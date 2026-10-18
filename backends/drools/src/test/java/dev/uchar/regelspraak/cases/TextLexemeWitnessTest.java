@@ -209,9 +209,9 @@ class TextLexemeWitnessTest {
         //     ref     : oracle: PASS (3 expectations)
         //     clingo  : TRANSLATION FAULT — the ASP string encoding cannot quote a line terminator, so clingo
         //               REFUSES this flank loudly and ref is the arbiter here (measured the same day).
-        for (String endName : List.of("\n", "\r")) {
-            String waarde = "uit" + endName + "voer";
-            String consequence = "afslag" + endName + "noord";
+        for (String lineEnd : List.of("\n", "\r")) {
+            String waarde = "uit" + lineEnd + "voer";
+            String consequence = "afslag" + lineEnd + "noord";
             Path ir = model("tekstlexeem-regeleinde", "equal", waarde, consequence);
             playBothBranches(ir, caseOf("regeleinde-raakt", waarde, true, consequence));
         }

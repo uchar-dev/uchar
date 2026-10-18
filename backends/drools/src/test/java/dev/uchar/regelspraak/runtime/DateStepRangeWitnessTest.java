@@ -99,7 +99,7 @@ class DateStepRangeWitnessTest {
         }
     }
 
-    @Test void the_examples_of_chapter_3_8_are_an_error() {
+    @Test void the_examples_of_chapter_3_8_are_a_fault() {
         play(List.of(
                 fout("2024-01-01T00:00:00 plus 2 000 000 000 000 uur", T0, "2000000000000", "HOURS", true, RANGE),
                 fout("2024-01-01T00:00:00 min 2 000 000 000 000 uur", T0, "2000000000000", "HOURS", false, RANGE),

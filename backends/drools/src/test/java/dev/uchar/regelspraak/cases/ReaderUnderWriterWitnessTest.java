@@ -48,7 +48,7 @@ class ReaderUnderWriterWitnessTest {
 
     // ---------------- a leeg or gevuld test, and a comparison in a characteristic assignment ----------------
 
-    @Test void an_empty_test_on_the_own_member_for_its_writer() throws Exception {
+    @Test void an_empty_test_on_the_own_member_before_its_writer() throws Exception {
         // "De uitkomst van een Vondst moet gesteld worden op zijn vinddag indien zijn afgeleide registratiedag leeg is",
         // with "De afgeleide registratiedag van een Vondst moet gesteld worden op zijn registratiedag" after it, and once
         // more before it. ref and clingo: V leeg, X 15-08-2026.
@@ -340,10 +340,10 @@ class ReaderUnderWriterWitnessTest {
         // "De afgeleide registratiedag van een Vondst moet gesteld worden op zijn vinddag indien zijn afgeleide
         // registratiedag leeg is": the rule reads its own target negatively, a cycle WF-046 refuses. The
         // exec-model branch refuses the cycle by name, as the row above.
-        String selfRole = regel("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", own("vinddag"),
+        String selfReadingRule = regel("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", own("vinddag"),
                 predicate("empty", own("afgeleide registratiedag")));
         String caseDocument = caseDocument(List.of(vondst("V", "2026-09-15", null, "")), day("V", "afgeleide registratiedag", "2026-09-15"));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(document(List.of(selfRole)), caseDocument));
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(document(List.of(selfReadingRule)), caseDocument));
         assertTrue(e.getMessage().contains("kring in de afhankelijkheden over het lid Vondst.afgeleide registratiedag via"
                 + " de regel \"afgeleide registratiedag\" — een kring die niet door een creatielid van een recursieve"
                 + " regelgroep loopt, is onwelgevormd (WF-045)"), e.getMessage());

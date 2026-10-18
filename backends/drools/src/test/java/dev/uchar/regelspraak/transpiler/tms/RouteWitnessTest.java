@@ -101,7 +101,7 @@ class RouteWitnessTest {
                 "INTERCEPTED: Object ComputeHelpers.intercepted[EmptyBarrier, Object]",
                 "ESTABLISHED: Boolean ComputeHelpers.established[Kwantor, int, int, int, int]",
                 "END_VERDICT: boolean ComputeHelpers.endVerdict[Kwantor, int, long, long]",
-                "VERDICT: BigDecimal ComputeHelpers.judgement[boolean]",
+                "VERDICT: BigDecimal ComputeHelpers.verdict[boolean]",
                 "CONTRACT_BREACH: Object ComputeHelpers.contractBreach[String]",
                 "WRITERS_CONFLICT: Fout ComputeHelpers.writersConflict[Object, Object, String, List, List, List]",
                 "LIST0: List ComputeHelpers.list0[]",
@@ -179,18 +179,18 @@ class RouteWitnessTest {
      *  while the barrier of another passes on; the verdict of a matrix; the lists of a fixed number of values, which
      *  may hold null. */
     @Test void the_routes_of_a_let_and_a_list() {
-        Object cell = ComputeHelpers.binderCell(), earlierBean = ComputeHelpers.binderCell();
+        Object cell = ComputeHelpers.binderCell(), other = ComputeHelpers.binderCell();
         assertFalse(ComputeHelpers.binderCellFilled(cell));
         assertEquals(7, ComputeHelpers.fillBinderCell(cell, 7));
         assertTrue(ComputeHelpers.binderCellFilled(cell));
         assertEquals(7, ComputeHelpers.binderValue(cell));
-        ComputeHelpers.fillBinderCell(earlierBean, null);
-        EmptyBarrier barrier = assertThrows(EmptyBarrier.class, () -> ComputeHelpers.binderValue(earlierBean));
-        assertSame(earlierBean, barrier.cell());
-        assertNull(ComputeHelpers.intercepted(barrier, earlierBean));
+        ComputeHelpers.fillBinderCell(other, null);
+        EmptyBarrier barrier = assertThrows(EmptyBarrier.class, () -> ComputeHelpers.binderValue(other));
+        assertSame(other, barrier.cell());
+        assertNull(ComputeHelpers.intercepted(barrier, other));
         assertSame(barrier, assertThrows(EmptyBarrier.class, () -> ComputeHelpers.intercepted(barrier, cell)));
-        assertEquals(BigDecimal.ONE, ComputeHelpers.judgement(true));
-        assertEquals(BigDecimal.ZERO, ComputeHelpers.judgement(false));
+        assertEquals(BigDecimal.ONE, ComputeHelpers.verdict(true));
+        assertEquals(BigDecimal.ZERO, ComputeHelpers.verdict(false));
         assertEquals(List.of(), ComputeHelpers.list0());
         assertEquals(Arrays.asList(1, null, 3), ComputeHelpers.list3(1, null, 3));
         assertEquals(List.of(1, 2, 3, 4, 5, 6), ComputeHelpers.list6(1, 2, 3, 4, 5, 6));
@@ -201,17 +201,17 @@ class RouteWitnessTest {
      *  attribute set through the setter of the property, and a leeg value left unset. */
     @Test void the_routes_of_a_creation() {
         Member onderwerp = new Member(null, BigDecimal.ONE);
-        Object recomputed = ComputeHelpers.newObject(onderwerp, New.class.getName());
-        assertTrue(recomputed instanceof New, () -> "een " + recomputed.getClass());
+        Object fresh = ComputeHelpers.newObject(onderwerp, New.class.getName());
+        assertTrue(fresh instanceof New, () -> "een " + fresh.getClass());
         assertTrue(assertThrows(IllegalStateException.class, () -> ComputeHelpers.newObject(onderwerp,
                 "dev.uchar.regelspraak.facts.Bestaatniet")).getMessage().contains("dev.uchar.regelspraak.facts.Bestaatniet"));
         assertTrue(assertThrows(IllegalStateException.class, () -> ComputeHelpers.newObject(onderwerp,
                 Member.class.getName())).getMessage().contains(Member.class.getName() + ", maar die klasse heeft geen publieke"
                 + " constructor zonder argumenten"));
-        ComputeHelpers.set(recomputed, "amount", BigDecimal.TEN);
-        assertEquals(BigDecimal.TEN, ((New) recomputed).getAmount());
-        ComputeHelpers.set(recomputed, "amount", null);
-        assertEquals(BigDecimal.TEN, ((New) recomputed).getAmount(), "een lege waarde laat het lid zoals het is");
+        ComputeHelpers.set(fresh, "amount", BigDecimal.TEN);
+        assertEquals(BigDecimal.TEN, ((New) fresh).getAmount());
+        ComputeHelpers.set(fresh, "amount", null);
+        assertEquals(BigDecimal.TEN, ((New) fresh).getAmount(), "een lege waarde laat het lid zoals het is");
     }
 
     /** A bean of a creation: a public constructor without arguments and a member with its setter. */

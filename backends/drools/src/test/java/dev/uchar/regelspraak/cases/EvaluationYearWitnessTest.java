@@ -139,7 +139,7 @@ class EvaluationYearWitnessTest {
      *  means both branches must play the patched case. Until card drl-teksttak-op-truth-maintenance the DRL-text
      *  branch had a refusal of its own per position, "the DRL-text branch has no defaults lowering" on the two
      *  positions in a prioritized default. */
-    private record Site(String golden, String pointer, String caseDocument, String date, Map<String, String> waarden,
+    private record Site(String golden, String pointer, String caseFileName, String date, Map<String, String> waarden,
                         boolean inconsistent, String refusal, String description) {}
 
     @Test void at_the_other_sites_the_answer_of_ref_or_the_refusal_of_the_branch() throws Exception {
@@ -202,7 +202,7 @@ class EvaluationYearWitnessTest {
     /** The golden's case with the row's date set and its expectations patched to the reference interpreter's answer.
      *  Every patched key must hit an expectation, so a row cannot pass on a key that names nothing. */
     private static JsonNode caseOf(Site p) throws Exception {
-        ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(p.golden()).resolve(p.caseDocument())));
+        ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(p.golden()).resolve(p.caseFileName())));
         if (p.date() != null) c.put("asOfDate", p.date());
         java.util.Set<String> touched = new java.util.HashSet<>();
         ArrayNode verwacht = JSON.createArrayNode();
@@ -224,7 +224,7 @@ class EvaluationYearWitnessTest {
                 verwacht.add(e);
             }
         }
-        assertEquals(p.waarden().keySet(), touched, "every patched expectation exists in " + p.golden() + "/" + p.caseDocument());
+        assertEquals(p.waarden().keySet(), touched, "every patched expectation exists in " + p.golden() + "/" + p.caseFileName());
         c.set("expected", verwacht);
         return c;
     }
@@ -277,9 +277,9 @@ class EvaluationYearWitnessTest {
         JsonPointer p = JsonPointer.compile(pointer);
         JsonNode oud = ir.at(p);
         assertEquals("Literal", oud.path("node").asText(), "the twist hits a literal: " + golden + pointer);
-        ObjectNode recomputed = (ObjectNode) JSON.readTree(REKENJAAR);
-        recomputed.set("type", oud.get("type"));
-        ((ObjectNode) ir.at(p.head())).set(p.last().getMatchingProperty(), recomputed);
+        ObjectNode fresh = (ObjectNode) JSON.readTree(REKENJAAR);
+        fresh.set("type", oud.get("type"));
+        ((ObjectNode) ir.at(p.head())).set(p.last().getMatchingProperty(), fresh);
         return temporary("rekenjaar-twist", ir);
     }
 
@@ -302,7 +302,7 @@ class EvaluationYearWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             return TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.roleBindings(), l.lets(),
-                    l.sourcePaths(), l.path()).dekking();
+                    l.sourcePaths(), l.navigationBindings()).dekking();
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }

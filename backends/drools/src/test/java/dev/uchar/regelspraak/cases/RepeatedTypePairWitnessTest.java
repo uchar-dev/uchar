@@ -267,7 +267,7 @@ class RepeatedTypePairWitnessTest {
                 "a declared member of the same name displaces the reference");
     }
 
-    @Test void a_many_role_without_opslag_carrying_other_side_stays_refused() throws Exception {
+    @Test void a_many_role_without_storage_carrying_other_side_stays_refused() throws Exception {
         // BOTH roles of one feittype to-many: a to-many role's storage is the far end's field, and here that
         // end is to-many too, so the model derives nothing at EITHER end. Its own sentence, naming the
         // CARDINALITY rather than a derivation that in fact succeeded.

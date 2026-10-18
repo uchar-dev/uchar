@@ -26,7 +26,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -65,9 +65,9 @@ class TmsAttributeChainWitnessTest {
             characteristicRule("registratie", "Vondst", "geregistreerd", check("gemeld", false)),
             characteristicRule("onbeheerd", "Vondst", "onbeheerd", check("geregistreerd", true)),
             computingRule("bergloon", "BEREKENING", "Vondst", "bergloon",
-                    binary("times", reading("gewicht", "Vondst"), number("2")), check("onbeheerd", false)),
+                    binary("times", ownRead("gewicht", "Vondst"), number("2")), check("onbeheerd", false)),
             computingRule("uitkering", "BEREKENING", "Vondst", "uitkering",
-                    binary("plus", reading("bergloon", "Vondst"), number("5")), "null"));
+                    binary("plus", ownRead("bergloon", "Vondst"), number("5")), "null"));
 
     private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
             List.of(attribuut("gewicht", WHOLE), attribuut("bergloon", WHOLE), attribuut("uitkering", WHOLE)),

@@ -62,23 +62,23 @@ class TmsIndexWitnessTest {
             "jutterswet-postwacht", "jutterswet-havenketen");
 
     /** Every constraint of every document, read once. */
-    private static List<Restriction> restrictions;
+    private static List<PatternConstraint> patternConstraints;
 
     /** The build of every document, by name. */
     private static final Map<String, DroolsBackend.Build> BUILD = new LinkedHashMap<>();
 
     /** One constraint of a pattern: the document, the rule, the class of the pattern's fact, its kind, whether it
      *  reads another variable than the pattern's own (a join), and the index it carries, null where none. */
-    record Restriction(String document, String regel, Class<?> javaClass, String soort, boolean join, Index<?, ?> index) {}
+    record PatternConstraint(String document, String regel, Class<?> javaClass, String soort, boolean join, Index<?, ?> index) {}
 
     @BeforeAll
     static void lees() throws Exception {
-        restrictions = new ArrayList<>();
+        patternConstraints = new ArrayList<>();
         for (String d : DOCUMENTS) {
             Path ir = d.equals("schaal") ? ScaleTrial.model() : GOLDEN.resolve(d).resolve("ir.json");
             DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
             BUILD.put(d, b);
-            restrictions.addAll(restrictions(d, b.execModelTranspiler().model()));
+            patternConstraints.addAll(patternConstraints(d, b.execModelTranspiler().model()));
         }
     }
 
@@ -132,7 +132,7 @@ class TmsIndexWitnessTest {
     void everyJoinIndexedOrNamed() {
         Set<String> seen = new TreeSet<>();
         List<String> without = new ArrayList<>();
-        for (Restriction b : restrictions) {
+        for (PatternConstraint b : patternConstraints) {
             if (!b.join()) continue;
             seen.add(b.soort());
             boolean index = b.index() instanceof BetaIndexN<?, ?> && b.index().getConstraintType() == Index.ConstraintType.EQUAL;
@@ -173,7 +173,7 @@ class TmsIndexWitnessTest {
     private static void indexed(Set<String> kinds, Set<String> rare) {
         Map<String, Integer> seen = new LinkedHashMap<>();
         List<String> without = new ArrayList<>();
-        for (Restriction b : restrictions) {
+        for (PatternConstraint b : patternConstraints) {
             if (!kinds.contains(b.soort()) && !rare.contains(b.soort())) continue;
             seen.merge(b.soort(), 1, Integer::sum);
             if (!b.join() || !(b.index() instanceof BetaIndexN<?, ?>)
@@ -189,15 +189,15 @@ class TmsIndexWitnessTest {
 
     /** Every constraint of every pattern of {@code model}, also inside a negation, an existence and the source of an
      *  accumulate. */
-    static List<Restriction> restrictions(String document, Model model) {
-        List<Restriction> out = new ArrayList<>();
+    static List<PatternConstraint> patternConstraints(String document, Model model) {
+        List<PatternConstraint> out = new ArrayList<>();
         for (Rule r : model.getRules()) loop(document, r.getName(), r.getView(), out);
         return out;
     }
 
-    private static void loop(String document, String regel, Condition c, List<Restriction> out) {
+    private static void loop(String document, String regel, Condition c, List<PatternConstraint> out) {
         if (c instanceof PatternImpl<?> p) {
-            restriction(document, regel, p.getPatternVariable().getType(), p.getConstraint(), out);
+            patternConstraint(document, regel, p.getPatternVariable().getType(), p.getConstraint(), out);
         } else if (c instanceof AccumulatePatternImpl<?> a) {
             loop(document, regel, a.getCondition(), out);
             return;
@@ -205,16 +205,16 @@ class TmsIndexWitnessTest {
         for (Condition sub : c.getSubConditions()) loop(document, regel, sub, out);
     }
 
-    private static void restriction(String document, String regel, Class<?> javaClass, Constraint c, List<Restriction> out) {
+    private static void patternConstraint(String document, String regel, Class<?> javaClass, Constraint c, List<PatternConstraint> out) {
         if (c == null) return;
         if (c instanceof SingleConstraint s) {
             String id = s.getExprId();
             if (id == null) return;
             int streep = id.lastIndexOf('_');
-            out.add(new Restriction(document, regel, javaClass, streep < 0 ? id : id.substring(0, streep),
+            out.add(new PatternConstraint(document, regel, javaClass, streep < 0 ? id : id.substring(0, streep),
                     s.getVariables().length > 1, s.getIndex()));
             return;
         }
-        for (Constraint k : c.getChildren()) restriction(document, regel, javaClass, k, out);
+        for (Constraint k : c.getChildren()) patternConstraint(document, regel, javaClass, k, out);
     }
 }

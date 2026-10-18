@@ -112,7 +112,7 @@ class ComparisonWitnessTest {
         void doe(DroolsBackend.Build bouw, KieSession sessie, Function<Object, String> label);
     }
 
-    private static final Preparation FIRED_AND_RESET = (bouw, sessie, label) -> {
+    private static final Preparation FIRED_AND_WRITTEN_BACK = (bouw, sessie, label) -> {
         assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt());
         DroolsBackend.zetAfgeleideWaarden(bouw, sessie, label);
     };
@@ -121,8 +121,8 @@ class ComparisonWitnessTest {
         return labels -> labelFunction(labels, l -> l);
     }
 
-    private static ScenarioResultaat rapport(Path golden, Path goldenCase) {
-        return CaseRunner.rapport(golden.resolve("ir.json"), List.of(goldenCase)).get(0);
+    private static ScenarioResultaat rapport(Path golden, Path casePath) {
+        return CaseRunner.rapport(golden.resolve("ir.json"), List.of(casePath)).get(0);
     }
 
     /** The diagnose of the report without the name of the case file and ": " before it. */
@@ -132,19 +132,19 @@ class ComparisonWitnessTest {
 
     @Test void the_entry_gives_on_both_branches_what_the_report_gives() throws Exception {
         Set<String> kinds = new TreeSet<>();
-        for (String[] caseOf : CASES) {
-            Path golden = GOLDEN.resolve(caseOf[0]);
-            JsonNode c = lees(golden.resolve(caseOf[1]));
+        for (String[] entry : CASES) {
+            Path golden = GOLDEN.resolve(entry[0]);
+            JsonNode c = lees(golden.resolve(entry[1]));
             for (JsonNode v : c.get("expected"))
                 kinds.add(v.get("kind").asText() + (v.has("rule") ? "+rule" : "") + (v.has("label")
                         && v.get("kind").asText().equals("inconsistent") ? "+label" : ""));
-            ScenarioResultaat r = rapport(golden, golden.resolve(caseOf[1]));
-            assertEquals(ScenarioResultaat.Status.PASS, r.status(), caseOf[0] + "/" + caseOf[1]);
+            ScenarioResultaat r = rapport(golden, golden.resolve(entry[1]));
+            assertEquals(ScenarioResultaat.Status.PASS, r.status(), entry[0] + "/" + entry[1]);
             for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
                 DroolsBackend.Vergelijking g = vergelijk(golden, c, branch, l -> l, c.get("expected"));
-                assertEquals(r.verwachtingen(), g.verwachtingen(), branch + " " + caseOf[0] + "/" + caseOf[1]);
-                assertEquals("", g.diagnose(), branch + " " + caseOf[0] + "/" + caseOf[1]);
-                assertTrue(g.pass(), branch + " " + caseOf[0] + "/" + caseOf[1]);
+                assertEquals(r.verwachtingen(), g.verwachtingen(), branch + " " + entry[0] + "/" + entry[1]);
+                assertEquals("", g.diagnose(), branch + " " + entry[0] + "/" + entry[1]);
+                assertTrue(g.pass(), branch + " " + entry[0] + "/" + entry[1]);
             }
         }
         assertEquals(Set.of("attributeEmpty", "attributeTimeline", "attributeValue", "characteristicAbsent",
@@ -207,11 +207,11 @@ class ComparisonWitnessTest {
      *  {@code lees} refuses, a session not fired and one updated after its write-back. */
     @Test void a_session_without_answer_is_refused() throws Exception {
         JsonNode c = lees(KUSTWACHT.resolve("case1.json"));
-        IllegalStateException notReset = refusal(IllegalStateException.class, KUSTWACHT, c, caselabels(),
+        IllegalStateException notWrittenBack = refusal(IllegalStateException.class, KUSTWACHT, c, caselabels(),
                 c.get("expected"), (bouw, sessie, label) -> assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt()));
         assertEquals("vergelijk: deze sessie is niet teruggezet; de beans dragen het fixpunt pas na"
                 + " DroolsBackend.zetAfgeleideWaarden, en tot dan alleen de invoer, dus zet eerst terug",
-                notReset.getMessage());
+                notWrittenBack.getMessage());
 
         IllegalStateException notFired = refusal(IllegalStateException.class, KUSTWACHT, c, caselabels(),
                 c.get("expected"), (bouw, sessie, label) -> { });
@@ -220,7 +220,7 @@ class ComparisonWitnessTest {
 
         IllegalStateException updated = refusal(IllegalStateException.class, KUSTWACHT, c, caselabels(),
                 c.get("expected"), (bouw, sessie, label) -> {
-                    FIRED_AND_RESET.doe(bouw, sessie, label);
+                    FIRED_AND_WRITTEN_BACK.doe(bouw, sessie, label);
                     Object beanObject = sessie.getObjects(o -> "W1".equals(label.apply(o))).iterator().next();
                     sessie.update(sessie.getFactHandle(beanObject), beanObject);
                 });
@@ -242,14 +242,14 @@ class ComparisonWitnessTest {
     @Test void a_label_of_two_beans_and_an_object_as_expectations_are_refused() throws Exception {
         JsonNode c = lees(KUSTWACHT.resolve("case1.json"));
         IllegalArgumentException duplicate = refusal(IllegalArgumentException.class, KUSTWACHT, c,
-                labels -> o -> labels.containsValue(o) ? "dienst" : null, c.get("expected"), FIRED_AND_RESET);
+                labels -> o -> labels.containsValue(o) ? "dienst" : null, c.get("expected"), FIRED_AND_WRITTEN_BACK);
         assertTrue(duplicate.getMessage().startsWith("vergelijk: de labelfunctie geeft het label 'dienst' aan "),
                 duplicate.getMessage());
         assertTrue(duplicate.getMessage().endsWith(", dus een verwachting op 'dienst' wijst geen bean aan"),
                 duplicate.getMessage());
 
         IllegalArgumentException noArray = refusal(IllegalArgumentException.class, KUSTWACHT, c, caselabels(), c,
-                FIRED_AND_RESET);
+                FIRED_AND_WRITTEN_BACK);
         assertEquals("vergelijk: de verwachtingen zijn de array 'expected' van een case, en dit is een OBJECT",
                 noArray.getMessage());
     }
@@ -266,7 +266,7 @@ class ComparisonWitnessTest {
                 "{\"kind\": \"characteristicAbsent\", \"label\": \"W9\", \"characteristic\": \"rustwacht\"}")) {
             JsonNode v = TmsDocuments.JSON.readTree("[" + expectation + "]");
             IllegalArgumentException e = refusal(IllegalArgumentException.class, KUSTWACHT, c, caselabels(), v,
-                    FIRED_AND_RESET);
+                    FIRED_AND_WRITTEN_BACK);
             assertEquals(v.get(0).get("kind").asText() + "-verwachting op onbekend label 'W9': geen bean van de sessie"
                     + " draagt het, dus er is niets te lezen", e.getMessage());
         }
@@ -286,7 +286,7 @@ class ComparisonWitnessTest {
         for (Map.Entry<String, String> z : sentences.entrySet()) {
             JsonNode v = TmsDocuments.JSON.readTree("[" + z.getKey() + "]");
             CaseRunner.Excluded e = refusal(CaseRunner.Excluded.class, BORGDEEL, c, caselabels(), v,
-                    FIRED_AND_RESET);
+                    FIRED_AND_WRITTEN_BACK);
             assertEquals(z.getValue(), e.getMessage());
             ObjectNode withExpectation = c.deepCopy();
             withExpectation.set("expected", v);

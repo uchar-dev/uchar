@@ -25,7 +25,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
 import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
@@ -84,8 +84,8 @@ class TmsFallThroughWitnessTest {
 
     private static final String GROUP = attributeGroup("doel van een vondst", "Vondst", "doel", List.of(
             standaard(compound("all", 0, List.of(check("c", false), check("afgewezen", true))),
-                    reading("bron1", "Vondst")),
-            standaard(check("d", false), reading("bron2", "Vondst"))));
+                    ownRead("bron1", "Vondst")),
+            standaard(check("d", false), ownRead("bron2", "Vondst"))));
 
     /** The input characteristics of object {@code bits}: b, c, d and f by its four bits. */
     private static List<String> kenmerken(int bits) {

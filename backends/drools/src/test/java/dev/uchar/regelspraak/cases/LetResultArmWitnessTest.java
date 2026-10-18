@@ -169,9 +169,9 @@ class LetResultArmWitnessTest {
     @Test void the_empty_target_is_observable_and_absent_in_both_branches() throws Exception {
         // the comparator must SEE the absence rather than leave it unasserted: the same input with a VALUE
         // expectation on `metlet` must MISMATCH in both branches, and name the target.
-        String caseOf = jutter(LEEG, waarde("metlet", "0.00"));
+        String caseJson = jutter(LEEG, waarde("metlet", "0.00"));
         for (String branch : List.of("exec", "drl")) {
-            CaseRunner.Result r = play(branch, caseOf);
+            CaseRunner.Result r = play(branch, caseJson);
             assertEquals("FAIL", r.status(), branch + ": de leeg-barriere moet observeerbaar zijn, niet slechts niet-geasserteerd");
             assertTrue(r.caseFailures().toString().contains("metlet"), branch + ": " + r.caseFailures());
         }
@@ -274,7 +274,7 @@ class LetResultArmWitnessTest {
         // ref-vs-clingo question in a backend this card may not touch, so the shape is witnessed here (where ref
         // is the arbiter and BOTH Drools branches agree with it) and never proposed as a corpus golden, which
         // gate 6 would rightly reject.
-        playBoth(jutter(EMPTY_ELSE_ARM_DIVISOR, waarde("takdeling", "7.00") + ", " + waarde("tak", "2.00")));
+        playBoth(jutter(EMPTY_ARM_DIVISOR_ELSE, waarde("takdeling", "7.00") + ", " + waarde("tak", "2.00")));
     }
 
     // ---------------- 5c. the two shapes the adversarial lens found (2026-09-18) ----------------
@@ -325,8 +325,8 @@ class LetResultArmWitnessTest {
         // twee verschillende takgardes") until card drl-teksttak-op-truth-maintenance. The analysis, whose needs are
         // genuine thunks, plays it (ref: 160.00), on both branches since that card. clingo refuses the document
         // outright ("TRANSLATION FAULT: expression kind not translated").
-        java.nio.file.Path ir = temporary("let-dubbelgarde-ir", DUPLICATE_GUARD_MODEL);
-        java.nio.file.Path c = temporary("let-dubbelgarde-case", DUPLICATE_GUARD_CASE);
+        java.nio.file.Path ir = temporary("let-dubbelgarde-ir", DOUBLE_GUARD_MODEL);
+        java.nio.file.Path c = temporary("let-dubbelgarde-case", DOUBLE_GUARD_CASE);
         try {
             assertEquals("PLAYED", CaseRunner.viaExecModel(ir, List.of(c)).status(), "exec speelt de vorm");
             CaseRunner.Result drl = CaseRunner.viaDrlText(ir, List.of(c));
@@ -350,15 +350,15 @@ class LetResultArmWitnessTest {
     // ---------------- replay: one document, one case, BOTH branches ----------------
 
     /** Both transpiler branches on the authored model and one case; each must PLAY it. */
-    private static void playBoth(String caseOf) throws Exception {
+    private static void playBoth(String caseJson) throws Exception {
         for (String branch : List.of("exec", "drl")) {
-            CaseRunner.Result r = play(branch, caseOf);
+            CaseRunner.Result r = play(branch, caseJson);
             assertEquals("PLAYED", r.status(), branch + ": " + r.reason() + " " + r.caseFailures());
         }
     }
 
-    private static CaseRunner.Result play(String branch, String caseOf) throws Exception {
-        Path ir = temporary("let-resultaat-ir", MODEL), c = temporary("let-resultaat-case", caseOf);
+    private static CaseRunner.Result play(String branch, String caseJson) throws Exception {
+        Path ir = temporary("let-resultaat-ir", MODEL), c = temporary("let-resultaat-case", caseJson);
         try {
             return branch.equals("drl") ? CaseRunner.viaDrlText(ir, List.of(c)) : CaseRunner.viaExecModel(ir, List.of(c));
         } finally {
@@ -415,7 +415,7 @@ class LetResultArmWitnessTest {
             + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }, "
             + "\"takopslaggrond\": { \"number\": \"6.00\" }" + ARM_INPUT;
     /** inkomen 2,00 (the ANDERS arm runs) with the same divisor absent: the site is in the arm NOT taken. */
-    private static final String EMPTY_ELSE_ARM_DIVISOR =
+    private static final String EMPTY_ARM_DIVISOR_ELSE =
             "\"inkomen\": { \"number\": \"2.00\" }, \"teller\": { \"number\": \"40.00\" }, "
             + "\"deler\": { \"number\": \"4\" }, \"staffel\": { \"number\": \"4\" }, "
             + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }, "
@@ -539,12 +539,12 @@ class LetResultArmWitnessTest {
      *  the read-guard lattice, which this branch refuses by name. Kept apart from {@link #MODEL} for the reason
      *  the refusal exists: a marker makes the WHOLE document an EXCLUDE, so it may not sit beside pins that must
      *  play. Verifier-clean and ref-replayed (160.00) before pinning. */
-    private static final String DUPLICATE_GUARD_MODEL = buildDuplicateGuard();
+    private static final String DOUBLE_GUARD_MODEL = buildDoubleGuard();
 
-    private static final String DUPLICATE_GUARD_CASE = jutter("\"inkomen\": { \"number\": \"40.00\" }",
+    private static final String DOUBLE_GUARD_CASE = jutter("\"inkomen\": { \"number\": \"40.00\" }",
             waarde("dubbelgarde", "160.00"));
 
-    private static String buildDuplicateGuard() {
+    private static String buildDoubleGuard() {
         String inkomen = attr("inkomen", 2, false, NN);
         String z = bref("z", UNSPECIFIED);
         String w = let("k", inkomen,
@@ -580,13 +580,13 @@ class LetResultArmWitnessTest {
         String zeroDivisor = attr("nuldeler", 0, true, NN);
         String gapDivisor = attr("gatdeler", 0, true, NN);
         String above10 = verg("greater", bref("k", NN), lit("10.00", 2, false));
-        String duplicateDef = binary("times", inkomen, lit("2", 0, true));
+        String doubleDef = binary("times", inkomen, lit("2", 0, true));
 
         String[][] rs = {
             // the variable read in the voorwaarde (substituted) AND in the result (bound)
             {"aandeel van een jutter", attr("aandeel", 2, false, UNSPECIFIED),
-             let("dubbel", duplicateDef, binary("plus", bref("dubbel", UNSPECIFIED), bref("dubbel", UNSPECIFIED)), UNSPECIFIED),
-             verg("greater", duplicateDef, lit("10.00", 2, false))},
+             let("dubbel", doubleDef, binary("plus", bref("dubbel", UNSPECIFIED), bref("dubbel", UNSPECIFIED)), UNSPECIFIED),
+             verg("greater", doubleDef, lit("10.00", 2, false))},
             // a later binder reading an earlier one
             {"gestaffeld van een jutter", attr("gestaffeld", 2, false, UNSPECIFIED),
              let("basis", inkomen,
@@ -623,7 +623,7 @@ class LetResultArmWitnessTest {
                     let("b", lit("5.00", 2, false), bref("b", UNSPECIFIED), UNSPECIFIED)), "null"},
             // the non-regression flank: a variable NO result read reaches gets no Let at all
             {"premie van een jutter", attr("premie", 2, false, UNSPECIFIED), lit("7.00", 2, false),
-             verg("greater", duplicateDef, lit("50.00", 2, false))},
+             verg("greater", doubleDef, lit("50.00", 2, false))},
             // a §6.5 site inside a NEED's own value — the companion must still be built for it
             {"heffing van een jutter", attr("heffing", 2, false, UNSPECIFIED),
              let("q", binary("dividedBy", counter, heffingsDivisor),

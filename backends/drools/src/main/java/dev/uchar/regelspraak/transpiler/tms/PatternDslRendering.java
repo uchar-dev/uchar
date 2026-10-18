@@ -205,11 +205,11 @@ final class PatternDslRendering {
             case Consequence.Contribution x -> contribution(x);
             case Consequence.FilterDeposit x -> consequentie(x.onderwerp(), slotsOf(x.member()), (drools, carrier, w) ->
                     voegIn(drools, x.insertion(), new FilterDeposit(x.fold(), carrier, w[x.member()])));
-            case Consequence.FilterError x -> filterError(x);
-            case Consequence.MemberError x -> consequentie(x.onderwerp(), slotsOf(placeSlots(x.member(), x.place())),
+            case Consequence.FilterFault x -> filterFault(x);
+            case Consequence.MemberFault x -> consequentie(x.onderwerp(), slotsOf(placeSlots(x.member(), x.place())),
                     (drools, carrier, w) -> {
                         List<Integer> place = foldPlace(x.place(), x.fold(), w[x.member()], w);
-                        voegIn(drools, x.insertion(), new MemberError(x.fold(), carrier, w[x.member()],
+                        voegIn(drools, x.insertion(), new MemberFault(x.fold(), carrier, w[x.member()],
                                 ComputeHelpers.inputFormFault(x.before(), w[x.member()], x.after(), null), place));
                     });
             case Consequence.Creation x -> creatie(x);
@@ -265,7 +265,7 @@ final class PatternDslRendering {
                 Predicate<Object[]> matrix = ClosureRendering.test(o.matrix());
                 yield consequentie(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) ->
                         voegIn(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()],
-                                ComputeHelpers.judgement(matrix.test(w)))));
+                                ComputeHelpers.verdict(matrix.test(w)))));
             }
             case Consequence.Input.MemberTest t -> {
                 Predicate<Object[]> matrix = ClosureRendering.test(t.matrix());
@@ -288,9 +288,9 @@ final class PatternDslRendering {
         };
     }
 
-    /** The fault of {@link Consequence.FilterError}: the filter evaluated again over the same bound values, then the member's
+    /** The fault of {@link Consequence.FilterFault}: the filter evaluated again over the same bound values, then the member's
      *  place. */
-    private RuleItemBuilder<?> filterError(Consequence.FilterError g) {
+    private RuleItemBuilder<?> filterFault(Consequence.FilterFault g) {
         Predicate<Object[]> filter = ClosureRendering.test(g.filter());
         return consequentie(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) -> {
             RuntimeException fout = ClosureRendering.fout(filter, w);
@@ -298,7 +298,7 @@ final class PatternDslRendering {
                 throw new IllegalStateException("het filter van " + g.fold() + " faalde in de toets en niet in het gevolg,"
                         + " over dezelfde gebonden waarden");
             List<Integer> place = foldPlace(g.place(), g.fold(), w[g.member()], w);
-            voegIn(drools, g.insertion(), new FilterError(g.fold(), carrier, w[g.member()], fout, place));
+            voegIn(drools, g.insertion(), new FilterFault(g.fold(), carrier, w[g.member()], fout, place));
         });
     }
 
@@ -396,24 +396,24 @@ final class PatternDslRendering {
                     return;
                 }
             }
-            Object recomputed = newObject(construction.javaClass());
+            Object fresh = newObject(construction.javaClass());
             for (int j = 0; j < setters.size(); j++) {
                 Object waarde = v[construction.settings().get(j).initialisatie()];
-                if (waarde != null) setters.get(j).accept(recomputed, waarde);
+                if (waarde != null) setters.get(j).accept(fresh, waarde);
             }
             int phase = (Integer) w[g.phase()];
             for (Consequence.Insert i : g.insertions())
                 switch (i) {
-                    case Consequence.Insert.New n -> voegIn(drools, n.insertion(), recomputed);
+                    case Consequence.Insert.New n -> voegIn(drools, n.insertion(), fresh);
                     case Consequence.Insert.Mark m -> voegIn(drools, m.insertion(),
-                            new CreationStamp(g.creatie(), onderwerp, recomputed, phase, d.stratum(), depth));
+                            new CreationStamp(g.creatie(), onderwerp, fresh, phase, d.stratum(), depth));
                     case Consequence.Insert.Link l -> voegIn(drools, l.insertion(), l.newIsFirst()
-                            ? new RelationLink(l.relation(), recomputed, onderwerp, phase)
-                            : new RelationLink(l.relation(), onderwerp, recomputed, phase));
+                            ? new RelationLink(l.relation(), fresh, onderwerp, phase)
+                            : new RelationLink(l.relation(), onderwerp, fresh, phase));
                     case Consequence.Insert.Characteristic k -> {
                         if (Boolean.TRUE.equals(v[k.initialisatie()]))
                             voegIn(drools, k.insertion(),
-                                    new HasCharacteristic(recomputed, g.initialisations().get(k.initialisatie()).member()));
+                                    new HasCharacteristic(fresh, g.initialisations().get(k.initialisatie()).member()));
                     }
                 }
         });
@@ -435,7 +435,7 @@ final class PatternDslRendering {
                 return;
             }
             if (v == null) return;
-            for (Consequence.StackFact f : g.sessionFacts()) voegIn(drools, g.insertion(), stackFact(f, onderwerp, v));
+            for (Consequence.StackFact f : g.facts()) voegIn(drools, g.insertion(), stackFact(f, onderwerp, v));
         });
     }
 
@@ -580,9 +580,9 @@ final class PatternDslRendering {
 
     private RuleItemBuilder<?> accumulation(Accumulation a) {
         Rendered bron = pattern(a.bron());
-        AccumulateFunction[] f = new AccumulateFunction[a.functions().size()];
+        AccumulateFunction[] f = new AccumulateFunction[a.aggregations().size()];
         for (int i = 0; i < f.length; i++) {
-            Accumulation.Aggregation fn = a.functions().get(i);
+            Accumulation.Aggregation fn = a.aggregations().get(i);
             Variable<Object> over = fn.bron() == null ? bron.variable() : known(fn.bron());
             f[i] = DSL.accFunction(function(fn.soort()), over).as(bind(fn.doel()));
         }
@@ -708,12 +708,12 @@ final class PatternDslRendering {
         veld(Contribution.class, "fold", Contribution::fold);
         veld(Contribution.class, "onderwerp", Contribution::onderwerp);
         veld(Contribution.class, "waarde", Contribution::waarde);
-        veld(FilterError.class, "fold", FilterError::fold);
-        veld(FilterError.class, "onderwerp", FilterError::onderwerp);
+        veld(FilterFault.class, "fold", FilterFault::fold);
+        veld(FilterFault.class, "onderwerp", FilterFault::onderwerp);
         veld(FilterDeposit.class, "fold", FilterDeposit::fold);
         veld(FilterDeposit.class, "onderwerp", FilterDeposit::onderwerp);
-        veld(MemberError.class, "fold", MemberError::fold);
-        veld(MemberError.class, "onderwerp", MemberError::onderwerp);
+        veld(MemberFault.class, "fold", MemberFault::fold);
+        veld(MemberFault.class, "onderwerp", MemberFault::onderwerp);
         veld(UniquenessKey.class, "uniqueness", UniquenessKey::uniqueness);
         veld(UniquenessKey.class, "element", UniquenessKey::element);
         veld(UniquenessViolation.class, "uniqueness", UniquenessViolation::uniqueness);
@@ -837,8 +837,8 @@ final class PatternDslRendering {
             case WAAR -> o -> Boolean.TRUE.equals(getter.apply(o));
             case PERIODS -> o -> Period.lijst((List<?>) getter.apply(o));
             case IS_SET -> o -> {
-                Object earlierBean = getter.apply(o);
-                return earlierBean != null && (soort == null || soort.isInstance(earlierBean));
+                Object other = getter.apply(o);
+                return other != null && (soort == null || soort.isInstance(other));
             };
         };
     }

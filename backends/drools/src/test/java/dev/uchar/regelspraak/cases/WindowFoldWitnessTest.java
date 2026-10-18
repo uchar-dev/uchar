@@ -75,14 +75,14 @@ class WindowFoldWitnessTest {
 
     /** vanaf the CONTRIBUTOR's own aanstelling: W3 (after the date) and W5 (leeg) miss it, the rest hit. */
     @Test void the_window_in_the_test_reads_the_bound_of_every_contributor() throws Exception {
-        BothBranches.green(document("all", null, null, ATTR), goldenCase(WITHIN, "S1", "S4", "S5"),
+        BothBranches.green(document("all", null, null, ATTR), caseDocument(WITHIN, "S1", "S4", "S5"),
                 "de grens is de aanstelling van de wacht, per bijdrager gelezen");
     }
 
     /** The same document against the answer a lowering reading the PLOEG's own date would give: both branches
      *  must reject it, so the row above really separates the two subjects. */
     @Test void the_reading_of_the_ploeg_itself_is_rejected_by_both_branches() throws Exception {
-        BothBranches.red(document("all", null, null, ATTR), goldenCase(WITHIN, "S2", "S4", "S6"),
+        BothBranches.red(document("all", null, null, ATTR), caseDocument(WITHIN, "S2", "S4", "S6"),
                 "kenmerk bevoegd: verwacht aanwezig, werkelijk afwezig",
                 "de datum van de ploeg is niet de grens van de bijdrager");
     }
@@ -90,16 +90,16 @@ class WindowFoldWitnessTest {
     /** ch. 3.10: {@code tot} is exclusive and "tot en met" inclusive — on the evaluation date itself the two
      *  spellings of one window give opposite folds. */
     @Test void the_to_bound_excludes_the_evaluation_date_and_up_to_and_including_includes_it() throws Exception {
-        BothBranches.green(document("all", null, null, EXCL), goldenCase(WITHIN, "S4"),
+        BothBranches.green(document("all", null, null, EXCL), caseDocument(WITHIN, "S4"),
                 "tot 15 juni: de evaluatiedatum ligt buiten het venster");
-        BothBranches.green(document("all", null, null, INCL), goldenCase(WITHIN, "S1", "S2", "S3", "S4", "S5", "S6"),
+        BothBranches.green(document("all", null, null, INCL), caseDocument(WITHIN, "S1", "S2", "S3", "S4", "S5", "S6"),
                 "tot en met 15 juni: de evaluatiedatum ligt erin");
     }
 
     /** An unset evaluation date never matches (ch. 3.10), so every non-empty ploeg fails ALLE and only the
      *  vacuous one holds — the reading WF-112 keeps because nothing complements it here. */
-    @Test void in_a_timeless_session_no_contributor_gets_the_window() throws Exception {
-        BothBranches.green(document("all", null, null, LIT), goldenCase(null, "S4"),
+    @Test void in_a_time_free_session_no_contributor_reaches_the_window() throws Exception {
+        BothBranches.green(document("all", null, null, LIT), caseDocument(null, "S4"),
                 "tijdvrij: het venster matcht nooit");
     }
 
@@ -107,17 +107,17 @@ class WindowFoldWitnessTest {
      *  gediplomeerd, so the composite differs from the bare window exactly there. */
     @Test void the_window_as_a_member_of_a_compound_matrix() throws Exception {
         BothBranches.green(document("all", null, null, combined("all", GEDIPLOMEERD, ATTR)),
-                goldenCase(WITHIN, "S1", "S4"), "ALLE[gediplomeerd, venster]");
+                caseDocument(WITHIN, "S1", "S4"), "ALLE[gediplomeerd, venster]");
         BothBranches.green(document("all", null, null, combined("the", GEDIPLOMEERD, ATTR)),
-                goldenCase(WITHIN, "S1", "S4"), "DE[gediplomeerd, venster]");
+                caseDocument(WITHIN, "S1", "S4"), "DE[gediplomeerd, venster]");
     }
 
     /** The window beside a numeric PARAMETER bound in one matrix: both are read. Under keurgrens 5 every wacht
      *  (8 dienstjaren) passes the comparison and the window decides; under 9 none passes. */
     @Test void the_window_beside_a_parameter_bound_reads_both() throws Exception {
         Path ir = withCheckBound(document("all", null, null, combined("all", KEURGRENS, ATTR)));
-        BothBranches.green(ir, withParameter(goldenCase(WITHIN, "S1", "S4", "S5"), "5"), "keurgrens 5: het venster beslist");
-        BothBranches.green(ir, withParameter(goldenCase(WITHIN, "S4"), "9"), "keurgrens 9: de vergelijking beslist");
+        BothBranches.green(ir, withParameter(caseDocument(WITHIN, "S1", "S4", "S5"), "5"), "keurgrens 5: het venster beslist");
+        BothBranches.green(ir, withParameter(caseDocument(WITHIN, "S4"), "9"), "keurgrens 9: de vergelijking beslist");
     }
 
     // ---------------- the window in an ALLE fold's FILTER: played, with ref's values ----------------
@@ -128,8 +128,8 @@ class WindowFoldWitnessTest {
      *  position (maintainer decision 2026-09-23). */
     @Test void the_window_in_the_filter_chooses_the_contributors_per_contributor() throws Exception {
         Path ir = document("all", null, ATTR, GEDIPLOMEERD);
-        BothBranches.green(ir, goldenCase(WITHIN, "S1", "S2", "S3", "S4", "S6"), "het filter selecteert per bijdrager");
-        BothBranches.green(ir, goldenCase(null, "S1", "S2", "S3", "S4", "S5", "S6"),
+        BothBranches.green(ir, caseDocument(WITHIN, "S1", "S2", "S3", "S4", "S6"), "het filter selecteert per bijdrager");
+        BothBranches.green(ir, caseDocument(null, "S1", "S2", "S3", "S4", "S5", "S6"),
                 "tijdvrij: niets geselecteerd, vacuüm waar");
     }
 
@@ -175,8 +175,8 @@ class WindowFoldWitnessTest {
      *  other three answered S1, S3, S5 and S6 at 2024-06-15 and nobody in a time-free session. */
     @Test void the_count_with_a_window_as_operand_of_a_condition() throws Exception {
         Path ir = conditionCountDocument(ATTR);
-        BothBranches.green(ir, goldenCase(WITHIN, "S1", "S3", "S5", "S6"), "de telling in de voorwaarde selecteert per wacht");
-        BothBranches.green(ir, goldenCase(null), "tijdvrij: niemand telt, dus niemand bevoegd");
+        BothBranches.green(ir, caseDocument(WITHIN, "S1", "S3", "S5", "S6"), "de telling in de voorwaarde selecteert per wacht");
+        BothBranches.green(ir, caseDocument(null), "tijdvrij: niemand telt, dus niemand bevoegd");
     }
 
     // ---------------- WF-112: GEEN and the counting quantifiers, refused by name in both branches ----------------
@@ -191,10 +191,10 @@ class WindowFoldWitnessTest {
             // the wire spells the quantifier as the table does; the transpiler's sentence names the record's constant
             String fold = "een kwantorvouw onder "
                     + Spelling.QUANTIFIER.waarde("QuantifierFold.quantifier", kw).name() + " over Strandwacht (WF-112)";
-            BothBranches.refused(document(kw, threshold, null, LIT), goldenCase(null, ALL_PLOEGEN),
+            BothBranches.refused(document(kw, threshold, null, LIT), caseDocument(null, ALL_PLOEGEN),
                     "periodevenster in de toets van " + fold + ": de kwantor telt of ontkent het vensterverdict",
                     "het venster in de toets onder " + kw);
-            BothBranches.refused(document(kw, threshold, LIT, GEDIPLOMEERD), goldenCase(null, ALL_PLOEGEN),
+            BothBranches.refused(document(kw, threshold, LIT, GEDIPLOMEERD), caseDocument(null, ALL_PLOEGEN),
                     "periodevenster in het filter van " + fold
                             + ": het venster kiest de leden waarover de kwantor telt of ontkent",
                     "het venster in het filter onder " + kw);
@@ -204,7 +204,7 @@ class WindowFoldWitnessTest {
     /** WF-112's walk is deep: a GEEN composite inside an ALLE fold's toets complements the window as surely as a
      *  GEEN fold does, and is refused on ITS quantifier. */
     @Test void a_window_under_a_none_compound_in_an_all_fold_is_refused() throws Exception {
-        BothBranches.refused(document("all", null, null, combined("none", LIT)), goldenCase(null, ALL_PLOEGEN),
+        BothBranches.refused(document("all", null, null, combined("none", LIT)), caseDocument(null, ALL_PLOEGEN),
                 "GEEN-samenstelling (WF-112)", "GEEN[venster] als toets van een ALLE-vouw");
     }
 
@@ -214,7 +214,7 @@ class WindowFoldWitnessTest {
     @Test void a_window_under_none_in_an_aggregation_filter_is_refused_by_name() throws Exception {
         BothBranches.refused(aggregationDocument(combined("none", ATTR)), countCase(null, 2, 1, 2, 0, 1, 2),
                 "GEEN-samenstelling (WF-112)", "GEEN[venster] als subselectie van een telling");
-        BothBranches.refused(conditionCountDocument(combined("none", ATTR)), goldenCase(null, ALL_PLOEGEN),
+        BothBranches.refused(conditionCountDocument(combined("none", ATTR)), caseDocument(null, ALL_PLOEGEN),
                 "GEEN-samenstelling (WF-112)", "diezelfde telling als operand van een voorwaarde");
     }
 
@@ -370,10 +370,10 @@ class WindowFoldWitnessTest {
         return ir;
     }
 
-    private static JsonNode withParameter(JsonNode goldenCase, String keurgrens) {
-        ((ObjectNode) goldenCase.get("input").get("parameters")).set("keurgrens",
+    private static JsonNode withParameter(JsonNode caseDocument, String keurgrens) {
+        ((ObjectNode) caseDocument.get("input").get("parameters")).set("keurgrens",
                 JSON.createObjectNode().put("number", keurgrens));
-        return goldenCase;
+        return caseDocument;
     }
 
     private static final String INSTANCES = """
@@ -415,8 +415,8 @@ class WindowFoldWitnessTest {
 
     /** The shared instances at {@code asOf} (null: a time-free session), expecting "bevoegd" present on exactly
      *  the named ploegen and absent on the others, plus no inconsistency. */
-    private static JsonNode goldenCase(String asOf, String... bevoegd) throws Exception {
-        return goldenCase(INSTANCES, List.of(ALL_PLOEGEN), "bevoegd", asOf, bevoegd);
+    private static JsonNode caseDocument(String asOf, String... bevoegd) throws Exception {
+        return caseDocument(INSTANCES, List.of(ALL_PLOEGEN), "bevoegd", asOf, bevoegd);
     }
 
     private static final String[] ALL_PLOEGEN = { "S1", "S2", "S3", "S4", "S5", "S6" };
@@ -438,10 +438,10 @@ class WindowFoldWitnessTest {
 
     /** The bergers at {@code asOf}, expecting "premiegerechtigd" present on exactly the named ploegen. */
     private static JsonNode ploegCase(String asOf, String... premiegerechtigd) throws Exception {
-        return goldenCase(BERGERS, List.of("P1", "P2"), "premiegerechtigd", asOf, premiegerechtigd);
+        return caseDocument(BERGERS, List.of("P1", "P2"), "premiegerechtigd", asOf, premiegerechtigd);
     }
 
-    private static JsonNode goldenCase(String instanties, List<String> labels, String kenmerk, String asOf,
+    private static JsonNode caseDocument(String instanties, List<String> labels, String kenmerk, String asOf,
             String... aanwezig) throws Exception {
         ObjectNode c = JSON.createObjectNode();
         c.put("format", "uchar-case-v0");

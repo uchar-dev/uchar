@@ -71,10 +71,10 @@ class ObserverWitnessTest {
         };
     }
 
-    /** Case {@code goldenCase} of {@code golden} on {@code branch}, set up as the replay sets it up and fired through the entry
+    /** Case {@code caseFileName} of {@code golden} on {@code branch}, set up as the replay sets it up and fired through the entry
      *  with a waarnemer over the case labels. */
-    private static Observed play(Path golden, String goldenCase, DroolsBackend.Branch branch) throws Exception {
-        JsonNode c = TmsDocuments.JSON.readTree(golden.resolve(goldenCase).toFile());
+    private static Observed play(Path golden, String caseFileName, DroolsBackend.Branch branch) throws Exception {
+        JsonNode c = TmsDocuments.JSON.readTree(golden.resolve(caseFileName).toFile());
         return CaseRunner.forMeasurement(golden.resolve("ir.json"), branch).withSession(c, (bouw, sessie, labels) -> {
             DroolsBackend.Waarnemer w = new DroolsBackend.Waarnemer(labelOf(labels));
             assertNull(DroolsBackend.vuur(bouw, sessie, w).geenFixpunt(), branch + ": the fire reaches its fixpoint");
@@ -82,8 +82,8 @@ class ObserverWitnessTest {
         });
     }
 
-    private static ScenarioResultaat rapport(Path golden, String goldenCase) {
-        return CaseRunner.rapport(golden.resolve("ir.json"), List.of(golden.resolve(goldenCase))).get(0);
+    private static ScenarioResultaat rapport(Path golden, String caseFileName) {
+        return CaseRunner.rapport(golden.resolve("ir.json"), List.of(golden.resolve(caseFileName))).get(0);
     }
 
     @Test void the_observer_gives_on_both_branches_what_the_report_gives() throws Exception {
@@ -100,11 +100,11 @@ class ObserverWitnessTest {
                     bare.dekking(), branch::name);
         }
         // the report plays the exec-model branch and fires through the same entry
-        for (String goldenCase : List.of("case1-geweigerd.json", "case4-kaal.json")) {
-            ScenarioResultaat r = rapport(EXCLUSION, goldenCase);
-            Observed w = play(EXCLUSION, goldenCase, DroolsBackend.Branch.EXEC_MODEL);
-            assertEquals(w.trace(), r.trace().vuringen().stream().map(v -> v.regel() + " " + v.labels() + " " + v.aantal()).toList(), goldenCase);
-            assertEquals(w.dekking(), r.dekking().stream().map(d -> d.regel() + " " + d.soort()).toList(), goldenCase);
+        for (String caseFileName : List.of("case1-geweigerd.json", "case4-kaal.json")) {
+            ScenarioResultaat r = rapport(EXCLUSION, caseFileName);
+            Observed w = play(EXCLUSION, caseFileName, DroolsBackend.Branch.EXEC_MODEL);
+            assertEquals(w.trace(), r.trace().vuringen().stream().map(v -> v.regel() + " " + v.labels() + " " + v.aantal()).toList(), caseFileName);
+            assertEquals(w.dekking(), r.dekking().stream().map(d -> d.regel() + " " + d.soort()).toList(), caseFileName);
         }
     }
 

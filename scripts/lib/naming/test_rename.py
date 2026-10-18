@@ -1128,6 +1128,16 @@ class Scopes(Fixture):
         self.assertIn('scope Bouwer#check names no method of a Java type of the zone', errors[1])
 
 
+    def test_the_scopes_of_two_adjacent_methods_do_not_overlap(self):
+        # card drools-word-fixes: a method scope runs from the end of the member before it to its closing brace, so
+        # two methods one after the other touch at one offset; check took that for scopes of equal reach
+        self.write({'src/Builder.java': 'class Builder {\n    boolean one(boolean waar) { return waar; }\n'
+                                        '    boolean two(boolean waar) { return !waar; }\n}\n'})
+        t = self.table('src', [row('waar', 'holds', 'waar', 'improved', 'Builder#one', 'fixture'),
+                               row('waar', 'holds', 'waar', 'improved', 'Builder#two', 'fixture')])
+        self.assertEqual(self.check(t), [])
+
+
 class External(Fixture):
     def test_a_name_read_through_a_type_outside_the_zone_is_left_alone(self):
         self.write({'lib/Buiten.java': 'class Buiten { static int waarde = 1; }\n',
@@ -1139,6 +1149,27 @@ class External(Fixture):
         self.assertEqual(self.apply(t)[0], 0)
         self.assertEqual(self.read('src/Binnen.java'),
                          'class Binnen {\n    int value;\n    int som() { return value + Buiten.waarde; }\n}\n')
+
+
+class SimpleNames(Fixture):
+    def test_a_simple_type_name_in_a_package_is_the_top_level_type_not_a_nested_one_of_a_neighbour(self):
+        # card drools-word-fixes: Aggregation.RESCALE in plan/Term read the enum plan/Aggregation, but a neighbour
+        # (Accumulation) nests a record of the same simple name, and the lookup took whichever file came first in a
+        # set: the row scoped to the enum's file governed the read in one run and not in the next. Twelve neighbours
+        # make a lucky pass of that lookup improbable
+        files = {'src/p/Soort.java': 'package p;\nenum Soort { WAARDE, ANDER }\n',
+                 'src/p/Lezer.java': 'package p;\nclass Lezer {\n    boolean is(Soort s) { return s == Soort.WAARDE; }\n}\n'}
+        for i in range(12):
+            files['src/p/Houder%d.java' % i] = 'package p;\nrecord Houder%d(int a) {\n    record Soort(int b) {}\n}\n' % i
+        self.write(files)
+        t = self.table('src', [row('WAARDE', 'VALUE', 'waarde', 'improved', 'src/p/Soort.java', 'fixture')])
+        git(self.root, 'add', '-A')
+        git(self.root, 'commit', '-q', '-m', 'table')
+        self.assertEqual(self.check(t), [])
+        self.assertEqual(self.apply(t)[0], 0)
+        self.assertEqual(self.read('src/p/Soort.java'), 'package p;\nenum Soort { VALUE, ANDER }\n')
+        self.assertEqual(self.read('src/p/Lezer.java'),
+                         'package p;\nclass Lezer {\n    boolean is(Soort s) { return s == Soort.VALUE; }\n}\n')
 
 
 class OutsideReads(Fixture):

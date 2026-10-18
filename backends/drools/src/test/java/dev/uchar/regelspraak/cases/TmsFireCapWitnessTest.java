@@ -69,7 +69,7 @@ class TmsFireCapWitnessTest {
         });
     }
 
-    @Test void a_kleine_factor_stops_the_run_on_the_cap_with_r_and_n0_in_the_sentence() throws Exception {
+    @Test void a_small_factor_stops_the_run_on_the_cap_with_r_and_n0_in_the_sentence() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsRepeatedFireWitnessTest.valueDocument(),
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {

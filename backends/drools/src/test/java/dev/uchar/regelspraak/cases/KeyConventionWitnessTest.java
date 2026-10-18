@@ -66,7 +66,7 @@ class KeyConventionWitnessTest {
 
     // ---------------- 1. name normalisation: the single form ----------------
 
-    @Test void an_otherwise_capitalised_key_finds_the_same_collision() throws Exception {
+    @Test void a_differently_capitalised_key_finds_the_same_collision() throws Exception {
         // ref, measured 2026-09-03 on this exact model: PASS (2 expectations) — S1 and S2 both flagged;
         // clingo agrees. Before the convention was pulled straight the backend answered "consistent":
         // "Vondstnummer" missed the granulariteit map, the scalar branch compared two List<Segment> with
@@ -87,7 +87,7 @@ class KeyConventionWitnessTest {
 
     // ---------------- 2. name normalisation: the union form ----------------
 
-    @Test void an_otherwise_capitalised_union_key_finds_the_same_collision() throws Exception {
+    @Test void a_differently_capitalised_union_key_finds_the_same_collision() throws Exception {
         // the union's own key site. TWO Strandvondsten and NO Wrakvondst, deliberately: with a Wrakvondst in
         // play the mis-read source still counts ITSELF (equals on the identical list object) and the sum
         // crosses 1 anyway, so the gap hides. ref, measured on this model: PASS (2 expectations); clingo
@@ -106,7 +106,7 @@ class KeyConventionWitnessTest {
 
     // ---------------- 3. name normalisation: the ch. 5.9 arity guard ----------------
 
-    @Test void an_otherwise_capitalised_key_counts_along_for_the_ariteit() throws Exception {
+    @Test void a_differently_capitalised_key_counts_along_for_the_arity() throws Exception {
         // the guard counts the TEMPORAL components of a key list; counting them with an exact match made a
         // mis-capitalised component invisible, so a two-temporal key list read as one and ran on. ref on this
         // model: "EVALUATION FAULT: a uniqueness key list carries at most one temporal key component (…)";
@@ -180,7 +180,7 @@ class KeyConventionWitnessTest {
      * branch's; the rows below ask the DRL-text branch for the same session as the exec-model branch on the documents
      * and cases of the rows above (Takdumps: the verdict, the input, what lees gives and the facts at the fixpoint). */
 
-    @Test void the_drl_text_reads_an_otherwise_capitalised_key_temporally() throws Exception {
+    @Test void the_drl_text_reads_a_differently_capitalised_key_temporally() throws Exception {
         Path ir = withKeys(STRANDREGISTER, o -> IrPath.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));
         BranchDumps.equal(ir, twoStrandvondsten(), "the mis-capitalised key");
         String drl = drl(ir);

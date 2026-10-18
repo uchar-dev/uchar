@@ -23,7 +23,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
 import static dev.uchar.regelspraak.cases.TmsDocuments.keuze;
 import static dev.uchar.regelspraak.cases.TmsDocuments.let;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
@@ -73,13 +73,13 @@ class TmsLetWitnessTest {
             attribuut("heffing", TWO)), List.of())), List.of());
 
     static final String BASE = computingRule("grondslag van een jutter", "BEREKENING", "Jutter", "grondslag",
-            reading("inkomen", "Jutter"), "null");
+            ownRead("inkomen", "Jutter"), "null");
 
     static final String HEFFING = computingRule("heffing van een jutter", "BEREKENING", "Jutter", "heffing",
-            let("k", reading("grondslag", "Jutter"), keuze(
+            let("k", ownRead("grondslag", "Jutter"), keuze(
                     comparison("greater", binderRead("k"), literal("10.00", TWO)),
                     literal("5.00", TWO),
-                    binary("dividedBy", binderRead("k"), reading("restpost", "Jutter"), TWO), TWO), TWO), "null");
+                    binary("dividedBy", binderRead("k"), ownRead("restpost", "Jutter"), TWO), TWO), TWO), "null");
 
     static final List<String> RULES = List.of(BASE, HEFFING);
 
@@ -140,15 +140,15 @@ class TmsLetWitnessTest {
     /** "Het tarief van een Jutter moet berekend worden als: q is zijn inkomen gedeeld door zijn restpost; k is zijn
      *  grondslag; als k groter is dan 10,00 dan 5,00, anders q". */
     static final String RATE = computingRule("tarief van een jutter", "BEREKENING", "Jutter", "tarief",
-            let("q", binary("dividedBy", reading("inkomen", "Jutter"), reading("restpost", "Jutter"), TWO),
-                    let("k", reading("grondslag", "Jutter"), keuze(
+            let("q", binary("dividedBy", ownRead("inkomen", "Jutter"), ownRead("restpost", "Jutter"), TWO),
+                    let("k", ownRead("grondslag", "Jutter"), keuze(
                             comparison("greater", binderRead("k"), literal("10.00", TWO)),
                             literal("5.00", TWO), binderRead("q"), TWO), TWO), TWO), "null");
 
     /** "Het saldo van een Jutter moet berekend worden als: k is zijn grondslag; (x is zijn restpost; x) plus k". */
     static final String BALANCE = computingRule("saldo van een jutter", "BEREKENING", "Jutter", "saldo",
-            let("k", reading("grondslag", "Jutter"),
-                    binary("plus", let("x", reading("restpost", "Jutter"), binderRead("x"), TWO), binderRead("k"),
+            let("k", ownRead("grondslag", "Jutter"),
+                    binary("plus", let("x", ownRead("restpost", "Jutter"), binderRead("x"), TWO), binderRead("k"),
                             TWO), TWO), "null");
 
     static JsonNode caseE() throws Exception {
@@ -212,14 +212,14 @@ class TmsLetWitnessTest {
                     List.of());
             Object j2 = TmsDocuments.beanObject(b.beanLoader(), "Jutter",
                     Map.of("inkomen", "40.00", "grondslag", "6.00", "restpost", "0.00"), List.of());
-            Facts sessionFacts = new Facts();
-            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1, j2), sessie -> sessie.addEventListener(sessionFacts)),
+            Facts facts = new Facts();
+            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1, j2), sessie -> sessie.addEventListener(facts)),
                     () -> "volgorde " + names);
-            assertEquals(sessionFacts.inserted, sessionFacts.withdrawn, () -> "foutfeiten en deponeringen in volgorde " + names);
+            assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten en deponeringen in volgorde " + names);
             TmsFaultWitnessTest.assertNumber("5.00", TmsDocuments.lees(j1, "heffing"), "heffing van J1 in volgorde " + names);
             TmsFaultWitnessTest.assertNumber("5.00", TmsDocuments.lees(j2, "heffing"), "heffing van J2 in volgorde " + names);
-            if (sessionFacts.depositCount > 0) deposit++;
-            if (sessionFacts.fouten > 0) fout++;
+            if (facts.depositCount > 0) deposit++;
+            if (facts.fouten > 0) fout++;
             orders++;
         }
         assertTrue(deposit > 0, "geen volgorde deponeerde op de tijdelijke grondslag");

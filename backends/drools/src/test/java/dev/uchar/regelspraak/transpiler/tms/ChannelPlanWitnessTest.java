@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *       no golden has one: the join reads the reference field on the source. This document is also fired with a case
  *       of three sources, and its shares and rests pinned, since the plan names the field and only a firing shows that
  *       the rendering reads it.</li>
- *   <li>Document F of {@code TmsAllocationWitnessTest} ({@link #recipientOutCreation}), since no golden has one: an
+ *   <li>Document F of {@code TmsAllocationWitnessTest} ({@link #recipientFromCreation}), since no golden has one: an
  *       allocation over a relation a form creates, whose range is the existence of a link.</li>
  * </ul>
  *
@@ -464,7 +464,7 @@ class ChannelPlanWitnessTest {
                         + " aandeel=ElementSleutel[objecttype=berger, naam=bergingsaandeel, kenmerk=false],"
                         + " rest=ElementSleutel[objecttype=berging, naam=onverdeelde rest, kenmerk=false],"
                         + " writer=verdeel de opbrengst gelijk, insertion=LOGICAL]"),
-                plans(recipientOutCreation(), List.of("verdeel de opbrengst gelijk")));
+                plans(recipientFromCreation(), List.of("verdeel de opbrengst gelijk")));
     }
 
     /** {@code jutterswet-bergersdeling} with both roles of its relation to-one, since no golden has an allocation whose
@@ -482,7 +482,7 @@ class ChannelPlanWitnessTest {
     /** Document F of {@code TmsAllocationWitnessTest}, which plays it: an allocation whose recipients an object creation
      *  adds over the allocation's connecting relation, so its range is a relation a form creates. Taken from that
      *  witness by reflection, as its members are of its own package, so that the document has one source. */
-    static JsonNode recipientOutCreation() throws Exception {
+    static JsonNode recipientFromCreation() throws Exception {
         Class<?> f = Class.forName("dev.uchar.regelspraak.cases.TmsAllocationWitnessTest");
         Method ir = f.getDeclaredMethod("ir", List.class, List.class, List.class);
         ir.setAccessible(true);
@@ -544,7 +544,7 @@ class ChannelPlanWitnessTest {
                     + n.patterns().stream().map(ChannelPlanWitnessTest::pattern).toList());
             case Exists b -> "bestaat " + b.patterns().stream().map(ChannelPlanWitnessTest::pattern).toList();
             case Accumulation a -> "accumulatie " + pattern(a.bron()) + " functies "
-                    + a.functions().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
+                    + a.aggregations().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
             case TestItem t -> "toets " + t.id() + " " + t.rol() + " sonde " + t.depositFlag() + " slots " + t.slots()
                     + " grootte " + t.size() + ": " + TermTree.tree(t.test());
         };

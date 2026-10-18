@@ -293,7 +293,7 @@ public class TestTermWitnessTest {
                 "kavel per kust VORM 0.0 SlotValue"), fields(plans));
     }
 
-    @Test void the_member_error_rule_tests_the_filter_without_its_fault() throws Exception {
+    @Test void the_member_fault_rule_tests_the_filter_without_its_fault() throws Exception {
         List<RulePlan> plans = plans(keurlastWithDividingFilter());
         assertEquals(List.of(
                 "keurlast van een jutter: geen toets",
@@ -350,10 +350,10 @@ public class TestTermWitnessTest {
      */
     @Test void a_test_without_fault_does_not_hold_where_the_condition_fails() {
         Term fails = new Term.Fail("de voorwaarde faalt", null);
-        Term holds = new Term.Const(Boolean.TRUE, null, null);
+        Term trueTerm = new Term.Const(Boolean.TRUE, null, null);
         assertFalse(ClosureRendering.test(new Term.WithoutFault(fails, null)).test(new Object[0]));
-        assertTrue(ClosureRendering.test(new Term.WithoutFault(holds, null)).test(new Object[0]));
-        Term kenmerk = new Term.Call(Aggregation.KENMERK, List.of(new Term.SlotValue(0, null), holds), null);
+        assertTrue(ClosureRendering.test(new Term.WithoutFault(trueTerm, null)).test(new Object[0]));
+        Term kenmerk = new Term.Call(Aggregation.KENMERK, List.of(new Term.SlotValue(0, null), trueTerm), null);
         Object[] noTruthValue = {"geen waarheidswaarde"};
         assertThrows(ClassCastException.class,
                 () -> ClosureRendering.test(new Term.WithoutFault(kenmerk, null)).test(noTruthValue));

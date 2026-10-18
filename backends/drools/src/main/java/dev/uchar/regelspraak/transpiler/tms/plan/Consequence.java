@@ -235,9 +235,9 @@ public sealed interface Consequence {
     }
 
     /** What a rule of a fold needs a member's place for: the first fault among the members' filters
-     *  ({@code FILTER_ERROR}), the first member whose timeline the case gives as the asOfDate-bucket scalar
-     *  ({@code MEMBER_ERROR}), or the members that the short circuit of a quantifier fold reaches ({@code QUANTIFIER}). */
-    enum PlaceReason { FILTER_ERROR, MEMBER_ERROR, QUANTIFIER }
+     *  ({@code FILTER_FAULT}), the first member whose timeline the case gives as the asOfDate-bucket scalar
+     *  ({@code MEMBER_FAULT}), or the members that the short circuit of a quantifier fold reaches ({@code QUANTIFIER}). */
+    enum PlaceReason { FILTER_FAULT, MEMBER_FAULT, QUANTIFIER }
 
     /**
      * The contribution ({@code Bijdrage}, RUNTIME-SEMANTICS ch. 3.4) of the member in slot {@code lid}, the subject of a
@@ -287,31 +287,31 @@ public sealed interface Consequence {
     record FilterDeposit(String onderwerp, String fold, int member, Insertion insertion) implements Consequence {}
 
     /**
-     * The fault of the filter of the fold {@code fold} for the member in slot {@code lid}, a {@code FilterError} on the
+     * The fault of the filter of the fold {@code fold} for the member in slot {@code lid}, a {@code FilterFault} on the
      * fold's subject, the object {@code onderwerp} binds: the condition {@code filter}, evaluated again over the value
      * array of {@code grootte} slots with the bound values at {@code slots}, gives its evaluation fault, which the test
      * of the rule found, so that it answering here is a broken contract; then the member's {@code place} in the fold's
      * order.
      */
-    record FilterError(String onderwerp, String fold, int member, Term filter, FoldPlace place, List<Integer> slots,
+    record FilterFault(String onderwerp, String fold, int member, Term filter, FoldPlace place, List<Integer> slots,
                       int size, Insertion insertion) implements Consequence {
-        public FilterError {
+        public FilterFault {
             slots = List.copyOf(slots);
-            if (place.reden() != PlaceReason.FILTER_ERROR)
+            if (place.reden() != PlaceReason.FILTER_FAULT)
                 throw new IllegalArgumentException("de plaats van een filterfout is die van het filter, niet "
                         + place.reden());
         }
     }
 
     /** The fault of the member in slot {@code lid} of the per-element fold {@code fold} over an attribute on a
-     *  timeline, which the case gives as the asOfDate-bucket scalar, a {@code MemberError} on the fold's subject, the object
+     *  timeline, which the case gives as the asOfDate-bucket scalar, a {@code MemberFault} on the fold's subject, the object
      *  {@code onderwerp} binds: the member's {@code place} in the fold's order, and the fault of the form of an input,
      *  the sentence {@code voor}, the member and {@code na}, named in no rule yet, made by the route
      *  {@link Route#INPUT_FORM_FAULT}. */
-    record MemberError(String onderwerp, String fold, int member, FoldPlace place, String before, String after,
+    record MemberFault(String onderwerp, String fold, int member, FoldPlace place, String before, String after,
                    Insertion insertion) implements Consequence {
-        public MemberError {
-            if (place.reden() != PlaceReason.MEMBER_ERROR)
+        public MemberFault {
+            if (place.reden() != PlaceReason.MEMBER_FAULT)
                 throw new IllegalArgumentException("de plaats van een lidfout is die van het lid, niet " + place.reden());
         }
     }
@@ -391,10 +391,10 @@ public sealed interface Consequence {
             List<Integer> attributes = new ArrayList<>(), kenmerken = new ArrayList<>();
             for (int i = 0; i < initialisations.size(); i++)
                 (initialisations.get(i).member().kenmerk() ? kenmerken : attributes).add(i);
-            List<Integer> isSet = construction.settings().stream().map(Construction.Setting::initialisatie).toList();
-            if (!isSet.equals(attributes))
+            List<Integer> setInitialisations = construction.settings().stream().map(Construction.Setting::initialisatie).toList();
+            if (!setInitialisations.equals(attributes))
                 throw new IllegalArgumentException("een creatie zet haar attribuutinitialisaties in hun volgorde "
-                        + attributes + ", niet " + isSet);
+                        + attributes + ", niet " + setInitialisations);
             List<String> order = new ArrayList<>(List.of("New", "Mark", "Link"));
             for (int k : kenmerken) order.add("Kenmerk " + k);
             List<String> given = insertions.stream().map(i -> i instanceof Insert.Characteristic k
@@ -466,19 +466,19 @@ public sealed interface Consequence {
      * with the bound values at {@code slots}, collapsed from an exact rational to a decimal where {@code collapse}. That
      * value is a characteristic's decision as the default declares it, a constant; an attribute's consequence, computed
      * from what the rule bound; or the decision of the first deciding member chain, bound off its outcome
-     * ({@link ReadKind#DECISION}). The consequence inserts each of {@code sessionFacts} with it, in order, as {@code insertion}
+     * ({@link ReadKind#DECISION}). The consequence inserts each of {@code facts} with it, in order, as {@code insertion}
      * says. Where the evaluation raises an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), it inserts that fault under
      * {@code fout} on the object in place of the decision; {@code fout} is null where the value is a constant or a bound
      * decision, which cannot fault, and such a fault would be a broken contract. Where the value is null, a leeg
      * consequence, the default decides nothing and inserts nothing, so the lower defaults decide (ch. 7.1).
      */
     record Decision(String onderwerp, Term waarde, List<Integer> slots, int size, boolean collapse, FaultName fout,
-                  List<StackFact> sessionFacts, Insertion insertion) implements Consequence {
+                  List<StackFact> facts, Insertion insertion) implements Consequence {
         public Decision {
             slots = List.copyOf(slots);
-            sessionFacts = List.copyOf(sessionFacts);
-            if (sessionFacts.isEmpty()) throw new IllegalArgumentException("een besluit voegt ten minste één feit in");
-            for (StackFact f : sessionFacts)
+            facts = List.copyOf(facts);
+            if (facts.isEmpty()) throw new IllegalArgumentException("een besluit voegt ten minste één feit in");
+            for (StackFact f : facts)
                 if (f instanceof StackFact.Inconsistency || f instanceof StackFact.Outcome u && u.soort() != Kind.DECIDED)
                     throw new IllegalArgumentException("een besluit voegt geen conflict in: " + f);
         }

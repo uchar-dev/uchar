@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * <p>The DRL-text branch writes such a test into the element pattern of its accumulate or quantifier and does not see
  * the later write either ({@code verwacht 2, werkelijk 0}); it refuses the form by name.
  */
-class FoldFilterRemoteSideWitnessTest {
+class FoldFilterFarSideWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -98,7 +98,7 @@ class FoldFilterRemoteSideWitnessTest {
                 caseDocument(THREE_VONDSTEN, day("J", "eerste late vinddag", "2026-03-10"))), "de eigen voorwaarde");
     }
 
-    @Test void a_characteristic_of_the_remote_object() throws Exception {
+    @Test void a_characteristic_of_the_far_object() throws Exception {
         // "… die aan de volgende voorwaarde voldoen: zijn jutter actief is", and "… zijn jutter niet actief is", with
         // "Een Jutter is actief indien zijn sluitdag gevuld is". ref and clingo: J actief, 3 and 0.
         String actief = characteristicRule("actief", "Jutter", predicate("filled", own("sluitdag", "Jutter")));
@@ -110,7 +110,7 @@ class FoldFilterRemoteSideWitnessTest {
                 case0), "het ontkende kenmerk van de jutter");
     }
 
-    @Test void an_empty_test_on_the_remote_member() throws Exception {
+    @Test void an_empty_test_on_the_far_member() throws Exception {
         // "… die aan de volgende voorwaarde voldoen: de sluitdag van de jutter van de Vondst is leeg": the source empties
         // when the sluitdag is written. ref and clingo: 0.
         assertNull(play(document(List.of(aantal(the(predicate("empty", jutterSluitdag()))), SLUITDAG)),
@@ -128,7 +128,7 @@ class FoldFilterRemoteSideWitnessTest {
                 dateLiteral("2026-03-01")))), DERIVED_OPENINGSDAG)), caseDocument), "ongelijk over een lege rol");
     }
 
-    @Test void two_remote_objects() throws Exception {
+    @Test void two_far_objects() throws Exception {
         // "… die aan alle volgende voorwaarden voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst;
         // zijn vinddag is later dan de afgeleide openingsdag van de haven van de Vondst". ref and clingo: 1 (V4).
         String filter = all(comparison("later", own("vinddag", "Vondst"), jutterSluitdag()),
@@ -137,7 +137,7 @@ class FoldFilterRemoteSideWitnessTest {
                 caseDocument(HAVENS, number("J", "aantal late vondsten", 1))), "twee verre objecten");
     }
 
-    @Test void a_date_arithmetic_with_the_remote_member() throws Exception {
+    @Test void a_date_arithmetic_with_the_far_member() throws Exception {
         // "… die aan de volgende voorwaarde voldoen: zijn vinddag min 7 dg is later dan de sluitdag van de jutter van de
         // Vondst". Refused by name before the fix. ref and clingo: 10-03-2026.
         String filter = the(comparison("later", dateMinus(own("vinddag", "Vondst"), 7), jutterSluitdag()));
@@ -165,7 +165,7 @@ class FoldFilterRemoteSideWitnessTest {
 
     // ---------------- other writers of the far member ----------------
 
-    @Test void the_remote_member_out_of_a_defaults_group() throws Exception {
+    @Test void the_far_member_out_of_a_defaults_group() throws Exception {
         // The sluitdag by a group: "Regel sluitdag" and "Afwijking van sluitdag: opgave gaat voor" (the opgegeven sluitdag
         // where it is filled). ref and clingo: J (opgave 12-03-2026) 20-03-2026, K 10-03-2026.
         String eerste = regel("eerste late vinddag", "Jutter", "eerste late vinddag",
@@ -179,7 +179,7 @@ class FoldFilterRemoteSideWitnessTest {
                 "de sluitdag uit een defaultsgroep");
     }
 
-    @Test void the_remote_member_out_of_an_allocation() throws Exception {
+    @Test void the_far_member_out_of_an_allocation() throws Exception {
         // "… het bergingsaandeel van de vondstberger van de Vondst is groter dan 10", the aandeel from "De opbrengst van een
         // berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, in gelijke delen". ref and
         // clingo: B1 20, B3 10, J 1.
@@ -199,7 +199,7 @@ class FoldFilterRemoteSideWitnessTest {
                 "het aandeel uit een verdeling");
     }
 
-    @Test void the_remote_object_out_of_a_creation() throws Exception {
+    @Test void the_far_object_out_of_a_creation() throws Exception {
         // "… de meldingsdag van de melding van de Vondst is later dan 01-03-2026", the melding from "Een Vondst heeft een
         // melding met meldingsdag gelijk aan zijn vinddag indien zijn vinddag gevuld is". The creation links the melding
         // to the element and updates it, so the form played before the fix as well. ref and clingo: 2.
@@ -281,10 +281,10 @@ class FoldFilterRemoteSideWitnessTest {
                 the(comparison("later", own("vinddag", "Vondst"), dateLiteral("2026-03-01"))), DATE), null);
         assertNull(play(document(List.of(SLUITDAG, literal)), caseDocument(THREE_VONDSTEN, day("J", "eerste late vinddag", "2026-03-10"))),
                 "een letterlijke grens");
-        String laterComparison = characteristicRule("laat", "Vondst", comparison("later", own("vinddag", "Vondst"), jutterSluitdag()));
+        String late = characteristicRule("laat", "Vondst", comparison("later", own("vinddag", "Vondst"), jutterSluitdag()));
         String bridge = regel("eerste late vinddag", "Jutter", "eerste late vinddag",
                 fold("first", own("vinddag", "Vondst"), the(characteristicCheck("laat", false, null)), DATE), null);
-        assertNull(play(document(List.of(SLUITDAG, laterComparison, bridge)), caseDocument(THREE_VONDSTEN, day("J", "eerste late vinddag", "2026-03-10"))),
+        assertNull(play(document(List.of(SLUITDAG, late, bridge)), caseDocument(THREE_VONDSTEN, day("J", "eerste late vinddag", "2026-03-10"))),
                 "een kenmerk op het element");
     }
 

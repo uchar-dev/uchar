@@ -440,21 +440,21 @@ withdraws the logical facts its earlier firing inserted and did not insert again
 A listed fold ("de eerste van A en B") is computed from its operands' bound values. Witness
 `TmsAggregationWitnessTest`.
 
-A filter that divides by a numeric zero for a member inserts a `FilterError` for that member, and no fault: the
+A filter that divides by a numeric zero for a member inserts a `FilterFault` for that member, and no fault: the
 reference interpreter evaluates a filter only where the evaluation of a form reaches the fold, so not where the form's
 condition does not hold, nor in a member of a composite that its verdict no longer reads (RUNTIME-SEMANTICS ch. 5.10),
 and there per member in fold order, stopping at the first fault (ch. 5.11). The bean model keeps a to-many role as a
 reference field on each member and no order, so for a model that reads it (`TmsTranspiler.readsListPlaces`) the
 case runner states the place of every member of a to-many list as a `ListPlace`, in the list the reference
 interpreter holds: the members the case writes under the holder, in the order it writes them, then the members the
-loader mirrors from their own link, in ascending label order (ch. 5.7a). The rule that inserts a `FilterError` joins the
+loader mirrors from their own link, in ascending label order (ch. 5.7a). The rule that inserts a `FilterFault` joins the
 member per route, with the intermediates of a path bound rather than in an `exists`, binds the place at every to-many
 step, and gives the fact its place in the fold order, the number of the selection of a union and then those places.
 Two routes to one member stay two facts, so the least is the member's first reach, as the dedup of the reference
-interpreter keeps it (ch. 3.4b). The rule that reads the fold binds the least `FilterError` on its subject beside the
+interpreter keeps it (ch. 3.4b). The rule that reads the fold binds the least `FilterFault` on its subject beside the
 contributions, the first in fold order, and where its own evaluation reaches the fold while one stands, that
 evaluation faults as a division in it would; the `Fout` is that rule's, inserted by its consequence or by its fault
-rule, named after it, and withdrawn when the `FilterError` goes. A member whose place the input did not state makes the
+rule, named after it, and withdrawn when the `FilterFault` goes. A member whose place the input did not state makes the
 rule fail loudly. Witness `TmsFilterErrorWitnessTest`.
 
 A filter that deposits for a member (a division by leeg, a negative root) inserts a `FilterDeposit` for that member
@@ -577,7 +577,7 @@ standing join that fact, under `exists` and under `not`, and the input stands as
 where the evaluation reaches it, an `Invoervormfout` inserted logically as a `Fout`, in the reference interpreter's
 words and naming the object, by its case label where the write-back has one: the own total without a clip over a full
 timeline; and over a bucket scalar the clip of a total, the timeline a comparison clip compares, the base of a
-pro-rata part, a member of a per-element fold (the first in fold order, after the filter faults, as a `MemberError`), an
+pro-rata part, a member of a per-element fold (the first in fold order, after the filter faults, as a `MemberFault`), an
 ever-unique key, on every instance of the type before the scope narrows the rows and up to an empty component before
 it, and the timeline the whole-period qualifier folds (below). `DroolsBackend.voegIn` states the same facts for a
 consumer, from the bucket scalars and the lists its `Invoer` names (above, "A session in four calls"): an `BucketInput`

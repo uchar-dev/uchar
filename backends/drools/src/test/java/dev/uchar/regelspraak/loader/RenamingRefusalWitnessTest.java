@@ -356,7 +356,7 @@ class RenamingRefusalWitnessTest {
         assertEquals("Jutter", k.eigenaar().naam);
         assertFalse(k.periode().jaar(), "month is the record's jaar false");
         assertTrue(k.periode().niet());
-        assertEquals(List.of(new RolBindingRef("f", "r")), l.path().get(k));
+        assertEquals(List.of(new RolBindingRef("f", "r")), l.navigationBindings().get(k));
         // absent host and qualifier: the subject, no qualifier — the v0 null of the record
         ObjectNode bare = golden(PENNINGDREMPEL);
         set(bare, V, "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"penninggerechtigd\",\"negated\":false,"

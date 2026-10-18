@@ -7,4 +7,4 @@ package dev.uchar.regelspraak.transpiler.tms;
  * that holds this mark ({@code DroolsBackend.vuur}); a consumer that fires more than once reads between the fires
  * without writing ({@code DroolsBackend.lees}). No rule reads it.
  */
-public record Reset() {}
+public record WrittenBack() {}

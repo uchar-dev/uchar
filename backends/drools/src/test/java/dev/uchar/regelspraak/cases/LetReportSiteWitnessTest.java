@@ -55,7 +55,7 @@ class LetReportSiteWitnessTest {
 
     // ---------------- ch. 10.6 clause 2: the need's own barrier still cuts the report off ----------------
 
-    @Test void the_barrier_of_the_need_cuts_the_message_off_and_leaves_it_otherwise_standing() throws Exception {
+    @Test void the_barrier_of_the_need_cuts_the_message_off_and_otherwise_leaves_it_standing() throws Exception {
         // "uit := Let k = inkomen in (k plus (saldo gedeeld door restpost))" — the read of `k` is the LEFT
         // operand, so it runs BEFORE the division. The site's own operands (saldo, restpost) are filled resp.
         // absent in both flanks; what differs is the NEED.

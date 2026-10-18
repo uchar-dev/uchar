@@ -15,7 +15,7 @@ import java.util.function.Predicate;
  * without deciding anything itself. A condition is a term whose value is a truth value. Every decision the analysis
  * takes about a value or a condition is a node or a field of a node: the function that computes it, by name
  * ({@link Aggregation}), among them the helper that compares and the operator, polarity and leeg tables it takes as
- * constants; the factor that restates a unit ({@link Rescale}); where a division, a square root or the matrix of a
+ * constants; the factor that restates a unit ({@link Restate}); where a division, a square root or the matrix of a
  * quantifier fold deposits ({@link Division}, {@link SquareRoot}, {@link QuantifierRead}); where the evaluation faults
  * ({@link Fail}, {@link Required}, {@link FoldRead} and the functions that can, {@link Aggregation#canFail}) and where a
  * fault does not hold instead ({@link WithoutFault}); what is evaluated only on need, on one branch or up to a stop
@@ -87,16 +87,16 @@ public sealed interface Term {
 
     /**
      * The value of {@code term} restated from the unit {@code van} into the unit {@code naar} (RUNTIME-SEMANTICS ch.
-     * 2.6) through {@code function}: {@link Aggregation#RESCALE_EXACT}, a number times {@code teller} and divided by
+     * 2.6) through {@code function}: {@link Aggregation#RESTATE_EXACT}, a number times {@code teller} and divided by
      * {@code noemer}, the exact canonical factors, as exact rationals; or {@link Aggregation#RESCALE}, where
      * {@code noemer} is null, times the single ratio {@code teller} of the two units. A leeg value and a value that is
      * no number pass unchanged. The analysis adds no node where no restatement is due.
      */
-    record Rescale(Aggregation function, Term term, Eenheid van, Eenheid naar, BigDecimal counter, BigDecimal denominator,
+    record Restate(Aggregation function, Term term, Eenheid van, Eenheid naar, BigDecimal counter, BigDecimal denominator,
                      String bron) implements Term {
-        public Rescale {
-            boolean exact = function == Aggregation.RESCALE_EXACT;
-            if (!exact && function != Aggregation.RESCALE || exact != (denominator != null))
+        public Restate {
+            boolean exact = function == Aggregation.RESTATE_EXACT;
+            if (!exact && function != Aggregation.RESTATE || exact != (denominator != null))
                 throw new IllegalArgumentException("een herschaling noemt HERSCHAAL_EXACT met een noemer of HERSCHAAL"
                         + " zonder, niet " + function + " met noemer " + denominator);
         }
@@ -148,11 +148,11 @@ public sealed interface Term {
     /**
      * The evaluation of a fold in the rule that reads it (RUNTIME-SEMANTICS ch. 5.10, 5.11): where the number of the
      * filter's deposits bound at slot {@code depositCount} is not 0, the probe in slot {@code depositFlag} hears the deposit;
-     * then, where the least filter fault bound at slot {@code filterError} stands, its fault; then, where the least member
-     * fault bound at slot {@code memberError} stands, its fault; then the fold's value {@code uitkomst}. A slot of -1: the
+     * then, where the least filter fault bound at slot {@code filterFault} stands, its fault; then, where the least member
+     * fault bound at slot {@code memberFault} stands, its fault; then the fold's value {@code uitkomst}. A slot of -1: the
      * fold has none of that kind. The analysis adds no node where the fold has none of the three.
      */
-    record FoldRead(Term outcome, int depositCount, int depositFlag, int filterError, int memberError, String bron)
+    record FoldRead(Term outcome, int depositCount, int depositFlag, int filterFault, int memberFault, String bron)
             implements Term {}
 
     /**

@@ -68,17 +68,17 @@ class ValueTermWitnessTest {
     @Test void a_runtime_call_with_unit_rescaling_is_a_tree_of_named_calls() throws Exception {
         List<RulePlan> plans = plans("jutterswet-sleepbaan");
         assertEquals(List.of(
-                "sleeplengte van een sleepbaan: Herschaal RESCALE_EXACT km->m 1000/1 (RS_PLUS(Const 2.5 km, "
-                        + "Herschaal RESCALE_EXACT m->km 1/1000 (Lees 0)))"), trees(plans));
+                "sleeplengte van een sleepbaan: Herschaal RESTATE_EXACT km->m 1000/1 (RS_PLUS(Const 2.5 km, "
+                        + "Herschaal RESTATE_EXACT m->km 1/1000 (Lees 0)))"), trees(plans));
         // the write boundary has no node of its own in the IR: it carries the fragment of the value it restates, and so
         // does the restatement of the right operand
         assertEquals(List.of(
-                "sleeplengte van een sleepbaan 0 Rescale bron '2,5 km plus de aanloop van de Sleepbaan'",
+                "sleeplengte van een sleepbaan 0 Restate bron '2,5 km plus de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0 Call bron '2,5 km plus de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0.0 Const BigDecimal type Numeriek[geheel=false, decimalen=1, "
                         + "teken=ONBEPAALD, eenheid=Eenheid[afkorting=km, stelsel=Afstand, canoniek=m, "
                         + "factorNaarCanoniek=1000, noemer=null]] bron '2,5 km'",
-                "sleeplengte van een sleepbaan 0.0.1 Rescale bron 'de aanloop van de Sleepbaan'",
+                "sleeplengte van een sleepbaan 0.0.1 Restate bron 'de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0.1.0 SlotValue bron 'de aanloop van de Sleepbaan'"), fields(plans));
     }
 

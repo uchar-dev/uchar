@@ -72,7 +72,7 @@ import java.util.Map;
  *
  * <p><b>The reference layer (L2 of the v1 wire migration).</b> A reference to a declared thing carries its
  * symbolic form only, and the bindings are the one source of every relation this backend walks: the navigation of
- * a read ({@code path}) and of a characteristic check ({@code navigation}), the range of a fold and of a quantifier
+ * a read ({@code navigationBindings}) and of a characteristic check ({@code navigation}), the range of a fold and of a quantifier
  * fold ({@code sourceRole}, {@code sourcePath}), the
  * recipient join of an allocation and the back-link of an object creation ({@code connectingRole}), a union
  * selection's {@code sourceRole}, a role check's {@code factType}/{@code role}, a creation's symbolic block and a
@@ -206,8 +206,8 @@ public final class IrLoader {
      *  {@link Loaded#sourcePaths()}. Identity-keyed for {@link #roleBindings}'s reason. */
     private final Map<Object, List<RolBindingRef>> sourcePaths = new java.util.IdentityHashMap<>();
     /** IR-SPEC ch. 4.1a: the navigation bindings per AttribuutRef / Kenmerk node — see
-     *  {@link Loaded#path()}. Identity-keyed for {@link #roleBindings}'s reason. */
-    private final Map<Object, List<RolBindingRef>> path = new java.util.IdentityHashMap<>();
+     *  {@link Loaded#navigationBindings()}. Identity-keyed for {@link #roleBindings}'s reason. */
+    private final Map<Object, List<RolBindingRef>> navigationBindings = new java.util.IdentityHashMap<>();
     /** The JSON pointer of every AttribuutRef, fold and role check read, by identity: the node kinds
      *  {@link #checkSubjects} refuses after the whole document is read, at the place they were written. */
     private final Map<Object, String> sites = new java.util.IdentityHashMap<>();
@@ -259,14 +259,14 @@ public final class IrLoader {
      *         would silently fold whatever direct relation happens to connect subject and element. Empty for a
      *         document whose folds all carry the one-step range.
      *  @param path the IR-SPEC ch. 4.1a navigation walk per navigated {@link Expr.AttribuutRef}
-     *         (its {@code path}, one binding per hop, subject-outward) and per navigated
+     *         (its {@code navigationBindings}, one binding per hop, subject-outward) and per navigated
      *         {@link Conditie.Kenmerk} (its {@code navigation}, a one-hop list), by IDENTITY, verbatim off the
      *         wire. Where a node carries one it decides the walk in both transpiler branches; a node without one
      *         is the subject's own read (or the element's, inside a fold's filter). */
     public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults,
                          Map<Object, RolBindingRef> roleBindings, List<Expr.Let> lets,
                          Map<Object, List<RolBindingRef>> sourcePaths,
-                         Map<Object, List<RolBindingRef>> path) {}
+                         Map<Object, List<RolBindingRef>> navigationBindings) {}
 
     /** Parse a {@code uchar-ir-v1} tree into a resolved model, or throw {@link Refusal} for a form
      *  the v0 backend does not carry. What rides beside the model — the prioritized-defaults extension and, since
@@ -284,7 +284,7 @@ public final class IrLoader {
     public static Loaded loadAll(JsonNode root) {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
-        return new Loaded(model, l.prioritizedDefaults, l.roleBindings, l.lets, l.sourcePaths, l.path);
+        return new Loaded(model, l.prioritizedDefaults, l.roleBindings, l.lets, l.sourcePaths, l.navigationBindings);
     }
 
     /** The IR-SPEC ch. 4.5 other-end narrowing of a loaded {@code RoleMembership}: the type the filler of the other
@@ -446,7 +446,7 @@ public final class IrLoader {
                 // type itself — a supertype is another type, even where it declares the member. Both branches
                 // refused such a read before, with a generic reason; refused here in the sentence ref and the
                 // verifier share. A subject-less position (a day-kind definition) anchors nothing.
-                if (s != null && ot != null && !path.containsKey(a)
+                if (s != null && ot != null && !navigationBindings.containsKey(a)
                         && !Namen.norm(ot.naam).equals(Namen.norm(s.naam)))
                     throw new Documentfout(sites.get(a), "an attribute reference without a path is the subject's"
                             + " own read, so its subjectType is the subject type '" + s.naam + "' — '"
@@ -546,23 +546,23 @@ public final class IrLoader {
     }
 
     /** The key set of a container object or an M1 node, checked as the OCaml loader's {@code check_keys} checks it:
-     *  the node discriminator when {@code jsonNode} names one, no key outside the node's own, every required key
+     *  the node discriminator when {@code expectedKind} names one, no key outside the node's own, every required key
      *  present, and an optional key written whole or not at all — present and null is neither (IR-SPEC § Method).
      *  Read leniently, each of these was a document part ignored or a null taken for an absent field. */
-    private static void fields(JsonNode n, String pad, String jsonNode, List<String> required, List<String> optional) {
+    private static void fields(JsonNode n, String pad, String expectedKind, List<String> required, List<String> optional) {
         if (n == null || !n.isObject())
             throw new Documentfout(pad, "expected a JSON object"
-                    + (jsonNode == null ? "" : " (" + jsonNode + ")") + ", got " + shortQuote(n));
-        if (jsonNode != null) {
+                    + (expectedKind == null ? "" : " (" + expectedKind + ")") + ", got " + shortQuote(n));
+        if (expectedKind != null) {
             JsonNode soort = n.get("node");
             if (soort == null)
-                throw new Documentfout(pad, "missing field 'node' (the discriminator \"" + jsonNode + "\")");
-            if (!soort.isTextual() || !jsonNode.equals(soort.asText()))
-                throw new Documentfout(pad + "/node", "expected \"" + jsonNode + "\", got " + shortQuote(soort));
+                throw new Documentfout(pad, "missing field 'node' (the discriminator \"" + expectedKind + "\")");
+            if (!soort.isTextual() || !expectedKind.equals(soort.asText()))
+                throw new Documentfout(pad + "/node", "expected \"" + expectedKind + "\", got " + shortQuote(soort));
         }
         n.fieldNames().forEachRemaining(k -> {
             if (!required.contains(k) && !optional.contains(k))
-                throw new Documentfout(pad + "/" + k, "unknown field" + (jsonNode == null ? "" : " on " + jsonNode));
+                throw new Documentfout(pad + "/" + k, "unknown field" + (expectedKind == null ? "" : " on " + expectedKind));
         });
         for (String k : required)
             if (!n.has(k)) throw missing(pad, k);
@@ -1487,7 +1487,7 @@ public final class IrLoader {
                     // subject's own attribute
                     List<RolBindingRef> steps = roleBindingList(n, p, "path");
                     if (steps.isEmpty()) throw new Documentfout(p + "/path", PATH_WITHOUT_STEP);
-                    path.put(a, List.copyOf(steps));
+                    navigationBindings.put(a, List.copyOf(steps));
                 }
                 yield a;
             }
@@ -1696,12 +1696,12 @@ public final class IrLoader {
             return head + " but no source operand: an instance fold ranges over a written source";
         if (arguments.size() != 1) return null;
         boolean count = soort.equals("count") || soort.equals("filledCount");
-        String jsonNode = text(arguments.get(0), "node");
-        if (jsonNode == null || jsonNode.isEmpty() || jsonNode.equals("AttributeReference")) return null;
-        if (jsonNode.equals("ListLiteral"))
+        String operandKind = text(arguments.get(0), "node");
+        if (operandKind == null || operandKind.isEmpty() || operandKind.equals("AttributeReference")) return null;
+        if (operandKind.equals("ListLiteral"))
             return count ? head + " and a ListLiteral operand: a listed value is no source of instances" : null;
-        if (jsonNode.equals("InstanceSetUnion") && soort.equals("count")) return null;
-        return head + " and " + ("AEIOU".indexOf(jsonNode.charAt(0)) >= 0 ? "an " : "a ") + jsonNode
+        if (operandKind.equals("InstanceSetUnion") && soort.equals("count")) return null;
+        return head + " and " + ("AEIOU".indexOf(operandKind.charAt(0)) >= 0 ? "an " : "a ") + operandKind
                 + " operand: the source of an instance fold is an AttributeReference";
     }
 
@@ -1914,7 +1914,7 @@ public final class IrLoader {
      *  transpilers' refusal. */
     private void checkFoldSource(JsonNode n, String p, Expr.FunctieKind fk, Expr.Functie f) {
         if (fk == null || f.elementObjecttype() == null
-                || !(f.argumenten().get(0) instanceof Expr.AttribuutRef bron) || path.containsKey(bron)
+                || !(f.argumenten().get(0) instanceof Expr.AttribuutRef bron) || navigationBindings.containsKey(bron)
                 || bron.attribuut() == null) return;
         Objecttype el = f.elementObjecttype();
         String a = bron.attribuut(), site = p + "/arguments/0";
@@ -1939,7 +1939,7 @@ public final class IrLoader {
      *  definition) any declared role name counts, as the verifier has no subject to ask either. */
     private void checkValueFoldSource(Expr.Functie f, Objecttype s) {
         if (!VALUE_FOLDS.contains(f.kind()) || f.elementObjecttype() == null
-                || !(f.argumenten().get(0) instanceof Expr.AttribuutRef bron) || path.containsKey(bron)
+                || !(f.argumenten().get(0) instanceof Expr.AttribuutRef bron) || navigationBindings.containsKey(bron)
                 || bron.attribuut() == null) return;
         Objecttype el = f.elementObjecttype();
         String a = bron.attribuut(), site = sites.get(f) + "/arguments/0";
@@ -2078,7 +2078,7 @@ public final class IrLoader {
                 Conditie.Kenmerk k = new Conditie.Kenmerk(text(n, "characteristic"), null, bool(n, "negated"),
                         ot(text(n, "host")), wholePeriod(nodeField(n, "wholePeriod")), bron(n));
                 RolBindingRef nb = roleBinding(n, p, "navigation");
-                if (nb != null) path.put(k, List.of(nb));
+                if (nb != null) navigationBindings.put(k, List.of(nb));
                 yield k;
             }
             // IR-SPEC ch. 4.5: one node for the role check — the fact type, the role the SUBJECT plays in it, and the
@@ -2099,19 +2099,19 @@ public final class IrLoader {
                     throw new Documentfout(p + "/role", "'" + rol + "' is not a declared role of fact type '" + feittype
                             + "' (a role check names the role by its declared name)");
                 String counterpart = optText(n, p, "counterpartType");
-                Objecttype earlierBean = counterpart == null ? null : ot(counterpart);
+                Objecttype other = counterpart == null ? null : ot(counterpart);
                 if (counterpart != null) {
-                    if (earlierBean == null)
+                    if (other == null)
                         throw new Documentfout(p + "/counterpartType", "role check: the counterpart type \""
                                 + counterpart + "\" is no declared object type");
                     RegelSpraakModel.Rol otherSide = ft.wederkerig ? bound : otherRole(ft, bound);
                     Objecttype filler = otherSide == null ? null : ot(otherSide.objecttypeNaam());
-                    if (filler != null && !earlierBean.isEen(filler))
+                    if (filler != null && !other.isEen(filler))
                         throw new Documentfout(p + "/counterpartType", "role check: the counterpart type \""
                                 + counterpart + "\" is no subtype of \"" + filler.naam + "\", the filler the role \""
                                 + otherSide.naam() + "\" declares");
                 }
-                Conditie.Rollidmaatschap r = new Conditie.Rollidmaatschap(rol, earlierBean, bron(n),
+                Conditie.Rollidmaatschap r = new Conditie.Rollidmaatschap(rol, other, bron(n),
                         truth(n, p, "negated"));
                 roleBindings.put(r, new RolBindingRef(feittype, r.rol()));
                 sites.put(r, p);
@@ -2203,12 +2203,12 @@ public final class IrLoader {
         Conditie.Predicaatsoort soort = enumValue(Spelling.PREDICATE_KIND, "Predicate.kind", textAt(n, p, "kind"),
                 p + "/kind");
         boolean negated = bool(n, "negated");
-        Conditie.GeheelPeriode period = wholePeriod(nodeField(n, "wholePeriod"));
+        Conditie.GeheelPeriode qualifier = wholePeriod(nodeField(n, "wholePeriod"));
         boolean emptyOrFilled = soort == Conditie.Predicaatsoort.LEEG || soort == Conditie.Predicaatsoort.GEVULD;
         // WF-043 admits a time-dependent PARAMETER as the operand of a whole-period test, and no executor folds one:
         // ref and the ASP backend refuse it in this sentence, the wire's own spelling of the name included
         JsonNode operand = nodeField(n, "operand");
-        if (emptyOrFilled && period != null && operand != null && "ParameterReference".equals(operand.path("node").asText()))
+        if (emptyOrFilled && qualifier != null && operand != null && "ParameterReference".equals(operand.path("node").asText()))
             throw new Refusal("Predicate.operand", "a whole-period leeg/gevuld test over the parameter '"
                     + operand.path("parameter").asText() + "' is not executed: the fold reads the timeline of an attribute");
         if (emptyOrFilled && negated) {
@@ -2218,7 +2218,7 @@ public final class IrLoader {
         // the day kind is written on a predicate of kind dayKind alone: absent elsewhere, the record's null
         return new Conditie.Predicaat(soort, expr(operand), text(n, "dayKind"), negated,
                 intOf(n, "digits"),
-                period, bron(n));
+                qualifier, bron(n));
     }
 
     /** IR-SPEC ch. 4.5: the whole-period qualifier, its granularity read onto the record's {@code jaar} flag (year
@@ -2244,11 +2244,11 @@ public final class IrLoader {
      * (WF-107's) stays null on every version. That spelling is why a form's own name may not end in a space, '#'
      * and digits: it would read as a version of another form. A form carries at least one version.
      */
-    private List<Version> vorm(JsonNode n, String pad, String jsonNode, List<String> optional) {
+    private List<Version> vorm(JsonNode n, String pad, String expectedKind, List<String> optional) {
         List<String> opt = new ArrayList<>(optional);
         opt.add("origin");     // the origin of a declaration a producer made itself (IR-SPEC ch. 2.13)
         opt.add("designations");   // a named form's names in the vocabularies (IR-SPEC ch. 2.12), on the form
-        fields(n, pad, jsonNode, List.of("node", "name", "versions"), opt);
+        fields(n, pad, expectedKind, List.of("node", "name", "versions"), opt);
         JsonNode nm = n.get("name");
         if (!nm.isNull() && !nm.isTextual())
             throw new Documentfout(pad + "/name", "expected a string or null, got " + shortQuote(nm));
@@ -2873,7 +2873,7 @@ public final class IrLoader {
         if (!isDateType(l) && !isDateType(r)) return;
         String p = sites.get(b);
         if (isDateType(l) && isDateType(r)) throw new Documentfout(p, DATE_PLUS_DATE);
-        if (!isDateType(l)) throw new Documentfout(p, durationForDateRefusal(b.op() == Expr.BinOp.MIN));
+        if (!isDateType(l)) throw new Documentfout(p, durationBeforeDateRefusal(b.op() == Expr.BinOp.MIN));
         Eenheid u = r == null ? null : r.eenheidOf();
         if (u != null) {
             String time = Tijdrekening.chronoUnit(u);
@@ -2956,7 +2956,7 @@ public final class IrLoader {
     static final String DATE_PLUS_DATE =
             "date \u00b1 date is ill-formed (date arithmetic takes a date and a duration)";
 
-    static String durationForDateRefusal(boolean min) {
+    static String durationBeforeDateRefusal(boolean min) {
         return min ? "duration \u2212 date is ill-formed (subtraction admits the date on the left only)"
                 : "duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)";
     }

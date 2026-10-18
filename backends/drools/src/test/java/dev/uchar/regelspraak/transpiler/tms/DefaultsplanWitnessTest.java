@@ -106,7 +106,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 1, slots=[1], size=2,"
                         + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.waardering, regel=defaults"
-                        + " A:Jutter.waardering], sessionFacts=[Value[doel=ElementSleutel[objecttype=jutter,"
+                        + " A:Jutter.waardering], facts=[Value[doel=ElementSleutel[objecttype=jutter,"
                         + " naam=waardering, kenmerk=false], writer=defaults A:Jutter.waardering],"
                         + " Decides[stack=defaults A:Jutter.waardering, index=0]], insertion=LOGICAL]",
                 "    waarde 0 SlotValue bron 'zijn basisbedrag'",
@@ -129,7 +129,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 1, slots=[1], size=2,"
                         + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.waardering, regel=defaults"
-                        + " A:Jutter.waardering], sessionFacts=[Value[doel=ElementSleutel[objecttype=jutter,"
+                        + " A:Jutter.waardering], facts=[Value[doel=ElementSleutel[objecttype=jutter,"
                         + " naam=waardering, kenmerk=false], writer=defaults A:Jutter.waardering],"
                         + " Decides[stack=defaults A:Jutter.waardering, index=1]], insertion=LOGICAL]",
                 "    waarde 0 SlotValue bron 'zijn kandidaatbedrag'",
@@ -145,7 +145,7 @@ class DefaultsplanWitnessTest {
                         + " bind []]",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Const 25, slots=[], size=0,"
                         + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.waardering, regel=defaults"
-                        + " A:Jutter.waardering], sessionFacts=[Value[doel=ElementSleutel[objecttype=jutter,"
+                        + " A:Jutter.waardering], facts=[Value[doel=ElementSleutel[objecttype=jutter,"
                         + " naam=waardering, kenmerk=false], writer=defaults A:Jutter.waardering]],"
                         + " insertion=LOGICAL]",
                 "    waarde 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
@@ -182,7 +182,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.2.0 SlotValue",
                 "    toets 0.2.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Const true, slots=[], size=3,"
-                        + " collapse=false, fout=null, sessionFacts=[Characteristic[kenmerk=ElementSleutel[objecttype=jutter,"
+                        + " collapse=false, fout=null, facts=[Characteristic[kenmerk=ElementSleutel[objecttype=jutter,"
                         + " naam=uitgesloten, kenmerk=true]], Decides[stack=defaults K:Jutter.uitgesloten,"
                         + " index=0]], insertion=LOGICAL]",
                 "    waarde 0 Const Boolean",
@@ -210,7 +210,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1.0 SlotValue",
                 "    toets 0.1.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Const false, slots=[], size=2,"
-                        + " collapse=false, fout=null, sessionFacts=[Decides[stack=defaults K:Jutter.uitgesloten,"
+                        + " collapse=false, fout=null, facts=[Decides[stack=defaults K:Jutter.uitgesloten,"
                         + " index=1]], insertion=LOGICAL]",
                 "    waarde 0 Const Boolean",
                 "regel defaults K:Jutter.uitgesloten: default 2 | vorm defaults K:Jutter.uitgesloten |"
@@ -231,7 +231,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Const true, slots=[], size=1,"
-                        + " collapse=false, fout=null, sessionFacts=[Characteristic[kenmerk=ElementSleutel[objecttype=jutter,"
+                        + " collapse=false, fout=null, facts=[Characteristic[kenmerk=ElementSleutel[objecttype=jutter,"
                         + " naam=uitgesloten, kenmerk=true]]], insertion=LOGICAL]",
                 "    waarde 0 Const Boolean",
                 "regel defaults K:Jutter.uitgesloten: geen rekendatum | vorm defaults"
@@ -262,7 +262,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=RS_PLUS(Lees 1, Const 20), slots=[1],"
                         + " size=2, collapse=true, fout=FaultName[vorm=defaults A:Jutter.korting, regel=defaults"
-                        + " A:Jutter.korting], sessionFacts=[Outcome[stack=defaults A:Jutter.korting, chain=1,"
+                        + " A:Jutter.korting], facts=[Outcome[stack=defaults A:Jutter.korting, chain=1,"
                         + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 Call bron 'de grondslag plus 20.00'",
                 "    waarde 0.0 SlotValue bron 'de grondslag van de Jutter'",
@@ -282,7 +282,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=RS_PLUS(Lees 1, Const 35), slots=[1],"
                         + " size=2, collapse=true, fout=FaultName[vorm=defaults A:Jutter.korting, regel=defaults"
-                        + " A:Jutter.korting], sessionFacts=[Outcome[stack=defaults A:Jutter.korting, chain=2,"
+                        + " A:Jutter.korting], facts=[Outcome[stack=defaults A:Jutter.korting, chain=2,"
                         + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 Call bron 'de grondslag plus 35.00'",
                 "    waarde 0.0 SlotValue bron 'de grondslag van de Jutter'",
@@ -302,7 +302,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=RS_PLUS(RS_PLUS(Lees 1, Const 15), Const"
                         + " 5), slots=[1], size=2, collapse=true, fout=FaultName[vorm=defaults A:Jutter.korting,"
-                        + " regel=defaults A:Jutter.korting], sessionFacts=[Outcome[stack=defaults A:Jutter.korting,"
+                        + " regel=defaults A:Jutter.korting], facts=[Outcome[stack=defaults A:Jutter.korting,"
                         + " chain=3, positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 Call bron 'die som plus 5.00'",
                 "    waarde 0.0 Call bron 'de grondslag plus 15.00'",
@@ -349,7 +349,7 @@ class DefaultsplanWitnessTest {
                         + " DECIDED {Kind}]] join [uitkomst-onderwerp_18: onderwerp = $onderwerp] beta"
                         + " [ander-besluit_19: OTHER_DECISION $besluit] na [] bind []]",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 0, slots=[0], size=1,"
-                        + " collapse=false, fout=null, sessionFacts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
+                        + " collapse=false, fout=null, facts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
                         + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 SlotValue",
                 "regel defaults A:Jutter.korting: terugval 0 | vorm defaults A:Jutter.korting | groep"
@@ -370,7 +370,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=RS_PLUS(Lees 1, Const 90), slots=[1],"
                         + " size=2, collapse=true, fout=FaultName[vorm=defaults A:Jutter.korting, regel=defaults"
-                        + " A:Jutter.korting], sessionFacts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
+                        + " A:Jutter.korting], facts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
                         + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 Call bron 'de grondslag plus 90.00'",
                 "    waarde 0.0 SlotValue bron 'de grondslag van de Jutter'",
@@ -387,7 +387,7 @@ class DefaultsplanWitnessTest {
                         + " [hoger-uitkomst-onderwerp_27: onderwerp = $onderwerp] beta [] na [] bind []]",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Const 5, slots=[], size=0,"
                         + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.korting, regel=defaults"
-                        + " A:Jutter.korting], sessionFacts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
+                        + " A:Jutter.korting], facts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
                         + " positie=1, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 Const BigDecimal type Numeriek[geheel=false, decimalen=2, teken=ONBEPAALD,"
                         + " eenheid=null] bron '5.00'",
@@ -409,7 +409,7 @@ class DefaultsplanWitnessTest {
                         + " AT_LEAST 0 {Integer}, [] chain VALUE UNDER 1 {Integer}]] join [] beta [] na [] bind"
                         + " [$onderwerp = [] Outcome.onderwerp VALUE, $waarde = [] Outcome.waarde VALUE]",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 0, slots=[0], size=1,"
-                        + " collapse=false, fout=null, sessionFacts=[Value[doel=ElementSleutel[objecttype=jutter,"
+                        + " collapse=false, fout=null, facts=[Value[doel=ElementSleutel[objecttype=jutter,"
                         + " naam=korting, kenmerk=false], writer=defaults A:Jutter.korting]], insertion=LOGICAL]",
                 "    waarde 0 SlotValue"), plans(golden("synth3-nestkorting")));
     }
@@ -432,7 +432,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1.0 SlotValue",
                 "    toets 0.1.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Const false, slots=[], size=2,"
-                        + " collapse=false, fout=null, sessionFacts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
+                        + " collapse=false, fout=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
                         + " chain=1, positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 Const Boolean",
                 "regel defaults K:Jutter.vrijgesteld: default 0.1.0 | vorm defaults K:Jutter.vrijgesteld"
@@ -451,7 +451,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1.0 SlotValue",
                 "    toets 0.1.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Const true, slots=[], size=2,"
-                        + " collapse=false, fout=null, sessionFacts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
+                        + " collapse=false, fout=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
                         + " chain=2, positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 Const Boolean",
                 "regel defaults K:Jutter.vrijgesteld: verschil 0 | vorm defaults K:Jutter.vrijgesteld |"
@@ -493,7 +493,7 @@ class DefaultsplanWitnessTest {
                         + " GELIJK DECIDED {Kind}]] join [uitkomst-onderwerp_16: onderwerp = $onderwerp] beta"
                         + " [ander-besluit_17: OTHER_DECISION $besluit] na [] bind []]",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 0, slots=[0], size=1,"
-                        + " collapse=false, fout=null, sessionFacts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
+                        + " collapse=false, fout=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
                         + " chain=0, positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 SlotValue",
                 "regel defaults K:Jutter.vrijgesteld: terugval 0 | vorm defaults K:Jutter.vrijgesteld |"
@@ -511,7 +511,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Const true, slots=[], size=1,"
-                        + " collapse=false, fout=null, sessionFacts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
+                        + " collapse=false, fout=null, facts=[Outcome[stack=defaults K:Jutter.vrijgesteld,"
                         + " chain=0, positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 Const Boolean",
                 "regel defaults K:Jutter.vrijgesteld: doorgeven wortel | vorm defaults"
@@ -533,7 +533,7 @@ class DefaultsplanWitnessTest {
                         + " {Boolean}]] join [] beta [] na [] bind [$onderwerp = [] Outcome.onderwerp VALUE,"
                         + " $waarde = [] Outcome.waarde VALUE]",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 0, slots=[0], size=1,"
-                        + " collapse=false, fout=null, sessionFacts=[Characteristic[kenmerk=ElementSleutel[objecttype=jutter,"
+                        + " collapse=false, fout=null, facts=[Characteristic[kenmerk=ElementSleutel[objecttype=jutter,"
                         + " naam=vrijgesteld, kenmerk=true]]], insertion=LOGICAL]",
                 "    waarde 0 SlotValue"), plans(golden("anchor/jutterswet-nestkenmerk")));
     }
@@ -553,7 +553,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Const 30, slots=[], size=1,"
                         + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.wachtgeld, regel=defaults"
-                        + " A:Jutter.wachtgeld], sessionFacts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=0,"
+                        + " A:Jutter.wachtgeld], facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=0,"
                         + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '30'",
@@ -570,7 +570,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Const 45, slots=[], size=1,"
                         + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.wachtgeld, regel=defaults"
-                        + " A:Jutter.wachtgeld], sessionFacts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=1,"
+                        + " A:Jutter.wachtgeld], facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=1,"
                         + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '45'",
@@ -587,7 +587,7 @@ class DefaultsplanWitnessTest {
                 "    toets 0.1 Const Boolean",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Const 30, slots=[], size=1,"
                         + " collapse=true, fout=FaultName[vorm=defaults A:Jutter.wachtgeld, regel=defaults"
-                        + " A:Jutter.wachtgeld], sessionFacts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=2,"
+                        + " A:Jutter.wachtgeld], facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=2,"
                         + " positie=0, soort=DECIDED]], insertion=LOGICAL]",
                 "    waarde 0 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '30'",
@@ -629,7 +629,7 @@ class DefaultsplanWitnessTest {
                         + " DECIDED {Kind}]] join [uitkomst-onderwerp_18: onderwerp = $onderwerp] beta"
                         + " [ander-besluit_19: OTHER_DECISION $besluit] na [] bind []]",
                 "  gevolg Decision [onderwerp=$onderwerp, waarde=Lees 0, slots=[0], size=1,"
-                        + " collapse=false, fout=null, sessionFacts=[Value[doel=ElementSleutel[objecttype=jutter,"
+                        + " collapse=false, fout=null, facts=[Value[doel=ElementSleutel[objecttype=jutter,"
                         + " naam=wachtgeld, kenmerk=false], writer=defaults A:Jutter.wachtgeld]],"
                         + " insertion=LOGICAL]",
                 "    waarde 0 SlotValue"), plans(golden("jutterswet-wachtgeld")));
@@ -660,11 +660,11 @@ class DefaultsplanWitnessTest {
                         conflict(conflict), conflict(inconsistency), conflict(decides), conflict(waarde)));
     }
 
-    /** "ok" where the constructor of {@link Consequence.Decision} takes a decision that inserts {@code sessionFacts}, else its
+    /** "ok" where the constructor of {@link Consequence.Decision} takes a decision that inserts {@code facts}, else its
      *  refusal. */
-    private static String decision(List<Consequence.StackFact> sessionFacts) {
+    private static String decision(List<Consequence.StackFact> facts) {
         try {
-            new Consequence.Decision("$onderwerp", new Term.SlotValue(0, null), List.of(0), 1, false, null, sessionFacts,
+            new Consequence.Decision("$onderwerp", new Term.SlotValue(0, null), List.of(0), 1, false, null, facts,
                     Consequence.Insertion.LOGICAL);
             return "ok";
         } catch (IllegalArgumentException e) {
@@ -737,7 +737,7 @@ class DefaultsplanWitnessTest {
             case Exists b -> "bestaat binnen " + b.inside() + " buiten " + b.outside() + " "
                     + b.patterns().stream().map(DefaultsplanWitnessTest::pattern).toList();
             case Accumulation a -> "accumulatie " + pattern(a.bron()) + " functies "
-                    + a.functions().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
+                    + a.aggregations().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
             case TestItem t -> "toets " + t.id() + " " + t.rol() + " sonde " + t.depositFlag() + " slots " + t.slots()
                     + " grootte " + t.size() + ": " + TermTree.tree(t.test());
         };

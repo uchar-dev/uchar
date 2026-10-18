@@ -16,7 +16,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
@@ -71,7 +71,7 @@ class TmsRoleCheckWitnessTest {
     }
 
     static final String ERVAREN = characteristicRule("ervarenheid", "Jutter", "ervaren",
-            comparison("greater", reading("dienstjaren", "Jutter"), number("5")));
+            comparison("greater", ownRead("dienstjaren", "Jutter"), number("5")));
     static final String WACHTDOEND = characteristicRule("wachtdienst", "Jutter", "wachtdoend",
             roleCheck("wachtindeling", "wachtjutter", null, false, "hij een wachtjutter is"));
     static final String VRIJGESTELD = characteristicRule("vrijstelling", "Jutter", "vrijgesteld",
@@ -109,7 +109,7 @@ class TmsRoleCheckWitnessTest {
     }
 
     /** The near side per world: per Jutter, wachtdoend, vrijgesteld and inzetbaar. */
-    static List<String> nearby(int n) {
+    static List<String> near(int n) {
         List<String> v = new ArrayList<>();
         switch (n) {
             case 1 -> v.addAll(jutterExpected("J1", true, true));
@@ -151,13 +151,13 @@ class TmsRoleCheckWitnessTest {
         return v;
     }
 
-    @Test void the_nearby_role_check_also_in_a_compound_with_a_later_derived_characteristic_check() throws Exception {
+    @Test void the_near_side_role_check_also_in_a_compound_with_a_later_derived_characteristic() throws Exception {
         List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(ERVAREN, WACHTDOEND, VRIJGESTELD, INZETBAAR))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(MODEL, order);
             for (int n = 1; n <= 3; n++) {
-                JsonNode caseDocument = TmsDocuments.caseDocument(world(n), nearby(n));
+                JsonNode caseDocument = TmsDocuments.caseDocument(world(n), near(n));
                 outcomes.add(names + " " + n + " " + TmsFaultWitnessTest.playBoth(ir, caseDocument));
                 verwacht.add(names + " " + n + " gespeeld");
             }
@@ -165,7 +165,7 @@ class TmsRoleCheckWitnessTest {
         assertEquals(verwacht, outcomes);
     }
 
-    @Test void the_remote_role_check_with_and_without_counterpart() throws Exception {
+    @Test void the_far_side_role_check_with_and_without_counterpart() throws Exception {
         List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(BEMAND, ONBEMAND, STRANDBEMAND, STRANDVRIJ))) {
             List<String> names = TmsDocuments.ruleNames(order);
@@ -187,7 +187,7 @@ class TmsRoleCheckWitnessTest {
             List.of(factTypeOneToMany("jutmelding", "melder", "Jutter", "melding", "Melding", "meldingen")));
 
     static final String REPORTED = characteristicRule("melding", "Jutter", "gemeld",
-            comparison("greater", reading("vangst", "Jutter"), number("3")));
+            comparison("greater", ownRead("vangst", "Jutter"), number("3")));
     static final String MELDER = characteristicRule("melderschap", "Jutter", "melder",
             roleCheck("jutmelding", "melder", null, false, "hij een melding heeft"));
     static final String SILENT = characteristicRule("stilte", "Jutter", "stil",

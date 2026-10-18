@@ -78,12 +78,14 @@ andere	other	plain	function word
 anderen	others	plain		added by card hernoem-drools-backend: 1 name in backends/drools (anderen)
 anders	else	wire	the else of an IfThenElse	false friend; `IfThenElse.else`
 anders	otherwise	plain	function word	false friend
+anders	differently	plain	the manner: anders gekapitaliseerd, differently capitalised	added by card drools-word-fixes
 anker	anchor	wire		false friend
 annotatie	annotation	wire		`statuteAnnotations`
 annotaties	annotations	wire		
 antwoord	answer	plain		
 argumentatietheorie	argumentationTheory	field	Flora-2's argumentation theory for defeasible rules, the @{...} rule descriptor	added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_argumentatietheorie)
 argumenten	arguments	wire		
+ariteit	arity	spec	the number of arguments of a node or of the components of a key	added by card drools-word-fixes; IR-SPEC
 ariteits	arity	plain	the form in a compound: ariteitsguard, arity guard	added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 armen	arms	field	the then and the else of an IfThenElse	added by card hernoem-drools-backend: in 2 identifiers (5 occurrences)
 assertie	assertion	wire		
@@ -116,6 +118,8 @@ beneden	below	plain	naar beneden is the rounding mode floor
 benoem	designate	spec	the verb stem of benoemd	IR-SPEC §2.12; added by card hernoem-drools-backend: in 3 identifiers (20 occurrences)
 benoembaar	designatable	spec	every declaration a vocabulary can designate	IR-SPEC §2.12; added by card hernoemgereedschap: in 4 identifiers (346 occurrences)
 benoemd	named	wire		`namedForm`
+benoemd	byName	plain	after a refusal: by name (weigert de exectak benoemd, the exec branch refuses by name)	added by card drools-word-fixes
+benoemd geweigerd	refusedByName	plain	a refusal that names what it refuses (worden benoemd geweigerd, are refused by name); not once named	added by card drools-word-fixes
 benoemde	named	wire		`namedForm`
 benoemt	designates	spec		IR-SPEC §2.12; added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (een_woord_dat_niets_benoemt_levert_geen_elementtype in frontends/regelspraak)
 bepaalde	definite	plain	the definite article form: de bepaalde kwantor, the quantifier the	added by card hernoem-drools-backend: 1 name in backends/drools (de_bepaalde_kwantor_wordt_bij_naam_geweigerd)
@@ -354,7 +358,7 @@ dezelfde	same	plain	function word: dezelfde X, the same X
 diagnose	diagnostic	wire		false friend
 diakriet	diacritic	plain		added by card hernoem-drools-backend: 1 name in backends/drools (diakriet)
 diakritische	diacritical	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_diakritische_kastvariant_is_geen_temporele_sleutel)
-dichtbij	nearby	plain		added by card hernoem-drools-backend: 1 name in backends/drools (dichtbij)
+dichtbij	near	plain	the near end of a pair, beside far (veraf)	corrected by card drools-word-fixes
 diens	its	plain	function word: diens X, its X	added by card hernoem-drools-backend: 1 name in backends/drools (naast_een_actieve_jutter_rekent_alleen_diens_vouw)
 diep	deep	plain		
 diepe	deep	plain		added by card hernoem-drools-backend: in 2 identifiers (4 occurrences)
@@ -401,9 +405,10 @@ drempel	threshold	wire
 drie	three	plain		
 drijf	drive	plain	the verb stem: drive a session to its fixpoint	added by card hernoem-drools-backend: 1 name in backends/drools (drijf)
 dubbel	duplicate	plain	twice the same thing: a duplicate key, a second declaration of one name, a fact inserted twice	context sharpened by card hernoem-drools-backend: the translator flagged it
-dubbel	double	plain	two-fold, of a number or a count (dubbel zo groot, twice as large; een dubbele waarde, a double value)	added by card hernoem-drools-backend: the translator flagged it
+dubbel	double	plain	two-fold: two of a kind that differ, or a number or a count twice (dubbelgarde, a double guard: two different guards; dubbel zo groot, twice as large)	context sharpened by card drools-word-fixes
 dubbele	duplicate	plain	twice the same thing: een dubbele sleutel, a duplicate key	context sharpened by card hernoem-drools-backend: the translator flagged it
-dubbele	double	plain	two-fold, of a number or a count	added by card hernoem-drools-backend: the translator flagged it
+dubbele	double	plain	two-fold: two of a kind that differ, or a number or a count twice	context sharpened by card drools-word-fixes
+dubbele punt	colon	plain	the character colon (een vormnaam met een dubbele punt, a form name with a colon)	added by card drools-word-fixes
 dubbelepunt	colon	plain		added by card hernoem-drools-backend: 1 name in backends/drools (dubbelepunt)
 dubbelop	redundant	plain		added by card hernoem-drools-backend: 1 name in backends/drools (dubbelop)
 dubbelzinnig	ambiguous	plain		added by card hernoem-drools-backend: 1 name in backends/drools (dubbelzinnig)
@@ -493,6 +498,7 @@ evaluatie	evaluation	plain		added by card hernoem-drools-backend: in 8 identifie
 evalueert	evaluates	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_basis_van_een_begrenzing_evalueert_voor_het_maximum)
 evalueren	evaluate	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 even	equally	plain	even groot: equally large; an even cycle stays even	false friend
+even	even	plain	of a number or a cycle (een even ontkenningskring, an even negation cycle)	added by card drools-word-fixes
 evenredig	proportional	plain		added by card hernoem-drools-backend: 1 name in backends/drools (evenredig)
 exacte	exact	plain		
 excepties	exceptions	wire		
@@ -521,8 +527,8 @@ feiten	facts	wire
 feittype	factType	wire		
 feittypen	factTypes	wire		
 filterdeponering	filterDeposit	plain		
-filterfout	filterError	plain		
-filterfouten	filterErrors	plain		added by card hernoem-drools-backend: 1 name in backends/drools (filterfouten)
+filterfout	filterFault	spec	the fault of the filter of a fold, an evaluation fault (the filter-fault rule)	corrected by card drools-word-fixes: in the transpiler and the TMS plans a fout is a fault; RUNTIME-SEMANTICS ch. 5.11
+filterfouten	filterFaults	spec	the faults of the filters of folds	corrected by card drools-word-fixes
 filtervouw	filterFold	plain		
 fixpunt	fixpoint	spec		RUNTIME-SEMANTICS §5.3
 floraeen	flora1	plain	Flora-1, the first Flora system of the F-logic papers	added by card hernoemgereedschap: 1 name in frontends/flogic (refuse_floraeen)
@@ -533,9 +539,9 @@ fouten	errors	spec	errors on the error channel, load errors, errors of an input 
 fouten	faults	spec	evaluation faults, as red cases pin them (the faults of a session, of a fixpoint)	RUNTIME-SEMANTICS §5.11; context sharpened by card hernoem-drools-backend: the translator flagged it
 fractie	fraction	plain		added by card hernoem-drools-backend: in 3 identifiers (3 occurrences)
 fragmenten	fragments	plain		added by card hernoem-drools-backend: in 2 identifiers (5 occurrences)
-functie	aggregation	wire	the v0 node Functie as an aggregation	
+functie	aggregation	wire	the v0 node Functie as an aggregation; Accumulatie.Functie, the aggregation of an accumulate	context sharpened by card drools-word-fixes
 functie	builtinCall	wire	the v0 node Functie as a builtin call	
-functie	function	wire	a function in general; a FunctionDef	
+functie	function	wire	a function in general; a FunctionDef; the plan's Functie, a static function a Term calls (Functie.RS_PLUS): StaticFunction in backends/drools, where Function meets java.util.function.Function	context sharpened by card drools-word-fixes
 functies	functions	plain		added by card hernoem-drools-backend: in 2 identifiers (30 occurrences)
 functioneel	functional	plain		added by card hernoem-drools-backend: in 3 identifiers (21 occurrences)
 functionele	functional	plain		added by card hernoem-drools-backend: 1 name in backends/drools (functioneleKlasse)
@@ -756,7 +762,8 @@ groter	greater	wire		false friend
 groter of gelijk	greaterOrEqual	wire		
 haakje	bracket	plain		added by card hernoem-drools-backend: 1 name in backends/drools (haakje)
 haakjes	parentheses	plain		
-haalt	gets	plain	haalt X: gets X; haalt de drempel: reaches the threshold	
+haalt	gets	plain	haalt X op, haalt X uit: gets X	context sharpened by card drools-word-fixes: a threshold, a matrix or a window is reached
+haalt	reaches	plain	haalt een drempel, de matrix, het venster: reaches it	added by card drools-word-fixes
 haar	its	plain	function word: the possessive (her, its)	
 handeling	action	plain		added by card hernoem-drools-backend: 1 name in backends/drools (handeling)
 hangt	hangs	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_weigering_hangt_aan_de_declaratie_en_niet_aan_de_casus)
@@ -786,9 +793,9 @@ hernoeming	renaming	spec	the renaming of the wire names (M8, landed at L5)	IR-SP
 herreken	recompute	plain		added by card hernoem-drools-backend: 1 name in backends/drools (herreken)
 herrekend	recomputed	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 herrekent	recomputes	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
-herschaal	rescale	plain	the verb stem	
+herschaal	restate	spec	restate a quantity in another unit, the verb stem (herschaalExact, restateExact)	corrected by card drools-word-fixes; RUNTIME-SEMANTICS ch. 2.6: restate
 herschaalbaar	rescalable	plain		added by card hernoem-drools-backend: 1 name in backends/drools (eisHerschaalbaar)
-herschaald	rescaled	plain		added by card hernoem-drools-backend: 1 name in backends/drools (herschaald)
+herschaald	restated	spec	restated in another unit	corrected by card drools-word-fixes; RUNTIME-SEMANTICS ch. 2.6
 herschaling	rescaling	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_runtimeaanroep_met_eenheidsherschaling_is_een_boom_van_genoemde_aanroepen)
 herschreven	rewritten	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_toekenning_wordt_herschreven_in_de_eenheid_van_het_lid)
 hersondeert	reprobes	plain	the probe reprobes the carrier	added by card hernoem-drools-backend: 1 name in backends/drools (de_sonde_hersondeert_de_drager_na_een_producent_die_na_de_companion_vuurt)
@@ -908,6 +915,7 @@ klachten	complaints	plain		added by card hernoem-drools-backend: 1 name in backe
 klapt	flips	plain	klapt om, flips over	added by card hernoem-drools-backend: 1 name in backends/drools (de_niet_prefix_klapt_de_kwantor_om_in_plaats_van_het_verdict)
 klasse	class	plain		
 klassen	classes	plain		added by card hernoem-drools-backend: in 11 identifiers (63 occurrences)
+kleine	small	plain	small (een kleine factor, a small factor)	added by card drools-word-fixes
 kleiner	less	wire		
 kleiner of gelijk	lessOrEqual	wire		
 kleinkind	grandchild	plain		
@@ -1004,7 +1012,7 @@ lezingen	readings	plain	interpretations of a source phrase	context sharpened by 
 lezingen	reads	wire	reads of a value, a cell, a path or a fold (Lezingen, the reads of a plan)	`TemporalRead`, `DimensionCellRead`; context sharpened by card hernoem-drools-backend: the translator flagged it
 lichaam	body	plain		added by card hernoem-drools-backend: 1 name in backends/drools (lichaam)
 lid	member	wire		false friend
-lidfout	memberError	plain		
+lidfout	memberFault	spec	the fault of a member of a fold, an evaluation fault (the member-fault rule)	corrected by card drools-word-fixes: in the transpiler and the TMS plans a fout is a fault; RUNTIME-SEMANTICS ch. 5.11
 lidmaatschap	membership	wire		
 lidmaatschaps	membership	plain	the form in a compound: lidmaatschapsopslag, membership store	added by card hernoem-drools-backend: in 2 identifiers (9 occurrences)
 lidrol	memberRole	plain		added by card hernoem-drools-backend: 1 name in backends/drools (lidrol)
@@ -1028,7 +1036,10 @@ literalen	literals	wire
 logisch	logical	plain		added by card hernoem-drools-backend: in 2 identifiers (94 occurrences)
 logische	logical	plain		added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (LogischeKnoop in frontends/regelspraak)
 lokale	local	plain		added by card hernoem-drools-backend: 1 name in backends/drools (twee_kwantificaties_binden_elk_dezelfde_lokale_naam)
-loopt	runs	plain		
+loopt	runs	plain	without an object: it goes on (loopt niet eindeloos, does not run endlessly)	context sharpened by card drools-word-fixes
+loopt	walks	plain	with an object: loopt een link, een pad, walks it (loopt geen link van haar eigen fase, walks no link of its own phase)	added by card drools-word-fixes
+lopen	run	plain	without an object: go on, run	added by card drools-word-fixes
+lopen	walk	plain	with an object: walk a link or a path (een link lopen, walk a link)	added by card drools-word-fixes
 losse	separate	plain		
 lowerbaar	lowerable	plain	that the transpiler can lower	added by card hernoem-drools-backend: 1 name in backends/drools (grensLowerbaar)
 lowerbare	lowerable	plain	that the transpiler can lower	added by card hernoem-drools-backend: 1 name in backends/drools (de_anker_lowerbare_heelperiode_guard_speelt_nog_in_beide_takken)
@@ -1115,7 +1126,7 @@ naar boven	ceiling	wire	the rounding mode	`Rounding.mode`
 naar rato	proportional	wire		`AllocationVersion.method`
 naast	beside	plain	function word	
 nabij	near	plain	the opposite of verre: a local role membership	
-nabije	nearby	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_nabije_rolcontrole_ook_in_een_samenstelling_met_een_later_afgeleid_kenmerk)
+nabije	near	spec	the near side of a role check (de nabije rolcheck, the near-side role check)	corrected by card drools-word-fixes; RUNTIME-SEMANTICS ch. 5.8a: near-side
 naden	seams	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_ingang_is_publiek_en_de_naden_niet)
 namen	names	wire		
 navigatie	navigation	wire		
@@ -1199,6 +1210,7 @@ onderdelen	parts	wire
 onderweg	intermediate	plain	on the way, before the fixpoint	
 onderwerp	subject	wire		
 ondraagbare	uncarriable	plain	that the backend cannot carry	added by card hernoem-drools-backend: 1 name in backends/drools (ondraagbareGrens)
+oneven	odd	plain	of a number or a cycle (een oneven ontkenningskring, an odd negation cycle)	added by card drools-word-fixes
 ongeacht	regardless	plain	function word	
 ongeankerde	unanchored	plain		added by card hernoem-drools-backend: 1 name in backends/drools (twee_ongeankerde_temporele_schrijvers_bereiken_een_fixpunt)
 ongeasserteerd	unasserted	plain		added by card hernoem-drools-backend: 1 name in backends/drools (het_lege_doel_is_observeerbaar_afwezig_niet_slechts_ongeasserteerd)
@@ -1294,6 +1306,7 @@ ophogen	increment	plain		added by card hernoem-drools-backend: 1 name in backend
 oplost	resolves	plain		added by card hernoem-drools-backend: in 2 identifiers (2 occurrences)
 opneemt	includes	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_subselectie_die_de_vondst_opneemt_speelde_al)
 opnieuw	again	plain	function word	
+opslag	storage	spec	where a role link is stored (opslagrichting, the storage direction); in a declared name of a test model (takopslag) it is a surcharge: a domain word, as written	added by card drools-word-fixes; IR-SPEC ch. 4.6: storage direction
 opsomming	enumeration	plain		added by card hernoem-drools-backend: 1 name in backends/drools (opsomming)
 optel	summing	plain	the stem in a compound: optelvouw, summing fold	added by card hernoem-drools-backend: 1 name in backends/drools (een_tekstbron_onder_de_optelvouw_valt_in_dezelfde_arm)
 optellend	summing	plain		added by card hernoem-drools-backend: 1 name in backends/drools (optellend)
@@ -1443,7 +1456,8 @@ regels	lines	plain	the lines of a text (over twee regels, over two lines)	added 
 regelversie	ruleStatusCheck	wire	the v0 node Regelversie: regelversie X is inconsistent	the wire keeps v0 `Regelversie` until its v1 form lands (B25)
 regelversie	ruleVersion	wire	a version of a rule	`RuleVersion`
 regelwaarde	ruleValue	plain		
-reikwijdte	scope	wire		
+reikwijdte	scope	wire	only the wire field scope of a uniqueness; how far a step goes is its reach	context sharpened by card drools-word-fixes
+reikwijdte	reach	spec	how far a step or a day-kind walk may go (reikwijdtefout, a reach fault)	added by card drools-word-fixes; RUNTIME-SEMANTICS ch. 3.8, the reach fence
 reken	compute	plain	the verb stem	
 rekendatum	evaluationDate	wire		`ContextValue.name`
 rekenen	compute	plain		
@@ -1487,6 +1501,7 @@ rood	red	plain	the red corpus (`corpus/rood`)	false friend; CLAUDE.md, gate 8
 rooster	grid	spec		false friend; RUNTIME-SEMANTICS §3.2
 ruimste	widest	plain		added by card hernoem-drools-backend: 1 name in backends/drools (ruimste)
 rust	rest	plain	in rust, at rest (een breuk in rust, a rational at rest)	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
+ruw	raw	plain	raw: not yet processed (ruw geval, raw case)	added by card drools-word-fixes
 ruwe	raw	plain		added by card hernoem-drools-backend: 1 name in backends/drools (PREMIE_UIT_RUWE_PREMIE)
 saldo	balance	plain		
 samen	together	plain	function word: verb particle (voeg samen: merge; stel samen: compose)	false friend
@@ -1668,11 +1683,12 @@ termen	terms	plain		added by card hernoem-drools-backend: the translator flagged
 termijn	term	plain	a period of time	added by card hernoem-drools-backend: in 3 identifiers (11 occurrences)
 terug	back	plain	function word: verb particle (leest terug, geeft terug)	
 teruggave	return	plain		added by card hernoem-drools-backend: in 2 identifiers (8 occurrences)
-teruggezet	reset	plain		
+teruggezet	writtenBack	plain	written back onto the beans by zetAfgeleideWaarden (deze sessie is teruggezet, this session is written back)	corrected by card drools-word-fixes
 terugkeer	recurrence	plain	the recurrence of a date pattern (de langste gregoriaanse terugkeer)	added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 terugval	fallback	wire		`emptyFallback`
-terugzetten	reset	plain		
-terugzetting	restore	plain		added by card hernoem-drools-backend: 1 name in backends/drools (TmsTerugzettingWitnessTest)
+terugzet	writeBack	plain	the stem of terugzetten in a compound: terugzetMs, the write-back in milliseconds	added by card drools-word-fixes
+terugzetten	writeBack	plain	the write-back: zetAfgeleideWaarden puts what stands in a session onto its beans (lees en terugzetten, read and write back); never reset	corrected by card drools-word-fixes: reset says the opposite
+terugzetting	writeBack	plain	the write-back of a session onto its beans (zetAfgeleideWaarden)	corrected by card drools-word-fixes
 terwijl	while	plain	function word	
 tien	ten	plain		false friend
 tijd	time	wire		
@@ -1690,7 +1706,8 @@ tijdsevenredig deel	timeProportionalPart	wire		`BuiltinCall.kind`
 tijdsevenredige	timeProportional	wire		added by card hernoem-drools-backend: 1 name in backends/drools (de_tijdsevenredige_basis_speelt_bij_aantal_een)
 tijdvak	period	wire	a period of a timeline	
 tijdvakken	periods	wire		added by card hernoem-drools-backend: in 2 identifiers (10 occurrences)
-tijdvrije	timeless	plain		added by card hernoem-drools-backend: 1 name in backends/drools (in_een_tijdvrije_sessie_haalt_geen_bijdrager_het_venster)
+tijdvrij	timeFree	spec	without an evaluation date: a time-free session	added by card drools-word-fixes; RUNTIME-SEMANTICS ch. 3.12
+tijdvrije	timeFree	spec	without an evaluation date: a time-free session	corrected by card drools-word-fixes; RUNTIME-SEMANTICS ch. 3.12
 titel	title	plain		added by card hernoem-drools-backend: the translator flagged it (ronde 2)
 toch	nevertheless	plain	function word	
 toe	to	plain	function word: verb particle (voeg toe: add; laat toe: allow)	false friend
@@ -1859,7 +1876,7 @@ verouderd	outdated	plain		added by card hernoem-drools-backend: 1 name in backen
 verouderde	outdated	plain		added by card hernoem-drools-backend: keeps 1 name outside backends/drools split right beside the rows the card added (de_zoekregel_weigert_een_verouderde_zin in frontends/regelspraak)
 verplaatsing	move	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_begeleider_leest_de_voorwaarde_zonder_verplaatsing)
 verplicht	required	plain	a required field	added by card hernoemgereedschap: 2 names in the loader tests (een_ontbrekend_verplicht_veld_weigert)
-verre	remote	plain	a role membership along a navigation	false friend
+verre	far	spec	the far side of a role check or a navigation (de verre rolcheck, the far-side role check; het verre lid, the far member)	corrected by card drools-word-fixes; RUNTIME-SEMANTICS ch. 5.8a: far-side
 verre rollidmaatschap	roleMembership	wire	the v0 node VerreRollidmaatschap	
 vers	fresh	plain		false friend
 verschil	difference	plain		
@@ -1927,10 +1944,11 @@ volgordes	orders	spec		RUNTIME-SEMANTICS §5.11
 volgt	follows	plain		
 volledig	complete	plain		added by card hernoem-drools-backend: in 2 identifiers (26 occurrences)
 volledige	full	plain		
-voor	before	plain	function word: earlier in time or in order (voor de lezing, before the read; voor de peildatum, before the as-of date)	context sharpened by card hernoem-drools-backend: the translator flagged it
+voor	before	plain	function word: earlier in time or in order (voor de lezing, before the read; voor de peildatum, before the as-of date; de schrijver voor de vouw, the writer before the fold)	context sharpened by card hernoem-drools-backend: the translator flagged it; examples added by card drools-word-fixes
 voor	for	plain	function word: a purpose or what something holds for (een regel voor elke vondst, a rule for each find; voorElk, forEach)	context sharpened by card hernoem-drools-backend: the translator flagged it
 vooraan	first	plain	function word: vooraan, at the front	
 voorafgaat	precedes	plain		added by card hernoem-drools-backend: 1 name in backends/drools (een_lezing_die_aan_de_deling_voorafgaat_kapt_via_de_barriere_de_fout_af)
+voorafgerond	preRounded	spec	rounded before the operation	added by card drools-word-fixes; IR-SPEC ch. 2.5: pre-rounded
 voorafgeronde	preRounded	plain		added by card hernoem-drools-backend: 1 name in backends/drools (VoorafgerondeFactorWitnessTest)
 voorbeeld	example	plain		
 voorbeelden	examples	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_voorbeelden_van_hoofdstuk_3_8_zijn_een_fout)
@@ -1962,6 +1980,7 @@ vraagt	requires	plain	vraagt een X: requires an X	added by card hernoemgereedsch
 vreemd	foreign	plain		
 vreemde	foreign	plain		
 vrij	free	plain		
+vrijgesteld	exempt	plain	exempt (vrijgesteld door ouder, exempt by a parent)	added by card drools-word-fixes
 vrijtellingen	exemptions	plain		added by card hernoem-drools-backend: 1 name in backends/drools (vrijtellingen)
 vroegere	earlier	plain		added by card hernoem-drools-backend: 1 name in backends/drools (de_vroegere_weigeringsassen_krijgen_op_beide_takken_een_oordeel)
 vul	fill	plain		added by card hernoem-drools-backend: in 3 identifiers (27 occurrences)

@@ -79,7 +79,7 @@ class AllocationRoleWitnessTest {
                 "the recipients must be those of the bound reservedeelname relation");
     }
 
-    @Test void a_binding_with_many_sister_is_refused_on_the_opslag_direction() throws Exception {
+    @Test void a_binding_with_many_sister_is_refused_on_the_storage_direction() throws Exception {
         // bergingstoezicht binds Berger as toezichthouder; the source side 'bewaakte berging' is to-many, so the
         // relation is stored on Berging and Berger carries no field to join on
         ObjectNode ir = lees(TOEZICHT);

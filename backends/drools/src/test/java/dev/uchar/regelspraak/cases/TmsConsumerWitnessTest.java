@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       {@code fireAllRules}, and write nothing; both refuse a session whose last {@code vuur} stopped at the cap, with
  *       the sentence of that {@code vuur}, and read the next {@code vuur} that reaches the fixpoint; and {@code lees}
  *       refuses a session whose last {@code vuur} broke off with an exception, here the filter document of
- *       {@link TmsFilterErrorWitnessTest} with its beans inserted without {@code voegIn}, so that the filter fault rule
+ *       {@link TmsFilterFaultWitnessTest} with its beans inserted without {@code voegIn}, so that the filter fault rule
  *       finds no place. What {@code lees} gives is thus always a fixpoint.</li>
  *   <li>And after a {@code vuur} that reached its fixpoint (the second fix round of step 3, point 1), both refuse a
  *       session in which something happened outside {@code vuur}, naming what happened and the way on, and write
@@ -103,7 +103,7 @@ class TmsConsumerWitnessTest {
 
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
-    @Test void an_object_creation_stands_after_the_reset_on_both_sides_on_the_beans() throws Exception {
+    @Test void an_object_creation_stands_after_the_write_back_on_both_sides_on_the_beans() throws Exception {
         play("anchor/jutterswet-rekenkamer", "case1-berekend.json", (bouw, sessie, labels) -> {
             Object j1 = labels.get("J1");
             assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint");
@@ -132,7 +132,7 @@ class TmsConsumerWitnessTest {
         });
     }
 
-    @Test void a_fact_creation_stands_after_the_reset_on_the_field_of_its_own_fact_type() throws Exception {
+    @Test void a_fact_creation_stands_after_the_write_back_on_the_field_of_its_own_fact_type() throws Exception {
         play("jutterswet-dubbelverbinding", "case1-binnen-venster.json", (bouw, sessie, labels) -> {
             Object h1 = labels.get("H1"), s1 = labels.get("S1"), s4 = labels.get("S4");
             assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint");
@@ -164,7 +164,7 @@ class TmsConsumerWitnessTest {
         });
     }
 
-    @Test void read_and_reset_refuse_a_session_that_did_not_fire_via_fire() throws Exception {
+    @Test void read_and_write_back_refuse_a_session_that_did_not_fire_via_fire() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsRepeatedFireWitnessTest.valueDocument(),
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
@@ -188,7 +188,7 @@ class TmsConsumerWitnessTest {
         });
     }
 
-    @Test void read_and_reset_refuse_a_session_whose_last_fire_reached_no_fixpoint() throws Exception {
+    @Test void read_and_write_back_refuse_a_session_whose_last_fire_reached_no_fixpoint() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsRepeatedFireWitnessTest.valueDocument(),
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
@@ -215,7 +215,7 @@ class TmsConsumerWitnessTest {
     }
 
     @Test void read_refuses_a_session_whose_last_fire_aborted() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(TmsFilterErrorWitnessTest.document(TmsFilterErrorWitnessTest.ZWARE),
+        DroolsBackend.Build b = DroolsBackend.build(TmsFilterFaultWitnessTest.document(TmsFilterFaultWitnessTest.ZWARE),
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
@@ -236,7 +236,7 @@ class TmsConsumerWitnessTest {
         });
     }
 
-    @Test void a_change_and_a_bare_fire_after_fire_refuse_read_and_reset_on_a_model_with_creation()
+    @Test void a_change_and_a_bare_fire_after_fire_refuse_read_and_write_back_on_a_model_with_creation()
             throws Exception {
         play("anchor/jutterswet-rekenkamer", "case1-berekend.json", (bouw, sessie, labels) -> {
             Object j1 = labels.get("J1");
@@ -256,7 +256,7 @@ class TmsConsumerWitnessTest {
         });
     }
 
-    @Test void after_an_update_read_read_and_reset_only_after_a_next_fire() throws Exception {
+    @Test void after_an_update_read_and_write_back_read_only_after_a_next_fire() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsRepeatedFireWitnessTest.valueDocument(),
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
@@ -284,7 +284,7 @@ class TmsConsumerWitnessTest {
         });
     }
 
-    @Test void an_update_after_putting_back_points_read_to_a_fresh_session() throws Exception {
+    @Test void an_update_after_the_write_back_points_read_to_a_fresh_session() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsRepeatedFireWitnessTest.valueDocument(),
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
@@ -300,7 +300,7 @@ class TmsConsumerWitnessTest {
                 Object v1 = beans.get("V1");
                 TmsRepeatedFireWitnessTest.set(v1, "gewicht", "3");
                 sessie.update(sessie.getFactHandle(v1), v1);
-                assertEquals(outsideFire(naam(v1) + " werd gewijzigd met update", FRESH_AFTER_RESET),
+                assertEquals(outsideFire(naam(v1) + " werd gewijzigd met update", FRESH_AFTER_WRITE_BACK),
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(),
                         "the reading after an update of a written-back session");
             } finally {
@@ -353,11 +353,11 @@ class TmsConsumerWitnessTest {
 
     // ---------------- helpers ----------------
 
-    /** Sets up case {@code caseDocument} of golden {@code golden} on the exec-model branch as the replay does, through
+    /** Sets up case {@code caseFileName} of golden {@code golden} on the exec-model branch as the replay does, through
      *  {@link DroolsBackend#voegIn}, and hands the session, not yet fired, to {@code meting}. */
-    private static void play(String golden, String caseDocument, CaseRunner.SessionMeasurement<Void> measurement) throws Exception {
+    private static void play(String golden, String caseFileName, CaseRunner.SessionMeasurement<Void> measurement) throws Exception {
         Path ir = CORPUS.resolve(golden).resolve("ir.json");
-        JsonNode c = TmsDocuments.JSON.readTree(Files.readString(ir.resolveSibling(caseDocument)));
+        JsonNode c = TmsDocuments.JSON.readTree(Files.readString(ir.resolveSibling(caseFileName)));
         CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL).withSession(c, measurement);
     }
 
@@ -366,7 +366,7 @@ class TmsConsumerWitnessTest {
     static final String FIRE_FIRST = "vuur haar eerst opnieuw met DroolsBackend.vuur";
     static final String FRESH_AT_CREATION = "dit model heeft creatieregels, dus DroolsBackend.vuur weigert een tweede"
             + " fire: open een verse sessie";
-    static final String FRESH_AFTER_RESET = "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een"
+    static final String FRESH_AFTER_WRITE_BACK = "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een"
             + " verse sessie met beans die alleen invoer dragen";
 
     /** The sentence of {@code lees} and {@code zetAfgeleideWaarden} where {@code description} happened outside {@code vuur}

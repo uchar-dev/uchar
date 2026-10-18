@@ -543,7 +543,7 @@ class RulePlanWitnessTest {
                     + n.patterns().stream().map(RulePlanWitnessTest::pattern).toList());
             case Exists b -> "bestaat " + b.patterns().stream().map(RulePlanWitnessTest::pattern).toList();
             case Accumulation a -> "accumulatie " + pattern(a.bron()) + " functies "
-                    + a.functions().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
+                    + a.aggregations().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
             case TestItem t -> "toets " + t.id() + " " + t.rol() + " sonde " + t.depositFlag() + " slots " + t.slots()
                     + " grootte " + t.size() + ": " + TermTree.tree(t.test());
         };

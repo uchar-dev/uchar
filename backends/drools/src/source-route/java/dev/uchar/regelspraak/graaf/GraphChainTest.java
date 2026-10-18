@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 import static dev.uchar.regelspraak.graaf.TwoRoutes.edges;
-import static dev.uchar.regelspraak.graaf.TwoRoutes.jsonNode;
+import static dev.uchar.regelspraak.graaf.TwoRoutes.node;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -115,7 +115,7 @@ class GraphChainTest {
     private static void assertMember(String route, RegelGraaf g) {
         assertEquals(1, g.nodes().stream().filter(n -> n.label().startsWith("ervaren ·")).count(),
                 () -> route + ": één elementknoop voor één lid: " + g.nodes());
-        RegelGraaf.Node ervaren = jsonNode(g, "ervaren · jutter");
+        RegelGraaf.Node ervaren = node(g, "ervaren · jutter");
         assertEquals(RegelGraaf.NodeKind.KENMERK, ervaren.kind(), route + ": geen INVOER, er IS een producent");
         assertFalse(ervaren.eindOutput(), route + ": geen eind-output, er IS een consument");
         assertTrue(edges(g).containsAll(Set.of("ervaren bij leeftijd -> ervaren · jutter",
@@ -127,7 +127,7 @@ class GraphChainTest {
         TwoRoutes.lees(MODEL_FLAT + PRODUCER_SUPER + CONSUMER_SUPER).graphs().forEach((route, g) -> {
             assertEquals(5, g.nodes().size(), () -> route + ": " + g.nodes());
             assertEquals(4, g.edges().size(), () -> route + ": " + g.edges());
-            assertEquals(RegelGraaf.NodeKind.INVOER, jsonNode(g, "leeftijd · jutter").kind(), route);
+            assertEquals(RegelGraaf.NodeKind.INVOER, node(g, "leeftijd · jutter").kind(), route);
         });
     }
 }

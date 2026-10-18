@@ -28,7 +28,7 @@ import java.util.Objects;
  * identity, the fault by its kind and its sentence, and the place by value. One member reached along two routes is
  * therefore one fact per route, each with that route's place, so the least of them stays the member's first reach.
  */
-public final class FilterError implements Comparable<FilterError> {
+public final class FilterFault implements Comparable<FilterFault> {
 
     private final String fold;
     private final Object onderwerp;
@@ -37,7 +37,7 @@ public final class FilterError implements Comparable<FilterError> {
     private final List<Integer> place;
     private final String sentence;
 
-    public FilterError(String fold, Object onderwerp, Object element, RuntimeException fout, List<Integer> place) {
+    public FilterFault(String fold, Object onderwerp, Object element, RuntimeException fout, List<Integer> place) {
         this.fold = Objects.requireNonNull(fold, "vouw");
         this.onderwerp = Objects.requireNonNull(onderwerp, "onderwerp");
         this.element = Objects.requireNonNull(element, "element");
@@ -60,7 +60,7 @@ public final class FilterError implements Comparable<FilterError> {
     /** The member's place in the fold order: the selection, then its place per to-many step of its route. */
     public List<Integer> place() { return place; }
 
-    @Override public int compareTo(FilterError o) {
+    @Override public int compareTo(FilterFault o) {
         for (int i = 0; i < Math.min(place.size(), o.place.size()); i++) {
             int c = Integer.compare(place.get(i), o.place.get(i));
             if (c != 0) return c;
@@ -72,7 +72,7 @@ public final class FilterError implements Comparable<FilterError> {
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof FilterError f && f.onderwerp == onderwerp && f.element == element && f.fold.equals(fold)
+        return o instanceof FilterFault f && f.onderwerp == onderwerp && f.element == element && f.fold.equals(fold)
                 && f.fout.getClass() == fout.getClass() && f.sentence.equals(sentence) && f.place.equals(place);
     }
 

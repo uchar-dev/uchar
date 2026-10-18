@@ -41,8 +41,8 @@ class PeriodTest {
         assertEquals(a.hashCode(), b.hashCode());
         assertEquals(List.of(a), List.of(b));
         assertEquals(List.of(a).hashCode(), List.of(b).hashCode());
-        Set<Object> sessionFacts = new HashSet<>(List.of(List.of(a), List.of(b)));
-        assertEquals(1, sessionFacts.size(), "twee gelijke tijdlijnen zijn één feit");
+        Set<Object> facts = new HashSet<>(List.of(List.of(a), List.of(b)));
+        assertEquals(1, facts.size(), "twee gelijke tijdlijnen zijn één feit");
         assertNotEquals(a, new Period(JAN, FEB, new BigDecimal("7.01")));
     }
 
@@ -55,7 +55,7 @@ class PeriodTest {
         assertEquals(List.of(), List.of(), "twee lege tijdlijnen zijn gelijk");
     }
 
-    @Test void another_clip_is_another_value() {
+    @Test void another_cut_is_another_value() {
         List<Period> whole = List.of(new Period(JAN, MRT, new BigDecimal("7")));
         List<Period> cut = List.of(new Period(JAN, FEB, new BigDecimal("7")), new Period(FEB, MRT, new BigDecimal("7")));
         assertNotEquals(whole, cut);
@@ -69,8 +69,8 @@ class PeriodTest {
         assertEquals(0, new BigDecimal("21").compareTo(RegelSpraakRuntime.rsTijdTotaal(timeline, "MAAND")));
         List<Object> clip = RegelSpraakRuntime.rsTijdKnip(timeline, List.of(new Period(FEB, MRT, null)), Period.class);
         assertEquals(List.of(new Period(FEB, MRT, new BigDecimal("11"))), clip);
-        Object recomputed = RegelSpraakRuntime.newSegment(Period.class, JAN, FEB, BigDecimal.TEN);
-        assertEquals(new Period(JAN, FEB, BigDecimal.TEN), recomputed);
+        Object fresh = RegelSpraakRuntime.newSegment(Period.class, JAN, FEB, BigDecimal.TEN);
+        assertEquals(new Period(JAN, FEB, BigDecimal.TEN), fresh);
     }
 
     @Test void list_makes_an_immutable_timeline_and_lets_an_absent_be_absent() {

@@ -8994,7 +8994,7 @@ has two forms.
   read leeg when the middle relation came later). The DRL-text branch
   refuses such a condition by its marker and keeps the one join in a value.*
   *Widened again in the exec-model branch on 2026-10-01 (golden
-  `jutterswet-late-vondst`, witness `FoldFilterRemoteSideWitnessTest`): the
+  `jutterswet-late-vondst`, witness `FoldFilterFarSideWitnessTest`): the
   subselection of a fold, and the filter and the matrix of a quantifier
   fold, read with the element as subject (RUNTIME-SEMANTICS ch. 3.4a,
   3.9a); where such a test reads through a role of the element, the source

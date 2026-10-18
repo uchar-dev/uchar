@@ -44,11 +44,11 @@ class CharacteristicValueWitnessTest {
 
     @Test void a_characteristic_attribution_with_false_is_refused_in_both_branches_by_name() throws Exception {
         Path ir = NEGATIEF;
-        Path goldenCase = write("casus.json", CASE_ABSENT);
+        Path casePath = write("casus.json", CASE_ABSENT);
         for (boolean viaDrl : new boolean[] { false, true }) {
             String branch = viaDrl ? "drl-tekst" : "exec-model";
-            CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlText(ir, List.of(goldenCase))
-                                         : CaseRunner.viaExecModel(ir, List.of(goldenCase));
+            CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlText(ir, List.of(casePath))
+                                         : CaseRunner.viaExecModel(ir, List.of(casePath));
             assertEquals("EXCLUDE", r.status(), branch + " hoort de waarde onwaar te weigeren, niet te spelen: " + r);
             assertTrue(r.reason().contains("WF-022"), branch + " noemt de regel van de norm: " + r.reason());
             assertTrue(r.reason().contains("'geen herleving'"), branch + " noemt de regel: " + r.reason());
@@ -58,10 +58,10 @@ class CharacteristicValueWitnessTest {
 
     @Test void the_same_rule_with_true_plays_in_both_branches() throws Exception {
         Path ir = write("waar-ir.json", document("waar"));
-        Path goldenCase = write("casus-waar.json", CASE_AANWEZIG);
+        Path casePath = write("casus-waar.json", CASE_AANWEZIG);
         for (boolean viaDrl : new boolean[] { false, true }) {
-            CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlText(ir, List.of(goldenCase))
-                                         : CaseRunner.viaExecModel(ir, List.of(goldenCase));
+            CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlText(ir, List.of(casePath))
+                                         : CaseRunner.viaExecModel(ir, List.of(casePath));
             assertEquals("PLAYED", r.status(), (viaDrl ? "drl-tekst" : "exec-model") + ": " + r);
         }
     }

@@ -59,15 +59,15 @@ class TmsCharacteristicDecisionWitnessTest {
     private static final Map<String, List<String>> INVOER = new LinkedHashMap<>();
     private static final Map<String, Boolean> VRIJGESTELD = new LinkedHashMap<>();
     static {
-        caseOf("J1", List.of("nx"), true);
-        caseOf("J2", List.of("nx", "y0"), false);
-        caseOf("J3", List.of("y0", "vrijgesteld"), true);
-        caseOf("J4", List.of("nx", "y0", "vrijgesteld"), true);
-        caseOf("J5", List.of(), false);
-        caseOf("J6", List.of("nx", "vrijgesteld"), true);
+        addCase("J1", List.of("nx"), true);
+        addCase("J2", List.of("nx", "y0"), false);
+        addCase("J3", List.of("y0", "vrijgesteld"), true);
+        addCase("J4", List.of("nx", "y0", "vrijgesteld"), true);
+        addCase("J5", List.of(), false);
+        addCase("J6", List.of("nx", "vrijgesteld"), true);
     }
 
-    private static void caseOf(String label, List<String> kenmerken, boolean vrijgesteld) {
+    private static void addCase(String label, List<String> kenmerken, boolean vrijgesteld) {
         INVOER.put(label, kenmerken);
         VRIJGESTELD.put(label, vrijgesteld);
     }

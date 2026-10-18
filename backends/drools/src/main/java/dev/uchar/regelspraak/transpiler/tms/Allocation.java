@@ -44,7 +44,7 @@ public final class Allocation {
      * empty pot, eligible weights that sum to 0); and the recipients on which a degradation surfaces the §9.5 deposit
      * of the allocation (ch. 4.3, 4.4), each once.
      */
-    public record Result(Map<Object, BigDecimal> shares, BigDecimal rest, Set<Object> depositCount) {}
+    public record Result(Map<Object, BigDecimal> shares, BigDecimal rest, Set<Object> depositors) {}
 
     /**
      * The distribution by {@code methode} of {@code pot} over {@code ontvangers}, the recipients of one source:
@@ -56,17 +56,17 @@ public final class Allocation {
     public static Result bereken(ResolvedVerdeling.Methode methode, Object pot, List<Recipient> recipients, boolean gewogen,
                            boolean capped, Integer decimals, boolean descending) {
         Map<Object, BigDecimal> shares = new IdentityHashMap<>();
-        Set<Object> depositCount = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<Object> depositors = Collections.newSetFromMap(new IdentityHashMap<>());
         // ch. 4.4: zero recipients write nothing and raise nothing, whatever the pot
-        if (recipients.isEmpty()) return new Result(shares, null, depositCount);
+        if (recipients.isEmpty()) return new Result(shares, null, depositors);
         // ch. 4.4, decided for v1 and uniform across the methods: an empty pot is no distribution, so it writes no
         // share and no rest and deposits nothing, not even for an empty weight or cap, and it is no fault
-        if (pot == null) return new Result(shares, null, depositCount);
+        if (pot == null) return new Result(shares, null, depositors);
         return switch (methode) {
-            case GELIJKE_DELEN -> equalShares(pot, recipients, decimals, shares, depositCount);
-            case NAAR_RATO -> proportional(pot, recipients, capped, decimals, shares, depositCount);
+            case GELIJKE_DELEN -> equalShares(pot, recipients, decimals, shares, depositors);
+            case NAAR_RATO -> proportional(pot, recipients, capped, decimals, shares, depositors);
             case OP_VOLGORDE -> ordered(pot, recipients, gewogen, capped, decimals, descending, shares,
-                    depositCount);
+                    depositors);
             case COMPLEX -> throw new IllegalStateException("een verdeling met de methode COMPLEX bereikt de berekening;"
                     + " de lader weigert die waarde sinds L4");
         };
@@ -74,7 +74,7 @@ public final class Allocation {
 
     /** One group, every recipient, unweighted (ch. 4.2); a cap is ill-formed here (WF-025) and refused before. */
     private static Result equalShares(Object pot, List<Recipient> recipients, Integer decimals,
-                                        Map<Object, BigDecimal> shares, Set<Object> depositCount) {
+                                        Map<Object, BigDecimal> shares, Set<Object> depositors) {
         BigDecimal a = RegelSpraakRuntime.toBd(pot);
         BigDecimal n = BigDecimal.valueOf(recipients.size());
         BigDecimal sum = BigDecimal.ZERO;
@@ -83,7 +83,7 @@ public final class Allocation {
             shares.put(o.recipient(), aandeel);
             sum = sum.add(aandeel);
         }
-        return new Result(shares, a.subtract(sum), depositCount);
+        return new Result(shares, a.subtract(sum), depositors);
     }
 
     /**
@@ -94,40 +94,40 @@ public final class Allocation {
      * split that distributes, as the reference interpreter reads it (ch. 4.3).
      */
     private static Result proportional(Object pot, List<Recipient> recipients, boolean capped, Integer decimals,
-                                    Map<Object, BigDecimal> shares, Set<Object> depositCount) {
+                                    Map<Object, BigDecimal> shares, Set<Object> depositors) {
         BigDecimal a = RegelSpraakRuntime.toBd(pot);
         List<Recipient> gerechtigd = new ArrayList<>();
         List<BigDecimal> gewichten = new ArrayList<>();
         BigDecimal weightSum = BigDecimal.ZERO;
         for (Recipient o : recipients) {
             if (o.weight() == null) {
-                depositCount.add(o.recipient());
+                depositors.add(o.recipient());
                 continue;
             }
             BigDecimal w = RegelSpraakRuntime.toBd(o.weight());
             if (w.signum() < 0) {
-                depositCount.add(o.recipient());
+                depositors.add(o.recipient());
                 w = BigDecimal.ZERO;
             }
             gerechtigd.add(o);
             gewichten.add(w);
             weightSum = weightSum.add(w);
         }
-        if (weightSum.signum() == 0) return new Result(shares, null, depositCount);
+        if (weightSum.signum() == 0) return new Result(shares, null, depositors);
         BigDecimal sum = BigDecimal.ZERO;
         for (int i = 0; i < gerechtigd.size(); i++) {
             Recipient o = gerechtigd.get(i);
             BigDecimal aandeel = a.multiply(gewichten.get(i)).divide(weightSum, MathContext.DECIMAL64);
             if (capped) {
                 BigDecimal max = RegelSpraakRuntime.toBd(o.maximum());
-                if (max == null || max.signum() < 0) depositCount.add(o.recipient());
+                if (max == null || max.signum() < 0) depositors.add(o.recipient());
                 aandeel = RegelSpraakRuntime.rsPlafond(aandeel, max);
             }
             aandeel = floor(aandeel, decimals);
             shares.put(o.recipient(), aandeel);
             sum = sum.add(aandeel);
         }
-        return new Result(shares, a.subtract(sum), depositCount);
+        return new Result(shares, a.subtract(sum), depositors);
     }
 
     /**
@@ -139,35 +139,35 @@ public final class Allocation {
      */
     private static Result ordered(Object pot, List<Recipient> recipients, boolean gewogen, boolean capped,
                                       Integer decimals, boolean descending, Map<Object, BigDecimal> shares,
-                                      Set<Object> depositCount) {
+                                      Set<Object> depositors) {
         BigDecimal a = RegelSpraakRuntime.toBd(pot);
-        List<Object> sessionFacts = new ArrayList<>(), keyNames = new ArrayList<>();
+        List<Object> facts = new ArrayList<>(), orderKeys = new ArrayList<>();
         List<Object> gewichten = gewogen ? new ArrayList<>() : null, maxima = capped ? new ArrayList<>() : null;
         for (Recipient o : recipients) {
-            sessionFacts.add(o.recipient());
-            keyNames.add(o.sleutel() instanceof BigDecimal d ? d.stripTrailingZeros() : o.sleutel());
+            facts.add(o.recipient());
+            orderKeys.add(o.sleutel() instanceof BigDecimal d ? d.stripTrailingZeros() : o.sleutel());
             if (gewogen) {
-                if (o.weight() == null) depositCount.add(o.recipient());
+                if (o.weight() == null) depositors.add(o.recipient());
                 // a weighted tie group always splits by weight, so an empty weight is the real 0 it counts as
                 gewichten.add(o.weight() == null ? BigDecimal.ZERO : RegelSpraakRuntime.toBd(o.weight()));
             }
             if (capped) {
                 BigDecimal max = RegelSpraakRuntime.toBd(o.maximum());
-                if (max == null || max.signum() < 0) depositCount.add(o.recipient());
+                if (max == null || max.signum() < 0) depositors.add(o.recipient());
                 maxima.add(max);
             }
         }
-        Map<Object, BigDecimal> out = RegelSpraakRuntime.rsVerdeelOpVolgorde(a, sessionFacts, keyNames, !descending, gewichten,
+        Map<Object, BigDecimal> out = RegelSpraakRuntime.rsVerdeelOpVolgorde(a, facts, orderKeys, !descending, gewichten,
                 maxima, decimals);
         BigDecimal sum = BigDecimal.ZERO;
-        for (Object f : sessionFacts) {
+        for (Object f : facts) {
             BigDecimal aandeel = out.get(f);
             if (aandeel == null)
                 throw new IllegalStateException("rsVerdeelOpVolgorde gaf geen aandeel voor " + FactNames.object(f));
             shares.put(f, aandeel);
             sum = sum.add(aandeel);
         }
-        return new Result(shares, a.subtract(sum), depositCount);
+        return new Result(shares, a.subtract(sum), depositors);
     }
 
     /** The floor at {@code decimals} decimals (ch. 4.3), the identity without them. */

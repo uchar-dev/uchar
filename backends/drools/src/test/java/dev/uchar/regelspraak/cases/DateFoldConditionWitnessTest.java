@@ -119,12 +119,12 @@ class DateFoldConditionWitnessTest {
         // "indien hij aan alle volgende voorwaarden voldoet: zijn vinddag is gevuld; de laatste van … is later dan zijn
         // meldtermijn" (J1); "… ten minste één van …: zijn vinddag is leeg; de laatste van … is later dan …" (J1 and J4);
         // "… geen van de volgende voorwaarden: de laatste van … is later dan …" (all but J1).
-        String laterComparison = vgl("later", fold("last"), MELDTERMIJN);
+        String late = vgl("later", fold("last"), MELDTERMIJN);
         assertNull(play(document(characteristicRule("late melding", compound("all", 0, predicate("filled", own("vinddag",
-                "Jutter")), laterComparison))), caseDocument(kenmerken("late melding", true, false, false, false, false))), "alle");
+                "Jutter")), late))), caseDocument(kenmerken("late melding", true, false, false, false, false))), "alle");
         assertNull(play(document(characteristicRule("late melding", compound("atLeast", 1, predicate("empty", own("vinddag",
-                "Jutter")), laterComparison))), caseDocument(kenmerken("late melding", true, false, false, true, false))), "ten minste één");
-        assertNull(play(document(characteristicRule("late melding", compound("none", 0, laterComparison))),
+                "Jutter")), late))), caseDocument(kenmerken("late melding", true, false, false, true, false))), "ten minste één");
+        assertNull(play(document(characteristicRule("late melding", compound("none", 0, late))),
                 caseDocument(kenmerken("late melding", false, true, true, true, true))), "geen van");
     }
 
@@ -172,9 +172,9 @@ class DateFoldConditionWitnessTest {
         String withoutFindDay = standaard(predicate("empty", own("vinddag", "Jutter")), DAY_ONE);
         assertNull(play(document(null, group("uitkomst", "Jutter", "attribute", "uitkomst", withoutFindDay, base)),
                 caseDocument(outcomes("2026-04-10", null, null, "2026-01-01", null))), "de basis");
-        String laterComparison = standaard(vgl("earlier", MELDTERMIJN, fold("last")), MELDTERMIJN);
+        String late = standaard(vgl("earlier", MELDTERMIJN, fold("last")), MELDTERMIJN);
         String vinddag = standaard(predicate("filled", own("vinddag", "Jutter")), own("vinddag", "Jutter"));
-        assertNull(play(document(null, group("uitkomst", "Jutter", "attribute", "uitkomst", laterComparison, vinddag)),
+        assertNull(play(document(null, group("uitkomst", "Jutter", "attribute", "uitkomst", late, vinddag)),
                 caseDocument(outcomes("2026-04-10", "2026-03-10", "2026-03-10", null, "2026-03-10"))), "een afwijking");
     }
 
@@ -184,10 +184,10 @@ class DateFoldConditionWitnessTest {
         // sluitdag": K2 and K3 (an empty source); K4 has no sluitdag.
         String open = "{\"node\":\"Default\",\"decision\":true,\"justification\":"
                 + predicate("filled", own("sluitdag", "Kustwacht")) + "}";
-        String laterComparison = "{\"node\":\"Default\",\"decision\":false,\"justification\":" + compound("all", 0,
+        String late = "{\"node\":\"Default\",\"decision\":false,\"justification\":" + compound("all", 0,
                 predicate("filled", own("sluitdag", "Kustwacht")), vgl("later", kustFold("last"), own("sluitdag",
                 "Kustwacht"))) + "}";
-        assertNull(play(document(null, group("open post", "Kustwacht", "characteristic", "open post", laterComparison, open)),
+        assertNull(play(document(null, group("open post", "Kustwacht", "characteristic", "open post", late, open)),
                 caseDocument(kustwachten("open post", false, true, true, false))));
     }
 

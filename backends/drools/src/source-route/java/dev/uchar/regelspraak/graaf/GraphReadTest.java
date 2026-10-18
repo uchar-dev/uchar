@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static dev.uchar.regelspraak.graaf.TwoRoutes.edges;
-import static dev.uchar.regelspraak.graaf.TwoRoutes.jsonNode;
+import static dev.uchar.regelspraak.graaf.TwoRoutes.node;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,7 +44,7 @@ class GraphReadTest {
     @Test void the_navigated_characteristic_check_reads_the_characteristic_of_the_reached_type() {
         TwoRoutes.lees(POSTEN).graphs().forEach((route, g) -> {
             assertTrue(edges(g).contains("risicopost · post -> seingerechtigd bij risicopost"), () -> route + ": " + edges(g));
-            assertFalse(jsonNode(g, "risicopost · post").eindOutput(), route + ": de genavigeerde check leest het kenmerk");
+            assertFalse(node(g, "risicopost · post").eindOutput(), route + ": de genavigeerde check leest het kenmerk");
             assertTrue(g.nodes().stream().noneMatch(n -> n.label().equals("risicopost · wachter")),
                     () -> route + ": de check leest niet het eigen kenmerk van de wachter: " + g.nodes());
             assertTrue(g.dependencies().stream().anyMatch(a -> a.producer().equals("risicopost bij hoogte")
@@ -65,8 +65,8 @@ class GraphReadTest {
         TwoRoutes.Twin t = TwoRoutes.lees(POSTEN);
         RegelGraaf fout = RegelGraaf.bouw(t.wire().model(), t.wire().prioritizedDefaults(),
                 ProducentConsument.bronNavigatie(t.wire().model()));
-        assertEquals(RegelGraaf.NodeKind.INVOER, jsonNode(fout, "risicopost · wachter").kind());
-        assertTrue(jsonNode(fout, "risicopost · post").eindOutput());
+        assertEquals(RegelGraaf.NodeKind.INVOER, node(fout, "risicopost · wachter").kind());
+        assertTrue(node(fout, "risicopost · post").eindOutput());
     }
 
     @Test void a_navigated_check_on_a_characteristic_of_two_declarants_reads_that_of_the_reached_type() {
@@ -87,7 +87,7 @@ class GraphReadTest {
         TwoRoutes.lees(bron).graphs().forEach((route, g) -> {
             assertTrue(edges(g).contains("risicopost · post -> seingerechtigd bij risicopost"), () -> route + ": " + edges(g));
             assertFalse(edges(g).contains("risicopost · kustvak -> seingerechtigd bij risicopost"), () -> route + ": " + edges(g));
-            assertTrue(jsonNode(g, "risicopost · kustvak").eindOutput(), route + ": het kenmerk van het kustvak leest niemand");
+            assertTrue(node(g, "risicopost · kustvak").eindOutput(), route + ": het kenmerk van het kustvak leest niemand");
             assertEquals(Set.of("risicopost bij hoogte"), g.dependencies().stream()
                     .filter(a -> a.consumer().equals("seingerechtigd bij risicopost"))
                     .map(RegelGraaf.Dependency::producer).collect(Collectors.toSet()), route);
@@ -126,7 +126,7 @@ class GraphReadTest {
             assertTrue(edges(g).contains("waardevol · vondst -> pronkstukaantal van een jutter"), () -> route + ": " + edges(g));
             assertTrue(g.nodes().stream().noneMatch(n -> n.label().equals("waardevol · jutter")),
                     () -> route + ": " + g.nodes());
-            assertFalse(jsonNode(g, "waardevol · vondst").eindOutput(), route);
+            assertFalse(node(g, "waardevol · vondst").eindOutput(), route);
         });
     }
 

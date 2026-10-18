@@ -64,7 +64,7 @@ final class TmsTimelineDocuments {
     /** "het tijdsevenredig deel per {@code granularity} van zijn {@code basis} gedurende de tijd dat {@code filter}"
      *  (RUNTIME-SEMANTICS ch. 3.7). */
     static String timeProportional(String base, String type, String filter, String granularity) {
-        return "{\"node\":\"BuiltinCall\",\"kind\":\"timeProportionalPart\",\"arguments\":[" + TmsDocuments.reading(base, type)
+        return "{\"node\":\"BuiltinCall\",\"kind\":\"timeProportionalPart\",\"arguments\":[" + TmsDocuments.ownRead(base, type)
                 + "],\"filter\":" + filter + ",\"granularity\":\"" + granularity + "\",\"type\":" + WHOLE
                 + ",\"source\":{\"snippet\":\"het tijdsevenredig deel per " + granularity + " van zijn " + base + "\"}}";
     }
@@ -79,7 +79,7 @@ final class TmsTimelineDocuments {
     /** "het totaal van zijn {@code attribuut}", optionally "gedurende" {@code filter} ("null" for none): the total of the
      *  subject's own timeline (RUNTIME-SEMANTICS ch. 3.6), a fold without a range. */
     static String ownTotal(String attribuut, String type, String filter) {
-        return "{\"node\":\"Aggregation\",\"kind\":\"total\",\"arguments\":[" + TmsDocuments.reading(attribuut, type)
+        return "{\"node\":\"Aggregation\",\"kind\":\"total\",\"arguments\":[" + TmsDocuments.ownRead(attribuut, type)
                 + "],\"elementType\":\"" + type + "\"" + (filter.equals("null") ? "" : ",\"filter\":" + filter)
                 + ",\"type\":" + WHOLE + ",\"source\":{\"snippet\":\"het totaal van zijn " + attribuut + "\"}}";
     }

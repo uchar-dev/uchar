@@ -73,8 +73,8 @@ class BranchDumpsCorpusWitnessTest {
         int compared = 0, cases = 0;
         for (Path g : goldens) {
             List<Path> casePaths = new ArrayList<>();
-            for (Path caseDocument : casePaths(g))
-                if (!TmsDocuments.JSON.readTree(caseDocument.toFile()).has("expectedFault")) casePaths.add(caseDocument);
+            for (Path casePath : casePaths(g))
+                if (!TmsDocuments.JSON.readTree(casePath.toFile()).has("expectedFault")) casePaths.add(casePath);
             if (casePaths.isEmpty()) continue;
             String naam = CORPUS.resolve("golden").relativize(g).toString();
             Path ir = g.resolve("ir.json");
@@ -87,9 +87,9 @@ class BranchDumpsCorpusWitnessTest {
                 continue;
             }
             compared++;
-            for (Path caseDocument : casePaths) {
-                JsonNode c = TmsDocuments.JSON.readTree(caseDocument.toFile());
-                String which = naam + "/" + caseDocument.getFileName();
+            for (Path casePath : casePaths) {
+                JsonNode c = TmsDocuments.JSON.readTree(casePath.toFile());
+                String which = naam + "/" + casePath.getFileName();
                 String a = BranchDumps.dump(exec, c), b = BranchDumps.dump(drl, c);
                 if (a.lines().noneMatch(r -> r.equals("fixpunt ja"))) withoutFixpoint.add(which);
                 String difference = firstDifference(comparable(a), comparable(b));
@@ -112,12 +112,12 @@ class BranchDumpsCorpusWitnessTest {
             casePaths = s.filter(p -> p.getFileName().toString().matches("case.*\\.json")).sorted().toList();
         }
         List<String> differences = new ArrayList<>();
-        for (Path caseDocument : casePaths) {
-            Path ir = caseDocument.resolveSibling("ir.json");
-            CaseRunner.RedResult exec = CaseRunner.runRed(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL);
-            CaseRunner.RedResult drl = CaseRunner.runRed(ir, caseDocument, DroolsBackend.Branch.DRL_TEXT);
+        for (Path casePath : casePaths) {
+            Path ir = casePath.resolveSibling("ir.json");
+            CaseRunner.RedResult exec = CaseRunner.runRed(ir, casePath, DroolsBackend.Branch.EXEC_MODEL);
+            CaseRunner.RedResult drl = CaseRunner.runRed(ir, casePath, DroolsBackend.Branch.DRL_TEXT);
             if (!exec.equals(drl))
-                differences.add(CORPUS.resolve("rood").relativize(caseDocument) + ": exec-model " + exec + " | drl-tekst " + drl);
+                differences.add(CORPUS.resolve("rood").relativize(casePath) + ": exec-model " + exec + " | drl-tekst " + drl);
         }
         assertEquals(List.of(), differences, "rode cases met een ander resultaat op de twee takken");
         int n = casePaths.size();

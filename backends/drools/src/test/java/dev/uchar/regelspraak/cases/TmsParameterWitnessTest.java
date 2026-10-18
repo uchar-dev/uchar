@@ -14,7 +14,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.parameterRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
@@ -53,9 +53,9 @@ class TmsParameterWitnessTest {
 
     private static final List<String> RULES = List.of(
             characteristicRule("zwaar bij drempel", "Vondst", "zwaar",
-                    comparison("greaterOrEqual", reading("gewicht", "Vondst"), parameterRead("drempel"))),
+                    comparison("greaterOrEqual", ownRead("gewicht", "Vondst"), parameterRead("drempel"))),
             computingRule("toeslag van een vondst", "BEREKENING", "Vondst", "toeslag",
-                    binary("plus", reading("gewicht", "Vondst"), parameterRead("tarief")), "null"),
+                    binary("plus", ownRead("gewicht", "Vondst"), parameterRead("tarief")), "null"),
             characteristicRule("goedkoop bij tarief", "Vondst", "goedkoop",
                     comparison("less", parameterRead("tarief"), parameterRead("drempel"))),
             computingRule("korting van een vondst", "BEREKENING", "Vondst", "korting",

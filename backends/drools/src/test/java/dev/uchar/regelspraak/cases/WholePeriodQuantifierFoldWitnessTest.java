@@ -102,7 +102,7 @@ class WholePeriodQuantifierFoldWitnessTest {
 
     // ---------------- the GEEN arm, which is not the negation of the ALLE arm ----------------
 
-    @Test void no_single_member_gets_the_matrix_so_the_none_fold_is_true() throws Exception {
+    @Test void no_single_member_reaches_the_matrix_so_the_none_fold_is_true() throws Exception {
         assertTrue(zeewaardig(ir(foldNode("none", "null", SOURCE_ROLE)), schepen(
                 schuit("S1", "3", "2025-01-01", "2026-01-01"),
                 schuit("S2", "4", "2025-01-01", "2026-01-01"))),
@@ -153,13 +153,13 @@ class WholePeriodQuantifierFoldWitnessTest {
      * onwaar: "niet alle leden halen de matrix" is waar zodra één lid hem mist.
      */
     @Test void the_not_prefix_flips_the_quantifier_over_in_place_of_the_verdict() throws Exception {
-        String noneGetsIt = schepen(schuit("S1", "3", "2025-01-01", "2026-01-01"),
+        String noneReachesIt = schepen(schuit("S1", "3", "2025-01-01", "2026-01-01"),
                                       schuit("S2", "4", "2025-01-01", "2026-01-01"));
-        assertTrue(zeewaardig(ir(foldNode("all", "null", SOURCE_ROLE, true)), noneGetsIt),
+        assertTrue(zeewaardig(ir(foldNode("all", "null", SOURCE_ROLE, true)), noneReachesIt),
                 "ALLE met een genegeerde matrix is GEEN over de positieve matrix");
-        String oneGetsIt = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
+        String oneReachesIt = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
                                      schuit("S2", "4", "2025-01-01", "2026-01-01"));
-        assertFalse(zeewaardig(ir(foldNode("all", "null", SOURCE_ROLE, true)), oneGetsIt),
+        assertFalse(zeewaardig(ir(foldNode("all", "null", SOURCE_ROLE, true)), oneReachesIt),
                 "één lid dat de positieve matrix haalt breekt haar");
     }
 
@@ -416,8 +416,8 @@ class WholePeriodQuantifierFoldWitnessTest {
      * dat BEIDE takken de mutant verwerpen — pas dan zegt de rij hierboven iets over de kwantor.
      */
     @Test void a_mutant_per_golden_is_rejected_by_both_branches() throws Exception {
-        for (String[] queue : MUTANTS) {
-            String naam = queue[0], caseName = queue[1], kenmerk = queue[2];
+        for (String[] row : MUTANTS) {
+            String naam = row[0], caseName = row[1], kenmerk = row[2];
             Path bron = CORPUS.resolve(naam).resolve(caseName);
             ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(bron));
             boolean touched = false;
@@ -493,11 +493,11 @@ class WholePeriodQuantifierFoldWitnessTest {
         }
     }
 
-    /** The replay of {@code caseDocument} on the exec-model branch, after asserting that the DRL-text branch gives the same
+    /** The replay of {@code caseFile} on the exec-model branch, after asserting that the DRL-text branch gives the same
      *  result, status, reason and failures alike. */
-    private static CaseRunner.Result sameVerdict(Path ir, Path caseDocument) {
-        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(caseDocument));
-        assertEquals(exec.toString(), CaseRunner.viaDrlText(ir, List.of(caseDocument)).toString(),
+    private static CaseRunner.Result sameVerdict(Path ir, Path caseFile) {
+        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(caseFile));
+        assertEquals(exec.toString(), CaseRunner.viaDrlText(ir, List.of(caseFile)).toString(),
                 () -> "de DRL-teksttak geeft op " + ir.getFileName() + " een ander oordeel dan de exec-model-tak");
         return exec;
     }
@@ -555,11 +555,11 @@ class WholePeriodQuantifierFoldWitnessTest {
         return foldNode(quantifier, threshold, filter, range, false);
     }
 
-    private static String foldNode(String quantifier, String filter, String range, boolean not) {
-        return foldNode(quantifier, -1, filter, range, not);
+    private static String foldNode(String quantifier, String filter, String range, boolean negated) {
+        return foldNode(quantifier, -1, filter, range, negated);
     }
 
-    private static String foldNode(String quantifier, int threshold, String filter, String range, boolean not) {
+    private static String foldNode(String quantifier, int threshold, String filter, String range, boolean negated) {
         return """
                 { "node": "QuantifierFold", "quantifier": "%s"%s, "elementType": "Schuit",%s
                   "test": {
@@ -572,7 +572,7 @@ class WholePeriodQuantifierFoldWitnessTest {
                   %s,
                   "source": { "snippet": "de wachtwaarde van %s schepen van de Vloot gedurende het gehele jaar groter is dan 10" } }
                 """.formatted(quantifier, threshold < 0 ? "" : ", \"threshold\": " + threshold,
-                        "null".equals(filter) ? "" : "\n  \"filter\": " + filter + ",", NUMERIEK, not, range,
+                        "null".equals(filter) ? "" : "\n  \"filter\": " + filter + ",", NUMERIEK, negated, range,
                         "none".equals(quantifier) ? "geen van de" : "alle");
     }
 

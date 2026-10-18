@@ -297,7 +297,7 @@ public final class ProducentConsument {
      *  (WF-053). */
     public static Navigatie wireNavigatie(IrLoader.Loaded loaded) {
         RegelSpraakModel model = loaded.model();
-        Map<Object, List<RegelSpraakModel.RolBindingRef>> hops = loaded.path();
+        Map<Object, List<RegelSpraakModel.RolBindingRef>> hops = loaded.navigationBindings();
         return (k, onderwerp) -> {
             List<RegelSpraakModel.RolBindingRef> pad = hops.get(k);
             if (pad == null || pad.isEmpty()) return null;

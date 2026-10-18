@@ -21,7 +21,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.predicate;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
@@ -104,8 +104,8 @@ class TmsFilterDepositWitnessTest {
 
     /** "zijn gewicht gedeeld door zijn deelnemers is groter dan 2", a new node on every call. */
     private static String zwaarPerParticipant() {
-        return comparison("greater", TmsFilterErrorWitnessTest.quotient(reading("gewicht", "Vondst"),
-                reading("deelnemers", "Vondst")), number("2"));
+        return comparison("greater", TmsFilterFaultWitnessTest.quotient(ownRead("gewicht", "Vondst"),
+                ownRead("deelnemers", "Vondst")), number("2"));
     }
 
     /** The fold of zware vondsten and drukte, a new node on every call, so each form reads a fold of its own. */
@@ -117,7 +117,7 @@ class TmsFilterDepositWitnessTest {
 
     private static String zorgvuldig() {
         return aggregation("count", VONDSTEN, "Vondst", sourceRole("aanmelding", "vondst"), compound("all", 0, List.of(
-                predicate("filled", reading("deelnemers", "Vondst")), zwaarPerParticipant())), "null", COUNTING,
+                predicate("filled", ownRead("deelnemers", "Vondst")), zwaarPerParticipant())), "null", COUNTING,
                 "het aantal vondsten van de Jutter die aan alle volgende voorwaarden voldoen: zijn deelnemers is gevuld;"
                         + " zijn gewicht gedeeld door zijn deelnemers is groter dan 2");
     }
@@ -132,7 +132,7 @@ class TmsFilterDepositWitnessTest {
     private static String union() {
         return "{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[{\"node\":\"InstanceSetUnion\",\"branches\":["
                 + selection(zwaarPerParticipant(), "vondsten van de Jutter die zwaar zijn per deelnemer") + ","
-                + selection(comparison("greater", reading("gewicht", "Vondst"), number("8")),
+                + selection(comparison("greater", ownRead("gewicht", "Vondst"), number("8")),
                         "vondsten van de Jutter die zwaarder zijn dan 8")
                 + "],\"source\":{\"snippet\":\"vondsten die zwaar zijn per deelnemer en vondsten die zwaarder zijn dan"
                 + " 8\"}}],\"type\":" + COUNTING + ",\"source\":{\"snippet\":\"het aantal vondsten die zwaar zijn per"
@@ -140,7 +140,7 @@ class TmsFilterDepositWitnessTest {
     }
 
     static final String DEELNEMERS = computingRule("deelnemers van een vondst", "BEREKENING", "Vondst", "deelnemers",
-            reading("opgave", "Vondst"), "null");
+            ownRead("opgave", "Vondst"), "null");
     static final String ZWARE = computingRule("zware vondsten", "BEREKENING", "Jutter", "zware vondsten", zwaar(),
             check("actief", false));
     static final String DRUKTE = characteristicRule("drukte", "Jutter", "druk", compound("all", 0, List.of(

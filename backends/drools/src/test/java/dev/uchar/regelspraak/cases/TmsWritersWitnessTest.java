@@ -20,7 +20,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.predicate;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
@@ -109,10 +109,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TmsWritersWitnessTest {
 
-    private static final String A = reading("a", "Vondst");
-    private static final String B = reading("b", "Vondst");
-    private static final String C = reading("c", "Vondst");
-    private static final String BETWEEN = reading("tussen", "Vondst");
+    private static final String A = ownRead("a", "Vondst");
+    private static final String B = ownRead("b", "Vondst");
+    private static final String C = ownRead("c", "Vondst");
+    private static final String BETWEEN = ownRead("tussen", "Vondst");
 
     private static final String BETWEEN_RULE = computingRule("tussen van een vondst", "BEREKENING", "Vondst", "tussen",
             binary("plus", A, number("1")), "null");
@@ -202,9 +202,9 @@ class TmsWritersWitnessTest {
     // ---------------- writers on sister subtypes and their supertype ----------------
 
     private static final List<String> SISTERS = List.of(
-            computingRule("doel van drijfgoed", "GELIJKSTELLING", "Drijfgoed", "doel", reading("a", "Drijfgoed"), "null"),
+            computingRule("doel van drijfgoed", "GELIJKSTELLING", "Drijfgoed", "doel", ownRead("a", "Drijfgoed"), "null"),
             computingRule("doel van wrakgoed", "GELIJKSTELLING", "Wrakgoed", "doel",
-                    binary("plus", reading("a", "Wrakgoed"), number("10")), "null"),
+                    binary("plus", ownRead("a", "Wrakgoed"), number("10")), "null"),
             computingRule("doel van een grote vondst", "GELIJKSTELLING", "Vondst", "doel", number("5"),
                     comparison("greater", A, number("100"))),
             computingRule("a van een vondst", "BEREKENING", "Vondst", "a", binary("plus", C, number("1")), "null"));
@@ -240,7 +240,7 @@ class TmsWritersWitnessTest {
     // ---------------- initialisations on sister subtypes ----------------
 
     private static final List<String> SISTER_INITIALISATIONS = List.of(
-            computingRule("standaarddoel van drijfgoed", "INITIALISATIE", "Drijfgoed", "doel", reading("a", "Drijfgoed"),
+            computingRule("standaarddoel van drijfgoed", "INITIALISATIE", "Drijfgoed", "doel", ownRead("a", "Drijfgoed"),
                     "null"),
             computingRule("standaarddoel van wrakgoed", "INITIALISATIE", "Wrakgoed", "doel", number("7"), "null"),
             computingRule("a van een vondst", "BEREKENING", "Vondst", "a", binary("plus", C, number("1")), "null"));
@@ -341,11 +341,11 @@ class TmsWritersWitnessTest {
     // ---------------- the red case of the corpus ----------------
 
     /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
-    private static final Path DUPLICATE_MESSAGE = Path.of("..", "..", "corpus", "rood", "jutterswet-dubbele-melding");
+    private static final Path DOUBLE_MESSAGE = Path.of("..", "..", "corpus", "rood", "jutterswet-dubbele-melding");
 
     @Test void the_red_case_gives_the_fault_with_the_sentence_of_ref() throws Exception {
         List<Path> cases;
-        try (var s = Files.list(DUPLICATE_MESSAGE)) {
+        try (var s = Files.list(DOUBLE_MESSAGE)) {
             cases = s.filter(p -> p.getFileName().toString().matches("case.*\\.json")).sorted().toList();
         }
         assertEquals(2, cases.size());
@@ -353,7 +353,7 @@ class TmsWritersWitnessTest {
             JsonNode c = TmsDocuments.JSON.readTree(Files.readString(z));
             String pin = c.path("expectedFault").path("drools").asText();
             assertTrue(pin.startsWith("twee schrijvers van één doel"), () -> z + ": " + pin);
-            String sentence = fout(DUPLICATE_MESSAGE.resolve("ir.json"), c);
+            String sentence = fout(DOUBLE_MESSAGE.resolve("ir.json"), c);
             assertTrue(sentence.contains(pin), () -> z + ": de zin\n" + sentence + "\nbevat de pin niet\n" + pin);
         }
     }

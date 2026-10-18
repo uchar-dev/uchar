@@ -20,7 +20,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.numberType;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
@@ -79,11 +79,11 @@ class TmsComputeFormWitnessTest {
             attribuut("basis", TWO), attribuut("waarde", THREE), attribuut("afgerond", WHOLE),
             attribuut("begrensd", THREE), attribuut("kwadraat", SIX), attribuut("aandeel", THREE)), List.of())), List.of());
 
-    private static final String VALUE = reading("waarde", "Vondst");
+    private static final String VALUE = ownRead("waarde", "Vondst");
 
     /** "De waarde van een Vondst moet berekend worden als zijn basis maal 1,5". */
     static final String DERIVATION = computingRule("waarde van een vondst", "BEREKENING", "Vondst", "waarde",
-            binary("times", reading("basis", "Vondst"), literal("1.5", numberType(false, 1, null)), THREE), "null");
+            binary("times", ownRead("basis", "Vondst"), literal("1.5", numberType(false, 1, null)), THREE), "null");
 
     static final String ROUNDING = computingRule("afgerond van een vondst", "BEREKENING", "Vondst", "afgerond",
             rounding(VALUE, "floor", 0, WHOLE), "null");
@@ -139,11 +139,11 @@ class TmsComputeFormWitnessTest {
 
     static final List<String> PERCENT_RULES = List.of(
             computingRule("tarief van een vondst", "BEREKENING", "Vondst", "tarief",
-                    binary("plus", reading("grondtarief", "Vondst"), literal("5", PCT), PCT), "null"),
+                    binary("plus", ownRead("grondtarief", "Vondst"), literal("5", PCT), PCT), "null"),
             computingRule("toeslag van een vondst", "BEREKENING", "Vondst", "toeslag",
-                    binary("percentageOf", reading("tarief", "Vondst"), reading("basis", "Vondst"), FOUR), "null"),
+                    binary("percentageOf", ownRead("tarief", "Vondst"), ownRead("basis", "Vondst"), FOUR), "null"),
             characteristicRule("duur bij tarief", "Vondst", "duur",
-                    comparison("greater", reading("tarief", "Vondst"), literal("20", PCT))));
+                    comparison("greater", ownRead("tarief", "Vondst"), literal("20", PCT))));
 
     static JsonNode percentCase() throws Exception {
         return TmsDocuments.caseOn(null, List.of(
@@ -172,15 +172,15 @@ class TmsComputeFormWitnessTest {
 
     static final List<String> UNIT_RULES = List.of(
             computingRule("aanloop van een sleepbaan", "BEREKENING", "Sleepbaan", "aanloop",
-                    binary("times", reading("grondaanloop", "Sleepbaan"), literal("2", WHOLE), M), "null"),
+                    binary("times", ownRead("grondaanloop", "Sleepbaan"), literal("2", WHOLE), M), "null"),
             computingRule("sleeplengte van een sleepbaan", "BEREKENING", "Sleepbaan", "sleeplengte",
-                    binary("plus", literal("2.5", numberType(false, 1, KILOMETER)), reading("aanloop", "Sleepbaan"),
+                    binary("plus", literal("2.5", numberType(false, 1, KILOMETER)), ownRead("aanloop", "Sleepbaan"),
                             numberType(false, 1, KILOMETER)), "null"),
             computingRule("begrensde aanloop van een sleepbaan", "BEREKENING", "Sleepbaan", "begrensde aanloop",
-                    clamp(reading("aanloop", "Sleepbaan"), "null", literal("0.2", numberType(false, 1, KILOMETER)), M),
+                    clamp(ownRead("aanloop", "Sleepbaan"), "null", literal("0.2", numberType(false, 1, KILOMETER)), M),
                     "null"),
             characteristicRule("lang bij sleeplengte", "Sleepbaan", "lang",
-                    comparison("greater", reading("sleeplengte", "Sleepbaan"), literal("3", numberType(true, 0, KILOMETER)))));
+                    comparison("greater", ownRead("sleeplengte", "Sleepbaan"), literal("3", numberType(true, 0, KILOMETER)))));
 
     static JsonNode unitCase() throws Exception {
         return TmsDocuments.caseOn(null, List.of(
@@ -202,7 +202,7 @@ class TmsComputeFormWitnessTest {
      *  ch. 2.6). S1: 500 (the aanloop 300 m against 0,5 km; 5000 m on the way, from the input), S2: 800. */
     @Test void a_listed_fold_recomputes_its_operands_over_a_later_derived_aanloop() throws Exception {
         String widest = computingRule("ruimste aanloop van een sleepbaan", "BEREKENING", "Sleepbaan", "ruimste aanloop",
-                TmsDocuments.listedFold("maximum", List.of(reading("aanloop", "Sleepbaan"),
+                TmsDocuments.listedFold("maximum", List.of(ownRead("aanloop", "Sleepbaan"),
                         literal("0.5", numberType(false, 1, KILOMETER))), M, "de maximale van zijn aanloop en 0,5 km"),
                 "null");
         assertEveryOrder(UNIT_MODEL, List.of(UNIT_RULES.get(0), widest), TmsDocuments.caseOn(null, List.of(
@@ -230,9 +230,9 @@ class TmsComputeFormWitnessTest {
                         "baandelen")),
                 List.of(), List.of(unitSystem("Afstand", List.of(METER, KILOMETER))));
         String length = computingRule("lengte van een baandeel", "BEREKENING", "Baandeel", "lengte",
-                reading("grondlengte", "Baandeel"), "null");
+                ownRead("grondlengte", "Baandeel"), "null");
         String totaal = computingRule("totale lengte van een sleepbaan", "BEREKENING", "Sleepbaan", "totale lengte",
-                TmsDocuments.aggregation("sum", reading("lengte", "Baandeel"), "Baandeel",
+                TmsDocuments.aggregation("sum", ownRead("lengte", "Baandeel"), "Baandeel",
                         TmsDocuments.sourceRole("baanindeling", "baandeel"), "null",
                         literal("1", numberType(true, 0, KILOMETER)), M,
                         "de som van de lengte van alle baandelen van de Sleepbaan of 1 km als die er niet zijn"), "null");

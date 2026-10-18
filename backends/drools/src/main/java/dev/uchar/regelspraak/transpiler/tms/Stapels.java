@@ -58,11 +58,11 @@ final class Stapels {
     }
 
     /** Every effective stack of the model, per type in the model's order and per target in the order of
-     *  {@link #effectiveStapels}. */
+     *  {@link #effectiveStacks}. */
     List<Stack> stapels() {
         List<Stack> out = new ArrayList<>();
         for (Objecttype ot : model.objecttypen.values())
-            for (List<PrioritizedDefaults> members : effectiveStapels(ot, chainGroupKeys(ot)).values())
+            for (List<PrioritizedDefaults> members : effectiveStacks(ot, chainGroupKeys(ot)).values())
                 out.add(new Stack(ot, members));
         return out;
     }
@@ -95,7 +95,7 @@ final class Stapels {
 
     /** The stacks of {@code type} by target key. {@code absorb} is the key set of the stack's owner on which an
      *  ordinary rule counts as a base, threaded down so the answer does not change with the depth. */
-    private LinkedHashMap<String, List<PrioritizedDefaults>> effectiveStapels(Objecttype type, Set<String> absorb) {
+    private LinkedHashMap<String, List<PrioritizedDefaults>> effectiveStacks(Objecttype type, Set<String> absorb) {
         LinkedHashMap<String, List<PrioritizedDefaults>> own = new LinkedHashMap<>();
         for (PrioritizedDefaults l : defaults)
             if (Namen.norm(l.onderwerp()).equals(Namen.norm(type.naam))) {
@@ -108,7 +108,7 @@ final class Stapels {
                 if (m != null) own.put(k, List.of(m));
             }
         LinkedHashMap<String, List<PrioritizedDefaults>> inherited =
-                type.supertype == null ? new LinkedHashMap<>() : effectiveStapels(type.supertype, absorb);
+                type.supertype == null ? new LinkedHashMap<>() : effectiveStacks(type.supertype, absorb);
         LinkedHashMap<String, List<PrioritizedDefaults>> out = new LinkedHashMap<>(own);
         inherited.forEach((k, parentMembers) -> {
             List<PrioritizedDefaults> ownMembers = own.get(k);

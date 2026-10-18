@@ -91,7 +91,7 @@ public final class TmsMeasurement {
             List<Path> paths = cases(map);
             if (!paths.isEmpty()) goldens.add(new Golden(golden.relativize(map).toString(), map, paths));
         }
-        for (Golden g : goldens) g.judgement();
+        for (Golden g : goldens) g.judge();
         List<Golden> gemeten = goldens.stream().filter(Golden::plays).toList();
         rondeVooraf(gemeten);
         int k = 0;
@@ -163,7 +163,7 @@ public final class TmsMeasurement {
         }
 
         /** The replay's verdict; an exception out of the replay is a FAIL with its sentence. */
-        void judgement() {
+        void judge() {
             try {
                 verdict = CaseRunner.viaExecModel(ir, paths);
             } catch (RuntimeException e) {
@@ -194,7 +194,7 @@ public final class TmsMeasurement {
 
     /** One fire of one case: its firings and the cap it fired under, the fire and the write-back in nanoseconds, the
      *  facts just before the fire, and, where asked, every fact the session held after the fire. */
-    private record FireMeasurement(int vuringen, int cap, long fireNanos, long setBackNanos, long n0,
+    private record FireMeasurement(int vuringen, int cap, long fireNanos, long writeBackNanos, long n0,
                               List<Object> sessionFacts) {}
 
     /** Fires case {@code c} of {@code g} on {@code branch} in a fresh session and measures it; any fault names the golden,
@@ -208,10 +208,10 @@ public final class TmsMeasurement {
                 long fired = System.nanoTime();
                 if (firing.geenFixpunt() != null) throw new IllegalStateException(firing.geenFixpunt());
                 List<Object> state = sessionFacts ? new ArrayList<>(sessie.getObjects()) : null;
-                long readBack = System.nanoTime();
+                long writeBackStart = System.nanoTime();
                 DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
-                long reset = System.nanoTime();
-                return new FireMeasurement(firing.vuringen(), firing.cap(), fired - begin, reset - readBack, n0, state);
+                long writtenBack = System.nanoTime();
+                return new FireMeasurement(firing.vuringen(), firing.cap(), fired - begin, writtenBack - writeBackStart, n0, state);
             });
         } catch (RuntimeException e) {
             throw new IllegalStateException(g.naam + ", " + g.caseNames.get(c) + " op " + branch + ": " + e, e);
@@ -301,10 +301,10 @@ public final class TmsMeasurement {
         int rules;
         List<TmsTranspiler.DefaultsGroup> groups = List.of();
         long firingsMin, firingsMax, n0;
-        double fireMs, setBackMs, sumMs;
+        double fireMs, writeBackMs, sumMs;
         /** The case with the largest firings / (R × N0), -1 while every case has N0 = 0; and the largest firings /
          *  cap of a case. */
-        double ratio = -1, ceilingShare = -1;
+        double ratio = -1, capShare = -1;
         String ratioCase, capCase;
         long ratioFirings, ratioN0, ratioCap;
         /** The case that needs the largest factor of the cap counted per phase ({@link Phases}), -1 while none does. */
@@ -335,16 +335,16 @@ public final class TmsMeasurement {
          *  times, the firings, N0, the ratios, and the control facts of its last fire. The firings and N0 must not
          *  differ between the fires but for the range the table shows; N0 differing means the set-up is not that of
          *  one case. */
-        void count(Golden g, String caseDocument, List<FireMeasurement> ms, Phases f) {
+        void count(Golden g, String caseFileName, List<FireMeasurement> ms, Phases f) {
             if (f.ratio() > phases) {
                 phases = f.ratio();
-                phasesCase = caseDocument;
+                phasesCase = caseFileName;
                 phasesFirings = f.vuringen();
                 phasesN = f.n();
             }
             fireMs += median(ms.stream().mapToLong(FireMeasurement::fireNanos).toArray()) / 1e6;
-            setBackMs += median(ms.stream().mapToLong(FireMeasurement::setBackNanos).toArray()) / 1e6;
-            sumMs += median(ms.stream().mapToLong(m -> m.fireNanos() + m.setBackNanos()).toArray()) / 1e6;
+            writeBackMs += median(ms.stream().mapToLong(FireMeasurement::writeBackNanos).toArray()) / 1e6;
+            sumMs += median(ms.stream().mapToLong(m -> m.fireNanos() + m.writeBackNanos()).toArray()) / 1e6;
             int min = ms.stream().mapToInt(FireMeasurement::vuringen).min().orElseThrow();
             int max = ms.stream().mapToInt(FireMeasurement::vuringen).max().orElseThrow();
             firingsMin += min;
@@ -353,23 +353,23 @@ public final class TmsMeasurement {
             int cap = ms.get(0).cap();
             for (FireMeasurement m : ms)
                 if (m.n0() != n || m.cap() != cap)
-                    throw new IllegalStateException(g.naam + ", " + caseDocument + ": N0 of het plafond verschilt tussen de"
+                    throw new IllegalStateException(g.naam + ", " + caseFileName + ": N0 of het plafond verschilt tussen de"
                             + " herhalingen: " + ms.stream().map(x -> x.n0() + "/" + x.cap()).toList());
             n0 += n;
             if (n > 0) {
                 double v = max / ((double) rules * n);
                 if (v > ratio) {
                     ratio = v;
-                    ratioCase = caseDocument;
+                    ratioCase = caseFileName;
                     ratioFirings = max;
                     ratioN0 = n;
                     ratioCap = cap;
                 }
             }
             double p = max / (double) cap;
-            if (p > ceilingShare) {
-                ceilingShare = p;
-                capCase = caseDocument;
+            if (p > capShare) {
+                capShare = p;
+                capCase = caseFileName;
             }
             List<Object> sessionFacts = ms.get(ms.size() - 1).sessionFacts();
             if (sessionFacts != null && !groups.isEmpty()) countControlFacts(g, sessionFacts);
@@ -407,7 +407,7 @@ public final class TmsMeasurement {
         for (Golden g : gemeten) {
             Branch t = g.branch;
             out.append("| ").append(g.naam).append(" | ").append(g.cases.size()).append(" | ").append(t.vuringen())
-                    .append(" | ").append(ms(t.fireMs)).append(" | ").append(ms(t.setBackMs)).append(" | ")
+                    .append(" | ").append(ms(t.fireMs)).append(" | ").append(ms(t.writeBackMs)).append(" | ")
                     .append(ms(t.buildMs)).append(" | ").append(t.rules).append(" | ").append(t.n0).append(" | ")
                     .append(t.ratio < 0 ? "–" : ratio(t.ratio)).append(" | ")
                     .append(t.phases < 0 ? "–" : ratio(t.phases)).append(" |\n");
@@ -421,13 +421,13 @@ public final class TmsMeasurement {
                 .append(gemeten.stream().mapToInt(g -> g.cases.size()).sum()).append(" cases.\n\n");
         out.append("Som en mediaan over de goldens.\n\n");
         out.append("| grootheid | som | mediaan |\n|---|---:|---:|\n");
-        queue(out, "vuringen", gemeten, t -> t.firingsMin, "%.0f");
-        queue(out, "vuren (ms)", gemeten, t -> t.fireMs, "%.3f");
-        queue(out, "terugzetten (ms)", gemeten, t -> t.setBackMs, "%.3f");
-        queue(out, "vuren+terugzetten (ms)", gemeten, t -> t.sumMs, "%.3f");
-        queue(out, "bouw (ms)", gemeten, t -> t.buildMs, "%.3f");
-        queue(out, "R", gemeten, t -> t.rules, "%.0f");
-        queue(out, "N0", gemeten, t -> t.n0, "%.0f");
+        row(out, "vuringen", gemeten, t -> t.firingsMin, "%.0f");
+        row(out, "vuren (ms)", gemeten, t -> t.fireMs, "%.3f");
+        row(out, "terugzetten (ms)", gemeten, t -> t.writeBackMs, "%.3f");
+        row(out, "vuren+terugzetten (ms)", gemeten, t -> t.sumMs, "%.3f");
+        row(out, "bouw (ms)", gemeten, t -> t.buildMs, "%.3f");
+        row(out, "R", gemeten, t -> t.rules, "%.0f");
+        row(out, "N0", gemeten, t -> t.n0, "%.0f");
         out.append('\n');
 
         List<Golden> perRatio = gemeten.stream().filter(g -> g.branch.ratio >= 0)
@@ -472,14 +472,14 @@ public final class TmsMeasurement {
         }
         Golden tightest = null;
         for (Golden g : gemeten)
-            if (tightest == null || g.branch.ceilingShare > tightest.branch.ceilingShare) tightest = g;
+            if (tightest == null || g.branch.capShare > tightest.branch.capShare) tightest = g;
         if (tightest != null)
             out.append("Het grootste vuringen/plafond van één case, onder het plafond van `vuur`: ")
-                    .append(ratio(tightest.branch.ceilingShare)).append(" (").append(tightest.naam)
+                    .append(ratio(tightest.branch.capShare)).append(" (").append(tightest.naam)
                     .append(", ").append(tightest.branch.capCase).append(").\n\n");
     }
 
-    private static void queue(StringBuilder out, String naam, List<Golden> goldens, ToDoubleFunction<Branch> waarde,
+    private static void row(StringBuilder out, String naam, List<Golden> goldens, ToDoubleFunction<Branch> waarde,
                             String vorm) {
         double[] n = goldens.stream().mapToDouble(g -> waarde.applyAsDouble(g.branch)).toArray();
         out.append("| ").append(naam).append(" | ").append(String.format(Locale.ROOT, vorm, Arrays.stream(n).sum()))

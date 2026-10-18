@@ -192,7 +192,7 @@ class OverlappingWritersWitnessTest {
         for (DroolsBackend.Branch drl : BRANCHES) assertNull(play(ir, caseDocument, drl), branch(drl));
     }
 
-    @Test void two_characteristic_assignments_play() throws Exception {
+    @Test void two_characteristic_attributions_play() throws Exception {
         // A characteristic is monotone (ch. 5.3): two attributions that both hold set it once.
         String ir = document(objecttype("Vondst", "Vondsten", null,
                         "{\"node\":\"Characteristic\",\"name\":\"meldplichtig\",\"kind\":\"adjectival\"}", DATES),
@@ -215,12 +215,12 @@ class OverlappingWritersWitnessTest {
     }
 
     /** The verdict names the divergence with each of {@code fragments}, and no cycle. */
-    private static void reportsWriters(String out, String formName, String... fragments) {
-        assertNotNull(out, formName + ": speelt, waar de twee vergelijkingen geen fixpunt hebben");
-        assertTrue(out.contains("geen fixpunt"), formName + ": " + out);
-        assertTrue(out.contains("divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)"), formName + ": " + out);
-        assertFalse(out.contains("kringverwijzing"), formName + " noemt een kring die het document niet heeft: " + out);
-        for (String f : fragments) assertTrue(out.contains(f), formName + " noemt '" + f + "': " + out);
+    private static void reportsWriters(String out, String runLabel, String... fragments) {
+        assertNotNull(out, runLabel + ": speelt, waar de twee vergelijkingen geen fixpunt hebben");
+        assertTrue(out.contains("geen fixpunt"), runLabel + ": " + out);
+        assertTrue(out.contains("divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)"), runLabel + ": " + out);
+        assertFalse(out.contains("kringverwijzing"), runLabel + " noemt een kring die het document niet heeft: " + out);
+        for (String f : fragments) assertTrue(out.contains(f), runLabel + " noemt '" + f + "': " + out);
     }
 
     // ---------------- documents ----------------

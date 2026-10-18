@@ -193,9 +193,9 @@ class UniquenessKeyFormWitnessTest {
     }
 
     /** One authored case over a corpus {@code ir.json}; the per-case failure line, null on a match. */
-    private static String play(Path zone, String goldenCase, String caseJson) throws Exception {
+    private static String play(Path zone, String goldenName, String caseJson) throws Exception {
         JsonNode c = JSON.readTree(caseJson);
-        return CaseRunner.playCase(zone.resolve(goldenCase).resolve("ir.json"), c);
+        return CaseRunner.playCase(zone.resolve(goldenName).resolve("ir.json"), c);
     }
 
     /** A one-instance case on {@code type} whose vondstnummer and {@code secondKey} both carry a timeline —

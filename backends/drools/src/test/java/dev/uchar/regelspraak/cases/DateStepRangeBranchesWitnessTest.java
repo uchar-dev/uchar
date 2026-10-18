@@ -59,28 +59,28 @@ class DateStepRangeBranchesWitnessTest {
             cases = s.filter(p -> p.getFileName().toString().matches("case.*\\.json")).sorted().toList();
         }
         assertEquals(4, cases.size(), "the red case's four case files: " + cases);
-        for (Path caseOf : cases) {
-            JsonNode c = JSON.readTree(Files.readString(caseOf));
-            for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) fails(ir, caseOf, c, branch);
+        for (Path casePath : cases) {
+            JsonNode c = JSON.readTree(Files.readString(casePath));
+            for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) fails(ir, casePath, c, branch);
         }
     }
 
     @Test void the_compound_day_kind_step_fails_in_the_branches_that_carry_day_kinds() throws Exception {
         Path map = RED.resolveSibling("dagsoortstap-buiten-bereik");
-        Path ir = map.resolve("ir.json"), caseOf = map.resolve("case1.json");
-        JsonNode c = JSON.readTree(Files.readString(caseOf));
-        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) fails(ir, caseOf, c, branch);
+        Path ir = map.resolve("ir.json"), casePath = map.resolve("case1.json");
+        JsonNode c = JSON.readTree(Files.readString(casePath));
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) fails(ir, casePath, c, branch);
     }
 
     /** {@code c} replayed on {@code branch} faults at fire, with the fragment it pins for the backend in the cause chain. */
-    private static void fails(Path ir, Path caseOf, JsonNode c, DroolsBackend.Branch branch) {
+    private static void fails(Path ir, Path casePath, JsonNode c, DroolsBackend.Branch branch) {
         String sentence = c.get("expectedFault").get("drools").asText();
-        String queue = caseOf.getFileName() + " on " + branch;
+        String row = casePath.getFileName() + " on " + branch;
         RuntimeException e = assertThrows(RuntimeException.class,
-                () -> CaseRunner.playCase(ir, withoutFault(c), branch), queue);
-        assertFalse(e instanceof CaseRunner.Excluded, queue + " faults at fire, it does not refuse the form: "
+                () -> CaseRunner.playCase(ir, withoutFault(c), branch), row);
+        assertFalse(e instanceof CaseRunner.Excluded, row + " faults at fire, it does not refuse the form: "
                 + e.getMessage());
-        assertTrue(chain(e).contains(sentence), queue + " names '" + sentence + "': " + chain(e));
+        assertTrue(chain(e).contains(sentence), row + " names '" + sentence + "': " + chain(e));
     }
 
     /** The case as written, with its {@code expectedFault} swapped for an empty {@code expected}. */

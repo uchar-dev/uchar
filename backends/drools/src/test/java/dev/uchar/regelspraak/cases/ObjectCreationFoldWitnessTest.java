@@ -131,7 +131,7 @@ class ObjectCreationFoldWitnessTest {
                 perJutter("telling", number("5"), number("5"), number("5"), number("5")))), "een kaal minimum en een constante");
     }
 
-    @Test void two_assignments_with_each_a_fold() throws Exception {
+    @Test void two_initialisations_with_a_fold_each() throws Exception {
         // R1 and R2 in one creation, and a count beside a date fold. ref and clingo: the values of R1 and R2; telling
         // 3, 0, 1 and 1, afrekendag that of R3.
         String ir = document(false, creatie(null, memberInit("heffing", percent(10, SUM)),
@@ -206,7 +206,7 @@ class ObjectCreationFoldWitnessTest {
 
     // ---------------- the write boundary ----------------
 
-    @Test void the_assignment_is_rewritten_in_the_unit_of_the_member() throws Exception {
+    @Test void the_initialisation_is_rewritten_in_the_unit_of_the_member() throws Exception {
         // ch. 2.4: the value lands in the declared unit of the member it is written to. "… met massa gelijk aan zijn
         // eigen massa" (kg into g), J1 to J4 each 2 kg; and "… met massa gelijk aan de som van de vondstmassa van alle
         // vondsten van de Jutter", V1 4 kg, V2 7 kg, V5 9 kg. ref: 2000 g each; 11000 g, leeg, leeg and 9000 g. clingo
@@ -232,7 +232,7 @@ class ObjectCreationFoldWitnessTest {
 
     // ---------------- what does not go along, by name ----------------
 
-    @Test void a_division_or_square_root_in_an_assignment_refuses_by_name() throws Exception {
+    @Test void a_division_or_square_root_in_an_initialisation_refuses_by_name() throws Exception {
         // "… met heffing gelijk aan zijn basis gedeeld door zijn deler", basis 2 for each Jutter and deler 2 for all but
         // J2: ref and clingo write 1,00, leeg, 1,00 and 1,00 and turn the case inconsistent (ch. 1.2, ch. 5.6). The
         // destructive exec-model branch evaluated the toekenningen once, when it minted, and reported the Fout of that

@@ -29,7 +29,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.numberType;
 import static dev.uchar.regelspraak.cases.TmsDocuments.groupDefault;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
@@ -113,7 +113,7 @@ class TmsDisplacedExceptionWitnessTest {
             new Fout("een onopgeloste rechtvaardiging", standaard("{\"node\":\"Unresolved\",\"source\":{\"snippet\":"
                     + "\"een niet-gemodelleerde grond\"}}", number("20")), "Unresolved condition reached in evaluation"),
             new Fout("een datumstap buiten het bereik in de rechtvaardiging", standaard(comparison("later",
-                    binary("plus", reading("vinddatum", "Vondst"), literal(TOO_LARGE, DAGEN), DATE),
+                    binary("plus", ownRead("vinddatum", "Vondst"), literal(TOO_LARGE, DAGEN), DATE),
                     literal("2026-01-01", DATE)), number("20")), "duration count " + TOO_LARGE + " is out of range"));
 
     /** Where the faulting default sits: the defaults of the group, highest first, around it. */
@@ -165,7 +165,7 @@ class TmsDisplacedExceptionWitnessTest {
                     TmsFaultWitnessTest.play(ir, noWrak, branch)), branch.toString());
     }
 
-    @Test void every_place_and_every_error_in_every_order_of_the_rules() throws Exception {
+    @Test void every_place_and_every_fault_in_every_order_of_the_rules() throws Exception {
         List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
         for (Place p : PLACES)
             for (Fout f : FAULTS)

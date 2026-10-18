@@ -57,7 +57,7 @@ class BeanNameCollisionWitnessTest {
 
     // ---------------- 1. two declarations on one fact class ----------------
 
-    @Test void two_object_types_with_is_one_to_one_class_are_refused_once_named() throws Exception {
+    @Test void two_object_types_with_is_a_on_a_class_are_refused_by_name() throws Exception {
         // the shape first reported: a type written as one word, declared first, and its subtype as three
         // words; the subtype's class then extends itself ("cyclic inheritance")
         ObjectNode ir = ir(PREMIERECHT);
@@ -71,7 +71,7 @@ class BeanNameCollisionWitnessTest {
                 "beannaambotsing", "'Recht op premie'", "'RechtOpPremie'", "dev.uchar.regelspraak.facts.RechtOpPremie");
     }
 
-    @Test void two_separate_object_types_on_a_class_are_refused_once_named() throws Exception {
+    @Test void two_separate_object_types_on_a_class_are_refused_by_name() throws Exception {
         ObjectNode ir = ir(PREMIERECHT);
         objecttype(ir, "RechtOpPremie", null).set("attributes",
                 lijst("{\"node\":\"Attribute\",\"name\":\"grondslag\",\"datatype\":" + WHOLE + "}"));
@@ -79,7 +79,7 @@ class BeanNameCollisionWitnessTest {
                 "beannaambotsing", "'Recht op premie'", "'RechtOpPremie'", "dev.uchar.regelspraak.facts.RechtOpPremie");
     }
 
-    @Test void two_equal_object_types_on_a_class_are_refused_once_named() throws Exception {
+    @Test void two_equal_object_types_on_a_class_are_refused_by_name() throws Exception {
         // identical members, the relation to a Jutter included, build one class that serves both types, so every
         // rule on the one matched the instances of the other: a wrong value with no refusal (R9 is a
         // RechtOpPremie, and no rule attributes or computes anything for it)
@@ -104,7 +104,7 @@ class BeanNameCollisionWitnessTest {
                 """), "beannaambotsing", "'Recht op premie'", "'RechtOpPremie'", "dev.uchar.regelspraak.facts.RechtOpPremie");
     }
 
-    @Test void an_object_type_with_the_name_of_a_helper_class_is_refused_once_named() throws Exception {
+    @Test void an_object_type_with_the_name_of_a_helper_class_is_refused_by_name() throws Exception {
         ObjectNode ir = ir(PREMIERECHT);
         objecttype(ir, "Segment", null).set("attributes",
                 lijst("{\"node\":\"Attribute\",\"name\":\"lengte\",\"datatype\":" + WHOLE + "}"));
@@ -121,7 +121,7 @@ class BeanNameCollisionWitnessTest {
 
     // ---------------- 2. a used member without a field of its own ----------------
 
-    @Test void attribute_and_characteristic_with_the_same_name_are_refused_once_named() throws Exception {
+    @Test void attribute_and_characteristic_with_the_same_name_are_refused_by_name() throws Exception {
         // the reported shape: WF-002 lets an attribute and a characteristic share a name, and the golden's
         // rules read the characteristic 'toegekend'. No rule may WRITE a name that is both (WF-022, the loader
         // refuses it as the verifier does), so the rule that attributes it goes and a case supplies it.
@@ -138,7 +138,7 @@ class BeanNameCollisionWitnessTest {
                 "RechtOpPremie.toegekend", "regel 'premie van een recht op premie'");
     }
 
-    @Test void attribute_and_characteristic_with_the_same_name_in_a_defaults_group_are_refused_once_named() throws Exception {
+    @Test void attribute_and_characteristic_with_the_same_name_in_a_defaults_group_are_refused_by_name() throws Exception {
         // the one corpus golden with the shape: both branches refused it before, each on a sentence of its own
         // (the exec branch's defaults fence, the DRL-text branch's defaults refusal); the bean model's sentence
         // now comes first in both
@@ -147,7 +147,7 @@ class BeanNameCollisionWitnessTest {
                 "defaultsgroep");
     }
 
-    @Test void two_attributes_on_a_property_are_refused_once_named() throws Exception {
+    @Test void two_attributes_on_a_property_are_refused_by_name() throws Exception {
         // 'aantal-toegekende rechten' goes first, so it takes the property and the golden's own attribute, which
         // its count rule writes, has no field left: before, the rule overwrote the value the case gave the other
         ObjectNode ir = ir(PREMIERECHT);
@@ -167,7 +167,7 @@ class BeanNameCollisionWitnessTest {
                 "regel 'aantal toegekende rechten'");
     }
 
-    @Test void two_characteristics_on_a_property_are_refused_once_named() throws Exception {
+    @Test void two_characteristics_on_a_property_are_refused_by_name() throws Exception {
         // 'laat-gemeld' goes first; the golden's 'laat gemeld', which its rule writes, has no field left, and a
         // case that asked after the other read the first one's truth
         ObjectNode ir = ir(REKENJAAR);
@@ -184,7 +184,7 @@ class BeanNameCollisionWitnessTest {
                 "Vondst.laatGemeld", "regel 'Kenmerktoekenning laat gemeld'");
     }
 
-    @Test void an_own_attribute_on_the_property_of_an_inherited_attribute_is_refused_once_named() throws Exception {
+    @Test void an_own_attribute_on_the_property_of_an_inherited_attribute_is_refused_by_name() throws Exception {
         // the subtype's own 'aantal-toegekende rechten' meets the inherited 'aantal toegekende rechten' on one
         // property of the Strandjutter bean; the ancestor's declaration keeps it, and the subtype's
         // initialisation wrote into the inherited value
@@ -224,7 +224,7 @@ class BeanNameCollisionWitnessTest {
 
     // ---------------- 3. a case that names a member without a field of its own ----------------
 
-    @Test void a_case_in_which_the_characteristic_is_set_without_its_own_field_is_refused_once_named() throws Exception {
+    @Test void a_case_in_which_the_characteristic_is_set_without_its_own_field_is_refused_by_name() throws Exception {
         // before: "kon setter setVondstgewicht(boolean) niet aanroepen", an unclassified ERROR
         refused(unusedCharacteristic(false), caseWithCharacteristic("\"characteristics\": [\"vondstgewicht\"]",
                         "{ \"kind\": \"attributeValue\", \"label\": \"R1\", \"attribute\": \"premie\", \"value\": { \"number\": \"20\" } }"),
@@ -232,7 +232,7 @@ class BeanNameCollisionWitnessTest {
                 "het attribuut 'vondstgewicht' van Recht op premie", "RechtOpPremie.vondstgewicht", "de case zet het");
     }
 
-    @Test void a_case_that_reads_the_characteristic_without_its_own_field_is_refused_once_named() throws Exception {
+    @Test void a_case_that_reads_the_characteristic_without_its_own_field_is_refused_by_name() throws Exception {
         // before: the expectation read the attribute's number as the characteristic's truth and passed, because a
         // number is not Boolean.TRUE — right by accident, and wrong the moment the attribute were a Boolean
         refused(unusedCharacteristic(false), caseWithCharacteristic("\"characteristics\": []",
@@ -241,7 +241,7 @@ class BeanNameCollisionWitnessTest {
                 "de case leest het");
     }
 
-    @Test void a_case_in_which_the_timeline_of_the_characteristic_is_set_without_its_own_field_is_refused_once_named() throws Exception {
+    @Test void a_case_in_which_the_timeline_of_the_characteristic_is_set_without_its_own_field_is_refused_by_name() throws Exception {
         // the path of the finding behind this class: a timeline for the characteristic reached the attribute's
         // setter, "kon setter setVondstgewicht(List) niet aanroepen"
         refused(unusedCharacteristic(true), caseWithCharacteristic(
@@ -254,7 +254,7 @@ class BeanNameCollisionWitnessTest {
 
     // ---------------- 4. two roles on one reference field ----------------
 
-    @Test void two_roles_on_one_reference_field_of_a_type_are_refused_once_named() throws Exception {
+    @Test void two_roles_on_one_reference_field_of_a_type_are_refused_by_name() throws Exception {
         // two relations, each giving a Recht op premie one Jutter, under names that differ by a hyphen: one field
         // vasteHouder of type Jutter serves both, so the per-use gate (name and type) lets either through
         ObjectNode ir = ir(PREMIERECHT);

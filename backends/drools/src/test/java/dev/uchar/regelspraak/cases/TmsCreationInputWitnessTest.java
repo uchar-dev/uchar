@@ -14,7 +14,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -79,7 +79,7 @@ class TmsCreationInputWitnessTest {
     /** "De terug van een Jutter moet berekend worden als de som van de waarde van al zijn meldingen, of 0": the case
      *  reads the member of the made object through it. */
     private static final String REFUND = computingRule("terug van een jutter", "BEREKENING", "Jutter", "terug",
-            TmsDocuments.aggregation("sum", reading("waarde", "Jutmelding"), "Jutmelding",
+            TmsDocuments.aggregation("sum", ownRead("waarde", "Jutmelding"), "Jutmelding",
                     TmsDocuments.sourceRole("jutmelding", "melding"), "null", number("0"), WHOLE,
                     "de som van de waarde van al zijn meldingen of 0"), "null");
 
@@ -89,37 +89,37 @@ class TmsCreationInputWitnessTest {
 
     /** On the created type itself, so outside the standing domain; the toeslag is never set, so it computes leeg. */
     private static final String LEEG = computingRule("waarde van een jutmelding", "GELIJKSTELLING", "Jutmelding", "waarde",
-            reading("toeslag", "Jutmelding"), "null");
+            ownRead("toeslag", "Jutmelding"), "null");
 
     private static final String INITIALISATION = computingRule("standaardwaarde", "INITIALISATIE", "Jutmelding", "waarde",
             number("5"), "null");
 
     private static final List<String> TWO = List.of(
             computingRule("waarde volgens de vangst", "GELIJKSTELLING", "Jutmelding", "waarde",
-                    binary("plus", reading("toeslag", "Jutmelding"), number("98")), "null"),
+                    binary("plus", ownRead("toeslag", "Jutmelding"), number("98")), "null"),
             computingRule("waarde volgens het tarief", "GELIJKSTELLING", "Jutmelding", "waarde", number("97"), "null"));
 
     /** The creation, its waarde the vangst of its subject, or the bonus, which no case sets. */
     private static String creatie(String bron) {
         return TmsCreationWitnessTest.objectCreation("meld de vangst", "Jutter", "Jutmelding",
-                List.of(TmsCreationWitnessTest.init("waarde", reading(bron, "Jutter"))), "null", "jutmelding", "melding");
+                List.of(TmsCreationWitnessTest.init("waarde", ownRead(bron, "Jutter"))), "null", "jutmelding", "melding");
     }
 
     private static Path document(List<String> rules, String bron) throws Exception {
         return TmsCreationWitnessTest.document(MODEL, rules, List.of(), List.of(creatie(bron)), List.of(), List.of());
     }
 
-    private static JsonNode caseDocument(String readBack) throws Exception {
+    private static JsonNode caseDocument(String refund) throws Exception {
         return TmsDocuments.caseDocument(List.of(instance("J1", "Jutter", Map.of("vangst", "7"), List.of(), Map.of())),
-                List.of(waarde("J1", "terug", readBack)));
+                List.of(waarde("J1", "terug", refund)));
     }
 
     /** Every order of {@code rules} in the document plays {@code caseDocument(terug)}. */
-    private static void plays(List<String> rules, String bron, String readBack) throws Exception {
+    private static void plays(List<String> rules, String bron, String refund) throws Exception {
         int orders = 0;
         for (List<String> order : TmsDocuments.permutations(rules)) {
             List<String> names = TmsDocuments.ruleNames(order);
-            assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(document(order, bron), caseDocument(readBack)),
+            assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(document(order, bron), caseDocument(refund)),
                     () -> "volgorde " + names);
             orders++;
         }
@@ -176,9 +176,9 @@ class TmsCreationInputWitnessTest {
 
     private static final List<String> SISTERS = List.of(
             computingRule("doel van drijfgoed", "INITIALISATIE", "Drijfgoed", "doel",
-                    binary("dividedBy", reading("a", "Drijfgoed"), number("2")), "null"),
+                    binary("dividedBy", ownRead("a", "Drijfgoed"), number("2")), "null"),
             computingRule("doel van wrakgoed", "GELIJKSTELLING", "Wrakgoed", "doel", number("7"), "null"),
-            computingRule("a van een vondst", "BEREKENING", "Vondst", "a", binary("plus", reading("c", "Vondst"), number("2")),
+            computingRule("a van een vondst", "BEREKENING", "Vondst", "a", binary("plus", ownRead("c", "Vondst"), number("2")),
                     "null"));
 
     @Test void a_division_in_an_initialisation_beside_a_writer_on_a_sister_subtype() throws Exception {
@@ -195,7 +195,7 @@ class TmsCreationInputWitnessTest {
         assertEquals(6, orders);
         List<String> withSupertype = new ArrayList<>(SISTERS);
         withSupertype.add(computingRule("doel van een vondst", "GELIJKSTELLING", "Vondst", "doel", number("9"),
-                TmsDocuments.comparison("greater", reading("a", "Vondst"), number("100"))));
+                TmsDocuments.comparison("greater", ownRead("a", "Vondst"), number("100"))));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
                 TmsDocuments.document(SISTER_MODEL, withSupertype), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().startsWith("transpiler SKIP: regel: doel van drijfgoed — een deling in een"

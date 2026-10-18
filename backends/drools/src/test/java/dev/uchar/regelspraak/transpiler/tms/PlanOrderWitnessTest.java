@@ -58,11 +58,11 @@ class PlanOrderWitnessTest {
 
     /** Floor, measured 2026-10-13 at step 1e: the sets and maps of two or more elements in the plans of the corpus. A
      *  deliberate removal lowers it in the same commit. */
-    private static final int EXPECTED_MIN_SETS = 1;
+    private static final int EXPECTED_MIN_COLLECTIONS = 1;
 
-    @Test void no_set_of_the_plan_has_an_order_per_run() throws Exception {
+    @Test void no_collection_of_the_plan_has_an_order_per_run() throws Exception {
         List<String> salted = new ArrayList<>();
-        int[] setCount = {0};
+        int[] collectionCount = {0};
         List<Path> goldens;
         try (Stream<Path> s = Files.walk(GOLDEN)) {
             goldens = s.filter(p -> p.getFileName().toString().equals("ir.json")).sorted().toList();
@@ -76,12 +76,12 @@ class PlanOrderWitnessTest {
             }
             String golden = GOLDEN.relativize(ir.getParent()).toString();
             for (RulePlan p : b.execModelTranspiler().modelplan().rules())
-                loop(p, golden + " | " + p.naam(), salted, setCount, new IdentityHashMap<>());
+                loop(p, golden + " | " + p.naam(), salted, collectionCount, new IdentityHashMap<>());
         }
         assertEquals(List.of(), salted, "verzamelingen met een volgorde per run");
-        int n = setCount[0];
-        assertTrue(n >= EXPECTED_MIN_SETS, () -> n + " verzamelingen, onder de vloer "
-                + EXPECTED_MIN_SETS);
+        int n = collectionCount[0];
+        assertTrue(n >= EXPECTED_MIN_COLLECTIONS, () -> n + " verzamelingen, onder de vloer "
+                + EXPECTED_MIN_COLLECTIONS);
     }
 
     /** Floor, from the measurement planvorm of 2026-10-13 (fix round 1e): the six sets of classes a rule leaves out in
@@ -154,29 +154,29 @@ class PlanOrderWitnessTest {
     }
 
     /** Records under {@code o} every set or map of two or more elements, and each that iterates in an order per run. */
-    private static void loop(Object o, String place, List<String> salted, int[] setCount,
+    private static void loop(Object o, String place, List<String> salted, int[] collectionCount,
                              Map<Object, Boolean> seen) throws ReflectiveOperationException {
         if (o == null || o instanceof String || o instanceof Number || o instanceof Enum<?> || o instanceof Class<?>)
             return;
         if (seen.put(o, Boolean.TRUE) != null) return;
         if ((o instanceof Set<?> s && s.size() > 1) || (o instanceof Map<?, ?> m && m.size() > 1)) {
-            setCount[0]++;
+            collectionCount[0]++;
             String javaClass = o.getClass().getName();
             if (javaClass.startsWith("java.util.ImmutableCollections$") || o.getClass() == HashSet.class
                     || o.getClass() == HashMap.class)
                 salted.add(place + " | " + javaClass + " " + o);
         }
         if (o instanceof Collection<?> c) {
-            for (Object x : c) loop(x, place, salted, setCount, seen);
+            for (Object x : c) loop(x, place, salted, collectionCount, seen);
         } else if (o instanceof Map<?, ?> m) {
             for (Map.Entry<?, ?> e : m.entrySet()) {
-                loop(e.getKey(), place, salted, setCount, seen);
-                loop(e.getValue(), place, salted, setCount, seen);
+                loop(e.getKey(), place, salted, collectionCount, seen);
+                loop(e.getValue(), place, salted, collectionCount, seen);
             }
         } else if (o.getClass().isRecord()) {
             for (RecordComponent rc : o.getClass().getRecordComponents()) {
                 rc.getAccessor().setAccessible(true);
-                loop(rc.getAccessor().invoke(o), place, salted, setCount, seen);
+                loop(rc.getAccessor().invoke(o), place, salted, collectionCount, seen);
             }
         }
     }

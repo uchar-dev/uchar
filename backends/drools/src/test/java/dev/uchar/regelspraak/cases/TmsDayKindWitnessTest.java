@@ -25,7 +25,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.numberType;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -232,7 +232,7 @@ class TmsDayKindWitnessTest {
             List.of(dayKind("springtijdag", "springtijdagen")));
 
     static String ploegRead(String attribuut) {
-        return reading(attribuut, "Bergingsploeg");
+        return ownRead(attribuut, "Bergingsploeg");
     }
 
     static final String MELDINGSDATUM = computingRule("meldingsdatum", "BEREKENING", "Bergingsploeg", "meldingsdatum",
@@ -299,13 +299,13 @@ class TmsDayKindWitnessTest {
             List.of(dayKind("springtijdag", "springtijdagen")));
 
     static final String MELDTIJDSTIP = computingRule("meldtijdstip", "BEREKENING", "Getijpost", "meldtijdstip",
-            dateStep("plus", reading("aanvraagtijdstip", "Getijpost"), literal("3", numberType(true, 0, unit("uur"))),
+            dateStep("plus", ownRead("aanvraagtijdstip", "Getijpost"), literal("3", numberType(true, 0, unit("uur"))),
                     DATE_TIME, "zijn aanvraagtijdstip plus 3 uur"), "null");
     static final String SLUITTIJDSTIP = computingRule("sluittijdstip", "BEREKENING", "Getijpost", "sluittijdstip",
-            dateStep("plus", reading("meldtijdstip", "Getijpost"), reading("wachttermijn", "Getijpost"), DATE_TIME,
+            dateStep("plus", ownRead("meldtijdstip", "Getijpost"), ownRead("wachttermijn", "Getijpost"), DATE_TIME,
                     "zijn meldtijdstip plus zijn wachttermijn"), "null");
     static final String OPENINGSTIJDSTIP = computingRule("openingstijdstip", "BEREKENING", "Getijpost", "openingstijdstip",
-            dateStep("minus", reading("meldtijdstip", "Getijpost"), reading("wachttermijn", "Getijpost"), DATE_TIME,
+            dateStep("minus", ownRead("meldtijdstip", "Getijpost"), ownRead("wachttermijn", "Getijpost"), DATE_TIME,
                     "zijn meldtijdstip min zijn wachttermijn"), "null");
 
     static final List<String> RULES_A2 = List.of(MELDTIJDSTIP, SLUITTIJDSTIP, OPENINGSTIJDSTIP);
@@ -344,7 +344,7 @@ class TmsDayKindWitnessTest {
 
     static final String ERKENNING = characteristicRule("erkenning", "Vondst", "erkend", check("gemeld", false));
     static final String TERM = computingRule("termijn", "BEREKENING", "Vondst", "termijn",
-            dateStep("plus", reading("vinddatum", "Vondst"), reading("wachttijd", "Vondst"), DATE,
+            dateStep("plus", ownRead("vinddatum", "Vondst"), ownRead("wachttijd", "Vondst"), DATE,
                     "zijn vinddatum plus zijn wachttijd"), check("erkend", true));
 
     static final List<String> RULES_B = List.of(ERKENNING, TERM);
@@ -368,14 +368,14 @@ class TmsDayKindWitnessTest {
                 numberValue("5")), List.of())), Map.of(), List.of(consistent()));
     }
 
-    @Test void the_scope_fault_on_an_intermediate_state_lapses_and_stays_at_the_fixpoint() throws Exception {
+    @Test void the_reach_fault_on_an_intermediate_state_lapses_and_stays_at_the_fixpoint() throws Exception {
         List<String> definitions = List.of(SEIZOENSDAG);
         assertEquals(everywhere(RULES_B, definitions, "gespeeld"), inEveryOrder(MODEL_B, RULES_B, definitions, caseB()));
         assertEquals(everywhere(RULES_B, definitions, OUTSIDE_RANGE),
                 inEveryOrder(MODEL_B, RULES_B, definitions, caseBFixpoint()));
     }
 
-    @Test void the_scope_fault_of_an_intermediate_state_is_withdrawn() throws Exception {
+    @Test void the_reach_fault_of_an_intermediate_state_is_withdrawn() throws Exception {
         Path ir = document(MODEL_B, RULES_B, List.of(SEIZOENSDAG));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int intermediateState = 0;
@@ -384,12 +384,12 @@ class TmsDayKindWitnessTest {
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("wachttijd", "5"), List.of("gemeld"));
             v1.getClass().getMethod(dev.uchar.regelspraak.transpiler.kern.Namen.setter("vinddatum"), LocalDate.class)
                     .invoke(v1, LocalDate.of(2027, 6, 1));
-            TmsLetWitnessTest.Facts sessionFacts = new TmsLetWitnessTest.Facts();
-            assertNull(TmsDocuments.fixpunt(b, order, List.of(v1), sessie -> sessie.addEventListener(sessionFacts)),
+            TmsLetWitnessTest.Facts facts = new TmsLetWitnessTest.Facts();
+            assertNull(TmsDocuments.fixpunt(b, order, List.of(v1), sessie -> sessie.addEventListener(facts)),
                     () -> "volgorde " + names);
-            assertEquals(sessionFacts.inserted, sessionFacts.withdrawn, () -> "foutfeiten in volgorde " + names);
+            assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
             assertNull(TmsDocuments.lees(v1, "termijn"), () -> "termijn in volgorde " + names);
-            if (sessionFacts.fouten > 0) intermediateState++;
+            if (facts.fouten > 0) intermediateState++;
         }
         assertTrue(intermediateState > 0, "geen volgorde liet de termijn vóór de erkenning rekenen");
     }
@@ -416,8 +416,8 @@ class TmsDayKindWitnessTest {
                     dayKind("havendag", "havendagen")));
 
     static String schouwerStep(String naam, String doel, String duration) {
-        return computingRule(naam, "BEREKENING", "Schouwer", doel, dateStep("plus", reading("vinddatum", "Schouwer"),
-                reading(duration, "Schouwer"), DATE, "zijn vinddatum plus zijn " + duration), "null");
+        return computingRule(naam, "BEREKENING", "Schouwer", doel, dateStep("plus", ownRead("vinddatum", "Schouwer"),
+                ownRead(duration, "Schouwer"), DATE, "zijn vinddatum plus zijn " + duration), "null");
     }
 
     static final String SCHOUW_TERM = schouwerStep("termijn", "termijn", "wachttijd");
@@ -460,7 +460,7 @@ class TmsDayKindWitnessTest {
             attribuut("meldtijdstip", DATE_TIME), attribuut("sluittijdstip", DATE_TIME), attribuut("getijspanne", SPRINGTIJ)),
             List.of())), List.of(), List.of(dayKind("springtijdag", "springtijdagen")));
     static final String GETIJSPANNE = computingRule("getijspanne", "BEREKENING", "Getijpost", "getijspanne",
-            duration("duration", reading("meldtijdstip", "Getijpost"), reading("sluittijdstip", "Getijpost"), SPRINGTIJ,
+            duration("duration", ownRead("meldtijdstip", "Getijpost"), ownRead("sluittijdstip", "Getijpost"), SPRINGTIJ,
                     "de tijdsduur van zijn meldtijdstip tot zijn sluittijdstip in hele springtijdagen"), "null");
 
     @Test void a_duration_in_day_kinds_between_two_date_times_is_refused_by_name() throws Exception {

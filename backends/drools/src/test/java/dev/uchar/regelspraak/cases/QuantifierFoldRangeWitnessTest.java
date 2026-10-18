@@ -52,7 +52,7 @@ class QuantifierFoldRangeWitnessTest {
         // The regression mirror: the golden as it stands, one feittype over the pair. Green before this card as
         // well; since L2 of the v1 wire migration the binding decides here too, as it does everywhere.
         Path p = temporary("kwantorvouw-uniek", lees());
-        for (Path caseDocument : cases()) playBoth(p, caseDocument);
+        for (Path casePath : cases()) playBoth(p, casePath);
     }
 
     @Test void the_quantifier_fold_reads_the_wire_binding_on_a_repeated_pair() throws Exception {
@@ -60,7 +60,7 @@ class QuantifierFoldRangeWitnessTest {
         // only the ch. 4.3 binding names the relation. All seven cases, both branches, the golden's own
         // expectations — the DRL-text branch used to refuse this document whole.
         Path p = temporary("kwantorvouw-herhaald", repeatedPair());
-        for (Path caseDocument : cases()) playBoth(p, caseDocument);
+        for (Path casePath : cases()) playBoth(p, casePath);
     }
 
     @Test void the_quantifier_fold_without_binding_is_a_document_error() throws Exception {
@@ -83,8 +83,8 @@ class QuantifierFoldRangeWitnessTest {
 
     // ---------------- fixtures ----------------
 
-    private static void playBoth(Path ir, Path caseDocument) throws Exception {
-        BothBranches.green(ir, JSON.readTree(Files.readString(caseDocument)), caseDocument.getFileName().toString());
+    private static void playBoth(Path ir, Path casePath) throws Exception {
+        BothBranches.green(ir, JSON.readTree(Files.readString(casePath)), casePath.getFileName().toString());
     }
 
     /** Every {@code sourceRole} under a rule, at whatever depth — the folds sit inside the rule's conditions. */

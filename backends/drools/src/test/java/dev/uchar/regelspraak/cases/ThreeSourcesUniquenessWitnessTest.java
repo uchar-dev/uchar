@@ -51,15 +51,15 @@ class ThreeSourcesUniquenessWitnessTest {
         }
         assertEquals(2, cases.size(), "de cases van het document");
         List<String> verdicts = new ArrayList<>();
-        for (Path caseDocument : cases)
+        for (Path casePath : cases)
             for (DroolsBackend.Branch branch : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
-                String judgement = CaseRunner.playCase(ir, JSON.readTree(caseDocument.toFile()), branch);
-                if (judgement != null) verdicts.add(branch + " — " + caseDocument.getFileName() + ": " + judgement);
+                String verdict = CaseRunner.playCase(ir, JSON.readTree(casePath.toFile()), branch);
+                if (verdict != null) verdicts.add(branch + " — " + casePath.getFileName() + ": " + verdict);
             }
         assertEquals(List.of(), verdicts, "de cases die niet spelen");
-        for (Path caseDocument : cases) {
-            String which = caseDocument.getFileName().toString();
-            String dump = BranchDumps.equal(ir, JSON.readTree(caseDocument.toFile()), which);
+        for (Path casePath : cases) {
+            String which = casePath.getFileName().toString();
+            String dump = BranchDumps.equal(ir, JSON.readTree(casePath.toFile()), which);
             assertTrue(dump.contains("feit UniquenessKey(uniqueness=String(\"eenmalige reekscode\"), bron=Integer(2),"
                     + " element=\"D1\""), () -> "de sleutel van de derde bron staat niet in de dump van " + which + ":\n"
                     + dump);

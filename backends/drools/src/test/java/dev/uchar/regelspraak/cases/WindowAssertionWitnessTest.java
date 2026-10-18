@@ -55,10 +55,10 @@ class WindowAssertionWitnessTest {
      *  V2 (meldatum after the date) and V4 (leeg meldatum) break it; in a time-free session all four do. */
     @Test void the_window_with_its_own_bound_as_assertion_plays() throws Exception {
         Path ir = document(MELDATUM);
-        BothBranches.green(ir, goldenCase("2024-06-15", List.of(V1, V3)), "V1 en V3 houden de assertie");
-        BothBranches.green(ir, goldenCase("2024-06-15", List.of(V2, V4), "V2", "V4"),
+        BothBranches.green(ir, caseDocument("2024-06-15", List.of(V1, V3)), "V1 en V3 houden de assertie");
+        BothBranches.green(ir, caseDocument("2024-06-15", List.of(V2, V4), "V2", "V4"),
                 "V2 buiten het venster, V4 zonder meldatum");
-        BothBranches.green(ir, goldenCase(null, List.of(V1, V2, V3, V4), "V1", "V2", "V3", "V4"),
+        BothBranches.green(ir, caseDocument(null, List.of(V1, V2, V3, V4), "V1", "V2", "V3", "V4"),
                 "tijdvrij: het venster matcht nooit");
     }
 
@@ -66,18 +66,18 @@ class WindowAssertionWitnessTest {
      *  the first; on 2025-01-01 V1 breaks the window, whose tot is exclusive; time-free both break it. */
     @Test void a_literal_window_in_an_all_assertion_plays() throws Exception {
         Path ir = document(combined("all", GEVULD, LITERAL));
-        BothBranches.green(ir, goldenCase("2024-06-15", List.of(V1)), "binnen het venster, gevuld");
-        BothBranches.green(ir, goldenCase("2024-06-15", List.of(V4), "V4"), "binnen het venster, niet gevuld");
-        BothBranches.green(ir, goldenCase("2025-01-01", List.of(V1), "V1"), "op de totgrens, die exclusief is");
-        BothBranches.green(ir, goldenCase(null, List.of(V1, V4), "V1", "V4"), "tijdvrij: het venster matcht nooit");
+        BothBranches.green(ir, caseDocument("2024-06-15", List.of(V1)), "binnen het venster, gevuld");
+        BothBranches.green(ir, caseDocument("2024-06-15", List.of(V4), "V4"), "binnen het venster, niet gevuld");
+        BothBranches.green(ir, caseDocument("2025-01-01", List.of(V1), "V1"), "op de totgrens, die exclusief is");
+        BothBranches.green(ir, caseDocument(null, List.of(V1, V4), "V1", "V4"), "tijdvrij: het venster matcht nooit");
     }
 
     /** WF-112's composite arm at the assertion: both branches refuse, naming the quantifier and the rule. */
     @Test void under_none_and_at_least_both_branches_refuse_the_window_by_name() throws Exception {
-        BothBranches.refused(document(combined("none", GEVULD, LITERAL)), goldenCase(null, List.of(V1, V4)),
+        BothBranches.refused(document(combined("none", GEVULD, LITERAL)), caseDocument(null, List.of(V1, V4)),
                 "GEEN-samenstelling (WF-112)", "GEEN[gevuld, venster] als assertie");
         BothBranches.refused(document(togetherWithThreshold("atLeast", 1, GEVULD, LITERAL)),
-                goldenCase(null, List.of(V1, V4)), "TEN_MINSTE-samenstelling (WF-112)",
+                caseDocument(null, List.of(V1, V4)), "TEN_MINSTE-samenstelling (WF-112)",
                 "TEN MINSTE 1[gevuld, venster] als assertie");
     }
 
@@ -142,7 +142,7 @@ class WindowAssertionWitnessTest {
 
     /** The given Vondsten at {@code asOf}: basispremie 1 on each (the control fires everywhere), and the named
      *  ones inconsistent under the rule — or, when none is named, no inconsistency at all. */
-    private static JsonNode goldenCase(String asOf, List<String> vondsten, String... inconsistent) throws Exception {
+    private static JsonNode caseDocument(String asOf, List<String> vondsten, String... inconsistent) throws Exception {
         ObjectNode c = JSON.createObjectNode();
         c.put("format", "uchar-case-v0");
         if (asOf == null) c.putNull("asOfDate"); else c.put("asOfDate", asOf);

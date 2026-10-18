@@ -90,7 +90,7 @@ class LetCarrierWalkWitnessTest {
 
     // ---------------- 2. the walks that must descend into a ch. 4.10 node ----------------
 
-    @Test void a_let_hidden_navigated_read_keeps_the_remote_side_reactive() throws Exception {
+    @Test void a_let_hidden_navigated_read_keeps_the_far_side_reactive() throws Exception {
         // "uit := Let k = het afgeleid van zijn strandmaat in k maal 2,00" — the read is NAVIGATED, so the
         // consumer's reactivity depends on navRefs seeing it. Its producer ("afgeleid") is FORCED into a lower
         // stratum (§9.2: it reads a negated kenmerk that has a producer, salience -1), so it fires AFTER this
@@ -98,7 +98,7 @@ class LetCarrierWalkWitnessTest {
         // against a leeg partner value (maal coalesces it to 0) and never recomputes.
         // ref on this exact model+case: J1.afgeleid 30.0000, J2.afgeleid 60.0000, J1.uit 120.000000,
         // J2.uit 60.000000 (the fixpoint; the strandmaatschap is wederkerig, so J2 reads J1 back).
-        assertNull(play(remoteReactivityModel(), caseOf(
+        assertNull(play(farSideReactivityModel(), caseOf(
                 inst("J1", "Jutter", "\"strandtegoed\": { \"number\": \"10.00\" }", "\"strandmaat\": [\"J2\"]")
                         + ", " + inst("J2", "Jutter", "\"strandtegoed\": { \"number\": \"20.00\" }", ""),
                 waarde("J1", "afgeleid", "30.0000") + ", " + waarde("J2", "afgeleid", "60.0000") + ", "
@@ -146,7 +146,7 @@ class LetCarrierWalkWitnessTest {
 
     // ------- 4. the other half: a companion the walk DOES build and the path probe must keep SILENT -------
 
-    @Test void a_division_in_the_not_taken_arm_yields_no_fault() throws Exception {
+    @Test void a_division_in_the_not_taken_arm_yields_no_error() throws Exception {
         // ch. 10.2 evaluates EXACTLY the chosen branch. The DAN branch divides by `deler`, which is absent; the
         // condition is false (a = 1,00, not > 100), so that division never runs. The walk DOES descend into the
         // branch — the §9.5 companion for that division exists — and what keeps it silent is its path probe:
@@ -169,7 +169,7 @@ class LetCarrierWalkWitnessTest {
         assertNull(play(notTakenArmModel(true), caseOf(invoer, verwacht)), "dezelfde keuze in een Let-body");
     }
 
-    @Test void a_division_in_a_let_body_with_an_unread_binder_does_deliver_the_fault() throws Exception {
+    @Test void a_division_in_a_let_body_with_an_unread_binder_does_deliver_the_error() throws Exception {
         // ch. 10.6 under call-by-need (maintainer decision O3): "Let d = deler in inkomen gedeeld door tweede",
         // `deler` AND `tweede` absent. The binder `d` is never read, so clause 3 never evaluates `deler`, no
         // barrier is raised, and the body ALWAYS runs — its division by the absent `tweede` is real: a §6.5
@@ -186,7 +186,7 @@ class LetCarrierWalkWitnessTest {
                 "dezelfde deling in een Let-body waarvan de binder niet gelezen wordt");
     }
 
-    @Test void a_division_behind_a_passed_empty_barrier_yields_no_fault() throws Exception {
+    @Test void a_division_behind_a_passed_empty_barrier_yields_no_error() throws Exception {
         // the sister: "Let d = deler in d plus (inkomen gedeeld door tweede)", `deler` and `tweede` absent. Now the
         // body READS `d` — and reads it FIRST (the left operand; ref evaluates a Binair left before right). That
         // read forces the leeg need, raises the barrier at the read (clause 2) and ends the Let before the
@@ -424,7 +424,7 @@ class LetCarrierWalkWitnessTest {
     }
 
     /** A Let over a NAVIGATED read of an attribute whose producer is forced to fire last. */
-    private static String remoteReactivityModel() {
+    private static String farSideReactivityModel() {
         String far = navAttr("Jutter", "afgeleid", num(4), "strandmaatschap", "strandmaat");
         String feittype = "{\"node\":\"FactType\",\"name\":\"strandmaatschap\","
                 + "\"reciprocal\":true,\"roles\":[{\"node\":\"Role\",\"name\":\"strandmaat\","

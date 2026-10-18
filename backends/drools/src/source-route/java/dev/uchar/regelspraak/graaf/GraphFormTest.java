@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static dev.uchar.regelspraak.graaf.TwoRoutes.edges;
-import static dev.uchar.regelspraak.graaf.TwoRoutes.jsonNode;
+import static dev.uchar.regelspraak.graaf.TwoRoutes.node;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,7 +48,7 @@ class GraphFormTest {
                     indien hij niet uitgesloten is.
             """;
         TwoRoutes.lees(bron).graphs().forEach((route, g) -> {
-            assertEquals(RegelGraaf.NodeKind.KENMERK, jsonNode(g, "uitgesloten · jutter").kind(),
+            assertEquals(RegelGraaf.NodeKind.KENMERK, node(g, "uitgesloten · jutter").kind(),
                     route + ": de defaultsgroep schrijft het kenmerk, dus het is geen invoer");
             assertEquals(List.of("uitsluiting van het penningrecht (DEFAULTSGROEP) -> uitgesloten -> "
                     + "penninggerechtigd tenzij uitgesloten (REGEL)"), dependencies(g), route);
@@ -77,7 +77,7 @@ class GraphFormTest {
                     De uitkering van een Strandrecht moet gesteld worden op zijn grondslag.
             """;
         TwoRoutes.lees(bron).graphs().forEach((route, g) -> {
-            assertEquals(RegelGraaf.NodeKind.ATTRIBUUT, jsonNode(g, "grondslag · strandrecht").kind(),
+            assertEquals(RegelGraaf.NodeKind.ATTRIBUUT, node(g, "grondslag · strandrecht").kind(),
                     route + ": de creatie kent de grondslag toe, dus die is geen invoer");
             assertEquals(List.of("boek een strandrecht bij elk wrakrecht (OBJECTCREATIE) -> grondslag -> "
                     + "uitkering van een strandrecht (REGEL)"), dependencies(g), route);
@@ -114,8 +114,8 @@ class GraphFormTest {
                     Het loon van een Berger moet gesteld worden op zijn bergingsaandeel.
             """;
         TwoRoutes.lees(bron).graphs().forEach((route, g) -> {
-            assertEquals(RegelGraaf.NodeKind.ATTRIBUUT, jsonNode(g, "bergingsaandeel · berger").kind(), route);
-            assertFalse(jsonNode(g, "opbrengst · berging").eindOutput(), route + ": de verdeling leest de opbrengst");
+            assertEquals(RegelGraaf.NodeKind.ATTRIBUUT, node(g, "bergingsaandeel · berger").kind(), route);
+            assertFalse(node(g, "opbrengst · berging").eindOutput(), route + ": de verdeling leest de opbrengst");
             assertEquals(List.of(
                     "opbrengst van een berging (REGEL) -> opbrengst -> verdeel de opbrengst van een berging (VERDELING)",
                     "verdeel de opbrengst van een berging (VERDELING) -> bergingsaandeel -> loon van een berger (REGEL)"),
@@ -139,7 +139,7 @@ class GraphFormTest {
                     De registernummers van alle Vondsten moeten uniek zijn.
             """;
         TwoRoutes.lees(bron).graphs().forEach((route, g) -> {
-            assertFalse(jsonNode(g, "registernummer · vondst").eindOutput(), route + ": twee controles lezen het");
+            assertFalse(node(g, "registernummer · vondst").eindOutput(), route + ": twee controles lezen het");
             assertEquals(List.of(
                     "registernummer van een vondst (REGEL) -> registernummer -> registernummer onder de grens (CONSISTENTIE)",
                     "registernummer van een vondst (REGEL) -> registernummer -> eenmalig registernummer (UNICITEIT)"),
@@ -183,7 +183,7 @@ class GraphFormTest {
                     indien het sein gehesen is.
             """;
         TwoRoutes.lees(bron).graphs().forEach((route, g) -> {
-            assertFalse(jsonNode(g, "gehesen · sein").eindOutput(), route + ": de feitcreatie leest het kenmerk");
+            assertFalse(node(g, "gehesen · sein").eindOutput(), route + ": de feitcreatie leest het kenmerk");
             assertEquals(List.of("hijsing naar hoogte (REGEL) -> gehesen -> vakbeseining door het kustvak (FEITCREATIE)"),
                     dependencies(g), route);
             assertEquals(Vormsoort.FEITCREATIE, g.dependencies().get(0).consumerForm(), route);

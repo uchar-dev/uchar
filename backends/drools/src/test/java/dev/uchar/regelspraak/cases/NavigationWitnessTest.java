@@ -146,7 +146,7 @@ class NavigationWitnessTest {
         assertEquals("/rules/rules/" + VLAGPRIJS + "/versions/0/value/path", e.site(), e.getMessage());
     }
 
-    @Test void a_malformed_binding_is_named_on_loading() throws Exception {
+    @Test void a_malformed_binding_is_refused_by_name_on_loading() throws Exception {
         // the verifier and ref give LOAD ERROR naming the field, and so does this loader, at the binding's pointer
         ObjectNode ir = lees();
         ((ObjectNode) waarde(ir).get("path").get(0)).remove("role");

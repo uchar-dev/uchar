@@ -39,8 +39,8 @@ class CounterpartWitnessTest {
 
     @Test void the_narrowing_on_the_other_side_plays_in_both_branches() throws Exception {
         // wachtjutter is to-many, so the link is Jutter's reference back at the post; the golden's own three cases
-        for (Path caseDocument : cases()) BothBranches.green(temporary(lees()), JSON.readTree(Files.readString(caseDocument)),
-                "the narrowed far-side check, " + caseDocument.getFileName());
+        for (Path casePath : cases()) BothBranches.green(temporary(lees()), JSON.readTree(Files.readString(casePath)),
+                "the narrowed far-side check, " + casePath.getFileName());
     }
 
     @Test void without_narrowing_every_jutter_counts_on_the_other_side() throws Exception {
@@ -58,8 +58,8 @@ class CounterpartWitnessTest {
         // round this backend compared case alone and called the document malformed.
         ObjectNode ir = lees();
         for (int r : new int[] { 0, 1, 2, 3 }) regel(ir, r).put("role", "Toegewezen  wachtpost");
-        for (Path caseDocument : cases()) BothBranches.green(temporary(ir), JSON.readTree(Files.readString(caseDocument)),
-                "the role named with another case and a doubled blank, " + caseDocument.getFileName());
+        for (Path casePath : cases()) BothBranches.green(temporary(ir), JSON.readTree(Files.readString(casePath)),
+                "the role named with another case and a doubled blank, " + casePath.getFileName());
     }
 
     // ---------------- the link stored on the SUBJECT: a null-test and a type test on its reference ----------------

@@ -1591,9 +1591,12 @@ class Index:
         fqn = m.imports.get(name)
         if fqn is not None:
             return self.java_fqn.get(fqn)
-        for f in self.java_types.get(name, ()):
-            if f in self.java_packages.get(m.package, ()):
-                return f
+        # a neighbour's nested type is read as Outer.Name, so a top-level type of the package wins; the order of a set
+        # must not decide between the files of one package (card drools-word-fixes)
+        here = sorted(f for f in self.java_types.get(name, ()) if f in self.java_packages.get(m.package, ()))
+        top = [f for f in here if any(t.name == name and t.parent is None for t in self.repo.model(f).types)]
+        if top or here:
+            return (top or here)[0]
         for pkg, static in m.wildcard_imports:
             f = self.java_fqn.get(pkg + '.' + name)
             if f is not None:
@@ -4305,7 +4308,8 @@ def _scopes_overlap(a, b):
         for f, ra in a.ranges.items():
             for s1, e1 in ra:
                 for s2, e2 in b.ranges.get(f, ()):
-                    if s1 <= e2 and s2 <= e1:
+                    # half-open: a member starts where the one before it ends
+                    if s1 < e2 and s2 < e1:
                         return True
         return False
     return True

@@ -102,11 +102,11 @@ public enum Aggregation {
     MAP(ComputeHelpers.class, "map", false),
     /** A value restated by the exact canonical factors of two units (ch. 2.1, 2.6), a {@code BigDecimal} numerator and
      *  denominator, as rationals; a leeg value and a value that is no number pass unchanged. The function of a
-     *  {@link Term.Rescale}. */
-    RESCALE_EXACT(ComputeHelpers.class, "rescaleExact", false),
+     *  {@link Term.Restate}. */
+    RESTATE_EXACT(ComputeHelpers.class, "restateExact", false),
     /** A value restated by the single ratio of two units, a {@code BigDecimal}, a rate whose factors are not both
-     *  known; a leeg value and a value that is no number pass unchanged. The function of a {@link Term.Rescale}. */
-    RESCALE(ComputeHelpers.class, "rescale", false),
+     *  known; a leeg value and a value that is no number pass unchanged. The function of a {@link Term.Restate}. */
+    RESTATE(ComputeHelpers.class, "restate", false),
     /** One step of a listed fold that keeps the least operand (ch. 1.2e): from the value so far and the next operand,
      *  a leeg operand skipped, a tie taking the later one, compared exactly ({@code ComputeHelpers.vergelijk}). The function
      *  of a {@link Term.ListedFold}. */

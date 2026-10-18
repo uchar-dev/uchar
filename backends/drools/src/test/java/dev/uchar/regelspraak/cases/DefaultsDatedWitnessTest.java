@@ -62,9 +62,9 @@ class DefaultsDatedWitnessTest {
         List<Path> cases = cases(DOCUMENT), red = cases(RED);
         assertEquals(5, cases.size(), "de cases van de golden");
         assertEquals(1, red.size(), "de cases van de rode case");
-        for (Path caseDocument : cases) {
-            JsonNode c = JSON.readTree(caseDocument.toFile());
-            String which = caseDocument.getFileName().toString();
+        for (Path casePath : cases) {
+            JsonNode c = JSON.readTree(casePath.toFile());
+            String which = casePath.getFileName().toString();
             BranchDumps.equal(ir, c, which);
             assertEquals("gespeeld", TmsFaultWitnessTest.play(ir, c, DroolsBackend.Branch.EXEC_MODEL), which);
         }

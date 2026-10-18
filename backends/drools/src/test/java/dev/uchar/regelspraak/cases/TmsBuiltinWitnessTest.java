@@ -31,7 +31,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
 import static dev.uchar.regelspraak.cases.TmsDocuments.keuze;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.let;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
@@ -103,7 +103,7 @@ class TmsBuiltinWitnessTest {
             attribuut("weken", numberType(true, 0, unit("weken"))),
             attribuut("dagen", numberType(true, 0, unit("dagen"))), attribuut("paasdatum", DATE)), List.of())), List.of());
 
-    private static final String AS_OF_DATE = reading("peildatum", "Vondst"), VINDDATUM = reading("vinddatum", "Vondst");
+    private static final String AS_OF_DATE = ownRead("peildatum", "Vondst"), VINDDATUM = ownRead("vinddatum", "Vondst");
 
     /** "De peildatum van een Vondst moet berekend worden als zijn vinddatum plus 10 dagen". */
     static final String AS_OF = computingRule("peildatum van een vondst", "BEREKENING", "Vondst", "peildatum",
@@ -159,9 +159,9 @@ class TmsBuiltinWitnessTest {
 
     @Test void the_absolute_value_of_a_later_derived_balance() throws Exception {
         String balance = computingRule("saldo van een vondst", "BEREKENING", "Vondst", "saldo",
-                binary("minus", reading("basis", "Vondst"), literal("50.00", TWO), TWO), "null");
+                binary("minus", ownRead("basis", "Vondst"), literal("50.00", TWO), TWO), "null");
         String afstand = computingRule("afstand van een vondst", "BEREKENING", "Vondst", "afstand",
-                builtin("absoluteValue", List.of(reading("saldo", "Vondst")), TWO, "de absolute waarde van zijn saldo"),
+                builtin("absoluteValue", List.of(ownRead("saldo", "Vondst")), TWO, "de absolute waarde van zijn saldo"),
                 "null");
         assertEveryOrder(NUMBER_MODEL, List.of(balance, afstand), TmsDocuments.caseOn(null, List.of(
                 instanceWith("V1", "Vondst", Map.of("basis", numberValue("20.00"), "saldo", numberValue("7.00")), List.of()),
@@ -172,10 +172,10 @@ class TmsBuiltinWitnessTest {
     }
 
     static final String OPPERVLAK = computingRule("oppervlak van een vondst", "BEREKENING", "Vondst", "oppervlak",
-            binary("times", reading("basis", "Vondst"), literal("2", WHOLE), TWO), "null");
+            binary("times", ownRead("basis", "Vondst"), literal("2", WHOLE), TWO), "null");
 
     static final String SIDE = computingRule("zijde van een vondst", "BEREKENING", "Vondst", "zijde",
-            rounding(builtin("squareRoot", List.of(reading("oppervlak", "Vondst")), TWO, "de wortel van zijn oppervlak"),
+            rounding(builtin("squareRoot", List.of(ownRead("oppervlak", "Vondst")), TWO, "de wortel van zijn oppervlak"),
                     "halfAwayFromZero", 2, TWO), "null");
 
     @Test void the_square_root_of_a_later_derived_oppervlak_under_its_rounding() throws Exception {
@@ -203,7 +203,7 @@ class TmsBuiltinWitnessTest {
      *  refused it as "een squareRoot die niet de basis van een afronding is". */
     @Test void a_square_root_without_rounding_is_exact_or_a_fault() throws Exception {
         String side = computingRule("zijde van een vondst", "BEREKENING", "Vondst", "zijde", builtin("squareRoot",
-                List.of(reading("oppervlak", "Vondst")), TWO, "de wortel van zijn oppervlak"), "null");
+                List.of(ownRead("oppervlak", "Vondst")), TWO, "de wortel van zijn oppervlak"), "null");
         JsonNode exact = TmsDocuments.caseOn(null, List.of(
                 instanceWith("V1", "Vondst", Map.of("basis", numberValue("2.00"), "oppervlak", numberValue("2.00")),
                         List.of()),
@@ -237,7 +237,7 @@ class TmsBuiltinWitnessTest {
             attribuut("basis", TWO)), List.of())), List.of());
 
     static final String TITLE = computingRule("titel van een vondst", "BEREKENING", "Vondst", "titel",
-            reading("naam", "Vondst"), "null");
+            ownRead("naam", "Vondst"), "null");
 
     static JsonNode textCase(String doel, String v1, String v2) throws Exception {
         return TmsDocuments.caseOn(null, List.of(
@@ -248,10 +248,10 @@ class TmsBuiltinWitnessTest {
 
     @Test void a_text_sequence_and_a_concatenation_over_a_later_derived_title() throws Exception {
         String description = computingRule("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
-                textComposition(List.of(textPart("Vondst: "), textExpression(reading("titel", "Vondst")))), "null");
+                textComposition(List.of(textPart("Vondst: "), textExpression(ownRead("titel", "Vondst")))), "null");
         assertEveryOrder(TEXT_MODEL, List.of(TITLE, description), textCase("omschrijving", "Vondst: anker", "Vondst: "));
         String code = computingRule("code van een vondst", "BEREKENING", "Vondst", "code", builtin("concatenation",
-                List.of(reading("titel", "Vondst"), reading("naam", "Vondst")), TEKST, "de concatenatie van zijn titel en"
+                List.of(ownRead("titel", "Vondst"), ownRead("naam", "Vondst")), TEKST, "de concatenatie van zijn titel en"
                         + " zijn naam"), "null");
         assertEveryOrder(TEXT_MODEL, List.of(TITLE, code), textCase("code", "ankeranker", ""));
     }
@@ -261,7 +261,7 @@ class TmsBuiltinWitnessTest {
      *  answer it differently: the branch refuses such a part by name. */
     @Test void a_text_composition_with_a_number_is_refused() throws Exception {
         String description = computingRule("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
-                textComposition(List.of(textPart("Bedrag: "), textExpression(reading("basis", "Vondst")))), "null");
+                textComposition(List.of(textPart("Bedrag: "), textExpression(ownRead("basis", "Vondst")))), "null");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
                 TmsDocuments.document(TEXT_MODEL, List.of(description)), DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("transpiler SKIP: regel: omschrijving van een vondst — een tekstdeel van type Numeriek in een"
@@ -283,13 +283,13 @@ class TmsBuiltinWitnessTest {
 
     @Test void the_eleven_test_and_exact_four_digits_over_a_later_derived_value() throws Exception {
         String number = computingRule("nummer van een vondst", "BEREKENING", "Vondst", "nummer",
-                reading("grondnummer", "Vondst"), "null");
+                ownRead("grondnummer", "Vondst"), "null");
         String valid = characteristicRule("geldig bij elfproef", "Vondst", "geldig",
-                trial("elevenTest", reading("nummer", "Vondst"), 0));
+                trial("elevenTest", ownRead("nummer", "Vondst"), 0));
         String postcode = computingRule("postcode van een vondst", "BEREKENING", "Vondst", "postcode",
-                reading("grondcode", "Vondst"), "null");
+                ownRead("grondcode", "Vondst"), "null");
         String four = characteristicRule("viercijferig bij postcode", "Vondst", "viercijferig",
-                trial("exactDigits", reading("postcode", "Vondst"), 4));
+                trial("exactDigits", ownRead("postcode", "Vondst"), 4));
         JsonNode caseDocument = TmsDocuments.caseOn(null, List.of(
                 instanceWith("V1", "Vondst", Map.of("grondnummer", numberValue("123456782"), "nummer",
                         numberValue("111111111"), "grondcode", textValue("1234"), "postcode", textValue("abcd")),
@@ -326,11 +326,11 @@ class TmsBuiltinWitnessTest {
             attribuut("minuut", WHOLE), attribuut("seconde", WHOLE), attribuut("milliseconde", WHOLE),
             attribuut("einddatum", DATE), attribuut("eindtijd", DATE_TIME)), List.of())), List.of());
 
-    private static final String AANKOMST = reading("aankomst", "Getij");
+    private static final String AANKOMST = ownRead("aankomst", "Getij");
 
     @Test void time_parts_and_date_construction_of_a_later_derived_aankomst() throws Exception {
         String aankomst = computingRule("aankomst van een getij", "BEREKENING", "Getij", "aankomst",
-                binary("plus", reading("vertrek", "Getij"), literal("2", numberType(true, 0, unit("uur"))), DATE_TIME),
+                binary("plus", ownRead("vertrek", "Getij"), literal("2", numberType(true, 0, unit("uur"))), DATE_TIME),
                 "null");
         String year = builtin("yearOf", List.of(AANKOMST), WHOLE, "het jaar uit zijn aankomst");
         List<String> rules = List.of(aankomst,
@@ -375,7 +375,7 @@ class TmsBuiltinWitnessTest {
             List.of());
 
     private static final String VALUE = computingRule("waarde van een vondst", "BEREKENING", "Vondst", "waarde",
-            binary("times", reading("basis", "Vondst"), literal("1.5", numberType(false, 1, null)), THREE), "null");
+            binary("times", ownRead("basis", "Vondst"), literal("1.5", numberType(false, 1, null)), THREE), "null");
 
     static final String UNRESOLVED_VALUE = "{\"node\":\"Unresolved\",\"type\":" + TWO + ",\"source\":{\"snippet\":"
             + "\"een onopgeloste heffing\"}}";
@@ -384,10 +384,10 @@ class TmsBuiltinWitnessTest {
 
     @Test void an_unresolved_marker_fails_only_where_the_evaluation_reaches_it() throws Exception {
         String heffing = computingRule("heffing van een vondst", "BEREKENING", "Vondst", "heffing", let("k",
-                reading("waarde", "Vondst"), keuze(comparison("greater", binderRead("k"), literal("10", WHOLE)),
+                ownRead("waarde", "Vondst"), keuze(comparison("greater", binderRead("k"), literal("10", WHOLE)),
                         literal("5.00", TWO), UNRESOLVED_VALUE, TWO), TWO), "null");
         String duration = characteristicRule("duur bij waarde", "Vondst", "duur", compound("all", 0, List.of(
-                comparison("greater", reading("waarde", "Vondst"), literal("100", WHOLE)), UNRESOLVED_CONDITION)));
+                comparison("greater", ownRead("waarde", "Vondst"), literal("100", WHOLE)), UNRESOLVED_CONDITION)));
         // the input waarde 3 sends the heffing to the marker on the way, 500 sends the condition to it
         for (String intermediateState : List.of("3", "500"))
             assertEveryOrder(UNRESOLVED_MODEL, List.of(VALUE, heffing, duration), TmsDocuments.caseOn(null, List.of(
@@ -395,13 +395,13 @@ class TmsBuiltinWitnessTest {
                             List.of())),
                     List.of(waarde("V1", "heffing", "5.00"), verwacht("V1", "duur", false), consistent())));
         List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
-        JsonNode lowLink = TmsDocuments.caseOn(null, List.of(
+        JsonNode low = TmsDocuments.caseOn(null, List.of(
                 instanceWith("V2", "Vondst", Map.of("basis", numberValue("4.00")), List.of())), List.of(consistent()));
         JsonNode high = TmsDocuments.caseOn(null, List.of(
                 instanceWith("V3", "Vondst", Map.of("basis", numberValue("100.00")), List.of())), List.of(consistent()));
         for (List<String> order : TmsDocuments.permutations(List.of(VALUE, heffing))) {
             List<String> names = TmsDocuments.ruleNames(order);
-            outcomes.add(names + " " + TmsFaultWitnessTest.play(TmsDocuments.document(UNRESOLVED_MODEL, order), lowLink,
+            outcomes.add(names + " " + TmsFaultWitnessTest.play(TmsDocuments.document(UNRESOLVED_MODEL, order), low,
                     DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(names + " Rekenfout: fout in de regel \"heffing van een vondst\": Unresolved reached in"
                     + " evaluation: this rule fails observably");
@@ -426,7 +426,7 @@ class TmsBuiltinWitnessTest {
             + "\"dimensions\":[{\"node\":\"Dimension\",\"name\":\"kwartaal\",\"plural\":\"kwartalen\",\"preposition\":"
             + "\"in\",\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]}],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static final String OMZET = reading("omzet", "Jutter");
+    private static final String OMZET = ownRead("omzet", "Jutter");
 
     /** The case reader does not carry dimensioned input (§3.6, a Map bean member), on any branch, so the beans are
      *  set here; "Het tweede kwartaal … als zijn omzet in k2 plus zijn toeslag" and "De jaaromzet … als de som van zijn
@@ -451,16 +451,16 @@ class TmsBuiltinWitnessTest {
 
     @Test void a_dimension_cell_and_a_dimension_fold_beside_a_later_derived_toeslag() throws Exception {
         String toeslag = computingRule("toeslag van een jutter", "BEREKENING", "Jutter", "toeslag",
-                reading("grondtoeslag", "Jutter"), "null");
+                ownRead("grondtoeslag", "Jutter"), "null");
         String cell = "{\"node\":\"DimensionCellRead\",\"attribute\":" + OMZET + ",\"labels\":[\"k2\"],\"source\":"
                 + "{\"snippet\":\"zijn omzet in k2\"}}";
         String tweede = computingRule("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal",
-                binary("plus", cell, reading("toeslag", "Jutter"), TWO), "null");
+                binary("plus", cell, ownRead("toeslag", "Jutter"), TWO), "null");
         String fold = "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[" + OMZET + "],\"dimensionSelection\":"
                 + "{\"node\":\"DimensionSelection\",\"dimension\":\"kwartaal\",\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]},"
                 + "\"type\":" + TWO + ",\"source\":{\"snippet\":\"de som van zijn omzet over alle kwartalen\"}}";
         String year = computingRule("jaaromzet van een jutter", "BEREKENING", "Jutter", "jaaromzet",
-                binary("plus", fold, reading("toeslag", "Jutter"), TWO), "null");
+                binary("plus", fold, ownRead("toeslag", "Jutter"), TWO), "null");
         DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(DIMENSION_MODEL, List.of(toeslag, tweede, year)),
                 DroolsBackend.Branch.EXEC_MODEL);
         int orders = 0;

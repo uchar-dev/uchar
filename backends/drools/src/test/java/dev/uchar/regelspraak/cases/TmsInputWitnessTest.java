@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <ul>
  *   <li>The order of a to-many list decides which member a fault names where a fold reads its members one by one and
- *       stops at the first fault (RUNTIME-SEMANTICS ch. 5.11). On the document of {@link TmsFilterErrorWitnessTest} the
+ *       stops at the first fault (RUNTIME-SEMANTICS ch. 5.11). On the document of {@link TmsFilterFaultWitnessTest} the
  *       filter of the fold faults for both Vondsten of J1, V1 dividing 9 and V2 4 by their deelnemers 0: in the order
  *       of the beans V1, V2 the fault names 9, in the order V2, V1 it names 4, and a list given as V2, V1 names 4 with
  *       the beans in the order V1, V2.</li>
@@ -58,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code Invoervormfout}, "the temporal total of "bedrag" over a case-supplied full timeline is not exercised by any
  * corpus case; the asOfDate-bucket convention carries the total". On the filter document, in either order, the
  * reference interpreter faults with "division by numeric zero", a sentence without the operands, and the ASP runner
- * reports both members without an order: which member it names, {@code TmsFilterErrorWitnessTest} measured with the
+ * reports both members without an order: which member it names, {@code TmsFilterFaultWitnessTest} measured with the
  * dividend added to the reference interpreter's sentence.
  *
  * <p><b>Red before the change</b> (measured 2026-10-10 on {@code 095a586a}): the witness does not compile there, since
@@ -138,9 +138,9 @@ class TmsInputWitnessTest {
             sentences.add(refusal(b, new Invoer().beans(beans).emmerscalair(v1, "lengte")));
             sentences.add(refusal(b, new Invoer().beans(List.of(j1, v1, v1))));
             // a bean model of another document: the bean compiler shares the classes of identical models only
-            DroolsBackend.Build earlierBean = DroolsBackend.build(TmsRepeatedFireWitnessTest.valueDocument(),
+            DroolsBackend.Build other = DroolsBackend.build(TmsRepeatedFireWitnessTest.valueDocument(),
                     DroolsBackend.Branch.EXEC_MODEL);
-            Object foreign = TmsDocuments.beanObject(earlierBean.beanLoader(), "Vondst", Map.of(), List.of());
+            Object foreign = TmsDocuments.beanObject(other.beanLoader(), "Vondst", Map.of(), List.of());
             sentences.add(refusal(b, new Invoer().beans(List.of(j1, foreign))));
             assertEquals(List.of(
                     lijst + " noemt " + naam(v3) + ", dat geen bean van de invoer is",
@@ -225,7 +225,7 @@ class TmsInputWitnessTest {
     // ---------------- helpers ----------------
 
     private static DroolsBackend.Build vondstBuild() throws Exception {
-        return DroolsBackend.build(TmsFilterErrorWitnessTest.document(TmsFilterErrorWitnessTest.ZWARE),
+        return DroolsBackend.build(TmsFilterFaultWitnessTest.document(TmsFilterFaultWitnessTest.ZWARE),
                 DroolsBackend.Branch.EXEC_MODEL);
     }
 

@@ -23,7 +23,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.numberType;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
@@ -82,7 +82,7 @@ class TmsDateFaultWitnessTest {
     static final String ERKENNING = characteristicRule("erkenning", "Vondst", "erkend", check("gemeld", false));
 
     static final String MELDTERMIJN = computingRule("meldtermijn", "BEREKENING", "Vondst", "meldtermijn",
-            binary("plus", reading("vinddatum", "Vondst"), reading("wachtdagen", "Vondst"), DATE), "null");
+            binary("plus", ownRead("vinddatum", "Vondst"), ownRead("wachtdagen", "Vondst"), DATE), "null");
 
     static final String WACHTDAGEN = attributeGroup("wachtdagen van een vondst", "Vondst", "wachtdagen", List.of(
             standaard(check("erkend", false), literal("3", WHOLE)),
@@ -108,7 +108,7 @@ class TmsDateFaultWitnessTest {
 
     /** The date steps of the lower default, in its consequence and in its justification. */
     static List<String> defaultGroups() {
-        String vinddatum = reading("vinddatum", "Vondst");
+        String vinddatum = ownRead("vinddatum", "Vondst");
         String three = literal("3", DAGEN), large = literal(TOO_LARGE, DAGEN);
         return List.of(
                 attributeGroup("meldtermijn van een vondst", "Vondst", "meldtermijn", List.of(
@@ -139,13 +139,13 @@ class TmsDateFaultWitnessTest {
             Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of(), List.of("gemeld"));
             v1.getClass().getMethod(dev.uchar.regelspraak.transpiler.kern.Namen.setter("vinddatum"),
                     java.time.LocalDate.class).invoke(v1, java.time.LocalDate.of(2026, 3, 1));
-            TmsLetWitnessTest.Facts sessionFacts = new TmsLetWitnessTest.Facts();
-            assertNull(TmsDocuments.fixpunt(b, order, List.of(v1), sessie -> sessie.addEventListener(sessionFacts)),
+            TmsLetWitnessTest.Facts facts = new TmsLetWitnessTest.Facts();
+            assertNull(TmsDocuments.fixpunt(b, order, List.of(v1), sessie -> sessie.addEventListener(facts)),
                     () -> "volgorde " + names);
-            assertEquals(sessionFacts.inserted, sessionFacts.withdrawn, () -> "foutfeiten in volgorde " + names);
+            assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
             assertEquals(java.time.LocalDate.of(2026, 3, 4), TmsDocuments.lees(v1, "meldtermijn"),
                     () -> "meldtermijn in volgorde " + names);
-            if (sessionFacts.fouten > 0) intermediateState++;
+            if (facts.fouten > 0) intermediateState++;
             orders++;
         }
         assertTrue(intermediateState > 0, "geen volgorde liet de lagere default eerst beslissen");
@@ -159,9 +159,9 @@ class TmsDateFaultWitnessTest {
 
     @Test void a_standing_date_fault_gives_the_sentence_of_the_reference() throws Exception {
         String close = computingRule("sluittijdstip", "BEREKENING", "Getijpost", "sluittijdstip",
-                binary("plus", reading("meldtijdstip", "Getijpost"), reading("wachttijd", "Getijpost"), DATE_TIME), "null");
+                binary("plus", ownRead("meldtijdstip", "Getijpost"), ownRead("wachttijd", "Getijpost"), DATE_TIME), "null");
         String report = computingRule("meldtermijn", "BEREKENING", "Getijpost", "meldtermijn",
-                binary("plus", reading("vinddatum", "Getijpost"), reading("wachtdagen", "Getijpost"), DATE), "null");
+                binary("plus", ownRead("vinddatum", "Getijpost"), ownRead("wachtdagen", "Getijpost"), DATE), "null");
         JsonNode hours = TmsDocuments.caseOn(null, List.of(instanceWith("G1", "Getijpost", Map.of(
                 "meldtijdstip", "{\"dateTime\":\"2024-01-01T00:00:00\"}", "wachttijd", numberValue("2000000000000")),
                 List.of())), List.of(consistent()));

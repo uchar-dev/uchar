@@ -85,10 +85,10 @@ class JoinWithTwoNullsWitnessTest {
     private static Modelplan plan(Class<?> wachter) {
         Subject onderwerp = new Subject(wachter, "$onderwerp", List.of(), List.of(),
                 List.of(Binding.van("$post", wachter, "post")));
-        FactPattern earlierBean = new FactPattern(wachter, "$ander", List.of(), List.of(new Join("ander-post", "post", "$post")),
+        FactPattern other = new FactPattern(wachter, "$ander", List.of(), List.of(new Join("ander-post", "post", "$post")),
                 List.of());
         return new Modelplan(List.of(), List.of(new RulePlan("join op de post", null, null, new ReadTable(List.of()),
-                List.of(onderwerp, earlierBean), new Consequence.Characteristic("$onderwerp", RUSTWACHT, Consequence.Insertion.LOGICAL))));
+                List.of(onderwerp, other), new Consequence.Characteristic("$onderwerp", RUSTWACHT, Consequence.Insertion.LOGICAL))));
     }
 
     /** The labels of the Wachters W1 and W2, with the posts {@code posten}, that have the characteristic at the fixpoint

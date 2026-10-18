@@ -100,7 +100,7 @@ class SourcePathChainWitnessTest {
      * the same document against that wrong number and demands BOTH branches reject it, so row 1's 12,00 is
      * a measurement rather than a coincidence.
      */
-    @Test void the_same_end_instance_via_two_routes_does_not_count_as_duplicate() throws Exception {
+    @Test void the_same_end_instance_via_two_routes_does_not_count_double() throws Exception {
         String perRoute = CHAIN.replace(
                 "\"label\": \"T1\", \"attribute\": \"steenlast\", \"value\": { \"number\": \"12.00\" }",
                 "\"label\": \"T1\", \"attribute\": \"steenlast\", \"value\": { \"number\": \"24.00\" }");

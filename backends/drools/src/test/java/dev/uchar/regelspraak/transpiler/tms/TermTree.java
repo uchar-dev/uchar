@@ -25,7 +25,7 @@ final class TermTree {
                     + "] in [" + tree(l.body()) + "]";
             case Term.Choice k -> "Keuze(" + tree(k.voorwaarde()) + ", " + tree(k.then()) + ", " + tree(k.otherwise()) + ")";
             case Term.Call a -> a.function() + lijst(a.arguments());
-            case Term.Rescale h -> "Herschaal " + h.function() + " " + unit(h.van()) + "->" + unit(h.naar())
+            case Term.Restate h -> "Herschaal " + h.function() + " " + unit(h.van()) + "->" + unit(h.naar())
                     + " " + h.counter() + (h.denominator() == null ? "" : "/" + h.denominator()) + " (" + tree(h.term()) + ")";
             case Term.Division d -> "Deel " + d.function() + " sonde " + d.depositFlag() + " (" + tree(d.left()) + ", "
                     + tree(d.right()) + ")";
@@ -34,8 +34,8 @@ final class TermTree {
             case Term.Required v -> "Vereist (" + tree(v.waarde()) + ") '" + v.sentence() + "'";
             case Term.TextComposition s -> "Tekstreeks" + lijst(s.parts());
             case Term.ListedFold g -> "GelijsteVouw " + g.function() + lijst(g.operands());
-            case Term.FoldRead v -> "Vouwlezing " + v.depositCount() + " " + v.depositFlag() + " " + v.filterError() + " "
-                    + v.memberError() + " (" + tree(v.outcome()) + ")";
+            case Term.FoldRead v -> "Vouwlezing " + v.depositCount() + " " + v.depositFlag() + " " + v.filterFault() + " "
+                    + v.memberFault() + " (" + tree(v.outcome()) + ")";
             case Term.DayKind d -> "Dagsoort " + d.naam();
             case Term.Compound s -> "Samengesteld " + s.quantifier() + " " + s.threshold() + lijst(s.members());
             case Term.QuantifierRead k -> "Kwantorlezing " + k.function() + " " + k.quantifier() + " " + k.threshold()
@@ -69,7 +69,7 @@ final class TermTree {
             case Term.Let l -> List.of(l.waarde(), l.body());
             case Term.Choice k -> List.of(k.voorwaarde(), k.then(), k.otherwise());
             case Term.Call a -> a.arguments();
-            case Term.Rescale h -> List.of(h.term());
+            case Term.Restate h -> List.of(h.term());
             case Term.Division d -> List.of(d.left(), d.right());
             case Term.SquareRoot w -> List.of(w.radicand());
             case Term.Fail f -> List.of();

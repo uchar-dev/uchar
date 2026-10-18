@@ -146,7 +146,7 @@ public final class CaseInvoer {
      *  ({@link Invoer#emmerscalair}). */
     private final List<Invoer.Bucket> emmers = new ArrayList<>();
     /** Per bean and per getter of a to-one reference field, the link of the case that wrote the field, which a collision
-     *  of the reverse leg names ({@link #spiegelReciprocalRoles}). */
+     *  of the reverse leg names ({@link #mirrorReciprocalRoles}). */
     private final Map<Object, Map<String, RoleLink>> writers = new IdentityHashMap<>();
 
     private CaseInvoer(DroolsBackend.Build build, LocalDate rekendatum) {
@@ -180,7 +180,7 @@ public final class CaseInvoer {
             for (JsonNode i : instances) invoer.beanFor(i);
             for (JsonNode i : instances) invoer.setAttributesAndCharacteristics(i);
             for (JsonNode i : instances) invoer.setRoles(i);
-            invoer.spiegelReciprocalRoles();
+            invoer.mirrorReciprocalRoles();
             return invoer;
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
@@ -354,7 +354,7 @@ public final class CaseInvoer {
                     // to mirror. ref's Case.materialise_relations makes the same write on the same role.
                     //
                     // roleLI == roleIL is the WEDERKERIG shape (§13.3.9.2: one role that is its own opposite),
-                    // whose mirror is spiegelReciprocalRoles's separate pass — untouched here, so its
+                    // whose mirror is mirrorReciprocalRoles's separate pass — untouched here, so its
                     // order-independence argument and its own conflict message keep holding.
                     if (roleLI != null && !roleLI.equalsIgnoreCase(roleIL) && !model.naarVeelRol(tL, tI, roleLI)) {
                         // The far field must really exist: a declared member of the same name displaces it
@@ -523,7 +523,7 @@ public final class CaseInvoer {
      *  </ul>
      *  A collision names the link whose leg the pass mirrored, the one that wrote the bean's own field: a leg the pass
      *  wrote itself never collides, since it writes only an empty field and its partner then reads back. */
-    private void spiegelReciprocalRoles() {
+    private void mirrorReciprocalRoles() {
         for (Object bean : labelToBean.values()) {
             // the reciprocal role of an instance of a SUBTYPE of its filler is its ancestor's (IR-SPEC ch. 2.6):
             // asked of the bean's own type alone, such a leg went unmirrored and the partner read an empty relation

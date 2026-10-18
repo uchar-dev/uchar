@@ -54,12 +54,12 @@ class ZeroDivisorConsumerWitnessTest {
      *  a fact of the fixpoint. Until card drl-teksttak-op-truth-maintenance the DRL-text branch threw Drools'
      *  {@code ConsequenceException} here, naming the rule "verhouding", with "Breuk deling door 0" in its cause chain,
      *  and {@code benoem} turned it into the sentence of the replay. */
-    @Test void self_fire_leaves_no_fault_out_of_the_fire() throws Exception {
+    @Test void self_fire_lets_no_fault_out_of_the_fire() throws Exception {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
             assertNull(fireSelf(branch), branch::name);
     }
 
-    @Test void both_branches_give_the_sentence_on_resetting() throws Exception {
+    @Test void both_branches_give_the_sentence_on_writing_back() throws Exception {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
             CaseRunner.forMeasurement(document(), branch).withSession(JSON.readTree(ZERO_AND_ORDINARY), (bouw, sessie, labels) -> {
                 assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), branch + ": the fire reaches its fixpoint");
@@ -72,7 +72,7 @@ class ZeroDivisorConsumerWitnessTest {
             });
     }
 
-    @Test void designate_lets_another_fault_like_drools_gave_it() throws Exception {
+    @Test void designate_leaves_another_fault_as_drools_gave_it() throws Exception {
         ConsequenceException e = new ConsequenceException(new IllegalStateException("geen deling"), null, null);
         assertSame(e, designate(e));
     }

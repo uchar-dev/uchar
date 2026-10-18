@@ -3,14 +3,14 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
 import java.util.List;
 
 /**
- * An accumulate over the objects {@code bron} matches, which binds a row also over no object: each of {@code functions}
+ * An accumulate over the objects {@code bron} matches, which binds a row also over no object: each of {@code aggregations}
  * folds the matched objects, or a value the pattern binds of each, into a variable of the rule.
  */
-public record Accumulation(FactPattern bron, List<Aggregation> functions) implements LhsItem {
+public record Accumulation(FactPattern bron, List<Aggregation> aggregations) implements LhsItem {
 
     public Accumulation {
-        functions = List.copyOf(functions);
-        if (functions.isEmpty()) throw new IllegalArgumentException("een accumulatie vouwt met ten minste één functie");
+        aggregations = List.copyOf(aggregations);
+        if (aggregations.isEmpty()) throw new IllegalArgumentException("een accumulatie vouwt met ten minste één functie");
     }
 
     /** {@code soort} over the matched object itself where {@code bron} is null, else over the variable {@code bron}

@@ -69,7 +69,7 @@ public final class Cycles {
     private Cycles() {}
 
     /** A read: the node, and whether the edge it draws is negative (ch. 5.2). */
-    private record Read(String jsonNode, boolean negative) {}
+    private record Read(String node, boolean negative) {}
 
     /** One form of the graph: its kind and name as the refusal names it, the IR node it is built from, whether it is a
      *  creation member of a recursive rule group, whether its writes are irrevocable, and the nodes it writes and
@@ -79,9 +79,9 @@ public final class Cycles {
     private record Vorm(ProducentConsument.Vormsoort soort, String naam, Object bron, boolean recursiveCreation,
                         boolean irrevocable, Set<String> writes, List<Read> leest) {}
 
-    /** An edge from the form that writes {@code jsonNode} to the form that reads it; {@code strict} where ch. 5.2 makes
+    /** An edge from the form that writes {@code node} to the form that reads it; {@code strict} where ch. 5.2 makes
      *  the edge strict or negative, so that off a cycle the reader's stratum lies above the writer's. */
-    private record Edge(int producer, int consumer, String jsonNode, boolean negative, boolean strict) {}
+    private record Edge(int producer, int consumer, String node, boolean negative, boolean strict) {}
 
     private static final Comparator<Vorm> FORM_ORDER =
             Comparator.comparing((Vorm v) -> v.soort().ordinal()).thenComparing(Vorm::naam);
@@ -90,7 +90,7 @@ public final class Cycles {
      *  A cycle names its nodes and the forms whose reads and writes close it, both sorted, so every order of the same
      *  forms gives the same sentence. */
     public static String refusal(IrLoader.Loaded loaded) {
-        Graph g = new Graph(loaded.model(), loaded.prioritizedDefaults(), loaded.path(),
+        Graph g = new Graph(loaded.model(), loaded.prioritizedDefaults(), loaded.navigationBindings(),
                 loaded.roleBindings(), loaded.sourcePaths());
         List<Vorm> vormen = g.vormen();
         List<Edge> edges = edges(vormen);
@@ -126,7 +126,7 @@ public final class Cycles {
         int n = vormen.size();
         List<Edge> edges = new ArrayList<>();
         for (Edge r : edges(vormen))
-            if (!(vormen.get(r.producer()).soort() == ProducentConsument.Vormsoort.REGEL && r.jsonNode().startsWith("chan:")))
+            if (!(vormen.get(r.producer()).soort() == ProducentConsument.Vormsoort.REGEL && r.node().startsWith("chan:")))
                 edges.add(r);
         List<List<Integer>> next = new ArrayList<>();
         for (int i = 0; i < n; i++) next.add(new ArrayList<>());
@@ -166,9 +166,9 @@ public final class Cycles {
         for (int c = 0; c < vormen.size(); c++) {
             Vorm reader = vormen.get(c);
             for (Read l : reader.leest()) {
-                boolean strict = l.negative() || reader.irrevocable() && !l.jsonNode().startsWith("char:");
-                for (int p : writers.getOrDefault(l.jsonNode(), List.of()))
-                    out.add(new Edge(p, c, l.jsonNode(), l.negative(), strict));
+                boolean strict = l.negative() || reader.irrevocable() && !l.node().startsWith("char:");
+                for (int p : writers.getOrDefault(l.node(), List.of()))
+                    out.add(new Edge(p, c, l.node(), l.negative(), strict));
             }
         }
         return out;
@@ -186,8 +186,8 @@ public final class Cycles {
         List<String> cycles = new ArrayList<>();
         for (Set<Integer> component : components(n, out)) {
             int eerste = component.iterator().next();
-            boolean selfRole = out.get(eerste).stream().anyMatch(r -> r.consumer() == eerste);
-            if (component.size() == 1 && !selfRole) continue;
+            boolean selfLoop = out.get(eerste).stream().anyMatch(r -> r.consumer() == eerste);
+            if (component.size() == 1 && !selfLoop) continue;
             Set<Vorm> through = new TreeSet<>(FORM_ORDER);
             Set<String> nodes = new LinkedHashSet<>();
             for (int i : component)
@@ -195,7 +195,7 @@ public final class Cycles {
                     if (component.contains(r.consumer())) {
                         through.add(vormen.get(i));
                         through.add(vormen.get(r.consumer()));
-                        nodes.add(r.jsonNode());
+                        nodes.add(r.node());
                     }
             List<String> forms = new ArrayList<>();
             for (Vorm v : through) forms.add(vorm(v));
@@ -216,7 +216,7 @@ public final class Cycles {
         for (Edge r : edges)
             if (r.negative() && reachable(next, r.consumer(), r.producer())) {
                 String c = vorm(vormen.get(r.consumer())), p = vorm(vormen.get(r.producer()));
-                out.add(c + " leest " + g.jsonNode(r.jsonNode()) + " ontkennend van " + p + ", dat vanuit " + c
+                out.add(c + " leest " + g.node(r.node()) + " ontkennend van " + p + ", dat vanuit " + c
                         + " bereikbaar is");
             }
         return new ArrayList<>(out);
@@ -324,7 +324,7 @@ public final class Cycles {
             this.stapels = new Stapels(model, defaults);
         }
 
-        String jsonNode(String k) {
+        String node(String k) {
             return names.getOrDefault(k, k);
         }
 
@@ -334,7 +334,7 @@ public final class Cycles {
             List<String> sorted = new ArrayList<>(nodes);
             sorted.sort(Comparator.comparing((String k) -> order.getOrDefault(k, "~" + k)));
             boolean members = sorted.stream().allMatch(k -> k.startsWith("attr:") || k.startsWith("char:"));
-            List<String> shown = sorted.stream().map(this::jsonNode).toList();
+            List<String> shown = sorted.stream().map(this::node).toList();
             if (shown.size() == 1) return (members ? "het lid " : "") + shown.get(0);
             return (members ? "de leden " : "de knopen ") + enumeration(shown);
         }
@@ -465,8 +465,8 @@ public final class Cycles {
                     writes.add(population(o.nieuwType()));
                     for (Objecttype t : o.nieuwType().keten()) writes.add(population(t));
                 }
-                String readBack = backLink(o);
-                if (readBack != null) writes.add(relation(readBack));
+                String backLinkRelation = backLink(o);
+                if (backLinkRelation != null) writes.add(relation(backLinkRelation));
                 if (o.nieuwType() != null)
                     for (ResolvedObjectCreatie.Toekenning t : o.toekenningen())
                         if (t.attribuut() != null) writes.addAll(mintWrite(o.nieuwType(), t.attribuut(), t.kenmerk()));
@@ -543,7 +543,7 @@ public final class Cycles {
 
         private static List<Read> negative(List<Read> l) {
             List<Read> out = new ArrayList<>();
-            for (Read x : l) out.add(new Read(x.jsonNode(), true));
+            for (Read x : l) out.add(new Read(x.node(), true));
             return out;
         }
 

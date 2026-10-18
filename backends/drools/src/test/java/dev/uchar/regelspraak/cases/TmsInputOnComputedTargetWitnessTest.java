@@ -20,7 +20,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.attribuut;
 import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.predicate;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -57,9 +57,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TmsInputOnComputedTargetWitnessTest {
 
     private static final List<String> RULES = List.of(
-            computingRule("bergloon", "GELIJKSTELLING", "Vondst", "bergloon", reading("taxatie", "Vondst"), "null"),
+            computingRule("bergloon", "GELIJKSTELLING", "Vondst", "bergloon", ownRead("taxatie", "Vondst"), "null"),
             computingRule("uitkering", "BEREKENING", "Vondst", "uitkering",
-                    binary("plus", reading("bergloon", "Vondst"), number("5")), "null"));
+                    binary("plus", ownRead("bergloon", "Vondst"), number("5")), "null"));
 
     private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
             List.of(attribuut("taxatie", WHOLE), attribuut("bergloon", WHOLE), attribuut("uitkering", WHOLE)),
@@ -86,7 +86,7 @@ class TmsInputOnComputedTargetWitnessTest {
      *  reference interpreter answers the same on this document (measured 2026-10-09, in the report of that step). */
     @Test void outside_the_standing_domain_writes_the_computing_rule_empty() throws Exception {
         String initialisatie = computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon", number("0"),
-                predicate("filled", reading("taxatie", "Vondst")));
+                predicate("filled", ownRead("taxatie", "Vondst")));
         JsonNode caseDocument = TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("taxatie", "30", "bergloon", "7"), List.of(), Map.of()),
                         instance("V2", "Vondst", Map.of("bergloon", "7"), List.of(), Map.of())),

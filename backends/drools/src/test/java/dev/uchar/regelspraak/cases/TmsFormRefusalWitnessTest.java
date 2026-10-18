@@ -38,7 +38,7 @@ class TmsFormRefusalWitnessTest {
     @Test void a_union_at_a_value_site_is_refused_like_the_other_branches_refuse_it() throws Exception {
         String snippet = "de vondsten van de Jutter en de vondsten van de Jutter die zwaarder zijn dan 8";
         String union = "{\"node\":\"InstanceSetUnion\",\"branches\":[" + selection("null", "de vondsten van de Jutter") + ","
-                + selection(TmsDocuments.comparison("greater", TmsDocuments.reading("gewicht", "Vondst"),
+                + selection(TmsDocuments.comparison("greater", TmsDocuments.ownRead("gewicht", "Vondst"),
                         TmsDocuments.number("8")), "de vondsten van de Jutter die zwaarder zijn dan 8")
                 + "],\"source\":{\"snippet\":\"" + snippet + "\"}}";
         Path ir = TmsDocuments.document(TmsFilterDepositWitnessTest.MODEL, List.of(

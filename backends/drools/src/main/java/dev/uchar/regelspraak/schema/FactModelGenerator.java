@@ -587,7 +587,7 @@ public final class FactModelGenerator {
      * pair of two to-many roles are backend gaps, named apart. {@code naam} names the creation in the exception of a
      * broken invariant: the 1:1 shape must have the forward field its guard reads.
      */
-    public static CreationLink creationLink(RegelSpraakModel model, Objecttype recomputed, Objecttype subject,
+    public static CreationLink creationLink(RegelSpraakModel model, Objecttype fresh, Objecttype subject,
                                                     RegelSpraakModel.RolBindingRef connectingRole, String naam) {
         String backRole, fwdRole;
         boolean backMany, fwdMany;
@@ -599,23 +599,23 @@ public final class FactModelGenerator {
             fwdRole = pair[0].naam(); fwdMany = pair[0].meervoudig();
             backRole = pair[1].naam(); backMany = pair[1].meervoudig();
         } else {
-            backRole = model.verbindendeRol(recomputed, subject);
-            fwdRole = model.verbindendeRol(subject, recomputed);
-            backMany = backRole != null && model.naarVeelRol(recomputed, subject, backRole);
-            fwdMany = fwdRole != null && model.naarVeelRol(subject, recomputed, fwdRole);
+            backRole = model.verbindendeRol(fresh, subject);
+            fwdRole = model.verbindendeRol(subject, fresh);
+            backMany = backRole != null && model.naarVeelRol(fresh, subject, backRole);
+            fwdMany = fwdRole != null && model.naarVeelRol(subject, fresh, fwdRole);
         }
         String backRef = backRole != null && !backMany ? backRole : null;
         String fwdRef = fwdRole != null && !fwdMany ? fwdRole : null;
-        if (backRef != null && !hasReferenceField(model, recomputed, backRef, subject))
-            return CreationLink.refuse(noReferenceFieldReason(model, recomputed, backRef, subject));
-        if (fwdRef != null && !hasReferenceField(model, subject, fwdRef, recomputed))
-            return CreationLink.refuse(noReferenceFieldReason(model, subject, fwdRef, recomputed));
+        if (backRef != null && !hasReferenceField(model, fresh, backRef, subject))
+            return CreationLink.refuse(noReferenceFieldReason(model, fresh, backRef, subject));
+        if (fwdRef != null && !hasReferenceField(model, subject, fwdRef, fresh))
+            return CreationLink.refuse(noReferenceFieldReason(model, subject, fwdRef, fresh));
         if (backRef == null && fwdRef == null) {
-            if (connectingRole == null && subject != recomputed && connectingFactTypes(model, subject, recomputed) > 1)
+            if (connectingRole == null && subject != fresh && connectingFactTypes(model, subject, fresh) > 1)
                 return new CreationLink(null, false, null, false, null, null, false, null,
-                        "more than one fact type relates \"" + subject.naam + "\" to \"" + recomputed.naam
+                        "more than one fact type relates \"" + subject.naam + "\" to \"" + fresh.naam
                                 + "\"; the created object's back-link is ambiguous (ch. 5.5)");
-            return CreationLink.refuse((connectingRole == null && subject == recomputed
+            return CreationLink.refuse((connectingRole == null && subject == fresh
                     ? "zelfgetypeerd rollenpaar zonder connectingRole-binding: uit twee gelijkgetypeerde rollen leidt"
                       + " de bean geen referentieveld af en de draad wijst geen rol aan"
                     : connectingRole == null && (backRole == null || fwdRole == null)
@@ -626,7 +626,7 @@ public final class FactModelGenerator {
         }
         // with a binding the cardinality is the bound role's own, without one the by-pair reading; either way a 1:1
         // arm must HAVE the forward field its guard reads
-        boolean oneToOne = connectingRole != null ? !fwdMany : !model.subjectNaarVeelCreatie(subject, recomputed);
+        boolean oneToOne = connectingRole != null ? !fwdMany : !model.subjectNaarVeelCreatie(subject, fresh);
         if (oneToOne != (fwdRef != null))
             throw new IllegalStateException("objectcreatie " + naam + ": subjectNaarVeelCreatie(" + oneToOne
                     + ") en het voorwaartse veld (" + fwdRef + ") spreken elkaar tegen");
@@ -721,9 +721,9 @@ public final class FactModelGenerator {
         for (RegelSpraakModel.RolBindingRef rb : bindings) {
             Rol[] pair = boundRolePair(model, rb);
             if (pair == null || cur == null) return null;
-            Objecttype otherType = model.objecttypeOpNaam(pair[1].objecttypeNaam());
+            Objecttype near = model.objecttypeOpNaam(pair[1].objecttypeNaam());
             Objecttype far = model.objecttypeOpNaam(pair[0].objecttypeNaam());
-            if (otherType == null || far == null || !cur.isEen(otherType)) return null;
+            if (near == null || far == null || !cur.isEen(near)) return null;
             toMany |= pair[0].meervoudig();
             roles.add(pair[0].naam());
             reaches.add(far);
@@ -792,7 +792,7 @@ public final class FactModelGenerator {
      *  ({@code opSubject}: the subject's field names the other end) or on the other end (its field names the
      *  subject), and the other role's declared filler {@code ander}; or the {@code weigering} when no field holds
      *  it. */
-    public record MembershipOpslag(String beanField, boolean opSubject, Objecttype earlierBean, String refusal) {}
+    public record MembershipStorage(String beanField, boolean opSubject, Objecttype otherType, String refusal) {}
 
     /**
      * IR-SPEC ch. 4.5 {@code RoleMembership}: "a link of the fact type exists in which the subject plays the role".
@@ -802,15 +802,15 @@ public final class FactModelGenerator {
      * other end, whose field — named after the subject's role — must point back at the subject, which is an
      * exists-join; with both roles to-many no bean carries the link at all.
      */
-    public static MembershipOpslag membershipOpslag(RegelSpraakModel model, RegelSpraakModel.RolBindingRef rb) {
+    public static MembershipStorage membershipStorage(RegelSpraakModel model, RegelSpraakModel.RolBindingRef rb) {
         Rol[] pair = boundRolePair(model, rb);
         if (pair == null)
-            return new MembershipOpslag(null, false, null, "rollidmaatschap onopgelost: de binding ("
+            return new MembershipStorage(null, false, null, "rollidmaatschap onopgelost: de binding ("
                     + (rb == null ? "geen" : rb.feittype() + ", " + rb.rol()) + ") noemt geen gedeclareerde rol");
-        Objecttype earlierBean = model.objecttypeOpNaam(pair[1].objecttypeNaam());
-        if (!pair[1].meervoudig()) return new MembershipOpslag(pair[1].naam(), true, earlierBean, null);
-        if (!pair[0].meervoudig()) return new MembershipOpslag(pair[0].naam(), false, earlierBean, null);
-        return new MembershipOpslag(null, false, earlierBean, "rollidmaatschap (" + rb.feittype() + ", " + rb.rol()
+        Objecttype otherType = model.objecttypeOpNaam(pair[1].objecttypeNaam());
+        if (!pair[1].meervoudig()) return new MembershipStorage(pair[1].naam(), true, otherType, null);
+        if (!pair[0].meervoudig()) return new MembershipStorage(pair[0].naam(), false, otherType, null);
+        return new MembershipStorage(null, false, otherType, "rollidmaatschap (" + rb.feittype() + ", " + rb.rol()
                 + "): beide rollen zijn meervoudig, dus geen bean draagt de link (§13.3.9 opslagrichting)");
     }
 

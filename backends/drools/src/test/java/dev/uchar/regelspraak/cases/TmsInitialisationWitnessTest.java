@@ -24,7 +24,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -87,15 +87,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TmsInitialisationWitnessTest {
 
-    private static final String COMPUTED = reading("berekend gewicht", "Vondst");
+    private static final String COMPUTED = ownRead("berekend gewicht", "Vondst");
 
     private static final List<String> ORDER = List.of(
             computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon", binary("times", number("2"), COMPUTED),
-                    comparison("greater", reading("gewicht", "Vondst"), number("10"))),
+                    comparison("greater", ownRead("gewicht", "Vondst"), number("10"))),
             computingRule("standaardvindloon", "INITIALISATIE", "Vondst", "vindloon", binary("plus", COMPUTED, number("5")),
                     "null"),
             computingRule("berekend gewicht van een vondst", "BEREKENING", "Vondst", "berekend gewicht",
-                    binary("plus", reading("gewicht", "Vondst"), number("1")), "null"));
+                    binary("plus", ownRead("gewicht", "Vondst"), number("1")), "null"));
 
     private static final String ORDER_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
             List.of(attribuut("gewicht", WHOLE), attribuut("berekend gewicht", WHOLE), attribuut("bergloon", WHOLE),
@@ -104,7 +104,7 @@ class TmsInitialisationWitnessTest {
     private static final List<String> DISPLACEMENT = List.of(
             characteristicRule("registratie", "Vondst", "geregistreerd", check("gemeld", false)),
             characteristicRule("onbeheerd", "Vondst", "onbeheerd", check("geregistreerd", true)),
-            computingRule("bergloon", "GELIJKSTELLING", "Vondst", "bergloon", reading("taxatie", "Vondst"),
+            computingRule("bergloon", "GELIJKSTELLING", "Vondst", "bergloon", ownRead("taxatie", "Vondst"),
                     check("onbeheerd", false)),
             computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon", number("7"), "null"));
 
@@ -157,9 +157,9 @@ class TmsInitialisationWitnessTest {
             boolean[] intermediateState = {false};
             sessie.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
-                    List<?> sessionFacts = e.getMatch().getObjects();
-                    if (e.getMatch().getRule().getName().startsWith("standaard") && sessionFacts.stream().anyMatch(o -> o == v1)
-                            && sessionFacts.stream().anyMatch(o -> o instanceof State s && s.waarde() == null))
+                    List<?> facts = e.getMatch().getObjects();
+                    if (e.getMatch().getRule().getName().startsWith("standaard") && facts.stream().anyMatch(o -> o == v1)
+                            && facts.stream().anyMatch(o -> o instanceof State s && s.waarde() == null))
                         intermediateState[0] = true;
                 }
             });
@@ -283,7 +283,7 @@ class TmsInitialisationWitnessTest {
                 List.of(attribuut("opbrengst", WHOLE), attribuut("deelnemers", WHOLE), attribuut("aandeel", WHOLE)),
                 List.of())), List.of());
         Path ir = TmsDocuments.document(model, List.of(computingRule("standaardaandeel", "INITIALISATIE", "Vondst",
-                "aandeel", binary("dividedBy", reading("opbrengst", "Vondst"), reading("deelnemers", "Vondst")), "null")));
+                "aandeel", binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("deelnemers", "Vondst")), "null")));
         JsonNode applies = TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("opbrengst", "100"), List.of(), Map.of())),
                 List.of(waarde("V1", "aandeel", null), TmsDocuments.inconsistent("standaardaandeel", "V1")));
@@ -304,7 +304,7 @@ class TmsInitialisationWitnessTest {
         Path ir = TmsDocuments.document(model, List.of(
                 computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon", number("7"), "null"),
                 computingRule("zwaar bergloon", "INITIALISATIE", "Vondst", "bergloon", number("9"),
-                        comparison("greater", reading("gewicht", "Vondst"), number("100")))));
+                        comparison("greater", ownRead("gewicht", "Vondst"), number("100")))));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("transpiler SKIP: regel: standaardbergloon — twee of meer initialisaties op één doel ('bergloon'"
@@ -322,10 +322,10 @@ class TmsInitialisationWitnessTest {
 
     private static final List<String> DIVISION = List.of(
             characteristicRule("erkenning", "Vondst", "erkend", check("gemeld", false)),
-            computingRule("bergloon", "GELIJKSTELLING", "Vondst", "bergloon", reading("taxatie", "Vondst"),
+            computingRule("bergloon", "GELIJKSTELLING", "Vondst", "bergloon", ownRead("taxatie", "Vondst"),
                     check("erkend", false)),
             computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon",
-                    binary("dividedBy", reading("opbrengst", "Vondst"), reading("deelnemers", "Vondst")), "null"));
+                    binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("deelnemers", "Vondst")), "null"));
 
     private static final String DIVISION_REFUSAL = "transpiler SKIP: regel: standaardbergloon — een deling in een"
             + " initialisatie waarvan het doel nog een schrijver heeft ('dividedBy'; 'bergloon' van Vondst wordt ook"

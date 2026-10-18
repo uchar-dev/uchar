@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Two consequences of the rules of a fold that no session of the corpus or the suite fired on the analysis rendered as
  * DRL text ({@code DRL_TMS} then, the DRL-text branch since the switch-over) at step 3a of card
  * drl-teksttak-op-truth-maintenance (lens on step 3a): the deposit of a filter ({@code FilterDeposit})
- * and the fault of a member ({@code MemberError}). The documents are those of the witnesses of the exec-model branch that
+ * and the fault of a member ({@code MemberFault}). The documents are those of the witnesses of the exec-model branch that
  * make these facts, {@link TmsFilterDepositWitnessTest} and part E of {@link TmsInputFormWitnessTest}, here fired
  * through both branches: each case gets the same verdict, and the dump of its session ({@link SessionDump}) is the same
  * in its input, in what {@code DroolsBackend.lees} gives and in the facts at the fixpoint ({@link BranchDumps}), and holds
@@ -66,7 +66,7 @@ class DrlTextFoldPathWitnessTest {
         instanties.addAll(TmsInputFormWitnessTest.playingE());
         JsonNode caseDocument = TmsTimelineDocuments.caseDocument(TmsInputFormWitnessTest.DATE, instanties, List.of(consistent()));
         String dump = BranchDumps.equal(ir, caseDocument, "de zaak van deel E");
-        assertEquals(3, Stream.of(dump.split("\n")).filter(r -> r.startsWith("feit MemberError(")).count(),
+        assertEquals(3, Stream.of(dump.split("\n")).filter(r -> r.startsWith("feit MemberFault(")).count(),
                 () -> "drie lidfouten, op V2, V5 en V6:\n" + dump);
     }
 }

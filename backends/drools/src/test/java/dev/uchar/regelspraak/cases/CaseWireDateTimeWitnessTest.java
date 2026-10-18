@@ -201,9 +201,9 @@ class CaseWireDateTimeWitnessTest {
         } catch (CaseRunner.Excluded uitgesloten) {
             throw new AssertionError(why + " — but the reader EXCLUDED it (" + uitgesloten.getMessage()
                     + "), which files a malformed case under 'not carried' and leaves the gate green");
-        } catch (RuntimeException otherwise) {
+        } catch (RuntimeException other) {
             throw new AssertionError(why + " — but the reader let it through to a bare "
-                    + otherwise.getClass().getName() + ": " + otherwise.getMessage());
+                    + other.getClass().getName() + ": " + other.getMessage());
         }
         throw new AssertionError(why + " — but the reader ACCEPTED it and read " + read);
     }

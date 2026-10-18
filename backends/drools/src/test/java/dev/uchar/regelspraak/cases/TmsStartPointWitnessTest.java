@@ -12,7 +12,7 @@ import java.util.Map;
 
 import static dev.uchar.regelspraak.cases.TmsDocuments.DATE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -95,7 +95,7 @@ class TmsStartPointWitnessTest {
     /** "De startdatum van een Jutter moet gesteld worden op zijn aanmelddatum": the ordinary rule that writes the
      *  anchor, as the parity zone's slices write theirs. */
     private static final String ANCHOR_RULE = computingRule("startdatum van een jutter", "GELIJKSTELLING", "Jutter",
-            "startdatum", reading("aanmelddatum", "Jutter"), "null");
+            "startdatum", ownRead("aanmelddatum", "Jutter"), "null");
 
     /** Two Jutters, each with an aanmelddatum, which the anchor rule writes into the startdatum. Every anchor is
      *  filled: a leeg anchor is not pinned here (see the class). */
@@ -124,9 +124,9 @@ class TmsStartPointWitnessTest {
     }
 
     static List<Row> rows() {
-        String moreThan10 = TmsDocuments.comparison("greater", reading("vergoeding", "Jutter"), TmsDocuments.number("10"));
+        String moreThan10 = TmsDocuments.comparison("greater", ownRead("vergoeding", "Jutter"), TmsDocuments.number("10"));
         String actief = TmsDocuments.check("actief", false);
-        String whole = TmsWholePeriodWitnessTest.wholeComparison("greater", reading("vergoeding", "Jutter"),
+        String whole = TmsWholePeriodWitnessTest.wholeComparison("greater", ownRead("vergoeding", "Jutter"),
                 TmsDocuments.number("0"), TmsWholePeriodWitnessTest.whole(true, false),
                 "zijn vergoeding gedurende het gehele jaar groter is dan 0");
         return List.of(
@@ -172,7 +172,7 @@ class TmsStartPointWitnessTest {
                 DroolsBackend.Branch.EXEC_MODEL));
     }
 
-    @Test void a_member_on_the_grid_that_reads_or_writes_no_form_plays() throws Exception {
+    @Test void a_member_on_the_grid_that_no_form_reads_or_writes_plays() throws Exception {
         assertNull(CaseRunner.playCase(temporary(document(model(true), List.of())), caseDocument(),
                 DroolsBackend.Branch.EXEC_MODEL));
     }

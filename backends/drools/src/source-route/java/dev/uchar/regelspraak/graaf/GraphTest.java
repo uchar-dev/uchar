@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import static dev.uchar.regelspraak.graaf.TwoRoutes.edges;
-import static dev.uchar.regelspraak.graaf.TwoRoutes.jsonNode;
+import static dev.uchar.regelspraak.graaf.TwoRoutes.node;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -46,23 +46,23 @@ class GraphTest {
             // three rules + four data elements = seven nodes
             assertEquals(7, g.nodes().size(), () -> route + ": " + g.nodes());
             assertEquals(3, g.nodes().stream().filter(n -> n.kind() == NodeKind.REGEL).count(), route);
-            assertEquals(NodeKind.INVOER, jsonNode(g, "gewicht · vondst").kind(),
+            assertEquals(NodeKind.INVOER, node(g, "gewicht · vondst").kind(),
                     route + ": een datum die geen regel produceert is een invoer");
-            assertEquals(NodeKind.KENMERK, jsonNode(g, "zwaar · vondst").kind(),
+            assertEquals(NodeKind.KENMERK, node(g, "zwaar · vondst").kind(),
                     route + ": 'is zwaar' is een kenmerk, geen gewoon attribuut");
-            assertEquals(NodeKind.ATTRIBUUT, jsonNode(g, "toeslag · vondst").kind(), route);
-            assertEquals(NodeKind.ATTRIBUUT, jsonNode(g, "bergloon · vondst").kind(), route);
+            assertEquals(NodeKind.ATTRIBUUT, node(g, "toeslag · vondst").kind(), route);
+            assertEquals(NodeKind.ATTRIBUUT, node(g, "bergloon · vondst").kind(), route);
         });
     }
 
     @Test void productless_end_output_is_marked() {
         TwoRoutes.lees(SOURCE).graphs().forEach((route, g) -> {
             // "bergloon" is produced by "bergloon van een vondst" and read by no rule: the only eind-output
-            assertTrue(jsonNode(g, "bergloon · vondst").eindOutput(), route + ": bergloon wordt door niets gelezen");
+            assertTrue(node(g, "bergloon · vondst").eindOutput(), route + ": bergloon wordt door niets gelezen");
             assertEquals(1, g.nodes().stream().filter(Node::eindOutput).count(), route);
             // an INVOER is never an eind-output, and a consumed attribuut is not one either
-            assertFalse(jsonNode(g, "gewicht · vondst").eindOutput(), route);
-            assertFalse(jsonNode(g, "toeslag · vondst").eindOutput(), route);
+            assertFalse(node(g, "gewicht · vondst").eindOutput(), route);
+            assertFalse(node(g, "toeslag · vondst").eindOutput(), route);
         });
     }
 

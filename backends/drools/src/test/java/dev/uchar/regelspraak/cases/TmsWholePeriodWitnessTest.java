@@ -21,7 +21,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -136,26 +136,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TmsWholePeriodWitnessTest {
 
     /** The whole-period qualifier: "het gehele jaar" or "de gehele maand", with or without its own negation. */
-    static String whole(boolean year, boolean not) {
-        return "{\"node\":\"WholePeriod\",\"granularity\":\"" + (year ? "year" : "month") + "\",\"negated\":" + not + "}";
+    static String whole(boolean year, boolean negated) {
+        return "{\"node\":\"WholePeriod\",\"granularity\":\"" + (year ? "year" : "month") + "\",\"negated\":" + negated + "}";
     }
 
     /** A comparison in its wire spelling under the qualifier {@code periode} ({@link #whole}). */
-    static String wholeComparison(String op, String left, String right, String period, String bron) {
+    static String wholeComparison(String op, String left, String right, String qualifier, String bron) {
         return "{\"node\":\"Comparison\",\"op\":\"" + op + "\",\"left\":" + left + ",\"right\":" + right
-                + ",\"wholePeriod\":" + period + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+                + ",\"wholePeriod\":" + qualifier + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
     }
 
     /** A leeg ({@code empty}) or gevuld ({@code filled}) test under the qualifier {@code periode}. */
-    static String wholePredicate(String kind, String operand, String period, String bron) {
+    static String wholePredicate(String kind, String operand, String qualifier, String bron) {
         return "{\"node\":\"Predicate\",\"kind\":\"" + kind + "\",\"operand\":" + operand + ",\"negated\":false,"
-                + "\"digits\":0,\"wholePeriod\":" + period + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+                + "\"digits\":0,\"wholePeriod\":" + qualifier + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
     }
 
     /** A check of {@code kenmerk} of the object one role away, {@code rol} of {@code feittype}, under the qualifier. */
-    static String wholeCheck(String kenmerk, String feittype, String rol, String period, String bron) {
+    static String wholeCheck(String kenmerk, String feittype, String rol, String qualifier, String bron) {
         return "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"" + kenmerk + "\",\"negated\":false,"
-                + "\"wholePeriod\":" + period + ",\"source\":{\"snippet\":\"" + bron + "\"},\"navigation\":{\"node\":"
+                + "\"wholePeriod\":" + qualifier + ",\"source\":{\"snippet\":\"" + bron + "\"},\"navigation\":{\"node\":"
                 + "\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}}";
     }
 
@@ -203,13 +203,13 @@ class TmsWholePeriodWitnessTest {
     static final String WACHTDAGEN = computingRule("wachtdagen", "BEREKENING", "Jutter", "wachtdagen",
             dayCount(check("wachtplichtig", false), "month"), "null");
     static final String TROUWPREMIE = premie("trouwpremie", "Jutter", "trouwpremie", "10",
-            wholeComparison("greater", reading("wachtdagen", "Jutter"), reading("drempel", "Jutter"), whole(true, false),
+            wholeComparison("greater", ownRead("wachtdagen", "Jutter"), ownRead("drempel", "Jutter"), whole(true, false),
                     "zijn wachtdagen gedurende het gehele jaar groter is dan zijn drempel"));
     static final String VULPREMIE = premie("vulpremie", "Jutter", "vulpremie", "20",
-            wholePredicate("filled", reading("wachtdagen", "Jutter"), whole(false, false),
+            wholePredicate("filled", ownRead("wachtdagen", "Jutter"), whole(false, false),
                     "zijn wachtdagen gedurende de gehele maand gevuld is"));
     static final String SILENT_PREMIE = premie("stilpremie", "Jutter", "stilpremie", "30",
-            wholeComparison("greater", reading("wachtdagen", "Jutter"), reading("drempel", "Jutter"), whole(true, true),
+            wholeComparison("greater", ownRead("wachtdagen", "Jutter"), ownRead("drempel", "Jutter"), whole(true, true),
                     "zijn wachtdagen niet gedurende het gehele jaar groter is dan zijn drempel"));
 
     static final List<String> RULES_A = List.of(WACHTDAGEN, TROUWPREMIE, VULPREMIE, SILENT_PREMIE);
@@ -303,10 +303,10 @@ class TmsWholePeriodWitnessTest {
             List.of(timeCharacteristic("wachtplichtig", "month")))), List.of());
 
     static final String NOT_EQUAL_PREMIE = premie("ongelijkpremie", "Jutter", "ongelijkpremie", "10",
-            wholeComparison("notEqual", reading("wachtdagen", "Jutter"), reading("drempel", "Jutter"), whole(true, false),
+            wholeComparison("notEqual", ownRead("wachtdagen", "Jutter"), ownRead("drempel", "Jutter"), whole(true, false),
                     "zijn wachtdagen gedurende het gehele jaar ongelijk is aan zijn drempel"));
     static final String EQUAL_PREMIE = premie("gelijkpremie", "Jutter", "gelijkpremie", "20",
-            wholeComparison("equal", reading("wachtdagen", "Jutter"), reading("drempel", "Jutter"), whole(true, false),
+            wholeComparison("equal", ownRead("wachtdagen", "Jutter"), ownRead("drempel", "Jutter"), whole(true, false),
                     "zijn wachtdagen gedurende het gehele jaar gelijk is aan zijn drempel"));
 
     static final List<String> RULES_A3 = List.of(WACHTDAGEN, NOT_EQUAL_PREMIE, EQUAL_PREMIE);
@@ -368,12 +368,12 @@ class TmsWholePeriodWitnessTest {
 
     static List<String> expectationsB() {
         List<String> out = new ArrayList<>();
-        Map<String, String[]> apply = new LinkedHashMap<>();
-        apply.put("S1", new String[]{"10", "5", null});
-        apply.put("S2", new String[]{"10", "5", null});
-        apply.put("S3", new String[]{null, null, "3"});
-        apply.put("S4", new String[]{"10", "5", null});
-        apply.forEach((s, g) -> {
+        Map<String, String[]> amounts = new LinkedHashMap<>();
+        amounts.put("S1", new String[]{"10", "5", null});
+        amounts.put("S2", new String[]{"10", "5", null});
+        amounts.put("S3", new String[]{null, null, "3"});
+        amounts.put("S4", new String[]{"10", "5", null});
+        amounts.forEach((s, g) -> {
             out.add(waarde(s, "werftoeslag", g[0]));
             out.add(waarde(s, "kadegeld", g[1]));
             out.add(waarde(s, "stilgeld", g[2]));
@@ -403,7 +403,7 @@ class TmsWholePeriodWitnessTest {
     static String count(String naam, String doel, String quantifier, int threshold, String description) {
         String bron = "de vaardagen van " + description + " van de boten van de Vloot niet gedurende het gehele jaar groter is"
                 + " dan 20";
-        String test = wholeComparison("greater", reading("vaardagen", "Boot"), number("20"), whole(true, true), bron);
+        String test = wholeComparison("greater", ownRead("vaardagen", "Boot"), number("20"), whole(true, true), bron);
         return characteristicRule(naam, "Vloot", doel, "{\"node\":\"QuantifierFold\",\"quantifier\":\"" + quantifier + "\","
                 + "\"threshold\":" + threshold + ",\"elementType\":\"Boot\",\"test\":" + test + ","
                 + TmsDocuments.sourceRole("indeling", "boot") + ",\"source\":{\"snippet\":\"" + bron + "\"}}");
@@ -459,18 +459,18 @@ class TmsWholePeriodWitnessTest {
             List.of(timeCharacteristic("wachtplichtig", "month"), kenmerk("vrijgesteld")))), List.of());
 
     static final String VRIJSTELLING = characteristicRule("vrijstelling", "Jutter", "vrijgesteld",
-            TmsDocuments.comparison("less", reading("drempel", "Jutter"), number("5")));
+            TmsDocuments.comparison("less", ownRead("drempel", "Jutter"), number("5")));
     static final String TROUW_E = premie("trouwpremie", "Jutter", "trouwpremie", "10", TmsDocuments.compound("all",
-            0, List.of(check("vrijgesteld", true), wholeComparison("greater", reading("wachtdagen", "Jutter"),
-                    reading("drempel", "Jutter"), whole(true, false),
+            0, List.of(check("vrijgesteld", true), wholeComparison("greater", ownRead("wachtdagen", "Jutter"),
+                    ownRead("drempel", "Jutter"), whole(true, false),
                     "zijn wachtdagen gedurende het gehele jaar groter is dan zijn drempel"))));
 
     static final List<String> RULES_E = List.of(WACHTDAGEN, VRIJSTELLING, TROUW_E);
 
-    static final String BUCKET_ERROR = "Invoervormfout: fout in de regel \"trouwpremie\": the whole-period qualifier over"
+    static final String BUCKET_FAULT = "Invoervormfout: fout in de regel \"trouwpremie\": the whole-period qualifier over"
             + " \"wachtdagen\" needs the full timeline; \"J1\" supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)";
 
-    static JsonNode bucketError() throws Exception {
+    static JsonNode bucketFault() throws Exception {
         return TmsTimelineDocuments.caseDocument("2024-06-15", List.of(instance("J1", "Jutter", Map.of("drempel",
                 numberValue("20"), "wachtdagen", numberValue("25")), List.of(), Map.of(), Map.of())), List.of(consistent()));
     }
@@ -488,7 +488,7 @@ class TmsWholePeriodWitnessTest {
     static final String MODEL_E_PATH = MODEL_B;
     static final List<String> RULES_E_PATH = List.of(HAVENDAGEN, WERFTOESLAG);
 
-    static final String BUCKET_ERROR_PATH = "Invoervormfout: fout in de regel \"werftoeslag\": the whole-period qualifier"
+    static final String BUCKET_FAULT_PATH = "Invoervormfout: fout in de regel \"werftoeslag\": the whole-period qualifier"
             + " over \"havendagen\" needs the full timeline; the werf of \"S1\" supplies only the asOfDate-bucket scalar"
             + " (ch. 3.9, ch. 8.4)";
 
@@ -504,16 +504,16 @@ class TmsWholePeriodWitnessTest {
         for (List<String> order : TmsDocuments.permutations(RULES_E)) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsTimelineDocuments.document(MODEL_E, order, List.of());
-            out.add(names + " " + TmsFaultWitnessTest.play(ir, bucketError(), DroolsBackend.Branch.EXEC_MODEL));
+            out.add(names + " " + TmsFaultWitnessTest.play(ir, bucketFault(), DroolsBackend.Branch.EXEC_MODEL));
             out.add(names + " " + TmsFaultWitnessTest.play(ir, bucketPlays(), DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " " + BUCKET_ERROR);
+            verwacht.add(names + " " + BUCKET_FAULT);
             verwacht.add(names + " gespeeld");
         }
         for (List<String> order : TmsDocuments.permutations(RULES_E_PATH)) {
             List<String> names = TmsDocuments.ruleNames(order);
             out.add(names + " " + TmsFaultWitnessTest.play(TmsTimelineDocuments.document(MODEL_E_PATH, order,
                     List.of()), bucketOverPath(), DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(names + " " + BUCKET_ERROR_PATH);
+            verwacht.add(names + " " + BUCKET_FAULT_PATH);
         }
         assertEquals(verwacht, out);
     }
@@ -539,7 +539,7 @@ class TmsWholePeriodWitnessTest {
         String overPath = premie("werftoeslag", "Schuit", "werftoeslag", "10", wholeComparison("greater",
                 WERF_HAVENDAGEN, number("5"), whole(true, false),
                 "de havendagen van de werf van de Schuit gedurende het gehele jaar groter is dan 5"));
-        String twoTimelines = wholeComparison("greater", reading("wachtdagen", "Jutter"), reading("vaardagen", "Jutter"),
+        String twoTimelines = wholeComparison("greater", ownRead("wachtdagen", "Jutter"), ownRead("vaardagen", "Jutter"),
                 whole(true, false), "zijn wachtdagen gedurende het gehele jaar groter is dan zijn vaardagen");
         assertEquals(List.of(
                 "transpiler SKIP: regel: trouw — een CharacteristicCheck met wholePeriod ('hij gedurende het gehele"
@@ -576,7 +576,7 @@ class TmsWholePeriodWitnessTest {
         parts.put("a3-gelijkheid", new Object[]{MODEL_A3, RULES_A3, cases(instancesA3(), expectationsA3())});
         parts.put("b-stap", new Object[]{MODEL_B, RULES_B, cases(instancesB(), expectationsB())});
         parts.put("c-tellend", new Object[]{MODEL_C, RULES_C, cases(instancesC(), expectationsC())});
-        parts.put("e-emmer-fout", new Object[]{MODEL_E, RULES_E, List.of(bucketError())});
+        parts.put("e-emmer-fout", new Object[]{MODEL_E, RULES_E, List.of(bucketFault())});
         parts.put("e-emmer-speelt", new Object[]{MODEL_E, RULES_E, List.of(bucketPlays())});
         parts.put("e-emmer-pad", new Object[]{MODEL_E_PATH, RULES_E_PATH, List.of(bucketOverPath())});
         // the refused forms, each with one case, to measure what the other executors do with them
@@ -591,7 +591,7 @@ class TmsWholePeriodWitnessTest {
                         "de havendagen van de werf van de Schuit gedurende het gehele jaar groter is dan 5"))),
                 cases(instancesB(), List.of(consistent()))});
         parts.put("r3-twee-tijdlijnen", new Object[]{MODEL_R, List.of(trouw(wholeComparison("greater",
-                reading("wachtdagen", "Jutter"), reading("vaardagen", "Jutter"), whole(true, false),
+                ownRead("wachtdagen", "Jutter"), ownRead("vaardagen", "Jutter"), whole(true, false),
                 "zijn wachtdagen gedurende het gehele jaar groter is dan zijn vaardagen"))), jutter});
         for (Map.Entry<String, Object[]> d : parts.entrySet()) {
             @SuppressWarnings("unchecked") List<String> rules = (List<String>) d.getValue()[1];

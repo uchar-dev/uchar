@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * {@code voorligger} and the to-many {@code opvolger}; {@code jutterswet-kavelgrens}, a self-typed one-to-one relation,
  * {@code noordbuur} and {@code zuidbuur}; {@code anchor/jutterswet-maatschap}, the reciprocal {@code maat};
  * {@code jutterswet-penningjaar}, an attribute on a year timeline), and the fold document of
- * {@link TmsFilterErrorWitnessTest}. The cases that collide are authored here; the corpus is not touched.
+ * {@link TmsFilterFaultWitnessTest}. The cases that collide are authored here; the corpus is not touched.
  */
 class CaseInputWitnessTest {
 
@@ -63,7 +63,7 @@ class CaseInputWitnessTest {
 
     // ---------------- ch. 5.7a: one leg, both legs ----------------
 
-    @Test void a_to_many_relation_is_in_the_field_of_the_member_how_the_case_also_writes_it() throws Exception {
+    @Test void a_to_many_relation_is_in_the_field_of_the_member_however_the_case_writes_it() throws Exception {
         // case1 writes both legs, case2 the to-many leg on W1 only, case3 the to-one legs on W2 and W3 only: one
         // relation, so one fact base. The relation has ONE field, voorligger on the member, which serves both
         // directions; nothing fills it toward W1.
@@ -108,13 +108,13 @@ class CaseInputWitnessTest {
 
     // ---------------- WF-013: a second, different target on a to-one field, at each of the four places ----------------
 
-    @Test void a_second_target_on_the_own_to_a_role_names_that_link() throws Exception {
+    @Test void a_second_target_on_the_own_to_one_role_names_that_link() throws Exception {
         CaseInvoer.Rolfout f = roleError(() -> CaseInvoer.van(bouw(MAATSCHAP), maatschap(List.of("J1", "J2", "J3"),
                 Map.of("J1", List.of("J2", "J3")))));
         collision(f, "J1", "maat", "J3");
     }
 
-    @Test void a_second_target_on_the_remote_field_of_a_one_to_one_relation_names_that_link() throws Exception {
+    @Test void a_second_target_on_the_far_field_of_a_one_to_one_relation_names_that_link() throws Exception {
         // K1 and K3 both name K2 as their zuidbuur: the forward fields are two, the far field, K2's noordbuur, is one.
         CaseInvoer.Rolfout f = roleError(() -> CaseInvoer.van(bouw(KAVELGRENS), chain("Duinkavel", "kavelbreedte",
                 List.of("K1", "K2", "K3"), Map.of("K1", Map.of("zuidbuur", List.of("K2")),
@@ -231,11 +231,11 @@ class CaseInputWitnessTest {
         assertEquals(0, new BigDecimal("4").compareTo((BigDecimal) waarde(fixpunt, w.get("W1"), "opvolgeraantal")));
     }
 
-    @Test void the_order_of_the_input_decides_which_member_names_a_fold_fault() throws Exception {
-        // The fold of TmsFilterErrorWitnessTest stops at the first member in fold order whose filter divides by 0
+    @Test void the_order_of_the_input_decides_which_member_a_fold_fault_names() throws Exception {
+        // The fold of TmsFilterFaultWitnessTest stops at the first member in fold order whose filter divides by 0
         // (RUNTIME-SEMANTICS ch. 5.11). V9 divides 4, V10 divides 9. Written under J1 as V9, V10: 4. Mirrored from
         // their own links: V10 before V9 in byte order, so 9, where the order of the case would give 4.
-        DroolsBackend.Build b = DroolsBackend.build(TmsFilterErrorWitnessTest.document(TmsFilterErrorWitnessTest.ZWARE),
+        DroolsBackend.Build b = DroolsBackend.build(TmsFilterFaultWitnessTest.document(TmsFilterFaultWitnessTest.ZWARE),
                 DroolsBackend.Branch.EXEC_MODEL);
         String v9 = TmsDocuments.instanceWithRoles("V9", "Vondst", Map.of("gewicht", "4", "deelnemers", "0"),
                 List.of(), Map.of());
@@ -253,7 +253,7 @@ class CaseInputWitnessTest {
         assertEquals(List.of("9 gedeeld door 0"), divisionFaults(b, mirrored));
     }
 
-    @Test void a_scalar_on_a_timeline_is_a_bucket_scalar_and_not_a_timeline() throws Exception {
+    @Test void a_scalar_on_a_timeline_is_a_bucket_scalar_and_a_timeline_is_not() throws Exception {
         DroolsBackend.Build b = bouw("jutterswet-penningjaar");
         CaseInvoer scalar = CaseInvoer.van(b, penningjaar("{ \"number\": \"14\" }"));
         Object j1 = scalar.beans().get("J1");
@@ -395,11 +395,11 @@ class CaseInputWitnessTest {
         CaseInvoer lees() throws Exception;
     }
 
-    /** The refusal of a role link that {@code reading} throws, caught as a consumer catches both kinds: in one clause,
+    /** The refusal of a role link that {@code read} throws, caught as a consumer catches both kinds: in one clause,
      *  whose parameter is a {@link CaseInvoer.Rolfout}. */
-    private static CaseInvoer.Rolfout roleError(Read reading) throws Exception {
+    private static CaseInvoer.Rolfout roleError(Read read) throws Exception {
         try {
-            reading.lees();
+            read.lees();
         } catch (CaseInvoer.Rolbotsing | CaseInvoer.Rolweigering e) {
             return e;
         }

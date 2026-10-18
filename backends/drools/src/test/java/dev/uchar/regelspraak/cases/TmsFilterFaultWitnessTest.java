@@ -31,7 +31,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
@@ -96,14 +96,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * and the filter that faults on the way only were green before: they pin what stays.
  *
  * <p><b>Red before the fold order</b> (measured 2026-10-08 on the branch after its creation step, {@code 2907fa91},
- * where the reading rule took the least {@code FilterError} by its sentence): all four documents of the fold order,
+ * where the reading rule took the least {@code FilterFault} by its sentence): all four documents of the fold order,
  * "expected: &lt;DelingDoorNul: deling door nul in de regel "zware vondsten": 9 gedeeld door 0 — …&gt; but was:
  * &lt;DelingDoorNul: deling door nul in de regel "zware vondsten": 4 gedeeld door 0 — …&gt;", and for the path "… in de
  * regel "bootlengte": 4 gedeeld door 0 …". Mutants, each caught: the mirrored list in descending label order (the
- * mirrored list), and a {@code FilterError} compared without its place, so that the two routes to one Boot merge into
+ * mirrored list), and a {@code FilterFault} compared without its place, so that the two routes to one Boot merge into
  * whichever fact came first (the path).
  *
- * <p><b>Red by mutation</b> (measured the same day, not committed). With the {@code FilterError} inserted by
+ * <p><b>Red by mutation</b> (measured the same day, not committed). With the {@code FilterFault} inserted by
  * {@code insert} instead of {@code logicalInsert}, the record of the transient 0 stayed and the rule faulted at the
  * fixpoint, "[erkenning, zware vondsten] DelingDoorNul: deling door nul in de regel "zware vondsten": 12 gedeeld door 0
  * — …" in both document orders. Without marking a fold whose filter can fault as a read that can fault, the composite's
@@ -111,7 +111,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * org.drools.modelcompiler.constraints.LambdaEvalExpression@… : java.lang.RuntimeException:
  * dev.uchar.regelspraak.runtime.Breuk$DelingDoorNul: Breuk deling door 0&gt;".
  */
-class TmsFilterErrorWitnessTest {
+class TmsFilterFaultWitnessTest {
 
     static final String MODEL = TmsDocuments.model(List.of(
             TmsDocuments.objecttype("Jutter", List.of(attribuut("zware vondsten", WHOLE)), List.of("actief", "druk")),
@@ -134,7 +134,7 @@ class TmsFilterErrorWitnessTest {
     /** The fold, a new node on every call, so each form reads a fold of its own. */
     static String zwaar() {
         return aggregation("count", VONDSTEN, "Vondst", sourceRole("aanmelding", "vondst"),
-                comparison("greater", quotient(reading("gewicht", "Vondst"), reading("deelnemers", "Vondst")),
+                comparison("greater", quotient(ownRead("gewicht", "Vondst"), ownRead("deelnemers", "Vondst")),
                         number("2")), "null", COUNTING, "het aantal vondsten van de Jutter die aan de volgende voorwaarde"
                         + " voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2");
     }
@@ -270,9 +270,9 @@ class TmsFilterErrorWitnessTest {
             factTypeOneToMany("bootgebruik", "boot", "Boot", "gebruiker", "Jutter", "gebruikers")));
 
     static final List<String> BOOT_LENGTH = List.of(computingRule("bootlengte", "BEREKENING", "Haven", "bootlengte",
-            aggregation("sum", reading("lengte", "Boot"), "Boot", sourcePath(List.of(roleBinding("ligplaats", "jutter"),
+            aggregation("sum", ownRead("lengte", "Boot"), "Boot", sourcePath(List.of(roleBinding("ligplaats", "jutter"),
                     roleBinding("bootgebruik", "boot"))), comparison("greater", quotient(
-                    reading("lengte", "Boot"), reading("breedte", "Boot")), number("2")), number("0"), WHOLE,
+                    ownRead("lengte", "Boot"), ownRead("breedte", "Boot")), number("2")), number("0"), WHOLE,
                     "de som van de lengte van alle boten van alle jutters van de Haven die aan de volgende voorwaarde"
                             + " voldoen: zijn lengte gedeeld door zijn breedte is groter dan 2, of 0 als die er niet"
                             + " zijn"), "null"));
@@ -381,9 +381,9 @@ class TmsFilterErrorWitnessTest {
      *  expected consistent, but the channel carries: zware vondsten × J1", measured 2026-10-08). */
     static String bewaaktZwaar() {
         return aggregation("count", VONDSTEN, "Vondst", sourceRole("aanmelding", "vondst"),
-                compound("all", 0, List.of(TmsDocuments.predicate("filled", reading("deelnemers", "Vondst")),
-                        comparison("greater", quotient(reading("gewicht", "Vondst"),
-                                reading("deelnemers", "Vondst")), number("2")))), "null", COUNTING,
+                compound("all", 0, List.of(TmsDocuments.predicate("filled", ownRead("deelnemers", "Vondst")),
+                        comparison("greater", quotient(ownRead("gewicht", "Vondst"),
+                                ownRead("deelnemers", "Vondst")), number("2")))), "null", COUNTING,
                 "het aantal vondsten van de Jutter die aan alle volgende voorwaarden voldoen: zijn deelnemers is"
                         + " gevuld; zijn gewicht gedeeld door zijn deelnemers is groter dan 2");
     }
@@ -452,7 +452,7 @@ class TmsFilterErrorWitnessTest {
 
         @Override public void objectInserted(ObjectInsertedEvent e) {
             String naam = e.getObject().getClass().getSimpleName();
-            if (naam.equals("Fout") || naam.equals("FilterError")) inserted++;
+            if (naam.equals("Fout") || naam.equals("FilterFault")) inserted++;
         }
 
         @Override public void objectUpdated(ObjectUpdatedEvent e) {}

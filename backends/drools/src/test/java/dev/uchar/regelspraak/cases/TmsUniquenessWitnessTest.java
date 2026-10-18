@@ -24,7 +24,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
 import static dev.uchar.regelspraak.cases.TmsDocuments.channelTest;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -78,11 +78,11 @@ class TmsUniquenessWitnessTest {
                     attribuut("factor", WHOLE), attribuut("toeslag", WHOLE), attribuut("nummer", WHOLE)), List.of())),
             List.of(factTypeOneToMany("ligging", "kust", "Kust", "vondst", "Vondst", "vondsten")));
 
-    static final String FACTOR = computingRule("factor", "BEREKENING", "Vondst", "factor", reading("opgave", "Vondst"), "null");
-    static final String TOESLAG = computingRule("toeslag", "BEREKENING", "Vondst", "toeslag", reading("factor", "Vondst"),
+    static final String FACTOR = computingRule("factor", "BEREKENING", "Vondst", "factor", ownRead("opgave", "Vondst"), "null");
+    static final String TOESLAG = computingRule("toeslag", "BEREKENING", "Vondst", "toeslag", ownRead("factor", "Vondst"),
             "null");
     static final String NUMBER = computingRule("nummer", "BEREKENING", "Vondst", "nummer",
-            binary("plus", reading("basis", "Vondst"), reading("toeslag", "Vondst")), "null");
+            binary("plus", ownRead("basis", "Vondst"), ownRead("toeslag", "Vondst")), "null");
     static final String SUSPECTED = characteristicRule("verdenking", "Kust", "verdacht", channelTest("eenmalig nummer"));
 
     /** A Uniqueness of one always-valid version over {@code bronnen} ({@link #bron}), scoped where {@code scope} is not
@@ -233,7 +233,7 @@ class TmsUniquenessWitnessTest {
                     List.of())), List.of());
 
     static final String STRAND_NUMBER = computingRule("strandnummer", "BEREKENING", "Strandvondst", "vondstnummer",
-            reading("opgave", "Strandvondst"), "null");
+            ownRead("opgave", "Strandvondst"), "null");
     static final String VONDSTUNIE = uniqueness("eenmalig vondstnummer", List.of(bron("Strandvondst",
             List.of("vondstnummer")), bron("Wrakvondst", List.of("vondstnummer"))), null,
             "Strandvondst verenigd met Wrakvondst moeten uniek zijn.");

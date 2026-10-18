@@ -175,9 +175,9 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         Map<String, Object> now = globals(sessie);
         for (String naam : new TreeSet<>(union(globals.keySet(), now.keySet()))) {
             Object oud = globals.get(naam);
-            Object recomputed = now.get(naam);
-            if (!Objects.equals(oud, recomputed))
-                return "de global '" + naam + "' veranderde van " + waarde(oud) + " in " + waarde(recomputed)
+            Object fresh = now.get(naam);
+            if (!Objects.equals(oud, fresh))
+                return "de global '" + naam + "' veranderde van " + waarde(oud) + " in " + waarde(fresh)
                         + " na de eerste DroolsBackend.vuur van deze sessie";
         }
         return null;
@@ -365,9 +365,9 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
 
     /** The clauses that are not null, joined: "a", "a en b", "a, b en c". */
     private static String combined(String... parts) {
-        List<String> rightUnit = java.util.Arrays.stream(parts).filter(Objects::nonNull).toList();
-        if (rightUnit.isEmpty()) return null;
-        if (rightUnit.size() == 1) return rightUnit.get(0);
-        return String.join(", ", rightUnit.subList(0, rightUnit.size() - 1)) + " en " + rightUnit.get(rightUnit.size() - 1);
+        List<String> present = java.util.Arrays.stream(parts).filter(Objects::nonNull).toList();
+        if (present.isEmpty()) return null;
+        if (present.size() == 1) return present.get(0);
+        return String.join(", ", present.subList(0, present.size() - 1)) + " en " + present.get(present.size() - 1);
     }
 }

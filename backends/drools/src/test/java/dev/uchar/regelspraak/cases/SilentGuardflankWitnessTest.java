@@ -176,15 +176,15 @@ class SilentGuardflankWitnessTest {
 
     /** One Kustvak with one Post carrying two Seinen — the creation's whole reach — expecting {@code vakseinaantal}. */
     private static JsonNode caseOf(String postCharacteristics, String s1Characteristics, String verwacht) throws Exception {
-        return caseRuw("[]", postCharacteristics, s1Characteristics, verwacht);
+        return rawCase("[]", postCharacteristics, s1Characteristics, verwacht);
     }
 
     /** The same population with the characteristic on the KUSTVAK instead. */
     private static JsonNode caseWithVak(String vakCharacteristics, String verwacht) throws Exception {
-        return caseRuw(vakCharacteristics, "[]", "[]", verwacht);
+        return rawCase(vakCharacteristics, "[]", "[]", verwacht);
     }
 
-    private static JsonNode caseRuw(String vakCharacteristics, String postCharacteristics, String s1Characteristics, String verwacht)
+    private static JsonNode rawCase(String vakCharacteristics, String postCharacteristics, String s1Characteristics, String verwacht)
             throws Exception {
         return JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": null,

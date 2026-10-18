@@ -36,19 +36,19 @@ class DuplicateRuleNameWitnessTest {
                 + " de tweede de eerste zou vervangen (vormnamen zijn uniek, WF-020)";
     }
 
-    @Test void two_rules_of_a_name_refuses_the_named_exec_branch() throws Exception {
+    @Test void the_exec_branch_refuses_two_rules_of_one_name_by_name() throws Exception {
         Path ir = document(regel("actief", ACTIEF) + "," + regel("actief", WEIGHT), "");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(ir));
         assertEquals("exec-model" + sentence("actief"), e.getMessage());
     }
 
-    @Test void a_rule_and_a_consistency_of_a_name_refuses_the_named_exec_branch() throws Exception {
+    @Test void the_exec_branch_refuses_a_rule_and_a_consistency_of_one_name_by_name() throws Exception {
         Path ir = document(regel("actief", ACTIEF) + "," + regel("gewicht", WEIGHT), CONSISTENTIE);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(ir));
         assertEquals("exec-model" + sentence("gewicht"), e.getMessage());
     }
 
-    @Test void the_drl_text_branch_refuses_the_same_named_document() throws Exception {
+    @Test void the_drl_text_branch_refuses_the_same_document_by_name() throws Exception {
         Path ir = document(regel("actief", ACTIEF) + "," + regel("actief", WEIGHT), "");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> play(ir, true));
         assertTrue(e.getMessage().contains("Duplicate rule name: actief"), e.getMessage());

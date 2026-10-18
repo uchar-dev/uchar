@@ -69,7 +69,7 @@ class DrlUnitSiteWitnessTest {
     private static final Set<String> DERIVED_OPERATORS = Set.of("plus", "minus", "reducedBy", "times");
     private static final Set<String> DERIVED_KIND = Set.of("sum", "total", "minimum", "maximum", "first", "last");
     /** WF-038: a tijdsduur's unit is the operator's parameter, not a derived result type. */
-    private static final Set<String> NO_BUILTIN_CALL = Set.of("duration", "absoluteDuration");
+    private static final Set<String> DURATION_CALL_KINDS = Set.of("duration", "absoluteDuration");
 
     @Test void the_drl_text_follows_the_declarations_not_the_wire_repetition() throws Exception {
         int twists = 0;
@@ -110,7 +110,7 @@ class DrlUnitSiteWitnessTest {
 
     /** Graft the sister unit onto every derived position under {@code x}; return the number of grafts. {@code scope}
      *  maps each binder in scope (lower-cased) to the declaration of its binding. */
-    private static int twist(JsonNode x, boolean vrijgesteldByParent, Declarations d, Map<String, JsonNode> scope) {
+    private static int twist(JsonNode x, boolean exemptByParent, Declarations d, Map<String, JsonNode> scope) {
         if (x.isArray()) {
             int n = 0;
             for (JsonNode kind : x) n += twist(kind, false, d, scope);
@@ -125,8 +125,8 @@ class DrlUnitSiteWitnessTest {
             if (dateTyped(l, d, scope) && !dateTyped(r, d, scope)) duration = r;
             else if (dateTyped(r, d, scope) && !dateTyped(l, d, scope)) duration = l;
         }
-        boolean vrijgesteld = vrijgesteldByParent || "Literal".equals(node)
-                || ("BuiltinCall".equals(node) && NO_BUILTIN_CALL.contains(o.path("kind").asText("")));
+        boolean vrijgesteld = exemptByParent || "Literal".equals(node)
+                || ("BuiltinCall".equals(node) && DURATION_CALL_KINDS.contains(o.path("kind").asText("")));
         int n = 0;
         if (!vrijgesteld && derived(o) && o.get("type") instanceof ObjectNode t) {
             ObjectNode sister = sister(t.get("unit"), CLASS.get(node));

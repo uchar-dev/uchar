@@ -74,7 +74,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       together after the member's pattern in the contribution rule and bound per route in the rule of the filter's
  *       fault, whose place of the first step is that of an intermediate. Fired as well, against the values the
  *       reference interpreter and the ASP backend give, and with a case whose filter faults along every route, where
- *       each route's {@link FilterError} carries its own place and the rule names the first route's fault.</li>
+ *       each route's {@link FilterFault} carries its own place and the rule names the first route's fault.</li>
  *   <li>The document of {@code TmsQuantifierFoldWitnessTest} whose matrix divides ({@link #matrixThatDivides}), since no
  *       golden has one: a quantifier fold whose matrix can fault and deposit, so a member contributes its test, with
  *       its place and the probe.</li>
@@ -136,7 +136,7 @@ class FoldPlanWitnessTest {
                 plans(golden("jutterswet-postwacht")));
     }
 
-    @Test void a_timeline_total_with_its_member_error() throws Exception {
+    @Test void a_timeline_total_with_its_member_fault() throws Exception {
         assertEquals(List.of(
                 "regel keurlast van een jutter: bijdrage aan vouw 0 | vorm keurlast van een jutter |"
                         + " groep null",
@@ -187,7 +187,7 @@ class FoldPlanWitnessTest {
                 "    toets 0.1.0 SlotValue",
                 "    toets 0.1.1 Const Boolean",
                 "  gevolg Lidfout [onderwerp=$vouwonderwerp, vouw=keurlast van een jutter: vouw 0,"
-                        + " member=4, plaats=selectie 0 [keurendeJutter 0 1] MEMBER_ERROR, before=the per-element temporal"
+                        + " member=4, plaats=selectie 0 [keurendeJutter 0 1] MEMBER_FAULT, before=the per-element temporal"
                         + " total of \"keurtarief\" over , after=: the case supplies an asOfDate-bucket scalar, which"
                         + " carries no period of its own; a set fold needs each member's own timeline (ch."
                         + " 3.6/§7.1, ch. 8.4), insertion=LOGICAL]"),
@@ -252,7 +252,7 @@ class FoldPlanWitnessTest {
                         + " teken=ONBEPAALD, eenheid=null] bron '2'",
                 "    toets 0.0.2 Const String",
                 "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=zware vondsten: vouw 1, member=5, plaats=selectie"
-                        + " 0 [aanmelder 0 1] FILTER_ERROR, slots=[0, 1, 2, 3, 5], size=6, insertion=LOGICAL]"
+                        + " 0 [aanmelder 0 1] FILTER_FAULT, slots=[0, 1, 2, 3, 5], size=6, insertion=LOGICAL]"
                         + " filter Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3), Const"
                         + " 2, Const >))",
                 "    filter 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht"
@@ -333,7 +333,7 @@ class FoldPlanWitnessTest {
                         + " teken=ONBEPAALD, eenheid=null] bron '2'",
                 "    toets 0.0.2 Const String",
                 "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=drukte: vouw 2, member=5, plaats=selectie 0"
-                        + " [aanmelder 0 1] FILTER_ERROR, slots=[0, 1, 2, 3, 5], size=6, insertion=LOGICAL] filter"
+                        + " [aanmelder 0 1] FILTER_FAULT, slots=[0, 1, 2, 3, 5], size=6, insertion=LOGICAL] filter"
                         + " Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3), Const 2,"
                         + " Const >))",
                 "    filter 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht"
@@ -468,7 +468,7 @@ class FoldPlanWitnessTest {
                         + " teken=ONBEPAALD, eenheid=null] bron '2'",
                 "    toets 0.0.2 Const String",
                 "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=havengeldtotaal van een Jutter: vouw 1, member=5,"
-                        + " plaats=selectie 0 [schipper 0 1] FILTER_ERROR, slots=[0, 1, 2, 3, 5], size=6,"
+                        + " plaats=selectie 0 [schipper 0 1] FILTER_FAULT, slots=[0, 1, 2, 3, 5], size=6,"
                         + " insertion=LOGICAL] filter Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1"
                         + " (Lees 2, Lees 3), Const 2, Const >))",
                 "    filter 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn havengeld"
@@ -635,7 +635,7 @@ class FoldPlanWitnessTest {
 
     /** {@link #havenketen} fired where the filter faults (fix round 1c-B2): the rule of the filter's fault binds the
      *  two intermediates per route and reads the place of the route's Boot, the first one, in J1's list, so each route
-     *  gives a {@link FilterError} with its own place: H1 along B1 at [0, 0], H2 along B2 at [0, 1], H1 along B3 at
+     *  gives a {@link FilterFault} with its own place: H1 along B1 at [0, 0], H2 along B2 at [0, 1], H1 along B3 at
      *  [0, 2]. The least is the first route's, H1's, so the rule names H1's fault, the first member in fold order
      *  (RUNTIME-SEMANTICS ch. 5.11): "4 gedeeld door 0", where the least sentence would name H2's 30. A place reader
      *  that reads the wrong place gives another fault or other places; no document of the corpus or the suite fires
@@ -651,20 +651,20 @@ class FoldPlanWitnessTest {
                 "Filterfout J1 H1 [0, 0]: " + division.formatted("4"),
                 "Filterfout J1 H2 [0, 1]: " + division.formatted("30"),
                 "Filterfout J1 H1 [0, 2]: " + division.formatted("4")),
-                filterErrors(ir, JSON.readTree(HAVENKETEN_FAULT)));
+                filterFaults(ir, JSON.readTree(HAVENKETEN_FAULT)));
         CaseRunner.RedResult r = CaseRunner.runRed(ir, caseDocument);
         assertEquals("FAULT", r.status(), r::detail);
         assertTrue(r.detail().startsWith("DelingDoorNul: deling door nul in de regel \"havengeldtotaal van een"
                 + " Jutter\": 4 gedeeld door 0 — "), r::detail);
     }
 
-    /** The {@link FilterError} facts that stand at the fixpoint of {@code caseDocument} on {@code ir}, in their own order, each
+    /** The {@link FilterFault} facts that stand at the fixpoint of {@code caseDocument} on {@code ir}, in their own order, each
      *  with the case labels of the fold's subject and of the member, its place and its fault as named after the fold.
      *  Read off the session after the fire and before the write-back, which raises the fault of the rule instead,
      *  through the measuring seam of {@code CaseRunner} ({@code forMeasurement}, {@code withSession}), which is
      *  package-private in its own package: by reflection, as {@link #matrixThatDivides} takes its document. */
     @SuppressWarnings("unchecked")
-    private static List<String> filterErrors(Path ir, JsonNode caseDocument) throws Exception {
+    private static List<String> filterFaults(Path ir, JsonNode caseDocument) throws Exception {
         Method forMeasurement = CaseRunner.class.getDeclaredMethod("forMeasurement", Path.class, DroolsBackend.Branch.class);
         forMeasurement.setAccessible(true);
         Object runner = forMeasurement.invoke(null, ir, DroolsBackend.Branch.EXEC_MODEL);
@@ -677,11 +677,11 @@ class FoldPlanWitnessTest {
             if (firing.geenFixpunt() != null) throw new AssertionError(firing.geenFixpunt());
             Map<Object, String> label = new IdentityHashMap<>();
             ((Map<String, Object>) a[2]).forEach((l, beanObject) -> label.put(beanObject, l));
-            List<FilterError> fouten = new ArrayList<>();
-            for (Object f : sessie.getObjects()) if (f instanceof FilterError x) fouten.add(x);
+            List<FilterFault> fouten = new ArrayList<>();
+            for (Object f : sessie.getObjects()) if (f instanceof FilterFault x) fouten.add(x);
             fouten.sort(null);
             List<String> out = new ArrayList<>();
-            for (FilterError x : fouten) {
+            for (FilterFault x : fouten) {
                 RuntimeException named = Rekenfout.designate(x.fout(), x.fold());
                 out.add("Filterfout " + label.get(x.onderwerp()) + " " + label.get(x.element()) + " " + x.place()
                         + ": " + named.getClass().getSimpleName() + ": " + named.getMessage());
@@ -708,9 +708,9 @@ class FoldPlanWitnessTest {
         RulePlan afterwards = new RulePlan("na het bestaan", null, null, new ReadTable(List.of()), List.of(exists,
                 new FactPattern(Value.class, "$erna", List.of(), List.of(new Join("erna", null, "$v")), List.of())),
                 new Consequence.InsertChannelState("bestaan", true, Consequence.Insertion.LOGICAL));
-        IllegalStateException way = assertThrows(IllegalStateException.class,
+        IllegalStateException unbound = assertThrows(IllegalStateException.class,
                 () -> PatternDslRendering.regel(afterwards, naam -> null));
-        assertEquals("de variabele $v is nog niet gebonden", way.getMessage());
+        assertEquals("de variabele $v is nog niet gebonden", unbound.getMessage());
     }
 
     /** Two quantifications that each bind the same name inside, an existence and a negation, are a plan the scope of
@@ -728,9 +728,9 @@ class FoldPlanWitnessTest {
         RulePlan afterwards = new RulePlan("na twee kwantificaties", null, null, new ReadTable(List.of()), List.of(exists,
                 not, new FactPattern(Value.class, "$erna", List.of(), List.of(new Join("erna", null, "$v")), List.of())),
                 channel);
-        IllegalStateException way = assertThrows(IllegalStateException.class,
+        IllegalStateException unbound = assertThrows(IllegalStateException.class,
                 () -> PatternDslRendering.regel(afterwards, naam -> null));
-        assertEquals("de variabele $v is nog niet gebonden", way.getMessage());
+        assertEquals("de variabele $v is nog niet gebonden", unbound.getMessage());
     }
 
     /** {@code jutterswet-gevuldepad} (a Jutter's boats, each unloading at one Bergplaats) with a third step, since no
@@ -812,7 +812,7 @@ class FoldPlanWitnessTest {
         for (RulePlan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
                 .modelplan().rules()) {
             if (!(p.consequence() instanceof Consequence.Contribution || p.consequence() instanceof Consequence.FilterDeposit
-                    || p.consequence() instanceof Consequence.FilterError || p.consequence() instanceof Consequence.MemberError))
+                    || p.consequence() instanceof Consequence.FilterFault || p.consequence() instanceof Consequence.MemberFault))
                 continue;
             out.add("regel " + p.naam() + " | vorm " + p.vorm() + " | groep " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
@@ -840,7 +840,7 @@ class FoldPlanWitnessTest {
             case Exists b -> "bestaat binnen " + b.inside() + " buiten " + b.outside() + " "
                     + b.patterns().stream().map(FoldPlanWitnessTest::pattern).toList();
             case Accumulation a -> "accumulatie " + pattern(a.bron()) + " functies "
-                    + a.functions().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
+                    + a.aggregations().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
             case TestItem t -> "toets " + t.id() + " " + t.rol() + " sonde " + t.depositFlag() + " slots " + t.slots()
                     + " grootte " + t.size() + ": " + TermTree.tree(t.test());
         };
@@ -922,13 +922,13 @@ class FoldPlanWitnessTest {
             }
             case Consequence.FilterDeposit f -> out.add("  gevolg Filterdeponering [onderwerp=" + f.onderwerp() + ", vouw="
                     + f.fold() + ", member=" + f.member() + ", insertion=" + f.insertion() + "]");
-            case Consequence.FilterError f -> {
+            case Consequence.FilterFault f -> {
                 out.add("  gevolg Filterfout [onderwerp=" + f.onderwerp() + ", vouw=" + f.fold() + ", member=" + f.member()
                         + ", plaats=" + place(f.place()) + ", slots=" + f.slots() + ", size=" + f.size()
                         + ", insertion=" + f.insertion() + "] filter " + TermTree.tree(f.filter()));
                 TermTree.fields("    filter", f.filter(), "0", out);
             }
-            case Consequence.MemberError f -> out.add("  gevolg Lidfout [onderwerp=" + f.onderwerp() + ", vouw=" + f.fold()
+            case Consequence.MemberFault f -> out.add("  gevolg Lidfout [onderwerp=" + f.onderwerp() + ", vouw=" + f.fold()
                     + ", member=" + f.member() + ", plaats=" + place(f.place()) + ", before=" + f.before() + ", after=" + f.after()
                     + ", insertion=" + f.insertion() + "]");
             default -> throw new IllegalStateException("geen gevolg van een vouw: " + g);

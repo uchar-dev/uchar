@@ -116,7 +116,7 @@ class ScenarioReportWitnessTest {
         assertEquals(6, r.dekking().size(), () -> r.dekking().toString());
     }
 
-    @Test void a_form_name_with_a_double_point_stays_whole() throws Exception {
+    @Test void a_form_name_with_a_colon_stays_whole() throws Exception {
         Path borgdeel = GOLDEN.resolve("anchor").resolve("jutterswet-borgdeel");
         Path d = Files.createTempDirectory("scenario-rapport");
         String bron = Files.readString(borgdeel.resolve("ir.json"));

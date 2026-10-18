@@ -134,7 +134,7 @@ class TmsSkeletonWitnessTest {
             + "\"objectType\":\"Lamp\",\"plural\":\"lampen\",\"many\":true}]}],\"parameters\":[],\"domains\":[],"
             + "\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
-    @Test void two_rules_of_a_name_refuse_the_named_branch() throws Exception {
+    @Test void two_rules_of_a_name_make_the_branch_refuse_by_name() throws Exception {
         Path ir = TmsDocuments.document(TmsDocuments.model(CHARACTERISTICS),
                 List.of(characteristicRule("actief", "actief", check("erkend", false)),
                         characteristicRule("actief", "vergund", check("erkend", false))));
@@ -163,7 +163,7 @@ class TmsSkeletonWitnessTest {
         Path ir = TmsDocuments.document(TmsDocuments.model(CHARACTERISTICS), List.of());
         IrLoader.Loaded l = IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(ir)));
         Object[] goed = {l.model(), null, l.prioritizedDefaults(), l.roleBindings(), l.lets(), l.sourcePaths(),
-                l.path()};
+                l.navigationBindings()};
         assertSame(TmsTranspiler.class, build.invoke(null, goed).getClass());
         int tested = 0;
         for (int i = 2; i < goed.length; i++) {

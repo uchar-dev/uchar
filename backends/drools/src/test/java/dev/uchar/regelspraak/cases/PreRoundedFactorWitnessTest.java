@@ -48,7 +48,7 @@ class PreRoundedFactorWitnessTest {
      * 3.00 wa as 3 · 0.3333333333333333 = 0.9999999999999999, so the sum is 1.9999999999999999 — written unrounded into
      * the 2-decimal attribute — and rounded down it is 1.
      */
-    @Test void the_factor_one_third_computes_before_rounded_in_both_branches() throws Exception {
+    @Test void the_factor_one_third_computes_pre_rounded_in_both_branches() throws Exception {
         Path ir = document("Wachtrooster", "dn", "dienst", "wa", "wacht", 3, "dienstduur", "wachtduur", "inzet",
                 "afgeronde inzet", "floor", "naar beneden");
         JsonNode caseDocument = caseDocument("dienstduur", "1.00", "wachtduur", "3.00", "inzet", "2.00", "afgeronde inzet", "2");
@@ -73,7 +73,7 @@ class PreRoundedFactorWitnessTest {
      * without that rounding, 9.00000000000000072, and rounded up 10 as well, on both branches since that card. Both are
      * the registered deviation of CONSTRUCTS row 26; {@code ref} answers 9.00 and 9.
      */
-    @Test void the_factor_one_twenty_fourth_computes_before_rounded_in_both_branches() throws Exception {
+    @Test void the_factor_one_twenty_fourth_computes_pre_rounded_in_both_branches() throws Exception {
         Path ir = document("Getijrooster", "tj", "tij", "sl", "slag", 24, "tijduur", "slagduur", "looptijd",
                 "afgeronde looptijd", "ceiling", "naar boven");
         JsonNode caseDocument = caseDocument("tijduur", "0.00", "slagduur", "216.00", "looptijd", "9.00", "afgeronde looptijd", "9");
@@ -98,7 +98,7 @@ class PreRoundedFactorWitnessTest {
         String sumType = number(false, 2, baseUnit);
         String addition = ("{\"node\":\"Binary\",\"op\":\"plus\",\"left\":%s,\"right\":%s,\"type\":%s,"
                 + "\"source\":{\"snippet\":\"de %s van de Jutter plus de %s van de Jutter\"}}")
-                .formatted(reading(left), reading(right), sumType, left, right);
+                .formatted(ownRead(left), ownRead(right), sumType, left, right);
         String rounding = ("{\"node\":\"Rounding\",\"base\":%s,\"mode\":\"%s\",\"decimals\":0,\"type\":%s,"
                 + "\"source\":{\"snippet\":\"de %s van de Jutter plus de %s van de Jutter %s afgerond op 0 decimalen\"}}")
                 .formatted(addition, mode, number(true, 0, baseUnit), left, right, modeSource);
@@ -140,7 +140,7 @@ class PreRoundedFactorWitnessTest {
         return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
     }
 
-    private static String reading(String attribuut) {
+    private static String ownRead(String attribuut) {
         return "{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"de %s van de Jutter\"}}"
                 .formatted(attribuut, attribuut);
     }

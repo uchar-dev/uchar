@@ -95,14 +95,14 @@ public final class ComputeHelpers {
     /** {@code v} restated by the exact canonical factors {@code teller ÷ noemer} as rationals, so a restatement that
      *  does not terminate stays exact until a collapse point (RUNTIME-SEMANTICS ch. 2.1, 2.6); a leeg value and a value
      *  that is no number pass unchanged. */
-    public static Object rescaleExact(Object v, BigDecimal counter, BigDecimal denominator) {
+    public static Object restateExact(Object v, BigDecimal counter, BigDecimal denominator) {
         return v instanceof BigDecimal || v instanceof Breuk
                 ? RegelSpraakRuntime.rsGedeeld(RegelSpraakRuntime.rsMaal(v, counter), denominator) : v;
     }
 
     /** {@code v} restated by the single ratio {@code factor} of two units, a rate whose factors are not both known; a
      *  leeg value and a value that is no number pass unchanged. */
-    public static Object rescale(Object v, BigDecimal factor) {
+    public static Object restate(Object v, BigDecimal factor) {
         return v instanceof BigDecimal || v instanceof Breuk ? RegelSpraakRuntime.rsMaal(v, factor) : v;
     }
 
@@ -360,10 +360,10 @@ public final class ComputeHelpers {
      *  ({@code rsGeheelPeriode}): over {@code timeline}, a list of segments or null, on the grid {@code grid}
      *  ("JAAR" or "MAAND"), with the test of code {@code toets} and the bound {@code grens} of a comparison read as a
      *  decimal, null where the test has none; complemented where the qualifier is negated ({@code niet}). */
-    public static boolean wholePeriod(Object timeline, Object bound, String grid, int test, boolean not) {
+    public static boolean wholePeriod(Object timeline, Object bound, String grid, int testCode, boolean wholePeriodNegated) {
         List<?> tl = (List<?>) timeline;
         BigDecimal g = RegelSpraakRuntime.toBd(bound);
-        return RegelSpraakRuntime.rsGeheelPeriode(tl, grid, test, g) != not;
+        return RegelSpraakRuntime.rsGeheelPeriode(tl, grid, testCode, g) != wholePeriodNegated;
     }
 
     /** The stop triggers of a composite and of a quantifier fold (RUNTIME-SEMANTICS ch. 5.10): the verdict once
@@ -469,8 +469,8 @@ public final class ComputeHelpers {
 
     /** Whether the key {@code sleutel} is the same key of one form as the key {@code ander}
      *  ({@link UniquenessKey#collidesWith}). */
-    public static boolean collidesWith(Object sleutel, Object earlierBean) {
-        return ((UniquenessKey) sleutel).collidesWith((UniquenessKey) earlierBean);
+    public static boolean collidesWith(Object sleutel, Object other) {
+        return ((UniquenessKey) sleutel).collidesWith((UniquenessKey) other);
     }
 
     /** Value equality at the write boundary: numbers by value, so that 5.0 and 5.00 are one value; leeg is null. */
@@ -565,7 +565,7 @@ public final class ComputeHelpers {
     /** The fault of the form of an input ({@link Invoervormfout}), the sentence {@code voor}, the object {@code object}
      *  and {@code na}, named in the rule {@code regel}: the fault a consequence inserts where the case gives an input
      *  in a form the rule cannot read ({@code plan.Consequence.Invoervormfout}). A null {@code regel} names no rule yet: the
-     *  fault of a member of a fold ({@code plan.Consequence.MemberError}), which the form that reads the fold names where it
+     *  fault of a member of a fold ({@code plan.Consequence.MemberFault}), which the form that reads the fold names where it
      *  meets it. */
     public static Invoervormfout inputFormFault(String before, Object object, String after, String regel) {
         return new Invoervormfout(before, object, after).inRule(regel);
@@ -602,7 +602,7 @@ public final class ComputeHelpers {
         for (Object o : (List<?>) recipients) lijst.add((Recipient) o);
         Allocation.Result u = Allocation.bereken(methode, pot, lijst, gewogen, capped, decimals, descending);
         List<Object> out = new ArrayList<>();
-        for (Object r : u.depositCount()) out.add(inconsistency(vorm, r));
+        for (Object r : u.depositors()) out.add(inconsistency(vorm, r));
         for (Map.Entry<Object, BigDecimal> e : u.shares().entrySet())
             out.add(new Value(e.getKey(), aandeel, e.getValue(), writer));
         if (rest != null && u.rest() != null) out.add(new Value(bron, rest, u.rest(), writer));
@@ -613,7 +613,7 @@ public final class ComputeHelpers {
      *  {@code waarde} ({@link Contribution}, RUNTIME-SEMANTICS ch. 3.4), or null where it contributes nothing: a leeg value is
      *  skipped (ch. 1.2). Where {@code totaal} is not null the value is the member's timeline and contributes its total
      *  over time per that unit (ch. 3.6, the per-element fold), and nothing where the case gives the timeline as the
-     *  asOfDate-bucket scalar ({@link BucketScalar}), since the member's {@link MemberError} stands instead. Where
+     *  asOfDate-bucket scalar ({@link BucketScalar}), since the member's {@link MemberFault} stands instead. Where
      *  {@code filled}, the contribution counts the member and carries no value; otherwise it carries the value, an exact
      *  rational collapsed to a decimal. */
     public static Contribution contribution(String fold, Object onderwerp, Object member, Object waarde, String totaal,
@@ -639,11 +639,11 @@ public final class ComputeHelpers {
             if (((Number) counts.get(i)).longValue() == 0) {
                 String veld = fields.get(i);
                 throw new IllegalStateException(switch (reden) {
-                    case FILTER_ERROR -> "het filter van " + fold + " faalt voor " + FactNames.object(member) + ", maar een"
+                    case FILTER_FAULT -> "het filter van " + fold + " faalt voor " + FactNames.object(member) + ", maar een"
                             + " lid van zijn route heeft geen Lijstplaats onder het veld '" + veld + "': de invoer stelt de"
                             + " volgorde van die lijst niet, en zonder haar is de eerste fout van de vouw niet te bepalen"
                             + " (RUNTIME-SEMANTICS ch. 5.11)";
-                    case MEMBER_ERROR -> "de vouw " + fold + " leest de tijdlijn van " + FactNames.object(member) + ", die de case"
+                    case MEMBER_FAULT -> "de vouw " + fold + " leest de tijdlijn van " + FactNames.object(member) + ", die de case"
                             + " als emmerscalair geeft, maar een lid van zijn route heeft geen Lijstplaats onder het veld '"
                             + veld + "': de invoer stelt de volgorde van die lijst niet, en zonder haar is niet te bepalen"
                             + " welk lid de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11)";
@@ -732,8 +732,8 @@ public final class ComputeHelpers {
      *  a bean whose class {@code Build.beanLoader()} loaded ({@code DroolsBackend.voegIn}) and refuses a reference
      *  field that points outside the input ({@code targetOutsideInput}), so within a session two classes of one name do
      *  not meet. */
-    public static boolean isSet(Object earlierBean, String soort) {
-        return earlierBean != null && (soort == null || isA(earlierBean, soort));
+    public static boolean isSet(Object other, String soort) {
+        return other != null && (soort == null || isA(other, soort));
     }
 
     /** Whether the evaluation date {@code datum} lies in the validity window from {@code vanaf} to {@code tot}, dates in
@@ -818,7 +818,7 @@ public final class ComputeHelpers {
 
     /** The verdict of the matrix of a quantifier fold as a member's contribution: 1 where it holds, 0 where it does not
      *  ({@code Consequence.Input.Verdict}). */
-    public static BigDecimal judgement(boolean holds) {
+    public static BigDecimal verdict(boolean holds) {
         return holds ? BigDecimal.ONE : BigDecimal.ZERO;
     }
 
@@ -891,16 +891,16 @@ public final class ComputeHelpers {
      *  {@code otherChain} from {@code ander}, the object another pattern binds, reach one object, by identity; a
      *  broken link reads as null and meets nothing. The other walk goes first, and the own one only where it reached an
      *  object. */
-    public static boolean meeting(Object own, Object earlierBean, List<?> ownChain, List<?> otherChain) {
-        Object b = walk(earlierBean, otherChain);
+    public static boolean meeting(Object own, Object other, List<?> ownChain, List<?> otherChain) {
+        Object b = walk(other, otherChain);
         if (b == null) return false;
         return walk(own, ownChain) == b;
     }
 
     /** Whether {@code listPlace}, a {@link ListPlace}, is the place of the object the walk over {@code keten} from
-     *  {@code jsonNode} reaches: its member is that object, by identity. */
-    public static boolean placeOf(Object listPlace, Object jsonNode, List<?> chain) {
-        return ((ListPlace) listPlace).member() == walk(jsonNode, chain);
+     *  {@code node} reaches: its member is that object, by identity. */
+    public static boolean placeOf(Object listPlace, Object node, List<?> chain) {
+        return ((ListPlace) listPlace).member() == walk(node, chain);
     }
 
     // ---------------- creations and links (plan.BetaTest, Route.CREATION_DEPTH) ----------------

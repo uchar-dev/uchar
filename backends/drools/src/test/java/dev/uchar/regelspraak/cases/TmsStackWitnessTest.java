@@ -23,7 +23,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
 import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
@@ -70,15 +70,15 @@ class TmsStackWitnessTest {
             TmsDocuments.subtype("Wrakvondst", "Vondst", List.of(), List.of())), List.of());
 
     private static final String INITIALISATION = computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon",
-            binary("times", number("2"), reading("gewicht", "Vondst")),
-            comparison("greater", reading("gewicht", "Vondst"), number("10")));
+            binary("times", number("2"), ownRead("gewicht", "Vondst")),
+            comparison("greater", ownRead("gewicht", "Vondst"), number("10")));
 
     private static final String GROUP = attributeGroup("wrakbergloon", "Wrakvondst", "bergloon", List.of(
             standaard(compound("all", 0, List.of(
-                            comparison("greater", reading("gewicht", "Wrakvondst"), number("50")),
-                            comparison("greater", reading("gewicht", "Wrakvondst"), number("100")))),
+                            comparison("greater", ownRead("gewicht", "Wrakvondst"), number("50")),
+                            comparison("greater", ownRead("gewicht", "Wrakvondst"), number("100")))),
                     number("9")),
-            standaard(comparison("greater", reading("gewicht", "Wrakvondst"), number("50")), number("5"))));
+            standaard(comparison("greater", ownRead("gewicht", "Wrakvondst"), number("50")), number("5"))));
 
     /** Per object its type, gewicht, bergloon in the input (null for none), and bergloon at the end (null for leeg). */
     private record Case(String type, String weight, String invoer, String bergloon) {}

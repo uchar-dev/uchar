@@ -131,7 +131,7 @@ class CompanionPathWitnessTest {
 
     // ---------------- (e) a FOREIGN barrier: another Let's read, before or after the forcing read ----------------
 
-    @Test void a_read_of_another_empty_binder_before_the_division_does_not_cut_off_after_it() throws Exception {
+    @Test void a_read_of_another_empty_binder_before_the_division_cuts_off_but_after_it_does_not() throws Exception {
         // "Let x = leegding in Let q = inkomen gedeeld door tweede in x plus q", `leegding` absent: the read of
         // x raises the OUTER Let's barrier before q is ever forced — ref leeg, CONSISTENT. Mirror "q plus x":
         // q is forced first (fault), then x ends the outer Let — ref leeg, INCONSISTENT. The barrier belongs to
@@ -213,18 +213,18 @@ class CompanionPathWitnessTest {
 
     // ---------------- (h) two sites in one rule value: each carries its OWN path ----------------
 
-    @Test void two_delingen_in_a_rule_value_each_get_their_own_path_condition() throws Exception {
+    @Test void two_divisions_in_a_rule_value_each_get_their_own_path_condition() throws Exception {
         // "(inkomen gedeeld door deler) plus (Let d = leegding in d plus (inkomen gedeeld door tweede))" — the
         // first division is bare (runs whenever the rule does), the second sits behind the read of `d`. Two
         // companions, indexed 1 and 2 (the DRL naming parity), each with its own condition. ref:
         //   everything absent      -> 0.0000, INCONSISTENT (site 1 faults; site 2 is cut off by the barrier)
         //   deler 2, leegding 1    -> 6.0000, INCONSISTENT (site 1 = 5; d read fine, site 2 faults -> 1 + 0)
         //   deler 2, leegding leeg -> 5.0000, CONSISTENT   (site 1 = 5; the barrier empties the Let; no fault)
-        assertNull(play(twoDelingenModel(), jutter(INKOMEN, waarde("uit", "0.0000") + ", " + inconsistent())),
+        assertNull(play(twoDivisionsModel(), jutter(INKOMEN, waarde("uit", "0.0000") + ", " + inconsistent())),
                 "beide operanden leeg: de kale deling faalt, de omhulde is afgekapt");
-        assertNull(play(twoDelingenModel(), jutter(INKOMEN + ", " + n("deler", "2.00") + ", " + n("leegding", "1.00"),
+        assertNull(play(twoDivisionsModel(), jutter(INKOMEN + ", " + n("deler", "2.00") + ", " + n("leegding", "1.00"),
                 waarde("uit", "6.0000") + ", " + inconsistent())), "alleen de omhulde deling faalt");
-        assertNull(play(twoDelingenModel(), jutter(INKOMEN + ", " + n("deler", "2.00"),
+        assertNull(play(twoDivisionsModel(), jutter(INKOMEN + ", " + n("deler", "2.00"),
                 waarde("uit", "5.0000") + ", " + consistent())), "de omhulde deling is afgekapt, de kale rekent");
     }
 
@@ -675,17 +675,17 @@ class CompanionPathWitnessTest {
      *  other — {@code readInMinimum} puts the read in the minimum and the division in the maximum. The clamp and the
      *  Let carry the type of the base, 2 decimals, which the verifier demands (WF-091). */
     private static String clampModel(boolean readInMinimum) {
-        String reading = bref("d", pos(2));
-        String body = readInMinimum ? clamped(attr("inkomen"), reading, DIVISION, num(2))
-                : clamped(attr("inkomen"), DIVISION, reading, num(2));
+        String binderRead = bref("d", pos(2));
+        String body = readInMinimum ? clamped(attr("inkomen"), binderRead, DIVISION, num(2))
+                : clamped(attr("inkomen"), DIVISION, binderRead, num(2));
         return ofModel(let("d", attr("deler"), body, num(2)));
     }
 
     /** (i') the same carrier with the read and the §6.5 division in the BASIS / MAXIMUM pair instead. */
     private static String clampBaseModel(boolean divisionInBase) {
-        String reading = bref("d", pos(2));
+        String binderRead = bref("d", pos(2));
         String zero = lit("0.0000", num(4));
-        String body = divisionInBase ? clamped(DIVISION, zero, reading) : clamped(reading, zero, DIVISION);
+        String body = divisionInBase ? clamped(DIVISION, zero, binderRead) : clamped(binderRead, zero, DIVISION);
         return ofModel(let("d", attr("deler"), body, num(4)));
     }
 
@@ -712,16 +712,16 @@ class CompanionPathWitnessTest {
 
     /** (i) the same, with the division by NUMERIC zero ("inkomen gedeeld door nul") as the other bound. */
     private static String clampZeroModel(boolean readInMinimum) {
-        String reading = bref("d", pos(2));
-        String body = readInMinimum ? clamped(attr("inkomen"), reading, DIVISION_ZERO, num(2))
-                : clamped(attr("inkomen"), DIVISION_ZERO, reading, num(2));
+        String binderRead = bref("d", pos(2));
+        String body = readInMinimum ? clamped(attr("inkomen"), binderRead, DIVISION_ZERO, num(2))
+                : clamped(attr("inkomen"), DIVISION_ZERO, binderRead, num(2));
         return ofModel(let("d", attr("deler"), body, num(2)));
     }
 
     /** (i) a ch. 10.2 guard "d groter dan (inkomen ÷ tweede)" ({@code readLeft}) or its mirror, in a Let on d. */
     private static String conditionOrderModel(boolean readLeft) {
-        String reading = bref("d", pos(2));
-        String condition = readLeft ? verg("greater", reading, DIVISION) : verg("greater", DIVISION, reading);
+        String binderRead = bref("d", pos(2));
+        String condition = readLeft ? verg("greater", binderRead, DIVISION) : verg("greater", DIVISION, binderRead);
         String keuze = ite(condition, lit("1.0000", num(4)), lit("2.0000", num(4)), num(4));
         return ofModel(let("d", attr("deler"), keuze, num(4)));
     }
@@ -761,7 +761,7 @@ class CompanionPathWitnessTest {
     }
 
     /** (h) a bare division plus a Let-wrapped one behind a read. */
-    private static String twoDelingenModel() {
+    private static String twoDivisionsModel() {
         String wrapped = let("d", attr("leegding"), binary("plus", bref("d", pos(2)), DIVISION, num(4)), num(4));
         return ofModel(binary("plus", DIVISION_DIVISOR, wrapped, num(4)));
     }

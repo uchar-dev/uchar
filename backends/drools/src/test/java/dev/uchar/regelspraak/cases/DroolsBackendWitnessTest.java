@@ -79,7 +79,7 @@ class DroolsBackendWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             TmsTranspiler et = TmsTranspiler.build(l.model(), cl, List.of(), l.roleBindings(), l.lets(),
-                    l.sourcePaths(), l.path());
+                    l.sourcePaths(), l.navigationBindings());
             assertEquals(List.of("penninggerechtigd tenzij uitgesloten"),
                     rules(KieBaseBuilder.createKieBaseFromModel(et.model())));
             assertEquals(List.of("regel: penninggerechtigd tenzij uitgesloten"),

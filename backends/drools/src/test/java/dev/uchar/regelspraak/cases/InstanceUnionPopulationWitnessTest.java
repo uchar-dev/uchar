@@ -29,7 +29,7 @@ class InstanceUnionPopulationWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    @Test void a_union_over_two_populations_is_refused_as_named_in_both_branches(@TempDir Path dir)
+    @Test void a_union_over_two_populations_is_refused_by_name_in_both_branches(@TempDir Path dir)
             throws Exception {
         Path ir = dir.resolve("ir.json");
         Files.writeString(ir, DOC);
@@ -47,7 +47,7 @@ class InstanceUnionPopulationWitnessTest {
      *  restate read it unguarded. A crash names no form and reaches the gate as an ERROR instead of as a
      *  channel with a reason. This row is the fence for both halves: both branches refuse, and both name the
      *  rule in the SAME words. */
-    @Test void the_union_on_a_value_site_is_refused_as_named_in_both_branches(@TempDir Path dir)
+    @Test void the_union_on_a_value_site_is_refused_by_name_in_both_branches(@TempDir Path dir)
             throws Exception {
         Path ir = dir.resolve("ir.json");
         Files.writeString(ir, BARE_UNION_DOC);

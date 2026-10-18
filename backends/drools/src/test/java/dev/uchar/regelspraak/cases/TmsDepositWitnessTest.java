@@ -17,7 +17,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.predicate;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
@@ -63,14 +63,14 @@ class TmsDepositWitnessTest {
             attribuut("a", TWO), attribuut("grond b", TWO), attribuut("b", TWO), attribuut("heffing", TWO),
             attribuut("toeslag", TWO)), List.of("zwaar", "zeer zwaar"))), List.of());
 
-    private static final String A = reading("a", "Jutter"), B = reading("b", "Jutter");
+    private static final String A = ownRead("a", "Jutter"), B = ownRead("b", "Jutter");
 
     private static String division(String counter) {
         return binary("dividedBy", counter, B, TWO);
     }
 
     static final List<String> RULES = List.of(
-            computingRule("b van een jutter", "BEREKENING", "Jutter", "b", reading("grond b", "Jutter"), "null"),
+            computingRule("b van een jutter", "BEREKENING", "Jutter", "b", ownRead("grond b", "Jutter"), "null"),
             characteristicRule("zwaar bij verhouding", "Jutter", "zwaar",
                     comparison("greater", division(A), literal("1", WHOLE))),
             characteristicRule("zeer zwaar bij verhouding", "Jutter", "zeer zwaar", compound("all", 0, List.of(

@@ -57,7 +57,7 @@ class DrlTextWitnessTest {
 
     /** One case: a golden, its case file, the form of the text the case reaches, and the instance whose link the case
      *  leaves out with the role it lacks. */
-    private record Case(String golden, String caseDocument, Pattern vorm, String label, String rol) {}
+    private record Case(String golden, String caseFileName, Pattern vorm, String label, String rol) {}
 
     @Test void a_missing_link_in_a_binding_and_in_a_field_test() throws Exception {
         List<Case> cases = List.of(
@@ -71,12 +71,12 @@ class DrlTextWitnessTest {
         List<String> fouten = new ArrayList<>();
         for (Case g : cases) {
             Path ir = GOLDEN.resolve(g.golden()).resolve("ir.json");
-            JsonNode caseDocument = JSON.readTree(GOLDEN.resolve(g.golden()).resolve(g.caseDocument()).toFile());
+            JsonNode caseDocument = JSON.readTree(GOLDEN.resolve(g.golden()).resolve(g.caseFileName()).toFile());
             String text = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
             if (!g.vorm().matcher(text).find()) fouten.add(g + ": de tekst heeft de vorm niet");
             if (!withoutLink(caseDocument, g)) fouten.add(g + ": de case geeft de link");
             String outcome = CaseRunner.playCase(ir, caseDocument, DroolsBackend.Branch.DRL_TEXT);
-            if (outcome != null) fouten.add(g.golden() + " " + g.caseDocument() + ": " + outcome);
+            if (outcome != null) fouten.add(g.golden() + " " + g.caseFileName() + ": " + outcome);
         }
         assertEquals(List.of(), fouten);
     }
@@ -102,13 +102,13 @@ class DrlTextWitnessTest {
         List<String[]> cases = new ArrayList<>();
         for (String document : List.of("turkish-member", "awkward-members", "turkish-characteristic"))
             try (Stream<Path> s = Files.list(PROPERTY.resolve(document))) {
-                for (Path caseDocument : s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList())
-                    cases.add(new String[]{PROPERTY.resolve(document).resolve("ir.json").toString(), caseDocument.toString()});
+                for (Path casePath : s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList())
+                    cases.add(new String[]{PROPERTY.resolve(document).resolve("ir.json").toString(), casePath.toString()});
             }
         try (Stream<Path> s = Files.list(PROPERTY.resolve("spelling"))) {
-            for (Path caseDocument : s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList())
+            for (Path casePath : s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList())
                 cases.add(new String[]{GOLDEN.resolve("jutterswet-sluimerwacht").resolve("ir.json").toString(),
-                        caseDocument.toString()});
+                        casePath.toString()});
         }
         List<String> fouten = new ArrayList<>();
         for (String[] g : cases) {

@@ -37,7 +37,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.pathRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
@@ -72,7 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       ({@link #recursive_chain_stops_where_the_condition_not_more_applies}).</li>
  *   <li>A fact creation makes each link once, beside a link of the input
  *       ({@link #a_fact_creation_lays_every_link_one_time}), and a second distinct filler of a to-one role is a fault at
- *       the fixpoint ({@link #a_second_filling_from_one_to_a_role_is_a_fault}).</li>
+ *       the fixpoint ({@link #a_second_filling_of_a_to_one_role_is_a_fault}).</li>
  *   <li>An object made in a phase is the subject of a creation only in a later phase, after the rule layer has reached
  *       a fixpoint over it, and a chain that does not stop meets the creation budget at its mint at depth 101
  *       ({@link #an_object_is_only_a_subject_in_the_next_generation}); a fact creation walks a link only in a later
@@ -149,19 +149,19 @@ class TmsCreationWitnessTest {
                     sourceRole("jutmelding", "melding"), "null", "null", COUNTING, "het aantal meldingen van de Jutter"),
                     "null"),
             computingRule("meldingswaarde", "BEREKENING", "Jutter", "meldingswaarde", aggregation("sum",
-                    reading("waarde", "Melding"), "Melding", sourceRole("jutmelding", "melding"), "null", number("0"), WHOLE,
+                    ownRead("waarde", "Melding"), "Melding", sourceRole("jutmelding", "melding"), "null", number("0"), WHOLE,
                     "de som van de waarde van alle meldingen van de Jutter of 0 als die er niet zijn"), "null"));
 
     /** The vangst: 7 where the klasse, which a rule sets, is 1, and else 3 for a gemeld Jutter; the lower default can
      *  decide before the rule has set the klasse. */
     private static final String VANGST = attributeGroup("vangst van een jutter", "Jutter", "vangst", List.of(
-            standaard(comparison("equal", reading("klasse", "Jutter"), number("1")), number("7")),
+            standaard(comparison("equal", ownRead("klasse", "Jutter"), number("1")), number("7")),
             standaard(check("gemeld", false), number("3"))));
 
     static Path documentA(String voorwaarde) throws Exception {
         String naam = voorwaarde.equals("null") ? "meld de vangst" : "meld een lage vangst";
         return document(MODEL_A, RULES_A, List.of(VANGST),
-                List.of(objectCreation(naam, "Jutter", "Melding", List.of(init("waarde", reading("vangst", "Jutter"))),
+                List.of(objectCreation(naam, "Jutter", "Melding", List.of(init("waarde", ownRead("vangst", "Jutter"))),
                         voorwaarde, "jutmelding", "melding")), List.of(), List.of());
     }
 
@@ -170,7 +170,7 @@ class TmsCreationWitnessTest {
                 List.of(waarde("J1", "meldingaantal", aantal), waarde("J1", "meldingswaarde", sum)));
     }
 
-    private static final String LAGE_VANGST = comparison("less", reading("vangst", "Jutter"), number("5"));
+    private static final String LAGE_VANGST = comparison("less", ownRead("vangst", "Jutter"), number("5"));
 
     @Test void an_object_creation_makes_an_object_per_subject_with_the_values_of_the_fixpoint() throws Exception {
         Path ir = documentA("null");
@@ -237,10 +237,10 @@ class TmsCreationWitnessTest {
                 computingRule("code van een wachter", "GELIJKSTELLING", "Wachter", "code", number("1"), "null"),
                 computingRule("opvolgeraantal", "BEREKENING", "Wachter", "opvolgeraantal", COUNT_OPVOLGERS, "null"));
         String rank = attributeGroup("rang van een wachter", "Wachter", "rang", List.of(
-                standaard(comparison("equal", reading("code", "Wachter"), number("1")), number("5")),
+                standaard(comparison("equal", ownRead("code", "Wachter"), number("1")), number("5")),
                 standaard(check("startwachter", false), number("0"))));
         String voorwaarde = compound("all", 0, List.of(check("startwachter", false), compound("atLeast", 1,
-                List.of(comparison("notEqual", reading("rang", "Wachter"), number("5")),
+                List.of(comparison("notEqual", ownRead("rang", "Wachter"), number("5")),
                         comparison("greater", COUNT_OPVOLGERS, number("0"))))));
         return document(model, rules, List.of(rank),
                 List.of(objectCreation("werf", "Wachter", "Wachter", List.of(), voorwaarde, "opvolging", "opvolger")),
@@ -285,7 +285,7 @@ class TmsCreationWitnessTest {
      *  differ only between those two rules, when the Melding has arrived; "waarschuw" makes a Waarschuwing where they
      *  differ. At every fixpoint of the rule layer they are equal. */
     static Path documentG() throws Exception {
-        return warnDocument(comparison("notEqual", reading("aantal", "Jutter"), reading("kopie", "Jutter")));
+        return warnDocument(comparison("notEqual", ownRead("aantal", "Jutter"), ownRead("kopie", "Jutter")));
     }
 
     /** The model and rules of G, with {@code voorwaarde} as the condition of "waarschuw". */
@@ -302,7 +302,7 @@ class TmsCreationWitnessTest {
                 computingRule("aantal", "BEREKENING", "Jutter", "aantal", aggregation("count", MELDINGEN, "Melding",
                         sourceRole("jutmelding", "melding"), "null", "null", COUNTING, "het aantal meldingen van de Jutter"),
                         "null"),
-                computingRule("kopie", "GELIJKSTELLING", "Jutter", "kopie", reading("aantal", "Jutter"), "null"),
+                computingRule("kopie", "GELIJKSTELLING", "Jutter", "kopie", ownRead("aantal", "Jutter"), "null"),
                 computingRule("waarschuwingaantal", "BEREKENING", "Jutter", "waarschuwingaantal", aggregation("count",
                         WARNINGS, "Waarschuwing", sourceRole("jutwaarschuwing", "waarschuwing"), "null", "null",
                         COUNTING, "het aantal waarschuwingen van de Jutter"), "null"));
@@ -354,7 +354,7 @@ class TmsCreationWitnessTest {
      *  aantal has grown past a kopie that is there, and the expected answer rests on no condition that holds on absence
      *  (ch. 6.1). At every fixpoint of the rule layer the two are equal, and the case expects G's answer. */
     static Path documentH() throws Exception {
-        return warnDocument(comparison("greater", reading("aantal", "Jutter"), reading("kopie", "Jutter")));
+        return warnDocument(comparison("greater", ownRead("aantal", "Jutter"), ownRead("kopie", "Jutter")));
     }
 
     /**
@@ -472,9 +472,9 @@ class TmsCreationWitnessTest {
                 computingRule("opvolgerbegin", "GELIJKSTELLING", "Wachter", "opvolgerbegin",
                         pathRead("beginstand", "Wachter", "opvolging", "opvolger"), "null"));
         String werf = objectCreation("werf de opvolger", "Wachter", "Wachter", List.of(
-                init("rang", binary("plus", reading("rang", "Wachter"), number("1"))),
-                init("beginstand", reading("stand", "Wachter"))),
-                comparison("less", reading("rang", "Wachter"), number("4")), "opvolging", "opvolger");
+                init("rang", binary("plus", ownRead("rang", "Wachter"), number("1"))),
+                init("beginstand", ownRead("stand", "Wachter"))),
+                comparison("less", ownRead("rang", "Wachter"), number("4")), "opvolging", "opvolger");
         return document(model, rules, List.of(), List.of(werf), List.of(),
                 List.of(ruleGroup("estafette", List.of("werf de opvolger"))));
     }
@@ -590,7 +590,7 @@ class TmsCreationWitnessTest {
         }
     }
 
-    @Test void a_second_filling_from_one_to_a_role_is_a_fault() throws Exception {
+    @Test void a_second_filling_of_a_to_one_role_is_a_fault() throws Exception {
         Path ir = documentD();
         String sentence = "IllegalStateException: de naar-één-rol \"haven\" van een Jutter heeft twee verschillende vullingen;"
                 + " een tweede vulling is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)";
@@ -774,9 +774,9 @@ class TmsCreationWitnessTest {
 
     /** "Een {@code subject} heeft een {@code rol} met …": an object creation of one always-valid version, its
      *  {@code connectingRole} the role {@code rol} of {@code feittype}, the role the created object plays. */
-    static String objectCreation(String naam, String subject, String recomputed, List<String> inits, String voorwaarde,
+    static String objectCreation(String naam, String subject, String fresh, List<String> inits, String voorwaarde,
                                 String feittype, String rol) {
-        return "{\"node\":\"ObjectCreation\",\"name\":\"" + naam + "\",\"versions\":[{\"createdType\":\"" + recomputed
+        return "{\"node\":\"ObjectCreation\",\"name\":\"" + naam + "\",\"versions\":[{\"createdType\":\"" + fresh
                 + "\",\"subject\":\"" + subject + "\",\"initialisations\":[" + String.join(",", inits) + "]"
                 + (voorwaarde.equals("null") ? "" : ",\"condition\":" + voorwaarde)
                 + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding(feittype, rol) + "}]}";

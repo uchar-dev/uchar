@@ -205,14 +205,14 @@ class EffectiveUnitWitnessTest {
         // Let g = <gewicht in kg> in (Let g = <literal in t> in <read g>) — WF-064: the NEAREST binder wins,
         // so the read is tonnes here and the outer kg must not leak in.
         Objecttype ot = vondst();
-        Expr reading = new Expr.BinderRef("g", num(KG), bron());
+        Expr read = new Expr.BinderRef("g", num(KG), bron());
         Expr.Literal inTonnen = new Expr.Literal("2", num(TON), bron());
-        Expr inside = new Expr.Let("g", inTonnen, reading, num(KG), bron());
+        Expr inside = new Expr.Let("g", inTonnen, read, num(KG), bron());
         Expr outside = new Expr.Let("g", lyingRef(ot), inside, num(KG), bron());
         // both, in the loader's own (post-)order: the inner Let is built before the outer one wraps it
         EffectiveUnit eff = overLets(inside, outside);
 
-        assertEquals(TON, eff.unitOf(reading), "de nabijste binder (t) wint van de buitenste (kg)");
+        assertEquals(TON, eff.unitOf(read), "de nabijste binder (t) wint van de buitenste (kg)");
         assertEquals(TON, eff.unitOf(inside));
         assertEquals(TON, eff.unitOf(outside));
     }
@@ -222,21 +222,21 @@ class EffectiveUnitWitnessTest {
         // first HAS a source (a unitless one) and the annotation may not speak over it; only the second falls back.
         // Let n = <2, unitless> in <read n, annotated t> — both the read AND the Let lie about tonnes.
         Expr.Literal number = new Expr.Literal("2", num(null), bron());
-        Expr reading = new Expr.BinderRef("n", num(TON), bron());
-        Expr let = new Expr.Let("n", number, reading, num(TON), bron());
+        Expr read = new Expr.BinderRef("n", num(TON), bron());
+        Expr let = new Expr.Let("n", number, read, num(TON), bron());
         EffectiveUnit eff = overLets(let);
 
-        assertNull(eff.unitOf(reading), "de binding is eenheidloos; de annotatie (t) is haar leugen");
+        assertNull(eff.unitOf(read), "de binding is eenheidloos; de annotatie (t) is haar leugen");
         assertNull(eff.unitOf(let), "en de Let draagt haar body");
-        assertNull(eff.van(reading).eenheidOf(), "ook op de datatype-route (van) blijft de eenheid weg");
+        assertNull(eff.van(read).eenheidOf(), "ook op de datatype-route (van) blijft de eenheid weg");
     }
 
     @Test void an_unbound_binder_read_claims_nothing() {
         // No Let of that name anywhere: there is nothing to derive from, and since L2 the read carries no
         // annotation of its own, so it claims no unit — the same answer as an AttribuutRef without a declaration.
-        Expr reading = new Expr.BinderRef("onbekend", num(TON), bron());
-        assertNull(overLets().unitOf(reading));
-        assertTrue(overLets().van(reading).isOnbekend(), "geen binding, dus geen datatype");
+        Expr read = new Expr.BinderRef("onbekend", num(TON), bron());
+        assertNull(overLets().unitOf(read));
+        assertTrue(overLets().van(read).isOnbekend(), "geen binding, dus geen datatype");
     }
 
     @Test void a_choice_reads_the_branch_not_its_own_claim() {
@@ -257,13 +257,13 @@ class EffectiveUnitWitnessTest {
         // vorm A — the shadowing Let sits DIRECTLY in the guard:
         //   Let g = <2 kg> in (als (Let g = <2 t> in <read g>) groter dan <2 kg> dan … anders …)
         // WF-064: the read sits under the INNER binder, so it is tonnes. Measured kg before the repair.
-        Expr reading = new Expr.BinderRef("g", num(KG), bron());
-        Expr inside = new Expr.Let("g", number(TON), reading, num(KG), bron());
+        Expr read = new Expr.BinderRef("g", num(KG), bron());
+        Expr inside = new Expr.Let("g", number(TON), read, num(KG), bron());
         Conditie guard = new Conditie.Vergelijking(Conditie.Operator.GROTER, inside, number(KG), bron());
         Expr keuze = new Expr.IfThenElse(guard, number(KG), number(KG), num(KG), bron());
         Expr outside = new Expr.Let("g", number(KG), keuze, num(KG), bron());
 
-        assertEquals(TON, overLets(inside, outside).unitOf(reading),
+        assertEquals(TON, overLets(inside, outside).unitOf(read),
                 "de nabijste binder (t) wint, ook wanneer haar Let in een ch. 10.2-guard staat");
     }
 
@@ -273,15 +273,15 @@ class EffectiveUnitWitnessTest {
         // Onopgelost carrier, so the pre-order scan could not reach into it and there was nothing to re-enter.
         // Making it a union node exposed the same break here — the one measured behaviour difference of the
         // union card, repaired at its root rather than pinned as a divergence.
-        Expr reading = new Expr.BinderRef("g", num(KG), bron());
-        Expr inside = new Expr.Let("g", number(TON), reading, num(KG), bron());
+        Expr read = new Expr.BinderRef("g", num(KG), bron());
+        Expr inside = new Expr.Let("g", number(TON), read, num(KG), bron());
         Conditie withinGuard = new Conditie.Vergelijking(Conditie.Operator.GROTER, number(KG), number(KG), bron());
         Expr nestedChoice = new Expr.IfThenElse(withinGuard, inside, number(KG), num(KG), bron());
         Conditie guard = new Conditie.Vergelijking(Conditie.Operator.GROTER, nestedChoice, number(KG), bron());
         Expr keuze = new Expr.IfThenElse(guard, number(KG), number(KG), num(KG), bron());
         Expr outside = new Expr.Let("g", number(KG), keuze, num(KG), bron());
 
-        assertEquals(TON, overLets(inside, outside).unitOf(reading),
+        assertEquals(TON, overLets(inside, outside).unitOf(read),
                 "ook onder een geneste keuze in de guard wint de nabijste binder (t)");
     }
 
@@ -339,8 +339,8 @@ class EffectiveUnitWitnessTest {
         // The no-op path a verifier-clean document takes: nothing is rebuilt, so a document that obeys
         // WF-091 lowers exactly as it did before this derivation existed.
         Objecttype ot = vondst();
-        Expr.AttribuutRef reading = new Expr.AttribuutRef("gewicht", ot, "een vondst", null, null, bron());
-        Expr.Binair honest = new Expr.Binair(Expr.BinOp.PLUS, reading, reading, num(KG), bron());
+        Expr.AttribuutRef read = new Expr.AttribuutRef("gewicht", ot, "een vondst", null, null, bron());
+        Expr.Binair honest = new Expr.Binair(Expr.BinOp.PLUS, read, read, num(KG), bron());
         assertSame(honest.type(), bare().van(honest));
     }
 }

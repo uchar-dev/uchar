@@ -16,7 +16,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
 import static dev.uchar.regelspraak.cases.TmsDocuments.let;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -61,7 +61,7 @@ class TmsFoldBinderWitnessTest {
                     factTypeOneToMany("samenstelling", "geheel", "Vondst", "brokstuk", "Brokstuk", "brokstukken")));
 
     private static final String BOUND = binderRead("grens");
-    private static final String THRESHOLD = reading("drempel", "Jutter");
+    private static final String THRESHOLD = ownRead("drempel", "Jutter");
 
     /** "het aantal vondsten van de Jutter" whose member passes {@code filter}. */
     private static String count(String filter) {
@@ -82,8 +82,8 @@ class TmsFoldBinderWitnessTest {
         return comparison("greater", left, right);
     }
 
-    private static final String VONDSTGEWICHT = reading("gewicht", "Vondst");
-    private static final String BROK_WEIGHT = reading("gewicht", "Brokstuk");
+    private static final String VONDSTGEWICHT = ownRead("gewicht", "Vondst");
+    private static final String BROK_WEIGHT = ownRead("gewicht", "Brokstuk");
 
     private static Path document(String waarde) throws Exception {
         return TmsDocuments.document(MODEL, List.of(computingRule("zware vondsten van een jutter", "BEREKENING", "Jutter",

@@ -15,7 +15,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.pathCheck;
 import static dev.uchar.regelspraak.cases.TmsDocuments.pathRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.predicate;
@@ -59,7 +59,7 @@ class TmsAbsentLinkWitnessTest {
     private static final List<String> RULES = List.of(
             characteristicRule("erkenning", "Jutter", "erkend", check("aangemeld", false)),
             computingRule("tarief", "BEREKENING", "Jutter", "tarief",
-                    binary("plus", reading("basistarief", "Jutter"), number("1")), check("erkend", false)),
+                    binary("plus", ownRead("basistarief", "Jutter"), number("1")), check("erkend", false)),
             characteristicRule("toewijzing", "Vondst", "toegewezen", predicate("filled", RATE)),
             characteristicRule("onbeheerd", "Vondst", "onbeheerd", predicate("empty", RATE)),
             characteristicRule("afwijking", "Vondst", "afwijkend", comparison("notEqual", RATE, number("5"))),

@@ -35,7 +35,7 @@ class CreationOrderWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    @Test void an_assignment_reads_a_value_that_a_defaults_group_writes() throws Exception {
+    @Test void a_member_initialisation_reads_a_value_that_a_defaults_group_writes() throws Exception {
         // "… met telling gelijk aan zijn basis", with "De basis van een Jutter moet berekend worden als 2" and "Afwijking
         // van basis: opgegeven basis gaat voor …"; J1's opgegeven basis is 7. ref and clingo: 7, 2, 2 and 2.
         String group = group("basis", "Jutter", own("opgegeven basis", "Jutter"), number(2));

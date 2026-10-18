@@ -393,7 +393,7 @@ class CreationPlanWitnessTest {
                         && p.leftSide().stream().anyMatch(CreationPlanWitnessTest::readsLinks)));
     }
 
-    @Test void a_fact_creation_runs_no_link_of_its_own_phase() throws Exception {
+    @Test void a_fact_creation_walks_no_link_of_its_own_phase() throws Exception {
         assertEquals(List.of(
                 "regel erf de directe opvolger | vorm erf de directe opvolger | groep uchar-feitcreatie",
                 "  lezingen [0 CREATION_PHASE $fase (creatiefase)]",
@@ -439,14 +439,14 @@ class CreationPlanWitnessTest {
      * once, and the bean is the first insertion. The constructor refuses a plan that would write on a bean in working
      * memory, as a later setter after the insertion would, or that would insert a fact naming the bean before it.
      */
-    @Test void the_plan_of_a_creation_constructs_for_inserting() {
+    @Test void the_plan_of_a_creation_constructs_before_inserting() {
         ElementSleutel amount = ElementSleutel.van("Penning", "bedrag", false);
         ElementSleutel uitgereikt = ElementSleutel.van("Penning", "uitgereikt", true);
         List<Consequence.Initialisation> inits = List.of(new Consequence.Initialisation(amount, new Term.SlotValue(1, "bedrag")),
                 new Consequence.Initialisation(uitgereikt, new Term.Const(true, null, "waar")));
         Consequence.Construction bouw = new Consequence.Construction(Object.class,
                 List.of(new Consequence.Construction.Setting(0, new Binding.Field(Object.class, "bedrag"))));
-        Consequence.Insert recomputed = new Consequence.Insert.New(Consequence.Insertion.STATED);
+        Consequence.Insert fresh = new Consequence.Insert.New(Consequence.Insertion.STATED);
         Consequence.Insert mark = new Consequence.Insert.Mark(Consequence.Insertion.STATED);
         Consequence.Insert link = new Consequence.Insert.Link("uitgifte", true, Consequence.Insertion.STATED);
         Consequence.Insert kenmerk = new Consequence.Insert.Characteristic(1, Consequence.Insertion.STATED);
@@ -461,16 +461,16 @@ class CreationPlanWitnessTest {
                         "een creatie voegt het nieuwe object, zijn merk en zijn koppeling elk één keer in:"
                                 + " [New[insertion=STATED], Mark[insertion=STATED], Characteristic[initialisatie=1,"
                                 + " insertion=STATED]]"),
-                List.of(creatie(inits, bouw, List.of(recomputed, mark, link, kenmerk)),
-                        creatie(inits, bouw, List.of(mark, recomputed, link, kenmerk)),
+                List.of(creatie(inits, bouw, List.of(fresh, mark, link, kenmerk)),
+                        creatie(inits, bouw, List.of(mark, fresh, link, kenmerk)),
                         creatie(inits, new Consequence.Construction(Object.class, List.of(bouw.settings().get(0),
                                 new Consequence.Construction.Setting(1, new Binding.Field(Object.class, "uitgereikt")))),
-                                List.of(recomputed, mark, link, kenmerk)),
+                                List.of(fresh, mark, link, kenmerk)),
                         creatie(inits, new Consequence.Construction(Object.class, List.of()),
-                                List.of(recomputed, mark, link, kenmerk, new Consequence.Insert.Characteristic(0,
+                                List.of(fresh, mark, link, kenmerk, new Consequence.Insert.Characteristic(0,
                                         Consequence.Insertion.STATED))),
-                        creatie(inits, bouw, List.of(recomputed, mark, link)),
-                        creatie(inits, bouw, List.of(recomputed, mark, kenmerk))));
+                        creatie(inits, bouw, List.of(fresh, mark, link)),
+                        creatie(inits, bouw, List.of(fresh, mark, kenmerk))));
     }
 
     /**
@@ -493,7 +493,7 @@ class CreationPlanWitnessTest {
         Consequence.Construction.Setting setWeight = new Consequence.Construction.Setting(3,
                 new Binding.Field(Object.class, "gewicht"));
         Consequence.Construction bouw = new Consequence.Construction(Object.class, List.of(setAmount, setWeight));
-        Consequence.Insert recomputed = new Consequence.Insert.New(Consequence.Insertion.STATED);
+        Consequence.Insert fresh = new Consequence.Insert.New(Consequence.Insertion.STATED);
         Consequence.Insert mark = new Consequence.Insert.Mark(Consequence.Insertion.STATED);
         Consequence.Insert link = new Consequence.Insert.Link("uitgifte", true, Consequence.Insertion.STATED);
         Consequence.Insert eerste = new Consequence.Insert.Characteristic(1, Consequence.Insertion.STATED);
@@ -505,12 +505,12 @@ class CreationPlanWitnessTest {
                         verwacht + "[New, Mark, Link, Kenmerk 2, Kenmerk 1]",
                         verwacht + "[New, Mark, Kenmerk 1, Link, Kenmerk 2]",
                         "een creatie zet haar attribuutinitialisaties in hun volgorde [0, 3], niet [3, 0]"),
-                List.of(creatie(inits, bouw, List.of(recomputed, mark, link, eerste, tweede)),
-                        creatie(inits, bouw, List.of(recomputed, link, mark, eerste, tweede)),
-                        creatie(inits, bouw, List.of(recomputed, mark, link, tweede, eerste)),
-                        creatie(inits, bouw, List.of(recomputed, mark, eerste, link, tweede)),
+                List.of(creatie(inits, bouw, List.of(fresh, mark, link, eerste, tweede)),
+                        creatie(inits, bouw, List.of(fresh, link, mark, eerste, tweede)),
+                        creatie(inits, bouw, List.of(fresh, mark, link, tweede, eerste)),
+                        creatie(inits, bouw, List.of(fresh, mark, eerste, link, tweede)),
                         creatie(inits, new Consequence.Construction(Object.class, List.of(setWeight, setAmount)),
-                                List.of(recomputed, mark, link, eerste, tweede))));
+                                List.of(fresh, mark, link, eerste, tweede))));
     }
 
     /**
@@ -530,7 +530,7 @@ class CreationPlanWitnessTest {
         Consequence.Construction bouw = new Consequence.Construction(Object.class,
                 List.of(new Consequence.Construction.Setting(0, new Binding.Field(Object.class, "bedrag"))));
         Consequence.Insertion set = Consequence.Insertion.STATED, logical = Consequence.Insertion.LOGICAL;
-        Consequence.Insert recomputed = new Consequence.Insert.New(set);
+        Consequence.Insert fresh = new Consequence.Insert.New(set);
         Consequence.Insert mark = new Consequence.Insert.Mark(set);
         Consequence.Insert link = new Consequence.Insert.Link("uitgifte", true, set);
         Consequence.Insert kenmerk = new Consequence.Insert.Characteristic(1, set);
@@ -542,13 +542,13 @@ class CreationPlanWitnessTest {
                         sentence + "Characteristic[initialisatie=1, insertion=LOGICAL] is niet gesteld",
                         "een creatie stelt haar fout bij het maken, want die houdt haar regel tegen: de foutinvoeging"
                                 + " LOGICAL is niet gesteld"),
-                List.of(creatie(inits, bouw, List.of(recomputed, mark, link, kenmerk)),
+                List.of(creatie(inits, bouw, List.of(fresh, mark, link, kenmerk)),
                         creatie(inits, bouw, List.of(new Consequence.Insert.New(logical), mark, link, kenmerk)),
-                        creatie(inits, bouw, List.of(recomputed, new Consequence.Insert.Mark(logical), link, kenmerk)),
-                        creatie(inits, bouw, List.of(recomputed, mark, new Consequence.Insert.Link("uitgifte", true, logical),
+                        creatie(inits, bouw, List.of(fresh, new Consequence.Insert.Mark(logical), link, kenmerk)),
+                        creatie(inits, bouw, List.of(fresh, mark, new Consequence.Insert.Link("uitgifte", true, logical),
                                 kenmerk)),
-                        creatie(inits, bouw, List.of(recomputed, mark, link, new Consequence.Insert.Characteristic(1, logical))),
-                        creatie(inits, bouw, List.of(recomputed, mark, link, kenmerk), logical)));
+                        creatie(inits, bouw, List.of(fresh, mark, link, new Consequence.Insert.Characteristic(1, logical))),
+                        creatie(inits, bouw, List.of(fresh, mark, link, kenmerk), logical)));
     }
 
     /** "ok" where the constructor of {@link Consequence.Creation} takes the plan, else its refusal. */
@@ -757,7 +757,7 @@ class CreationPlanWitnessTest {
             case Exists b -> "bestaat binnen " + b.inside() + " buiten " + b.outside() + " "
                     + b.patterns().stream().map(CreationPlanWitnessTest::pattern).toList();
             case Accumulation a -> "accumulatie " + pattern(a.bron()) + " functies "
-                    + a.functions().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
+                    + a.aggregations().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();
             case TestItem t -> "toets " + t.id() + " " + t.rol() + " sonde " + t.depositFlag() + " slots " + t.slots()
                     + " grootte " + t.size() + ": " + TermTree.tree(t.test());
         };

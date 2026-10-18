@@ -93,7 +93,7 @@ class DayKindDurationTest {
     }
 
     @Test
-    void step_falls_on_the_scope_and_does_not_run_endlessly() {
+    void step_falls_on_the_reach_and_does_not_run_endlessly() {
         IllegalStateException e =
                 assertThrows(
                         IllegalStateException.class,
@@ -109,7 +109,7 @@ class DayKindDurationTest {
     }
 
     @Test
-    void the_scope_lies_above_the_longest_gregorian_recurrence() {
+    void the_reach_lies_above_the_longest_gregorian_recurrence() {
         // the century-skipped leap day: 2096-02-29 -> 2104-02-29, 2 921 days, still steps. And the case the
         // reach was RAISED for (maintainer decision 2026-09-19): a year-bound day kind more than a decade out.
         Predicate<LocalDate> leapDay = x -> x.getMonthValue() == 2 && x.getDayOfMonth() == 29;

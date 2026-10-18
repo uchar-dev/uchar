@@ -28,7 +28,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.objecttype;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
@@ -91,7 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * java.lang.IllegalStateException to be thrown, but nothing was thrown."; the old form of the first row fired a second
  * time without a word and read no derivation for J2, "expected: &lt;[J1.totaalgewicht = 4, J2.totaalgewicht = 10, …]&gt;
  * but was: &lt;[J1.totaalgewicht = 4, V1 is zwaar, …]&gt;"; with J2 inserted the old form read what a fresh session
- * reads, and on the filter document of {@link TmsFilterErrorWitnessTest} a Vondst inserted between two fires stopped
+ * reads, and on the filter document of {@link TmsFilterFaultWitnessTest} a Vondst inserted between two fires stopped
  * the second fire with a {@code ConsequenceException} out of the filter fault rule, "… maar een lid van zijn route
  * heeft geen Lijstplaats onder het veld 'aanmelder' …", since only {@code voegIn} states the places.
  *
@@ -109,7 +109,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       puts in inserted;</li>
  *   <li>a plain {@code fireAllRules}, named by the first rule it fired;</li>
  *   <li>a relation changed, a reference field of a bean of the input, since {@code voegIn} numbers the places of a list
- *       over the relations of one input. On the filter document of {@link TmsFilterErrorWitnessTest} a Vondst V2 (9 by 0)
+ *       over the relations of one input. On the filter document of {@link TmsFilterFaultWitnessTest} a Vondst V2 (9 by 0)
  *       without an aanmelder gets J1, whose list holds V1 (10 by 2): at the first fixpoint J1's zware vondsten is 1,
  *       as the reference interpreter gives it, and a fresh session of the new input faults on V2's 9; and a Vondst V1
  *       (9 by 0) moves from J1 to J2, whose list holds V2 (4 by 0), each at place 0 of its list: a fresh session gives
@@ -166,25 +166,25 @@ class TmsRepeatedFireWitnessTest {
             objecttype("Jutter", List.of(attribuut("totaalgewicht", WHOLE)), List.of()),
             objecttype("Vondst", List.of(attribuut("gewicht", WHOLE), attribuut("uitkering", WHOLE),
                     attribuut("bonus", WHOLE), attribuut("vindloon", WHOLE), attribuut("heffing", WHOLE),
-                    attribuut("noemer", WHOLE), attribuut("aandeel", TmsFilterErrorWitnessTest.RATIONAL)), List.of("zwaar"))),
+                    attribuut("noemer", WHOLE), attribuut("aandeel", TmsFilterFaultWitnessTest.RATIONAL)), List.of("zwaar"))),
             List.of(factTypeOneToMany("vinding", "vinder", "Jutter", "vondst", "Vondst", "vondsten")));
 
     static final List<String> VALUE_RULES = List.of(
             computingRule("uitkering", "BEREKENING", "Vondst", "uitkering",
-                    binary("plus", reading("gewicht", "Vondst"), number("10")), "null"),
-            characteristicRule("zwaarte", "Vondst", "zwaar", comparison("greater", reading("gewicht", "Vondst"), number("5"))),
+                    binary("plus", ownRead("gewicht", "Vondst"), number("10")), "null"),
+            characteristicRule("zwaarte", "Vondst", "zwaar", comparison("greater", ownRead("gewicht", "Vondst"), number("5"))),
             computingRule("bonus", "GELIJKSTELLING", "Vondst", "bonus", number("7"), check("zwaar", false)),
             computingRule("totaalgewicht", "BEREKENING", "Jutter", "totaalgewicht",
-                    aggregation("sum", reading("gewicht", "Vondst"), "Vondst", sourceRole("vinding", "vondst"), "null",
+                    aggregation("sum", ownRead("gewicht", "Vondst"), "Vondst", sourceRole("vinding", "vondst"), "null",
                             "null", WHOLE, "de som van de gewichten van zijn vondsten"), "null"),
             computingRule("standaardvindloon", "INITIALISATIE", "Vondst", "vindloon",
-                    binary("plus", reading("gewicht", "Vondst"), number("5")), "null"));
+                    binary("plus", ownRead("gewicht", "Vondst"), number("5")), "null"));
 
     static final List<String> GROUPS = List.of(attributeGroup("heffing van een vondst", "Vondst", "heffing",
             List.of(standaard(check("zwaar", false), number("40")))));
 
     static final List<String> FAULT_RULES = List.of(computingRule("aandeel", "BEREKENING", "Vondst", "aandeel",
-            TmsFilterErrorWitnessTest.quotient(number("100"), reading("noemer", "Vondst")), "null"));
+            TmsFilterFaultWitnessTest.quotient(number("100"), ownRead("noemer", "Vondst")), "null"));
 
     static Path valueDocument() throws Exception {
         return TmsDocuments.document(MODEL, VALUE_RULES, List.of(), GROUPS);
@@ -223,7 +223,7 @@ class TmsRepeatedFireWitnessTest {
                 assertEquals(SECOND_VALUES, tweede, "second reading: the characteristic, the conditional value and the"
                         + " default lapse, the sum follows, and the initialisation fires again, since its target stayed"
                         + " empty on the bean");
-                assertEquals(freshReading(b, beans), tweede, "the second reading is that of a fresh session");
+                assertEquals(freshRead(b, beans), tweede, "the second reading is that of a fresh session");
             } finally {
                 sessie.dispose();
             }
@@ -249,14 +249,14 @@ class TmsRepeatedFireWitnessTest {
                 List<String> tweede = describe(DroolsBackend.lees(b, sessie), beans);
                 assertEquals(List.of("V1.aandeel = 25", "V2: deling door nul in de regel \"aandeel\": 100 " + ZERO), tweede,
                         "second reading: the fault on V1 lapsed, the one on V2 arose");
-                assertEquals(freshReading(b, beans), tweede, "the second reading is that of a fresh session");
+                assertEquals(freshRead(b, beans), tweede, "the second reading is that of a fresh session");
             } finally {
                 sessie.dispose();
             }
         });
     }
 
-    @Test void after_the_reset_fire_refuses_the_session() throws Exception {
+    @Test void after_the_write_back_fire_refuses_the_session() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(valueDocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSession(b, () -> {
             Map<String, Object> beans = valueBeans(b, "10");
@@ -354,7 +354,7 @@ class TmsRepeatedFireWitnessTest {
             }
             // the way the sentence names: a fresh session that gives J2 as a bean
             beans.put("J2", j2);
-            assertEquals(WITH_J2, freshReading(b, beans), "a fresh session that gives J2");
+            assertEquals(WITH_J2, freshRead(b, beans), "a fresh session that gives J2");
         });
     }
 
@@ -390,16 +390,16 @@ class TmsRepeatedFireWitnessTest {
             // V2 deleted between the fires
             Map<String, Object> tweede = valueBeans(b, "10");
             Object v2 = tweede.get("V2");
-            KieSession way = b.kieBase().newKieSession();
+            KieSession away = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, way, new Invoer().beans(tweede.values()));
-                assertNull(DroolsBackend.vuur(b, way).geenFixpunt(), "first fire");
-                way.delete(way.getFactHandle(v2));
+                DroolsBackend.voegIn(b, away, new Invoer().beans(tweede.values()));
+                assertNull(DroolsBackend.vuur(b, away).geenFixpunt(), "first fire");
+                away.delete(away.getFactHandle(v2));
                 assertEquals(afterFire + TmsConsumerWitnessTest.naam(v2) + " werd verwijderd" + newOrAway,
-                        assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, way)).getMessage(),
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, away)).getMessage(),
                         "a bean deleted between two fires");
             } finally {
-                way.dispose();
+                away.dispose();
             }
             // a Jutter inserted after voegIn, before the first fire
             Map<String, Object> third = valueBeans(b, "10");
@@ -444,7 +444,7 @@ class TmsRepeatedFireWitnessTest {
                 + " update";
     }
 
-    @Test void a_global_that_changes_after_the_first_fire_refuses_fire_read_and_reset() throws Exception {
+    @Test void a_global_that_changes_after_the_first_fire_refuses_fire_read_and_write_back() throws Exception {
         Path ir = Path.of("..", "..", "corpus", "golden", "jutterswet-aanvoergeld", "ir.json");
         String caseDocument = Files.readString(ir.resolveSibling("case.json"));
         CaseRunner runner = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL);
@@ -460,19 +460,19 @@ class TmsRepeatedFireWitnessTest {
                     + " vuur, en open voor een andere waarde een verse sessie",
                     assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(bouw, sessie)).getMessage(),
                     "the second fire");
-            String reading = "geen fixpunt om te lezen of terug te zetten: " + changed + ", en het fixpunt hoort bij de"
+            String expectedSentence = "geen fixpunt om te lezen of terug te zetten: " + changed + ", en het fixpunt hoort bij de"
                     + " oude waarde; DroolsBackend.vuur weigert de sessie, dus open een verse sessie";
-            assertEquals(reading, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(bouw, sessie))
+            assertEquals(expectedSentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(bouw, sessie))
                     .getMessage(), "the reading");
-            assertEquals(reading, assertThrows(IllegalStateException.class,
+            assertEquals(expectedSentence, assertThrows(IllegalStateException.class,
                     () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)).getMessage(), "the write-back");
             return null;
         });
         // the way the sentence names: a fresh session with the other value
-        JsonNode earlierBean = TmsDocuments.JSON.readTree(caseDocument);
-        ((com.fasterxml.jackson.databind.node.ObjectNode) earlierBean.get("input").get("parameters").get("aanvoertarief"))
+        JsonNode another = TmsDocuments.JSON.readTree(caseDocument);
+        ((com.fasterxml.jackson.databind.node.ObjectNode) another.get("input").get("parameters").get("aanvoertarief"))
                 .put("number", "22.50");
-        runner.withSession(earlierBean, (bouw, sessie, labels) -> {
+        runner.withSession(another, (bouw, sessie, labels) -> {
             assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "fresh fire");
             assertEquals(List.of("J1 332.5", "J2 109.9", "J3 22.5"), aanvoergeld(DroolsBackend.lees(bouw, sessie), labels),
                     "a fresh session at tarief 22.50");
@@ -563,7 +563,7 @@ class TmsRepeatedFireWitnessTest {
 
     /** J1 actief with V1 (10 by 2) as its aanmelder's Vondst, and V2 (9 by 0) without an aanmelder; then V2 gets J1. */
     @Test void a_relation_that_arises_between_two_fires_refuses_fire() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(TmsFilterErrorWitnessTest.document(TmsFilterErrorWitnessTest.ZWARE),
+        DroolsBackend.Build b = DroolsBackend.build(TmsFilterFaultWitnessTest.document(TmsFilterFaultWitnessTest.ZWARE),
                 DroolsBackend.Branch.EXEC_MODEL);
         inSession(b, () -> {
             Map<String, Object> beans = new LinkedHashMap<>();
@@ -592,13 +592,13 @@ class TmsRepeatedFireWitnessTest {
                 sessie.dispose();
             }
             // the way the sentence names: a fresh session, in which V2 divides 9 by 0 in J1's list
-            assertEquals(List.of("J1: " + ZWARE_FAULT.formatted("9")), freshReading(b, beans), "a fresh session");
+            assertEquals(List.of("J1: " + ZWARE_FAULT.formatted("9")), freshRead(b, beans), "a fresh session");
         });
     }
 
     /** J1 and J2 actief, V1 (9 by 0) J1's, V2 (4 by 0) J2's, each at place 0 of its list; then V1 moves to J2. */
     @Test void a_relation_that_moves_between_two_fires_refuses_fire() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(TmsFilterErrorWitnessTest.document(TmsFilterErrorWitnessTest.ZWARE),
+        DroolsBackend.Build b = DroolsBackend.build(TmsFilterFaultWitnessTest.document(TmsFilterFaultWitnessTest.ZWARE),
                 DroolsBackend.Branch.EXEC_MODEL);
         inSession(b, () -> {
             Map<String, Object> beans = new LinkedHashMap<>();
@@ -627,7 +627,7 @@ class TmsRepeatedFireWitnessTest {
                 sessie.dispose();
             }
             // the way the sentence names: a fresh session, in which V1 comes before V2 in J2's list and divides 9
-            assertEquals(List.of("J1.zware vondsten = 0", "J2: " + ZWARE_FAULT.formatted("9")), freshReading(b, beans),
+            assertEquals(List.of("J1.zware vondsten = 0", "J2: " + ZWARE_FAULT.formatted("9")), freshRead(b, beans),
                     "a fresh session");
         });
     }
@@ -642,7 +642,7 @@ class TmsRepeatedFireWitnessTest {
 
     /** J1 and J2 in the input, V1 (10) and V2 (4) found by J1; after the first fire V1's vinder becomes J2 without an
      *  update, which Drools does not see. */
-    @Test void a_relation_that_changes_without_update_refuses_fire_read_and_reset() throws Exception {
+    @Test void a_relation_that_changes_without_update_refuses_fire_read_and_write_back() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(valueDocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSession(b, () -> {
             Map<String, Object> beans = valueBeans(b, "10");
@@ -656,12 +656,12 @@ class TmsRepeatedFireWitnessTest {
                 assertEquals(FIRST_VALUES, describe(DroolsBackend.lees(b, sessie), beans), "first reading");
                 setRole(v1, "vinder", j2);
                 String changed = withoutUpdate("vinder", v1, j1, j2);
-                String reading = "geen fixpunt om te lezen of terug te zetten: " + changed + ", en het fixpunt hoort bij"
+                String expectedSentence = "geen fixpunt om te lezen of terug te zetten: " + changed + ", en het fixpunt hoort bij"
                         + " de oude relatie; DroolsBackend.vuur weigert de sessie, dus open een verse sessie met alle"
                         + " beans in één Invoer";
-                assertEquals(reading, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie))
+                assertEquals(expectedSentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie))
                         .getMessage(), "the reading");
-                assertEquals(reading, assertThrows(IllegalStateException.class,
+                assertEquals(expectedSentence, assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.zetAfgeleideWaarden(b, sessie)).getMessage(), "the write-back");
                 assertEquals(changed + ": Drools ziet een veld pas na een update, dus een fire zou de oude relatie"
                         + " blijven lezen, en ook met een update vraagt een gewijzigde relatie een verse sessie, want"
@@ -672,11 +672,11 @@ class TmsRepeatedFireWitnessTest {
                 sessie.dispose();
             }
             // the way the sentences name: a fresh session of the changed input
-            assertEquals(WITH_J2, freshReading(b, beans), "a fresh session");
+            assertEquals(WITH_J2, freshRead(b, beans), "a fresh session");
         });
     }
 
-    @Test void an_emptied_agenda_or_a_focus_switch_outside_fire_refuses_fire_read_and_reset()
+    @Test void an_emptied_agenda_or_a_focus_switch_outside_fire_refuses_fire_read_and_write_back()
             throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(valueDocument(), DroolsBackend.Branch.EXEC_MODEL);
         String main = "de agendagroep \"MAIN\" werd geleegd";
@@ -702,10 +702,10 @@ class TmsRepeatedFireWitnessTest {
                 // Drools queues the clear of a group for the next fire, which ran it with an
                 // UnsupportedOperationException (measured 2026-10-10), so the watch names the call that waits
                 String group = "een agendagroep werd geleegd met AgendaGroup.clear";
-                String reading = TmsConsumerWitnessTest.outsideFire(group, FRESH_OUTSIDE_FIRE);
-                assertEquals(reading, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, other))
+                String expectedSentence = TmsConsumerWitnessTest.outsideFire(group, FRESH_OUTSIDE_FIRE);
+                assertEquals(expectedSentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, other))
                         .getMessage(), "the reading");
-                assertEquals(reading, assertThrows(IllegalStateException.class,
+                assertEquals(expectedSentence, assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.zetAfgeleideWaarden(b, other)).getMessage(), "the write-back");
                 assertEquals(moreThanOneUpdate(AFTER_FIRE, group), assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.vuur(b, other)).getMessage(), "the second fire");
@@ -720,11 +720,11 @@ class TmsRepeatedFireWitnessTest {
             assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "first fire");
             sessie.getAgenda().getAgendaGroup(dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.OBJECTCREATIE)
                     .setFocus();
-            String reading = TmsConsumerWitnessTest.outsideFire("een agendagroep kreeg de focus met"
+            String expectedSentence = TmsConsumerWitnessTest.outsideFire("een agendagroep kreeg de focus met"
                     + " AgendaGroup.setFocus", TmsConsumerWitnessTest.FRESH_AT_CREATION);
-            assertEquals(reading, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(bouw, sessie))
+            assertEquals(expectedSentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(bouw, sessie))
                     .getMessage(), "the reading");
-            assertEquals(reading, assertThrows(IllegalStateException.class,
+            assertEquals(expectedSentence, assertThrows(IllegalStateException.class,
                     () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)).getMessage(), "the write-back");
             return null;
         });
@@ -740,7 +740,7 @@ class TmsRepeatedFireWitnessTest {
         }
     }
 
-    @Test void an_unknown_action_on_the_propagation_list_refuses_fire_read_and_reset() throws Exception {
+    @Test void an_unknown_action_on_the_propagation_list_refuses_fire_read_and_write_back() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(valueDocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSession(b, () -> {
             Map<String, Object> beans = valueBeans(b, "10");
@@ -839,7 +839,7 @@ class TmsRepeatedFireWitnessTest {
     }
 
     /** The reading of a fresh session of {@code b} over the same beans, which hold the input alone. */
-    private static List<String> freshReading(DroolsBackend.Build b, Map<String, Object> beans) {
+    private static List<String> freshRead(DroolsBackend.Build b, Map<String, Object> beans) {
         KieSession fresh = b.kieBase().newKieSession();
         try {
             DroolsBackend.voegIn(b, fresh, new Invoer().beans(beans.values()));

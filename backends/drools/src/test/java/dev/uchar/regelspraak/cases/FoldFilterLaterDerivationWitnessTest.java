@@ -158,7 +158,7 @@ class FoldFilterLaterDerivationWitnessTest {
                 "de lege bron");
     }
 
-    @Test void a_quantifier_that_is_true_only_for_the_writer() throws Exception {
+    @Test void a_quantifier_that_is_true_only_before_the_writer() throws Exception {
         // "De lichtklasse van een Berging moet berekend worden als 1 indien het gewicht van ten minste één van de vondsten
         // van de Berging die aan de volgende voorwaarde voldoen: zijn afgeleide dag is leeg groter is dan 15": true while
         // V2 (20) is still in, false once it has left. ref and clingo: leeg, with an ordinary writer after the rule and
@@ -180,7 +180,7 @@ class FoldFilterLaterDerivationWitnessTest {
         assertNull(play(ir, caseDocument(STRAND, empty("B", "lichtklasse"))), "alle over een subselectie die later vult");
     }
 
-    @Test void an_aggregation_comparison_that_is_true_only_for_the_writer() throws Exception {
+    @Test void an_aggregation_comparison_that_is_true_only_before_the_writer() throws Exception {
         // "... indien de maximale waarde van het gewicht van alle vondsten van de Berging die aan de volgende voorwaarde
         // voldoen: zijn afgeleide dag is leeg groter is dan 15". ref and clingo: leeg.
         String ir = document(rules(lichtClass(comparison("greater",
@@ -188,7 +188,7 @@ class FoldFilterLaterDerivationWitnessTest {
         assertNull(play(ir, caseDocument(STRAND, empty("B", "lichtklasse"))), "de aggregatievergelijking");
     }
 
-    @Test void the_writer_for_the_fold_already_played() throws Exception {
+    @Test void the_writer_before_the_fold_already_played() throws Exception {
         // A flank: the writer declared before the fold fires first. ref and clingo: 10 for V1 and V2.
         String ir = document(rules(DERIVED, zwaarste("Vondst",
                 maximum(subselection(predicate("empty", own("afgeleide dag"))), TWO_ROLES))), "");

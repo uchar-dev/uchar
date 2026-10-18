@@ -35,7 +35,7 @@ import java.util.List;
  * forward run followed by a backward run is therefore decided by ONE equality between two getter chains — one
  * walked from the subject, one from the element — and no element can be reached twice. Only where a BACKWARD hop
  * is followed by a FORWARD one can two intermediates meet in the same element; there the intermediate is a genuine
- * existential, and {@link Plan#betweenNodes} names it so both branches can quantify it EXISTENTIALLY (one tuple per
+ * existential, and {@link Plan#intermediateNodes} names it so both branches can quantify it EXISTENTIALLY (one tuple per
  * element) instead of joining it into the accumulate source (one tuple per route).
  */
 public final class SourcePath {
@@ -72,7 +72,7 @@ public final class SourcePath {
         public int meeting() { return backwardFrom; }
 
         /** The node indices that need an EXISTENTIAL binding — empty exactly when {@link #meets()}. */
-        public List<Integer> betweenNodes() {
+        public List<Integer> intermediateNodes() {
             List<Integer> out = new ArrayList<>();
             for (int i = forward + 1; i <= backwardFrom - 1; i++) out.add(i);
             return out;

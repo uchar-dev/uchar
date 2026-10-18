@@ -62,14 +62,14 @@ class TmsCompoundWitnessTest {
 
     /** The document with {@code voorwaarde} over the eight Jutters, ingedeeld where {@code oordeel} holds of the number
      *  of the three members that hold. */
-    private static void play(String voorwaarde, IntPredicate judgement) throws Exception {
+    private static void play(String voorwaarde, IntPredicate verdict) throws Exception {
         List<String> jutters = new ArrayList<>(), verwacht = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
             boolean erkend = (i & 1) != 0, reported = (i & 2) != 0, geschorst = (i & 4) != 0;
             int touch = (reported ? 1 : 0) + (geschorst ? 0 : 1) + (erkend ? 1 : 0);
             jutters.add(jutter(i, erkend, reported, geschorst));
             verwacht.add(verwacht("J" + i, "vergund", erkend));
-            verwacht.add(verwacht("J" + i, "ingedeeld", judgement.test(touch)));
+            verwacht.add(verwacht("J" + i, "ingedeeld", verdict.test(touch)));
         }
         playDocument(voorwaarde, jutters, verwacht);
     }

@@ -297,7 +297,7 @@ class MorePeriodicGateWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             return TmsTranspiler.build(model, cl, loaded.prioritizedDefaults(), loaded.roleBindings(), loaded.lets(),
-                    loaded.sourcePaths(), loaded.path()).drl();
+                    loaded.sourcePaths(), loaded.navigationBindings()).drl();
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }
@@ -314,7 +314,7 @@ class MorePeriodicGateWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             TmsTranspiler et = TmsTranspiler.build(model, cl, loaded.prioritizedDefaults(),
-                    loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.path());
+                    loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings());
             List<String> out = new ArrayList<>();
             for (Dekking d : et.dekking()) out.add(d.verdict() + " " + d.sleutel() + " — " + d.reden());
             return out;

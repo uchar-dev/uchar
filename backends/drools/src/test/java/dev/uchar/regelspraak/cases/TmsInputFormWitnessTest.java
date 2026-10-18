@@ -23,7 +23,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -227,12 +227,12 @@ class TmsInputFormWitnessTest {
             TmsTimelineDocuments.set(j1, "borgplichtig", List.of(
                     TmsTimelineDocuments.beanSegment(b.beanLoader(), "2024-03-01", "2025-03-01", null)));
             BucketInput bucket = new BucketInput(j1, ElementSleutel.van("Jutter", "jaartarief", false));
-            TmsLetWitnessTest.Facts sessionFacts = new TmsLetWitnessTest.Facts();
-            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1, bucket), sessie -> sessie.addEventListener(sessionFacts)),
+            TmsLetWitnessTest.Facts facts = new TmsLetWitnessTest.Facts();
+            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1, bucket), sessie -> sessie.addEventListener(facts)),
                     () -> "volgorde " + names);
-            assertEquals(sessionFacts.inserted, sessionFacts.withdrawn, () -> "foutfeiten in volgorde " + names);
+            assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
             assertNull(TmsDocuments.lees(j1, "jaardeel"), () -> "jaardeel in volgorde " + names);
-            if (sessionFacts.fouten > 0) intermediateState++;
+            if (facts.fouten > 0) intermediateState++;
         }
         assertTrue(intermediateState > 0, "geen volgorde liet de jaardeelregel de basis lezen voor J1 vrijgesteld was");
     }
@@ -288,7 +288,7 @@ class TmsInputFormWitnessTest {
     static final String GUARD = computingRule("wachtsom", "BEREKENING", "Jutter", "wachtsom",
             ownTotal("vergoeding", "Jutter", check("wachtplichtig", false)), "null");
     static final String TOP = computingRule("topsom", "BEREKENING", "Jutter", "topsom",
-            ownTotal("vergoeding", "Jutter", comparison("greater", reading("controle", "Jutter"), number("5"))), "null");
+            ownTotal("vergoeding", "Jutter", comparison("greater", ownRead("controle", "Jutter"), number("5"))), "null");
 
     static final List<String> RULES_D = List.of(CHECK, GUARD, TOP);
 
@@ -345,9 +345,9 @@ class TmsInputFormWitnessTest {
     static final String RATE_E = computingRule("tarief", "BEREKENING", "Vondst", "tarief",
             timeProportional("jaartarief", "Vondst", check("bewaard", false), "month"), "null");
     static final String GEKEURD = characteristicRule("keuring", "Vondst", "gekeurd",
-            comparison("greater", reading("keurscore", "Vondst"), number("5")));
+            comparison("greater", ownRead("keurscore", "Vondst"), number("5")));
     static final String LAST = computingRule("last", "BEREKENING", "Jutter", "last", aggregation("total",
-            reading("tarief", "Vondst"), "Vondst", sourceRole("bewaring", "vondst"), check("gekeurd", false), "null", WHOLE,
+            ownRead("tarief", "Vondst"), "Vondst", sourceRole("bewaring", "vondst"), check("gekeurd", false), "null", WHOLE,
             "het totaal van de tarieven van zijn vondsten die gekeurd zijn"), "null");
 
     static final List<String> RULES_E = List.of(RATE_E, GEKEURD, LAST);
@@ -392,7 +392,7 @@ class TmsInputFormWitnessTest {
                         + " its own; a set fold needs each member's own timeline (ch. 3.6/§7.1, ch. 8.4)");
     }
 
-    @Test void a_member_that_does_not_get_the_filter_or_has_a_derived_timeline_does_not_fail() throws Exception {
+    @Test void a_member_that_does_not_pass_the_filter_or_has_a_derived_timeline_does_not_fail() throws Exception {
         inEveryOrder(MODEL_E, RULES_E, List.of(), TmsTimelineDocuments.caseDocument(DATE, playingE(), List.of(
                 waarde("J2", "last", "0"), waarde("J3", "last", "36"),
                 expectedTimeline("V4", "tarief", months(2024, 1, 3, "12")))), "gespeeld");
@@ -460,7 +460,7 @@ class TmsInputFormWitnessTest {
             List.of(TmsUniquenessWitnessTest.bron("Strandvondst", List.of("code", "vondstnummer"))), null,
             "De codes en vondstnummers van alle Strandvondsten moeten uniek zijn.");
 
-    @Test void the_form_of_the_key_precedes_the_scope_and_after_an_empty_part() throws Exception {
+    @Test void the_form_of_the_key_precedes_the_scope_and_follows_an_empty_part() throws Exception {
         JsonNode caseDocument = TmsTimelineDocuments.caseDocument(DATE, List.of(
                         // no kust: it takes no part in the scoped form, and its kavelnummer as a bucket scalar faults
                         instance("S1", "Strandvondst", Map.of("kavelnummer", numberValue("3")), List.of(), Map.of(),

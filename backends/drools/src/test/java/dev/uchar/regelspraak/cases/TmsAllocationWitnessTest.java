@@ -31,7 +31,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.validity;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberType;
 import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
@@ -220,7 +220,7 @@ class TmsAllocationWitnessTest {
 
     /** "zijn {@code attribuut}" on a Berger. */
     static String berger(String attribuut) {
-        return reading(attribuut, "Berger");
+        return ownRead(attribuut, "Berger");
     }
 
     /** Every order of the rules and, independently, of the allocations of a part, as documents, with the names of the
@@ -566,7 +566,7 @@ class TmsAllocationWitnessTest {
             version("equalShares", "bergingsaandeel", null, null, 0, "onverdeelde rest", null, false, null,
                     validity(null, "2025-12-31")),
             version("proportional", "bergingsaandeel", "basisgewicht", null, 0, "onverdeelde rest", null, false,
-                    comparison("greaterOrEqual", reading("vrijgavescore", "Berging"), number("10")),
+                    comparison("greaterOrEqual", ownRead("vrijgavescore", "Berging"), number("10")),
                     validity("2026-01-01", null))));
 
     static JsonNode eCase(String asOfDate, String score, List<String> verwachtingen) throws Exception {
@@ -626,7 +626,7 @@ class TmsAllocationWitnessTest {
     // ---------------- G: a pot derived later ----------------
 
     static final String POT = computingRule("opbrengst van een berging", "BEREKENING", "Berging", "opbrengst",
-            reading("bruto", "Berging"), "null");
+            ownRead("bruto", "Berging"), "null");
 
     static JsonNode gCase() throws Exception {
         return TmsDocuments.caseDocument(List.of(

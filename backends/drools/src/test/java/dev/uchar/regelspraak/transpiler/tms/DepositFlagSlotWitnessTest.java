@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * for a slot nobody fills. Over the plans of every golden the branch builds.
  *
  * <p><b>Red</b> before the step, on {@code 8447b5f2}: 36 positions named a probe slot that nobody filled, the tests
- * with the role {@code WITHOUT_FAULT} or {@code FOUT}, the {@code TestFault} and the {@code FilterError} of
+ * with the role {@code WITHOUT_FAULT} or {@code FOUT}, the {@code TestFault} and the {@code FilterFault} of
  * {@code jutterswet-filterwacht}, {@code jutterswet-ploegaandeel} and others.
  */
 class DepositFlagSlotWitnessTest {

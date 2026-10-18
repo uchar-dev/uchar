@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * corpus goldens' {@code ir.json} off the wire, or an in-memory variant of one; every case is authored here,
  * so no corpus expectation is read, moved or touched.
  */
-class OpslagDirectionWitnessTest {
+class StorageDirectionWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 

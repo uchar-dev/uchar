@@ -25,7 +25,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -127,7 +127,7 @@ class TmsTimelineWitnessTest {
             List.of(timeCharacteristic("borgplichtig", "month"), kenmerk("actief")))), List.of());
 
     static final String ACTIEF = TmsDocuments.characteristicRule("actief", "Jutter", "actief",
-            comparison("greater", reading("score", "Jutter"), number("5")));
+            comparison("greater", ownRead("score", "Jutter"), number("5")));
     static final String JAARDEEL = computingRule("jaardeel", "BEREKENING", "Jutter", "jaardeel",
             timeProportional("jaartarief", "Jutter", BORGPLICHTIG, "year"), check("actief", false));
     static final String MONTH_PART = computingRule("maanddeel", "BEREKENING", "Jutter", "maanddeel",
@@ -135,7 +135,7 @@ class TmsTimelineWitnessTest {
     static final String WACHTSOM = computingRule("wachtsom", "BEREKENING", "Jutter", "wachtsom",
             ownTotal("maanddeel", "Jutter", BORGPLICHTIG), "null");
     static final String TOPSOM = computingRule("topsom", "BEREKENING", "Jutter", "topsom",
-            ownTotal("bedrag", "Jutter", comparison("greater", reading("maanddeel", "Jutter"), number("100"))), "null");
+            ownTotal("bedrag", "Jutter", comparison("greater", ownRead("maanddeel", "Jutter"), number("100"))), "null");
 
     static final List<String> RULES_A = List.of(ACTIEF, JAARDEEL, MONTH_PART, WACHTSOM, TOPSOM);
 
@@ -259,7 +259,7 @@ class TmsTimelineWitnessTest {
             List.of(timeCharacteristic("borgplichtig", "month"), kenmerk("vrijgesteld")))), List.of());
 
     static final String VRIJSTELLING = TmsDocuments.characteristicRule("vrijstelling", "Jutter", "vrijgesteld",
-            comparison("less", reading("score", "Jutter"), number("5")));
+            comparison("less", ownRead("score", "Jutter"), number("5")));
     static final String YEAR_PART_NON_FREE = computingRule("jaardeel", "BEREKENING", "Jutter", "jaardeel",
             timeProportional("jaartarief", "Jutter", BORGPLICHTIG, "year"), check("vrijgesteld", true));
 
@@ -292,10 +292,10 @@ class TmsTimelineWitnessTest {
             timeAttribute("jaartarief", WHOLE, "year"), timeAttribute("jaardeel", WHOLE, "year")),
             List.of(timeCharacteristic("borgplichtig", "month")))), List.of());
 
-    static final String COUNTER = computingRule("teller", "BEREKENING", "Jutter", "teller", reading("score", "Jutter"), "null");
+    static final String COUNTER = computingRule("teller", "BEREKENING", "Jutter", "teller", ownRead("score", "Jutter"), "null");
     static final String YEAR_PART_UNDER_FIVE = computingRule("jaardeel", "BEREKENING", "Jutter", "jaardeel",
             timeProportional("jaartarief", "Jutter", BORGPLICHTIG, "year"),
-            comparison("less", reading("teller", "Jutter"), number("5")));
+            comparison("less", ownRead("teller", "Jutter"), number("5")));
 
     static JsonNode caseB2() throws Exception {
         return TmsTimelineDocuments.caseDocument(null, List.of(
@@ -370,7 +370,7 @@ class TmsTimelineWitnessTest {
     static final String SILENT = computingRule("stilsom", "BEREKENING", "Jutter", "stilsom",
             ownTotal("vergoeding", "Jutter", check("wachtplichtig", true)), "null");
     static final String TOP = computingRule("topsom", "BEREKENING", "Jutter", "topsom",
-            ownTotal("vergoeding", "Jutter", comparison("greater", reading("vergoeding", "Jutter"), number("10"))),
+            ownTotal("vergoeding", "Jutter", comparison("greater", ownRead("vergoeding", "Jutter"), number("10"))),
             "null");
 
     static JsonNode caseD() throws Exception {

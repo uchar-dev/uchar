@@ -22,7 +22,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -167,9 +167,9 @@ class TmsTimelineRefusalWitnessTest {
                 "wachtplichtig", List.of(period("2024-01-01", "2024-02-01")));
         out.add(new Row("tweede-schrijver", TmsTimelineDocuments.ir(MODEL_JAARDEEL, List.of(
                         jaardeel("jaardeel borg", "BEREKENING", "borgplichtig",
-                                comparison("greater", reading("score", "Jutter"), number("5"))),
+                                comparison("greater", ownRead("score", "Jutter"), number("5"))),
                         jaardeel("jaardeel wacht", "BEREKENING", "wachtplichtig",
-                                comparison("less", reading("score", "Jutter"), number("6")))), List.of()),
+                                comparison("less", ownRead("score", "Jutter"), number("6")))), List.of()),
                 TmsTimelineDocuments.caseDocument(null, List.of(
                                 instance("J1", "Jutter", Map.of("score", numberValue("10"), "jaartarief", RATE_2024),
                                         List.of(), both, Map.of()),
@@ -207,7 +207,7 @@ class TmsTimelineRefusalWitnessTest {
         // a characteristic on a timeline as the target
         out.add(new Row("kenmerk-als-doel", TmsTimelineDocuments.ir(MODEL_JAARDEEL, List.of(
                         TmsDocuments.characteristicRule("borgplicht", "Jutter", "borgplichtig",
-                                comparison("greater", reading("score", "Jutter"), number("5")))), List.of()),
+                                comparison("greater", ownRead("score", "Jutter"), number("5")))), List.of()),
                 TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of("score", numberValue("10")),
                         List.of(), Map.of(), Map.of())), List.of(TmsDocuments.consistent())),
                 List.of("transpiler SKIP: regel: borgplicht — het tijdsafhankelijke kenmerk 'borgplichtig' van"
@@ -219,7 +219,7 @@ class TmsTimelineRefusalWitnessTest {
                                 objecttype("Vondst", List.of(timeAttribute("tarief", WHOLE, "month")), List.of())),
                         List.of(factTypeOneToMany("bewaring", "jutter", "Jutter", "vondst", "Vondst", "vondsten"))),
                         List.of(computingRule("tariefsom", "BEREKENING", "Jutter", "tariefsom", aggregation("sum",
-                                reading("tarief", "Vondst"), "Vondst", sourceRole("bewaring", "vondst"), "null", "null",
+                                ownRead("tarief", "Vondst"), "Vondst", sourceRole("bewaring", "vondst"), "null", "null",
                                 WHOLE, "de som van de tarieven van zijn vondsten"), "null")), List.of()),
                 TmsTimelineDocuments.caseDocument(null, List.of(
                                 instance("J1", "Jutter", Map.of(), List.of(), Map.of(),
@@ -242,7 +242,7 @@ class TmsTimelineRefusalWitnessTest {
         String fiveInJanuary = timeline(List.of(segment("2024-01-01", "2024-02-01", "5")));
         out.add(new Row("knip-gelijk", TmsTimelineDocuments.ir(MODEL_CLIP, List.of(computingRule("gelijke wachtsom",
                         "BEREKENING", "Jutter", "wachtsom", ownTotal("vergoeding", "Jutter", comparison("equal",
-                                reading("controle", "Jutter"), reading("grens", "Jutter"))), "null")), List.of()),
+                                ownRead("controle", "Jutter"), ownRead("grens", "Jutter"))), "null")), List.of()),
                 TmsTimelineDocuments.caseDocument(null, List.of(
                                 instance("J1", "Jutter", Map.of("vergoeding", tenToJuly, "controle", fiveInJanuary),
                                         List.of(), Map.of(), Map.of()),
@@ -252,7 +252,7 @@ class TmsTimelineRefusalWitnessTest {
                 List.of(clipSentence("gelijke wachtsom", "gelijk aan", "equal"))));
         out.add(new Row("knip-ongelijk", TmsTimelineDocuments.ir(MODEL_CLIP, List.of(computingRule("ongelijke wachtsom",
                         "BEREKENING", "Jutter", "wachtsom", ownTotal("vergoeding", "Jutter", comparison("notEqual",
-                                reading("controle", "Jutter"), number("1000"))), "null")), List.of()),
+                                ownRead("controle", "Jutter"), number("1000"))), "null")), List.of()),
                 TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of(
                                 "vergoeding", timeline(List.of(segment("2024-01-01", "2024-07-01", "100"))),
                                 "controle", timeline(List.of(segment("2024-01-01", "2024-02-01", "1000")))),
@@ -333,7 +333,7 @@ class TmsTimelineRefusalWitnessTest {
         // gives no omzet, since no case reader carries dimensioned input
         out.add(new Row("dimensiecel-op-tijdlijn", TmsTimelineDocuments.ir(MODEL_DIMENSION, List.of(computingRule(
                         "tweede kwartaal", "BEREKENING", "Jutter", "tweede kwartaal", "{\"node\":\"DimensionCellRead\","
-                                + "\"attribute\":" + reading("omzet", "Jutter") + ",\"labels\":[\"k2\"],\"source\":"
+                                + "\"attribute\":" + ownRead("omzet", "Jutter") + ",\"labels\":[\"k2\"],\"source\":"
                                 + "{\"snippet\":\"zijn omzet in k2\"}}", "null")), List.of()),
                 TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of(), List.of(), Map.of(),
                         Map.of())), List.of(waarde("J1", "tweede kwartaal", null))),
@@ -351,9 +351,9 @@ class TmsTimelineRefusalWitnessTest {
         return out;
     }
 
-    static String secondWriter(String regel, String earlierBean) {
+    static String secondWriter(String regel, String other) {
         return "transpiler SKIP: regel: " + regel + " — een tijdsafhankelijk doel met een tweede schrijver"
-                + " ('jaardeel' van Jutter wordt ook geschreven door \"" + earlierBean + "\"): deze tak draagt"
+                + " ('jaardeel' van Jutter wordt ook geschreven door \"" + other + "\"): deze tak draagt"
                 + " deze vorm nog niet; een doel met meer schrijvers blijft omheind (RUNTIME-SEMANTICS ch. 7.8), en geen"
                 + " golden met cases heeft er een";
     }
@@ -392,7 +392,7 @@ class TmsTimelineRefusalWitnessTest {
     /** "De wachtsom van een Jutter moet berekend worden als het totaal van zijn vergoeding gedurende de tijd dat hij
      *  wachtplichtig is", in EUR. */
     static final String WACHTSOM_RATE = computingRule("wachtsom", "BEREKENING", "Jutter", "wachtsom",
-            "{\"node\":\"Aggregation\",\"kind\":\"total\",\"arguments\":[" + reading("vergoeding", "Jutter")
+            "{\"node\":\"Aggregation\",\"kind\":\"total\",\"arguments\":[" + ownRead("vergoeding", "Jutter")
                     + "],\"elementType\":\"Jutter\",\"filter\":" + check("wachtplichtig", false) + ",\"type\":"
                     + TmsDocuments.numberType(true, 0, EUR) + ",\"source\":{\"snippet\":\"het totaal van zijn"
                     + " vergoeding\"}}", "null");
@@ -475,7 +475,7 @@ class TmsTimelineRefusalWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             TmsTranspiler t = TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.roleBindings(), l.lets(),
-                    l.sourcePaths(), l.path());
+                    l.sourcePaths(), l.navigationBindings());
             List<String> out = new ArrayList<>();
             for (Dekking d : t.dekking())
                 if (!d.lowered()) out.add("transpiler " + d.verdict() + ": " + d.sleutel()

@@ -32,7 +32,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.jutterBean;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicGroup;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.lees;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
 import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
@@ -103,7 +103,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Afloop nog niet"; the rows of the characteristic rule alone
  * were green there from the start, since step 2a carries that rule.
  */
-class TmsRestoreWitnessTest {
+class TmsWriteBackWitnessTest {
 
     private static final List<String> CHARACTERISTICS = List.of("erkend", "vergund");
 
@@ -121,7 +121,7 @@ class TmsRestoreWitnessTest {
                             verwacht("J3", "vergund", false), verwacht("J3", "erkend", false))), branch), branch.toString());
     }
 
-    @Test void only_after_the_reset_the_bean_carries_the_derived_characteristic() throws Exception {
+    @Test void only_after_the_write_back_the_bean_carries_the_derived_characteristic() throws Exception {
         for (DroolsBackend.Branch branch : BRANCHES) setCharacteristicBack(DroolsBackend.build(document(), branch));
     }
 
@@ -168,9 +168,9 @@ class TmsRestoreWitnessTest {
 
     private static final List<String> RULES = List.of(
             computingRule("uitkering", "BEREKENING", "Vondst", "uitkering",
-                    binary("times", reading("gewicht", "Vondst"), number("2")), "null"),
+                    binary("times", ownRead("gewicht", "Vondst"), number("2")), "null"),
             computingRule("standaardvindloon", "INITIALISATIE", "Vondst", "vindloon",
-                    binary("plus", reading("gewicht", "Vondst"), number("5")), "null"));
+                    binary("plus", ownRead("gewicht", "Vondst"), number("5")), "null"));
 
     private static final List<String> GROUPS = List.of(
             attributeGroup("heffing van een vondst", "Vondst", "heffing",
@@ -196,7 +196,7 @@ class TmsRestoreWitnessTest {
         assertEquals(8, orders);
     }
 
-    @Test void only_after_the_reset_the_beans_carry_the_derived_attributes() throws Exception {
+    @Test void only_after_the_write_back_the_beans_carry_the_derived_attributes() throws Exception {
         int orders = 0;
         for (List<String> rules : TmsDocuments.permutations(RULES))
             for (List<String> groups : TmsDocuments.permutations(GROUPS))
@@ -275,7 +275,7 @@ class TmsRestoreWitnessTest {
     /** Two writers of one attribute of one object with different values have no common fixpoint, and the write-back
      *  does not choose: the facts are put in the session by hand, since the branch refuses every document that could
      *  derive them (two computing rules, or two initialisations, on one target), and in both orders. */
-    @Test void two_different_values_on_a_target_are_a_named_error_in_every_order() throws Exception {
+    @Test void two_different_values_on_a_target_are_a_named_fault_in_every_order() throws Exception {
         for (DroolsBackend.Branch branch : BRANCHES) {
             List<String> sentences = new ArrayList<>();
             Object v1 = twoWriters(branch, new BigDecimal("20"), new BigDecimal("7"), sentences);

@@ -57,7 +57,7 @@ import java.util.Map;
  * so after a change of the input a second fire would keep what the first made and initialised, where a fresh session
  * evaluates the creations anew; {@link DroolsBackend#vuur} therefore refuses a second fire on a model with a creation.
  *
- * <p><b>The case</b> ({@link #goldenCase}): one Kustwacht {@code K}; N Wachters {@code W1}…{@code WN} of rang 0, each a
+ * <p><b>The case</b> ({@link #caseDocument}): one Kustwacht {@code K}; N Wachters {@code W1}…{@code WN} of rang 0, each a
  * Wachter of {@code K}; ten Vondsten {@code Vi_j} per Wachter, of gewicht 5 + ((7i + 11j) mod 36), so between 5 and 40;
  * the parameter vondstfactor 2. Both sides of the conditions are reached: the higher default of (b) holds where the
  * gewicht is above 25 (about 42% of the Vondsten), and (f) fails where the wachtsom reaches 300 (W7 among the first
@@ -144,7 +144,7 @@ public final class ScaleTrial {
             case "tweedepunt" -> System.exit(secondPoint(Integer.parseInt(args[1])));
             case "controle" -> System.exit(check(Integer.parseInt(args[1])));
             case "case" -> Files.writeString(Path.of(args[2]), JSON.writerWithDefaultPrettyPrinter().writeValueAsString(
-                    goldenCase(Integer.parseInt(args[1]), true, args.length > 3 && args[3].equals("gewijzigd"))));
+                    caseDocument(Integer.parseInt(args[1]), true, args.length > 3 && args[3].equals("gewijzigd"))));
             default -> throw new IllegalStateException(args[0]);
         }
     }
@@ -174,7 +174,7 @@ public final class ScaleTrial {
     /** The case of {@code n} Wachters, with {@code changed} the one after the change of the second fire; with
      *  {@code verwacht} also every value the model derives on an input object, and the inconsistency of every Wachter
      *  whose wachtsom reaches the bound, as the case schema spells them. */
-    static ObjectNode goldenCase(int n, boolean verwacht, boolean changed) {
+    static ObjectNode caseDocument(int n, boolean verwacht, boolean changed) {
         JsonNodeFactory f = JsonNodeFactory.instance;
         ObjectNode doc = f.objectNode();
         doc.put("format", "uchar-case-v0");
@@ -248,7 +248,7 @@ public final class ScaleTrial {
         int fout = 0;
         for (Path ir : List.of(model(), modelWithoutCreation()))
             for (boolean changed : List.of(false, true)) {
-                JsonNode c = goldenCase(n, true, changed);
+                JsonNode c = caseDocument(n, true, changed);
                 String verdict = CaseRunner.playCase(ir, c, BRANCH);
                 System.out.println(ir.getParent().getFileName() + (changed ? ", gewijzigd" : "") + ", " + BRANCH
                         + ": " + (verdict == null ? "gelijk aan de verwachting" : verdict));
@@ -262,7 +262,7 @@ public final class ScaleTrial {
     /** One fire of the case: its firings and the cap it fired under, the fire and the write-back in nanoseconds, the
      *  facts just before the fire and their peak during it, the heap in use after a collection with the session open,
      *  and two outcomes that every point must give alike. */
-    record FireMeasurement(int vuringen, int cap, long fireNanos, long setBackNanos, long n0, long peak, long heap,
+    record FireMeasurement(int vuringen, int cap, long fireNanos, long writeBackNanos, long n0, long peak, long heap,
                       String kusttotaal, int inconsistent) {}
 
     /** Measures one point in this JVM and prints one line, {@code PUNT} with its fields tab-separated,
@@ -287,7 +287,7 @@ public final class ScaleTrial {
         }
         int rules = rules(b.kieBase());
         CaseRunner runner = CaseRunner.forMeasurement(ir, branch);
-        JsonNode c = goldenCase(n, false, false);
+        JsonNode c = caseDocument(n, false, false);
         List<FireMeasurement> metingen = new ArrayList<>();
         try {
             for (int i = -WARM_UP; i < REPETITIONS; i++) {
@@ -306,8 +306,8 @@ public final class ScaleTrial {
                 throw new IllegalStateException("herhalingen verschillen in invoer, plafond of uitkomst: " + metingen);
         System.out.println(String.join("\t", "PUNT", branch.name(), String.valueOf(n),
                 range(metingen, FireMeasurement::vuringen),
-                ms(median(metingen, FireMeasurement::fireNanos)), ms(median(metingen, FireMeasurement::setBackNanos)),
-                ms(median(metingen, m -> m.fireNanos() + m.setBackNanos())),
+                ms(median(metingen, FireMeasurement::fireNanos)), ms(median(metingen, FireMeasurement::writeBackNanos)),
+                ms(median(metingen, m -> m.fireNanos() + m.writeBackNanos())),
                 range(metingen, m -> (int) m.peak()), String.valueOf(median(metingen, FireMeasurement::heap) >> 20),
                 ms(median(bouw)), String.valueOf(rules), String.valueOf(eerste.n0()), eerste.kusttotaal(),
                 String.valueOf(eerste.inconsistent()), String.valueOf(eerste.cap())));
@@ -329,11 +329,11 @@ public final class ScaleTrial {
             throw new IllegalStateException("de feitenteller staat op " + counter.state + ", de sessie houdt "
                     + sessie.getFactCount() + " feiten");
         DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
-        long reset = System.nanoTime();
+        long writtenBack = System.nanoTime();
         long heap = used();
         Object kusttotaal = RegelSpraakRuntime.get(labels.get("K"), "kusttotaal");
         int inconsistent = sessie.getObjects(o -> o.getClass().getSimpleName().equals("Inconsistentie")).size();
-        return new FireMeasurement(firing.vuringen(), firing.cap(), fired - begin, reset - fired, counter.n0,
+        return new FireMeasurement(firing.vuringen(), firing.cap(), fired - begin, writtenBack - fired, counter.n0,
                 counter.peak, heap, kusttotaal instanceof BigDecimal d ? d.toPlainString() : String.valueOf(kusttotaal),
                 inconsistent);
     }
@@ -392,7 +392,7 @@ public final class ScaleTrial {
                             long secondNanos, List<String> before, List<String> after) {}
 
     /** The fresh session with the changed case: its firings, its set-up and its fire in nanoseconds, and its reading. */
-    private record Fresh(int vuringen, long setupNanos, long fireNanos, List<String> reading) {}
+    private record Fresh(int vuringen, long setupNanos, long fireNanos, List<String> read) {}
 
     /** One round of the second fire. */
     private record Second(Repeated repeated, Fresh fresh) {}
@@ -403,7 +403,7 @@ public final class ScaleTrial {
         Path ir = modelWithoutCreation();
         int rules = rules(DroolsBackend.build(ir, BRANCH).kieBase());
         CaseRunner runner = CaseRunner.forMeasurement(ir, BRANCH);
-        JsonNode c = goldenCase(n, false, false), changed = goldenCase(n, false, true);
+        JsonNode c = caseDocument(n, false, false), changed = caseDocument(n, false, true);
         List<Second> rounds = new ArrayList<>();
         for (int i = -WARM_UP; i < REPETITIONS; i++) {
             Second t = ronde(runner, c, changed);
@@ -454,13 +454,13 @@ public final class ScaleTrial {
             DroolsBackend.Vuring firing = DroolsBackend.vuur(bouw, sessie);
             long fired = System.nanoTime();
             if (firing.geenFixpunt() != null) throw new IllegalStateException("verse sessie: " + firing.geenFixpunt());
-            List<String> reading = describe(DroolsBackend.lees(bouw, sessie), labels);
-            return new Fresh(firing.vuringen(), setUp - start[0], fired - setUp, reading);
+            List<String> read = describe(DroolsBackend.lees(bouw, sessie), labels);
+            return new Fresh(firing.vuringen(), setUp - start[0], fired - setUp, read);
         });
-        if (!a.after().equals(v.reading())) {
-            List<String> differences = difference(a.after(), v.reading());
+        if (!a.after().equals(v.read())) {
+            List<String> differences = difference(a.after(), v.read());
             throw new IllegalStateException("de lezing na de tweede fire (" + a.after().size() + " regels) verschilt van die"
-                    + " van een verse sessie met de gewijzigde invoer (" + v.reading().size() + " regels), in "
+                    + " van een verse sessie met de gewijzigde invoer (" + v.read().size() + " regels), in "
                     + differences.size() + " regels" + (differences.isEmpty() ? ", alleen in hoe vaak een regel voorkomt" : "")
                     + "; de eerste: " + differences.subList(0, Math.min(10, differences.size())));
         }
@@ -509,7 +509,7 @@ public final class ScaleTrial {
 
     /** A point as its child JVM reported it: the fields of its {@code PUNT} or {@code TWEEDE} line, or the refusal or
      *  fault, and the load of the machine when it started. */
-    private record Result(DroolsBackend.Branch branch, int n, String belasting, String[] fields, String differences) {
+    private record Result(DroolsBackend.Branch branch, int n, String belasting, String[] fields, String failure) {
         String veld(int i) {
             return fields[i];
         }
@@ -556,7 +556,7 @@ public final class ScaleTrial {
         for (DroolsBackend.Branch branch : branches)
             for (int n : NS) {
                 Result u = kind(branch, n, "PUNT", "punt", branch.name(), String.valueOf(n));
-                if (u.differences() != null) complete = false;
+                if (u.failure() != null) complete = false;
                 results.computeIfAbsent(branch, t -> new LinkedHashMap<>()).put(n, u);
             }
         System.out.print(table(results));
@@ -567,17 +567,17 @@ public final class ScaleTrial {
     /** The floor of point 9 of the card on one branch: the firings against the cap at N = 10 000, under half, and the
      *  slope of fire plus write-back from N = 1 000 to N = 10 000 in log-log, at most 1.2; NaN where a point is missing
      *  or failed, which misses the floor. */
-    private record Floor(double part, double helling) {
+    private record Floor(double capShare, double helling) {
         static Floor van(Map<Integer, Result> perN) {
             Result a = perN.get(1_000), z = perN.get(10_000);
-            boolean zGemeten = z != null && z.differences() == null;
-            boolean both = zGemeten && a != null && a.differences() == null;
+            boolean zGemeten = z != null && z.failure() == null;
+            boolean both = zGemeten && a != null && a.failure() == null;
             return new Floor(zGemeten ? eerste(z.veld(3)) / Double.parseDouble(z.veld(14)) : Double.NaN,
                     both ? Math.log10(z.ms(6) / a.ms(6)) : Double.NaN);
         }
 
         boolean reached() {
-            return part < 0.5 && helling <= 1.2;
+            return capShare < 0.5 && helling <= 1.2;
         }
     }
 
@@ -596,8 +596,8 @@ public final class ScaleTrial {
             for (Result u : perN.values()) {
                 out.append("| ").append(u.branch()).append(" | ").append(u.n()).append(" | ").append(u.belasting())
                         .append(" | ");
-                if (u.differences() != null) {
-                    out.append(u.differences().replace("|", "\\|")).append(" |").append(" |".repeat(13)).append('\n');
+                if (u.failure() != null) {
+                    out.append(u.failure().replace("|", "\\|")).append(" |").append(" |".repeat(13)).append('\n');
                     continue;
                 }
                 String vuringen = u.veld(3);
@@ -617,10 +617,10 @@ public final class ScaleTrial {
             boolean both = !Double.isNaN(v.helling());
             out.append("- Helling ").append(e.getKey()).append(" (vuren+terugzetten, log-log, N = 1 000 → 10 000): ")
                     .append(both ? String.format(Locale.ROOT, "%.2f", v.helling()) : "–").append('\n');
-            if (!Double.isNaN(v.part()))
+            if (!Double.isNaN(v.capShare()))
                 out.append("- Vloer ").append(e.getKey()).append(" (vuringen onder de helft van het plafond bij N = 10 000,")
                         .append(" helling ten hoogste 1,2): vuringen/plafond ")
-                        .append(String.format(Locale.ROOT, "%.3f", v.part())).append(", helling ")
+                        .append(String.format(Locale.ROOT, "%.3f", v.capShare())).append(", helling ")
                         .append(both ? String.format(Locale.ROOT, "%.2f", v.helling()) : "–").append(": ")
                         .append(v.reached() ? "gehaald" : "NIET gehaald").append('\n');
         }
@@ -650,9 +650,9 @@ public final class ScaleTrial {
         for (int n : NS) {
             Result u = kind(BRANCH, n, "TWEEDE", "tweedepunt", String.valueOf(n));
             out.append("| ").append(n).append(" | ").append(u.belasting()).append(" | ");
-            if (u.differences() != null) {
+            if (u.failure() != null) {
                 complete = false;
-                out.append(u.differences().replace("|", "\\|")).append(" |").append(" |".repeat(12)).append('\n');
+                out.append(u.failure().replace("|", "\\|")).append(" |").append(" |".repeat(12)).append('\n');
                 continue;
             }
             out.append(u.veld(2)).append(" | ").append(u.veld(3)).append(" | ").append(u.veld(4)).append(" | ")

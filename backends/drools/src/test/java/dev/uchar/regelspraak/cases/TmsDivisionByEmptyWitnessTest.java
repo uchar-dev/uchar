@@ -23,7 +23,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -61,7 +61,7 @@ class TmsDivisionByEmptyWitnessTest {
             characteristicRule("claim", "Vondst", "geclaimd", check("gemeld", false)),
             characteristicRule("vrijgave", "Vondst", "vrij", check("geclaimd", true)),
             computingRule("aandeel", "BEREKENING", "Vondst", "aandeel",
-                    binary("dividedBy", reading("opbrengst", "Vondst"), reading("deelnemers", "Vondst")),
+                    binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("deelnemers", "Vondst")),
                     check("vrij", false)));
 
     private static final String MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",

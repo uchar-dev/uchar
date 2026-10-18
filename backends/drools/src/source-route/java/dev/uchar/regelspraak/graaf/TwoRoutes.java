@@ -62,7 +62,7 @@ final class TwoRoutes {
     }
 
     /** The graph's node by its human label. */
-    static RegelGraaf.Node jsonNode(RegelGraaf g, String label) {
+    static RegelGraaf.Node node(RegelGraaf g, String label) {
         return g.nodes().stream().filter(n -> n.label().equals(label)).findFirst()
                 .orElseThrow(() -> new AssertionError("geen knoop met label '" + label + "' in " + g.nodes()));
     }

@@ -164,7 +164,7 @@ class ObjectCreationWitnessTest {
 
     // ---------------- 2. the §13.4.6.4 kenmerkwaardetoekenning ----------------
 
-    @Test void a_true_characteristic_attribution_sets_the_marking_on_the_minted_object() throws Exception {
+    @Test void a_true_characteristic_initialisation_sets_the_marking_on_the_minted_object() throws Exception {
         After after = afterFire(ir(OVERZEE), overzee("800", Boolean.TRUE));
         assertEquals(Boolean.TRUE, RegelSpraakRuntime.get(onlyMint(after), "overzees"),
                 "a true kenmerk value sets the mark on the mint");
@@ -172,7 +172,7 @@ class ObjectCreationWitnessTest {
         assertNull(play(ir(OVERZEE), overzeeWithExpectation("800", Boolean.TRUE, "1800")));
     }
 
-    @Test void an_empty_characteristic_attribution_lets_the_marking_unset() throws Exception {
+    @Test void an_empty_characteristic_initialisation_leaves_the_marking_unset() throws Exception {
         // ch. 5.5: a characteristic initialisation evaluating false OR EMPTY leaves the mark unset —
         // equivalent to an absent initialisation. The subject's `overzees` is a NULLABLE Booleaan attribute,
         // so an unsupplied one reads leeg; writing that leeg through to the mint's primitive boolean field
@@ -184,14 +184,14 @@ class ObjectCreationWitnessTest {
                 "so the gewone arm decides: 800");
     }
 
-    @Test void a_false_characteristic_attribution_lets_the_marking_also_unset() throws Exception {
+    @Test void a_false_characteristic_initialisation_leaves_the_marking_also_unset() throws Exception {
         // the third value the flank must separate from true: explicit false, same outcome as empty.
         After after = afterFire(ir(OVERZEE), overzee("800", Boolean.FALSE));
         assertEquals(Boolean.FALSE, RegelSpraakRuntime.get(onlyMint(after), "overzees"));
         assertNull(play(ir(OVERZEE), overzeeWithExpectation("800", Boolean.FALSE, "800")));
     }
 
-    @Test void a_true_literal_characteristic_attribution_sets_the_marking_too() throws Exception {
+    @Test void a_true_literal_characteristic_initialisation_sets_the_marking_too() throws Exception {
         // The same three-way flank once more, now with the initialisation value a LITERAL instead of a read of
         // a nullable attribute — the arms no case input can reach, so only a pin holds them. ref on this
         // mutated model: 1800 (800 + the overzeese arm's 1000).
@@ -201,7 +201,7 @@ class ObjectCreationWitnessTest {
         assertNull(play(ir, overzeeWithExpectation("800", null, "1800")));
     }
 
-    @Test void a_false_literal_characteristic_attribution_lets_the_marking_unset() throws Exception {
+    @Test void a_false_literal_characteristic_initialisation_leaves_the_marking_unset() throws Exception {
         // and its literal false — the arm a "write whatever the value is" lowering would set (the primitive
         // field would then hold false anyway, so ONLY the branch value separates the two). ref: 800.
         Path ir = characteristicValue("""
@@ -210,7 +210,7 @@ class ObjectCreationWitnessTest {
         assertNull(play(ir, overzeeWithExpectation("800", null, "800")));
     }
 
-    @Test void a_non_boolean_characteristic_attribution_is_refused_with_wf027() throws Exception {
+    @Test void a_non_boolean_characteristic_initialisation_is_refused_with_wf027() throws Exception {
         // The fourth value, and the one the empty arm must stay SEPARABLE from: a non-boolean initialisation is
         // never a silently unset mark. ref on this mutated model faults, with the same rule: "EVALUATION FAULT:
         // characteristic initialisation of "overzees" is not boolean: 5"; the verifier rejects the document (WF-027).
@@ -227,7 +227,7 @@ class ObjectCreationWitnessTest {
 
     // ---------------- 3. a creation with NO toekenningen ----------------
 
-    @Test void a_creation_without_assignments_still_mints_and_links() throws Exception {
+    @Test void a_creation_without_initialisations_still_mints_and_links() throws Exception {
         // The corpus carries this shape (the penninguitgifte Dossier), but that golden is excluded on an
         // unrelated Phase-D consistentie form, so the shape is exercised here on a programmatic variant of
         // the rekenkamer model with its toekenningen removed. The mint must still EXIST and be linked both

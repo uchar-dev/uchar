@@ -62,7 +62,7 @@ final class ClosureRendering {
                 yield w -> voorwaarde.test(w) ? then.van(w) : otherwise.van(w);
             }
             case Term.Call a -> call(a.function(), a.arguments());
-            case Term.Rescale h -> rescale(h);
+            case Term.Restate h -> restate(h);
             case Term.Division d -> {
                 ValueFunction l = valueFunction(d.left()), r = valueFunction(d.right());
                 Implementation f = implementation(d.function());
@@ -193,9 +193,9 @@ final class ClosureRendering {
     }
 
     /** A restatement through the function the plan names, with the factors it takes: the numerator and the denominator
-     *  of {@link Aggregation#RESCALE_EXACT}, or the one ratio of {@link Aggregation#RESCALE}, whose plan has no
-     *  denominator ({@link Term.Rescale}). */
-    private static ValueFunction rescale(Term.Rescale h) {
+     *  of {@link Aggregation#RESTATE_EXACT}, or the one ratio of {@link Aggregation#RESTATE}, whose plan has no
+     *  denominator ({@link Term.Restate}). */
+    private static ValueFunction restate(Term.Restate h) {
         ValueFunction f = valueFunction(h.term());
         Implementation g = implementation(h.function());
         BigDecimal counter = h.counter(), denominator = h.denominator();
@@ -276,12 +276,12 @@ final class ClosureRendering {
      *  rule's probe, then the first filter fault, then the first member fault, then the fold's value. */
     private static ValueFunction foldRead(Term.FoldRead v) {
         ValueFunction outcome = valueFunction(v.outcome());
-        int depositCount = v.depositCount(), depositFlag = v.depositFlag(), filterError = v.filterError(), memberError = v.memberError();
+        int depositCount = v.depositCount(), depositFlag = v.depositFlag(), filterFault = v.filterFault(), memberFault = v.memberFault();
         return w -> {
             if (depositFlag >= 0 && ((Number) w[depositCount]).longValue() > 0) ComputeHelpers.report(w[depositFlag]);
-            if (filterError >= 0 && w[filterError] != null) throw ((FilterError) w[filterError]).fout();
+            if (filterFault >= 0 && w[filterFault] != null) throw ((FilterFault) w[filterFault]).fout();
             // the reference interpreter reads the members' values once every member's filter is evaluated
-            if (memberError >= 0 && w[memberError] != null) throw ((MemberError) w[memberError]).fout();
+            if (memberFault >= 0 && w[memberFault] != null) throw ((MemberFault) w[memberFault]).fout();
             return outcome.van(w);
         };
     }
@@ -360,8 +360,8 @@ final class ClosureRendering {
                     x[7]);
             case CELL -> x -> ComputeHelpers.cell(x[0], (String) x[1]);
             case MAP -> x -> ComputeHelpers.map(x[0]);
-            case RESCALE_EXACT -> x -> ComputeHelpers.rescaleExact(x[0], (BigDecimal) x[1], (BigDecimal) x[2]);
-            case RESCALE -> x -> ComputeHelpers.rescale(x[0], (BigDecimal) x[1]);
+            case RESTATE_EXACT -> x -> ComputeHelpers.restateExact(x[0], (BigDecimal) x[1], (BigDecimal) x[2]);
+            case RESTATE -> x -> ComputeHelpers.restate(x[0], (BigDecimal) x[1]);
             case SMALLEST -> x -> ComputeHelpers.smallest(x[0], x[1]);
             case LARGEST -> x -> ComputeHelpers.largest(x[0], x[1]);
             case FALLBACK -> x -> ComputeHelpers.fallback(x[0], x[1]);

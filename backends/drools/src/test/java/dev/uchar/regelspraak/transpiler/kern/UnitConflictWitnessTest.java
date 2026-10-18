@@ -238,8 +238,8 @@ class UnitConflictWitnessTest {
         ot.attributen.put("prijs", num(EUR));
         ot.attributen.put("factor", num(tweede));
         Expr.AttribuutRef prijs = new Expr.AttribuutRef("prijs", ot, "een vracht", null, num(EUR), bron());
-        Expr.AttribuutRef earlierBean = new Expr.AttribuutRef("factor", ot, "een vracht", null, num(tweede), bron());
-        Eenheid out = bare().unitOf(new Expr.Binair(Expr.BinOp.MAAL, prijs, earlierBean, num(EUR), bron()));
+        Expr.AttribuutRef other = new Expr.AttribuutRef("factor", ot, "een vracht", null, num(tweede), bron());
+        Eenheid out = bare().unitOf(new Expr.Binair(Expr.BinOp.MAAL, prijs, other, num(EUR), bron()));
         assertEquals(Eenheid.product(EUR, tweede), out, "de afleiding levert het §4.4 opake product");
         return out;
     }
@@ -508,7 +508,7 @@ class UnitConflictWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             assertNotNull(TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(),
-                    loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.path()));
+                    loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings()));
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }

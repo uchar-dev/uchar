@@ -51,20 +51,20 @@ class TmsCycleWitnessTest {
 
     private static final List<String> CHARACTERISTICS = List.of("wachtdoend", "vrijgesteld", "dwarsligger", "afgelost", "paraat");
 
-    @Test void a_negation_cycle_with_paired_negations_is_refused_in_every_order() throws Exception {
+    @Test void an_even_negation_cycle_is_refused_in_every_order() throws Exception {
         refused(List.of(characteristicRule("wachtdoend tenzij vrijgesteld", "wachtdoend", check("vrijgesteld", true)),
                         characteristicRule("vrijgesteld tenzij wachtdoend", "vrijgesteld", check("wachtdoend", true))),
                 "exec-model: kring in de afhankelijkheden over de leden Jutter.vrijgesteld en Jutter.wachtdoend via de regel"
                         + " \"vrijgesteld tenzij wachtdoend\" en de regel \"wachtdoend tenzij vrijgesteld\"" + REASON);
     }
 
-    @Test void a_oneven_negation_cycle_of_length_one_is_refused() throws Exception {
+    @Test void an_odd_negation_cycle_of_length_one_is_refused() throws Exception {
         refused(List.of(characteristicRule("dwarsligger tenzij dwarsligger", "dwarsligger", check("dwarsligger", true))),
                 "exec-model: kring in de afhankelijkheden over het lid Jutter.dwarsligger via de regel"
                         + " \"dwarsligger tenzij dwarsligger\"" + REASON);
     }
 
-    @Test void an_oneven_negation_cycle_of_length_two_is_refused_in_every_order() throws Exception {
+    @Test void an_odd_negation_cycle_of_length_two_is_refused_in_every_order() throws Exception {
         refused(List.of(characteristicRule("wachtdoend tenzij afgelost", "wachtdoend", check("afgelost", true)),
                         characteristicRule("afgelost indien wachtdoend", "afgelost", check("wachtdoend", false))),
                 "exec-model: kring in de afhankelijkheden over de leden Jutter.afgelost en Jutter.wachtdoend via de regel"

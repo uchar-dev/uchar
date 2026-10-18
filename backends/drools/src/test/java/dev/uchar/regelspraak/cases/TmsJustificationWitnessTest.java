@@ -139,11 +139,11 @@ class TmsJustificationWitnessTest {
             assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in " + where);
             for (int i = 0; i < jutters.size(); i++) {
                 Object j = jutters.get(i);
-                List<Object> sessionFacts = new ArrayList<>(sessie.getObjects(o -> o instanceof HasCharacteristic h
+                List<Object> facts = new ArrayList<>(sessie.getObjects(o -> o instanceof HasCharacteristic h
                         && h.onderwerp() == j && h.kenmerk().naam().equals("vergund")));
-                String formName = "J" + (i + 1) + " in " + where;
-                assertEquals(VERGUND[i] ? 1 : 0, sessionFacts.size(), () -> formName + ": " + sessionFacts);
-                if (VERGUND[i]) assertEquals(JUSTIFICATIONS[i], justifications(sessie, sessionFacts.get(0)), formName);
+                String label = "J" + (i + 1) + " in " + where;
+                assertEquals(VERGUND[i] ? 1 : 0, facts.size(), () -> label + ": " + facts);
+                if (VERGUND[i]) assertEquals(JUSTIFICATIONS[i], justifications(sessie, facts.get(0)), label);
             }
             DroolsBackend.zetAfgeleideWaarden(b, sessie);
             for (int i = 0; i < jutters.size(); i++)

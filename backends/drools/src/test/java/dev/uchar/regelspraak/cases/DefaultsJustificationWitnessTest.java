@@ -179,7 +179,7 @@ class DefaultsJustificationWitnessTest {
                 "dringend over een premie uit een latere groep");
     }
 
-    @Test void the_group_decides_again_if_the_remote_value_changes_after_it() throws Exception {
+    @Test void the_group_decides_again_if_the_far_side_value_changes_after_it() throws Exception {
         // "De bonuspremie van een Jutter moet berekend worden als 20 indien hij niet ijverig is" (a negated read, so
         // the stratification puts it below salience 0), "De premie van een Jutter moet gesteld worden op de
         // bonuspremie van de Jutter" (salience 0), and the gemelde premie of the card's R2 over that premie with the
@@ -189,9 +189,9 @@ class DefaultsJustificationWitnessTest {
         String jutter = objecttype("Jutter", "Jutters", true, List.of(attribuut("premie"), attribuut("bonuspremie")),
                 List.of("ijverig"));
         String model = model(List.of(jutter, VONDST, MESSAGE), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
-        String nonIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
+        String notIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet ijverig is\"}}";
-        List<String> rules = List.of(regel("bonuspremie", "Jutter", "bonuspremie", number(20), nonIjverig, "calculation"),
+        List<String> rules = List.of(regel("bonuspremie", "Jutter", "bonuspremie", number(20), notIjverig, "calculation"),
                 regel("premie uit bonus", "Jutter", "premie", own("bonuspremie", "Jutter"), null, "equation"));
         String ir = document(model, rules, List.of(reportedGroup(greater(viaVondstJutter("premie"), number(15)))));
         List<String> inst = List.of(instance("J1", "Jutter", "", "", ""), instance("J2", "Jutter", "", "", "\"ijverig\""),
@@ -204,7 +204,7 @@ class DefaultsJustificationWitnessTest {
         assertNull(play(ir, caseDocument(inst, verwacht, "")), "de gemelde premie na de late premie");
     }
 
-    @Test void a_characteristic_target_waits_for_the_band_of_a_remote_producer() throws Exception {
+    @Test void a_characteristic_target_waits_for_the_band_of_a_far_side_producer() throws Exception {
         // The row above with a characteristic target: "Een Melding is dringend", "Uitzondering: Een Melding is niet
         // dringend indien de premie van de jutter van de vondst van de Melding groter is dan 15". The premie rule is
         // in band 0 but waits on the bonuspremie, a negated read in band -1; a group that decided in band 0 attributed
@@ -213,9 +213,9 @@ class DefaultsJustificationWitnessTest {
         String jutter = objecttype("Jutter", "Jutters", true, List.of(attribuut("premie"), attribuut("bonuspremie")),
                 List.of("ijverig"));
         String model = model(List.of(jutter, VONDST, MESSAGE), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
-        String nonIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
+        String notIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet ijverig is\"}}";
-        List<String> rules = List.of(regel("bonuspremie", "Jutter", "bonuspremie", number(20), nonIjverig, "calculation"),
+        List<String> rules = List.of(regel("bonuspremie", "Jutter", "bonuspremie", number(20), notIjverig, "calculation"),
                 regel("premie uit bonus", "Jutter", "premie", own("bonuspremie", "Jutter"), null, "equation"));
         String group = characteristicGroup("dringendheid", "Melding", "dringend",
                 decision(greater(viaVondstJutter("premie"), number(15)), false), decision(ALTIJD, true));
@@ -239,10 +239,10 @@ class DefaultsJustificationWitnessTest {
         String melding = objecttype("Melding", "Meldingen", false, List.of(attribuut("gemelde premie")),
                 List.of("dringend", "rustig"));
         String model = model(List.of(JUTTER, VONDST, melding), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
-        String nonDringend = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"dringend\",\"negated\":true,"
+        String notDringend = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"dringend\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"de Melding niet dringend is\"}}";
         String rest = regel("rust", "Melding", "rustig", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
-                + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}", nonDringend, null);
+                + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}", notDringend, null);
         String group = characteristicGroup("dringendheid", "Melding", "dringend",
                 decision(greater(viaVondstJutter("premie"), number(5)), false), decision(ALTIJD, true));
         List<String> inst = List.of(instance("J1", "Jutter", "\"ruwe premie\":{\"number\":\"8\"}", "", ""),
@@ -265,10 +265,10 @@ class DefaultsJustificationWitnessTest {
         // not dringend and rustig, M2 dringend and not rustig, in both documents.
         String melding = objecttype("Melding", "Meldingen", false,
                 List.of(attribuut("meldpremie"), attribuut("ruwe meldpremie")), List.of("dringend", "rustig"));
-        String nonDringend = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"dringend\",\"negated\":true,"
+        String notDringend = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"dringend\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"de Melding niet dringend is\"}}";
         String rest = regel("rust", "Melding", "rustig", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
-                + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}", nonDringend, null);
+                + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}", notDringend, null);
         String meldpremie = regel("meldpremie", "Melding", "meldpremie", own("ruwe meldpremie", "Melding"), null, "equation");
         String ownGroup = characteristicGroup("dringendheid", "Melding", "dringend",
                 decision(greater(own("meldpremie", "Melding"), number(5)), false), decision(ALTIJD, true));
@@ -280,18 +280,18 @@ class DefaultsJustificationWitnessTest {
                 "rustig na dringend, op het eigen type");
         String jutter = objecttype("Jutter", "Jutters", true, List.of(attribuut("premie"), attribuut("bonuspremie")),
                 List.of("ijverig"));
-        String nonIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
+        String notIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet ijverig is\"}}";
-        List<String> rules = List.of(regel("bonuspremie", "Jutter", "bonuspremie", number(20), nonIjverig, "calculation"),
+        List<String> rules = List.of(regel("bonuspremie", "Jutter", "bonuspremie", number(20), notIjverig, "calculation"),
                 regel("premie uit bonus", "Jutter", "premie", own("bonuspremie", "Jutter"), null, "equation"), rest);
-        String remoteGroup = characteristicGroup("dringendheid", "Melding", "dringend",
+        String farSideGroup = characteristicGroup("dringendheid", "Melding", "dringend",
                 decision(greater(viaVondstJutter("premie"), number(15)), false), decision(ALTIJD, true));
         List<String> inst = List.of(instance("J1", "Jutter", "", "", ""), instance("J2", "Jutter", "", "", "\"ijverig\""),
                 vondst("V1", "J1", "", false), vondst("V2", "J2", "", false),
                 instance("M1", "Melding", "", "\"vondst\":[\"V1\"]", ""),
                 instance("M2", "Melding", "", "\"vondst\":[\"V2\"]", ""));
         assertNull(play(document(model(List.of(jutter, VONDST, melding), List.of(JUTTER_VONDST, VONDST_MESSAGE), ""),
-                        rules, List.of(remoteGroup)), caseDocument(inst, verwacht, "")),
+                        rules, List.of(farSideGroup)), caseDocument(inst, verwacht, "")),
                 "rustig na dringend, twee rollen ver in de band van een negatielezer");
     }
 

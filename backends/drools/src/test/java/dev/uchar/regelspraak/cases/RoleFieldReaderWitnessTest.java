@@ -58,7 +58,7 @@ class RoleFieldReaderWitnessTest {
 
     // ---------------- 1. the §8.1.7 FAR-SIDE rolcheck ----------------
 
-    @Test void the_remote_role_check_refuses_a_back_reference_without_field() throws Exception {
+    @Test void the_far_side_role_check_refuses_a_back_reference_without_field() throws Exception {
         // The twin of the near-side rolcheck gated 2026-09-10: "de Werf heeft een schuit" is an exists-join that
         // reads the FILLER's reference back at the subject. With BOTH roles of `ligplaats` to-many the bean model
         // derives no field at either end, so the join probes a getter nobody has. Measured on the pre-gate jar, on a
@@ -73,7 +73,7 @@ class RoleFieldReaderWitnessTest {
         // DIAGNOSIS, not a value: an unclassified fault and a bare compiler message both become the one §13.3.9
         // sentence. Since L2 of the v1 wire migration the check is one node, RoleMembership, and where its link is
         // stored is one derivation (FactModelGenerator.membershipOpslag) with one sentence for both branches.
-        Path ir = remoteRoleCheck(), c = caseOf(werfAndSchuit(false, "{}", "{ \"kind\": \"attributeEmpty\","
+        Path ir = farSideRoleCheck(), c = caseOf(werfAndSchuit(false, "{}", "{ \"kind\": \"attributeEmpty\","
                 + " \"label\": \"W1\", \"attribute\": \"wachtgeld\" }"));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.playCase(ir, JSON.readTree(Files.readString(c))));
@@ -315,7 +315,7 @@ class RoleFieldReaderWitnessTest {
 
     /** synth-navigatiepremie with BOTH ligplaats roles to-many (no field at either end) and a §8.1.7 far-side check
      *  "de Werf heeft een schuit" gating a Werf rule. Verifier-clean; ref and clingo carry no such condition. */
-    private static Path remoteRoleCheck() throws Exception {
+    private static Path farSideRoleCheck() throws Exception {
         ObjectNode ir = goldenIr(NAVIGATION_PREMIE);
         IrPath.addAttribute(IrPath.objectType(ir, "Werf"), "wachtgeld", number());
         for (JsonNode r : IrPath.declaratie(ir, "factTypes", "ligplaats").get("roles"))

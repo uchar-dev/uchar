@@ -31,7 +31,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.listedFold;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
 import static dev.uchar.regelspraak.cases.TmsDocuments.standaard;
@@ -95,13 +95,13 @@ class TmsAggregationWitnessTest {
     private static final String VRIJGAVE = characteristicRule("vrijgave", "Vondst", "vrij", check("erkend", true));
 
     private static final String BERGLOON = attributeGroup("bergloon van een vondst", "Vondst", "bergloon", List.of(
-            standaard(check("erkend", false), reading("taxatie", "Vondst")),
+            standaard(check("erkend", false), ownRead("taxatie", "Vondst")),
             standaard(check("gemeld", false), number("5"))));
 
     private static final String VONDSTEN = "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":"
             + "\"Jutter\",\"source\":{\"snippet\":\"vondsten van de Jutter\"}}";
 
-    static final String SUM = aggregation("sum", reading("bergloon", "Vondst"), "Vondst", sourceRole("aanmelding", "vondst"),
+    static final String SUM = aggregation("sum", ownRead("bergloon", "Vondst"), "Vondst", sourceRole("aanmelding", "vondst"),
             "null", number("0"), WHOLE, "de som van het bergloon van alle vondsten van de Jutter of 0 als die er niet zijn");
 
     static final String ERKEND_COUNT = aggregation("count", VONDSTEN, "Vondst", sourceRole("aanmelding", "vondst"),
@@ -164,7 +164,7 @@ class TmsAggregationWitnessTest {
     @Test void a_fold_firing_again_leaves_a_value_for_the_target() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(RULES), DroolsBackend.Branch.EXEC_MODEL);
         List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-        int refiredAt = 0, intermediate = 0, dropped = 0;
+        int refires = 0, intermediate = 0, dropped = 0;
         for (List<Rule> order : TmsDocuments.sample(gegenereerd, 20261008L, 100)) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
@@ -202,11 +202,11 @@ class TmsAggregationWitnessTest {
             assertNumber("0", TmsDocuments.lees(j2, "erkendaantal"), "erkendaantal van J2 in volgorde " + names);
             assertNumber("0", TmsDocuments.lees(j2, "vrijaantal"), "vrijaantal van J2 in volgorde " + names);
             List<Object> sums = seen.getOrDefault("bergsom", List.of());
-            if (sums.size() > 1 && sums.stream().distinct().count() > 1) refiredAt++;
+            if (sums.size() > 1 && sums.stream().distinct().count() > 1) refires++;
             if (counts.stream().anyMatch(x -> x != null && x < 2)) intermediate++;
             if (exemptions.stream().anyMatch(x -> x != null && x > 1)) dropped++;
         }
-        assertTrue(refiredAt > 0, "geen volgorde liet de som van J1 met verschillende waarden opnieuw vuren");
+        assertTrue(refires > 0, "geen volgorde liet de som van J1 met verschillende waarden opnieuw vuren");
         assertTrue(intermediate > 0, "geen volgorde liet de telling van J1 vuren op een telling onder 2");
         assertTrue(dropped > 0, "geen volgorde liet de telling van vrije vondsten van J1 vuren voordat V1 en V2 hun"
                 + " vrij verloren");
@@ -215,7 +215,7 @@ class TmsAggregationWitnessTest {
     // ---------------- a fold in a default ----------------
 
     private static final String PREMIE = attributeGroup("premie van een jutter", "Jutter", "premie", List.of(
-            standaard(comparison("greater", ERKEND_COUNT, number("1")), aggregation("sum", reading("bergloon", "Vondst"),
+            standaard(comparison("greater", ERKEND_COUNT, number("1")), aggregation("sum", ownRead("bergloon", "Vondst"),
                     "Vondst", sourceRole("aanmelding", "vondst"), "null", "null", WHOLE,
                     "de som van het bergloon van alle vondsten van de Jutter")),
             standaard(comparison("greater", COUNT, number("0")), number("5"))));
@@ -328,12 +328,12 @@ class TmsAggregationWitnessTest {
             Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "20"), List.of("gemeld"));
             Object v3 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "10"), List.of());
             for (Object v : List.of(v1, v2, v3)) setRole(v, "aanmelder", j1);
-            TmsFaultWitnessTest.FaultFacts sessionFacts = new TmsFaultWitnessTest.FaultFacts();
+            TmsFaultWitnessTest.FaultFacts facts = new TmsFaultWitnessTest.FaultFacts();
             assertNull(TmsFaultWitnessTest.vuur(b, order, List.of(j1, v1, v2, v3), new DefaultAgendaEventListener() {},
-                    sessionFacts), () -> "volgorde " + names);
-            assertEquals(sessionFacts.inserted, sessionFacts.withdrawn, () -> "foutfeiten in volgorde " + names);
+                    facts), () -> "volgorde " + names);
+            assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
             assertNumber("25", TmsDocuments.lees(j1, "gemiddeld bergloon"), "gemiddeld bergloon in volgorde " + names);
-            if (sessionFacts.inserted > 0) intermediate++;
+            if (facts.inserted > 0) intermediate++;
         }
         assertTrue(intermediate > 0, "geen volgorde deelde door de telling terwijl die nog 0 was");
     }
@@ -348,7 +348,7 @@ class TmsAggregationWitnessTest {
 
     static final List<String> FILTER_RULES = List.of(computingRule("zware vondsten", "BEREKENING", "Jutter",
             "zware vondsten", aggregation("count", VONDSTEN, "Vondst", sourceRole("aanmelding", "vondst"),
-                    comparison("greater", binary("dividedBy", reading("gewicht", "Vondst"), reading("deelnemers", "Vondst")),
+                    comparison("greater", binary("dividedBy", ownRead("gewicht", "Vondst"), ownRead("deelnemers", "Vondst")),
                             number("2")), "null", COUNTING, "het aantal vondsten van de Jutter die aan de volgende voorwaarde"
                             + " voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2"), "null"));
 
@@ -368,7 +368,7 @@ class TmsAggregationWitnessTest {
     }
 
     /** The fault of a fold's filter is the fault of the rule that reads the fold, which the rule raises where its
-     *  evaluation reaches the fold while the member's {@code FilterError} stands ({@code TmsFilterErrorWitnessTest}),
+     *  evaluation reaches the fold while the member's {@code FilterFault} stands ({@code TmsFilterErrorWitnessTest}),
      *  reported at the fixpoint with the sentence the exec-model branch gives for the same filter, and the fire ends at
      *  its fixpoint in every order of the generated rules. */
     @Test void a_fault_in_the_filter_of_a_fold_stands_at_the_fixpoint() throws Exception {
@@ -399,7 +399,7 @@ class TmsAggregationWitnessTest {
     // ---------------- a listed fold ----------------
 
     private static final String ONDERGRENS = computingRule("ondergrens", "BEREKENING", "Vondst", "ondergrens",
-            listedFold("first", List.of(reading("taxatie", "Vondst"), reading("bergloon", "Vondst")), WHOLE,
+            listedFold("first", List.of(ownRead("taxatie", "Vondst"), ownRead("bergloon", "Vondst")), WHOLE,
                     "de eerste van zijn taxatie en zijn bergloon"), "null");
 
     static final List<String> LISTED_RULES = List.of(ERKENNING, ONDERGRENS);
@@ -436,9 +436,9 @@ class TmsAggregationWitnessTest {
 
     static final List<String> PATH_RULES = List.of(
             computingRule("vangst", "BEREKENING", "Bergplaats", "vangstgewicht",
-                    binary("plus", reading("ruw gewicht", "Bergplaats"), number("1")), "null"),
+                    binary("plus", ownRead("ruw gewicht", "Bergplaats"), number("1")), "null"),
             computingRule("vangstsom", "BEREKENING", "Jutter", "vangstsom", aggregation("sum",
-                    reading("vangstgewicht", "Bergplaats"), "Bergplaats", sourcePath(List.of(
+                    ownRead("vangstgewicht", "Bergplaats"), "Bergplaats", sourcePath(List.of(
                             roleBinding("bemanning", "gevoerde boot"), roleBinding("lossing", "losplaats"))),
                     "null", number("0"), WHOLE,
                     "de som van het vangstgewicht van alle losplaatsen van alle gevoerde boten van de Jutter"), "null"));

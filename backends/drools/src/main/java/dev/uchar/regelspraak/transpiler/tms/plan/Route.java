@@ -104,7 +104,7 @@ public enum Route {
     /** The verdict of a composite whose members are all read ({@link Term.Compound}). */
     END_VERDICT(ComputeHelpers.class, "endVerdict"),
     /** The verdict of a matrix as a member's contribution, 1 or 0 ({@link Consequence.Input.Verdict}). */
-    VERDICT(ComputeHelpers.class, "judgement"),
+    VERDICT(ComputeHelpers.class, "verdict"),
     /** A broken contract, thrown: no evaluation fault. */
     CONTRACT_BREACH(ComputeHelpers.class, "contractBreach"),
     /** The fault of writers that disagree, as the {@link Consequence.Schrijversconflict} plans it. */

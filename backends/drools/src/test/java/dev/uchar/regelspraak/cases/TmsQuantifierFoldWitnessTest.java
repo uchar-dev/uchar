@@ -24,7 +24,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
@@ -98,13 +98,13 @@ class TmsQuantifierFoldWitnessTest {
     }
 
     static final String SCHORSING = characteristicRule("schorsing", "Wacht", "geschorst",
-            comparison("greater", reading("klachten", "Wacht"), number("2")));
+            comparison("greater", ownRead("klachten", "Wacht"), number("2")));
     static final String BEVOEGDHEID = characteristicRule("bevoegdheid", "Wacht", "bevoegd", compound("all", 0, List.of(
-            comparison("greater", reading("dienstjaren", "Wacht"), number("5")), check("geschorst", true))));
-    static final String POINTS = computingRule("punten", "BEREKENING", "Wacht", "punten", reading("opgave", "Wacht"),
+            comparison("greater", ownRead("dienstjaren", "Wacht"), number("5")), check("geschorst", true))));
+    static final String POINTS = computingRule("punten", "BEREKENING", "Wacht", "punten", ownRead("opgave", "Wacht"),
             "null");
     static final String DEELNEMERS = computingRule("deelnemers", "BEREKENING", "Wacht", "deelnemers",
-            reading("aanmelding", "Wacht"), "null");
+            ownRead("aanmelding", "Wacht"), "null");
 
     /** The five quantifiers over "hij is bevoegd": the Ploeg's characteristic, the rule, the fold. */
     static final List<List<String>> QUANTIFIERS = List.of(
@@ -120,13 +120,13 @@ class TmsQuantifierFoldWitnessTest {
                     check("bevoegd", false), "precies 1 van de wachten van de Ploeg bevoegd is")), "exactly"));
 
     static final String QUALIFIED = characteristicRule("kwalificatie", "Ploeg", "gekwalificeerd", quantifierFold("all", 0,
-            check("bevoegd", false), comparison("greater", reading("punten", "Wacht"), number("5")),
+            check("bevoegd", false), comparison("greater", ownRead("punten", "Wacht"), number("5")),
             "de punten van alle wachten van de Ploeg die bevoegd zijn groter is dan 5"));
 
     /** "zijn opgave gedeeld door zijn deelnemers is groter dan 2", a new node on every call. */
     static String perParticipant() {
-        return comparison("greater", TmsFilterErrorWitnessTest.quotient(reading("opgave", "Wacht"),
-                reading("deelnemers", "Wacht")), number("2"));
+        return comparison("greater", TmsFilterFaultWitnessTest.quotient(ownRead("opgave", "Wacht"),
+                ownRead("deelnemers", "Wacht")), number("2"));
     }
 
     static final String CALM = characteristicRule("rustigheid", "Ploeg", "rustig", quantifierFold("none", 0, null,
@@ -323,7 +323,7 @@ class TmsQuantifierFoldWitnessTest {
         assertEquals(verwacht, outcomes);
     }
 
-    @Test void the_filter_of_each_member_is_read_for_the_matrix() throws Exception {
+    @Test void the_filter_of_each_member_is_read_before_the_matrix() throws Exception {
         List<String> outcomes = new ArrayList<>(), verwacht = new ArrayList<>();
         for (List<String> members : List.of(List.of("D", "B"), List.of("B", "D")))
             playBoth(CHECKABLE, members, List.of(D, B), List.of(verwacht("P1", "keurbaar", false),

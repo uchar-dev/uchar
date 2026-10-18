@@ -11,7 +11,7 @@ import java.util.Objects;
  * reference interpreter holds: the members the case wrote under the list's holder, in the order it wrote them, and
  * after them the members whose own link the loader mirrors into it, in ascending label order (ch. 5.7a, "member
  * ORDER"). The filter fault rule of a fold, the member fault rule of a per-element fold over a timeline and the
- * contribution rule of an ordered quantifier fold read it ({@link FilterError}, {@link MemberError}, {@link MemberTest});
+ * contribution rule of an ordered quantifier fold read it ({@link FilterFault}, {@link MemberFault}, {@link MemberTest});
  * {@link TmsTranspiler#readsListPlaces} says whether a model has such a rule.
  *
  * <p>Compared by the member's identity, the field and the place.

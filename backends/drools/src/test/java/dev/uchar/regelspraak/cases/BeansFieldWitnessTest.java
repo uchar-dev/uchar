@@ -35,39 +35,39 @@ class BeansFieldWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
-    private static final Path DUPLICATE = CORPUS.resolve("jutterswet-dubbelverbinding");
+    private static final Path DUBBELVERBINDING = CORPUS.resolve("jutterswet-dubbelverbinding");
     private static final Path POSTWACHT = CORPUS.resolve("jutterswet-postwacht");
     private static final Path KUSTREGISTER = CORPUS.resolve("anchor").resolve("jutterswet-kustregister");
 
     // ---------------- zetVeld: the field the creation writes ----------------
 
     @Test void a_write_field_beside_the_binding_is_refused_by_name() throws Exception {
-        ObjectNode ir = lees(DUPLICATE);
+        ObjectNode ir = lees(DUBBELVERBINDING);
         creatie(ir, 0, "winterberging").put("zetVeld", "keurhaven");
         unknownField(ir, "/rules/factCreations/0/versions/0/zetVeld", "FactCreationVersion");
     }
 
     @Test void set_field_follows_the_made_role() throws Exception {
-        ObjectNode ir = lees(DUPLICATE);
+        ObjectNode ir = lees(DUBBELVERBINDING);
         creatie(ir, 0, "winterberging").put("factType", "keurberging").put("anchorRole", "keurhaven")
                 .put("targetRole", "keurschuit");
-        BothBranches.red(temporary("zet-binding", ir), goldenCase(DUPLICATE, "case1"), "attribuut wintertal: verwacht 2, werkelijk 0",
+        BothBranches.red(temporary("zet-binding", ir), goldenCase(DUBBELVERBINDING, "case1"), "attribuut wintertal: verwacht 2, werkelijk 0",
                 "the creation must write the bound keurberging relation");
     }
 
     // ---------------- joinVeld: the field the doel joins on ----------------
 
     @Test void a_link_field_beside_the_binding_is_refused_by_name() throws Exception {
-        ObjectNode ir = lees(DUPLICATE);
+        ObjectNode ir = lees(DUBBELVERBINDING);
         creatie(ir, 0, "winterberging").put("joinVeld", "vlaghaven");
         unknownField(ir, "/rules/factCreations/0/versions/0/joinVeld", "FactCreationVersion");
     }
 
     @Test void join_field_follows_the_join_binding() throws Exception {
-        ObjectNode ir = lees(DUPLICATE);
+        ObjectNode ir = lees(DUBBELVERBINDING);
         ArrayNode pad = (ArrayNode) creatie(ir, 0, "winterberging").get("path");
         pad.set(pad.size() - 1, binding("vlagvoering", "vlaggenschip"));
-        BothBranches.red(temporary("join-binding", ir), goldenCase(DUPLICATE, "case1"), "attribuut wintertal: verwacht 2, werkelijk 1",
+        BothBranches.red(temporary("join-binding", ir), goldenCase(DUBBELVERBINDING, "case1"), "attribuut wintertal: verwacht 2, werkelijk 1",
                 "the join must read the bound vlagvoering relation");
     }
 
@@ -191,10 +191,10 @@ class BeansFieldWitnessTest {
     }
 
     /** The loader refuses a field the L2 shape does not have, at its own pointer, as an unknown field. */
-    private static void unknownField(ObjectNode ir, String site, String jsonNode) {
+    private static void unknownField(ObjectNode ir, String site, String nodeKind) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
         assertEquals(site, e.site(), e.getMessage());
-        assertTrue(e.getMessage().contains("unknown field on " + jsonNode), e.getMessage());
+        assertTrue(e.getMessage().contains("unknown field on " + nodeKind), e.getMessage());
     }
 
     private static int kaveletiketIndex(ObjectNode ir) {

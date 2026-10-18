@@ -30,7 +30,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWith;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
@@ -143,7 +143,7 @@ class TmsEvaluationDateWitnessTest {
 
     /** "De premie van een Jutter is kleiner dan 40", geldig vanaf 2026. */
     static final String PREMIECONTROLE = "{\"node\":\"Consistency\",\"name\":\"premiecontrole vanaf 2026\",\"versions\":"
-            + "[{\"subject\":\"Jutter\",\"assertion\":" + comparison("less", reading("premie", "Jutter"),
+            + "[{\"subject\":\"Jutter\",\"assertion\":" + comparison("less", ownRead("premie", "Jutter"),
             literal("40", WHOLE)) + ",\"validity\":" + FROM_2026 + ",\"source\":{\"snippet\":\"premiecontrole\"}}]}";
 
     static JsonNode premieCase(String asOfDate, List<String> verwachtingen) throws Exception {
@@ -411,15 +411,15 @@ class TmsEvaluationDateWitnessTest {
 
     /** "De startdatum van een Jutter moet berekend worden als zijn aanmelddatum plus 1 maand". */
     static final String START = computingRule("startdatum van een jutter", "BEREKENING", "Jutter", "startdatum",
-            binary("plus", reading("aanmelddatum", "Jutter"), literal("1", numberType(true, 0, unit("maand"))), DATE),
+            binary("plus", ownRead("aanmelddatum", "Jutter"), literal("1", numberType(true, 0, unit("maand"))), DATE),
             "null");
 
     static final String WAITING_YEARS = computingRule("wachtjaren van een jutter", "BEREKENING", "Jutter", "wachtjaren",
             binary("minus", contextValue("evaluationYear", WHOLE), builtin("yearOf",
-                    List.of(reading("startdatum", "Jutter")), WHOLE, "het jaar uit zijn startdatum"), WHOLE), "null");
+                    List.of(ownRead("startdatum", "Jutter")), WHOLE, "het jaar uit zijn startdatum"), WHOLE), "null");
 
     static final String VERSTREKEN = computingRule("verstreken dagen van een jutter", "BEREKENING", "Jutter", "verstreken",
-            builtin("duration", List.of(reading("startdatum", "Jutter"), contextValue("evaluationDate", DATE)),
+            builtin("duration", List.of(ownRead("startdatum", "Jutter"), contextValue("evaluationDate", DATE)),
                     numberType(true, 0, unit("dagen")), "de tijdsduur van zijn startdatum tot de Rekendatum in hele"
                             + " dagen"), "null");
 
@@ -473,7 +473,7 @@ class TmsEvaluationDateWitnessTest {
     /** "De bonus vanaf start van een Jutter moet berekend worden als 100, indien het de periode vanaf zijn startdatum
      *  is": a bound that another rule derives. */
     static final String BONUS_FROM_START = computingRule("bonus vanaf start", "BEREKENING", "Jutter", "bonus vanaf start",
-            literal("100", WHOLE), window(reading("startdatum", "Jutter"), "null", false));
+            literal("100", WHOLE), window(ownRead("startdatum", "Jutter"), "null", false));
 
     static JsonNode windowCase(String asOfDate, String bonus, String j1, String j2) throws Exception {
         return TmsDocuments.caseOn(asOfDate, List.of(

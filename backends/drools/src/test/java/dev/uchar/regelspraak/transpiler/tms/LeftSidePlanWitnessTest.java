@@ -95,7 +95,7 @@ class LeftSidePlanWitnessTest {
                     case Exists b -> b.patterns().forEach(p -> pattern(t, "bestaat", p));
                     case Accumulation a -> {
                         pattern(t, "accumulatie", a.bron());
-                        a.functions().forEach(f -> tally(t, "functie " + f.soort()));
+                        a.aggregations().forEach(f -> tally(t, "functie " + f.soort()));
                     }
                     case TestItem x -> tally(t, "toets");
                 }

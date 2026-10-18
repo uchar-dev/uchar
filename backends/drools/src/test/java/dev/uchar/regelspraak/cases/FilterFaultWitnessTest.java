@@ -24,7 +24,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.pathRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.roleBinding;
@@ -147,7 +147,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * played or refused a form in sentences of its own ("drl-transpiler MARKER: regel: drukte"), it now plays or refuses as
  * the exec-model branch does.
  */
-class FilterErrorWitnessTest {
+class FilterFaultWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path FILTERWACHT =
@@ -256,7 +256,7 @@ class FilterErrorWitnessTest {
     /** "zijn gewicht gedeeld door zijn deelnemers is groter dan 2", the quotient typed as a quotient derives its type
      *  (WF-091). */
     static final String FILTER = comparison("greater", "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":"
-            + reading("gewicht", "Vondst") + ",\"right\":" + reading("deelnemers", "Vondst") + ",\"type\":{\"node\":"
+            + ownRead("gewicht", "Vondst") + ",\"right\":" + ownRead("deelnemers", "Vondst") + ",\"type\":{\"node\":"
             + "\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"},\"source\":{\"snippet\":\"zijn gewicht"
             + " gedeeld door zijn deelnemers\"}}", number("2"));
 
@@ -361,7 +361,7 @@ class FilterErrorWitnessTest {
         for (String[] r : new String[][] {{"drukte", "druk", "atLeast", "true", "false"},
                 {"belading", "beladen", "all", "true", "true"}, {"ontlasting", "ontlast", "none", "false", "true"}}) {
             Path ir = document(List.of(quantifierRule(r[0], r[1], quantifierFold(r[2], FILTER,
-                    comparison("greater", reading("gewicht", "Vondst"), number("5"))))), List.of());
+                    comparison("greater", ownRead("gewicht", "Vondst"), number("5"))))), List.of());
             played(ir, TmsDocuments.caseDocument(j1(false), List.of(verwacht("J1", r[1], false), consistent())));
             played(ir, TmsDocuments.caseDocument(j2j3(), List.of(verwacht("J2", r[1], Boolean.parseBoolean(r[3])),
                     verwacht("J3", r[1], Boolean.parseBoolean(r[4])), consistent())));
@@ -376,8 +376,8 @@ class FilterErrorWitnessTest {
      *  members of J2 and J3 do not, and divide by no 0. Where J1 is actief, V1 (10 above 50) does not hold, so the fold
      *  goes on to V2, 100 by 0. */
     @Test void a_division_in_the_matrix_of_a_quantifier_fold() throws Exception {
-        String test = comparison("greater", reading("gewicht", "Vondst"), "{\"node\":\"Binary\",\"op\":\"dividedBy\","
-                + "\"left\":" + number("100") + ",\"right\":" + reading("deelnemers", "Vondst") + ",\"type\":{\"node\":"
+        String test = comparison("greater", ownRead("gewicht", "Vondst"), "{\"node\":\"Binary\",\"op\":\"dividedBy\","
+                + "\"left\":" + number("100") + ",\"right\":" + ownRead("deelnemers", "Vondst") + ",\"type\":{\"node\":"
                 + "\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"},\"source\":{\"snippet\":\"100"
                 + " gedeeld door zijn deelnemers\"}}");
         Path ir = document(List.of(quantifierRule("drukte", "druk", quantifierFold("atLeast", "null", test))), List.of());
@@ -388,12 +388,12 @@ class FilterErrorWitnessTest {
         fails(ir, TmsDocuments.caseDocument(j1(true), List.of(consistent())), "drukte", "100");
     }
 
-    /** The bootlengte of {@code TmsFilterErrorWitnessTest}: the sum of the lengte of all boten of all jutters of the
+    /** The bootlengte of {@code TmsFilterFaultWitnessTest}: the sum of the lengte of all boten of all jutters of the
      *  Haven whose lengte divided by their breedte is greater than 2, or 0, over a path that walks back to the jutters
      *  and forward to their boot. H1's jutters J1 and J2 share B1 (9 by 3): 9, once. B9 (4 by 0) is the boot of no
      *  jutter of H1; where J3 of H1 uses it, the fold reaches it and divides 4 by 0. */
     @Test void a_member_that_the_path_does_not_reach_is_not_filtered() throws Exception {
-        Path ir = TmsDocuments.document(TmsFilterErrorWitnessTest.HAVENMODEL, TmsFilterErrorWitnessTest.BOOT_LENGTH);
+        Path ir = TmsDocuments.document(TmsFilterFaultWitnessTest.HAVENMODEL, TmsFilterFaultWitnessTest.BOOT_LENGTH);
         String b1 = instanceWithRoles("B1", "Boot", Map.of("lengte", "9", "breedte", "3"), List.of(), Map.of());
         String b9 = instanceWithRoles("B9", "Boot", Map.of("lengte", "4", "breedte", "0"), List.of(), Map.of());
         String j1 = instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B1")));
@@ -413,7 +413,7 @@ class FilterErrorWitnessTest {
      *  attribute than {@link #FILTER} does, so that a case can make one of the two folds fault and not the other, and
      *  each names a division of its own. */
     static final String PLOEGFILTER = comparison("greater", "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":"
-            + reading("gewicht", "Vondst") + ",\"right\":" + reading("ploeg", "Vondst") + ",\"type\":{\"node\":"
+            + ownRead("gewicht", "Vondst") + ",\"right\":" + ownRead("ploeg", "Vondst") + ",\"type\":{\"node\":"
             + "\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"},\"source\":{\"snippet\":"
             + "\"zijn gewicht gedeeld door zijn ploeg\"}}", number("2"));
 
@@ -426,16 +426,16 @@ class FilterErrorWitnessTest {
         return switch (letter) {
             case 'A' -> check("actief", false);
             case 'F' -> comparison("greater", fold(PLOEGFILTER), number("0"));
-            case 'D' -> comparison("greater", TmsFilterErrorWitnessTest.quotient(reading("saldo", "Jutter"),
-                    reading("noemer", "Jutter")), number("1"));
-            case 'K' -> quantifierFold("atLeast", FILTER, comparison("greater", reading("gewicht", "Vondst"), number("5")));
+            case 'D' -> comparison("greater", TmsFilterFaultWitnessTest.quotient(ownRead("saldo", "Jutter"),
+                    ownRead("noemer", "Jutter")), number("1"));
+            case 'K' -> quantifierFold("atLeast", FILTER, comparison("greater", ownRead("gewicht", "Vondst"), number("5")));
             default -> throw new IllegalArgumentException("geen lid " + letter);
         };
     }
 
     /** One case of the composite: the Jutter it is about, its instances, and per member its verdict there: "W" it
      *  holds, "O" it does not, or the dividend of the division by 0 it reaches. */
-    private record Case(String label, List<String> instanties, Map<Character, String> judgement) {}
+    private record Case(String label, List<String> instanties, Map<Character, String> verdicts) {}
 
     private static String jutter(String label, boolean actief, String balance, String denominator, List<String> vondsten) {
         return instanceWithRoles(label, "Jutter", Map.of("saldo", balance, "noemer", denominator),
@@ -469,7 +469,7 @@ class FilterErrorWitnessTest {
      *  every member holds, "O" where one does not, and for a fault the member's letter and its dividend ("F 10"). */
     static String verdict(List<Character> order, Case g) {
         for (char c : order) {
-            String o = g.judgement().get(c);
+            String o = g.verdicts().get(c);
             if (o.equals("O")) return o;
             if (!o.equals("W")) return c + " " + o;
         }
@@ -570,9 +570,9 @@ class FilterErrorWitnessTest {
      *  composite faults, after "hij is actief" the fold is not read. J2 is actief, and its one contributor V3 was found
      *  on 2026-01-05, later than its peildatum 2020-01-01. */
     @Test void a_date_fold_beside_a_member_in_both_orders() throws Exception {
-        String dateFold = comparison("later", aggregation("first", reading("vinddatum", "Vondst"), "Vondst",
+        String dateFold = comparison("later", aggregation("first", ownRead("vinddatum", "Vondst"), "Vondst",
                 sourceRole("aanmelding", "vondst"), FILTER, "null", DATE, "de eerste van de vinddatum van alle vondsten van de"
-                        + " Jutter die aan de volgende voorwaarde voldoen"), reading("peildatum", "Jutter"));
+                        + " Jutter die aan de volgende voorwaarde voldoen"), ownRead("peildatum", "Jutter"));
         List<String> j1 = List.of(withDates(jutter("J1", false, "0", "1", List.of("V1", "V2")), Map.of("peildatum",
                 "2020-01-01")), withDates(vondst("V1", "10", "2"), Map.of("vinddatum", "2026-01-05")),
                 withDates(vondst("V2", "9", "0"), Map.of("vinddatum", "2026-01-06")));
@@ -592,9 +592,9 @@ class FilterErrorWitnessTest {
     /** "de eerste van de vinddatum van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen:
      *  {@code filter} is later dan zijn peildatum". */
     private static String dateFold(String filter) {
-        return comparison("later", aggregation("first", reading("vinddatum", "Vondst"), "Vondst",
+        return comparison("later", aggregation("first", ownRead("vinddatum", "Vondst"), "Vondst",
                 sourceRole("aanmelding", "vondst"), filter, "null", DATE, "de eerste van de vinddatum van alle vondsten"
-                        + " van de Jutter die aan de volgende voorwaarde voldoen"), reading("peildatum", "Jutter"));
+                        + " van de Jutter die aan de volgende voorwaarde voldoen"), ownRead("peildatum", "Jutter"));
     }
 
     /** {@link #dateFold} over {@link #FILTER} as the third member after "hij is actief" and "hij is beladen", under
@@ -620,7 +620,7 @@ class FilterErrorWitnessTest {
                 Map.of("vondsten", List.of("V3", "V4"))), Map.of("peildatum", "2020-01-01")),
                 withDates(vondst("V3", "10", "2"), Map.of("vinddatum", "2026-01-05")),
                 withDates(vondst("V4", "3", "0"), Map.of("vinddatum", "2019-01-01")));
-        String zwaar = comparison("greater", reading("gewicht", "Vondst"), number("5"));
+        String zwaar = comparison("greater", ownRead("gewicht", "Vondst"), number("5"));
         // per quantifier: its wire spelling and threshold, its name, druk on J1, druk on J2 (control)
         String[][] quantifiers = {{"none", "0", "GEEN", "false", "false"}, {"atLeast", "1", "TEN_MINSTE", "true", "true"},
                 {"atMost", "1", "TEN_HOOGSTE", "false", "true"}, {"exactly", "1", "PRECIES", "false", "true"}};
@@ -737,7 +737,7 @@ class FilterErrorWitnessTest {
     static String zwaarFold() {
         return aggregation("count", "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":"
                 + "\"Jutter\",\"source\":{\"snippet\":\"vondsten van de Jutter\"}}", "Vondst", sourceRole("aanmelding", "vondst"),
-                comparison("greater", reading("gewicht", "Vondst"), number("50")), "null", COUNTING,
+                comparison("greater", ownRead("gewicht", "Vondst"), number("50")), "null", COUNTING,
                 "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen");
     }
 
@@ -770,7 +770,7 @@ class FilterErrorWitnessTest {
      *  counts both, and V1, gewicht 10, holds the quantifier fold; the input values would count none and hold nothing. */
     @Test void a_dividing_filter_over_an_overwritten_divisor_in_every_rule_order() throws Exception {
         String deelnemers = computingRule("deelnemers", "BEREKENING", "Vondst", "deelnemers",
-                binary("plus", reading("ploeg", "Vondst"), number("1")), "null");
+                binary("plus", ownRead("ploeg", "Vondst"), number("1")), "null");
         List<String> instanties = List.of(jutter("J1", false, List.of("V1", "V2")),
                 instanceWithRoles("V1", "Vondst", Map.of("gewicht", "10", "ploeg", "1", "deelnemers", "10"), List.of(),
                         Map.of()),
@@ -795,8 +795,8 @@ class FilterErrorWitnessTest {
      *  it the companion read "hij is actief" as well; a companion fed the moved condition's inline deposits for J5
      *  (mutant, measured 2026-10-09). */
     @Test void a_companion_reads_the_condition_without_move() throws Exception {
-        String division = "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":" + reading("saldo", "Jutter") + ",\"right\":"
-                + reading("noemer", "Jutter") + ",\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":"
+        String division = "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":" + ownRead("saldo", "Jutter") + ",\"right\":"
+                + ownRead("noemer", "Jutter") + ",\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":"
                 + "\"unspecified\"},\"source\":{\"snippet\":\"zijn saldo gedeeld door zijn noemer\"}}";
         Path ir = document(List.of(computingRule("zwaarte", "BEREKENING", "Jutter", "zwaarte", division, compound("all", 0,
                 List.of(comparison("greater", zwaarFold(), number("0")), check("actief", false))))), List.of());
@@ -830,8 +830,8 @@ class FilterErrorWitnessTest {
                 "null", "null", COUNTING, "het aantal winterschuiten van de Haven"), "null");
         String fold = comparison("greater", aggregation("count", "{\"node\":\"AttributeReference\",\"attribute\":"
                 + "\"liggers\",\"subjectType\":\"Haven\",\"source\":{\"snippet\":\"liggers van de Haven\"}}", "Schuit",
-                sourceRole("thuisligging", "ligger"), comparison("greater", TmsFilterErrorWitnessTest.quotient(
-                        reading("lengte", "Schuit"), reading("breedte", "Schuit")), number("2")), "null", COUNTING,
+                sourceRole("thuisligging", "ligger"), comparison("greater", TmsFilterFaultWitnessTest.quotient(
+                        ownRead("lengte", "Schuit"), ownRead("breedte", "Schuit")), number("2")), "null", COUNTING,
                 "het aantal liggers van de Haven die aan de volgende voorwaarde voldoen"), number("0"));
         String safe = check("veilig", false);
         String h1 = instanceWithRoles("H1", "Haven", Map.of(), List.of(), Map.of("liggers", List.of("S1", "S2")));
@@ -893,7 +893,7 @@ class FilterErrorWitnessTest {
     @Test void a_defaults_group_with_a_fold_that_can_not_fail_plays() throws Exception {
         String five = aggregation("count", "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":"
                 + "\"Jutter\",\"source\":{\"snippet\":\"vondsten van de Jutter\"}}", "Vondst", sourceRole("aanmelding", "vondst"),
-                comparison("greater", reading("gewicht", "Vondst"), number("5")), "null", COUNTING,
+                comparison("greater", ownRead("gewicht", "Vondst"), number("5")), "null", COUNTING,
                 "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen");
         Path ir = defaultsGroup(TmsDocuments.standaard(compound("all", 0, List.of(comparison("greater", five,
                 number("0")))), number("2")));
@@ -951,7 +951,7 @@ class FilterErrorWitnessTest {
     }
 
     /** A node of the wire with its source text. */
-    private static String jsonNode(String fields, String bron) {
+    private static String node(String fields, String bron) {
         return "{" + fields + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
     }
 
@@ -976,26 +976,26 @@ class FilterErrorWitnessTest {
      *  both branches, with the runtime's sentence in the cause chain; for the other four it answers or crashes where
      *  this backend faults (reported with the fix round, not pinned here). */
     @Test void a_filter_that_fails_otherwise_than_by_a_division() throws Exception {
-        String vinddatum = reading("vinddatum", "Vondst");
+        String vinddatum = ownRead("vinddatum", "Vondst");
         Map<String, String> filters = new java.util.LinkedHashMap<>();
-        filters.put("dagsoortstap", comparison("later", jsonNode("\"node\":\"Binary\",\"op\":\"plus\",\"left\":" + vinddatum
-                + ",\"right\":" + reading("wachttijd", "Vondst") + ",\"type\":" + DATE, "zijn vinddatum plus zijn wachttijd"),
+        filters.put("dagsoortstap", comparison("later", node("\"node\":\"Binary\",\"op\":\"plus\",\"left\":" + vinddatum
+                + ",\"right\":" + ownRead("wachttijd", "Vondst") + ",\"type\":" + DATE, "zijn vinddatum plus zijn wachttijd"),
                 vinddatum));
-        filters.put("datumbereik", comparison("later", jsonNode("\"node\":\"Binary\",\"op\":\"plus\",\"left\":" + vinddatum
-                + ",\"right\":" + reading("termijn", "Vondst") + ",\"type\":" + DATE, "zijn vinddatum plus zijn termijn"),
+        filters.put("datumbereik", comparison("later", node("\"node\":\"Binary\",\"op\":\"plus\",\"left\":" + vinddatum
+                + ",\"right\":" + ownRead("termijn", "Vondst") + ",\"type\":" + DATE, "zijn vinddatum plus zijn termijn"),
                 vinddatum));
-        filters.put("macht", comparison("greater", jsonNode("\"node\":\"Rounding\",\"base\":" + jsonNode("\"node\":\"Binary\","
-                + "\"op\":\"power\",\"left\":" + reading("gewicht", "Vondst") + ",\"right\":" + reading("deelnemers", "Vondst")
+        filters.put("macht", comparison("greater", node("\"node\":\"Rounding\",\"base\":" + node("\"node\":\"Binary\","
+                + "\"op\":\"power\",\"left\":" + ownRead("gewicht", "Vondst") + ",\"right\":" + ownRead("deelnemers", "Vondst")
                 + ",\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"}",
                 "zijn gewicht tot de macht zijn deelnemers") + ",\"mode\":\"floor\",\"decimals\":0,\"type\":" + WHOLE,
                 "zijn gewicht tot de macht zijn deelnemers naar beneden afgerond op 0 decimalen"), number("2")));
-        filters.put("datum met", comparison("later", jsonNode("\"node\":\"BuiltinCall\",\"kind\":\"dateWith\","
-                + "\"arguments\":[" + reading("jaar", "Vondst") + "," + reading("maand", "Vondst") + "," + number("1") + "],"
+        filters.put("datum met", comparison("later", node("\"node\":\"BuiltinCall\",\"kind\":\"dateWith\","
+                + "\"arguments\":[" + ownRead("jaar", "Vondst") + "," + ownRead("maand", "Vondst") + "," + number("1") + "],"
                 + "\"type\":" + DATE, "de datum met jaar: zijn jaar, maand: zijn maand en dag: 1"), vinddatum));
-        filters.put("rekenjaar", comparison("greater", jsonNode("\"node\":\"ContextValue\",\"name\":\"evaluationYear\","
-                + "\"type\":" + WHOLE, "het Rekenjaar"), reading("gewicht", "Vondst")));
-        filters.put("paasdag", comparison("later", jsonNode("\"node\":\"BuiltinCall\",\"kind\":\"easterSunday\","
-                + "\"arguments\":[" + reading("jaar", "Vondst") + "],\"type\":" + DATE, "de eerste paasdag van zijn jaar"),
+        filters.put("rekenjaar", comparison("greater", node("\"node\":\"ContextValue\",\"name\":\"evaluationYear\","
+                + "\"type\":" + WHOLE, "het Rekenjaar"), ownRead("gewicht", "Vondst")));
+        filters.put("paasdag", comparison("later", node("\"node\":\"BuiltinCall\",\"kind\":\"easterSunday\","
+                + "\"arguments\":[" + ownRead("jaar", "Vondst") + "],\"type\":" + DATE, "de eerste paasdag van zijn jaar"),
                 vinddatum));
         Map<String, Map<String, String>> numbers = Map.of(
                 "dagsoortstap", Map.of("wachttijd", "1"), "datumbereik", Map.of("termijn", "2000000000"),
@@ -1019,10 +1019,10 @@ class FilterErrorWitnessTest {
                 continue;
             }
             for (DroolsBackend.Branch branch : List.of(EXEC, DRL)) {
-                String not = TmsFaultWitnessTest.play(ir, TmsDocuments.caseDocument(List.of(instanceWithRoles("J1", "Jutter",
+                String notActive = TmsFaultWitnessTest.play(ir, TmsDocuments.caseDocument(List.of(instanceWithRoles("J1", "Jutter",
                         Map.of(), List.of(), Map.of("vondsten", List.of("V1"))), v1),
                         List.of(waarde("J1", "vondsttal", null), consistent())), branch);
-                if (!not.equals("gespeeld")) afwijkend.add(f.getKey() + " " + branch + " niet actief: " + not);
+                if (!notActive.equals("gespeeld")) afwijkend.add(f.getKey() + " " + branch + " niet actief: " + notActive);
                 if (!fout.containsKey(f.getKey())) continue;
                 JsonNode actief = TmsDocuments.caseDocument(List.of(instanceWithRoles("J1", "Jutter", Map.of(),
                         List.of("actief"), Map.of("vondsten", List.of("V1"))), v1), List.of(consistent()));

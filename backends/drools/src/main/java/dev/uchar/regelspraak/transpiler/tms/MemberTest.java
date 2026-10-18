@@ -13,7 +13,7 @@ import java.util.Objects;
  * contributor it does not reach raises no fault and deposits nothing; the rule that reads the fold replays that order
  * over these values, and only a contributor the replay reaches has its fault or its deposit heard.
  *
- * <p>{@code place} is the contributor's place in that order, as {@link FilterError#place} gives it: 0 for the one
+ * <p>{@code place} is the contributor's place in that order, as {@link FilterFault#place} gives it: 0 for the one
  * selection, then the place of the member in the list of the fold's subject ({@link ListPlace}), absent for a range
  * that reaches at most one member. Ordered by the place, compared element by element. Compared by value: the place,
  * the verdict, the fault by its kind and its sentence, and the deposit, so the {@link Contribution} that carries it merges

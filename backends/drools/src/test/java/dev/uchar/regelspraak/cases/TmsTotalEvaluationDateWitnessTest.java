@@ -14,7 +14,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
@@ -60,7 +60,7 @@ class TmsTotalEvaluationDateWitnessTest {
             TmsDocuments.attribuut("topsom", WHOLE)), List.of(kenmerk("vrijgesteld")))), List.of());
 
     static final String VRIJSTELLING = TmsDocuments.characteristicRule("vrijstelling", "Jutter", "vrijgesteld",
-            comparison("less", reading("score", "Jutter"), number("5")));
+            comparison("less", ownRead("score", "Jutter"), number("5")));
     static final String TOPSOM = computingRule("topsom", "BEREKENING", "Jutter", "topsom", ownTotal("bedrag", "Jutter",
             "null"), check("vrijgesteld", true));
 
@@ -115,12 +115,12 @@ class TmsTotalEvaluationDateWitnessTest {
         for (List<Rule> order : TmsDocuments.sample(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of("score", "3"), List.of());
-            TmsLetWitnessTest.Facts sessionFacts = new TmsLetWitnessTest.Facts();
-            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1), sessie -> sessie.addEventListener(sessionFacts)),
+            TmsLetWitnessTest.Facts facts = new TmsLetWitnessTest.Facts();
+            assertNull(TmsDocuments.fixpunt(b, order, List.of(j1), sessie -> sessie.addEventListener(facts)),
                     () -> "volgorde " + names);
-            assertEquals(sessionFacts.inserted, sessionFacts.withdrawn, () -> "foutfeiten in volgorde " + names);
+            assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
             assertNull(TmsDocuments.lees(j1, "topsom"), () -> "topsom in volgorde " + names);
-            if (sessionFacts.fouten > 0) intermediateState++;
+            if (facts.fouten > 0) intermediateState++;
         }
         assertTrue(intermediateState > 0, "geen volgorde liet het totaal vóór de vrijstelling rekenen");
     }

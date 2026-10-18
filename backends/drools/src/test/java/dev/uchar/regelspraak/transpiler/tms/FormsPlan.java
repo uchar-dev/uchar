@@ -56,7 +56,7 @@ final class FormsPlan {
             "_pad", "_beta", "_samengesteld", "_zonderfout", "_vouwlezing", "_kwantorlezing", "_let", "_binder", "_lijst",
             "rsDagsoort_Werkdag", "tweede != null, tweede == $onderwerp.post", "eerste == $onderwerp", " >= 1", " < 3",
             "Outcome.Kind.DECIDED", "insert(", "insertLogical(", "ComputeHelpers.depositFlag()", "ComputeHelpers.fail(",
-            "ComputeHelpers.required(", "ComputeHelpers.textComposition(", "ComputeHelpers.rescaleExact(", "ComputeHelpers.rescale(",
+            "ComputeHelpers.required(", "ComputeHelpers.textComposition(", "ComputeHelpers.restateExact(", "ComputeHelpers.restate(",
             "ComputeHelpers.divided(", "ComputeHelpers.squareRoot(", "ComputeHelpers.largest(", "Breuk.van(",
             "java.time.LocalDateTime.parse(", "java.math.RoundingMode.HALF_UP", "Period.class",
             "dev.uchar.regelspraak.ir.Conditie.Operator.LATER", "ComputeHelpers.contractBreach(", "ComputeHelpers.computeFault(",
@@ -384,12 +384,12 @@ final class FormsPlan {
 
     /** Fragments of the text that show the forms of the fold plan ({@link #folds}), one per form. */
     static final List<String> FOLD_FORMS = List.of("new Contribution(\"proefvouw: telling\", $vouwonderwerp, $onderwerp, null)",
-            "ComputeHelpers.contribution(\"proefvouw: som\"", "\"MAAND\", true)", "ComputeHelpers.judgement(", "_matrix",
+            "ComputeHelpers.contribution(\"proefvouw: som\"", "\"MAAND\", true)", "ComputeHelpers.verdict(", "_matrix",
             "_lidtoets", "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(sonde))",
             "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null))", "_plaats",
             "ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER",
             "java.util.Arrays.asList(\"kustvak\", \"wachter\")", "java.util.Arrays.asList()",
-            "new FilterDeposit(", "RuntimeException f = ", "new FilterError(", "new MemberError(",
+            "new FilterDeposit(", "RuntimeException f = ", "new FilterFault(", "new MemberFault(",
             "ComputeHelpers.inputFormFault(", "ComputeHelpers.placeOf(", "ComputeHelpers.meeting(", "ListPlace(");
 
     /**
@@ -449,15 +449,15 @@ final class FormsPlan {
                 List.of(foldSubject, member(post, v, height), places(1, "kustvak", new BetaTest("plaats-1",
                         Aggregation.PLACE_OF, O, List.of(new Term.Const(List.of(), null, null)))),
                         new TestItem("fout", TestItem.Role.FAULT, failing, -1, List.of(0), 4)),
-                new Consequence.FilterError(v, "proefvouw", 1, failing, new Consequence.FoldPlace(0,
-                        List.of(new Consequence.FoldPlace.Step("kustvak", 2, 3)), Consequence.PlaceReason.FILTER_ERROR),
+                new Consequence.FilterFault(v, "proefvouw", 1, failing, new Consequence.FoldPlace(0,
+                        List.of(new Consequence.FoldPlace.Step("kustvak", 2, 3)), Consequence.PlaceReason.FILTER_FAULT),
                         List.of(0, 1, 2, 3), 4, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidfout", "proef", null, table(new Read(0, ReadKind.SUBJECT, "lid", O),
                 placeSlot(1, ReadKind.LIST_PLACES, "$lijstplaatsen_1"), placeSlot(2, ReadKind.LIST_PLACE, "$plaats_1")),
                 List.of(foldSubject, member(post, v), places(1, "kustvak", new BetaTest("plaats-1",
                         Aggregation.PLACE_OF, O, List.of(new Term.Const(List.of(), null, null))))),
-                new Consequence.MemberError(v, "proefvouw", 0, new Consequence.FoldPlace(0,
-                        List.of(new Consequence.FoldPlace.Step("kustvak", 1, 2)), Consequence.PlaceReason.MEMBER_ERROR),
+                new Consequence.MemberFault(v, "proefvouw", 0, new Consequence.FoldPlace(0,
+                        List.of(new Consequence.FoldPlace.Step("kustvak", 1, 2)), Consequence.PlaceReason.MEMBER_FAULT),
                         "the total of ", ": a scalar", Consequence.Insertion.LOGICAL)));
         return new Modelplan(List.of(), rules);
     }
@@ -581,9 +581,9 @@ final class FormsPlan {
         Term waarde = new Term.Let(12, "a", new Term.Call(Aggregation.RS_PLUS, List.of(lees(0), number("1.50")), "a"),
                 new Term.Let(13, "b", new Term.Choice(new Term.WithoutFault(new Term.Call(Aggregation.RS_AGG_COMPARE,
                         List.of(new Term.Binder(12, "a", "a"), lees(6), text(">")), "a groter dan de drempel"), null),
-                        new Term.Rescale(Aggregation.RESCALE_EXACT, new Term.Binder(12, "a", "a"), null, null,
+                        new Term.Restate(Aggregation.RESTATE_EXACT, new Term.Binder(12, "a", "a"), null, null,
                                 BigDecimal.ONE, BigDecimal.TEN, null),
-                        new Term.Rescale(Aggregation.RESCALE, new Term.Binder(12, "a", "a"), null, null,
+                        new Term.Restate(Aggregation.RESTATE, new Term.Binder(12, "a", "a"), null, null,
                                 new BigDecimal("2.5"), null, null), "als a groter is dan de drempel"),
                         new Term.ListedFold(Aggregation.LARGEST, List.of(
                                 new Term.Binder(13, "b", "b"),

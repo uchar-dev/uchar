@@ -41,7 +41,7 @@ public record RulePlan(String naam, String vorm, String agendaGroup, ReadTable l
                 case Accumulation a -> {
                     // the source's variables stay in scope, as the rendering into the executable model keeps them
                     declare(naam, a.bron(), inScope);
-                    for (Accumulation.Aggregation f : a.functions()) declare(naam, f.doel(), inScope);
+                    for (Accumulation.Aggregation f : a.aggregations()) declare(naam, f.doel(), inScope);
                 }
                 case Not n -> inside(naam, n.inside(), inScope);
                 case Exists b -> inside(naam, b.inside(), inScope);

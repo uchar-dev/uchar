@@ -164,7 +164,7 @@ class PropertyWitnessTest {
             String e = Namen.property(naam), getter = getters.get(e), setter = setters.get(e);
             Object bean = trial.getConstructor().newInstance();
             java.math.BigDecimal written = new java.math.BigDecimal(++n + ".01"),
-                    isSet = new java.math.BigDecimal(n + ".02");
+                    setValue = new java.math.BigDecimal(n + ".02");
             Map<String, Object> names = new java.util.LinkedHashMap<>();
             names.put("lidnamen.getter", Namen.lidnamen(e).getter());
             names.put("lidnamen.setter", Namen.lidnamen(e).setter());
@@ -182,18 +182,18 @@ class PropertyWitnessTest {
                 return trial.getMethod(getter).invoke(bean);
             });
             meet(fouten, naam, "Rekenhulpen.zet", written, () -> {
-                Object recomputed = ComputeHelpers.newObject(bean, trial.getName());
-                ComputeHelpers.set(recomputed, e, written);
-                return trial.getMethod(getter).invoke(recomputed);
+                Object fresh = ComputeHelpers.newObject(bean, trial.getName());
+                ComputeHelpers.set(fresh, e, written);
+                return trial.getMethod(getter).invoke(fresh);
             });
             // the readers, of a value set through the generator's own setter
-            trial.getMethod(setter, java.math.BigDecimal.class).invoke(bean, isSet);
-            meet(fouten, naam, "Accessors.eigenschapGetter", isSet, () -> Accessors.eigenschapGetter(trial, e).apply(bean));
-            meet(fouten, naam, "Accessors.leesEigenschap", isSet, () -> Accessors.leesEigenschap(bean, e));
-            meet(fouten, naam, "PatternDslWeergave.invoerlezer", isSet, () -> PatternDslRendering.inputReader(
+            trial.getMethod(setter, java.math.BigDecimal.class).invoke(bean, setValue);
+            meet(fouten, naam, "Accessors.eigenschapGetter", setValue, () -> Accessors.eigenschapGetter(trial, e).apply(bean));
+            meet(fouten, naam, "Accessors.leesEigenschap", setValue, () -> Accessors.leesEigenschap(bean, e));
+            meet(fouten, naam, "PatternDslWeergave.invoerlezer", setValue, () -> PatternDslRendering.inputReader(
                     new Binding.Field(trial, naam), Binding.ReadForm.VALUE, null).apply(bean));
-            meet(fouten, naam, "Rekenhulpen.lees", isSet, () -> ComputeHelpers.lees(bean, e));
-            meet(fouten, naam, "Rekenhulpen.langs", isSet, () -> ComputeHelpers.along(bean, List.of(e)));
+            meet(fouten, naam, "Rekenhulpen.lees", setValue, () -> ComputeHelpers.lees(bean, e));
+            meet(fouten, naam, "Rekenhulpen.langs", setValue, () -> ComputeHelpers.along(bean, List.of(e)));
             meet(fouten, naam, "Rekenhulpen.ontmoeting", true,
                     () -> ComputeHelpers.meeting(bean, bean, List.of(e), List.of(e)));
         }
@@ -296,9 +296,9 @@ class PropertyWitnessTest {
     @Test void a_document_with_a_turkish_characteristic_fires() throws Exception {
         Path map = Path.of("src", "test", "resources", "property", "turkish-characteristic");
         com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
-        for (String caseDocument : List.of("case.json", "case-without.json"))
-            assertNull(FoldPlanWitnessTest.playCase(map.resolve("ir.json"), json.readTree(map.resolve(caseDocument).toFile())),
-                    caseDocument);
+        for (String caseFileName : List.of("case.json", "case-without.json"))
+            assertNull(FoldPlanWitnessTest.playCase(map.resolve("ir.json"), json.readTree(map.resolve(caseFileName).toFile())),
+                    caseFileName);
     }
 
     /** Names whose property is no Java identifier: a digit first ("3 M", "3e lid") or a character that is no
@@ -325,16 +325,16 @@ class PropertyWitnessTest {
         }
     }
 
-    /** One reader or writer {@code formName} of the member {@code naam}: what it gives, or the fault it throws, where that is
+    /** One reader or writer {@code label} of the member {@code naam}: what it gives, or the fault it throws, where that is
      *  not {@code verwacht}. */
-    private static void meet(List<String> fouten, String naam, String formName, Object verwacht,
-                             java.util.concurrent.Callable<Object> reading) {
+    private static void meet(List<String> fouten, String naam, String label, Object verwacht,
+                             java.util.concurrent.Callable<Object> readCall) {
         try {
-            Object read = reading.call();
-            if (!verwacht.equals(read)) fouten.add(naam + " | " + formName + " gaf " + read + ", verwacht " + verwacht);
+            Object read = readCall.call();
+            if (!verwacht.equals(read)) fouten.add(naam + " | " + label + " gaf " + read + ", verwacht " + verwacht);
         } catch (Exception f) {
             Throwable cause = f instanceof java.lang.reflect.InvocationTargetException i ? i.getCause() : f;
-            fouten.add(naam + " | " + formName + " faalt: " + cause);
+            fouten.add(naam + " | " + label + " faalt: " + cause);
         }
     }
 
@@ -425,14 +425,14 @@ class PropertyWitnessTest {
                 cases = s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList();
             }
             List<String> fouten = new ArrayList<>();
-            for (Path caseDocument : cases) {
+            for (Path casePath : cases) {
                 String outcome;
                 try {
-                    outcome = FoldPlanWitnessTest.playCase(ir, json.readTree(caseDocument.toFile()));
+                    outcome = FoldPlanWitnessTest.playCase(ir, json.readTree(casePath.toFile()));
                 } catch (java.lang.reflect.InvocationTargetException f) {
                     outcome = "faalt: " + f.getCause();
                 }
-                if (outcome != null) fouten.add(caseDocument.getFileName() + " | " + outcome);
+                if (outcome != null) fouten.add(casePath.getFileName() + " | " + outcome);
             }
             assertEquals(4, cases.size(), "de vier cases van eigenschap/spelling");
             assertEquals(List.of(), fouten, "cases waarvan de replay het gedeclareerde lid niet bereikt");

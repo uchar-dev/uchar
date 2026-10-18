@@ -167,13 +167,13 @@ class EmptyNegatedWitnessTest {
      *  S3 carries 5 over its first half, S2 and S4 carry none. meldpremie is 40 on {@code treffers}, leeg on the
      *  others. The ongemeten rule is dropped because it reads the now-temporal lengte without a qualifier and
      *  would be refused for THAT; the werfpremie rule because it reads the werf, not the lengte. */
-    private void playWholeYear(String soort, boolean negated, boolean not, String... treffers) throws Exception {
+    private void playWholeYear(String soort, boolean negated, boolean wholePeriodNegated, String... treffers) throws Exception {
         ObjectNode ir = ir();
         IrPath.timeline(IrPath.attribute(IrPath.objectType(ir, "Schuit"), "lengte"), "month");
         IrPath.rules(ir).set("rules", JSON.createArrayNode().add(IrPath.rulesList(ir, "rules").get(0)));
         ObjectNode vw = (ObjectNode) IrPath.version(ir, "rules", 0, 0).get("condition");
         vw.put("kind", soort).put("negated", negated);
-        vw.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", "year").put("negated", not);
+        vw.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", "year").put("negated", wholePeriodNegated);
         ObjectNode c = (ObjectNode) caseOf();
         for (JsonNode inst : c.get("input").get("instances")) {
             String label = inst.get("label").asText();
@@ -194,7 +194,7 @@ class EmptyNegatedWitnessTest {
         rows.addObject().put("kind", "consistent");
         c.set("expected", rows);
         BothBranches.green(temporary(ir), c, "whole-period " + soort + (negated ? " negated" : "")
-                + (not ? ", niet gedurende" : ""));
+                + (wholePeriodNegated ? ", niet gedurende" : ""));
     }
 
     /** Shape-faithful segment stand-in for the runtime fold: the {@code van}/{@code tot}/{@code waarde} properties
@@ -235,8 +235,8 @@ class EmptyNegatedWitnessTest {
         JsonNode waarden = JSON.createObjectNode()
                 .set("meldpremie", JSON.createObjectNode().put("number", "40"));
         ((ObjectNode) waarden).set("werfpremie", JSON.createObjectNode().put("number", "25"));
-        for (JsonNode queue : rows) {
-            ObjectNode r = (ObjectNode) queue;
+        for (JsonNode row : rows) {
+            ObjectNode r = (ObjectNode) row;
             switch (r.get("kind").asText()) {
                 case "attributeValue" -> { r.put("kind", "attributeEmpty"); r.remove("value"); }
                 case "attributeEmpty" -> { r.put("kind", "attributeValue"); r.set("value", waarden.get(r.get("attribute").asText())); }

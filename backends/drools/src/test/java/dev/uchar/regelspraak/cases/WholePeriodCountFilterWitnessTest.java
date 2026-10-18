@@ -70,10 +70,10 @@ class WholePeriodCountFilterWitnessTest {
         Path ir = COMPUTING_RULE.resolve("ir.json");
         List<Path> cases = cases(ir);
         assertEquals(4, cases.size(), "de cases van de rekenregel");
-        for (Path caseDocument : cases) {
-            JsonNode c = JSON.readTree(caseDocument.toFile());
-            assertNull(CaseRunner.playCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "exec-model — " + caseDocument);
-            assertNull(CaseRunner.playCase(ir, c, DroolsBackend.Branch.DRL_TEXT), "drl-tekst — " + caseDocument);
+        for (Path casePath : cases) {
+            JsonNode c = JSON.readTree(casePath.toFile());
+            assertNull(CaseRunner.playCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "exec-model — " + casePath);
+            assertNull(CaseRunner.playCase(ir, c, DroolsBackend.Branch.DRL_TEXT), "drl-tekst — " + casePath);
         }
         String text = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
         List<String> functions = new ArrayList<>();
@@ -106,10 +106,10 @@ class WholePeriodCountFilterWitnessTest {
         Path other = Files.createTempFile("heelperiode-andere-volgorde", ".json");
         other.toFile().deleteOnExit();
         Files.writeString(other, JSON.writeValueAsString(document));
-        for (Path caseDocument : cases(ir)) {
-            JsonNode c = JSON.readTree(caseDocument.toFile());
+        for (Path casePath : cases(ir)) {
+            JsonNode c = JSON.readTree(casePath.toFile());
             for (DroolsBackend.Branch branch : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT))
-                assertNull(CaseRunner.playCase(other, c, branch), branch + " — " + caseDocument);
+                assertNull(CaseRunner.playCase(other, c, branch), branch + " — " + casePath);
         }
     }
 
@@ -117,10 +117,10 @@ class WholePeriodCountFilterWitnessTest {
         Path ir = CREATION_GUARD.resolve("ir.json");
         List<Path> cases = cases(ir);
         assertEquals(3, cases.size(), "de cases van de creatieguard");
-        for (Path caseDocument : cases) {
-            JsonNode c = JSON.readTree(caseDocument.toFile());
+        for (Path casePath : cases) {
+            JsonNode c = JSON.readTree(casePath.toFile());
             for (DroolsBackend.Branch branch : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT))
-                assertNull(CaseRunner.playCase(ir, c, branch), branch + " — " + caseDocument);
+                assertNull(CaseRunner.playCase(ir, c, branch), branch + " — " + casePath);
         }
     }
 

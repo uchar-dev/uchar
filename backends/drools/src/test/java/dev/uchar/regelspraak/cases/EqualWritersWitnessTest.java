@@ -50,10 +50,10 @@ class EqualWritersWitnessTest {
         String model = TmsDocuments.model(List.of(TmsDocuments.objecttype("Jutter", List.of(
                 TmsDocuments.attribuut("basis", TWO_DECIMALS),
                 TmsDocuments.attribuut("premie", TWO_DECIMALS)), List.of())), List.of());
-        String voorwaarde = TmsDocuments.comparison("greater", TmsDocuments.reading("basis", "Jutter"),
+        String voorwaarde = TmsDocuments.comparison("greater", TmsDocuments.ownRead("basis", "Jutter"),
                 TmsDocuments.number("0"));
         String base = TmsDocuments.computingRule("premie uit de basis", "GELIJKSTELLING", "Jutter", "premie",
-                TmsDocuments.reading("basis", "Jutter"), voorwaarde);
+                TmsDocuments.ownRead("basis", "Jutter"), voorwaarde);
         String whole = TmsDocuments.computingRule("premie als geheel getal", "GELIJKSTELLING", "Jutter", "premie",
                 TmsDocuments.number("5"), voorwaarde);
         TreeSet<String> both = new TreeSet<>(List.of("premie als geheel getal=5", "premie uit de basis=5.00"));
@@ -128,12 +128,12 @@ class EqualWritersWitnessTest {
                 TmsDocuments.attribuut("basis", TWO_DECIMALS),
                 TmsDocuments.attribuut("bedrag", TWO_DECIMALS),
                 TmsDocuments.attribuut("premie", TWO_DECIMALS)), List.of())), List.of());
-        String rechtvaardiging = TmsDocuments.comparison("greater", TmsDocuments.reading("basis", "Jutter"),
+        String rechtvaardiging = TmsDocuments.comparison("greater", TmsDocuments.ownRead("basis", "Jutter"),
                 TmsDocuments.number("0"));
         String base = unordered(TmsDocuments.attributeGroup("premie uit de basis", "Jutter", "premie",
-                List.of(TmsDocuments.standaard(rechtvaardiging, TmsDocuments.reading("basis", "Jutter")))));
+                List.of(TmsDocuments.standaard(rechtvaardiging, TmsDocuments.ownRead("basis", "Jutter")))));
         String amount = unordered(TmsDocuments.attributeGroup("premie uit het bedrag", "Jutter", "premie",
-                List.of(TmsDocuments.standaard(rechtvaardiging, TmsDocuments.reading("bedrag", "Jutter")))));
+                List.of(TmsDocuments.standaard(rechtvaardiging, TmsDocuments.ownRead("bedrag", "Jutter")))));
         List<String> fouten = new ArrayList<>();
         for (List<String> groups : List.of(List.of(base, amount), List.of(amount, base))) {
             String eerste = groups.get(0) == base ? "5.00" : "5", tweede = groups.get(0) == base ? "5" : "5.00";

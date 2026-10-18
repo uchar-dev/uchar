@@ -11,15 +11,15 @@ import java.util.Objects;
  * ({@code TmsTranspiler.memberErrorRule}), on the fold's subject, with the fault that names the member ({@code fout},
  * unnamed); it is no fault by itself. The reference interpreter evaluates the filter of every member before it reads a
  * value, and then reads the values in fold order and faults at the first member that brings no timeline of its own. The
- * rule that reads the fold binds these facts beside its contributions and its {@link FilterError} facts, and where its
+ * rule that reads the fold binds these facts beside its contributions and its {@link FilterFault} facts, and where its
  * evaluation reaches the fold it faults with the first filter fault, and otherwise with the least of these, so the
  * member it names does not depend on the order of the firings.
  *
- * <p>{@code place} is the member's place in the fold order, as {@link FilterError#place} gives it. Compared as
- * {@link FilterError} is: the fold's key by value, the subject and the member by identity, the fault by its kind and its
+ * <p>{@code place} is the member's place in the fold order, as {@link FilterFault#place} gives it. Compared as
+ * {@link FilterFault} is: the fold's key by value, the subject and the member by identity, the fault by its kind and its
  * sentence, and the place by value, and ordered by the place.
  */
-public final class MemberError implements Comparable<MemberError> {
+public final class MemberFault implements Comparable<MemberFault> {
 
     private final String fold;
     private final Object onderwerp;
@@ -27,7 +27,7 @@ public final class MemberError implements Comparable<MemberError> {
     private final RuntimeException fout;
     private final List<Integer> place;
 
-    public MemberError(String fold, Object onderwerp, Object element, RuntimeException fout, List<Integer> place) {
+    public MemberFault(String fold, Object onderwerp, Object element, RuntimeException fout, List<Integer> place) {
         this.fold = Objects.requireNonNull(fold, "vouw");
         this.onderwerp = Objects.requireNonNull(onderwerp, "onderwerp");
         this.element = Objects.requireNonNull(element, "element");
@@ -48,7 +48,7 @@ public final class MemberError implements Comparable<MemberError> {
     /** The member's place in the fold order: the selection, then its place per to-many step of its route. */
     public List<Integer> place() { return place; }
 
-    @Override public int compareTo(MemberError o) {
+    @Override public int compareTo(MemberFault o) {
         for (int i = 0; i < Math.min(place.size(), o.place.size()); i++) {
             int c = Integer.compare(place.get(i), o.place.get(i));
             if (c != 0) return c;
@@ -60,7 +60,7 @@ public final class MemberError implements Comparable<MemberError> {
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof MemberError f && f.onderwerp == onderwerp && f.element == element && f.fold.equals(fold)
+        return o instanceof MemberFault f && f.onderwerp == onderwerp && f.element == element && f.fold.equals(fold)
                 && f.fout.getClass() == fout.getClass() && f.fout.getMessage().equals(fout.getMessage())
                 && f.place.equals(place);
     }

@@ -24,7 +24,7 @@ import dev.uchar.regelspraak.transpiler.tms.Fout;
 import dev.uchar.regelspraak.transpiler.tms.Fired;
 import dev.uchar.regelspraak.transpiler.tms.Cycles;
 import dev.uchar.regelspraak.transpiler.tms.ListPlace;
-import dev.uchar.regelspraak.transpiler.tms.Reset;
+import dev.uchar.regelspraak.transpiler.tms.WrittenBack;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import dev.uchar.regelspraak.runtime.Accessors;
@@ -278,7 +278,7 @@ public final class DroolsBackend {
      *  name, after the label {@code exec-model:}, the name of the analysis. */
     private static TmsTranspiler analyse(IrLoader.Loaded loaded, ClassLoader cl) {
         TmsTranspiler t = TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.roleBindings(),
-                loaded.lets(), loaded.sourcePaths(), loaded.path());
+                loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings());
         for (Dekking d : t.dekking())
             if (!d.lowered()) throw new Excluded("transpiler " + d.verdict() + ": " + d.sleutel()
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));
@@ -373,26 +373,26 @@ public final class DroolsBackend {
                 throw new IllegalArgumentException("voegIn: de bean " + naam(beanObject) + " staat twee keer in de invoer");
         String outsideSentence = targetOutsideInput("voegIn", build, beans, typen, perClass);
         if (outsideSentence != null) throw new IllegalArgumentException(outsideSentence);
-        List<Object> sessionFacts = new ArrayList<>(beans);
-        for (Invoer.Bucket e : invoer.emmers()) sessionFacts.add(bucketInput(typen, e));
-        sessionFacts.addAll(listPlaces(build, tms.listFields(), beans, typen, invoer.lists()));
-        for (Object fact : sessionFacts) sessie.insert(fact);
+        List<Object> facts = new ArrayList<>(beans);
+        for (Invoer.Bucket e : invoer.emmers()) facts.add(bucketInput(typen, e));
+        facts.addAll(listPlaces(build, tms.listFields(), beans, typen, invoer.lists()));
+        for (Object fact : facts) sessie.insert(fact);
         Watch.op(sessie, relationFields(build, beansClasses(build)), beans, "DroolsBackend.voegIn");
     }
 
     /** The sentence that refuses a reference field of a bean of {@code beans} that holds an object outside
-     *  {@code beans}, with {@code formName} the call that refuses, or null where every such field holds one of them or none.
+     *  {@code beans}, with {@code refusingCall} the call that refuses, or null where every such field holds one of them or none.
      *  The branch derives only for the objects in the session, so every value of such an object, and every value read
      *  through the field, would stay empty without a word; and the link the field gives still counts, so a creation it
      *  blocks makes no object in its place. */
-    private static String targetOutsideInput(String formName, Build build, List<Object> beans, Map<Object, Objecttype> typen,
+    private static String targetOutsideInput(String refusingCall, Build build, List<Object> beans, Map<Object, Objecttype> typen,
                                              Map<Class<?>, Objecttype> perClass) {
         Map<Objecttype, List<String>> fields = new HashMap<>();
         for (Object beanObject : beans)
             for (String veld : fields.computeIfAbsent(typen.get(beanObject), t -> referenceFields(build.model(), t))) {
                 Object doel = Accessors.leesEigenschap(beanObject, veld);
                 if (doel != null && !typen.containsKey(doel))
-                    return formName + ": het veld '" + veld + "' van " + naam(beanObject) + " wijst naar een "
+                    return refusingCall + ": het veld '" + veld + "' van " + naam(beanObject) + " wijst naar een "
                             + perClass.computeIfAbsent(doel.getClass(), k -> objecttype(build, doel)).naam + " ("
                             + naam(doel) + ") die niet als bean in de invoer staat: de tak leidt alleen af voor de"
                             + " objecten in de sessie, dus geef elk object waarnaar een bean wijst ook zelf als bean op";
@@ -602,7 +602,7 @@ public final class DroolsBackend {
      *                                       changed; the sentence says which, and what to do
      */
     public static Fixpunt lees(Build build, KieSession sessie) {
-        return reading(build, sessie, null);
+        return readFixpoint(build, sessie, null);
     }
 
     /** As {@link #lees(Build, KieSession)}, with {@code label} giving the case label of an input bean and null for an
@@ -613,10 +613,10 @@ public final class DroolsBackend {
      *  Function)} gives the faults it throws. */
     public static Fixpunt lees(Build build, KieSession sessie, Function<Object, String> label) {
         Objects.requireNonNull(label, "label");
-        return reading(build, sessie, label);
+        return readFixpoint(build, sessie, label);
     }
 
-    private static Fixpunt reading(Build build, KieSession sessie, Function<Object, String> label) {
+    private static Fixpunt readFixpoint(Build build, KieSession sessie, Function<Object, String> label) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
         return build.execModelTranspiler().lees(sessie, label);
@@ -919,7 +919,7 @@ public final class DroolsBackend {
                     + " evaluatiefout(en), de eerste van '" + fouten.get(0).regel() + "': " + fouten.get(0).melding()
                     + "; de regels geven op deze invoer geen antwoord, en zetAfgeleideWaarden werpt de fouten en zet niets"
                     + " terug, dus er is niets om met de verwachtingen te vergelijken");
-        if (sessie.getObjects(new ClassObjectFilter(Reset.class)).isEmpty())
+        if (sessie.getObjects(new ClassObjectFilter(WrittenBack.class)).isEmpty())
             throw new IllegalStateException("vergelijk: deze sessie is niet teruggezet; de beans dragen het fixpunt pas na"
                     + " DroolsBackend.zetAfgeleideWaarden, en tot dan alleen de invoer, dus zet eerst terug");
         Map<String, Object> perLabel = new HashMap<>();
@@ -1010,7 +1010,7 @@ public final class DroolsBackend {
         private final int floor;
         private final long rules;
         private int waarde;
-        private long sessionFacts = -1;
+        private long facts = -1;
 
         /** A fixed cap. */
         Cap(int fixed) {
@@ -1030,9 +1030,9 @@ public final class DroolsBackend {
             long n = sessie.getFactCount();
             // a double holds every product below 2^53 exactly, and a cap is an int
             double recomputed = Math.min(Integer.MAX_VALUE, Math.max(floor, Math.ceil(factor * rules * n)));
-            if (sessionFacts < 0 || recomputed > waarde) {
+            if (facts < 0 || recomputed > waarde) {
                 waarde = (int) recomputed;
-                sessionFacts = n;
+                facts = n;
             }
         }
 
@@ -1042,7 +1042,7 @@ public final class DroolsBackend {
                     ? "geen fixpunt: het vuurplafond van " + waarde + " vuringen is bereikt"
                     : "geen fixpunt: het vuurplafond van " + waarde + " vuringen is bereikt, het grootste van " + floor
                       + " en " + java.math.BigDecimal.valueOf(factor).stripTrailingZeros().toPlainString() + " × "
-                      + rules + " regels × " + sessionFacts + " feiten vlak vóór het vuren; zonder kring vuurt de tak per"
+                      + rules + " regels × " + facts + " feiten vlak vóór het vuren; zonder kring vuurt de tak per"
                       + " regel en feit een begrensd aantal keren, dus dit is een fout van de verlaging";
         }
     }
@@ -1073,7 +1073,7 @@ public final class DroolsBackend {
                     + " initialisatie, is gesteld en vervalt niet (RUNTIME-SEMANTICS ch. 5.5), dus een volgende fire zou"
                     + " na een invoerwijziging een toestand geven die geen verse evaluatie geeft; open per invoer een"
                     + " verse sessie");
-        if (!sessie.getObjects(new ClassObjectFilter(Reset.class)).isEmpty())
+        if (!sessie.getObjects(new ClassObjectFilter(WrittenBack.class)).isEmpty())
             throw new IllegalStateException("deze sessie is teruggezet (zetAfgeleideWaarden): haar beans dragen afgeleide"
                     + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
                     + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met beans die"

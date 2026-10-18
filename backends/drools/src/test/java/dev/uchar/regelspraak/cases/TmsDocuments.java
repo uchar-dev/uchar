@@ -239,7 +239,7 @@ final class TmsDocuments {
     }
 
     /** "zijn {@code attribuut}": a read of the subject's own attribute. */
-    static String reading(String attribuut, String type) {
+    static String ownRead(String attribuut, String type) {
         return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribuut + "\",\"subjectType\":\"" + type
                 + "\",\"source\":{\"snippet\":\"zijn " + attribuut + "\"}}";
     }

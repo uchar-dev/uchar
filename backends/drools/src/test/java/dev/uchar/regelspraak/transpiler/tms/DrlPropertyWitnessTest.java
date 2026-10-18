@@ -212,7 +212,7 @@ class DrlPropertyWitnessTest {
     /** What a member of a measurement holds: its Java type, the test that holds where it is set, the value it is set to,
      *  and the value it holds where it is not set, which a binding then gives. A number attribute is set or null; a
      *  scalar characteristic, a {@code boolean} with an {@code is} getter, is true or false. */
-    private record MemberKind(Class<?> type, String test, Object isSet, Object empty) {}
+    private record MemberKind(Class<?> type, String test, Object setValue, Object empty) {}
 
     private static final MemberKind ATTRIBUUT = new MemberKind(BigDecimal.class, " != null", new BigDecimal("7.25"), null);
     private static final MemberKind KENMERK = new MemberKind(boolean.class, " == true", Boolean.TRUE, Boolean.FALSE);
@@ -257,18 +257,18 @@ class DrlPropertyWitnessTest {
             for (Message m : result.getMessages(Message.Level.ERROR))
                 return "compileert niet: " + m.getText().replace('\n', ' ');
             KieBase kb = helper.build(EqualityBehaviorOption.EQUALITY);
-            List<Object> isSet, empty;
+            List<Object> whenSet, empty;
             try {
-                isSet = sessie(kb, p.javaClass(), setter, soort, soort.isSet(), global);
+                whenSet = sessie(kb, p.javaClass(), setter, soort, soort.setValue(), global);
                 empty = sessie(kb, p.javaClass(), setter, soort, soort.empty(), global);
             } catch (RuntimeException f) {
                 // MVEL compiles a constraint on first use, so "drools == true" fails only when the session fires
                 return "vuurt niet: " + String.valueOf(f.getMessage()).replace('\n', ' ');
             }
-            boolean goed = waarde ? isSet.equals(List.of(soort.isSet()))
+            boolean goed = waarde ? whenSet.equals(List.of(soort.setValue()))
                     && empty.equals(java.util.Collections.singletonList(soort.empty()))
-                    : isSet.size() == 1 && empty.isEmpty();
-            return goed ? "leest" : "gezet " + isSet + ", leeg " + empty;
+                    : whenSet.size() == 1 && empty.isEmpty();
+            return goed ? "leest" : "gezet " + whenSet + ", leeg " + empty;
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }

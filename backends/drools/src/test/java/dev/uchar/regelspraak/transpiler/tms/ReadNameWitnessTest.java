@@ -224,7 +224,7 @@ class ReadNameWitnessTest {
                 case Exists e -> e.patterns().forEach(pt -> pattern(pt, out));
                 case Accumulation a -> {
                     pattern(a.bron(), out);
-                    for (Accumulation.Aggregation f : a.functions()) out.add(f.doel());
+                    for (Accumulation.Aggregation f : a.aggregations()) out.add(f.doel());
                 }
                 case TestItem t -> { }
             }

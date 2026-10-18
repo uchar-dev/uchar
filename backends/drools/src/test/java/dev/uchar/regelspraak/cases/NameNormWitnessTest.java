@@ -164,7 +164,7 @@ class NameNormWitnessTest {
         // clingo raises the same wording at translation, and the analysis refuses it by name, on both branches. Until
         // card drl-teksttak-op-truth-maintenance the DRL-text branch booked it as a MARKER with its onopgelost
         // sentinel ("// onopgelost uniciteitscontrole (ch. 5.9: at most one temporal key component)").
-        refusesDuplicateTemporal(TWO_TEMPORAL, "uniciteit: dubbel temporeel enkelvoudig — een uniciteitssleutel"
+        refusesDoubleTemporal(TWO_TEMPORAL, "uniciteit: dubbel temporeel enkelvoudig — een uniciteitssleutel"
                 + " 'kavelnummer' van Strandvondst op een tijdlijn naast een tweede");
     }
 
@@ -177,13 +177,13 @@ class NameNormWitnessTest {
                 ((ObjectNode) b).set("keys", JSON.createArrayNode().add("vondstnummer").add("volgnummer"));
             IrPath.rulesList(o, "uniquenesses").remove(1);
         });
-        refusesDuplicateTemporal(ir, "uniciteit-unie: eenmalig vondstnummer — een uniciteitssleutel 'volgnummer' van"
+        refusesDoubleTemporal(ir, "uniciteit-unie: eenmalig vondstnummer — een uniciteitssleutel 'volgnummer' van"
                 + " Strandvondst op een tijdlijn naast een tweede");
     }
 
     /** Both branches refuse {@code ir} at the build, by name, in the sentence that holds {@code fragment}: a key with
      *  two temporal parts (RUNTIME-SEMANTICS ch. 5.9). */
-    private static void refusesDuplicateTemporal(Path ir, String fragment) {
+    private static void refusesDoubleTemporal(Path ir, String fragment) {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
             CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
                     () -> DroolsBackend.build(ir, branch), branch.toString());
@@ -222,8 +222,8 @@ class NameNormWitnessTest {
     }
 
     /** Rename Strandvondst's {@code vondstnummer} declaration, keeping the declared order. */
-    private static void renameAttribute(ObjectNode ir, String recomputed) {
-        IrPath.attribute(IrPath.objectType(ir, "Strandvondst"), "vondstnummer").put("name", recomputed);
+    private static void renameAttribute(ObjectNode ir, String fresh) {
+        IrPath.attribute(IrPath.objectType(ir, "Strandvondst"), "vondstnummer").put("name", fresh);
     }
 
     /** The granulariteit keyed under another spelling of the declared member, which stays scalar. Until M1 that

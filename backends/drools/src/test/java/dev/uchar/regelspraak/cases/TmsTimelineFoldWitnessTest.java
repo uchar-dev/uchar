@@ -25,7 +25,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.waarde;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.WHOLE;
@@ -93,10 +93,10 @@ class TmsTimelineFoldWitnessTest {
     static final String RATE = computingRule("tarief", "BEREKENING", "Vondst", "tarief",
             timeProportional("jaartarief", "Vondst", check("bewaard", false), "month"), "null");
     static final String LAST = computingRule("last", "BEREKENING", "Jutter", "last", aggregation("total",
-            reading("tarief", "Vondst"), "Vondst", sourceRole("bewaring", "vondst"), "null", "null", WHOLE,
+            ownRead("tarief", "Vondst"), "Vondst", sourceRole("bewaring", "vondst"), "null", "null", WHOLE,
             "het totaal van de tarieven van zijn vondsten"), "null");
     static final String SUM = computingRule("som", "BEREKENING", "Jutter", "som", aggregation("sum",
-            reading("tarief", "Vondst"), "Vondst", sourceRole("bewaring", "vondst"), "null", "null", WHOLE,
+            ownRead("tarief", "Vondst"), "Vondst", sourceRole("bewaring", "vondst"), "null", "null", WHOLE,
             "de som van de tarieven van zijn vondsten"), "null");
 
     static final List<String> RULES = List.of(RATE, LAST, SUM);

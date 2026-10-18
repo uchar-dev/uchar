@@ -30,7 +30,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instance;
 import static dev.uchar.regelspraak.cases.TmsDocuments.channelTest;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsDocuments.verwacht;
@@ -103,12 +103,12 @@ class TmsConsistencyWitnessTest {
 
     private static final List<String> CHAIN = List.of(
             computingRule("tussengewicht van een vondst", "BEREKENING", "Vondst", "tussengewicht",
-                    binary("plus", reading("gewicht", "Vondst"), number("1")), "null"),
+                    binary("plus", ownRead("gewicht", "Vondst"), number("1")), "null"),
             computingRule("eindgewicht van een vondst", "BEREKENING", "Vondst", "eindgewicht",
-                    binary("plus", reading("tussengewicht", "Vondst"), number("1")), "null"));
+                    binary("plus", ownRead("tussengewicht", "Vondst"), number("1")), "null"));
 
     private static final String CHECK = consistency("controle eindgewicht", "Vondst",
-            comparison("greater", reading("eindgewicht", "Vondst"), number("10")));
+            comparison("greater", ownRead("eindgewicht", "Vondst"), number("10")));
 
     private static final String CHAIN_MODEL = TmsDocuments.model(List.of(TmsDocuments.objecttype("Vondst",
             List.of(attribuut("gewicht", WHOLE), attribuut("tussengewicht", WHOLE), attribuut("eindgewicht", WHOLE)),
@@ -206,7 +206,7 @@ class TmsConsistencyWitnessTest {
             TmsDocuments.objecttype("Dossier", List.of(), List.of("onder verscherpt toezicht"))), List.of());
 
     private static final String CHECK_BALANCE = consistency("controle saldo", "Rekeninghouder",
-            comparison("greaterOrEqual", reading("saldo", "Rekeninghouder"), number("0")));
+            comparison("greaterOrEqual", ownRead("saldo", "Rekeninghouder"), number("0")));
 
     private static final String TOEZICHT = characteristicRule("toezicht", "Dossier", "onder verscherpt toezicht",
             channelTest("controle saldo"));
@@ -318,16 +318,16 @@ class TmsConsistencyWitnessTest {
             throws Exception {
         String naam = "controle " + op;
         Path ir = TmsDocuments.document(model, List.of(), List.of(consistency(naam, "Vondst",
-                comparison(op, reading(left, "Vondst"), reading(right, "Vondst")))));
-        for (Row queue : rows) {
+                comparison(op, ownRead(left, "Vondst"), ownRead(right, "Vondst")))));
+        for (Row row : rows) {
             List<String> attributes = new ArrayList<>();
-            if (queue.left() != null) attributes.add(invoer(left, queue.left(), text));
-            if (queue.right() != null) attributes.add(invoer(right, queue.right(), text));
+            if (row.left() != null) attributes.add(invoer(left, row.left(), text));
+            if (row.right() != null) attributes.add(invoer(right, row.right(), text));
             JsonNode caseDocument = TmsDocuments.caseDocument(List.of("{\"label\":\"V1\",\"objectType\":\"Vondst\",\"attributes\":{"
                     + String.join(",", attributes) + "},\"roles\":{},\"characteristics\":[]}"),
-                    List.of(queue.geschonden() ? inconsistent(naam, "V1") : consistent()));
+                    List.of(row.geschonden() ? inconsistent(naam, "V1") : consistent()));
             for (DroolsBackend.Branch branch : BRANCHES)
-                assertNull(CaseRunner.playCase(ir, caseDocument, branch), () -> branch + ": " + naam + " over " + queue);
+                assertNull(CaseRunner.playCase(ir, caseDocument, branch), () -> branch + ": " + naam + " over " + row);
         }
         return rows.size();
     }

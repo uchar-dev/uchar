@@ -128,9 +128,9 @@ class SubtypeRoleFillerWitnessTest {
     @Test void a_field_of_another_role_takes_no_subtype() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ROLE_KEY.resolve("ir.json")));
         IrPath.objectType(ir, "Vlot").put("supertype", "Ponton");
-        ObjectNode reading = (ObjectNode) IrPath.version(ir, "rules", "ligdiepte van een schuit").get("value");
-        reading.put("attribute", "dekhoogte").put("subjectType", "Vlot");
-        ((ObjectNode) reading.get("path").get(0)).put("factType", "vlotligging");
+        ObjectNode attributeReference = (ObjectNode) IrPath.version(ir, "rules", "ligdiepte van een schuit").get("value");
+        attributeReference.put("attribute", "dekhoogte").put("subjectType", "Vlot");
+        ((ObjectNode) attributeReference.get("path").get(0)).put("factType", "vlotligging");
         RegelSpraakModel model = IrLoader.load(ir);
         Objecttype schuit = model.objecttypeOpNaam("Schuit");
         assertTrue(FactModelGenerator.hasReferenceField(model, schuit, "ligger", model.objecttypeOpNaam("Ponton")));

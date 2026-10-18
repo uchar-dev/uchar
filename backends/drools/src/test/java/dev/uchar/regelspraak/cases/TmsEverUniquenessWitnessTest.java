@@ -19,7 +19,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.inconsistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.WHOLE;
@@ -79,7 +79,7 @@ class TmsEverUniquenessWitnessTest {
             List.of(timeCharacteristic("bewaard", "month"), kenmerk("geregistreerd")))), List.of());
 
     static final String REGISTRATIE = characteristicRule("registratie", "Vondst", "geregistreerd",
-            comparison("greater", reading("code", "Vondst"), number("0")));
+            comparison("greater", ownRead("code", "Vondst"), number("0")));
     static final String NUMBER = computingRule("nummer", "BEREKENING", "Vondst", "nummer",
             dayCount(check("bewaard", false), "year"), check("geregistreerd", false));
     static final String EENMALIG = TmsUniquenessWitnessTest.uniqueness("eenmalig nummer",

@@ -33,7 +33,7 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.gegenereerd;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.instanceWithRoles;
-import static dev.uchar.regelspraak.cases.TmsDocuments.reading;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.objecttype;
 import static dev.uchar.regelspraak.cases.TmsDocuments.pathRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.permutations;
@@ -67,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       counts the link the fact creation made over the object the first made
  *       ({@link #a_chain_of_object_creation_fact_creation_and_object_creation_runs_in_three_strata}).</li>
  *   <li>Two creations of one stratum that do not read each other fire in one generation, in one phase, and both read
- *       the Penning of the stratum below ({@link #two_creations_of_a_stratum_fire_in_a_generation}).</li>
+ *       the Penning of the stratum below ({@link #two_creations_of_one_stratum_fire_in_one_generation}).</li>
  *   <li>Every creation of a generation reads the same settled world: an object creation does not count the link a
  *       fact creation of its own generation lays ({@link #the_creations_of_a_generation_read_a_world}).</li>
  *   <li>An object creation whose condition the rule layer makes true after a generation fires in the next generation,
@@ -233,7 +233,7 @@ class TmsCreationStratumWitnessTest {
     private static final String AFREKENINGEN = "{\"node\":\"AttributeReference\",\"attribute\":\"afrekeningen\","
             + "\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"afrekeningen van de Jutter\"}}";
 
-    private static final String SUM = aggregation("sum", reading("bedrag", "Penning"), "Penning",
+    private static final String SUM = aggregation("sum", ownRead("bedrag", "Penning"), "Penning",
             sourceRole("jutterheeftpenning", "penning"), "null", number("0"), WHOLE,
             "de som van het bedrag van alle penningen van de Jutter of 0 als die er niet zijn");
 
@@ -372,7 +372,7 @@ class TmsCreationStratumWitnessTest {
                 List.of(waarde("J1", "penningaantal", "1"), waarde("J1", "kwitantieaantal", "1")));
     }
 
-    @Test void two_creations_of_a_stratum_fire_in_a_generation() throws Exception {
+    @Test void two_creations_of_one_stratum_fire_in_one_generation() throws Exception {
         playsInEveryOrder(List.of(GEEF, MAKE, KWITEER), RULES_T, TmsCreationStratumWitnessTest::documentT, caseT());
         Path ir = documentT(List.of(GEEF, MAKE, KWITEER), RULES_T);
         for (DroolsBackend.Branch branch : BRANCHES) {
@@ -406,8 +406,8 @@ class TmsCreationStratumWitnessTest {
 
     /** A chain of Wachters while the rang is below 52: W1 of rang 1 makes W2, and so on to W52, 51 generations. */
     static final String WERF = objectCreation("werf de opvolger", "Wachter", "Wachter",
-            List.of(init("rang", binary("plus", reading("rang", "Wachter"), number("1")))),
-            comparison("less", reading("rang", "Wachter"), number("52")), "opvolging", "opvolger");
+            List.of(init("rang", binary("plus", ownRead("rang", "Wachter"), number("1")))),
+            comparison("less", ownRead("rang", "Wachter"), number("52")), "opvolging", "opvolger");
 
     /** A chain of Boeien while the nummer is below 52, 51 generations; the wachterrang reads the rang of the Boei's
      *  wachter, which "werf de opvolger" writes, so this chain sits a stratum above the other. */
@@ -416,9 +416,9 @@ class TmsCreationStratumWitnessTest {
     /** The chain of Boeien while the nummer is below {@code grens}: from B1, {@code grens - 1} generations. */
     static String leg(int bound) {
         return objectCreation("leg de volgende boei", "Boei", "Boei",
-                List.of(init("nummer", binary("plus", reading("nummer", "Boei"), number("1"))),
+                List.of(init("nummer", binary("plus", ownRead("nummer", "Boei"), number("1"))),
                         init("wachterrang", pathRead("rang", "Wachter", "bewaking", "wachter"))),
-                comparison("less", reading("nummer", "Boei"), number(String.valueOf(bound))), "boeiketen", "volgende boei");
+                comparison("less", ownRead("nummer", "Boei"), number(String.valueOf(bound))), "boeiketen", "volgende boei");
     }
 
     static Path documentB(List<String> creations) throws Exception {
@@ -481,12 +481,12 @@ class TmsCreationStratumWitnessTest {
     /** "De kopie van een Boei moet gesteld worden op zijn nummer": it reads what the chain of Boeien writes, positively,
      *  so it sits in the stratum of that chain. */
     static final String COPY = computingRule("kopie van een boei", "GELIJKSTELLING", "Boei", "kopie",
-            reading("nummer", "Boei"), "null");
+            ownRead("nummer", "Boei"), "null");
 
     /** "Een Boei is genummerd indien zijn nummer groter is dan 0": a characteristic attribution reads strictly, so it
      *  sits a stratum above the chain of Boeien. */
     static final String NUMBERED = TmsDocuments.characteristicRule("genummerd", "Boei", "genummerd",
-            comparison("greater", reading("nummer", "Boei"), number("0")));
+            comparison("greater", ownRead("nummer", "Boei"), number("0")));
 
     /** Document B with the chain of Boeien running while the nummer is below {@code grens}, beside {@code rules}. */
     static Path documentL(int bound, List<String> creations, List<String> rules) throws Exception {
@@ -555,8 +555,8 @@ class TmsCreationStratumWitnessTest {
     static Path documentG(int bound) throws Exception {
         return document(MODEL_G, List.of(), List.of(),
                 List.of(objectCreation("werf de lange keten", "Wachter", "Wachter",
-                        List.of(init("rang", binary("plus", reading("rang", "Wachter"), number("1")))),
-                        comparison("less", reading("rang", "Wachter"), number(String.valueOf(bound))), "opvolging",
+                        List.of(init("rang", binary("plus", ownRead("rang", "Wachter"), number("1")))),
+                        comparison("less", ownRead("rang", "Wachter"), number(String.valueOf(bound))), "opvolging",
                         "opvolger")),
                 List.of(), List.of(ruleGroup("lange estafette", List.of("werf de lange keten"))));
     }
@@ -611,7 +611,7 @@ class TmsCreationStratumWitnessTest {
     /** "Een Wachter heeft een boei met nummer gelijk aan 1 indien zijn rang gelijk is aan 51": it reads the rang that
      *  "werf de opvolger" writes, strictly, so it sits a stratum above that chain. */
     static final String BOEI_AT_51 = objectCreation("leg een boei", "Wachter", "Boei", List.of(init("nummer", number("1"))),
-            comparison("equal", reading("rang", "Wachter"), number("51")), "bewaking", "boei");
+            comparison("equal", ownRead("rang", "Wachter"), number("51")), "bewaking", "boei");
 
     /** "werf de opvolger" while the rang is below 51, "leg een boei" and the chain of Boeien while the nummer is below 51,
      *  without a wachterrang: 50 generations in stratum 0, one in stratum 1 and 50 in stratum 2. */
@@ -619,11 +619,11 @@ class TmsCreationStratumWitnessTest {
         List<String> c = new ArrayList<>();
         for (String creatie : creations)
             c.add(creatie.equals(WERF) ? objectCreation("werf de opvolger", "Wachter", "Wachter",
-                    List.of(init("rang", binary("plus", reading("rang", "Wachter"), number("1")))),
-                    comparison("less", reading("rang", "Wachter"), number("51")), "opvolging", "opvolger")
+                    List.of(init("rang", binary("plus", ownRead("rang", "Wachter"), number("1")))),
+                    comparison("less", ownRead("rang", "Wachter"), number("51")), "opvolging", "opvolger")
                     : creatie.equals(LEG) ? objectCreation("leg de volgende boei", "Boei", "Boei",
-                    List.of(init("nummer", binary("plus", reading("nummer", "Boei"), number("1")))),
-                    comparison("less", reading("nummer", "Boei"), number("51")), "boeiketen", "volgende boei")
+                    List.of(init("nummer", binary("plus", ownRead("nummer", "Boei"), number("1")))),
+                    comparison("less", ownRead("nummer", "Boei"), number("51")), "boeiketen", "volgende boei")
                     : creatie);
         return document(MODEL_B, List.of(), List.of(), c, List.of(),
                 List.of(ruleGroup("estafette", List.of("werf de opvolger")),
@@ -691,9 +691,9 @@ class TmsCreationStratumWitnessTest {
                 List.of(feittype("opvolging", "voorganger", "Wachter", "opvolger", "Wachter"),
                         factTypeOneToMany("maatschap", "maat", "Wachter", "maatgever", "Wachter", "maatgevers")));
         String werf = objectCreation("werf de opvolger", "Wachter", "Wachter",
-                List.of(init("rang", binary("plus", reading("rang", "Wachter"), number("1")))),
+                List.of(init("rang", binary("plus", ownRead("rang", "Wachter"), number("1")))),
                 TmsDocuments.compound("all", 0, List.of(
-                        comparison("less", reading("rang", "Wachter"), number(String.valueOf(bound))),
+                        comparison("less", ownRead("rang", "Wachter"), number(String.valueOf(bound))),
                         comparison("greater", aggregation("count", MAATGEVERS, "Wachter", sourceRole("maatschap", "maatgever"),
                                 "null", "null", COUNTING, "het aantal maatgevers van de Wachter"), number("0")))),
                 "opvolging", "opvolger");
@@ -793,10 +793,10 @@ class TmsCreationStratumWitnessTest {
      *  "opvolgerbegin" reads the beginstand of the opvolger and "verder" the opvolgerbegin of the opvolger. */
     static Path documentV(List<String> rules) throws Exception {
         String werf = objectCreation("werf de opvolger", "Wachter", "Wachter", List.of(
-                init("rang", binary("plus", reading("rang", "Wachter"), number("1"))),
+                init("rang", binary("plus", ownRead("rang", "Wachter"), number("1"))),
                 init("beginstand", aggregation("count", MAATGEVERS, "Wachter", sourceRole("maatschap", "maatgever"), "null",
                         "null", COUNTING, "het aantal maatgevers van de Wachter"))),
-                comparison("less", reading("rang", "Wachter"), number("4")), "opvolging", "opvolger");
+                comparison("less", ownRead("rang", "Wachter"), number("4")), "opvolging", "opvolger");
         String maten = factCreation("maak maten", "maatschap", "maatgever", "maat", "Wachter",
                 List.of(roleBinding("opvolging", "opvolger")), "null");
         return document(MODEL_V, rules, List.of(), List.of(werf), List.of(maten),
@@ -865,13 +865,13 @@ class TmsCreationStratumWitnessTest {
     /** "werf de opvolger": a Wachter of rang below 4 gets an opvolger with rang plus 1 and beginbeloning its
      *  erfbeloning. */
     private static final String WERF_R = objectCreation("werf de opvolger", "Wachter", "Wachter", List.of(
-            init("rang", binary("plus", reading("rang", "Wachter"), number("1"))),
-            init("beginbeloning", reading("erfbeloning", "Wachter"))),
-            comparison("less", reading("rang", "Wachter"), number("4")), "opvolging", "opvolger");
+            init("rang", binary("plus", ownRead("rang", "Wachter"), number("1"))),
+            init("beginbeloning", ownRead("erfbeloning", "Wachter"))),
+            comparison("less", ownRead("rang", "Wachter"), number("4")), "opvolging", "opvolger");
 
     /** "beloon de wachter": a Wachter whose stand is above 0 gets a Beloning. */
     private static final String BELOON_R = objectCreation("beloon de wachter", "Wachter", "Beloning", List.of(),
-            comparison("greater", reading("stand", "Wachter"), number("0")), "toekenning", "beloning");
+            comparison("greater", ownRead("stand", "Wachter"), number("0")), "toekenning", "beloning");
 
     /** The rules on the cycle of document R: the stand counts the opvolgers, the beloningaantal the beloningen, and the
      *  erfbeloning reads the beloningaantal of the voorganger. */

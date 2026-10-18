@@ -37,11 +37,11 @@ public enum ReadKind {
     /** The folded value of the contributions ({@code vouw}). */
     FOLDED_VALUE,
     /** The least filter fault of a fold on the subject ({@code vouw}). */
-    FILTER_ERROR,
+    FILTER_FAULT,
     /** The number of filter deposits of a fold on the subject ({@code vouw}). */
     FILTER_DEPOSIT,
     /** The least member fault of a fold on the subject ({@code vouw}). */
-    MEMBER_ERROR,
+    MEMBER_FAULT,
     /** The standing of the §9.5 channel of a form, through its {@code ChannelState} ({@code kanaal}). */
     CHANNEL,
     /** The number of the creation phase the driver opened ({@code creatiefase}). */

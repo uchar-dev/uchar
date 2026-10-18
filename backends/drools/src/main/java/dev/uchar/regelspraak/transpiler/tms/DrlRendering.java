@@ -469,7 +469,7 @@ final class DrlRendering {
         private String accumulation(Accumulation a) {
             String bron = pattern(a.bron());
             List<String> f = new ArrayList<>();
-            for (Accumulation.Aggregation x : a.functions()) {
+            for (Accumulation.Aggregation x : a.aggregations()) {
                 String over = x.bron() == null ? a.bron().naam() : x.bron();
                 f.add(x.doel() + " : " + switch (x.soort()) {
                     case COUNT -> "count()";
@@ -704,7 +704,7 @@ final class DrlRendering {
                 case Term.Choice k -> new Expr("(" + bool(k.voorwaarde(), c) + " ? (Object) " + waarde(k.then(), c).text()
                         + " : (Object) " + waarde(k.otherwise(), c).text() + ")", Object.class);
                 case Term.Call a -> call(a.function(), a.arguments().stream().map(x -> waarde(x, c)).toList());
-                case Term.Rescale h -> call(h.function(), h.denominator() == null
+                case Term.Restate h -> call(h.function(), h.denominator() == null
                         ? List.of(waarde(h.term(), c), constant(h.counter()))
                         : List.of(waarde(h.term(), c), constant(h.counter()), constant(h.denominator())));
                 case Term.Division d -> {
@@ -809,14 +809,14 @@ final class DrlRendering {
                 b.append("    if (((Number) ").append(slot(v.depositCount(), c)).append(").longValue() > 0) {\n        ")
                         .append(route(Route.REPORT)).append("(").append(depositFlag(v.depositFlag(), c).text()).append(");\n    }\n");
             }
-            if (v.filterError() >= 0) {
-                String f = slot(v.filterError(), c);
-                b.append("    if (").append(f).append(" != null) {\n        throw ((").append(typeName(FilterError.class))
+            if (v.filterFault() >= 0) {
+                String f = slot(v.filterFault(), c);
+                b.append("    if (").append(f).append(" != null) {\n        throw ((").append(typeName(FilterFault.class))
                         .append(") ").append(f).append(").fout();\n    }\n");
             }
-            if (v.memberError() >= 0) {
-                String f = slot(v.memberError(), c);
-                b.append("    if (").append(f).append(" != null) {\n        throw ((").append(typeName(MemberError.class))
+            if (v.memberFault() >= 0) {
+                String f = slot(v.memberFault(), c);
+                b.append("    if (").append(f).append(" != null) {\n        throw ((").append(typeName(MemberFault.class))
                         .append(") ").append(f).append(").fout();\n    }\n");
             }
             b.append("    return ").append(waarde(v.outcome(), c).text()).append(";\n");
@@ -902,8 +902,8 @@ final class DrlRendering {
                 case Consequence.FilterDeposit x -> voegIn(b, "    ", x.insertion(), "new "
                         + typeName(FilterDeposit.class) + "(" + str(x.fold()) + ", " + x.onderwerp() + ", "
                         + variable(x.member()) + ")");
-                case Consequence.FilterError x -> filterError(x, b);
-                case Consequence.MemberError x -> voegIn(b, "    ", x.insertion(), "new " + typeName(MemberError.class) + "("
+                case Consequence.FilterFault x -> filterFault(x, b);
+                case Consequence.MemberFault x -> voegIn(b, "    ", x.insertion(), "new " + typeName(MemberFault.class) + "("
                         + str(x.fold()) + ", " + x.onderwerp() + ", " + variable(x.member()) + ", "
                         + route(Route.INPUT_FORM_FAULT) + "(" + str(x.before()) + ", " + variable(x.member()) + ", "
                         + str(x.after()) + ", null), " + foldPlace(x.place(), x.fold(), x.member(), null) + ")");
@@ -1005,10 +1005,10 @@ final class DrlRendering {
          *  evaluates the matrix with the probe where the plan names one, and gives the verdict or the evaluation
          *  fault. */
         private void contribution(Consequence.Contribution x, StringBuilder b) {
-            String recomputed = "new " + typeName(Contribution.class) + "(" + str(x.fold()) + ", " + x.onderwerp() + ", "
+            String fresh = "new " + typeName(Contribution.class) + "(" + str(x.fold()) + ", " + x.onderwerp() + ", "
                     + variable(x.member()) + ", ";
             switch (x.input()) {
-                case Consequence.Input.Count t -> voegIn(b, "    ", x.insertion(), recomputed + "null)");
+                case Consequence.Input.Count t -> voegIn(b, "    ", x.insertion(), fresh + "null)");
                 case Consequence.Input.MemberValue l -> {
                     b.append("    Object v = ").append(route(Route.CONTRIBUTION)).append("(").append(str(x.fold()))
                             .append(", ").append(x.onderwerp()).append(", ").append(variable(x.member())).append(", ")
@@ -1025,7 +1025,7 @@ final class DrlRendering {
                     Context c = context(x.slots(), -1, null, o.matrix());
                     fill(place, o.matrix().bron(), "boolean " + naam + "(" + c.declaratie() + ")",
                             "    return " + bool(o.matrix(), c) + ";\n");
-                    voegIn(b, "    ", x.insertion(), recomputed + route(Route.VERDICT) + "(" + naam + "(" + c.arguments()
+                    voegIn(b, "    ", x.insertion(), fresh + route(Route.VERDICT) + "(" + naam + "(" + c.arguments()
                             + ")))");
                 }
                 case Consequence.Input.MemberTest l -> {
@@ -1040,7 +1040,7 @@ final class DrlRendering {
                             + "    return new " + typeName(MemberTest.class) + "(plaats, waar, fout, "
                             + route(Route.REPORTED) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "));\n";
                     fill(place, l.matrix().bron(), "Object " + naam + "(" + c.declaratie() + ")", body);
-                    voegIn(b, "    ", x.insertion(), recomputed + naam + "(" + c.arguments() + "))");
+                    voegIn(b, "    ", x.insertion(), fresh + naam + "(" + c.arguments() + "))");
                 }
             }
         }
@@ -1094,7 +1094,7 @@ final class DrlRendering {
             } else {
                 b.append("    if (v != null) {\n");
             }
-            for (Consequence.StackFact f : x.sessionFacts()) voegIn(b, "        ", x.insertion(), stackFact(f, x.onderwerp()));
+            for (Consequence.StackFact f : x.facts()) voegIn(b, "        ", x.insertion(), stackFact(f, x.onderwerp()));
             b.append("    }\n");
         }
 
@@ -1224,9 +1224,9 @@ final class DrlRendering {
             b.append("    }\n");
         }
 
-        /** The fault of {@link Consequence.FilterError}: the filter evaluated again over the same bound values, its
+        /** The fault of {@link Consequence.FilterFault}: the filter evaluated again over the same bound values, its
          *  evaluation fault inserted with the member's place, and an answer there a broken contract. */
-        private void filterError(Consequence.FilterError x, StringBuilder b) {
+        private void filterFault(Consequence.FilterFault x, StringBuilder b) {
             int place = reserveer();
             String naam = naam("fout", place);
             Context c = context(x.slots(), -1, null, x.filter());
@@ -1238,7 +1238,7 @@ final class DrlRendering {
             b.append("    if (f == null) {\n        ").append(route(Route.CONTRACT_BREACH)).append("(")
                     .append(str("het filter van " + x.fold() + " faalde in de toets en niet in het gevolg, over"
                             + " dezelfde gebonden waarden")).append(");\n    }\n");
-            voegIn(b, "    ", x.insertion(), "new " + typeName(FilterError.class) + "(" + str(x.fold()) + ", "
+            voegIn(b, "    ", x.insertion(), "new " + typeName(FilterFault.class) + "(" + str(x.fold()) + ", "
                     + x.onderwerp() + ", " + variable(x.member()) + ", f, "
                     + foldPlace(x.place(), x.fold(), x.member(), null) + ")");
         }
@@ -1294,7 +1294,7 @@ final class DrlRendering {
                     dayKinds(k.otherwise(), out);
                 }
                 case Term.Call a -> a.arguments().forEach(x -> dayKinds(x, out));
-                case Term.Rescale h -> dayKinds(h.term(), out);
+                case Term.Restate h -> dayKinds(h.term(), out);
                 case Term.Division d -> {
                     dayKinds(d.left(), out);
                     dayKinds(d.right(), out);

@@ -51,7 +51,7 @@ import java.util.function.Predicate;
  * {@code vuringen} (the firings, the cap and the sentence of a run without a fixpoint), {@code fixpunt} (the outcome
  * of the fire in one line: {@code ja}, {@code nee} with the sentence of the cap or the budget, or {@code gooit} with
  * the exception the fire threw), {@code spoor-telling} (the firings per rule), {@code spoor-volgorde} (the rules in the
- * order they fired), {@code lees} (everything {@link DroolsBackend#lees} gives) and {@code sessionFacts}/{@code feit}
+ * order they fired), {@code lees} (everything {@link DroolsBackend#lees} gives) and {@code facts}/{@code feit}
  * (every object in working memory at the fixpoint, the beans with their fields among them, so that a write on a bean
  * during the fire shows).
  * The order and the count of the firings depend on the order in which a rendering adds the rules, so a step reports
@@ -105,7 +105,7 @@ final class SessionDump {
     }
 
     /** The input of a session right before its fire: every object in working memory, named and with its fields as
-     *  {@link #sessionFacts} writes them, and every global of the knowledge base with its value. Two sessions of one document
+     *  {@link #facts} writes them, and every global of the knowledge base with its value. Two sessions of one document
      *  with an equal input are two firings of one case. A global that is a predicate, the compiled day kind of the
      *  document, is left out: it is the same for every case, only the DRL text holds it in a global, and it prints an
      *  identity of the JVM otherwise. */
@@ -185,7 +185,7 @@ final class SessionDump {
         out.append("fixpunt ").append(v.geenFixpunt() == null ? "ja" : "nee " + n.sentence(v.geenFixpunt())).append('\n');
         trace(out);
         if (v.geenFixpunt() != null) {
-            sessionFacts(out, n);
+            facts(out, n);
             return;
         }
         Map<Object, String> label = new IdentityHashMap<>();
@@ -206,7 +206,7 @@ final class SessionDump {
             lees.add("fout " + n.nameOf(f.onderwerp()) + " " + citeer(f.regel()) + ": " + n.sentence(f.fout()));
         for (Object i : fp.inconsistenties()) lees.add("inconsistentie " + n.render(i));
         rules(out, "lees", lees);
-        sessionFacts(out, n);
+        facts(out, n);
     }
 
     /** Appends the dump of a session whose {@code vuur} threw {@code e}: its input, the exception, the firings before
@@ -218,15 +218,15 @@ final class SessionDump {
         out.append("vuringen gooit ").append(n.fout(e)).append('\n');
         out.append("fixpunt gooit ").append(n.fout(e)).append('\n');
         trace(out);
-        sessionFacts(out, n);
+        facts(out, n);
     }
 
     /** Appends every object in working memory, sorted and named. */
-    private void sessionFacts(StringBuilder out, Naming n) {
-        List<String> sessionFacts = new ArrayList<>();
-        for (Object o : sessie.getObjects()) sessionFacts.add(n.fact(o));
-        out.append("feiten ").append(sessionFacts.size()).append('\n');
-        rules(out, "feit", sessionFacts);
+    private void facts(StringBuilder out, Naming n) {
+        List<String> facts = new ArrayList<>();
+        for (Object o : sessie.getObjects()) facts.add(n.fact(o));
+        out.append("feiten ").append(facts.size()).append('\n');
+        rules(out, "feit", facts);
     }
 
     /** Appends the firings per rule and in order, each rule by its name quoted. */
