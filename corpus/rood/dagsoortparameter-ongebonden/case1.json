@@ -11,6 +11,7 @@
     "parameters": {}
   },
   "expectedFault": {
+    "code": "EF-014",
     "ref": "parameter \"openingsdatum\" is unbound in this case",
     "clingo": "parameter \"openingsdatum\" is unbound in this case"
   }

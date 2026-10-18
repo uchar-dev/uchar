@@ -16,9 +16,14 @@ module SMap = World.SMap
 
 let norm = Ir_v0.Checks.norm
 
-exception Error of string
+(* [code] as in [Value.Fault]: the EF code of a refusal of the case input
+   (RUNTIME-SEMANTICS ch. 5.7b) where the raising site names one *)
+exception Error of { code : string option; text : string }
 
-let fail fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
+let fail fmt = Printf.ksprintf (fun s -> raise (Error { code = None; text = s })) fmt
+
+(* a refusal of the kind [code] *)
+let failc code fmt = Printf.ksprintf (fun s -> raise (Error { code = Some code; text = s })) fmt
 
 type expectation =
   | Attribute_value of { label : string; attr : string; value : Value.t }
@@ -30,9 +35,11 @@ type expectation =
   | Inconsistent of { rule : string option; label : string option }
 
 (* the red-path case form (corpus/rood): LOADING OR evaluation MUST
-   fail observably in every executor; each field is a substring the
-   executor's own fault report must contain *)
-type expected_fault = { ef_ref : string; ef_clingo : string }
+   fail observably in every executor; each fragment is a substring the
+   executor's own fault report must contain, and [ef_code] the fault kind's
+   EF code (RUNTIME-SEMANTICS ch. 5.7b), one for every executor, which gate 8
+   compares with the codes each executor reports *)
+type expected_fault = { ef_ref : string; ef_clingo : string; ef_code : string option }
 
 type t = {
   as_of : string option;
@@ -133,14 +140,15 @@ let ms_of_datetime s =
    the same template, so the two cannot drift apart. *)
 let date_at ~at s =
   try Value.date_of_iso s
-  with Value.Fault why -> fail "%s %S is not the uchar-case-v0 date lexeme yyyy-mm-dd (%s)" at s why
+  with Value.Fault { text = why; _ } ->
+    failc "EF-003" "%s %S is not the uchar-case-v0 date lexeme yyyy-mm-dd (%s)" at s why
 
 (* a period or segment boundary, as its day number *)
 let day_at ~at s = match date_at ~at s with Value.Date d -> d | _ -> assert false
 
 let datetime_at ~at s =
   try Value.Date_time (ms_of_datetime s)
-  with Error why ->
+  with Error { text = why; _ } ->
     fail "%s %S is not the uchar-case-v0 dateTime lexeme yyyy-mm-ddThh:mm:ss[.fff] (%s)" at s why
 
 (* The `number` lexeme of uchar-case-v0 is the case schema's pattern,
@@ -414,7 +422,7 @@ let resolve_role_ft (doc : document) ~otype ~key =
   match hits with
   | [ p ] -> p
   | [] -> fail "role key %S does not resolve to a declared role opposite %S" key otype
-  | _ -> fail "role key %S is ambiguous from %S" key otype
+  | _ -> failc "EF-001" "role key %S is ambiguous from %S" key otype
 
 let resolve_role doc ~otype ~key =
   let _, far, _ = resolve_role_ft doc ~otype ~key in
@@ -670,7 +678,7 @@ let check_role_targets (doc : document) (world : World.t) =
           List.iter
             (fun l ->
               match SMap.find_opt l world.instances with
-              | None -> fail "role %S on %S links unknown label %S" key i.label l
+              | None -> failc "EF-002" "role %S on %S links unknown label %S" key i.label l
               | Some target ->
                   (* upper bound, not equality: a subtype instance fills
                      a supertype-typed role (ch. 2.6) *)
@@ -844,7 +852,9 @@ let expected_fault_of_kvs kvs =
         if s = "" then fail "expectedFault.%s: an empty fragment would match any fault" what;
         s
       in
-      Some { ef_ref = frag "ref"; ef_clingo = frag "clingo" }
+      (* optional in the schema (additive); gate 8 demands it of every red case *)
+      let code = Option.map (str ~at:(child at "code")) (List.assoc_opt "code" fk) in
+      Some { ef_ref = frag "ref"; ef_clingo = frag "clingo"; ef_code = code }
 
 (* The pinned fragments read on their OWN, without the world — the
    split every executor's runner performs before loading anything

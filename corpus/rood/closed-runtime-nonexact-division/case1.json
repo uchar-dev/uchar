@@ -17,6 +17,7 @@
     }
   },
   "expectedFault": {
+    "code": "EF-006",
     "ref": "does not fit the declared 2 decimals",
     "clingo": "non-exact division (an explicit rounding is mandated before precision is lost)"
   }

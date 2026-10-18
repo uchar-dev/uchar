@@ -30,6 +30,7 @@
     "parameters": {}
   },
   "expectedFault": {
+    "code": "EF-005",
     "ref": "division by numeric zero",
     "clingo": "division by numeric zero",
     "drools": "deling door nul in de regel \"deel van een vondst\": 90 gedeeld door 0"

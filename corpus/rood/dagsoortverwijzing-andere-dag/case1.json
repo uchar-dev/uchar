@@ -10,6 +10,7 @@
     "parameters": {}
   },
   "expectedFault": {
+    "code": "EF-022",
     "ref": "a nested day-kind test on a date other than the bound day",
     "clingo": "a nested day-kind test on a date other than the bound day"
   }

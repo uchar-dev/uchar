@@ -686,7 +686,17 @@ public final class DroolsBackend {
      *  phase; and the sentence of a run that ends without a fixpoint, at the cap or at the
      *  creation budget ({@code CreationBudget}), and null at a fixpoint. A run that ends at the budget counts the firings
      *  of its fires before the one in which the creation rule threw. */
-    public record Firing(int firings, int cap, String noFixpoint) {}
+    public record Firing(int firings, int cap, String noFixpoint) {
+
+        /** The EF code of the fault kind of {@link #noFixpoint} (RUNTIME-SEMANTICS ch. 5.7b), beside the sentence and
+         *  never inside it: EF-015 where the run ended at the creation budget; null at a fixpoint and at the cap, which
+         *  is a safeguard of this backend and no fault kind. The two ends without a fixpoint are told apart by the
+         *  count, not by the sentence: {@code fire} ends at the cap only with {@code firings >= cap}, and a creation
+         *  rule throws at the budget only inside a phase that starts below the cap, whose firings it does not count. */
+        public String code() {
+            return noFixpoint != null && firings < cap ? "EF-015" : null;
+        }
+    }
 
     /**
      * Fires {@code session} of {@code build} to its fixpoint under a cap on the firings of the run, of

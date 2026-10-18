@@ -92,6 +92,11 @@ public final class WritersConflict extends IllegalStateException {
                 l == null ? "een aangemaakte " + type : l + ", een " + type);
     }
 
+    /** The fault kind (RUNTIME-SEMANTICS ch. 5.7b): two writers of one target that disagree. */
+    public String code() {
+        return "EF-016";
+    }
+
     /** The object whose attribute the writers disagree on. */
     public Object onderwerp() {
         return onderwerp;

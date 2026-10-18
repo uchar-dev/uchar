@@ -39,6 +39,7 @@
     }
   },
   "expectedFault": {
+    "code": "EF-014",
     "ref": "parameter \"aanvoertarief\" is unbound in this case (binding is fail-fast, ch. 5.7)",
     "clingo": "parameter \"aanvoertarief\" is unbound in this case (binding is fail-fast, ch. 5.7)"
   }

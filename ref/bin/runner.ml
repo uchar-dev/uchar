@@ -50,14 +50,14 @@ let bottom_sentence sentences_path case_path =
     exit 2);
   match
     try Uchar_ref.Case.expected_fault_of_file case_path with
-    | Uchar_ref.Case.Error msg | Sys_error msg | Yojson.Json_error msg ->
+    | Uchar_ref.Case.Error { text = msg; _ } | Sys_error msg | Yojson.Json_error msg ->
         Printf.eprintf "BOTTOM_SENTENCE: %s is unreadable: %s\n" case_path msg;
         exit 2
   with
   | None ->
       Printf.eprintf "BOTTOM_SENTENCE: %s declares no expectedFault to check\n" case_path;
       exit 2
-  | Some { ef_ref; ef_clingo } ->
+  | Some { ef_ref; ef_clingo; _ } ->
       print_endline "PINS 2";
       List.iter
         (fun (key, frag) ->
@@ -72,6 +72,17 @@ let bottom_sentence sentences_path case_path =
               then Printf.printf "HIT %s %d %S\n" key n frag)
             sentences)
         [ ("ref", ef_ref); ("clingo", ef_clingo) ]
+
+(* The two machine lines of the red path, which gate 8 reads: the code this
+   executor observed (RUNTIME-SEMANTICS ch. 5.7b), and the case's own
+   expectedFault.code as the case reader decoded it. The runner decodes it,
+   never the shell: a JSON string may spell any character as an escape (the
+   --bottom-sentence precedent). "-" stands for none. Printed whenever the red
+   path observed a fault, before the fragment verdict, so a fragment mismatch
+   and a code mismatch are told apart. *)
+let print_codes ~observed ~pinned =
+  let one = function None -> "-" | Some c -> c in
+  Printf.printf "CODE %s\nCODE-PINNED %s\n" (one observed) (one pinned)
 
 let () =
   let noop, ir_path, case_path =
@@ -101,16 +112,17 @@ let () =
     let doc = Ir_v0.Loader.load_file ir_path in
     let case =
       try Uchar_ref.Case.load_file doc case_path
-      with Uchar_ref.Case.Error msg -> (
+      with Uchar_ref.Case.Error { code; text = msg } -> (
         match pinned with
         | None ->
-            Printf.eprintf "CASE ERROR: %s\n" msg;
+            Printf.eprintf "CASE ERROR: %s\n" (Uchar_ref.Value.report ~code msg);
             exit 2
-        | Some { ef_ref; _ } ->
+        | Some { ef_ref; ef_code; _ } ->
             (* the red path's LOAD arm: the case reader refused, and
                that refusal is as observable a failure as a fault at
                evaluation — it is matched against the same pin *)
-            let report = "CASE ERROR: " ^ msg in
+            let report = "CASE ERROR: " ^ Uchar_ref.Value.report ~code msg in
+            print_codes ~observed:code ~pinned:ef_code;
             if Uchar_ref.Case.contains ~needle:ef_ref report then (
               Printf.printf "oracle: expected fault observed at load (%s)\n" ef_ref;
               exit 0)
@@ -129,7 +141,7 @@ let () =
       }
     in
     match case.expected_fault with
-    | Some { ef_ref; _ } -> (
+    | Some { ef_ref; ef_code; _ } -> (
         (* the red path's EVALUATION arm (the load arm is above): the
            run MUST fault, observably, with the pinned fragment in the
            report — never a silent success *)
@@ -137,11 +149,13 @@ let () =
         | (_ : Uchar_ref.World.t) ->
             prerr_endline "EXPECTED FAULT DID NOT OCCUR: evaluation succeeded";
             exit 1
-        | exception Uchar_ref.Value.Fault msg ->
-            if Uchar_ref.Case.contains ~needle:ef_ref msg then
+        | exception Uchar_ref.Value.Fault { code; text } ->
+            let report = Uchar_ref.Value.report ~code text in
+            print_codes ~observed:code ~pinned:ef_code;
+            if Uchar_ref.Case.contains ~needle:ef_ref report then
               Printf.printf "oracle: expected fault observed (%s)\n" ef_ref
             else begin
-              Printf.eprintf "EXPECTED FAULT MISMATCH: wanted %S in:\n%s\n" ef_ref msg;
+              Printf.eprintf "EXPECTED FAULT MISMATCH: wanted %S in:\n%s\n" ef_ref report;
               exit 1
             end)
     | None -> (
@@ -154,11 +168,11 @@ let () =
             List.iter (fun m -> Printf.printf "MISMATCH: %s\n" m) mismatches;
             exit 1)
   with
-  | Uchar_ref.Value.Fault msg ->
-      Printf.eprintf "EVALUATION FAULT: %s\n" msg;
+  | Uchar_ref.Value.Fault { code; text } ->
+      Printf.eprintf "EVALUATION FAULT: %s\n" (Uchar_ref.Value.report ~code text);
       exit 1
-  | Uchar_ref.Case.Error msg ->
-      Printf.eprintf "CASE ERROR: %s\n" msg;
+  | Uchar_ref.Case.Error { code; text } ->
+      Printf.eprintf "CASE ERROR: %s\n" (Uchar_ref.Value.report ~code text);
       exit 2
   | Ir_v0.Loader.Error (path, msg) ->
       Printf.eprintf "IR LOAD ERROR at %s: %s\n" (if path = "" then "<root>" else path) msg;

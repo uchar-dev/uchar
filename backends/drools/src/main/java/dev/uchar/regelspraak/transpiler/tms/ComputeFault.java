@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.runtime.Breuk;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
 /**
  * An evaluation fault of the exec-model branch other than a division by a numeric zero
@@ -77,6 +78,22 @@ public final class ComputeFault extends RuntimeException {
     /** The rule a named fault ran in; null where nothing named it yet. */
     public String regel() {
         return regel;
+    }
+
+    /** The fault kind of this fault (RUNTIME-SEMANTICS ch. 5.7b), read off its sentence: the sentences are this
+     *  class's constants and the runtime's, the reference interpreter's words, and a plan term carries a sentence
+     *  rather than a code, so the kind is named here, beside the text and never inside it. Null for a sentence of a
+     *  kind no red case witnesses yet (an irrational square root, an easterSunday or a dateWith out of range). */
+    public String code() {
+        if (sentence.equals(EVALUATION_DATE_WITHOUT_DATE) || sentence.equals(RegelSpraakRuntime.REKENJAAR_ZONDER_REKENDATUM))
+            return "EF-011";
+        if (sentence.equals(VALIDITY_WITHOUT_DATE)) return "EF-012";
+        if (sentence.equals(DAY_OUTSIDE_DAY_KIND)) return "EF-010";
+        if (sentence.equals(UNRESOLVED) || sentence.equals(UNRESOLVED_CONDITION)) return "EF-019";
+        if (sentence.equals(RegelSpraakRuntime.DATUMTIJD_BUITEN_BEREIK)) return "EF-007";
+        if (sentence.startsWith("duration count ") && sentence.endsWith(" is out of range")) return "EF-008";
+        if (sentence.startsWith(ComputeHelpers.DAY_KIND_WALK)) return "EF-009";
+        return null;
     }
 
     /** Whether {@code t} is an evaluation fault this branch turns into a {@link Fault}: a division by a numeric zero, a

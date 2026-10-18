@@ -18,6 +18,7 @@
   "parameters": {}
  },
  "expectedFault": {
+  "code": "EF-004",
   "ref": "does not fit 2 decimals",
   "clingo": "does not fit 2 decimals"
  }

@@ -95,6 +95,7 @@
     "parameters": {}
   },
   "expectedFault": {
+    "code": "EF-019",
     "ref": "Unresolved condition reached in evaluation",
     "clingo": "Unresolved condition reached in translation",
     "drools": "fout in de regel \"vakbeseining door het kustvak\": Unresolved condition reached in evaluation"

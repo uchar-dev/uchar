@@ -14,6 +14,7 @@
     "parameters": {}
   },
   "expectedFault": {
+    "code": "EF-018",
     "ref": "the created object's back-link is ambiguous",
     "clingo": "the created object's back-link is ambiguous"
   }

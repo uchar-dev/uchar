@@ -37,7 +37,7 @@ let check name ok =
 let translate doc case =
   try Translate.translate doc case with
   | Uchar_ref.Value.Fault _ as f -> raise f
-  | e -> raise (Uchar_ref.Value.Fault ("a CRASH, not a fault: " ^ Printexc.to_string e))
+  | e -> raise (Uchar_ref.Value.Fault { code = None; text = ("a CRASH, not a fault: " ^ Printexc.to_string e) })
 
 (* the frontend-faithful pure-% spelling (jutterswet-vondsttarief) *)
 let pct_unit =
@@ -236,14 +236,14 @@ let translates name left =
   let doc, case = load left in
   match translate doc case with
   | (_ : string) -> check (name ^ ": clingo translates") true
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (name ^ ": clingo translates (unexpected fault: " ^ m ^ ")") false
 
 let faults name left =
   let doc, case = load left in
   match translate doc case with
   | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (name ^ ": faults loudly (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:"unit-carrying multiplicative operand" m)
 
@@ -301,7 +301,7 @@ let () =
       check "m -> m is x1 (finest maps to itself)" (Q.equal rm Q.one);
       check "multiply-only: km->m factor is a whole number >= 1"
         (Z.equal (Q.den rkm) Z.one && Q.geq rkm Q.one)
-  | exception Uchar_ref.Value.Fault m -> check ("finest(Afstand) unexpected fault: " ^ m) false);
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("finest(Afstand) unexpected fault: " ^ m) false);
   let deadline =
     system ~ident:"Termijn"
       [ eenh ~system:"Termijn" ~canonical_form:"maand" "maand" (Some (1, 1));
@@ -313,7 +313,7 @@ let () =
       let year = eenh ~system:"Termijn" ~canonical_form:"maand" "jaar" (Some (12, 1)) in
       check "jaar -> maand is x12 (non-power-of-ten multiply-only integer)"
         (Q.equal (to_finest year) (Q.of_int 12))
-  | exception Uchar_ref.Value.Fault m -> check ("finest(Termijn) unexpected fault: " ^ m) false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("finest(Termijn) unexpected fault: " ^ m) false
 
 (* a unit system whose sibling factors (2 and 3) share no integer-finest faults —
    never a silent divide-down canonical *)
@@ -325,7 +325,7 @@ let () =
   in
   match Normalise.(finest_of_units ~where:"unit system \"Broken\"" (plain_units broken)) with
   | _ -> check "no-finest unit system must fault, not silently pick" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("no-finest faults loudly (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:"admits no finest base unit" m)
 
@@ -341,7 +341,7 @@ let () =
       check "an exact 1/3 factor: the finest is third" (finest.Ir_v0.Ast.abbr_text = Some "third");
       check "an exact 1/3 factor: base restates into third by exactly 3"
         (Q.equal (to_finest base) (Q.of_int 3))
-  | exception Uchar_ref.Value.Fault m -> check ("an exact 1/3 factor faulted: " ^ m) false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("an exact 1/3 factor faulted: " ^ m) false
 
 (* the jaar/maand document (unit system Termijn): looptijd (maand) = 2 jaar +
    basisduur (maand). Before the pass clingo refuses the km/m-style factor≠1
@@ -455,7 +455,7 @@ let () =
   (* the pass makes the factor≠1 jaar/maand join+write translate at all *)
   (match translate doc case with
   | (_ : string) -> check "jaar/maand doc translates end-to-end (pass lifts the factor≠1 fence)" true
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("jaar/maand doc translates (unexpected fault: " ^ m ^ ")") false);
   (* and ref pins the value clingo must reproduce: 2 jaar + 3 maand = 27 maand *)
   let env =
@@ -548,14 +548,14 @@ let () =
         (Q.equal (to_finest ton_mass) (Q.of_int 1000));
       check "kg@Massa -> kg@Gewicht is x1 (the factorless crossing)"
         (Q.equal (to_finest kg_mass) Q.one)
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("cross-system finest unexpected fault: " ^ m) false);
   (* and the multiply-only invariant is NOT relaxed by crossing systems: a
      cross-system ratio that is not a positive integer keeps the loud refusal *)
   let half_ton : Ir_v0.Ast.measure_unit = eenh ~system:"Massa" ~canonical_form:"kg" "ht" (Some (3, 2)) in
   match Normalise.finest_of_units ~where [ kg_weight; half_ton ] with
   | _ -> check "a non-integer CROSS-SYSTEM ratio must fault, not silently pick" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("cross-system non-integer ratio faults loudly (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:"admits no finest base unit" m
         && Uchar_ref.Case.contains ~needle:"unit systems Gewicht, Massa" m)
@@ -874,7 +874,7 @@ let () =
     | p ->
         check "cross-system document translates at all four unit positions" true;
         p
-    | exception Uchar_ref.Value.Fault m ->
+    | exception Uchar_ref.Value.Fault { text = m; _ } ->
         check ("cross-system document translates (unexpected fault: " ^ m ^ ")") false;
         ""
   in
@@ -901,7 +901,7 @@ let () =
   match translate doc case with
   | (_ : string) ->
       check "mutant: unconvertible cross-system units must NOT translate" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("mutant: unconvertible cross-system units refuse loudly (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:"non-identical units" m)
 
@@ -920,7 +920,7 @@ let () =
       check "mutant: the emitted bound follows the declared factor (500, not 1000)"
         (Uchar_ref.Case.contains ~needle:"(500*100)" clamp
         && not (Uchar_ref.Case.contains ~needle:"(1000*100)" clamp))
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("mutant: a 500-kg ton still translates (unexpected fault: " ^ m ^ ")") false
 
 (* --- the retired unknown-type arithmetic recursion arm (besluit 16Y+17b) --- *)
@@ -1029,7 +1029,7 @@ let () =
   Sys.remove casef;
   match translate doc case with
   | (_ : string) -> check "unknown-typed arithmetic Binair: expected a loud fault, got a model" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("unknown-typed arithmetic Binair faults loudly (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:"non-numeric arithmetic operand" m)
 
@@ -1117,7 +1117,7 @@ let faults_with ~name ~ir ~case_text ~needle =
   Sys.remove casef;
   match translate doc case with
   | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (name ^ " faults loudly (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
 
 (* a document the loader refuses (B12, U2): since L2 a range is written in
@@ -1642,7 +1642,7 @@ let clingo_matches ~name ~ir ~case_text =
   with
   | [] -> check label true
   | ms -> check (label ^ " (" ^ String.concat "; " ms ^ ")") false
-  | exception Uchar_ref.Value.Fault m -> check (label ^ " (fault: " ^ m ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (fault: " ^ m ^ ")") false
 
 let translates_with ~name ~ir ~case_text =
   let irf = write_temp ".ir.json" ir in
@@ -1653,7 +1653,7 @@ let translates_with ~name ~ir ~case_text =
   Sys.remove casef;
   match translate doc case with
   | (_ : string) -> check (name ^ ": translates") true
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (name ^ ": translates (unexpected fault: " ^ m ^ ")") false
 
 let () =
@@ -1978,7 +1978,7 @@ let translates_carrying ~name ~ir ~case_text ~needle =
   match translate doc case with
   | program -> check (name ^ ": translates, program carries " ^ needle)
                  (Uchar_ref.Case.contains ~needle program)
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (name ^ ": translates (unexpected fault: " ^ m ^ ")") false
 
 let () =
@@ -2620,7 +2620,7 @@ let () =
     in
     match translate (right_twisted doc (Lv_date_time lex)) case with
     | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
-    | exception Uchar_ref.Value.Fault m ->
+    | exception Uchar_ref.Value.Fault { text = m; _ } ->
         check (name ^ " faults loudly (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
   in
   refused_at_load ~name:"onleesbaar datum-tijd-literal-lexeem bij het laden"
@@ -2717,7 +2717,7 @@ let loads_case ~name ~case_text ~needle =
   let outcome =
     match Uchar_ref.Case.load_file doc casef with
     | (_ : Uchar_ref.Case.t) -> Ok ()
-    | exception Uchar_ref.Case.Error m -> Error m
+    | exception Uchar_ref.Case.Error { text = m; _ } -> Error m
   in
   Sys.remove irf;
   Sys.remove casef;
@@ -2812,7 +2812,7 @@ let loads_ir_case ~name ~ir ~case_text ~needle =
   let outcome =
     match Uchar_ref.Case.load_file doc casef with
     | (_ : Uchar_ref.Case.t) -> Ok ()
-    | exception Uchar_ref.Case.Error m -> Error m
+    | exception Uchar_ref.Case.Error { text = m; _ } -> Error m
   in
   Sys.remove irf;
   Sys.remove casef;
@@ -3244,7 +3244,7 @@ let () =
   let name = "the supertype edge " ^ fact ^ " comes from the list key, not from ot_naam" in
   match translate unnamed case with
   | program -> check name (Uchar_ref.Case.contains ~needle:fact program)
-  | exception Uchar_ref.Value.Fault m -> check (name ^ " (fault: " ^ m ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (fault: " ^ m ^ ")") false
 
 (* ch. 3.9 — the §8.2 whole-period qualifier over a NAVIGATED characteristic.
 
@@ -3484,7 +3484,7 @@ let substitute ~truth ~via body_text =
   let n = String.length truth in
   let rec search i =
     if i + n > String.length body_text then
-      raise (Uchar_ref.Value.Fault ("test twist: substring not found: " ^ truth))
+      raise (Uchar_ref.Value.Fault { code = None; text = ("test twist: substring not found: " ^ truth) })
     else if String.sub body_text i n = truth then
       String.sub body_text 0 i ^ via ^ String.sub body_text (i + n) (String.length body_text - i - n)
     else search (i + 1)
@@ -3793,7 +3793,7 @@ let () =
    in
    match translate both_sides case with
    | (_ : string) -> check "ch3.4b een pad naast een bronRol, voorbij de lader: expected a fault" false
-   | exception Uchar_ref.Value.Fault m ->
+   | exception Uchar_ref.Value.Fault { text = m; _ } ->
        check ("ch3.4b een pad naast een bronRol, voorbij de lader (" ^ m ^ ")")
          (m = "sourcePath beside sourceRole: a fold carries one range, never two"));
   (* (c) a listed fold has no set source (D8 (i): the source is a SINGLE
@@ -4670,11 +4670,11 @@ let () =
           let doc, case = load_pair ~ir ~case_text:vals in
           (match ref_report doc case with
           | (_ : string list) -> check (ident ^ ": ref weigert (kreeg een wereld)") false
-          | exception Uchar_ref.Value.Fault m ->
+          | exception Uchar_ref.Value.Fault { text = m; _ } ->
               check (ident ^ ": ref weigert in de zin van de verifier (" ^ m ^ ")") (m = sentence_text));
           (match translate doc case with
           | (_ : string) -> check (ident ^ ": clingo weigert (kreeg een programma)") false
-          | exception Uchar_ref.Value.Fault m ->
+          | exception Uchar_ref.Value.Fault { text = m; _ } ->
               check (ident ^ ": clingo weigert in de zin van de verifier (" ^ m ^ ")") (m = sentence_text))
       | vs ->
           check
@@ -4987,7 +4987,7 @@ let both_break ~name ~ir ~case_text ~needle =
   in
   (match Uchar_ref.Eval.evaluate env case.world with
   | _ -> check (name ^ ": ref breekt af (kreeg een wereld terug)") false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (name ^ ": ref breekt af (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m));
   let label = name ^ ": clingo is UNSAT" in
   match Solve.run_clingo (translate doc case) with
@@ -4996,7 +4996,7 @@ let both_break ~name ~ir ~case_text ~needle =
   | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
   | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
   | _, _ -> check (label ^ " (clingo killed)") false
-  | exception Uchar_ref.Value.Fault m -> check (label ^ " (vertaalfout: " ^ m ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (vertaalfout: " ^ m ^ ")") false
 
 let () =
   (* vorm 1 — de §6.5-plek in de NIET-betreden arm. inkomen 40,00 ligt boven de
@@ -6837,7 +6837,7 @@ let dk_translates ~name ~ir =
   Sys.remove casef;
   match translate doc case with
   | (_ : string) -> check (name ^ ": clingo translates") true
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (name ^ ": clingo translates (unexpected fault: " ^ m ^ ")") false
 
 let () =
@@ -6931,7 +6931,7 @@ let () =
   Sys.remove casef;
   (match translate doc case with
   | (_ : string) -> check "datum-tijd plus dagsoort translates" true
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("datum-tijd plus dagsoort translates (unexpected fault: " ^ m ^ ")") false);
   (* the §6.10 twin stays refused by name, in ref's words *)
   faults_with ~name:"dagsoorttijdsduur over datum-tijd-operanden blijft een erkende flank"
@@ -7145,7 +7145,7 @@ let () =
   Sys.remove irf;
   Sys.remove casef;
   match translate doc case with
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("AANTAL_GEVULDE: the set form translates (unexpected fault: " ^ m ^ ")") false;
       check "AANTAL_GEVULDE: the count is keyed on the element (no program)" false
   | program ->
@@ -7318,7 +7318,7 @@ let () =
   Sys.remove casef;
   match translate doc case with
   | (_ : string) -> check "AANTAL_GEVULDE temporal: expected a loud fault, got a model" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check
         ("AANTAL_GEVULDE temporal: the refusal is not the expr_term bottom sentence (" ^ m ^ ")")
         (not (Uchar_ref.Case.contains ~needle:"expression kind not translated" m))
@@ -7427,7 +7427,7 @@ let () =
   | (_ : string) ->
       check "AANTAL_GEVULDE: a count derives no unit, so som / count over a kg source translates"
         true
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check
         ("AANTAL_GEVULDE: a count derives no unit, so som / count over a kg source translates \
           (unexpected fault: " ^ m ^ ")")
@@ -7612,7 +7612,7 @@ let () =
       check (name ^ Printf.sprintf " (%d segment(en))" (List.length segs))
         (segs = [ (day_number "2025-03-15", day_number "2025-07-01", 12) ])
   | Error m -> check (name ^ " (" ^ m ^ ")") false
-  | exception Uchar_ref.Value.Fault m -> check (name ^ " (fout: " ^ m ^ ")") false);
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (fout: " ^ m ^ ")") false);
   (* de HEKKEN van de producent worden mee geknipt. Met `actief` ook in
      januari 2024 is het 2024-deel 10 x 31/366, niet exact; die bucket valt
      buiten het venster [2025-01-01, open) en wordt nooit geschreven. ref
@@ -8210,12 +8210,12 @@ let () =
   (let doc, case = load_pair ~ir:flat_ir ~case_text:param_case in
    match ref_report doc case with
    | (_ : string list) -> check "GEVULD over a non-temporal lengte (ref): expected a fault" false
-   | exception Uchar_ref.Value.Fault m ->
+   | exception Uchar_ref.Value.Fault { text = m; _ } ->
        check ("GEVULD over a non-temporal lengte (ref): " ^ m) (m = wf043));
   (let doc, case = load_pair ~ir:param_ir ~case_text:param_case in
    match ref_report doc case with
    | (_ : string list) -> check "GEVULD over a parameter, whole year (ref): expected a fault" false
-   | exception Uchar_ref.Value.Fault m ->
+   | exception Uchar_ref.Value.Fault { text = m; _ } ->
        check ("GEVULD over a parameter, whole year (ref): " ^ m) (m = sentence_text))
 
 (* THE SHARED FAIL-FAST's two checks (card clingo-parameter-failfast): an
@@ -8232,11 +8232,11 @@ let unbound_fires ~name ~ir ~case_text ~param ~silent =
   let doc, case = load_pair ~ir ~case_text in
   (match ref_report doc case with
   | _ -> check (name ^ ": ref faults (it evaluated)") false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (name ^ ": ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m));
   let label = name ^ ": clingo fires the shared fail-fast" in
   match translate doc case with
-  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
   | program -> (
       match Solve.run_clingo program with
       | _, Unix.WEXITED 20 ->
@@ -8274,7 +8274,7 @@ let pinned_loud ~entry ~name ~ir ~case_text ~needle =
   let doc, case = load_pair ~ir ~case_text in
   let label = name ^ ": clingo refuses where ref plays" in
   match translate doc case with
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (label ^ " (translation fault: " ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
   | program -> (
       match Solve.run_clingo program with
@@ -8290,11 +8290,11 @@ let pinned_silent ~entry ~name ~ir ~case_text ~param =
   let doc, case = load_pair ~ir ~case_text in
   (match ref_report doc case with
   | _ -> check (name ^ ": ref faults (it evaluated)") false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (name ^ ": ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle:(pf_reason param) m));
   let label = name ^ ": clingo answers where ref faults" in
   match translate doc case with
-  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ": the deviation is gone)") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ": the deviation is gone)") false
   | program -> (
       match Solve.run_clingo program with
       | out, Unix.WEXITED (10 | 30) -> (
@@ -8313,7 +8313,7 @@ let pinned_value ~entry ~name ~ir ~case_text ~answers =
   let doc, case = load_pair ~ir ~case_text in
   let label = name ^ ": clingo answers otherwise" in
   match translate doc case with
-  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
   | program -> (
       match Solve.run_clingo program with
       | out, Unix.WEXITED (10 | 30) ->
@@ -9262,12 +9262,12 @@ let () =
    in
    (match ref_report doc case with
    | _ -> check (name ^ ": ref faults (it evaluated)") false
-   | exception Uchar_ref.Value.Fault m ->
+   | exception Uchar_ref.Value.Fault { text = m; _ } ->
        check (name ^ ": ref faults (" ^ m ^ ")")
          (Uchar_ref.Case.contains ~needle:"no fixpoint within 100 passes" m));
    let label = name ^ ": clingo's fence fires" in
    match translate doc case with
-   | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
    | program -> (
        match Solve.run_clingo program with
        | _, Unix.WEXITED 20 ->
@@ -9635,7 +9635,7 @@ let () =
   let doc, case = load_pair ~ir ~case_text:unbound in
   (match ref_report doc case with
   | _ -> check "horizon fence: an unbound parameter in the die/dat filter: ref faults (it evaluated)" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("horizon fence: an unbound parameter in the die/dat filter: ref faults (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle m));
   faults_with ~name:"horizon fence: an unbound parameter in the die/dat filter, in translation" ~ir
@@ -9682,12 +9682,12 @@ let () =
   let doc = right_twisted doc (Lv_date "2026-13-40") in
   (match ref_report doc case with
   | _ -> check "a malformed date literal: ref faults (it evaluated)" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("a malformed date literal: ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m));
   match translate doc case with
   | (_ : string) ->
       check "a malformed date literal refuses in ref's reader, in translation: expected a loud fault" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("a malformed date literal refuses in ref's reader, in translation (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle m)
 
@@ -10506,13 +10506,13 @@ let named_refusal ~by ~ref_plays ~name ~ir ~case_text ~param =
   else (
     match ref_report doc case with
     | _ -> check (name ^ ": ref faults (it evaluated)") false
-    | exception Uchar_ref.Value.Fault m ->
+    | exception Uchar_ref.Value.Fault { text = m; _ } ->
         check (name ^ ": ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle:(pf_reason param) m));
   let named = Printf.sprintf "parameter %S is unbound in this case, and whether %s" param by
   and not_normed = "depends on the order of the members a creation adds, which is not normed (ch. 3.9a/5.7a)" in
   let label = name ^ ": clingo refuses in the named sentence" in
   match translate doc case with
-  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
   | program -> (
       match Solve.run_clingo program with
       | _, Unix.WEXITED 20 ->
@@ -11872,7 +11872,7 @@ let () =
   | finest, to_finest ->
       check "de factor {1, 24}: de fijnste eenheid is uur" (finest.Ir_v0.Ast.abbr_text = Some "uur");
       check "de factor {1, 24}: 1 dg is precies 24 uur" (Q.equal (to_finest dg_u) (Q.of_int 24))
-  | exception Uchar_ref.Value.Fault m -> check ("de factor {1, 24}: onverwachte fout: " ^ m) false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("de factor {1, 24}: onverwachte fout: " ^ m) false
 
 (* THE L3 LOAD TABLE. The type system of the wire in its L3 shape: a number
    with its unit and, at a declaration, the percentage tag; a date with its
@@ -12065,12 +12065,12 @@ let () =
   in
   (match Uchar_ref.Eval.evaluate env case.world with
   | _ -> check "L3-laadtabel: ref weigert de presentatietag in een annotatie (kreeg een wereld)" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("L3-laadtabel: ref weigert de presentatietag in een annotatie (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:sentence_text m));
   match translate doc case with
   | (_ : string) -> check "L3-laadtabel: clingo weigert de presentatietag in een annotatie (kreeg een programma)" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("L3-laadtabel: clingo weigert de presentatietag in een annotatie (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:sentence_text m)
 
@@ -12466,10 +12466,10 @@ let () =
       in
       (match ref_report doc case with
       | (_ : string list) -> check (ident ^ ": ref weigert (kreeg een wereld)") false
-      | exception Uchar_ref.Value.Fault m -> check (ident ^ ": ref weigert (" ^ m ^ ")") (m = sentence_text));
+      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": ref weigert (" ^ m ^ ")") (m = sentence_text));
       match translate doc case with
       | (_ : string) -> check (ident ^ ": clingo weigert (kreeg een programma)") false
-      | exception Uchar_ref.Value.Fault m -> check (ident ^ ": clingo weigert (" ^ m ^ ")") (m = sentence_text))
+      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": clingo weigert (" ^ m ^ ")") (m = sentence_text))
     [ ( "WF-028 onbekende doelrol", {|"targetRole": "vaksein"|}, {|"targetRole": "onbekend"|},
         "'onbekend' is not a role of 'vakbeseining'" );
       ( "WF-028 onbekende ankerrol", {|"anchorRole": "seinvak"|}, {|"anchorRole": "onbekend"|},
@@ -12533,11 +12533,11 @@ let () =
   let doc, case = load_pair ~ir ~case_text:(case_text "null" "2026") in
   (match ref_report doc case with
   | (_ : string list) -> check "Rekenjaar zonder rekendatum: ref weigert (kreeg een wereld)" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("Rekenjaar zonder rekendatum: ref weigert (" ^ m ^ ")") (m = sentence_text));
   match translate doc case with
   | (_ : string) -> check "Rekenjaar zonder rekendatum: clingo weigert (kreeg een programma)" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("Rekenjaar zonder rekendatum: clingo weigert (" ^ m ^ ")") (m = sentence_text)
 
 (* WF-108 (c) over the wire, on the probe that found the gap: the golden
@@ -12586,10 +12586,10 @@ let () =
   let doc, case = load_pair ~ir ~case_text in
   (match ref_report doc case with
   | (_ : string list) -> check "kv-eenstap: ref weigert (kreeg een wereld)" false
-  | exception Uchar_ref.Value.Fault m -> check ("kv-eenstap: ref weigert (" ^ m ^ ")") (m = sentence_text));
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("kv-eenstap: ref weigert (" ^ m ^ ")") (m = sentence_text));
   match translate doc case with
   | (_ : string) -> check "kv-eenstap: clingo weigert (kreeg een programma)" false
-  | exception Uchar_ref.Value.Fault m -> check ("kv-eenstap: clingo weigert (" ^ m ^ ")") (m = sentence_text)
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("kv-eenstap: clingo weigert (" ^ m ^ ")") (m = sentence_text)
 
 (* ... and the two shapes the loader refuses on the wire, built past it on the
    Werf fixture: both spellings, and none. ref and this backend speak the
@@ -12614,10 +12614,10 @@ let () =
     (fun (ident, d, sentence_text) ->
       (match ref_report d case with
       | (_ : string list) -> check (ident ^ ": ref weigert (kreeg een wereld)") false
-      | exception Uchar_ref.Value.Fault m -> check (ident ^ ": ref weigert (" ^ m ^ ")") (m = sentence_text));
+      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": ref weigert (" ^ m ^ ")") (m = sentence_text));
       match translate d case with
       | (_ : string) -> check (ident ^ ": clingo weigert (kreeg een programma)") false
-      | exception Uchar_ref.Value.Fault m -> check (ident ^ ": clingo weigert (" ^ m ^ ")") (m = sentence_text))
+      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": clingo weigert (" ^ m ^ ")") (m = sentence_text))
     [ ( "kwantorvouw met twee bereiken, voorbij de lader", value_range ~role_ref:(Some rb) ~trail:(Some [ rb; rb ]),
         "sourcePath beside sourceRole: a quantifier fold carries one range, never two" );
       ( "kwantorvouw zonder bereik, voorbij de lader", value_range ~role_ref:None ~trail:None,
@@ -12640,10 +12640,10 @@ let () =
     let doc, case = load_pair ~ir ~case_text in
     (match ref_report doc case with
     | (_ : string list) -> check (ident ^ ": ref weigert (kreeg een wereld)") false
-    | exception Uchar_ref.Value.Fault m -> check (ident ^ ": ref weigert (" ^ m ^ ")") (m = sentence_text));
+    | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": ref weigert (" ^ m ^ ")") (m = sentence_text));
     match translate doc case with
     | (_ : string) -> check (ident ^ ": clingo weigert (kreeg een programma)") false
-    | exception Uchar_ref.Value.Fault m -> check (ident ^ ": clingo weigert (" ^ m ^ ")") (m = sentence_text)
+    | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": clingo weigert (" ^ m ^ ")") (m = sentence_text)
   in
   let year_of =
     Printf.sprintf
@@ -12715,11 +12715,11 @@ let () =
   let doc, case = load_pair ~ir ~case_text in
   (match ref_report doc case with
   | (_ : string list) -> check "emmerende builtin in een expressie: ref weigert (kreeg een wereld)" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("emmerende builtin in een expressie: ref weigert (" ^ m ^ ")") (m = sentence_text));
   match translate doc case with
   | (_ : string) -> check "emmerende builtin in een expressie: clingo weigert (kreeg een programma)" false
-  | exception Uchar_ref.Value.Fault m ->
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("emmerende builtin in een expressie: clingo weigert (" ^ m ^ ")") (m = sentence_text)
 
 (* THE M7 LOAD REFUSALS (the source record, delta B26): a node's source text
@@ -14166,7 +14166,7 @@ let clingo_fence_fires ?(without = []) ~name ~ir ~case_text ~needle () =
   let doc, case = load_pair ~ir ~case_text in
   let label = name ^ ": clingo's fence fires" in
   match translate doc case with
-  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
   | program -> (
       match Solve.run_clingo program with
       | _, Unix.WEXITED 20 ->
@@ -14184,7 +14184,7 @@ let clingo_fence_fires ?(without = []) ~name ~ir ~case_text ~needle () =
             match Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) with
             | [] -> "clingo answered the rows"
             | ms -> "clingo answered: " ^ String.concat "; " ms
-            | exception Uchar_ref.Value.Fault m -> "clingo answered a model; reading the rows: " ^ m
+            | exception Uchar_ref.Value.Fault { text = m; _ } -> "clingo answered a model; reading the rows: " ^ m
           in
           check (label ^ " (" ^ answered ^ ")") false
       | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
@@ -14197,7 +14197,7 @@ let clingo_fence_fires ?(without = []) ~name ~ir ~case_text ~needle () =
 let program_holds ~name ~ir ~case_text ~present ~absent =
   let doc, case = load_pair ~ir ~case_text in
   match translate doc case with
-  | exception Uchar_ref.Value.Fault m -> check (name ^ " (translation fault: " ^ m ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (translation fault: " ^ m ^ ")") false
   | program ->
       let has f = Uchar_ref.Case.contains ~needle:f program in
       let missing = List.filter (fun f -> not (has f)) present
@@ -14485,7 +14485,7 @@ let () =
       Sys.remove casef;
       match translate doc case with
       | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
-      | exception Uchar_ref.Value.Fault msg -> check (name ^ " (" ^ msg ^ ")") (msg = sentence))
+      | exception Uchar_ref.Value.Fault { text = msg; _ } -> check (name ^ " (" ^ msg ^ ")") (msg = sentence))
     [ ( "WF-038: a text duration operand", extent ~typ:(counted ~u:"jr" ()) (body_text "gisteren") up_to,
         duration_operand_refusal Duration Text_type );
       ( "WF-038: a text absoluteDuration operand",
@@ -14543,7 +14543,7 @@ let () =
       Sys.remove casef;
       match translate doc case with
       | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
-      | exception Uchar_ref.Value.Fault msg -> check (name ^ " (" ^ msg ^ ")") (msg = sentence))
+      | exception Uchar_ref.Value.Fault { text = msg; _ } -> check (name ^ " (" ^ msg ^ ")") (msg = sentence))
     [ ("WF-035 day: date + date", d, "plus", day_number, day_number, date_plus_date_refusal);
       ("WF-035 ms: date - date", m, "minus", moment, moment, date_plus_date_refusal);
       ("WF-035 mixed, day slot: day date + ms date", d, "plus", day_number, moment, date_plus_date_refusal);
@@ -14735,7 +14735,7 @@ let () =
   let on_read ~name ~ir ~sentence_text =
     match load_pair ~ir ~case_text:(case_data timeline_state) with
     | (_ : Ir_v0.Ast.document * Uchar_ref.Case.t) -> check (name ^ ": expected a refusal at load") false
-    | exception Uchar_ref.Case.Error m -> check (name ^ " (" ^ m ^ ")") (m = sentence_text)
+    | exception Uchar_ref.Case.Error { text = m; _ } -> check (name ^ " (" ^ m ^ ")") (m = sentence_text)
   in
   on_read ~name:"ch3.2 a case timeline on a multi-period grid" ~ir:plural_flag
     ~sentence_text:
@@ -14784,7 +14784,7 @@ let () =
   in
   (match translate_doc (doc ~objective:None ~base_expr:None) (case_data "2024-01-01" "2025-01-01") with
   | (_ : string) -> check "ch3.2 pro-rata on the calendar grid translates" true
-  | exception Uchar_ref.Value.Fault m -> check ("ch3.2 pro-rata on the calendar grid (" ^ m ^ ")") false);
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("ch3.2 pro-rata on the calendar grid (" ^ m ^ ")") false);
   let enclosed = "pro-rata onto or from a grid that does not lie on the calendar is fenced" in
   faults_with ~name:"ch3.2 pro-rata onto a target on a fixed start point"
     ~ir:(doc ~objective:(Some "--01-15") ~base_expr:None) ~case_text:(case_data "2024-01-01" "2025-01-01")
@@ -15457,12 +15457,12 @@ let () =
     in
     (match ref_report doc case with
     | _ -> check (name ^ ": ref faults on the budget (it evaluated)") false
-    | exception Uchar_ref.Value.Fault m ->
+    | exception Uchar_ref.Value.Fault { text = m; _ } ->
         check (name ^ ": ref faults on the budget, at the mint at depth 101 (" ^ m ^ ")")
           (Uchar_ref.Case.contains ~needle:ref_site m));
     let label = name ^ ": clingo is UNSAT on the budget, with one witness, on the mint at depth 101" in
     match translate doc case with
-    | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+    | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
     | program -> (
         match Solve.run_clingo program with
         | _, Unix.WEXITED 20 ->
@@ -15546,7 +15546,7 @@ let () =
        ~needle:(Printf.sprintf "#const oc_nest = %d." Translate.oc_nest)
        ~by:"#const oc_nest = 60." (translate doc case)
    with
-   | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
    | exception Failure m -> check (label ^ " (" ^ m ^ ")") false
    | program -> (
        match Solve.run_clingo program with
@@ -15630,7 +15630,7 @@ let () =
   let doc, case = load_pair ~ir:(lange_chain 5) ~case_text:(case_data [ value_node "W1" "rang" "1" ]) in
   let label = name ^ ": clingo refuses by name" in
   match translate doc case with
-  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
   | program -> (
       match
         Solve.run_clingo (program ^ "\nis_a(oc9(\"W1\"),\"wachter\"). depth(oc9(\"W1\"),1,1). nest(oc9(\"W1\"),1).\n")

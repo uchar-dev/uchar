@@ -163,7 +163,7 @@ let div_gen ~err ~collapse l r =
           Empty
       | _ ->
           let rq, ru = num_exn "gedeeld door" r in
-          if Q.equal rq Q.zero then fault "division by numeric zero"
+          if Q.equal rq Q.zero then faultc "EF-005" "division by numeric zero"
           else
             let q, u =
               match (lu, ru) with
@@ -612,7 +612,7 @@ let sub_day_ms : Ir_v0.Checks.time_unit -> int option = function
    wrap-around; the bounds are checked before the product so the check
    itself cannot wrap. *)
 let ms_range_fault () =
-  fault "datum-tijd arithmetic leaves the representable millisecond range"
+  faultc "EF-007" "datum-tijd arithmetic leaves the representable millisecond range"
 
 let add_units_ms (tu : Ir_v0.Checks.time_unit) n t =
   match sub_day_ms tu with
@@ -653,7 +653,7 @@ let whole_units_between_ms (tu : Ir_v0.Checks.time_unit) ta tb =
 let whole_count_of q =
   match Z.to_int (Z.div (Q.num q) (Q.den q)) with
   | n -> n
-  | exception Z.Overflow -> fault "duration count %s is out of range" (Q.to_string q)
+  | exception Z.Overflow -> faultc "EF-008" "duration count %s is out of range" (Q.to_string q)
 
 (* --- the day-kind walk (ch. 3.8) ---------------------------------------
    A declared day kind is a PREDICATE over a calendar day, so neither
@@ -689,7 +689,7 @@ let nth_day_of_kind ~matches ~forward ~from n =
   let step = if forward then 1 else -1 in
   let rec go d found gap =
     if gap >= day_kind_reach then
-      fault
+      faultc "EF-009"
         "day-kind walk: no day of the kind within %d calendar days of %s (the walk reaches no \
          further; a day kind whose next occurrence lies beyond the reach is refused, not \
          diagnosed)"

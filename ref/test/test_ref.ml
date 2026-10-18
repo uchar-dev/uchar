@@ -35,7 +35,7 @@ let check name ok =
 let () =
   Printexc.set_uncaught_exception_handler (fun e bt ->
       (match e with
-      | Value.Fault m ->
+      | Value.Fault { text = m; _ } ->
           Printf.printf
             "FAIL <onafgevangen fault> na het laatst gerapporteerde voorbeeld %S\n  fault: %s\n"
             !last_item m
@@ -65,7 +65,7 @@ let with_errs f =
 
 let expect_fault name f =
   match f () with
-  | exception Value.Fault _ -> check name true
+  | exception Value.Fault { text = _; _ } -> check name true
   | _ -> check name false
 
 (* A fault is only a witness if it says WHAT it refuses. [expect_fault]
@@ -82,7 +82,7 @@ let substring hay needle =
 
 let expect_fault_msg name f frag =
   match f () with
-  | exception Value.Fault m -> check (name ^ " (got: " ^ m ^ ")") (substring m frag)
+  | exception Value.Fault { text = m; _ } -> check (name ^ " (got: " ^ m ^ ")") (substring m frag)
   | _ -> check (name ^ " (no fault at all)") false
 
 (* --- ch. 1.2a: arithmetic operators over empty ------------------------- *)
@@ -465,7 +465,7 @@ let () =
   check "verify-show-unit-noemer"
     (Arith.show_unit (Value.Unit eur_per_jr) = "€/jr" && Arith.show_unit (Value.Unit eur) = "€");
   (match Arith.restate_into (Value.Unit eur) (q "1") (Value.Unit eur_per_jr) with
-  | exception Value.Fault m ->
+  | exception Value.Fault { text = m; _ } ->
       check "verify-show-unit-in-fault" (m = "incompatible units: € vs €/jr")
   | _ -> check "verify-show-unit-in-fault" false)
 
@@ -541,7 +541,7 @@ let () =
   | _ -> check "verify-wf092-kaal-is-canoniek-doel" false);
   (* half-filled (a): a loud fault naming the unit and its target *)
   (match Arith.factor jr_half with
-  | exception Value.Fault m ->
+  | exception Value.Fault { text = m; _ } ->
       check "verify-wf092-halfvorm-faalt-luid"
         (m = "unit jr names canonical unit \"mnd\" but carries no conversion factor into it")
   | _ -> check "verify-wf092-halfvorm-faalt-luid" false);
@@ -554,7 +554,7 @@ let () =
      factor question with the stray factor itself, unasked what it converts
      into *)
   (match Arith.factor mnd_half_b with
-  | exception Value.Fault m ->
+  | exception Value.Fault { text = m; _ } ->
       check "verify-wf092-halfvorm-b-faalt-luid"
         (m
        = "unit mnd carries conversion factor 1 but names no canonical unit to convert into")
@@ -1636,7 +1636,7 @@ let plays ~ident ~ir ~case_data further =
   with_files ~ir ~case_data (fun findings c evalueer ->
       check (ident ^ ": verifier-clean") (findings = []);
       match evalueer () with
-      | exception Value.Fault m -> check (ident ^ " (fault: " ^ m ^ ")") false
+      | exception Value.Fault { text = m; _ } -> check (ident ^ " (fault: " ^ m ^ ")") false
       | final ->
           let mismatches = Case.check c final in
           check
@@ -1971,7 +1971,7 @@ let () =
       match evalueer () with
       | exception Failure m ->
           check (ident ^ " (" ^ m ^ ")") (substring m "ref/lib/eval.ml, run_object_creatie")
-      | exception Value.Fault m -> check (ident ^ " (an evaluation fault: " ^ m ^ ")") false
+      | exception Value.Fault { text = m; _ } -> check (ident ^ " (an evaluation fault: " ^ m ^ ")") false
       | _ -> check (ident ^ " (no failure)") false)
 
 (* WV-5.5-budget-regelketen (since 2026-10-09): the forms that make nothing
@@ -2557,7 +2557,7 @@ let () =
      the grid's *)
   let eur_per_dg = { eur with denominator = Some dg } in
   (match Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit eur_per_dg "10")) with
-  | exception Value.Fault m ->
+  | exception Value.Fault { text = m; _ } ->
       check "WV-3.6-g-vreemde-noemer"
         (m
         = "the temporal total of a €/dg value cannot integrate over a mnd grid: the \
@@ -2724,7 +2724,7 @@ let () =
   in
   let w_bucket = world_of (jutter [ "v9" ]) [ bucket_member "v9" ] in
   (match run w_bucket Total with
-  | exception Value.Fault m ->
+  | exception Value.Fault { text = m; _ } ->
       check "WV-3.6-h-bucketlid"
         (m
         = "the per-element temporal total of \"bewaartarief\" over \"v9\": the case supplies an \
@@ -2843,7 +2843,7 @@ let () =
     (match load_doc "2024-10-15" "2025-10-15" with [ _ ] -> true | _ -> false);
   check "WV-3.2-vast-invoer-naast-het-raster"
     (match load_doc "2025-01-01" "2026-01-01" with
-    | exception Case.Error m -> substring m "segment boundaries must sit on the declared granularity grid"
+    | exception Case.Error { text = m; _ } -> substring m "segment boundaries must sit on the declared granularity grid"
     | _ -> false)
 
 (* WV-3.2-vast-peildatum: the subject's own total over the asOfDate bucket
@@ -2886,7 +2886,7 @@ let () =
        Case.timeline_of_json ~at:"J1.blok" ~grid:plural_flag (Some num0)
          (Yojson.Safe.from_string {|[{"from":"2026-04-01","to":"2026-09-01","value":{"number":"1"}}]|})
      with
-    | exception Case.Error m -> substring m "a multi-period grid, which carries no operation"
+    | exception Case.Error { text = m; _ } -> substring m "a multi-period grid, which carries no operation"
     | _ -> false)
 
 (* WV-3.2-zinnen: the sentences in which a grid without an operation is
@@ -2899,12 +2899,12 @@ let () =
       Case.timeline_of_json ~at ~grid:gr (Some num0)
         (Yojson.Safe.from_string {|[{"from":"2024-01-01","to":"2024-03-01","value":{"number":"1"}}]|})
     with
-    | exception Case.Error m -> m
+    | exception Case.Error { text = m; _ } -> m
     | _ -> "(geladen)"
   in
   let at_the_as_of_date gr =
     match Timeline.grid_bucket gr (day "2024-02-15") with
-    | exception Value.Fault m -> m
+    | exception Value.Fault { text = m; _ } -> m
     | _ -> "(een periode)"
   in
   let plural_flag = Timeline.grid_of ~gran:Month ~count:2 ~fixed:(Some "2024-01-01") ~variable:false in
@@ -2975,7 +2975,7 @@ let () =
   check "WV-3.2-vast-prorata-kalender"
     (match evalueer (doc ~objective:None ~base_expr:None) (case_data "2024-01-01" "2025-01-01") () with
     | () -> true
-    | exception Value.Fault _ -> false);
+    | exception Value.Fault { text = _; _ } -> false);
   expect_fault_msg "WV-3.2-vast-prorata-doel"
     (evalueer (doc ~objective:(Some "--01-15") ~base_expr:None) (case_data "2024-01-01" "2025-01-01")) enclosed;
   expect_fault_msg "WV-3.2-vast-prorata-basis"
@@ -4970,7 +4970,7 @@ let () =
     "a filledCount aggregation carries elementType \"Vondst\" and a ListLiteral operand";
   let not_this_arm name e =
     match ev e with
-    | exception Value.Fault m ->
+    | exception Value.Fault { text = m; _ } ->
         check (name ^ " (got: " ^ m ^ ")")
           (not (substring m "no source operand" || substring m "no source of instances"))
     | _ -> check (name ^ " (no fault at all)") false
@@ -5065,7 +5065,7 @@ let () =
     (fun () -> ev (fold_node Filled_count [ union ]))
     "a filledCount aggregation carries elementType \"Vondst\" and an InstanceSetUnion operand";
   match ev (fold_node Count [ union ]) with
-  | exception Value.Fault m ->
+  | exception Value.Fault { text = m; _ } ->
       check ("WF-037-bronarm-unie-onder-count-niet-deze-arm (got: " ^ m ^ ")")
         (not (substring m "the source of an instance fold is an AttributeReference"))
   | _ -> check "WF-037-bronarm-unie-onder-count-niet-deze-arm (no fault at all)" false
@@ -5172,7 +5172,7 @@ let () =
   check "WV-3.10-telkwantor-fasestaart"
     (match gate (Some "2024-06-15") (compound None_of 0) with
      | (_ : bool) -> false
-     | exception Value.Fault m -> substring m "Declined at evaluation");
+     | exception Value.Fault { text = m; _ } -> substring m "Declined at evaluation");
   check "WV-3.10-alle-blijft-gedragen" (gate (Some "2024-06-15") (compound All 0) = true);
   check "WV-3.10-de-blijft-gedragen" (gate (Some "2024-06-15") (compound The 0) = true);
   check "WV-3.10-alle-poort-werkt-nog" (gate (Some "2025-01-01") (compound All 0) = false)
@@ -5457,7 +5457,7 @@ let () =
               wachter "W2" "20" [ ("voorligger", [ "W3" ]) ];
               wachter "W3" "30" [] ]);
        false
-     with Case.Error m -> Case.contains ~needle:"the reverse leg of" m)
+     with Case.Error { text = m; _ } -> Case.contains ~needle:"the reverse leg of" m)
 
 (* --- ch. 5.8 rule 4: the zero-hop self-reference (WF-053, D10) ----------- *)
 
@@ -5834,7 +5834,7 @@ let () =
         navigation_binding = Some { rb_fact_type = "vondstvinding"; rb_role = "vinder" } }
   in
   match ec "v1" (kc_nav (Some "Jutter")) with
-  | exception Value.Fault m ->
+  | exception Value.Fault { text = m; _ } ->
       check ("WV-5.8b-genavigeerde-vreemde-eigenaar-weigert (got: " ^ m ^ ")")
         (Case.contains ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\"" m)
   | _ -> check "WV-5.8b-genavigeerde-vreemde-eigenaar-weigert (no fault at all)" false
@@ -5915,7 +5915,7 @@ let () =
   check "WV-5.8b-B-ankergastheer-poort-de-anker" (vakseinen (Some "Kustvak") = 2);
   check "WV-5.8b-B-gastheerloze-guard-poort-de-anker" (vakseinen None = 2);
   (match vakseinen (Some "Post") with
-  | exception Value.Fault m ->
+  | exception Value.Fault { text = m; _ } ->
       check ("WV-5.8b-B-tussenstap-gastheer-weigert (got: " ^ m ^ ")")
         (Case.contains ~needle:"is hosted on \"Post\" while the subject is \"Kustvak\"" m)
   | _ -> check "WV-5.8b-B-tussenstap-gastheer-weigert (no fault at all)" false);
@@ -5992,7 +5992,7 @@ let () =
           d.object_types }
   in
   match Eval.evaluate (env_of overlap_doc) w with
-  | exception Value.Fault m ->
+  | exception Value.Fault { text = m; _ } ->
       check ("WV-5.8b-B-ambigue-gastheer-weigert (got: " ^ m ^ ")")
         (Case.contains ~needle:"is hosted on 'Sein', which the target 'Sein' is" m
         && Case.contains ~needle:"but so can the anchor 'Kustvak' be" m)
@@ -6128,7 +6128,7 @@ let () =
      let w = world_state ~link:true whole_2026 in
      Eval.eval_cond (env_of doc_non_temporal) w (World.get w "S1") ~err:no_err (cond ())
    with
-  | exception Value.Fault m ->
+  | exception Value.Fault { text = m; _ } ->
       check ("WV-3.9-kenmerk-niet-tijdsafhankelijk (got: " ^ m ^ ")")
         (Case.contains ~needle:"is not a time-dependent characteristic of \"Werf\"" m)
   | _ -> check "WV-3.9-kenmerk-niet-tijdsafhankelijk (no fault at all)" false);
@@ -6377,7 +6377,7 @@ let () =
   in
   let expect_msg name f frag =
     match f () with
-    | exception Value.Fault m -> check (name ^ " (got: " ^ m ^ ")") (contains m frag)
+    | exception Value.Fault { text = m; _ } -> check (name ^ " (got: " ^ m ^ ")") (contains m frag)
     | _ -> check (name ^ " (no fault at all)") false
   in
   (* the two distinguishable faults *)
@@ -7627,7 +7627,7 @@ let () =
   let day_number lex = Printf.sprintf "day out of range in date lexeme %S" lex in
   let rejects ident f expected_value =
     match f () with
-    | exception Value.Fault m -> check (ident ^ " (got: " ^ m ^ ")") (m = expected_value)
+    | exception Value.Fault { text = m; _ } -> check (ident ^ " (got: " ^ m ^ ")") (m = expected_value)
     | _ -> check (ident ^ " (no fault at all)") false
   in
   (* position vanaf: day-first sorted before "2026-06-01", so the window
@@ -7675,7 +7675,7 @@ let () =
           "expected": [ { "kind": "consistent" } ] }|}
       as_of;
     close_out oc;
-    let r = try Ok (Case.load_file empty_doc f) with Case.Error m -> Error m in
+    let r = try Ok (Case.load_file empty_doc f) with Case.Error { text = m; _ } -> Error m in
     Sys.remove f;
     r
   in
@@ -7826,8 +7826,8 @@ let () =
     let r =
       match Case.load_file d f with
       | c -> `Loaded c
-      | exception Case.Error m -> `Refused m
-      | exception Value.Fault m -> `Fault m
+      | exception Case.Error { text = m; _ } -> `Refused m
+      | exception Value.Fault { text = m; _ } -> `Fault m
     in
     Sys.remove f;
     r
@@ -8311,7 +8311,7 @@ let () =
   in
   let rejects ident value_node expected_value =
     match Eval.evaluate (env_of (doc value_node)) world_state with
-    | exception Value.Fault m -> check (ident ^ " (got: " ^ m ^ ")") (m = expected_value)
+    | exception Value.Fault { text = m; _ } -> check (ident ^ " (got: " ^ m ^ ")") (m = expected_value)
     | w ->
         check
           (Printf.sprintf "%s (no fault at all; herleefd on R1: %b, on R2: %b)" ident
@@ -8358,7 +8358,7 @@ let () =
      Eval.evaluate (env_of doc_v7)
        (World.add_instance World.empty (inst "J1" "Jutter" [ ("aantal aangemelde vondsten", n "14") ]))
    with
-  | exception Value.Fault m ->
+  | exception Value.Fault { text = m; _ } ->
       let expected_value =
         sentence_text ~rule_def:"aantal als kenmerk" ~objective:"aantal aangemelde vondsten" ~ot:"Jutter"
           {|the literal {"boolean": false} typed Boolean|}
@@ -8671,7 +8671,7 @@ let () =
              (inst "J1" "Jutter"
                 [ ("van", Value.date_of_iso "2024-01-01"); ("tot", Value.date_of_iso "2025-01-01") ]))
       with
-      | exception Value.Fault m ->
+      | exception Value.Fault { text = m; _ } ->
           check (name ^ " (got: " ^ m ^ ")") (m = Ir_v0.Checks.duration_unknown_unit kind "vadem")
       | _ -> check (name ^ " (no fault at all)") false)
     [ ("WV-3.8-duur-onbekende-eenheid-faalt", Ir_v0.Ast.Duration);
@@ -8716,7 +8716,7 @@ let () =
   List.iter
     (fun (name, value_node, sentence) ->
       match run value_node with
-      | exception Value.Fault m -> check (name ^ " (got: " ^ m ^ ")") (m = sentence)
+      | exception Value.Fault { text = m; _ } -> check (name ^ " (got: " ^ m ^ ")") (m = sentence)
       | _ -> check (name ^ " (no fault at all)") false)
     [ ( "WV-3.8-duurvorm-tekstoperand", extent (Some (counted ~u:"jr" ())) (litv "gisteren" Text_type) up_to,
         duration_operand_refusal Duration Text_type );
@@ -8763,7 +8763,7 @@ let () =
   List.iter
     (fun (name, objective, value_node, sentence) ->
       match run objective value_node with
-      | exception Value.Fault msg -> check (name ^ " (got: " ^ msg ^ ")") (msg = sentence)
+      | exception Value.Fault { text = msg; _ } -> check (name ^ " (got: " ^ msg ^ ")") (msg = sentence)
       | _ -> check (name ^ " (no fault at all)") false)
     [ ("WV-3.8-datumvorm-dag-plus-dag", d, bin d day_number day_number, date_plus_date_refusal);
       ("WV-3.8-datumvorm-ms-min-ms", m, bin ~minus:true m moment moment, date_plus_date_refusal);

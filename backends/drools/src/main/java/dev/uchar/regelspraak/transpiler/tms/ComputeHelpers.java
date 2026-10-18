@@ -157,7 +157,7 @@ public final class ComputeHelpers {
 
     /** The opening of the runtime's fault of a day-kind walk past its reach ({@code rsDatumPlusDagsoort}), which is the
      *  reference interpreter's sentence word for word, the reach and the date after it. */
-    private static final String DAY_KIND_WALK = "day-kind walk: no day of the kind within "
+    static final String DAY_KIND_WALK = "day-kind walk: no day of the kind within "
             + RegelSpraakRuntime.DAGSOORT_REIKWIJDTE + " calendar days of ";
 
     /** easterSunday of a whole year without a unit (RUNTIME-SEMANTICS ch. 3.8, WF-038), by the algorithm of that chapter

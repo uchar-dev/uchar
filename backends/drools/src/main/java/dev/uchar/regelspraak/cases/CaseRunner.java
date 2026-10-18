@@ -14,9 +14,13 @@ import dev.uchar.regelspraak.ir.Spelling;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.core.Namen;
+import dev.uchar.regelspraak.transpiler.tms.ComputeFault;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationFaults;
+import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
 
 import org.kie.api.KieBase;
 import org.kie.api.runtime.KieSession;
@@ -373,8 +377,10 @@ public final class CaseRunner {
      *  hits the fire cap without a fixpoint, which raises nothing), EXCLUDE (a form the backend does not carry — a
      *  loader refusal, or an {@link Excluded} from the build or from the case reader — with the reason), or NOFAULT
      *  (the case ran to a model — the backend does not enforce this red-path constraint, so its form is not
-     *  Drools-carried). */
-    public record RedResult(String status, String detail) {}
+     *  Drools-carried). {@code code} is the EF code of a FAULT's kind (RUNTIME-SEMANTICS ch. 5.7b), several
+     *  comma-separated in the order of the report, beside the text and never inside it; null where the fault names no
+     *  kind and for every other status. */
+    public record RedResult(String status, String detail, String code) {}
 
     /** Replay a single {@code corpus/rood} case and report what the backend observes. The split is by exception
      *  TYPE, not by phase. A loader refusal, or an {@link Excluded} from the build or from a case-input form, is an
@@ -404,33 +410,34 @@ public final class CaseRunner {
         try {
             runner = build(irPath, branch);
         } catch (Excluded e) {
-            return new RedResult("EXCLUDE", e.getMessage());
+            return new RedResult("EXCLUDE", e.getMessage(), null);
         } catch (IrLoader.Refusal e) {
-            return new RedResult("EXCLUDE", "loader: " + e.getMessage());
+            return new RedResult("EXCLUDE", "loader: " + e.getMessage(), null);
         } catch (java.io.IOException e) {
             throw new RuntimeException("could not read " + irPath + ": " + e.getMessage(), e);
         }
         try {
             JsonNode c = JSON.readTree(Files.readString(casePath));
-            String fault = runner.fireRed(c);
-            return fault == null
-                    ? new RedResult("NOFAULT", "ran to a model without faulting")
-                    : new RedResult("FAULT", fault);
+            DroolsBackend.Firing firing = runner.fireRed(c);
+            return firing.noFixpoint() == null
+                    ? new RedResult("NOFAULT", "ran to a model without faulting", null)
+                    : new RedResult("FAULT", firing.noFixpoint(), firing.code());
         } catch (Excluded e) {
-            return new RedResult("EXCLUDE", e.getMessage());
+            return new RedResult("EXCLUDE", e.getMessage(), null);
         } catch (java.io.IOException e) {
             throw new RuntimeException("could not read " + casePath + ": " + e.getMessage(), e);
         } catch (RuntimeException e) {
             // a fault raised while loading inputs or firing rules — a division by zero surfaces here, wrapped by
             // Drools; the whole cause chain is the report so the pinned fragment can match the deepest message.
-            return new RedResult("FAULT", faultText(e));
+            return new RedResult("FAULT", faultText(e), faultCode(e));
         }
     }
 
-    /** Fire one red-path case: load its world, fire the rules, and return the fault text if the run does not
-     *  reach a fixpoint. Returns {@code null} when the run completes cleanly (a NOFAULT — the backend produced a
-     *  model where ref/clingo reject). A fault raised at fire propagates as an exception the caller renders. */
-    private String fireRed(JsonNode c) {
+    /** Fire one red-path case: load its world, fire the rules, and return what the fire did: its
+     *  {@link DroolsBackend.Firing#noFixpoint} is the fault text where the run does not reach a fixpoint, with its code,
+     *  and null when the run completes cleanly (a NOFAULT — the backend produced a model where ref/clingo reject). A
+     *  fault raised at fire propagates as an exception the caller renders. */
+    private DroolsBackend.Firing fireRed(JsonNode c) {
         labelToBean.clear();
         labelType.clear();
         evaluationDate = asOfDate(c);
@@ -441,10 +448,40 @@ public final class CaseRunner {
             CaseInput input = readInput(c);
             setGlobals(session, c);
             DroolsBackend.insert(backendBuild, session, input.inputData());
-            return fireToFixpoint(session);
+            return fireToFixpointFiring(session, null);
         } finally {
             session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
+        }
+    }
+
+    /** The EF codes (RUNTIME-SEMANTICS ch. 5.7b) of the red-path fault {@code t}, comma-separated in the order of its
+     *  report, each once; null where it names no kind. Classified here, at the catch, by exception type: the production
+     *  runtime's {@link Breuk.DelingDoorNul} gets no field for a concern of this backend, so its kind is read off its
+     *  class; the backend's own fault exceptions name theirs ({@code code()}); several faults at the fixpoint
+     *  ({@link EvaluationFaults}) give the code of each. In a cause chain the outermost exception that names a kind
+     *  decides: a fault named after its rule wraps the same fault unnamed. */
+    static String faultCode(Throwable t) {
+        List<String> codes = new ArrayList<>();
+        addCode(codes, t);
+        return codes.isEmpty() ? null : String.join(", ", codes);
+    }
+
+    private static void addCode(List<String> codes, Throwable t) {
+        for (Throwable c = t; c != null; c = c.getCause() == c ? null : c.getCause()) {
+            if (c instanceof EvaluationFaults several) {
+                for (RuntimeException f : several.faults()) addCode(codes, f);
+                return;
+            }
+            String code = c instanceof Breuk.DelingDoorNul ? "EF-005"
+                    : c instanceof ComputeFault f ? f.code()
+                    : c instanceof WritersConflict w ? w.code()
+                    : c instanceof CaseDateFault d ? d.code()
+                    : null;
+            if (code != null) {
+                if (!codes.contains(code)) codes.add(code);
+                return;
+            }
         }
     }
 
@@ -520,6 +557,12 @@ public final class CaseRunner {
     /** As above, with {@code observer} recording what the session fires ({@link DroolsBackend.Observer}); null
      *  records nothing. */
     private String fireToFixpoint(KieSession session, DroolsBackend.Observer observer) {
+        return fireToFixpointFiring(session, observer).noFixpoint();
+    }
+
+    /** As {@link #fireToFixpoint(KieSession, DroolsBackend.Observer)}, returning the {@link DroolsBackend.Firing} itself,
+     *  so that the red path reads the code of a run without a fixpoint beside its sentence. */
+    private DroolsBackend.Firing fireToFixpointFiring(KieSession session, DroolsBackend.Observer observer) {
         SessionDump trace = documenthash == null ? null : SessionDump.op(session, labelToBean);
         DroolsBackend.Firing firing;
         try {
@@ -530,11 +573,8 @@ public final class CaseRunner {
             throw e;
         }
         if (trace != null) trace.seam(documenthash, backendBuild, firing, labelToBean);
-        if (firing.noFixpoint() == null) {
-            DroolsBackend.setDerivedValues(backendBuild, session, this::beanLabel);
-            return null;
-        }
-        return firing.noFixpoint();
+        if (firing.noFixpoint() == null) DroolsBackend.setDerivedValues(backendBuild, session, this::beanLabel);
+        return firing;
     }
 
     /** Reads case {@code c} through the backend's entry ({@link CaseInput}), as a consumer reads it, and keeps its
@@ -1062,13 +1102,28 @@ public final class CaseRunner {
      *  an {@link Excluded}. */
     private static LocalDate caseWireDate(String lexeme, String field) {
         if (!CASE_DATE.matcher(lexeme).matches())
-            throw new IllegalArgumentException("malformed date '" + lexeme + "' on '" + field
+            throw new CaseDateFault("malformed date '" + lexeme + "' on '" + field
                     + "': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only,"
                     + " no sign and no extended year");
         try { return LocalDate.parse(lexeme); }
         catch (java.time.format.DateTimeParseException e) {
-            throw new IllegalArgumentException("malformed date '" + lexeme + "' on '" + field
+            throw new CaseDateFault("malformed date '" + lexeme + "' on '" + field
                     + "': the field widths are right but the calendar is not (" + e.getMessage() + ")");
+        }
+    }
+
+    /** The refusal of a case date lexeme that names no calendar day (RUNTIME-SEMANTICS ch. 5.7b, EF-003). A document
+     *  defect, so a hard error and never an {@link Excluded}, as before; a type of its own only so that the red path
+     *  can name its kind ({@link #faultCode}). */
+    static final class CaseDateFault extends IllegalArgumentException {
+        private static final long serialVersionUID = 1L;
+
+        CaseDateFault(String message) {
+            super(message);
+        }
+
+        String code() {
+            return "EF-003";
         }
     }
 

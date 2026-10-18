@@ -37,6 +37,7 @@
     "parameters": {}
   },
   "expectedFault": {
+    "code": "EF-024",
     "ref": "at most one temporal key component",
     "clingo": "at most one temporal key component"
   }

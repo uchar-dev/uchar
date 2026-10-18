@@ -223,7 +223,13 @@ reviewer's duty on a machine that has catala. Current gates:
    evaluation (contract widened 2026-09-19) — in **both** executors with the
    pinned fragment in each report (the unsolved-state guard among them:
    `Unresolved` — the v0 `Onopgelost` — reached in evaluation faults with WF-044, never
-   vanishes); an empty red set is a failure, never silently green; and no pinned fragment cites a BOTTOM SENTENCE of `ref` or clingo — a fall-through arm's refusal, which is the same sentence for every form that arm catches because it describes the position and what is carried there rather than the construct rejected. Such a pin witnesses nothing of its own, and where the sentence claims no corpus case reaches it, it makes that claim untrue. The thirty-six sentences are listed in the script with source, function and reason; the fragments are decoded and compared by `ref --bodemzin`, the red path's own reader and matcher, so a JSON-escaped pin cannot slip past, and a standing self-test in the gate fails if that decoding is ever replaced by a text scrape. The cure is a named arm for the form, never a reworded bottom.
+   vanishes); an empty red set is a failure, never silently green; and no pinned fragment cites a BOTTOM SENTENCE of `ref` or clingo — a fall-through arm's refusal, which is the same sentence for every form that arm catches because it describes the position and what is carried there rather than the construct rejected. Such a pin witnesses nothing of its own, and where the sentence claims no corpus case reaches it, it makes that claim untrue. The thirty-six sentences are listed in the script with source, function and reason; the fragments are decoded and compared by `ref --bottom-sentence`, the red path's own reader and matcher, so a JSON-escaped pin cannot slip past, and a standing self-test in the gate fails if that decoding is ever replaced by a text scrape. The cure is a named arm for the form, never a reworded bottom. Since
+   2026-10-19 (card `meldingscodes`) every red case pins `expectedFault.code`, the EF code of its fault kind
+   (RUNTIME-SEMANTICS ch. 5.7b), and ref, clingo, and Drools where a `drools` fragment is pinned, must report it
+   — the runners print `CODE`/`CODE-PINNED`, Drools heads its status line with it — unless the executor stands in
+   the script's reason-carrying divergence list (category REFUSAL or LIMIT, stale both ways); the gate parses the
+   ch. 5.7b table strictly, holds every witness to its row's code and every pinned code to a row; floors
+   `EXPECTED_MIN_RED_CODES=93` and `EXPECTED_MIN_EF_CODES=24` (measured 2026-10-18).
 
 9. `scripts/check-catala.sh` — the Catala frontend builds and its
    full test suite passes (E2E through verifier, ref and clingo plus

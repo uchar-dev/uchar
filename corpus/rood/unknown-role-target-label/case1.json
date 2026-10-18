@@ -30,6 +30,7 @@
     "parameters": {}
   },
   "expectedFault": {
+    "code": "EF-002",
     "ref": "role \"liggers\" on \"H1\" links unknown label \"S9\"",
     "clingo": "role \"liggers\" on \"H1\" links unknown label \"S9\""
   }

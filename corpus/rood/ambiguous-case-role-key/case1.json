@@ -41,6 +41,7 @@
     "parameters": {}
   },
   "expectedFault": {
+    "code": "EF-001",
     "ref": "role key \"ligger\" is ambiguous from \"Schuit\"",
     "clingo": "role key \"ligger\" is ambiguous from \"Schuit\""
   }

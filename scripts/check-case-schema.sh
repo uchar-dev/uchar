@@ -98,8 +98,9 @@ validator = CaseValidator(schema)
 # HERE, against the schema itself: every pattern position, every lexeme of its kind's table, through
 # the SAME validator the corpus check below uses. SCOPE is the schema's whole pattern surface; the
 # clamp fails when a pattern turns up at a position the table does not carry, or a carried one goes.
-DATE, DATETIME, NUMBER = "date", "dateTime", "number"
+DATE, DATETIME, NUMBER, FAULT_CODE = "date", "dateTime", "number", "faultCode"
 PATTERN_POSITIONS = {
+    "/properties/expectedFault/properties/code": FAULT_CODE,
     "/properties/asOfDate/oneOf/0": DATE,
     "/$defs/instance/properties/characteristicTimelines/additionalProperties/items/properties/from": DATE,
     "/$defs/instance/properties/characteristicTimelines/additionalProperties/items/properties/to": DATE,
@@ -153,6 +154,19 @@ LEXEMES = {
         ("3/04",   False, "a denominator with a leading zero"),
         ("1.5/2",  False, "a decimal numerator"),
         ("",       False, "the empty string"),
+    ],
+    # the EF code of a fault kind (RUNTIME-SEMANTICS ch. 5.7b), 2026-10-18 (card meldingscodes)
+    FAULT_CODE: [
+        ("EF-005",   True,  "the code itself"),
+        ("EF-000",   True,  "the pattern checks the form, not the table; gate 8 holds every pinned code "
+                            "to a row of the RUNTIME-SEMANTICS table"),
+        ("EF-005\n", False, "a trailing newline"),
+        ("EF-05",    False, "two digits"),
+        ("EF-0005",  False, "four digits"),
+        ("ef-005",   False, "lower case"),
+        ("WF-005",   False, "a verifier rule, not a fault kind"),
+        ("EF005",    False, "no hyphen"),
+        ("",         False, "the empty string"),
     ],
 }
 

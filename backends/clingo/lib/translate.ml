@@ -60,6 +60,7 @@ module Eval = Uchar_ref.Eval
 
 let norm = Ir_v0.Checks.norm
 let fault = Value.fault
+let faultc = Value.faultc
 
 (* WF-097: the two qualifications a gedurende clip member has no reading for.
    Every clip arm here matched `eigenaar` and `periode` away with `_`, so a
@@ -183,12 +184,16 @@ let numeric_scale ~what s =
       what;
   s
 
-let scaled_of_value ~decimals (v : Value.t) : int =
+(* [fit_code]: the EF code of the over-precision refusal where the value is a
+   case input (EF-004, RUNTIME-SEMANTICS ch. 5.7b); none for a value of the
+   document itself *)
+let scaled_of_value ?fit_code ~decimals (v : Value.t) : int =
   match v with
   | Num (q, _) ->
       let s = Q.mul q (Q.of_int (pow10 decimals)) in
       if not (Z.equal (Q.den s) Z.one) then
-        fault "value %s does not fit %d decimals" (Q.to_string q) decimals
+        (match fit_code with Some c -> faultc c | None -> fault)
+          "value %s does not fit %d decimals" (Q.to_string q) decimals
       else if Z.gt (Z.abs (Q.num s)) (Z.of_int max_int31) then
         fault
           "value %s at %d decimals exceeds clingo's integer range (grounding would wrap \
@@ -227,7 +232,7 @@ let scaled_input ~what dt (v : Value.t) =
   (match v with
   | Num (q, _) when unbounded_datatype dt && not (Z.equal (Q.den q) Z.one) -> unbounded_refusal ~what q
   | _ -> ());
-  scaled_of_value ~decimals:(decimals_of_datatype dt) v
+  scaled_of_value ~fit_code:"EF-004" ~decimals:(decimals_of_datatype dt) v
 
 (* --- the datum-tijd pair term (RUNTIME-SEMANTICS ch. 3.8; the A4 pair-term
    encoding) -------------------------------------------------------------
@@ -507,6 +512,29 @@ let non_exact_division ctx =
     "a division into a number declared without decimals is not whole, and this encoding holds the \
      unbounded form as a whole number"
   else non_exact_division_bounded
+
+(* The fault kind (RUNTIME-SEMANTICS ch. 5.7b) of a viol/2 witness, as the UNSAT
+   diagnosis returns it ([Solve.diagnostic]: `viol("<reason>",<subject>)`, the
+   string escapes undone). The code is not an argument of viol/2: red pins quote
+   the atom (`viol("creation budget exhausted",oc0(`), and a code spliced into it
+   would break them. So the translator, which writes the reasons, knows the code
+   per reason, and the runner renders it beside the report. Each arm reads the
+   opening of a reason the emitters in this file write, up to its first
+   interpolation. A reason no arm names has no code: a guard of this backend's own
+   limits ("arithmetic range exceeded …"), the unbounded form it holds as a whole
+   number, or a kind no red case witnesses yet. *)
+let viol_code witness =
+  let opens p = String.starts_with ~prefix:("viol(\"" ^ p) witness in
+  let holds s = Case.contains ~needle:s witness in
+  if opens "division by numeric zero\"" then Some "EF-005"
+  else if opens (non_exact_division_bounded ^ "\"") then Some "EF-006"
+  else if opens "result of " && holds " does not fit its declared decimals\"" then Some "EF-006"
+  else if opens "day-kind walk: no day of the kind within " then Some "EF-009"
+  else if opens "parameter \"" && holds "\" is unbound in this case" then Some "EF-014"
+  else if opens "creation budget exhausted\"" then Some "EF-015"
+  else if opens "two writers of one target disagree: " then Some "EF-016"
+  else if opens "to-one second filler on role " then Some "EF-017"
+  else None
 
 (* the conjunctions under which term [t] is negative ([~neg:true]) or positive
    ([~neg:false]), read without any product formed on the way. A product
@@ -4358,7 +4386,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                    refuses in the shared sentence, in the translation phase —
                    the day-kind table's posture *)
                 (match List.find_opt (param_unbound ctx) (cond_param_names c) with
-                | Some p -> fault "%s" (unbound_param_reason p)
+                | Some p -> faultc "EF-014" "%s" (unbound_param_reason p)
                 | None -> ());
                 fun (i : Uchar_ref.World.instance) ->
                   (* a filter that cannot be evaluated at all keeps the member:
@@ -4592,7 +4620,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          refusal sits at the same position on the same ground and a pin must be
          able to tell which one spoke. *)
       if attr_temporal ctx ~otype:el ~attr:a then
-        fault
+        faultc "EF-021"
           "the temporal attribute %S of a set has no moment at which a filled count can ask a \
            timeline whether it is filled (ch. 3.4c); ref refuses the form on that ground, so this \
            arm must not answer from a bucket it picked itself"
@@ -5605,7 +5633,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          day-kind predicate is evaluated at translation time (the extension
          table), so the only way here is a bound day OUTSIDE a day-kind
          condition, which denotes nothing. *)
-      fault
+      faultc "EF-010"
         "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind \
          evaluation it denotes nothing"
   | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_date -> (
@@ -5614,7 +5642,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       match ctx.case.as_of with
       | Some d -> ([], string_of_int (day_of_lexeme d), 1)
       | None ->
-          fault
+          faultc "EF-011"
             "the evaluationDate context value needs an evaluation date; the case carries asOfDate \
              null")
   | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_year -> (
@@ -5626,7 +5654,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let y, _, _ = Value.civil_from_days (day_of_lexeme d) in
           ([], string_of_int y, 1)
       | None ->
-          fault
+          faultc "EF-011"
             "the evaluationYear context value needs an evaluation date; the case carries asOfDate \
              null")
   (* a name outside WF-098's closed set, spelled byte for byte (the bound
@@ -5854,7 +5882,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Expr_unresolved _ ->
       (* the unsolved-state guard: an Unresolved node never vanishes —
          the rule that carries it fails observably (WF-044) *)
-      fault "Unresolved reached in translation: this rule fails observably"
+      faultc "EF-019" "Unresolved reached in translation: this rule fails observably"
   | Function_call { kind = Sum_function; element_object_type = None; dimension_selection = None; _ } ->
       (* the LISTED-operand som (§5.8.3, RUNTIME-SEMANTICS ch. 5.11): the
          contributors are spelled out as operands and there is no instance
@@ -6519,7 +6547,7 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
                  every duration over it — a confident wrong answer. The shared
                  sentence, in the translation phase: the table is EVALUATED
                  here, before any rule body exists that could carry a guard. *)
-              fault "%s" (unbound_param_reason nm))
+              faultc "EF-014" "%s" (unbound_param_reason nm))
       | None -> fault "unknown parameter %S" nm)
   | Function_call { kind; grain = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
   | Function_call { kind = (Year_of | Month_of | Day_of) as k; call_arguments; filter = None; _ } -> (
@@ -6628,7 +6656,7 @@ and dk_cond ctx ~stack ~day (c : condition_expr) : bool =
       | None -> ()
       | Some (Bound_day _) -> ()
       | Some _ ->
-          fault
+          faultc "EF-022"
             "a nested day-kind test on a date other than the bound day is a recognised, \
              unexecuted form (the \xc2\xa79.8 composition is carried on the bound day only)");
       let hit = dk_holds ctx ~stack (req "Predicate.dayKind" day_kind) day in
@@ -7821,7 +7849,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          message untrue. Wording follows ref (`Unresolved condition reached in
          …`) so both executors name the same position, and the expression arm
          (`… in translation …`) so the phase stays this backend's own. *)
-      fault "Unresolved condition reached in translation: this rule fails observably"
+      faultc "EF-019" "Unresolved condition reached in translation: this rule fails observably"
   | Time_window { starting_at; up_to; to_inclusive; _ } ->
       (* ch. 3.10's evaluation-date gate, ref's arm read in this backend's
          phase. The date is a SESSION constant, so each bound becomes one
@@ -9476,7 +9504,7 @@ let translate_rule ctx (r : resolved_rule) =
             then
               match (r.rr_presentation, r.rr_condition) with
               | Some Characteristic_attribution, _ ->
-                  fault
+                  faultc "EF-023"
                     "a period condition on the temporal characteristic target %S is ch. 3.10's \
                      CLIP over a characteristic timeline, and no temporal characteristic is \
                      written here (ch. 3.11), so there is no timeline to cut. Declined in \
@@ -10919,7 +10947,7 @@ let translate_consistency ctx i (c : resolved_consistency) =
 let uni_key_guards ctx ~otype ~keys =
   let temporal = List.filter (fun k -> attr_temporal ctx ~otype ~attr:k) keys in
   if List.length temporal > 1 then
-    fault
+    faultc "EF-024"
       "a uniqueness key list carries at most one temporal key component (the same-moment \
        tuple join has no corpus case; ch. 5.9)";
   List.iter
@@ -10932,7 +10960,7 @@ let uni_key_guards ctx ~otype ~keys =
               && Uchar_ref.World.timeline inst k = None
               && Uchar_ref.World.attr inst k <> Value.Empty
             then
-              fault
+              faultc "EF-020"
                 "the ever-unique key %S needs the full timeline; %S supplies only a scalar \
                  (ch. 5.9)"
                 k inst.label)

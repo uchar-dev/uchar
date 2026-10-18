@@ -307,7 +307,10 @@ on the table, kept as the decision's rationale:
    zero is a hard runtime error in v0 (and a literal `1/0` is rejected at
    parse time). Decided: v1 routes numeric-zero division into the same
    inconsistency channel; the v0 hard fault and the parse-time rejection
-   remain the mirror.
+   remain the mirror. The hard fault is fault kind **EF-005** (ch. 5.7b),
+   whose channel cell records this decision: when the move is executed the
+   code stays and its witnesses move from the red corpus to golden
+   `inconsistent` expectations.
 
 ---
 
@@ -3810,6 +3813,17 @@ implements:
    channel. Engine-internal control facts (creation markers and kin) are
    not part of the observable outcome.
 
+**Refusals of the case input (step 3).** The executors read the case
+before any rule fires and refuse it there, by name and never by a guess,
+in three ways beside the input-precision fence of ch. 2.4 and ch. 11.3
+(fault kind EF-004, ch. 5.7b). A role key that resolves to two roles of
+the instance's object type is refused, since a link cannot be filed under
+two relations (EF-001; IR-SPEC ch. 2.6). A role link that names a label
+the case does not declare is refused, since it names no instance
+(EF-002). A date lexeme that names no calendar day — `2026-02-30`, which
+the case schema's pattern admits because a pattern checks field widths and
+not a calendar — is refused, naming its position and the lexeme (EF-003).
+
 **Divergence by two writers of one target.** Two rules that write one
 attribute and whose conditions both hold on one instance demand, by
 ch. 5.1, that the attribute equal each of their values. Where the values
@@ -3921,6 +3935,93 @@ relation, not the instance, that is spelled from one side only.) W1's own `voorl
 row, and that is the flank: nothing fills `voorligger` toward W1, so the
 absent-link rule of ch. 5.8 reads leeg — establishing a relation in both
 directions is not the same as inventing one.
+
+### 5.7b Fault kinds and their codes
+
+A **fault kind** is a property of the semantics, not of an executor:
+division by a numeric zero is the same fault whether an executor meets it
+while it reads the case, translates the document or evaluates it. Every
+kind has a code, `EF-###` (the `E` of evaluation, beside the `WF-###` rules
+of `IR-SPEC.md`), listed in the table below with its channel, its
+parameters, the clause that defines it and its witnesses.
+
+- **Codes.** Numbered from EF-001 in order of arrival. A code is never
+  reused and never renumbered; a retired code stays in the table, marked
+  retired, as a WF rule does. One namespace serves every channel, so a
+  kind that moves to another channel keeps its code.
+- **Channels.** `case input`: the case is refused while it is read, before
+  any rule fires (ch. 5.7 step 3, ch. 11.3). `fault`: the session aborts on
+  a well-formed input (ch. 1.4 point 4, ch. 2.4, ch. 3.8, ch. 5.5, ch. 5.7,
+  ch. 8). `declined`: a form this specification leaves without a meaning
+  and every executor refuses by name (ch. 3.12). `§9.5`: a fact on the error
+  channel, without an abort (ch. 5.6); no kind of this table is on that
+  channel yet. A channel cell may add, after a semicolon, a decision that
+  moves the kind to another channel.
+- **The report.** An executor carries the code beside the text of its
+  message, never inside it, and renders it at the head of its report:
+  `EF-005: division by numeric zero`. A report of several faults lists
+  their codes in the order of the report: `EF-005, EF-016: …`. The text of
+  a message is the executor's own and differs between executors; the code
+  does not.
+- **Parameters.** The column names the parameters that identify the object
+  of a fault; their values are declared names, labels and lexemes as they
+  stand in the document and the case, untranslated. No executor emits them
+  as data yet and no gate checks them: the column is checked from the card
+  that emits them on (`spec/proposals/MESSAGE-CODES.md` §7, card 5). It is
+  the one column of this table without a machine check, recorded rather
+  than hidden.
+- **Witnesses.** A code enters the table together with its witness: a red
+  case (`corpus/rood/<dir>`) whose `expectedFault.code` names it, or, for a
+  kind on the §9.5 channel, a golden case (`corpus/golden/<dir>`) whose
+  `inconsistent` expectation names it. Gate 8 (`scripts/check-rood.sh`)
+  reads this table: every row parses, every witness exists and pins the
+  code of its row, and every code a red case pins is a row. An executor
+  that fails on a witness for a reason of its own — a form it does not
+  carry, a limit of its representation — stands in that gate's
+  reason-carrying divergence list.
+- **Kinds without a code.** A normative fault without a witness keeps its
+  text and gets a code when a red case for it lands: today, among others,
+  the pass budget of ch. 5.7 step 4 where no divergence by two writers is
+  named. A safeguard of one executor (a fire cap) is no fault kind.
+
+| Code | Kind | Channel | Parameters | Spec home | Witnesses |
+|---|---|---|---|---|---|
+| EF-001 | a role key of the case input resolves to two roles | case input | `roleKey`, `objectType` | ch. 5.7 step 3; IR-SPEC ch. 2.6 | `corpus/rood/ambiguous-case-role-key` |
+| EF-002 | a role link of the case input names a label the case does not declare | case input | `role`, `label`, `target` | ch. 5.7 step 3 | `corpus/rood/unknown-role-target-label` |
+| EF-003 | a date lexeme of the case input names no calendar day | case input | `field`, `lexeme` | ch. 5.7 step 3 | `corpus/rood/asofdate-kalender`, `corpus/rood/inputdatum-kalender` |
+| EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 11.3 | `corpus/rood/input-overprecision`, `corpus/rood/input-overprecision-param`, `corpus/rood/list-element-overprecision`, `corpus/rood/struct-field-overprecision` |
+| EF-005 | division by a numeric zero | fault; decided to move to §9.5 (ch. 1.4 point 4) | `rule`, `dividend` | ch. 1.4 point 4 | `corpus/rood/aantalgevulde-ongewaakte-deling`, `corpus/rood/atmost-reads-until-settled`, `corpus/rood/begrensd-reads-bounds-in-order`, `corpus/rood/closed-runtime-division-by-zero`, `corpus/rood/division-abs-by-numeric-zero`, `corpus/rood/division-by-numeric-zero`, `corpus/rood/som-fallback-always-evaluated`, `corpus/rood/vouwfilter-deelt-door-nul` |
+| EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4 | `corpus/rood/closed-nonexact-division`, `corpus/rood/closed-runtime-nonexact-division`, `corpus/rood/decimal-nonterminating` |
+| EF-007 | a datum-tijd step leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/rood/dagsoortstap-buiten-bereik`, `corpus/rood/datumtijdstap-buiten-bereik` |
+| EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/rood/datumtijdstap-buiten-bereik` |
+| EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/rood/dagsoort-onvervulbare-wandeling`, `corpus/rood/dagsoort-reikwijdte-buiten-tabel` |
+| EF-010 | the bound day is read outside a day-kind evaluation | fault | — | ch. 3.8 | `corpus/rood/contextwaarde-de-dag-buiten-dagsoort` |
+| EF-011 | a context value needs an evaluation date the case does not carry | fault | `contextValue` | ch. 8.2 | `corpus/rood/rekenjaar-zonder-rekendatum`, `corpus/rood/tijdsduur-reads-van-before-tot` |
+| EF-012 | a validity-bounded form in a session without an evaluation date | fault | — | ch. 8.1 | `corpus/rood/jutterswet-uitsluiting-zonder-rekendatum` |
+| EF-013 | the Parameterset timeline of a parameter does not cover the evaluation date | fault | `parameter`, `date` | ch. 8.4 | `corpus/rood/vintage-uncovered-date` |
+| EF-014 | a parameter the case does not bind is read | fault | `parameter` | ch. 5.7 step 2 | `corpus/rood/aanvoergeld-parameter-ongebonden`, `corpus/rood/dagsoortparameter-ongebonden` |
+| EF-015 | the creation budget is exhausted | fault | `creation`, `stratum`, `depth` | ch. 5.5 | `corpus/rood/finite-chain-over-budget`, `corpus/rood/jutterswet-budgetgrens-over`, `corpus/rood/runaway-recursion` |
+| EF-016 | two writers of one target disagree | fault | `rules`, `values`, `attribute`, `label`, `objectType` | ch. 5.7 | `corpus/rood/jutterswet-dubbele-melding` |
+| EF-017 | a to-one role gets a second filler | fault | `role`, `label`, `filler` | ch. 5.5 | `corpus/rood/to-one-second-filler` |
+| EF-018 | the back-link of a created object is ambiguous | fault | `objectType`, `createdType` | ch. 5.5 | `corpus/rood/ambiguous-backlink` |
+| EF-019 | an `Unresolved` node is reached, at an expression or a condition position | fault | `position` | ch. 5.7; WF-044 | `corpus/rood/wf044-onopgelost-guard`, `corpus/rood/wf044-onopgelost-reached` |
+| EF-020 | a temporal key component is supplied as a scalar | fault | `key`, `label` | ch. 5.9 | `corpus/rood/uni-temporal-key-scalar`, `corpus/rood/uu-temporal-key-scalar` |
+| EF-021 | a filled count over a temporal attribute of a set | declined | `attribute` | ch. 3.4c | `corpus/rood/aantalgevulde-temporele-setbron` |
+| EF-022 | a nested day-kind test on a date other than the bound day | declined | — | ch. 3.8; ch. 3.12 | `corpus/rood/dagsoortverwijzing-andere-dag` |
+| EF-023 | a period condition on a temporal characteristic target | declined | `characteristic` | ch. 3.10; ch. 3.11 | `corpus/rood/periodevenster-tijdlijnkenmerk` |
+| EF-024 | a uniqueness key with more than one temporal component | declined | `key` | ch. 5.9 | `corpus/rood/uni-two-temporal-keys`, `corpus/rood/uu-two-temporal-keys` |
+
+The four declined kinds are static properties of the document. Each ends
+as a WF rule (its witness moves to `corpus/negatief`) or as a specified
+form (its witness moves to the golden corpus), and its code then retires.
+
+Worked example (`corpus/rood/division-by-numeric-zero`, replayed by gate
+8): the case pins `"code": "EF-005"`. The reference interpreter reports the
+code beside its message "division by numeric zero"; the ASP backend
+reports it for its witness `viol("division by numeric zero","V1")`; the
+Drools backend's red run reports `FAULT EF-005: DelingDoorNul: deling door
+nul in de regel "deel van een vondst": 90 gedeeld door 0 — …`. Three texts,
+one code.
 
 ### 5.8 The navigated read
 

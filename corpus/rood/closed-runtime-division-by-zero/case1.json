@@ -17,6 +17,7 @@
     }
   },
   "expectedFault": {
+    "code": "EF-005",
     "ref": "division by numeric zero",
     "clingo": "division by numeric zero"
   }

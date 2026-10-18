@@ -14,6 +14,7 @@
     "parameters": {}
   },
   "expectedFault": {
+    "code": "EF-023",
     "ref": "is ch. 3.10's CLIP over a characteristic timeline, and no temporal characteristic is written here (ch. 3.11), so there is no timeline to cut. Declined at evaluation",
     "clingo": "is ch. 3.10's CLIP over a characteristic timeline, and no temporal characteristic is written here (ch. 3.11), so there is no timeline to cut. Declined in translation"
   }

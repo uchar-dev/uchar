@@ -10,7 +10,8 @@ import java.nio.file.Path;
  * gate classifies:
  *
  * <pre>
- *   FAULT &lt;text&gt;      exit 0   any runtime exception after the build other than an Excluded — at fire or while
+ *   FAULT [&lt;codes&gt;: ]&lt;text&gt;  exit 0   (the codes: the EF codes of the fault's kinds, RUNTIME-SEMANTICS ch. 5.7b, where
+ *                              it names any) any runtime exception after the build other than an Excluded — at fire or while
  *                              the case is read, a named refusal or a crash alike — and a run that hits the fire
  *                              cap without a fixpoint; the gate matches the pinned fragment, which cites this
  *                              backend's own sentence and never platform text
@@ -37,7 +38,11 @@ public final class DroolsRedMain {
         try {
             CaseRunner.RedResult r = CaseRunner.runRed(ir, c);
             switch (r.status()) {
-                case "FAULT" -> { System.out.println("FAULT " + r.detail()); System.exit(0); }
+                // the fault kind's code at the head of the report, beside the text (RUNTIME-SEMANTICS ch. 5.7b)
+                case "FAULT" -> {
+                    System.out.println("FAULT " + (r.code() == null ? "" : r.code() + ": ") + r.detail());
+                    System.exit(0);
+                }
                 case "EXCLUDE" -> { System.out.println("EXCLUDE " + r.detail()); System.exit(2); }
                 default -> { System.out.println("NOFAULT " + r.detail()); System.exit(1); }
             }

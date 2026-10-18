@@ -118,7 +118,7 @@ let validity_day ~what s =
   match Value.date_of_iso s with
   | Value.Date z -> z
   | _ -> assert false
-  | exception Value.Fault why ->
+  | exception Value.Fault { text = why; _ } ->
       Value.fault "validity gate: %s %S is not the ISO date lexeme yyyy-mm-dd (%s)" what s why
 
 let window_admits ~as_of (g : validity_window option) =
@@ -127,7 +127,7 @@ let window_admits ~as_of (g : validity_window option) =
   | Some { valid_from; valid_to } -> (
       match as_of with
       | None ->
-          Value.fault "a validity-bounded form needs an evaluation date; this session is time-free"
+          Value.faultc "EF-012" "a validity-bounded form needs an evaluation date; this session is time-free"
       | Some d ->
           let day = validity_day ~what:"asOfDate" d in
           let starting_at = Option.map (validity_day ~what:"validity.from") valid_from in
@@ -528,8 +528,9 @@ let connecting_pair env ~from_type ~to_type =
          beside a blocked two-role shape — is v0's null: no link *)
       None
   | _ ->
-      Value.fault "more than one fact type relates %S to %S; the created object's back-link is \
-                   ambiguous (ch. 5.5)"
+      Value.faultc "EF-018"
+        "more than one fact type relates %S to %S; the created object's back-link is \
+         ambiguous (ch. 5.5)"
         from_type to_type
 
 (* the explicit role binding (v1 extension, IR-SPEC ch. 2.6): resolve the
@@ -870,7 +871,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           match decl.par_datatype with
           | Some (List_type _) -> Value.Empty
           | _ ->
-              Value.fault "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)"
+              Value.faultc "EF-014" "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)"
                 name))
   | Attribute_reference { attribute_ref; object_type = ot; navigation_bindings; _ } -> (
       let name = req "AttributeReference.attribute" attribute_ref in
@@ -1070,14 +1071,14 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
              | Embedded_expression { expr = e } -> eval_expr env world self ~err (req "EmbeddedExpression.expr" e))
            pieces)
   | Expr_unresolved _ ->
-      Value.fault "Unresolved reached in evaluation: this rule fails observably"
+      Value.faultc "EF-019" "Unresolved reached in evaluation: this rule fails observably"
   | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_date -> (
       (* ch. 8.2: the execution-date context value — the only
          expression-level access to the evaluation date *)
       match env.as_of with
       | Some d -> Value.date_of_iso d
       | None ->
-          Value.fault
+          Value.faultc "EF-011"
             "the evaluationDate context value needs an evaluation date; the case carries asOfDate \
              null")
   | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_year -> (
@@ -1087,7 +1088,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       match env.as_of with
       | Some d -> Arith.year_of (Value.date_of_iso d)
       | None ->
-          Value.fault
+          Value.faultc "EF-011"
             "the evaluationYear context value needs an evaluation date; the case carries asOfDate \
              null")
   (* any other name is outside WF-098's closed set, spelled byte for byte —
@@ -1107,7 +1108,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | Some (Now v) -> v
       | Some (Later f) -> f ()
       | None ->
-          Value.fault
+          Value.faultc "EF-010"
             "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind \
              evaluation it denotes nothing")
   | Dimension_cell_read _ | Variable_reference _ | Context_value _ ->
@@ -1738,7 +1739,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                  and a timeline answers it differently at every one.
                  The construct is named AFTER the interpolation on purpose — the
                  interpolation-free tail is all a pin can quote. *)
-              Value.fault
+              Value.faultc "EF-021"
                 "the temporal attribute %S of a set has no moment at which a filled count can ask \
                  a timeline whether it is filled (ch. 3.4c); presence is a question about an \
                  instant, and only sum and total define the per-element collapse that would \
@@ -2150,7 +2151,7 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
       | None -> ()
       | Some (Bound_day _) -> ()
       | Some _ ->
-          Value.fault
+          Value.faultc "EF-022"
             "a nested day-kind test on a date other than the bound day is a recognised, \
              unexecuted form (the \xc2\xa79.8 composition is carried on the bound day only)");
       let d =
@@ -2439,7 +2440,7 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
                    | Some (Some z) -> if to_inclusive then today <= z else today < z
                    | _ -> true)
            | _ -> assert false))
-  | Condition_unresolved _ -> Value.fault "Unresolved condition reached in evaluation"
+  | Condition_unresolved _ -> Value.faultc "EF-019" "Unresolved condition reached in evaluation"
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
    Two steps stand between a unit SPELLING on a duration node and a verdict
@@ -2767,7 +2768,7 @@ let run_rule env world (r : resolved_rule) =
           if target_timeline && Option.fold ~none:false ~some:contains_time_window r.rr_condition then
             match (r.rr_presentation, r.rr_condition) with
             | Some Characteristic_attribution, _ ->
-                Value.fault
+                Value.faultc "EF-023"
                   "a period condition on the temporal characteristic target %S is ch. 3.10's \
                    CLIP over a characteristic timeline, and no temporal characteristic is written \
                    here (ch. 3.11), so there is no timeline to cut. Declined at evaluation"
@@ -3109,7 +3110,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
           else begin
             let depth = subject_depth + 1 in
             if depth > creation_budget then
-              Value.fault
+              Value.faultc "EF-015"
                 "creation budget exhausted: object creation \"%s\" of stratum %d would mint at \
                  creation depth %d, on %s — a stratum mints to depth %d, and a chain of creations \
                  without end is a fault, never a silent truncation (ch. 5.5)"
@@ -3423,7 +3424,7 @@ let ever_tuples env ~otype ~keys (i : World.instance) : string list =
   let ot_decl = object_type env otype in
   let temporal = List.filter (Ir_v0.Checks.attr_temporal ot_decl) keys in
   if List.length temporal > 1 then
-    Value.fault
+    Value.faultc "EF-024"
       "a uniqueness key list carries at most one temporal key component (the same-moment \
        tuple join has no corpus case; ch. 5.9)";
   let carried k =
@@ -3433,7 +3434,7 @@ let ever_tuples env ~otype ~keys (i : World.instance) : string list =
       | Some tl -> List.map (fun (s : Timeline.segment) -> s.s_value) tl
       | None ->
           if World.attr i k <> Value.Empty then
-            Value.fault
+            Value.faultc "EF-020"
               "the ever-unique key %S needs the full timeline; %S supplies only a scalar \
                (ch. 5.9)"
               k i.label
@@ -3663,7 +3664,7 @@ let parameter_set_check env =
                 p
           | Some tl ->
               if Timeline.read tl day = Value.Empty then
-                Value.fault
+                Value.faultc "EF-013"
                   "session start: the Parameterset timeline of %S does not cover the \
                    evaluation date %s — ch. 8.4"
                   p d))
@@ -3676,7 +3677,11 @@ let fixpoint ~budget ~cause step world =
   let rec go n world =
     if n > budget then
       match cause world with
-      | Some why -> Value.fault "no fixpoint within %d passes — divergence is a fault (ch. 5.7): %s" budget why
+      | Some why ->
+          (* [cause] names one divergence only, two writers of one target that
+             disagree (ch. 5.7) *)
+          Value.faultc "EF-016" "no fixpoint within %d passes — divergence is a fault (ch. 5.7): %s"
+            budget why
       | None -> Value.fault "no fixpoint within %d passes — divergence is a fault (ch. 5.7)" budget
     else
       let world, changed = step world in
@@ -3703,7 +3708,8 @@ let validate_input_precision env world =
     | Some (Number { decimal_places; _ }), Value.Num (q, _)
     | Some (Percentage { decimal_places; _ }), Value.Num (q, _) ->
         if not (fits ~decimals:decimal_places q) then
-          Value.fault "input %s = %s does not fit %d decimals" what (Value.lexeme_of_q q) decimal_places
+          Value.faultc "EF-004" "input %s = %s does not fit %d decimals" what (Value.lexeme_of_q q)
+            decimal_places
     (* recurse into composite values: an over-precise field of a record or
        element of a list is refused at the boundary too, exactly as the ASP
        backend scales every field/element — otherwise ref keeps a precision
