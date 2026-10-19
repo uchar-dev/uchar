@@ -1,1 +1,4 @@
-name 'penninggerechtigd tenzij uitgesloten' collides with 'penninggerechtigd tenzij uitgesloten' in rules
+WF-020.name-collision
+name=penninggerechtigd tenzij uitgesloten
+otherName=penninggerechtigd tenzij uitgesloten
+namespace=rules

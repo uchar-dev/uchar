@@ -1,1 +1,6 @@
-wholeness mismatch: the power composite is typed whole, but the type a power derives is fractional
+WF-091.facet-mismatch
+facet=wholeness
+subject=the power composite
+type=whole
+source=the type a power derives
+sourceType=fractional

@@ -1,1 +1,2 @@
-gedurende over 'borgplichtig', which is not a temporal characteristic
+WF-056.condition-not-temporal
+characteristic=borgplichtig

@@ -1,1 +1,4 @@
-the characteristic check is hosted on 'Sein', which the target 'Sein' is — but so can the anchor 'Kustvak' be, because the model declares a type below both
+WF-109.single-hit-shared
+host=Sein
+hit=the target 'Sein'
+others=the anchor 'Kustvak'

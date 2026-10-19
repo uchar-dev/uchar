@@ -1,1 +1,5 @@
-unit mismatch: the total aggregation is typed 'EUR' of system 'Munt' (factor 1 to 'EUR') per 'jr' of system 'Tijd' (factor 1 to 'jr'), but the type
+WF-091.facet-mismatch
+facet=unit
+subject=the total aggregation
+type='EUR' of system 'Munt' (factor 1 to 'EUR') per 'jr' of system 'Tijd' (factor 1 to 'jr')
+sourceType='EUR' of system 'Munt' (factor 1 to 'EUR')

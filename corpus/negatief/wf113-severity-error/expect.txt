@@ -1,1 +1,1 @@
-severity error is not a wire severity
+WF-113.severity-error

@@ -1,1 +1,1 @@
-date ordering across two date precisions (day and millisecond), which share no order
+WF-036.date-precision-ordering

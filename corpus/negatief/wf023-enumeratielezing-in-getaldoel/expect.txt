@@ -1,1 +1,3 @@
-a enumeration value is assigned to a number target
+WF-023.datatype-family-mismatch
+valueKind=enumeration
+targetKind=number

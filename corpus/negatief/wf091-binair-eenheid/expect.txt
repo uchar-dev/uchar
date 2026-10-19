@@ -1,1 +1,5 @@
-unit mismatch: the plus composite is typed 't' of system 'Gewicht' (factor 1000 to 'kg'), but the type derived from its operands is 'kg' of system
+WF-091.facet-mismatch
+facet=unit
+subject=the plus composite
+type='t' of system 'Gewicht' (factor 1000 to 'kg')
+source=the type derived from its operands

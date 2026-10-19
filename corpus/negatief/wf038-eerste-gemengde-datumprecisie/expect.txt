@@ -1,1 +1,2 @@
-first orders dates of two precisions (day and millisecond), which share no order
+WF-038.fold-date-precisions
+function=first

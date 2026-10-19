@@ -1,1 +1,3 @@
-operand of the minimum ordering fold is enumeration, must be a number or a date
+WF-038.ordering-fold-operand
+function=minimum
+type=enumeration

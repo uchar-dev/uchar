@@ -1,1 +1,6 @@
-unit mismatch: the filledCount aggregation is typed 'kg' of system 'Gewicht' (factor 1 to 'kg'), but the type a filled count derives is no unit
+WF-091.facet-mismatch
+facet=unit
+subject=the filledCount aggregation
+type='kg' of system 'Gewicht' (factor 1 to 'kg')
+source=the type a filled count derives
+sourceType=no unit

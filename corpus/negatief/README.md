@@ -10,10 +10,14 @@ hand-broken variant of a golden dump) and `NOTE.md` (which rule, and
 what was broken). Gate 3 (`scripts/check-verifier.sh`) requires the
 verifier to reject every case here **for exactly the declared rule**; a
 case that passes, or fails only for other rules, turns the gate red. A
-directory may also hold `expect.txt` (since L2, U1): one literal line of the
-verifier message of the ARM the case pins, without a JSON pointer, which gate 3
-requires verbatim in the report — so a case that moves to another arm of its
-rule turns the gate red too.
+directory may also hold `expect.txt` (since L2, U1): the ARM the case pins.
+Since the card `verifier-arm-keys` the first line is the arm key
+`WF-###.<slug>` of the declared rule and each further line a `name=value` pair
+that must be among the parameters the verifier reports for that key
+(`verifier --arms`), so a case that moves to another arm of its rule turns the
+gate red too, and a rewording of a message does not. Before that card the file
+was one literal fragment of the message; the rows below, written then, speak of
+the fragment.
 
 These files are not required to validate against the schema (gate 2
 covers `corpus/golden/` only); they must stay *loadable* — a violation

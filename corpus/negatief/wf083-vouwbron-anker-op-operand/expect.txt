@@ -1,1 +1,2 @@
-is not the fold's anchor 'Jutter' (a count source is read on the fold subject)
+WF-083.count-source-anchor
+anchor=Jutter

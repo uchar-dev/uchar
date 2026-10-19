@@ -1,1 +1,1 @@
-characteristic target's value must be the boolean constant true
+WF-022.value-not-true

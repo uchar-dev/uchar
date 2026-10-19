@@ -1,1 +1,2 @@
-Unresolved marker 'de verjaringsgrens' is not accounted for
+WF-113.marker-unaccounted
+marker=de verjaringsgrens

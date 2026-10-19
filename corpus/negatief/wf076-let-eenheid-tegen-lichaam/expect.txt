@@ -1,1 +1,2 @@
-differs from its body type (number(2 decimals, kg))
+WF-076.let-type-differs
+bodyType=number(2 decimals, kg)

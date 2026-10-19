@@ -1,1 +1,5 @@
-unit mismatch: the clamp is typed 't' of system 'Gewicht' (factor 1000 to 'kg'), but the type derived from its base is 'kg' of system 'Gewicht'
+WF-091.facet-mismatch
+facet=unit
+subject=the clamp
+type='t' of system 'Gewicht' (factor 1000 to 'kg')
+source=the type derived from its base

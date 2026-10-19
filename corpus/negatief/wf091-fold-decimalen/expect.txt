@@ -1,1 +1,6 @@
-decimals mismatch: the minimum aggregation is typed 4 decimals, but the type derived from its operands is 2 decimals
+WF-091.facet-mismatch
+facet=decimals
+subject=the minimum aggregation
+type=4 decimals
+source=the type derived from its operands
+sourceType=2 decimals

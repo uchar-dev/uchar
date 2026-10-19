@@ -1,1 +1,3 @@
-literal value is a date value but its type is a millisecond-precision Date
+WF-114.variant-type-mismatch
+variant=date
+type=a millisecond-precision Date

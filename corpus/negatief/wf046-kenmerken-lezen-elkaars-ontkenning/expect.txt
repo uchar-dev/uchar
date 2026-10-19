@@ -1,1 +1,3 @@
-negative dependency edge on a cycle: uitgesloten tenzij penninggerechtigd reads what penninggerechtigd tenzij uitgesloten produces
+WF-046.negative-edge-cycle
+reader=uitgesloten tenzij penninggerechtigd
+producer=penninggerechtigd tenzij uitgesloten

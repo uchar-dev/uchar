@@ -1,1 +1,4 @@
-forms 'controle opgave meldingsdatum' and 'controle opgave aangiftedatum' share the effective name
+WF-118.shared-effective-name
+kind=forms
+first=controle opgave meldingsdatum
+second=controle opgave aangiftedatum

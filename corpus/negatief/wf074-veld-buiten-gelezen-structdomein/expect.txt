@@ -1,1 +1,2 @@
-is not a declared field of struct 'dossier'
+WF-074.field-undeclared
+domain=dossier

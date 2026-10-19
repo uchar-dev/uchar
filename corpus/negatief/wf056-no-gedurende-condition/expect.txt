@@ -1,1 +1,1 @@
-timeProportionalPart without a gedurende condition
+WF-056.proportional-no-condition

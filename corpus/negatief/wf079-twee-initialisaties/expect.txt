@@ -1,1 +1,3 @@
-two initialisations write target (Vondst, bergloon) with no prioritized defaults
+WF-079.initialisation-same-target
+objectType=Vondst
+attribute=bergloon

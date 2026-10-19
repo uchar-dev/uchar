@@ -1,1 +1,2 @@
-role check names fact type 'bestaatniet', which is not declared
+WF-034.fact-type-undeclared
+factType=bestaatniet

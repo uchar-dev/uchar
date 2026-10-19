@@ -1,1 +1,4 @@
-collides with 'Kenmerktoekenning jutter penninggerechtigd' in allocations
+WF-020.name-collision
+name=Kenmerktoekenning jutter penninggerechtigd
+otherName=Kenmerktoekenning jutter penninggerechtigd
+namespace=allocations

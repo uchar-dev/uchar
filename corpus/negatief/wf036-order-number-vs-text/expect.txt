@@ -1,1 +1,2 @@
-ordering operand is text
+WF-036.ordering-not-number
+type=text

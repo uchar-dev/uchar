@@ -1,1 +1,3 @@
-gedurende over 'erkend', which is not a temporal characteristic of 'Jutter'
+WF-055.during-not-temporal
+characteristic=erkend
+objectType=Jutter

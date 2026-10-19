@@ -1,1 +1,3 @@
-negative dependency edge on a cycle: richt een post in reads what richt een post in produces
+WF-046.negative-edge-cycle
+reader=richt een post in
+producer=richt een post in

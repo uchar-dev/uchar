@@ -1,1 +1,1 @@
-carries a parenthesis, which the source form (<vocabulary>: <designation>) cannot write
+WF-117.has-parenthesis

@@ -1,1 +1,2 @@
-a month, quarter or year grid of one unit starts on a day-month
+WF-115.day-month-required
+granularity=month

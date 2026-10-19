@@ -1,1 +1,2 @@
-the from bound of a time window is a millisecond-precision date: the window is a range of civil days and no clause reads an instant bound
+WF-111.bound-instant
+side=from

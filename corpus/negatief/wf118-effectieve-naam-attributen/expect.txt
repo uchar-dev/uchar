@@ -1,1 +1,2 @@
-of the object type 'Jutter' share the effective name
+WF-118.shared-scoped-name
+scope= of the object type 'Jutter'

@@ -1,1 +1,2 @@
-unguarded object creation 'werf de opvolger #2' in a recursive group
+WF-033.unguarded-creation
+name=werf de opvolger #2

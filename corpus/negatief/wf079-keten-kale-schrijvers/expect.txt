@@ -1,1 +1,4 @@
-two unconditional computing rules write target (Wrakrecht, uitkering) through its type chain — one declared on Strandrecht, one on Wrakrecht — and no defaults group folds them into one stack, so both fire on a Wrakrecht instance
+WF-079.computing-chained
+objectType=Wrakrecht
+attribute=uitkering
+other=Strandrecht

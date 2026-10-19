@@ -1,1 +1,1 @@
-union sources disagree on key arity
+WF-030.key-arity-mismatch

@@ -1,1 +1,1 @@
-a count folds INSTANCES and has no LISTED form, and this node carries 3 operands
+WF-037.count-listed-form

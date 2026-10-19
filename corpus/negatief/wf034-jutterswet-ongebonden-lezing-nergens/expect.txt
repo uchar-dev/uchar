@@ -1,1 +1,3 @@
-'rang' is neither an attribute nor a characteristic of 'Jutter'
+WF-034.member-undeclared
+member=rang
+objectType=Jutter

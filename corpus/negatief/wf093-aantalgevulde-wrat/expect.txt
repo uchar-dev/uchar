@@ -1,1 +1,3 @@
-value aggregation over "vondsten", which is no attribute of "Vondst": a value fold reads an attribute per contributor
+WF-093.value-no-attribute
+attribute=vondsten
+elementType=Vondst

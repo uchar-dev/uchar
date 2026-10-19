@@ -27,7 +27,19 @@
 
 open Ast
 
-type violation = { wf : string; at : string; reason : string }
+(* [key] is "WF-###.<slug>": the arm of rule [wf] that fired, one key per message
+   template within a rule (MESSAGE-CODES §2.2); [params] are the named values
+   the message quotes, in the order of the message, values as in the document. *)
+(* The field order is the old sort order: WF-046 sorts violations with the
+   polymorphic compare, and [key] and [params] come last so the reports keep
+   the order they had. *)
+type violation = {
+  wf : string;
+  at : string;
+  reason : string;
+  key : string;
+  params : (string * string) list;
+}
 
 (* Since M1 the rule lists sit under "rules" and the model lists under
    "model" (IR-SPEC ch. 2). The checks build their paths in the spelling
@@ -55,7 +67,14 @@ let m1_root at =
       String.concat "/" ("" :: "model" :: List.assoc root m1_model_lists :: rest)
   | _ -> at
 
-let v wf at reason = { wf; at = m1_root at; reason }
+(* The rule is read from the key, so a site without a key does not compile and
+   a key without a rule fails where it is built. *)
+let rule_of key =
+  match String.index_opt key '.' with
+  | Some 6 when String.length key > 7 && String.sub key 0 3 = "WF-" -> String.sub key 0 6
+  | _ -> invalid_arg ("Checks.rule_of: key without WF-###.<slug>: " ^ key)
+
+let v ?(params = []) key at reason = { wf = rule_of key; key; params; at = m1_root at; reason }
 
 (* The pointers of a named form (IR-SPEC ch. 3, Versioning). A version is
    cited by `/rules/<list>/<f>/versions/<v>`, the pointer the loader
@@ -250,13 +269,15 @@ let lexeme_negative s =
    ([~target]), the restriction the target declares *)
 let literal_sign_refusal ~target t w =
   let under = if target then " is written into a target under a " else " under a " in
+  (* the slug beside the sentence: the target reading is a template of its own *)
+  let arm kind = (if target then "target-" else "sign-") ^ kind in
   match t with
   | Non_negative when lexeme_negative w ->
-      Some ("negative literal '" ^ w ^ "'" ^ under ^ "non-negative sign restriction")
+      Some (arm "non-negative", "negative literal '" ^ w ^ "'" ^ under ^ "non-negative sign restriction")
   | Positive when lexeme_negative w || lexeme_zero w ->
-      Some ("literal '" ^ w ^ "'" ^ under ^ "positive sign restriction")
+      Some (arm "positive", "literal '" ^ w ^ "'" ^ under ^ "positive sign restriction")
   | Negative when not (lexeme_negative w) ->
-      Some ("literal '" ^ w ^ "'" ^ under ^ "negative sign restriction")
+      Some (arm "negative", "literal '" ^ w ^ "'" ^ under ^ "negative sign restriction")
   | _ -> None
 
 (* WF-081: the string of a literal's number variant (IR-SPEC ch. 4.1) is
@@ -383,7 +404,7 @@ let variant_named_by = function
   | Sum_type _ -> Some "constructor"
   | List_type _ | Struct_type _ -> None
 
-let literal_variant_refusal (variant : literal_variant) (typ : datatype) =
+let literal_variant_mismatch (variant : literal_variant) (typ : datatype) =
   let key = literal_variant_key variant in
   if variant_named_by typ = Some key then None
   else
@@ -400,10 +421,14 @@ let literal_variant_refusal (variant : literal_variant) (typ : datatype) =
       | Struct_type _ -> "a StructType"
     in
     Some
-      (Printf.sprintf "literal value is %s %s value but its type is %s: the variant is the one \
-                       the type names"
-         (if key = "enumeration" then "an" else "a")
-         key named)
+      ( [ ("variant", key); ("type", named) ],
+        Printf.sprintf "literal value is %s %s value but its type is %s: the variant is the one \
+                        the type names"
+          (if key = "enumeration" then "an" else "a")
+          key named )
+
+(* the sentence alone, for the loader, which keeps no parameters *)
+let literal_variant_refusal variant typ = Option.map snd (literal_variant_mismatch variant typ)
 
 (* WF-098 (IR-SPEC ch. 4.1): a context value names one of two session
    values, compared byte for byte. The bound day of a day-kind definition is
@@ -580,50 +605,73 @@ let canonical_day_month g m d =
 
 (* WF-115 (b): the refusal of fixed start point [s] on a grid of [g] and
    count [n], or None when it fits. A count below 1 is WF-005's. *)
-let fixed_start_point_refusal g n s =
+let fixed_start_point_arm g n s =
   if n < 1 then None
   else
     let cause =
       match (g, read_fixed_start_point s) with
-      | Day, _ when n = 1 -> Some "a day grid has a wall at every day boundary and takes no start point"
+      | Day, _ when n = 1 ->
+          Some ("day-grid-start", [], "a day grid has a wall at every day boundary and takes no start point")
       | _, l when g = Week || n >= 2 -> (
           match l with
           | Some (Vs_date _) -> None
           | _ ->
               Some
-                "a week grid and a grid of several units start on a date, written yyyy-mm-dd, the \
-                 ISO form of a day of the calendar")
+                ( "date-start-required", [],
+                  "a week grid and a grid of several units start on a date, written yyyy-mm-dd, the \
+                   ISO form of a day of the calendar" ))
       | _, (None | Some (Vs_date _)) ->
           Some
-            "a month, quarter or year grid of one unit starts on a day-month, written --mm-dd, a \
-             day of month mm in a leap year"
+            ( "day-month-required", [],
+              "a month, quarter or year grid of one unit starts on a day-month, written --mm-dd, a \
+               day of month mm in a leap year" )
       | _, Some (Vs_day_month (m, d)) -> (
           match canonical_day_month g m d with
-          | Some "--01-01" -> Some "it lays the calendar's own grid, which is written without a fixedStart"
+          | Some "--01-01" ->
+              Some ("calendar-grid-start", [], "it lays the calendar's own grid, which is written without a fixedStart")
           | Some c when c = s -> None
           | Some c ->
               Some
-                ("its canonical spelling is " ^ c
-               ^ ", with the earliest month of the year that has a wall on that day")
+                ( "start-not-canonical", [ ("canonical", c) ],
+                  "its canonical spelling is " ^ c
+                  ^ ", with the earliest month of the year that has a wall on that day" )
           | None -> assert false (* a day of month m is a day of m's cycle *))
     in
     Option.map
-      (fun r ->
-        "fixed start point '" ^ s ^ "' does not fit a " ^ Spelling.encode Spelling.granularity g
-        ^ " grid of count " ^ string_of_int n ^ ": " ^ r)
+      (fun (slug, extra, r) ->
+        let granularity = Spelling.encode Spelling.granularity g in
+        ( slug,
+          [ ("start", s); ("granularity", granularity); ("count", string_of_int n) ] @ extra,
+          "fixed start point '" ^ s ^ "' does not fit a " ^ granularity
+          ^ " grid of count " ^ string_of_int n ^ ": " ^ r ))
       cause
 
+(* the sentence alone, for the executors that refuse in it *)
+let fixed_start_point_refusal g n s = Option.map (fun (_, _, r) -> r) (fixed_start_point_arm g n s)
+
 (* WF-115 (a). *)
+let fixed_start_point_variable_arm timeline_state s =
+  ( "variable-start-fixed",
+    [ ("timeline", timeline_state); ("start", s) ],
+    "timeline '" ^ timeline_state ^ "' has a variable start and a fixedStart '" ^ s
+    ^ "': its periods run from the anchor its start-point determination binds per object, and a \
+       timeline has one start" )
+
 let fixed_start_point_variable_refusal timeline_state s =
-  "timeline '" ^ timeline_state ^ "' has a variable start and a fixedStart '" ^ s
-  ^ "': its periods run from the anchor its start-point determination binds per object, and a \
-     timeline has one start"
+  let _, _, r = fixed_start_point_variable_arm timeline_state s in
+  r
 
 (* WF-115 (c): a facet's fixed start point against its named timeline's. *)
-let fixed_start_point_adoption_refusal ~facet ~timeline_state ~from_timeline =
+let fixed_start_point_adoption_arm ~facet ~timeline_state ~from_timeline =
   let body_text = function None -> "none" | Some s -> "'" ^ s ^ "'" in
-  "named-timeline adoption is partial: fixed start point " ^ body_text facet ^ " on the facet, "
-  ^ body_text from_timeline ^ " on timeline '" ^ timeline_state ^ "'"
+  ( "adoption-partial",
+    [ ("facet", body_text facet); ("fromTimeline", body_text from_timeline); ("timeline", timeline_state) ],
+    "named-timeline adoption is partial: fixed start point " ^ body_text facet ^ " on the facet, "
+    ^ body_text from_timeline ^ " on timeline '" ^ timeline_state ^ "'" )
+
+let fixed_start_point_adoption_refusal ~facet ~timeline_state ~from_timeline =
+  let _, _, r = fixed_start_point_adoption_arm ~facet ~timeline_state ~from_timeline in
+  r
 
 (* --- document context --------------------------------------------------- *)
 
@@ -767,7 +815,7 @@ let populations_overlap doc a b =
    (`T ⊑ O`), [near] those that OVERLAP it ([populations_overlap]). [None] is the
    one reading the wire settles: exactly one binding satisfies, and no other can
    be the host's object. *)
-let wf109_host_sentence ~host ~(bound : (string * string) list) ~hits ~near =
+let wf109_host_arm ~host ~(bound : (string * string) list) ~hits ~near =
   let named (r, t) = "the " ^ r ^ " '" ^ t ^ "'" in
   let here = String.concat " and " (List.map named bound) in
   let hosted = "the characteristic check is hosted on '" ^ host ^ "', which " in
@@ -775,21 +823,35 @@ let wf109_host_sentence ~host ~(bound : (string * string) list) ~hits ~near =
   | [], _, _ -> None
   | _, [ _ ], [ _ ] -> None
   | _, [ h ], others ->
+      let rest = String.concat " and " (List.map named (List.filter (fun b -> b <> h) others)) in
       Some
-        (hosted ^ named h ^ " is \xe2\x80\x94 but so can "
-        ^ String.concat " and " (List.map named (List.filter (fun b -> b <> h) others))
-        ^ " be, because the model declares a type below both: the host names one object on paper \
-           and two at run time")
-  | _, [], [] -> Some (hosted ^ "no object bound here can be: this position binds " ^ here)
+        ( "single-hit-shared",
+          [ ("host", host); ("hit", named h); ("others", rest) ],
+          hosted ^ named h ^ " is \xe2\x80\x94 but so can " ^ rest
+          ^ " be, because the model declares a type below both: the host names one object on paper \
+             and two at run time" )
+  | _, [], [] ->
+      Some
+        ( "no-bound-object",
+          [ ("host", host); ("bound", here) ],
+          hosted ^ "no object bound here can be: this position binds " ^ here )
   | _, [], others ->
+      let some = String.concat " and " (List.map named others) in
       Some
-        (hosted ^ "no object bound here IS: only SOME objects of "
-        ^ String.concat " and " (List.map named others)
-        ^ " are one, so the host would hold for some of them and fault for the rest")
+        ( "only-some-objects",
+          [ ("host", host); ("others", some) ],
+          hosted ^ "no object bound here IS: only SOME objects of " ^ some
+          ^ " are one, so the host would hold for some of them and fault for the rest" )
   | _, hs, _ ->
+      let hit = String.concat " and " (List.map named hs) in
       Some
-        (hosted ^ String.concat " and " (List.map named hs)
-        ^ " both are: the host names one object and this names two")
+        ( "several-hits",
+          [ ("host", host); ("hits", hit) ],
+          hosted ^ hit ^ " both are: the host names one object and this names two" )
+
+(* the sentence alone, for the executors that refuse in it *)
+let wf109_host_sentence ~host ~bound ~hits ~near =
+  Option.map (fun (_, _, sentence) -> sentence) (wf109_host_arm ~host ~bound ~hits ~near)
 
 (* The type on [from]'s chain that DECLARES [member] — [from] itself when it
    declares it. The ch. 7.2 conflict key names this type and not the
@@ -1043,7 +1105,7 @@ let wf001 ctx =
     let label = Option.value label ~default:root in
     dups_by norm (List.map (fun k -> (k, "/" ^ root)) keys)
     |> List.map (fun (a, b, at) ->
-        v "WF-001" at
+        v ~params:[("label", label); ("first", a); ("second", b)] "WF-001.namespace-collision" at
           (Printf.sprintf "namespace '%s': names '%s' and '%s' collide case-insensitively" label a b))
   in
   ns ~label:"objectTypes" "objecttypen" (List.map fst ctx.doc.object_types)
@@ -1060,10 +1122,10 @@ let wf002 ctx =
       let at = "/objecttypen/" ^ otn in
       (dups_by norm (List.map (fun (k, _) -> (k, at ^ "/attributen")) ot.attributes)
        |> List.map (fun (a, b, p) ->
-           v "WF-002" p (Printf.sprintf "attributes '%s' and '%s' collide case-insensitively" a b)))
+           v ~params:[("first", a); ("second", b)] "WF-002.attribute-collision" p (Printf.sprintf "attributes '%s' and '%s' collide case-insensitively" a b)))
       @ (dups_by norm (List.map (fun k -> (k, at ^ "/kenmerken")) (some_names ot.characteristics))
          |> List.map (fun (a, b, p) ->
-             v "WF-002" p (Printf.sprintf "characteristics '%s' and '%s' collide case-insensitively" a b))))
+             v ~params:[("first", a); ("second", b)] "WF-002.characteristic-collision" p (Printf.sprintf "characteristics '%s' and '%s' collide case-insensitively" a b))))
     ctx.doc.object_types
 
 let wf003 ctx =
@@ -1073,7 +1135,7 @@ let wf003 ctx =
      dimension refs: WF-004.) *)
   let dt_check at = function
     | Some (Enumeration { domain_spec = Some d; _ }) when find_ci ctx.doc.domain_specs d = None ->
-        [ v "WF-003" at ("enumeration references undeclared domain '" ^ d ^ "'") ]
+        [ v ~params:[("domain", d)] "WF-003.undeclared-domain" at ("enumeration references undeclared domain '" ^ d ^ "'") ]
     | _ -> []
   in
   List.concat_map
@@ -1084,7 +1146,7 @@ let wf003 ctx =
           (fun (a, tln) ->
             match tln with
             | Some n when find_timeline ctx n = None ->
-                [ v "WF-003" (at ^ "/attribuutTijdlijnNaam/" ^ a)
+                [ v ~params:[("timeline", n)] "WF-003.undeclared-timeline" (at ^ "/attribuutTijdlijnNaam/" ^ a)
                     ("reference to undeclared timeline '" ^ n ^ "'") ]
             | _ -> [])
           ot.attribute_timeline_names)
@@ -1096,7 +1158,7 @@ let wf003 ctx =
           (fun r ->
             match r.role_object_type_name with
             | Some o when object_type ctx o = None ->
-                [ v "WF-003" ("/feittypen/" ^ fn)
+                [ v ~params:[("objectType", o)] "WF-003.role-filler-undeclared" ("/feittypen/" ^ fn)
                     ("role filler type '" ^ o ^ "' is not a declared object type") ]
             | _ -> [])
           ft.role_names)
@@ -1108,15 +1170,15 @@ let wf004 ctx =
       List.concat_map
         (fun (a, dims) ->
           let at = "/objecttypen/" ^ otn ^ "/attribuutDimensies/" ^ a in
-          (if dims = [] then [ v "WF-004" at "dimensioned attribute with an empty dimension list" ]
+          (if dims = [] then [ v "WF-004.empty-dimension-list" at "dimensioned attribute with an empty dimension list" ]
            else [])
           @ (dups_by norm (List.map (fun d -> (d, at)) (some_names dims))
-             |> List.map (fun (x, _, p) -> v "WF-004" p ("duplicate dimension '" ^ x ^ "'")))
+             |> List.map (fun (x, _, p) -> v ~params:[("dimension", x)] "WF-004.duplicate-dimension" p ("duplicate dimension '" ^ x ^ "'")))
           @ List.concat_map
               (fun d ->
                 match d with
                 | Some d when find_ci ctx.doc.dimensions d = None ->
-                    [ v "WF-004" at ("reference to undeclared dimension '" ^ d ^ "'") ]
+                    [ v ~params:[("dimension", d)] "WF-004.undeclared-dimension" at ("reference to undeclared dimension '" ^ d ^ "'") ]
                 | Some _ -> []
                 (* the loader reads every entry of a `dimensions` list as a
                    string, so a null entry cannot reach this walk since M1 *)
@@ -1134,7 +1196,7 @@ let wf005 ctx =
           (fun (a, (t : period)) ->
             match t.tv_count with
             | Some n when n < 1 ->
-                [ v "WF-005" (at ^ prefix ^ a)
+                [ v ~params:[("count", string_of_int n)] "WF-005.count-below-one" (at ^ prefix ^ a)
                     (Printf.sprintf "timeline facet count %d < 1" n) ]
             | _ -> [])
           l
@@ -1158,12 +1220,12 @@ let wf005 ctx =
                       | None -> assert false
                     in
                     (if facet_gran <> tl.tl_granularity then
-                       [ v "WF-005" (at ^ "/attribuutTijdlijnNaam/" ^ a)
+                       [ v "WF-005.granularity-differs" (at ^ "/attribuutTijdlijnNaam/" ^ a)
                            "named-timeline adoption is partial: granularity differs from the declaration" ]
                      else [])
                     @
                     if facet_count <> tl.tl_count then
-                      [ v "WF-005" (at ^ "/attribuutTijdlijnNaam/" ^ a)
+                      [ v "WF-005.period-count-differs" (at ^ "/attribuutTijdlijnNaam/" ^ a)
                           "named-timeline adoption is partial: period count differs from the declaration" ]
                     else [])
             | None -> [])
@@ -1181,10 +1243,10 @@ let wf005 ctx =
       (fun (p, (par : parameter)) ->
         match par.par_timeline_count with
         | Some n when n < 1 ->
-            [ v "WF-005" ("/parameters/" ^ p ^ "/timeline/count")
+            [ v ~params:[("parameter", p); ("count", string_of_int n)] "WF-005.parameter-below-one" ("/parameters/" ^ p ^ "/timeline/count")
                 (Printf.sprintf "the timeline facet of parameter '%s' has count %d < 1" p n) ]
         | Some n when n > 1 ->
-            [ v "WF-005" ("/parameters/" ^ p ^ "/timeline/count")
+            [ v ~params:[("parameter", p); ("count", string_of_int n)] "WF-005.parameter-above-one" ("/parameters/" ^ p ^ "/timeline/count")
                 (Printf.sprintf
                    "the timeline facet of parameter '%s' has count %d > 1: a parameter's \
                     timeline is one period while multi-period grids are open \
@@ -1199,12 +1261,12 @@ let wf006 ctx =
       match dt with
       | Some (Enumeration { label_list; _ }) ->
           let at = "/domeinen/" ^ d in
-          (if label_list = [] then [ v "WF-006" at "enumeration domain declares no values" ] else [])
+          (if label_list = [] then [ v "WF-006.no-values" at "enumeration domain declares no values" ] else [])
           @ (if List.exists (fun x -> x = None) label_list then
-               [ v "WF-006" at "enumeration domain contains a null value" ]
+               [ v "WF-006.null-value" at "enumeration domain contains a null value" ]
              else [])
           @ (dups_by norm (List.map (fun x -> (x, at)) (some_names label_list))
-             |> List.map (fun (x, _, p) -> v "WF-006" p ("duplicate enumeration value '" ^ x ^ "'")))
+             |> List.map (fun (x, _, p) -> v ~params:[("value", x)] "WF-006.duplicate-value" p ("duplicate enumeration value '" ^ x ^ "'")))
       | _ -> [])
     ctx.doc.domain_specs
 
@@ -1213,9 +1275,9 @@ let wf006 ctx =
 let check_number_form at = function
   | Number { whole_part; decimal_places; _ } | Percentage { whole_part; decimal_places; _ } ->
       if decimal_places < 0 then
-        [ v "WF-007" at (Printf.sprintf "decimals %d < 0" decimal_places) ]
+        [ v ~params:[("decimals", string_of_int decimal_places)] "WF-007.decimals-below-zero" at (Printf.sprintf "decimals %d < 0" decimal_places) ]
       else if whole_part && decimal_places >= 1 then
-        [ v "WF-007" at
+        [ v ~params:[("decimals", string_of_int decimal_places)] "WF-007.whole-with-decimals" at
             (Printf.sprintf "whole number with %d decimals: not one of the three precision forms"
                decimal_places) ]
       else []
@@ -1271,7 +1333,7 @@ let rec check_unit_form ~systems at (u : measure_unit) =
   in
   (match u.system with
    | Some s when not (mem_ci systems s) ->
-       [ v "WF-034" (at ^ "/system")
+       [ v ~params:[("unit", named); ("unitSystem", s)] "WF-034.undeclared-unit-system" (at ^ "/system")
            (Printf.sprintf
               "unit %s declares unit system '%s', which no declaration carries: the unit \
                resolves against no conversion table"
@@ -1279,13 +1341,13 @@ let rec check_unit_form ~systems at (u : measure_unit) =
    | _ -> [])
   @ (match (u.canonical_form, u.factor_to_canonical) with
   | Some c, None ->
-      [ v "WF-092" at
+      [ v ~params:[("unit", named); ("canonical", c)] "WF-092.canonical-without-factor" at
           (Printf.sprintf
              "unit %s names canonical unit '%s' but carries no conversion factor into it: a \
               half-filled conversion pair is not a unit (both fields, or neither)"
              named c) ]
   | None, Some f ->
-      [ v "WF-092" at
+      [ v ~params:[("unit", named); ("factor", rational_render f)] "WF-092.factor-without-canonical" at
           (Printf.sprintf
              "unit %s carries conversion factor %s but names no canonical unit to convert into: a \
               half-filled conversion pair is not a unit (both fields, or neither)"
@@ -1294,7 +1356,7 @@ let rec check_unit_form ~systems at (u : measure_unit) =
   @ (match u.factor_to_canonical with
     | Some { num; den } when ggd num den <> 1 ->
         let g = ggd num den in
-        [ v "WF-092" (at ^ "/factorToCanonical")
+        [ v ~params:[("unit", named); ("numerator", string_of_int num); ("denominator", string_of_int den); ("spelling", rational_render { num = num / g; den = den / g })] "WF-092.factor-not-lowest" (at ^ "/factorToCanonical")
             (Printf.sprintf
                "unit %s carries conversion factor %d/%d, which is not in lowest terms: an exact \
                 factor has one spelling, here %s"
@@ -1396,7 +1458,7 @@ let wf007_model ctx =
 let wf007_presentation ctx =
   List.map
     (fun at ->
-      v "WF-007" at
+      v "WF-007.presentation-tag-misplaced" at
         "the presentation tag \"percentage\" on a type annotation: the tag is written only \
          where a datatype is declared")
     ctx.doc.presentation_annotations
@@ -1427,7 +1489,7 @@ let wf009 ctx =
                   | None -> [])
                 es.unit_list))
         |> List.map (fun (_, a, at) ->
-               v "WF-009" at
+               v ~params:[("unit", a); ("unitSystem", sn)] "WF-009.unit-declared-twice" at
                  (Printf.sprintf
                     "the unit '%s' is declared twice in the unit system '%s': one Unit per \
                      abbreviation"
@@ -1451,10 +1513,10 @@ let wf009 ctx =
                | Some c when u.abbr_text = Some c -> [] (* self-canonical *)
                | Some c ->
                    if List.mem (norm c) seen then
-                     [ v "WF-009" at ("conversion cycle through '" ^ c ^ "'") ]
+                     [ v ~params:[("unit", c)] "WF-009.conversion-cycle" at ("conversion cycle through '" ^ c ^ "'") ]
                    else (
                      match lookup c with
-                     | None -> [ v "WF-009" at ("conversion targets unknown unit '" ^ c ^ "'") ]
+                     | None -> [ v ~params:[("unit", c)] "WF-009.unknown-target-unit" at ("conversion targets unknown unit '" ^ c ^ "'") ]
                      | Some next -> follow (norm c :: seen) next)
              in
              follow (Option.to_list (Option.map norm d.ge_unit.abbr_text)) d.ge_unit)
@@ -1468,9 +1530,9 @@ let wf011 ctx =
       let n = List.length ft.role_names in
       let at = "/feittypen/" ^ fn in
       if ft.reciprocal && n <> 1 then
-        [ v "WF-011" at (Printf.sprintf "reciprocal fact type with %d roles (must be 1)" n) ]
+        [ v ~params:[("count", string_of_int n)] "WF-011.reciprocal-role-count" at (Printf.sprintf "reciprocal fact type with %d roles (must be 1)" n) ]
       else if (not ft.reciprocal) && n < 2 then
-        [ v "WF-011" at (Printf.sprintf "fact type with %d roles (must be >= 2)" n) ]
+        [ v ~params:[("count", string_of_int n)] "WF-011.role-below-two" at (Printf.sprintf "fact type with %d roles (must be >= 2)" n) ]
       else [])
     ctx.doc.fact_types
 
@@ -1500,7 +1562,7 @@ let wf012 ctx =
       in
       ignore names;
       List.map
-        (fun n -> v "WF-012" at ("role name or plural '" ^ n ^ "' is ambiguous within the fact type"))
+        (fun n -> v ~params:[("name", n)] "WF-012.ambiguous-role-name" at ("role name or plural '" ^ n ^ "' is ambiguous within the fact type"))
         colliding)
     ctx.doc.fact_types
 
@@ -1509,7 +1571,7 @@ let wf013 ctx =
     (fun (fn, ft) ->
       match ft.role_names with
       | [ r ] when ft.reciprocal && r.role_many ->
-          [ v "WF-013" ("/feittypen/" ^ fn) "reciprocal fact type's role must be to-one" ]
+          [ v "WF-013.role-to-many" ("/feittypen/" ^ fn) "reciprocal fact type's role must be to-one" ]
       | _ -> [])
     ctx.doc.fact_types
 
@@ -1517,12 +1579,12 @@ let wf014 ctx =
   List.concat_map
     (fun (dn, d) ->
       let at = "/dimensies/" ^ dn in
-      (if d.dim_values = [] then [ v "WF-014" at "dimension with an empty label set" ] else [])
+      (if d.dim_values = [] then [ v "WF-014.empty-label-set" at "dimension with an empty label set" ] else [])
       @ (if List.exists (fun x -> x = None) d.dim_values then
-           [ v "WF-014" at "dimension contains a null label" ]
+           [ v "WF-014.null-label" at "dimension contains a null label" ]
          else [])
       @ (dups_by norm (List.map (fun x -> (x, at)) (some_names d.dim_values))
-         |> List.map (fun (x, _, p) -> v "WF-014" p ("duplicate label '" ^ x ^ "'"))))
+         |> List.map (fun (x, _, p) -> v ~params:[("label", x)] "WF-014.duplicate-label" p ("duplicate label '" ^ x ^ "'"))))
     ctx.doc.dimensions
 
 let wf015 ctx =
@@ -1531,7 +1593,7 @@ let wf015 ctx =
        (fun tl -> Option.map (fun n -> (n, "/tijdlijnen")) tl.tl_name)
        ctx.doc.timelines)
   |> List.map (fun (a, b, at) ->
-      v "WF-015" at
+      v ~params:[("first", a); ("second", b)] "WF-015.timeline-collision" at
         (Printf.sprintf "timelines '%s' and '%s' collide under normalized-name identity" a b))
 
 let wf016 ctx =
@@ -1548,7 +1610,7 @@ let wf016 ctx =
               ctx.doc.resolved_start_point_determinations
           then []
           else
-            [ v "WF-016" "/tijdlijnen"
+            [ v ~params:[("timeline", n)] "WF-016.no-start-point" "/tijdlijnen"
                 ("variable-start timeline '" ^ n ^ "' has no start-point determination") ]
       | _ -> [])
     ctx.doc.timelines
@@ -1600,12 +1662,12 @@ let wf017 ctx =
   List.concat_map
     (fun (i, (d : day_kind)) ->
       (if calendar_spelling d.dk_name then
-         [ v "WF-017" (at i "name") ("day-kind '" ^ d.dk_name ^ "' shadows a built-in calendar unit") ]
+         [ v ~params:[("dayKind", d.dk_name)] "WF-017.name-shadows-calendar" (at i "name") ("day-kind '" ^ d.dk_name ^ "' shadows a built-in calendar unit") ]
        else [])
       @
       match d.dk_plural with
       | Some p when calendar_spelling p ->
-          [ v "WF-017" (at i "plural")
+          [ v ~params:[("plural", p); ("dayKind", d.dk_name)] "WF-017.plural-shadows-calendar" (at i "plural")
               (Printf.sprintf "the plural '%s' of day kind '%s' shadows a built-in calendar unit"
                  p d.dk_name) ]
       | _ -> [])
@@ -1620,7 +1682,7 @@ let wf017 ctx =
                 if j = i then None
                 else if norm p = norm e.dk_name then
                   Some
-                    (v "WF-017" (at i "plural")
+                    (v ~params:[("plural", p); ("dayKind", d.dk_name); ("otherDayKind", e.dk_name)] "WF-017.plural-equals-name" (at i "plural")
                        (Printf.sprintf
                           "the plural '%s' of day kind '%s' is the name of day kind '%s': one \
                            spelling names two day kinds"
@@ -1629,7 +1691,7 @@ let wf017 ctx =
                   match e.dk_plural with
                   | Some q when j < i && norm p = norm q ->
                       Some
-                        (v "WF-017" (at i "plural")
+                        (v ~params:[("plural", p); ("dayKind", d.dk_name); ("otherPlural", q); ("otherDayKind", e.dk_name)] "WF-017.plural-equals-plural" (at i "plural")
                            (Printf.sprintf
                               "the plural '%s' of day kind '%s' is the plural '%s' of day kind \
                                '%s': one spelling names two day kinds"
@@ -1649,7 +1711,7 @@ let wf018 ctx =
       let at = "/parameters/" ^ p in
       match par.par_datatype with
       | Some (Enumeration { domain_spec = Some d; _ }) when find_ci ctx.doc.domain_specs d = None ->
-          [ v "WF-018" at ("parameter enumeration references undeclared domain '" ^ d ^ "'") ]
+          [ v ~params:[("domain", d)] "WF-018.undeclared-domain" at ("parameter enumeration references undeclared domain '" ^ d ^ "'") ]
       | Some _ -> []
       | None -> assert false (* the loader reads the datatype as required *))
     ctx.doc.parameters
@@ -1681,9 +1743,9 @@ let wf107 ctx =
           match n with
           | Some s when collapse_ws s <> "" -> None
           | Some _ ->
-              Some (v "WF-107" (name_at at) ("form in " ^ arr ^ " carries a blank name" ^ why))
+              Some (v ~params:[("array", arr); ("reason", why)] "WF-107.name-blank" (name_at at) ("form in " ^ arr ^ " carries a blank name" ^ why))
           | None ->
-              Some (v "WF-107" (name_at at) ("form in " ^ arr ^ " carries no name" ^ why)))
+              Some (v ~params:[("array", arr); ("reason", why)] "WF-107.name-missing" (name_at at) ("form in " ^ arr ^ " carries no name" ^ why)))
         (forms_of entries))
     (named_forms ctx)
 
@@ -1721,7 +1783,7 @@ let wf020 ctx =
           List.find_opt (fun (k', arr', _, _) -> k = k' && arr <> arr') stripped
         with
         | Some (_, arr', n', _) when rank arr < rank arr' ->
-            Some (v "WF-020" at
+            Some (v ~params:[("name", n); ("otherName", n'); ("namespace", arr')] "WF-020.name-collision" at
                     (Printf.sprintf
                        "name '%s' collides with '%s' in %s (unique across all named forms)"
                        n n' arr'))
@@ -1737,7 +1799,7 @@ let wf020 ctx =
       (fun (arr, forms) ->
         List.filter_map (fun (n, at, _) -> Option.map (fun n -> (n, at)) n) forms
         |> dups_by norm
-        |> List.map (fun (a, _, at) -> v "WF-020" at (Printf.sprintf "duplicate name '%s' in %s" a arr)))
+        |> List.map (fun (a, _, at) -> v ~params:[("name", a); ("namespace", arr)] "WF-020.duplicate-name" at (Printf.sprintf "duplicate name '%s' in %s" a arr)))
       arrays
   in
   cross @ within
@@ -1774,7 +1836,7 @@ let wf101 ctx =
             match w with
             | Some w when not (lexeme_iso_date w) ->
                 Some
-                  (v "WF-101"
+                  (v ~params:[("bound", w)] "WF-101.validity-bound-form"
                      (at ^ "/validity/" ^ field)
                      ("validity bound '" ^ w
                       ^ "' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges \
@@ -1808,7 +1870,7 @@ let wf021 ctx =
                 List.filter_map
                   (fun (n2, g2, at2) ->
                     if validity_overlaps g1 g2 then
-                      Some (v "WF-021" at1
+                      Some (v ~params:[("first", label n1 at1); ("second", label n2 at2); ("namespace", arr)] "WF-021.windows-overlap" at1
                               (Printf.sprintf
                                  "validity windows of versions '%s' and '%s' overlap (%s)"
                                  (label n1 at1) (label n2 at2) arr))
@@ -1835,17 +1897,17 @@ let wf022 ctx =
       match r.objective with
       | Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ }) -> (
           match object_type ctx otn with
-          | None -> [ v "WF-022" (at ^ "/target") ("target object type '" ^ otn ^ "' is not declared") ]
+          | None -> [ v ~params:[("objectType", otn)] "WF-022.undeclared-object-type" (at ^ "/target") ("target object type '" ^ otn ^ "' is not declared") ]
           | Some ot -> (
               let computes = r.rr_presentation <> Some Characteristic_attribution in
               match (has_attr ot a, has_characteristic ot a) with
               | true, true ->
-                  [ v "WF-022" (at ^ "/target")
+                  [ v ~params:[("member", a); ("objectType", otn)] "WF-022.target-both-kinds" (at ^ "/target")
                       ("target '" ^ a ^ "' names both an attribute and a characteristic of '" ^ otn
                      ^ "': which member a rule writes decides its kind, and this name decides \
                         nothing") ]
               | false, true when computes ->
-                  [ v "WF-022" (at ^ "/target")
+                  [ v ~params:[("member", a); ("objectType", otn)] "WF-022.writing-target-characteristic" (at ^ "/target")
                       ("a version with a presentation or with initialisation true writes an \
                         attribute, so its target MUST name one, and '" ^ a
                      ^ "' is a characteristic of '" ^ otn ^ "'") ]
@@ -1854,19 +1916,19 @@ let wf022 ctx =
                   match r.value_node with
                   | Some (Literal { variant = Lv_boolean true; typ = Some Boolean; _ }) -> []
                   | _ ->
-                      [ v "WF-022" (at ^ "/value")
+                      [ v "WF-022.value-not-true" (at ^ "/value")
                           "characteristic target's value must be the boolean constant true" ])
               | true, false when not computes ->
-                  [ v "WF-022" (at ^ "/target")
+                  [ v ~params:[("member", a); ("objectType", otn)] "WF-022.characteristic-target-attribute" (at ^ "/target")
                       ("a version without a presentation and without initialisation attributes a \
                         characteristic, so its target MUST name one, and '" ^ a
                      ^ "' is an attribute of '" ^ otn ^ "'") ]
               | true, false -> []
               | false, false ->
-                  [ v "WF-022" (at ^ "/target")
+                  [ v ~params:[("member", a); ("objectType", otn)] "WF-022.target-not-member" (at ^ "/target")
                       ("target '" ^ a ^ "' is neither an attribute nor a characteristic of '" ^ otn ^ "'") ]))
-      | Some _ -> [ v "WF-022" (at ^ "/target") "rule target is not an attribute reference" ]
-      | None -> [ v "WF-022" (at ^ "/target") "rule without a target" ])
+      | Some _ -> [ v "WF-022.target-not-attribute" (at ^ "/target") "rule target is not an attribute reference" ]
+      | None -> [ v "WF-022.rule-without-target" (at ^ "/target") "rule without a target" ])
     ctx.doc.resolved_rules
 
 let wf025 ctx =
@@ -1875,16 +1937,16 @@ let wf025 ctx =
       let at = r.vd_pointer in
       (match r.vd_method, r.ratio_attribute with
        | Some Equal_shares, Some _ ->
-           [ v "WF-025" at "equal-shares allocation with a ratio attribute" ]
+           [ v "WF-025.equal-shares-ratio" at "equal-shares allocation with a ratio attribute" ]
        | Some Proportional, None ->
-           [ v "WF-025" at "proportional allocation without a ratio attribute" ]
+           [ v "WF-025.proportional-without-ratio" at "proportional allocation without a ratio attribute" ]
        | _ -> [])
       @ (match r.maximum_attribute, r.ratio_attribute with
-         | Some _, None -> [ v "WF-025" at "maximum requires a ratio attribute" ]
+         | Some _, None -> [ v "WF-025.maximum-without-ratio" at "maximum requires a ratio attribute" ]
          | _ -> [])
       @ (match r.ordering_attribute, r.vd_method with
          | Some _, Some m when m <> Ordered ->
-             [ v "WF-025" at "ordering key on a non-ordered allocation" ]
+             [ v "WF-025.ordering-on-unordered" at "ordering key on a non-ordered allocation" ]
          | _ -> [])
       @
       match r.ordering_attribute, r.objective_type_name with
@@ -1893,7 +1955,7 @@ let wf025 ctx =
           | Some ot -> (
               match attr_of ot key with
               | Some (Some d) when not (is_orderable d) ->
-                  [ v "WF-025" at ("ordering key '" ^ key ^ "' has a non-orderable type") ]
+                  [ v ~params:[("attribute", key)] "WF-025.key-not-orderable" at ("ordering key '" ^ key ^ "' has a non-orderable type") ]
               | _ -> [])
           | None -> [])
       | _ -> [])
@@ -1938,7 +2000,7 @@ let wf026 ctx =
               | _ -> false
             in
             if same_target && distinct_form n1 n2 then
-              Some (v "WF-026" at1
+              Some (v ~params:[("objectType", Option.value dt1 ~default:"?"); ("attribute", Option.value da1 ~default:"?")] "WF-026.target-written-twice" at1
                       (Printf.sprintf "two allocations write target (%s, %s)"
                          (Option.value dt1 ~default:"?") (Option.value da1 ~default:"?")))
             else None)
@@ -1960,7 +2022,7 @@ let wf026 ctx =
          ~attr:(fun (_, _, a, _) -> a)
          ~pairs:(fun (n1, _, _, _) (n2, _, _, _) -> distinct_form n1 n2)
     |> List.map (fun ((_, low, a, at), (_, high, _, _)) ->
-           v "WF-026" at
+           v ~params:[("objectType", low); ("attribute", a); ("otherObjectType", high)] "WF-026.chain-target-twice" at
              (Printf.sprintf
                 "two allocations write target (%s, %s) through its type chain — one ranging \
                  over %s, one over %s — and an allocation is never folded into a stack, so an \
@@ -2000,13 +2062,13 @@ let wf034_allocations ctx =
       let at = r.vd_pointer in
       (match r.source_attribute with
        | None ->
-           [ v "WF-034" (at ^ "/sourceAttribute")
+           [ v "WF-034.no-source-attribute" (at ^ "/sourceAttribute")
                "allocation without a source attribute: it resolves against no declaration" ]
        | Some _ -> [])
       @
       match r.target_attribute with
       | None ->
-          [ v "WF-034" (at ^ "/targetAttribute")
+          [ v "WF-034.no-target-attribute" (at ^ "/targetAttribute")
               "allocation without a target attribute: it resolves against no declaration" ]
       | Some _ -> [])
     ctx.doc.allocations
@@ -2051,7 +2113,7 @@ let wf034_allocation_names ctx =
       let at = r.vd_pointer in
       let filled field = function
         | Some a when norm a = "" ->
-            [ v "WF-034" (at ^ "/" ^ field)
+            [ v ~params:[("field", field)] "WF-034.field-empty" (at ^ "/" ^ field)
                 (field
                ^ " is present but empty: an attribute name that names nothing \
                   resolves against no declaration") ]
@@ -2094,13 +2156,13 @@ let wf034_allocation_types ctx =
       let at = r.vd_pointer in
       (match r.source_type with
        | None ->
-           [ v "WF-034" (at ^ "/sourceType")
+           [ v "WF-034.no-source-type" (at ^ "/sourceType")
                "allocation without a source object type: it resolves against no declaration" ]
        | Some _ -> [])
       @
       match r.objective_type_name with
       | None ->
-          [ v "WF-034" (at ^ "/targetType")
+          [ v "WF-034.no-target-type" (at ^ "/targetType")
               "allocation without a target object type: it resolves against no declaration" ]
       | Some _ -> [])
     ctx.doc.allocations
@@ -2172,7 +2234,7 @@ let wf034_allocation_name_resolution ctx =
                | Some ot ->
                    if has_attr ot a then []
                    else
-                     [ v "WF-034" (at ^ "/" ^ field)
+                     [ v ~params:[("attribute", a); ("side", side); ("objectType", tn); ("field", field)] "WF-034.undeclared-allocation-attribute" (at ^ "/" ^ field)
                          (Printf.sprintf
                             "'%s' is not a declared attribute of the %s type '%s': the \
                              allocation's %s resolves against no declaration"
@@ -2229,11 +2291,11 @@ let wf034_object_creation_subject ctx =
          let at = r.oc_pointer ^ "/subject" in
          match r.oc_subject with
          | Some s when object_type ctx s = None ->
-             [ v "WF-034" at
+             [ v ~params:[("objectType", s)] "WF-034.undeclared-creation-subject" at
                  ("object creation's subject type '" ^ s
                 ^ "' is not declared: the creation resolves against no declaration") ]
          | None ->
-             [ v "WF-034" at
+             [ v "WF-034.no-creation-subject" at
                  "object creation without a subject: the population it runs over, and the type \
                   its member values evaluate on, resolve against no declaration" ]
          | Some _ -> [])
@@ -2298,20 +2360,20 @@ let wf027 ctx =
     (fun (r : resolved_object_creation) ->
       let at = r.oc_pointer in
       match r.created_type with
-      | None -> [ v "WF-027" at "object creation without a created type" ]
+      | None -> [ v "WF-027.no-created-type" at "object creation without a created type" ]
       | Some tn -> (
           match object_type ctx tn with
-          | None -> [ v "WF-027" at ("created type '" ^ tn ^ "' is not declared") ]
+          | None -> [ v ~params:[("objectType", tn)] "WF-027.undeclared-created-type" at ("created type '" ^ tn ^ "' is not declared") ]
           | Some ot ->
               List.concat_map
                 (fun (j, t) ->
                   let tat = Printf.sprintf "%s/initialisations/%d" at j in
                   match t.to_attribute with
-                  | None -> [ v "WF-027" tat "member initialisation without a member name" ]
+                  | None -> [ v "WF-027.member-name-missing" tat "member initialisation without a member name" ]
                   | Some m ->
                       if t.to_characteristic then
                         (if not (has_characteristic ot m) then
-                           [ v "WF-027" tat
+                           [ v ~params:[("member", m); ("objectType", tn)] "WF-027.undeclared-characteristic" tat
                                ("'" ^ m ^ "' is not a declared characteristic of '" ^ tn ^ "'") ]
                          else [])
                         @
@@ -2329,20 +2391,20 @@ let wf027 ctx =
                            stays refused. *)
                         (match t.to_value with
                          | None ->
-                             [ v "WF-027" tat "characteristic initialisation without a value" ]
+                             [ v "WF-027.characteristic-value-missing" tat "characteristic initialisation without a value" ]
                          | Some (Lambda _ | Instance_set_union _) ->
-                             [ v "WF-027" tat
+                             [ v "WF-027.value-not-boolean" tat
                                  "characteristic initialisation's value must be a \
                                   boolean-typed expression" ]
                          | Some w -> (
                              match expr_type ctx ~binders:[] w with
                              | Some Boolean | None -> []
                              | Some _ ->
-                                 [ v "WF-027" tat
+                                 [ v "WF-027.value-not-boolean" tat
                                      "characteristic initialisation's value must be a \
                                       boolean-typed expression" ]))
                       else if not (has_attr ot m) then
-                        [ v "WF-027" tat ("'" ^ m ^ "' is not a declared attribute of '" ^ tn ^ "'") ]
+                        [ v ~params:[("member", m); ("objectType", tn)] "WF-027.undeclared-attribute" tat ("'" ^ m ^ "' is not a declared attribute of '" ^ tn ^ "'") ]
                       else [])
                 (List.mapi (fun j t -> (j, t)) r.assignments)))
     ctx.doc.object_creations
@@ -2352,12 +2414,12 @@ let wf029 ctx =
     (fun (r : resolved_consistency) ->
       let at = r.cons_pointer in
       (match r.cons_subject with
-       | None -> [ v "WF-029" at "consistency without a subject type" ]
+       | None -> [ v "WF-029.no-subject-type" at "consistency without a subject type" ]
        | Some s when object_type ctx s = None ->
-           [ v "WF-029" at ("subject type '" ^ s ^ "' is not declared") ]
+           [ v ~params:[("objectType", s)] "WF-029.undeclared-subject-type" at ("subject type '" ^ s ^ "' is not declared") ]
        | Some _ -> [])
       @ match r.assertion with
-        | None -> [ v "WF-029" at "consistency without an assertion" ]
+        | None -> [ v "WF-029.no-assertion" at "consistency without an assertion" ]
         | Some _ -> [])
     ctx.doc.consistencies
 
@@ -2596,25 +2658,25 @@ let wf089_domain_identity ?(source = "the declaration it reads from") at ~what ~
       | None, None -> []
       | Some a, Some b when choice_type_same a b -> []
       | Some a, Some b when norm (choice_type_name a) = norm (choice_type_name b) ->
-          [ v "WF-089" at
+          [ v ~params:[("subject", what); ("variant", choice_type_variant a); ("name", choice_type_name a); ("source", source); ("sourceVariant", choice_type_variant b); ("sourceName", choice_type_name b)] "WF-089.variant-clash" at
               (Printf.sprintf
                  "%s is typed as the %s '%s', but %s is the %s '%s' \
                   (one namespace: a domain has one variant)"
                  what (choice_type_variant a) (choice_type_name a) source (choice_type_variant b)
                  (choice_type_name b)) ]
       | Some a, Some b ->
-          [ v "WF-089" at
+          [ v ~params:[("subject", what); ("domain", choice_type_name a); ("source", source); ("sourceDomain", choice_type_name b)] "WF-089.domain-mismatch" at
               (Printf.sprintf
                  "%s is typed with keuzetype domain '%s', but %s names domain '%s'"
                  what (choice_type_name a) source (choice_type_name b)) ]
       | Some a, None ->
-          [ v "WF-089" at
+          [ v ~params:[("subject", what); ("domain", choice_type_name a); ("source", source); ("type", datatype_kind d)] "WF-089.domain-unnamed" at
               (Printf.sprintf
                  "%s is typed with keuzetype domain '%s', but %s is %s and names no keuzetype \
                   domain"
                  what (choice_type_name a) source (datatype_kind d)) ]
       | None, Some b ->
-          [ v "WF-089" at
+          [ v ~params:[("subject", what); ("type", datatype_kind t); ("source", source); ("sourceDomain", choice_type_name b)] "WF-089.type-not-keuzetype" at
               (Printf.sprintf
                  "%s is typed %s, naming no keuzetype domain, but %s names domain '%s'"
                  what (datatype_kind t) source (choice_type_name b)) ])
@@ -2652,16 +2714,16 @@ let wf090_struct_identity ?(source = "the declaration it reads from") at ~what ~
       | None, None -> []
       | Some a, Some b when norm a = norm b -> []
       | Some a, Some b ->
-          [ v "WF-090" at
+          [ v ~params:[("subject", what); ("domain", a); ("source", source); ("sourceDomain", b)] "WF-090.struct-domain-mismatch" at
               (Printf.sprintf "%s is typed with struct domain '%s', but %s names struct domain '%s'"
                  what a source b) ]
       | Some a, None ->
-          [ v "WF-090" at
+          [ v ~params:[("subject", what); ("domain", a); ("source", source); ("type", datatype_kind d)] "WF-090.struct-domain-unnamed" at
               (Printf.sprintf
                  "%s is typed with struct domain '%s', but %s is %s and names no struct domain" what
                  a source (datatype_kind d)) ]
       | None, Some b ->
-          [ v "WF-090" at
+          [ v ~params:[("subject", what); ("type", datatype_kind t); ("source", source); ("sourceDomain", b)] "WF-090.type-not-struct" at
               (Printf.sprintf
                  "%s is typed %s, naming no struct domain, but %s names struct domain '%s'" what
                  (datatype_kind t) source b) ])
@@ -2773,7 +2835,8 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
   | None, _ | _, None -> []
   | Some d, Some t ->
       let mismatch facet shown_t shown_d =
-        [ v "WF-091" at
+        [ v ~params:[("facet", facet); ("subject", what); ("type", shown_t); ("source", source); ("sourceType", shown_d)]
+            "WF-091.facet-mismatch" at
             (Printf.sprintf "%s mismatch: %s is typed %s, but %s is %s" facet what shown_t source
                shown_d) ]
       in
@@ -3224,7 +3287,7 @@ let numeric_operand_arm ctx ~binders at (e : expr) =
           | Date_in_days | Date_time_type -> "Date values are calendar positions"
           | _ -> t ^ " values are not amounts"
         in
-        [ v "WF-091"
+        [ v ~params:[("aggregation", head); ("operand", operand); ("verb", verb); ("type", t); ("reason", why)] "WF-091.numeric-operand-refused"
             (Printf.sprintf "%s/arguments/%d" at i)
             (Printf.sprintf
                "%s of %s %s %s values: a total, sum or pro-rata part is arithmetic over a \
@@ -3260,19 +3323,19 @@ let composite_identity ctx ~binders at (e : expr) =
 let wf030 ctx =
   let source_checks at otn keys =
     match otn with
-    | None -> [ v "WF-030" (at ^ "/objectType") "uniqueness source without an object type" ]
+    | None -> [ v "WF-030.source-without-type" (at ^ "/objectType") "uniqueness source without an object type" ]
     | Some otn -> (
         match object_type ctx otn with
-        | None -> [ v "WF-030" (at ^ "/objectType") ("source type '" ^ otn ^ "' is not declared") ]
+        | None -> [ v ~params:[("objectType", otn)] "WF-030.undeclared-source-type" (at ^ "/objectType") ("source type '" ^ otn ^ "' is not declared") ]
         | Some ot ->
             List.concat
               (List.mapi
                  (fun j k ->
                    let kat = Printf.sprintf "%s/keys/%d" at j in
                    match k with
-                   | None -> [ v "WF-030" kat "null key entry" ]
+                   | None -> [ v "WF-030.null-key" kat "null key entry" ]
                    | Some k when not (has_attr ot k) ->
-                       [ v "WF-030" kat
+                       [ v ~params:[("attribute", k); ("objectType", otn)] "WF-030.undeclared-key" kat
                            ("key '" ^ k ^ "' is not a declared attribute of '" ^ otn ^ "'") ]
                    | Some _ -> [])
                  keys))
@@ -3293,7 +3356,7 @@ let wf030 ctx =
         let arity_v =
           match arities with
           | a :: rest when List.exists (fun x -> x <> a) rest ->
-              [ v "WF-030" at "union sources disagree on key arity" ]
+              [ v "WF-030.key-arity-mismatch" at "union sources disagree on key arity" ]
           | _ -> []
         in
         (* per-position datatype-kind agreement across sources *)
@@ -3320,7 +3383,7 @@ let wf030 ctx =
                       (fun a b -> match a, b with Some x, Some y -> x <> y | _ -> false)
                       first other)
                   (List.filter (fun o -> List.length o = List.length first) rest)
-              then [ v "WF-030" at "union sources disagree on a key position's datatype kind" ]
+              then [ v "WF-030.key-kind-mismatch" at "union sources disagree on a key position's datatype kind" ]
               else []
           | _ -> []
         in
@@ -3350,7 +3413,7 @@ let wf030 ctx =
                       (fun a b -> match a, b with Some x, Some y -> x <> y | _ -> false)
                       first other)
                   (List.filter (fun o -> List.length o = List.length first) rest)
-              then [ v "WF-030" at "union sources disagree on a key position's unit" ]
+              then [ v "WF-030.key-unit-mismatch" at "union sources disagree on a key position's unit" ]
               else []
           | _ -> []
         in
@@ -3372,7 +3435,7 @@ let day_kind_scan at (c0 : condition_expr) : violation list * string list =
   let viols = ref [] and refs = ref [] in
   let impure kind name =
     viols :=
-      v "WF-031" at
+      v ~params:[("kind", kind); ("name", name)] "WF-031.condition-reads-state" at
         (Printf.sprintf
            "day-kind condition reads %s '%s' — a day-kind condition references only dates, \
             date-components, easterSunday, literals, parameters and other day kinds, never \
@@ -3382,7 +3445,7 @@ let day_kind_scan at (c0 : condition_expr) : violation list * string list =
   in
   let session name =
     viols :=
-      v "WF-031" at
+      v ~params:[("name", name)] "WF-031.condition-reads-session" at
         (Printf.sprintf
            "day-kind condition reads the session value '%s' — a day kind classifies a bare date \
             at stratum 0 (ch. 5.4), so its predicate is a function of THE DAY alone; the bound \
@@ -3482,12 +3545,12 @@ let wf031 ctx =
       (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_day_kind_definitions)
   in
   (dups_by norm named
-   |> List.map (fun (a, _, at) -> v "WF-031" at ("more than one definition for day kind '" ^ a ^ "'")))
+   |> List.map (fun (a, _, at) -> v ~params:[("dayKind", a)] "WF-031.duplicate-definition" at ("more than one definition for day kind '" ^ a ^ "'")))
   @ List.concat_map
       (fun (i, r) ->
         let at = Printf.sprintf "/dayKindDefinitions/%d" i in
         (match r.rd_condition with
-         | None -> [ v "WF-031" at "day-kind definition without a condition" ]
+         | None -> [ v "WF-031.no-condition" at "day-kind definition without a condition" ]
          (* the purity clause (IR-SPEC par. 5): no derived-state read *)
          | Some c -> fst (day_kind_scan (at ^ "/condition") c))
         (* The validity MUST be always, neither bound written: no executor
@@ -3495,7 +3558,7 @@ let wf031 ctx =
            dead. *)
         @ (match r.rd_validity with
            | Some { valid_from = Some _; _ } | Some { valid_to = Some _; _ } ->
-               [ v "WF-031" at
+               [ v "WF-031.bounded-validity" at
                    "day-kind definition with a bounded validity window; must be always (from and to both absent)" ]
            | _ -> [])
         (* The name IS which day kind is being defined, so an absent or blank
@@ -3511,15 +3574,15 @@ let wf031 ctx =
            "undeclared day kind ' '" — true, and the wrong diagnosis. *)
         @ match r.rd_name with
           | None ->
-              [ v "WF-031" at
+              [ v "WF-031.no-name" at
                   "day-kind definition without a name; it defines no declared day kind and is \
                    silently dead" ]
           | Some n when collapse_ws n = "" ->
-              [ v "WF-031" at
+              [ v "WF-031.blank-name" at
                   "day-kind definition with a blank name; it defines no declared day kind and is \
                    silently dead" ]
           | Some n when not (mem_ci (day_kind_names ctx) n) ->
-              [ v "WF-031" at ("definition for undeclared day kind '" ^ n ^ "'") ]
+              [ v ~params:[("dayKind", n)] "WF-031.undeclared-day-kind" at ("definition for undeclared day kind '" ^ n ^ "'") ]
           | _ -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_day_kind_definitions)
 
@@ -3567,7 +3630,7 @@ let wf085 ctx =
         let cyc = take [] path in
         let names = String.concat " -> " (List.map name (cyc @ [ i ])) in
         viols :=
-          v "WF-085"
+          v ~params:[("cycle", names)] "WF-085.day-kind-cycle"
             (Printf.sprintf "/dayKindDefinitions/%d" i)
             ("day-kind reference cycle (no fixpoint; the toolchain resolves it to a silent false): "
             ^ names)
@@ -3587,28 +3650,28 @@ let wf032 ctx =
     (fun (i, r) ->
       let at = Printf.sprintf "/startPointDeterminations/%d" i in
       (match r.sp_timeline with
-       | None -> [ v "WF-032" at "start point without a timeline" ]
+       | None -> [ v "WF-032.no-timeline" at "start point without a timeline" ]
        | Some t -> (
            match find_timeline ctx t with
-           | None -> [ v "WF-032" at ("start point for undeclared timeline '" ^ t ^ "'") ]
+           | None -> [ v ~params:[("timeline", t)] "WF-032.undeclared-timeline" at ("start point for undeclared timeline '" ^ t ^ "'") ]
            | Some tl when not tl.variable_start ->
-               [ v "WF-032" at ("start point for fixed-start timeline '" ^ t ^ "'") ]
+               [ v ~params:[("timeline", t)] "WF-032.fixed-start-timeline" at ("start point for fixed-start timeline '" ^ t ^ "'") ]
            | Some _ -> []))
       @ (match r.sp_subject_type, r.one_member with
          | Some otn, Some one_member -> (
              match object_type ctx otn with
-             | None -> [ v "WF-032" at ("object type '" ^ otn ^ "' is not declared") ]
+             | None -> [ v ~params:[("objectType", otn)] "WF-032.undeclared-object-type" at ("object type '" ^ otn ^ "' is not declared") ]
              | Some ot -> (
                  match attr_of ot one_member with
                  | Some (Some Date_in_days) -> []
                  | Some (Some d) ->
-                     [ v "WF-032" at
+                     [ v ~params:[("member", one_member); ("kind", datatype_kind d)] "WF-032.anchor-wrong-kind" at
                          ("anchor member '" ^ one_member ^ "' is " ^ datatype_kind d
                           ^ ", must be a day-precision date") ]
                  | Some None | None ->
-                     [ v "WF-032" at
+                     [ v ~params:[("member", one_member); ("objectType", otn)] "WF-032.anchor-undeclared" at
                          ("anchor member '" ^ one_member ^ "' is not a declared attribute of '" ^ otn ^ "'") ]))
-         | _ -> [ v "WF-032" at "start point without object type or member" ])
+         | _ -> [ v "WF-032.missing-object-member" at "start point without object type or member" ])
       @
       match r.sp_subject_type, r.sp_timeline with
       | Some otn, Some t ->
@@ -3617,7 +3680,7 @@ let wf032 ctx =
               if j > i then
                 match r2.sp_subject_type, r2.sp_timeline with
                 | Some otn2, Some t2 when norm otn2 = norm otn && tl_norm t2 = tl_norm t ->
-                    Some (v "WF-032" at
+                    Some (v ~params:[("objectType", otn); ("timeline", t)] "WF-032.duplicate-start-point" at
                             (Printf.sprintf
                                "more than one start-point determination for (%s, %s)" otn t))
                 | _ -> None
@@ -3651,7 +3714,7 @@ let wf033 ctx =
       List.concat_map
         (fun one_member ->
           if List.mem (norm (strip_version one_member)) all_form_names then []
-          else [ v "WF-033" at ("group member '" ^ one_member ^ "' does not resolve to a rule form") ])
+          else [ v ~params:[("member", one_member)] "WF-033.undeclared-member" at ("group member '" ^ one_member ^ "' does not resolve to a rule form") ])
         member_list
       @
       if g.recursive then
@@ -3669,14 +3732,14 @@ let wf033 ctx =
            instances), a relation creation is idempotent over the fixed
            universe and needs none (ch. 5.5) *)
         (if ocs = [] && not (List.exists fc_member member_list) then
-           [ v "WF-033" at "recursive group without a creation member" ]
+           [ v "WF-033.no-creation-member" at "recursive group without a creation member" ]
          else [])
         @ List.concat_map
             (fun oc ->
               (* a version of a form with several carries its number in its
                  name ('<form> #2'), so the sentence names the version *)
               if oc.oc_condition = None then
-                [ v "WF-033" at
+                [ v ~params:[("name", Option.value oc.oc_name ~default:"?")] "WF-033.unguarded-creation" at
                     ("unguarded object creation '"
                      ^ Option.value oc.oc_name ~default:"?"
                      ^ "' in a recursive group") ]
@@ -3757,7 +3820,7 @@ let rec enum_use_site ctx at (d : datatype) : violation list =
                  label_list declared
           then []
           else
-            [ v "WF-088" at
+            [ v ~params:[("domain", dn)] "WF-088.use-site-disagrees" at
                 ("enumeration use site disagrees with the declaration of domain '" ^ dn
                ^ "' (the same values, in declaration order, required)") ]
       | _ -> [])
@@ -3844,13 +3907,13 @@ let rec struct_use_site ctx at (d : datatype) : violation list =
   | Struct_type { domain_spec; field_list } -> (
       match struct_decl ctx domain_spec with
       | None ->
-          [ v "WF-072" at
+          [ v ~params:[("domain", domain_spec)] "WF-072.use-site-undeclared" at
               ("struct-type use site names domain '" ^ domain_spec
              ^ "', which is not a declared struct type") ]
       | Some decl ->
           if fields_agree decl field_list then []
           else
-            [ v "WF-072" at
+            [ v ~params:[("domain", domain_spec)] "WF-072.use-site-disagrees" at
                 ("struct-type use site disagrees with the declaration of domain '" ^ domain_spec
                ^ "' (same fields, datatypes and order required)") ])
   | List_type { element } -> struct_use_site ctx at element
@@ -4095,7 +4158,7 @@ let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
          navigation bindings in this slot are ill-formed (WF-053) *)
       (match navigation_bindings with
        | Some _ ->
-           [ v "WF-053" at
+           [ v "WF-053.fold-source-path" at
                "a path on a fold source is ill-formed (the fold's relation is its range, \
                 sourceRole or sourcePath)" ]
        | None -> [])
@@ -4105,13 +4168,13 @@ let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
        | Src_role_under_value_fold ->
            (* the sentence ref, the ASP backend and the Drools loader share
               since the L2 fix round, so a refusal reads the same in all four *)
-           [ v "WF-093" at
+           [ v ~params:[("attribute", a); ("elementType", element_type)] "WF-093.value-no-attribute" at
                (Printf.sprintf
                   "value aggregation over %S, which is no attribute of %S: a value fold reads an \
                    attribute per contributor, and a role name is a count source only a count folds"
                   a element_type) ]
        | Src_count_of_member ->
-           [ v "WF-093" at
+           [ v ~params:[("attribute", a); ("elementType", element_type)] "WF-093.count-source-member" at
                ("the source of this count aggregation reads '" ^ a
               ^ "', a member of the element type '" ^ element_type
               ^ "': a count folds INSTANCES, so its source is a count source naming the \
@@ -4125,19 +4188,23 @@ let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
          in
          match anchor with
          | Some anc when norm otn <> norm anc ->
-             [ v "WF-083" at
+             (* the reading is a part of the sentence, so each reading is an arm *)
+             let slug, why =
+               match reading with
+               | Src_count -> ("count-source-anchor", "a count source is read on the fold subject")
+               | Src_own -> ("own-attribute-anchor", "a fold without a range reads the subject's own attribute")
+               | _ -> ("set-source-anchor", "a set source reads each member of the elementType")
+             in
+             [ v ~params:[("subjectType", otn); ("anchor", anc); ("attribute", a)] ("WF-083." ^ slug) at
                  ("fold-source subjectType '" ^ otn ^ "' is not the fold's anchor '" ^ anc ^ "' ("
-                 ^ (match reading with
-                   | Src_count -> "a count source is read on the fold subject"
-                   | Src_own -> "a fold without a range reads the subject's own attribute"
-                   | _ -> "a set source reads each member of the elementType")
+                 ^ why
                  ^ "): the executors resolve '" ^ a
                  ^ "' against the anchor, never against this field, so the two spellings name \
                     different declarations") ]
          | _ -> [])
       @
       match object_type ctx otn with
-      | None -> [ v "WF-034" at ("object type '" ^ otn ^ "' is not declared") ]
+      | None -> [ v ~params:[("objectType", otn)] "WF-034.undeclared-object-type" at ("object type '" ^ otn ^ "' is not declared") ]
       | Some ot -> (
           match reading with
           | Src_count | Src_count_of_member | Src_role_under_value_fold | Src_undecided -> []
@@ -4146,12 +4213,12 @@ let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
               else if has_characteristic ot a then
                 (* WF-080: an aggregation source is a value position — a
                    characteristic endpoint carries no value here *)
-                [ v "WF-080" at
+                [ v ~params:[("attribute", a); ("objectType", otn)] "WF-080.source-is-characteristic" at
                     ("'" ^ a ^ "' is a characteristic of '" ^ otn
                    ^ "', not an attribute — a characteristic endpoint is ill-formed in an \
                       aggregation source position") ]
               else
-                [ v "WF-034" at
+                [ v ~params:[("attribute", a); ("objectType", otn)] "WF-034.fold-attribute-undeclared" at
                     ("'" ^ a ^ "' is not a declared attribute of '" ^ otn
                    ^ "': a value fold's source reads an attribute of each contributor") ]))
   | _ -> []
@@ -4160,9 +4227,13 @@ let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
 
 (* Resolve a binding to (fact type, bound role, opposite role). Only the
    declared role name binds — the plural is presentation (WF-047). *)
-let resolve_binding ctx (rb : role_binding) =
+let resolve_binding_arm ctx (rb : role_binding) =
+  let refusal slug params message = Error (slug, params, message) in
+  let role_params = [ ("role", rb.rb_role); ("factType", rb.rb_fact_type) ] in
   match find_ci ctx.doc.fact_types rb.rb_fact_type with
-  | None -> Error ("role binding names undeclared fact type '" ^ rb.rb_fact_type ^ "'")
+  | None ->
+      refusal "undeclared-fact-type" [ ("factType", rb.rb_fact_type) ]
+        ("role binding names undeclared fact type '" ^ rb.rb_fact_type ^ "'")
   | Some (ft : fact_type_name) -> (
       match ft.role_names with
       | [ a; b ] -> (
@@ -4173,11 +4244,11 @@ let resolve_binding ctx (rb : role_binding) =
           | true, false -> Ok (ft, a, b)
           | false, true -> Ok (ft, b, a)
           | true, true ->
-              Error
+              refusal "role-ambiguous" role_params
                 ("role name '" ^ rb.rb_role ^ "' is ambiguous within fact type '"
                ^ rb.rb_fact_type ^ "'")
           | false, false ->
-              Error
+              refusal "role-undeclared" role_params
                 ("role binding names no declared role '" ^ rb.rb_role ^ "' of fact type '"
                ^ rb.rb_fact_type ^ "' (the plural does not bind)"))
       | [ r ] when ft.reciprocal ->
@@ -4189,19 +4260,25 @@ let resolve_binding ctx (rb : role_binding) =
           in
           if matches r then Ok (ft, r, r)
           else
-            Error
+            refusal "role-undeclared" role_params
               ("role binding names no declared role '" ^ rb.rb_role ^ "' of fact type '"
              ^ rb.rb_fact_type ^ "' (the plural does not bind)")
       | _ ->
-          Error
+          refusal "role-count" [ ("factType", rb.rb_fact_type) ]
             ("role binding into fact type '" ^ rb.rb_fact_type
            ^ "', which does not have exactly two roles (or one, reciprocal)"))
+
+(* A refusal of [resolve_binding] as the violation of [rule]: its slug is the arm,
+   its parameters the names the message quotes. *)
+let resolve_binding ctx rb = Result.map_error (fun (_, _, message) -> message) (resolve_binding_arm ctx rb)
+
+let binding_violation rule at (slug, params, message) = v ~params (rule ^ "." ^ slug) at message
 
 (* WF-047: the binding resolves and its fillers agree with the node's
    declared source/target types (skip a side the node leaves unnamed). *)
 let wf047_binding ctx at (rb : role_binding) ~bound_filler ~other_filler =
-  match resolve_binding ctx rb with
-  | Error e -> [ v "WF-047" at e ]
+  match resolve_binding_arm ctx rb with
+  | Error e -> [ binding_violation "WF-047" at e ]
   | Ok (_, bound, other) ->
       (* "agree" is ⊑-COMPATIBILITY, not equality (IR-SPEC ch. 2.2/2.6): a
          role's declared filler type is an UPPER bound, so a fact type
@@ -4214,7 +4291,7 @@ let wf047_binding ctx at (rb : role_binding) ~bound_filler ~other_filler =
             let filler = Option.value r.role_object_type_name ~default:"" in
             if type_compatible ctx filler expected then []
             else
-              [ v "WF-047" at
+              [ v ~params:[("side", what); ("role", Option.value r.role_identifier ~default:"?"); ("filler", filler); ("expected", expected)] "WF-047.role-filler-mismatch" at
                   (Printf.sprintf "the %s role '%s' fills '%s', but the node names '%s'" what
                      (Option.value r.role_identifier ~default:"?")
                      filler expected) ]
@@ -4232,7 +4309,7 @@ let wf047_binding ctx at (rb : role_binding) ~bound_filler ~other_filler =
    without them is the subject's own read, so there is nothing here to
    derive. *)
 let nav_hops ctx ~subject ~(bindings : role_binding list) ~(endpoint : string option) :
-    ((string * role_ref) list, string list) result =
+    ((string * role_ref) list, (string * (string * string) list * string) list) result =
   let filler (r : role_ref) = Option.value r.role_object_type_name ~default:"" in
   (* ONE-SIDED, deliberately: the walk lands on a role whose declared
      filler is [c], so every instance it can hold is ⊑ c, and all of them
@@ -4245,19 +4322,23 @@ let nav_hops ctx ~subject ~(bindings : role_binding list) ~(endpoint : string op
   let endpoint_check cur =
     match (endpoint, cur) with
     | Some e, Some c when not (is_sub ctx ~sub:c ~super:e) ->
-        [ Printf.sprintf "the navigation reaches '%s', not the endpoint '%s'" c e ]
+        [ ("endpoint-not-reached", [ ("reached", c); ("endpoint", e) ],
+           Printf.sprintf "the navigation reaches '%s', not the endpoint '%s'" c e) ]
     | _ -> []
   in
   let step (i, cur, acc, errs) (rb : role_binding) =
-    match resolve_binding ctx rb with
+    match resolve_binding_arm ctx rb with
     | Error e -> (i + 1, None, acc, errs @ [ e ])
     | Ok (_, bound, opposite) ->
         let near =
           match cur with
           | Some c when not (fills ctx ~inst:c ~role:opposite) ->
-              [ Printf.sprintf
-                  "hop %d over '%s': the near side fills '%s', but the walk stands at '%s'" i
-                  rb.rb_fact_type (filler opposite) c ]
+              [ ( "hop-near-side",
+                  [ ("hop", string_of_int i); ("factType", rb.rb_fact_type);
+                    ("filler", filler opposite); ("walk", c) ],
+                  Printf.sprintf
+                    "hop %d over '%s': the near side fills '%s', but the walk stands at '%s'" i
+                    rb.rb_fact_type (filler opposite) c ) ]
           | _ -> []
         in
         (i + 1, Some (filler bound), acc @ [ (rb.rb_fact_type, bound) ], errs @ near)
@@ -4273,13 +4354,13 @@ let nav_hops ctx ~subject ~(bindings : role_binding list) ~(endpoint : string op
    no read reaches here that could consume a collection. *)
 let wf053_attribute_ref ctx at ~subject ~bindings ~endpoint =
   match nav_hops ctx ~subject ~bindings ~endpoint with
-  | Error msgs -> List.map (fun m -> v "WF-053" at m) msgs
+  | Error msgs -> List.map (fun (slug, params, m) -> v ~params ("WF-053." ^ slug) at m) msgs
   | Ok hops ->
       List.concat
         (List.mapi
            (fun i ((_, (r : role_ref))) ->
              if r.role_many then
-               [ v "WF-053" at
+               [ v ~params:[("hop", string_of_int i); ("role", Option.value r.role_identifier ~default:"?")] "WF-053.hop-to-many" at
                    (Printf.sprintf
                       "hop %d reaches the to-many role '%s' in a scalar slot — a to-many step \
                        needs an aggregation, never a silent first pick"
@@ -4298,7 +4379,7 @@ let wf053_read ctx at ~subject ~object_type:otn ~bindings =
   | None, _ -> []
   | Some st, Some hops -> wf053_attribute_ref ctx at ~subject:st ~bindings:hops ~endpoint:(Some otn)
   | Some st, None when norm st <> norm otn ->
-      [ v "WF-053" at
+      [ v ~params:[("subjectType", st); ("objectType", otn)] "WF-053.read-other-type" at
           (Printf.sprintf
              "an attribute reference without a path is the subject's own read, so its \
               subjectType is the subject type '%s' — '%s' names another type, which only a \
@@ -4420,7 +4501,7 @@ let rec bound_only_expr (e : expr) : bool =
 let wf077_condition at (c : condition_expr) : violation list =
   let operand slot = function
     | Some e when not (bound_only_expr e) ->
-        [ v "WF-077" slot
+        [ v "WF-077.condition-operand-read" slot
             "an IfThenElse condition operand reads more than a binder, parameter or literal — an \
              attribute, field or characteristic read must pass through a Let binding first" ]
     | _ -> []
@@ -4436,7 +4517,7 @@ let wf077_condition at (c : condition_expr) : violation list =
           (List.mapi (fun i c -> walk (Printf.sprintf "%s/parts/%d" at i) c) components)
     | Characteristic_check _ | Role_membership _ | Rule_status_check _
     | Quantifier_fold _ | Condition_unresolved _ ->
-        [ v "WF-077" at
+        [ v "WF-077.condition-reads-state" at
             "an IfThenElse condition reads a characteristic, role or channel — not admissible (only \
              binders, parameters and literals may be read; route state reads through a Let \
              binding)" ]
@@ -4474,14 +4555,14 @@ let wf097_clip_qualifications at (c : condition_expr) : violation list =
         let ident = Option.value characteristic ~default:"?" in
         (match holder with
          | Some e ->
-             [ v "WF-097" at
+             [ v ~params:[("host", e)] "WF-097.clip-member-host" at
                  ("host '" ^ e
                 ^ "' on a gedurende clip member: the clip reads the SUBJECT's characteristic \
                    timeline, so a host here names a subject no reader consults") ]
          | None -> [])
         @ (match time_period with
            | Some p ->
-               [ v "WF-097" at
+               [ v ~params:[("polarity", (if p.gp_negated then "negated" else "affirmative")); ("characteristic", ident)] "WF-097.clip-member-qualifier" at
                    (Printf.sprintf
                       "wholePeriod qualifier (%s) on the gedurende clip member '%s': the clip \
                        already ranges over the whole timeline, so the qualifier — negated or not \
@@ -4507,14 +4588,14 @@ let wf097_clip_qualifications at (c : condition_expr) : violation list =
    attribute and the annotation for a literal, which carries no other. *)
 let wf111_bound ctx ~subject at side (e : expr) =
   let refuse what =
-    [ v "WF-111" at
+    [ v ~params:[("side", side); ("form", what)] "WF-111.bound-form" at
         (Printf.sprintf
            "the %s bound of a time window is %s — a bound is a date literal or an own scalar date \
             attribute of the subject; the general date expression is an OPEN wire decision"
            side what) ]
   in
   let instant =
-    [ v "WF-111" at
+    [ v ~params:[("side", side)] "WF-111.bound-instant" at
         (Printf.sprintf
            "the %s bound of a time window is a millisecond-precision date: the window is a range \
             of civil days and no clause reads an instant bound"
@@ -4564,7 +4645,7 @@ let wf112_position at (quantifier_kind : quantifier_kind) (parts : condition_exp
   | All | The -> []
   | None_of | At_least | At_most | Exactly ->
       if List.exists cond_has_window parts then
-        [ v "WF-112" at
+        [ v "WF-112.window-under-count" at
             "a time window under none or a counting quantifier: the window gates the RULE, and no \
              reading is specified for a verdict that is counted or complemented" ]
       else []
@@ -4603,7 +4684,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             (* every other value node carries its annotation: a derived
                position its derived type, a literal or a composite value its
                own (WF-034) *)
-            [ v "WF-034" (sub "type") "value node without a static type" ])
+            [ v "WF-034.no-static-type" (sub "type") "value node without a static type" ])
   in
   typ_checks
   (* WF-091 at a COMPOSITE position: the annotation against the expectation
@@ -4622,7 +4703,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
      | Rule_pos | Let_pos -> None
      | Closed_pos (wf, _) -> (
          let deny phrase =
-           Some [ v wf at (phrase ^ " is not admissible inside a closed function or lambda body") ]
+           Some [ v ~params:[("form", phrase)] (wf ^ ".inadmissible-in-closed") at (phrase ^ " is not admissible inside a closed function or lambda body") ]
          in
          match e with
          | Attribute_reference _ -> deny "an attribute or characteristic read"
@@ -4645,23 +4726,23 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       let vat = sub "value" in
       (match typ with
       | Some t -> (
-          match literal_variant_refusal variant t with
-          | Some sentence -> [ v "WF-114" vat sentence ]
+          match literal_variant_mismatch variant t with
+          | Some (params, sentence) -> [ v ~params "WF-114.variant-type-mismatch" vat sentence ]
           | None -> [])
       | None -> [])
       @
       match (variant, typ) with
       | Lv_number w, _ when number_lexeme_refusal w <> None ->
-          [ v "WF-081" vat (Option.get (number_lexeme_refusal w)) ]
+          [ v ~params:[("lexeme", w)] "WF-081.number-lexeme-refused" vat (Option.get (number_lexeme_refusal w)) ]
       | Lv_date w, _ when date_lexeme_refusal w <> None ->
-          [ v "WF-084" vat (Option.get (date_lexeme_refusal w)) ]
+          [ v ~params:[("lexeme", w)] "WF-084.date-lexeme-refused" vat (Option.get (date_lexeme_refusal w)) ]
       | Lv_date_time w, _ when date_time_lexeme_refusal w <> None ->
-          [ v "WF-095" vat (Option.get (date_time_lexeme_refusal w)) ]
+          [ v ~params:[("lexeme", w)] "WF-095.date-time-lexeme" vat (Option.get (date_time_lexeme_refusal w)) ]
       | Lv_enumeration w, Some (Enumeration { label_list; _ }) when not (mem_ci (some_names label_list) w) ->
-          [ v "WF-039" vat ("enumeration label '" ^ w ^ "' is not in the declared domain") ]
+          [ v ~params:[("label", w)] "WF-039.label-not-declared" vat ("enumeration label '" ^ w ^ "' is not in the declared domain") ]
       | Lv_number w, Some (Number { sign_char = Some t; _ }) -> (
           match literal_sign_refusal ~target:false t w with
-          | Some sentence -> [ v "WF-039" vat sentence ]
+          | Some (slug, sentence) -> [ v ~params:[("lexeme", w)] ("WF-039." ^ slug) vat sentence ]
           | None -> [])
       | _ -> [])
   | Text_composition { pieces; _ } ->
@@ -4687,20 +4768,20 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
            (fun (side, t) ->
              match t with
              | Some d when not (is_number_like d) ->
-                 [ v "WF-035" (sub side) ("operand of a numeric operator is " ^ datatype_kind d) ]
+                 [ v ~params:[("type", datatype_kind d)] "WF-035.operand-not-number" (sub side) ("operand of a numeric operator is " ^ datatype_kind d) ]
              | _ -> [])
            [ ("left", lt); ("right", rt) ]
        else [])
       @ (match op, lt, rt with
          | Power, Some l, Some r
            when unit_of l <> None || unit_of r <> None ->
-             [ v "WF-035" at "power operands must be unitless" ]
+             [ v "WF-035.power-not-unitless" at "power operands must be unitless" ]
          | (Plus | Min | Reduced_by), Some l, Some r when is_number_like l && is_number_like r ->
              (* reducedBy belongs to the additive family (ch. 1.2a);
                 ref restates its right operand like plus/min — a hunted
                 gap: the compatibility clause skipped it entirely *)
              if not (units_compatible_adopting left_side right_side (unit_of l) (unit_of r)) then
-               [ v "WF-035" at "additive operands have incompatible units" ]
+               [ v "WF-035.additive-unit-mismatch" at "additive operands have incompatible units" ]
              else []
          | _ -> [])
       (* the WF-035 date±duration clause (RUNTIME-SEMANTICS ch. 3.8): the
@@ -4713,29 +4794,29 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
            match t with
            | None -> []
            | Some d when not (is_number_like d) ->
-               [ v "WF-035" (sub side) (date_duration_operand_refusal d) ]
+               [ v ~params:[("type", datatype_kind d)] "WF-035.duration-not-number" (sub side) (date_duration_operand_refusal d) ]
            | Some d -> (
                match unit_of d with
-               | None -> [ v "WF-035" (sub side) date_duration_without_time_unit ]
+               | None -> [ v "WF-035.duration-no-unit" (sub side) date_duration_without_time_unit ]
                | Some u -> (
                    match time_unit_of_unit u with
                    | Some tu ->
                        if time_unit_sub_day tu && date_t = Date_in_days then
-                         [ v "WF-035" at sub_day_unit_on_day_date ]
+                         [ v "WF-035.sub-day-unit" at sub_day_unit_on_day_date ]
                        else []
                    | None ->
                        if day_kind_unit ctx u then []
                        else
-                         [ v "WF-035" (sub side)
+                         [ v ~params:[("unit", Option.value u.abbr_text ~default:"?")] "WF-035.duration-unknown-unit" (sub side)
                              (date_duration_unknown_unit (Option.value u.abbr_text ~default:"?")) ]))
          in
          match op, lt, rt with
          | (Plus | Min), Some l, Some r when is_date l && is_date r ->
-             [ v "WF-035" at date_plus_date_refusal ]
+             [ v "WF-035.date-plus-date" at date_plus_date_refusal ]
          | Min, _, Some r when is_date r ->
-             [ v "WF-035" at (duration_before_date_refusal ~minus:true) ]
+             [ v "WF-035.duration-minus-date" at (duration_before_date_refusal ~minus:true) ]
          | Plus, _, Some r when is_date r ->
-             [ v "WF-035" at (duration_before_date_refusal ~minus:false) ]
+             [ v "WF-035.duration-plus-date" at (duration_before_date_refusal ~minus:false) ]
          | (Plus | Min), Some l, _ when is_date l -> duration_side "right" rt l
          | _ -> [])
       @ (match left_side with Some e -> walk_expr ctx ~binders ~subject ~body (sub "left") e | None -> [])
@@ -4779,21 +4860,21 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       in
       (* WF-037: facet validity per kind *)
       (if f.empty_fallback <> None && f.kind <> Sum_function then
-         [ v "WF-037" at "empty-value fallback on a non-sum aggregation" ]
+         [ v "WF-037.empty-fallback-kind" at "empty-value fallback on a non-sum aggregation" ]
        else [])
       @ (if f.dimension_selection <> None && not (List.mem f.kind [ Sum_function; Minimum; Maximum ]) then
-           [ v "WF-037" at "dimension selection on a kind other than sum/min/max" ]
+           [ v "WF-037.dimension-selection-kind" at "dimension selection on a kind other than sum/min/max" ]
          else [])
       @ (match f.grain, f.kind with
          | Some _, (Time_proportional_part | Day_count) -> []
-         | Some _, _ -> [ v "WF-037" at "granularity facet on a non-bucketing kind" ]
+         | Some _, _ -> [ v "WF-037.granularity-non-bucketing" at "granularity facet on a non-bucketing kind" ]
          | None, (Time_proportional_part | Day_count) ->
-             [ v "WF-037" at "bucketing builtin without a granularity" ]
+             [ v "WF-037.bucketing-without-granularity" at "bucketing builtin without a granularity" ]
          | None, _ -> [])
       @ (if List.mem f.kind scalar_one_arg_kinds && arity <> 1 then
-           [ v "WF-037" at (Printf.sprintf "builtin arity %d, expected 1" arity) ]
+           [ v ~params:[("arity", string_of_int arity); ("expected", "1")] "WF-037.builtin-arity" at (Printf.sprintf "builtin arity %d, expected 1" arity) ]
          else if List.mem f.kind [ Duration; Absolute_duration ] && arity <> 2 then
-           [ v "WF-037" at (Printf.sprintf "builtin arity %d, expected 2" arity) ]
+           [ v ~params:[("arity", string_of_int arity); ("expected", "2")] "WF-037.builtin-arity" at (Printf.sprintf "builtin arity %d, expected 2" arity) ]
          else [])
       (* This clause is what DEFINES the listed value fold: no element type,
          no dimension selection, two or more operands. Both counts step aside
@@ -4804,7 +4885,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
            List.mem f.kind aggregation_kinds && f.element_object_type = None
            && f.dimension_selection = None && arity < 2 && f.kind <> Count
            && f.kind <> Filled_count
-         then [ v "WF-037" at "value fold with fewer than two operands" ]
+         then [ v "WF-037.fold-few-operands" at "value fold with fewer than two operands" ]
          else [])
       (* WF-037, the count's arity (IR-SPEC ch. 4.3, semantics
          RUNTIME-SEMANTICS ch. 3.4a; maintainer decision 2026-09-20). The
@@ -4848,7 +4929,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              in
              if named = [] then []
              else
-               [ v "WF-110" at
+               [ v ~params:[("fields", String.concat " + " named)] "WF-110.count-with-source" at
                    (Printf.sprintf
                       "a count over an instance-set union names no source of its own, and this \
                        node carries %s: the union's selections carry the population, the \
@@ -4857,7 +4938,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                       (String.concat " + " named)) ]
          | _ -> [])
       @ (if f.kind = Count && arity >= 2 then
-           [ v "WF-037" at
+           [ v ~params:[("count", string_of_int arity)] "WF-037.count-listed-form" at
                (Printf.sprintf
                   "a count folds INSTANCES and has no LISTED form, and this node carries %d \
                    operands: the source language spells a count over a subject expression alone \
@@ -4884,7 +4965,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       @ (match f.kind, f.element_object_type, f.call_arguments with
          | Count, None, [ Instance_set_union _ ] -> []
          | Count, None, ([] | [ _ ]) ->
-             [ v "WF-037" at
+             [ v "WF-037.count-element-type" at
                  "the count is an INSTANCE fold and MUST carry an element type: without one its \
                   argument is no fold source at all — and with no argument there is none — so \
                   the count has no contributors to count, only its operand, whatever that \
@@ -4907,14 +4988,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          under the two counts only. *)
       @ (match sourceless with
          | Some (el, `No_operand) ->
-             [ v "WF-037" at
+             [ v ~params:[("function", Spelling.encode Spelling.aggregation_kind f.kind); ("objectType", el)] "WF-037.aggregation-no-source" at
                  (Printf.sprintf
                     "a %s aggregation carries elementType \"%s\" but no source operand: an \
                      instance fold ranges over a written source"
                     (Spelling.encode Spelling.aggregation_kind f.kind)
                     el) ]
          | Some (el, `List_literal) ->
-             [ v "WF-037" at
+             [ v ~params:[("function", Spelling.encode Spelling.aggregation_kind f.kind); ("objectType", el)] "WF-037.aggregation-list-source" at
                  (Printf.sprintf
                     "a %s aggregation carries elementType \"%s\" and a ListLiteral operand: a \
                      listed value is no source of instances"
@@ -4937,7 +5018,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          arm, so that arm has no source question left. *)
       @ (match non_source with
          | Some (el, a) ->
-             [ v "WF-037" at
+             [ v ~params:[("function", Spelling.encode Spelling.aggregation_kind f.kind); ("objectType", el); ("operand", Spelling.a_node a)] "WF-037.aggregation-non-source" at
                  (Printf.sprintf
                     "a %s aggregation carries elementType \"%s\" and %s operand: the source of an \
                      instance fold is an AttributeReference"
@@ -4958,7 +5039,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          listed form, which an empty argument list is not. *)
       @ (if f.kind <> Filled_count || sourceless <> None || non_source <> None then []
          else if arity <> 1 then
-           [ v "WF-037" at
+           [ v ~params:[("count", string_of_int arity)] "WF-037.filled-count-arity" at
                (Printf.sprintf
                   "the filled count takes exactly ONE argument, its set source, and this node \
                    carries %d: there is no listed form of this kind — the source language \
@@ -4968,7 +5049,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          else
            match f.element_object_type with
            | None ->
-               [ v "WF-037" at
+               [ v "WF-037.filled-element-type" at
                    "the filled count is an INSTANCE fold and MUST carry an element type: \
                     without one its argument is no fold source at all, and the count has no \
                     contributors whose values it could test for presence (ch. 4.3)" ]
@@ -4976,26 +5057,27 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (* WF-034: references *)
       @ (match f.element_object_type with
          | Some t when object_type ctx t = None ->
-             [ v "WF-034" at ("aggregation element type '" ^ t ^ "' is not declared") ]
+             [ v ~params:[("elementType", t)] "WF-034.undeclared-element-type" at ("aggregation element type '" ^ t ^ "' is not declared") ]
          | _ -> [])
       (* WF-038: operand typing slices *)
       @ (match f.kind, f.call_arguments with
          | (Square_root | Absolute_value), [ a ] -> (
              match Option.bind (ty a) (numeric_builtin_operand_refusal f.kind) with
-             | Some sentence -> [ v "WF-038" at sentence ]
+             | Some sentence ->
+                 [ v ~params:[("function", Spelling.encode Spelling.builtin_kind f.kind); ("type", datatype_kind (Option.get (ty a)))] "WF-038.builtin-not-number" at sentence ]
              | None -> [])
          | Easter_sunday, [ a ] -> (
              match ty a with
              | Some (Number { whole_part = true; measure_unit = None; _ }) -> []
              | Some d ->
-                 [ v "WF-038" at ("easterSunday operand is " ^ datatype_kind d
+                 [ v ~params:[("type", datatype_kind d)] "WF-038.easter-sunday-operand" at ("easterSunday operand is " ^ datatype_kind d
                                   ^ ", must be a whole unitless number") ]
              | None -> [])
          | (Hour_of | Minute_of | Second_of | Millisecond_of), [ a ] -> (
              match ty a with
              | Some Date_time_type | None -> []
              | Some d ->
-                 [ v "WF-038" at ("sub-day extractor operand is " ^ datatype_kind d
+                 [ v ~params:[("type", datatype_kind d)] "WF-038.sub-day-extractor" at ("sub-day extractor operand is " ^ datatype_kind d
                                   ^ ", must be a millisecond-precision date") ])
          | (Year_of | Month_of | Day_of), [ a ] -> (
              (* the day-precision extractors read civil components (ch. 3.8
@@ -5003,7 +5085,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 precision, mirroring the v0 field read *)
              match ty a with
              | Some d when not (is_date d) ->
-                 [ v "WF-038" at ("day-precision extractor operand is " ^ datatype_kind d
+                 [ v ~params:[("type", datatype_kind d)] "WF-038.day-precision-extractor" at ("day-precision extractor operand is " ^ datatype_kind d
                                   ^ ", must be a date") ]
              | _ -> [])
          | (Duration | Absolute_duration), [ a; b ] ->
@@ -5016,35 +5098,35 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              let operand side t =
                match t with
                | Some d when not (is_date d) ->
-                   [ v "WF-038" (sub side) (duration_operand_refusal f.kind d) ]
+                   [ v ~params:[("function", Spelling.encode Spelling.builtin_kind f.kind); ("type", datatype_kind d)] "WF-038.duration-not-date" (sub side) (duration_operand_refusal f.kind d) ]
                | _ -> []
              in
              operand "arguments/0" ta
              @ operand "arguments/1" tb
              @ (match ta, tb with
                 | Some da, Some db when is_date da && is_date db && da <> db ->
-                    [ v "WF-038" at (duration_mixed_precision f.kind) ]
+                    [ v ~params:[("function", Spelling.encode Spelling.builtin_kind f.kind)] "WF-038.duration-mixed-precision" at (duration_mixed_precision f.kind) ]
                 | _ -> [])
              @ (match f.typ with
                 | None ->
                     (* the counted unit lives on the node type: an absent
                        type cannot carry it — without this arm the wire is
                        verifier-clean and faults only at evaluation *)
-                    [ v "WF-038" at (duration_without_node_type f.kind) ]
+                    [ v ~params:[("function", Spelling.encode Spelling.builtin_kind f.kind)] "WF-038.duration-no-node" at (duration_without_node_type f.kind) ]
                 | Some t -> (
                     match unit_of t with
-                    | None -> [ v "WF-038" at (duration_without_time_unit f.kind) ]
+                    | None -> [ v ~params:[("function", Spelling.encode Spelling.builtin_kind f.kind)] "WF-038.duration-no-unit" at (duration_without_time_unit f.kind) ]
                     | Some u -> (
                         match time_unit_of_unit u with
                         | Some tu ->
                             if time_unit_sub_day tu
                                && (ta = Some Date_in_days || tb = Some Date_in_days)
-                            then [ v "WF-038" at (duration_sub_day_on_day_dates f.kind) ]
+                            then [ v ~params:[("function", Spelling.encode Spelling.builtin_kind f.kind)] "WF-038.sub-day-operands" at (duration_sub_day_on_day_dates f.kind) ]
                             else []
                         | None ->
                             if day_kind_unit ctx u then []
                             else
-                              [ v "WF-038" at
+                              [ v ~params:[("function", Spelling.encode Spelling.builtin_kind f.kind); ("unit", Option.value u.abbr_text ~default:"?")] "WF-038.duration-unknown-unit" at
                                   (duration_unknown_unit f.kind
                                      (Option.value u.abbr_text ~default:"?")) ])))
          | _ -> [])
@@ -5095,7 +5177,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                      let shown =
                        match d with List_type _ -> datatype_detail d | _ -> datatype_kind d
                      in
-                     [ v "WF-038"
+                     [ v ~params:[("function", kn); ("type", shown)] "WF-038.ordering-fold-operand"
                          (Printf.sprintf "%s/arguments/%d" at i)
                          ("operand of the " ^ kn ^ " ordering fold is " ^ shown
                         ^ ", must be a number or a date") ]
@@ -5113,11 +5195,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                        reported as one *)
                     let dated = function `Date_day | `Date_ms -> true | `Num -> false in
                     if List.for_all dated fams then
-                      [ v "WF-038" at
+                      [ v ~params:[("function", kn)] "WF-038.fold-date-precisions" at
                           (kn ^ " orders dates of two precisions (day and millisecond), \
                                 which share no order") ]
                     else
-                      [ v "WF-038" at
+                      [ v ~params:[("function", kn)] "WF-038.fold-number-date" at
                           (kn ^ " orders operands of two comparable families, numbers and \
                                 dates, which share no ordering") ]
                 | _ -> []))
@@ -5125,7 +5207,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          | Some lw -> (
              (match ty lw with
               | Some d when not (is_number_like d) ->
-                  [ v "WF-038" (sub "emptyFallback")
+                  [ v ~params:[("type", datatype_kind d)] "WF-038.fallback-not-number" (sub "emptyFallback")
                       ("sum fallback is " ^ datatype_kind d ^ ", must be numeric") ]
               | _ -> [])
              @ walk_expr ctx ~binders ~subject (sub "emptyFallback") lw)
@@ -5137,14 +5219,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              | Some dn -> (
                  match find_ci ctx.doc.dimensions dn with
                  | None ->
-                     [ v "WF-040" (sub "dimensionSelection")
+                     [ v ~params:[("dimension", dn)] "WF-040.selection-undeclared-dimension" (sub "dimensionSelection")
                          ("selection over undeclared dimension '" ^ dn ^ "'") ]
                  | Some dim ->
                      List.concat_map
                        (fun l ->
                          match l with
                          | Some l when not (mem_ci (some_names dim.dim_values) l) ->
-                             [ v "WF-040" (sub "dimensionSelection")
+                             [ v ~params:[("label", l); ("dimension", dn)] "WF-040.label-not-declared" (sub "dimensionSelection")
                                  ("label '" ^ l ^ "' is not declared on dimension '" ^ dn ^ "'") ]
                          | _ -> [])
                        ds.ds_labels)
@@ -5202,7 +5284,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          the source's own anchor makes in [aggregation_source_check]. *)
       @ (match (f.kind, f.element_object_type, subject) with
          | Total, Some el, Some st when source_position && (not ranged) && norm el <> norm st ->
-             [ v "WF-083" (sub "elementType")
+             [ v ~params:[("elementType", el); ("subject", st)] "WF-083.total-element-mismatch" (sub "elementType")
                  (Printf.sprintf
                     "the elementType '%s' of a total without a range is not the fold subject \
                      '%s': without a range the fold is the subject's own read, so its \
@@ -5221,13 +5303,13 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                let p = Printf.sprintf "%s/arguments/%d" at i in
                match (a, f.element_object_type) with
                | Attribute_reference { attribute_ref; object_type = None; _ }, Some _ when source_position ->
-                   [ v "WF-034" p
+                   [ v ~params:[("attribute", Option.value attribute_ref ~default:"?")] "WF-034.ref-without-subject" p
                        ("attribute reference '"
                        ^ Option.value attribute_ref ~default:"?"
                        ^ "' without a subjectType: it resolves against no declaration") ]
                | Attribute_reference { attribute_ref = None; object_type = Some otn; _ }, Some _
                  when source_position ->
-                   [ v "WF-034" p
+                   [ v ~params:[("objectType", otn)] "WF-034.ref-without-attribute" p
                        ("attribute reference on '" ^ otn
                       ^ "' without an attribute name: it resolves against no declaration") ]
                | Attribute_reference _, Some el when source_position ->
@@ -5271,7 +5353,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                | Characteristic_check { characteristic = Some k; navigation_binding = None; _ } ->
                    if temporal_char k then []
                    else
-                     [ v "WF-055" (sub "filter")
+                     [ v ~params:[("characteristic", k); ("objectType", aot)] "WF-055.during-not-temporal" (sub "filter")
                          ("gedurende over '" ^ k
                         ^ "', which is not a temporal characteristic of '" ^ aot ^ "'") ]
                | Comparison
@@ -5299,7 +5381,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                        match part with
                        | Characteristic_check _ -> clip_cond_ok part
                        | _ ->
-                           [ v "WF-055" (sub "filter")
+                           [ v "WF-055.composite-member-narrowing" (sub "filter")
                                "a composite gedurende member is an own temporal \
                                 characteristic check (v0 partitions static comparison \
                                 members into value-side guards and markers nested \
@@ -5307,7 +5389,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                                 checks -- a recorded narrowing)" ])
                      components
                | _ ->
-                   [ v "WF-055" (sub "filter")
+                   [ v "WF-055.during-condition-shape" (sub "filter")
                        "the gedurende condition is an own temporal characteristic check, a \
                         per-segment comparison of an own temporal attribute against a scalar \
                         bound, or an all composite of characteristic checks" ]
@@ -5333,7 +5415,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       @ (if f.kind <> Time_proportional_part then []
          else
            (match f.filter with
-           | None -> [ v "WF-056" at "timeProportionalPart without a gedurende condition" ]
+           | None -> [ v "WF-056.proportional-no-condition" at "timeProportionalPart without a gedurende condition" ]
            | Some (Characteristic_check { characteristic = Some k; navigation_binding = None; _ }) -> (
                (* the gedurende characteristic MUST be temporal — a
                   non-temporal one has no periods to prorate over (a
@@ -5346,7 +5428,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                             (List.exists
                                (fun (n, _) -> norm n = norm k)
                                ot.characteristic_granularity) ->
-                       [ v "WF-056" (sub "filter")
+                       [ v ~params:[("characteristic", k)] "WF-056.condition-not-temporal" (sub "filter")
                            ("gedurende over '" ^ k ^ "', which is not a temporal characteristic")
                        ]
                    | _ -> [])
@@ -5363,20 +5445,20 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    | Some (_, Some bg) -> (
                        match f.grain with
                        | Some g when bg < g ->
-                           [ v "WF-056" (sub "arguments/0")
+                           [ v "WF-056.base-finer-grain" (sub "arguments/0")
                                "pro-rata base granularity is finer than the bucket" ]
                        | _ -> [])
                    | _ ->
-                       [ v "WF-056" (sub "arguments/0")
+                       [ v ~params:[("attribute", b)] "WF-056.base-not-temporal" (sub "arguments/0")
                            ("pro-rata base '" ^ b ^ "' is not a temporal attribute") ])
                | None -> [])
            | [ Parameter_ref { parameter = Some p; _ } ] -> (
                match find_ci ctx.doc.parameters p with
                | Some { par_granularity = Some _; _ } -> []
                | _ ->
-                   [ v "WF-056" (sub "arguments/0")
+                   [ v ~params:[("parameter", p)] "WF-056.parameter-not-granular" (sub "arguments/0")
                        ("pro-rata base parameter '" ^ p ^ "' is not granular") ])
-           | _ -> [ v "WF-056" at "timeProportionalPart takes one temporal source argument" ])
+           | _ -> [ v "WF-056.proportional-argument-count" at "timeProportionalPart takes one temporal source argument" ])
       (* WF-047 and WF-102: the fold's range. The loader has already seen to
          its presence and to one spelling (B12) *)
       @ (let fold_source =
@@ -5400,7 +5482,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 one-step spelling's territory, not the path's *)
              (if List.length trail >= 2 then []
               else
-                [ v "WF-102" (sub "sourcePath")
+                [ v ~params:[("steps", string_of_int (List.length trail))] "WF-102.path-too-short" (sub "sourcePath")
                     (Printf.sprintf
                        "a sourcePath carries at least TWO steps, found %d — the one-step range \
                         is spelled sourceRole"
@@ -5411,7 +5493,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              @ (match fold_source with
                | Some (_, `Member) -> []
                | _ ->
-                   [ v "WF-102" (sub "sourcePath")
+                   [ v "WF-102.path-outside-fold" (sub "sourcePath")
                        "a sourcePath is admissible only as the range of a single-argument VALUE \
                         fold's set source — a count's range is one step, spelled sourceRole" ])
              (* (d) every step resolves (WF-047) and the steps JOIN: the
@@ -5426,8 +5508,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                   | [] -> []
                   | (rb : role_binding) :: rest -> (
                       let step = sub ("sourcePath/" ^ string_of_int i) in
-                      match resolve_binding ctx rb with
-                      | Error e -> [ v "WF-047" step e ]
+                      match resolve_binding_arm ctx rb with
+                      | Error e -> [ binding_violation "WF-047" step e ]
                       | Ok (_, bound, other) ->
                           let bound_filler =
                             Option.value bound.role_object_type_name ~default:""
@@ -5440,7 +5522,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                             | None -> []
                             | Some ft when fills ctx ~inst:ft ~role:other -> []
                             | Some ft ->
-                                [ v "WF-102" step
+                                [ v ~params:[("role", Option.value other.role_identifier ~default:"?"); ("filler", other_filler); ("startType", ft); ("origin", if i = 0 then "the fold subject" else "the type the previous step reaches")] "WF-102.path-not-connected" step
                                     (Printf.sprintf
                                        "the opposite role '%s' fills '%s', but this step starts \
                                         at '%s' (%s) — a sourcePath is a connected walk"
@@ -5460,7 +5542,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                             else
                               match f.element_object_type with
                               | Some el when not (type_compatible ctx bound_filler el) ->
-                                  [ v "WF-102" step
+                                  [ v ~params:[("role", Option.value bound.role_identifier ~default:"?"); ("filler", bound_filler); ("elementType", el)] "WF-102.path-misses-element" step
                                       (Printf.sprintf
                                          "the last step's bound role '%s' fills '%s', but the \
                                           fold's elementType is '%s' — the path must land on \
@@ -5488,7 +5570,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              | None, Some _ when non_source <> None -> []
              | None, Some _ when sourceless <> None -> []
              | None, Some _ ->
-                 [ v "WF-047" (sub "sourceRole")
+                 [ v "WF-047.role-not-fold" (sub "sourceRole")
                      "a fold-source role binding on a node that is not an instance fold over a \
                       relation" ]
              | Some (el, written), Some rb -> (
@@ -5504,7 +5586,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                           || match bound.role_plural with
                              | Some m -> norm m = norm w
                              | None -> false) ->
-                     [ v "WF-047" (sub "sourceRole")
+                     [ v ~params:[("written", w); ("role", Option.value bound.role_identifier ~default:"?")] "WF-047.fold-source-mismatch" (sub "sourceRole")
                          (Printf.sprintf
                             "the written fold source '%s' does not denote the bound role '%s'" w
                             (Option.value bound.role_identifier ~default:"?")) ]
@@ -5513,7 +5595,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (match base_expr with Some e -> walk_expr ctx ~binders ~subject ~body (sub "base") e | None -> [])
   | Clamp { base_expr; minimum; maximum; _ } ->
       (if minimum = None && maximum = None then
-         [ v "WF-035" at "clamp without any bound" ]
+         [ v "WF-035.clamp-without-bound" at "clamp without any bound" ]
        else [])
       @ List.concat_map
           (fun (n, e) ->
@@ -5521,7 +5603,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             | Some e ->
                 (match ty e with
                  | Some d when not (is_number_like d) ->
-                     [ v "WF-035" (sub n) ("clamp " ^ n ^ " is " ^ datatype_kind d ^ ", must be numeric") ]
+                     [ v ~params:[("bound", n); ("type", datatype_kind d)] "WF-035.clamp-not-numeric" (sub n) ("clamp " ^ n ^ " is " ^ datatype_kind d ^ ", must be numeric") ]
                  | _ -> [])
                 @ walk_expr ctx ~binders ~subject ~body (sub n) e
             | None -> [])
@@ -5546,7 +5628,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                  | Some d
                    when is_number_like d
                         && not (units_compatible_adopting base_expr e (unit_of bt) (unit_of d)) ->
-                     [ v "WF-099" (sub n) ("clamp " ^ n ^ " and base have incompatible units") ]
+                     [ v ~params:[("bound", n)] "WF-099.clamp-unit-incompatible" (sub n) ("clamp " ^ n ^ " and base have incompatible units") ]
                  | _ -> [])
                [ ("minimum", minimum); ("maximum", maximum) ]
          | _ -> [])
@@ -5555,7 +5637,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       | Some otn -> (
           match object_type ctx otn with
           | None ->
-              [ v "WF-034" at ("object type '" ^ otn ^ "' is not declared") ]
+              [ v ~params:[("objectType", otn)] "WF-034.undeclared-object-type" at ("object type '" ^ otn ^ "' is not declared") ]
           | Some ot ->
               (* [objecttype] is the type the value lives on — the subject
                  itself or the navigation endpoint — so the member check
@@ -5568,12 +5650,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                         endpoint carries no attribute value here. A
                         characteristic is read through a characteristic check
                         (ch. 4.5), never an AttributeReference in a value slot. *)
-                     [ v "WF-080" at
+                     [ v ~params:[("attribute", a); ("objectType", otn)] "WF-080.value-is-characteristic" at
                          ("'" ^ a ^ "' is a characteristic of '" ^ otn
                         ^ "', not an attribute — a characteristic endpoint is ill-formed in a \
                            value position") ]
                    else
-                     [ v "WF-034" at
+                     [ v ~params:[("member", a); ("objectType", otn)] "WF-034.member-undeclared" at
                          ("'" ^ a ^ "' is neither an attribute nor a characteristic of '" ^ otn
                         ^ "'") ]
                | None ->
@@ -5582,7 +5664,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                       resolves through `subjectType` AND `attribute`; with the
                       member name absent it lands on a declared type and reads
                       nothing there. *)
-                   [ v "WF-034" at
+                   [ v ~params:[("objectType", otn)] "WF-034.ref-without-attribute" at
                        ("attribute reference on '" ^ otn
                       ^ "' without an attribute name: it resolves against no declaration") ])
               (* WF-053: the navigated read, or the subject's own *)
@@ -5591,7 +5673,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
           (* WF-034 (widened, maintainer decision 2026-09-04): the absent
              endpoint resolves against nothing — it skips the member
              resolution, WF-053 and WF-080 at once *)
-          [ v "WF-034" at
+          [ v ~params:[("attribute", Option.value attribute_ref ~default:"?")] "WF-034.ref-without-subject" at
               ("attribute reference '"
               ^ Option.value attribute_ref ~default:"?"
               ^ "' without a subjectType: it resolves against no declaration") ])
@@ -5613,7 +5695,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                               List.filter (fun l -> mem_ci (some_names dim.dim_values) l) lbls
                             in
                             if List.length hits <> 1 then
-                              [ v "WF-040" at
+                              [ v ~params:[("dimension", dn); ("count", string_of_int (List.length hits))] "WF-040.dimension-pin-count" at
                                   (Printf.sprintf
                                      "cell read pins dimension '%s' %d times, must be exactly once"
                                      dn (List.length hits)) ]
@@ -5621,12 +5703,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                       dims
                     @
                     if List.length lbls <> List.length dims then
-                      [ v "WF-040" at
+                      [ v ~params:[("labelCount", string_of_int (List.length lbls)); ("dimensionCount", string_of_int (List.length dims))] "WF-040.label-count-mismatch" at
                           (Printf.sprintf "cell read carries %d labels for %d dimensions"
                              (List.length lbls) (List.length dims)) ]
                     else []
                 | None ->
-                    [ v "WF-040" at ("cell read of undimensioned attribute '" ^ a ^ "'") ])
+                    [ v ~params:[("attribute", a)] "WF-040.undimensioned-cell-read" at ("cell read of undimensioned attribute '" ^ a ^ "'") ])
             | None -> [])
            @ walk_expr ctx ~binders ~subject (sub "attribute") inner
        | Some (Attribute_reference _ as inner) ->
@@ -5648,7 +5730,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
               no type (B13), and with this arm disabled
               `wf034-dimensiecel-geen-referentie` turns clean while no other
               report changes (measured in the L2 fix round). *)
-           [ v "WF-034" (sub "attribute")
+           [ v "WF-034.cell-attribute-kind" (sub "attribute")
                "dimension-cell read whose attribute position is not an attribute reference: it \
                 resolves against no declaration" ]
            @ walk_expr ctx ~binders ~subject (sub "attribute") inner
@@ -5659,24 +5741,27 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
               turned CLEAN when its cell's `attribute` was emptied; with this
               arm disabled `wf034-dimensiecel-zonder-attribuut` turns clean
               while no other report changes (measured in the L2 fix round) *)
-           [ v "WF-034" at
+           [ v "WF-034.cell-without-reference" at
                "dimension-cell read without an attribute reference: it resolves against no \
                 declaration" ])
   | Parameter_ref { parameter; _ } -> (
       match parameter with
       | Some p -> (
           match find_ci ctx.doc.parameters p with
-          | None -> [ v "WF-034" at ("reference to undeclared parameter '" ^ p ^ "'") ]
+          | None -> [ v ~params:[("parameter", p)] "WF-034.undeclared-parameter" at ("reference to undeclared parameter '" ^ p ^ "'") ]
           | Some _ -> [])
       | None ->
           (* WF-034 (widened, 2026-09-04, second wave): the same shape one node
              kind over. A parameter reference resolves through exactly one
              field; the arm above reports a name that resolves nowhere, and
              sits behind `Some p`, so an ABSENT name walked past it. *)
-          [ v "WF-034" at
+          [ v "WF-034.parameter-without-name" at
               "parameter reference without a parameter name: it resolves against no declaration"
           ])
-  | Variable_reference { ident; _ } -> [ v "WF-034" at (variable_reference_refusal ident) ]
+  | Variable_reference { ident; _ } -> (
+      match ident with
+      | Some n -> [ v ~params:[("variable", n)] "WF-034.variable-unbound" at (variable_reference_refusal ident) ]
+      | None -> [ v "WF-034.variable-without-name" at (variable_reference_refusal ident) ])
   | Context_value { ident; typ; _ } -> (
       (* WF-098 (maintainer decision 2026-09-10): the context-value name is a
          CLOSED SET, not a reference. Nothing in the document declares it, so
@@ -5699,10 +5784,13 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       | None -> []
       | Some n -> (
           match context_value_refusal n with
-          | Some sentence -> [ v "WF-098" (sub "name") sentence ]
+          | Some sentence -> [ v ~params:[("name", n)] "WF-098.context-name-refused" (sub "name") sentence ]
           | None -> (
               match Option.bind typ (context_value_type_refusal n) with
-              | Some sentence -> [ v "WF-098" (sub "type") sentence ]
+              | Some sentence ->
+                  (* the name fixes the type, so each name has the one sentence of its own *)
+                  let slug = if n = Spelling.evaluation_date then "date-type" else "year-type" in
+                  [ v ~params:[("name", n)] ("WF-098.context-" ^ slug) (sub "type") sentence ]
               | None -> [])))
   | Bound_day _ -> []
   | Expr_unresolved _ -> [] (* honest marker; WF-044 is behavioural *)
@@ -5717,12 +5805,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             | Some ot ->
                 (if attr_temporal ot a then []
                  else
-                   [ v "WF-049" (sub "base")
+                   [ v ~params:[("attribute", a); ("objectType", otn)] "WF-049.read-not-temporal" (sub "base")
                        ("temporal read of '" ^ a ^ "', which is not a temporal attribute of '"
                       ^ otn ^ "'") ])
                 @ (match subject with
                   | Some st when norm st <> norm otn ->
-                      [ v "WF-049" (sub "base")
+                      [ v ~params:[("objectType", otn); ("subjectType", st)] "WF-049.timeline-wrong-type" (sub "base")
                           ("the read's timeline belongs to '" ^ otn
                          ^ "', not the subject type '" ^ st ^ "'") ]
                   | _ -> [])
@@ -5730,10 +5818,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 (* the node's type is the timeline's element datatype *)
                 (match (typ, find_ci ot.attributes a) with
                 | Some t, Some (Some decl) when not (same_datatype t decl) ->
-                    [ v "WF-049" (sub "type")
+                    [ v "WF-049.read-type-mismatch" (sub "type")
                         "the read's type must equal the timeline's element datatype" ]
                 | None, _ ->
-                    [ v "WF-049" (sub "type") "the read carries no type (extension node: required)" ]
+                    [ v "WF-049.read-no-type" (sub "type") "the read carries no type (extension node: required)" ]
                 | _ -> []))
         | Parameter_ref { parameter = Some p; _ } -> (
             match find_ci ctx.doc.parameters p with
@@ -5741,17 +5829,17 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             | Some par ->
                 (if par.par_granularity <> None then []
                  else
-                   [ v "WF-049" (sub "base")
+                   [ v ~params:[("parameter", p)] "WF-049.parameter-not-granular" (sub "base")
                        ("temporal read of parameter '" ^ p ^ "', which is not granular") ])
                 @ (match (typ, par.par_datatype) with
                   | Some t, Some decl when not (same_datatype t decl) ->
-                      [ v "WF-049" (sub "type")
+                      [ v "WF-049.read-type-mismatch" (sub "type")
                           "the read's type must equal the timeline's element datatype" ]
                   | None, _ ->
-                      [ v "WF-049" (sub "type") "the read carries no type (extension node: required)" ]
+                      [ v "WF-049.read-no-type" (sub "type") "the read carries no type (extension node: required)" ]
                   | _ -> []))
         | _ ->
-            [ v "WF-049" (sub "base")
+            [ v "WF-049.read-base-shape" (sub "base")
                 "the read's base must be an own temporal attribute reference or a granular \
                  parameter reference (a temporal characteristic operand is OPEN)" ]
       in
@@ -5759,11 +5847,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
         match ty date_value with
         | Some Date_in_days -> []
         | Some d ->
-            [ v "WF-049" (sub "date")
+            [ v ~params:[("type", datatype_kind d)] "WF-049.date-not-day" (sub "date")
                 ("the read's date operand is " ^ datatype_kind d
                ^ ", must be a day-precision date") ]
         | None ->
-            [ v "WF-049" (sub "date")
+            [ v "WF-049.date-no-type" (sub "date")
                 "the read's date operand carries no type (extension node: day precision required)" ]
       in
       point_in_time_checks @ date_checks
@@ -5774,17 +5862,17 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          argument is present iff the constructor is unary; the argument's
          static type equals the declared payload datatype *)
       (match typ with
-       | None -> [ v "WF-062" (sub "type") "construct carries no sum type" ]
+       | None -> [ v "WF-062.construct-no-type" (sub "type") "construct carries no sum type" ]
        | Some (Sum_type { domain_spec; _ }) -> (
            match sum_decl ctx domain_spec with
            | None ->
-               [ v "WF-062" (sub "type")
+               [ v ~params:[("domain", domain_spec)] "WF-062.construct-domain-undeclared" (sub "type")
                    ("construct names sum-type domain '" ^ domain_spec
                   ^ "', which is not a declared sum type") ]
            | Some ctors -> (
                match List.find_opt (fun (n, _) -> norm n = norm constructor_) ctors with
                | None ->
-                   [ v "WF-062" at
+                   [ v ~params:[("constructor", constructor_); ("domain", domain_spec)] "WF-062.constructor-undeclared" at
                        ("'" ^ constructor_ ^ "' is not a declared constructor of sum type '"
                       ^ domain_spec ^ "'") ]
                | Some (_, payload) -> (
@@ -5794,20 +5882,20 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                         | Some pd, Some a -> (
                             match ty a with
                             | Some ad when not (same_datatype ad pd) ->
-                                [ v "WF-062" at
+                                [ v ~params:[("argument", detail_vs ad ~against:pd); ("payload", detail_vs pd ~against:ad)] "WF-062.argument-type-mismatch" at
                                     ("argument type " ^ detail_vs ad ~against:pd
                                    ^ " does not match the declared payload "
                                    ^ detail_vs pd ~against:ad) ]
                             | _ -> [])
                         | _ -> [])
                    | None, Some _ ->
-                       [ v "WF-062" at
+                       [ v ~params:[("constructor", constructor_)] "WF-062.nullary-with-argument" at
                            ("nullary constructor '" ^ constructor_ ^ "' carries an argument") ]
                    | Some _, None ->
-                       [ v "WF-062" at
+                       [ v ~params:[("constructor", constructor_)] "WF-062.unary-without-argument" at
                            ("unary constructor '" ^ constructor_ ^ "' carries no argument") ])))
        | Some d ->
-           [ v "WF-062" (sub "type")
+           [ v ~params:[("type", datatype_kind d)] "WF-062.construct-not-sum" (sub "type")
                ("construct type is " ^ datatype_kind d ^ ", not a sum type") ])
       @ (match argument with
          | Some a -> walk_expr ctx ~binders ~subject ~body (sub "argument") a
@@ -5836,20 +5924,20 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       in
       let scrutinee_checks, ctors =
         match decl with
-        | `NoType -> ([ v "WF-063" (sub "scrutinee") "match scrutinee carries no type" ], None)
+        | `NoType -> ([ v "WF-063.scrutinee-untyped" (sub "scrutinee") "match scrutinee carries no type" ], None)
         | `NotChoiceType d ->
-            ([ v "WF-063" (sub "scrutinee")
+            ([ v ~params:[("type", datatype_kind d)] "WF-063.scrutinee-not-choice" (sub "scrutinee")
                  ("match scrutinee is " ^ datatype_kind d
                 ^ ", which is no keuzetype (a sum type or an enumeration)") ], None)
         | `NoDomain ->
-            ([ v "WF-063" (sub "scrutinee")
+            ([ v "WF-063.enum-no-domain" (sub "scrutinee")
                  "match scrutinee is an enumeration naming no declaring domain" ], None)
         | `Sum (domain_spec, None) ->
-            ([ v "WF-063" (sub "scrutinee")
+            ([ v ~params:[("domain", domain_spec)] "WF-063.sum-domain-undeclared" (sub "scrutinee")
                  ("match scrutinee names sum-type domain '" ^ domain_spec
                 ^ "', which is not a declared sum type") ], None)
         | `Enum (domain_spec, None) ->
-            ([ v "WF-063" (sub "scrutinee")
+            ([ v ~params:[("domain", domain_spec)] "WF-063.enum-domain-undeclared" (sub "scrutinee")
                  ("match scrutinee names enumeration domain '" ^ domain_spec
                 ^ "', which is not a declared enumeration domain") ], None)
         | `Sum (_, Some cs) | `Enum (_, Some cs) -> ([], Some cs)
@@ -5863,20 +5951,20 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             let declared = List.map fst cs in
             List.map
               (fun (_, dup, _) ->
-                v "WF-063" at (alt ^ " '" ^ dup ^ "' is matched by more than one arm"))
+                v ~params:[("alternative", alt); ("value", dup)] "WF-063.arm-duplicate" at (alt ^ " '" ^ dup ^ "' is matched by more than one arm"))
               (dups_by norm (List.map (fun c -> (c, at)) arm_names))
             @ List.filter_map
                 (fun c ->
                   if mem_ci declared c then None
                   else
                     Some
-                      (v "WF-063" at
+                      (v ~params:[("arm", c); ("alternative", alt); ("family", family)] "WF-063.arm-undeclared" at
                          ("arm '" ^ c ^ "' is not a declared " ^ alt ^ " of the " ^ family)))
                 arm_names
             @ List.filter_map
                 (fun d ->
                   if mem_ci arm_names d then None
-                  else Some (v "WF-063" at (alt ^ " '" ^ d ^ "' is not covered by any arm")))
+                  else Some (v ~params:[("alternative", alt); ("value", d)] "WF-063.alternative-uncovered" at (alt ^ " '" ^ d ^ "' is not covered by any arm")))
                 declared
       in
       (* WF-063: an arm carries a binder iff its alternative is unary — so on
@@ -5893,10 +5981,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                     match payload, binder with
                     | None, None | Some _, Some _ -> []
                     | None, Some b ->
-                        [ v "WF-063" at
+                        [ v ~params:[("alternative", alt); ("value", c); ("binder", b)] "WF-063.nullary-binder" at
                             ("nullary " ^ alt ^ " '" ^ c ^ "' carries a binder '" ^ b ^ "'") ]
                     | Some _, None ->
-                        [ v "WF-063" at ("unary " ^ alt ^ " '" ^ c ^ "' carries no binder") ]))
+                        [ v ~params:[("alternative", alt); ("value", c)] "WF-063.unary-no-binder" at ("unary " ^ alt ^ " '" ^ c ^ "' carries no binder") ]))
               arms
       in
       (* the binders an arm body sees: the arm binder, whose declared
@@ -5926,7 +6014,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 match expr_type ctx ~binders:(arm_binders c binder) body with
                 | Some bt when not (same_datatype bt mt) ->
                     Some
-                      (v "WF-064" at
+                      (v ~params:[("arm", c); ("armType", detail_vs bt ~against:mt); ("resultType", detail_vs mt ~against:bt)] "WF-064.arm-type-mismatch" at
                          ("the '" ^ c ^ "' arm body is " ^ detail_vs bt ~against:mt
                         ^ ", but the match result type is " ^ detail_vs mt ~against:bt))
                 | _ -> None)
@@ -5959,22 +6047,22 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             | Rule_pos | Let_pos -> false
           in
           if outside then
-            [ v "WF-064" at
+            [ v ~params:[("name", ident)] "WF-064.binder-outside-closure" at
                 ("binder reference '" ^ ident
                ^ "' is bound outside the enclosing closed body — a closed function or lambda body \
                   reads only its own parameters and inner bindings") ]
-          else [ v "WF-064" at ("binder reference '" ^ ident ^ "' resolves to no enclosing binder") ]
+          else [ v ~params:[("name", ident)] "WF-064.binder-unresolved" at ("binder reference '" ^ ident ^ "' resolves to no enclosing binder") ]
       | Some _ -> [])
   | Struct_literal { typ; field_list; _ } ->
       (* WF-073: the type is a declared struct; the supplied fields are
          exactly the declared fields, each once; each value's static type
          equals the field declaration *)
       (match typ with
-       | None -> [ v "WF-073" (sub "type") "struct literal carries no type" ]
+       | None -> [ v "WF-073.struct-untyped" (sub "type") "struct literal carries no type" ]
        | Some (Struct_type { domain_spec; _ }) -> (
            match struct_decl ctx domain_spec with
            | None ->
-               [ v "WF-073" (sub "type")
+               [ v ~params:[("domain", domain_spec)] "WF-073.struct-domain-undeclared" (sub "type")
                    ("struct literal names struct-type domain '" ^ domain_spec
                   ^ "', which is not a declared struct type") ]
            | Some decl ->
@@ -5982,20 +6070,20 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                let lit_names = List.map fst field_list in
                List.map
                  (fun (_, dup, _) ->
-                   v "WF-073" at ("field '" ^ dup ^ "' is supplied by more than one entry"))
+                   v ~params:[("field", dup)] "WF-073.field-supplied-twice" at ("field '" ^ dup ^ "' is supplied by more than one entry"))
                  (dups_by norm (List.map (fun n -> (n, at)) lit_names))
                @ List.filter_map
                    (fun n ->
                      if mem_ci declared_names n then None
                      else
                        Some
-                         (v "WF-073" at
+                         (v ~params:[("field", n); ("domain", domain_spec)] "WF-073.field-alien" at
                             ("field '" ^ n ^ "' is not a declared field of struct '" ^ domain_spec ^ "'")))
                    lit_names
                @ List.filter_map
                    (fun d ->
                      if mem_ci lit_names d then None
-                     else Some (v "WF-073" at ("declared field '" ^ d ^ "' is not supplied")))
+                     else Some (v ~params:[("field", d)] "WF-073.field-missing" at ("declared field '" ^ d ^ "' is not supplied")))
                    declared_names
                @ List.concat_map
                    (fun (fname, value) ->
@@ -6004,13 +6092,13 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                      | Some (_, fdt) -> (
                          match ty value with
                          | Some vt when not (same_datatype vt fdt) ->
-                             [ v "WF-073" at
+                             [ v ~params:[("field", fname); ("valueType", detail_vs vt ~against:fdt); ("declaredType", detail_vs fdt ~against:vt)] "WF-073.field-value-type" at
                                  ("field '" ^ fname ^ "' value is " ^ detail_vs vt ~against:fdt
                                 ^ ", but the declared field datatype is " ^ detail_vs fdt ~against:vt) ]
                          | _ -> []))
                    field_list)
        | Some d ->
-           [ v "WF-073" (sub "type")
+           [ v ~params:[("type", datatype_kind d)] "WF-073.literal-not-struct" (sub "type")
                ("struct literal type is " ^ datatype_kind d ^ ", not a struct type") ])
       @ List.concat
           (List.mapi
@@ -6024,26 +6112,26 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
        | Some (Struct_type { domain_spec; _ }) -> (
            match struct_decl ctx domain_spec with
            | None ->
-               [ v "WF-074" (sub "base")
+               [ v ~params:[("domain", domain_spec)] "WF-074.base-undeclared" (sub "base")
                    ("field access base names struct-type domain '" ^ domain_spec
                   ^ "', which is not a declared struct type") ]
            | Some decl -> (
                match List.find_opt (fun (n, _) -> norm n = norm field_name) decl with
                | None ->
-                   [ v "WF-074" at
+                   [ v ~params:[("field", field_name); ("domain", domain_spec)] "WF-074.field-undeclared" at
                        ("'" ^ field_name ^ "' is not a declared field of struct '" ^ domain_spec ^ "'") ]
                | Some (_, fdt) -> (
                    match typ with
                    | Some t when not (same_datatype t fdt) ->
-                       [ v "WF-074" (sub "type")
+                       [ v ~params:[("accessType", detail_vs t ~against:fdt); ("declaredType", detail_vs fdt ~against:t)] "WF-074.type-differs" (sub "type")
                            ("field access type " ^ detail_vs t ~against:fdt
                           ^ " differs from the declared field datatype " ^ detail_vs fdt ~against:t) ]
-                   | None -> [ v "WF-074" (sub "type") "field access carries no type" ]
+                   | None -> [ v "WF-074.access-untyped" (sub "type") "field access carries no type" ]
                    | _ -> [])))
        | Some d ->
-           [ v "WF-074" (sub "base")
+           [ v ~params:[("type", datatype_kind d)] "WF-074.base-not-struct" (sub "base")
                ("field access base is " ^ datatype_kind d ^ ", not a struct value") ]
-       | None -> [ v "WF-074" (sub "base") "field access base carries no type" ])
+       | None -> [ v "WF-074.base-untyped" (sub "base") "field access base carries no type" ])
       @ walk_expr ctx ~binders ~subject ~body (sub "base") base
   | Let { typ; binder; value; body = lbody; _ } ->
       (* WF-076: the Let binding (IR-SPEC ch. 4.10). The node type equals the
@@ -6053,15 +6141,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       let body_binders = (binder, ty value) :: binders in
       (match typ, expr_type ctx ~binders:body_binders lbody with
        | Some t, Some bt when not (same_datatype t bt) ->
-           [ v "WF-076" (sub "type")
+           [ v ~params:[("letType", detail_vs t ~against:bt); ("bodyType", detail_vs bt ~against:t)] "WF-076.let-type-differs" (sub "type")
                (Printf.sprintf
                   "the let type (%s) differs from its body type (%s) — the let type must equal the \
                    body type"
                   (detail_vs t ~against:bt) (detail_vs bt ~against:t)) ]
-       | None, _ -> [ v "WF-076" (sub "type") "let carries no type" ]
+       | None, _ -> [ v "WF-076.let-untyped" (sub "type") "let carries no type" ]
        | _ -> [])
       @ (if mentions_binder binder value then
-           [ v "WF-076" (sub "value")
+           [ v ~params:[("binder", binder)] "WF-076.binder-self-reference" (sub "value")
                ("the let binder '" ^ binder
               ^ "' is referenced in its own value — a binder is visible only in the let body") ]
          else [])
@@ -6085,8 +6173,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (match typ with
        | Some (List_type _) -> []
        | Some d ->
-           [ v "WF-066" (sub "type") ("list literal type is " ^ datatype_kind d ^ ", not a list type") ]
-       | None -> [ v "WF-066" (sub "type") "list literal carries no type" ])
+           [ v ~params:[("type", datatype_kind d)] "WF-066.literal-not-list" (sub "type") ("list literal type is " ^ datatype_kind d ^ ", not a list type") ]
+       | None -> [ v "WF-066.literal-untyped" (sub "type") "list literal carries no type" ])
       @ (match elem_dt with
          | None -> []
          | Some ed ->
@@ -6095,7 +6183,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                   (fun i e ->
                     match ty e with
                     | Some t when not (same_datatype t ed) ->
-                        [ v "WF-066" (sub (Printf.sprintf "elements/%d" i))
+                        [ v ~params:[("elementType", detail_vs t ~against:ed); ("declaredType", detail_vs ed ~against:t)] "WF-066.element-type-differs" (sub (Printf.sprintf "elements/%d" i))
                             ("element type " ^ detail_vs t ~against:ed
                            ^ " differs from the declared element " ^ detail_vs ed ~against:t) ]
                     | _ -> [])
@@ -6107,7 +6195,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
   | Lambda _ ->
       (* WF-069: a lambda is admissible only as a Fold/MapList function operand
          (there it is loaded as a fold_fn, never this expr variant) *)
-      [ v "WF-069" at "a Lambda is admissible only as the function operand of a Fold or MapList" ]
+      [ v "WF-069.lambda-outside-fold" at "a Lambda is admissible only as the function operand of a Fold or MapList" ]
   | If_then_else { typ; condition; then_; else_; _ } ->
       (* WF-069: position-restricted to lambda, function and (the Phase-5c
          widening) Let bodies; both branches agree on the node's own
@@ -6116,13 +6204,13 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (match body with
        | Closed_pos _ | Let_pos -> []
        | Rule_pos ->
-           [ v "WF-069" at
+           [ v "WF-069.ifthenelse-outside-body" at
                "an IfThenElse is admissible only inside a lambda, function or Let body" ])
       @ wf077_condition (sub "condition") condition
       @ (let branch name e =
            match typ, ty e with
            | Some t, Some bt when not (same_datatype t bt) ->
-               [ v "WF-069" (sub name)
+               [ v ~params:[("branch", name); ("branchType", detail_vs bt ~against:t); ("ifType", detail_vs t ~against:bt)] "WF-069.branch-type-mismatch" (sub name)
                    ("the " ^ name ^ " branch is " ^ detail_vs bt ~against:t
                   ^ ", but the IfThenElse type is " ^ detail_vs t ~against:bt) ]
            | _ -> []
@@ -6135,10 +6223,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (* WF-068: resolvable function; arity; argument types; result type *)
       (match function_decl ctx function_name with
        | None ->
-           [ v "WF-068" at ("invoke names '" ^ function_name ^ "', which is not a declared function") ]
+           [ v ~params:[("name", function_name)] "WF-068.invoke-undeclared" at ("invoke names '" ^ function_name ^ "', which is not a declared function") ]
        | Some fd ->
            (if List.length arguments <> List.length fd.fd_parameters then
-              [ v "WF-068" at
+              [ v ~params:[("function", function_name); ("supplied", string_of_int (List.length arguments)); ("declared", string_of_int (List.length fd.fd_parameters))] "WF-068.arity-mismatch" at
                   (Printf.sprintf "invoke of '%s' supplies %d arguments, but it declares %d parameters"
                      function_name (List.length arguments) (List.length fd.fd_parameters)) ]
             else
@@ -6147,14 +6235,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    (fun i (a, (_, pt)) ->
                      match ty a with
                      | Some at' when not (same_datatype at' pt) ->
-                         [ v "WF-068" (sub (Printf.sprintf "arguments/%d" i))
+                         [ v ~params:[("argumentType", detail_vs at' ~against:pt); ("parameterType", detail_vs pt ~against:at')] "WF-068.argument-type-mismatch" (sub (Printf.sprintf "arguments/%d" i))
                              ("argument type " ^ detail_vs at' ~against:pt
                             ^ " does not match the parameter datatype " ^ detail_vs pt ~against:at') ]
                      | _ -> [])
                    (List.combine arguments fd.fd_parameters)))
            @ (match typ with
              | Some t when not (same_datatype t fd.fd_result) ->
-                 [ v "WF-068" (sub "type")
+                 [ v "WF-068.result-type-differs" (sub "type")
                      "invoke result type differs from the declared function result" ]
              | _ -> []))
       @ List.concat
@@ -6168,12 +6256,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          non-list datatype *)
       @ (match typ with
         | Some d when is_list_type d ->
-            [ v "WF-070" (sub "type")
+            [ v "WF-070.fold-accumulator-list" (sub "type")
                 "fold accumulator is list-typed — it must be a first-order non-list datatype" ]
         | _ -> [])
       @ (match typ, ty init with
         | Some at', Some it when not (same_datatype at' it) ->
-            [ v "WF-070" (sub "init") "fold init datatype differs from the accumulator type" ]
+            [ v "WF-070.init-type-differs" (sub "init") "fold init datatype differs from the accumulator type" ]
         | _ -> [])
       (* WF-069/070: the (accumulator, element) function, its closed body *)
       @ check_fold_fn ctx ~binders ~subject ~host:"the fold" (sub "function") ~params:[ typ; src_elem ]
@@ -6188,8 +6276,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       @ (match typ with
         | Some (List_type _) -> []
         | Some d ->
-            [ v "WF-070" (sub "type") ("map result is " ^ datatype_kind d ^ ", must be a list type") ]
-        | None -> [ v "WF-070" (sub "type") "map carries no result type" ])
+            [ v ~params:[("type", datatype_kind d)] "WF-070.map-not-list" (sub "type") ("map result is " ^ datatype_kind d ^ ", must be a list type") ]
+        | None -> [ v "WF-070.map-untyped" (sub "type") "map carries no result type" ])
       @ check_fold_fn ctx ~binders ~subject ~host:"the MapList" (sub "function") ~params:[ src_elem ]
           ~result:out_elem function_name
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
@@ -6199,7 +6287,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (* WF-070: the node type equals the source's list type *)
       @ (match typ, ty list with
         | Some t, Some s when not (same_datatype t s) ->
-            [ v "WF-070" (sub "type") "filter result type must equal the source list type" ]
+            [ v "WF-070.filter-type-differs" (sub "type") "filter result type must equal the source list type" ]
         | _ -> [])
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
       (* the binder is bound in the condition — the aggregation-filter precedent;
@@ -6211,8 +6299,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       @ (match typ with
         | Some (Number { whole_part = true; _ }) -> []
         | Some d ->
-            [ v "WF-070" (sub "type") ("length is " ^ datatype_kind d ^ ", must be a whole number") ]
-        | None -> [ v "WF-070" (sub "type") "length carries no type" ])
+            [ v ~params:[("type", datatype_kind d)] "WF-070.length-not-whole" (sub "type") ("length is " ^ datatype_kind d ^ ", must be a whole number") ]
+        | None -> [ v "WF-070.length-untyped" (sub "type") "length carries no type" ])
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
   | Instance_set_union { branches; _ } ->
       (* WF-110, the §5.7 concatenation of subject expressions (ch. 4.3,
@@ -6220,7 +6308,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          2026-09-20). Clause (c) — the count names no source of its own —
          is a claim about the COUNT and lives in the Functie arm above. *)
       if not union_ok then
-        [ v "WF-110" at
+        [ v "WF-110.union-unconsumed" at
             "an instance-set union stands where nothing consumes it: the union of subject \
              expressions denotes a set of INSTANCES, and the one node that folds instances is \
              the instance count — so this node is admissible as the SINGLE argument of a \
@@ -6233,7 +6321,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
            the one-step range and WF-087 for the nullary keuzetype. *)
         (match branches with
          | [] | [ _ ] ->
-             [ v "WF-110" at
+             [ v ~params:[("selections", string_of_int (List.length branches))] "WF-110.union-single-selection" at
                  (Printf.sprintf
                     "an instance-set union carries at least TWO selections and this one carries \
                      %d: a single selection IS the ordinary instance count, spelled with the \
@@ -6271,7 +6359,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                         | Some f0 -> norm f0 <> norm el
                         | None -> false
                       then
-                        [ v "WF-110" (bat ^ "/elementType")
+                        [ v ~params:[("selection", string_of_int ri); ("firstElement", Option.value r0.isb_element_type ~default:"?"); ("element", el)] "WF-110.selection-population" (bat ^ "/elementType")
                             (Printf.sprintf
                                "the selections of an instance-set union range over ONE population: \
                                 selection %d names '%s' and this one names '%s' (ch. 4.3)"
@@ -6286,11 +6374,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                     SAME derived range (clause (d)), so nothing derives it. *)
                  @ (match b.isb_element_type with
                    | None ->
-                       [ v "WF-110" (bat ^ "/elementType")
+                       [ v "WF-110.selection-unnamed" (bat ^ "/elementType")
                            "an instance-set union's selection MUST name the population it \
                             ranges over (ch. 4.3)" ]
                    | Some el when object_type ctx el = None ->
-                       [ v "WF-034" (bat ^ "/elementType")
+                       [ v ~params:[("elementType", el)] "WF-034.selection-type-undeclared" (bat ^ "/elementType")
                            ("instance-set selection element type '" ^ el ^ "' is not declared") ]
                    | Some _ -> [])
                  (* WF-047 at a new position rather than under a new rule — the
@@ -6310,8 +6398,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
 and fold_source_check ctx ~binders at list =
   match expr_type ctx ~binders list with
   | Some (List_type _) -> []
-  | Some d -> [ v "WF-070" at ("fold source is " ^ datatype_kind d ^ ", must be list-typed") ]
-  | None -> [ v "WF-070" at "fold source carries no type" ]
+  | Some d -> [ v ~params:[("type", datatype_kind d)] "WF-070.source-not-list" at ("fold source is " ^ datatype_kind d ^ ", must be list-typed") ]
+  | None -> [ v "WF-070.source-untyped" at "fold source carries no type" ]
 
 (* A Fold/MapList [function] operand (IR-SPEC ch. 4.8): [params] the expected
    parameter datatypes in order (accumulator then element for a fold, element
@@ -6322,7 +6410,7 @@ and check_fold_fn ctx ~binders ~subject ~host at ~params ~result (fn : fold_fn) 
   match fn with
   | Fn_lambda { parameters; body = lbody; _ } ->
       (if List.length parameters <> arity then
-         [ v "WF-069" at
+         [ v ~params:[("supplied", string_of_int (List.length parameters)); ("expected", string_of_int arity)] "WF-069.lambda-arity" at
              (Printf.sprintf "lambda takes %d parameters, but its host expects %d"
                 (List.length parameters) arity) ]
        else
@@ -6331,7 +6419,7 @@ and check_fold_fn ctx ~binders ~subject ~host at ~params ~result (fn : fold_fn) 
               (fun (pn, pt) exp ->
                 match exp with
                 | Some e when not (same_datatype e pt) ->
-                    [ v "WF-070" at
+                    [ v ~params:[("parameter", pn); ("actualType", detail_vs pt ~against:e); ("expectedType", detail_vs e ~against:pt)] "WF-070.parameter-type-mismatch" at
                         ("lambda parameter '" ^ pn ^ "' is " ^ detail_vs pt ~against:e ^ ", expected "
                        ^ detail_vs e ~against:pt) ]
                 | _ -> [])
@@ -6354,7 +6442,7 @@ and check_fold_fn ctx ~binders ~subject ~host at ~params ~result (fn : fold_fn) 
              expr_type ctx ~binders:(List.map (fun (n, dt) -> (n, Some dt)) parameters) lbody )
          with
         | Some r, Some b when not (same_datatype r b) ->
-            [ v "WF-070" at
+            [ v ~params:[("bodyType", detail_vs b ~against:r); ("host", host); ("requiredType", detail_vs r ~against:b)] "WF-070.body-type-mismatch" at
                 ("lambda body is " ^ detail_vs b ~against:r ^ ", but " ^ host ^ " requires "
                ^ detail_vs r ~against:b) ]
         | _ -> [])
@@ -6374,7 +6462,7 @@ and check_fold_fn ctx ~binders ~subject ~host at ~params ~result (fn : fold_fn) 
          lambda; a named function reaches a fold through a lambda body that
          Invokes it (exactly what the anchors do), so a bare FunctionDef name
          has no executor witness and is refused before translation *)
-      [ v "WF-069" at
+      [ v ~params:[("name", n)] "WF-069.fold-function-named" at
           ("the fold function operand names '" ^ n
          ^ "', but must be an inline lambda (a named function reaches a fold via a lambda body \
             that invokes it)") ]
@@ -6395,7 +6483,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
         if List.exists (fun e -> match e with Some e -> expr_temporal ctx e | None -> false) operands
         then []
         else
-          [ v "WF-043" at "wholePeriod qualifier on a non-time-dependent operand" ]
+          [ v "WF-043.whole-period-operand" at "wholePeriod qualifier on a non-time-dependent operand" ]
   in
   let closed =
     (* inside a closed body a condition is limited to Comparison/Predicate
@@ -6409,7 +6497,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
         | Comparison _ | Predicate _ -> None
         | _ ->
             Some
-              [ v wf at
+              [ v (wf ^ ".condition-in-closed") at
                   "this condition reads a characteristic, role, period or composite — not \
                    admissible inside a closed function or lambda body" ])
   in
@@ -6429,20 +6517,20 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
       (match ordering, lt, rt with
        | `Num, Some l, Some r ->
            (if not (is_number_like l) then
-              [ v "WF-036" (sub "left") ("ordering operand is " ^ datatype_kind l) ]
+              [ v ~params:[("type", datatype_kind l)] "WF-036.ordering-not-number" (sub "left") ("ordering operand is " ^ datatype_kind l) ]
             else [])
            @ (if not (is_number_like r) then
-                [ v "WF-036" (sub "right") ("ordering operand is " ^ datatype_kind r) ]
+                [ v ~params:[("type", datatype_kind r)] "WF-036.ordering-not-number" (sub "right") ("ordering operand is " ^ datatype_kind r) ]
               else [])
            @ (if is_number_like l && is_number_like r
                  && not (units_compatible_adopting left_side right_side (unit_of l) (unit_of r))
-              then [ v "WF-036" at "ordering operands have incompatible units" ]
+              then [ v "WF-036.ordering-unit-mismatch" at "ordering operands have incompatible units" ]
               else [])
        | `Date, Some l, Some r ->
            List.concat_map
              (fun (side, d) ->
                if is_date d then []
-               else [ v "WF-036" (sub side) ("date-ordering operand is " ^ datatype_kind d) ])
+               else [ v ~params:[("type", datatype_kind d)] "WF-036.date-ordering-operand" (sub side) ("date-ordering operand is " ^ datatype_kind d) ])
              [ ("left", l); ("right", r) ]
            (* WF-036, the date-ordering precision clause: the two DATE
               REPRESENTATIONS are two comparable families, exactly as
@@ -6457,7 +6545,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
               it); its own rule reports it. *)
            @ (match l, r with
               | Date_in_days, Date_time_type | Date_time_type, Date_in_days ->
-                  [ v "WF-036" at
+                  [ v "WF-036.date-precision-ordering" at
                       "date ordering across two date precisions (day and millisecond), which \
                        share no order" ]
               | _ -> [])
@@ -6465,26 +6553,26 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
            match l, r with
            | Enumeration { domain_spec = Some d1; _ }, Enumeration { domain_spec = Some d2; _ }
              when norm d1 <> norm d2 ->
-               [ v "WF-036" at "equality across different enumeration domains" ]
+               [ v "WF-036.equality-enumeration-domains" at "equality across different enumeration domains" ]
            | Sum_type { domain_spec = d1; _ }, Sum_type { domain_spec = d2; _ } when norm d1 <> norm d2 ->
                (* WF-061 (nominal): two sum-typed operands of one comparison
                   MUST name the same declaring domain *)
-               [ v "WF-061" at
+               [ v ~params:[("first", d1); ("second", d2)] "WF-061.comparison-different-domains" at
                    ("comparison across different sum-type domains '" ^ d1 ^ "' and '" ^ d2 ^ "'") ]
            | Struct_type { domain_spec = d1; _ }, Struct_type { domain_spec = d2; _ } when norm d1 <> norm d2 ->
                (* WF-072 (nominal): two struct-typed operands of one comparison
                   MUST name the same declaring domain *)
-               [ v "WF-072" at
+               [ v ~params:[("first", d1); ("second", d2)] "WF-072.comparison-domains-differ" at
                    ("comparison across different struct-type domains '" ^ d1 ^ "' and '" ^ d2 ^ "'") ]
            | Date_in_days, Date_time_type | Date_time_type, Date_in_days ->
-               [ v "WF-036" at "equality across date precisions" ]
+               [ v "WF-036.equality-date-precisions" at "equality across date precisions" ]
            | a, b when is_number_like a && is_number_like b ->
                if not (units_compatible_adopting left_side right_side (unit_of a) (unit_of b)) then
-                 [ v "WF-036" at "equality operands have incompatible units" ]
+                 [ v "WF-036.equality-unit-mismatch" at "equality operands have incompatible units" ]
                else []
            | a, b when datatype_kind a <> datatype_kind b
                        && not (is_number_like a && is_number_like b) ->
-               [ v "WF-036" at
+               [ v ~params:[("left", datatype_kind a); ("right", datatype_kind b)] "WF-036.equality-across-families" at
                    ("equality across families: " ^ datatype_kind a ^ " vs " ^ datatype_kind b) ]
            | _ -> [])
        | _ -> [])
@@ -6499,17 +6587,17 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
            | Text_type -> []
            | Number { whole_part = true; measure_unit = None; _ } -> []
            | _ ->
-               [ v "WF-036" at
+               [ v ~params:[("type", datatype_kind d)] "WF-036.eleven-test-operand" at
                    ("elevenTest operand is " ^ datatype_kind d
                     ^ ", must be text or a whole unitless number") ])
        | Exact_digits, Some d when d <> Text_type ->
-           [ v "WF-036" at ("exactDigits operand is " ^ datatype_kind d ^ ", must be text") ]
+           [ v ~params:[("type", datatype_kind d)] "WF-036.exact-digits-operand" at ("exactDigits operand is " ^ datatype_kind d ^ ", must be text") ]
        | Day_kind_predicate, Some d when not (is_date d) ->
-           [ v "WF-036" at ("day-kind predicate operand is " ^ datatype_kind d ^ ", must be a date") ]
+           [ v ~params:[("type", datatype_kind d)] "WF-036.day-kind-operand" at ("day-kind predicate operand is " ^ datatype_kind d ^ ", must be a date") ]
        | _ -> [])
       @ (match variety, day_kind with
          | Day_kind_predicate, Some dk when not (mem_ci (day_kind_names ctx) dk) ->
-             [ v "WF-034" at ("reference to undeclared day kind '" ^ dk ^ "'") ]
+             [ v ~params:[("dayKind", dk)] "WF-034.undeclared-day-kind" at ("reference to undeclared day kind '" ^ dk ^ "'") ]
          | _ -> [])
       @ whole_period_check time_period [ operand ]
       @ (match operand with Some e -> walk_expr ctx ~binders ~subject ~body (sub "operand") e | None -> [])
@@ -6548,7 +6636,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
          owner that does not declare the named characteristic is WF-100. *)
       (match holder with
        | Some e when object_type ctx e = None ->
-           [ v "WF-034" (sub "host")
+           [ v ~params:[("objectType", e)] "WF-034.host-undeclared" (sub "host")
                ("characteristic check's host '" ^ e
               ^ "' is not a declared object type: the check resolves against no declaration") ]
        | _ -> [])
@@ -6617,9 +6705,9 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
            in
            let hits = List.filter (fun (_, t) -> is_sub ctx ~sub:t ~super:e) bound in
            let near = List.filter (fun (_, t) -> populations_overlap ctx.doc t e) bound in
-           (match wf109_host_sentence ~host:e ~bound ~hits ~near with
+           (match wf109_host_arm ~host:e ~bound ~hits ~near with
             | None -> []
-            | Some m -> [ v "WF-109" (sub "host") m ])
+            | Some (slug, params, m) -> [ v ~params ("WF-109." ^ slug) (sub "host") m ])
        | _ -> [])
       @ (match characteristic with
        | None ->
@@ -6633,7 +6721,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
               verifier-clean when emptied, while both executors fault
               loudly on the same document (`ref`
               "missing KenmerkCheck.kenmerk", clingo "missing kenmerk"). *)
-           [ v "WF-034" at
+           [ v "WF-034.check-without-name" at
                "characteristic check without a characteristic name: it resolves against no \
                 declaration" ]
        | Some _ -> [])
@@ -6656,7 +6744,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
         | Some k, None, Some otn -> (
             match object_type ctx otn with
             | Some ot when not (has_characteristic ot k) ->
-                [ v keyed_wf keyed_at
+                [ v ~params:[("characteristic", k); ("objectType", otn)] (keyed_wf ^ ".characteristic-undeclared") keyed_at
                     ("'" ^ k ^ "' is not a declared characteristic of '" ^ otn ^ "'") ]
             | _ -> [])
         | _ -> [])
@@ -6665,7 +6753,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
               match object_type ctx otn with
               | Some ot
                 when not (List.exists (fun (n, _) -> norm n = norm k) ot.characteristic_granularity) ->
-                  [ v "WF-043" at "wholePeriod qualifier on a non-time-dependent characteristic" ]
+                  [ v "WF-043.whole-period-characteristic" at "wholePeriod qualifier on a non-time-dependent characteristic" ]
               | _ -> [])
           | _ -> []))
       @ (* WF-053: the navigated characteristic check — one hop, its binding;
@@ -6676,17 +6764,17 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
        | None, _ | Some _, None -> []
        | Some rb, Some st -> (
            let filler (r : role_ref) = Option.value r.role_object_type_name ~default:"" in
-           match resolve_binding ctx rb with
-           | Error e -> [ v "WF-053" at e ]
+           match resolve_binding_arm ctx rb with
+           | Error e -> [ binding_violation "WF-053" at e ]
            | Ok (_, bound, opposite) ->
                if not (fills ctx ~inst:st ~role:opposite) then
-                 [ v "WF-053" at
+                 [ v ~params:[("factType", rb.rb_fact_type); ("filler", filler opposite); ("subject", st)] "WF-053.near-side-mismatch" at
                      (Printf.sprintf
                         "the near side of '%s' fills '%s', but the check's subject is '%s'"
                         rb.rb_fact_type (filler opposite) st) ]
                else
                  (if bound.role_many then
-                    [ v "WF-053" at
+                    [ v ~params:[("role", Option.value bound.role_identifier ~default:"?")] "WF-053.check-many-role" at
                         (Printf.sprintf
                            "the navigated check reaches the to-many role '%s' — a to-many \
                             step needs an aggregation, never a silent first pick"
@@ -6697,7 +6785,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
                  | Some k -> (
                      match object_type ctx (filler bound) with
                      | Some ot when not (has_characteristic ot k) ->
-                         [ v "WF-034" at
+                         [ v ~params:[("characteristic", k); ("objectType", filler bound)] "WF-034.characteristic-undeclared" at
                              ("'" ^ k ^ "' is not a declared characteristic of '"
                             ^ filler bound ^ "'") ]
                      | _ -> [])
@@ -6727,7 +6815,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
          reciprocal fact type has one role, bound and opposite at once. *)
       match find_ci ctx.doc.fact_types fact_type with
       | None ->
-          [ v "WF-034" (sub "factType")
+          [ v ~params:[("factType", fact_type)] "WF-034.fact-type-undeclared" (sub "factType")
               ("role check names fact type '" ^ fact_type
              ^ "', which is not declared: the check resolves against no declaration") ]
       | Some (ft : fact_type_name) -> (
@@ -6736,13 +6824,13 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
           in
           match List.filter named ft.role_names with
           | [] ->
-              [ v "WF-034" (sub "role")
+              [ v ~params:[("role", role); ("factType", fact_type)] "WF-034.role-undeclared" (sub "role")
                   ("'" ^ role ^ "' is not a declared role of fact type '" ^ fact_type
                  ^ "' (a role check names the role by its declared name)") ]
           | [ r ] -> (
               (match subject with
               | Some st when not (fills ctx ~inst:st ~role:r) ->
-                  [ v "WF-034" (sub "role")
+                  [ v ~params:[("subject", st); ("role", role); ("factType", fact_type); ("filler", Option.value r.role_object_type_name ~default:"?")] "WF-034.subject-not-filling" (sub "role")
                       (Printf.sprintf
                          "the subject '%s' does not fill the role '%s' of fact type '%s', which \
                           is filled by '%s': the check names a link the subject can never be in"
@@ -6761,7 +6849,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
                   in
                   match (object_type ctx ct, other) with
                   | None, _ ->
-                      [ v "WF-034" (sub "counterpartType")
+                      [ v ~params:[("objectType", ct)] "WF-034.counterpart-undeclared" (sub "counterpartType")
                           ("role check's counterpart type '" ^ ct
                          ^ "' is not a declared object type: the check resolves against no \
                             declaration") ]
@@ -6769,7 +6857,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
                     when not
                            (is_sub ctx ~sub:ct
                               ~super:(Option.value o.role_object_type_name ~default:"")) ->
-                      [ v "WF-034" (sub "counterpartType")
+                      [ v ~params:[("counterpart", ct); ("filler", Option.value o.role_object_type_name ~default:"?"); ("otherRole", Option.value o.role_identifier ~default:"?"); ("factType", fact_type)] "WF-034.counterpart-not-subtype" (sub "counterpartType")
                           (Printf.sprintf
                              "the counterpart type '%s' is no subtype of '%s', the filler of the \
                               other role '%s' of fact type '%s': the check names a link whose \
@@ -6780,12 +6868,12 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
                              fact_type) ]
                   | _ -> []))
           | _ ->
-              [ v "WF-034" (sub "role")
+              [ v ~params:[("role", role); ("factType", fact_type)] "WF-034.role-ambiguous" (sub "role")
                   ("role name '" ^ role ^ "' is ambiguous within fact type '" ^ fact_type ^ "'")
               ]))
   | Time_window { starting_at; up_to; _ } ->
       (if starting_at = None && up_to = None then
-         [ v "WF-042" at "time window without any bound" ]
+         [ v "WF-042.window-without-bound" at "time window without any bound" ]
        else [])
       @ List.concat_map
           (fun (n, e) ->
@@ -6793,7 +6881,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
             | Some e ->
                 (match expr_type ctx ~binders e with
                  | Some d when not (is_date d) ->
-                     [ v "WF-042" (sub n) ("window bound is " ^ datatype_kind d ^ ", must be a date") ]
+                     [ v ~params:[("type", datatype_kind d)] "WF-042.bound-not-date" (sub n) ("window bound is " ^ datatype_kind d ^ ", must be a date") ]
                  | _ -> [])
                 @ wf111_bound ctx ~subject (sub n) n e
                 @ walk_expr ctx ~binders ~subject (sub n) e
@@ -6802,7 +6890,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
   | Compound { quantifier_kind; cutoff; components; _ } ->
       (match quantifier_kind with
        | At_least | At_most | Exactly when cutoff < 1 ->
-           [ v "WF-041" at (Printf.sprintf "counting quantifier with threshold %d < 1" cutoff) ]
+           [ v ~params:[("threshold", string_of_int cutoff)] "WF-041.threshold-below-one" at (Printf.sprintf "counting quantifier with threshold %d < 1" cutoff) ]
        | _ -> [])
       @ wf112_position at quantifier_kind components
       @ List.concat
@@ -6832,7 +6920,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
          van de". *)
       (match k.kv_quantifier with
        | All | None_of | At_least | At_most | Exactly -> []
-       | The -> [ v "WF-108" (sub "quantifier") quantifier_fold_the_refusal ])
+       | The -> [ v "WF-108.quantifier-the-refused" (sub "quantifier") quantifier_fold_the_refusal ])
       @ wf112_position at k.kv_quantifier (List.filter_map Fun.id [ k.kv_filter; k.kv_test ])
       (* (e) the threshold: present EXACTLY under a counting quantifier. A
          counting fold without one names no number to compare the count with;
@@ -6843,19 +6931,19 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
          shared-rule discipline arm (c) states. *)
       @ (match (k.kv_quantifier, k.kv_threshold) with
          | (At_least | At_most | Exactly), None ->
-             [ v "WF-108" at
+             [ v "WF-108.threshold-missing" at
                  "counting quantifier fold without a threshold: the verdict compares the number \
                   of contributors satisfying the matrix with a threshold, and there is none to \
                   compare it with" ]
          | (All | None_of | The), Some d ->
-             [ v "WF-108" (sub "threshold")
+             [ v ~params:[("threshold", string_of_int d)] "WF-108.threshold-non-counting" (sub "threshold")
                  (Printf.sprintf
                     "quantifier fold with a threshold (%d) under a NON-counting quantifier: the \
                      threshold is read only by the counting quantifiers, and a number no reader \
                      consults states a quantification the quantifier contradicts"
                     d) ]
          | (At_least | At_most | Exactly), Some d when d < 1 ->
-             [ v "WF-041" (sub "threshold")
+             [ v ~params:[("threshold", string_of_int d)] "WF-041.threshold-below-one" (sub "threshold")
                  (Printf.sprintf "counting quantifier with threshold %d < 1" d) ]
          | _ -> [])
       (* (b) the population. WF-034 owns the name resolution of every other
@@ -6864,11 +6952,11 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
          nothing a reader can name. *)
       @ (match k.kv_element_object_type with
          | None ->
-             [ v "WF-108" (sub "elementType")
+             [ v "WF-108.population-unnamed" (sub "elementType")
                  "quantifier fold without an elementType: the population it ranges over is \
                   unnamed" ]
          | Some t when object_type ctx t = None ->
-             [ v "WF-034" (sub "elementType")
+             [ v ~params:[("elementType", t)] "WF-034.fold-element-undeclared" (sub "elementType")
                  ("quantifier-fold element type '" ^ t ^ "' is not declared") ]
          | Some _ -> [])
       (* (d) the matrix. A quantifier with no matrix states a range and
@@ -6876,7 +6964,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
          can name it. *)
       @ (match k.kv_test with
          | None ->
-             [ v "WF-108" (sub "test")
+             [ v "WF-108.test-missing" (sub "test")
                  "quantifier fold without a test: the matrix is what every contributor must \
                   satisfy, and a quantifier over no condition has no verdict" ]
          | Some _ -> [])
@@ -6888,7 +6976,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
          | Some trail ->
              (if List.length trail >= 2 then []
                 else
-                  [ v "WF-108" (sub "sourcePath")
+                  [ v ~params:[("steps", string_of_int (List.length trail))] "WF-108.path-too-short" (sub "sourcePath")
                       (Printf.sprintf
                          "a quantifier fold's sourcePath carries at least TWO steps, found %d — \
                           the one-step range is spelled sourceRole"
@@ -6897,8 +6985,8 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
                   | [] -> []
                   | (rb : role_binding) :: rest -> (
                       let step = sub ("sourcePath/" ^ string_of_int i) in
-                      match resolve_binding ctx rb with
-                      | Error e -> [ v "WF-047" step e ]
+                      match resolve_binding_arm ctx rb with
+                      | Error e -> [ binding_violation "WF-047" step e ]
                       | Ok (_, bound, other) ->
                           let bound_filler = Option.value bound.role_object_type_name ~default:"" in
                           let joins =
@@ -6906,7 +6994,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
                             | None -> []
                             | Some ft when fills ctx ~inst:ft ~role:other -> []
                             | Some ft ->
-                                [ v "WF-108" step
+                                [ v ~params:[("role", Option.value other.role_identifier ~default:"?"); ("filler", Option.value other.role_object_type_name ~default:""); ("startType", ft); ("origin", if i = 0 then "the quantifier's subject" else "the type the previous step reaches")] "WF-108.path-not-connected" step
                                     (Printf.sprintf
                                        "the opposite role '%s' fills '%s', but this step starts \
                                         at '%s' (%s) — a quantifier range is a connected walk"
@@ -6921,7 +7009,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
                             else
                               match k.kv_element_object_type with
                               | Some el when not (type_compatible ctx bound_filler el) ->
-                                  [ v "WF-108" step
+                                  [ v ~params:[("role", Option.value bound.role_identifier ~default:"?"); ("filler", bound_filler); ("elementType", el)] "WF-108.path-misses-element" step
                                       (Printf.sprintf
                                          "the last step's bound role '%s' fills '%s', but the \
                                           quantifier's elementType is '%s' — the path must \
@@ -6983,7 +7071,7 @@ let expression_layer ctx =
           | Some otd -> (
               match List.find_opt (fun (n, _) -> norm n = norm a) otd.attribute_granularity with
               | Some (_, Some tg) when tg <> g ->
-                  [ v wf (at ^ "/value")
+                  [ v ~params:[("function", what)] (wf ^ ".bucket-granularity-differs") (at ^ "/value")
                       (what ^ " bucket granularity differs from the target's declared granularity")
                   ]
               | Some (_, Some _) | None -> []
@@ -6997,10 +7085,10 @@ let expression_layer ctx =
       @ (match r.value_node with
         | Some (Function_call ({ kind = Day_count; _ } as f)) ->
             (if f.call_arguments <> [] then
-               [ v "WF-058" (at ^ "/value/arguments") "dayCount takes no arguments" ]
+               [ v "WF-058.day-count-arguments" (at ^ "/value/arguments") "dayCount takes no arguments" ]
              else [])
             @ (match f.filter with
-              | None -> [ v "WF-058" (at ^ "/value") "dayCount without a gedurende condition" ]
+              | None -> [ v "WF-058.day-count-condition" (at ^ "/value") "dayCount without a gedurende condition" ]
               | Some (Characteristic_check { characteristic = Some k; navigation_binding = None; negation = false; _ }) -> (
                   match Option.bind subject (object_type ctx) with
                   | Some otd
@@ -7008,12 +7096,12 @@ let expression_layer ctx =
                            (List.exists
                               (fun (n, _) -> norm n = norm k)
                               otd.characteristic_granularity) ->
-                      [ v "WF-058" (at ^ "/value/filter")
+                      [ v ~params:[("characteristic", k)] "WF-058.condition-not-temporal" (at ^ "/value/filter")
                           ("gedurende over '" ^ k ^ "', which is not a temporal characteristic")
                       ]
                   | _ -> [])
               | Some _ ->
-                  [ v "WF-058" (at ^ "/value/filter")
+                  [ v "WF-058.condition-not-check" (at ^ "/value/filter")
                       "the day-count gedurende condition is an own temporal characteristic check"
                   ])
         | _ -> [])
@@ -7876,7 +7964,7 @@ let wf045_046 ctx =
           let cyc = take [] path in
           let names = String.concat " -> " (List.map (fun j -> forms.(j).df_name) (cyc @ [ i ])) in
           viol45 :=
-            v "WF-045" forms.(i).df_at ("dependency cycle through no recursive creation: " ^ names)
+            v ~params:[("cycle", names)] "WF-045.dependency-cycle" forms.(i).df_at ("dependency cycle through no recursive creation: " ^ names)
             :: !viol45
       | 2 -> ()
       | _ ->
@@ -7905,7 +7993,7 @@ let wf045_046 ctx =
         (fun (ci, kind) ->
           if kind = Dep_neg && reaches ci pi then
             viol46 :=
-              v "WF-046" forms.(ci).df_at
+              v ~params:[("reader", forms.(ci).df_name); ("producer", forms.(pi).df_name)] "WF-046.negative-edge-cycle" forms.(ci).df_at
                 (Printf.sprintf
                    "negative dependency edge on a cycle: %s reads what %s produces while %s is reachable from it (no strata exist)"
                    forms.(ci).df_name forms.(pi).df_name forms.(pi).df_name)
@@ -7946,7 +8034,7 @@ let wf028 ctx =
          let filler (r : role_ref) = Option.value r.role_object_type_name ~default:"" in
          let created_checks =
            match find_ci ctx.doc.fact_types ftn with
-           | None -> [ v "WF-028" at ("created fact type '" ^ ftn ^ "' is not declared") ]
+           | None -> [ v ~params:[("factType", ftn)] "WF-028.undeclared-fact-type" at ("created fact type '" ^ ftn ^ "' is not declared") ]
            | Some (ft : fact_type_name) -> (
                match ft.role_names with
                | [ a; b ] ->
@@ -7960,9 +8048,11 @@ let wf028 ctx =
                      | true, false -> Ok a
                      | false, true -> Ok b
                      | true, true ->
-                         Error ("role '" ^ name ^ "' is ambiguous within '" ^ ftn ^ "'")
+                         Error ("created-role-ambiguous", [ ("role", name); ("factType", ftn) ],
+                                "role '" ^ name ^ "' is ambiguous within '" ^ ftn ^ "'")
                      | false, false ->
-                         Error ("'" ^ name ^ "' is not a role of '" ^ ftn ^ "'")
+                         Error ("created-role-missing", [ ("role", name); ("factType", ftn) ],
+                                "'" ^ name ^ "' is not a role of '" ^ ftn ^ "'")
                    in
                    (* ONE-SIDED. [anker] names the type the creation
                       ranges over; read extensionally that is every
@@ -7982,22 +8072,22 @@ let wf028 ctx =
                       upward from every filler is sound. *)
                    let end_check what name expected =
                      match pick name with
-                     | Error e -> [ v "WF-028" at e ]
+                     | Error (slug, params, e) -> [ v ~params ("WF-028." ^ slug) at e ]
                      | Ok r -> (
                          match expected with
                          | Some t when not (is_sub ctx ~sub:t ~super:(filler r)) ->
-                             [ v "WF-028" at
+                             [ v ~params:[("roleKind", what); ("roleName", name); ("filler", filler r); ("expectedType", t)] "WF-028.filler-mismatch" at
                                  (Printf.sprintf "%s '%s' fills '%s', but the node names '%s'"
                                     what name (filler r) t) ]
                          | _ -> [])
                    in
                    (if norm anchor_role = norm objective_role then
-                      [ v "WF-028" at "anchorRole and targetRole must be distinct roles" ]
+                      [ v "WF-028.roles-not-distinct" at "anchorRole and targetRole must be distinct roles" ]
                     else [])
                    @ end_check "anchorRole" anchor_role fc.anchor_point
                    @ end_check "targetRole" objective_role fc.fc_target
                | _ ->
-                   [ v "WF-028" at
+                   [ v ~params:[("factType", ftn)] "WF-028.not-two-roles" at
                        ("created fact type '" ^ ftn ^ "' does not have exactly two roles") ])
          in
          let chain_checks =
@@ -8005,13 +8095,13 @@ let wf028 ctx =
               hop's far side fills, and the last hop is the one that reaches
               the target *)
            let step at_step cur rb =
-             match resolve_binding ctx rb with
-             | Error e -> Error [ v "WF-028" at_step e ]
+             match resolve_binding_arm ctx rb with
+             | Error (slug, params, e) -> Error [ v ~params ("WF-028.binding-" ^ slug) at_step e ]
              | Ok (_, bound, other) -> (
                  match cur with
                  | Some cur when not (fills ctx ~inst:cur ~role:other) ->
                      Error
-                       [ v "WF-028" at_step
+                       [ v ~params:[("factType", rb.rb_fact_type); ("filler", filler other); ("position", cur)] "WF-028.hop-side-mismatch" at_step
                            (Printf.sprintf
                               "hop over '%s': the near side fills '%s', but the chain stands \
                                at '%s'"
@@ -8037,13 +8127,13 @@ let wf028 ctx =
                         rather than riding along here. *)
                      (match (reached, fc.fc_target) with
                      | Some r, Some d when norm r <> norm d ->
-                         [ v "WF-028" at
+                         [ v ~params:[("reached", r); ("target", d)] "WF-028.chain-misses-target" at
                              (Printf.sprintf "the join chain reaches '%s', not the target '%s'"
                                 r d) ]
                      | _ -> [])
                      @
                      if norm join.rb_fact_type = norm ftn then
-                       [ v "WF-028" at
+                       [ v "WF-028.relation-equals-hop" at
                            "the created relation must differ from the relation of the final \
                             hop" ]
                      else [])
@@ -8069,28 +8159,28 @@ let wf050 ctx =
            | _ -> None
          in
          (if l.defaults = [] then
-            [ v "WF-050" at "a defaults group carries at least one default" ]
+            [ v "WF-050.group-without-default" at "a defaults group carries at least one default" ]
           else [])
          @ (match target_name with
            | None ->
-               [ v "WF-050" at
+               [ v "WF-050.target-not-one" at
                    "a defaults group targets exactly one of a characteristic or an attribute" ]
            | Some _ -> [])
          @ (match object_type ctx l.pd_subject with
            | None ->
-               [ v "WF-050" at
+               [ v ~params:[("objectType", l.pd_subject)] "WF-050.subject-not-declared" at
                    ("defaults-group subject '" ^ l.pd_subject ^ "' is not a declared object type") ]
            | Some ot -> (
                (match l.pd_characteristic with
                | Some k when not (mem_ci (some_names ot.characteristics) k) ->
-                   [ v "WF-050" at
+                   [ v ~params:[("characteristic", k); ("objectType", l.pd_subject)] "WF-050.characteristic-not-declared" at
                        ("defaults target '" ^ k ^ "' is not a declared characteristic of '"
                       ^ l.pd_subject ^ "'") ]
                | _ -> [])
                @
                match l.pd_attribute with
                | Some a when not (has_attr ot a) ->
-                   [ v "WF-050" at
+                   [ v ~params:[("attribute", a); ("objectType", l.pd_subject)] "WF-050.attribute-not-declared" at
                        ("defaults target '" ^ a ^ "' is not a declared attribute of '"
                       ^ l.pd_subject ^ "'") ]
                | _ -> []))
@@ -8114,17 +8204,17 @@ let wf050 ctx =
                      (* present content must match the target kind *)
                      (match (is_char, r.default_decision, r.default_consequence) with
                      | true, _, Some _ ->
-                         [ v "WF-050" rat "a characteristic default carries no consequence" ]
+                         [ v "WF-050.characteristic-no-consequence" rat "a characteristic default carries no consequence" ]
                      | false, Some _, _ ->
-                         [ v "WF-050" rat "an attribute default carries no decision" ]
+                         [ v "WF-050.attribute-no-decision" rat "an attribute default carries no decision" ]
                      | _ -> [])
                      @ (match (r.default_initialisation, is_group, r.default_justification) with
                        | true, _, Some _ ->
-                           [ v "WF-050" rat
+                           [ v "WF-050.initialisation-no-justification" rat
                                "the initialisation default carries no written justification (its \
                                 justification is input-emptiness, ch. 7.3)" ]
                        | false, false, None when has_content ->
-                           [ v "WF-050" rat "a non-initialisation default carries a justification" ]
+                           [ v "WF-050.non-initial-justification" rat "a non-initialisation default carries a justification" ]
                        | _ -> [])
                      @ (match r.default_exceptions with
                        | Some egs ->
@@ -8146,13 +8236,13 @@ let wf050 ctx =
                 (fun j (r : default) ->
                   let rat = Printf.sprintf "%s/defaults/%d" at j in
                   (if r.default_initialisation && l.pd_characteristic <> None then
-                     [ v "WF-050" rat
+                     [ v "WF-050.initialisation-on-characteristic" rat
                          "an initialisation default on characteristic defaults is meaningless \
                           (characteristics start absent)" ]
                    else [])
                   @
                   if r.default_initialisation && j <> List.length l.defaults - 1 then
-                    [ v "WF-050" rat "the initialisation default sits lowest (last)" ]
+                    [ v "WF-050.initialisation-not-last" rat "the initialisation default sits lowest (last)" ]
                   else [])
                 l.defaults)
          @ (match target_name with
@@ -8195,7 +8285,7 @@ let wf050 ctx =
                    oc.assignments
                in
                (if group_size > 1 && not l.pd_unordered then
-                  [ v "WF-050" at
+                  [ v ~params:[("objectType", l.pd_subject); ("target", tn)] "WF-050.groups-without-unordered" at
                       ("multiple defaults groups on target '" ^ l.pd_subject ^ "." ^ tn
                      ^ "' without the declared-unordered marking — priority is explicit \
                         (defaults) or explicitly absent ('unordered'), never implicit \
@@ -8219,7 +8309,7 @@ let wf050 ctx =
                       | _ -> false)
                     ctx.doc.resolved_rules
                 then
-                  [ v "WF-050" at
+                  [ v ~params:[("objectType", l.pd_subject); ("target", tn)] "WF-050.rule-also-writes" at
                       ("a rule also writes defaults target '" ^ l.pd_subject ^ "." ^ tn
                      ^ "' — an unordered plain writer would silently defeat the group's \
                         decisions") ]
@@ -8233,7 +8323,7 @@ let wf050 ctx =
                         && initialises oc)
                       ctx.doc.object_creations
                   then
-                    [ v "WF-050" at
+                    [ v ~params:[("objectType", l.pd_subject); ("target", tn)] "WF-050.creation-also-writes" at
                         ("an object creation also initialises defaults target '"
                        ^ l.pd_subject ^ "." ^ tn
                        ^ "' — a creation-time write would silently defeat the group's \
@@ -8257,7 +8347,7 @@ let wf050 ctx =
                             match chain_lower ctx ~ty:Fun.id nt l.pd_subject with
                             | Some (low, _) when norm low = norm nt ->
                                 Some
-                                  (v "WF-050" at
+                                  (v ~params:[("objectType", l.pd_subject); ("target", tn); ("createdType", nt)] "WF-050.creation-through-chain" at
                                      (Printf.sprintf
                                         "an object creation also initialises defaults target \
                                          '%s.%s' through its type chain — the group declared \
@@ -8286,7 +8376,7 @@ let wf050 ctx =
                          | _ -> false)
                        ctx.doc.allocations
                    then
-                     [ v "WF-050" at
+                     [ v ~params:[("objectType", l.pd_subject); ("attribute", a)] "WF-050.allocation-also-writes" at
                          ("an allocation also writes defaults target '" ^ l.pd_subject ^ "."
                         ^ a ^ "'") ]
                    else [])
@@ -8307,7 +8397,7 @@ let wf050 ctx =
                                     match chain_lower ctx ~ty:Fun.id l.pd_subject t with
                                     | Some (low, _) ->
                                         Some
-                                          (v "WF-050" at
+                                          (v ~params:[("objectType", l.pd_subject); ("attribute", a); ("part", part); ("allocatedType", t); ("lowType", low)] "WF-050.allocation-through-chain" at
                                              (Printf.sprintf
                                                 "an allocation also writes defaults target \
                                                  '%s.%s' through its type chain — the group \
@@ -8383,7 +8473,7 @@ let wf052 ctx =
       let forms = List.sort_uniq compare (List.map (fun (_, fm, _) -> fm) same) in
       let _, first, _ = List.hd same in
       if List.length forms > 1 && form <> first then
-        [ v "WF-052" at
+        [ v ~params:[("relation", ftn); ("count", string_of_int (List.length forms))] "WF-052.relation-multiple-writers" at
             (Printf.sprintf
                "connecting relation '%s' has a to-one created-side role and %d object-creation \
                 writers; at most one may write it"
@@ -8472,19 +8562,19 @@ let wf079 ctx =
         if has_defaults otn a then None else Some (n, otn, a, g, at))
       computing
   in
-  let rec pairs ~sentence = function
+  let rec pairs ~slug ~sentence = function
     | [] -> []
     | (n1, ot1, a1, g1, at1) :: rest ->
         List.filter_map
           (fun (n2, ot2, a2, g2, _) ->
             let same_target = norm ot1 = norm ot2 && norm a1 = norm a2 in
             if same_target && distinct_form n1 n2 && validity_overlaps g1 g2 then
-              Some (v "WF-079" at1 (sentence ot1 a1))
+              Some (v ~params:[("objectType", ot1); ("attribute", a1)] ("WF-079." ^ slug) at1 (sentence ot1 a1))
             else None)
           rest
-        @ pairs ~sentence rest
+        @ pairs ~slug ~sentence rest
   in
-  let chain ~sentence versions =
+  let chain ~slug ~sentence versions =
     chain_pairs ctx
       ~ty:(fun (_, t, _, _, _) -> t)
       ~attr:(fun (_, _, a, _, _) -> a)
@@ -8493,32 +8583,35 @@ let wf079 ctx =
       versions
     |> List.filter_map (fun ((_, low, a, _, at), (_, high, _, _, _)) ->
            if List.mem ("A:" ^ norm a) (chain_group_keys ctx.doc low) then None
-           else Some (v "WF-079" at (sentence low a high)))
+           else
+             Some
+               (v ~params:[("objectType", low); ("attribute", a); ("other", high)] ("WF-079." ^ slug) at
+                  (sentence low a high)))
   in
   let initialisation_writers =
     List.filter (fun (_, otn, a, _, _) -> not (has_defaults otn a)) initialisations
   in
   dedup_reports
-    (pairs writers ~sentence:(fun ot a ->
+    (pairs writers ~slug:"computing-same-target" ~sentence:(fun ot a ->
          Printf.sprintf
            "two unconditional computing rules write target (%s, %s) with no prioritized defaults \
             — priority is explicit (a defaults group) or explicitly absent, never implicit agenda \
             order (ch. 7.7)"
            ot a)
-    @ chain computing ~sentence:(fun low a high ->
+    @ chain computing ~slug:"computing-chained" ~sentence:(fun low a high ->
           Printf.sprintf
             "two unconditional computing rules write target (%s, %s) through its type chain — one \
              declared on %s, one on %s — and no defaults group folds them into one stack, so both \
              fire on a %s instance; priority is explicit (a defaults group, whose subtype base \
              replaces the inherited base, ch. 7.10), never implicit agenda order (ch. 7.7)"
             low a high low low)
-    @ pairs initialisation_writers ~sentence:(fun ot a ->
+    @ pairs initialisation_writers ~slug:"initialisation-same-target" ~sentence:(fun ot a ->
           Printf.sprintf
             "two initialisations write target (%s, %s) with no prioritized defaults — where both \
              apply nothing ranks them, and a condition on either gives it no priority: the fixpoint \
              does not define which value the target takes (ch. 5.4)"
             ot a)
-    @ chain initialisations ~sentence:(fun low a high ->
+    @ chain initialisations ~slug:"initialisation-chained" ~sentence:(fun low a high ->
           Printf.sprintf
             "two initialisations write target (%s, %s) through its type chain — one declared on \
              %s, one on %s — and no defaults group folds them into one stack, so both write a %s \
@@ -8540,16 +8633,16 @@ let wf054 ctx =
       | Some _, None -> [] (* WF-030 reports the missing subject *)
       | Some rb, Some subj -> (
           let filler (r : role_ref) = Option.value r.role_object_type_name ~default:"" in
-          match resolve_binding ctx rb with
-          | Error e -> [ v "WF-054" at e ]
+          match resolve_binding_arm ctx rb with
+          | Error e -> [ binding_violation "WF-054" at e ]
           | Ok (_, bound, opposite) ->
               if not (fills ctx ~inst:subj ~role:opposite) then
-                [ v "WF-054" at
+                [ v ~params:[("factType", rb.rb_fact_type); ("filler", filler opposite); ("subject", subj)] "WF-054.near-side-mismatch" at
                     (Printf.sprintf
                        "the near side of '%s' fills '%s', but the uniqueness subject is '%s'"
                        rb.rb_fact_type (filler opposite) subj) ]
               else if bound.role_many then
-                [ v "WF-054" at
+                [ v ~params:[("role", Option.value bound.role_identifier ~default:"?")] "WF-054.scope-role-many" at
                     (Printf.sprintf
                        "the scope role '%s' is to-many — a scope parent is one instance"
                        (Option.value bound.role_identifier ~default:"?")) ]
@@ -8590,7 +8683,7 @@ let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype)
     datatype_kind dt = datatype_kind wt || (is_number_like dt && is_number_like wt)
   in
   (if not same_family then
-     [ v "WF-023" at
+     [ v ~params:[("valueKind", datatype_kind wt); ("targetKind", datatype_kind dt)] "WF-023.datatype-family-mismatch" at
          (Printf.sprintf "a %s value is assigned to a %s target" (datatype_kind wt)
             (datatype_kind dt)) ]
    else [])
@@ -8609,17 +8702,17 @@ let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype)
          | _ -> None
        in
        match (own, literal_sign_refusal ~target:true t w) with
-       | None, Some sentence when not (sign_conflict dt wt) ->
-           [ v "WF-039" (value_at ^ "/value") sentence ]
+       | None, Some (slug, sentence) when not (sign_conflict dt wt) ->
+           [ v ~params:[("lexeme", w)] ("WF-039." ^ slug) (value_at ^ "/value") sentence ]
        | _ -> [])
    | _ -> [])
   @ (if
        is_number_like dt && is_number_like wt
        && not (units_compatible_adopting target value (unit_of dt) (unit_of wt))
-     then [ v "WF-023" at "assignment across incompatible units" ]
+     then [ v "WF-023.incompatible-units" at "assignment across incompatible units" ]
      else [])
   @ (if sign_conflict dt wt then
-       [ v "WF-023" at "the value's sign restriction contradicts the target's" ]
+       [ v "WF-023.sign-restriction-conflict" at "the value's sign restriction contradicts the target's" ]
      else [])
   @ (* WF-090's write half (struct-domain identity, ch. 2.4): the same
        three write positions, the struct sibling of the keuzetype clause
@@ -8630,19 +8723,19 @@ let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype)
    | None, None -> []
    | Some a, Some b when norm a = norm b -> []
    | Some a, Some b ->
-       [ v "WF-090" at
+       [ v ~params:[("sourceDomain", b); ("targetDomain", a)] "WF-090.assignment-domain-mismatch" at
            (Printf.sprintf
               "a value of the struct domain '%s' is assigned to a target of the struct domain \
                '%s'"
               b a) ]
    | Some a, None when same_family ->
-       [ v "WF-090" at
+       [ v ~params:[("type", datatype_kind wt); ("targetDomain", a)] "WF-090.assignment-value-unnamed" at
            (Printf.sprintf
               "a %s value naming no struct domain is assigned to a target of the struct domain \
                '%s'"
               (datatype_kind wt) a) ]
    | None, Some b when same_family ->
-       [ v "WF-090" at
+       [ v ~params:[("sourceDomain", b); ("type", datatype_kind dt)] "WF-090.assignment-target-unnamed" at
            (Printf.sprintf
               "a value of the struct domain '%s' is assigned to a %s target naming no struct \
                domain"
@@ -8657,17 +8750,17 @@ let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype)
   | None, None -> []
   | Some a, Some b when choice_type_same a b -> []
   | Some a, Some b ->
-      [ v "WF-023" at
+      [ v ~params:[("valueVariant", choice_type_variant b); ("valueName", choice_type_name b); ("targetVariant", choice_type_variant a); ("targetName", choice_type_name a)] "WF-023.choice-domain-mismatch" at
           (Printf.sprintf "a value of the %s '%s' is assigned to a target of the %s '%s'"
              (choice_type_variant b) (choice_type_name b) (choice_type_variant a)
              (choice_type_name a)) ]
   | Some a, None when same_family ->
-      [ v "WF-023" at
+      [ v ~params:[("valueKind", datatype_kind wt); ("targetVariant", choice_type_variant a); ("targetName", choice_type_name a)] "WF-023.untyped-to-choice" at
           (Printf.sprintf
              "a %s value naming no keuzetype domain is assigned to a target of the %s '%s'"
              (datatype_kind wt) (choice_type_variant a) (choice_type_name a)) ]
   | None, Some b when same_family ->
-      [ v "WF-023" at
+      [ v ~params:[("valueVariant", choice_type_variant b); ("valueName", choice_type_name b); ("targetKind", datatype_kind dt)] "WF-023.choice-to-untyped" at
           (Printf.sprintf
              "a value of the %s '%s' is assigned to a %s target naming no keuzetype domain"
              (choice_type_variant b) (choice_type_name b) (datatype_kind dt)) ]
@@ -8763,17 +8856,17 @@ let wf082 ctx =
       | _ when not first_version -> []
       | None -> []
       | Some [] ->
-          [ v "WF-082" at
+          [ v "WF-082.annotations-empty" at
               "statuteAnnotations is empty — an annotation-free rule omits the field entirely" ]
       | Some entries ->
           List.concat
             (List.mapi
                (fun j e ->
                  if e = "" then
-                   [ v "WF-082" (Printf.sprintf "%s/%d" at j)
+                   [ v "WF-082.annotation-blank" (Printf.sprintf "%s/%d" at j)
                        "blank statute annotation — every entry carries text" ]
                  else if String.trim e <> e then
-                   [ v "WF-082" (Printf.sprintf "%s/%d" at j)
+                   [ v "WF-082.annotation-whitespace" (Printf.sprintf "%s/%d" at j)
                        "statute annotation carries leading/trailing whitespace — entries are trimmed" ]
                  else [])
                entries))
@@ -8811,7 +8904,7 @@ let wf051 ctx =
            |> List.find_opt (fun ((_ : int), (f : dep_form)) -> f.df_at = at)
          with
          | Some (fi, _) when reaches fi fi ->
-             [ v "WF-051" at
+             [ v ~params:[("group", Option.value l.pd_name ~default:at)] "WF-051.cycle-through-group" at
                  ("a dependency cycle passes through defaults group '"
                  ^ Option.value l.pd_name ~default:at
                  ^ "' — its displacement reads are negative edges; no strata exist") ]
@@ -8843,14 +8936,14 @@ let wf075 ctx =
                     r.default_decision <> None || r.default_consequence <> None
                   in
                   (if in_sub && r.default_initialisation then
-                     [ v "WF-075" rat
+                     [ v "WF-075.group-initialisation" rat
                          "a default inside an exception group carries no initialisation (the \
                           initialisation and input defaults are root-only, ch. 7.9)" ]
                    else [])
                   @ (if (not has_content) && r.default_exceptions = None
                         && not r.default_initialisation
                      then
-                       [ v "WF-075" rat
+                       [ v "WF-075.contentless-default" rat
                            "a default carries its own decision/consequence or a nested \
                             exception group (a contentless default decides nothing, \
                             ch. 7.9)" ]
@@ -8858,7 +8951,7 @@ let wf075 ctx =
                   @ (if r.default_exceptions <> None && (not has_content)
                         && r.default_justification <> None && not r.default_initialisation
                      then
-                       [ v "WF-075" rat
+                       [ v "WF-075.group-default-justified" rat
                            "a group-default (exceptions present, no own decision or \
                             consequence) carries no justification of its own: the exception \
                             groups decide, so a condition here would be silently ignored \
@@ -8868,12 +8961,12 @@ let wf075 ctx =
                     | None -> []
                     | Some egs ->
                         (if egs.egs_members = [] then
-                           [ v "WF-075" (rat ^ "/exceptions")
+                           [ v "WF-075.no-exception-group" (rat ^ "/exceptions")
                                "the exceptions field carries at least one exception group \
                                 (ch. 7.9)" ]
                          else [])
                         @ (if List.length egs.egs_members >= 2 && not egs.egs_unordered then
-                             [ v "WF-075" (rat ^ "/exceptions")
+                             [ v "WF-075.groups-not-unordered" (rat ^ "/exceptions")
                                  "two or more exception groups must be declared unordered \
                                   (the root regime, ch. 7.9)" ]
                            else [])
@@ -8914,7 +9007,7 @@ let wf057 ctx =
   let check at what name =
     match name with
     | Some n when bad n ->
-        [ v "WF-057" at
+        [ v ~params:[("kind", what); ("declaredName", show n)] "WF-057.name-unsafe-characters" at
             (Printf.sprintf
                "%s \"%s\" carries a quote, backslash or control character — declared names must \
                 be target-text-safe"
@@ -8994,7 +9087,7 @@ let wf059 ctx =
         (fun (an, dt) ->
           match dt with
           | None ->
-              [ v "WF-059"
+              [ v "WF-059.attribute-no-datatype"
                   ("/objecttypen/" ^ key ^ "/attributen/" ^ an)
                   "declared attribute carries no datatype" ]
           | Some _ -> [])
@@ -9039,11 +9132,11 @@ let wf060 ctx =
       match dt with
       | Some (Sum_type { constructor_list; _ }) ->
           let at = "/domeinen/" ^ name in
-          (if constructor_list = [] then [ v "WF-060" at "sum type declares no constructor" ]
+          (if constructor_list = [] then [ v "WF-060.no-constructor" at "sum type declares no constructor" ]
            else [])
           @ List.map
               (fun (first, dup, at') ->
-                v "WF-060" at'
+                v ~params:[("constructor", dup); ("earlier", first)] "WF-060.duplicate-constructor" at'
                   (Printf.sprintf "duplicate constructor name '%s' (already declared as '%s')"
                      dup first))
               (dups_by norm (List.map (fun (n, _) -> (n, at)) constructor_list))
@@ -9055,18 +9148,18 @@ let wf060 ctx =
                     match sum_decl ctx domain_spec with
                     | Some _ -> []
                     | None ->
-                        [ v "WF-060" at
+                        [ v ~params:[("domain", domain_spec)] "WF-060.payload-domain-undeclared" at
                             ("constructor payload names sum-type domain '" ^ domain_spec
                            ^ "', which is not a declared sum type") ])
                 | Some d ->
-                    [ v "WF-060" at
+                    [ v ~params:[("type", datatype_kind d)] "WF-060.payload-not-admissible" at
                         ("constructor payload is " ^ datatype_kind d
                        ^ ", which is not an admissible sum-type payload (number, day-precision \
                           date, or a declared sum type)") ])
               constructor_list
           @
           if domain_reaches ctx ~target:name ~visited:[ norm name ] name then
-            [ v "WF-060" at
+            [ v ~params:[("domain", name)] "WF-060.sum-type-recursive" at
                 ("sum type '" ^ name
                ^ "' is recursive — the payload graph over sum-type and struct declarations must \
                   be acyclic")
@@ -9093,7 +9186,7 @@ let wf087 ctx =
       match dt with
       | Some (Sum_type { constructor_list; _ })
         when constructor_list <> [] && List.for_all (fun (_, p) -> p = None) constructor_list ->
-          [ v "WF-087" ("/domeinen/" ^ name)
+          [ v ~params:[("name", name)] "WF-087.sum-only-nullary" ("/domeinen/" ^ name)
               ("sum type '" ^ name
              ^ "' declares only nullary constructors — the nullary keuzetype has one wire form: \
                 normalise it to an Enumeration domain carrying those names as its values (ch. 2.4)")
@@ -9111,13 +9204,13 @@ let wf061 ctx =
     | Sum_type { domain_spec; constructor_list } -> (
         match sum_decl ctx domain_spec with
         | None ->
-            [ v "WF-061" at
+            [ v ~params:[("domain", domain_spec)] "WF-061.use-site-undeclared" at
                 ("sum-type use site names domain '" ^ domain_spec
                ^ "', which is not a declared sum type") ]
         | Some decl ->
             if constructors_agree decl constructor_list then []
             else
-              [ v "WF-061" at
+              [ v ~params:[("domain", domain_spec)] "WF-061.use-site-disagrees" at
                   ("sum-type use site disagrees with the declaration of domain '" ^ domain_spec
                  ^ "' (same constructors, payloads and order required)") ])
     | _ -> []
@@ -9176,10 +9269,10 @@ let wf071 ctx =
       match dt with
       | Some (Struct_type { field_list; _ }) ->
           let at = "/domeinen/" ^ name in
-          (if field_list = [] then [ v "WF-071" at "struct type declares no field" ] else [])
+          (if field_list = [] then [ v "WF-071.struct-no-field" at "struct type declares no field" ] else [])
           @ List.map
               (fun (first, dup, at') ->
-                v "WF-071" at'
+                v ~params:[("name", dup); ("first", first)] "WF-071.duplicate-field" at'
                   (Printf.sprintf "duplicate field name '%s' (already declared as '%s')" dup first))
               (dups_by norm (List.map (fun (n, _) -> (n, at)) field_list))
           @ List.concat_map
@@ -9190,25 +9283,25 @@ let wf071 ctx =
                     match sum_decl ctx domain_spec with
                     | Some _ -> []
                     | None ->
-                        [ v "WF-071" at
+                        [ v ~params:[("field", fname); ("domain", domain_spec)] "WF-071.field-sum-undeclared" at
                             ("field '" ^ fname ^ "' names sum-type domain '" ^ domain_spec
                            ^ "', which is not a declared sum type") ])
                 | Struct_type { domain_spec; _ } -> (
                     match struct_decl ctx domain_spec with
                     | Some _ -> []
                     | None ->
-                        [ v "WF-071" at
+                        [ v ~params:[("field", fname); ("domain", domain_spec)] "WF-071.field-struct-undeclared" at
                             ("field '" ^ fname ^ "' names struct-type domain '" ^ domain_spec
                            ^ "', which is not a declared struct type") ])
                 | d ->
-                    [ v "WF-071" at
+                    [ v ~params:[("field", fname); ("type", datatype_kind d)] "WF-071.field-inadmissible-type" at
                         ("field '" ^ fname ^ "' is " ^ datatype_kind d
                        ^ ", which is not an admissible struct-field datatype (number, day-precision \
                           date, sum type, or struct type)") ])
               field_list
           @
           if domain_reaches ctx ~target:name ~visited:[ norm name ] name then
-            [ v "WF-071" at
+            [ v ~params:[("name", name)] "WF-071.struct-recursive" at
                 ("struct type '" ^ name
                ^ "' is recursive — the field graph over sum-type and struct declarations must be \
                   acyclic")
@@ -9282,7 +9375,7 @@ let wf065 ctx =
   let element_check at element =
     if admissible_element ctx element then []
     else
-      [ v "WF-065" at
+      [ v ~params:[("type", datatype_kind element)] "WF-065.element-type-invalid" at
           ("list element is " ^ datatype_kind element
          ^ ", not a first-order non-list datatype (number, day-precision date, a declared \
             sum type, or a declared struct type)") ]
@@ -9300,7 +9393,7 @@ let wf065 ctx =
                       it always carries its grid, so the key alone decides *)
                    List.exists (fun (n, _) -> norm n = norm an) ot.attribute_granularity
                  then
-                   [ v "WF-065" at
+                   [ v "WF-065.list-attribute-granularity" at
                        "a list-typed attribute carries a granularity — a list-typed temporal \
                         attribute is ill-formed" ]
                  else [])
@@ -9390,7 +9483,7 @@ let wf067 ctx =
   let name_dups =
     dups_by norm (List.mapi (fun i fd -> (fd.fd_name, Printf.sprintf "/functionDefs/%d" i)) fds)
     |> List.map (fun (first, dup, at) ->
-           v "WF-067" at
+           v ~params:[("name", dup); ("first", first)] "WF-067.duplicate-function" at
              (Printf.sprintf "duplicate function name '%s' (already declared as '%s')" dup first))
   in
   (* [name] reaches itself through the invocation graph? *)
@@ -9412,12 +9505,12 @@ let wf067 ctx =
            let at = Printf.sprintf "/functionDefs/%d" i in
            (dups_by norm (List.map (fun (pn, _) -> (pn, at)) fd.fd_parameters)
             |> List.map (fun (first, dup, at') ->
-                   v "WF-067" at'
+                   v ~params:[("name", dup); ("first", first)] "WF-067.duplicate-parameter" at'
                      (Printf.sprintf "duplicate parameter name '%s' (already declared as '%s')" dup
                         first)))
            @ (match fd.fd_result with
              | Sum_type { domain_spec; _ } when sum_decl ctx domain_spec = None ->
-                 [ v "WF-067" at
+                 [ v ~params:[("domain", domain_spec)] "WF-067.result-sum-undeclared" at
                      ("result names sum-type domain '" ^ domain_spec ^ "', which is not a declared sum \
                        type") ]
              | _ -> [])
@@ -9438,7 +9531,7 @@ let wf067 ctx =
               with
              | None, _ -> []
              | Some bt, r when not (same_datatype bt r) ->
-                 [ v "WF-067" (at ^ "/body/type")
+                 [ v ~params:[("bodyType", detail_vs bt ~against:r); ("resultType", detail_vs r ~against:bt)] "WF-067.body-type-mismatch" (at ^ "/body/type")
                      ("the body is " ^ detail_vs bt ~against:r ^ ", but the declared result is "
                     ^ detail_vs r ~against:bt) ]
              | _ -> [])
@@ -9449,7 +9542,7 @@ let wf067 ctx =
                ~binders:(List.map (fun (n, dt) -> (n, Some dt)) fd.fd_parameters)
                ~subject:None ~body:(Closed_pos ("WF-067", [])) (at ^ "/body") fd.fd_body
            @ (if reaches ~target:fd.fd_name ~visited:[ norm fd.fd_name ] fd.fd_name then
-                [ v "WF-067" at
+                [ v ~params:[("name", fd.fd_name)] "WF-067.recursive-cycle" at
                     ("function '" ^ fd.fd_name
                    ^ "' is part of a recursive invocation cycle — the invocation graph must be \
                       acyclic") ]
@@ -9474,13 +9567,13 @@ let wf086 ctx =
          let at = Printf.sprintf "/prioritizedDefaults/%d" i in
          match (l.pd_attribute, l.pd_characteristic, object_type ctx l.pd_subject) with
          | Some a, _, Some ot when attr_temporal ot a ->
-             [ v "WF-086" at
+             [ v ~params:[("attribute", a)] "WF-086.temporal-attribute-target" at
                  ("defaults target '" ^ a
                 ^ "' is a temporal attribute (declared granularity) — a defaults group decides \
                    at one fixpoint and cannot write a timeline (ch. 6)") ]
          | _, Some k, Some ot
            when List.exists (fun (n, _) -> norm n = norm k) ot.characteristic_granularity ->
-             [ v "WF-086" at
+             [ v ~params:[("characteristic", k)] "WF-086.temporal-characteristic-target" at
                  ("defaults target '" ^ k
                 ^ "' is a temporal characteristic (declared granularity) — a defaults group \
                    decides at one fixpoint and cannot write a timeline (ch. 6)") ]
@@ -9505,7 +9598,7 @@ let wf103 ctx =
       match ot.ot_supertype with
       | Some s when declared_object_type ctx s = None ->
           Some
-            (v "WF-103"
+            (v ~params:[("supertype", s)] "WF-103.supertype-undeclared"
                ("/objecttypen/" ^ key ^ "/supertype")
                ("supertype '" ^ s
               ^ "' is not a declared object type: the chain ends at a name nothing declares, so \
@@ -9546,7 +9639,7 @@ let wf104 ctx =
         let cyc = take [] path in
         let names = String.concat " -> " (List.map name (cyc @ [ i ])) in
         viols :=
-          v "WF-104"
+          v ~params:[("cycle", names)] "WF-104.supertype-cycle"
             ("/objecttypen/" ^ name i ^ "/supertype")
             ("supertype cycle (a type would be its own ancestor, so member resolution has no \
               root to stop at): " ^ names)
@@ -9593,7 +9686,7 @@ let wf105 ctx =
             | None -> None
             | Some anc ->
                 Some
-                  (v "WF-105" at
+                  (v ~params:[("kind", what); ("name", name); ("ancestor", anc)] "WF-105.name-redeclared" at
                      (Printf.sprintf
                         "%s '%s' is already declared on '%s' further up the chain: a subtype \
                          never redeclares an inherited name (one instance would carry two \
@@ -9769,17 +9862,24 @@ let wf113 ctx =
     (fun (at, (d : diagnostic)) ->
       (match severity_refusal d.diag_severity with
       | None -> []
-      | Some sentence -> [ v "WF-113" (at ^ "/severity") sentence ])
+      | Some sentence ->
+          let slug =
+            match d.diag_severity with
+            | Some Sev_error -> "severity-error"
+            | Some Sev_info -> "severity-info"
+            | _ -> "severity-missing"
+          in
+          [ v ("WF-113." ^ slug) (at ^ "/severity") sentence ])
       @ (match d.message with
         | Some m when not (blank m) -> []
         | _ ->
-            [ v "WF-113" (at ^ "/message")
+            [ v "WF-113.message-blank" (at ^ "/message")
                 "diagnostic with an empty or blank message: an entry that says nothing accounts \
                  for nothing" ])
       @
       if d.diag_line >= 0 then []
       else
-        [ v "WF-113" (at ^ "/line")
+        [ v ~params:[("line", string_of_int d.diag_line)] "WF-113.line-negative" (at ^ "/line")
             (Printf.sprintf
                "diagnostic with line %d: a line is a source position, and 0 is the value for \
                 none (a hand-built document, or a producer warning without a token)"
@@ -9789,10 +9889,10 @@ let wf113 ctx =
       (fun (at, sources_of) ->
         List.filter_map
           (function
-            | None -> Some (v "WF-113" at marker_without_source)
+            | None -> Some (v "WF-113.marker-without-source" at marker_without_source)
             | Some b when blank b ->
                 Some
-                  (v "WF-113" at
+                  (v "WF-113.marker-blank-source" at
                      "Unresolved marker whose source snippet is blank: blank counts as absent, \
                       since nearly every message contains it and a message about another \
                       marker would account for this one")
@@ -9807,7 +9907,7 @@ let wf113 ctx =
                 then None
                 else
                   Some
-                    (v "WF-113" at
+                    (v ~params:[("marker", b)] "WF-113.marker-unaccounted" at
                        (Printf.sprintf
                           "Unresolved marker '%s' is not accounted for: no diagnostic message \
                            contains its source snippet verbatim"
@@ -9895,7 +9995,7 @@ let m1_named (doc : document) at =
    carry their wire pointers, mapped here because the executors' loader
    refuses the first of them itself ([Loader.reader]). (c) points at the
    timeline name, which is present where the fixed start point may not be. *)
-let wf115_findings (doc : document) : (string * string) list =
+let wf115_keyed (doc : document) : (string * (string * (string * string) list * string)) list =
   let named_item n =
     List.find_opt
       (fun tl -> match tl.tl_name with Some x -> tl_norm x = tl_norm n | None -> false)
@@ -9908,9 +10008,9 @@ let wf115_findings (doc : document) : (string * string) list =
            let at = Printf.sprintf "/tijdlijnen/%d/fixedStart" i in
            match (tl.tl_fixed_start_point, tl.variable_start, tl.tl_granularity) with
            | Some s, true, _ ->
-               [ (at, fixed_start_point_variable_refusal (Option.value tl.tl_name ~default:"") s) ]
+               [ (at, fixed_start_point_variable_arm (Option.value tl.tl_name ~default:"") s) ]
            | Some s, false, Some g ->
-               Option.to_list (Option.map (fun r -> (at, r)) (fixed_start_point_refusal g tl.tl_count s))
+               Option.to_list (Option.map (fun r -> (at, r)) (fixed_start_point_arm g tl.tl_count s))
            | _ -> [])
          doc.timelines)
   in
@@ -9923,7 +10023,7 @@ let wf115_findings (doc : document) : (string * string) list =
             (fun (one_member, (t : period)) ->
               match (t.tv_fixed_start_point, Option.join (find_ci granularities one_member), t.tv_count) with
               | Some s, Some g, Some n ->
-                  Option.map (fun r -> (at lookup_table one_member, r)) (fixed_start_point_refusal g n s)
+                  Option.map (fun r -> (at lookup_table one_member, r)) (fixed_start_point_arm g n s)
               | _ -> None)
             periods
         in
@@ -9941,7 +10041,7 @@ let wf115_findings (doc : document) : (string * string) list =
                   else
                     Some
                       ( at "attribuutTijdlijnNaam" one_member,
-                        fixed_start_point_adoption_refusal ~facet ~timeline_state:(Option.get ident)
+                        fixed_start_point_adoption_arm ~facet ~timeline_state:(Option.get ident)
                           ~from_timeline:tl.tl_fixed_start_point ))
             ot.attribute_timeline_names)
       doc.object_types
@@ -9953,13 +10053,17 @@ let wf115_findings (doc : document) : (string * string) list =
         | Some s, Some g, Some n ->
             Option.map
               (fun r -> ("/parameters/" ^ p ^ "/timeline/fixedStart", r))
-              (fixed_start_point_refusal g n s)
+              (fixed_start_point_arm g n s)
         | _ -> None)
       doc.parameters
   in
   List.map (fun (at, r) -> (m1_named doc (m1_root at), r)) (timelines @ facet_list @ parameters)
 
-let wf115 ctx = List.map (fun (at, r) -> v "WF-115" at r) (wf115_findings ctx.doc)
+(* the sentences alone, for the loader, which keeps no key *)
+let wf115_findings doc = List.map (fun (at, (_, _, sentence)) -> (at, sentence)) (wf115_keyed doc)
+
+let wf115 ctx =
+  List.map (fun (at, (slug, params, r)) -> v ~params ("WF-115." ^ slug) at r) (wf115_keyed ctx.doc)
 
 (* --- WF-116 to WF-120: the vocabulary side table (IR-SPEC ch. 2.12) ----- *)
 
@@ -10002,14 +10106,16 @@ let description (b : designatable) =
 
 (* WF-116: the vocabulary declarations. *)
 let wf116 (t : vocabulary_table) : violation list =
-  let v at reason = { wf = "WF-116"; at; reason } in
+  let v ?(params = []) slug at reason =
+    { wf = "WF-116"; key = "WF-116." ^ slug; params; at; reason }
+  in
   let ident =
     List.filter_map
       (fun (x : vocabulary) ->
         if is_word x.voc_name then None
         else
           Some
-            (v (x.voc_at ^ "/name")
+            (v ~params:[("vocabulary", x.voc_name)] "name-not-word" (x.voc_at ^ "/name")
                (Printf.sprintf
                   "vocabulary name '%s' is not a word: it is empty, or carries whitespace, a \
                    parenthesis or a colon"
@@ -10019,7 +10125,7 @@ let wf116 (t : vocabulary_table) : violation list =
   let duplicate =
     List.map
       (fun (leading, second, at) ->
-        v (at ^ "/name")
+        v ~params:[("first", leading); ("second", second)] "names-collide" (at ^ "/name")
           (Printf.sprintf "vocabularies '%s' and '%s' collide case-insensitively" leading second))
       (dups_by norm (List.map (fun (x : vocabulary) -> (x.voc_name, x.voc_at)) t.vt_vocabularies))
   in
@@ -10028,7 +10134,7 @@ let wf116 (t : vocabulary_table) : violation list =
     | leading :: rest ->
         List.map
           (fun (x : vocabulary) ->
-            v (x.voc_at ^ "/default")
+            v ~params:[("first", leading.voc_name); ("second", x.voc_name)] "multiple-defaults" (x.voc_at ^ "/default")
               (Printf.sprintf
                  "vocabularies '%s' and '%s' are both the default: a document has at most one default \
                   vocabulary"
@@ -10042,7 +10148,7 @@ let wf116 (t : vocabulary_table) : violation list =
         match x.voc_language with
         | Some l when not (is_language_code l) ->
             Some
-              (v (x.voc_at ^ "/language")
+              (v ~params:[("language", l); ("vocabulary", x.voc_name)] "language-not-code" (x.voc_at ^ "/language")
                  (Printf.sprintf "language '%s' of vocabulary '%s' is not a code: it is empty or carries \
                                   whitespace"
                     l x.voc_name))
@@ -10058,7 +10164,9 @@ let vocabulary_of (t : vocabulary_table) ident =
    (maintainer decision 2026-09-27): its form is asked whatever vocabulary it
    names. *)
 let wf117 (t : vocabulary_table) : violation list =
-  let v at reason = { wf = "WF-117"; at; reason } in
+  let v ?(params = []) slug at reason =
+    { wf = "WF-117"; key = "WF-117." ^ slug; params; at; reason }
+  in
   let per_element (b : designatable) =
     let rec loop seen_before = function
       | [] -> []
@@ -10067,7 +10175,7 @@ let wf117 (t : vocabulary_table) : violation list =
           let unknown =
             match vocabulary_of t x.ben_vocabulary with
             | None ->
-                [ v (x.ben_at ^ "/vocabulary")
+                [ v ~params:[("designation", d); ("vocabulary", x.ben_vocabulary)] "undeclared-vocabulary" (x.ben_at ^ "/vocabulary")
                     (Printf.sprintf
                        "designation '%s' names the vocabulary '%s', which the document does not declare"
                        d x.ben_vocabulary) ]
@@ -10078,7 +10186,7 @@ let wf117 (t : vocabulary_table) : violation list =
               List.find_opt (fun (y : designation) -> norm y.ben_vocabulary = norm x.ben_vocabulary) seen_before
             with
             | Some earlier ->
-                [ v x.ben_at
+                [ v ~params:[("vocabulary", x.ben_vocabulary); ("declaration", description b); ("first", earlier.ben_text); ("second", d)] "second-designation" x.ben_at
                     (Printf.sprintf "a second designation in the vocabulary '%s' on %s: '%s' and '%s'"
                        x.ben_vocabulary (description b) earlier.ben_text d) ]
             | None -> []
@@ -10086,14 +10194,14 @@ let wf117 (t : vocabulary_table) : violation list =
           let form_kind =
             (if is_trimmed d then []
              else
-               [ v (x.ben_at ^ "/designation")
+               [ v ~params:[("designation", d); ("vocabulary", x.ben_vocabulary)] "not-trimmed" (x.ben_at ^ "/designation")
                    (Printf.sprintf
                       "designation '%s' in the vocabulary '%s' is empty or not trimmed: a designation is \
                        text without whitespace at either end"
                       d x.ben_vocabulary) ])
             @
             if has_bracket d then
-              [ v (x.ben_at ^ "/designation")
+              [ v ~params:[("designation", d); ("vocabulary", x.ben_vocabulary)] "has-parenthesis" (x.ben_at ^ "/designation")
                   (Printf.sprintf
                      "designation '%s' in the vocabulary '%s' carries a parenthesis, which the source form \
                       (<vocabulary>: <designation>) cannot write"
@@ -10107,7 +10215,7 @@ let wf117 (t : vocabulary_table) : violation list =
   List.concat_map per_element t.vt_designatable
   @ List.map
       (fun (domain_spec, w, at) ->
-        v at (Printf.sprintf "a value designation names '%s', which the enumeration '%s' does not declare"
+        v ~params:[("value", w); ("domain", domain_spec)] "undeclared-value" at (Printf.sprintf "a value designation names '%s', which the enumeration '%s' does not declare"
                 w domain_spec))
       t.vt_separate_values
 
@@ -10139,7 +10247,9 @@ let link_chain (doc : document) ident =
    type the later member of the pair is declared on or inherited by first,
    which is the type whose own members take part in it. *)
 let wf118 (doc : document) (t : vocabulary_table) : violation list =
-  let v at reason = { wf = "WF-118"; at; reason } in
+  let v ?(params = []) slug at reason =
+    { wf = "WF-118"; key = "WF-118." ^ slug; params; at; reason }
+  in
   let plural = function
     | Bn_object_type -> "object types" | Bn_attribute -> "attributes"
     | Bn_characteristic -> "characteristics" | Bn_fact_type -> "fact types" | Bn_role -> "roles"
@@ -10159,7 +10269,9 @@ let wf118 (doc : document) (t : vocabulary_table) : violation list =
             (fun (b, (nb, db)) ->
               if norm denominator_a = norm nb && (da || db) && tallies a b then
                 Some
-                  (v b.bn_at
+                  (v ~params:[("kind", plural a.bn_kind); ("first", a.bn_name); ("second", b.bn_name); ("scope", scope); ("name", nb); ("vocabulary", voc.voc_name)]
+                     (* the scope clause is part of the sentence: a scoped collision is an arm of its own *)
+                     (if scope = "" then "shared-effective-name" else "shared-scoped-name") b.bn_at
                      (Printf.sprintf "%s '%s' and '%s'%s share the effective name '%s' in the vocabulary '%s'"
                         (plural a.bn_kind) a.bn_name b.bn_name scope nb voc.voc_name))
               else None)
@@ -10218,7 +10330,9 @@ let wf119 (t : vocabulary_table) : violation list =
             | Some _ -> None
             | None ->
                 Some
-                  { wf = "WF-119"; at = b.bn_at;
+                  { wf = "WF-119"; key = "WF-119.no-designation";
+                    params = [ ("declaration", description b); ("vocabulary", voc.voc_name) ];
+                    at = b.bn_at;
                     reason =
                       Printf.sprintf "%s carries no designation in the default vocabulary '%s'"
                         (description b) voc.voc_name })
@@ -10242,7 +10356,10 @@ let wf120 (doc : document) (t : vocabulary_table) : violation list =
           match vocabulary_of t x.ben_vocabulary with
           | Some voc when (not voc.voc_default) && x.ben_text = b.bn_name && not (reported x.ben_text) ->
               Some
-                { wf = "WF-120"; at = x.ben_at ^ "/designation";
+                { wf = "WF-120"; key = "WF-120.redundant-designation";
+                  params = [ ("designation", x.ben_text); ("vocabulary", voc.voc_name);
+                             ("declaration", description b) ];
+                  at = x.ben_at ^ "/designation";
                   reason =
                     Printf.sprintf
                       "designation '%s' in the vocabulary '%s' spells the canonical name of %s, and no \
@@ -10282,19 +10399,22 @@ let origin_with_owner = [ "attribute"; "characteristic"; "role"; "enumerationVal
    rule's number, and every other reader refuses the document at load in the
    same sentence ([Loader.document]), because a reader that keeps the origin
    cannot hold a value its set does not name. *)
-let origin_refusal (h : origin) : (string * string) option =
+let origin_refusal_keyed (h : origin) : (string * (string * string) list * string * string) option =
   let element_list xs = String.concat ", " (List.map (Printf.sprintf "'%s'") xs) in
   if not (List.mem h.hk_form origin_forms) then
     Some
-      ( h.hk_at ^ "/form",
+      ( "unknown-form", [ ("form", h.hk_form) ], h.hk_at ^ "/form",
         Printf.sprintf "the origin form '%s' is none of the forms of IR-SPEC ch. 2.13 (%s)" h.hk_form
           (element_list origin_forms) )
   else if not (List.mem_assoc h.hk_kind origin_kinds) then
     Some
-      ( h.hk_at ^ "/from/kind",
+      ( "unknown-kind", [ ("kind", h.hk_kind) ], h.hk_at ^ "/from/kind",
         Printf.sprintf "the origin's source kind '%s' is none of the kinds of IR-SPEC ch. 2.13 (%s)"
           h.hk_kind (element_list (List.map fst origin_kinds)) )
   else None
+
+(* the pointer and sentence alone, for the loader, which keeps no key *)
+let origin_refusal h = Option.map (fun (_, _, at, r) -> (at, r)) (origin_refusal_keyed h)
 
 (* The declaration an origin's 'from' names: of its kind, under the name
    identity of ch. 2.1, within its owner for a scoped kind. An attribute or a
@@ -10327,7 +10447,9 @@ let origin_names (h : origin) =
    document; (d) the kind the form names. A clause that needs a value (a)
    refuses is not asked. *)
 let wf121 (t : vocabulary_table) : violation list =
-  let v at reason = { wf = "WF-121"; at; reason } in
+  let v ?(params = []) slug at reason =
+    { wf = "WF-121"; key = "WF-121." ^ slug; params; at; reason }
+  in
   let carriers =
     List.filter_map
       (fun (b : designatable) -> Option.map (fun h -> (b, h)) b.bn_origin)
@@ -10342,7 +10464,7 @@ let wf121 (t : vocabulary_table) : violation list =
   in
   List.concat_map
     (fun ((b : designatable), (h : origin)) ->
-      let a = match origin_refusal h with Some (at, r) -> [ v at r ] | None -> [] in
+      let a = match origin_refusal_keyed h with Some (slug, params, at, r) -> [ v ~params slug at r ] | None -> [] in
       let kind_known = List.mem_assoc h.hk_kind origin_kinds in
       let bv =
         if not kind_known then []
@@ -10351,13 +10473,13 @@ let wf121 (t : vocabulary_table) : violation list =
           let holder =
             match (scoped, h.hk_owner) with
             | true, None ->
-                [ v (h.hk_at ^ "/from")
+                [ v ~params:[("declaration", description b); ("kind", h.hk_kind); ("name", h.hk_name)] "source-needs-owner" (h.hk_at ^ "/from")
                     (Printf.sprintf
                        "the origin of %s comes from the %s '%s' without an owner, and a source of that kind \
                         names the declaration that scopes it"
                        (description b) h.hk_kind h.hk_name) ]
             | false, Some o ->
-                [ v (h.hk_at ^ "/from/owner")
+                [ v ~params:[("declaration", description b); ("kind", h.hk_kind); ("name", h.hk_name); ("owner", o)] "source-has-owner" (h.hk_at ^ "/from/owner")
                     (Printf.sprintf
                        "the origin of %s comes from the %s '%s' with the owner '%s', and a source of that \
                         kind has none"
@@ -10367,7 +10489,7 @@ let wf121 (t : vocabulary_table) : violation list =
           let exists =
             if h.hk_kind = "decisionTable" || holder <> [] || origin_source t h <> None then []
             else
-              [ v (h.hk_at ^ "/from")
+              [ v ~params:[("declaration", description b); ("source", origin_names h)] "source-undeclared" (h.hk_at ^ "/from")
                   (Printf.sprintf "the origin of %s comes from %s, which the document does not declare"
                      (description b) (origin_names h)) ]
           in
@@ -10376,7 +10498,7 @@ let wf121 (t : vocabulary_table) : violation list =
       let c =
         match origin_source t h with
         | Some x when x.bn_at = b.bn_at ->
-            [ v (h.hk_at ^ "/from")
+            [ v ~params:[("declaration", description b)] "source-self" (h.hk_at ^ "/from")
                 (Printf.sprintf "the origin of %s names that declaration itself" (description b)) ]
         | Some first -> (
             (* follow the origins from [b]; report a cycle through [b] at the
@@ -10394,7 +10516,7 @@ let wf121 (t : vocabulary_table) : violation list =
             in
             match loop [] first with
             | Some cycle when List.for_all (fun y -> index b < index y) cycle ->
-                [ v (h.hk_at ^ "/from")
+                [ v ~params:[("declaration", description b); ("cycle", String.concat ", " (List.map description cycle))] "origin-cycle" (h.hk_at ^ "/from")
                     (Printf.sprintf "following 'from' from %s through %s comes back to it: the origins form a cycle"
                        (description b)
                        (String.concat ", " (List.map description cycle))) ]
@@ -10404,7 +10526,7 @@ let wf121 (t : vocabulary_table) : violation list =
       let d =
         match origin_source_kind h.hk_form with
         | Some expected_value when kind_known && expected_value <> h.hk_kind ->
-            [ v (h.hk_at ^ "/from/kind")
+            [ v ~params:[("declaration", description b); ("form", h.hk_form); ("expectedKind", expected_value); ("kind", h.hk_kind)] "form-kind-mismatch" (h.hk_at ^ "/from/kind")
                 (Printf.sprintf
                    "the origin of %s has the form '%s', which comes from a source of kind '%s', and its \
                     source is of kind '%s'"

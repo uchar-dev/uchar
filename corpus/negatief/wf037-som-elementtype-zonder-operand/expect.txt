@@ -1,1 +1,3 @@
-a sum aggregation carries elementType "Vondst" but no source operand
+WF-037.aggregation-no-source
+function=sum
+objectType=Vondst

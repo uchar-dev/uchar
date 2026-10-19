@@ -1,1 +1,4 @@
-the last step's bound role 'ingepakte kist' fills 'Kist', but the fold's elementType is 'Vondst' — the path must land on the element type
+WF-102.path-misses-element
+role=ingepakte kist
+filler=Kist
+elementType=Vondst

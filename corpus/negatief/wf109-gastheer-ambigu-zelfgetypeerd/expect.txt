@@ -1,1 +1,3 @@
-the characteristic check is hosted on 'Wachter', which the anchor 'Wachter' and the target 'Wachter' both are
+WF-109.several-hits
+host=Wachter
+hits=the anchor 'Wachter' and the target 'Wachter'

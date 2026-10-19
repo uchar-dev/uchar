@@ -1,1 +1,6 @@
-decimals mismatch: the rounding is typed 4 decimals, but the type derived from its base and its decimal count is 0 decimals
+WF-091.facet-mismatch
+facet=decimals
+subject=the rounding
+type=4 decimals
+source=the type derived from its base and its decimal count
+sourceType=0 decimals

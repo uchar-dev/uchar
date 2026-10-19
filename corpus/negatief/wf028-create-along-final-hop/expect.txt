@@ -1,1 +1,1 @@
-the created relation must differ from the relation of the final hop
+WF-028.relation-equals-hop

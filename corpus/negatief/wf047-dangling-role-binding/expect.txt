@@ -1,1 +1,3 @@
-role binding names no declared role 'bewaker' of fact type 'bergingsdeelname' (the plural does not bind)
+WF-047.role-undeclared
+role=bewaker
+factType=bergingsdeelname

@@ -1,1 +1,1 @@
-is empty or not trimmed: a designation is text without whitespace at either end
+WF-117.not-trimmed

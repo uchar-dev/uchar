@@ -1,1 +1,1 @@
-empty-value fallback on a non-sum aggregation
+WF-037.empty-fallback-kind

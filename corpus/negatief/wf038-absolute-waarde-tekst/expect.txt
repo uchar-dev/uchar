@@ -1,1 +1,3 @@
-absoluteValue operand is text, must be a number
+WF-038.builtin-not-number
+function=absoluteValue
+type=text

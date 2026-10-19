@@ -1,1 +1,3 @@
-fold-source subjectType 'Boot' is not the fold's anchor 'Vondst' (a set source reads each member of the elementType)
+WF-083.set-source-anchor
+subjectType=Boot
+anchor=Vondst

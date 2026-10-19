@@ -1,1 +1,2 @@
-context value 'evaluationYear' is annotated with a type other than the one its name fixes: a whole Number with 0 decimals, the sign unspecified and no unit
+WF-098.context-year-type
+name=evaluationYear

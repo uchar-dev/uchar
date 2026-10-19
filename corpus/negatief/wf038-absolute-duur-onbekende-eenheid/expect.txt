@@ -1,1 +1,3 @@
-absoluteDuration: the counted unit 'vadem' is neither a recognised time unit nor a declared day kind
+WF-038.duration-unknown-unit
+function=absoluteDuration
+unit=vadem

@@ -1,1 +1,2 @@
-literal '-0' is written into a target under a negative sign restriction
+WF-039.target-negative
+lexeme=-0

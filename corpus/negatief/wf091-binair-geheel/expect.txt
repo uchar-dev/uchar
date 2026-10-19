@@ -1,1 +1,6 @@
-wholeness mismatch: the plus composite is typed whole, but the type derived from its operands is fractional
+WF-091.facet-mismatch
+facet=wholeness
+subject=the plus composite
+type=whole
+source=the type derived from its operands
+sourceType=fractional

@@ -1,1 +1,3 @@
-the navigation reaches 'Jutter', not the endpoint 'Strandjutter'
+WF-053.endpoint-not-reached
+reached=Jutter
+endpoint=Strandjutter

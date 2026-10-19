@@ -1,1 +1,2 @@
-enumeration use site disagrees with the declaration of domain 'keurstatus' (the same values, in declaration order, required)
+WF-088.use-site-disagrees
+domain=keurstatus

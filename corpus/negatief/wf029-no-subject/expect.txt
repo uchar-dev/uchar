@@ -1,1 +1,1 @@
-consistency without a subject type
+WF-029.no-subject-type

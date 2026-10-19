@@ -218,6 +218,20 @@ and `params`). The card's gain is survival of rewording — the verifier has
 no second language and no catalogue — against 441 sites and 354 files; it
 may go last (§7).
 
+*Landed 2026-10-19 (card `verifier-arm-keys`).* The count on `main` was 458
+violation sites over 111 rules, not 441 over 104 (435 calls of `v "WF-###"`,
+17 of a rule-local `v`, 2 direct records, 4 sites whose rule is a value).
+`Checks.violation` carries `key` and `params`; `v` takes the key, so a call
+with a bare `WF-###` raises where it is built and gate 3 refuses it in the
+source. The report line is `WF-###.<slug> FAIL <pointer>: <message>`, the
+message unchanged, and `verifier --arms` prints key, pointer and parameters as
+JSON. All 354 `expect.txt` files are a key line plus `name=value` lines (213
+distinct keys, 572 pairs); gate 3 matches the pairs as a subset against the
+parameters of one violation, and refuses a key with two message templates. A
+helper that builds a sentence for several arms (`resolve_binding`, `nav_hops`,
+`literal_sign_refusal`, `wf109_host_sentence`, `fixed_start_point_refusal`)
+returns the slug and the parameters with the sentence.
+
 ### 2.3 Refusals by an executor — not normative
 
 A refusal says what one executor does not carry; another executor may carry

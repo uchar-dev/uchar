@@ -1,1 +1,2 @@
-millisecond-precision date literal lexeme '2026-03-15T12:00' is not the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff]
+WF-095.date-time-lexeme
+lexeme=2026-03-15T12:00

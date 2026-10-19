@@ -1,1 +1,4 @@
-a filledCount aggregation carries elementType "Vondst" and a Literal operand
+WF-037.aggregation-non-source
+function=filledCount
+objectType=Vondst
+operand=a Literal

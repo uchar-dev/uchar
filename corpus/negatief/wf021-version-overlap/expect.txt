@@ -1,1 +1,4 @@
-validity windows of versions 'Kenmerktoekenning jutter penninggerechtigd #1' and 'Kenmerktoekenning jutter penninggerechtigd #2' overlap (rules)
+WF-021.windows-overlap
+first=Kenmerktoekenning jutter penninggerechtigd #1
+second=Kenmerktoekenning jutter penninggerechtigd #2
+namespace=rules

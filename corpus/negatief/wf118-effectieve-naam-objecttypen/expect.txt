@@ -1,1 +1,4 @@
-object types 'Jutter' and 'Vondst' share the effective name
+WF-118.shared-effective-name
+kind=object types
+first=Jutter
+second=Vondst

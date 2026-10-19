@@ -1,1 +1,4 @@
-validity windows of versions 'werf de opvolger #1' and 'werf de opvolger #2' overlap (objectCreations)
+WF-021.windows-overlap
+first=werf de opvolger #1
+second=werf de opvolger #2
+namespace=objectCreations

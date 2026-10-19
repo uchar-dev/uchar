@@ -1,1 +1,3 @@
-wholePeriod qualifier (affirmative) on the gedurende clip member 'aangesteld'
+WF-097.clip-member-qualifier
+polarity=affirmative
+characteristic=aangesteld

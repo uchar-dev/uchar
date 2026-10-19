@@ -1,1 +1,4 @@
-an object creation also initialises defaults target 'Strandrecht.uitkering' through its type chain — the group declared on Strandrecht, the created type Wrakrecht — and an object creation is never folded into a stack, so an instance of Wrakrecht it creates has both writers
+WF-050.creation-through-chain
+objectType=Strandrecht
+target=uitkering
+createdType=Wrakrecht

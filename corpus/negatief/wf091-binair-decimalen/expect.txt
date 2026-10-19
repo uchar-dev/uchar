@@ -1,1 +1,6 @@
-decimals mismatch: the plus composite is typed 2 decimals, but the type derived from its operands is 4 decimals
+WF-091.facet-mismatch
+facet=decimals
+subject=the plus composite
+type=2 decimals
+source=the type derived from its operands
+sourceType=4 decimals

@@ -1,1 +1,1 @@
-allocation without a source attribute: it resolves against no declaration
+WF-034.no-source-attribute

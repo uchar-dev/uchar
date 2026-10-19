@@ -1,1 +1,6 @@
-decimals mismatch: the count aggregation is typed 2 decimals, but the type a count derives is 0 decimals
+WF-091.facet-mismatch
+facet=decimals
+subject=the count aggregation
+type=2 decimals
+source=the type a count derives
+sourceType=0 decimals

@@ -1,1 +1,2 @@
-source type 'Vondsten' is not declared
+WF-030.undeclared-source-type
+objectType=Vondsten

@@ -1,1 +1,1 @@
-statute annotation carries leading/trailing whitespace — entries are trimmed
+WF-082.annotation-whitespace

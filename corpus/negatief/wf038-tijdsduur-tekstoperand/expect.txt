@@ -1,1 +1,3 @@
-duration operand is text, must be a date
+WF-038.duration-not-date
+function=duration
+type=text

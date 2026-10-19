@@ -3769,7 +3769,7 @@ let evaluate env world =
      answering on a graph the verifier would reject *)
   (match Ir_v0.Checks.wf045_046 { doc = env.doc } with
   | [] -> ()
-  | { Ir_v0.Checks.wf; at; reason } :: _ ->
+  | { Ir_v0.Checks.wf; at; reason; _ } :: _ ->
       Value.fault "%s at %s: %s — the dependency graph is ill-formed; ref/ refuses to evaluate"
         wf at reason);
   parameter_set_check env;

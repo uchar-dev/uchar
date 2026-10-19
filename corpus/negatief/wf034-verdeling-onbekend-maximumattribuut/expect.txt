@@ -1,1 +1,5 @@
-'bestaatniet' is not a declared attribute of the target type 'Berger': the allocation's maximumAttribute resolves against no declaration
+WF-034.undeclared-allocation-attribute
+attribute=bestaatniet
+side=target
+objectType=Berger
+field=maximumAttribute

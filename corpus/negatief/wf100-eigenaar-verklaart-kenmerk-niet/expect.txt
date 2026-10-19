@@ -1,1 +1,3 @@
-'gekeurd' is not a declared characteristic of 'Jutter'
+WF-100.characteristic-undeclared
+characteristic=gekeurd
+objectType=Jutter

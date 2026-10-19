@@ -1,1 +1,2 @@
-of the enumeration 'Vondstsoort' share the effective name
+WF-118.shared-scoped-name
+scope= of the enumeration 'Vondstsoort'

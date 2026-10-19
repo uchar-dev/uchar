@@ -1,1 +1,2 @@
-pro-rata bucket granularity differs from the target's declared granularity
+WF-056.bucket-granularity-differs
+function=pro-rata

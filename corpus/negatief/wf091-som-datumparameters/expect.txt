@@ -1,1 +1,5 @@
-the sum of the parameter 'peildatum' folds Date values
+WF-091.numeric-operand-refused
+aggregation=the sum
+operand=the parameter 'peildatum'
+verb=folds
+type=Date

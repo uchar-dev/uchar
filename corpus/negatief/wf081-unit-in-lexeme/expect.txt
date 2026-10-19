@@ -1,1 +1,2 @@
-numeric literal lexeme '5 €' is not a number of the case format
+WF-081.number-lexeme-refused
+lexeme=5 €

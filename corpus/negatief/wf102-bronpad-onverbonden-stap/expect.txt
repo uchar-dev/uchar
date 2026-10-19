@@ -1,1 +1,4 @@
-the opposite role 'verpakte vondst' fills 'Vondst', but this step starts at 'Boot'
+WF-102.path-not-connected
+role=verpakte vondst
+filler=Vondst
+startType=Boot

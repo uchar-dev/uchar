@@ -1,1 +1,3 @@
-a number value is assigned to a text target
+WF-023.datatype-family-mismatch
+valueKind=number
+targetKind=text

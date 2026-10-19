@@ -1,1 +1,3 @@
-an allocation also writes defaults target 'Berging.onverdeelde rest'
+WF-050.allocation-also-writes
+objectType=Berging
+attribute=onverdeelde rest

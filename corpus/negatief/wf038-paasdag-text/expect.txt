@@ -1,1 +1,2 @@
-easterSunday operand is text, must be a whole unitless number
+WF-038.easter-sunday-operand
+type=text

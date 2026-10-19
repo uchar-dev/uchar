@@ -1,1 +1,1 @@
-the count is an INSTANCE fold and MUST carry an element type
+WF-037.count-element-type

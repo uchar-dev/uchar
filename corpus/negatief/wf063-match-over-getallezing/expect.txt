@@ -1,1 +1,2 @@
-match scrutinee is number, which is no keuzetype
+WF-063.scrutinee-not-choice
+type=number

@@ -12440,16 +12440,18 @@ let () =
     (fun (form_kind, truth, via, wf, _) ->
       let j = Yojson.Safe.from_string (substitute base ~truth ~via) in
       let finding =
-        List.filter
-          (fun (x : Ir_v0.Checks.violation) -> x.wf = wf)
-          (Ir_v0.Checks.all (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier j))
+        List.map
+          (fun (x : Ir_v0.Checks.violation) -> (x.wf, x.at, x.reason))
+          (List.filter
+             (fun (x : Ir_v0.Checks.violation) -> x.wf = wf)
+             (Ir_v0.Checks.all (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier j)))
       in
       let ident = "L4-laadtabel: " ^ form_kind ^ " is de " ^ wf ^ "-bevinding van de verifier" in
       match Ir_v0.Loader.document j with
       | (_ : Ir_v0.Ast.document) -> check (ident ^ " (het document laadt)") false
       | exception Ir_v0.Loader.Error (at, m) ->
           check (ident ^ " (" ^ at ^ ": " ^ m ^ ")")
-            (finding = [ { Ir_v0.Checks.wf; at; reason = m } ]))
+            (finding = [ (wf, at, m) ]))
     spelling_set
 
 (* A fact creation's two named roles, over the wire: the loader reads a
@@ -12579,10 +12581,11 @@ let () =
   in
   check "kv-eenstap: de verifier weigert met WF-108 op het pad"
     (List.mem
-       { Ir_v0.Checks.wf = "WF-108"; at = "/rules/rules/0/versions/0/condition/sourcePath";
-         reason = sentence_text }
-       (Ir_v0.Checks.all
-          (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir))));
+       ("WF-108", "/rules/rules/0/versions/0/condition/sourcePath", sentence_text)
+       (List.map
+          (fun (x : Ir_v0.Checks.violation) -> (x.wf, x.at, x.reason))
+          (Ir_v0.Checks.all
+             (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir)))));
   let doc, case = load_pair ~ir ~case_text in
   (match ref_report doc case with
   | (_ : string list) -> check "kv-eenstap: ref weigert (kreeg een wereld)" false
@@ -12634,9 +12637,11 @@ let () =
   let rejected ident ir case_text at =
     check (ident ^ ": de verifier weigert met WF-037")
       (List.mem
-         { Ir_v0.Checks.wf = "WF-037"; at; reason = sentence_text }
-         (Ir_v0.Checks.all
-            (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir))));
+         ("WF-037", at, sentence_text)
+         (List.map
+            (fun (x : Ir_v0.Checks.violation) -> (x.wf, x.at, x.reason))
+            (Ir_v0.Checks.all
+               (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir)))));
     let doc, case = load_pair ~ir ~case_text in
     (match ref_report doc case with
     | (_ : string list) -> check (ident ^ ": ref weigert (kreeg een wereld)") false

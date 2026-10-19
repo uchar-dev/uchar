@@ -1,1 +1,4 @@
-a count aggregation carries elementType "Vondst" and a Binary operand
+WF-037.aggregation-non-source
+function=count
+objectType=Vondst
+operand=a Binary

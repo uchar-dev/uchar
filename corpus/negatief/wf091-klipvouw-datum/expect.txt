@@ -1,1 +1,6 @@
-the total of 'wachtvergoeding per maand' on 'Klipjutter' folds Date values: a total, sum or pro-rata part is arithmetic over a Number, and Date values are calendar positions
+WF-091.numeric-operand-refused
+aggregation=the total
+operand='wachtvergoeding per maand' on 'Klipjutter'
+verb=folds
+type=Date
+reason=Date values are calendar positions

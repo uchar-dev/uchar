@@ -1,1 +1,3 @@
-unit 'kg' names canonical unit 'g' but carries no conversion factor into it
+WF-092.canonical-without-factor
+unit='kg'
+canonical=g

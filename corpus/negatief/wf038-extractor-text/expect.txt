@@ -1,1 +1,2 @@
-day-precision extractor operand is text, must be a date
+WF-038.day-precision-extractor
+type=text

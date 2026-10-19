@@ -1,1 +1,1 @@
-allocation without a target object type: it resolves against no declaration
+WF-034.no-target-type

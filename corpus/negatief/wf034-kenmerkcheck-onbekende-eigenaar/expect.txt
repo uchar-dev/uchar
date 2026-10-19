@@ -1,1 +1,2 @@
-characteristic check's host 'Bestaatniet' is not a declared object type
+WF-034.host-undeclared
+objectType=Bestaatniet

@@ -1,1 +1,3 @@
-a value designation names 'gruis', which the enumeration 'Vondstsoort' does not declare
+WF-117.undeclared-value
+value=gruis
+domain=Vondstsoort

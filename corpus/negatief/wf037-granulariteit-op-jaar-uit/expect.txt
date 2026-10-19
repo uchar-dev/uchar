@@ -1,1 +1,1 @@
-granularity facet on a non-bucketing kind
+WF-037.granularity-non-bucketing

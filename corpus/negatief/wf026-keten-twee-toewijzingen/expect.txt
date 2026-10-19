@@ -1,1 +1,4 @@
-two allocations write target (Hoofdberger, bergingsaandeel) through its type chain — one ranging over Berger, one over Hoofdberger — and an allocation is never folded into a stack, so an instance of Hoofdberger receives both shares
+WF-026.chain-target-twice
+objectType=Hoofdberger
+attribute=bergingsaandeel
+otherObjectType=Berger

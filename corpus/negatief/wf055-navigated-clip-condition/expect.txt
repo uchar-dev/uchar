@@ -1,1 +1,1 @@
-the gedurende condition is an own temporal characteristic check, a per-segment comparison of an own temporal attribute
+WF-055.during-condition-shape

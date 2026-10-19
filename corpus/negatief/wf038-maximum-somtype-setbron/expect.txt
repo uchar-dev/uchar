@@ -1,1 +1,3 @@
-operand of the maximum ordering fold is sumtype, must be a number or a date
+WF-038.ordering-fold-operand
+function=maximum
+type=sumtype

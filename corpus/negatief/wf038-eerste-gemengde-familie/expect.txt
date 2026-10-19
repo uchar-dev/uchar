@@ -1,1 +1,2 @@
-first orders operands of two comparable families, numbers and dates, which share no ordering
+WF-038.fold-number-date
+function=first

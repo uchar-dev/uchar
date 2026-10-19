@@ -1,1 +1,2 @@
-context value 'evaluationDate' is annotated with a type other than the one its name fixes: a day-precision Date
+WF-098.context-date-type
+name=evaluationDate

@@ -1,1 +1,6 @@
-wholeness mismatch: the times composite is typed whole, but the type derived from its operands is fractional
+WF-091.facet-mismatch
+facet=wholeness
+subject=the times composite
+type=whole
+source=the type derived from its operands
+sourceType=fractional

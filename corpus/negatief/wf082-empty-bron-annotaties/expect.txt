@@ -1,1 +1,1 @@
-statuteAnnotations is empty — an annotation-free rule omits the field entirely
+WF-082.annotations-empty

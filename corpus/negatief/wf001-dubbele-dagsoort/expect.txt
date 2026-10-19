@@ -1,1 +1,4 @@
-namespace 'dayKinds': names 'schouwdag' and 'Schouwdag' collide case-insensitively
+WF-001.namespace-collision
+label=dayKinds
+first=schouwdag
+second=Schouwdag

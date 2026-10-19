@@ -1,1 +1,3 @@
-does not fill the role 'wachtjutter' of fact type 'wachtindeling'
+WF-034.subject-not-filling
+role=wachtjutter
+factType=wachtindeling

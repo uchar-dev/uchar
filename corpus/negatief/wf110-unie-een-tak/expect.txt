@@ -1,1 +1,1 @@
-an instance-set union carries at least TWO selections and this one carries 1
+WF-110.union-single-selection

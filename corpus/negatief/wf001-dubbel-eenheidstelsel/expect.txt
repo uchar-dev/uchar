@@ -1,1 +1,4 @@
-namespace 'unitSystems': names 'Gewicht' and 'gewicht' collide case-insensitively
+WF-001.namespace-collision
+label=unitSystems
+first=Gewicht
+second=gewicht

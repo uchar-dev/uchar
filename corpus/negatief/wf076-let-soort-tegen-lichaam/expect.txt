@@ -1,1 +1,3 @@
-the let type (text) differs from its body type (number(0 decimals))
+WF-076.let-type-differs
+letType=text
+bodyType=number(0 decimals)

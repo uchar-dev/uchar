@@ -1,1 +1,3 @@
-is the plural 'schouwdagen' of day kind 'schouwdag': one spelling names two day kinds
+WF-017.plural-equals-plural
+otherPlural=schouwdagen
+otherDayKind=schouwdag

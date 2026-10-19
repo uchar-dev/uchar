@@ -1,1 +1,2 @@
-context value 'de dagX' is not one of the two admissible names evaluationDate, evaluationYear
+WF-098.context-name-refused
+name=de dagX

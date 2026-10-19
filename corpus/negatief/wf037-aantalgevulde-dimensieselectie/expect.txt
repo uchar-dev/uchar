@@ -1,1 +1,1 @@
-dimension selection on a kind other than sum/min/max
+WF-037.dimension-selection-kind

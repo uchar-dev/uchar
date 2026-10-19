@@ -1,1 +1,3 @@
-key 'vondstnummers' is not a declared attribute of 'Vondst'
+WF-030.undeclared-key
+attribute=vondstnummers
+objectType=Vondst

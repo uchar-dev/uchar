@@ -1,1 +1,2 @@
-attribute reference on 'Jutter' without an attribute name: it resolves against no declaration
+WF-034.ref-without-attribute
+objectType=Jutter

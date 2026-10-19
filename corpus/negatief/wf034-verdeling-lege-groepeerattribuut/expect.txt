@@ -1,1 +1,2 @@
-orderingAttribute is present but empty: an attribute name that names nothing resolves against no declaration
+WF-034.field-empty
+field=orderingAttribute

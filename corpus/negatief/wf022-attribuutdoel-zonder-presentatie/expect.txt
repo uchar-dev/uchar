@@ -1,1 +1,1 @@
-a version without a presentation and without initialisation attributes a characteristic, so its target MUST name one
+WF-022.characteristic-target-attribute

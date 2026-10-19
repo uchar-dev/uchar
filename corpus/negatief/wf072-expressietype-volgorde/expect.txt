@@ -1,1 +1,2 @@
-struct-type use site disagrees with the declaration of domain 'dossier'
+WF-072.use-site-disagrees
+domain=dossier

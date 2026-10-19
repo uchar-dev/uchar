@@ -1,1 +1,4 @@
-is no subtype of 'Jutter', the filler of the other role 'wachtjutter' of fact type 'wachtindeling'
+WF-034.counterpart-not-subtype
+filler=Jutter
+otherRole=wachtjutter
+factType=wachtindeling

@@ -1,1 +1,3 @@
-two unconditional computing rules write target (Jutter, uitkomst) with no prioritized defaults
+WF-079.computing-same-target
+objectType=Jutter
+attribute=uitkomst

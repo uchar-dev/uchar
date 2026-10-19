@@ -239,7 +239,7 @@ while IFS= read -r ir; do
   scen=$(basename "$(dirname "$ir")")
   vout=$("$VERIFIER" "$ir" 2>&1); vrc=$?
   if pin=$(vh_pin_of "$scen"); then
-    got=$(printf '%s\n' "$vout" | sed -n 's/^\(WF-[0-9][0-9]*\) FAIL \([^:]*\):.*/\1 \2/p')
+    got=$(printf '%s\n' "$vout" | sed -n 's/^\(WF-[0-9][0-9]*\)\(\.[a-z0-9-]*\)\{0,1\} FAIL \([^:]*\):.*/\1 \3/p')
     if [ $vrc -eq 0 ]; then
       VERIFY_FAIL+=("$scen: a verifier holdout, but verifier-clean now — the reason-carrying list is stale")
     elif [ $vrc -ne 1 ] || [ "$got" != "$pin" ]; then

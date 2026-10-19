@@ -1,1 +1,3 @@
-a count aggregation carries elementType "Vondst" and a ListLiteral operand
+WF-037.aggregation-list-source
+function=count
+objectType=Vondst

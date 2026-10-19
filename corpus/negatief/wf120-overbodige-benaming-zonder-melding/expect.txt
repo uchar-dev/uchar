@@ -1,1 +1,1 @@
-and no diagnostic accounts for it: a redundant designation is admitted with a warning whose message contains it
+WF-120.redundant-designation

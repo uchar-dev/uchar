@@ -1,1 +1,5 @@
-the bound role 'dossierhouder' fills 'Jutter', but the node names 'Dossier'
+WF-047.role-filler-mismatch
+side=bound
+role=dossierhouder
+filler=Jutter
+expected=Dossier

@@ -1,1 +1,2 @@
-the timeline facet of parameter 'penningbedrag' has count 2 > 1
+WF-005.parameter-above-one
+parameter=penningbedrag

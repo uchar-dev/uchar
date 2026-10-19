@@ -1,1 +1,3 @@
-squareRoot operand is text, must be a number
+WF-038.builtin-not-number
+function=squareRoot
+type=text

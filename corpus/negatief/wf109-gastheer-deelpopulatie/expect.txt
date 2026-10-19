@@ -1,1 +1,2 @@
-the characteristic check is hosted on 'Strandvondst', which no object bound here IS
+WF-109.only-some-objects
+host=Strandvondst

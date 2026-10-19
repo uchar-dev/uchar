@@ -1,1 +1,5 @@
-the first aggregation is typed with struct domain 'logboek', but operand 0 names struct domain 'dossier'
+WF-090.struct-domain-mismatch
+subject=the first aggregation
+domain=logboek
+source=operand 0
+sourceDomain=dossier

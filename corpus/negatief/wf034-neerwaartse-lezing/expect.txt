@@ -1,1 +1,3 @@
-'bergingsdiepte' is not a declared attribute of 'Strandrecht'
+WF-034.fold-attribute-undeclared
+attribute=bergingsdiepte
+objectType=Strandrecht

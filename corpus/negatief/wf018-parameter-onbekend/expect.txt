@@ -1,1 +1,2 @@
-parameter enumeration references undeclared domain 'Drempels'
+WF-018.undeclared-domain
+domain=Drempels

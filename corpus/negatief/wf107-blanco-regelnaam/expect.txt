@@ -1,1 +1,2 @@
-form in rules carries a blank name (a named form's identity on this wire IS its name
+WF-107.name-blank
+array=rules

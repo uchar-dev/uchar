@@ -1,1 +1,3 @@
-fold-source subjectType 'Jutter' is not the fold's anchor 'Vondst' (a fold without a range reads the subject's own attribute)
+WF-083.own-attribute-anchor
+subjectType=Jutter
+anchor=Vondst

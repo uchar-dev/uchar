@@ -1,1 +1,3 @@
-a second designation in the vocabulary 'handboek' on the object type 'Jutter'
+WF-117.second-designation
+vocabulary=handboek
+declaration=the object type 'Jutter'

@@ -1,1 +1,2 @@
-unit 'EUR' carries conversion factor 2/2, which is not in lowest terms
+WF-092.factor-not-lowest
+unit='EUR'

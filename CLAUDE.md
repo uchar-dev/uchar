@@ -183,7 +183,19 @@ reviewer's duty on a machine that has catala. Current gates:
    `: `, spaces included, and a FAIL line without that separator fails the
    gate; the count carries a floor `EXPECTED_MIN_POINTERS`), so a witness
    whose report points into the void no longer passes; an empty negatief
-   corpus is a failure, never silently green.
+   corpus is a failure, never silently green. Since 2026-10-19 (card
+   `verifier-arm-keys`) every violation carries a key `WF-###.<slug>` (one
+   per message template within a rule) and named parameters, the report
+   line is `WF-###.<slug> FAIL <pointer>: <message>`, and `verifier --arms`
+   prints key, pointer and parameters; `expect.txt` is a key line of the
+   declared rule plus `name=value` lines, matched as a subset against the
+   parameters of one violation, so a rewording of a message breaks no pin
+   (the fragment form above is history); gate 3 also refuses a key with two
+   message templates over the negatief reports and a violation built
+   without a key in `checks.ml`; floors `EXPECTED_MIN_ARMS=213`,
+   `EXPECTED_MIN_PARAM_LINES=572`, `EXPECTED_MIN_REPORT_KEYS=318` and
+   `EXPECTED_MIN_ARM_SITES=421` (measured 2026-10-19), `EXPECTED_MIN_EXPECT`
+   raised to 354 and `EXPECTED_MIN_POINTERS` to 619.
 4. `scripts/check-case-schema.sh` — the case schema
    (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
    `corpus/golden/**/case*.json` and `corpus/rood/**/case*.json`

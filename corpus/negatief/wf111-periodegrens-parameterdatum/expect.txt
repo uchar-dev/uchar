@@ -1,1 +1,3 @@
-the from bound of a time window is the parameter 'peildatum'
+WF-111.bound-form
+side=from
+form=the parameter 'peildatum'

@@ -1,1 +1,5 @@
-unit mismatch: the maximum aggregation is typed 't' of system 'Gewicht' (factor 1000 to 'kg'), but the type derived from its operands is 'kg' of
+WF-091.facet-mismatch
+facet=unit
+subject=the maximum aggregation
+type='t' of system 'Gewicht' (factor 1000 to 'kg')
+source=the type derived from its operands

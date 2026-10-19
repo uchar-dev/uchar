@@ -1,1 +1,3 @@
-two allocations write target (Jutter, aantal aangemelde vondsten)
+WF-026.target-written-twice
+objectType=Jutter
+attribute=aantal aangemelde vondsten

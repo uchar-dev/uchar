@@ -1,1 +1,3 @@
-unit 'm' declares unit system 'Afstandt', which no declaration carries: the unit resolves against no conversion table
+WF-034.undeclared-unit-system
+unit='m'
+unitSystem=Afstandt

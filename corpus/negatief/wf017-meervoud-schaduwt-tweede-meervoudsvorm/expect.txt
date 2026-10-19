@@ -1,1 +1,3 @@
-the plural 'secondes' of day kind 'stormvloeddag' shadows a built-in calendar unit
+WF-017.plural-shadows-calendar
+plural=secondes
+dayKind=stormvloeddag

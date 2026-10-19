@@ -1,1 +1,2 @@
-the read's date operand is date-ms, must be a day-precision date
+WF-049.date-not-day
+type=date-ms

@@ -1,1 +1,2 @@
-duration without a node type (the counted unit is the node type's unit)
+WF-038.duration-no-node
+function=duration

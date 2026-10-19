@@ -13,9 +13,31 @@ let () =
         | violations ->
             List.iter
               (fun (x : Ir_v0.Checks.violation) ->
-                Printf.printf "%s FAIL %s: %s\n" x.wf x.at x.reason)
+                Printf.printf "%s FAIL %s: %s\n" x.key x.at x.reason)
               violations;
             exit 1
+      with
+      | Ir_v0.Loader.Error (path, msg) ->
+          Printf.eprintf "LOAD ERROR at %s: %s\n"
+            (if path = "" then "<root>" else path) msg;
+          exit 2
+      | Sys_error e | Yojson.Json_error e ->
+          Printf.eprintf "LOAD ERROR: %s\n" e;
+          exit 2)
+  | [| _; "--arms"; file |] -> (
+      (* the machine form of the report, one line per violation:
+         key TAB pointer TAB {"name": "value", ...}; the text of the human
+         report stays as it is, and gate 3 reads the parameters here *)
+      try
+        let j = Yojson.Safe.from_file file in
+        let doc = Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier j in
+        let grid = Ir_v0.Loader.vocabularies j in
+        List.iter
+          (fun (x : Ir_v0.Checks.violation) ->
+            Printf.printf "%s\t%s\t%s\n" x.key x.at
+              (Yojson.Safe.to_string
+                 (`Assoc (List.map (fun (n, value) -> (n, `String value)) x.params))))
+          (Ir_v0.Checks.all doc @ Ir_v0.Checks.vocabularies doc grid)
       with
       | Ir_v0.Loader.Error (path, msg) ->
           Printf.eprintf "LOAD ERROR at %s: %s\n"
@@ -40,5 +62,5 @@ let () =
           Printf.eprintf "LOAD ERROR: %s\n" e;
           exit 2)
   | _ ->
-      prerr_endline "usage: verifier <ir.json> | verifier --dependency-edges <ir.json>";
+      prerr_endline "usage: verifier <ir.json> | verifier --arms <ir.json> | verifier --dependency-edges <ir.json>";
       exit 2

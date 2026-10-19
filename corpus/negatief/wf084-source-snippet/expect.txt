@@ -1,1 +1,2 @@
-date literal lexeme 'dd. 31-01-2024' is not the ISO form yyyy-mm-dd (fixed field widths, valid ranges — ch. 4.1)
+WF-084.date-lexeme-refused
+lexeme=dd. 31-01-2024

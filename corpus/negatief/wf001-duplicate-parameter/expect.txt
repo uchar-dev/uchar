@@ -1,1 +1,4 @@
-namespace 'parameters': names 'vondstdrempel' and 'Vondstdrempel' collide case-insensitively
+WF-001.namespace-collision
+label=parameters
+first=vondstdrempel
+second=Vondstdrempel

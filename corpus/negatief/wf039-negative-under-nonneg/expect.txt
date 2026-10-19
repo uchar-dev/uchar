@@ -1,1 +1,2 @@
-negative literal '-3' under a non-negative sign restriction
+WF-039.sign-non-negative
+lexeme=-3

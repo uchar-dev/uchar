@@ -1,1 +1,3 @@
-vocabularies 'handboek' and 'Handboek' collide case-insensitively
+WF-116.names-collide
+first=handboek
+second=Handboek

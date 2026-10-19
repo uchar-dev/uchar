@@ -1,1 +1,1 @@
-date ± date is ill-formed (date arithmetic takes a date and a duration)
+WF-035.date-plus-date

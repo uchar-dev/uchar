@@ -1,1 +1,1 @@
-timeline facet count 0 < 1
+WF-005.count-below-one

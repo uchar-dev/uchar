@@ -1,1 +1,1 @@
-power operands must be unitless
+WF-035.power-not-unitless

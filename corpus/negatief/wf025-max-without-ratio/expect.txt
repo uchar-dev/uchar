@@ -1,1 +1,1 @@
-maximum requires a ratio attribute
+WF-025.maximum-without-ratio

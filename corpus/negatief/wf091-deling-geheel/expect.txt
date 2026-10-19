@@ -1,1 +1,6 @@
-wholeness mismatch: the dividedBy composite is typed whole, but the type a quotient derives is fractional
+WF-091.facet-mismatch
+facet=wholeness
+subject=the dividedBy composite
+type=whole
+source=the type a quotient derives
+sourceType=fractional

@@ -1,1 +1,1 @@
-dimension-cell read without an attribute reference: it resolves against no declaration
+WF-034.cell-without-reference

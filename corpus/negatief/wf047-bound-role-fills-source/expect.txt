@@ -1,1 +1,5 @@
-the bound role 'berging' fills 'Berging', but the node names 'Berger'
+WF-047.role-filler-mismatch
+side=bound
+role=berging
+filler=Berging
+expected=Berger

@@ -1,1 +1,5 @@
-the sum of its operand 0 folds Date values
+WF-091.numeric-operand-refused
+aggregation=the sum
+operand=its operand 0
+verb=folds
+type=Date

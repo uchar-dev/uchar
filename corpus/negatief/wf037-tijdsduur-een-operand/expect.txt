@@ -1,1 +1,1 @@
-builtin arity 1, expected 2
+WF-037.builtin-arity

@@ -1,1 +1,6 @@
-the sum of 'vondstdatum' on 'Vondst' folds Date values: a total, sum or pro-rata part is arithmetic over a Number, and Date values are calendar positions
+WF-091.numeric-operand-refused
+aggregation=the sum
+operand='vondstdatum' on 'Vondst'
+verb=folds
+type=Date
+reason=Date values are calendar positions

@@ -1,1 +1,2 @@
-duration operands mix date precisions (both must share one precision)
+WF-038.duration-mixed-precision
+function=duration

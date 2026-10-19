@@ -1,1 +1,2 @@
-validity bound '2026-02-30' is not the ISO form yyyy-mm-dd
+WF-101.validity-bound-form
+bound=2026-02-30

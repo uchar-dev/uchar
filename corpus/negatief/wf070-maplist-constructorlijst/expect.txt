@@ -1,1 +1,4 @@
-lambda body is sumtype 'aanspraak' [Erkend of number(3 decimals, fractional, sign nonNegative), Vervallen], but the MapList requires sumtype 'aanspraak' [Erkend of number(2 decimals, fractional, sign nonNegative), Vervallen]
+WF-070.body-type-mismatch
+bodyType=sumtype 'aanspraak' [Erkend of number(3 decimals, fractional, sign nonNegative), Vervallen]
+host=the MapList
+requiredType=sumtype 'aanspraak' [Erkend of number(2 decimals, fractional, sign nonNegative), Vervallen]

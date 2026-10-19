@@ -1,1 +1,1 @@
-a sourcePath is admissible only as the range of a single-argument VALUE fold's set source
+WF-102.path-outside-fold

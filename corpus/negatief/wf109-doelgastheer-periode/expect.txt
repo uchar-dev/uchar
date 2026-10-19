@@ -1,1 +1,2 @@
-the characteristic check is hosted on 'Sein', which no object bound here can be
+WF-109.no-bound-object
+host=Sein

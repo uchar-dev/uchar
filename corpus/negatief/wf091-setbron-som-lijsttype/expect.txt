@@ -1,1 +1,3 @@
-and ListType values are not amounts
+WF-091.numeric-operand-refused
+type=ListType
+reason=ListType values are not amounts

@@ -1,1 +1,5 @@
-the plus composite is typed with keuzetype domain 'Vaarwater', but the type derived from its operands is number and names no keuzetype domain
+WF-089.domain-unnamed
+subject=the plus composite
+domain=Vaarwater
+source=the type derived from its operands
+type=number

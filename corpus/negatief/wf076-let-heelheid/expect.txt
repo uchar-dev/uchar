@@ -1,1 +1,3 @@
-the let type (number(0 decimals, whole)) differs from its body type (number(0 decimals, fractional))
+WF-076.let-type-differs
+letType=number(0 decimals, whole)
+bodyType=number(0 decimals, fractional)

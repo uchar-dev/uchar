@@ -1,1 +1,4 @@
-lambda parameter 'd' is struct 'logboek', expected struct 'dossier'
+WF-070.parameter-type-mismatch
+parameter=d
+actualType=struct 'logboek'
+expectedType=struct 'dossier'

@@ -1,1 +1,1 @@
-are both the default: a document has at most one default vocabulary
+WF-116.multiple-defaults

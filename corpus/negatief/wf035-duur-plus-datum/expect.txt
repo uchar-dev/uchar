@@ -1,1 +1,1 @@
-duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)
+WF-035.duration-plus-date

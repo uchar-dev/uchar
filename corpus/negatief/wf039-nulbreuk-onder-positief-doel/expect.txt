@@ -1,1 +1,2 @@
-literal '0/5' is written into a target under a positive sign restriction
+WF-039.target-positive
+lexeme=0/5

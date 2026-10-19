@@ -1,1 +1,2 @@
-object creation's subject type 'Bestaatniet' is not declared: the creation resolves against no declaration
+WF-034.undeclared-creation-subject
+objectType=Bestaatniet

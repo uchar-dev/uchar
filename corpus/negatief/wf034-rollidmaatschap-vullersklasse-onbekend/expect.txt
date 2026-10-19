@@ -1,1 +1,2 @@
-role check's counterpart type 'Strandwachter' is not a declared object type
+WF-034.counterpart-undeclared
+objectType=Strandwachter

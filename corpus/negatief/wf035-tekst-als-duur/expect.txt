@@ -1,1 +1,2 @@
-date ± duration: the duration operand is text, must be a number carrying a time unit
+WF-035.duration-not-number
+type=text

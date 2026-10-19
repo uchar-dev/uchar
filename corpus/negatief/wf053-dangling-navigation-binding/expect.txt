@@ -1,1 +1,2 @@
-role binding names undeclared fact type 'bemanning'
+WF-053.undeclared-fact-type
+factType=bemanning

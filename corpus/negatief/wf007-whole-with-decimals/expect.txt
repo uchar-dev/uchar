@@ -1,1 +1,1 @@
-whole number with 2 decimals: not one of the three precision forms
+WF-007.whole-with-decimals

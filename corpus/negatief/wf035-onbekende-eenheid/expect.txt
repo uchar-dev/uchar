@@ -1,1 +1,2 @@
-date ± duration: the duration unit 'vadem' is neither a recognised time unit nor a declared day kind
+WF-035.duration-unknown-unit
+unit=vadem

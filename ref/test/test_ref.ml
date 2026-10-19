@@ -297,14 +297,17 @@ let () =
           c.world
       in
       check "WV-2.3-maal-niet-heel-waarde-12" (Case.check c final = []);
-      let findings f = Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier f) in
+      let findings f =
+        List.map
+          (fun (x : Ir_v0.Checks.violation) -> (x.wf, x.at, x.reason))
+          (Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier f))
+      in
       check "WV-2.3-maal-niet-heel-fractioneel-schoon" (findings irf = []);
       check "WV-2.3-maal-niet-heel-heel-geweigerd"
         (findings whole_f
-        = [ { Ir_v0.Checks.wf = "WF-091"; at = "/rules/rules/0/versions/0/value/type";
-              reason =
-                "wholeness mismatch: the times composite is typed whole, but the type derived from \
-                 its operands is fractional" } ]))
+        = [ ( "WF-091", "/rules/rules/0/versions/0/value/type",
+              "wholeness mismatch: the times composite is typed whole, but the type derived from \
+               its operands is fractional" ) ]))
 
 (* --- ch. 2.4: the assignment gate --------------------------------------- *)
 
@@ -8594,9 +8597,11 @@ let () =
     {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"heffing","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"heffing van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"heffing","subjectType":"Jutter","source":{"snippet":"De heffing"}},"value":{"node":"VariableReference","name":"x","source":{"snippet":"x"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|};
   close_out oc;
   let finding =
-    List.filter
-      (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-034")
-      (Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier irf))
+    List.map
+      (fun (x : Ir_v0.Checks.violation) -> (x.wf, x.at, x.reason))
+      (List.filter
+         (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-034")
+         (Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier irf)))
   in
   (match Ir_v0.Loader.load_file irf with
   | (_ : Ir_v0.Ast.document) -> check "WV-4.1-variabele-weigert-bij-laden (the document loads)" false
@@ -8604,7 +8609,7 @@ let () =
       check
         ("WV-4.1-variabele-weigert-bij-laden (" ^ at ^ ": " ^ m ^ ")")
         (m = Ir_v0.Checks.variable_reference_refusal (Some "x")
-        && finding = [ { Ir_v0.Checks.wf = "WF-034"; at; reason = m } ]));
+        && finding = [ ("WF-034", at, m) ]));
   Sys.remove irf
 
 (* WV-4.3-numerieke-builtin (WF-038): a square root and an absolute value take

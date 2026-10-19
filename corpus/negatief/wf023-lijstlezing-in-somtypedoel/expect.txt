@@ -1,1 +1,3 @@
-a list value is assigned to a sumtype target
+WF-023.datatype-family-mismatch
+valueKind=list
+targetKind=sumtype

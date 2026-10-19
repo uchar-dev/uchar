@@ -1,1 +1,1 @@
-diagnostic without a severity
+WF-113.severity-missing

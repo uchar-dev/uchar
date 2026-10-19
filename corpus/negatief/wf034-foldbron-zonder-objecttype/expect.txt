@@ -1,1 +1,2 @@
-attribute reference 'gewicht' without a subjectType: it resolves against no declaration
+WF-034.ref-without-subject
+attribute=gewicht

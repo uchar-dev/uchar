@@ -1,1 +1,1 @@
-value fold with fewer than two operands
+WF-037.fold-few-operands

@@ -1,1 +1,3 @@
-the characteristic check is hosted on 'Baken', which the anchor 'Kustvak' and the target 'Sein' both are
+WF-109.several-hits
+host=Baken
+hits=the anchor 'Kustvak' and the target 'Sein'

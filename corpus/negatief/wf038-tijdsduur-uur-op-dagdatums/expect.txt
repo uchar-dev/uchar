@@ -1,1 +1,2 @@
-sub-day duration unit on day-precision operands (millisecond precision required)
+WF-038.sub-day-operands
+function=duration

@@ -1,1 +1,1 @@
-wholePeriod qualifier on a non-time-dependent operand
+WF-043.whole-period-operand

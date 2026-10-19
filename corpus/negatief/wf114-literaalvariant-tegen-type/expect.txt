@@ -1,1 +1,3 @@
-literal value is a text value but its type is a Number
+WF-114.variant-type-mismatch
+variant=text
+type=a Number

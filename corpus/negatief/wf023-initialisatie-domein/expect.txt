@@ -1,1 +1,5 @@
-a value of the enumeration domain 'Kust' is assigned to a target of the enumeration domain 'Vaarwater'
+WF-023.choice-domain-mismatch
+valueVariant=enumeration domain
+valueName=Kust
+targetVariant=enumeration domain
+targetName=Vaarwater

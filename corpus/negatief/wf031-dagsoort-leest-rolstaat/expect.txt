@@ -1,1 +1,3 @@
-day-kind condition reads role membership 'wachtjutter'
+WF-031.condition-reads-state
+kind=role membership
+name=wachtjutter

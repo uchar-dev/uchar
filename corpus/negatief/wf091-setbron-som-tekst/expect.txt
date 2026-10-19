@@ -1,1 +1,6 @@
-the sum of 'vindplaats' on 'Vondst' folds Text values: a total, sum or pro-rata part is arithmetic over a Number, and Text values are not amounts
+WF-091.numeric-operand-refused
+aggregation=the sum
+operand='vindplaats' on 'Vondst'
+verb=folds
+type=Text
+reason=Text values are not amounts

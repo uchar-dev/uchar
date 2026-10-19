@@ -27,8 +27,14 @@ The project is an OCaml dune build in two parts:
   the two OCaml emitters use to write them. The library is still named
   `uchar-ir-v0`; renaming it is a change to every reader.
 - `bin/` — the `verifier` executable: `verifier <ir.json>` exits 0 when
-  the document is well-formed, non-zero with one `WF-### FAIL <path>:
-  <reason>` line per violation otherwise. `<path>` is a JSON pointer into
+  the document is well-formed, non-zero with one `WF-###.<slug> FAIL
+  <path>: <reason>` line per violation otherwise. `WF-###` is the rule; the
+  slug names the arm of that rule that fired (one slug per message template
+  within a rule, at most three words), and the pair is the key a pin names.
+  `verifier --arms <ir.json>` is the same report for a machine: per
+  violation `key<TAB>path<TAB>{"name": "value", ...}`, the named values the
+  message quotes (gate 3 matches the `name=value` lines of an `expect.txt`
+  against them). `<path>` is a JSON pointer into
   the document (`/model/objectTypes/0/attributes/1/timeline/count`,
   `/rules/rules/2/versions/0/condition`), as a load error's is; below a
   node a check may add a segment of its own reading, such as a struct

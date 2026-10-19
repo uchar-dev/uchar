@@ -1,1 +1,3 @@
-target 'toelage' names both an attribute and a characteristic of 'Jutter'
+WF-022.target-both-kinds
+member=toelage
+objectType=Jutter

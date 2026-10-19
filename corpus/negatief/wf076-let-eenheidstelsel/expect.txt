@@ -1,1 +1,3 @@
-the let type (number(2 decimals, kg, system GEWICHT)) differs from its body type (number(2 decimals, kg, system Gewicht))
+WF-076.let-type-differs
+letType=number(2 decimals, kg, system GEWICHT)
+bodyType=number(2 decimals, kg, system Gewicht)

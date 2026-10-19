@@ -1,1 +1,2 @@
-duration without a recognised time unit on its node type
+WF-038.duration-no-unit
+function=duration

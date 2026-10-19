@@ -10,15 +10,21 @@
 #      Additional incidental violations are allowed; a case that passes, or
 #      fails only for other rules, turns the gate red. A negatief corpus
 #      without cases is reported explicitly, never silently green. A case
-#      directory that carries an expect.txt (card l2-referentielaag, U1) must
-#      also be rejected on the ARM that file names: its one line is a literal
-#      fragment of the expected verifier message, without a JSON pointer and
-#      without a rule number, and it must occur verbatim (grep -F) in the
-#      MESSAGE of a report line of the declared rule — the text after
-#      "WF-### FAIL <pointer>: " on a line that begins with the declared
-#      rule — so neither the line prefix nor a message of another rule can
-#      satisfy it; an empty or blank expect.txt, or one of more than one
-#      line, fails.
+#      directory that carries an expect.txt must also be rejected on the ARM
+#      that file names. Every violation carries a key `WF-###.<slug>` (the
+#      arm, MESSAGE-CODES §2.2) and named parameters; the report line is
+#      `WF-###.<slug> FAIL <pointer>: <message>`, and `verifier --arms` prints
+#      key, pointer and parameters as JSON for the machine. The first line of
+#      expect.txt is the key, of the rule the directory name declares; each
+#      further line is `name=value`, and the verifier must report that key
+#      with every such pair among the parameters of ONE violation (a subset
+#      match, values byte for byte). An expect.txt in the old form (a message
+#      fragment), a blank line, a duplicate line or an empty file fails, so a
+#      rewording of a message breaks no pin and a changed key or value does.
+#      Two more checks run over all negatief reports: one key stands for ONE
+#      message template (the message with each parameter value replaced by a
+#      placeholder and every number by '#'; a key with two templates is
+#      refused), and in checks.ml no site builds a violation without a key.
 #   4. every JSON pointer a negatief report cites resolves in that case's
 #      document (RFC 6901): a report that sends its reader to a position
 #      the document does not have is refused, whatever its rule and arm.
@@ -95,10 +101,18 @@ EXPECTED_MIN_NEGATIVE=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.js
 # range on a node that is no instance fold) and three that never had one (WF-030's source type and
 # key resolution, WF-037's bucketing builtin without a granularity) — and three more WF-037 arms the
 # fix round found without one (the two builtin arities, a value fold with fewer than two operands).
-EXPECTED_MIN_EXPECT=260     # 2026-09-25: measured 260 (corpus/negatief/*/expect.txt); raised at L5 by the witness of the v0 context-value spelling and by the 31 witnesses of the L5 stamp list that pin their arm
+EXPECTED_MIN_EXPECT=354     # 2026-10-19: measured 354 (corpus/negatief/*/expect.txt), card verifier-arm-keys; before that 260 (2026-09-25, L5)
+# The arm keys and their parameter lines (card verifier-arm-keys, 2026-10-19), floored for the same
+# reason: a pin that quietly lost its `name=value` lines would still pass on its key.
+EXPECTED_MIN_ARMS=213         # 2026-10-19: measured 213 distinct keys named by the expect.txt files
+EXPECTED_MIN_PARAM_LINES=572  # 2026-10-19: measured 572 `name=value` lines over the expect.txt files
+# The key and template check reads every negatief report; a parse that stopped finding keys would
+# check nothing. The static count is the key literals in checks.ml (two sites may share one).
+EXPECTED_MIN_REPORT_KEYS=318  # 2026-10-19: measured 318 distinct keys over the negatief reports
+EXPECTED_MIN_ARM_SITES=421    # 2026-10-19: measured 421 key literals "WF-###.<slug>" in spec/verifier/lib/checks.ml
 # The cited pointers (check 4) are floored in the same regime: a parse that stopped finding the
 # pointer in a report line would check nothing and pass.
-EXPECTED_MIN_POINTERS=547   # 2026-09-25: measured 547 pointers over the 446 negatief reports, all resolving
+EXPECTED_MIN_POINTERS=619   # 2026-10-19: measured 619 pointers over the negatief reports, all resolving (547 on 2026-09-25)
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.
@@ -120,7 +134,6 @@ done < "$list"
 # check 3: negatief cases are rejected for the declared rule, and on the
 # declared arm where the case names one (expect.txt).
 n_neg=0
-n_expect=0
 find corpus/negatief -name ir.json 2>/dev/null | sort > "$list"
 while IFS= read -r f; do
     n_neg=$((n_neg + 1))
@@ -148,37 +161,9 @@ while IFS= read -r f; do
     # pointer is the text between "FAIL " and the FIRST ": ", spaces included: a pattern that stopped
     # at a space skipped such a line in silence, and the floor below left room for it. A FAIL line
     # without that separator cites no pointer anyone can read, and is refused after the loop.
-    printf '%s\n' "$out" | awk -v f="$f" -v noptr="$noptr" '/^WF-[0-9]+ FAIL / {
-        rest = $0; sub(/^WF-[0-9]+ FAIL /, "", rest); i = index(rest, ": ")
+    printf '%s\n' "$out" | awk -v f="$f" -v noptr="$noptr" '/^WF-[0-9]+(\.[a-z0-9-]+)? FAIL / {
+        rest = $0; sub(/^WF-[0-9]+(\.[a-z0-9-]+)? FAIL /, "", rest); i = index(rest, ": ")
         if (i == 0) print f "\t" $0 >> noptr; else print f "\t" substr(rest, 1, i - 1) }' >> "$ptrs"
-    arm="$(dirname "$f")/expect.txt"
-    if [ -f "$arm" ]; then
-        n_expect=$((n_expect + 1))
-        frag=$(cat "$arm")
-        if [ -z "$(printf '%s' "$frag" | tr -d '[:space:]')" ]; then
-            printf 'FAIL: %s is empty or blank: it pins no arm\n' "$arm" >&2
-            status=1
-        elif [ "$(awk 'END { print NR }' "$arm")" -ne 1 ]; then
-            printf 'FAIL: %s is not one line: an arm fragment is one literal line of the verifier message\n' "$arm" >&2
-            status=1
-        elif printf '%s\n' "$frag" | grep -qE '/(model|rules|diagnostics)/'; then
-            printf 'FAIL: %s carries a JSON pointer: the fragment is the message, which a path shift must not break\n' "$arm" >&2
-            status=1
-        elif printf '%s\n' "$frag" | grep -qE 'WF-[0-9]{3}'; then
-            printf 'FAIL: %s carries a rule number: the rule is the directory name, the fragment is the message of its arm\n' "$arm" >&2
-            status=1
-        elif [ "$rejected" -eq 1 ] && ! printf '%s\n' "$out" | sed -n "s/^$expect FAIL [^ ]*: //p" | grep -qF -- "$frag"; then
-            # Only the messages of the declared rule's lines count: sought in the whole report,
-            # a fragment such as "FAIL", the rule number, or a line of another rule's message
-            # would pass without pinning an arm of this rule (measured at the L2 lens). Sought
-            # only after a rejection for the declared rule: a case that passed, or failed for
-            # other rules only, is already reported above, and this line would claim a
-            # rejection that did not happen.
-            printf 'FAIL: negatief case %s rejected for %s, but not on the arm %s names (sought in the messages of the %s lines):\n  expected fragment: %s\n%s\n' \
-                "$f" "$expect" "$arm" "$expect" "$frag" "$out" >&2
-            status=1
-        fi
-    fi
 done < "$list"
 
 # check 4: every FAIL line cites a readable pointer, and the cited pointers resolve (RFC 6901, ~1
@@ -225,6 +210,122 @@ if [ "${n_ptr:-0}" -lt "$EXPECTED_MIN_POINTERS" ]; then
     status=1
 fi
 
+# check 5 (card verifier-arm-keys, 2026-10-19): the arm keys. Over every negatief report: (a) each
+# expect.txt is a key line plus `name=value` lines, the key is of the rule its directory declares,
+# and the verifier reports that key with every pair among the parameters of one violation; (b) one
+# key stands for one message template across all reports; (c) checks.ml builds no violation
+# without a key, and its slugs are at most three words. The numbers are floored below.
+CHECKS_ML="$VERIFIER_DIR/lib/checks.ml"
+counts=$(python3 - "$BIN" "$list" "$CHECKS_ML" <<'PY'
+import json, os, re, subprocess, sys
+exe, listfile, checks = sys.argv[1:4]
+docs = [l.rstrip("\n") for l in open(listfile, encoding="utf-8") if l.strip()]
+bad = []
+def fail(msg):
+    bad.append(msg)
+KEY = re.compile(r"^WF-[0-9]{3}\.[a-z][a-z0-9]*(-[a-z0-9]+){0,2}$")
+PAIR = re.compile(r"^[a-z][A-Za-z0-9]*=.+$")
+templates, templates_b, n_expect, n_params, pinned = {}, {}, 0, 0, set()
+for f in docs:
+    d = os.path.dirname(f)
+    m = re.match(r"wf0*([0-9]+)-", os.path.basename(d))
+    if not m:
+        continue  # the directory-name failure is reported by check 3
+    rule = "WF-%03d" % int(m.group(1))
+    report = subprocess.run([exe, f], capture_output=True, text=True).stdout.split("\n")
+    armed = subprocess.run([exe, "--arms", f], capture_output=True, text=True).stdout.split("\n")
+    report = [l for l in report if " FAIL " in l]
+    armed = [l for l in armed if l]
+    if len(report) != len(armed):
+        fail("%s: %d report lines but %d --arms lines" % (f, len(report), len(armed)))
+        continue
+    viol = []
+    for line, arm in zip(report, armed):
+        key, at, js = arm.split("\t", 2)
+        params = json.loads(js, object_pairs_hook=lambda p: p)
+        mm = re.match(r"(\S+) FAIL (.*?): (.*)$", line, re.S)
+        if mm is None or mm.group(1) != key:
+            fail("%s: report line and --arms line disagree on the key: %s / %s" % (f, line, key))
+            continue
+        viol.append((key, params))
+        text = mm.group(3)
+        # two normalisations of the template: every occurrence of a value, and the first occurrence
+        # of each value in parameter order; a key is one template when either agrees, because a
+        # value that coincides with a word of the sentence defeats one of them, never both
+        a, b, cur = text, text, 0
+        for _, v in sorted(params, key=lambda x: -len(x[1])):
+            if v and not v.isdigit():
+                a = re.sub(r"(?<![A-Za-z0-9_])" + re.escape(v) + r"(?![A-Za-z0-9_])", "{}", a)
+        for _, v in params:
+            if v and not v.isdigit():
+                pat = re.compile(r"(?<![A-Za-z0-9_])" + re.escape(v) + r"(?![A-Za-z0-9_])")
+                hit = pat.search(b, cur) or pat.search(b)
+                if hit:
+                    b = b[:hit.start()] + "{}" + b[hit.end():]
+                    cur = hit.start() + 2
+        templates.setdefault(key, {}).setdefault(re.sub(r"[0-9]+", "#", a), f)
+        templates_b.setdefault(key, {}).setdefault(re.sub(r"[0-9]+", "#", b), f)
+    arm = os.path.join(d, "expect.txt")
+    if not os.path.isfile(arm):
+        continue
+    n_expect += 1
+    raw = open(arm, encoding="utf-8").read()
+    lines = raw.split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
+    if not lines or not any(x.strip() for x in lines):
+        fail("%s is empty or blank: it pins no arm" % arm); continue
+    if any(not x.strip() for x in lines):
+        fail("%s has a blank line" % arm); continue
+    if not KEY.match(lines[0]):
+        fail("%s: the first line must be an arm key WF-###.<slug> (a message fragment is the old form): %r" % (arm, lines[0])); continue
+    if lines[0][:6] != rule:
+        fail("%s pins %s, but the directory declares %s" % (arm, lines[0], rule)); continue
+    if len(set(lines)) != len(lines):
+        fail("%s has a duplicate line" % arm); continue
+    wanted = []
+    for x in lines[1:]:
+        if not PAIR.match(x):
+            fail("%s: %r is not name=value" % (arm, x)); break
+        wanted.append(tuple(x.split("=", 1)))
+    else:
+        n_params += len(wanted)
+        pinned.add(lines[0])
+        mine = [p for k, p in viol if k == lines[0]]
+        if not any(all(w in p for w in wanted) for p in mine):
+            fail("negatief case %s rejected, but not on the arm %s names: key %s with %s expected, the %s keys reported are %s%s"
+                 % (f, arm, lines[0], wanted, rule, sorted({k for k, _ in viol if k[:6] == rule}),
+                    "" if not mine else "; the parameters of that key are %s" % [dict(p) for p in mine]))
+for key, ts in sorted(templates.items()):
+    if len(ts) > 1 and len(templates_b[key]) > 1:
+        fail("key %s stands for %d message templates (a key is one template; split it):\n    %s"
+             % (key, len(templates_b[key]), "\n    ".join("%s  [%s]" % (t, g) for t, g in templates_b[key].items())))
+src = open(checks, encoding="utf-8").read()
+# comments hold no sites
+src = re.sub(r"\(\*.*?\*\)", lambda m: " " * len(m.group(0)), src, flags=re.S)
+for mm in re.finditer(r'\bv\s+(?:~params:\[[^\]]*\]\s+)?"(WF-[0-9]+)"', src):
+    fail("%s:%d: a violation built with the bare rule %s: it needs a key WF-###.<slug>" % (checks, src.count("\n", 0, mm.start()) + 1, mm.group(1)))
+sites = re.findall(r'"(WF-[0-9]{3})\.([a-z0-9]+(?:-[a-z0-9]+)*)"', src)
+for rule_, slug in sites:
+    if not re.fullmatch(r"[a-z][a-z0-9]*(-[a-z0-9]+){0,2}", slug):
+        fail("%s: slug %r of %s is not kebab-case of at most three words" % (checks, slug, rule_))
+for x in bad:
+    sys.stderr.write("FAIL: " + x + "\n")
+print(n_expect, n_params, len(pinned), len(templates), len(sites), 1 if bad else 0)
+PY
+) || { echo "FAIL: the arm check could not run" >&2; exit 1; }
+set -- $counts
+n_expect=$1; n_params=$2; n_arms=$3; n_keys=$4; n_sites=$5
+[ "$6" -eq 0 ] || status=1
+for floor in "n_arms:EXPECTED_MIN_ARMS:arm keys named by expect.txt files" "n_params:EXPECTED_MIN_PARAM_LINES:name=value lines" "n_keys:EXPECTED_MIN_REPORT_KEYS:keys in the negatief reports" "n_sites:EXPECTED_MIN_ARM_SITES:key literals in checks.ml"; do
+    var=${floor%%:*}; rest=${floor#*:}; name=${rest%%:*}; what=${rest#*:}
+    eval "have=\$$var; min=\$$name"
+    if [ "$have" -lt "$min" ]; then
+        echo "FAIL: $have $what found, but $name pins at least $min — the arm check read fewer than it did (a deliberate removal lowers the floor in the same commit)" >&2
+        status=1
+    fi
+done
+
 # The floor is evaluated BEFORE the unpopulated-corpus exit, or that exit would answer the very
 # case the floor exists for: with the zones moved aside both counts are 0 and an "all zero -> exit
 # 0" branch placed first never lets the floor run. Measured 2026-09-10, before this order: both
@@ -247,6 +348,6 @@ if [ "$n_expect" -lt "$EXPECTED_MIN_EXPECT" ]; then
 fi
 
 if [ "$status" -eq 0 ]; then
-    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negatief rejected for their declared rule, floor $EXPECTED_MIN_NEGATIVE; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT; $n_ptr cited pointers resolve in their documents, floor $EXPECTED_MIN_POINTERS)"
+    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negatief rejected for their declared rule, floor $EXPECTED_MIN_NEGATIVE; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT, $n_arms arm keys, floor $EXPECTED_MIN_ARMS, $n_params name=value lines, floor $EXPECTED_MIN_PARAM_LINES; $n_keys keys of one template each in the reports, floor $EXPECTED_MIN_REPORT_KEYS, $n_sites key literals in checks.ml, floor $EXPECTED_MIN_ARM_SITES; $n_ptr cited pointers resolve in their documents, floor $EXPECTED_MIN_POINTERS)"
 fi
 exit "$status"

@@ -1,1 +1,1 @@
-sub-day time unit on a day-precision date (millisecond precision required)
+WF-035.sub-day-unit

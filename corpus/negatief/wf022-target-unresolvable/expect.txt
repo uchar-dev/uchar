@@ -1,1 +1,3 @@
-target 'spookkenmerk' is neither an attribute nor a characteristic of 'Jutter'
+WF-022.target-not-member
+member=spookkenmerk
+objectType=Jutter

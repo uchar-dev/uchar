@@ -1,1 +1,2 @@
-numeric literal lexeme '12,50' is not a number of the case format
+WF-081.number-lexeme-refused
+lexeme=12,50

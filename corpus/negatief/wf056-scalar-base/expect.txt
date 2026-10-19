@@ -1,1 +1,2 @@
-pro-rata base 'borgtarief' is not a temporal attribute
+WF-056.base-not-temporal
+attribute=borgtarief

@@ -1,1 +1,2 @@
-names the vocabulary 'wet', which the document does not declare
+WF-117.undeclared-vocabulary
+vocabulary=wet

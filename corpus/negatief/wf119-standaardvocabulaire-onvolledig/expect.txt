@@ -1,1 +1,2 @@
-carries no designation in the default vocabulary 'cgm'
+WF-119.no-designation
+vocabulary=cgm

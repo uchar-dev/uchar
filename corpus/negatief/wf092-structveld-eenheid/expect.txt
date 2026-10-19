@@ -1,1 +1,3 @@
-unit 'km' names canonical unit 'm' but carries no conversion factor into it
+WF-092.canonical-without-factor
+unit='km'
+canonical=m

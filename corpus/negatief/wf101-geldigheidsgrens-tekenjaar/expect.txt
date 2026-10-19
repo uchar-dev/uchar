@@ -1,1 +1,2 @@
-validity bound '+012026-01-01' is not the ISO form yyyy-mm-dd
+WF-101.validity-bound-form
+bound=+012026-01-01

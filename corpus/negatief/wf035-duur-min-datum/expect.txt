@@ -1,1 +1,1 @@
-duration − date is ill-formed (subtraction admits the date on the left only)
+WF-035.duration-minus-date

@@ -1,1 +1,4 @@
-lambda body is number(0 decimals, fractional), but the fold requires number(0 decimals, whole)
+WF-070.body-type-mismatch
+bodyType=number(0 decimals, fractional)
+host=the fold
+requiredType=number(0 decimals, whole)

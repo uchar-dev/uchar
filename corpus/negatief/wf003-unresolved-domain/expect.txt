@@ -1,1 +1,2 @@
-enumeration references undeclared domain 'Bedragen'
+WF-003.undeclared-domain
+domain=Bedragen

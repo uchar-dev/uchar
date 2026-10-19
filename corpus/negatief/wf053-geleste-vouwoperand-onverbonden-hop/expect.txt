@@ -1,1 +1,1 @@
-an attribute reference without a path is the subject's own read
+WF-053.read-other-type

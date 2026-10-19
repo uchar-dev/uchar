@@ -1,1 +1,6 @@
-soort mismatch: the plus composite is typed boolean, but the type derived from its operands is number
+WF-091.facet-mismatch
+facet=soort
+subject=the plus composite
+type=boolean
+source=the type derived from its operands
+sourceType=number

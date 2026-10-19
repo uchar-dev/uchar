@@ -1,1 +1,3 @@
-'spook' is not a declared attribute of 'Jutter'
+WF-027.undeclared-attribute
+member=spook
+objectType=Jutter

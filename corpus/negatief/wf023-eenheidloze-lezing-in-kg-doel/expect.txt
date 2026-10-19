@@ -1,1 +1,1 @@
-assignment across incompatible units
+WF-023.incompatible-units

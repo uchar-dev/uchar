@@ -1,1 +1,3 @@
-two initialisations write target (Wrakvondst, bergloon) through its type chain
+WF-079.initialisation-chained
+objectType=Wrakvondst
+attribute=bergloon

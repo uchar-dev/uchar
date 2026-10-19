@@ -1,1 +1,3 @@
-'wachtjutters' is not a declared role of fact type 'wachtindeling' (a role check names the role by its declared name)
+WF-034.role-undeclared
+role=wachtjutters
+factType=wachtindeling
