@@ -604,10 +604,12 @@ class FoldPlanWitnessTest {
         return (String) play.invoke(null, ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL);
     }
 
-    /** The case of {@link #havenketen} where the filter faults (fix round 1c-B2): J1's boats B1, B2 and B3, in that
-     *  order, unload at P1, P2 and P3, which lie in H1, H2 and H1, and both havens have 0 ligplaatsen, so the filter
-     *  divides by zero along every route. The reference interpreter and the ASP backend both fault with "division by
-     *  numeric zero", a sentence that names no member. */
+    /** The case of {@link #havenketenWithRoot} where the filter faults (fix round 1c-B2): J1's boats B1, B2 and B3, in
+     *  that order, unload at P1, P2 and P3, which lie in H1, H2 and H1, and both havens have a havengeld that is no
+     *  square, 3 and 2, so the filter faults along every route. Until the card zero-division-channel (2026-10-19) the
+     *  filter of {@link #havenketen} divided the havengeld (4 and 30) by 0 ligplaatsen, a fault in the reference
+     *  interpreter and the ASP backend then ("division by numeric zero", a sentence that names no member), a deposit
+     *  since. */
     private static final String HAVENKETEN_FAULT = """
             {"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [
               {"label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {"gevoerde boot": ["B1", "B2", "B3"]},
@@ -624,37 +626,52 @@ class FoldPlanWitnessTest {
                "characteristics": []},
               {"label": "P3", "objectType": "Bergplaats", "attributes": {}, "roles": {"haven": ["H1"]},
                "characteristics": []},
-              {"label": "H1", "objectType": "Haven", "attributes": {"havengeld": {"number": "4"},
+              {"label": "H1", "objectType": "Haven", "attributes": {"havengeld": {"number": "3"},
                "ligplaatsen": {"number": "0"}}, "roles": {}, "characteristics": []},
-              {"label": "H2", "objectType": "Haven", "attributes": {"havengeld": {"number": "30"},
+              {"label": "H2", "objectType": "Haven", "attributes": {"havengeld": {"number": "2"},
                "ligplaatsen": {"number": "0"}}, "roles": {}, "characteristics": []}],
               "parameters": {}},
-             "expectedFault": {"code": "EF-005", "params": {}}}
+             "expected": []}
             """;
 
-    /** {@link #havenketen} fired where the filter faults (fix round 1c-B2): the rule of the filter's fault binds the
-     *  two intermediates per route and reads the place of the route's Boot, the first one, in J1's list, so each route
-     *  gives a {@link FilterFault} with its own place: H1 along B1 at [0, 0], H2 along B2 at [0, 1], H1 along B3 at
-     *  [0, 2]. The least is the first route's, H1's, so the rule names H1's fault, the first member in fold order
-     *  (RUNTIME-SEMANTICS ch. 5.11): "4 gedeeld door 0", where the least sentence would name H2's 30. A place reader
-     *  that reads the wrong place gives another fault or other places; no document of the corpus or the suite fires
-     *  this form, so the harness does not watch it. */
+    /** {@link #havenketen} with "de wortel van zijn havengeld is groter dan 2" in place of the filter's division,
+     *  "zijn havengeld gedeeld door zijn ligplaatsen is groter dan 2": the root of a havengeld that is no square faults
+     *  (RUNTIME-SEMANTICS ch. 2.2), where a numeric zero divisor deposits since the card zero-division-channel. */
+    static JsonNode havenketenWithRoot() throws Exception {
+        ObjectNode d = (ObjectNode) havenketen();
+        JsonNode rules = d.get("rules").get("rules");
+        ObjectNode value = (ObjectNode) rules.get(rules.size() - 1).get("versions").get(0).get("value");
+        ObjectNode comparison = (ObjectNode) value.get("filter").get("parts").get(0);
+        comparison.set("left", JSON.readTree("{\"node\": \"BuiltinCall\", \"kind\": \"squareRoot\", \"arguments\": ["
+                + ref("havengeld", "Haven", "zijn havengeld") + "], \"type\": {\"node\": \"Number\", \"whole\": true,"
+                + " \"decimals\": 0, \"sign\": \"unspecified\"}, \"source\": {\"snippet\": \"de wortel van zijn"
+                + " havengeld\"}}"));
+        return d;
+    }
+
+    /** {@link #havenketenWithRoot} fired where the filter faults (fix round 1c-B2): the rule of the filter's fault binds
+     *  the two intermediates per route and reads the place of the route's Boot, the first one, in J1's list, so each
+     *  route gives a {@link FilterFault} with its own place: H1 along B1 at [0, 0], H2 along B2 at [0, 1], H1 along B3
+     *  at [0, 2]. The least is the first route's, H1's, so the rule names H1's fault, the first member in fold order
+     *  (RUNTIME-SEMANTICS ch. 5.11): the root of 3, where the least sentence would name H2's 2. A place reader that
+     *  reads the wrong place gives another fault or other places; no document of the corpus or the suite fires this
+     *  form, so the harness does not watch it. Until the card zero-division-channel the filter divided H1's 4 and H2's
+     *  30 by 0. */
     @Test void the_path_with_two_between_nodes_fails_at_the_first_route_place(@TempDir Path map) throws Exception {
         Path ir = map.resolve("ir.json"), caseDocument = map.resolve("case.json");
-        Files.writeString(ir, JSON.writeValueAsString(havenketen()));
+        Files.writeString(ir, JSON.writeValueAsString(havenketenWithRoot()));
         Files.writeString(caseDocument, HAVENKETEN_FAULT);
-        String division = "DelingDoorNul: deling door nul in de regel \"havengeldtotaal van een Jutter: vouw 1\": %s"
-                + " gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4,"
-                + " punt 4)";
+        String root = "ComputeFault: fout in de regel \"havengeldtotaal van een Jutter: vouw 1\": irrational square root"
+                + " of %s reached without an explicit rounding (§13.4.17.13 mandates one)";
         assertEquals(List.of(
-                "Filterfout J1 H1 [0, 0]: " + division.formatted("4"),
-                "Filterfout J1 H2 [0, 1]: " + division.formatted("30"),
-                "Filterfout J1 H1 [0, 2]: " + division.formatted("4")),
+                "Filterfout J1 H1 [0, 0]: " + root.formatted("3"),
+                "Filterfout J1 H2 [0, 1]: " + root.formatted("2"),
+                "Filterfout J1 H1 [0, 2]: " + root.formatted("3")),
                 filterFaults(ir, JSON.readTree(HAVENKETEN_FAULT)));
         CaseRunner.RedResult r = CaseRunner.runRed(ir, caseDocument);
         assertEquals("FAULT", r.status(), r::detail);
-        assertTrue(r.detail().startsWith("DelingDoorNul: deling door nul in de regel \"havengeldtotaal van een"
-                + " Jutter\": 4 gedeeld door 0 — "), r::detail);
+        assertTrue(r.detail().startsWith("ComputeFault: fout in de regel \"havengeldtotaal van een Jutter\": irrational"
+                + " square root of 3 "), r::detail);
     }
 
     /** The {@link FilterFault} facts that stand at the fixpoint of {@code caseDocument} on {@code ir}, in their own order, each

@@ -811,11 +811,11 @@ final class DrlRendering {
             String naam = naam("vouwlezing", place);
             StringBuilder b = new StringBuilder();
             if (v.depositFlag() >= 0) {
-                if (v.depositCount() < 0)
+                if (v.deposits() < 0)
                     throw new IllegalStateException("een vouwlezing met een sonde en zonder deponeringen in " + plan.naam());
-                b.append("    if (((Number) ").append(slot(v.depositCount(), c)).append(").longValue() > 0) {\n        ")
-                        .append(route(Route.REPORT)).append("(").append(depositFlag(v.depositFlag(), c).text()).append(", ")
-                        .append(list(texts(v.codes()))).append(");\n    }\n");
+                b.append("    ").append(route(Route.REPORT_FILTER_DEPOSITS)).append("(")
+                        .append(depositFlag(v.depositFlag(), c).text()).append(", ").append(slot(v.deposits(), c))
+                        .append(");\n");
             }
             if (v.filterFault() >= 0) {
                 String f = slot(v.filterFault(), c);
@@ -890,6 +890,9 @@ final class DrlRendering {
                         + str(x.sentence()) + ", " + str(x.fault().regel()) + "))");
                 case Consequence.Inconsistency x -> insert(b, "    ", x.insertion(), route(Route.INCONSISTENCY) + "("
                         + str(x.form()) + ", " + x.onderwerp() + ", " + list(texts(x.codes())) + ")");
+                case Consequence.ConditionDeposit x -> insert(b, "    ", x.insertion(), route(Route.INCONSISTENCY) + "("
+                        + str(x.form()) + ", " + x.onderwerp() + ", " + depositCodesAgain(x.condition(), x.depositFlag(),
+                                x.slots(), "de voorwaarde van \"" + x.form() + "\"") + ")");
                 case Consequence.WritersConflict x -> insert(b, "    ", x.insertion(), route(Route.WRITERS_CONFLICT)
                         + "(" + x.onderwerp() + ", " + variable(x.waarden()) + ", " + str(x.attribute()) + ", "
                         + list(texts(x.documentOrder())) + ", " + list(texts(x.typeClasses())) + ", "
@@ -909,7 +912,8 @@ final class DrlRendering {
                 case Consequence.Contribution x -> contribution(x, b);
                 case Consequence.FilterDeposit x -> insert(b, "    ", x.insertion(), "new "
                         + typeName(FilterDeposit.class) + "(" + str(x.fold()) + ", " + x.onderwerp() + ", "
-                        + variable(x.member()) + ")");
+                        + variable(x.member()) + ", " + depositCodesAgain(x.filter(), x.depositFlag(), x.slots(),
+                                "het filter van " + x.fold()) + ")");
                 case Consequence.FilterFault x -> filterFault(x, b);
                 case Consequence.MemberFault x -> insert(b, "    ", x.insertion(), "new " + typeName(MemberFault.class) + "("
                         + str(x.fold()) + ", " + x.onderwerp() + ", " + variable(x.member()) + ", "
@@ -986,6 +990,24 @@ final class DrlRendering {
                 b.append("        }\n");
             }
             b.append("    }\n");
+        }
+
+        /** The codes of the deposit of {@code condition}, which the test of the rule found: a function of the rule
+         *  evaluates it again over the bound values at {@code slots} with a fresh probe in slot {@code depositFlag},
+         *  an evaluation fault leaving what the probe heard before it, and gives the codes the probe heard, a probe
+         *  that heard nothing a broken contract of {@code what}; returns its call. */
+        private String depositCodesAgain(Term condition, int depositFlag, List<Integer> slots, String what) {
+            int place = reserveer();
+            String naam = naam("deponering", place);
+            Context c = context(slots, depositFlag, route(Route.FRESH_DEPOSIT_FLAG) + "()", condition);
+            String body = tryCatch("        boolean uitkomst = " + bool(condition, c) + ";\n",
+                    "        " + route(Route.CAUGHT) + "(e);\n")
+                    + "    if (!" + route(Route.REPORTED) + "(" + DEPOSIT_FLAG + ")) {\n        "
+                    + route(Route.CONTRACT_BREACH) + "(" + str(what + " deponeerde in de toets en niet in het gevolg,"
+                            + " over dezelfde gebonden waarden") + ");\n    }\n"
+                    + "    return " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + ");\n";
+            fill(place, condition.source(), "java.util.List " + naam + "(" + c.declaration() + ")", body);
+            return naam + "(" + c.arguments() + ")";
         }
 
         /** The fault of {@link Consequence.TestFault}: the condition evaluated again over the same bound values, its

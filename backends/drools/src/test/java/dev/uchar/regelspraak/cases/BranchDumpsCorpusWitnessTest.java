@@ -58,8 +58,9 @@ class BranchDumpsCorpusWitnessTest {
     static final int EXPECTED_MIN_GOLDENS = 255;
     /** The cases of the goldens compared, measured 2026-10-14 at step 6b and again at step 6c, on the same corpus. */
     static final int EXPECTED_MIN_CASES = 695;
-    /** The case files under {@code corpus/red}, measured 2026-10-14: the 49 of before step 6b and its one. */
-    static final int EXPECTED_MIN_RED_CASES = 50;
+    /** The case files under {@code corpus/red}, measured 2026-10-14: the 49 of before step 6b and its one; 44 since the
+     *  card zero-division-channel (2026-10-19) moved six witnesses of a division by a numeric zero to the golden corpus. */
+    static final int EXPECTED_MIN_RED_CASES = 44;
     /** The cases of played goldens whose fire reaches no fixpoint, measured 2026-10-14: none. */
     static final List<String> WITHOUT_FIXPOINT = List.of();
 

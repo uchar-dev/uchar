@@ -1,0 +1,46 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "grondslag": {
+        "number": "60"
+      },
+      "kindertallen": {
+        "list": [
+          {
+            "number": "2"
+          },
+          {
+            "number": "0"
+          }
+        ]
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "delertotaal",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "delertotaal van een jutter",
+      "label": "J1",
+      "code": "EF-005"
+    }
+  ]
+}

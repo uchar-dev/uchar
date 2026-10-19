@@ -42,6 +42,7 @@
     { "kind": "attributeEmpty", "label": "W2", "attribute": "geenteken" },
     { "kind": "attributeValue", "label": "W2", "attribute": "minsteteken", "value": { "number": "1" } },
     { "kind": "attributeValue", "label": "W3", "attribute": "geenteken", "value": { "number": "1" } },
-    { "kind": "attributeEmpty", "label": "W3", "attribute": "minsteteken" }
+    { "kind": "attributeEmpty", "label": "W3", "attribute": "minsteteken" },
+    { "kind": "consistent" }
   ]
 }

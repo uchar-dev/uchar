@@ -80,6 +80,9 @@
       "kind": "attributeEmpty",
       "label": "S2",
       "attribute": "randteken"
+    },
+    {
+      "kind": "consistent"
     }
   ]
 }

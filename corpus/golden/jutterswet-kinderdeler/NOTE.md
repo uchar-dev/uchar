@@ -1,5 +1,11 @@
 # jutterswet-kinderdeler
 
+*Since 2026-10-19 (card `zero-division-channel`) a numeric-zero divisor in a
+closed body is leeg with a §9.5 fact of kind EF-005, no fault
+(`RUNTIME-SEMANTICS.md` ch. 1.4 point 4, ch. 10.1), and
+`closed-runtime-division-by-zero` is a golden. What follows about the
+numeric-zero fence describes the state before that card.*
+
 The closed-body **runtime-divisor** witness (ASP-TRANSLATION S15/S19, form 5).
 `delertotaal` folds `acc + (grondslag / x)` over the list parameter
 `kindertallen`, the divisor `x` a bound list element — a RUNTIME divisor, not a

@@ -17,19 +17,28 @@ therefore happen on documents where its value is discarded.
 
 ```
 vangstsom := de som van zijn deelvangst en zijn teller
-             of zijn teller gedeeld door zijn noemer als die er niet zijn
+             of het Rekenjaar als die er niet zijn
 ```
 
-with `deelvangst` = 5, `teller` = 1 and `noemer` = 0.
+with `deelvangst` = 5 and `teller` = 1, in a session with no evaluation
+date (`asOfDate` null).
 
 Both contributors are **filled**, so the som is 5 + 1 = 6 and the
-stand-in's value is not needed. It is evaluated anyway, and `1 ÷ 0`
-faults: the document has no answer.
+stand-in's value is not needed. It is evaluated anyway, and the evaluation
+year needs an evaluation date the case does not carry: a fault, kind
+EF-011 (ch. 8.2), so the document has no answer.
 
-| executor | pinned fragment | why |
-|----------|-----------------|-----|
-| ref | `division by numeric zero` | the stand-in evaluates after the contributors and faults |
-| clingo | `a sum over listed operands is not translated` | the listed-operand som is not carried by the ASP backend at all — an honest refusal, not an order observation |
+| executor | reports | why |
+|----------|---------|-----|
+| ref | EF-011 | the stand-in evaluates after the contributors and faults |
+| clingo | CLINGO-007, `a sum over listed operands is not translated` | the listed-operand som is not carried by the ASP backend at all — an honest refusal, not an order observation (gate 8's divergence list) |
+
+Until 2026-10-19 the stand-in was `zijn teller gedeeld door zijn noemer`
+with `noemer` 0, a division by a numeric zero (EF-005). The card
+`zero-division-channel` routed that division into the §9.5 channel
+(ch. 1.4 point 4), where it deposits and leaves the outcome standing, so
+the stand-in became the evaluation year, a hard fault of v1, and `noemer`
+left the model. The history below is that of the division.
 
 The clingo fragment moved on 2026-09-19, and the move is this case's own
 doing. It used to read `expression kind not translated`, the translator's

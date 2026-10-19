@@ -28,8 +28,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * A term names a probe slot only where its position in the rule fills it (card drl-teksttak-op-truth-maintenance, step
  * 1e; FABLE-2 §1.2 point 3): a test of deposits ({@link TestItem.Role#DEPOSIT}), the value of a
- * {@link Consequence.Value} with a deposit, and the matrix of a {@link Consequence.Input.MemberTest} with a probe, each with the
- * slot it fills. Everywhere else, as in the rule of a condition's fault or of a filter's fault, the analysis sets the
+ * {@link Consequence.Value} with a deposit, the matrix of a {@link Consequence.Input.MemberTest} with a probe, and, since the
+ * card zero-division-channel (2026-10-19), the condition of a {@link Consequence.ConditionDeposit} and the filter of a
+ * {@link Consequence.FilterDeposit}, evaluated again to hear the codes, each with the slot it fills. Everywhere else, as in the rule of a condition's fault or of a filter's fault, the analysis sets the
  * probe of a division, a square root, a fold's evaluation and a quantifier fold to -1, so that a rendering needs no rule
  * for a slot nobody fills. Over the plans of every golden the branch builds.
  *
@@ -74,6 +75,8 @@ class DepositFlagSlotWitnessTest {
                     case Consequence.Value w when w.deposit() != null -> w.deposit().depositFlag();
                     case Consequence.Contribution bd when bd.input() instanceof Consequence.Input.MemberTest l && l.depositFlag() >= 0 ->
                             l.depositFlag();
+                    case Consequence.ConditionDeposit c -> c.depositFlag();
+                    case Consequence.FilterDeposit f -> f.depositFlag();
                     default -> null;
                 };
                 if (fills != null && s.equals(Set.of(fills))) filled++;

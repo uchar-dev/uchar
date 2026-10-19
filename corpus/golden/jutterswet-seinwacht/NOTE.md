@@ -1,5 +1,11 @@
 # jutterswet-seinwacht
 
+*Since 2026-10-19 (card `zero-division-channel`) a filled dividend divided by
+a numeric zero is leeg with a §9.5 fact of kind EF-005, no fault
+(`RUNTIME-SEMANTICS.md` ch. 1.4 point 4). The case pins `consistent` since: an
+unread division is the absence of that fact where it was the absence of a
+fault. The text below speaks of the fault.*
+
 The **trigger-row witness** of `RUNTIME-SEMANTICS.md` ch. 5.10. The two
 older short-circuit goldens pin that the stop happens; this one pins
 *which* trigger causes it, for the three rows that had no artifact of

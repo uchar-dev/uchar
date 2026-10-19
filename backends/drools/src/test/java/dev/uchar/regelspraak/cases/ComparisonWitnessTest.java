@@ -228,15 +228,18 @@ class ComparisonWitnessTest {
     }
 
     /** A fault at the fixpoint: the rules give no answer, the write-back throws instead of writing, and the entry says
-     *  so with the fault, where it would otherwise report "not written back". */
+     *  so with the fault, where it would otherwise report "not written back". The red case reads the evaluation year in a
+     *  session without an evaluation date (EF-011); until the card zero-division-channel (2026-10-19) it was the
+     *  division by a numeric zero of {@code division-by-numeric-zero}, which deposits since. */
     @Test void an_evaluation_fault_at_the_fixpoint_is_named() throws Exception {
-        Path division = Path.of("..", "..", "corpus", "red", "division-by-numeric-zero");
-        JsonNode c = read(division.resolve("case1.json"));
-        IllegalStateException e = refusal(IllegalStateException.class, division, c, caselabels(),
+        Path clamp = Path.of("..", "..", "corpus", "red", "clamp-reads-bounds-in-order");
+        JsonNode c = read(clamp.resolve("case1.json"));
+        IllegalStateException e = refusal(IllegalStateException.class, clamp, c, caselabels(),
                 TmsDocuments.JSON.readTree("[{\"kind\": \"consistent\"}]"),
                 (build, session, label) -> assertNull(DroolsBackend.fire(build, session).noFixpoint()));
         assertTrue(e.getMessage().startsWith("vergelijk: aan het fixpunt van deze sessie staan 1 evaluatiefout(en), de"
-                + " eerste van 'deel van een vondst': deling door nul in de regel \"deel van een vondst\""), e.getMessage());
+                + " eerste van 'begrenswaarde van een jutter': fout in de regel \"begrenswaarde van een jutter\""),
+                e.getMessage());
     }
 
     @Test void a_label_of_two_beans_and_an_object_as_expectations_are_refused() throws Exception {

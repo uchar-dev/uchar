@@ -307,10 +307,14 @@ on the table, kept as the decision's rationale:
    zero is a hard runtime error in v0 (and a literal `1/0` is rejected at
    parse time). Decided: v1 routes numeric-zero division into the same
    inconsistency channel; the v0 hard fault and the parse-time rejection
-   remain the mirror. The hard fault is fault kind **EF-005** (ch. 5.7b),
-   whose channel cell records this decision: when the move is executed the
-   code stays and its witnesses move from the red corpus to golden
-   `inconsistent` expectations.
+   remain the mirror. **Executed 2026-10-19** (card
+   `zero-division-channel`): a filled dividend divided by a numeric zero —
+   `gedeeld door` and its abs variant alike — is leeg and deposits a §9.5
+   fact of kind **EF-005** (ch. 5.7b) on the rule × subject that evaluates
+   it, as a leeg divisor does with EF-031; an empty dividend still yields 0
+   before the divisor is read (ch. 1.2). The kind kept its code; its
+   witnesses moved from the red corpus to golden `inconsistent`
+   expectations. Worked example: ch. 2.2.
 
 ---
 
@@ -366,9 +370,13 @@ the fractional-exponent domain or mandates a decimal-precision minimum.
 | datum ± duur (plus/min over a date and a duration) | **calendar arithmetic, not field arithmetic** — ch. 3.8: the count truncates toward zero, months/quarters/years clamp to the month end; the date stands on the left of plus and min (duration ± date is ill-formed) | 2024-01-31 + 2 weken = 2024-02-14; 2024-01-31 + 1 maand = 2024-02-29 |
 | tijdsduur van A tot B (in hele *eenheid*) | whole declared units between two dates, signed; the packed-month rule of ch. 3.8; the absolute variant drops the sign | tijdsduur van 29-02-2004 tot 28-02-2026 in jaren = 21 |
 
-Division by numeric zero: hard fault in v0; decided for v1: it routes
-into the §9.5 channel (ch. 1.4 point 4). A rational literal
-with denominator zero is rejected at parse time.
+Division by numeric zero: hard fault in v0; in v1 it routes into the
+§9.5 channel (ch. 1.4 point 4). Worked example (`ref/` test
+`ch2.2-div-zero`): 5 ÷ 0 is **leeg**, with exactly one §9.5 deposit, of
+kind EF-005; 0 ÷ 0 and leeg ÷ 0 follow the dividend rule of ch. 1.2
+instead — 0 ÷ 0 has a filled dividend and is leeg with the deposit, leeg ÷ 0
+is 0 without one. A rational literal with denominator zero is rejected at
+parse time.
 
 ### 2.3 Result precision (static typing)
 
@@ -1373,8 +1381,15 @@ does not, and a document that needs the distinction writes both.
 
 **What this does NOT give.** There is no average. `sum ÷ filledCount` is
 the hand-spelled form and it is the author's to write; over a wholly empty
-source it divides by zero and faults, and that fault is deliberate
-(maintainer decision G1). What the kind does give the author is the GUARD
+source it divides by zero, and the outcome is observable and deliberate
+(maintainer decision G1): the quotient is leeg and the division deposits a
+§9.5 fact of kind EF-005 on the rule × subject (ch. 1.4 point 4; until
+that move was executed, 2026-10-19, the division faulted). Worked example
+(the golden `filled-count-unguarded-division`, gates 5, 6 and 12): a
+Jutter without vondsten has `aantal gevulde` 0 and a som of 0 by its
+fallback, so `gemiddelde vondstwaarde` = 0 ÷ 0 is **leeg**, with one
+§9.5 fact of kind EF-005 from the rule `gemiddelde vondstwaarde` on that
+Jutter. What the kind does give the author is the GUARD
 that makes it avoidable: a filled count is an ordinary expression, so
 "indien het aantal gevulde … groter is dan 0" is writable in a rule's
 condition, where `count` could not serve — an instance count is 1 for a
@@ -3753,7 +3768,8 @@ surfaces beside the result. Operational clauses, mirrored:
   ch. 1.2d value equality, component by component — an enumeration
   component therefore up to the ci label identity of WF-008, so two
   spellings of one declared label collide), the allocation degrades of
-  ch. 4.3/4.4, division by empty (dividend filled), a negative
+  ch. 4.3/4.4, division by empty (dividend filled), division by a
+  numeric zero (dividend filled; ch. 1.4 point 4), a negative
   radicand, an empty variable-start anchor (ch. 3.2).
   Worked example (golden `jutterswet-keurspelling` case 4, verbatim in
   gates 5–6, and `WV-5.6-enum-sleutel` in `ref/test/`): under
@@ -3957,9 +3973,10 @@ directions is not the same as inventing one.
 
 ### 5.7b Fault kinds and their codes
 
-A **fault kind** is a property of the semantics, not of an executor:
-division by a numeric zero is the same fault whether an executor meets it
-while it reads the case, translates the document or evaluates it. Every
+A **fault kind** is a property of the semantics, not of an executor: a
+context value that needs an evaluation date the case does not carry is the
+same fault whether an executor meets it while it reads the case, translates
+the document or evaluates it. Every
 kind has a code, `EF-###` (the `E` of evaluation, beside the `WF-###` rules
 of `IR-SPEC.md`), listed in the table below with its channel, its
 parameters, the clause that defines it and its witnesses.
@@ -3970,8 +3987,7 @@ parameters, the clause that defines it and its witnesses.
   kind that moves to another channel keeps its code.
 - **Channels.** `case input`: the case is refused while it is read, before
   any rule fires (ch. 5.7 step 3, ch. 11.3). `fault`: the session aborts on
-  a well-formed input (ch. 1.4 point 4, ch. 2.4, ch. 3.8, ch. 5.5, ch. 5.7,
-  ch. 8). `declined`: a form this specification leaves without a meaning
+  a well-formed input (ch. 2.4, ch. 3.8, ch. 5.5, ch. 5.7, ch. 8). `declined`: a form this specification leaves without a meaning
   and every executor refuses by name (ch. 3.12). `§9.5`: a fact on the error
   channel, without an abort (ch. 5.6); the fact keeps rule × subject as its
   identity and carries the codes of its kinds beside it. A channel cell may
@@ -3979,8 +3995,9 @@ parameters, the clause that defines it and its witnesses.
   channel.
 - **The report.** An executor carries the code beside the text of its
   message, never inside it, and renders it at the head of its report:
-  `EF-005: division by numeric zero`. A report of several faults lists
-  their codes in the order of the report: `EF-005, EF-016: …`. The text of
+  `EF-011: the evaluationYear context value needs an evaluation date; …`. A
+  report of several faults lists their codes in the order of the report:
+  `EF-011, EF-016: …`. The text of
   a message is the executor's own and differs between executors; the code
   does not. A kind on the `§9.5` channel has no report: its code travels on
   the channel fact (ch. 5.6).
@@ -3989,9 +4006,10 @@ parameters, the clause that defines it and its witnesses.
   the document and the case, untranslated, and the writers or values of a list
   (EF-016) are its elements joined by `, `. An executor emits them as data
   beside its report and never inside the text: on the machine line of its
-  runner, `CODE EF-005 {"rule": "…"}`, one JSON object of strings per code (the
-  red run of the Drools backend puts the object after each code of its status
-  line, `FAULT EF-005 {"rule": "…"}: …`; `{}` where the executor names none). A
+  runner, `CODE EF-014 {"parameter": "…"}`, one JSON object of strings per code
+  (the red run of the Drools backend puts the object after each code of its
+  status line, `FAULT EF-016 {"rules": "…", …}: …`; `{}` where the executor
+  names none). A
   red case pins them (`expectedFault.params`, an object of strings) and gate 8
   holds every executor that checks the case to them as a subset: it emits at least
   the pinned ones. An executor emits what it has in hand at the place that
@@ -3999,15 +4017,14 @@ parameters, the clause that defines it and its witnesses.
   executor emits; a parameter that not every executor emits is not pinned by
   any case (an executor that does not name it would fail the pin). Measured
   2026-10-19, of the column of each row: `ref` emits all of it except
-  `dividend` (EF-005), `contextValue` (EF-011), `position` (EF-019) and `key`
-  (EF-024), which no executor emits yet, and `rule` (EF-005), which only the
-  Drools backend emits. The ASP backend lacks, beside those, `place` (EF-004),
+  `contextValue` (EF-011), `position` (EF-019) and `key` (EF-024), which no
+  executor emits yet. The ASP backend lacks, beside those, `place` (EF-004),
   `value` and `decimals` (EF-006), `place` (EF-006) in all but one of its
   reasons, `from` (EF-009), `creation`, `stratum` and `depth` (EF-015),
   `values` (EF-016) and `filler` (EF-017). The Drools backend emits only `field` and
   `lexeme` (EF-003), `count` (EF-008), `from` and `reach` (EF-009), `creation`,
-  `stratum` and `depth` (EF-015), `rules`, `values`, `attribute`, `label` and
-  `objectType` (EF-016), and `rule` (EF-005), and no other.
+  `stratum` and `depth` (EF-015), and `rules`, `values`, `attribute`, `label`
+  and `objectType` (EF-016), and no other.
   Gate 8 holds each executor's emitted keys to this column: a key outside the
   column of its code fails with the code, the executor and the key.
 - **Witnesses.** A code enters the table together with its witness: a red
@@ -4040,7 +4057,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-002 | a role link of the case input names a label the case does not declare | case input | `role`, `label`, `target` | ch. 5.7 step 3 | `corpus/red/unknown-role-target-label` |
 | EF-003 | a date lexeme of the case input names no calendar day | case input | `field`, `lexeme` | ch. 5.7 step 3 | `corpus/red/as-of-date-calendar`, `corpus/red/input-date-calendar` |
 | EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 11.3 | `corpus/red/input-overprecision`, `corpus/red/input-overprecision-param`, `corpus/red/list-element-overprecision`, `corpus/red/struct-field-overprecision` |
-| EF-005 | division by a numeric zero | fault; decided to move to §9.5 (ch. 1.4 point 4) | `rule`, `dividend` | ch. 1.4 point 4 | `corpus/red/filled-count-unguarded-division`, `corpus/red/at-most-reads-until-settled`, `corpus/red/clamp-reads-bounds-in-order`, `corpus/red/closed-runtime-division-by-zero`, `corpus/red/division-abs-by-numeric-zero`, `corpus/red/division-by-numeric-zero`, `corpus/red/sum-fallback-always-evaluated`, `corpus/red/fold-filter-divides-by-zero` |
+| EF-005 | a filled dividend is divided by a numeric zero | §9.5 | `rule`, `label` | ch. 1.4 point 4; ch. 2.2 | `corpus/golden/division-by-numeric-zero`, `corpus/golden/division-abs-by-numeric-zero`, `corpus/golden/filled-count-unguarded-division`, `corpus/golden/at-most-reads-until-settled`, `corpus/golden/closed-runtime-division-by-zero`, `corpus/golden/fold-filter-divides-by-zero` |
 | EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4 | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating` |
 | EF-007 | a datum-tijd step leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range` |
 | EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/red/date-time-step-outside-range` |
@@ -4072,15 +4089,19 @@ The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified
 form (its witness moves to the golden corpus), and its code then retires.
 
-Worked example (`corpus/red/division-by-numeric-zero`, replayed by gate
-8): the case pins `"code": "EF-005"` and `"params": {}` (the parameters `rule`
-and `dividend` that the row names are not emitted by every executor, so the
-case pins none). The reference interpreter reports the
-code beside its message "division by numeric zero"; the ASP backend
-reports it for its witness `viol("division by numeric zero","V1")`; the
-Drools backend's red run reports `FAULT EF-005 {"rule": "deel van een
-vondst"}: DelingDoorNul: deling door nul in de regel "deel van een vondst":
-90 gedeeld door 0 — …`. Three texts, one code.
+Worked example (`corpus/red/clamp-reads-bounds-in-order`, replayed by gate
+8): the case pins `"code": "EF-011"` and `"params": {}` (the parameter
+`contextValue` that the row names is emitted by no executor yet, so the case
+pins none). The reference interpreter reports the code beside its message
+where it evaluates the minimum of the clamp, "the evaluationYear context
+value needs an evaluation date; the case carries asOfDate null"; the ASP
+backend reports it beside the same sentence where it translates that
+minimum; the Drools backend's red run reports `FAULT EF-011 {}:
+ComputeFault: error in the rule "begrenswaarde van een jutter": the
+evaluationYear context value needs an evaluation date; …`. Two moments,
+three texts, one code. (Until 2026-10-19 this example was
+`division-by-numeric-zero`, whose kind EF-005 moved to the §9.5 channel
+then, ch. 1.4 point 4.)
 
 ### 5.8 The navigated read
 
@@ -4561,9 +4582,9 @@ empty prefix, and then the composite reads **no member at all**:
 
 That is not an edge case bolted on — it is the same rule applied to the
 prefix of length zero. It is observable, because the members it does not
-read are exactly the members whose faults do not happen: a vacuously true
-`atMost` over a member that would divide by zero **answers**, and does
-not fault. The wire admits all three shapes (WF-041 constrains only
+read are exactly the members whose faults and §9.5 facts do not happen: a
+vacuously true `atMost` over a member that would divide by zero
+**answers**, and deposits nothing. The wire admits all three shapes (WF-041 constrains only
 *d* ≥ 1) and this clause fixes what they mean.
 
 **The short circuit never changes a truth value.** Every trigger is
@@ -4622,8 +4643,9 @@ bergingsaandeel ← 1  indien  ALLE [
 | 4 | 100 | true | ⌊100/4⌋ = 25 > 0 → true | **1** |
 | 7 | 3 | true | ⌊3/7⌋ = 0 > 0 → false | **leeg** |
 
-Row 1 is the clause: without it, member 2 divides by zero and the whole
-evaluation faults instead of answering. Rows 2 and 3 are the control —
+Row 1 is the clause: without it, member 2 divides by zero and deposits a
+§9.5 fact of kind EF-005 (ch. 1.4 point 4); with it the channel stays
+empty, and the golden pins `consistent`. Rows 2 and 3 are the control —
 member 2 *is* read whenever member 1 holds, and decides both ways.
 
 Worked example (absolute; the `jutterswet-wachtdeling` corpus golden,
@@ -4647,10 +4669,15 @@ verdicts: the stop follows from the quantifier's own trigger, never from
 a special case for the conjunction.
 
 **Every row of the trigger table carries its own artifact.** A stop is
-observable only as a fault that does *not* happen, so a witness that
-pins verdicts alone leaves the row free to move. Each row below is
-therefore pinned by a case in which the member after the stop *would*
-fault — measured against a mutant that changes exactly that row:
+observable only as a fault or a §9.5 fact that does *not* happen, so a
+witness that pins verdicts alone leaves the row free to move. Each row
+below is therefore pinned by a case in which the member after the stop
+*would* divide by zero, and which pins the channel `consistent` — measured
+against a mutant that changes exactly that row (until the numeric zero went
+to the channel, 2026-10-19, the member would fault, and the case pinned the
+answer). The other direction — a member the outcome has not settled away
+*is* read — is the golden `at-most-reads-until-settled`, whose member 2
+deposits EF-005:
 
 | row | witness |
 |-----|---------|
@@ -4663,7 +4690,7 @@ fault — measured against a mutant that changes exactly that row:
 | `atMost`, vacuously true (*d* ≥ *n*) | `jutterswet-vacuumwacht` (`vacuumteken`, every row) |
 | `exactly`, threshold exceeded | `jutterswet-seinwacht` (`preciesteken`, `S1`) |
 | `exactly`, out of reach | `jutterswet-seinwacht` (`randteken`, *d* = 3 > *n* = 2) |
-| triggers tested *before* the member | `jutterswet-seinwacht` (`minsteteken`): a check made afterwards reads the faulting member 1 |
+| triggers tested *before* the member | `jutterswet-seinwacht` (`minsteteken`): a check made afterwards reads the dividing member 1 |
 
 ### 5.11 Operand order
 
@@ -4808,23 +4835,25 @@ the fixpoint independent of it, and ch. 7.1 fixes the defaults chain by
 priority rather than by evaluation.
 
 **Worked example — `Clamp` (absolute; the `clamp-reads-bounds-in-order`
-red case verbatim, gate 8).** A `Jutter` with `teller` = 1, `noemer` = 0
-and `grens` **absent**:
+red case verbatim, gate 8).** A `Jutter` with `grens` **absent**, in a
+session with no evaluation date:
 
 ```
 begrenswaarde := Let grenswaarde = zijn grens
-                 in (100 met een minimum van zijn teller gedeeld door zijn noemer
+                 in (100 met een minimum van het Rekenjaar
                          en een maximum van de grenswaarde)
 ```
 
-`base` = 100 evaluates first. `minimum` = 1 ÷ 0 evaluates second and
-**faults** — division by a numeric zero (ch. 1.2). `maximum` is never
-reached. Pinned outcome: the rule **fails observably** with *"division
-by numeric zero"*.
+`base` = 100 evaluates first. `minimum` = the `evaluationYear` context
+value evaluates second and **faults** — there is no evaluation date to read
+(ch. 8.2). `maximum` is never reached. Pinned outcome: the rule **fails
+observably**, fault kind EF-011. (Until 2026-10-19 the minimum was `1 ÷ 0`,
+whose fault went to the §9.5 channel with ch. 1.4 point 4; a deposit would
+not end the evaluation, so it could not show the order.)
 
 Under the reverse order the `maximum` would run first, its read of
 `grenswaarde` would raise the ch. 10.6 barrier, the whole `Let` would be
-leeg, the division would never happen, and the same document would
+leeg, the evaluation year would never be read, and the same document would
 quietly write nothing. The two orders do not differ in a value; one has
 an answer and the other does not.
 
@@ -6623,7 +6652,13 @@ could enter — a declared-but-absent **non-list** parameter FAULTS
 while a declared-but-absent **list** parameter reads leeg and that
 leegte propagates on **source position** (the `list` operand) *before*
 any body runs, never as a body operand. Emptiness therefore lives only
-at the fold's boundary (init, source), never in its interior.
+at the fold's boundary (init, source), never in an operand the interior
+reads. An operation in the body can still yield leeg where it deposits a
+§9.5 fact — a division by a numeric zero (ch. 1.4 point 4), a negative
+radicand — and the body's ch. 1–2 discipline then governs that leeg as
+it does any other: `acc + grondslag ÷ x` over [2, 0] with grondslag 60
+folds to 30, since `plus` reads the leeg quotient as 0, with one fact of
+kind EF-005 (the golden `closed-runtime-division-by-zero`).
 
 ### 10.2 Fold, MapList, FilterList, ListLength
 
@@ -6780,8 +6815,8 @@ verbatim).** One instance of an object type carrying whole-number inputs
 |---|---|---|---|
 | 2a | `Let x = a in x` | **leeg** | clause 2: the read fires the barrier (strict: leeg too) |
 | 2b | `Let x = a in 42` | **42** | clause 3: `x` is never read, so `a` is never evaluated (strict: **leeg**) |
-| i | `Let q = 100 ÷ 0 in 42` | **42**, no fault | clause 3 over a *faulting* value (strict: **faults**) |
-| ii | `Let q = 100 ÷ 0 in q` | **fault** *"division by numeric zero"* | the read forces the value; fail-fast, unchanged |
+| i | `Let q = 100 ÷ 0 in 42` | **42**, no §9.5 reason | clause 3 over a *depositing* value (strict: one reason, EF-005) |
+| ii | `Let q = 100 ÷ 0 in q` | **leeg**, exactly **one** §9.5 reason, EF-005 | the read forces the value, which deposits and is leeg (ch. 1.4 point 4), so the read ends the `Let` (clause 2) |
 | iii | `Let k = 2 in Let x = a in if k > 1 then 7 else x maal 2` | **7** | the condition reads `k` on *every* branch; `x` is read only on the branch not chosen (strict: **leeg**) |
 | iv | `Let q = (g ÷ d) plus 0 in q plus q` | **0**, exactly **one** §9.5 reason | clause 1, and only clause 1: `g ÷ d` deposits a reason and yields leeg, which the `plus 0` coalesces to a filled **0** — so the barrier stays silent, the second read really happens, and the single reason is the memo's doing. Without the memo: **two** reasons |
 
@@ -6795,7 +6830,8 @@ coalesced form the once-ness witness.
 
 Rows i, iii and iv are the differential witnesses of the change: ref and
 clingo agree on each, where the strict lowering faulted on i and derived
-nothing on iii.
+nothing on iii. (Rows i and ii read a fault until the numeric zero went to
+the §9.5 channel, 2026-10-19: i answered 42 without the fault, ii faulted.)
 
 **Worked example — the `jutterswet-tariefstelling` anchor.** Object
 type `Jutter` with `inkomen` (2 dec, input), `kindertal` (whole, input),

@@ -294,10 +294,13 @@ class TmsAggregationWitnessTest {
         return TmsDocuments.caseDocument(instances, List.of(value("J1", "gemiddeld bergloon", "25"), consistent()));
     }
 
-    /** J2 reports nothing: the sum is its fallback 0 and the count 0, at the fixpoint as well. */
+    /** J2 reports nothing: the sum is its fallback 0 and the count 0, at the fixpoint as well, so the gemiddeld bergloon
+     *  is leeg with the §9.5 deposit EF-005 (RUNTIME-SEMANTICS ch. 1.4, point 4; a fault until the card
+     *  zero-division-channel). */
     static JsonNode persistentDivisionCase() throws Exception {
         return TmsDocuments.caseDocument(List.of(instanceWithRoles("J2", "Jutter", Map.of(), List.of(), Map.of())),
-                List.of(consistent()));
+                List.of(value("J2", "gemiddeld bergloon", null),
+                        TmsDocuments.inconsistent("gemiddeld bergloon", "J2", "EF-005")));
     }
 
     @Test void a_division_by_a_count_that_is_intermediate_zero() throws Exception {
@@ -309,15 +312,15 @@ class TmsAggregationWitnessTest {
             expected.add(names + " gespeeld");
             outcomes.add(names + " " + TmsFaultWitnessTest.play(divisionDocument(order), persistentDivisionCase(),
                     DroolsBackend.Branch.EXEC_MODEL));
-            expected.add(names + " DelingDoorNul: deling door nul in de regel \"gemiddeld bergloon\": 0 gedeeld door 0 —"
-                    + " een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)");
+            expected.add(names + " gespeeld");
         }
         assertEquals(expected, outcomes);
         assertEquals(4, outcomes.size());
     }
 
     /** The generated rules in a seeded sample of orders: the fire ends at its fixpoint without throwing, and at least
-     *  one order divides by the count while it is still 0, a fault fact that is gone at the fixpoint. */
+     *  one order divides by the count while it is still 0, a deposit EF-005 that is gone at the fixpoint (a fault fact
+     *  until the card zero-division-channel). */
     @Test void sample_of_the_division_by_a_count() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(divisionDocument(DIVISION_RULES), DroolsBackend.Branch.EXEC_MODEL);
         int intermediate = 0;
@@ -328,12 +331,12 @@ class TmsAggregationWitnessTest {
             Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "20"), List.of("gemeld"));
             Object v3 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "10"), List.of());
             for (Object v : List.of(v1, v2, v3)) setRole(v, "aanmelder", j1);
-            TmsFaultWitnessTest.FaultFacts facts = new TmsFaultWitnessTest.FaultFacts();
-            assertNull(TmsFaultWitnessTest.fire(b, order, List.of(j1, v1, v2, v3), new DefaultAgendaEventListener() {},
-                    facts), () -> "volgorde " + names);
-            assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
+            TmsLetWitnessTest.Facts facts = new TmsLetWitnessTest.Facts();
+            assertNull(TmsDocuments.fixpoint(b, order, List.of(j1, v1, v2, v3), session -> session.addEventListener(facts)),
+                    () -> "volgorde " + names);
+            assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten en deponeringen in volgorde " + names);
             assertNumber("25", TmsDocuments.read(j1, "gemiddeld bergloon"), "gemiddeld bergloon in volgorde " + names);
-            if (facts.inserted > 0) intermediate++;
+            if (facts.codes.contains("EF-005")) intermediate++;
         }
         assertTrue(intermediate > 0, "geen volgorde deelde door de telling terwijl die nog 0 was");
     }
@@ -346,20 +349,22 @@ class TmsAggregationWitnessTest {
                     List.of())),
             List.of(factTypeOneToMany("aanmelding", "aanmelder", "Jutter", "vondst", "Vondst", "vondsten")));
 
+    /** "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: de wortel van zijn gewicht is groter
+     *  dan 2"; the fault device of {@link TmsDocuments#root} since the card zero-division-channel, until then "zijn
+     *  gewicht gedeeld door zijn deelnemers". */
     static final List<String> FILTER_RULES = List.of(computingRule("zware vondsten", "BEREKENING", "Jutter",
             "zware vondsten", aggregation("count", VONDSTEN, "Vondst", sourceRole("aanmelding", "vondst"),
-                    comparison("greater", binary("dividedBy", ownRead("gewicht", "Vondst"), ownRead("deelnemers", "Vondst")),
+                    comparison("greater", TmsDocuments.root(ownRead("gewicht", "Vondst"), "de wortel van zijn gewicht"),
                             number("2")), "null", COUNTING, "het aantal vondsten van de Jutter die aan de volgende voorwaarde"
-                            + " voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2"), "null"));
+                            + " voldoen: de wortel van zijn gewicht is groter dan 2"), "null"));
 
-    /** J1 reports V1 (gewicht 10, deelnemers 2: 5, counted) and V2 (gewicht 9, deelnemers 0): the filter divides 9 by
-     *  0 for V2, and the rule, which has no condition, reaches the fold: a fault at the fixpoint, on J1 and named after
-     *  the rule. */
+    /** J1 reports V1 (gewicht 9: 3, counted) and V2 (gewicht 2): the filter takes the root of 2 for V2, and the rule,
+     *  which has no condition, reaches the fold: a fault at the fixpoint, on J1 and named after the rule. */
     static JsonNode filterCase() throws Exception {
         return TmsDocuments.caseDocument(List.of(
                 instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of("vondsten", List.of("V1", "V2"))),
-                instanceWithRoles("V1", "Vondst", Map.of("gewicht", "10", "deelnemers", "2"), List.of(), Map.of()),
-                instanceWithRoles("V2", "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of(), Map.of())),
+                instanceWithRoles("V1", "Vondst", Map.of("gewicht", "9"), List.of(), Map.of()),
+                instanceWithRoles("V2", "Vondst", Map.of("gewicht", "2"), List.of(), Map.of())),
                 List.of(consistent()));
     }
 
@@ -372,8 +377,7 @@ class TmsAggregationWitnessTest {
      *  reported at the fixpoint with the sentence the exec-model branch gives for the same filter, and the fire ends at
      *  its fixpoint in every order of the generated rules. */
     @Test void a_fault_in_the_filter_of_a_fold_stands_at_the_fixpoint() throws Exception {
-        String sentence = "DelingDoorNul: deling door nul in de regel \"zware vondsten\": 9 gedeeld door 0 — een numerieke"
-                + " nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+        String sentence = "ComputeFault: " + TmsDocuments.irrational("zware vondsten", "2");
         assertEquals(sentence, TmsFaultWitnessTest.play(filterdocument(FILTER_RULES), filterCase(),
                 DroolsBackend.Branch.EXEC_MODEL));
         DroolsBackend.Build b = DroolsBackend.build(filterdocument(FILTER_RULES), DroolsBackend.Branch.EXEC_MODEL);
@@ -381,8 +385,8 @@ class TmsAggregationWitnessTest {
         for (List<Rule> order : TmsDocuments.permutations(b.execModelTranspiler().model().getRules())) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
-            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "10", "deelnemers", "2"), List.of());
-            Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of());
+            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "9"), List.of());
+            Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "2"), List.of());
             setRole(v1, "aanmelder", j1);
             setRole(v2, "aanmelder", j1);
             // the places of the list the case would write, which a fold whose filter can fault reads
@@ -392,7 +396,7 @@ class TmsAggregationWitnessTest {
             orders++;
         }
         // four generated rules: the reading rule, the contribution rule, the filter fault rule and, since the filter
-        // divides, the filter deposit rule (fixround 1 of tms-expressievormen-en-rekendatum)
+        // takes a root, the filter deposit rule (fixround 1 of tms-expressievormen-en-rekendatum)
         assertEquals(24, orders);
     }
 

@@ -132,7 +132,7 @@ spec bug.
     and a rule's condition are read at the fixpoint.
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2],
-  [V3]),
+  [V3], [V4]),
   has a frame in the suite, named `README [tag]`, that pins it and
   goes red when the entry no longer holds.
 - Exact arithmetic by declared-decimals integer scaling: a value of an
@@ -449,6 +449,20 @@ Recorded limitations:
   p and nothing is refused. The exact lowering, the need per path
   instead of on the whole body, changes the translation of every Let
   body.
+- [V4] A division by a numeric zero in a closed body (a Fold or MapList
+  body) yields leeg with a §9.5 deposit of EF-005 (RUNTIME-SEMANTICS
+  ch. 1.4 point 4). A closed body lowers to one term per step and has no
+  absence in it, so this backend carries that leeg only as an operand of
+  plus, minus, times or percentage-of, where ch. 1.2 reads it as 0: the
+  fold `acc + grondslag ÷ x` over [2, 0] with grondslag 60 answers 30,00
+  with the deposit on the rule and the subject that read the fold, as ref
+  does (golden `closed-runtime-division-by-zero`). Anywhere else in a
+  closed body the leeg would propagate (the body's own value, the value of
+  a Let whose binder is read, a rounding, a comparison), and a zero
+  divisor there derives the named witness `viol("a division by a numeric
+  zero in a closed body yields leeg …", _)` → UNSAT, where ref answers:
+  `Let m = grondslag ÷ x in (als x ≥ 4 dan acc + 1,00 anders acc + m)`
+  over [0] is leeg with the deposit in ref.
 - Negative or empty allocation operands make the generated program
   UNSATISFIABLE — clingo then fails exactly where `ref/` faults
   (ch. 4.4), instead of silently diverging by the truncation/floor

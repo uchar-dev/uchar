@@ -21,6 +21,7 @@
     { "kind": "attributeValue", "label": "B2", "attribute": "vacuumteken", "value": { "number": "1" } },
     { "kind": "attributeEmpty", "label": "B2", "attribute": "stopteken" },
     { "kind": "attributeValue", "label": "B3", "attribute": "vacuumteken", "value": { "number": "1" } },
-    { "kind": "attributeValue", "label": "B3", "attribute": "stopteken",   "value": { "number": "1" } }
+    { "kind": "attributeValue", "label": "B3", "attribute": "stopteken",   "value": { "number": "1" } },
+    { "kind": "consistent" }
   ]
 }

@@ -36,7 +36,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * A fault in the subselection of a fold, on the exec-model and the DRL-text branch, arises where the evaluation of a
+ * <b>Since the card zero-division-channel (2026-10-19)</b> a division by a numeric zero is no fault but a §9.5 deposit of
+ * kind EF-005 beside a leeg quotient (RUNTIME-SEMANTICS ch. 1.4, point 4), so the rows of this class whose filter
+ * divided by 0 now pin where that deposit arises: under the form whose evaluation reaches the fold, and nowhere else,
+ * which is where the fault arose ({@link #deposits}). A leeg quotient does not pass the filter, so the member does not
+ * count. The path row and a matrix row pin a fault still, with the square root without a rounding of a number that is
+ * no square ({@link TmsDocuments#root}, {@link #fails}); the order of the faults of a fold's filter is pinned by
+ * {@code TmsFilterFaultWitnessTest}. The text below is that of the division as a fault, with the measurements of that
+ * time.
+ *
+ * <p>A fault in the subselection of a fold, on the exec-model and the DRL-text branch, arises where the evaluation of a
  * form reaches the fold, and nowhere else. The reference interpreter evaluates a rule's condition first and its value
  * only where the rule fires, a composite condition only up to the member after which its verdict stands
  * (RUNTIME-SEMANTICS ch. 5.10), and a fold's filter only where it evaluates the fold, per member of that subject's
@@ -162,13 +171,23 @@ class FilterFaultWitnessTest {
         assertEquals("gespeeld", TmsFaultWitnessTest.play(ir, caseDocument, DRL), "drl-tekst");
     }
 
-    /** Both branches fault on {@code caseDocument}, where rule {@code regel} reaches its fold and the filter divides
-     *  {@code dividend} by zero for a member: with the division named after the rule, a fault of the fixpoint. */
-    private static void fails(Path ir, JsonNode caseDocument, String regel, String dividend) throws Exception {
+    /** Both branches fault on {@code caseDocument}, where rule {@code regel} reaches its fold and the filter or the
+     *  matrix takes the root of {@code radicand}, which is no square, for a member: with the fault named after the
+     *  rule, a fault of the fixpoint. Until the card zero-division-channel the fault was a division by zero. */
+    private static void fails(Path ir, JsonNode caseDocument, String regel, String radicand) throws Exception {
         for (DroolsBackend.Branch branch : List.of(EXEC, DRL))
-            assertEquals("DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + dividend + " gedeeld door 0 —"
-                    + " een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)",
+            assertEquals("ComputeFault: " + TmsDocuments.irrational(regel, radicand),
                     TmsFaultWitnessTest.play(ir, caseDocument, branch), branch.toString());
+    }
+
+    /** Both branches play {@code instances}, where rule {@code regel} reaches its fold on {@code label} and the filter
+     *  divides by a numeric zero for a member: {@code outcome}, and the §9.5 deposit of kind EF-005 under that rule on
+     *  that subject. Until the card zero-division-channel such a row faulted ({@link #fails}). */
+    private static void deposits(Path ir, List<String> instances, List<String> outcome, String regel, String label)
+            throws Exception {
+        List<String> expectations = new ArrayList<>(outcome);
+        expectations.add(TmsDocuments.inconsistent(regel, label, "EF-005"));
+        played(ir, TmsDocuments.caseDocument(instances, expectations));
     }
 
     private static String vondst(String label, String weight, String deelnemers) {
@@ -224,18 +243,14 @@ class FilterFaultWitnessTest {
                 value("J2", "zware vondsten", "1"), expected("J2", "druk", true), consistent())));
     }
 
-    /** The red case {@code fold-filter-divides-by-zero}: J1 actief, both rules reach the fold and divide 9 by 0. The
-     *  exec-model branch counts a fault at the fixpoint, so it gives both, ordered by the name of the rule; the
-     *  destructive exec-model branch stopped at the first, in the order of its evaluation. */
-    @Test void where_the_fold_is_reached_the_division_stays_a_fault() throws Exception {
-        JsonNode caseDocument = TmsDocuments.caseDocument(j1(true), List.of(consistent()));
-        String division = "9 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4,"
-                + " punt 4)";
-        assertEquals("EvaluationFaults: aan het fixpunt staan 2 evaluatiefouten, in de regels \"drukte\", \"zware"
-                + " vondsten\": deling door nul in de regel \"drukte\": " + division + "; deling door nul in de regel \"zware"
-                + " vondsten\": " + division, TmsFaultWitnessTest.play(FILTERWACHT, caseDocument, EXEC), "exec-model");
-        assertEquals(TmsFaultWitnessTest.play(FILTERWACHT, caseDocument, EXEC), TmsFaultWitnessTest.play(FILTERWACHT, caseDocument, DRL),
-                "drl-tekst");
+    /** The golden {@code fold-filter-divides-by-zero} (a red case until the card zero-division-channel): J1 actief,
+     *  both rules reach the fold and divide 9 by 0, so each deposits EF-005 on J1, and V2 does not count. Until that
+     *  card the exec-model branch counted a fault at the fixpoint and gave both, ordered by the name of the rule. */
+    @Test void where_the_fold_is_reached_the_division_deposits() throws Exception {
+        List<String> expectations = new ArrayList<>(List.of(value("J1", "vondstental", "2"), value("J1", "zware vondsten",
+                "1"), expected("J1", "druk", true)));
+        expectations.add(TmsDocuments.inconsistent("zware vondsten", "J1", "EF-005"));
+        deposits(FILTERWACHT, j1(true), expectations, "drukte", "J1");
     }
 
     // ---------------- the other places where a fold stands under a condition ----------------
@@ -318,7 +333,7 @@ class FilterFaultWitnessTest {
         played(ir, TmsDocuments.caseDocument(j1(false), List.of(value("J1", "zwaarte", null), consistent())));
         played(ir, TmsDocuments.caseDocument(j2j3(), List.of(value("J2", "zwaarte", "2"), value("J3", "zwaarte", "1"),
                 consistent())));
-        fails(ir, TmsDocuments.caseDocument(j1(true), List.of(consistent())), "zwaarte", "9");
+        deposits(ir, j1(true), List.of(value("J1", "zwaarte", "2")), "zwaarte", "J1");
     }
 
     /** "Een Jutter heeft een melding met telling gelijk aan 1 indien hij aan alle volgende voorwaarden voldoet: hij is
@@ -330,7 +345,7 @@ class FilterFaultWitnessTest {
         played(ir, TmsDocuments.caseDocument(j1(false), List.of(value("J1", "meldtelling", null), consistent())));
         played(ir, TmsDocuments.caseDocument(j2j3(), List.of(value("J2", "meldtelling", "1"),
                 value("J3", "meldtelling", null), consistent())));
-        fails(ir, TmsDocuments.caseDocument(j1(true), List.of(consistent())), "meld", "9");
+        deposits(ir, j1(true), List.of(value("J1", "meldtelling", "1")), "meld", "J1");
     }
 
     /** "Een Jutter heeft een melding met telling gelijk aan het aantal vondsten … indien hij actief is": the fold is
@@ -365,7 +380,8 @@ class FilterFaultWitnessTest {
             played(ir, TmsDocuments.caseDocument(j1(false), List.of(expected("J1", r[1], false), consistent())));
             played(ir, TmsDocuments.caseDocument(j2j3(), List.of(expected("J2", r[1], Boolean.parseBoolean(r[3])),
                     expected("J3", r[1], Boolean.parseBoolean(r[4])), consistent())));
-            fails(ir, TmsDocuments.caseDocument(j1(true), List.of(consistent())), r[0], "9");
+            // V2 divides by 0 and is no contributor; V1 (gewicht 10) is, so as J2
+            deposits(ir, j1(true), List.of(expected("J1", r[1], Boolean.parseBoolean(r[3]))), r[0], "J1");
         }
     }
 
@@ -374,7 +390,7 @@ class FilterFaultWitnessTest {
      *  accumulate as well, the destructive exec-model branch asked it after the accumulate (until card
      *  tms-omschakeling, 2026-10-10). J4's V6 (60 above 100 by 2) holds; the
      *  members of J2 and J3 do not, and divide by no 0. Where J1 is actief, V1 (10 above 50) does not hold, so the fold
-     *  goes on to V2, 100 by 0. */
+     *  goes on to V2, 100 by 0: a leeg quotient, which does not hold, and the deposit. */
     @Test void a_division_in_the_matrix_of_a_quantifier_fold() throws Exception {
         String test = comparison("greater", ownRead("gewicht", "Vondst"), "{\"node\":\"Binary\",\"op\":\"dividedBy\","
                 + "\"left\":" + number("100") + ",\"right\":" + ownRead("deelnemers", "Vondst") + ",\"type\":{\"node\":"
@@ -385,17 +401,35 @@ class FilterFaultWitnessTest {
         played(ir, TmsDocuments.caseDocument(combined(j2j3(), List.of(jutter("J4", true, List.of("V6")),
                 vondst("V6", "60", "2"))), List.of(expected("J2", "druk", false), expected("J3", "druk", false),
                 expected("J4", "druk", true), consistent())));
-        fails(ir, TmsDocuments.caseDocument(j1(true), List.of(consistent())), "drukte", "100");
+        deposits(ir, j1(true), List.of(expected("J1", "druk", false)), "drukte", "J1");
+    }
+
+    /** The fault of a matrix, since the division of the row above deposits: "het gewicht van ten minste één van de
+     *  vondsten van de Jutter: de wortel van zijn gewicht is groter dan 3", after "hij is actief". J5's V8 (gewicht 4,
+     *  the root 2) does not hold, so the fold goes on to V9 (gewicht 2), whose root is irrational: the fault. J6 reads
+     *  V10 (gewicht 16, the root 4) first, which settles the fold, so V9 is not read and J6 is druk. J7 is not actief,
+     *  so the fold is not read. */
+    @Test void a_root_in_the_matrix_of_a_quantifier_fold_faults_where_it_is_reached() throws Exception {
+        String test = comparison("greater", TmsDocuments.root(ownRead("gewicht", "Vondst"), "de wortel van zijn gewicht"),
+                number("3"));
+        Path ir = document(List.of(quantifierRule("drukte", "druk", quantifierFold("atLeast", "null", test))), List.of());
+        fails(ir, TmsDocuments.caseDocument(List.of(jutter("J5", true, List.of("V8", "V9")), vondst("V8", "4", "1"),
+                vondst("V9", "2", "1")), List.of(consistent())), "drukte", "2");
+        played(ir, TmsDocuments.caseDocument(List.of(jutter("J6", true, List.of("V10", "V9")), vondst("V10", "16", "1"),
+                vondst("V9", "2", "1")), List.of(expected("J6", "druk", true), consistent())));
+        played(ir, TmsDocuments.caseDocument(List.of(jutter("J7", false, List.of("V9")), vondst("V9", "2", "1")),
+                List.of(expected("J7", "druk", false), consistent())));
     }
 
     /** The bootlengte of {@code TmsFilterFaultWitnessTest}: the sum of the lengte of all boten of all jutters of the
-     *  Haven whose lengte divided by their breedte is greater than 2, or 0, over a path that walks back to the jutters
-     *  and forward to their boot. H1's jutters J1 and J2 share B1 (9 by 3): 9, once. B9 (4 by 0) is the boot of no
-     *  jutter of H1; where J3 of H1 uses it, the fold reaches it and divides 4 by 0. */
+     *  Haven the root of whose lengte is greater than 2, or 0, over a path that walks back to the jutters and forward to
+     *  their boot. H1's jutters J1 and J2 share B1 (lengte 9, the root 3): 9, once. B9 (lengte 2) is the boot of no
+     *  jutter of H1; where J3 of H1 uses it, the fold reaches it and takes the root of 2: the fault. Until the card
+     *  zero-division-channel the filter divided the lengte by the breedte and B9 divided 4 by 0. */
     @Test void a_member_that_the_path_does_not_reach_is_not_filtered() throws Exception {
         Path ir = TmsDocuments.document(TmsFilterFaultWitnessTest.HAVENMODEL, TmsFilterFaultWitnessTest.BOOT_LENGTH);
         String b1 = instanceWithRoles("B1", "Boot", Map.of("lengte", "9", "breedte", "3"), List.of(), Map.of());
-        String b9 = instanceWithRoles("B9", "Boot", Map.of("lengte", "4", "breedte", "0"), List.of(), Map.of());
+        String b9 = instanceWithRoles("B9", "Boot", Map.of("lengte", "2", "breedte", "0"), List.of(), Map.of());
         String j1 = instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B1")));
         String j2 = instanceWithRoles("J2", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B1")));
         played(ir, TmsDocuments.caseDocument(List.of(instanceWithRoles("H1", "Haven", Map.of(), List.of(),
@@ -404,7 +438,7 @@ class FilterFaultWitnessTest {
         String j3 = instanceWithRoles("J3", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B9")));
         fails(ir, TmsDocuments.caseDocument(List.of(instanceWithRoles("H1", "Haven", Map.of(), List.of(),
                 Map.of("jutters", List.of("J1", "J2", "J3"))), j1, j2, j3, b1, b9), List.of(consistent())),
-                "bootlengte", "4");
+                "bootlengte", "2");
     }
 
     // ---------------- the order of an "alle" composite around a fold ----------------
@@ -434,7 +468,8 @@ class FilterFaultWitnessTest {
     }
 
     /** One case of the composite: the Jutter it is about, its instances, and per member its verdict there: "W" it
-     *  holds, "O" it does not, or the dividend of the division by 0 it reaches. */
+     *  holds, "O" it does not, and a "D" after either where its evaluation divides by 0 and deposits (until the card
+     *  zero-division-channel the dividend of that division, a fault). */
     private record Case(String label, List<String> instances, Map<Character, String> verdicts) {}
 
     private static String jutter(String label, boolean actief, String balance, String denominator, List<String> vondsten) {
@@ -447,33 +482,36 @@ class FilterFaultWitnessTest {
                 List.of(), Map.of());
     }
 
-    /** J1 is not actief, and every other member faults in a division of its own: F at V1, 10 by its ploeg 0; D, 5 by
-     *  the noemer 0; K at V2, 9 by its deelnemers 0 (the subselection is settled for every vondst before the matrix,
-     *  ch. 3.9a, so V1, which holds the matrix, does not stop it). J2 is actief and every member holds: V3, 10 by 2 in
-     *  both quotients and gewicht 10 above 5, counts for F and for K, and 6 by 2 is 3. J3 is actief, its one vondst V5,
-     *  2 by 2 in both quotients, counts for neither, so F and K do not hold, and its noemer is 0. J4 is actief and D
-     *  holds; its one vondst V7 makes F fault, 10 by its ploeg 0, and does not count for K, 10 by its deelnemers 5
-     *  being 2: whether the composite faults or answers there follows the order of F and K alone. */
+    /** J1 is not actief, and every other member divides by 0 on its way: F at V1, 10 by its ploeg 0, and V2 counts (9
+     *  by 3), so F holds; D, 5 by the noemer 0, which does not hold; K at V2, 9 by its deelnemers 0, and V1 is in the
+     *  subselection and holds the matrix, so K holds (the subselection is settled for every vondst before the matrix,
+     *  ch. 3.9a). J2 is actief and every member holds: V3, 10 by 2 in both quotients and gewicht 10 above 5, counts for
+     *  F and for K, and 6 by 2 is 3. J3 is actief, its one vondst V5, 2 by 2 in both quotients, counts for neither, so F
+     *  and K do not hold, and its noemer is 0. J4 is actief and D holds; its one vondst V7 divides 10 by its ploeg 0 in
+     *  F, which then counts nothing and does not hold, and does not count for K, 10 by its deelnemers 5 being 2: whether
+     *  the composite deposits there follows the order of F and K alone. Until the card zero-division-channel each of
+     *  those divisions was a fault, named by its dividend. */
     static final List<Case> CASES = List.of(
             new Case("J1", List.of(jutter("J1", false, "5", "0", List.of("V1", "V2")), vondst("V1", "10", "2", "0"),
-                    vondst("V2", "9", "0", "3")), Map.of('A', "O", 'F', "10", 'D', "5", 'K', "9")),
+                    vondst("V2", "9", "0", "3")), Map.of('A', "O", 'F', "WD", 'D', "OD", 'K', "WD")),
             new Case("J2", List.of(jutter("J2", true, "6", "2", List.of("V3", "V4")), vondst("V3", "10", "2", "2"),
                     vondst("V4", "3", "3", "3")), Map.of('A', "W", 'F', "W", 'D', "W", 'K', "W")),
             new Case("J3", List.of(jutter("J3", true, "5", "0", List.of("V5")), vondst("V5", "2", "2", "2")),
-                    Map.of('A', "W", 'F', "O", 'D', "5", 'K', "O")),
+                    Map.of('A', "W", 'F', "O", 'D', "OD", 'K', "O")),
             new Case("J4", List.of(jutter("J4", true, "6", "2", List.of("V7")), vondst("V7", "10", "5", "0")),
-                    Map.of('A', "W", 'F', "10", 'D', "W", 'K', "O")));
+                    Map.of('A', "W", 'F', "OD", 'D', "W", 'K', "O")));
 
     /** The composite's verdict on {@code g} by RUNTIME-SEMANTICS ch. 5.10 and 5.11: the members are read in
-     *  {@code order}, and the first that does not hold or faults decides, a fault ending the evaluation; "W" where
-     *  every member holds, "O" where one does not, and for a fault the member's letter and its dividend ("F 10"). */
+     *  {@code order} and the first that does not hold decides; "W" where every member holds and "O" where one does not,
+     *  with a "D" after it where a member read divided by 0 and deposited. */
     static String verdict(List<Character> order, Case g) {
+        boolean deposited = false;
         for (char c : order) {
             String o = g.verdicts().get(c);
-            if (o.equals("O")) return o;
-            if (!o.equals("W")) return c + " " + o;
+            deposited |= o.endsWith("D");
+            if (o.startsWith("O")) return deposited ? "OD" : "O";
         }
-        return "W";
+        return deposited ? "WD" : "W";
     }
 
     /** What {@code branch} gives on {@code caseDocument}: "gespeeld", the verdict of an expectation that failed, or the fault with
@@ -487,19 +525,18 @@ class FilterFaultWitnessTest {
         }
     }
 
-    /** What each branch must give where the verdict on rule {@code regel} is {@code verdict}: for a fault, the division
-     *  of the fixpoint with its dividend, named after the rule. Until card drl-teksttak-op-truth-maintenance the DRL-text
-     *  branch gave Drools' exception for the constraint that held the member's quotient. */
-    static String expectation(String verdict, String regel) {
-        if (verdict.equals("W") || verdict.equals("O")) return "gespeeld";
-        return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + verdict.substring(2)
-                + " gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4,"
-                + " punt 4)";
+    /** The expectations of the case of {@code label} where the verdict of the rule {@code regel} is {@code verdict}:
+     *  druk where it holds, and the deposit of EF-005 where a member deposited, else consistent. */
+    static List<String> expectations(String verdict, String regel, String label) {
+        return List.of(expected(label, "druk", verdict.startsWith("W")), verdict.endsWith("D")
+                ? TmsDocuments.inconsistent(regel, label, "EF-005") : consistent());
     }
 
     /** Every order of the four members, on the four cases, on both branches: a member is evaluated only where every
-     *  member before it holds, and a fault ends the evaluation (ch. 5.10, 5.11), so the verdict, and whether and which
-     *  division by 0 happens, follows the order. On J1 each branch names the division of the first member, F's, D's or
+     *  member before it holds (ch. 5.10, 5.11), so the verdict, and whether a division by 0 deposits, follows the order;
+     *  on J4 the composite deposits where the order puts F before K, and not where it puts K first. Until the card
+     *  zero-division-channel a division by 0 was a fault that ended the evaluation, and the paragraph below is of that
+     *  time: On J1 each branch names the division of the first member, F's, D's or
      *  K's, so a branch that evaluated the two folds in the other order names the other fold's division; on J4 it
      *  faults where the order puts F before K, and answers where it puts K first. The reference interpreter's message
      *  names no division ("division by numeric zero"); it faults on J4 in each of the twelve orders with F before K and
@@ -513,12 +550,11 @@ class FilterFaultWitnessTest {
             Path ir = document(List.of(characteristicRule("drukte", "Jutter", "druk", compound("all", 0, members))), List.of());
             for (Case g : CASES) {
                 String verdict = verdict(order, g);
-                JsonNode caseDocument = TmsDocuments.caseDocument(g.instances(), verdict.equals("W") || verdict.equals("O")
-                        ? List.of(expected(g.label(), "druk", verdict.equals("W")), consistent()) : List.of(consistent()));
+                JsonNode caseDocument = TmsDocuments.caseDocument(g.instances(), expectations(verdict, "drukte", g.label()));
                 for (DroolsBackend.Branch branch : List.of(EXEC, DRL)) {
-                    String received = observation(ir, caseDocument, branch), expected = expectation(verdict, "drukte");
-                    if (!received.equals(expected))
-                        deviating.add(order + " " + g.label() + " " + branch + ": verwacht " + expected + ", kreeg " + received);
+                    String received = observation(ir, caseDocument, branch);
+                    if (!received.equals("gespeeld"))
+                        deviating.add(order + " " + g.label() + " " + branch + ": verwacht " + verdict + ", kreeg " + received);
                 }
             }
         }
@@ -528,7 +564,8 @@ class FilterFaultWitnessTest {
     /** "de telling van de melding van de Jutter is groter dan 0", a member that reads through a role, beside
      *  {@link #fold()} in both orders: on the exec-model branch such a condition goes on the subject bound again after
      *  the join to the melding, and the members after the fold on the subject bound again from that. J1's V2 divides 9
-     *  by 0 and its melding counts 0: with the fold first the composite faults, after the member it is not read. J2's V3
+     *  by 0 and its melding counts 0: with the fold first the composite deposits (a fault until the card
+     *  zero-division-channel) and is not druk, after the member the fold is not read. J2's V3
      *  (10 by 2) counts and its melding counts 3: druk. J3's V5 (2 by 2) does not count: not druk. */
     @Test void a_navigated_member_beside_the_fold_in_both_orders() throws Exception {
         String navigated = comparison("greater", pathRead("telling", "Melding", "JutterHeeftMelding", "melding"),
@@ -547,7 +584,7 @@ class FilterFaultWitnessTest {
                 List.of(foldMember, navigated)))), List.of());
         Path memberFirst = document(List.of(characteristicRule("drukte", "Jutter", "druk", compound("all", 0,
                 List.of(navigated, foldMember)))), List.of());
-        fails(foldFirst, TmsDocuments.caseDocument(j1, List.of(consistent())), "drukte", "9");
+        deposits(foldFirst, j1, List.of(expected("J1", "druk", false)), "drukte", "J1");
         played(memberFirst, TmsDocuments.caseDocument(j1, List.of(expected("J1", "druk", false), consistent())));
         for (Path ir : List.of(foldFirst, memberFirst)) {
             played(ir, TmsDocuments.caseDocument(j2, List.of(expected("J2", "druk", true), consistent())));
@@ -567,7 +604,8 @@ class FilterFaultWitnessTest {
     /** "de eerste van de vinddatum van alle vondsten van de Jutter die {@link #FILTER} is later dan zijn peildatum"
      *  beside "hij is actief", in both orders, on both branches (until card drl-teksttak-op-truth-maintenance the
      *  DRL-text branch refused a fold of dates in a condition by name, measured 2026-10-09). J1 is not actief and its V2 divides 9 by 0: with the fold first the
-     *  composite faults, after "hij is actief" the fold is not read. J2 is actief, and its one contributor V3 was found
+     *  composite deposits (a fault until the card zero-division-channel) and is not druk, after "hij is actief" the fold
+     *  is not read. J2 is actief, and its one contributor V3 was found
      *  on 2026-01-05, later than its peildatum 2020-01-01. */
     @Test void a_date_fold_beside_a_member_in_both_orders() throws Exception {
         String dateFold = comparison("later", aggregation("first", ownRead("vinddatum", "Vondst"), "Vondst",
@@ -583,7 +621,7 @@ class FilterFaultWitnessTest {
                 List.of(dateFold, check("actief", false))))), List.of());
         Path actiefFirst = document(List.of(characteristicRule("drukte", "Jutter", "druk", compound("all", 0,
                 List.of(check("actief", false), dateFold)))), List.of());
-        fails(foldFirst, TmsDocuments.caseDocument(j1, List.of(consistent())), "drukte", "9");
+        deposits(foldFirst, j1, List.of(expected("J1", "druk", false)), "drukte", "J1");
         played(actiefFirst, TmsDocuments.caseDocument(j1, List.of(expected("J1", "druk", false), consistent())));
         for (Path ir : List.of(foldFirst, actiefFirst))
             played(ir, TmsDocuments.caseDocument(j2, List.of(expected("J2", "druk", true), consistent())));
@@ -677,8 +715,9 @@ class FilterFaultWitnessTest {
      *  hoogste 1 of three, with "hij is beladen" third, where no stop trigger can fire before the fold whatever the
      *  first member gives. The exec-model branch folds there what the reference interpreter reads, so it lowers these
      *  forms as before the refusal and plays them as the reference interpreter answers: with V1 alone, 10 by 2 and
-     *  found after the peildatum, not druk, druk, druk, not druk, druk and not druk; with V2 beside it, 9 by 0, a fault
-     *  in each. The guard: where the threshold settles the composite before any member, ten hoogste 1 and ten minste 2
+     *  found after the peildatum, not druk, druk, druk, not druk, druk and not druk; with V2 beside it, 9 by 0, the
+     *  deposit EF-005 in each, V2 no contributor, under the characteristics of that case: not druk, druk, druk, druk,
+     *  not druk and druk (a fault in each until the card zero-division-channel). The guard: where the threshold settles the composite before any member, ten hoogste 1 and ten minste 2
      *  over the fold alone, and where the fold is the second member of an alle composite that is the only member under
      *  geen, after "hij is actief" on a J1 that is not actief, the reference interpreter reads no fold and answers
      *  (druk, not druk, druk), and the branch before the refusal divided 9 by 0: the destructive exec-model branch kept
@@ -687,36 +726,36 @@ class FilterFaultWitnessTest {
      *  frontend's documents of these forms, with the ASP runner and the branch before the refusal ({@code 4ada319d}).
      *  */
     @Test void a_fold_that_can_fail_in_a_member_that_is_always_read_plays_like_ref() throws Exception {
-        String division = "DelingDoorNul: deling door nul in de regel \"drukte\": 9 gedeeld door 0 — een numerieke nul"
-                + " als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
         String actief = check("actief", false), beladen = check("beladen", false), fold = dateFold(FILTER);
         List<String> deviating = new ArrayList<>();
-        // per form: its composite, J1's characteristics with V1 alone and its druk there, and with V2 beside V1
+        // per form: its composite, J1's characteristics with V1 alone and its druk there, and with V2 beside V1 and its
+        // druk there
         Map<String, Object[]> playing = new java.util.LinkedHashMap<>();
         playing.put("geen, enig lid", new Object[] {compound("none", 0, List.of(fold)), List.of(), false,
-                List.of()});
+                List.of(), false});
         playing.put("ten minste 1, eerste lid", new Object[] {compound("atLeast", 1, List.of(fold, actief)),
-                List.of(), true, List.of("actief")});
+                List.of(), true, List.of("actief"), true});
         playing.put("geen over alle, eerste lid", new Object[] {compound("none", 0, List.of(compound("all", 0,
-                List.of(fold, actief)))), List.of(), true, List.of()});
+                List.of(fold, actief)))), List.of(), true, List.of(), true});
         playing.put("precies 1, tweede van twee", new Object[] {compound("exactly", 1, List.of(actief, fold)),
-                List.of("actief"), false, List.of()});
+                List.of("actief"), false, List.of(), true});
         playing.put("ten minste 2, tweede van drie", new Object[] {compound("atLeast", 2, List.of(actief, fold,
-                beladen)), List.of("beladen"), true, List.of()});
+                beladen)), List.of("beladen"), true, List.of(), false});
         playing.put("ten hoogste 1, tweede van drie", new Object[] {compound("atMost", 1, List.of(actief, fold,
-                beladen)), List.of("actief"), false, List.of()});
+                beladen)), List.of("actief"), false, List.of(), true});
         for (Map.Entry<String, Object[]> v : playing.entrySet()) {
             Object[] w = v.getValue();
             Path ir = document(List.of(characteristicRule("drukte", "Jutter", "druk", (String) w[0])), List.of());
             @SuppressWarnings("unchecked") List<String> kenmerken = (List<String>) w[1], withV2 = (List<String>) w[3];
             JsonNode answer = TmsDocuments.caseDocument(asOfJutter(kenmerken, false), List.of(expected("J1", "druk",
                     (Boolean) w[2]), consistent()));
-            JsonNode fault = TmsDocuments.caseDocument(asOfJutter(withV2, true), List.of(consistent()));
+            JsonNode deposit = TmsDocuments.caseDocument(asOfJutter(withV2, true), List.of(expected("J1", "druk",
+                    (Boolean) w[4]), TmsDocuments.inconsistent("drukte", "J1", "EF-005")));
             for (DroolsBackend.Branch branch : List.of(EXEC, DRL)) {
                 String given = TmsFaultWitnessTest.play(ir, answer, branch);
                 if (!given.equals("gespeeld")) deviating.add(v.getKey() + " " + branch + ": " + given);
-                given = TmsFaultWitnessTest.play(ir, fault, branch);
-                if (!given.equals(division)) deviating.add(v.getKey() + " met V2 " + branch + ": " + given);
+                given = TmsFaultWitnessTest.play(ir, deposit, branch);
+                if (!given.equals("gespeeld")) deviating.add(v.getKey() + " met V2 " + branch + ": " + given);
             }
         }
         likeRef(document(List.of(characteristicRule("drukte", "Jutter", "druk", compound("atMost", 1,
@@ -745,7 +784,8 @@ class FilterFaultWitnessTest {
      *  voldoet: - {@link #zwaarFold()} is groter dan 0", and the creation of a melding with that telling under that
      *  condition: the value is read only where the condition holds, so the fold in the condition comes first. J1 has no
      *  vondst above 50. J2's V6 (60 by 2) is above 50 and counts, its V4 (3 by 3) does not: 1. J4 has V6 and V2, so the
-     *  condition holds and the value divides 9 by 0. */
+     *  condition holds and the value divides 9 by 0: V6 counts, V2 deposits (a fault until the card
+     *  zero-division-channel). */
     @Test void a_fold_in_the_value_under_a_fold_in_the_condition() throws Exception {
         String condition = compound("all", 0, List.of(comparison("greater", zwaarFold(), number("0"))));
         Path regel = document(List.of(computingRule("zwaarte", "BEREKENING", "Jutter", "zwaarte", fold(), condition)),
@@ -756,7 +796,7 @@ class FilterFaultWitnessTest {
         List<String> j2 = List.of(jutter("J2", false, List.of("V6", "V4")), v6, vondst("V4", "3", "3"));
         played(regel, TmsDocuments.caseDocument(j2, List.of(value("J2", "zwaarte", "1"), consistent())));
         List<String> j4 = List.of(jutter("J4", false, List.of("V6", "V2")), v6, vondst("V2", "9", "0"));
-        fails(regel, TmsDocuments.caseDocument(j4, List.of(consistent())), "zwaarte", "9");
+        deposits(regel, j4, List.of(value("J4", "zwaarte", "1")), "zwaarte", "J4");
         // the creation, whose initialisation divides, the analysis refuses by name on both branches; until card
         // drl-teksttak-op-truth-maintenance the DRL-text branch played it on J1 and J2 and faulted on J4
         initialisationRefused(creation);
@@ -814,8 +854,8 @@ class FilterFaultWitnessTest {
      *  the members "het aantal liggers van de Haven die aan de volgende voorwaarde voldoen: zijn lengte gedeeld door zijn
      *  breedte is groter dan 2 is groter dan 0" and "de Haven veilig is", in both orders, read back through "het
      *  wintertal van een Haven ... het aantal winterschuiten van de Haven": the condition of a fact creation's anchor.
-     *  H1 is not veilig and its S2 divides 9 by 0: with the fold first the composite faults, after "de Haven veilig is"
-     *  the fold is not read and H1 gets no winterschuit. H2 is veilig and its S3 (10 by 2) is its winterschuit. */
+     *  H1 is not veilig and its S2 divides 9 by 0: with the fold first the composite deposits (a fault until the card
+     *  zero-division-channel), after "de Haven veilig is" the fold is not read; H1 gets no winterschuit either way. H2 is veilig and its S3 (10 by 2) is its winterschuit. */
     @Test void a_fact_creation_reads_the_members_of_its_condition_in_order() throws Exception {
         String model = TmsDocuments.model(List.of(
                 TmsDocuments.objectType("Haven", List.of(attribute("wintertal", COUNTING)), List.of("veilig")),
@@ -853,8 +893,8 @@ class FilterFaultWitnessTest {
             ir.toFile().deleteOnExit();
             List<String> h1Case = new ArrayList<>(List.of(h1));
             h1Case.addAll(schuiten1);
-            if (members.get(0).equals(fold)) fails(ir, TmsDocuments.caseDocument(h1Case, List.of(consistent())),
-                    "winterberging door de haven", "9");
+            if (members.get(0).equals(fold)) deposits(ir, h1Case, List.of(value("H1", "wintertal", "0")),
+                    "winterberging door de haven", "H1");
             else played(ir, TmsDocuments.caseDocument(h1Case, List.of(value("H1", "wintertal", "0"), consistent())));
             played(ir, TmsDocuments.caseDocument(List.of(h2, s3), List.of(value("H2", "wintertal", "1"), consistent())));
         }

@@ -20,8 +20,17 @@
     ],
     "parameters": {}
   },
-  "expectedFault": {
-    "code": "EF-005",
-    "params": {}
-  }
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "K1",
+      "attribute": "stukprijs"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "stukprijs van een kavel",
+      "label": "K1",
+      "code": "EF-005"
+    }
+  ]
 }

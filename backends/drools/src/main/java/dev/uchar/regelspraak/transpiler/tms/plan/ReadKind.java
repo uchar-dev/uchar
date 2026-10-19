@@ -38,7 +38,7 @@ public enum ReadKind {
     FOLDED_VALUE,
     /** The least filter fault of a fold on the subject ({@code vouw}). */
     FILTER_FAULT,
-    /** The number of filter deposits of a fold on the subject ({@code vouw}). */
+    /** The list of filter deposits of a fold on the subject ({@code vouw}). */
     FILTER_DEPOSIT,
     /** The least member fault of a fold on the subject ({@code vouw}). */
     MEMBER_FAULT,

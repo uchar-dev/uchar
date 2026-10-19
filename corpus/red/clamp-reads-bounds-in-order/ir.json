@@ -10,26 +10,6 @@
         "attributes": [
           {
             "node": "Attribute",
-            "name": "teller",
-            "datatype": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "unspecified"
-            }
-          },
-          {
-            "node": "Attribute",
-            "name": "noemer",
-            "datatype": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "unspecified"
-            }
-          },
-          {
-            "node": "Attribute",
             "name": "grens",
             "datatype": {
               "node": "Number",
@@ -113,32 +93,16 @@
                   }
                 },
                 "minimum": {
-                  "node": "Binary",
-                  "op": "dividedBy",
-                  "left": {
-                    "node": "AttributeReference",
-                    "attribute": "teller",
-                    "subjectType": "Jutter",
-                    "source": {
-                      "snippet": "zijn teller"
-                    }
-                  },
-                  "right": {
-                    "node": "AttributeReference",
-                    "attribute": "noemer",
-                    "subjectType": "Jutter",
-                    "source": {
-                      "snippet": "zijn noemer"
-                    }
-                  },
+                  "node": "ContextValue",
+                  "name": "evaluationYear",
                   "type": {
                     "node": "Number",
-                    "whole": false,
+                    "whole": true,
                     "decimals": 0,
                     "sign": "unspecified"
                   },
                   "source": {
-                    "snippet": "zijn teller gedeeld door zijn noemer"
+                    "snippet": "het Rekenjaar"
                   }
                 },
                 "maximum": {
@@ -155,7 +119,7 @@
                   "sign": "unspecified"
                 },
                 "source": {
-                  "snippet": "100 met een minimum van zijn teller gedeeld door zijn noemer en een maximum van de grenswaarde"
+                  "snippet": "100 met een minimum van het Rekenjaar en een maximum van de grenswaarde"
                 }
               },
               "source": {

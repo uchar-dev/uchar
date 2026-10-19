@@ -222,8 +222,29 @@ class RulePlanWitnessTest {
                 "    toets 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '0'",
                 "    toets 0.1.2 Const String",
-                "  gevolg Inconsistency [onderwerp=$onderwerp, form=bergingsaandeel van een jutter,"
-                        + " codes=[EF-031], insertion=LOGICAL]"),
+                "  gevolg ConditionDeposit [onderwerp=$onderwerp, form=bergingsaandeel van een jutter,"
+                        + " condition=Samengesteld ALLE 0(RS_AGG_COMPARE(Lees 0, Const 0, Const !=),"
+                        + " RS_AGG_COMPARE(RS_ROUNDING(Deel DIVIDED sonde 2 (Lees 1, Lees 0), Const 0, Const FLOOR),"
+                        + " Const 0, Const >)), depositFlag=2, slots=[0, 1], size=3, insertion=LOGICAL]",
+                "    condition 0 Compound bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
+                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
+                "    condition 0.0 Call bron 'zijn ploegomvang is ongelijk aan 0'",
+                "    condition 0.0.0 SlotValue bron 'zijn ploegomvang'",
+                "    condition 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    condition 0.0.2 Const String",
+                "    condition 0.1 Call bron 'het aandeel is groter dan 0'",
+                "    condition 0.1.0 Call bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter naar beneden afgerond op 0 decimalen'",
+                "    condition 0.1.0.0 Division bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter'",
+                "    condition 0.1.0.0.0 SlotValue bron 'de vangstwaarde van de Jutter'",
+                "    condition 0.1.0.0.1 SlotValue bron 'de ploegomvang van de Jutter'",
+                "    condition 0.1.0.1 Const Integer",
+                "    condition 0.1.0.2 Const RoundingMode",
+                "    condition 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
+                        + " eenheid=null] bron '0'",
+                "    condition 0.1.2 Const String"),
                 rules(golden("jutterswet-ploegaandeel")));
     }
 

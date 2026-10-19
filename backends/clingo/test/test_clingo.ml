@@ -4975,28 +4975,47 @@ let arm_heffing_empty_and_reported =
       { "kind": "attributeEmpty", "label": "J1", "attribute": "heffing" },
       { "kind": "inconsistent", "rule": "heffing van een jutter", "label": "J1" } ]|}
 
-(* de rode spiegel: de plek zit in de arm die WEL betreden wordt, dus beide
-   executors moeten waarneembaar afbreken — ref met een fout die [needle]
-   draagt, clingo met UNSAT. Een model, of een fout met een andere reden, is
-   een failure: dit is de helft die de andere helft eerlijk houdt. *)
-let both_break ~name ~ir ~case_text ~needle =
+let both_answer ~name ~ir ~case_text =
+  ref_matches ~name ~ir ~case_text;
+  clingo_matches ~name ~ir ~case_text
+
+(* FIXRONDE 4, lens point 4: the recorded deviations of the parameter guard
+   (backends/clingo/README.md, the tagged entries), each with a frame named
+   after its entry. A frame pins the deviation as it stands and goes red when
+   it disappears — the gate-7 survivor pattern: a deviation that is gone takes
+   its frames and its README entry with it, as [S2] did in fixronde 5. *)
+let pinned name entry = Printf.sprintf "README [%s]: %s" entry name
+
+(* loud: ref plays the case's rows; clingo refuses, in translation or UNSAT,
+   with [needle] *)
+let pinned_loud ~entry ~name ~ir ~case_text ~needle =
+  let name = pinned name entry in
+  ref_matches ~name ~ir ~case_text;
   let doc, case = load_pair ~ir ~case_text in
-  let env =
-    { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
-      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
-  in
-  (match Uchar_ref.Eval.evaluate env case.world with
-  | _ -> check (name ^ ": ref aborts (got a world back)") false
+  let label = name ^ ": clingo refuses where ref plays" in
+  match translate doc case with
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check (name ^ ": ref aborts (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m));
-  let label = name ^ ": clingo is UNSAT" in
-  match Solve.run_clingo (translate doc case) with
-  | _, Unix.WEXITED 20 -> check label true
-  | _, Unix.WEXITED (10 | 30) -> check (label ^ " (found a model)") false
-  | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
-  | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
-  | _, _ -> check (label ^ " (clingo killed)") false
-  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (vertaalfout: " ^ m ^ ")") false
+      check (label ^ " (translation fault: " ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
+  | program -> (
+      match Solve.run_clingo program with
+      | _, Unix.WEXITED 20 ->
+          let ws = Solve.diagnostic program in
+          check (label ^ " (" ^ String.concat "; " ws ^ ")") (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
+      | _, _ -> check (label ^ " (clingo no longer refuses: the deviation is gone)") false)
+
+(* de spiegel met een NULdeler: sinds v1 de deling door een numerieke nul naar
+   het §9.5-kanaal leidt (RUNTIME-SEMANTICS ch. 1.4 punt 4) blijft heffing leeg
+   en staat het kanaalfeit er met code EF-005, waar de lege deler EF-031 geeft.
+   Tot dan braken beide executors hier af. *)
+let arm_heffing_empty_zero =
+  {|"expected": [
+      { "kind": "attributeEmpty", "label": "J1", "attribute": "heffing" },
+      { "kind": "inconsistent", "rule": "heffing van een jutter", "label": "J1",
+        "code": "EF-005" } ]|}
+
+(* het deponeren van de nuldeler staat in het programma: de regel die het
+   kanaalfeit met EF-005 neerlegt *)
+let zero_deposit = {|"EF-005") :-|}
 
 let () =
   (* vorm 1 — de §6.5-plek in de NIET-betreden arm. inkomen 40,00 ligt boven de
@@ -5031,17 +5050,14 @@ let () =
   (* de garde zelf staat er nog — een fix die het hek gewoon weghaalt zou de
      regel hierboven ook groen maken *)
   translates_carrying ~name:"ch10.2 the zero guard is still in the program" ~ir:arm_doc12
-    ~case_text:zero_not_taken ~needle:{|viol("division by numeric zero"|};
-  (* vorm 2, de andere richting: de arm WORDT betreden en dan breken beide
-     executors af, met dezelfde reden *)
-  both_break ~name:"ch10.2 zero division in the ENTERED arm"
+    ~case_text:zero_not_taken ~needle:zero_deposit;
+  (* vorm 2, de andere richting: de arm WORDT betreden en dan melden beide
+     executors de nuldeler, met dezelfde code *)
+  both_answer ~name:"ch10.2 zero division in the ENTERED arm"
     ~ir:arm_doc12
     ~case_text:
       (arm_case ~inkomen:"5" ~restpost:"0" ~parameters:arm_params12
-         ~expected_value:
-           {|"expectedFault": { "code": "EF-005", "params": {} }|}
-         ())
-    ~needle:"division by numeric zero";
+         ~expected_value:arm_heffing_empty_zero ());
   (* vorm 3 — één behoefte in de armen van twee knopen: 40,00 boven de drempel
      van 10,00 en onder de hoge drempel van 100,00, dus 40,00 + 0,00 *)
   let case3 =
@@ -5091,8 +5107,8 @@ let () =
   clingo_matches
     ~name:"ch10.2 zero division in the not-entered arm under an operator does not abort"
     ~ir:arm_doc5 ~case_text:five_zero_not_taken;
-  (* en de betreden arm onder diezelfde operator: melden respectievelijk
-     afbreken, precies als ref *)
+  (* en de betreden arm onder diezelfde operator: melden, met de lege deler en
+     met de nuldeler, precies als ref *)
   let five_taken =
     arm_case ~inkomen:"5" ~parameters:arm_params12
       ~expected_value:
@@ -5106,13 +5122,16 @@ let () =
     ~case_text:five_taken;
   clingo_matches ~name:"ch10.2 §6.5-site in the ENTERED arm under an operator does report"
     ~ir:arm_doc5 ~case_text:five_taken;
-  both_break ~name:"ch10.2 zero division in the ENTERED arm under an operator" ~ir:arm_doc5
+  both_answer ~name:"ch10.2 zero division in the ENTERED arm under an operator" ~ir:arm_doc5
     ~case_text:
       (arm_case ~inkomen:"5" ~restpost:"0" ~parameters:arm_params12
          ~expected_value:
-           {|"expectedFault": { "code": "EF-005", "params": {} }|}
-         ())
-    ~needle:"division by numeric zero";
+           {|"expected": [
+               { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+                 "value": { "number": "5" } },
+               { "kind": "inconsistent", "rule": "heffing van een jutter", "label": "J1",
+                 "code": "EF-005" } ]|}
+         ());
   (* vorm 4 — de behoefte wordt alleen in de niet-betreden arm gelezen, dus
      ch. 10.6 evalueert haar waarde daar niet en de §6.5-plek erin zwijgt *)
   ref_matches ~name:"ch10.6 need only in the not-entered arm" ~ir:arm_doc4
@@ -5132,7 +5151,10 @@ let () =
    nuldeling in de anders-arm brak het programma af op een lijst waarvan elk
    element de dan-arm kiest. De §6.5-melding kan hier niet ontstaan — een
    gesloten body is leegvrij (ch. 10.1) — dus wat de armgarde in deze route
-   koopt is precies de fail-fast-kant.
+   koopt is de kant van de nuldeler: sinds v1 (ch. 1.4 punt 4) een melding
+   met EF-005, die de gesloten body draagt waar de lege uitkomst onder een
+   `plus` als 0 telt, en anders de benoemde grens van deze backend (README
+   [V4]).
 
    Het document is een vouw over de kindertallen, afgeleid van de vorm van
    `jutterswet-kinderdeler`: per kindertal telt de vouw 1,00 op, of — onder de
@@ -5255,6 +5277,28 @@ let cb_total n =
         { "kind": "consistent" } ]|}
     n
 
+(* een kindertal 0 in de betreden anders-arm (RUNTIME-SEMANTICS ch. 1.4 punt 4):
+   het deel is leeg met een melding EF-005. Onder de `plus` telt het als 0, dus
+   0,00 + 0 = 0,00 *)
+let cb_zero_coalesced =
+  {|"expected": [
+      { "kind": "attributeValue", "label": "J1", "attribute": "delertotaal",
+        "value": { "number": "0" } },
+      { "kind": "inconsistent", "rule": "delertotaal van een jutter", "label": "J1",
+        "code": "EF-005" } ]|}
+
+(* … en waar het lege deel de waarde van een behoefte is die de arm leest, leegt
+   de barrière (ch. 10.6) het lichaam en daarmee de vouw *)
+let cb_zero_empty =
+  {|"expected": [
+      { "kind": "attributeEmpty", "label": "J1", "attribute": "delertotaal" },
+      { "kind": "inconsistent", "rule": "delertotaal van een jutter", "label": "J1",
+        "code": "EF-005" } ]|}
+
+(* de zin van de grens README [V4]: een nuldeler in een gesloten body die niet
+   onder plus, min, maal of percentage-van staat *)
+let closed_zero_division_reason = "a division by a numeric zero in a closed body yields leeg"
+
 let () =
   (* de niet-betreden arm: drempel 0, kindertal 0 — de dan-arm telt 1,00 op en
      de deling door dat nul-kindertal mag het programma niet afbreken *)
@@ -5268,7 +5312,7 @@ let () =
   (* de garde staat er nog — een fix die het hek weghaalt zou de regel
      hierboven ook groen maken *)
   translates_carrying ~name:"ch10.2 closed body: the zero guard is still in the program"
-    ~ir:recht_0 ~case_text:tallies ~needle:{|viol("division by numeric zero"|};
+    ~ir:recht_0 ~case_text:tallies ~needle:zero_deposit;
   (* de betreden arm REKENT: drempel 4, kindertal 3 — 0,00 + 60/3 = 20,00 *)
   let recht_4 = cb_doc ~cutoff:4 ~lambda_body:cb_body_recht in
   let calculates = cb_case ~kindertallen:{|{ "number": "3" }|} ~expected_value:(cb_total "20.00") in
@@ -5277,13 +5321,10 @@ let () =
   clingo_matches ~name:"ch10.2 closed body: the entered arm also calculates in clingo" ~ir:recht_4
     ~case_text:calculates;
   (* en de betreden arm VUURT: drempel 4, kindertal 0 — nu deelt de anders-arm
-     wel door nul, en dan breken beide executors af *)
-  both_break ~name:"ch10.2 closed body: zero division in the ENTERED arm" ~ir:recht_4
-    ~case_text:
-      (cb_case ~kindertallen:zero_value
-         ~expected_value:
-           {|"expectedFault": { "code": "EF-005", "params": {} }|})
-    ~needle:"division by numeric zero";
+     wel door nul: het deel is leeg, de `plus` telt het als 0, en beide
+     executors melden de nuldeler *)
+  both_answer ~name:"ch10.2 closed body: zero division in the ENTERED arm" ~ir:recht_4
+    ~case_text:(cb_case ~kindertallen:zero_value ~expected_value:cb_zero_coalesced);
   (* dezelfde grens langs ch. 10.6, binnen de gesloten body: de deling zit
      achter een behoefte die alleen de anders-arm leest *)
   let let_0 = cb_doc ~cutoff:0 ~lambda_body:cb_body_let in
@@ -5293,12 +5334,11 @@ let () =
     ~name:"ch10.6 closed body: need only in the not-entered arm does not abort"
     ~ir:let_0 ~case_text:tallies;
   let let_4 = cb_doc ~cutoff:4 ~lambda_body:cb_body_let in
-  both_break ~name:"ch10.6 closed body: need in the ENTERED arm" ~ir:let_4
-    ~case_text:
-      (cb_case ~kindertallen:zero_value
-         ~expected_value:
-           {|"expectedFault": { "code": "EF-005", "params": {} }|})
-    ~needle:"division by numeric zero"
+  (* de behoefte m is leeg en wordt gelezen, dus de barrière leegt de Let en
+     daarmee het vouwlichaam: ref geeft leeg en de melding, clingo weigert *)
+  pinned_loud ~entry:"V4" ~name:"ch10.6 closed body: need in the ENTERED arm" ~ir:let_4
+    ~case_text:(cb_case ~kindertallen:zero_value ~expected_value:cb_zero_empty)
+    ~needle:closed_zero_division_reason
 
 (* --- en dezelfde behoefte-grens op regelniveau ONDER een operator ---------
    De Let staat er niet aan de kop van de waarde maar onder een `plus`, dus hij
@@ -5417,7 +5457,7 @@ let () =
     ~name:"ch10.6 operator between Let and branch, zero divisor in the not-entered arm does not abort"
     ~ir:arm_doc9 ~case_text:on_zero40;
   translates_carrying ~name:"ch10.6 operator between Let and branch: the zero guard is still in the program"
-    ~ir:arm_doc9 ~case_text:on_zero40 ~needle:{|viol("division by numeric zero"|};
+    ~ir:arm_doc9 ~case_text:on_zero40 ~needle:zero_deposit;
   (* de spiegel: inkomen 5,00 kiest de anders-arm, en dan wordt z WEL gelezen.
      Met een lege deler meldt §6.5 en maakt de ch.-10.6-barrière het GEHEEL
      leeg — niet alleen de arm. Dat laatste is precies wat een kale duw naar
@@ -5445,13 +5485,10 @@ let () =
                { "kind": "inconsistent", "rule": "heffing van een jutter",
                  "label": "J1" } ]|}
          ());
-  both_break ~name:"ch10.6 operator between Let and branch, zero divisor in the ENTERED arm" ~ir:arm_doc9
+  both_answer ~name:"ch10.6 operator between Let and branch, zero divisor in the ENTERED arm" ~ir:arm_doc9
     ~case_text:
       (arm_case ~inkomen:"5" ~restpost:"0" ~parameters:arm_params12
-         ~expected_value:
-           {|"expectedFault": { "code": "EF-005", "params": {} }|}
-         ())
-    ~needle:"division by numeric zero";
+         ~expected_value:arm_heffing_empty_zero ());
   (* DE WIKKELGETUIGE. De rechterhand van de `plus` draagt zelf een
      §6.5-plek, buiten de tak om, en de waarde van z draagt een nuldeler. De
      dan-arm wordt betreden: z's nuldeling mag niets doen, maar de deling in de
@@ -5606,9 +5643,6 @@ let arm_val n =
         { "kind": "consistent" } ]|}
     n
 
-let arm_breaks =
-  {|"expectedFault": { "code": "EF-005", "params": {} }|}
-
 (* de vier hoeken van elke vorm: de niet-betreden arm met een lege en met een
    nul-deler, en de betreden arm met dezelfde twee *)
 let arm_four ~ident ~ir ~not_taken =
@@ -5626,7 +5660,7 @@ let arm_four ~ident ~ir ~not_taken =
   (* de garde staat er nog — een fix die het hek weghaalt zou de twee regels
      hierboven ook groen maken *)
   translates_carrying ~name:(ident ^ ": de nulgarde staat nog in het programma") ~ir
-    ~case_text:zero40 ~needle:{|viol("division by numeric zero"|};
+    ~case_text:zero40 ~needle:zero_deposit;
   (* DE REIKWIJDTE-PIN, en de spiegel ineen: de arm WORDT betreden, de behoefte
      wordt gelezen, en dan meldt §6.5 én leegt de ch.-10.6-barrière het GEHEEL —
      niet alleen de arm, wat een coalescerende wikkel als 0,00 zou lezen *)
@@ -5635,10 +5669,9 @@ let arm_four ~ident ~ir ~not_taken =
   ref_matches ~name:(ident ^ ", lege deler in de BETREDEN arm") ~ir ~case_text:empty5;
   clingo_matches ~name:(ident ^ ", lege deler in de BETREDEN arm meldt en leegt") ~ir
     ~case_text:empty5;
-  both_break ~name:(ident ^ ", nuldeler in de BETREDEN arm") ~ir
+  both_answer ~name:(ident ^ ", nuldeler in de BETREDEN arm") ~ir
     ~case_text:(arm_case ~inkomen:"5" ~restpost:"0" ~parameters:arm_params12
-                  ~expected_value:arm_breaks ())
-    ~needle:"division by numeric zero"
+                  ~expected_value:arm_heffing_empty_zero ())
 
 let () =
   (* D1: de niet-betreden arm levert w = 1,00 *)
@@ -5663,10 +5696,9 @@ let () =
   clingo_matches
     ~name:"ch10.6 nested value reads the outermost need, empty divisor reports and empties"
     ~ir:arm_doc15 ~case_text:empty40;
-  both_break ~name:"ch10.6 nested value reads the outermost need, zero divisor" ~ir:arm_doc15
+  both_answer ~name:"ch10.6 nested value reads the outermost need, zero divisor" ~ir:arm_doc15
     ~case_text:(arm_case ~inkomen:"40" ~restpost:"0" ~parameters:arm_params12
-                  ~expected_value:arm_breaks ())
-    ~needle:"division by numeric zero"
+                  ~expected_value:arm_heffing_empty_zero ())
 
 let () =
   (* D4 — DE LUIDE WEIGERING. Een wikkel tussen de twee Lets met een
@@ -5752,22 +5784,21 @@ let () =
   let empty40 = arm_case ~inkomen:"40" ~parameters:arm_params12
                  ~expected_value:arm_heffing_empty_and_reported () in
   let zero40 =
-    arm_case ~inkomen:"40" ~restpost:"0" ~parameters:arm_params12 ~expected_value:arm_breaks ()
+    arm_case ~inkomen:"40" ~restpost:"0" ~parameters:arm_params12 ~expected_value:arm_heffing_empty_zero ()
   in
   List.iter
     (fun (ident, ir) ->
       ref_matches ~name:(ident ^ ", lege deler op de dan-arm") ~ir ~case_text:empty40;
       clingo_matches ~name:(ident ^ ", lege deler op de dan-arm meldt en leegt") ~ir
         ~case_text:empty40;
-      both_break ~name:(ident ^ ", nuldeler op de dan-arm") ~ir ~case_text:zero40
-        ~needle:"division by numeric zero")
+      both_answer ~name:(ident ^ ", nuldeler op de dan-arm") ~ir ~case_text:zero40)
     [ ("ch10.6 vangst: de conditie leest de geneste binder", arm_doc18);
       ("ch10.6 vangst: de andere arm leest de behoefte direct", arm_doc19) ]
 
 (* --- knoop 1, tweede helft: de GESLOTEN body ------------------------------
    Dezelfde twee routes in de derde lowering. De §6.5-melding kan hier niet
    ontstaan (een gesloten body is leegvrij, ch. 10.1), dus wat er te meten valt
-   is precies de fail-fast-kant. *)
+   is de kant van de nuldeler (README [V4]). *)
 
 let cbn_ite ~left_side ~cutoff ~then_branch ~else_branch =
   Printf.sprintf
@@ -5821,20 +5852,19 @@ let cb_three ~ident ~lambda_body =
   clingo_matches ~name:(ident ^ " in de niet-betreden arm breekt niet af") ~ir:lower_end
     ~case_text:tallies;
   translates_carrying ~name:(ident ^ ": de nulgarde staat nog in het programma") ~ir:lower_end
-    ~case_text:tallies ~needle:{|viol("division by numeric zero"|};
+    ~case_text:tallies ~needle:closed_zero_division_reason;
   (* de betreden arm REKENT — een armgarde die de arm zelf doodmaakt haalt dit
      niet *)
   let calculates = cb_case ~kindertallen:{|{ "number": "3" }|} ~expected_value:(cb_total "20.00") in
   ref_matches ~name:(ident ^ ": de betreden arm rekent") ~ir:upper_end ~case_text:calculates;
   clingo_matches ~name:(ident ^ ": de betreden arm rekent ook in clingo") ~ir:upper_end
     ~case_text:calculates;
-  (* en de betreden arm VUURT *)
-  both_break ~name:(ident ^ " in de BETREDEN arm") ~ir:upper_end
-    ~case_text:
-      (cb_case ~kindertallen:zero_value
-         ~expected_value:
-           {|"expectedFault": { "code": "EF-005", "params": {} }|})
-    ~needle:"division by numeric zero"
+  (* en de betreden arm VUURT: de behoefte m is leeg met een melding EF-005, de
+     arm leest haar en de barrière leegt het lichaam; ref geeft leeg en de
+     melding, clingo weigert bij naam (README [V4]) *)
+  pinned_loud ~entry:"V4" ~name:(ident ^ " in de BETREDEN arm") ~ir:upper_end
+    ~case_text:(cb_case ~kindertallen:zero_value ~expected_value:cb_zero_empty)
+    ~needle:closed_zero_division_reason
 
 let () =
   cb_three ~ident:"ch10.6 gesloten body: geneste Let" ~lambda_body:cb_body_nested;
@@ -8246,34 +8276,6 @@ let unbound_fires ~name ~ir ~case_text ~param ~silent =
       | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
       | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
       | _, _ -> check (label ^ " (clingo killed)") false)
-
-let both_answer ~name ~ir ~case_text =
-  ref_matches ~name ~ir ~case_text;
-  clingo_matches ~name ~ir ~case_text
-
-(* FIXRONDE 4, lens point 4: the recorded deviations of the parameter guard
-   (backends/clingo/README.md, the tagged entries), each with a frame named
-   after its entry. A frame pins the deviation as it stands and goes red when
-   it disappears — the gate-7 survivor pattern: a deviation that is gone takes
-   its frames and its README entry with it, as [S2] did in fixronde 5. *)
-let pinned name entry = Printf.sprintf "README [%s]: %s" entry name
-
-(* loud: ref plays the case's rows; clingo refuses, in translation or UNSAT,
-   with [needle] *)
-let pinned_loud ~entry ~name ~ir ~case_text ~needle =
-  let name = pinned name entry in
-  ref_matches ~name ~ir ~case_text;
-  let doc, case = load_pair ~ir ~case_text in
-  let label = name ^ ": clingo refuses where ref plays" in
-  match translate doc case with
-  | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check (label ^ " (translation fault: " ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
-  | program -> (
-      match Solve.run_clingo program with
-      | _, Unix.WEXITED 20 ->
-          let ws = Solve.diagnostic program in
-          check (label ^ " (" ^ String.concat "; " ws ^ ")") (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
-      | _, _ -> check (label ^ " (clingo no longer refuses: the deviation is gone)") false)
 
 (* silent: ref faults in its words; clingo answers, and exactly the case's
    rows — they are the answer the deviation gives *)

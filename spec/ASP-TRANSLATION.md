@@ -67,7 +67,7 @@ ch. 1.4). `viol/2` is fenced by the global constraint `:- viol(_,_).`
 — any `viol/2` derivation makes the program UNSAT, which is the
 encoding of ref's *hard faults*; the runner then re-runs relaxed,
 shows the `viol/2` witnesses, and gate 8 reads the fault kind and its
-parameters off the witness (`CODE EF-005 {…}`, RUNTIME-SEMANTICS ch. 5.7b) and
+parameters off the witness (`CODE EF-014 {…}`, RUNTIME-SEMANTICS ch. 5.7b) and
 compares them with `expectedFault {code, params}`. Nothing ever degrades silently: a value the
 encoding cannot carry exactly becomes a `viol/2` witness, never a
 truncated number.
@@ -439,11 +439,11 @@ rounding it cannot compute in one integer step.
 - **Division** (gedeeld-door): the three §6.5 edges ride beside the
   value — empty dividend → 0 *before* the divisor is read; empty
   divisor under a filled dividend → the rule-keyed channel fact and
-  no value; numeric zero divisor → `viol("division by numeric
-  zero")` — the v0-mirror hard fault, which ch. 1.4 point 4 keeps as
-  the mirror while v1 routes this case into the §9.5 channel (a
-  decided, tracked delta both executors will follow together when the
-  v1 divergence lands). The bare form translates only EXACT outcomes:
+  no value; numeric zero divisor under a filled dividend → the same,
+  with the code EF-005 beside it (`inconsistent_code/3`) — v1 routes this
+  case into the §9.5 channel (RUNTIME-SEMANTICS ch. 1.4 point 4; executed
+  2026-10-19 in both executors at once, until then the v0-mirror hard
+  fault `viol("division by numeric zero")`). The bare form translates only EXACT outcomes:
   a remainder
   derives a `viol/2` witness, never a truncated value. The
   rounded form (afgerond over a division) computes the mode's integer
@@ -454,7 +454,8 @@ rounding it cannot compute in one integer step.
 - **Abs-division** (gedeeld-door-abs, ch. 2.2): the rounded-division
   path at (richting-nul, 5) — the defined truncation point, both
   signs, no extra fence. Anchor `jutterswet-taxatie` (full sign
-  table); red `corpus/red/division-abs-by-numeric-zero`.
+  table); golden `corpus/golden/division-abs-by-numeric-zero` (a red
+  case until 2026-10-19).
 - **Power** (tot-de-macht): `((t)**e)` at compile-time scale sl^e for
   a compile-time non-negative integer exponent; the base operand is
   fenced at the largest value whose e-th power stays inside 2^31 —
@@ -1813,12 +1814,17 @@ scale.
       round_z-scale-5 form carried whole into the body (golden
       `jutterswet-kinderkap`, `acc + (x /abs 3)`, `[10,25] → 11.66666`). A
       **runtime (bound-binder) divisor** for the bare division keeps the
-      two-factor form and rides a numeric-zero `viol/2`; the empty-operand §9.5
-      edges (empty dividend → 0, empty divisor → the channel) cannot arise on
-      always-bound binders, so only the zero fault does (golden
+      two-factor form; the empty-operand §9.5 edges (empty dividend → 0, empty
+      divisor → the channel) cannot arise on always-bound binders, so only the
+      numeric zero does, whose quotient is leeg with the deposit EF-005 (golden
       `jutterswet-kinderdeler`, `acc + (grondslag / x)`, `60/[2,3,4,5] → 77.00`,
-      every quotient exact; red `closed-runtime-division-by-zero`, `[2,0]` → both
-      *"division by numeric zero"*).
+      every quotient exact; golden `closed-runtime-division-by-zero`, `[2,0]` →
+      30,00 with the deposit, in both executors). A closed body has no absence,
+      so the translation carries that leeg only as an operand of plus, minus,
+      times or percentage-of, where it reads as 0; elsewhere a zero divisor in a
+      closed body derives a named `viol/2` witness, a limit of this backend
+      (`backends/clingo/README.md` [V4]). Until 2026-10-19 the zero divisor was
+      a fault in both executors, *"division by numeric zero"*.
     - **`Tot_de_macht`** by a compile-time non-negative integer exponent unfolds
       to **repeated `Maal`** under the same 46340 fence — one factor per step, the
       running partial product bounded so it never wraps (a conservative
@@ -2455,12 +2461,10 @@ play it (measured 2026-09-26 on "zijn taxatie maal 1/3 naar beneden
 afgerond op 2 decimalen" over a taxatie of 10: ref `oracle: PASS` on
 3.33, the exec-model and the DRL-text branch `PLAYED 1`), while this
 encoding holds a number only as an integer at a power-of-ten scale. And
-one decided *future* delta, recorded rather than encoded:
-numeric-zero division is today the v0-mirror hard fault in both
-executors (`corpus/red/division-by-numeric-zero`,
-`division-abs-by-numeric-zero`); ch. 1.4 point 4 routes it into the
-§9.5 channel in v1 — a tracked delta both executors will take
-together.
+one decided delta, executed 2026-10-19 in both executors at once:
+ch. 1.4 point 4 routes numeric-zero division into the §9.5 channel in
+v1 (goldens `division-by-numeric-zero`, `division-abs-by-numeric-zero`),
+where it was the v0-mirror hard fault until then.
 
 *Constructs and shapes without a corpus case (fault at translation):*
 validity windows on the forms OUTSIDE the ch. 8.2 gate — allocation,
@@ -3549,7 +3553,7 @@ qN_rdef(S) :- is_a(S,"t"), <divisor body>.
 qN(S,0)    :- is_a(S,"t"), not qN_ldef(S).
 inconsistent("<rule name>",S)
            :- is_a(S,"t"), qN_ldef(S), not qN_rdef(S).
-viol("division by numeric zero",S) :- <full body>, (R) == 0.
+inconsistent("<rule name>",S) :- <full body>, (R) == 0.
 ```
 
 An empty dividend collapses to 0 before the divisor is read (also under
@@ -3558,9 +3562,14 @@ filled dividend deposits the §9.5 channel fact — keyed by the ENCLOSING
 RULE'S NAME, exactly as ref keys its channel (harmonised 2026-08-20 so
 the case format's rule pin reads both executors identically; the reason
 text stays executor-internal) — and derives no value
-(leeg as absence); a numeric zero divisor derives a `viol/2` witness —
-UNSAT with the reason named, exactly where ref hard-faults (pinned by
-`corpus/red/division-by-numeric-zero`). The true quotient
+(leeg as absence); a numeric zero divisor under a filled dividend does
+the same (golden `corpus/golden/division-by-numeric-zero`; until
+2026-10-19 a `viol/2` witness, UNSAT where ref hard-faulted). Each
+`inconsistent/2` rule has an `inconsistent_code/3` twin with the same
+body that carries the code, EF-031 and EF-005. Inside a fold filter, a
+quantifier element or a closed body the deposit is keyed by the subject
+of the form whose evaluation reaches it, joined through its reach, as ref
+keys it (since 2026-10-19; before, by the member). The true quotient
 (L/sl)/(R/sr) at out-scale m is L·(sr·m) / (R·sl), where m is
 max(sl, sr) widened to the write target's scale — ref writes the exact
 rational, so a quotient that fits the target's declared decimals
@@ -3593,12 +3602,13 @@ native integer division itself truncates toward zero on both signs,
 this is the one rounded mode that needs no negative-range fence. The
 three §6.5 edges ride along unchanged (empty dividend → 0 before the
 divisor is read; empty divisor under a filled dividend → the
-rule-keyed channel fact beside an absent value; numeric zero → a
-`viol/2` witness). Anchored absolutely by
+rule-keyed channel fact beside an absent value; numeric zero → the
+same, with its own code). Anchored absolutely by
 `corpus/golden/anchor/jutterswet-taxatie` (the RS ch. 2.2 example row
 on both signs — 10 ÷abs 3 = 3,33333 and −10 ÷abs 3 = −3,33333 — plus
-the exact and empty corners) and observably red by
-`corpus/red/division-abs-by-numeric-zero` in both executors.
+the exact and empty corners) and by the golden
+`corpus/golden/division-abs-by-numeric-zero` in both executors (a red
+case until 2026-10-19).
 
 **Tot-de-macht** (2026-08-21) translates for a compile-time
 non-negative integer exponent: the scaled base L at scale sl grounds

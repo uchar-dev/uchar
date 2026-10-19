@@ -48,8 +48,39 @@
     ],
     "parameters": {}
   },
-  "expectedFault": {
-    "code": "EF-005",
-    "params": {}
-  }
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vondstental",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zware vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "druk"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "zware vondsten",
+      "label": "J1",
+      "code": "EF-005"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "drukte",
+      "label": "J1",
+      "code": "EF-005"
+    }
+  ]
 }

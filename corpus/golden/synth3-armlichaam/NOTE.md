@@ -1,5 +1,13 @@
 # synth3-armlichaam
 
+*Since 2026-10-19 (card `zero-division-channel`) a numeric-zero divisor in a
+closed body is leeg with a §9.5 fact of kind EF-005, no fault
+(`RUNTIME-SEMANTICS.md` ch. 1.4 point 4, ch. 10.1); in the ASP backend a zero
+divisor where that leeg does not coalesce is a named limit
+(`backends/clingo/README.md` [V4]). What follows about the numeric-zero fence
+and its faults describes the state before that card; the cases pin
+`consistent`.*
+
 The **closed lambda body with a branch node** witness — the sixth golden of the
 ch.-10.2/10.6 family and the one form the card that built the other five
 (`synth3-takhek`, `synth3-operatortak`, `synth3-armverdeling`,

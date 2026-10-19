@@ -173,6 +173,13 @@ final class PatternDslRendering {
                             ComputeHelpers.computeFault(x.sentence(), x.fault().regel()))));
             case Consequence.Inconsistency x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
                     insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), a[0], x.codes())));
+            case Consequence.ConditionDeposit x -> {
+                Predicate<Object[]> condition = ClosureRendering.test(x.condition());
+                String what = "de voorwaarde van \"" + x.form() + "\"";
+                yield consequenceItem(x.onderwerp(), x.slots(), x.size(), (drools, onderwerp, w) ->
+                        insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), onderwerp,
+                                depositCodesAgain(condition, x.depositFlag(), w, what))));
+            }
             case Consequence.WritersConflict x ->
                     new VariadicConsequence(new Variable[]{known(x.onderwerp()), variable(x.waarden())}, (drools, a) ->
                             insert(drools, x.insertion(), ComputeHelpers.writersConflict(a[0], a[1], x.attribute(),
@@ -203,8 +210,13 @@ final class PatternDslRendering {
                     x.maximum()), (drools, source, w) -> insert(drools, x.insertion(), new Recipient(x.allocation(), source,
                     w[x.recipient()], read(w, x.weight()), read(w, x.key()), read(w, x.maximum()))));
             case Consequence.Contribution x -> contribution(x);
-            case Consequence.FilterDeposit x -> consequenceItem(x.onderwerp(), slotsOf(x.member()), (drools, carrier, w) ->
-                    insert(drools, x.insertion(), new FilterDeposit(x.fold(), carrier, w[x.member()])));
+            case Consequence.FilterDeposit x -> {
+                Predicate<Object[]> filter = ClosureRendering.test(x.filter());
+                String what = "het filter van " + x.fold();
+                yield consequenceItem(x.onderwerp(), x.slots(), x.size(), (drools, carrier, w) ->
+                        insert(drools, x.insertion(), new FilterDeposit(x.fold(), carrier, w[x.member()],
+                                depositCodesAgain(filter, x.depositFlag(), w, what))));
+            }
             case Consequence.FilterFault x -> filterFault(x);
             case Consequence.MemberFault x -> consequenceItem(x.onderwerp(), slotsOf(placeSlots(x.member(), x.place())),
                     (drools, carrier, w) -> {
@@ -287,6 +299,24 @@ final class PatternDslRendering {
                 });
             }
         };
+    }
+
+    /** The codes of the deposit of {@code condition}, which the test of the rule found: the condition evaluated again
+     *  over the bound values {@code w} with a fresh probe in slot {@code depositFlag}, an evaluation fault leaving what
+     *  the probe heard before it ({@link TestItem.Role#DEPOSIT}); a probe that heard nothing is a broken contract of
+     *  {@code what}. */
+    private static List<String> depositCodesAgain(Predicate<Object[]> condition, int depositFlag, Object[] w, String what) {
+        Object s = ComputeHelpers.depositFlag();
+        w[depositFlag] = s;
+        try {
+            condition.test(w);
+        } catch (RuntimeException e) {
+            if (!ComputeHelpers.isEvaluationFault(e)) throw e;
+        }
+        if (!ComputeHelpers.reported(s))
+            throw new IllegalStateException(what + " deponeerde in de toets en niet in het gevolg, over dezelfde gebonden"
+                    + " waarden");
+        return ComputeHelpers.depositCodes(s);
     }
 
     /** The fault of {@link Consequence.FilterFault}: the filter evaluated again over the same bound values, then the member's

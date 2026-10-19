@@ -1,5 +1,11 @@
 # synth3-takhek
 
+*Since 2026-10-19 (card `zero-division-channel`) a filled dividend divided by
+a numeric zero is leeg with a §9.5 fact of kind EF-005, no fault
+(`RUNTIME-SEMANTICS.md` ch. 1.4 point 4). Case 1 pins `consistent`, so it pins
+that the zero division in the arm not taken does not happen. What follows
+about the fault describes the state before that card.*
+
 The **arm-fence witness** on the rule-head route: a hand-written `ir.json`
 with no `source.rgs`, like its `synth3-*` siblings — the RegelSpraak emitter
 produces no `IfThenElse` at all (IR-SPEC ch. 4.10), so this family has no

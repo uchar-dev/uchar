@@ -1,5 +1,13 @@
 # jutterswet-filterwacht
 
+*Since 2026-10-19 (card `zero-division-channel`) a filled dividend divided by
+a numeric zero is leeg with a §9.5 fact of kind EF-005, no fault
+(`RUNTIME-SEMANTICS.md` ch. 1.4 point 4). Both cases here pin `consistent`, so
+they pin that the division does not happen where the reading form does not
+reach the fold; the twin where it is reached is the golden
+`fold-filter-divides-by-zero` (a red case until then). What follows about the
+fault describes the state before that card.*
+
 A fold whose subselection divides, read where the reading form does not
 reach it. The reference interpreter evaluates a rule's condition first and
 its value only where the rule fires, a composite condition only up to the

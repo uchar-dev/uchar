@@ -14,7 +14,6 @@ import java.util.Map;
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
-import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistency;
@@ -37,6 +36,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * engine that named neither the rule nor the division. Its test now answers that the condition does not hold where it
  * faults, and a rule of the form's own inserts the fault logically, so the fault stands while the reads it rested on
  * stand and is reported at the fixpoint, as a fault in a value is ({@link TmsFaultWitnessTest}).
+ *
+ * <p><b>The device</b> is the square root without a rounding of a number that is no square of a rational
+ * ({@link TmsDocuments#root}), since the card zero-division-channel (2026-10-19); until then it was a division by a
+ * numeric zero, which deposits since (RUNTIME-SEMANTICS ch. 1.4, point 4), and the documents and measurements below are
+ * those of the division: where the condition divided by the bergloon or the deelnemers it now takes the root of the
+ * bergloon or the opbrengst, and the transient 0 of the lower default is a transient 2.
  *
  * <p>The transient document: a Vondst with {@code taxatie}, {@code opbrengst} and {@code bergloon}, "Een Vondst is
  * erkend indien hij gemeld is", the defaults group of {@link TmsFaultWitnessTest} on the bergloon (higher "op zijn
@@ -74,18 +79,21 @@ class TmsConditionFaultWitnessTest {
 
     // ---------------- a transient fault in a condition ----------------
 
+    /** "Een Vondst is zwaar indien de wortel van zijn bergloon groter is dan 2". */
     static final List<String> TEMPORARY = List.of(ERKENNING,
             characteristicRule("zwaarte", "Vondst", "zwaar", comparison("greater",
-                    binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("bergloon", "Vondst")), number("2"))));
+                    TmsDocuments.root(ownRead("bergloon", "Vondst"), "de wortel van zijn bergloon"), number("2"))));
 
+    /** The bergloon: higher "op zijn taxatie indien hij erkend is", lower "op 2 indien hij gemeld is". */
     static final String GROUP = attributeGroup("bergloon van een vondst", "Vondst", "bergloon", List.of(
             defaultEntry(check("erkend", false), ownRead("taxatie", "Vondst")),
-            defaultEntry(check("gemeld", false), number("0"))));
+            defaultEntry(check("gemeld", false), number("2"))));
 
+    /** V1, gemeld, taxatie 9: bergloon 9, zwaar (the root 3), consistent; the root of the transient 2 on the way. */
     static JsonNode temporaryCase() throws Exception {
         return TmsDocuments.caseDocument(
-                List.of(instance("V1", "Vondst", Map.of("taxatie", "30", "opbrengst", "90"), List.of("gemeld"), Map.of())),
-                List.of(value("V1", "bergloon", "30"), expected("V1", "zwaar", true), consistent()));
+                List.of(instance("V1", "Vondst", Map.of("taxatie", "9"), List.of("gemeld"), Map.of())),
+                List.of(value("V1", "bergloon", "9"), expected("V1", "zwaar", true), consistent()));
     }
 
     static Path temporary(List<String> rules) throws Exception {
@@ -106,30 +114,31 @@ class TmsConditionFaultWitnessTest {
     }
 
     /** The generated rules in a seeded sample of orders, at least one of which must test the condition against the
-     *  transient 0 of the lower default: there a fault fact is inserted, and it is gone again at the fixpoint. */
+     *  transient 2 of the lower default: there a fault fact is inserted, and it is gone again at the fixpoint. */
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(temporary(TEMPORARY), DroolsBackend.Branch.EXEC_MODEL);
         List<Rule> generated = b.execModelTranspiler().model().getRules();
         int onTheIntermediateState = 0;
         for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100)) {
             List<String> names = order.stream().map(Rule::getName).toList();
-            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "30", "opbrengst", "90"),
-                    List.of("gemeld"));
+            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "9"), List.of("gemeld"));
             TmsFaultWitnessTest.FaultFacts facts = new TmsFaultWitnessTest.FaultFacts();
             String fault = TmsFaultWitnessTest.fire(b, order, List.of(v1), new DefaultAgendaEventListener() {}, facts);
             assertNull(fault, () -> "volgorde " + names);
             assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
-            TmsFaultWitnessTest.assertNumber("30", TmsDocuments.read(v1, "bergloon"), "bergloon in volgorde " + names);
+            TmsFaultWitnessTest.assertNumber("9", TmsDocuments.read(v1, "bergloon"), "bergloon in volgorde " + names);
             assertTrue(TmsDocuments.has(v1, "zwaar"), () -> "zwaar in volgorde " + names);
             if (facts.inserted > 0) onTheIntermediateState++;
         }
-        assertTrue(onTheIntermediateState > 0, "geen volgorde toetste de voorwaarde tegen de tijdelijke 0 van de lagere default");
+        assertTrue(onTheIntermediateState > 0, "geen volgorde toetste de voorwaarde tegen de tijdelijke 2 van de lagere"
+                + " default");
     }
 
     // ---------------- a fault in a condition that stands ----------------
 
-    private static final String DEELNEMERS = binary("dividedBy", ownRead("opbrengst", "Vondst"),
-            ownRead("deelnemers", "Vondst"));
+    /** "de wortel van zijn opbrengst"; until the card zero-division-channel "zijn opbrengst gedeeld door zijn
+     *  deelnemers". */
+    private static final String DEELNEMERS = TmsDocuments.root(ownRead("opbrengst", "Vondst"), "de wortel van zijn opbrengst");
 
     /** One document per kind of form with a condition: its name, its rules and its consistencies. */
     record Form(String naam, List<String> rules, List<String> consistencies) {}
@@ -144,16 +153,15 @@ class TmsConditionFaultWitnessTest {
             new Form("controle", List.of(ERKENNING),
                     List.of(consistency("controle", "Vondst", comparison("greater", DEELNEMERS, number("0"))))));
 
+    /** V1, gemeld, opbrengst 2: the root of 2 in every form. */
     static JsonNode persistentCase() throws Exception {
         return TmsDocuments.caseDocument(
-                List.of(instance("V1", "Vondst", Map.of("opbrengst", "100", "deelnemers", "0"), List.of("gemeld"),
-                        Map.of())),
+                List.of(instance("V1", "Vondst", Map.of("opbrengst", "2"), List.of("gemeld"), Map.of())),
                 List.of(consistent()));
     }
 
     private static String message(String regel) {
-        return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": 100 gedeeld door 0 — een numerieke nul als"
-                + " deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+        return "ComputeFault: " + TmsDocuments.irrational(regel, "2");
     }
 
     @Test void a_persistent_fault_in_a_condition_gives_in_every_order_the_message_of_the_exec_model_branch()
@@ -182,8 +190,7 @@ class TmsConditionFaultWitnessTest {
                     DroolsBackend.Branch.EXEC_MODEL);
             for (List<Rule> order : TmsDocuments.permutations(b.execModelTranspiler().model().getRules())) {
                 List<String> names = order.stream().map(Rule::getName).toList();
-                Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("opbrengst", "100", "deelnemers", "0"),
-                        List.of("gemeld"));
+                Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("opbrengst", "2"), List.of("gemeld"));
                 outcomes.add(names + " " + TmsFaultWitnessTest.fire(b, order, List.of(v1),
                         new DefaultAgendaEventListener() {}, new TmsFaultWitnessTest.FaultFacts()));
                 expected.add(names + " " + message(v.naam()));

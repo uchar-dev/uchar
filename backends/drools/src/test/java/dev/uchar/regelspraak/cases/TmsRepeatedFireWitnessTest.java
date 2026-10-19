@@ -183,8 +183,10 @@ class TmsRepeatedFireWitnessTest {
     static final List<String> GROUPS = List.of(attributeGroup("heffing van een vondst", "Vondst", "heffing",
             List.of(defaultEntry(check("zwaar", false), number("40")))));
 
+    /** "Het aandeel van een Vondst moet berekend worden als de wortel van zijn noemer", the fault device of
+     *  {@link TmsDocuments#root}; until the card zero-division-channel "100 gedeeld door zijn noemer". */
     static final List<String> FAULT_RULES = List.of(computingRule("aandeel", "BEREKENING", "Vondst", "aandeel",
-            TmsFilterFaultWitnessTest.quotient(number("100"), ownRead("noemer", "Vondst")), "null"));
+            TmsDocuments.root(ownRead("noemer", "Vondst"), "de wortel van zijn noemer"), "null"));
 
     static Path valueDocument() throws Exception {
         return TmsDocuments.document(MODEL, VALUE_RULES, List.of(), GROUPS);
@@ -199,8 +201,6 @@ class TmsRepeatedFireWitnessTest {
     static final List<String> SECOND_VALUES = List.of("J1.totaalgewicht = 7", "V1.uitkering = 13", "V1.vindloon = 8",
             "V2.uitkering = 14", "V2.vindloon = 9");
 
-    private static final String ZERO = "gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg"
-            + " (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
 
     @Test void a_derivation_lapses_and_an_initialisation_fires_again_between_two_fires() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(valueDocument(), DroolsBackend.Branch.EXEC_MODEL);
@@ -234,20 +234,20 @@ class TmsRepeatedFireWitnessTest {
         DroolsBackend.Build b = DroolsBackend.build(faultDocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSession(b, () -> {
             Map<String, Object> beans = new LinkedHashMap<>();
-            beans.put("V1", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("noemer", "0"), List.of()));
-            beans.put("V2", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("noemer", "5"), List.of()));
+            beans.put("V1", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("noemer", "2"), List.of()));
+            beans.put("V2", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("noemer", "25"), List.of()));
             KieSession session = b.kieBase().newKieSession();
             try {
                 DroolsBackend.insert(b, session, new Input().beans(beans.values()));
                 assertNull(DroolsBackend.fire(b, session).noFixpoint(), "first fire");
-                assertEquals(List.of("V1: deling door nul in de regel \"aandeel\": 100 " + ZERO, "V2.aandeel = 20"),
+                assertEquals(List.of("V1: " + TmsDocuments.irrational("aandeel", "2"), "V2.aandeel = 5"),
                         describe(DroolsBackend.fixpointOf(b, session), beans), "first reading");
-                set(beans.get("V1"), "noemer", "4");
-                set(beans.get("V2"), "noemer", "0");
+                set(beans.get("V1"), "noemer", "16");
+                set(beans.get("V2"), "noemer", "3");
                 for (Object v : beans.values()) session.update(session.getFactHandle(v), v);
                 assertNull(DroolsBackend.fire(b, session).noFixpoint(), "second fire");
                 List<String> second = describe(DroolsBackend.fixpointOf(b, session), beans);
-                assertEquals(List.of("V1.aandeel = 25", "V2: deling door nul in de regel \"aandeel\": 100 " + ZERO), second,
+                assertEquals(List.of("V1.aandeel = 4", "V2: " + TmsDocuments.irrational("aandeel", "3")), second,
                         "second reading: the fault on V1 lapsed, the one on V2 arose");
                 assertEquals(freshRead(b, beans), second, "the second reading is that of a fresh session");
             } finally {
@@ -561,7 +561,8 @@ class TmsRepeatedFireWitnessTest {
         });
     }
 
-    /** J1 actief with V1 (10 by 2) as its aanmelder's Vondst, and V2 (9 by 0) without an aanmelder; then V2 gets J1. */
+    /** J1 actief with V1 (gewicht 9, the root 3) as its aanmelder's Vondst, and V2 (gewicht 3, no square) without an
+     *  aanmelder; then V2 gets J1. Until the card zero-division-channel V1 divided 10 by 2 and V2 9 by 0. */
     @Test void a_relation_that_arises_between_two_fires_refuses_fire() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsFilterFaultWitnessTest.document(TmsFilterFaultWitnessTest.ZWARE),
                 DroolsBackend.Branch.EXEC_MODEL);
@@ -569,10 +570,8 @@ class TmsRepeatedFireWitnessTest {
             Map<String, Object> beans = new LinkedHashMap<>();
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
             beans.put("J1", j1);
-            beans.put("V1", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "10", "deelnemers", "2"),
-                    List.of()));
-            beans.put("V2", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"),
-                    List.of()));
+            beans.put("V1", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "9"), List.of()));
+            beans.put("V2", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "3"), List.of()));
             setRole(beans.get("V1"), "aanmelder", j1);
             KieSession session = b.kieBase().newKieSession();
             try {
@@ -591,12 +590,13 @@ class TmsRepeatedFireWitnessTest {
             } finally {
                 session.dispose();
             }
-            // the way the sentence names: a fresh session, in which V2 divides 9 by 0 in J1's list
-            assertEquals(List.of("J1: " + ZWARE_FAULT.formatted("9")), freshRead(b, beans), "a fresh session");
+            // the way the sentence names: a fresh session, in which V2 takes the root of 3 in J1's list
+            assertEquals(List.of("J1: " + ZWARE_FAULT.formatted("3")), freshRead(b, beans), "a fresh session");
         });
     }
 
-    /** J1 and J2 actief, V1 (9 by 0) J1's, V2 (4 by 0) J2's, each at place 0 of its list; then V1 moves to J2. */
+    /** J1 and J2 actief, V1 (gewicht 3) J1's, V2 (gewicht 2) J2's, each at place 0 of its list, the filter faulting on
+     *  both; then V1 moves to J2. Until the card zero-division-channel V1 divided 9 and V2 4 by 0. */
     @Test void a_relation_that_moves_between_two_fires_refuses_fire() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsFilterFaultWitnessTest.document(TmsFilterFaultWitnessTest.ZWARE),
                 DroolsBackend.Branch.EXEC_MODEL);
@@ -606,17 +606,15 @@ class TmsRepeatedFireWitnessTest {
             Object j2 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
             beans.put("J1", j1);
             beans.put("J2", j2);
-            beans.put("V1", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"),
-                    List.of()));
-            beans.put("V2", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "4", "deelnemers", "0"),
-                    List.of()));
+            beans.put("V1", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "3"), List.of()));
+            beans.put("V2", TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "2"), List.of()));
             setRole(beans.get("V1"), "aanmelder", j1);
             setRole(beans.get("V2"), "aanmelder", j2);
             KieSession session = b.kieBase().newKieSession();
             try {
                 DroolsBackend.insert(b, session, new Input().beans(beans.values()));
                 assertNull(DroolsBackend.fire(b, session).noFixpoint(), "first fire");
-                assertEquals(List.of("J1: " + ZWARE_FAULT.formatted("9"), "J2: " + ZWARE_FAULT.formatted("4")),
+                assertEquals(List.of("J1: " + ZWARE_FAULT.formatted("3"), "J2: " + ZWARE_FAULT.formatted("2")),
                         describe(DroolsBackend.fixpointOf(b, session), beans), "first reading");
                 Object v1 = beans.get("V1");
                 setRole(v1, "aanmelder", j2);
@@ -626,8 +624,8 @@ class TmsRepeatedFireWitnessTest {
             } finally {
                 session.dispose();
             }
-            // the way the sentence names: a fresh session, in which V1 comes before V2 in J2's list and divides 9
-            assertEquals(List.of("J1.zware vondsten = 0", "J2: " + ZWARE_FAULT.formatted("9")), freshRead(b, beans),
+            // the way the sentence names: a fresh session, in which V1 comes before V2 in J2's list and takes the root of 3
+            assertEquals(List.of("J1.zware vondsten = 0", "J2: " + ZWARE_FAULT.formatted("3")), freshRead(b, beans),
                     "a fresh session");
         });
     }
@@ -792,9 +790,9 @@ class TmsRepeatedFireWitnessTest {
         });
     }
 
-    /** The fault of the rule "zware vondsten" where the filter divides {@code %s} by 0, as {@code Fixpoint} gives it. */
-    static final String ZWARE_FAULT = "deling door nul in de regel \"zware vondsten\": %s gedeeld door 0 — een numerieke"
-            + " nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+    /** The fault of the rule "zware vondsten" where the filter takes the root of {@code %s}, as {@code Fixpoint} gives
+     *  it. */
+    static final String ZWARE_FAULT = TmsDocuments.irrational("zware vondsten", "%s");
 
     /** The handle of the {@code Value} that gives {@code vondst} its uitkering. */
     private static org.kie.api.runtime.rule.FactHandle uitkering(KieSession session, Object vondst) {

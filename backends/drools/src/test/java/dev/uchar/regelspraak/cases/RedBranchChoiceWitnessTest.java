@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <p>The seam of {@link CaseRunner} ({@link SessionDump}, under the property {@value SessionDump#PROPERTY}) names the
  * dump of every session it writes after the branch of the build that fired the session
  * ({@code DroolsBackend.Build#branch}), which is the branch the entry chose. A child JVM, with the property set to a
- * fresh directory, plays the red case {@code division-by-numeric-zero}, a fault at fire, through the red entry once per
+ * fresh directory, plays the red case {@code clamp-reads-bounds-in-order}, a fault at fire, through the red entry once per
  * branch: each call leaves exactly one dump, under its own branch, and the two calls report the same
  * {@code RedResult}. A child JVM, because the seam reads the property once, when its class loads, and the JVM of the
  * suite has loaded it long before.
@@ -35,7 +35,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class RedBranchChoiceWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
-    private static final Path CASE = Path.of("..", "..", "corpus", "red", "division-by-numeric-zero");
+    /** Until the card zero-division-channel (2026-10-19) {@code division-by-numeric-zero}, whose division deposits since
+     *  and which is a golden. */
+    private static final Path CASE = Path.of("..", "..", "corpus", "red", "clamp-reads-bounds-in-order");
 
     @Test void the_red_entry_builds_the_branch_that_it_gets() throws Exception {
         Path map = Files.createTempDirectory("rode-takkeuze");

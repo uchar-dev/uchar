@@ -1,5 +1,11 @@
 # jutterswet-ploegaandeel
 
+*Since 2026-10-19 (card `zero-division-channel`) a filled dividend divided by
+a numeric zero is leeg with a §9.5 fact of kind EF-005, no fault
+(`RUNTIME-SEMANTICS.md` ch. 1.4 point 4). The case pins `consistent` since, so
+the stop that leaves member 2 unread on `J1` is observable as the fact that
+does not come into being. The measurements below were taken with the fault.*
+
 The **short-circuit witness** of the composite condition
 (`RUNTIME-SEMANTICS.md` ch. 5.10): the conjunctive quantifier evaluates
 its members left to right in wire order and stops at the first member

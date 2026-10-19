@@ -11,14 +11,16 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * A division by a numeric zero in a CONDITION: "Een Vondst is zwaar indien zijn gewogen gewicht gedeeld door zijn
- * geschatte gewicht groter is dan 1", over V3, whose geschatte gewicht is 0,00 under a gewogen gewicht of 60,00. ref
- * faults with "division by numeric zero" and clingo with its fail-fast guard on V3 (RUNTIME-SEMANTICS ch. 1.4, point
- * 4), in every form below. On the destructive lowering a condition is tested in a constraint and not in a
+ * geschatte gewicht groter is dan 1", over V3, whose geschatte gewicht is 0,00 under a gewogen gewicht of 60,00. Since
+ * the card zero-division-channel (2026-10-19) the quotient is leeg, so the comparison does not hold, and the condition
+ * deposits a §9.5 fact of kind EF-005 on the rule and the subject that evaluates it (RUNTIME-SEMANTICS ch. 1.4, point
+ * 4), in ref, in clingo and on both branches of this backend, in every form below; the probe of the deposit rule hears
+ * the code where the rule's consequence evaluates the condition again. Until that card ref faulted with "division by
+ * numeric zero", clingo with its fail-fast guard, and this backend in the sentence below the history. On the destructive lowering a condition is tested in a constraint and not in a
  * consequence, so the fault leaves the fire as Drools' {@code ConstraintEvaluationException} and not as the
  * {@code ConsequenceException} that {@code ZeroDivisorWitnessTest} pins. Until card tms-omschakeling (2026-10-10) the
  * predicates of the destructive exec-model branch carried their rule: Drools' message named the rule and the
@@ -36,24 +38,16 @@ class ZeroDivisorConditionWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    /** The fault is the runtime's own named type, with the sentence as its message (by name, so this witness compiled
-     *  against the backend before the fix). */
-    private static void named(String sentence, RuntimeException e) {
-        assertEquals("DelingDoorNul", e.getClass().getSimpleName(), () -> e.getClass().getName() + ": " + e.getMessage());
-        assertEquals(sentence, e.getMessage());
-    }
-
-    private static String sentence(String regel, String dividend) {
-        return "deling door nul in de regel \"" + regel + "\": " + dividend + " gedeeld door 0 — een numerieke nul als deler "
-                + "is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
-    }
+    /** V3 is not zwaar, and the rule zwaar deposits EF-005 on V3. */
+    private static final String V3_NOT_ZWAAR = "{\"kind\":\"characteristicAbsent\",\"label\":\"V3\",\"characteristic\":"
+            + "\"zwaar\"}," + TmsDocuments.inconsistent("zwaar", "V3", "EF-005");
 
     private static final String DIVISION_GREATER_THAN_ONE = greaterThan(division(own("gewogen gewicht"), own("geschatte gewicht")),
             number("1"), "zijn gewogen gewicht gedeeld door zijn geschatte gewicht groter is dan 1");
 
     @Test void a_comparison_with_a_number() throws Exception {
         Path ir = document(zwaar(DIVISION_GREATER_THAN_ONE));
-        named(sentence("zwaar", "60"), assertThrows(RuntimeException.class, () -> play(ir, false, ZERO_AND_ORDINARY)));
+        assertNull(play(ir, false, zeroAndOrdinary(V3_NOT_ZWAAR)));
     }
 
     @Test void the_condition_of_an_ordinary_rule() throws Exception {
@@ -61,7 +55,8 @@ class ZeroDivisorConditionWitnessTest {
         Path ir = document(regel("verhouding", "Vondst", "verhouding", "De verhouding van een Vondst",
                 "{\"node\":\"Literal\",\"value\":{\"number\":\"1.00\"},\"type\":" + TWO_DECIMALS + ",\"source\":{\"snippet\":"
                         + "\"1,00\"}}", DIVISION_GREATER_THAN_ONE, ",\"presentation\":\"equation\""));
-        named(sentence("verhouding", "60"), assertThrows(RuntimeException.class, () -> play(ir, false, ZERO_AND_ORDINARY)));
+        assertNull(play(ir, false, zeroAndOrdinary("{\"kind\":\"attributeEmpty\",\"label\":\"V3\",\"attribute\":"
+                + "\"verhouding\"}," + TmsDocuments.inconsistent("verhouding", "V3", "EF-005"))));
     }
 
     @Test void a_comparison_with_a_parameter() throws Exception {
@@ -69,7 +64,7 @@ class ZeroDivisorConditionWitnessTest {
         Path ir = document(zwaar(greaterThan(division(own("gewogen gewicht"), own("geschatte gewicht")),
                 "{\"node\":\"ParameterReference\",\"parameter\":\"drempel\",\"source\":{\"snippet\":\"de drempel\"}}",
                 "zijn gewogen gewicht gedeeld door zijn geschatte gewicht groter is dan de drempel")));
-        named(sentence("zwaar", "60"), assertThrows(RuntimeException.class, () -> play(ir, false, ZERO_AND_ORDINARY)));
+        assertNull(play(ir, false, zeroAndOrdinary(V3_NOT_ZWAAR)));
     }
 
     @Test void under_a_counting_quantifier() throws Exception {
@@ -79,7 +74,7 @@ class ZeroDivisorConditionWitnessTest {
         Path ir = document(zwaar("{\"node\":\"Compound\",\"quantifier\":\"atLeast\",\"threshold\":1,\"parts\":[" + empty + ","
                 + DIVISION_GREATER_THAN_ONE + "],\"source\":{\"snippet\":\"hij aan ten minste één van de volgende voorwaarden "
                 + "voldoet\"}}"));
-        named(sentence("zwaar", "60"), assertThrows(RuntimeException.class, () -> play(ir, false, ZERO_AND_ORDINARY)));
+        assertNull(play(ir, false, zeroAndOrdinary(V3_NOT_ZWAAR)));
     }
 
     @Test void in_the_subselection_of_a_fold() throws Exception {
@@ -94,7 +89,10 @@ class ZeroDivisorConditionWitnessTest {
                 + "vondsten van de Jutter die aan de volgende voorwaarde voldoen\"}}";
         Path ir = document(regel("zware vondsten", "Jutter", "aantal zware vondsten", "Het aantal zware vondsten van een "
                 + "Jutter", count, null, ",\"presentation\":\"calculation\""));
-        named(sentence("zware vondsten", "60"), assertThrows(RuntimeException.class, () -> play(ir, false, ZERO_AND_ORDINARY)));
+        // V1 counts (400 by 320), V3 does not and deposits under the rule that reads the fold, on J1
+        assertNull(play(ir, false, zeroAndOrdinary("{\"kind\":\"attributeValue\",\"label\":\"J1\",\"attribute\":"
+                + "\"aantal zware vondsten\",\"value\":{\"number\":\"1\"}}," + TmsDocuments.inconsistent("zware vondsten",
+                "J1", "EF-005"))));
     }
 
     @Test void in_the_matrix_of_a_quantifier_fold() throws Exception {
@@ -108,36 +106,37 @@ class ZeroDivisorConditionWitnessTest {
                 + "\"test\":" + matrix + ",\"source\":{\"snippet\":\"ten minste één van de vondsten van de Jutter\"},"
                 + "\"sourceRole\":" + ROLE_VONDST + "}";
         Path ir = document(regel("ijverig", "Jutter", "ijverig", "Een Jutter is ijverig", WAAR, quantifier, ""));
-        named(sentence("ijverig", "100"), assertThrows(RuntimeException.class,
-                () -> play(ir, false, caseDocument(jutter("0.00") + "," + vondst("V1", "320.00", "400.00", true)))));
+        assertNull(play(ir, false, caseDocument(jutter("0.00") + "," + vondst("V1", "320.00", "400.00", true),
+                "{\"kind\":\"characteristicAbsent\",\"label\":\"J1\",\"characteristic\":\"ijverig\"},"
+                        + TmsDocuments.inconsistent("ijverig", "J1", "EF-005"))));
     }
 
     @Test void over_a_role() throws Exception {
         // "… indien zijn gewogen gewicht gedeeld door de verhouding van de jutter van de Vondst groter is dan 1", V3 of
-        // J1 with a verhouding of 0,00 (V1 has no jutter: its divisor is leeg, ch. 1.2)
+        // J1 with a verhouding of 0,00 (V1 has no jutter: its divisor is leeg, ch. 1.2, which deposits EF-031)
         Path ir = document(zwaar(greaterThan(division(own("gewogen gewicht"), viaJutter("verhouding")), number("1"),
                 "zijn gewogen gewicht gedeeld door de verhouding van de jutter van de Vondst groter is dan 1")));
-        named(sentence("zwaar", "60"), assertThrows(RuntimeException.class, () -> play(ir, false,
-                caseDocument(jutter("0.00") + "," + vondst("V1", "320.00", "400.00", false) + "," + vondst("V3", "0.00", "60.00", true)))));
+        assertNull(play(ir, false, caseDocument(jutter("0.00") + "," + vondst("V1", "320.00", "400.00", false) + ","
+                + vondst("V3", "0.00", "60.00", true), V3_NOT_ZWAAR + "," + TmsDocuments.inconsistent("zwaar", "V1", "EF-031"))));
     }
 
-    @Test void the_scenario_report_and_the_red_route_carry_the_sentence() throws Exception {
+    /** The scenario report passes the case that pins the deposit, and the red route runs it to a model; until the card
+     *  zero-division-channel both carried the sentence of the fault. */
+    @Test void the_scenario_report_passes_and_the_red_route_runs_to_a_model() throws Exception {
         Path ir = document(zwaar(DIVISION_GREATER_THAN_ONE));
-        Path c = Files.writeString(Files.createTempDirectory("nuldeler-voorwaarde").resolve("case1-nul.json"), ZERO_AND_ORDINARY);
+        Path c = Files.writeString(Files.createTempDirectory("nuldeler-voorwaarde").resolve("case1-nul.json"),
+                zeroAndOrdinary(V3_NOT_ZWAAR));
         List<ScenarioResult> report = CaseRunner.report(ir, List.of(c));
-        assertEquals(ScenarioResult.Status.FAIL, report.get(0).status(), report::toString);
-        assertEquals("case1-nul.json: ERROR DelingDoorNul: " + sentence("zwaar", "60"), report.get(0).diagnostic());
-        // gate 8 pins "Breuk deling door 0" on its red cases: the chain still carries it
+        assertEquals(ScenarioResult.Status.PASS, report.get(0).status(), report::toString);
         CaseRunner.RedResult r = CaseRunner.runRed(ir, c);
-        assertEquals("FAULT", r.status(), r::detail);
-        assertTrue(r.detail().startsWith("DelingDoorNul: " + sentence("zwaar", "60")), r.detail());
-        assertTrue(r.detail().contains("Breuk deling door 0"), r.detail());
+        assertEquals("NOFAULT", r.status(), r::detail);
     }
 
     @Test void a_consumer_that_itself_fires_reads_the_rule_and_the_condition() throws Exception {
         // the distribution's service fires the KieBase itself, on the exec-model branch through the entry: the
-        // fire reaches its fixpoint with the fault of the condition standing as a fact, DroolsBackend.read gives it as
-        // data, and DroolsBackend.setDerivedValues throws it in the sentence of the replay, which names the rule.
+        // fire reaches its fixpoint with the deposit of the condition standing as an inconsistency, which
+        // DroolsBackend.read gives as data, no fault, and DroolsBackend.setDerivedValues writes back. Until the card
+        // zero-division-channel the condition's fault stood instead, and the write-back threw it.
         // The destructive exec-model branch threw Drools' ConstraintEvaluationException out of the fire instead, which
         // DroolsBackend.designate named, and so did the destructive DRL-text branch until card
         // drl-teksttak-op-truth-maintenance ("[Rule "zwaar" …"); since that card both branches render the analysis.
@@ -146,11 +145,11 @@ class ZeroDivisorConditionWitnessTest {
                     .withSession(JSON.readTree(ZERO_AND_ORDINARY), (build, session, labels) -> {
                         assertEquals(null, DroolsBackend.fire(build, session).noFixpoint(),
                                 branch + ": the fire reaches its fixpoint");
-                        List<dev.uchar.regelspraak.transpiler.tms.Fault> faults = DroolsBackend.fixpointOf(build, session).faults();
-                        assertEquals(1, faults.size(), faults::toString);
-                        assertEquals(sentence("zwaar", "60"), faults.get(0).message(), branch + ": the fault as data");
-                        named(sentence("zwaar", "60"), assertThrows(RuntimeException.class,
-                                () -> DroolsBackend.setDerivedValues(build, session)));
+                        dev.uchar.regelspraak.transpiler.tms.Fixpoint fixpoint = DroolsBackend.fixpointOf(build, session);
+                        assertEquals(List.of(), fixpoint.faults(), branch + ": no fault");
+                        assertEquals(1, fixpoint.inconsistencies().size(), () -> branch + ": the deposit as data, "
+                                + fixpoint.inconsistencies());
+                        DroolsBackend.setDerivedValues(build, session);
                         return null;
                     });
     }
@@ -248,14 +247,20 @@ class ZeroDivisorConditionWitnessTest {
                 + "[\"J1\"]" : "") + "},\"characteristics\":[]}";
     }
 
-    private static String caseDocument(String instances) {
+    private static String caseDocument(String instances, String expected) {
         return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + instances + "],\"parameters\":"
-                + "{\"drempel\":{\"number\":\"1.00\"}}},\"expected\":[]}";
+                + "{\"drempel\":{\"number\":\"1.00\"}}},\"expected\":[" + expected + "]}";
     }
 
-    /** J1 with a verhouding of 2,00; V1 (400 by 320) and V3 (60 by 0,00), both of J1. */
-    private static final String ZERO_AND_ORDINARY = caseDocument(jutter("2.00") + "," + vondst("V1", "320.00", "400.00", true) + ","
-            + vondst("V3", "0.00", "60.00", true));
+    /** J1 with a verhouding of 2,00; V1 (400 by 320) and V3 (60 by 0,00), both of J1; {@code expected} the
+     *  expectations. */
+    private static String zeroAndOrdinary(String expected) {
+        return caseDocument(jutter("2.00") + "," + vondst("V1", "320.00", "400.00", true) + ","
+                + vondst("V3", "0.00", "60.00", true), expected);
+    }
+
+    /** The same case without expectations, for a consumer that reads the fixpoint itself. */
+    private static final String ZERO_AND_ORDINARY = zeroAndOrdinary("");
 
     /** One branch's verdict on one case: null when every expectation holds. */
     private static String play(Path ir, boolean viaDrl, String caseDocument) throws Exception {

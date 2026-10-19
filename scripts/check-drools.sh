@@ -296,6 +296,7 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-staffelvergoeding|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "anchor/jutterswet-toelagegronden|EXCLUDE DROOLS-054|bean name collision, refused before either branch lowers the document: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property, Jutter.toelage, which carries the attribute, and a defaults group writes the characteristic (v0 bean-model limit, not a defaults divergence). Until 2026-09-28 the transpiler's defaults fence refused it one phase later, on the same limit"
   "anchor/jutterswet-vondstdossier|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
+  "closed-runtime-division-by-zero|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a red case until card zero-division-channel (2026-10-19), excluded in check-red.sh on the same refusal"
   "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
   "jutterswet-dossierrecht-catala|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
@@ -1362,7 +1363,12 @@ EXPECTED_CHANNEL=(
 # and both branches play each golden with the same status line, PLAYED 1, 2, 5, 4 and 3. No source file of this backend
 # changed. The sixth case of the dated document, without an evaluation date, is the red case
 # jutterswet-uitsluiting-zonder-rekendatum (check-red.sh), fault-pinned on the backend's own sentence.
-EXPECTED_PLAYED=255
+# 255 -> 260 (2026-10-19, card zero-division-channel): a division by a numeric zero deposits a §9.5 fact of kind EF-005
+# beside a leeg quotient (RUNTIME-SEMANTICS ch. 1.4, point 4), and six red witnesses of the old fault became goldens
+# with `inconsistent` expectations that pin the code. Five play on both branches: division-by-numeric-zero,
+# division-abs-by-numeric-zero, filled-count-unguarded-division, at-most-reads-until-settled and
+# fold-filter-divides-by-zero; closed-runtime-division-by-zero folds over a list and stands in EXPECTED_CHANNEL.
+EXPECTED_PLAYED=260
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

@@ -12,9 +12,6 @@
      },
      "teller": {
       "number": "1"
-     },
-     "noemer": {
-      "number": "0"
      }
     },
     "roles": {},
@@ -24,7 +21,7 @@
   "parameters": {}
  },
  "expectedFault": {
-  "code": "EF-005",
+  "code": "EF-011",
   "params": {}
  }
 }

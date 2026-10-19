@@ -47,8 +47,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * A fault in a fold's filter on the exec-model branch is the fault of the form whose evaluation reaches the
  * fold. The reference interpreter evaluates a rule's condition first and its value only where the rule fires, a
  * composite condition only up to the member after which its verdict stands (RUNTIME-SEMANTICS ch. 5.10), and a fold's
- * filter per member only where it evaluates the fold; a filter that divides by a numeric zero there faults the
- * evaluation (ch. 1.4, point 4). Nowhere else does that division happen, so nowhere else is there a fault.
+ * filter per member only where it evaluates the fold; a filter that faults there faults the evaluation. Nowhere else
+ * does the filter run, so nowhere else is there a fault.
+ *
+ * <p><b>The device</b> is the square root without a rounding of a number that is no square of a rational
+ * ({@link TmsDocuments#root}), since the card zero-division-channel (2026-10-19). Until then the filter divided by a
+ * numeric zero, which deposits since (RUNTIME-SEMANTICS ch. 1.4, point 4), and the documents and measurements below are
+ * those of the division. Each member keeps its place and its part: "gewicht 10 by deelnemers 2, heavy" is a gewicht of
+ * 9 (the root 3, heavy), "9 by 0" a gewicht of 3 and "4 by 0" a gewicht of 2, both faults, so the least sentence names
+ * the member that divided 4 as before; the transient 0 of the lower default is a transient 2, under the root of the
+ * deelnemers. The deelnemers of a member stay in the input of the rows that wrote them, read by no rule there.
  *
  * <p>The model: a Jutter reports Vondsten (aanmelding: aanmelder, one Jutter; vondst, many Vondsten); a Vondst has
  * gewicht and deelnemers, a Jutter the characteristics actief and druk. The fold "het aantal vondsten van de Jutter die
@@ -131,12 +139,13 @@ class TmsFilterFaultWitnessTest {
                 + RATIONAL + ",\"source\":{\"snippet\":\"dividedBy\"}}";
     }
 
-    /** The fold, a new node on every call, so each form reads a fold of its own. */
+    /** The fold "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: de wortel van zijn gewicht
+     *  is groter dan 2", a new node on every call, so each form reads a fold of its own. */
     static String zwaar() {
         return aggregation("count", VONDSTEN, "Vondst", sourceRole("aanmelding", "vondst"),
-                comparison("greater", quotient(ownRead("gewicht", "Vondst"), ownRead("deelnemers", "Vondst")),
+                comparison("greater", TmsDocuments.root(ownRead("gewicht", "Vondst"), "de wortel van zijn gewicht"),
                         number("2")), "null", COUNTING, "het aantal vondsten van de Jutter die aan de volgende voorwaarde"
-                        + " voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2");
+                        + " voldoen: de wortel van zijn gewicht is groter dan 2");
     }
 
     static final List<String> ZWARE = List.of(computingRule("zware vondsten", "BEREKENING", "Jutter", "zware vondsten",
@@ -154,19 +163,18 @@ class TmsFilterFaultWitnessTest {
         return TmsDocuments.caseDocument(List.of(
                 instanceWithRoles("J1", "Jutter", Map.of(), actief ? List.of("actief") : List.of(),
                         Map.of("vondsten", List.of("V1", "V2"))),
-                instanceWithRoles("V1", "Vondst", Map.of("gewicht", "10", "deelnemers", "2"), List.of(), Map.of()),
-                instanceWithRoles("V2", "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of(), Map.of())),
+                instanceWithRoles("V1", "Vondst", Map.of("gewicht", "9"), List.of(), Map.of()),
+                instanceWithRoles("V2", "Vondst", Map.of("gewicht", "3"), List.of(), Map.of())),
                 expectations);
     }
 
     private static String fault(String regel) {
-        return fault(regel, "9");
+        return fault(regel, "3");
     }
 
-    /** The fault of rule {@code regel} where the filter divides {@code dividend} by 0. */
-    private static String fault(String regel, String dividend) {
-        return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + dividend + " gedeeld door 0 — een"
-                + " numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+    /** The fault of rule {@code regel} where the filter takes the root of {@code radicand}. */
+    private static String fault(String regel, String radicand) {
+        return "ComputeFault: " + TmsDocuments.irrational(regel, radicand);
     }
 
     // ---------------- a fold under a condition that does not hold ----------------
@@ -205,28 +213,28 @@ class TmsFilterFaultWitnessTest {
      *  interpreter's does: "9 gedeeld door 0", where the least sentence would name V3's 4. */
     @Test void with_two_failing_members_the_rule_names_the_first_in_the_fold_order() throws Exception {
         java.util.LinkedHashMap<String, List<String>> numbers = new java.util.LinkedHashMap<>();
-        numbers.put("V1", List.of("10", "2"));
-        numbers.put("V2", List.of("9", "0"));
-        numbers.put("V3", List.of("4", "0"));
+        numbers.put("V1", List.of("9", "2"));
+        numbers.put("V2", List.of("3", "0"));
+        numbers.put("V3", List.of("2", "0"));
         assertEquals(fault("zware vondsten"), TmsFaultWitnessTest.play(document(ZWARE),
                 caseDocument(Map.of("vondsten", List.of("V1", "V2", "V3")), numbers, Map.of()),
                 DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals(List.of(), deviatingOrders(document(ZWARE), b -> vondsten(b, List.of(List.of("10", "2"),
-                List.of("9", "0"), List.of("4", "0")), List.of(0, 1, 2)), fault("zware vondsten")));
+        assertEquals(List.of(), deviatingOrders(document(ZWARE), b -> vondsten(b, List.of(List.of("9", "2"),
+                List.of("3", "0"), List.of("2", "0")), List.of(0, 1, 2)), fault("zware vondsten")));
     }
 
     /** The same members written under J1 as V1, V3, V2, with V3 dividing 9 and V2 4: the order the case writes counts,
      *  not the order of the labels, which would put V2 first. */
     @Test void in_a_written_list_the_order_of_the_case_counts() throws Exception {
         java.util.LinkedHashMap<String, List<String>> numbers = new java.util.LinkedHashMap<>();
-        numbers.put("V1", List.of("10", "2"));
-        numbers.put("V2", List.of("4", "0"));
-        numbers.put("V3", List.of("9", "0"));
+        numbers.put("V1", List.of("9", "2"));
+        numbers.put("V2", List.of("2", "0"));
+        numbers.put("V3", List.of("3", "0"));
         assertEquals(fault("zware vondsten"), TmsFaultWitnessTest.play(document(ZWARE),
                 caseDocument(Map.of("vondsten", List.of("V1", "V3", "V2")), numbers, Map.of()),
                 DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals(List.of(), deviatingOrders(document(ZWARE), b -> vondsten(b, List.of(List.of("10", "2"),
-                List.of("4", "0"), List.of("9", "0")), List.of(0, 2, 1)), fault("zware vondsten")));
+        assertEquals(List.of(), deviatingOrders(document(ZWARE), b -> vondsten(b, List.of(List.of("9", "2"),
+                List.of("2", "0"), List.of("3", "0")), List.of(0, 2, 1)), fault("zware vondsten")));
     }
 
     /** No list under J1: V9 (4 by 0) and V10 (9 by 0) each name J1 as their aanmelder, in that order in the case. The
@@ -234,13 +242,13 @@ class TmsFilterFaultWitnessTest {
      *  "member ORDER"): V10 before V9, so 9, where the order of the case and a numeric order of the labels give 4. */
     @Test void in_a_mirrored_list_the_label_order_counts() throws Exception {
         java.util.LinkedHashMap<String, List<String>> numbers = new java.util.LinkedHashMap<>();
-        numbers.put("V9", List.of("4", "0"));
-        numbers.put("V10", List.of("9", "0"));
+        numbers.put("V9", List.of("2", "0"));
+        numbers.put("V10", List.of("3", "0"));
         assertEquals(fault("zware vondsten"), TmsFaultWitnessTest.play(document(ZWARE), caseDocument(Map.of(), numbers,
                 Map.of("V9", Map.of("aanmelder", List.of("J1")), "V10", Map.of("aanmelder", List.of("J1")))),
                 DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals(List.of(), deviatingOrders(document(ZWARE), b -> vondsten(b, List.of(List.of("4", "0"),
-                List.of("9", "0")), List.of(1, 0)), fault("zware vondsten")));
+        assertEquals(List.of(), deviatingOrders(document(ZWARE), b -> vondsten(b, List.of(List.of("2", "0"),
+                List.of("3", "0")), List.of(1, 0)), fault("zware vondsten")));
     }
 
     /** The beans of a Vondst document: J1 actief and a Vondst per entry of {@code numbers}, each linked to J1, and the
@@ -271,11 +279,10 @@ class TmsFilterFaultWitnessTest {
 
     static final List<String> BOOT_LENGTH = List.of(computingRule("bootlengte", "BEREKENING", "Haven", "bootlengte",
             aggregation("sum", ownRead("lengte", "Boot"), "Boot", sourcePath(List.of(roleBinding("ligplaats", "jutter"),
-                    roleBinding("bootgebruik", "boot"))), comparison("greater", quotient(
-                    ownRead("lengte", "Boot"), ownRead("breedte", "Boot")), number("2")), number("0"), WHOLE,
+                    roleBinding("bootgebruik", "boot"))), comparison("greater", TmsDocuments.root(
+                    ownRead("lengte", "Boot"), "de wortel van zijn lengte"), number("2")), number("0"), WHOLE,
                     "de som van de lengte van alle boten van alle jutters van de Haven die aan de volgende voorwaarde"
-                            + " voldoen: zijn lengte gedeeld door zijn breedte is groter dan 2, of 0 als die er niet"
-                            + " zijn"), "null"));
+                            + " voldoen: de wortel van zijn lengte is groter dan 2, of 0 als die er niet zijn"), "null"));
 
     /** H1 writes the jutters J1, J2, J3; J1 and J3 use B2 (9 by 0), J2 uses B1 (4 by 0). The reference interpreter walks
      *  the path step by step, J1's boot, J2's, J3's: B2, B1, B2, and keeps the first reach of B2 (RUNTIME-SEMANTICS
@@ -287,15 +294,15 @@ class TmsFilterFaultWitnessTest {
                 instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B2"))),
                 instanceWithRoles("J2", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B1"))),
                 instanceWithRoles("J3", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B2"))),
-                instanceWithRoles("B1", "Boot", Map.of("lengte", "4", "breedte", "0"), List.of(), Map.of()),
-                instanceWithRoles("B2", "Boot", Map.of("lengte", "9", "breedte", "0"), List.of(), Map.of())),
+                instanceWithRoles("B1", "Boot", Map.of("lengte", "2", "breedte", "0"), List.of(), Map.of()),
+                instanceWithRoles("B2", "Boot", Map.of("lengte", "3", "breedte", "0"), List.of(), Map.of())),
                 List.of(consistent()));
         Path ir = TmsDocuments.document(HAVENMODEL, BOOT_LENGTH);
         assertEquals(fault("bootlengte"), TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(List.of(), deviatingOrders(ir, b -> {
             Object h1 = TmsDocuments.beanObject(b.beanLoader(), "Haven", Map.of(), List.of());
-            Object b1 = TmsDocuments.beanObject(b.beanLoader(), "Boot", Map.of("lengte", "4", "breedte", "0"), List.of());
-            Object b2 = TmsDocuments.beanObject(b.beanLoader(), "Boot", Map.of("lengte", "9", "breedte", "0"), List.of());
+            Object b1 = TmsDocuments.beanObject(b.beanLoader(), "Boot", Map.of("lengte", "2", "breedte", "0"), List.of());
+            Object b2 = TmsDocuments.beanObject(b.beanLoader(), "Boot", Map.of("lengte", "3", "breedte", "0"), List.of());
             List<Object> input = new ArrayList<>(List.of(h1, b1, b2));
             List<Object> boten = List.of(b2, b1, b2);
             for (int k = 0; k < 3; k++) {
@@ -354,8 +361,8 @@ class TmsFilterFaultWitnessTest {
         int orders = 0;
         for (List<Rule> order : TmsDocuments.permutations(b.execModelTranspiler().model().getRules())) {
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), actief ? List.of("actief") : List.of());
-            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "10", "deelnemers", "2"), List.of());
-            Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of());
+            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "9"), List.of());
+            Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "3"), List.of());
             setRole(v1, "aanmelder", j1);
             setRole(v2, "aanmelder", j1);
             String outcome = TmsFaultWitnessTest.fire(b, order, List.of(j1, v1, v2, new ListPlace(v1, "aanmelder", 0),
@@ -371,21 +378,22 @@ class TmsFilterFaultWitnessTest {
 
     // ---------------- a filter that faults on the way only ----------------
 
+    /** The deelnemers: higher "op 9 indien hij erkend is", lower "op 2 indien hij gemeld is". */
     private static final String DEELNEMERS = attributeGroup("deelnemers van een vondst", "Vondst", "deelnemers", List.of(
-            defaultEntry(check("erkend", false), number("3")),
-            defaultEntry(check("gemeld", false), number("0"))));
+            defaultEntry(check("erkend", false), number("9")),
+            defaultEntry(check("gemeld", false), number("2"))));
 
-    /** The fold with its division guarded, "… die aan alle volgende voorwaarden voldoen: zijn deelnemers is gevuld; zijn
-     *  gewicht gedeeld door zijn deelnemers is groter dan 2": the reference interpreter then divides by no leeg on its
-     *  way and keeps no §6.5 deposit there (ch. 6.1, "Recorded residuals"), which it did without the guard ("MISMATCH:
-     *  expected consistent, but the channel carries: zware vondsten × J1", measured 2026-10-08). */
+    /** The fold with its root guarded, "… die aan alle volgende voorwaarden voldoen: zijn deelnemers is gevuld; de
+     *  wortel van zijn deelnemers is groter dan 2". With the division the guard kept the reference interpreter off a
+     *  leeg divisor on its way and off the §6.5 deposit there (ch. 6.1, "Recorded residuals"), which it kept without the
+     *  guard ("MISMATCH: expected consistent, but the channel carries: zware vondsten × J1", measured 2026-10-08). */
     static String bewaaktZwaar() {
         return aggregation("count", VONDSTEN, "Vondst", sourceRole("aanmelding", "vondst"),
                 compound("all", 0, List.of(TmsDocuments.predicate("filled", ownRead("deelnemers", "Vondst")),
-                        comparison("greater", quotient(ownRead("gewicht", "Vondst"),
-                                ownRead("deelnemers", "Vondst")), number("2")))), "null", COUNTING,
+                        comparison("greater", TmsDocuments.root(ownRead("deelnemers", "Vondst"),
+                                "de wortel van zijn deelnemers"), number("2")))), "null", COUNTING,
                 "het aantal vondsten van de Jutter die aan alle volgende voorwaarden voldoen: zijn deelnemers is"
-                        + " gevuld; zijn gewicht gedeeld door zijn deelnemers is groter dan 2");
+                        + " gevuld; de wortel van zijn deelnemers is groter dan 2");
     }
 
     static final List<String> TEMPORARY = List.of(characteristicRule("erkenning", "Vondst", "erkend", check("gemeld", false)),
@@ -395,21 +403,21 @@ class TmsFilterFaultWitnessTest {
         return TmsDocuments.document(MODEL, rules, List.of(), List.of(DEELNEMERS));
     }
 
-    /** J1 reports V1 (gewicht 12) and V2 (gewicht 9), both gemeld: deelnemers 3 for both, 12 and 9 divided by 3 is more
-     *  than 2, so zware vondsten 2. Exact quotients: the ASP runner refuses a division that does not terminate without
-     *  an explicit rounding. */
+    /** J1 reports V1 and V2, both gemeld: deelnemers 9 for both, whose root 3 is more than 2, so zware vondsten 2. With
+     *  the division the members weighed 12 and 9 over 3 deelnemers. */
     static JsonNode temporaryCase() throws Exception {
         return TmsDocuments.caseDocument(List.of(
                 instanceWithRoles("J1", "Jutter", Map.of(), List.of(), Map.of("vondsten", List.of("V1", "V2"))),
                 instanceWithRoles("V1", "Vondst", Map.of("gewicht", "12"), List.of("gemeld"), Map.of()),
                 instanceWithRoles("V2", "Vondst", Map.of("gewicht", "9"), List.of("gemeld"), Map.of())),
-                List.of(value("J1", "zware vondsten", "2"), value("V1", "deelnemers", "3"),
-                        value("V2", "deelnemers", "3"), consistent()));
+                List.of(value("J1", "zware vondsten", "2"), value("V1", "deelnemers", "9"),
+                        value("V2", "deelnemers", "9"), consistent()));
     }
 
     /** Both orders of the document, and a seeded sample of the orders of the generated rules: no fault at the fixpoint,
-     *  zware vondsten 2, and at least one order in which the filter divided by the lower default's 0 on the way. */
-    @Test void a_filter_that_divides_by_zero_intermediate_does_not_fail_at_the_fixpoint() throws Exception {
+     *  zware vondsten 2, and at least one order in which the filter took the root of the lower default's 2 on the
+     *  way. */
+    @Test void a_filter_that_faults_on_an_intermediate_state_does_not_fail_at_the_fixpoint() throws Exception {
         List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(TEMPORARY)) {
             List<String> names = TmsDocuments.ruleNames(order);
@@ -439,7 +447,7 @@ class TmsFilterFaultWitnessTest {
                     () -> "zware vondsten in volgorde " + names + ": " + zwaar);
             if (traces.inserted > 0) intermediate++;
         }
-        assertTrue(intermediate > 0, "geen volgorde liet het filter delen door de 0 van de lagere default");
+        assertTrue(intermediate > 0, "geen volgorde liet het filter de wortel nemen uit de 2 van de lagere default");
     }
 
     // ---------------- helpers ----------------

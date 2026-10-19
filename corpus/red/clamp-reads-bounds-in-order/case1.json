@@ -6,10 +6,7 @@
       {
         "label": "J1",
         "objectType": "Jutter",
-        "attributes": {
-          "teller": { "number": "1" },
-          "noemer": { "number": "0" }
-        },
+        "attributes": {},
         "roles": {},
         "characteristics": []
       }
@@ -17,7 +14,7 @@
     "parameters": {}
   },
   "expectedFault": {
-    "code": "EF-005",
+    "code": "EF-011",
     "params": {}
   }
 }

@@ -8,8 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * RUNTIME-SEMANTICS ch. 10.6 as UNIFIED to <b>call-by-need</b> (maintainer decision O3, 2026-09-01) — the
@@ -25,10 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * a strict bind in a scratch copy makes exactly these witnesses red).
  *
  * <ul>
- *   <li><b>clause 3, an unread binder evaluates nothing.</b> A value that would FAULT (division by numeric
- *       zero) under a binder the body never reads: the Let's outcome is the body's, no fault — where the
- *       strict binding evaluated the value first and died. Its twin reads the binder, and there the fault
- *       stands: a "never evaluate anything" implementation passes the first and fails the second;</li>
+ *   <li><b>clause 3, an unread binder evaluates nothing.</b> A value that would deposit (division by numeric
+ *       zero, a §9.5 fact of kind EF-005 since the card zero-division-channel; until then a fault) under a binder
+ *       the body never reads: the Let's outcome is the body's, no deposit — where the strict binding evaluated the
+ *       value first. Its twin reads the binder, and there the deposit stands and the barrier empties the Let: a
+ *       "never evaluate anything" implementation passes the first and fails the second;</li>
  *   <li><b>clause 2, the barrier sits at the READ.</b> The probe-B1 shape: a leeg value whose binder is read
  *       only in the branch ch. 10.2 does NOT take, so nothing reads it and the target is written with the
  *       body's outcome — where the strict binding emptied the whole Let at the bind place and wrote nothing;</li>
@@ -50,14 +49,13 @@ class LetNeedWitnessTest {
         assertNull(play(zeroDivisionModel(false), jutter("", valueJson("uitkomst", "42.00"))));
     }
 
-    @Test void the_same_value_under_a_read_binder_keeps_the_fault() throws Exception {
+    @Test void the_same_value_under_a_read_binder_deposits_and_empties_the_let() throws Exception {
         // the twin that keeps the first honest: the SAME value, now read. The read forces the need, so the
-        // division by numeric zero happens and fails fast. ref: EVALUATION FAULT "division by numeric zero";
-        // here the mirror is the runtime's own ArithmeticException, surfacing out of fire.
-        RuntimeException fault = assertThrows(RuntimeException.class,
-                () -> play(zeroDivisionModel(true), jutter("", valueJson("uitkomst", "42.00"))));
-        assertTrue(causeText(fault).contains("deling door 0"),
-                "de gelezen behoefte draagt de deling-door-nul: " + causeText(fault));
+        // division by numeric zero happens: it deposits one §9.5 reason of kind EF-005 and its need is leeg, so the
+        // read ends the Let (clause 2) and nothing is written. ref (RUNTIME-SEMANTICS ch. 10.6 row ii): leeg, one
+        // reason. Until the card zero-division-channel the division failed fast here, in ref and in this backend.
+        assertNull(play(zeroDivisionModel(true), jutter("", "{ \"kind\": \"attributeEmpty\", \"label\": \"J1\","
+                + " \"attribute\": \"uitkomst\" }, " + TmsDocuments.inconsistent("uitkomst van een jutter", "J1", "EF-005"))));
     }
 
     // ---------------- clause 2: the leeg-barrier fires at the READ, not at the bind ----------------
@@ -114,13 +112,6 @@ class LetNeedWitnessTest {
         } finally {
             Files.deleteIfExists(tmp);
         }
-    }
-
-    /** The whole cause chain's messages — a fault at fire reaches the caller wrapped by Drools. */
-    private static String causeText(Throwable t) {
-        StringBuilder sb = new StringBuilder();
-        for (Throwable c = t; c != null; c = c.getCause() == c ? null : c.getCause()) sb.append(c).append(" | ");
-        return sb.toString();
     }
 
     /** One Jutter, the given input attributes, the given expectations. The consistency verdict is part of each

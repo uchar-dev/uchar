@@ -185,8 +185,7 @@ alone.
 
 **Faults.** An evaluation fault is a fact of the fixpoint, on both branches, not an exception out of the fire: `fixpointOf` gives it as data (`Fixpoint.faults`, the subject, the rule and the exception), and `setDerivedValues`
 throws what stands before it writes anything, and then writes nothing: one fault as its own exception, a
-`Breuk.DelingDoorNul` (an `ArithmeticException`) for a division by a numeric zero, a `ComputeFault` for a fault of a
-computation or of the evaluation date, a `WritersConflict` (an `IllegalStateException`) for two writers of one
+`ComputeFault` for a fault of a computation or of the evaluation date, a `WritersConflict` (an `IllegalStateException`) for two writers of one
 attribute that disagree (RUNTIME-SEMANTICS ch. 5.7) and an `InputFormFault` for a timeline input in the other
 convention (ch. 8.4); two or more as `EvaluationFaults`, with each fault in `faults()`. Any other exception is no
 evaluation fault: a broken contract or a bug.
@@ -401,23 +400,21 @@ creation laid on the reference fields among it, once, after the last fire of the
 beans then hold values the network never saw arrive, and `DroolsBackend.fire` refuses the session (above, "One
 write-back per session").
 
-**Evaluation faults are logical facts.** A division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) is a fault,
-and so is every fault of `ComputeFault`: a date step or a duration count outside the range of ch. 3.8, a walk over the
+**Evaluation faults are logical facts.** Every fault of `ComputeFault` is one: a date step or a duration count outside the range of ch. 3.8, a walk over the
 days of a day kind that passes its reach (ch. 3.8), a context value
 or a validity window in a session without an evaluation date (ch. 8.1, 8.2), an `Unresolved` node the evaluation
 reaches (ch. 5.7, WF-044), an argument a date builtin cannot take (easterSunday of a year that is not whole,
 dateWith over parts that name no day), and an irrational square root without a rounding (ch. 2.2), where the
 reference interpreter computes a rational one exactly. A fault, like a value, belongs to the fixpoint (ch. 5.2; PLAN §9,
 2026-10-09, "Faults and deposits count at the fixpoint"). This branch has no strata and passes intermediate states
-the reference interpreter does not see, such as a divisor a lower default set to 0 before a higher one decides, and a
+the reference interpreter does not see, such as a radicand a lower default set before a higher one decides, and a
 fault thrown out of the fire there could not be withdrawn when the state passes. So no consequence throws an
 evaluation fault: the consequence that computes a value inserts the fault logically as a `Fault`, in place of the value,
 and the fault goes when a read it rested on changes. A condition is tested in the left-hand side, where Drools cannot
 take an exception as a fact; there the test answers that the condition does not hold where it faults, and a rule of the
 form's own, `<rule>: fout in de voorwaarde`, with the same left-hand side and the test that the condition faults,
-inserts the `Fault`. The write-back reports the faults that stand at the fixpoint before it writes anything: one division
-as a `DelingDoorNul`, named after the rule, in the sentence the destructive DRL-text lowering gave it out of its fire
-until card `drl-teksttak-op-truth-maintenance` ("deling door nul in de regel "aandeel": 100 gedeeld door 0 — …"), one other fault as its `ComputeFault`, named
+inserts the `Fault`. The write-back reports the faults that stand at the fixpoint before it writes anything: one fault
+as its `ComputeFault`, named
 after the rule and in the reference interpreter's sentence wherever that executor names the fault ("fout in de regel
 "meldtermijn": duration count … is out of range"), two or more as `EvaluationFaults`, ordered by the name of the form and
 then by the sentence, so the report does not depend on the order of the rules. That message opens with a head that names
@@ -468,7 +465,7 @@ withdraws the logical facts its earlier firing inserted and did not insert again
 A listed fold ("de eerste van A en B") is computed from its operands' bound values. Witness
 `TmsAggregationWitnessTest`.
 
-A filter that divides by a numeric zero for a member inserts a `FilterFault` for that member, and no fault: the
+A filter that faults for a member inserts a `FilterFault` for that member, and no fault: the
 reference interpreter evaluates a filter only where the evaluation of a form reaches the fold, so not where the form's
 condition does not hold, nor in a member of a composite that its verdict no longer reads (RUNTIME-SEMANTICS ch. 5.10),
 and there per member in fold order, stopping at the first fault (ch. 5.11). The bean model keeps a to-many role as a
@@ -895,21 +892,20 @@ leeg beside a conditional initialisatie outside the ch. 7.7 domain, where `ref` 
 
 ## Recorded: a division by a numeric zero
 
-A division whose divisor is a numeric zero is a fault (RUNTIME-SEMANTICS ch. 1.4, point 4; the red case
-`division-by-numeric-zero`): `ref` faults with "division by numeric zero" and clingo with its fail-fast guard on the
-subject. `Breuk.delen` throws `Breuk.DelingDoorNul`, an `ArithmeticException` with the message it always had ("Breuk
-deling door 0") and the dividend, and `Breuk.DelingDoorNul.inDeRegel` names the rule and the operands: "deling door nul
-in de regel "verhouding": 60 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch.
-1.4, punt 4)". The replay (`ERROR DelingDoorNul: …`) reads that sentence on both branches, and the red path and the
-scenario report, which play the exec-model branch, read it as well.
-
-On both branches the fault is a logical fact of the fixpoint (above, "Evaluation faults are logical facts"). The
-consequence that computes a value inserts the fault in place of the value, a condition that divides gets the rule
-`<rule>: fout in de voorwaarde`, and a fold's filter that divides makes the form that reads the fold fault where its
-evaluation reaches the fold, so a division by zero on an intermediate state, or in a filter no form reaches, is no
-fault. At the fixpoint `fixpointOf` gives the fault as data and `setDerivedValues` throws it before it writes anything,
-named as above. A division in a default is refused by name (above, "What it refuses"). Witnesses `ZeroDivisorWitnessTest`,
-`ZeroDivisorConditionWitnessTest`, `TmsFaultWitnessTest`, `TmsConditionFaultWitnessTest` and `TmsFilterErrorWitnessTest`.
+A filled dividend divided by a numeric zero is leeg with a §9.5 deposit of kind EF-005 (RUNTIME-SEMANTICS ch. 1.4, point
+4; the golden `division-by-numeric-zero`), as in `ref` and the ASP backend, since the card zero-division-channel
+(2026-10-19); until then all three faulted. `ComputeHelpers.divided` and `dividedAbs` answer the zero before they call
+the runtime, whose `Breuk.delen` still throws `Breuk.DelingDoorNul` there, the mirror of v0, and the probe of the deposit
+hears the code. A deposit hears its codes where it is made: a value in its consequence, as before; a condition and a
+fold's filter, which their rule tests in the left-hand side, in the consequence of their deposit rule, which evaluates
+the condition again over the same bound values (`Consequence.ConditionDeposit`, `Consequence.FilterDeposit`), so one
+division gives EF-031 over a leeg divisor and EF-005 over a numeric zero. The `FilterDeposit` fact carries its codes, and
+the rule that reads the fold lists those facts and reports their codes. A division still counts as a function that can
+fail (`StaticFunction.DIVIDED`), so the plans keep the fault rules of a condition and a filter that divides, which no
+longer fire for it. Witnesses `ZeroDivisorWitnessTest`, `ZeroDivisorConditionWitnessTest`,
+`ZeroDivisorConsumerWitnessTest` and `FilterFaultWitnessTest`; the fault rules are witnessed with the square root
+without a rounding of a number that is no square (`TmsFaultWitnessTest`, `TmsConditionFaultWitnessTest`,
+`TmsFilterFaultWitnessTest`).
 
 Until card `drl-teksttak-op-truth-maintenance` the fault left the fire of the DRL-text branch, in the cause chain of
 Drools' `ConsequenceException`, and `DroolsBackend.designate`, which `CaseRunner` calls where it fires a session, turned

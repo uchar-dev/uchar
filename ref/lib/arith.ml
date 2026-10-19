@@ -4,10 +4,9 @@
 
    Every operator implements three things at once: the empty rule, the
    exact rational rule, and the unit rule. §9.5 inconsistencies (division
-   by empty under a filled dividend, a negative radicand) are reported
-   through the [err] callback — the value degrades to empty, the error
-   surfaces beside it (ch. 1.4 point 4). Division by a numeric zero is a
-   hard fault. *)
+   by empty or by a numeric zero under a filled dividend, a negative
+   radicand) are reported through the [err] callback — the value degrades
+   to empty, the error surfaces beside it (ch. 1.4 point 4). *)
 
 open Value
 
@@ -150,8 +149,9 @@ let pct_of l r =
   Num (Q.mul (Q.div lq (Q.of_int 100)) rq, ru)
 
 (* gedeeld door: dividend (left) tested first and coalesces; an empty
-   divisor under a filled dividend propagates as error-empty (§6.5);
-   division by numeric zero is a hard fault *)
+   divisor under a filled dividend propagates as error-empty (§6.5), and so
+   does a numeric zero divisor (ch. 1.4 point 4: v1 routes it into the §9.5
+   channel; the v0 mirror faults) *)
 let div_gen ~err ~collapse l r =
   match l with
   | Empty -> Num (Q.zero, Unitless)
@@ -163,7 +163,10 @@ let div_gen ~err ~collapse l r =
           Empty
       | _ ->
           let rq, ru = num_exn "gedeeld door" r in
-          if Q.equal rq Q.zero then faultc "EF-005" "division by numeric zero"
+          if Q.equal rq Q.zero then begin
+            err { code = Some "EF-005"; text = "division by numeric zero" };
+            Empty
+          end
           else
             let q, u =
               match (lu, ru) with

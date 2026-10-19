@@ -91,6 +91,21 @@ public sealed interface Consequence {
     }
 
     /**
+     * The §9.5 inconsistency of the form {@code form} on the object {@code onderwerp} binds, deposited by its condition
+     * {@code condition}, which the test of the rule found to deposit: the consequence evaluates it again over the value
+     * array of {@code size} slots with the bound values at {@code slots} and a fresh probe in slot {@code depositFlag},
+     * and the inconsistency carries the codes the probe heard (RUNTIME-SEMANTICS ch. 5.6, 5.7b). The codes are not
+     * known when the plan is made: one division deposits EF-031 over a leeg divisor and EF-005 over a numeric zero. A
+     * probe that hears nothing here is a broken contract.
+     */
+    record ConditionDeposit(String onderwerp, String form, Term condition, int depositFlag, List<Integer> slots, int size,
+                            Insertion insertion) implements Consequence {
+        public ConditionDeposit {
+            slots = List.copyOf(slots);
+        }
+    }
+
+    /**
      * The fault of two or more writers of attribute {@code target} that stand on one object with different values
      * (RUNTIME-SEMANTICS ch. 5.7), on the object {@code onderwerp} binds, over the value facts the slot {@code waarden}
      * holds: the writers in the order of the document's rules {@code documentOrder}, each named once, and a writer
@@ -287,9 +302,16 @@ public sealed interface Consequence {
     }
 
     /** That evaluating the filter of the fold {@code fold} for the member in slot {@code member} deposits, a
-     *  {@code FilterDeposit} on the fold's subject, the object {@code onderwerp} binds; the test of the rule found
-     *  it. */
-    record FilterDeposit(String onderwerp, String fold, int member, Insertion insertion) implements Consequence {}
+     *  {@code FilterDeposit} on the fold's subject, the object {@code onderwerp} binds; the test of the rule found it.
+     *  The consequence evaluates the condition {@code filter} again over the value array of {@code size} slots with the
+     *  bound values at {@code slots} and a fresh probe in slot {@code depositFlag}, and the fact carries the codes the
+     *  probe heard, as {@link ConditionDeposit} does. */
+    record FilterDeposit(String onderwerp, String fold, int member, Term filter, int depositFlag, List<Integer> slots,
+                         int size, Insertion insertion) implements Consequence {
+        public FilterDeposit {
+            slots = List.copyOf(slots);
+        }
+    }
 
     /**
      * The fault of the filter of the fold {@code fold} for the member in slot {@code member}, a {@code FilterFault} on the

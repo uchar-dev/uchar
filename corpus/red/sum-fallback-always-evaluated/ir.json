@@ -30,16 +30,6 @@
           },
           {
             "node": "Attribute",
-            "name": "noemer",
-            "datatype": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "unspecified"
-            }
-          },
-          {
-            "node": "Attribute",
             "name": "vangstsom",
             "datatype": {
               "node": "Number",
@@ -100,32 +90,16 @@
                 }
               ],
               "emptyFallback": {
-                "node": "Binary",
-                "op": "dividedBy",
-                "left": {
-                  "node": "AttributeReference",
-                  "attribute": "teller",
-                  "subjectType": "Vangst",
-                  "source": {
-                    "snippet": "zijn teller"
-                  }
-                },
-                "right": {
-                  "node": "AttributeReference",
-                  "attribute": "noemer",
-                  "subjectType": "Vangst",
-                  "source": {
-                    "snippet": "zijn noemer"
-                  }
-                },
+                "node": "ContextValue",
+                "name": "evaluationYear",
                 "type": {
                   "node": "Number",
-                  "whole": false,
+                  "whole": true,
                   "decimals": 0,
                   "sign": "unspecified"
                 },
                 "source": {
-                  "snippet": "zijn teller gedeeld door zijn noemer"
+                  "snippet": "het Rekenjaar"
                 }
               },
               "type": {
@@ -135,7 +109,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de som van zijn deelvangst en zijn teller of zijn teller gedeeld door zijn noemer als die er niet zijn"
+                "snippet": "de som van zijn deelvangst en zijn teller of het Rekenjaar als die er niet zijn"
               }
             },
             "initialisation": false,

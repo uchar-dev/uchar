@@ -386,6 +386,13 @@ final class TmsDocuments {
         return "{\"kind\":\"inconsistent\",\"rule\":\"" + regel + "\",\"label\":\"" + label + "\"}";
     }
 
+    /** As {@link #inconsistent(String, String)}, a fact that carries the EF code {@code code} among its codes
+     *  (RUNTIME-SEMANTICS ch. 5.6, 5.7b). */
+    static String inconsistent(String regel, String label, String code) {
+        return "{\"kind\":\"inconsistent\",\"rule\":\"" + regel + "\",\"label\":\"" + label + "\",\"code\":\"" + code
+                + "\"}";
+    }
+
     /** A sample of the orders of {@code l} too long to try every order: {@code l} itself, its reverse, and
      *  {@code count} shuffles from {@code seed}, so a failing order can be replayed. */
     static <T> List<List<T>> sample(List<T> l, long seed, int count) {
@@ -591,6 +598,21 @@ final class TmsDocuments {
     static String builtin(String kind, List<String> arguments, String type, String source) {
         return "{\"node\":\"BuiltinCall\",\"kind\":\"" + kind + "\",\"arguments\":[" + String.join(",", arguments)
                 + "],\"type\":" + type + ",\"source\":{\"snippet\":\"" + source + "\"}}";
+    }
+
+    /** The fault device of the witnesses of an evaluation fault since the card zero-division-channel (2026-10-19): "de
+     *  wortel van {@code operand}" without a rounding, of type whole number, exact where the operand is the square of a
+     *  rational and the fault of an irrational root where it is not (RUNTIME-SEMANTICS ch. 2.2), as the reference
+     *  interpreter computes it. Until that card those witnesses divided by a numeric zero, which deposits a §9.5 fact
+     *  since (ch. 1.4 point 4). */
+    static String root(String operand, String source) {
+        return builtin("squareRoot", List.of(operand), WHOLE, source);
+    }
+
+    /** The sentence of the fault of {@link #root} over the radicand {@code radicand} in the rule {@code regel}. */
+    static String irrational(String regel, String radicand) {
+        return "fout in de regel \"" + regel + "\": irrational square root of " + radicand + " reached without an explicit"
+                + " rounding (§13.4.17.13 mandates one)";
     }
 
     /** "Daarbij geldt: {@code binder} is {@code value}" around {@code body}: a Let of the body's {@code type}. */

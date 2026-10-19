@@ -54,6 +54,7 @@ final class FormsPlan {
             "ComputeHelpers.isA(this", "ComputeHelpers.classNotIn(this", "ComputeHelpers.inside(date",
             "ComputeHelpers.readProperty(this, \"hoogte\")", "ComputeHelpers.holds(", "ComputeHelpers.periods(", "ComputeHelpers.isSet(",
             "_pad", "_beta", "_samengesteld", "_zonderfout", "_vouwlezing", "_kwantorlezing", "_let", "_binder", "_lijst",
+            "_deponering",
             "rsDagsoort_Werkdag", "second != null, second == $onderwerp.post", "first == $onderwerp", " >= 1", " < 3",
             "Outcome.Kind.DECIDED", "insert(", "insertLogical(", "ComputeHelpers.depositFlag()", "ComputeHelpers.fail(",
             "ComputeHelpers.required(", "ComputeHelpers.textComposition(", "ComputeHelpers.restateExact(", "ComputeHelpers.restate(",
@@ -88,6 +89,12 @@ final class FormsPlan {
                 new TestItem("voorwaarde", TestItem.Role.CONDITION, new Term.Call(StaticFunction.EMPTY_TEST, List.of(readOf(0),
                         new Term.Const(Boolean.TRUE, null, null)), "zijn uitkijkbonus leeg is"), -1, List.of(0), 1)),
                 new Consequence.Inconsistency(O, "proef", List.of(), Consequence.Insertion.LOGICAL)));
+        Term depositing = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Division(StaticFunction.DIVIDED,
+                readOf(0), number("0"), 1, "uitkijkbonus gedeeld door 0"), number("1"), text(">")), "de deling door 0 groter dan 1");
+        rules.add(new RulePlan("deponering van een toets", "proef", null, new ReadTable(List.of(
+                new Read(0, ReadKind.INVOER, "uitkijkbonus", "$uitkijkbonus"), new Read(1, ReadKind.DEPOSIT_FLAG, null, null))),
+                List.of(onderwerp, new TestItem("deponering", TestItem.Role.DEPOSIT, depositing, 1, List.of(0), 2)),
+                new Consequence.ConditionDeposit(O, "proef", depositing, 1, List.of(0), 2, Consequence.Insertion.LOGICAL)));
         FactPattern waarden = new FactPattern(Value.class, "$waarde", List.of(new Alpha("attribuut", List.of(
                 new Alpha.FieldTest("attribute", Alpha.Comparator.GELIJK, ElementKey.van("wachter", "uitkijkbonus", false))))),
                 List.of(new Join("onderwerp", "onderwerp", O)), List.of());
@@ -412,6 +419,8 @@ final class FormsPlan {
                 number("2"), 6, "de hoogte gedeeld door 2"), number("1"), text(">")), "de helft groter dan 1");
         Term failing = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Division(StaticFunction.DIVIDED, readOf(0),
                 number("0"), -1, "de hoogte gedeeld door 0"), number("1"), text(">")), "het filter dat faalt");
+        Term filterDepositing = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Division(StaticFunction.DIVIDED,
+                readOf(0), number("0"), 2, "de hoogte gedeeld door 0"), number("1"), text(">")), "het filter dat deponeert");
         List<RulePlan> rules = new ArrayList<>();
         rules.add(new RulePlan("telling", "proef", null, table(new Read(0, ReadKind.SUBJECT, "lid", O)),
                 List.of(foldSubject, member(post, v)), new Consequence.Contribution(v, "proefvouw: telling", 0,
@@ -441,9 +450,10 @@ final class FormsPlan {
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: lidtoets", 1,
                 new Consequence.Input.MemberTest(matrix, -1, new Consequence.FoldPlace(0, List.of(), Consequence.PlaceReason.QUANTIFIER)),
                 List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
-        rules.add(new RulePlan("filterdeponering", "proef", null, table(new Read(0, ReadKind.SUBJECT, "lid", O)),
-                List.of(foldSubject, member(post, v)), new Consequence.FilterDeposit(v, "proefvouw", 0,
-                Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("filterdeponering", "proef", null, table(heightSlot(), memberSlot(1),
+                new Read(2, ReadKind.DEPOSIT_FLAG, null, null)),
+                List.of(foldSubject, member(post, v, height)), new Consequence.FilterDeposit(v, "proefvouw", 1,
+                filterDepositing, 2, List.of(0, 1), 3, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("filterfout", "proef", null, table(heightSlot(), memberSlot(1),
                 placeSlot(2, ReadKind.LIST_PLACES, "$lijstplaatsen_1"), placeSlot(3, ReadKind.LIST_PLACE, "$plaats_1")),
                 List.of(foldSubject, member(post, v, height), places(1, "kustvak", new BetaTest("plaats-1",
@@ -572,7 +582,7 @@ final class FormsPlan {
                         "de uitkijkbonus gedeeld door 2"), number("1"), text(">")), "de helft groter dan 1"),
                 new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.SquareRoot(StaticFunction.SQUARE_ROOT, readOf(0), 14,
                         "de wortel"), number("1"), text(">=")), "de wortel minstens 1"),
-                new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.FoldRead(readOf(9), 8, 14, List.of(), 10, 11,
+                new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.FoldRead(readOf(9), 15, 14, 10, 11,
                         "de som van de bijdragen"), number("0"), text("<")), "de som onder 0"),
                 new Term.QuantifierRead(StaticFunction.QUANTIFIER_READ, readOf(8), readOf(15), Condition.Quantifier.TEN_MINSTE, 1, 14,
                         "ten minste één bijdrage"),
@@ -615,7 +625,7 @@ final class FormsPlan {
                                         null),
                                 new Term.Choice(new Term.Const(Boolean.TRUE, null, null), readOf(17),
                                         new Term.Fail("nooit", null), null),
-                                new Term.FoldRead(readOf(9), 8, 14, List.of(), 10, 11, null)), "de grootste"),
+                                new Term.FoldRead(readOf(9), 15, 14, 10, 11, null)), "de grootste"),
                         false, "b is als a groter is dan de drempel"),
                 false, "a is de uitkijkbonus plus 1,50");
         List<LhsItem> lhs = List.of(onderwerp, parameter, evaluationDate, outcome, relationLink,

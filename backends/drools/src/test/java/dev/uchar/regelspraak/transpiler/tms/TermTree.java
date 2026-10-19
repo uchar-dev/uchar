@@ -34,7 +34,7 @@ final class TermTree {
             case Term.Required v -> "Vereist (" + tree(v.value()) + ") '" + v.sentence() + "'";
             case Term.TextComposition s -> "Tekstreeks" + list(s.parts());
             case Term.ListedFold g -> "GelijsteVouw " + g.function() + list(g.operands());
-            case Term.FoldRead v -> "Vouwlezing " + v.depositCount() + " " + v.depositFlag() + " " + v.filterFault() + " "
+            case Term.FoldRead v -> "Vouwlezing " + v.deposits() + " " + v.depositFlag() + " " + v.filterFault() + " "
                     + v.memberFault() + " (" + tree(v.outcome()) + ")";
             case Term.DayKind d -> "Dagsoort " + d.naam();
             case Term.Compound s -> "Samengesteld " + s.quantifier() + " " + s.threshold() + list(s.members());

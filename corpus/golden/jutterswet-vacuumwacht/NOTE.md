@@ -1,5 +1,11 @@
 # jutterswet-vacuumwacht
 
+*Since 2026-10-19 (card `zero-division-channel`) a filled dividend divided by
+a numeric zero is leeg with a §9.5 fact of kind EF-005, no fault
+(`RUNTIME-SEMANTICS.md` ch. 1.4 point 4). The case pins `consistent` since,
+and the too-eager direction is the golden `at-most-reads-until-settled`. The
+text below speaks of the fault.*
+
 The **at-most true-stop witness** of `RUNTIME-SEMANTICS.md` ch. 5.10.
 
 `at most d` stops in **two** directions: once the hits have exceeded *d*

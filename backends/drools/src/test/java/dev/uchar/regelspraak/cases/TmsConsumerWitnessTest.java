@@ -219,7 +219,8 @@ class TmsConsumerWitnessTest {
                 DroolsBackend.Branch.EXEC_MODEL);
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
-            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of());
+            // the gewicht 3, whose root the filter cannot take (until the card zero-division-channel 9 divided by 0)
+            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "3"), List.of());
             TmsRepeatedFireWitnessTest.setRole(v1, "aanmelder", j1);
             KieSession session = b.kieBase().newKieSession();
             try {

@@ -20,6 +20,9 @@ public enum Route {
      *  of a fold whose filter deposited ({@link Term.FoldRead}); a division and a square root report within their own
      *  function. */
     REPORT(ComputeHelpers.class, "report"),
+    /** The deposits of a fold's filter, the list of its {@code FilterDeposit} facts, reported to the probe of the rule
+     *  that reads the fold with their codes ({@link Term.FoldRead}). */
+    REPORT_FILTER_DEPOSITS(ComputeHelpers.class, "reportFilterDeposits"),
     /** Whether the probe heard a place: the verdict of a test of deposits, and the deposit of a consequence. */
     REPORTED(ComputeHelpers.class, "reported"),
     /** The EF codes the probe heard, which the deposit of a consequence and a member's test carry

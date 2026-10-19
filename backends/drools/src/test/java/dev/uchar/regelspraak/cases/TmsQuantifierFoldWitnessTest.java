@@ -54,10 +54,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * matrix is then read in the contributors' order and stops at the first member after which the verdict stands; a
  * member it does not reach raises no fault and deposits nothing. The matrix "zijn opgave gedeeld door zijn
  * deelnemers is groter dan 2" divides by a value derived from the aanmelding: A (10 by 1) holds, B (no aanmelding)
- * deposits the §6.5 inconsistency of a division by leeg and fails, C (aanmelding 0) faults. Under rustig (none) the
- * list A, B stops at A and B deposits nothing, while B, A deposits; under volledig (all) both lists deposit; A, C
- * under none plays and C, A faults. Krap and bezet over C alone settle on the empty prefix (at most 1 over one
- * contributor, at least 2 out of reach) and read nothing, so they neither fault nor deposit. Keurbaar (all wachten
+ * deposits the §6.5 inconsistency of a division by leeg (EF-031) and fails, C (aanmelding 0) deposits that of a
+ * division by a numeric zero (EF-005) and fails — it faulted until the card zero-division-channel (2026-10-19), which
+ * routed the numeric zero into the §9.5 channel (RUNTIME-SEMANTICS ch. 1.4, point 4). Under rustig (none) the list
+ * A, B stops at A and B deposits nothing, while B, A deposits; under volledig (all) both lists deposit; A, C under none
+ * stops at A, and C, A deposits. Krap and bezet over C alone settle on the empty prefix (at most 1 over one
+ * contributor, at least 2 out of reach) and read nothing, so they deposit nothing. Keurbaar (all wachten
  * whose quotient exceeds 2 are gediplomeerd) over D (10 by 1, not gediplomeerd) and B: the filter of every member is
  * read before the matrix, so B's filter deposits although D's matrix settles the fold.
  *
@@ -267,11 +269,6 @@ class TmsQuantifierFoldWitnessTest {
     static final String A = melder("A", 10, 1, false), B = melder("B", 10, null, false),
             C = melder("C", 10, 0, false), D = melder("D", 10, 1, false);
 
-    /** The fault of a division by zero in the condition of {@code regel}. */
-    static String division(String regel) {
-        return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": 10 gedeeld door 0 — een numerieke nul als"
-                + " deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
-    }
 
     /** {@code regel} beside the derivation of the deelnemers, in both orders, over P1 with {@code members} in that order
      *  (and the members' instances {@code instances}), with the expectations {@code expectations}; each outcome is
@@ -303,16 +300,18 @@ class TmsQuantifierFoldWitnessTest {
         assertEquals(expected, outcomes);
     }
 
-    @Test void the_matrix_fails_only_for_a_member_that_reaches_the_short_circuit() throws Exception {
+    /** C divides by a numeric zero: until the card zero-division-channel a fault where the matrix reached it, since a
+     *  deposit of kind EF-005 there. A fault in a matrix is pinned by {@code FilterFaultWitnessTest}. */
+    @Test void the_matrix_deposits_by_a_zero_only_for_a_member_that_reaches_the_short_circuit() throws Exception {
         List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         playBoth(CALM, List.of("A", "C"), List.of(A, C), List.of(expected("P1", "rustig", false), consistent()),
                 "gespeeld", outcomes, expected);
-        playBoth(CALM, List.of("C", "A"), List.of(A, C), List.of(consistent()), division("rustigheid"), outcomes,
-                expected);
-        playBoth(COMPLETE, List.of("A", "C"), List.of(A, C), List.of(consistent()), division("volledigheid"), outcomes,
-                expected);
-        playBoth(COMPLETE, List.of("C", "A"), List.of(A, C), List.of(consistent()), division("volledigheid"), outcomes,
-                expected);
+        playBoth(CALM, List.of("C", "A"), List.of(A, C), List.of(expected("P1", "rustig", false),
+                TmsDocuments.inconsistent("rustigheid", "P1", "EF-005")), "gespeeld", outcomes, expected);
+        playBoth(COMPLETE, List.of("A", "C"), List.of(A, C), List.of(expected("P1", "volledig", false),
+                TmsDocuments.inconsistent("volledigheid", "P1", "EF-005")), "gespeeld", outcomes, expected);
+        playBoth(COMPLETE, List.of("C", "A"), List.of(A, C), List.of(expected("P1", "volledig", false),
+                TmsDocuments.inconsistent("volledigheid", "P1", "EF-005")), "gespeeld", outcomes, expected);
         // the empty prefix (ch. 5.10): at most 1 over one contributor cannot be exceeded, at least 2 is out of reach
         playBoth(KRAP_PER_PARTICIPANT, List.of("C"), List.of(C), List.of(expected("P1", "krap", true), consistent()),
                 "gespeeld", outcomes, expected);

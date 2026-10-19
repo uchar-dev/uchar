@@ -65,6 +65,7 @@ class RouteWitnessTest {
         assertEquals(List.of(
                 "FRESH_DEPOSIT_FLAG: Object ComputeHelpers.depositFlag[]",
                 "REPORT: void ComputeHelpers.report[Object, List]",
+                "REPORT_FILTER_DEPOSITS: void ComputeHelpers.reportFilterDeposits[Object, Object]",
                 "REPORTED: boolean ComputeHelpers.reported[Object]",
                 "DEPOSIT_CODES: List ComputeHelpers.depositCodes[Object]",
                 "IS_EMPTY: boolean ComputeHelpers.isEmpty[Object]",

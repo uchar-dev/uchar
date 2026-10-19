@@ -37,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * exec-model branch, over a binder whose value another rule derives later: "De grondslag van een Jutter moet
  * berekend worden als zijn inkomen" and "De heffing van een Jutter moet berekend worden als: k is zijn grondslag; als k
  * groter is dan 10,00 dan 5,00, anders k gedeeld door zijn restpost". The division in the else branch is a §6.5 place
- * (a leeg divisor gives leeg and a §9.5 inconsistency, ch. 1.2) and a fault place (a numeric zero, ch. 1.4): it is
+ * (a leeg divisor gives leeg and a §9.5 inconsistency of kind EF-031, ch. 1.2) and, since the card zero-division-channel
+ * (2026-10-19), a place of the same kind for a numeric zero (EF-005, ch. 1.4 point 4; until then a fault): it is
  * evaluated only where the branch is taken, and the binder is read, and its value evaluated, only where a branch reads
  * it. A read of a binder whose value is leeg ends the {@code Let} with leeg (clause 2).
  *
@@ -47,7 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (nothing: the grondslag stays leeg, the read raises the barrier, heffing leeg) — the transient deposit of J1 goes
  * again, so the case is consistent. Case B: J3 (inkomen 6, no restpost): else at the fixpoint, heffing leeg with the
  * §9.5 inconsistency of the heffing on J3. Case C: J2 (inkomen 40, grondslag 6, restpost 0): the transient division by
- * zero goes again, heffing 5,00. Case D: J5 (inkomen 6, restpost 0): the division by zero stands at the fixpoint. The
+ * zero goes again, heffing 5,00. Case D: J5 (inkomen 6, restpost 0): the division by zero stands at the fixpoint, heffing
+ * leeg with the §9.5 inconsistency EF-005 of the heffing on J5 (a fault until the card zero-division-channel). The
  * second document, with the binder q whose value divides and the nested Let of the saldo, is described at its row.
  *
  * <p><b>Measured</b> (2026-10-09, the reference interpreter's runner and the ASP runner on every order of both
@@ -111,22 +113,17 @@ class TmsLetWitnessTest {
         return TmsDocuments.caseOn(null, List.of(
                 instanceWith("J5", "Jutter", Map.of("inkomen", numberValue("6.00"), "restpost", numberValue("0.00")),
                         List.of())),
-                List.of(consistent()));
+                List.of(value("J5", "heffing", null), inconsistent("heffing van een jutter", "J5", "EF-005")));
     }
-
-    static final String J5_BY_ZERO = "DelingDoorNul: deling door nul in de regel \"heffing van een jutter\": 6 gedeeld"
-            + " door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
 
     @Test void the_taken_branch_computes_and_the_other_does_not_in_every_order() throws Exception {
         List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(RULES)) {
             List<String> names = TmsDocuments.ruleNames(order);
             java.nio.file.Path ir = TmsDocuments.document(MODEL, order);
-            for (JsonNode caseDocument : List.of(caseA(), caseB(), caseC()))
+            for (JsonNode caseDocument : List.of(caseA(), caseB(), caseC(), caseD()))
                 outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
-            outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseD(), DroolsBackend.Branch.EXEC_MODEL));
-            for (int i = 0; i < 3; i++) expected.add(names + " gespeeld");
-            expected.add(names + " " + J5_BY_ZERO);
+            for (int i = 0; i < 4; i++) expected.add(names + " gespeeld");
         }
         assertEquals(expected, outcomes);
     }
@@ -171,7 +168,8 @@ class TmsLetWitnessTest {
         return TmsDocuments.caseOn(null, List.of(
                 instanceWith("J5", "Jutter", Map.of("inkomen", numberValue("6.00"), "restpost", numberValue("0.00")),
                         List.of())),
-                List.of(consistent()));
+                List.of(value("J5", "tarief", null), value("J5", "saldo", "6.00"),
+                        inconsistent("tarief van een jutter", "J5", "EF-005")));
     }
 
     /** Clause 3 of ch. 10.6: the binder q, whose value divides, is read only on the else branch, so where the then
@@ -179,7 +177,9 @@ class TmsLetWitnessTest {
      *  restpost) does not deposit, although in an order where the tarief fires before the grondslag is derived J2
      *  reads the input grondslag 6, takes the else branch and divides by zero on the way. J8 (inkomen 6, no restpost)
      *  takes the else branch at the fixpoint: q is 6 divided by leeg, leeg with the §9.5 deposit (ch. 1.2), and its read
-     *  ends the Let with leeg (clause 2). J5 (inkomen 6, restpost 0) reads q at the fixpoint and faults. The saldo
+     *  ends the Let with leeg (clause 2). J5 (inkomen 6, restpost 0) reads q at the fixpoint: 6 by a numeric zero, leeg
+     *  with the deposit EF-005 (ch. 1.4 point 4; a fault until the card zero-division-channel), and its read ends the
+     *  Let likewise. The saldo
      *  holds a nested Let whose binder x reads the restpost: where it is leeg the read empties the nested Let alone,
      *  never the enclosing one (clause 2), and "plus" counts the leeg operand as 0 (ch. 1.2): J7 and J8 get their
      *  grondslag. */
@@ -188,24 +188,22 @@ class TmsLetWitnessTest {
         for (List<String> order : TmsDocuments.permutations(List.of(BASE, RATE, BALANCE))) {
             List<String> names = TmsDocuments.ruleNames(order);
             java.nio.file.Path ir = TmsDocuments.document(MODEL_WITH_RATE, order);
-            for (JsonNode caseDocument : List.of(caseE(), caseF())) {
+            for (JsonNode caseDocument : List.of(caseE(), caseF(), caseG())) {
                 outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
                 expected.add(names + " gespeeld");
             }
-            outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseG(), DroolsBackend.Branch.EXEC_MODEL));
-            expected.add(names + " DelingDoorNul: deling door nul in de regel \"tarief van een jutter\": 6 gedeeld door 0"
-                    + " — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)");
         }
         assertEquals(expected, outcomes);
     }
 
     /** Every order of the generated rules, on the beans of case A's J1 and case C's J2: the fixpoint has no fault and no
      *  deposit, and in at least one order the heffing took the else branch on the transient grondslag, divided by a
-     *  leeg restpost (a deposit that went again) and by a zero (a fault that went again). */
+     *  leeg restpost (a deposit EF-031 that went again) and by a zero (a deposit EF-005 that went again; a fault until the
+     *  card zero-division-channel). */
     @Test void the_intermediate_state_in_every_order_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(MODEL, RULES),
                 DroolsBackend.Branch.EXEC_MODEL);
-        int orders = 0, deposit = 0, fault = 0;
+        int orders = 0, deposit = 0, zero = 0;
         for (List<Rule> order : TmsDocuments.permutations(b.execModelTranspiler().model().getRules())) {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of("inkomen", "40.00", "grondslag", "6.00"),
@@ -218,23 +216,33 @@ class TmsLetWitnessTest {
             assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten en deponeringen in volgorde " + names);
             TmsFaultWitnessTest.assertNumber("5.00", TmsDocuments.read(j1, "heffing"), "heffing van J1 in volgorde " + names);
             TmsFaultWitnessTest.assertNumber("5.00", TmsDocuments.read(j2, "heffing"), "heffing van J2 in volgorde " + names);
-            if (facts.depositCount > 0) deposit++;
-            if (facts.faults > 0) fault++;
+            if (facts.codes.contains("EF-031")) deposit++;
+            if (facts.codes.contains("EF-005")) zero++;
             orders++;
         }
         assertTrue(deposit > 0, "geen volgorde deponeerde op de tijdelijke grondslag");
-        assertTrue(fault > 0, "geen volgorde deelde door de tijdelijke nul");
+        assertTrue(zero > 0, "geen volgorde deelde door de tijdelijke nul");
         assertEquals(24, orders);
     }
 
-    /** Counts the fault facts and the §9.5 inconsistencies a session inserts and withdraws. */
+    /** Counts the fault facts and the §9.5 inconsistencies a session inserts and withdraws, and gathers the EF codes of
+     *  the inconsistencies. */
     static final class Facts implements RuleRuntimeEventListener {
         int inserted, withdrawn, faults, depositCount;
+        final java.util.Set<Object> codes = new java.util.TreeSet<>();
 
         @Override public void objectInserted(ObjectInsertedEvent e) {
             String category = e.getObject().getClass().getSimpleName();
             if (category.equals("Fault")) { inserted++; faults++; }
-            if (category.equals("Inconsistentie")) { inserted++; depositCount++; }
+            if (category.equals("Inconsistentie")) {
+                inserted++;
+                depositCount++;
+                try {
+                    codes.addAll((List<?>) e.getObject().getClass().getMethod("getCodes").invoke(e.getObject()));
+                } catch (ReflectiveOperationException x) {
+                    throw new IllegalStateException(x);
+                }
+            }
         }
 
         @Override public void objectUpdated(ObjectUpdatedEvent e) {}

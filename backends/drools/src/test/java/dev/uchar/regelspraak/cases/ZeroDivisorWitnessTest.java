@@ -13,19 +13,15 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A division by a numeric zero: "De verhouding van een Vondst moet berekend worden als zijn gewogen gewicht gedeeld door
- * zijn geschatte gewicht", over a Vondst whose geschatte gewicht is 0,00. RUNTIME-SEMANTICS ch. 1.4, point 4 keeps the
- * hard fault of the mirror until the v1 delta to the §9.5 channel lands in every executor at once (the red case
- * {@code division-by-numeric-zero}); ref faults with "division by numeric zero" and clingo with its fail-fast guard, on
- * the subject V3. This backend faults as well, and names it: the rule the division ran in and the operands, in a
- * sentence of its own, where the replay and the scenario report read it; a consumer that fires the KieBase itself
- * gets Drools' ConsequenceException and names it through {@code DroolsBackend.designate} (since 2026-10-02, no handler
- * on a class name: {@code ZeroDivisorConsumerWitnessTest}). A leeg divisor
- * stays leeg with its §9.5 deposit, and a leeg dividend over a zero divisor stays 0 (ch. 1.2). Every document is authored
- * here on Jutterswet material, with the outcomes ref and clingo give it.
+ * zijn geschatte gewicht", over a Vondst whose geschatte gewicht is 0,00. Since the card zero-division-channel
+ * (2026-10-19) v1 routes it into the §9.5 channel (RUNTIME-SEMANTICS ch. 1.4, point 4): the verhouding of V3 is leeg and
+ * the rule deposits a fact of kind EF-005 on V3, in ref, in clingo and on both branches of this backend (the golden
+ * {@code division-by-numeric-zero}). Until then all three faulted, and this witness pinned the sentence of this
+ * backend's fault. A leeg divisor stays leeg with its §9.5 deposit EF-031, and a leeg dividend over a zero divisor stays
+ * 0 (ch. 1.2). Every document is authored here on Jutterswet material, with the outcomes ref and clingo give it.
  *
  * <p><b>Red before the fix</b> (measured 2026-10-02 on the backend of {@code da03d480}): the fire threw Drools'
  * {@code ConsequenceException} ("Exception executing consequence for rule "verhouding" in defaultpkg:
@@ -36,21 +32,9 @@ class ZeroDivisorWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    /** The fault is the runtime's own named type, carrying the sentence as its message (by name, so this witness
-     *  compiled against the backend before the type existed). */
-    private static void named(String sentence, RuntimeException e) {
-        assertEquals("DelingDoorNul", e.getClass().getSimpleName(), () -> e.getClass().getName() + ": " + e.getMessage());
-        assertEquals(sentence, e.getMessage());
-    }
-
-    private static String sentence(String regel) {
-        return "deling door nul in de regel \"" + regel + "\": 60 gedeeld door 0 — een numerieke nul als deler is een "
-                + "fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
-    }
-
     @Test void a_zero_divisor_in_the_value_of_a_rule() throws Exception {
         Path ir = document(regel(division("dividedBy")), "");
-        named(sentence("verhouding"), assertThrows(RuntimeException.class, () -> play(ir, false, ZERO_AND_ORDINARY)));
+        assertNull(play(ir, false, ZERO_AND_ORDINARY), "de nuldeler in de waarde");
     }
 
     @Test void a_zero_divisor_in_the_consequence_of_a_default() throws Exception {
@@ -68,30 +52,30 @@ class ZeroDivisorWitnessTest {
 
     @Test void a_zero_divisor_in_the_absolute_division() throws Exception {
         Path ir = document(regel(division("dividedByAbs")), "");
-        named(sentence("verhouding"), assertThrows(RuntimeException.class, () -> play(ir, false, ZERO_AND_ORDINARY)));
+        assertNull(play(ir, false, ZERO_AND_ORDINARY), "de nuldeler in de absolute deling");
     }
 
-    @Test void the_drl_text_branch_names_the_same_fault() throws Exception {
+    @Test void the_drl_text_branch_deposits_the_same() throws Exception {
         Path ir = document(regel(division("dividedBy")), "");
-        named(sentence("verhouding"), assertThrows(RuntimeException.class, () -> play(ir, true, ZERO_AND_ORDINARY)));
+        assertNull(play(ir, true, ZERO_AND_ORDINARY), "de nuldeler op de DRL-teksttak");
     }
 
-    @Test void the_scenario_report_carries_the_sentence() throws Exception {
+    /** The scenario report passes the case that pins the deposit; until the card zero-division-channel it carried the
+     *  sentence of the fault. */
+    @Test void the_scenario_report_passes_the_deposit() throws Exception {
         Path ir = document(regel(division("dividedBy")), "");
         Path c = Files.writeString(Files.createTempDirectory("nuldeler").resolve("case1-nul.json"), ZERO_AND_ORDINARY);
         List<ScenarioResult> report = CaseRunner.report(ir, List.of(c));
-        assertEquals(ScenarioResult.Status.FAIL, report.get(0).status(), report::toString);
-        assertEquals("case1-nul.json: ERROR DelingDoorNul: " + sentence("verhouding"), report.get(0).diagnostic());
+        assertEquals(ScenarioResult.Status.PASS, report.get(0).status(), report::toString);
     }
 
-    @Test void the_red_route_keeps_the_pinned_fragments() throws Exception {
-        // gate 8 pins "Breuk deling door 0" and "deling door 0" on three red cases: the chain still carries them
+    /** The red route runs the division to a model: no fault (gate 8 pinned the sentence of this backend's fault on three
+     *  red cases until the card zero-division-channel moved them to the golden corpus). */
+    @Test void the_red_route_runs_the_division_to_a_model() throws Exception {
         Path ir = document(regel(division("dividedBy")), "");
         Path c = Files.writeString(Files.createTempFile("nuldeler", ".json"), ZERO_AND_ORDINARY);
         CaseRunner.RedResult r = CaseRunner.runRed(ir, c);
-        assertEquals("FAULT", r.status(), r::detail);
-        assertTrue(r.detail().startsWith("DelingDoorNul: " + sentence("verhouding")), r.detail());
-        assertTrue(r.detail().contains("Breuk deling door 0"), r.detail());
+        assertEquals("NOFAULT", r.status(), r::detail);
     }
 
     @Test void an_empty_numerator_above_a_zero_divisor_stays_zero() throws Exception {
@@ -187,9 +171,11 @@ class ZeroDivisorWitnessTest {
                 + "],\"parameters\":{}},\"expected\":[" + expected + "]}";
     }
 
-    /** V1 (240 by 320, 0,75) beside V3, whose geschatte gewicht is 0,00 under a gewogen gewicht of 60,00. */
+    /** V1 (240 by 320, 0,75) beside V3, whose geschatte gewicht is 0,00 under a gewogen gewicht of 60,00: its
+     *  verhouding leeg, with the §9.5 fact EF-005 of the rule verhouding on V3. */
     private static final String ZERO_AND_ORDINARY = caseDocument(vondst("V1", "320.00", "240.00") + "," + vondst("V3", "0.00", "60.00"),
-            ratio("V1", "0.75"));
+            ratio("V1", "0.75") + ",{\"kind\":\"attributeEmpty\",\"label\":\"V3\",\"attribute\":\"verhouding\"},"
+                    + TmsDocuments.inconsistent("verhouding", "V3", "EF-005"));
 
     /** One branch's verdict on one case: null when every expectation holds. */
     private static String play(Path ir, boolean viaDrl, String caseDocument) throws Exception {

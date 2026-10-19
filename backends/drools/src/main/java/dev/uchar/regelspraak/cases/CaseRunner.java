@@ -492,11 +492,13 @@ public final class CaseRunner {
     record FaultKind(String code, Map<String, String> params) {}
 
     /** The fault kinds of the red-path fault {@code t}, in the order of its report, each code once; empty where it names
-     *  no kind. Classified here, at the catch, by exception type: the production runtime's {@link Breuk.DelingDoorNul}
-     *  gets no field for a concern of this backend, so its kind is read off its class (and its parameter off the rule
-     *  it already carries); the backend's own fault exceptions name theirs ({@code code()}, {@code params()}); several
-     *  faults at the fixpoint ({@link EvaluationFaults}) give the kind of each. In a cause chain the outermost exception
-     *  that names a kind decides: a fault named after its rule wraps the same fault unnamed. */
+     *  no kind. Classified here, at the catch, by exception type: the backend's own fault exceptions name theirs
+     *  ({@code code()}, {@code params()}); several faults at the fixpoint ({@link EvaluationFaults}) give the kind of
+     *  each. In a cause chain the outermost exception that names a kind decides: a fault named after its rule wraps the
+     *  same fault unnamed. The production runtime's {@link Breuk.DelingDoorNul} names no kind: a division by a numeric
+     *  zero is the §9.5 deposit EF-005 since v1 (RUNTIME-SEMANTICS ch. 1.4 point 4), which this branch makes before the
+     *  runtime is called ({@code ComputeHelpers.divided}), so the runtime's fault no longer reaches a fault rule from
+     *  a division of the IR. */
     static List<FaultKind> faultKinds(Throwable t) {
         List<FaultKind> kinds = new ArrayList<>();
         addKind(kinds, t);
@@ -510,9 +512,7 @@ public final class CaseRunner {
                 return;
             }
             FaultKind kind = null;
-            if (c instanceof Breuk.DelingDoorNul z)
-                kind = new FaultKind("EF-005", z.regel() == null ? Map.of() : Map.of("rule", z.regel()));
-            else if (c instanceof ComputeFault f && f.code() != null) kind = new FaultKind(f.code(), f.params());
+            if (c instanceof ComputeFault f && f.code() != null) kind = new FaultKind(f.code(), f.params());
             else if (c instanceof WritersConflict w) kind = new FaultKind(w.code(), w.params());
             else if (c instanceof CaseDateFault d) kind = new FaultKind(d.code(), d.params());
             if (kind != null) {

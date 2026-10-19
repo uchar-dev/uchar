@@ -309,19 +309,19 @@ class CompanionPathWitnessTest {
     }
 
     @Test void the_same_bound_order_decides_between_hard_fault_and_barrier() throws Exception {
-        // the value-side twin: a division by NUMERIC zero (a hard fault, not a channel deposit) in one bound,
-        // the barrier read in the other, nul = 0,00. "… minimum d, maximum inkomen ÷ nul": the minimum's read ends
-        // the Let first and the zero division never runs -> ref uit leeg, CONSISTENT. Mirror "… minimum inkomen ÷
-        // nul, maximum d": ref evaluates the minimum first and dies, EVALUATION FAULT "division by numeric zero",
-        // which the branch gives as the runtime's own ArithmeticException at the fixpoint. On the truth-maintenance
-        // branch, measured as the row above.
-        String input = INKOMEN + ", " + n("nul", "0.00");
+        // the value-side twin: a hard fault, not a channel deposit, in one bound, the barrier read in the other: the
+        // root of nul = 2,00 without a rounding, which is irrational (RUNTIME-SEMANTICS ch. 2.2). "… minimum d,
+        // maximum de wortel van nul": the minimum's read ends the Let first and the root never runs -> uit leeg,
+        // CONSISTENT. Mirror "… minimum de wortel van nul, maximum d": the minimum runs first and faults. Until the
+        // card zero-division-channel (2026-10-19) the bound divided the inkomen by nul = 0,00, which deposits since
+        // (ch. 1.4, point 4); ref and this branch faulted on it as they now fault on the root.
+        String input = INKOMEN + ", " + n("nul", "2.00");
         assertNull(playTms(clampZeroModel(true), jutter(input, empty("uit") + ", " + consistent())),
-                "de lezing in het minimum kapt af voordat het maximum door nul deelt");
+                "de lezing in het minimum kapt af voordat het maximum de wortel neemt");
         RuntimeException fault = assertThrows(RuntimeException.class,
                 () -> playTms(clampZeroModel(false), jutter(input, empty("uit") + ", " + consistent())));
-        assertTrue(causeText(fault).contains("10 gedeeld door 0"),
-                "het minimum deelt door nul voordat het maximum de barriere opwerpt: " + causeText(fault));
+        assertTrue(causeText(fault).contains("irrational square root of 2"),
+                "het minimum neemt de wortel voordat het maximum de barriere opwerpt: " + causeText(fault));
     }
 
     @Test void the_base_of_a_clamp_evaluates_before_the_maximum() throws Exception {
@@ -612,7 +612,9 @@ class CompanionPathWitnessTest {
     private static final String DIVISION_DIVISOR = binary("dividedBy", attr("inkomen"), attr("deler"), num(4));
     private static final String DIVISION_ABS = binary("dividedByAbs", attr("inkomen"), attr("tweede"), num(4));
     private static final String DIVISION_LEEGDING = binary("dividedBy", attr("leegding"), attr("tweede"), num(4));
-    private static final String DIVISION_ZERO = binary("dividedBy", attr("inkomen"), attr("nul"), num(4));
+    /** "de wortel van nul", a hard fault where nul is no square; until the card zero-division-channel "het inkomen
+     *  gedeeld door nul", whose numeric zero deposits since. */
+    private static final String ROOT_OF_NUL = squareRoot(attr("nul"), num(4));
     /** (a'') "5,00 gedeeld door het leegding" — a LITERAL dividend, so companionOperand refuses it and the site
      *  qualifies for no companion of its own, bare or under a carrier. */
     private static final String DIVISION_LITERAL = binary("dividedBy", lit("5.00", pos(2)), attr("leegding"), num(4));
@@ -710,11 +712,11 @@ class CompanionPathWitnessTest {
         return ofModel(let("x", attr("leegding"), binary("plus", inside, right, num(4)), num(4)));
     }
 
-    /** (i) the same, with the division by NUMERIC zero ("inkomen gedeeld door nul") as the other bound. */
+    /** (i) the same, with a hard fault ("de wortel van nul") as the other bound. */
     private static String clampZeroModel(boolean readInMinimum) {
         String binderRead = bref("d", pos(2));
-        String body = readInMinimum ? clamped(attr("inkomen"), binderRead, DIVISION_ZERO, num(2))
-                : clamped(attr("inkomen"), DIVISION_ZERO, binderRead, num(2));
+        String body = readInMinimum ? clamped(attr("inkomen"), binderRead, ROOT_OF_NUL, num(2))
+                : clamped(attr("inkomen"), ROOT_OF_NUL, binderRead, num(2));
         return ofModel(let("d", attr("deler"), body, num(2)));
     }
 

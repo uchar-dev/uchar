@@ -69,18 +69,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TmsInputWitnessTest {
 
-    private static final String ZERO = " gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg"
-            + " (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+    /** The fault of the fold's filter of {@link TmsFilterFaultWitnessTest} on the member whose gewicht is {@code radicand},
+     *  the root of a number that is no square; until the card zero-division-channel the filter divided by 0. */
+    private static String rootFault(String radicand) {
+        return TmsDocuments.irrational("zware vondsten", radicand);
+    }
 
     @Test void a_list_has_the_order_of_the_beans_by_default() throws Exception {
         DroolsBackend.Build b = vondstBuild();
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
             List<Object> jv = jutterWithVondsten(b);
             Object j1 = jv.get(0), v1 = jv.get(1), v2 = jv.get(2);
-            assertEquals(List.of("deling door nul in de regel \"zware vondsten\": 9" + ZERO),
-                    faults(b, new Input().beans(List.of(j1, v1, v2))), "V1 before V2");
-            assertEquals(List.of("deling door nul in de regel \"zware vondsten\": 4" + ZERO),
-                    faults(b, new Input().beans(List.of(j1, v2, v1))), "V2 before V1");
+            assertEquals(List.of(rootFault("3")), faults(b, new Input().beans(List.of(j1, v1, v2))), "V1 before V2");
+            assertEquals(List.of(rootFault("2")), faults(b, new Input().beans(List.of(j1, v2, v1))), "V2 before V1");
         });
     }
 
@@ -89,7 +90,7 @@ class TmsInputWitnessTest {
         TmsRepeatedFireWitnessTest.inSession(b, () -> {
             List<Object> jv = jutterWithVondsten(b);
             Object j1 = jv.get(0), v1 = jv.get(1), v2 = jv.get(2);
-            assertEquals(List.of("deling door nul in de regel \"zware vondsten\": 4" + ZERO),
+            assertEquals(List.of(rootFault("2")),
                     faults(b, new Input().beans(List.of(j1, v1, v2)).list(j1, "aanmelder", List.of(v2, v1))),
                     "the list V2, V1 with the beans in the order V1, V2");
         });
@@ -229,11 +230,12 @@ class TmsInputWitnessTest {
                 DroolsBackend.Branch.EXEC_MODEL);
     }
 
-    /** J1 actief, V1 (gewicht 9, deelnemers 0) and V2 (gewicht 4, deelnemers 0), both reported by J1. */
+    /** J1 actief, V1 (gewicht 3) and V2 (gewicht 2), both reported by J1: the filter faults on each. Until the card
+     *  zero-division-channel V1 divided 9 and V2 4 by 0. */
     private static List<Object> jutterWithVondsten(DroolsBackend.Build b) throws Exception {
         Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
-        Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of());
-        Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "4", "deelnemers", "0"), List.of());
+        Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "3"), List.of());
+        Object v2 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", "2"), List.of());
         TmsRepeatedFireWitnessTest.setRole(v1, "aanmelder", j1);
         TmsRepeatedFireWitnessTest.setRole(v2, "aanmelder", j1);
         return List.of(j1, v1, v2);

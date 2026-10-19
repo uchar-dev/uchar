@@ -251,8 +251,21 @@ let () =
   expect_num "WV-2.2-m" (Arith.sqrt_ ~err:no_err (n "9")) "3";
   expect_num "WV-2.2-n" (Arith.sqrt_rounded ~err:no_err Half_away_from_zero 2 (n "2")) "1.41";
   expect_num "WV-2.2-o" (Arith.abs_ (n "-3/7")) "3/7";
-  (* division by numeric zero is a hard fault; ch. 1.4 point 4 *)
-  expect_fault "ch2.2-div-zero" (fun () -> Arith.div_ ~err:no_err (n "5") (n "0"))
+  (* division by numeric zero: leeg plus one §9.5 deposit of the kind EF-005
+     (ch. 1.4 point 4; the v0 mirror faults) *)
+  (let codes = ref [] in
+   let r = Arith.div_ ~err:(fun (d : Value.deposit) -> codes := d.code :: !codes) (n "5") (n "0") in
+   expect_empty "ch2.2-div-zero" r;
+   check "ch2.2-div-zero (§9.5 EF-005)" (!codes = [ Some "EF-005" ]));
+  (* the dividend rule of ch. 1.2 comes first: 0 ÷ 0 has a filled dividend and
+     deposits, leeg ÷ 0 is 0 without a deposit *)
+  (let codes = ref [] in
+   let r = Arith.div_ ~err:(fun (d : Value.deposit) -> codes := d.code :: !codes) (n "0") (n "0") in
+   expect_empty "ch2.2-div-zero-by-zero" r;
+   check "ch2.2-div-zero-by-zero (§9.5 EF-005)" (!codes = [ Some "EF-005" ]));
+  (let r, deposits = with_errs (fun err -> Arith.div_ ~err empty_value (n "0")) in
+   expect_num "ch2.2-div-empty-by-zero" r "0";
+   check "ch2.2-div-empty-by-zero (no §9.5 deposit)" (deposits = 0))
 
 (* --- ch. 2.3: the wholeness of a product ---------------------------------- *)
 
@@ -3412,8 +3425,9 @@ let () =
        the fold's element binder wins over it (ref semantics; the ASP side
        carries a Let only in the bare rule value, ASP-TRANSLATION S19);
    (i)–(iv) the four L witnesses, each replayed differentially against clingo:
-       a faulting value under an unread binder does not fault, the same value
-       under a read binder does, a leeg value read only in the branch the
+       a depositing value under an unread binder deposits nothing, the same
+       value under a read binder deposits once and ends the Let, a leeg value
+       read only in the branch the
        condition does NOT choose leaves the chosen branch standing, and the
        need is evaluated exactly ONCE however often it is read. *)
 let () =
@@ -3501,15 +3515,26 @@ let () =
       { op = Divided_by; left_side = Some (litv "100" num0); right_side = Some (litv "0" num0);
         typ = Some num0; source_name = None }
   in
-  (* (i) clause 3 with a FAULTING value: `let q = 100 / 0 in 42` never
-     evaluates the division, so it yields 42 rather than faulting *)
-  expect_num "WV-10.6-ongelezen-faultende-value"
-    (Eval.eval_expr env w self ~err:no_err (letexpr "q" divide_by_zero (litv "42" num0) num0))
-    "42";
-  (* (ii) the same value READ: the fault surfaces, fail-fast *)
-  expect_fault "WV-10.6-gelezen-faultende-value" (fun () ->
-      Eval.eval_expr env w self ~err:no_err
-        (letexpr "q" divide_by_zero (binder_ref "q") num0));
+  (* (i) clause 3 with a DEPOSITING value: `let q = 100 / 0 in 42` never
+     evaluates the division, so it yields 42 and deposits no §9.5 reason.
+     Until v1 routed the numeric zero into the channel (ch. 1.4 point 4) the
+     value faulted, and this row pinned that the fault did not happen *)
+  (let r, deposits =
+     with_errs (fun err ->
+         Eval.eval_expr env w self ~err (letexpr "q" divide_by_zero (litv "42" num0) num0))
+   in
+   expect_num "WV-10.6-ongelezen-faultende-value" r "42";
+   check "WV-10.6-ongelezen-faultende-value (no §9.5 reason)" (deposits = 0));
+  (* (ii) the same value READ: the division runs and deposits its one reason,
+     EF-005, and its need is leeg, so the read ends the Let (clause 2) *)
+  (let codes = ref [] in
+   let r =
+     Eval.eval_expr env w self
+       ~err:(fun (d : Value.deposit) -> codes := d.code :: !codes)
+       (letexpr "q" divide_by_zero (binder_ref "q") num0)
+   in
+   expect_empty "WV-10.6-gelezen-faultende-value" r;
+   check "WV-10.6-gelezen-faultende-value (§9.5 EF-005)" (!codes = [ Some "EF-005" ]));
   (* (iii) a leeg value whose binder is read ONLY in the branch the condition
      does not choose: `let k = 2 in let x = a in if k > 1 then 7 else x maal 2`
      -> 7. The condition is read on EVERY branch (k), the else-branch operand on
@@ -6225,9 +6250,12 @@ let () =
 
 (* WV-5.10: the composite condition short-circuits. The members are read left to
    right in WIRE order and evaluation stops at the first member after which the
-   outcome stands, so a member the outcome no longer reads raises NO fault. Both
-   ch. 5.10 tables verbatim (corpus goldens jutterswet-ploegaandeel and
-   jutterswet-wachtdeling): member 1 tests the divisor, member 2 divides by it. *)
+   outcome stands, so a member the outcome no longer reads deposits NO §9.5
+   fact. Both ch. 5.10 tables verbatim (corpus goldens jutterswet-ploegaandeel
+   and jutterswet-wachtdeling): member 1 tests the divisor, member 2 divides by
+   it. A division by the numeric zero deposits EF-005 since v1 routed it into
+   the channel (ch. 1.4 point 4); until then it faulted, and these examples
+   pinned the fault's absence where they now pin the channel's. *)
 let () =
   let division : Ir_v0.Ast.expr =
     Rounding
@@ -6258,16 +6286,23 @@ let () =
         ];
     }
   in
-  let run doc ploeg vangst =
+  let final doc ploeg vangst =
     let w =
       World.add_instance World.empty
         (inst "w" "Wacht" [ ("ploegomvang", n ploeg); ("vangstwaarde", n vangst) ])
     in
-    World.attr (World.get (Eval.evaluate (env_of doc) w) "w") "merk"
+    Eval.evaluate (env_of doc) w
   in
+  let run doc ploeg vangst = World.attr (World.get (final doc ploeg vangst) "w") "merk" in
+  (* the channel after the run: (rule, subject, codes) per fact *)
+  let channel doc ploeg vangst =
+    List.map (fun (f : World.error_fact) -> (f.rule, f.subject, f.codes)) (final doc ploeg vangst).channel
+  in
+  let unread name doc ploeg vangst = check (name ^ " (no §9.5 fact)") (channel doc ploeg vangst = []) in
   (* table 1 — `all`, member 1 "ploegomvang ongelijk aan 0" *)
   let every = doc_of All 0 Not_equal in
   expect_empty "WV-5.10-alle-deler-0-geen-fault" (run every "0" "100");
+  unread "WV-5.10-alle-deler-0-geen-fault" every "0" "100";
   expect_num "WV-5.10-alle-deler-4" (run every "4" "100") "1";
   expect_empty "WV-5.10-alle-deler-7-lid2-beslist" (run every "7" "3");
   (* table 2 — the SAME two members, member 1 "ploegomvang gelijk aan 0",
@@ -6275,15 +6310,17 @@ let () =
      stop fixes it true): one trigger, opposite verdicts *)
   let none_value = doc_of None_of 0 Equal and least = doc_of At_least 1 Equal in
   expect_empty "WV-5.10-geen-deler-0-geen-fault" (run none_value "0" "100");
+  unread "WV-5.10-geen-deler-0-geen-fault" none_value "0" "100";
   expect_empty "WV-5.10-geen-deler-4" (run none_value "4" "100");
   expect_num "WV-5.10-geen-deler-7" (run none_value "7" "3") "1";
   expect_num "WV-5.10-tenminste-deler-0-geen-fault" (run least "0" "100") "1";
+  unread "WV-5.10-tenminste-deler-0-geen-fault" least "0" "100";
   expect_num "WV-5.10-tenminste-deler-4" (run least "4" "100") "1";
   expect_empty "WV-5.10-tenminste-deler-7" (run least "7" "3");
   (* the clause is load-bearing: WITHOUT the stop, member 2 is read on a zero
-     divisor and the evaluation faults instead of answering. The one-member
-     composite isolates that member: no prefix can settle the outcome, so it IS
-     read, and the fault is the pre-clause behaviour of every table row above. *)
+     divisor and deposits its §9.5 fact. The one-member composite isolates that
+     member: no prefix can settle the outcome, so it IS read, and the fact is
+     the pre-clause behaviour of every table row above. *)
   let naked : Ir_v0.Ast.document =
     { (doc_of All 0 Not_equal) with
       resolved_rules =
@@ -6294,14 +6331,17 @@ let () =
         ];
     }
   in
-  expect_fault "WV-5.10-ongepoort-lid-fault-wel" (fun () -> run naked "0" "100");
+  expect_empty "WV-5.10-ongepoort-lid-fault-wel" (run naked "0" "100");
+  check "WV-5.10-ongepoort-lid-fault-wel (§9.5 EF-005)"
+    (channel naked "0" "100" = [ ("merk", "w", [ "EF-005" ]) ]);
   (* the OUT-OF-REACH trigger stops too: TEN MINSTE 2 over two members whose
      first does not hold can no longer reach 2, so member 2 stays unread even
      though no hit has been counted *)
   let least2 = doc_of At_least 2 Not_equal in
   expect_empty "WV-5.10-tenminste-2-onhaalbaar-geen-fault" (run least2 "0" "100");
-  (* ---- one example per trigger row, each pinning the FAULT's absence or
-     presence rather than only the verdict. Without these the trigger table is
+  unread "WV-5.10-tenminste-2-onhaalbaar-geen-fault" least2 "0" "100";
+  (* ---- one example per trigger row, each pinning the §9.5 fact's absence
+     (until v1: the fault's) rather than only the verdict. Without these the trigger table is
      spec text with no artifact: an executor may drop, add or defer a row and
      every gate still passes. Each row below was measured against an arm-exact
      ref mutant that changes exactly that row. ---- *)
@@ -6324,33 +6364,40 @@ let () =
   (* THE STOP IS CHECKED BEFORE THE MEMBER, NOT AFTER. At TEN MINSTE with a
      threshold ABOVE the member count the out-of-reach trigger fires on the
      EMPTY prefix, so NOTHING is read — a checker that evaluates first and asks
-     afterwards reads the faulting member 1 and dies. *)
+     afterwards reads the depositing member 1 and deposits. *)
   expect_empty "WV-5.10-drempel-boven-ledental-leest-niets"
     (run (doc_members At_least 3 [ faultend; true_ploeg0 ]) "0" "100");
+  unread "WV-5.10-drempel-boven-ledental-leest-niets" (doc_members At_least 3 [ faultend; true_ploeg0 ]) "0" "100";
   (* AT-MOST'S TRUE DIRECTION IS A TRIGGER (maintainer decision 2026-09-07;
      this replaces the earlier boundary that excluded it). With d >= n the
      outcome can no longer become false, so it STANDS on the empty prefix and
-     NOTHING is read — the faulting member 1 included. Vacuously true. *)
+     NOTHING is read — the depositing member 1 included. Vacuously true. *)
   expect_num "WV-5.10-atmost-vacuum-waar-leest-niets"
     (run (doc_members At_most 2 [ faultend; true_ploeg0 ]) "0" "100") "1";
+  unread "WV-5.10-atmost-vacuum-waar-leest-niets" (doc_members At_most 2 [ faultend; true_ploeg0 ]) "0" "100";
   (* the same trigger below the member count: after two non-holding members of
      four, two remain and the threshold is 2, so hits can no longer EXCEED it
-     and the outcome stands true — the faulting third member stays unread *)
+     and the outcome stands true — the depositing third member stays unread *)
   expect_num "WV-5.10-atmost-waar-stop-onder-ledental"
     (run (doc_members At_most 2 [ member1 Greater; member1 Greater; faultend; true_ploeg0 ]) "0" "100")
     "1";
+  unread "WV-5.10-atmost-waar-stop-onder-ledental"
+    (doc_members At_most 2 [ member1 Greater; member1 Greater; faultend; true_ploeg0 ]) "0" "100";
   (* AT-MOST'S FALSE DIRECTION IS a trigger: two hits past a threshold of 1
-     settle the outcome, and the faulting third member is never read. *)
+     settle the outcome, and the depositing third member is never read. *)
   expect_empty "WV-5.10-atmost-overschrijding-stopt"
     (run (doc_members At_most 1 [ true_ploeg0; true_vangst; faultend ]) "0" "100");
+  unread "WV-5.10-atmost-overschrijding-stopt" (doc_members At_most 1 [ true_ploeg0; true_vangst; faultend ]) "0" "100";
   (* `exactly`'s OVER-THRESHOLD TRIGGER, likewise: hits 2 against a threshold of 1
-     settle it false and the faulting third member stays unread. *)
+     settle it false and the depositing third member stays unread. *)
   expect_empty "WV-5.10-precies-overschrijding-stopt"
     (run (doc_members Exactly 1 [ true_ploeg0; true_vangst; faultend ]) "0" "100");
+  unread "WV-5.10-precies-overschrijding-stopt" (doc_members Exactly 1 [ true_ploeg0; true_vangst; faultend ]) "0" "100";
   (* `exactly`'s OUT-OF-REACH TRIGGER: a threshold above the member count settles
      it false on the empty prefix, so nothing is read. *)
   expect_empty "WV-5.10-precies-onhaalbaar-leest-niets"
-    (run (doc_members Exactly 3 [ faultend; true_ploeg0 ]) "0" "100")
+    (run (doc_members Exactly 3 [ faultend; true_ploeg0 ]) "0" "100");
+  unread "WV-5.10-precies-onhaalbaar-leest-niets" (doc_members Exactly 3 [ faultend; true_ploeg0 ]) "0" "100"
 
 (* --- ch. 5.11: operand order — one pinned pair per visible sweep row ----
    Each row below is TWO worked examples over one shape: two operand
@@ -6383,14 +6430,16 @@ let () =
     | exception Value.Fault { text = m; _ } -> check (name ^ " (got: " ^ m ^ ")") (contains m frag)
     | _ -> check (name ^ " (no fault at all)") false
   in
-  (* the two distinguishable faults *)
+  (* the two distinguishable faults. The first was the division by a numeric
+     zero until that went to the §9.5 channel (ch. 1.4 point 4, card
+     zero-division-channel); the evaluation year read in a session without an
+     evaluation date faults at its read as the division did (ch. 8.2) *)
   let tree : Ir_v0.Ast.expr =
-    Binary
-      { op = Divided_by; left_side = Some (litv "1" num0); right_side = Some (litv "0" num0);
-        typ = Some num0; source_name = None }
+    Context_value { ident = Some Ir_v0.Spelling.evaluation_year; typ = Some num0; source_name = None }
   in
   let pit : Ir_v0.Ast.expr = Expr_unresolved { typ = Some num0; source_name = None } in
-  let bm = "division by numeric zero" and pm = "Unresolved reached in evaluation" in
+  let bm = "the evaluationYear context value needs an evaluation date"
+  and pm = "Unresolved reached in evaluation" in
   let element_list : Ir_v0.Ast.datatype = List_type { element = num0 } in
   let pair_domain : Ir_v0.Ast.datatype =
     Struct_type { domain_spec = "paar"; field_list = [ ("een", num0); ("twee", num0) ] }

@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Vacuumwacht",
+        "attributes": {
+          "ploegomvang": {
+            "number": "0"
+          },
+          "vangstwaarde": {
+            "number": "100"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "stopteken",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "stopteken van een vacuumwacht",
+      "label": "B1",
+      "code": "EF-005"
+    }
+  ]
+}

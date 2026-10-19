@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.uchar.regelspraak.runtime.Breuk;
+import dev.uchar.regelspraak.transpiler.tms.ComputeFault;
 import dev.uchar.regelspraak.transpiler.tms.State;
 
 import org.drools.model.Rule;
@@ -29,7 +29,6 @@ import java.util.Map;
 import static dev.uchar.regelspraak.cases.TmsDocuments.WHOLE;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
 import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
-import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static dev.uchar.regelspraak.cases.TmsDocuments.consistent;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
@@ -47,12 +46,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * An evaluation fault in a rule's value on the exec-model branch: a division by a numeric zero is a fault
- * (RUNTIME-SEMANTICS ch. 1.4, point 4), and a fault, like a value, belongs to the fixpoint (ch. 5.2). The branch has no
+ * An evaluation fault in a rule's value on the exec-model branch: a fault, like a value, belongs to the fixpoint
+ * (RUNTIME-SEMANTICS ch. 5.2). The branch has no
  * strata and passes intermediate states the reference interpreter does not see, and a fault thrown out of a consequence
  * cannot be withdrawn, so the fault is a fact inserted logically, justified by the activation that raised it, and the
  * session reports the faults that stand once it reaches its fixpoint, in an order that does not depend on the order of
  * the rules.
+ *
+ * <p><b>The device</b> is the square root without a rounding of a number that is no square of a rational, the fault of
+ * an irrational root (ch. 2.2; {@link TmsDocuments#root}), since the card zero-division-channel (2026-10-19). Until then
+ * it was a division by a numeric zero, which v1 routes into the §9.5 channel since (ch. 1.4, point 4), and the documents
+ * and measurements below are those of the division: the reader divided its opbrengst by the bergloon or the deelnemers,
+ * where it now takes the root of the bergloon, the opbrengst or the taxatie, and the transient 0 of the lower default
+ * is a transient 2. Each row asks what it asked of the division.
  *
  * <p>The transient document: a Vondst with {@code taxatie}, {@code opbrengst}, {@code bergloon} and {@code aandeel},
  * "Een Vondst is erkend indien hij gemeld is", a defaults group on the bergloon, higher "op zijn taxatie indien hij
@@ -118,28 +124,33 @@ class TmsFaultWitnessTest {
 
     private static final String ERKENNING = characteristicRule("erkenning", "Vondst", "erkend", check("gemeld", false));
 
-    // ---------------- a transient division by zero ----------------
+    // ---------------- a transient fault ----------------
 
+    /** "Het aandeel van een Vondst moet berekend worden als de wortel van zijn bergloon, indien zijn bergloon gevuld
+     *  is". */
     static final List<String> TEMPORARY = List.of(ERKENNING,
             computingRule("aandeel", "BEREKENING", "Vondst", "aandeel",
-                    binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("bergloon", "Vondst")),
+                    TmsDocuments.root(ownRead("bergloon", "Vondst"), "de wortel van zijn bergloon"),
                     predicate("filled", ownRead("bergloon", "Vondst"))));
 
+    /** The bergloon: higher "op zijn taxatie indien hij erkend is", lower "op 2 indien hij gemeld is". */
     static final String GROUP = attributeGroup("bergloon van een vondst", "Vondst", "bergloon", List.of(
             defaultEntry(check("erkend", false), ownRead("taxatie", "Vondst")),
-            defaultEntry(check("gemeld", false), number("0"))));
+            defaultEntry(check("gemeld", false), number("2"))));
 
+    /** V1, gemeld, taxatie 9: bergloon 9, aandeel 3, consistent; the reader takes the root of the transient 2 on the
+     *  way where the lower default decides first. */
     static JsonNode temporaryCase() throws Exception {
         return TmsDocuments.caseDocument(
-                List.of(instance("V1", "Vondst", Map.of("taxatie", "30", "opbrengst", "90"), List.of("gemeld"), Map.of())),
-                List.of(value("V1", "bergloon", "30"), value("V1", "aandeel", "3"), consistent()));
+                List.of(instance("V1", "Vondst", Map.of("taxatie", "9"), List.of("gemeld"), Map.of())),
+                List.of(value("V1", "bergloon", "9"), value("V1", "aandeel", "3"), consistent()));
     }
 
     static Path temporary(List<String> rules) throws Exception {
         return TmsDocuments.document(MODEL, rules, List.of(), List.of(GROUP));
     }
 
-    @Test void a_temporary_division_by_zero_disappears_at_the_fixpoint_in_every_order_of_the_document()
+    @Test void a_temporary_fault_disappears_at_the_fixpoint_in_every_order_of_the_document()
             throws Exception {
         List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(TEMPORARY)) {
@@ -152,48 +163,49 @@ class TmsFaultWitnessTest {
     }
 
     /** The two rules, the two defaults, and the standings of the bergloon and of erkend; a seeded sample of their
-     *  orders, at least one of which must let the reader divide by the transient 0 of the lower default. */
+     *  orders, at least one of which must let the reader take the root of the transient 2 of the lower default. */
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(temporary(TEMPORARY), DroolsBackend.Branch.EXEC_MODEL);
         List<Rule> generated = b.execModelTranspiler().model().getRules();
         int onTheIntermediateState = 0;
         for (List<Rule> order : TmsDocuments.sample(generated, 20261008L, 100)) {
             List<String> names = order.stream().map(Rule::getName).toList();
-            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "30", "opbrengst", "90"),
-                    List.of("gemeld"));
+            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("taxatie", "9"), List.of("gemeld"));
             boolean[] intermediateState = {false};
             FaultFacts facts = new FaultFacts();
             String fault = fire(b, order, List.of(v1), new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     if (e.getMatch().getRule().getName().equals("aandeel")
                             && e.getMatch().getObjects().stream().anyMatch(o -> o instanceof State s
-                                    && s.value() instanceof BigDecimal d && d.signum() == 0))
+                                    && s.value() instanceof BigDecimal d && d.compareTo(BigDecimal.TWO) == 0))
                         intermediateState[0] = true;
                 }
             }, facts);
             assertNull(fault, () -> "volgorde " + names);
             assertEquals(facts.inserted, facts.withdrawn, () -> "foutfeiten in volgorde " + names);
-            assertNumber("30", TmsDocuments.read(v1, "bergloon"), "bergloon in volgorde " + names);
+            assertNumber("9", TmsDocuments.read(v1, "bergloon"), "bergloon in volgorde " + names);
             assertNumber("3", TmsDocuments.read(v1, "aandeel"), "aandeel in volgorde " + names);
             if (intermediateState[0]) {
-                assertTrue(facts.inserted > 0, () -> "de deling door de tijdelijke 0 gaf geen foutfeit, volgorde " + names);
+                assertTrue(facts.inserted > 0, () -> "de wortel uit de tijdelijke 2 gaf geen foutfeit, volgorde " + names);
                 onTheIntermediateState++;
             }
         }
-        assertTrue(onTheIntermediateState > 0, "geen volgorde liet de lezer delen door de tijdelijke 0 van de lagere default");
+        assertTrue(onTheIntermediateState > 0, "geen volgorde liet de lezer de wortel nemen uit de tijdelijke 2 van de"
+                + " lagere default");
     }
 
     // ---------------- a fault that stands at the fixpoint ----------------
 
+    /** "Het aandeel van een Vondst moet berekend worden als de wortel van zijn opbrengst, indien hij erkend is". */
     static final List<String> PERSISTENT = List.of(ERKENNING,
             computingRule("aandeel", "BEREKENING", "Vondst", "aandeel",
-                    binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("deelnemers", "Vondst")),
+                    TmsDocuments.root(ownRead("opbrengst", "Vondst"), "de wortel van zijn opbrengst"),
                     check("erkend", false)));
 
+    /** V1, gemeld, opbrengst 2: the root of 2 at the fixpoint. */
     static JsonNode persistentCase() throws Exception {
         return TmsDocuments.caseDocument(
-                List.of(instance("V1", "Vondst", Map.of("opbrengst", "100", "deelnemers", "0"), List.of("gemeld"),
-                        Map.of())),
+                List.of(instance("V1", "Vondst", Map.of("opbrengst", "2"), List.of("gemeld"), Map.of())),
                 List.of(value("V1", "aandeel", null), consistent()));
     }
 
@@ -201,16 +213,15 @@ class TmsFaultWitnessTest {
         return TmsDocuments.document(MODEL, rules);
     }
 
-    private static final String AANDEEL_BY_ZERO = "DelingDoorNul: deling door nul in de regel \"aandeel\": 100 gedeeld"
-            + " door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+    private static final String AANDEEL_ROOT = "ComputeFault: " + TmsDocuments.irrational("aandeel", "2");
 
-    @Test void a_persistent_division_by_zero_gives_in_every_order_the_same_message_as_the_exec_model_branch()
+    @Test void a_persistent_fault_gives_in_every_order_the_same_message_as_the_exec_model_branch()
             throws Exception {
         List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(PERSISTENT)) {
             List<String> names = TmsDocuments.ruleNames(order);
             outcomes.add(names + " " + play(persistent(order), persistentCase(), DroolsBackend.Branch.EXEC_MODEL));
-            expected.add(names + " " + AANDEEL_BY_ZERO);
+            expected.add(names + " " + AANDEEL_ROOT);
         }
         assertEquals(expected, outcomes);
         assertEquals(2, outcomes.size());
@@ -224,9 +235,8 @@ class TmsFaultWitnessTest {
         int orders = 0;
         for (List<Rule> order : TmsDocuments.permutations(b.execModelTranspiler().model().getRules())) {
             List<String> names = order.stream().map(Rule::getName).toList();
-            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("opbrengst", "100", "deelnemers", "0"),
-                    List.of("gemeld"));
-            assertEquals(AANDEEL_BY_ZERO, fire(b, order, List.of(v1), new DefaultAgendaEventListener() {},
+            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("opbrengst", "2"), List.of("gemeld"));
+            assertEquals(AANDEEL_ROOT, fire(b, order, List.of(v1), new DefaultAgendaEventListener() {},
                     new FaultFacts()), () -> "volgorde " + names);
             assertNull(TmsDocuments.read(v1, "aandeel"), () -> "een fout schrijft niets terug, volgorde " + names);
             orders++;
@@ -236,18 +246,20 @@ class TmsFaultWitnessTest {
 
     // ---------------- two faults that stand ----------------
 
+    /** "Het aandeel … als de wortel van zijn opbrengst", "De verhouding … als de wortel van zijn taxatie, indien hij
+     *  erkend is" and the erkenning. */
     static final List<String> TWO = List.of(
             computingRule("aandeel", "BEREKENING", "Vondst", "aandeel",
-                    binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("deelnemers", "Vondst")), "null"),
+                    TmsDocuments.root(ownRead("opbrengst", "Vondst"), "de wortel van zijn opbrengst"), "null"),
             computingRule("verhouding", "BEREKENING", "Vondst", "verhouding",
-                    binary("dividedBy", ownRead("taxatie", "Vondst"), ownRead("deelnemers", "Vondst")),
+                    TmsDocuments.root(ownRead("taxatie", "Vondst"), "de wortel van zijn taxatie"),
                     check("erkend", false)),
             ERKENNING);
 
+    /** V1, gemeld, opbrengst 2 and taxatie 3: a fault in each rule. */
     static JsonNode twoCase() throws Exception {
         return TmsDocuments.caseDocument(
-                List.of(instance("V1", "Vondst", Map.of("opbrengst", "100", "taxatie", "30", "deelnemers", "0"),
-                        List.of("gemeld"), Map.of())),
+                List.of(instance("V1", "Vondst", Map.of("opbrengst", "2", "taxatie", "3"), List.of("gemeld"), Map.of())),
                 List.of(value("V1", "aandeel", null), value("V1", "verhouding", null), consistent()));
     }
 
@@ -259,10 +271,8 @@ class TmsFaultWitnessTest {
     private static final String TWO_HEAD = "aan het fixpunt staan 2 evaluatiefouten, in de regels \"aandeel\","
             + " \"verhouding\"";
 
-    private static final String TWO_FAULTS = "EvaluationFaults: " + TWO_HEAD + ": deling door nul in de regel"
-            + " \"aandeel\": 100 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS"
-            + " ch. 1.4, punt 4); deling door nul in de regel \"verhouding\": 30 gedeeld door 0 — een numerieke nul als"
-            + " deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+    private static final String TWO_FAULTS = "EvaluationFaults: " + TWO_HEAD + ": " + TmsDocuments.irrational("aandeel", "2")
+            + "; " + TmsDocuments.irrational("verhouding", "3");
 
     @Test void two_persistent_faults_are_in_every_order_in_the_same_fixed_order() throws Exception {
         List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
@@ -281,8 +291,8 @@ class TmsFaultWitnessTest {
         int orders = 0;
         for (List<Rule> order : TmsDocuments.permutations(b.execModelTranspiler().model().getRules())) {
             List<String> names = order.stream().map(Rule::getName).toList();
-            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst",
-                    Map.of("opbrengst", "100", "taxatie", "30", "deelnemers", "0"), List.of("gemeld"));
+            Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("opbrengst", "2", "taxatie", "3"),
+                    List.of("gemeld"));
             assertEquals(TWO_FAULTS, fire(b, order, List.of(v1), new DefaultAgendaEventListener() {},
                     new FaultFacts()), () -> "volgorde " + names);
             orders++;
@@ -290,31 +300,32 @@ class TmsFaultWitnessTest {
         assertEquals(720, orders);
     }
 
-    /** The fault a consumer meets at the fixpoint is the exception the fire of the destructive exec-model branch gave
-     *  through {@code DroolsBackend.designate}, which the DRL-text branch's fire gives still: the named division, with the
-     *  division as {@code Rational.delen} threw it as its cause, so the red path's cause chain reads as on that branch.
-     *  Two faults are one exception whose cause is the first fault of its message and whose suppressed exception is the
-     *  second. */
-    @Test void the_faults_at_the_fixpoint_carry_the_division_as_cause() throws Exception {
+    /** The fault a consumer meets at the fixpoint is the fault named after its rule, with the unnamed fault the
+     *  evaluation raised as its cause, so the red path's cause chain reads both. Two faults are one exception whose cause
+     *  is the first fault of its message and whose suppressed exception is the second. Until the card
+     *  zero-division-channel the fault was the named division, with the division as {@code Rational.delen} threw it as
+     *  its cause. */
+    @Test void the_faults_at_the_fixpoint_carry_the_unnamed_fault_as_cause() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(persistent(PERSISTENT), DroolsBackend.Branch.EXEC_MODEL);
         RuntimeException one = fixpointFault(b, b.execModelTranspiler().model().getRules(), List.of(TmsDocuments.beanObject(
-                b.beanLoader(), "Vondst", Map.of("opbrengst", "100", "deelnemers", "0"), List.of("gemeld"))),
+                b.beanLoader(), "Vondst", Map.of("opbrengst", "2"), List.of("gemeld"))),
                 new DefaultAgendaEventListener() {}, new FaultFacts());
-        assertInstanceOf(Breuk.DelingDoorNul.class, one);
-        assertEquals(AANDEEL_BY_ZERO, "DelingDoorNul: " + one.getMessage());
-        assertInstanceOf(Breuk.DelingDoorNul.class, one.getCause());
-        assertEquals("Breuk deling door 0", one.getCause().getMessage());
+        assertInstanceOf(ComputeFault.class, one);
+        assertEquals(AANDEEL_ROOT, "ComputeFault: " + one.getMessage());
+        assertInstanceOf(ComputeFault.class, one.getCause());
+        assertEquals("irrational square root of 2 reached without an explicit rounding (§13.4.17.13 mandates one)",
+                one.getCause().getMessage());
 
         DroolsBackend.Build b2 = DroolsBackend.build(two(TWO), DroolsBackend.Branch.EXEC_MODEL);
         RuntimeException two = fixpointFault(b2, b2.execModelTranspiler().model().getRules(), List.of(TmsDocuments.beanObject(
-                b2.beanLoader(), "Vondst", Map.of("opbrengst", "100", "taxatie", "30", "deelnemers", "0"),
-                List.of("gemeld"))), new DefaultAgendaEventListener() {}, new FaultFacts());
+                b2.beanLoader(), "Vondst", Map.of("opbrengst", "2", "taxatie", "3"), List.of("gemeld"))),
+                new DefaultAgendaEventListener() {}, new FaultFacts());
         assertEquals(TWO_FAULTS, two.getClass().getSimpleName() + ": " + two.getMessage());
-        assertEquals(AANDEEL_BY_ZERO, "DelingDoorNul: " + two.getCause().getMessage());
+        assertEquals(AANDEEL_ROOT, "ComputeFault: " + two.getCause().getMessage());
         assertEquals(1, two.getSuppressed().length);
-        assertInstanceOf(Breuk.DelingDoorNul.class, two.getSuppressed()[0]);
-        assertTrue(two.getSuppressed()[0].getMessage().startsWith("deling door nul in de regel \"verhouding\": 30"),
-                () -> "onderdrukt: " + two.getSuppressed()[0]);
+        assertInstanceOf(ComputeFault.class, two.getSuppressed()[0]);
+        assertTrue(two.getSuppressed()[0].getMessage().startsWith("fout in de regel \"verhouding\": irrational square"
+                + " root of 3"), () -> "onderdrukt: " + two.getSuppressed()[0]);
     }
 
     // ---------------- the CLI's status line ----------------
@@ -345,19 +356,18 @@ class TmsFaultWitnessTest {
     /** The document with two faults under rule names of over a hundred characters each. */
     static final List<String> LONG = List.of(
             computingRule(LONG_AANDEEL, "BEREKENING", "Vondst", "aandeel",
-                    binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("deelnemers", "Vondst")), "null"),
+                    TmsDocuments.root(ownRead("opbrengst", "Vondst"), "de wortel van zijn opbrengst"), "null"),
             computingRule(LONG_RATIO, "BEREKENING", "Vondst", "verhouding",
-                    binary("dividedBy", ownRead("taxatie", "Vondst"), ownRead("deelnemers", "Vondst")),
+                    TmsDocuments.root(ownRead("taxatie", "Vondst"), "de wortel van zijn taxatie"),
                     check("erkend", false)),
             ERKENNING);
 
-    /** V1 and V2, each with a numeric zero for deelnemers: each rule faults on both, four faults in all. */
+    /** V1 and V2, each with an opbrengst and a taxatie that are no squares: each rule faults on both, four faults in
+     *  all. */
     static JsonNode twoVondstenCase() throws Exception {
         return TmsDocuments.caseDocument(List.of(
-                instance("V1", "Vondst", Map.of("opbrengst", "100", "taxatie", "30", "deelnemers", "0"),
-                        List.of("gemeld"), Map.of()),
-                instance("V2", "Vondst", Map.of("opbrengst", "50", "taxatie", "20", "deelnemers", "0"),
-                        List.of("gemeld"), Map.of())),
+                instance("V1", "Vondst", Map.of("opbrengst", "2", "taxatie", "3"), List.of("gemeld"), Map.of()),
+                instance("V2", "Vondst", Map.of("opbrengst", "5", "taxatie", "6"), List.of("gemeld"), Map.of())),
                 List.of(consistent()));
     }
 

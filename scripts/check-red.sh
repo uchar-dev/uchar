@@ -76,27 +76,31 @@ CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 # NO second floor on the Drools leg's fault count: its not-carried cases are each pinned by name in
 # the reason-carrying exclusion list below, so the leg's fault total is the case count minus a
 # name-pinned set, both of which are already held.
-EXPECTED_MIN_RED_CASES=26   # 2026-09-10: measured 26 (corpus/red/**/case*.json)
+EXPECTED_MIN_RED_CASES=44   # 2026-10-19: measured 44 (corpus/red/**/case*.json; 26 measured 2026-09-10, 50 before the card
+                            # zero-division-channel moved six witnesses of a division by a numeric zero to the golden corpus)
 # The code checks (card meldingscodes, 2026-10-18). RED_CODES counts the ref and clingo checks in
-# which the executor reported the case's code: 50 cases × 2 executors minus the 7 entries of the
-# divergence list, measured 93. EF_CODES counts the rows of the RUNTIME-SEMANTICS ch. 5.7b table,
+# which the executor reported the case's code: 44 cases × 2 executors minus the 6 entries of the
+# divergence list, measured 82 (93 on 50 cases and 7 entries before the card zero-division-channel). EF_CODES counts the rows of the RUNTIME-SEMANTICS ch. 5.7b table,
 # measured 24. The Drools leg's code checks get no floor of their own, for the reason its fault count
 # has none (below): each is a case with a `drools` fragment, held by that pin and by the name-carrying
 # exclusion list.
-EXPECTED_MIN_RED_CODES=93   # 2026-10-18: measured 93 (ref 50 + clingo 43)
+EXPECTED_MIN_RED_CODES=82   # 2026-10-19: measured 82 (ref 44 + clingo 38; 93 on 2026-10-18, lowered with the six moved cases)
 # The parameter checks (card fragment-cleanup, 2026-10-19). RED_PARAMS counts, over the code checks of ref and clingo that
 # did not stand in the divergence list, the pinned parameter pairs the executor confirmed among its own, an empty pin
 # counting once: it is the one count that says the pins carry parameters at all, so a corpus whose params quietly emptied
 # would keep every other check green. DROOLS_PARAMS is the same count over the Drools leg, kept apart because that leg
 # may be skipped and the floor of the two OCaml executors must not move with it.
-EXPECTED_MIN_RED_PARAMS=131   # 2026-10-19: measured 131 (ref 69 + clingo 62: the pinned pairs of the 50 cases, an empty pin once, clingo on 43 of them)
-EXPECTED_MIN_DROOLS_PARAMS=33 # 2026-10-19: measured 33 (the 26 cases that FAULT on Drools)
+EXPECTED_MIN_RED_PARAMS=120   # 2026-10-19: measured 120 (ref 63 + clingo 57: the pinned pairs of the 44 cases, an empty pin once, clingo
+                              # on 38 of them; 131 before the card zero-division-channel moved six cases, each an empty pin)
+EXPECTED_MIN_DROOLS_PARAMS=28 # 2026-10-19: measured 28 (the 21 cases that FAULT on Drools; 33 on 26 before the card
+                              # zero-division-channel)
 EXPECTED_MIN_EF_CODES=31    # 2026-10-19: measured 31 (RUNTIME-SEMANTICS ch. 5.7b; 24 at card meldingscodes, 2026-10-18,
                             # raised with the seven §9.5 codes of card channel-fact-codes)
 # GOLDEN_CODES counts the golden `inconsistent` expectations that pin a code (card channel-fact-codes): the codes
 # gates 5, 6 and 12 hold the executors to on the §9.5 channel, so a count that quietly halved would halve that
 # comparison and no other gate counts it.
-EXPECTED_MIN_GOLDEN_CODES=73   # 2026-10-19: measured 73 (corpus/golden/**/case*.json)
+EXPECTED_MIN_GOLDEN_CODES=80   # 2026-10-19: measured 80 (corpus/golden/**/case*.json; 73 at card channel-fact-codes, raised
+                               # with the seven EF-005 pins of the six witnesses card zero-division-channel moved here)
 
 if ! command -v python3 >/dev/null 2>&1; then
     echo 'FAIL: need python3 — the code leg reads the fault-kind table of RUNTIME-SEMANTICS ch. 5.7b and decodes the golden witnesses it names' >&2
@@ -123,8 +127,7 @@ fi
 # <case, relative to corpus/red, without .json>|<executor>|<CODE>|<CATEGORY> <reason>
 divergence=$(mktemp) || exit 2
 cat > "$divergence" <<'EOF2'
-clamp-reads-bounds-in-order/case1|clingo|CLINGO-005|REFUSAL measured 2026-10-18: the backend refuses the Clamp whose minimum bound is not a ground literal, "a Clamp minimum bound that is not a ground literal could be empty; ref reads an empty bound as no bound, which the bare join cannot express", at translation, so the division by numeric zero that ref and Drools fault on (EF-005) is never reached
-sum-fallback-always-evaluated/case1|clingo|CLINGO-007|REFUSAL measured 2026-10-18: the backend does not translate a sum over listed operands, "a sum over listed operands is not translated: …", so the stand-in whose division by numeric zero ref faults on (EF-005) is never evaluated
+sum-fallback-always-evaluated/case1|clingo|CLINGO-007|REFUSAL measured 2026-10-18, case reworked 2026-10-19 (card zero-division-channel): the backend does not translate a sum over listed operands, "a sum over listed operands is not translated: …", so the stand-in whose read of the evaluation year without an evaluation date ref faults on (EF-011) is never evaluated; until that card the stand-in divided by a numeric zero (EF-005), which deposits since
 day-kind-step-outside-range/case1|clingo|CLINGO-001|LIMIT measured 2026-10-18: the step's millisecond value 53375975860 "exceeds clingo's integer range (grounding would wrap silently)" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
 date-time-step-outside-range/case1-plus-uren|clingo|CLINGO-001|LIMIT measured 2026-10-18: the step's millisecond value 2000000000000 "exceeds clingo's integer range" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
 date-time-step-outside-range/case2-min-uren|clingo|CLINGO-001|LIMIT measured 2026-10-18: the step's millisecond value 2000000000000 "exceeds clingo's integer range" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
@@ -510,7 +513,7 @@ bash scripts/check-exec-codes.sh || status=1
 # carry the red-path form (an EXCLUDE from the loader, a transpiler or the case reader, or a NOFAULT
 # where the backend does not enforce the constraint and runs to a model). A not-carried form is listed
 # below with a reason; every other case MUST FAULT with the pinned code and the pinned parameters among
-# the ones the status line carries (`FAULT EF-005 {"rule":"…"}: <report>`, one `<code> <json>` per code, in
+# the ones the status line carries (`FAULT EF-016 {"rules":"…"}: <report>`, one `<code> <json>` per code, in
 # report order). Until the card fragment-cleanup (2026-10-19) a case carried a `drools` fragment of the
 # backend's own sentence, which told this leg whether the backend carried the case; the exclusion list
 # says it now, and a case that is neither listed nor FAULTs fails the gate (completeness). An EXCLUDE entry also pins the register code of the refusal (`name|EXCLUDE DROOLS-014 <reason>`, card
@@ -587,7 +590,6 @@ aanvoergeld-parameter-unbound|NOFAULT measured 2026-09-23 (card clingo-parameter
 ambiguous-backlink|EXCLUDE DROOLS-080 measured 2026-10-10 (card tms-omschakeling): since the switch-over the exec-model branch this leg drives lowers with truth maintenance, and it refuses the creation when it builds the KieBase, "transpiler SKIP: objectcreatie: insigne voor een jutter — more than one fact type relates "Jutter" to "Insigne"; the created object's back-link is ambiguous (ch. 5.5); deze tak draagt deze vorm nog niet". It names the ambiguity ref and clingo fault on, but as a form the branch does not carry, an EXCLUDE, and this leg pins a fragment only on a FAULT. Until the switch-over the destructive lowering faulted at fire in the same words and the case pinned them
 ambiguous-case-role-key|EXCLUDE DROOLS-050 measured 2026-09-22 (P1 port): the case-input arm refuses at the role key `ligger` on the bean-field limit — two same-named roles contend for one field on Schuit. Same phase as ref's and clingo's load fault, different reason: they refuse the ambiguity itself, this backend a field it cannot carry; it raises that as a form it does not carry, so the refusal is an EXCLUDE
 closed-nonexact-division|EXCLUDE DROOLS-008 the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
-closed-runtime-division-by-zero|EXCLUDE DROOLS-008 the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
 closed-runtime-nonexact-division|EXCLUDE DROOLS-008 the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
 day-kind-parameter-unbound|EXCLUDE DROOLS-179 measured 2026-10-10 (card tms-omschakeling): the exec-model branch this leg drives, which lowers with truth maintenance since the switch-over, refuses the reaching rule when it builds the KieBase, "transpiler SKIP: regel: streefdatum van een havenmeester — een duur in dagsoorten (…): de definitie van de dagsoort 'havendag' leest de parameter 'openingsdatum', die deze tak in een dagsoortdefinitie niet leest (WF-031 laat haar toe)", so the unbound parameter is never reached. The refusal is about the operand FORM and not about the binding, which is why it is listed rather than fragment-pinned. Measured first 2026-09-19 on the destructive lowering, whose day-kind predicate compiler (kern.DayKinds) carried no PARAMETER operand at all and SKIPped the rule (waarde buiten scope)
 day-kind-reference-other-day|EXCLUDE DROOLS-180 measured 2026-10-10 (card tms-omschakeling): the exec-model branch this leg drives, which lowers with truth maintenance since the switch-over, refuses the reaching rule when it builds the KieBase, "transpiler SKIP: regel: uiterste bergingsdatum van een bergingsploeg — een duur in dagsoorten (…): de definitie van de dagsoort 'springtijdag' toetst de dagsoort 'ankerdag' op een andere dag dan de gebonden dag (…), een vorm die geen executor uitvoert (RUNTIME-SEMANTICS ch. 3.8)", and fire is never reached. All three executors refuse the form; only the two that can carry a fragment pin one. Measured first 2026-09-19 on the destructive lowering, whose day-kind predicate compiler (kern.DayKinds) left the §9.8 composition UNCOMPILED for an operand other than the bound day and SKIPped the rule (waarde buiten scope)
@@ -727,8 +729,9 @@ PYEOF
         fi
         # monotone floor (maintainer decision 2026-09-09) on the EXCLUDE entries that pin a register code: a list that
         # quietly lost its code pins would keep passing on the channel alone. Measured 2026-10-19 (card
-        # drools-refusal-codes): 19 cases, the 19 EXCLUDE entries of the list.
-        EXPECTED_MIN_DROOLS_EXCLUDE_CODES=19
+        # drools-refusal-codes): 19 cases, the 19 EXCLUDE entries of the list; 18 the same day, when the card
+        # zero-division-channel moved closed-runtime-division-by-zero to the golden corpus.
+        EXPECTED_MIN_DROOLS_EXCLUDE_CODES=18
         if [ "$d_excl_codes" -lt "$EXPECTED_MIN_DROOLS_EXCLUDE_CODES" ]; then
             printf 'check-red: FAIL — Drools leg: %s EXCLUDE cases compared on their DROOLS code, but EXPECTED_MIN_DROOLS_EXCLUDE_CODES pins at least %s — the list shrank or lost its code pins\n' "$d_excl_codes" "$EXPECTED_MIN_DROOLS_EXCLUDE_CODES" >&2
             status=1

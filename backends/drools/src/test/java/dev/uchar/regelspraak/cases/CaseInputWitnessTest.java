@@ -233,25 +233,24 @@ class CaseInputWitnessTest {
     }
 
     @Test void the_order_of_the_input_decides_which_member_a_fold_fault_names() throws Exception {
-        // The fold of TmsFilterFaultWitnessTest stops at the first member in fold order whose filter divides by 0
-        // (RUNTIME-SEMANTICS ch. 5.11). V9 divides 4, V10 divides 9. Written under J1 as V9, V10: 4. Mirrored from
-        // their own links: V10 before V9 in byte order, so 9, where the order of the case would give 4.
+        // The fold of TmsFilterFaultWitnessTest stops at the first member in fold order whose filter faults
+        // (RUNTIME-SEMANTICS ch. 5.11): the root of a gewicht that is no square (until the card zero-division-channel a
+        // division by 0, which deposits since). V9 takes the root of 2, V10 of 3. Written under J1 as V9, V10: 2.
+        // Mirrored from their own links: V10 before V9 in byte order, so 3, where the order of the case would give 2.
         DroolsBackend.Build b = DroolsBackend.build(TmsFilterFaultWitnessTest.document(TmsFilterFaultWitnessTest.ZWARE),
                 DroolsBackend.Branch.EXEC_MODEL);
-        String v9 = TmsDocuments.instanceWithRoles("V9", "Vondst", Map.of("gewicht", "4", "deelnemers", "0"),
-                List.of(), Map.of());
-        String v10 = TmsDocuments.instanceWithRoles("V10", "Vondst", Map.of("gewicht", "9", "deelnemers", "0"),
-                List.of(), Map.of());
+        String v9 = TmsDocuments.instanceWithRoles("V9", "Vondst", Map.of("gewicht", "2"), List.of(), Map.of());
+        String v10 = TmsDocuments.instanceWithRoles("V10", "Vondst", Map.of("gewicht", "3"), List.of(), Map.of());
         JsonNode written = TmsDocuments.caseDocument(List.of(TmsDocuments.instanceWithRoles("J1", "Jutter", Map.of(),
                 List.of("actief"), Map.of("vondsten", List.of("V9", "V10"))), v9, v10), List.of());
-        assertEquals(List.of("4 gedeeld door 0"), divisionFaults(b, written));
+        assertEquals(List.of("square root of 2"), rootFaults(b, written));
         JsonNode mirrored = TmsDocuments.caseDocument(List.of(TmsDocuments.instanceWithRoles("J1", "Jutter", Map.of(),
                 List.of("actief"), Map.of()),
-                TmsDocuments.instanceWithRoles("V9", "Vondst", Map.of("gewicht", "4", "deelnemers", "0"), List.of(),
+                TmsDocuments.instanceWithRoles("V9", "Vondst", Map.of("gewicht", "2"), List.of(),
                         Map.of("aanmelder", List.of("J1"))),
-                TmsDocuments.instanceWithRoles("V10", "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of(),
+                TmsDocuments.instanceWithRoles("V10", "Vondst", Map.of("gewicht", "3"), List.of(),
                         Map.of("aanmelder", List.of("J1")))), List.of());
-        assertEquals(List.of("9 gedeeld door 0"), divisionFaults(b, mirrored));
+        assertEquals(List.of("square root of 3"), rootFaults(b, mirrored));
     }
 
     @Test void a_scalar_on_a_timeline_is_a_bucket_scalar_and_a_timeline_is_not() throws Exception {
@@ -452,11 +451,11 @@ class CaseInputWitnessTest {
     }
 
     /** The dividends of the divisions by zero that stand at the fixpoint of case {@code c}, as "n gedeeld door 0". */
-    private static List<String> divisionFaults(DroolsBackend.Build b, JsonNode c) {
+    private static List<String> rootFaults(DroolsBackend.Build b, JsonNode c) {
         Fixpoint f = fire(b, CaseInput.van(b, c), Map.of());
         List<String> out = new ArrayList<>();
         for (var fault : f.faults()) {
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+) gedeeld door 0")
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("square root of (\\d+)")
                     .matcher(fault.fault().getMessage());
             assertTrue(m.find(), fault.fault().getMessage());
             out.add(m.group());

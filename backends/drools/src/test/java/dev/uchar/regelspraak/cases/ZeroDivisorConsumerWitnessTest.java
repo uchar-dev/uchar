@@ -2,8 +2,6 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.runtime.Breuk;
-
 import org.junit.jupiter.api.Test;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.rule.ConsequenceException;
@@ -16,7 +14,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
@@ -47,9 +44,6 @@ class ZeroDivisorConsumerWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    private static final String SENTENCE = "deling door nul in de regel \"verhouding\": 60 gedeeld door 0 — een numerieke nul als "
-            + "deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
-
     /** A consumer that fires a KieBase of either branch itself gets nothing out of the fire: the division by zero is
      *  a fact of the fixpoint. Until card drl-teksttak-op-truth-maintenance the DRL-text branch threw Drools'
      *  {@code ConsequenceException} here, naming the rule "verhouding", with "Breuk deling door 0" in its cause chain,
@@ -59,15 +53,19 @@ class ZeroDivisorConsumerWitnessTest {
             assertNull(fireSelf(branch), branch::name);
     }
 
-    @Test void both_branches_give_the_sentence_on_writing_back() throws Exception {
+    /** Since the card zero-division-channel (2026-10-19) the division by zero is a §9.5 deposit of kind EF-005
+     *  (RUNTIME-SEMANTICS ch. 1.4, point 4): the consumer reads it as an inconsistency of the fixpoint, no fault, and the
+     *  write-back writes. Until then the fault stood as data, and the write-back threw it in the sentence of the
+     *  replay. */
+    @Test void both_branches_write_back_with_the_deposit() throws Exception {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
             CaseRunner.forMeasurement(document(), branch).withSession(JSON.readTree(ZERO_AND_ORDINARY), (build, session, labels) -> {
                 assertNull(DroolsBackend.fire(build, session).noFixpoint(), branch + ": the fire reaches its fixpoint");
-                List<dev.uchar.regelspraak.transpiler.tms.Fault> faults = DroolsBackend.fixpointOf(build, session).faults();
-                assertEquals(1, faults.size(), faults::toString);
-                assertEquals(SENTENCE, faults.get(0).message(), branch + ": the fault as data");
-                assertEquals(SENTENCE, assertThrows(Breuk.DelingDoorNul.class,
-                        () -> DroolsBackend.setDerivedValues(build, session)).getMessage(), branch + ": the fault thrown");
+                dev.uchar.regelspraak.transpiler.tms.Fixpoint fixpoint = DroolsBackend.fixpointOf(build, session);
+                assertEquals(List.of(), fixpoint.faults(), branch + ": no fault");
+                assertEquals(1, fixpoint.inconsistencies().size(), () -> branch + ": the deposit as data, "
+                        + fixpoint.inconsistencies());
+                DroolsBackend.setDerivedValues(build, session);
                 return null;
             });
     }

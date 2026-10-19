@@ -52,17 +52,37 @@ public final class ComputeHelpers {
     /** The EF code (RUNTIME-SEMANTICS ch. 5.7b) of the §6.5 deposit: a filled dividend divided by a leeg divisor. */
     private static final List<String> DIVISION_BY_EMPTY = List.of("EF-031");
 
+    /** The EF code (RUNTIME-SEMANTICS ch. 5.7b) of a filled dividend divided by a numeric zero, which v1 routes into the
+     *  §9.5 channel (ch. 1.4 point 4). */
+    private static final List<String> DIVISION_BY_ZERO = List.of("EF-005");
+
     /** A division (RUNTIME-SEMANTICS ch. 1.2, 1.4, {@code rsGedeeld}): {@code depositFlag} hears the §6.5 deposit where a
-     *  filled dividend meets a leeg divisor; a numeric zero divisor faults. */
+     *  filled dividend meets a leeg divisor, and the deposit of ch. 1.4 point 4 where it meets a numeric zero, whose
+     *  quotient is leeg. The runtime, the mirror of v0, throws {@link Breuk.DelingDoorNul} there, so the zero is
+     *  answered before it is called. */
     public static Object divided(Object left, Object right, Object depositFlag) {
+        if (left != null && isNumericZero(right)) {
+            DepositFlag.report(depositFlag, DIVISION_BY_ZERO);
+            return null;
+        }
         if (left != null && right == null) DepositFlag.report(depositFlag, DIVISION_BY_EMPTY);
         return RegelSpraakRuntime.rsGedeeld(left, right);
     }
 
     /** As {@link #divided}, truncated toward zero at 5 decimals ({@code rsGedeeldAbs}). */
     public static Object dividedAbs(Object left, Object right, Object depositFlag) {
+        if (left != null && isNumericZero(right)) {
+            DepositFlag.report(depositFlag, DIVISION_BY_ZERO);
+            return null;
+        }
         if (left != null && right == null) DepositFlag.report(depositFlag, DIVISION_BY_EMPTY);
         return RegelSpraakRuntime.rsGedeeldAbs(left, right);
+    }
+
+    /** Whether {@code v} is a number equal to zero; leeg is not. */
+    private static boolean isNumericZero(Object v) {
+        Breuk q = Breuk.van(v);
+        return q != null && q.isNul();
     }
 
     /** A square root under its rounding (§13.4.17.13): the runtime's root at 34 digits ({@code rsWortel}), which the
@@ -558,6 +578,13 @@ public final class ComputeHelpers {
      *  (RUNTIME-SEMANTICS ch. 5.6). */
     public static List<String> depositCodes(Object depositFlag) {
         return depositFlag instanceof DepositFlag s ? s.codes() : List.of();
+    }
+
+    /** The filter of a fold deposited where {@code deposits}, the list of its {@link FilterDeposit} facts on the
+     *  reading rule's subject, is not empty: {@code depositFlag}, the probe of the reading rule or nothing, hears it
+     *  with the codes of each ({@code Term.FoldRead}). */
+    public static void reportFilterDeposits(Object depositFlag, Object deposits) {
+        for (Object d : (List<?>) deposits) DepositFlag.report(depositFlag, ((FilterDeposit) d).codes());
     }
 
     /** The evaluation fault of the fixed sentence {@code sentence} ({@link ComputeFault}), named in the rule {@code regel}: the

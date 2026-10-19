@@ -35,7 +35,7 @@
      /100 into the scale — no division). Gedeeld-door carries its
      three edges (empty dividend → 0; empty divisor under a filled
      dividend → the §9.5 channel fact beside an absent value; numeric
-     zero divisor → a viol/2 witness, UNSAT with the reason named)
+     zero divisor under a filled dividend → the same, with its own code)
      and translates only EXACT outcomes — a remainder derives a
      viol/2 witness, never a silently truncated value; the
      Rounding-over-division form computes the mode's integer rounding
@@ -230,6 +230,13 @@ let unbounded_refusal ~what q =
 let non_exact_division_bounded =
   "non-exact division (an explicit rounding is mandated before precision is lost)"
 
+(* the limit of [closed_division]: a numeric-zero divisor in a closed body whose
+   leeg quotient does not coalesce *)
+let closed_zero_division =
+  "a division by a numeric zero in a closed body yields leeg (RUNTIME-SEMANTICS ch. 1.4 point 4), \
+   which this encoding carries only as an operand of plus, minus, times or percentage-of, where \
+   it reads as 0"
+
 let scaled_input ~what dt (v : Value.t) =
   (match v with
   | Num (q, _) when unbounded_datatype dt && not (Z.equal (Q.den q) Z.one) -> unbounded_refusal ~what q
@@ -393,6 +400,13 @@ type ctx = {
      a case that binds its parameters translates byte for byte as before.
      [fun _ -> []] at rule level. *)
   mutable param_reach : expr -> string list;
+  (* the subject variable a §9.5 deposit is keyed by where it is not the
+     subject the expression is translated over: the subject of the form whose
+     evaluation reaches a fold member, a quantifier element or a closed body,
+     set beside [param_reach] where that carries the reach of that form (the
+     outermost such subject wins), [None] at rule level. ref deposits under
+     the reading form's rule × subject (ch. 5.6), never under the member's *)
+  mutable deposit_subject : string option;
   (* the Lets whose bodies enclose the current node, innermost first: their
      needs ride [rule_guard], and [reach_at] decides their barriers per read *)
   mutable let_needs : let_info list;
@@ -570,8 +584,7 @@ let viol_code witness =
     | _ -> []
   in
   let found k = function Some v -> [ (k, v) ] | None -> [] in
-  if opens "division by numeric zero\"" then Some ("EF-005", [])
-  else if opens (non_exact_division_bounded ^ "\"") then Some ("EF-006", [])
+  if opens (non_exact_division_bounded ^ "\"") then Some ("EF-006", [])
   else if opens "result of " && holds " does not fit its declared decimals\"" then
     Some ("EF-006", found "place" (between "result of " " does not fit its declared decimals"))
   else if opens "day-kind walk: no day of the kind within " then
@@ -1913,13 +1926,15 @@ let source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x =
    recomputed only when a parameter is in fact unbound. [part] marks a part
    that runs member by member, for the Let barriers inside it. *)
 let with_member_reach ctx ~subject ~subject_ot ~join ?part f =
-  let saved = ctx.param_reach and saved_p = ctx.parts in
+  let saved = ctx.param_reach and saved_p = ctx.parts and saved_s = ctx.deposit_subject in
   ctx.param_reach <-
     (fun name -> (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join ()) @ saved name);
+  if ctx.deposit_subject = None then ctx.deposit_subject <- Some subject;
   (match part with Some pt -> ctx.parts <- pt :: ctx.parts | None -> ());
   let r = f () in
   ctx.param_reach <- saved;
   ctx.parts <- saved_p;
+  ctx.deposit_subject <- saved_s;
   r
 
 (* the range order of a fold over [el] from [subject] ([use_ro]), and a part
@@ -3067,7 +3082,7 @@ let rec reads_first b (e : expr) : bool =
    fences, viol/2 guards and §9.5 deposits are emitted. Moving the node is what
    puts the value inside the arm's scope; the arm guard then reaches it the
    ordinary way. Without it a §6.5 divisor place in the value reports itself,
-   and a numeric zero there breaks the program off, on a document whose case
+   with an empty or a numeric-zero divisor alike, on a document whose case
    takes the OTHER arm — where ref evaluates nothing at all (ch. 5.11: an
    operand never reached raises no fault and deposits no channel fact).
 
@@ -5568,8 +5583,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          rounded-division path with (Toward_zero, 5) IS the semantics
          (arith.div_abs = div_gen collapsed through round_q Toward_zero
          5), edges included: empty dividend → 0, empty divisor under a
-         filled dividend → the §9.5 channel fact, numeric zero → a
-         viol/2 witness. gringo's integer division truncates toward
+         filled dividend → the §9.5 channel fact, numeric zero → the
+         same channel with its own code. gringo's integer division truncates toward
          zero on both signs, so the negative range needs no fence. *)
       translate_division ctx ~subject ~subject_ot ~left_side ~right_side
         ~rounding:(Some (Toward_zero, 5))
@@ -5877,11 +5892,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              subject and rule context of THIS fold ride the shared fail-fast's
              reach: a parameter they read is reached only where a subject
              reaches the fold *)
-          let saved_r = ctx.param_reach in
+          let saved_r = ctx.param_reach and saved_s = ctx.deposit_subject in
           let reach = rule_reach ctx ~subject ~subject_ot in
           ctx.param_reach <- (fun _ -> reach e);
+          if ctx.deposit_subject = None then ctx.deposit_subject <- Some subject;
           let r = closed_term ctx ~guard_body:[ Printf.sprintf "lpres(%s)" lterm ] ~witness:lterm init in
           ctx.param_reach <- saved_r;
+          ctx.deposit_subject <- saved_s;
           r
         end
       in
@@ -5901,16 +5918,18 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let rec_body =
         [ Printf.sprintf "%s(%s,I-1,A)" fa lterm; Printf.sprintf "lelem(%s,I,V)" lterm ]
       in
-      let saved = ctx.binders and saved_r = ctx.param_reach in
+      let saved = ctx.binders and saved_r = ctx.param_reach and saved_s = ctx.deposit_subject in
       ctx.binders <-
         (norm accname, ([], "A", out_scale, Some acct))
         :: (norm xname, ([], "V", elem_scale, Some xt))
         :: ctx.binders;
       (let reach = rule_reach ctx ~subject ~subject_ot in
        ctx.param_reach <- (fun _ -> reach e));
+      if ctx.deposit_subject = None then ctx.deposit_subject <- Some subject;
       let branches = body_branches ctx ~guard_body:rec_body ~witness:lterm body in
       ctx.binders <- saved;
       ctx.param_reach <- saved_r;
+      ctx.deposit_subject <- saved_s;
       List.iter
         (fun (g, t, s) ->
           if s <> out_scale then
@@ -5989,10 +6008,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
 (* gedeeld-door (§6.5, arith.div_gen) — three edges plus the value:
    an empty dividend collapses to 0 before the divisor is read (also
    under a zero or empty divisor); an empty divisor under a filled
-   dividend deposits the §9.5 channel fact and derives no value (leeg
-   as absence); a numeric zero divisor is a hard fault — a viol/2
-   witness, so the UNSAT diagnosis names the reason, exactly where
-   ref faults. The value itself: the true quotient (L/sl)/(R/sr) at
+   dividend deposits the §9.5 channel fact (EF-031) and derives no value
+   (leeg as absence); a numeric zero divisor under a filled dividend does
+   the same with EF-005 (RUNTIME-SEMANTICS ch. 1.4 point 4: v1 routes it
+   into the channel; until then it was a viol/2 witness). The value itself: the true quotient (L/sl)/(R/sr) at
    out-scale m is L·(sr·m) / (R·sl). Bare division translates only
    its EXACT outcomes — a remainder derives a viol/2 witness instead
    of a truncated value (v0's §6.1.2 static guard demands an explicit
@@ -6265,10 +6284,19 @@ and translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding
   emit ctx "%s_ldef(%s) :- %s." p subject lbody;
   emit ctx "%s_rdef(%s) :- %s." p subject rbody;
   emit ctx "%s(%s,0) :- %s, not %s_ldef(%s)." p subject base p subject;
-  deposit ctx ~code:"EF-031" ~rule:(str ctx.rule_name) ~subject
-    (Printf.sprintf "%s, %s_ldef(%s), not %s_rdef(%s)" (String.concat ", " (base :: guard)) p subject p
-       subject);
-  emit ctx "viol(\"division by numeric zero\",%s) :- %s, (%s) == 0." subject full tr;
+  (* the deposits ride the reading form's rule × subject: inside a fold member,
+     a quantifier element or a closed body that is [deposit_subject], joined
+     through the reach of the place ([param_reach]) *)
+  let key, reach =
+    match ctx.deposit_subject with
+    | Some s -> (s, ctx.param_reach right_side)
+    | None -> (subject, [])
+  in
+  deposit ctx ~code:"EF-031" ~rule:(str ctx.rule_name) ~subject:key
+    (Printf.sprintf "%s, %s_ldef(%s), not %s_rdef(%s)" (String.concat ", " (reach @ (base :: guard))) p
+       subject p subject);
+  deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject:key
+    (Printf.sprintf "%s, (%s) == 0" (String.concat ", " (reach @ [ full ])) tr);
   (match rounding with
   | None ->
       emit ctx "%s(%s,V) :- %s, (%s) != 0, %s \\ %s == 0, V = %s/%s." p subject full tr numt
@@ -6293,8 +6321,8 @@ and translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding
               List.iter
                 (fun conds ->
                   emit ctx
-                    "viol(\"negative operand under rounded division is not translated\",%s) :- %s."
-                    subject (String.concat ", " (full :: conds)))
+                    "viol(\"negative operand under rounded division is not translated\",%s) :- %s, (%s) != 0."
+                    subject (String.concat ", " (full :: conds)) tr)
                 (sign_conds ctx ~neg:true t))
             [ tl; tr ]);
       let guards =
@@ -8279,15 +8307,17 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
             fault "a named FunctionDef as a MapList operand is refused (the operand must be an inline lambda)"
       in
       let base = [ Printf.sprintf "lelem(%s,I,V)" inner ] in
-      let saved = ctx.binders and saved_r = ctx.param_reach in
+      let saved = ctx.binders and saved_r = ctx.param_reach and saved_s = ctx.deposit_subject in
       ctx.binders <- (norm pname, ([], "V", inner_es, Some pt)) :: ctx.binders;
       (* the mapped body is keyed by the list alone, like a fold's closed body,
          so the subject's reach rides the shared fail-fast here too *)
       (let reach = rule_reach ctx ~subject ~subject_ot in
        ctx.param_reach <- (fun _ -> reach e));
+      if ctx.deposit_subject = None then ctx.deposit_subject <- Some subject;
       let branches = body_branches ctx ~guard_body:base ~witness:mapid body in
       ctx.binders <- saved;
       ctx.param_reach <- saved_r;
+      ctx.deposit_subject <- saved_s;
       List.iter
         (fun (g, t, s) ->
           if s <> out_es then
@@ -8342,8 +8372,8 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
 
          The §6.5 empty-divisor deposit cannot arise here (a closed body is
          leeg-free, ch. 10.1), so what the arm guard buys in this route is the
-         fail-fast side: a viol/2 guard fires where its arm is taken and
-         nowhere else. The [Match] arm below already threaded its pattern this
+         fail-fast side and the numeric-zero deposit ([closed_division]): each
+         fires where its arm is taken and nowhere else. The [Match] arm below already threaded its pattern this
          way; this arm was the one that did not. *)
       let arm extra e =
         let guard_body = guard_body @ catoms @ [ extra ] in
@@ -8568,8 +8598,8 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
   | Binary { op = (Plus | Min) as op; left_side; right_side; _ } ->
       numeric_ok ctx left_side;
       numeric_ok ctx right_side;
-      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binary.left" left_side) in
-      let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binary.right" right_side) in
+      let bl, tl, sl = coalesced_operand ctx ~guard_body ~witness (req "Binary.left" left_side) in
+      let br, tr, sr = coalesced_operand ctx ~guard_body ~witness (req "Binary.right" right_side) in
       (* the numeric_ok ctx pair reads the wire `type` (and passes an unannotated
          binder); the scale is what the harmonisation actually divides by *)
       let sl = numeric_scale ~what:"a closed-body additive join" sl in
@@ -8635,8 +8665,8 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       | Percentage_of -> pct_left_ok ctx left_side
       | _ -> unit_free_ok ctx left_side);
       unit_free_ok ctx right_side;
-      let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binary.left" left_side) in
-      let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binary.right" right_side) in
+      let bl, tl, sl = coalesced_operand ctx ~guard_body ~witness (req "Binary.left" left_side) in
+      let br, tr, sr = coalesced_operand ctx ~guard_body ~witness (req "Binary.right" right_side) in
       range_guard ctx ~subject:witness ~body:(guard_body @ bl @ br) [ (tl, 46340); (tr, 46340) ];
       let term = Printf.sprintf "(%s*%s)" tl tr in
       ctx.signs <- (term, Product (tl, tr)) :: ctx.signs;
@@ -8650,16 +8680,18 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       (* a closed-body bare division (§6.5): a compile-time positive constant
          divisor rides the gcd-reduced form (the tutorial's decimal of n /
          2.0000); a RUNTIME divisor (a bound binder — a list element) rides the
-         two-factor form with its numeric-zero fence, the empty-operand §9.5
-         edges gone because a closed-body binder is never leeg. Divisor-side
-         range fence and non-exact viol both in body context. *)
-      closed_division ctx ~guard_body ~witness ~rounding:None ~left_side ~right_side
+         two-factor form with its numeric-zero edge, the empty-divisor §9.5
+         edge gone because a closed-body binder is never leeg. Divisor-side
+         range fence and non-exact viol both in body context. Here the
+         quotient is no operand of a coalescing operator ([coalesced_operand]) *)
+      closed_division ctx ~guard_body ~witness ~coalesced:false ~rounding:None ~left_side ~right_side
   | Binary { op = Divided_by_abs; left_side; right_side; _ } ->
       (* the abs-division variant (ch. 2.2): the quotient truncated toward zero
          at 5 decimals — gringo's integer `/` IS that collapse on both signs, so
          the round_z-scale-5 form carried into the body context needs no
          exactness guard and no negative fence *)
-      closed_division ctx ~guard_body ~witness ~rounding:(Some (Toward_zero, 5)) ~left_side ~right_side
+      closed_division ctx ~guard_body ~witness ~coalesced:false ~rounding:(Some (Toward_zero, 5))
+        ~left_side ~right_side
   | Binary { op = Power; left_side; right_side; _ } ->
       (* tot de macht in a closed body (ch. 2.2): a compile-time non-negative
          integer exponent unfolds to repeated Maal under the SAME 46340
@@ -8874,15 +8906,37 @@ and closed_money_mult ctx ~guard_body ~witness ~base_expr : string list * string
   let a = fresh ctx "A" and c = fresh ctx "C" in
   (ma @ ra @ money_mult_body ~a ~c ~tm ~tr ~tr_sign, c, 100)
 
+(* an operand of a closed-body operator that reads a leeg operand as 0 (plus,
+   minus, times, percentage-of: the ch. 1.2 coalesce table): a division there
+   is translated as [coalesced], so its numeric-zero divisor gives 0 beside its
+   §9.5 deposit; every other operand is an ordinary closed term *)
+and coalesced_operand ctx ~guard_body ~witness (e : expr) : string list * string * int =
+  match e with
+  | Binary { op = Divided_by; left_side; right_side; _ } ->
+      closed_division ctx ~guard_body ~witness ~coalesced:true ~rounding:None ~left_side ~right_side
+  | Binary { op = Divided_by_abs; left_side; right_side; _ } ->
+      closed_division ctx ~guard_body ~witness ~coalesced:true ~rounding:(Some (Toward_zero, 5))
+        ~left_side ~right_side
+  | _ -> closed_term ctx ~guard_body ~witness e
+
 (* a closed-body division (§6.5/S18), the rule-level [translate_division]
    carried into the body context. A COMPILE-TIME positive constant divisor folds
    the whole constant fraction (sr·out_scale)/(c·sl) by its full gcd; a RUNTIME
-   divisor (a bound binder — a list element) keeps the two-factor form and rides
-   a numeric-zero fence. The empty-operand edges the rule level carries (empty
-   dividend → 0, empty divisor → the §9.5 channel) never arise here — a
-   closed-body binder is never leeg (ch. 10.1) — so no coalesce and no
-   inconsistent/2 fact, only the divisor-side fences keyed by [witness] and
-   grounded by [guard_body]. [rounding] None is the exact bare division (value
+   divisor (a bound binder — a list element) keeps the two-factor form. The
+   empty-operand edges the rule level carries (empty dividend → 0, empty divisor
+   → the §9.5 channel) never arise here — a closed-body operand read is never
+   leeg (ch. 10.1) — so only the divisor-side fences keyed by [witness] and
+   grounded by [guard_body]. A runtime divisor can be a numeric zero, and the
+   quotient is then leeg with a §9.5 deposit of EF-005 (RUNTIME-SEMANTICS
+   ch. 1.4 point 4). This encoding carries that leeg only where it coalesces:
+   [coalesced] says the quotient is an operand of plus, minus, times or
+   percentage-of ([coalesced_operand]), so it stands for 0, which a term
+   computes without a comparison (Z = 1/(|tr|+1) is 1 at a zero divisor and 0
+   elsewhere), and the deposit lands on the rule and the subject whose
+   evaluation reaches the body ([deposit_subject], [param_reach]). Anywhere else
+   a leeg would have to propagate through the body, which a closed term cannot
+   express, so a zero divisor there derives a viol/2 witness of this backend's
+   limit: loud, never a value ref does not give. [rounding] None is the exact bare division (value
    guarded [numt \ dent == 0], a remainder derives a viol/2 and UNSAT — ref
    stays exact-rational, then its bounded write refuses; the differential holds
    where it runs); [Some (Toward_zero, d)] is the abs-division truncation at d
@@ -8890,7 +8944,8 @@ and closed_money_mult ctx ~guard_body ~witness ~base_expr : string list * string
    exactness guard and no negative fence. The exactness test runs at the
    precision the fold/write will STORE ([ctx.write_scale] for the bare form, the
    collapse scale for abs), not merely at the operand scales. *)
-and closed_division ctx ~guard_body ~witness ~rounding ~left_side ~right_side : string list * string * int =
+and closed_division ctx ~guard_body ~witness ~coalesced ~rounding ~left_side ~right_side :
+    string list * string * int =
   let left_side = req "Binary.left" left_side and right_side = req "Binary.right" right_side in
   numeric_ok ctx (Some left_side);
   numeric_ok ctx (Some right_side);
@@ -8934,22 +8989,37 @@ and closed_division ctx ~guard_body ~witness ~rounding ~left_side ~right_side : 
   let runtime = const_div = None in
   let gbody = guard_body @ bl @ br in
   range_guard ctx ~subject:witness ~body:gbody range_bounds;
-  (* a runtime divisor can be numeric zero (never leeg — the §9.5 empty-divisor
-     edge cannot arise in a closed body); a constant divisor is fenced positive *)
-  if runtime then
-    emit ctx "viol(\"division by numeric zero\",%s) :- %s, (%s) == 0." witness
-      (String.concat ", " gbody) tr;
-  let nonzero = if runtime then [ Printf.sprintf "(%s) != 0" tr ] else [] in
+  let zero = Printf.sprintf "(%s) == 0" tr in
+  let deposit_subject = if coalesced then ctx.deposit_subject else None in
+  (match (runtime, deposit_subject) with
+  | false, _ -> ()
+  | true, Some subject ->
+      deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject
+        (String.concat ", " (ctx.param_reach right_side @ gbody @ [ zero ]))
+  | true, None ->
+      emit ctx "viol(%s,%s) :- %s." (quote closed_zero_division) witness
+        (String.concat ", " (gbody @ [ zero ])));
+  (* the coalesced quotient: numt and dent as they are where the divisor is not
+     zero, 0 over 1 where it is *)
+  let numt, dent, value_guard =
+    match deposit_subject with
+    | Some _ when runtime ->
+        let z = fresh ctx "Z" in
+        ( Printf.sprintf "(%s*(1-%s))" numt z,
+          Printf.sprintf "(%s+%s)" dent z,
+          [ Printf.sprintf "%s = 1/(|%s|+1)" z tr ] )
+    | _ -> (numt, dent, if runtime then [ Printf.sprintf "(%s) != 0" tr ] else [])
+  in
   match rounding with
   | None ->
       emit ctx "viol(\"%s\",%s) :- %s, %s \\ %s != 0." (non_exact_division ctx) witness
-        (String.concat ", " (gbody @ nonzero))
+        (String.concat ", " (gbody @ value_guard))
         numt dent;
-      ( bl @ br @ nonzero @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
+      ( bl @ br @ value_guard @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
         Printf.sprintf "(%s/%s)" numt dent,
         out_scale )
   | Some (Toward_zero, _) ->
-      (bl @ br @ nonzero, Printf.sprintf "(%s/%s)" numt dent, out_scale)
+      (bl @ br @ value_guard, Printf.sprintf "(%s/%s)" numt dent, out_scale)
   | Some (mode_kind, _) ->
       ignore mode_kind;
       faultc "CLINGO-022"
@@ -11801,7 +11871,8 @@ let translate (doc : document) (case : Case.t) : string =
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
     { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1;
-      write_unbounded = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = []; value_of = None;
+      write_unbounded = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
+      value_of = None;
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
       before_arm = []; pre_scope = []; pre_reach = []; pre_let = [];
       pre_asks = []; signs = []; sign_helpers = []; oc_strata }

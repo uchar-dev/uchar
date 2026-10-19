@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * A §6.5 division or a §6.6 root in a rule's value whose operand folds over a role: "(100 gedeeld door (de som van het
@@ -140,14 +139,16 @@ class FoldCompanionWitnessTest {
         assertNull(playDrl(ir, caseDocument), "DRL-teksttak");
     }
 
-    @Test void a_divisor_that_is_zero_fails() throws Exception {
-        // "(100 gedeeld door het aantal vondsten van de Jutter)": J2 counts 0, a division by numeric zero, which is no
-        // §9.5 deposit but a fault: ref "division by numeric zero", clingo the same guard, and both Drools branches stop
-        // at fire.
+    @Test void a_divisor_that_is_zero_deposits() throws Exception {
+        // "(100 gedeeld door het aantal vondsten van de Jutter)": J2 counts 0, a division by numeric zero, which since
+        // the card zero-division-channel (2026-10-19) is a §9.5 deposit of kind EF-005 beside a leeg heffing
+        // (RUNTIME-SEMANTICS ch. 1.4, point 4), on both Drools branches as in ref and clingo. Until then it was a fault
+        // in all of them.
         String ir = document(regel(rounded(binary("dividedBy", number(100), COUNTING, UNBOUNDED)), null));
-        String caseDocument = caseDocument(situation(), heffing("33.33", null, "100.00", "100.00"), CONSISTENT);
-        assertThrows(RuntimeException.class, () -> play(ir, caseDocument), "exectak");
-        assertThrows(RuntimeException.class, () -> playDrl(ir, caseDocument), "DRL-teksttak");
+        String caseDocument = caseDocument(situation(), heffing("33.33", null, "100.00", "100.00"),
+                TmsDocuments.inconsistent("heffing", "J2", "EF-005"));
+        assertNull(play(ir, caseDocument), "exectak");
+        assertNull(playDrl(ir, caseDocument), "DRL-teksttak");
     }
 
     // ---------------- documents ----------------

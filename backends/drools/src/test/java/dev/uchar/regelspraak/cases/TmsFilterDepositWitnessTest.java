@@ -65,7 +65,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <p>Two more documents: a count over an instance-set union whose first selection's filter divides (ch. 3.4d, a
  * contribution rule per selection), and the fold whose filter faults for one member and deposits for another, in
  * both list orders: the reference interpreter stops at the fault where it comes first and deposits before it where it
- * comes second, and the session faults either way, so the outcome is the fault.
+ * comes second, and the session faults either way, so the outcome is the fault. Until the card zero-division-channel
+ * (2026-10-19) the fault was V3's division by a numeric zero, which deposits since (RUNTIME-SEMANTICS ch. 1.4, point
+ * 4): that document now gives one fact with both codes, EF-005 of V3 and EF-031 of V4, and the fault and the deposit
+ * are a filter that takes a root ({@link TmsDocuments#root}), irrational for one member and of a negative number for
+ * the other.
  *
  * <p>The argument of a fold over a set source holds no place of its own: a division there is ill-formed (WF-037), and
  * the verifier, the reference interpreter, the ASP runner and the loader of every Drools branch refuse it with the
@@ -215,16 +219,48 @@ class TmsFilterDepositWitnessTest {
         assertEquals(expected, outcomes);
     }
 
-    @Test void a_filter_that_fails_for_a_member_and_for_another_deposits_fails() throws Exception {
-        String fault = "DelingDoorNul: deling door nul in de regel \"zware vondsten\": 10 gedeeld door 0 — een numerieke"
-                + " nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+    /** V3 divides 10 by a numeric zero and V4 3 by a leeg divisor: both deposit, under the reading form on J2, in one
+     *  fact with the codes of both kinds, EF-005 and EF-031 (RUNTIME-SEMANTICS ch. 5.6), in both list orders. Until the
+     *  card zero-division-channel V3's division faulted, and this document was the fault and the deposit of the next
+     *  test. */
+    @Test void a_filter_that_divides_by_a_zero_for_a_member_and_by_leeg_for_another_deposits_both_codes()
+            throws Exception {
         List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(List.of(DEELNEMERS, ZWARE))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(MODEL, order);
             for (List<String> members : List.of(List.of("V3", "V4"), List.of("V4", "V3"))) {
                 JsonNode caseDocument = TmsDocuments.caseDocument(List.of(jutter("J2", true, members), vondst("V3", "10", "0"),
-                        vondst("V4", "3", null)), List.of(consistent()));
+                        vondst("V4", "3", null)), List.of(value("J2", "zware vondsten", "0"),
+                        TmsDocuments.inconsistent("zware vondsten", "J2", "EF-005"),
+                        TmsDocuments.inconsistent("zware vondsten", "J2", "EF-031")));
+                outcomes.add(names + " " + members + " " + TmsFaultWitnessTest.play(ir, caseDocument,
+                        DroolsBackend.Branch.EXEC_MODEL));
+                expected.add(names + " " + members + " gespeeld");
+            }
+        }
+        assertEquals(expected, outcomes);
+    }
+
+    /** "De zware vondsten van een Jutter moet berekend worden als het aantal vondsten van de Jutter die aan de volgende
+     *  voorwaarde voldoen: de wortel van zijn gewicht is groter dan 2, indien hij actief is". */
+    static final String ZWARE_ROOT = computingRule("zware vondsten", "BEREKENING", "Jutter", "zware vondsten",
+            aggregation("count", VONDSTEN, "Vondst", sourceRole("aanmelding", "vondst"), comparison("greater",
+                    TmsDocuments.root(ownRead("gewicht", "Vondst"), "de wortel van zijn gewicht"), number("2")), "null",
+                    COUNTING, "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: de wortel van"
+                            + " zijn gewicht is groter dan 2"), check("actief", false));
+
+    /** The filter faults for V3, the root of 2, and deposits for V4, the root of -4 (the §6.6 deposit, without a code):
+     *  the fault, in both list orders. */
+    @Test void a_filter_that_fails_for_a_member_and_for_another_deposits_fails() throws Exception {
+        String fault = "ComputeFault: " + TmsDocuments.irrational("zware vondsten", "2");
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
+        for (List<String> order : TmsDocuments.permutations(List.of(DEELNEMERS, ZWARE_ROOT))) {
+            List<String> names = TmsDocuments.ruleNames(order);
+            Path ir = TmsDocuments.document(MODEL, order);
+            for (List<String> members : List.of(List.of("V3", "V4"), List.of("V4", "V3"))) {
+                JsonNode caseDocument = TmsDocuments.caseDocument(List.of(jutter("J2", true, members), vondst("V3", "2", null),
+                        vondst("V4", "-4", null)), List.of(consistent()));
                 outcomes.add(names + " " + members + " " + TmsFaultWitnessTest.play(ir, caseDocument,
                         DroolsBackend.Branch.EXEC_MODEL));
                 expected.add(names + " " + members + " " + fault);
