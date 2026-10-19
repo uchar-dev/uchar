@@ -5,7 +5,7 @@ kenmerk NEGATIEF leest, en dan moet de regel die de unie telt ONDER de regel
 staan die dat kenmerk schrijft (`RUNTIME-SEMANTICS.md` ch. 6.1, ch. 3.4a voor
 de gewone vouw en ch. 3.4d voor de unie). Deze golden is hand geschreven: de
 RegelSpraak-frontend lost "die niet gemerkt zijn" niet op naar een kenmerk van
-het element en weigert de zin bij naam, dus er is geen `bron.rgs` en geen
+het element en weigert de zin bij naam, dus er is geen `source.rgs` en geen
 producentroute — de vorm bestaat alleen op de wire.
 
 **De regelvolgorde is opzettelijk verkeerd om.** De consument (`ongemerkt

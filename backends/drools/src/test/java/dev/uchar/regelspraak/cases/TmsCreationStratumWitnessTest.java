@@ -550,7 +550,7 @@ class TmsCreationStratumWitnessTest {
             objectType("Wachter", List.of(attribute("rang", WHOLE)), List.of())),
             List.of(factType("opvolging", "voorganger", "Wachter", "opvolger", "Wachter")));
 
-    /** The chain of {@code corpus/rood} {@code finite-chain-over-budget} without its consistency, while the rang is below
+    /** The chain of {@code corpus/red} {@code finite-chain-over-budget} without its consistency, while the rang is below
      *  {@code grens}: from W1 of rang 1, {@code grens - 1} generations in one stratum. */
     static Path documentG(int bound) throws Exception {
         return document(MODEL_G, List.of(), List.of(),

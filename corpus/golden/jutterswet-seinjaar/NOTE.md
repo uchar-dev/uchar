@@ -6,8 +6,8 @@ ch. 4.6 (q2)) a qualified guard binds the ANKER only, so the check is about the
 anker: a `vakbeseining` between a Kustvak and a sein of its post is created iff
 the kustvak was hoisted during the whole of every year its timeline touches.
 
-**Hand-written IR, deliberately: there is no `bron.rgs`.** It is
-`corpus/negatief/wf109-doelgastheer-periode` with the host taken off the guard,
+**Hand-written IR, deliberately: there is no `source.rgs`.** It is
+`corpus/negative/wf109-target-host-period` with the host taken off the guard,
 `gehesen` made time-dependent on the anker, and the doel's characteristic
 spelled `Gehesen`: a second declaration on another type whose name equals the
 anker's up to case. Declared names compare case-insensitively in every reader

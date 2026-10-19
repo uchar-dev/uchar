@@ -32,10 +32,10 @@ rather than leeg ÷ 0. Pinning the numerator only where it is non-zero
 would leave the reader to take the fallback on trust and would let an
 executor that answered leeg there pass.
 
-The red twin `corpus/rood/aantalgevulde-ongewaakte-deling` is this same
+The red twin `corpus/red/filled-count-unguarded-division` is this same
 document with the condition removed. It faults in all three executors, so
 what the guard prevents is pinned as well as the guard itself — and what
 decision G1 leaves to the rule author is a LOUD failure, not a quiet
 wrong number.
 
-No `bron.rgs`: the kind is wire-first and no frontend spells it.
+No `source.rgs`: the kind is wire-first and no frontend spells it.

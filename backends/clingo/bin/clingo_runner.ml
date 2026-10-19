@@ -1,7 +1,7 @@
 (* Gate-6 runner: translate one (ir.json, case.json) pair to ASP, run
    clingo, and check the stable model against the case's expectations —
    the same absolute expectations gate 5 pins for ref/. On an
-   expectedFault case (corpus/rood) the pair must instead fail
+   expectedFault case (corpus/red) the pair must instead fail
    observably — a case-reader refusal at LOAD, a translation fault, or
    UNSAT — with the pinned fragment in the report; an UNSAT is
    diagnosed by re-running without the global integrity constraint so

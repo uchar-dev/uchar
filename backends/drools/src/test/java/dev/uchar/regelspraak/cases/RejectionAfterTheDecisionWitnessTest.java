@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Two object creations without a connectingRole binding, the first of which reads, negatively, the relation the second
  * makes (card drl-teksttak-op-truth-maintenance, section "Na 20261010-objectcreatie-zonder-connectingrole-binding"). The
  * document {@code src/test/resources/objectcreatie/afwijzing-na-het-besluit} comes from the RegelSpraak frontend, its
- * {@code bron.rgs} beside it: "wijs af zonder besluit" makes an Afwijzing for a Jutter that is no begunstigde, and "stel
+ * {@code source.rgs} beside it: "wijs af zonder besluit" makes an Afwijzing for a Jutter that is no begunstigde, and "stel
  * het penningbesluit vast" makes the Penningbesluit that makes a penninggerechtigde Jutter one. The first reads the
  * relation the second derives from its type pair, so it stands a stratum above it (RUNTIME-SEMANTICS ch. 6.1, 6.3): J1
  * (14 vondsten against the vondstdrempel 12) is penninggerechtigd and gets no Afwijzing, J2 (11) gets one.

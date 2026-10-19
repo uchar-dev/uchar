@@ -93,7 +93,7 @@ jobs:
       - name: check-noop
         run: opam exec -- sh scripts/check-noop.sh
 
-  rood:
+  red:
     name: "Gate 8: red corpus (expected faults observed in both executors)"
     runs-on: ubuntu-latest
     steps:
@@ -106,8 +106,8 @@ jobs:
       - name: install clingo
         # Ubuntu ships the clingo binary in the gringo package
         run: sudo apt-get update && sudo apt-get install -y gringo && clingo --version
-      - name: check-rood
-        run: opam exec -- sh scripts/check-rood.sh
+      - name: check-red
+        run: opam exec -- sh scripts/check-red.sh
 
   catala:
     # The gate-9 CI leg is conditional by maintainer decision (2026-08-24):
@@ -317,8 +317,8 @@ jobs:
         with:
           path: frontends/regelspraak/lib
           key: regelspraak-jars-antlr-4.13.2-junit-1.10.2
-      - name: check-graaf
-        run: opam exec -- bash scripts/check-graaf.sh
+      - name: check-graph
+        run: opam exec -- bash scripts/check-graph.sh
 
   scenario:
     # Gate 16 — the scenariotoetsen extension of the RegelSpraak frontend

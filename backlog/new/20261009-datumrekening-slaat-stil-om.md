@@ -62,7 +62,7 @@ datum komt met deze kaart.
 
 ## Acceptatie (bij oppakken aanscherpen)
 
-- (a) Rode gevallen in `corpus/rood` voor de hoeken van punt 1 en 2 die een
+- (a) Rode gevallen in `corpus/red` voor de hoeken van punt 1 en 2 die een
   datum-tijd raken, met `expectedFault {ref, clingo, drools}`; voor wat clingo
   bij de vertaling al weigert, telt die weigering.
 - (b) Ref controleert het aantal maal de eenheid en het omkeren van het teken
@@ -79,7 +79,7 @@ Klein tot middel: vier kleine plaatsen in drie executors, plus een normvraag.
 
 May touch: `ref/lib/arith.ml`, `backends/clingo/**`,
 `backends/drools/src/main/java/dev/uchar/regelspraak/runtime/RegelSpraakRuntime.java`,
-getuigen in de drie, `corpus/rood/<nieuwe gevallen>/`, `spec/RUNTIME-SEMANTICS.md`
+getuigen in de drie, `corpus/red/<nieuwe gevallen>/`, `spec/RUNTIME-SEMANTICS.md`
 (voorstel, na het besluit), kaartverplaatsing.
 
 ## Raakvlakken

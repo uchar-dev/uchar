@@ -3,12 +3,12 @@
 The first golden whose `diagnostics` list is not empty (WF-113, `spec/IR-SPEC.md`
 ch. 2): a document the producer did write, together with its own account of what
 stayed out of it. The account comes from a real producer route, not a hand-made
-list — `bron.rgs` through the RegelSpraak frontend, `ir.json` its byte-identical
+list — `source.rgs` through the RegelSpraak frontend, `ir.json` its byte-identical
 emission (gate 10).
 
 ## What the source does
 
-`bron.rgs` declares a Jutter with a `wrakkental`, one rule that computes the
+`source.rgs` declares a Jutter with a `wrakkental`, one rule that computes the
 `wrakkenloon` from it, and a decision table `Wrakkenbonus` that has a header row
 and no data rows. A table without rows has nothing to lower, so the frontend
 writes no rule for it and says so in a `warning` on line 10, the line where the
@@ -20,7 +20,7 @@ table starts:
 That `warning` is the whole of `diagnostics`. WF-113 (a) holds: severity
 `warning`, a non-empty message, an integer line. The document carries no
 `Unresolved` node, so (b) has nothing to account for here; the two red documents
-under `corpus/rood/wf044-onopgelost-*` are its witnesses.
+under `corpus/red/wf044-onopgelost-*` are its witnesses.
 
 ## Hand computation
 

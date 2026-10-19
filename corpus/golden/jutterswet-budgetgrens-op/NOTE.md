@@ -5,21 +5,21 @@ recursive creation that makes 100 Wachters in one evaluation stratum, each
 from the one made before it, plays in every executor. The 100th Wachter is
 made at creation depth 100 and in generation 100; on a chain like this one,
 where every creation waits only for its subject, the two counts are the same
-number. The red twin `corpus/rood/jutterswet-budgetgrens-over` is this
+number. The red twin `corpus/red/jutterswet-budgetgrens-over` is this
 document with one literal moved by one: its chain would make a 101st
 Wachter, and every executor that carries the budget faults there.
 `synth2-budgetgrens-onder` (97 Wachters made) stays as the green side
-further down; `corpus/rood/finite-chain-over-budget` (104) and
-`corpus/rood/runaway-recursion` (no end) are the red side further up.
+further down; `corpus/red/finite-chain-over-budget` (104) and
+`corpus/red/runaway-recursion` (no end) are the red side further up.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - `Feittype opvolging`: a voorganger has one opvolger, both Wachters.
 - `Regelgroep lange estafette is recursief` over the one creation `werf de
   lange keten`: a Wachter whose rang is kleiner dan 101 gets an opvolger with
   rang its rang plus 1 and the ketennummer of the Wachter, over
   `connectingRole {opvolging, opvolger}`. This is the form of
-  `corpus/rood/finite-chain-over-budget`, with the bound at 101 instead of
+  `corpus/red/finite-chain-over-budget`, with the bound at 101 instead of
   105; the ketennummer only carries the number of the chain to its end.
 - Rule `opvolgerrang van een wachter`: the opvolgerrang of a Wachter is the
   rang of its opvolger.
@@ -116,7 +116,7 @@ with truth maintenance on the card's base.
 On main `8beff67a` the bound lay one creation lower for a chain with a rule
 in its stratum (this document, and `synth2-budgetgrens-onder`'s form with
 the bound moved up): 99 creations played in both executors, 100 faulted in
-both. Without such a rule (`corpus/rood/finite-chain-over-budget`'s form)
+both. Without such a rule (`corpus/red/finite-chain-over-budget`'s form)
 ref played 100 creations and clingo faulted on them. ref plays this document
 since the card `creatie-initialisatie-leest-groeiende-waarde`, clingo and the
 branch with truth maintenance since the card `creatiebudget-ref-en-clingo`.

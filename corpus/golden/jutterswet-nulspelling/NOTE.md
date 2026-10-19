@@ -19,8 +19,8 @@ character and refused both, measured:
     literal '-0' under a non-negative sign restriction
 
 The other side of the same reading is refused and pinned by
-`corpus/negatief/wf039-min-nul-onder-negatief-doel` (`-0` is not negative)
-and `corpus/negatief/wf039-nulbreuk-onder-positief-doel` (`0/5` is not
+`corpus/negative/wf039-min-zero-under-negative-target` (`-0` is not negative)
+and `corpus/negative/wf039-zero-rational-under-positive-target` (`0/5` is not
 positive).
 
 ## Hand-computed absolutes (one Vondst V1)
@@ -34,6 +34,6 @@ Each case is consistent. `ref`, the ASP backend and both Drools branches
 replay the two cases with these values (measured 2026-09-25; Drools PLAYED
 2 in each branch), and a do-nothing run mismatches both.
 
-Deliberately carries no `bron.rgs` and no `bron.catala_en`: the spelling is
+Deliberately carries no `source.rgs` and no `source.catala_en`: the spelling is
 a wire-level one that neither frontend emits. Hand-authored, in the
 Jutterswet's own vocabulary.

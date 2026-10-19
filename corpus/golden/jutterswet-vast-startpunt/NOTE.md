@@ -7,7 +7,7 @@ periods start where the calendar's do not, carried on the wire in
 executors. The storm year is a construct of this golden, not an article of the
 Jutterswet, whose penningjaar is the calendar year (art. 3b).
 
-## Source (`bron.rgs`) and wire
+## Source (`source.rgs`) and wire
 
 - `Tijdlijn het stormjaar heeft tijdvakken van een jaar startend op dag 1 van
   maand 10` — a named year grid from 1 October:
@@ -216,6 +216,6 @@ describes calendar grids — and `ref` refuses every case at load, measured
     case6-heel-kalenderjaar.json CASE ERROR: expected J1.stormwachtdagen.timeline[0]: segment boundaries must sit on the declared granularity grid
     case7-week-en-kwartaal.json  CASE ERROR: expected J1.stormwachtdagen.timeline[0]: segment boundaries must sit on the declared granularity grid
 
-Before this card the frontend refused `bron.rgs` at emission: the wire had no
+Before this card the frontend refused `source.rgs` at emission: the wire had no
 field for the start point, and a timeline written without it lies on the
 calendar grid.

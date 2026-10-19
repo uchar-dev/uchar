@@ -59,7 +59,7 @@ Klein tot middel; de grens tussen een monotone en een niet-monotone lezing is
 het werk.
 
 May touch: `backends/clingo/**` (a1) of `spec/verifier/**` en
-`corpus/negatief/<nieuw>/` (a2), `spec/RUNTIME-SEMANTICS.md` en
+`corpus/negative/<nieuw>/` (a2), `spec/RUNTIME-SEMANTICS.md` en
 `spec/IR-SPEC.md` (voorstel), kaartverplaatsing.
 
 ## Raakvlakken

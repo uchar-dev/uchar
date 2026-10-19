@@ -49,4 +49,4 @@ parameter-bound day kind has no compiled predicate and the reaching rule is
 skipped. No executor answers this golden *differently*; two answer it and two
 say, per form, that they do not.
 
-The unbound case is red: `corpus/rood/dagsoortparameter-ongebonden`.
+The unbound case is red: `corpus/red/day-kind-parameter-unbound`.

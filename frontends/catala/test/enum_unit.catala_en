@@ -1,12 +1,12 @@
 # De ONDERGRENS van WF-087 aan de plugin-kant — rechtenvrij, eigen
-# auteurschap. `enum_nullair.catala_en` toont de normalisatie op drie
+# auteurschap. `enum_nullary.catala_en` toont de normalisatie op drie
 # constructoren; dit programma toont haar op ÉÉN. Een opsomming met precies
 # één payloadloze constructor is een unit-type, en een unit-type is een
 # nullair keuzetype als elk ander: het hoort op de wire in de enumeratievorm,
 # niet in de SumType-vorm.
 #
 # De grens is niet decoratief. De verifierkant ervan staat als negatief-geval
-# gepind (`corpus/negatief/wf087-unit-sumtype`) omdat een `List.length > 1`-
+# gepind (`corpus/negative/wf087-unit-sumtype`) omdat een `List.length > 1`-
 # verzwakking van WF-087 precies hier doorglipt; de PLUGIN draagt haar eigen
 # kopie van dezelfde regel (`keuzetype_of`), en zonder dit programma glipt
 # diezelfde verzwakking daar ongestraft door: elke andere all-nullary fixture

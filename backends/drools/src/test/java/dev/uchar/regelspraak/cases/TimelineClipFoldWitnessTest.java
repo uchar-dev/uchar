@@ -16,7 +16,7 @@ import java.nio.file.Path;
  * read, in one sentence that names the rule and WF-091, whatever the case supplies. WF-091 rejects the document since
  * card ref-klipvouw-nul, so this refusal is the backend's second line, not a corpus route.
  *
- * <p>RED FIRST, measured 2026-09-25 with the exec code of main 2f47d80e on {@code wf091-klipvouw-datum} (until
+ * <p>RED FIRST, measured 2026-09-25 with the exec code of main 2f47d80e on {@code wf091-clip-fold-date} (until
  * then the red case {@code datumtijdlijn-klipvouw}, byte-identical):
  * <pre>
  *   no value timeline      exec  ERROR ConsequenceException … java.lang.ClassCastException:
@@ -39,7 +39,7 @@ class TimelineClipFoldWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path CLIP_DATE =
-            Path.of("..", "..", "corpus", "negatief", "wf091-klipvouw-datum", "ir.json");
+            Path.of("..", "..", "corpus", "negative", "wf091-clip-fold-date", "ir.json");
     private static final Path CLIP_NUMBER =
             Path.of("..", "..", "corpus", "golden", "jutterswet-erfwacht", "ir.json");
 

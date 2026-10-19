@@ -23,7 +23,7 @@ Own Jutterswet-flavoured casus, own dates, rights-free.
 > stelt de strandvoogd de vondst ter controle. 5. De vondst kan worden
 > afgehaald tot en met de dertigste dag na de dag van aanmelding.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - `meldingsdatum` of a Vondst, a `Datum in dagen`, carries the marker (lid 3).
 - **melding na de vinddag** (lid 1): `meldingsdatum` = `vinddag` plus 3 dagen.
@@ -96,7 +96,7 @@ input does not already satisfy.
 
 The seven cases are written as seven scenarios, one instance `V` each, and the
 expectations above are their expectation bullets. The frontend's `--cases`
-mode lowers `bron.rgs` with `scenario.rgs` to the seven case files and to the
+mode lowers `source.rgs` with `scenario.rgs` to the seven case files and to the
 `ir.json` of the production route, and gate 16 regenerates them byte for byte.
 The scenario layer carries every expectation here: a date value, an empty
 attribute, a characteristic present and absent, consistent, and the

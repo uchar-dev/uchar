@@ -4,7 +4,7 @@
 clusterdocument), gemeten door de hoofdsessie op uchar `c16cb4d6` via de
 distributie (`bin/regelspraak check|scenario|cases`) en de eigen
 uitvoerders; reproductie op Jutterswet-materiaal in `/tmp/v2/probe/k6/`
-(bron.rgs, bron-brug.rgs, scenario.rgs, cases/; alleen lezen). Luid in alle
+(source.rgs, bron-brug.rgs, scenario.rgs, cases/; alleen lezen). Luid in alle
 uitvoerders (de frontend lowert de zin niet en laat een marker op de draad
 staan; ref en clingo falen op de onopgeloste voorwaarde, de exec-tak
 markeert), geen fout antwoord. Op verzoek van de eigenaar geschreven
@@ -68,7 +68,7 @@ ontwerpkeuze met twee wegen, hieronder als acceptatie (b).
     Scenario: Jutter J met Vondst V (gewicht 12) en Melding M (melder J); verwacht: V is zwaar, M is
     dringend.
 
-    R1  bron.rgs zoals hierboven.
+    R1  source.rgs zoals hierboven.
         nu: check exit 0 met twee WARNINGs ("… wordt NIET gelowerd: een meerstapsbereik …" en
         "onopgelost: de geschreven naam bindt geen kenmerk en geen rol van het onderwerp (§8.1.7/§8.1.8)
         … blijft als marker op de wire staan"); scenario MARKER "transpiler SKIP: regel: dringend —

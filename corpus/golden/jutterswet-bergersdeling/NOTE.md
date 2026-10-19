@@ -2,7 +2,7 @@
 
 Same model, same case, same three hand-computed numbers as
 `corpus/golden/jutterswet-hoofdberging`. The one thing that is new is that
-this document comes out of a `bron.rgs` instead of being written by hand.
+this document comes out of a `source.rgs` instead of being written by hand.
 
 `jutterswet-hoofdberging` pins an allocation whose recipient set is narrower
 than the relation that reaches it: `bergingsdeelname` relates `Berging` to

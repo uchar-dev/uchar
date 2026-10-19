@@ -16,7 +16,7 @@ Jutterswet (`corpus/jutterswet/wet-v4.md`), art. 4:
 > geweigerd; dit geldt niet indien de weigering is herroepen; dat laatste
 > geldt weer niet indien de herroeping is vervallen.
 
-## De bron (`bron.rgs`)
+## De bron (`source.rgs`)
 
 Een basisregel, twee uitzonderingsblokken en één gewone regel. Elk blok
 schrijft alleen zijn eigen voorwaarde:

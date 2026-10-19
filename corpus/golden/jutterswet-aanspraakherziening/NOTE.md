@@ -35,7 +35,7 @@ functionDefs (unknown model section)`.
 Until 2026-09-25 the result arm of WF-068 compared the two datatypes byte
 for byte, while its argument arm already compared them as ch. 2.1 does.
 Making that one comparison byte for byte again turns this document, and no
-other golden or rood document, red, measured:
+other golden or red document, red, measured:
 
     WF-068 FAIL /rules/rules/0/versions/0/value/list/list/function/body/type:
     invoke result type differs from the declared function result
@@ -50,6 +50,6 @@ rules, and of the other goldens `jutterswet-meldtermijnen` and
     WF-068 FAIL /rules/rules/0/versions/0/value/list/list/function/body/type:
     invoke result type differs from the declared function result
 
-Deliberately carries no `bron.rgs` and no `bron.catala_en`: the drift is a
+Deliberately carries no `source.rgs` and no `source.catala_en`: the drift is a
 wire-level spelling that neither frontend emits. Hand-authored, in the
 Jutterswet's own vocabulary.

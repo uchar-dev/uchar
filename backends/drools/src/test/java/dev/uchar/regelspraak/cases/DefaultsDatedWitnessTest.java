@@ -41,7 +41,7 @@ class DefaultsDatedWitnessTest {
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
     private static final Path CORPUS = Path.of("..", "..", "corpus");
     private static final Path DOCUMENT = CORPUS.resolve("golden").resolve("jutterswet-uitsluiting-gedateerd");
-    private static final Path RED = CORPUS.resolve("rood").resolve("jutterswet-uitsluiting-zonder-rekendatum");
+    private static final Path RED = CORPUS.resolve("red").resolve("jutterswet-uitsluiting-zonder-rekendatum");
     private static final Path GOLDEN = CORPUS.resolve("golden").resolve("anchor").resolve("jutterswet-uitsluiting");
 
     /** The sentence of the fault of a case without an evaluation date, as the replay names it. */

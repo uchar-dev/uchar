@@ -8,7 +8,7 @@ strandjutter heeft.
 
 The first corpus carrier of the far-side role check, the form that reads the
 relation from the end the subject does not hold. Until 2026-09-20 the form had
-**zero** documents across golden, rood, negatief and the parity zone, which is
+**zero** documents across golden, red, negative and the parity zone, which is
 why `IR-SPEC.md` ch. 4.5 recorded it as uncrossed: a clause over it would have
 had no witness. This document is that witness, hand-written, with its
 expectations computed by hand before any executor saw it. Since L2 (2026-09-24)
@@ -80,17 +80,17 @@ and the DRL-text one — play all three cases against these same pins. So the
 far form closes the differential square (ref ≡ clingo ≡ Drools) on the values
 above, anchored to hand-written numbers rather than to parity.
 
-*Why it has no `bron.rgs`.* The witness is a wire document, and it needs no
+*Why it has no `source.rgs`.* The witness is a wire document, and it needs no
 producer route to be one: the form's producer half is a frontend question and
 this card is about what the IR means and what its readers do with it. The
 directory therefore carries no source, and gates 9, 10 and 14 skip it by
 construction.
 
-*Its twins in the negatief zone* are
-`corpus/negatief/wf034-verre-rolcheck-verkeerde-zijde`: this document's first
+*Its twins in the negative zone* are
+`corpus/negative/wf034-far-role-check-wrong-side`: this document's first
 rule with `role` repointed at `wachtjutter`, the other end's role instead of
 the subject's — one field, one edit, and the crossing fails while both names
-still resolve; and `corpus/negatief/wf034-rollidmaatschap-vreemde-vullersklasse`,
+still resolve; and `corpus/negative/wf034-role-membership-foreign-filler-class`,
 whose `counterpartType` names `Wachtpost`, a class outside the other role's
 filler chain.
 

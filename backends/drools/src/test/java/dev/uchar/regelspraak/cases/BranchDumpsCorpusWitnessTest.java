@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * them, so that one that arrives shows by name. A golden the exec-model branch does not play is gate 12's channel, and
  * this witness skips it.
  *
- * <p>Every case under {@code corpus/rood} is played through the red path of both branches
+ * <p>Every case under {@code corpus/red} is played through the red path of both branches
  * ({@link CaseRunner#runRed(Path, Path, DroolsBackend.Branch)}), which must give the same {@code RedResult}: the same
  * status and the same text. Gate 8's Drools leg plays the exec-model branch alone, so without this row no gate would
  * bring a red case to the DRL-text branch (decision 46 of the card). That the entry builds the branch it is given, which
@@ -58,7 +58,7 @@ class BranchDumpsCorpusWitnessTest {
     static final int EXPECTED_MIN_GOLDENS = 255;
     /** The cases of the goldens compared, measured 2026-10-14 at step 6b and again at step 6c, on the same corpus. */
     static final int EXPECTED_MIN_CASES = 695;
-    /** The case files under {@code corpus/rood}, measured 2026-10-14: the 49 of before step 6b and its one. */
+    /** The case files under {@code corpus/red}, measured 2026-10-14: the 49 of before step 6b and its one. */
     static final int EXPECTED_MIN_RED_CASES = 50;
     /** The cases of played goldens whose fire reaches no fixpoint, measured 2026-10-14: none. */
     static final List<String> WITHOUT_FIXPOINT = List.of();
@@ -108,7 +108,7 @@ class BranchDumpsCorpusWitnessTest {
 
     @Test void every_red_case_gives_the_same_red_result_on_both_branches() throws Exception {
         List<Path> casePaths;
-        try (Stream<Path> s = Files.walk(CORPUS.resolve("rood"))) {
+        try (Stream<Path> s = Files.walk(CORPUS.resolve("red"))) {
             casePaths = s.filter(p -> p.getFileName().toString().matches("case.*\\.json")).sorted().toList();
         }
         List<String> differences = new ArrayList<>();
@@ -117,7 +117,7 @@ class BranchDumpsCorpusWitnessTest {
             CaseRunner.RedResult exec = CaseRunner.runRed(ir, casePath, DroolsBackend.Branch.EXEC_MODEL);
             CaseRunner.RedResult drl = CaseRunner.runRed(ir, casePath, DroolsBackend.Branch.DRL_TEXT);
             if (!exec.equals(drl))
-                differences.add(CORPUS.resolve("rood").relativize(casePath) + ": exec-model " + exec + " | drl-tekst " + drl);
+                differences.add(CORPUS.resolve("red").relativize(casePath) + ": exec-model " + exec + " | drl-tekst " + drl);
         }
         assertEquals(List.of(), differences, "rode cases met een ander resultaat op de twee takken");
         int n = casePaths.size();

@@ -87,14 +87,14 @@ class of wrong answer that changes no attribute — would be invisible here.
    replayable zones: **five** documents besides this one carry a
    non-reciprocal self-typed fact type with both roles to-one —
    `anchor/jutterswet-erflijn`, `anchor/jutterswet-wachtersketen`,
-   `synth2-budgetgrens-onder`, `corpus/rood/finite-chain-over-budget`
-   and `corpus/rood/runaway-recursion`. (Two more carry the shape in
-   `corpus/negatief` — `wf012-ambiguous-roles`,
+   `synth2-budgetgrens-onder`, `corpus/red/finite-chain-over-budget`
+   and `corpus/red/runaway-recursion`. (Two more carry the shape in
+   `corpus/negative` — `wf012-ambiguous-roles`,
    `wf033-no-creation-member` — and fall **outside** this count by
    construction. The criterion is REPLAY, not the presence of pinned
-   values: golden and rood are both replayed — golden pins values, rood
+   values: golden and red are both replayed — golden pins values, red
    pins the fault it must raise, and neither of the red zone's 26 cases
-   carries an `expected` at all — whereas a negatief document is only
+   carries an `expected` at all — whereas a negative document is only
    ever READ, by the verifier, and never executed. A shape that is
    never run cannot witness what an executor does with it.)
 

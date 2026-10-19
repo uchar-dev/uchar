@@ -1,7 +1,7 @@
 # synth3-takhek
 
 The **arm-fence witness** on the rule-head route: a hand-written `ir.json`
-with no `bron.rgs`, like its `synth3-*` siblings — the RegelSpraak emitter
+with no `source.rgs`, like its `synth3-*` siblings — the RegelSpraak emitter
 produces no `IfThenElse` at all (IR-SPEC ch. 4.10), so this family has no
 source language and is authored on the wire.
 

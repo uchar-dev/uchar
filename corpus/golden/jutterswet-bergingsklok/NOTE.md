@@ -81,10 +81,10 @@ no script and no corpus document in any zone.
 ## What this golden deliberately leaves to the red zone and the suites
 
 - **The reach fence.** Nothing here walks far; the day kind no calendar day
-  satisfies is `corpus/rood/dagsoort-onvervulbare-wandeling`.
-- **`de dag` outside its binding** is `corpus/rood/contextwaarde-de-dag-buiten-dagsoort`.
+  satisfies is `corpus/red/day-kind-unsatisfiable-walk`.
+- **`de dag` outside its binding** is `corpus/red/context-value-de-dag-outside-day-kind`.
 - **The §9.8 composition on a date other than the bound day** is
-  `corpus/rood/dagsoortverwijzing-andere-dag`.
+  `corpus/red/day-kind-reference-other-day`.
 - **The other composite quantors and the §9.8 nested reference on the bound
   day** are in the two executors' own suites (`ref/test`,
   `backends/clingo/test`), where the eight arms were measured against each

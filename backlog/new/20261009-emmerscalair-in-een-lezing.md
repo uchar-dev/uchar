@@ -28,12 +28,12 @@ uitgeschreven in `TmsInvoervormWitnessTest` en `TmsGeheelPeriodeWitnessTest` (de
 - (a) Bevestigen dat ch. 8.4 ook voor deze drie lezingen geldt, of de spec preciseren (beschermd pad: voorstel). Ook
   het moment van de fout: de tak faalt zodra de pro rata wordt uitgerekend, ook als de voorwaarde geen ware periode
   heeft.
-- (b) Ref en clingo gerepareerd, rood eerst, met een rood geval per lezing in `corpus/rood/` (ref en clingo met hun zin).
+- (b) Ref en clingo gerepareerd, rood eerst, met een rood geval per lezing in `corpus/red/` (ref en clingo met hun zin).
 - (c) Alle gates groen.
 
 ## Omvang
 
 Klein.
 
-May touch: `ref/`, `backends/clingo/`, `corpus/rood/<nieuwe gevallen>/`, `spec/RUNTIME-SEMANTICS.md` (voorstel),
+May touch: `ref/`, `backends/clingo/`, `corpus/red/<nieuwe gevallen>/`, `spec/RUNTIME-SEMANTICS.md` (voorstel),
 kaartverplaatsing.

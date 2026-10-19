@@ -435,7 +435,7 @@ public final class CaseInput {
         // declared member was reported as a second role, and the commonest one was no second role at all: a target
         // of a SUBTYPE of the role's filler, which the field of the filler's class takes (IR-SPEC ch. 2.6) and which
         // the type gate then refused by equality. Two same-named roles toward different types
-        // (corpus/rood/ambiguous-case-role-key) are the cause that sentence was written for, and it now names them.
+        // (corpus/red/ambiguous-case-role-key) are the cause that sentence was written for, and it now names them.
         FactModelGenerator.Origin houder = FactModelGenerator.fieldOrigin(model, carrier, role);
         String field = Namen.ident(carrier.naam, true) + "." + Namen.ident(role, false);
         String cause;

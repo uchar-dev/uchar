@@ -6,13 +6,13 @@ leeg and gevuld tests (`negated: true` under the qualifier), which
 RegelSpraak cannot spell: the frontend's grammar reads `… gedurende het
 gehele jaar leeg is` and `… niet gedurende het gehele jaar leeg is`, and
 has no `niet` before `leeg` or `gevuld`. This twin carries the five rules
-that can be spelled, in `bron.rgs`, so gate 10 holds the frontend's
+that can be spelled, in `source.rgs`, so gate 10 holds the frontend's
 emission of the form: the leeg test, the gevuld test, the qualifier's own
 negation, the month grid and a navigated operand.
 
 ## Source and emission
 
-`bron.rgs` declares `Werf` with the month-granular `havengeld`, `Schuit`
+`source.rgs` declares `Werf` with the month-granular `havengeld`, `Schuit`
 with the month-granular `bemanning` and five whole-number results, and the
 fact type `ligplaats` (one `werf`, many `schuiten`). The five rules write
 10, 20, 50, 60 and 70 under the conditions of the rules of the same name in

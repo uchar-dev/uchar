@@ -86,7 +86,7 @@ IR. So: reference interpreter, then Clingo, then the extra source languages.
 | Path | Role |
 |---|---|
 | `spec/` | **The product**: `PLAN.md` (the constitution), `IR-REVIEW.md` (the founding review), `IR-SPEC.md` (the normative IR spec, every MUST carrying a `WF-###` id), `RUNTIME-SEMANTICS.md` (evaluation semantics with worked examples that run verbatim as tests), `CONSTRUCTS.md` (the v0→v1 delta register), the JSON schemas, the OCaml verifier |
-| `corpus/` | `golden/` (cases with expected values, rights-free by construction — the Jutterswet casus), `negatief/` (documents the verifier must reject, one per WF rule), `rood/` (cases that must fail observably in every executor) |
+| `corpus/` | `golden/` (cases with expected values, rights-free by construction — the Jutterswet casus), `negative/` (documents the verifier must reject, one per WF rule), `red/` (cases that must fail observably in every executor) |
 | `ref/` | The reference interpreter (OCaml): the executable definition of the semantics |
 | `backends/` | `clingo/` (translation to ASP-Core-2) and `drools/` (an IR loader plus two transpiler branches — DRL text for fast development and testing, the executable model for compiling services — over a shared runtime) |
 | `frontends/` | `regelspraak/` (Java parser/resolver, emits the IR), `catala/` (a Catala plugin), `flogic/` (OCaml, a second independent source language) |
@@ -105,7 +105,7 @@ subselection), aggregations, prioritized defaults, distribution rules, and
 temporal arithmetic.
 
 Sixteen gates guard it. Structural: self-containedness, schema validation
-with byte-identical round-trip, the verifier over golden and negatief
+with byte-identical round-trip, the verifier over golden and negative
 corpora, case-file validation. Semantic: the reference interpreter replays
 every case exactly; Clingo and Drools must reproduce the same pinned
 answers; a no-op guard proves an identity transpiler fails; the red corpus

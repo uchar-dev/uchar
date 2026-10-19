@@ -37,10 +37,10 @@ writers; at most one may write it`), so the form could not stand in the
 corpus. Since then a writer is a form: the two versions never co-apply,
 and whether versions overlap is WF-021's question. Two DIFFERENT
 creations on one to-one role stay refused
-(`corpus/negatief/wf052-two-writers-one-to-one-relation`), and two
+(`corpus/negative/wf052-two-writers-one-to-one-relation`), and two
 overlapping versions of one creation are WF-021's
-(`corpus/negatief/wf021-creatie-versies-overlappen`).
+(`corpus/negative/wf021-creation-versions-overlap`).
 
-The source is `bron.rgs`; the RegelSpraak frontend writes the two
+The source is `source.rgs`; the RegelSpraak frontend writes the two
 versions as one form and makes the creation a member of its group, and
 gate 10 re-emits this document byte-identically.

@@ -249,7 +249,7 @@ the reason and the citation.
 
 1. **two `::` facts for one class** — WF-106, an object type declares at
    most one direct supertype. On the wire that refusal is structural
-   (`supertype` is one string), so no verifier check and no `corpus/negatief`
+   (`supertype` is one string), so no verifier check and no `corpus/negative`
    entry can carry it: F-logic is the only source form in this repository
    that can actually *write* a second parent, so this fixture is the only
    place the rule can be tested. The message names the two known
@@ -303,4 +303,4 @@ The suite emits each test program, asserts it is verifier-clean, replays
 its cases through the reference runner and the clingo backend, and drives
 every refusal fixture. `scripts/check-flogic.sh` (gate 14, with an
 unconditional CI leg) runs that suite and holds every corpus golden
-carrying a `bron.flogic` to byte-identical re-emission.
+carrying a `source.flogic` to byte-identical re-emission.

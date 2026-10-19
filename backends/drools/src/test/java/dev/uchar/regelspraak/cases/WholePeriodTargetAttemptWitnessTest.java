@@ -23,7 +23,7 @@ import java.nio.file.Path;
  * branch, which makes no doel attempt, refuses these guards in sentences of its own, which name the form: a check with a
  * host that is not the subject, and a whole-period comparison over a timeline along a path; the rows of the exec-model
  * branch pin those since card tms-omschakeling (2026-10-10). Every model below is
- * built in memory from {@code corpus/negatief/wf109-doelgastheer-periode/ir.json} (read, never written): anker
+ * built in memory from {@code corpus/negative/wf109-target-host-period/ir.json} (read, never written): anker
  * {@code Kustvak}, one tussenstap {@code Post}, doel {@code Sein}, beside the rule that COUNTS the created relation.
  * S1 carries the tested timeline for the whole of 2024 and S2 for its first half, so a doel reading is 1; the anker
  * V1 is set up per test so the anker reading differs from it. Measurements 2026-09-23 on main 0f386245, recorded at
@@ -34,7 +34,7 @@ class WholePeriodTargetAttemptWitnessTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
-    private static final Path BASE = Path.of("..", "..", "corpus", "negatief", "wf109-doelgastheer-periode", "ir.json");
+    private static final Path BASE = Path.of("..", "..", "corpus", "negative", "wf109-target-host-period", "ir.json");
 
     private static final String JAAR = "[{\"from\":\"2024-01-01\",\"to\":\"2025-01-01\"}]";
     private static final String HALF = "[{\"from\":\"2024-01-01\",\"to\":\"2024-07-01\"}]";
@@ -126,7 +126,7 @@ class WholePeriodTargetAttemptWitnessTest {
     // ---------------- 3. the fenced witness no longer sinks the package ----------------
 
     @Test void the_wf109_period_witness_refuses_per_construct() throws Exception {
-        // The negatief witness itself (WF-109 FAIL, the third fence). Measured RED FIRST:
+        // The negative witness itself (WF-109 FAIL, the third fence). Measured RED FIRST:
         //     ref / clingo : FAULT (the host names an object this position does not bind)
         //     exec         : PLAYED — 1, the doel reading of a verifier-rejected document
         //     drl-tekst    : EXCLUDE drl compile: … rsGeheelPeriode($subject.getGehesen(), "JAAR", 7, null)

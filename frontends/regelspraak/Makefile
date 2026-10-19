@@ -42,7 +42,7 @@ help:
 	@echo "  make compile               Compile the generated parser + the frontend sources"
 	@echo "  make test                  Run the JUnit 5 suite via the standalone console launcher"
 	@echo "  make ir FILE=\"a.rgs …\" [OUT=…]  Emit the IR JSON (uchar-ir-v1) for one-or-more .rgs files"
-	@echo "  make ir FILE=\"bron.rgs scenario.rgs\" OUT=… CASES=<map>  … and lower the scenarios to case files"
+	@echo "  make ir FILE=\"source.rgs scenario.rgs\" OUT=… CASES=<map>  … and lower the scenarios to case files"
 	@echo "  make clean                 Remove generated sources (gen/) and classes (out/)"
 	@echo "  make clean-jar             Remove the downloaded jars (lib/)"
 

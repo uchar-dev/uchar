@@ -34,7 +34,7 @@ between the same pair, the population plural names no single relation, so no
 binding can be written, and a single-argument count with an
 `elementType` but no range is refused at load. Until L2 it loaded and
 failed WF-034 and WF-048 at once; its witness `wf048-telling-meerduidig` left
-the corpus with WF-048 (`corpus/negatief/README.md`).
+the corpus with WF-048 (`corpus/negative/README.md`).
 
 ## Case derivation (hand-computed, absolute)
 

@@ -21,7 +21,7 @@ own amounts, rights-free.
 > beneden afgerond op twee decimalen. 4. De havenmeester stelt de drie
 > percentages en de drempel vast.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - **havengeld** (lid 1): "het percentage havengeld van het taxatiebedrag van
   de taxatie van de Vondst" — Y read one step from the Vondst over the role
@@ -67,8 +67,8 @@ each), clingo the same, the Drools exec-model branch plays them (`PLAYED 4`),
 and so does the DRL-text branch (`PLAYED 4`). Every case refutes the
 do-nothing executor, and twelve counter-cases, each one expectation moved by
 0,01 or an empty expectation turned into 1, fail in ref, clingo and the exec
-branch. The IR from `bron.rgs` alone is byte-identical to the one written
-beside the cases from `bron.rgs` with `scenario.rgs`. Before the frontend
+branch. The IR from `source.rgs` alone is byte-identical to the one written
+beside the cases from `source.rgs` with `scenario.rgs`. Before the frontend
 read these forms (uchar `921fcc64`), each of the three rules was refused: the
 navigated read with an ERROR that no member "percentage havengeld van het
 taxatiebedrag" exists on Taxatie, the parenthesised operand with a syntax

@@ -7,7 +7,7 @@
 #      count — the suite emits each test program, asserts it verifier-clean,
 #      replays its cases through ref AND clingo, and drives one fixture per
 #      refusal; a suite that ran nothing is a silent greenlight;
-#   2. every corpus golden that carries a bron.flogic re-emits through the
+#   2. every corpus golden that carries a source.flogic re-emits through the
 #      frontend and, after canonicalisation (the same serialiser shape gate 2
 #      enforces, executed from that script — one source of truth), is
 #      byte-identical to the checked-in ir.json;
@@ -29,10 +29,10 @@ fail() { echo "check-flogic: FAIL — $*" >&2; exit 1; }
 # content shifted passes; the name-carrying lists are what cover that direction. A deliberate
 # removal lowers the floor in the same commit.
 # Both counts are unseen elsewhere: the suite is not corpus files at all, and the golden count is
-# the number of bron.flogic sources, which no other gate reads (gate 2 floors the ir.json beside
+# the number of source.flogic sources, which no other gate reads (gate 2 floors the ir.json beside
 # them, so a deleted source would otherwise cost frontend coverage in silence).
 EXPECTED_MIN_CHECKS=81   # 2026-09-12: measured 81 (frontends/flogic/test, the runtest alias)
-EXPECTED_MIN_GOLDENS=1   # 2026-09-12: measured 1 (corpus/golden/**/bron.flogic)
+EXPECTED_MIN_GOLDENS=1   # 2026-09-12: measured 1 (corpus/golden/**/source.flogic)
 
 command -v dune >/dev/null 2>&1 || fail "dune not found (run: eval \$(opam env))"
 command -v python3 >/dev/null 2>&1 || fail "python3 not found (the canonicaliser needs it)"
@@ -78,7 +78,7 @@ PYEOF
 pass=0; diffcount=0; emitfail=0
 while IFS= read -r src; do
   d=$(dirname "$src"); n=${d#corpus/golden/}
-  [ -f "$d/ir.json" ] || fail "$n carries bron.flogic but no ir.json"
+  [ -f "$d/ir.json" ] || fail "$n carries source.flogic but no ir.json"
   raw=$(mktemp -t flogic-gate-XXXXXX.json)
   out=$(mktemp -t flogic-gate-canon-XXXXXX.json)
   if ! "$BIN" "$src" "$raw" >/dev/null 2>&1; then
@@ -93,7 +93,7 @@ while IFS= read -r src; do
     diffcount=$((diffcount + 1))
   fi
   rm -f "$raw" "$out"
-done < <(find corpus/golden -name bron.flogic | sort)
+done < <(find corpus/golden -name source.flogic | sort)
 
 [ $((pass + diffcount + emitfail)) -gt 0 ] \
   || fail "no flogic goldens found under corpus/golden (an empty set is a failure)"

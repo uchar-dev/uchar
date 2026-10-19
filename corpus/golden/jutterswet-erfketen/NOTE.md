@@ -3,10 +3,10 @@
 A hand-computed Jutterswet golden whose rules depend on each other across the
 subtype chain `Klipjutter` ⊑ `Jutter`. It exists for the rule graph of the
 Drools backend and gate 15: until it, no golden had a rule → rule dependency
-over a subtype chain, so the spec leg of `scripts/check-graaf.sh` could not
+over a subtype chain, so the spec leg of `scripts/check-graph.sh` could not
 see that the graph keys a member on its DECLARING type.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 `Jutter` declares `vondstwaarde`, `strandloon`, `kliptoeslag`, `jutterloon`,
 `hoogtepremie` (whole, non-negative) and the characteristic `hoogwerker`;
@@ -76,7 +76,7 @@ has no input at all. Both cases also expect `consistent`.
   counts.
 - Drools: `PLAYED 2` in the exec-model branch and `PLAYED 2` in the DRL-text
   branch.
-- gate 10: `bron.rgs` re-emits this `ir.json` byte for byte.
+- gate 10: `source.rgs` re-emits this `ir.json` byte for byte.
 
 ## noop refutation (gate 7)
 

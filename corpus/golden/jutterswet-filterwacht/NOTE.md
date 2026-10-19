@@ -58,7 +58,7 @@ holds the fold IS evaluated, its filter divides, and it decides both ways
 (`J2` counts 1, `J3` counts 0, not leeg).
 
 Where `J1` IS actief the fold is reached and `V2` divides by 0: that is the
-red case `corpus/rood/vouwfilter-deelt-door-nul`, which pins the fault in
+red case `corpus/red/fold-filter-divides-by-zero`, which pins the fault in
 `ref`, clingo and the Drools exec-model branch.
 
 ## Why the two cases are separate
@@ -78,7 +78,7 @@ the Drools branches.
 `ref` ≡ clingo over all eleven expectations (gates 5 and 6), anchored to the
 hand-written absolutes above. Gate 12 replays both cases in the exec-model
 branch and in the DRL-text branch; the truth-maintenance branch plays them
-too (`TmsCorpusWitnessTest`). Gate 10 re-emits `bron.rgs` to a
+too (`TmsCorpusWitnessTest`). Gate 10 re-emits `source.rgs` to a
 byte-identical `ir.json`, and gate 16 regenerates both case files from
 `scenario.rgs`.
 

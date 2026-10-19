@@ -3,7 +3,7 @@
 The golden of the vocabulary side table (`spec/IR-SPEC.md` ch. 2.12,
 WF-116 to WF-120) and of the RegelSpraak dialect that writes it
 (`frontends/regelspraak/grammar/DIVERGENCES.md`, "Vocabulaires en
-benamingen"). `bron.rgs` declares two vocabularies:
+benamingen"). `source.rgs` declares two vocabularies:
 
     Vocabulaire handboek (taal: nl)
     Vocabulaire cgm (standaard) (taal: nl)
@@ -30,7 +30,7 @@ stands in `diagnostics` (real output of the emitted document):
 
 That warning quotes the designation, which is how the document accounts
 for it (WF-120), and the verifier answers `verifier: PASS`. Without the
-warning the same document is the negatief `wf120-overbodige-benaming-zonder-melding`.
+warning the same document is the negative `wf120-redundant-designation-without-warning`.
 In `cgm`, the default, the designation `NAAM` is required and never
 redundant.
 

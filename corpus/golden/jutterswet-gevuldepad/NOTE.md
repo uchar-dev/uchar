@@ -16,7 +16,7 @@ Since L2 WF-093 (b) carries the ground WF-096 carried until then; WF-096 left
 with L2 (`spec/proposals/V1-WIREMIGRATIE.md` B11). A count whose source names
 a role is refused over a `sourcePath` for another reason: a count's range is
 one step, spelled `sourceRole` (WF-102 (c),
-`corpus/negatief/wf102-bronpad-op-niet-setbron`). The filled count reads a
+`corpus/negative/wf102-source-path-by-negated-set-source`). The filled count reads a
 VALUE per contributor, which is what makes the set source admissible here,
 and that is why ch. 3.4b's word ELEMENTS waited for this kind to exist before
 it had a carrier.
@@ -35,4 +35,4 @@ the join tuples rather than the union of ELEMENTS answers **3** — P1
 counted twice plus P3. The pinned 2 is the flat-union reading: an element
 reached along several intermediates contributes once.
 
-No `bron.rgs`: the kind is wire-first and no frontend spells it.
+No `source.rgs`: the kind is wire-first and no frontend spells it.

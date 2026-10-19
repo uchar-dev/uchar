@@ -29,7 +29,7 @@ tak met truth maintenance geen schrijfgrenscontrole; dat is niet nagemeten.
   evaluatiefout is zoals in ref; voor een regel en voor een verdeling.
 - (b) De tak met truth maintenance (na `20261008-tms-omschakeling` dé exec-model-tak) faalt zoals ref, als logisch
   `Fout`-feit aan het fixpunt; rood eerst, in elke volgorde van de betrokken regels.
-- (c) Een rood geval in `corpus/rood/` als het een evaluatiefout blijft (ref en clingo met hun zin).
+- (c) Een rood geval in `corpus/red/` als het een evaluatiefout blijft (ref en clingo met hun zin).
 - (d) Alle gates groen; de pins van gate 12 bewegen niet.
 
 ## Omvang
@@ -37,7 +37,7 @@ tak met truth maintenance geen schrijfgrenscontrole; dat is niet nagemeten.
 Klein tot middel. Na `20261008-tms-omschakeling`, zodat alleen de tak met truth maintenance mee hoeft; de DRL-teksttak
 volgt met `20261008-drl-teksttak-op-truth-maintenance`.
 
-May touch: `backends/drools/**`, `corpus/rood/<nieuw geval>/`, `spec/verifier/` (voorstel), kaartverplaatsing.
+May touch: `backends/drools/**`, `corpus/red/<nieuw geval>/`, `spec/verifier/` (voorstel), kaartverplaatsing.
 
 ## Na `20261008-tms-omschakeling` (2026-10-11)
 

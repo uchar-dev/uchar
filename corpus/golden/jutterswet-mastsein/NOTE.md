@@ -9,7 +9,7 @@ along it happens to stop, by putting TWO steps between the anker and the doel.
 The question is real and not decorative: a guard has exactly two patterns to
 hang on, so an executor that mistook "the object the chain reaches last" for
 "the object the chain reaches next" would answer a different number here and
-the same number there. The file is authored, not patched — `bron.rgs` through
+the same number there. The file is authored, not patched — `source.rgs` through
 the frontend, `ir.json` its byte-identical emission (gate 10).
 
 ## What makes the reading identifiable
@@ -50,4 +50,4 @@ The world: V1 (Kustvak, gehesen) → P1 (Post, not) → M1 (Mast, gehesen) → S
 The same three moves as its sister, with one extra: hosting the guard on
 `Mast` or on `Post` names an intermediate step, which is an object the chain
 walks THROUGH and no pattern carries — WF-109's zero flank, witnessed at
-`corpus/negatief/wf109-gastheer-derde-type` over the one-step chain.
+`corpus/negative/wf109-host-third-type` over the one-step chain.

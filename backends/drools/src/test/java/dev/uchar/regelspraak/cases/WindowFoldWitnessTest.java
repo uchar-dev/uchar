@@ -63,7 +63,7 @@ class WindowFoldWitnessTest {
             Path.of("..", "..", "corpus", "golden", "jutterswet-schouwploeg");
     private static final Path PLOEGPREMIE =
             Path.of("..", "..", "corpus", "golden", "jutterswet-ploegpremie");
-    private static final Path NEGATIEF = Path.of("..", "..", "corpus", "negatief");
+    private static final Path NEGATIVE = Path.of("..", "..", "corpus", "negative");
 
     private static final String WITHIN = "2024-06-15";
 
@@ -225,11 +225,11 @@ class WindowFoldWitnessTest {
      *  condition) was refused by both branches before, but under a generic scope note in the exec branch and
      *  without the rule's number in the DRL-text branch; it now names WF-112 in the same words as the fold. */
     @Test void both_branches_refuse_the_wf112_negatives_of_the_corpus_by_name() throws Exception {
-        BothBranches.refused(NEGATIEF.resolve("wf112-venster-in-geen-vouw").resolve("ir.json"),
+        BothBranches.refused(NEGATIVE.resolve("wf112-window-in-none-fold").resolve("ir.json"),
                 JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("case1-allen-ervaren.json"))),
                 "periodevenster in de toets van een kwantorvouw onder GEEN over Strandwacht (WF-112)",
                 "de vouwarm van WF-112, tijdvrij");
-        BothBranches.refused(NEGATIEF.resolve("wf112-periodevenster-tellende-kwantor").resolve("ir.json"),
+        BothBranches.refused(NEGATIVE.resolve("wf112-time-window-counting-quantifier").resolve("ir.json"),
                 JSON.readTree("""
                         { "format": "uchar-case-v0", "asOfDate": null,
                           "input": { "instances": [ { "label": "V1", "objectType": "Vondst", "attributes": {},

@@ -32,12 +32,12 @@ The source annotation carries a unit (`kg`) while the count's own type
 carries none. That asymmetry is not sloppiness but the law: the result of
 a filled count is a whole, unitless cardinality whatever the folded
 attribute measures, DERIVED rather than declared, so the annotation is
-crossed against it (WF-091; negatief `wf091-aantalgevulde-eenheid`). The
+crossed against it (WF-091; negative `wf091-filled-count-unit`). The
 unit-bearing operand is also what the annotation-indifference harness
 twists: it substitutes a convertible sister unit on the source and demands
 the same pinned counts back.
 
-`bron.rgs` arrived 2026-09-20 and is this zone's producer-route witness.
+`source.rgs` arrived 2026-09-20 and is this zone's producer-route witness.
 The source language has no spelling for the operation at all, so the kind
 was written on the wire first, with no frontend able to author it; the
 sentence here is a **dialect extension** of the RegelSpraak frontend

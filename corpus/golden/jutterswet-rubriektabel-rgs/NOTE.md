@@ -4,7 +4,7 @@ The RegelSpraak-source twin of `jutterswet-rubriektabel`: an `Aanspoelsel`
 gets the `rubriek` "organisch" when its `soort` is "zeewier" or "wrakhout",
 and "overig" when it is neither; it is `weegplichtig` when at least two of
 three grounds hold. The two `rubriek` rules are written as one `Beslistabel`
-in `bron.rgs` (§12). A decision table has no node of its own: the
+in `source.rgs` (§12). A decision table has no node of its own: the
 frontend's `BeslistabelDesugar` turns every data row into an ordinary rule,
 so `ir.json` carries two plain rules for the table. Gate 10 re-emits the
 document from the source byte for byte, so the desugaring of a table with
@@ -13,7 +13,7 @@ header without rows, which the frontend reports and does not lower. The
 three case files are the carrier's, copied byte for byte, with the same
 absolute expectations.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 ```
 Beslistabel rubriek van een aanspoelsel

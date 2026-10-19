@@ -338,7 +338,7 @@ public sealed interface Expr {
      * all. Both branches agree on {@code type}, which is the node's. WF-069 restricts where it may stand.
      *
      * <p>Never emitter-produced: no RegelSpraak construct lowers to it, so {@link dev.uchar.regelspraak.emit.IrEmitter}
-     * writes none and no {@code bron.rgs} golden carries one. It is here because the union is the shape
+     * writes none and no {@code source.rgs} golden carries one. It is here because the union is the shape
      * every consumer walks: a wire form parsed into anything else is an opaque leaf to {@link #contains} and
      * to every hand-written tree walk built on it, which under-report in silence.
      *

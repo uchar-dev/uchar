@@ -108,7 +108,7 @@ if [ "$n_cases" -eq 0 ]; then
 fi
 # The floor on the green zone's case files. Gate 4 sees the same files plus the red zone's, but its
 # total is the sum of two zones, so a golden case traded for a red one keeps it equal — the floor
-# per zone (here, and gate 8 for corpus/rood) is strictly stronger and is where they live.
+# per zone (here, and gate 8 for corpus/red) is strictly stronger and is where they live.
 if [ "$n_cases" -lt "$EXPECTED_MIN_CASES" ]; then
     echo "FAIL: $n_cases golden case(s) replayed, but EXPECTED_MIN_CASES pins at least $EXPECTED_MIN_CASES — the green corpus shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1

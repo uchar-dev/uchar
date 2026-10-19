@@ -54,7 +54,7 @@ composite that stopped evaluating altogether.
 
 `ref` ≡ `clingo` over all three expectations (gate 5 ≡ gate 6), anchored
 to the hand-written absolutes above; gate 12 replays them in Drools.
-Gate 10 re-emits `bron.rgs` to a byte-identical `ir.json`.
+Gate 10 re-emits `source.rgs` to a byte-identical `ir.json`.
 NOOP-REFUTING: `J2`'s `bergingsaandeel` is derived and absent from the
 raw input, so a do-nothing run mismatches it (gate 7) — the case does
 not ride on the two leeg expectations alone.

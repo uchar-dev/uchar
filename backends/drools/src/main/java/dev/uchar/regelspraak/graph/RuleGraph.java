@@ -45,7 +45,7 @@ import java.util.Set;
  * object creation that assigns an inherited member to a read of it on a strict subtype of the created type, which
  * the creation never mints. The graph is built from the records the loader rebuilds from {@code ir.json}, with the
  * defaults groups and the navigation bindings it returns beside the model, so a consumer without sources gets the
- * graph a resolver's model gives. {@code scripts/check-graaf.sh} holds both claims: the dependencies against the
+ * graph a resolver's model gives. {@code scripts/check-graph.sh} holds both claims: the dependencies against the
  * verifier's, over every golden, and the two routes against each other.
  *
  * <p>The render is jar-only: {@link #mermaid()} is the bare Mermaid flowchart source (offline-usable), and

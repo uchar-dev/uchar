@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * 3". RUNTIME-SEMANTICS ch. 3.8 truncates a fractional count toward zero before the step, so 10 hours divided by 3 step
  * 3 hours and -10 divided by 3 step -3. The RegelSpraak frontend refuses such a source sentence by its form, but the
  * wire carries it and the verifier admits it, so the documents here are corpus documents twisted in memory: the red
- * case {@code datumtijdstap-buiten-bereik} for the calendar-unit step, and the goldens {@code jutterswet-bergingsklok}
+ * case {@code date-time-step-outside-range} for the calendar-unit step, and the goldens {@code jutterswet-bergingsklok}
  * and {@code jutterswet-getijklok} for the day-kind step on a date and on a date-time. Every expectation is the
  * reference interpreter's answer on the same twisted document and case (measured 2026-10-09): 2024-01-01T03:00:00,
  * 2023-12-31T21:00:00, and three springtijdagen from 2026-03-10, 2026-04-15 with and without its 09:15:30. The ASP
@@ -47,7 +47,7 @@ class DateStepDivisionWitnessTest {
     private static final Path CORPUS = Path.of("..", "..", "corpus");
 
     @Test void a_non_terminating_count_in_a_calendar_step_in_each_branch() throws Exception {
-        Path ir = divided(CORPUS.resolve("rood/datumtijdstap-buiten-bereik/ir.json"), "sluittijdstip van een getijpost");
+        Path ir = divided(CORPUS.resolve("red/date-time-step-outside-range/ir.json"), "sluittijdstip van een getijpost");
         JsonNode ten = caseDocument("Getijpost", "G1", "{\"meldtijdstip\":{\"dateTime\":\"2024-01-01T00:00:00\"},"
                 + "\"wachttijd\":{\"number\":\"10\"}}", "sluittijdstip", "{\"dateTime\":\"2024-01-01T03:00:00\"}");
         JsonNode minusTen = caseDocument("Getijpost", "G1", "{\"meldtijdstip\":{\"dateTime\":\"2024-01-01T00:00:00\"},"

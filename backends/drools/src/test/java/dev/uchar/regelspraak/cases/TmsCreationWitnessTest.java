@@ -715,7 +715,7 @@ class TmsCreationWitnessTest {
 
     /** The two sides of the budget the reference interpreter and the ASP backend pin: a chain of 97 mints plays
      *  ({@code synth2-budgetgrens-onder}), and the chains of the three red cases fault at the mint at depth 101
-     *  ({@code corpus/rood} {@code jutterswet-budgetgrens-over}, {@code finite-chain-over-budget} and
+     *  ({@code corpus/red} {@code jutterswet-budgetgrens-over}, {@code finite-chain-over-budget} and
      *  {@code runaway-recursion}), with a sentence that names the creation, its stratum, the depth of the mint and the
      *  type and depth of its subject. The red cases pin the same place for the other two: the reference interpreter's
      *  fragment names the same creation, stratum and depth, and the ASP backend's names its witness on a mint of that
@@ -729,7 +729,7 @@ class TmsCreationWitnessTest {
                 List.of(under.resolve("case1.json"))).status());
         for (Map.Entry<String, String> red : Map.of("jutterswet-budgetgrens-over", "werf de lange keten",
                 "finite-chain-over-budget", "werf de lange keten", "runaway-recursion", "werf eeuwig").entrySet()) {
-            Path d = CORPUS.resolve("rood").resolve(red.getKey());
+            Path d = CORPUS.resolve("red").resolve(red.getKey());
             JsonNode caseDocument = TmsDocuments.JSON.readTree(Files.readString(d.resolve("case1.json")));
             ((com.fasterxml.jackson.databind.node.ObjectNode) caseDocument).putArray("expected");
             String sentence = TmsFaultWitnessTest.playBoth(d.resolve("ir.json"), caseDocument);

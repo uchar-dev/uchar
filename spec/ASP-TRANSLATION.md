@@ -6,7 +6,7 @@ deliverable this document was always growing toward. Part I describes what `back
 every claim is distilled from `backends/clingo/lib/translate.ml` and
 witnessed by the gate set (gate 6, `scripts/check-clingo.sh`, replays
 every golden case through the translation; gate 8,
-`scripts/check-rood.sh`, pins the observable faults; the negatief
+`scripts/check-red.sh`, pins the observable faults; the negative
 corpus under gate 3 pins what the verifier rejects before translation
 is ever reached). The text normates what the code proves — semantics
 itself is defined by `RUNTIME-SEMANTICS.md` and this document must
@@ -81,8 +81,8 @@ Because machine integers wrap silently (the hunted 50000×50000 <
 bounds table is in S6. Scales themselves are capped at 10^9
 (`pow10`); input values are range-checked at load (`scaled_of_value`:
 "does not fit N decimals", "exceeds clingo's integer range" — gate-8
-witnesses `corpus/rood/input-overprecision`,
-`corpus/rood/input-overprecision-param`).
+witnesses `corpus/red/input-overprecision`,
+`corpus/red/input-overprecision-param`).
 
 **Names.** Declared names and case labels land between double quotes
 in the generated program. WF-057 (IR-SPEC ch. 2.1) rejects documents
@@ -192,7 +192,7 @@ Witnesses: every golden case exercises this section (gate 6);
 standing routing by the defaults anchors, `jutterswet-waardestelling`
 (the scalar standing norm) and `jutterswet-borgdeel` (the temporal
 arm); vintages by `jutterswet-aanmeldquotum`,
-`jutterswet-penningvintage` and `corpus/rood/vintage-uncovered-date`;
+`jutterswet-penningvintage` and `corpus/red/vintage-uncovered-date`;
 the symbolic carriage by `jutterswet-vondstetiket` (text),
 `jutterswet-keurstaat` (enum, including the case2 norm-insensitive
 spelling), `jutterswet-borgvlag` (boolean — case2 pins `onwaar` as a
@@ -354,7 +354,7 @@ as a compile-time civil day number; a case without `asOfDate` faults.
 underivable body, for free (more in S9). **Unresolved**: translation
 faults with "Unresolved reached" — the WF-044 unsolved-state guard;
 the rule fails observably (gate-8 witness
-`corpus/rood/wf044-onopgelost-reached`).
+`corpus/red/wf044-unresolved-reached`).
 
 Witnesses: navigation by `synth-navigatiepremie`,
 `jutterswet-vindersloon`, `jutterswet-borgdeel`; evaluationDate and point
@@ -454,7 +454,7 @@ rounding it cannot compute in one integer step.
 - **Abs-division** (gedeeld-door-abs, ch. 2.2): the rounded-division
   path at (richting-nul, 5) — the defined truncation point, both
   signs, no extra fence. Anchor `jutterswet-taxatie` (full sign
-  table); red `corpus/rood/division-abs-by-numeric-zero`.
+  table); red `corpus/red/division-abs-by-numeric-zero`.
 - **Power** (tot-de-macht): `((t)**e)` at compile-time scale sl^e for
   a compile-time non-negative integer exponent; the base operand is
   fenced at the largest value whose e-th power stays inside 2^31 —
@@ -869,7 +869,7 @@ role), and the translator refuses by name what ref refuses: a subject
 type that does not fill `role`, and a `counterpartType` that is not
 declared or not ⊑ the other role's declared filler (WF-034). Witnesses
 `jutterswet-wachtindeling`, `jutterswet-postbezetting`,
-`near-side-rolcheck-to-many`. *Until L2* the near-side `Rollidmaatschap`
+`near-side-role-check-to-many`. *Until L2* the near-side `Rollidmaatschap`
 was a join over the connecting role derived from the type pair
 (`Eval.connecting_role`, shared with ref), and a to-many connecting
 reference was v0's marker, refused loudly; the far-side
@@ -1073,11 +1073,11 @@ supplies: a set with FEWER THAN TWO filled contributors is refused
 too, where `ref` answers without ever performing an addition — the
 single member itself at one contributor, and leeg (som) or 0 (totaal)
 at none. Those two edges are where the two executors part; both are
-recorded in `corpus/negatief/wf091-setbron-totaal-datum/NOTE.md`. Since
+recorded in `corpus/negative/wf091-set-source-total-date/NOTE.md`. Since
 WF-091 (IR-SPEC ch. 4.1) demands a Number as the operand of `sum` and
 `total`, the verifier rejects such a document: its witnesses are
-`corpus/negatief/wf091-setbron-som-datum` and its `total` twin
-`wf091-setbron-totaal-datum`, and this translation's own refusal, kept as
+`corpus/negative/wf091-set-source-sum-date` and its `total` twin
+`wf091-set-source-total-date`, and this translation's own refusal, kept as
 a second line, is witnessed by the backend's suite
 (`backends/clingo/test/test_clingo.ml`). The *sum* is doubly fenced: each
 contributor at 46340 *and* the contributor count at 46340 (`viol` when
@@ -1182,7 +1182,7 @@ and never reads this helper back. A document that could break that is
 refused before it reaches the backend — a negated characteristic check
 inside a filter is a NEGATIVE edge in the dependency walk
 (`RUNTIME-SEMANTICS.md` ch. 6.1), so a cycle through it fails WF-046
-(`corpus/negatief/wf046-negated-clip-kenmerk-cycle`). The complement's
+(`corpus/negative/wf046-negated-clip-characteristic-cycle`). The complement's
 edges are exactly the endpoints the `clN_wu` cutset already carried, so
 the calendar facts are unchanged by the negation.
 
@@ -1223,7 +1223,7 @@ take the same encoding; no corpus case exercises them yet, so they
 keep the loud S19 fault.
 
 *Where the stamp is ABSENT, the som parts company with that row*
-(measured 2026-09-19 on `corpus/rood/som-fallback-always-evaluated`,
+(measured 2026-09-19 on `corpus/red/sum-fallback-always-evaluated`,
 which is exactly this shape): `ref` CARRIES the listed som — its
 contributor arm reads the operand list whenever `elementType` is
 absent, whatever the kind — while this backend does not, since every
@@ -1270,7 +1270,7 @@ granular parameter `param_tl("p",F,T,R)` likewise. A gap or an empty
 date: the body is underivable, leeg for free. An uncovered *vintage*
 is the opposite — the shared `parameterset_check` fail-fast, run
 before emission (gate-8 witness
-`corpus/rood/vintage-uncovered-date`). A point read needs the
+`corpus/red/vintage-uncovered-date`). A point read needs the
 full timeline in the case; the asOfDate-bucket scalar cannot serve it
 and faults (the ch. 4.3a convention: executors fault, never guess).
 
@@ -1391,13 +1391,13 @@ oc_budget.` with `viol("generation budget exhausted",X) :-
 depth(X,oc_budget).` — the runaway chain is UNSAT with its reason,
 exactly where ref's pass budget faults. The back-link pair
 resolution reuses `Eval.connecting_pair`; an ambiguous back-link
-faults in both executors (`corpus/rood/ambiguous-backlink`).
+faults in both executors (`corpus/red/ambiguous-backlink`).
 
 **Fact creation** (ch. 3.4): the symbolic form walks its join chain
 — one positive `role/3` atom per step — and asserts the new filling
 in both directions. The to-one guard is a `viol/2` witness when a
 second filler appears on a to-one role
-(`corpus/rood/to-one-second-filler`). Bean-field-only fact creations
+(`corpus/red/to-one-second-filler`). Bean-field-only fact creations
 fault: the symbolic form is what executes.
 
 Both creation forms sit under S1's validity gate: an excluded
@@ -1511,9 +1511,9 @@ and `jutterswet-centdeling` (cent pot under whole-euro rounding into
 a cent target); uniqueness by `jutterswet-kustregister`,
 `jutterswet-strandregister`, `jutterswet-postwacht`,
 `jutterswet-vondstnummer`; the union by `jutterswet-nummerregister`
-(per-subject collision pins); red: `uni-temporal-key-scalar`,
-`uni-two-temporal-keys`, `uu-temporal-key-scalar`,
-`uu-two-temporal-keys`.
+(per-subject collision pins); red: `uniqueness-temporal-key-scalar`,
+`uniqueness-two-temporal-keys`, `ever-unique-temporal-key-scalar`,
+`ever-unique-two-temporal-keys`.
 
 ### S13. The §9.5 channel
 
@@ -2278,7 +2278,7 @@ exact rationals with a **pinned finite scale S = 4** (vraag 4-A): a
 value that does not terminate at four decimals faults loudly and
 *consistently* in both executors — ref's bounded-write gate and clingo's
 does-not-fit / non-exact-division fence (the red witness
-`corpus/rood/decimal-nonterminating`, `1,0000 / 3,0000` at four decimals:
+`corpus/red/decimal-nonterminating`, `1,0000 / 3,0000` at four decimals:
 ref's *"does not fit the declared 4 decimals"* and clingo's *"non-exact
 division (an explicit rounding is mandated before precision is lost)"*).
 The rational operators and the `ToRat` casts ride the existing numeric
@@ -2457,7 +2457,7 @@ afgerond op 2 decimalen" over a taxatie of 10: ref `oracle: PASS` on
 encoding holds a number only as an integer at a power-of-ten scale. And
 one decided *future* delta, recorded rather than encoded:
 numeric-zero division is today the v0-mirror hard fault in both
-executors (`corpus/rood/division-by-numeric-zero`,
+executors (`corpus/red/division-by-numeric-zero`,
 `division-abs-by-numeric-zero`); ch. 1.4 point 4 routes it into the
 §9.5 channel in v1 — a tracked delta both executors will take
 together.
@@ -2621,14 +2621,14 @@ strictest of the three readings, is what the verifier came round to.
 Since L2 the form has a named arm instead: WF-096 retired with the set
 flag, and a count whose source names a member of the element type is
 refused as WF-093's (`the source of this count aggregation reads '…', a
-member of the element type '…'`; negatief
-`wf093-telling-over-attribuutbron`), on the same ground: a
+member of the element type '…'`; negative
+`wf093-count-over-attribute-source`), on the same ground: a
 count folds the contributors, and such a source hands it values). The LISTED
 som left this catch-all on 2026-09-19 WITHOUT being translated: it has
 a named arm of its own (`a sum over listed operands is not translated
 …`) and is refused exactly as before. The reason it needed a name is
 the catch-all's own sentence:
-`corpus/rood/som-fallback-always-evaluated` fell here, so "no corpus
+`corpus/red/sum-fallback-always-evaluated` fell here, so "no corpus
 case exercises it" was false while that witness stood — the same
 untruth WF-044's condition arm had just removed from the condition
 half. The form is `sum` with an absent `elementType` AND an
@@ -2646,8 +2646,8 @@ carry an absent `elementType`, so absence does not mean "listed"
 there; the `count` listed form is no som; and no document in any zone
 carries a `dimensionSelection` on a `sum` (measured 2026-09-19 over
 corpus and parity, when the field was `dimensieSelectie` on a `Functie`,
-and again 2026-09-25: the only carrier since is the negatief witness
-`wf037-aantalgevulde-dimensieselectie`, on a `filledCount` that WF-037
+and again 2026-09-25: the only carrier since is the negative witness
+`wf037-filled-count-dimension-selection`, on a `filledCount` that WF-037
 refuses);
 what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
@@ -2659,7 +2659,7 @@ check rides the S7 `role/3` join, above, with no to-many exception since
 L2 — until L2 the near-side `Rollidmaatschap`'s **to-many connecting
 reference** faulted loudly in both executors (`the rolcheck's
 connecting reference to … is the to-many role …`; the red case
-`near-side-rolcheck-to-many`, since L2 a golden, RUNTIME-SEMANTICS
+`near-side-role-check-to-many`, since L2 a golden, RUNTIME-SEMANTICS
 ch. 5.8a)). The **day-kind (`dayKind`) predicate** — a
 reference to a declared day kind used as a condition — is itself a loud
 non-translation here: clingo reaches this condition catch-all and ref
@@ -3027,7 +3027,7 @@ unknown object types, attributes, parameters; malformed or missing
 their timelines missing from the case.
 
 Gate 8 keeps the observable-fault subset honest
-(`corpus/rood/`), and the catch-alls guarantee the list can only
+(`corpus/red/`), and the catch-alls guarantee the list can only
 shrink by *translation*, never by silence.
 
 ## Part II — The hand exercises and encoding notes (historical)
@@ -3560,7 +3560,7 @@ the case format's rule pin reads both executors identically; the reason
 text stays executor-internal) — and derives no value
 (leeg as absence); a numeric zero divisor derives a `viol/2` witness —
 UNSAT with the reason named, exactly where ref hard-faults (pinned by
-`corpus/rood/division-by-numeric-zero`). The true quotient
+`corpus/red/division-by-numeric-zero`). The true quotient
 (L/sl)/(R/sr) at out-scale m is L·(sr·m) / (R·sl), where m is
 max(sl, sr) widened to the write target's scale — ref writes the exact
 rational, so a quotient that fits the target's declared decimals
@@ -3598,7 +3598,7 @@ rule-keyed channel fact beside an absent value; numeric zero → a
 `corpus/golden/anchor/jutterswet-taxatie` (the RS ch. 2.2 example row
 on both signs — 10 ÷abs 3 = 3,33333 and −10 ÷abs 3 = −3,33333 — plus
 the exact and empty corners) and observably red by
-`corpus/rood/division-abs-by-numeric-zero` in both executors.
+`corpus/red/division-abs-by-numeric-zero` in both executors.
 
 **Tot-de-macht** (2026-08-21) translates for a compile-time
 non-negative integer exponent: the scaled base L at scale sl grounds
@@ -3678,8 +3678,8 @@ annotated `eenheid:null` still carries its operands' units at runtime,
 and the annotation-based first cut let a comparison of two plus
 composites slip through (caught by the verification round of this very
 fix). The companion verifier gap is closed: WF-035's additive-family
-unit-compatibility clause skipped Verminderd_met entirely (negatief
-`wf035-verminderd-met-incompatible-units` pins the rejection; v0's
+unit-compatibility clause skipped Verminderd_met entirely (negative
+`wf035-reduced-with-incompatible-units` pins the rejection; v0's
 resolver enforces the same, so the widening is mirror-founded).
 
 **The name-quoting fence.** A declared name or case label containing a

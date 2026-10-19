@@ -1,6 +1,6 @@
 # jutterswet-melding-naar-aard — two writers of one target whose conditions exclude each other
 
-The green twin of `rood/jutterswet-dubbele-melding`. Two attributes of a
+The green twin of `red/jutterswet-dubbele-melding`. Two attributes of a
 Vondst are each written by two conditional rules, and on every instance at
 most one of the two conditions holds, so every target has at most one writer
 per instance and each rule's equation holds at the fixpoint

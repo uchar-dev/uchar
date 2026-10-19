@@ -1083,7 +1083,7 @@ fi
 # is never green. Measured 2026-09-04 with exactly that mutant — a refusal at the front of CaseRunner's DRL
 # branch: the leg fell from 9 played goldens to 0 and the gate still said PASS. NB the count is the STATUS
 # HEAD, so a golden whose every case file carried expectedFault would replay nothing and still print
-# "PLAYED 0", counting here — the corpus zone discipline gate 4 pins (golden carries expected, rood carries
+# "PLAYED 0", counting here — the corpus zone discipline gate 4 pins (golden carries expected, red carries
 # expectedFault) makes that shape unreachable today, and this bottom must not come to lean on it.
 if [ "$n_drl" -eq 0 ]; then
     echo 'FAIL: the DRL-text branch PLAYED no golden — the leg measured nothing (an empty played set is never green)' >&2

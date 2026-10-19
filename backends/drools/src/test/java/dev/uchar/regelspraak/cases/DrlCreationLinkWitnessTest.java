@@ -44,7 +44,7 @@ class DrlCreationLinkWitnessTest {
     /** A Wachter creates a Wachter over `opvolging`: two distinct sibling roles, both filled by Wachter. */
     private static final String WACHTERSKETEN = "anchor/jutterswet-wachtersketen";
     /** Jutter and Insigne related by two fact types, and a creation with no binding. */
-    private static final Path AMBIGUOUS = Path.of("..", "..", "corpus", "rood", "ambiguous-backlink", "ir.json");
+    private static final Path AMBIGUOUS = Path.of("..", "..", "corpus", "red", "ambiguous-backlink", "ir.json");
 
     // ---------------- the binding: repeated and self-typed pairs ----------------
 

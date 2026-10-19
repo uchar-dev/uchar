@@ -47,7 +47,7 @@ never evaluates its second member.
 ## The differential square
 
 `ref` ≡ `clingo` over all six expectations (gate 5 ≡ gate 6), anchored to
-the hand-written absolutes; gate 10 re-emits `bron.rgs` byte-identically.
+the hand-written absolutes; gate 10 re-emits `source.rgs` byte-identically.
 NOOP-REFUTING: `R2`'s `ordeteken` and `R3`'s `gelijkteken` are derived and
 absent from the raw input (gate 7). Mutation-wise this golden is the
 artifact that kills the two "fence without the prefix" mutants: with

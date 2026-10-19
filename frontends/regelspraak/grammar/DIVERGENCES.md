@@ -259,7 +259,7 @@ with `is niet een` — the forms §9.2 keeps out of official RegelSpraak. Before
 this card no such document reached a valid IR: it drew the target-mismatch ERROR
 or a syntax error, or it was emitted with a characteristic named `niet …` or
 `geen …` that its object type does not declare, which the verifier refuses
-(WF-022 on a flat rule, the defaults-target check on a group). The 71 `bron.rgs`
+(WF-022 on a flat rule, the defaults-target check on a group). The 71 `source.rgs`
 goldens that existed before this card re-emit byte-identically
 (gate 10). The golden `jutterswet-schorsing` (Jutterswet art. 3 and 4bis) is the
 first whose source carries a negated exception.
@@ -408,7 +408,7 @@ one ERROR however many of its members would be refused.
 exception's justification now carries the base's `>= 12` first; its four cases
 are unchanged and pass in ref, clingo and the Drools exec branch.
 `jutterswet-bergingsdrempel` changed its header to `Afwijking van`, with a
-byte-identical `ir.json`. Every other `bron.rgs` golden re-emits byte-identically
+byte-identical `ir.json`. Every other `source.rgs` golden re-emits byte-identically
 (gate 10), and so does every re-emitted source of the parity zone (gate 11). The
 phrase `Afwijking van` occurs in no source of the repository besides that golden
 (counted 2026-09-25 over the 81 corpus sources and the 47 of the parity zone) and
@@ -601,7 +601,7 @@ heads for one subtype, and the base written after the block. Each plays with the
 hand-computed values, and the DRL-text branch refuses each on its defaults
 sentence. A window on the base and its block plays in ref and clingo, and the
 Drools exec branch excludes it by name, as it excludes every defaults group with
-a dated window. The 116 `bron.rgs` goldens re-emit byte-identically, and so do
+a dated window. The 116 `source.rgs` goldens re-emit byte-identically, and so do
 the two ways around the refusal that played before: the whole tree on the
 subtype, and the base repeated on the subtype with the deviation under it.
 Golden: `jutterswet-meldtermijn-strandjutter`.
@@ -673,7 +673,7 @@ verifier-clean before are refused since — an `Uitzondering op` directly after
 a group whose members do not include its base, and an `Uitzonderingen
 ongeordend` block directly after a group — because at that position the rules
 behind the block would fall outside the group in silence. No `.rgs` source in
-the repository — golden, rood or parity zone — carries a `Regelgroep` at all,
+the repository — golden, red or parity zone — carries a `Regelgroep` at all,
 so nothing in the corpus moves. Witness: `RuleGroupExceptionTest`.
 
 ### Emission (v0-mirror invariant)
@@ -786,7 +786,7 @@ hand. Each refusal cites its rule:
   refused rather than flattened. This refusal is one of that rule's only two
   witnesses anywhere: on the wire `supertype` is a bare string, so a second
   parent cannot be WRITTEN, and WF-106 carries no verifier check and no
-  `corpus/negatief` case (`spec/IR-SPEC.md` ch. 2.2). A head repeating ONE
+  `corpus/negative` case (`spec/IR-SPEC.md` ch. 2.2). A head repeating ONE
   parent is redundant, not a second parent, and is not refused.
 - **WF-104** — self-reference (`X is een X`), and a cycle of two steps or
   more, reported with its named path. The back edge is cut after it is
@@ -1023,7 +1023,7 @@ emitted before, which is the measurement above stated as a property.
   the lowercase form and is recorded rather than discovered.
 - The temporal set source stays refused downstream, not here. A filled count
   over a timeline attribute has no moment at which to ask, and the two OCaml
-  executors refuse it by name (`corpus/rood/aantalgevulde-temporele-setbron`);
+  executors refuse it by name (`corpus/red/filled-count-temporal-set-source`);
   the frontend admits the sentence, as it does for the other folds.
 - The catala and flogic frontends do not get the kind. Each carries its own
   refusal list, and a wire kind they never write costs them nothing.
@@ -1723,7 +1723,7 @@ line aside (witness: `ExtensionRedeclarationTest`).
 ### Inertness — measured, not assumed
 
 Counted on 2026-09-25, before the token existed: the opening `(mag` and the
-whole sequence occur in none of the 81 `bron.rgs` sources of the corpus, none
+whole sequence occur in none of the 81 `source.rgs` sources of the corpus, none
 of the 47 sources of the repository's parity zone, none of the six
 markdown documents of the v2.3.0 specification set, none of 660 `.rgs` files
 in the operational rule collections and toolchain examples outside this
@@ -2398,7 +2398,7 @@ of the distribution emit the same IR, diagnostics and exit code. Witness:
 
 Counted on 2026-09-28 over 643 distinct RegelSpraak sources (by content), in
 six collections: the 107 sources this corpus held before the card (100
-`bron.rgs` and 7 `scenario.rgs`), the 47 sources of the repository's
+`source.rgs` and 7 `scenario.rgs`), the 47 sources of the repository's
 parity zone, 59 sources of the distribution that consumes this repository, and
 outside it 201 sources of a rule workbench, 36 of an operational rule
 collection and 193 of the reference toolchain's corpus. Read as text (comments and literals left out),
@@ -2761,7 +2761,7 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   there is a list, a datatype RegelSpraak does not declare, and a scalar
   parameter that is read and left out faults in `ref` and clingo — binding is
   fail-fast (RUNTIME-SEMANTICS ch. 5.7), as the red case
-  `aanvoergeld-parameter-ongebonden` pins — so the gate refuses what those
+  `aanvoergeld-parameter-unbound` pins — so the gate refuses what those
   executors would refuse, and a parameter set, which gives each parameter it
   carries a value, does not change that.
 - **One document, one IR document**: every scenario of a document must
@@ -2838,7 +2838,7 @@ serialiser, so a case file and an IR document share one shape.
   production route's.
 
 The CLI writes both: `Resolver --ir <out.json> --cases <map> <file.rgs…>`,
-or `make ir FILE="bron.rgs scenario.rgs" OUT=<out.json> CASES=<map>`. The
+or `make ir FILE="source.rgs scenario.rgs" OUT=<out.json> CASES=<map>`. The
 sources are read as one test document. A model with an ERROR writes neither
 the IR document nor a case file; each diagnostic names its file and the line
 in it (`ERROR (<file>:<line>): …`), and no line of the chain of files. Every
@@ -2985,7 +2985,7 @@ schema, the file name, the scope and its IR document, the CLI) and
 `ScenarioParameterSetTest` (the two tokens, a case file with a jaargang and
 a whole timeline written by hand, the exclusive end, and each refusal of
 the parameter set on its line). The corpus:
-nine goldens carry a `scenario.rgs` beside their `bron.rgs` whose lowering
+nine goldens carry a `scenario.rgs` beside their `source.rgs` whose lowering
 reproduces their pinned case files, and whose scenario route reproduces their
 `ir.json`, byte for byte — the handwritten expectations are the anchor —:
 `ww-herleving-inkomen-rgs`, `jutterswet-uitsluiting-rgs`,
@@ -3043,7 +3043,7 @@ draagt geen negatieve rand, zoals een ontkenning (WF-046): dependency cycle thro
 -> penningrecht -> uitsluiting" — measured equal to the verifier's WF-046 lines on the eleven WF-045 cycles in the 868
 documents of the corpus zones and the parity zone, five of them with a negative edge (2026-10-06). A negative edge
 on a cycle WF-045 admits, through a recursive creation, still passes `check`. Witnesses: `DependencyCycleTest`,
-`SelfReadCycleTest`, and the negatief `wf046-kenmerken-lezen-elkaars-ontkenning`.
+`SelfReadCycleTest`, and the negative `wf046-characteristics-read-each-other-negation`.
 
 
 ## Bronvolgorde: what one rule reads of another does not depend on the order
@@ -3274,8 +3274,8 @@ wrong role name one role far in full stay the verifier's. The 72 that bind,
 the declared attribute with `van` in its name and the member inherited from a
 supertype of the filler among them, play unchanged in ref and the ASP backend.
 Every rgs golden and the sources of the parity zone re-emit byte-identically
-(gates 10 and 11). Negatief witnesses: `wf053-jutterswet-ongebonden-lezing-subtype`
-and `wf034-jutterswet-ongebonden-lezing-nergens`.
+(gates 10 and 11). Negatief witnesses: `wf053-jutterswet-unbound-read-subtype`
+and `wf034-jutterswet-unbound-read-nowhere`.
 
 ---
 
@@ -3286,7 +3286,7 @@ calendar step (RUNTIME-SEMANTICS ch. 3.8: 1,9 maanden steps one month, −1,9
 steps −1), so "zijn startdag plus 20,5 mnd" lands half a month short of what
 the sentence says. The wire keeps that meaning: a document with a fractional
 count is well-formed, and golden `jutterswet-vervaltermijn`, written as IR
-without a `bron.rgs`, pins it (`zijn aangiftedatum min 1,9 maanden`, 31-01-2024
+without a `source.rgs`, pins it (`zijn aangiftedatum min 1,9 maanden`, 31-01-2024
 to 31-12-2023) in ref, the ASP backend and both Drools branches. The verifier
 admits such a document, so the refusal is this producer's own and keeps its
 Dutch words (`BrokenDurationTest`).
@@ -3497,8 +3497,8 @@ then names the designations it was composed from and stands on the line of
 the first part the source declares (X for the opgave family; B for the
 group, or S where B is a row; the member for a fold, or the first role where
 the member is generated; "Vocabulaires en benamingen", "Fail-fast
-refusals"); the wire of such a collision is the negatief case
-`wf118-effectieve-naam-vormen`.
+refusals"); the wire of such a collision is the negative case
+`wf118-effective-name-forms`.
 
 The other forms of the table carry no designation, each for a reason:
 

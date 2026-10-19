@@ -1,7 +1,7 @@
 # jutterswet-lichterloon
 
 The **sharing witness** of the let-lowering card (2026-09-01): the first
-corpus golden whose `bron.rgs` carries a §13.4.2.10 *variabelendeel*
+corpus golden whose `source.rgs` carries a §13.4.2.10 *variabelendeel*
 (`Daarbij geldt:`) and whose `ir.json` therefore carries an
 emitter-produced `Let` (`IR-SPEC.md` ch. 4.10).
 
@@ -42,6 +42,6 @@ unitless × € product as €, so every operand of the sum is €).
 
 `ref` ≡ `clingo` over both expectations (gate 5 ≡ gate 6), anchored to
 these hand-written absolutes; the Drools backend PLAYS it (gate 12), so
-ref ≡ clingo ≡ Drools. Gate 10 re-emits `bron.rgs` to a byte-identical
+ref ≡ clingo ≡ Drools. Gate 10 re-emits `source.rgs` to a byte-identical
 `ir.json`. NOOP-REFUTING: `lichterloon` is computed and absent from the
 raw input, so a do-nothing run mismatches it (gate 7).

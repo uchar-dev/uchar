@@ -26,4 +26,4 @@ The instance count stands beside them for the same reason it does in
 `jutterswet-gevuldetelling`: without it the four 2's witness nothing,
 since the reader cannot see that the population is 3.
 
-No `bron.rgs`: the kind is wire-first and no frontend spells it.
+No `source.rgs`: the kind is wire-first and no frontend spells it.

@@ -224,7 +224,7 @@ class FilterFaultWitnessTest {
                 value("J2", "zware vondsten", "1"), expected("J2", "druk", true), consistent())));
     }
 
-    /** The red case {@code vouwfilter-deelt-door-nul}: J1 actief, both rules reach the fold and divide 9 by 0. The
+    /** The red case {@code fold-filter-divides-by-zero}: J1 actief, both rules reach the fold and divide 9 by 0. The
      *  exec-model branch counts a fault at the fixpoint, so it gives both, ordered by the name of the rule; the
      *  destructive exec-model branch stopped at the first, in the order of its evaluation. */
     @Test void where_the_fold_is_reached_the_division_stays_a_fault() throws Exception {

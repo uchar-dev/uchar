@@ -270,7 +270,7 @@ class OriginOnTheWireTest {
         int with = 0, without = 0;
         try (var directories = Files.list(GOLDEN)) {
             for (Path map : directories.sorted().toList()) {
-                Path source = map.resolve("bron.rgs");
+                Path source = map.resolve("source.rgs");
                 if (!Files.exists(source)) continue;
                 RegelSpraakModel m = Resolver.resolve(Files.readString(source));
                 assertTrue(m.isOk(), () -> map + " resolvet niet: " + m.diagnostics);

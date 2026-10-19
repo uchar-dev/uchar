@@ -3,7 +3,7 @@
 The **operand-order** witness of `RUNTIME-SEMANTICS.md` ch. 5.11: a
 node's operands are evaluated **left to right in wire order**, and that
 order is observable because it decides which §9.5 channel facts come
-into being. Hand-written (synth3 family, no `bron.rgs`): the shape is a
+into being. Hand-written (synth3 family, no `source.rgs`): the shape is a
 kernel-level question, not a source-language one.
 
 ## The shape

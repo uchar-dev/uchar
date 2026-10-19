@@ -22,7 +22,7 @@ kenmerk is satisfied by the raw input.
 
 Under `count` a count over this range is ill-formed: a count's range is one
 step, spelled `sourceRole` (WF-102 (c)), and the verifier, ref and the ASP
-backend refuse it in one sentence (`corpus/negatief/wf102-bronpad-op-niet-setbron`).
+backend refuse it in one sentence (`corpus/negative/wf102-source-path-by-negated-set-source`).
 Until L2 WF-096 fenced the same node (`wf096-aantal-setbron-bronpad`, removed
 with WF-096 at L2). The quantifier fold is a different node
 under its own rule, and this document is the witness that it counts over a
@@ -30,7 +30,7 @@ multi-step range, flat.
 
 ## Producer route, measured 2026-09-22
 
-No `bron.rgs`. Each sentence above, fed through the RegelSpraak frontend
+No `source.rgs`. Each sentence above, fed through the RegelSpraak frontend
 (`make -C frontends/regelspraak ir FILE=…`), is refused with the error
 "setlezing buiten een vouwbron", which cited WF-096 until L2 and cites WF-053
 since (measured again 2026-09-24, on both sentences: `… hier wordt één waarde

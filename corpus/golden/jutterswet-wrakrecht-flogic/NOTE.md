@@ -5,14 +5,14 @@ The **second source twin** of the hand-written anchor
 twin `corpus/golden/jutterswet-wrakrecht`: the same three object types, the
 same chain, the same fact type and the same four cases with the same
 absolute values — but with an `ir.json` the F-logic frontend
-(`frontends/flogic`) emitted from a `bron.flogic`. The anchor pins that all
+(`frontends/flogic`) emitted from a `source.flogic`. The anchor pins that all
 three executors agree on inheritance; the two source twins pin that two
 unrelated source languages reach exactly that IR. The four `case*.json`
 files are byte-identical to the anchor's and to the RegelSpraak twin's on
 purpose: **one set of expectations, replayed against a hand-written
 document and two emitted ones.**
 
-## Source (`bron.flogic`)
+## Source (`source.flogic`)
 
 The slice is a subset of Flora-2 2.2 syntax; `frontends/flogic/README.md`
 carries the full table. The four things this document needs from it:

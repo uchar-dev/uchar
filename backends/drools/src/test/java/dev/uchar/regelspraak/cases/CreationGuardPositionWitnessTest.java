@@ -24,8 +24,8 @@ import java.nio.file.Path;
  * generically — and the DRL-text branch PLAYED it, inlining the composite on the doel pattern. A document that
  * skips the verifier reaches this backend as it is, so both branches carry the fence themselves.
  *
- * <p>The two corpus negatives of the same fences ({@code wf109-doelgastheer-samengesteld},
- * {@code wf109-doelgastheer-genavigeerd}) were refused by both branches already, under the generic note; they
+ * <p>The two corpus negatives of the same fences ({@code wf109-target-host-compound},
+ * {@code wf109-target-host-navigated}) were refused by both branches already, under the generic note; they
  * now carry the rule's name as well.
  */
 class CreationGuardPositionWitnessTest {
@@ -35,7 +35,7 @@ class CreationGuardPositionWitnessTest {
     /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
     private static final Path BAKENSEIN = Path.of("..", "..", "corpus", "golden", "jutterswet-bakensein");
     private static final Path SEINHIJSING = Path.of("..", "..", "corpus", "golden", "jutterswet-seinhijsing");
-    private static final Path NEGATIEF = Path.of("..", "..", "corpus", "negatief");
+    private static final Path NEGATIVE = Path.of("..", "..", "corpus", "negative");
 
     @TempDir Path tmp;
 
@@ -65,8 +65,8 @@ class CreationGuardPositionWitnessTest {
     /** The two corpus negatives of fences one and two, loaded without the verifier. */
     @Test void the_wf109_target_negatives_refuse_both_branches_by_name() throws Exception {
         JsonNode c = JSON.readTree(Files.readString(SEINHIJSING.resolve("case.json")));
-        for (String negative : new String[] { "wf109-doelgastheer-samengesteld", "wf109-doelgastheer-genavigeerd" })
-            BothBranches.refused(NEGATIEF.resolve(negative).resolve("ir.json"), c,
+        for (String negative : new String[] { "wf109-target-host-compound", "wf109-target-host-navigated" })
+            BothBranches.refused(NEGATIVE.resolve(negative).resolve("ir.json"), c,
                     "doelgastheer binnen een samengestelde of genavigeerde voorwaarde: alleen de anker is gebonden (WF-109)", negative);
     }
 

@@ -55,7 +55,7 @@ evaluates its second member at all.
 ## The differential square
 
 `ref` ≡ `clingo` over all three expectations (gate 5 ≡ gate 6), anchored
-to the hand-written absolutes above. Gate 10 re-emits `bron.rgs` to a
+to the hand-written absolutes above. Gate 10 re-emits `source.rgs` to a
 byte-identical `ir.json`. NOOP-REFUTING: `K2`'s `klipteken` is derived and
 absent from the raw input (gate 7). The Drools backend's channel status
 for this golden is pinned by gate 12 as for every other.

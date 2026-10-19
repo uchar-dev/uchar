@@ -86,7 +86,7 @@ class GraphDefaultReadTest {
         return comparable.stream().map(ir -> DynamicTest.dynamicTest(CORPUS.relativize(ir.getParent()).toString(), () -> {
             IrLoader.Loaded w = IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
             union(w.model(), w.prioritizedDefaults(), ProducerConsumer.wireNavigation(w), ir + " (wire)");
-            Path rgs = ir.resolveSibling("bron.rgs");
+            Path rgs = ir.resolveSibling("source.rgs");
             if (Files.exists(rgs)) {
                 RegelSpraakModel m = Resolver.resolve(Files.readString(rgs) + "\n", rgs.toString());
                 assertTrue(m.isOk(), () -> rgs + " resolvet niet: " + m.diagnostics);

@@ -35,7 +35,7 @@ two cases pin absolute values (`kadegeld` 5 and 9, `standaardvaarwater`
   only (WF-038), and the composite positions are numeric — so a write
   carries the identity.
 
-Measured 2026-09-25 with the two mutants over the golden and rood zones
+Measured 2026-09-25 with the two mutants over the golden and red zones
 (301 documents): each turns this golden red. The lookup mutant leaves every
 other document clean; the identity mutant also turns
 `jutterswet-meldtermijnen` red, whose write carries a sum-type domain name in

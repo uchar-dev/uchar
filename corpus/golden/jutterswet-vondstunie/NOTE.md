@@ -60,7 +60,7 @@ keer" aan beide kanten.
 
 ## Rood-eerst
 
-Gemeten op de frontend van vóór deze kaart (5b42e5b9): deze `bron.rgs` werd
+Gemeten op de frontend van vóór deze kaart (5b42e5b9): deze `source.rgs` werd
 geweigerd met de WF-037-ariteitsfout en bereikte de schijf niet. Sinds de kaart
 emitteert zij byte-identiek aan de gecommitte `ir.json` (poort 10), is het
 document verifier-schoon (poort 3) en antwoorden `ref` en clingo dezelfde vier

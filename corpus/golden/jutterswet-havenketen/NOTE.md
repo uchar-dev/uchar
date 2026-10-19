@@ -14,7 +14,7 @@ through these roles:
 
 The afgeleide openingsdag of a Haven is its openingsdag, and the fact
 creation `werving` makes every geworven jutter of the kustwacht of a Haven
-a havenjutter of that Haven. In `bron.rgs` the four readers come first and
+a havenjutter of that Haven. In `source.rgs` the four readers come first and
 the fact creation and the derivation last.
 
 The forms: a comparison and a gevuld test over two roles, a date

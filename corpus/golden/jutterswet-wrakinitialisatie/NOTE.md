@@ -84,5 +84,5 @@ Reading every default of the composed stack on the owner's level again
 brings back the own-read fault in `ref` and the ASP backend and the
 far-side refusal in the Drools exec-model branch.
 
-The source is `bron.rgs`; gate 10 re-emits this document from it
+The source is `source.rgs`; gate 10 re-emits this document from it
 byte-identically.

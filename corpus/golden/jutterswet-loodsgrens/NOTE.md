@@ -24,7 +24,7 @@ Het loodstal van een Loodspost moet berekend worden als het aantal loodsen van
 `IR-SPEC.md` ch. 4.5 (`QuantifierFold`, WF-108); semantics
 `RUNTIME-SEMANTICS.md` ch. 3.9a.
 
-## Why this ir.json is hand-written and carries no bron.rgs
+## Why this ir.json is hand-written and carries no source.rgs
 
 When it was written, for the reason the rest of the non-temporal family was:
 `RuleChecker.kwantorvouw` lowered only the §8.2-QUALIFIED condition, so the
@@ -35,7 +35,7 @@ a `QuantifierFold`, without a diagnostic; where the lowering declines — measur
 with "ten minste 0 van de loodsen" — the refusal cites WF-053 since L2 (`… hier
 wordt één waarde verwacht, en een meervoudige stap in een lezing vraagt een
 aggregatie (WF-053, IR-SPEC ch. 4.1a)`). The document is still the hand-written
-one and carries no `bron.rgs`, so gate 10 does not see it.
+one and carries no `source.rgs`, so gate 10 does not see it.
 
 ## What it covers that the others do not
 

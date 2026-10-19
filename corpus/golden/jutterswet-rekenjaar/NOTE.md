@@ -18,7 +18,7 @@ rules:
 
 The node stands in four positions: as a rule value, as the left operand
 of a subtraction, as the right operand of a comparison and as the left
-operand of a comparison. The source is `bron.rgs`; gate 10 re-emits this
+operand of a comparison. The source is `source.rgs`; gate 10 re-emits this
 document from it byte-identically.
 
 ## Hand computation (absolute)
@@ -67,7 +67,7 @@ every executor ("the evaluationYear context value needs an evaluation
 date; the case carries asOfDate null"), which `ref/test` (the ch. 8.2
 worked example), the ASP backend's own suite and the Drools backend's
 `EvaluationYearWitnessTest` pin, and gate 8 for all three executors through the
-red case `corpus/rood/rekenjaar-zonder-rekendatum` (this document with a
+red case `corpus/red/evaluation-year-without-evaluation-date` (this document with a
 dateless case).
 
 ## noop refutation (gate 7)

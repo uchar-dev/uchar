@@ -2,9 +2,9 @@
 
 One directory per golden: `ir.json` (the `uchar-ir-v1` document),
 one or more `case*.json` files, a `NOTE.md` with the hand computation,
-and — where a frontend carries the form — a source file (`bron.rgs`,
-authored against the Jutterswet in `corpus/jutterswet/`; `bron.catala_en`;
-or `bron.flogic`) that must re-emit the committed IR byte-identically
+and — where a frontend carries the form — a source file (`source.rgs`,
+authored against the Jutterswet in `corpus/jutterswet/`; `source.catala_en`;
+or `source.flogic`) that must re-emit the committed IR byte-identically
 (gates 9, 10, 14). Goldens without a source are hand-written IR for forms
 no frontend produces yet. Every golden passes the full gate set: schema
 round-trip (gate 2), verifier (gate 3), case schema (gate 4), exact
@@ -191,7 +191,7 @@ field appears — where the Catala dump carries it populated. At this
 golden's admission the RegelSpraak emitter could not produce the field
 at all; it has since learned the layered form
 (`jutterswet-wrakrecht` carries populated `prioritizedDefaults` from
-`bron.rgs`), while this pair deliberately keeps the flat render: the
+`source.rgs`), while this pair deliberately keeps the flat render: the
 form difference over identical inputs and outcomes is what it pins. The
 render is faithful on every input, not just the five cases: both rules
 decide the same value (`waar`), so the ordered defaults collapse to a

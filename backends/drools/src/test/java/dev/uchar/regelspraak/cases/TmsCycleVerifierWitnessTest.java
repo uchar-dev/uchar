@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code jutterswet-opvolgerversies} and {@code synth2-budgetgrens-onder}), and the three wrakboekingen, "over de leden
  * Strandrecht.grondslag en Wrakrecht.bergingsvergoeding via de regel "bereken de bergingsvergoeding van een wrakrecht"
  * en de objectcreatie "boek een strandrecht bij elk wrakrecht""; and of the 22 negative cases one passed,
- * {@code wf045-subtypecreatie-cyclus}, a cycle through the population of a creation that mints a subtype of its own
+ * {@code wf045-subtype-creation-cycle}, a cycle through the population of a creation that mints a subtype of its own
  * subject.
  */
 class TmsCycleVerifierWitnessTest {
@@ -65,7 +65,7 @@ class TmsCycleVerifierWitnessTest {
     @Test void each_negative_document_of_wf045_wf046_and_wf051_is_refused() throws Exception {
         List<String> admitted = new ArrayList<>();
         int n = 0;
-        for (Path ir : documents(CORPUS.resolve("negatief"), "wf04[56]-.*|wf051-.*")) {
+        for (Path ir : documents(CORPUS.resolve("negative"), "wf04[56]-.*|wf051-.*")) {
             IrLoader.Loaded l = IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(ir)));
             if (Cycles.refusal(l) == null) admitted.add(CORPUS.relativize(ir.getParent()).toString());
             n++;

@@ -588,7 +588,7 @@ class ScenarioLoweringTest {
 
     @Test void the_cases_mode_writes_the_ir_document_and_the_case_files() throws IOException {
         Path d = Files.createTempDirectory("scenario-cli");
-        Path source = Files.writeString(d.resolve("bron.rgs"), MODEL);
+        Path source = Files.writeString(d.resolve("source.rgs"), MODEL);
         Path scen = Files.writeString(d.resolve("scenario.rgs"), SCENARIO);
         Output u = cli(d.resolve("ir.json"), d.resolve("cases"), source, scen);
         assertEquals(0, u.code(), u.tekst());
@@ -599,7 +599,7 @@ class ScenarioLoweringTest {
 
     @Test void the_cases_mode_writes_nothing_at_an_error_and_names_file_and_line() throws IOException {
         Path d = Files.createTempDirectory("scenario-cli");
-        Path source = Files.writeString(d.resolve("bron.rgs"), MODEL);
+        Path source = Files.writeString(d.resolve("source.rgs"), MODEL);
         Path scen = Files.writeString(d.resolve("scenario.rgs"), SCENARIO.replace("met peildatum 15-03-2024",
                 "met peildatum 15-03-2024 12:00:00.000"));
         Output u = cli(d.resolve("ir.json"), d.resolve("cases"), source, scen);
@@ -615,7 +615,7 @@ class ScenarioLoweringTest {
     @Test void the_cases_mode_refuses_a_directory_with_a_case_file_that_it_does_not_write() throws IOException {
         // before: the old file stayed beside the new ones, and the run wrote them and exited 0
         Path d = Files.createTempDirectory("scenario-cli");
-        Path source = Files.writeString(d.resolve("bron.rgs"), MODEL);
+        Path source = Files.writeString(d.resolve("source.rgs"), MODEL);
         Path scen = Files.writeString(d.resolve("scenario.rgs"), SCENARIO);
         Files.createDirectories(d.resolve("cases"));
         Files.writeString(d.resolve("cases/case9-oud.json"), "{}\n");
@@ -634,7 +634,7 @@ class ScenarioLoweringTest {
 
     @Test void a_document_without_scenario_has_nothing_to_lower() throws IOException {
         Path d = Files.createTempDirectory("scenario-cli");
-        Path source = Files.writeString(d.resolve("bron.rgs"), MODEL);
+        Path source = Files.writeString(d.resolve("source.rgs"), MODEL);
         Output u = cli(d.resolve("ir.json"), d.resolve("cases"), source);
         assertEquals(1, u.code());
         assertTrue(u.tekst().contains("het document draagt geen scenario, dus er valt geen casebestand te schrijven"),

@@ -12,7 +12,7 @@ RegelSpraak-bron komt. `nx`, `ny` en `nz` zijn abstracte gronden, zoals in
 het anker: de golden pint de uitvoeringssemantiek, geen lezing van een
 wettekst.
 
-## De bron (`bron.rgs`)
+## De bron (`source.rgs`)
 
 - basisregel `vrijstelling van een jutter`: `Een Jutter is vrijgesteld
   indien hij nx is`;

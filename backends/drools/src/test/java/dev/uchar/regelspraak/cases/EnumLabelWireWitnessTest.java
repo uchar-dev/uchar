@@ -60,7 +60,7 @@ class EnumLabelWireWitnessTest {
      *  kenmerk condition and an attribute-to-attribute copy. Hand-written IR. */
     private static final String KEURSTAAT = "jutterswet-keurstaat";
 
-    /** The same two positions emitted from a {@code bron.rgs} (card v8-enum-emitter): the literal in the
+    /** The same two positions emitted from a {@code source.rgs} (card v8-enum-emitter): the literal in the
      *  write target and in the comparison, and a derived enum read back as a comparison operand. */
     private static final String VONDSTKLASSE = "jutterswet-vondstklasse";
 

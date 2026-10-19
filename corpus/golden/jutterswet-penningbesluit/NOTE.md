@@ -8,13 +8,13 @@ penningbesluit carries **no `connectingRole` binding**: its sentence names
 the created TYPE, not a role, so the back-link is the uniquely-derivable
 connecting relation of `RUNTIME-SEMANTICS.md` ch. 5.5 (`IR-SPEC.md` ch. 3.3).
 Rules read the made object back over that relation in both directions. Gate
-10 re-emits `ir.json` from `bron.rgs` byte for byte.
+10 re-emits `ir.json` from `source.rgs` byte for byte.
 
 The parameters follow art. 7 and the overgangsrecht for the penningjaar
 2025 in `corpus/jutterswet/wet-v4.md`: a vondstdrempel of 12 and a
 penningbedrag of 250 euro.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - `Objecttype de Jutter` with the characteristic `penninggerechtigd` and
   the attributes `aantal aangemelde vondsten` and `penningjaar` (input),

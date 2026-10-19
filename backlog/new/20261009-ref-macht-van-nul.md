@@ -5,7 +5,7 @@
 hoofdsessie vastgelegd en nagemeten volgens de afspraak dat een bestaande bug een
 kaart krijgt. Gemeten op uchar main (`_build` van de hoofdcheckout, ref
 ongewijzigd sinds `54ba99f7`); het document staat in
-`/tmp/lens-bugs/w2/f1/d/c3-macht/` (`bron.rgs`, `ir.json`, `case2.json`).*
+`/tmp/lens-bugs/w2/f1/d/c3-macht/` (`source.rgs`, `ir.json`, `case2.json`).*
 
 ## Aanleiding
 
@@ -34,7 +34,7 @@ deelnemers −1).
 
 - (a) Ref geeft `EVALUATION FAULT: division by numeric zero` (of de zin die
   ch. 1.4 voor deze vorm vraagt), rood eerst, met een voorbeeld in `ref/test/`.
-- (b) Een rood geval in `corpus/rood` met `expectedFault` voor ref en, waar ze
+- (b) Een rood geval in `corpus/red` met `expectedFault` voor ref en, waar ze
   de vorm dragen, Drools; clingo weigert de vorm al bij de vertaling.
 - (c) Nagaan of andere plaatsen in `ref/lib/arith.ml` een Zarith-exceptie
   ongevangen laten (`Q.inv`, `Q.div`, `Z.div` op een nul).
@@ -42,5 +42,5 @@ deelnemers −1).
 
 ## Omvang
 
-Klein. May touch: `ref/lib/arith.ml`, `ref/test/`, `corpus/rood/<nieuw geval>/`,
+Klein. May touch: `ref/lib/arith.ml`, `ref/test/`, `corpus/red/<nieuw geval>/`,
 kaartverplaatsing.

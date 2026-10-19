@@ -71,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Two initialisations on sister subtypes play, and one on their supertype beside them is refused (WF-079 per
  * concrete type). A rule on a member an object creation sets: {@code TmsCreationInputWitnessTest}.
  *
- * <p>The red case {@code corpus/rood/jutterswet-dubbele-melding} gives on this branch the fault its
+ * <p>The red case {@code corpus/red/jutterswet-dubbele-melding} gives on this branch the fault its
  * {@code expectedFault} pins (EF-016 and its parameters), the writers in the order of the document, as the reference
  * interpreter names them.
  *
@@ -341,7 +341,7 @@ class TmsWritersWitnessTest {
     // ---------------- the red case of the corpus ----------------
 
     /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
-    private static final Path DOUBLE_MESSAGE = Path.of("..", "..", "corpus", "rood", "jutterswet-dubbele-melding");
+    private static final Path DOUBLE_MESSAGE = Path.of("..", "..", "corpus", "red", "jutterswet-dubbele-melding");
 
     @Test void the_red_case_gives_the_fault_with_the_sentence_of_ref() throws Exception {
         List<Path> cases;

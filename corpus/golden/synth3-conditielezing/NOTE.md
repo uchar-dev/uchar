@@ -4,7 +4,7 @@ The **condition-is-a-read** witness of ch. 10.6 clause 2 + WF-077: an
 `IfThenElse` *condition* operand is a **read** of the binder like any
 other, so a binder whose value is leeg fires the barrier **there** —
 before either branch is considered. Hand-written (synth3 family, no
-`bron.rgs`): it pins where an executor counts the read, which is a
+`source.rgs`): it pins where an executor counts the read, which is a
 kernel question.
 
 ## The shape

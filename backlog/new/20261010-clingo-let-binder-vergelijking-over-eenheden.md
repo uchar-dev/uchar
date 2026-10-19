@@ -43,7 +43,7 @@ dus twee kaarten.
 
 ## Acceptatie (bij oppakken aanscherpen)
 
-- (a) Een golden met deze vorm, eigen Jutterswet-casus, rechtenvrij, met `bron.rgs`, en ten minste een case waarin de
+- (a) Een golden met deze vorm, eigen Jutterswet-casus, rechtenvrij, met `source.rgs`, en ten minste een case waarin de
   kale vergelijking de andere tak kiest (zoals 500 m tegen 1 km) en een waarin beide lezingen dezelfde tak kiezen.
 - (b) Clingo gerepareerd, rood eerst: ref ≡ clingo ≡ Drools (exec-model-tak) op de golden, tegen absolute
   verwachtingen. Nagaan of dezelfde lacune bestaat voor een binder in een optelling met een waarde in een andere eenheid

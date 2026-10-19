@@ -2547,7 +2547,7 @@
         },
         "supertype": {
           "type": "string",
-          "description": "The single direct parent, by declared name; absent = a root type. An extension field under the Method's discipline: optional, never required, never null, written whole or not at all. The type is a bare string and NOT an array on purpose (IR-SPEC ch. 2.2, WF-106): single parenthood holds by wire SHAPE, so a second direct parent is not a document the verifier rejects but one that cannot be written — this closed node refuses the array form here, which is where that refusal is enforced. The cost is stated rather than hidden: WF-106 therefore carries no verifier check and no corpus/negatief witness, and its witnesses live in the frontends that read the language above this wire."
+          "description": "The single direct parent, by declared name; absent = a root type. An extension field under the Method's discipline: optional, never required, never null, written whole or not at all. The type is a bare string and NOT an array on purpose (IR-SPEC ch. 2.2, WF-106): single parenthood holds by wire SHAPE, so a second direct parent is not a document the verifier rejects but one that cannot be written — this closed node refuses the array form here, which is where that refusal is enforced. The cost is stated rather than hidden: WF-106 therefore carries no verifier check and no corpus/negative witness, and its witnesses live in the frontends that read the language above this wire."
         },
         "animate": {
           "type": "boolean"

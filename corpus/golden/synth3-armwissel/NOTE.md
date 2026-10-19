@@ -1,7 +1,7 @@
 # synth3-armwissel
 
 The same nested `Let` as `synth3-armverdeling`, with **the branch condition
-reading the nested binder**. Hand-written `ir.json`, no `bron.rgs` (no
+reading the nested binder**. Hand-written `ir.json`, no `source.rgs` (no
 source language emits an `IfThenElse`, IR-SPEC ch. 4.10).
 
 One character of difference in the condition, and the two documents need

@@ -36,7 +36,7 @@ class VocabularyDialectTest {
 
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden", "jutterswet-vocabulaires");
 
-    private static String source() throws Exception { return Files.readString(GOLDEN.resolve("bron.rgs")); }
+    private static String source() throws Exception { return Files.readString(GOLDEN.resolve("source.rgs")); }
 
     // ---------------- the tokens and the grammar ----------------
 

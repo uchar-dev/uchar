@@ -25,7 +25,7 @@
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
-ZONES='corpus/golden corpus/negatief corpus/rood spec/schema spec/verifier ref backends frontends spec/IR-SPEC.md spec/RUNTIME-SEMANTICS.md'
+ZONES='corpus/golden corpus/negative corpus/red spec/schema spec/verifier ref backends frontends spec/IR-SPEC.md spec/RUNTIME-SEMANTICS.md'
 EXCEPTIONS=''
 # 'main-spec' is anchored on a leading non-letter so it flags a citation into the
 # private RegelSpraak spec markdown (e.g. "(main-spec §12, L4633)") without matching
@@ -152,7 +152,7 @@ rm -f "$RENAME_HITS"
 [ "$c_card" -ge 1 ] || { echo "FAIL: rename tripwire stale — the rename card is gone from backlog/doing|done/" >&2; status=1; }
 [ "$c_rungolden" -ge 1 ] || { echo "FAIL: rename tripwire stale — the runGolden false-positive allowance no longer matches anything; drop it from this list" >&2; status=1; }
 # Pathnames too: git grep sees content only, so a tracked PATH carrying the
-# old vocabulary (a future negatief dir, a fixture) would slip through the
+# old vocabulary (a future negative dir, a fixture) would slip through the
 # scan above. The plan document itself and toka/ (original form) are the
 # only allowed carriers.
 BAD_RENAME_PATHS=$(git ls-files | grep -iE 'ladder|rung' | grep -v -e '^HERNOEM_LADDER_20260829\.md$' -e '^toka/' || true)

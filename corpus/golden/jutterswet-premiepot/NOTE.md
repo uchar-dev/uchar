@@ -36,7 +36,7 @@ below. The casus of the parity zone has the same shape in its rules
 The role check read nothing until the same date; the edge to
 `premiegerechtigd` is the one it now draws.
 
-The order of the two creations in `bron.rgs` does not matter: with the fact
+The order of the two creations in `source.rgs` does not matter: with the fact
 creation written above the object creation the frontend writes the same
 document byte for byte. Until 2026-10-06 it dropped the fact creation then,
 with the WARNING "referentieveld-zijde voor tussenstap 'premiehaven' niet af

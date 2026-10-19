@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.util.TreeSet;
 
 /**
- * The command line the rule-graph gate drives (scripts/check-graaf.sh): for every {@code ir.json} named, the
+ * The command line the rule-graph gate drives (scripts/check-graph.sh): for every {@code ir.json} named, the
  * {@link RuleGraph} of the model the LOADER rebuilds from the wire, with the defaults groups and the navigation
  * bindings the loader returns beside it, printed as its dependencies. One block per document:
  *

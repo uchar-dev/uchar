@@ -4,7 +4,7 @@
 # is a case file written in RegelSpraak, and its lowering must reproduce the
 # pinned corpus.
 #
-# For every golden that carries a scenario.rgs beside its bron.rgs, the
+# For every golden that carries a scenario.rgs beside its source.rgs, the
 # frontend's --cases mode reads the two as one test document and must
 #   1. write exactly the golden's pinned case files — the same file names, none
 #      missing and none extra — each byte-identical to the pinned file: the
@@ -48,12 +48,12 @@ JAR=$(ls "$FE"/lib/antlr-*-complete.jar 2>/dev/null | head -1)
 goldens=0; cases=0; bad=0
 while IFS= read -r scen; do
   d=$(dirname "$scen"); n=${d#corpus/golden/}
-  [ -f "$d/bron.rgs" ] || fail "$n carries scenario.rgs but no bron.rgs"
+  [ -f "$d/source.rgs" ] || fail "$n carries scenario.rgs but no source.rgs"
   [ -f "$d/ir.json" ] || fail "$n carries scenario.rgs but no ir.json"
   goldens=$((goldens + 1))
   tmp=$(mktemp -d -t scenario-gate-XXXXXX)
   if ! out=$(java -cp "$JAR:$FE/out" dev.uchar.regelspraak.resolver.Resolver \
-      --ir "$tmp/ir.json" --cases "$tmp/cases" "$d/bron.rgs" "$d/scenario.rgs" 2>&1); then
+      --ir "$tmp/ir.json" --cases "$tmp/cases" "$d/source.rgs" "$d/scenario.rgs" 2>&1); then
     echo "LOWER FAIL: $n (the frontend refuses its own scenario document)"
     echo "$out" | sed 's/^/    /'
     bad=$((bad + 1)); rm -rf "$tmp"; continue

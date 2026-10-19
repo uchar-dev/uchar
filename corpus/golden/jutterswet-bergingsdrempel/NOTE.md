@@ -19,7 +19,7 @@ op`, which carried its own condition only at the time; the `ir.json` of
 the `Afwijking van` header is byte-identical to the one the old header
 gave.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - Base rule **bergingsbevoegd bij quotum**: a Jutter is `bergingsbevoegd`
   when `aantal geborgen wrakken >= 20`.

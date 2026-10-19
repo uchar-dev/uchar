@@ -13,7 +13,7 @@ Through a type chain WF-050's creation clause refuses a creation whose
 `createdType` lies strictly below the group's subject (`IR-SPEC.md` ch. 6.1,
 WF-050): the created instance inherits the group's stack (`RUNTIME-SEMANTICS.md`
 ch. 7.10), which never absorbs a creation-time write, so that instance has two
-writers. `corpus/negatief/wf050-keten-creatie-naast-groep` pins that
+writers. `corpus/negative/wf050-chain-creation-beside-group` pins that
 direction. This golden pins the other one. A creation is not polymorphic: it
 creates an instance of exactly its `createdType`. Here that is a plain
 `Strandrecht`, which does not inherit the `Wrakrecht` stack, so the group never
@@ -32,7 +32,7 @@ this golden is refused,
     object creation is never folded into a stack, so an instance of
     Strandrecht it creates has both writers
 
-and none of the other 761 documents in golden, rood, negatief and the parity
+and none of the other 761 documents in golden, red, negative and the parity
 zone changes its report.
 
 ## Hand computation (absolute)

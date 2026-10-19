@@ -17,7 +17,7 @@ field) that tests one of those derived values:
 | losse gewicht | de som van het gewicht van alle vondsten van de Berging | hij is niet gedateerd | a rule on the afgeleide dag |
 | meldklasse | in the condition: het gewicht van ten minste één van de vondsten van de Berging ... groter is dan 15 | zijn afgeleide dag is leeg | the defaults group |
 
-`bron.rgs` declares the four readers before the writers. `ref/` and the ASP
+`source.rgs` declares the four readers before the writers. `ref/` and the ASP
 backend evaluate each fold after the writers of what its subselection reads
 negatively (the leeg test and the negated characteristic are negative edges,
 IR-SPEC ch. 5.5 and WF-046), and in their fixpoint a comparison on a value

@@ -46,6 +46,6 @@ exactly what the inlined form does. Only V2 separates them.
 `ref` ≡ `clingo` over both expectations (gate 5 ≡ gate 6), anchored to
 these hand-written absolutes; the Drools backend PLAYS it (gate 12), so
 ref ≡ clingo ≡ Drools — all three agree that V2 stays leeg. Gate 10
-re-emits `bron.rgs` to a byte-identical `ir.json`. NOOP-REFUTING: V1's
+re-emits `source.rgs` to a byte-identical `ir.json`. NOOP-REFUTING: V1's
 `vondstrecht` is computed and absent from the raw input, so a do-nothing
 run mismatches it (gate 7) — the case does not ride on V2's leeg alone.

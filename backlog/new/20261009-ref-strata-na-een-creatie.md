@@ -85,12 +85,12 @@ van clingo. Deze kaart houdt de goldens.
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Een golden met deze vorm, de lezer eerst, eigen Jutterswet-casus,
-  rechtenvrij, met `bron.rgs`, `ir.json` en de case hierboven; ref, clingo en de
+  rechtenvrij, met `source.rgs`, `ir.json` en de case hierboven; ref, clingo en de
   Drools-takken die de vorm dragen spelen hem; een tweede golden voor de vorm
   met de consistentie. Voorbeelden in `ref/test/` voor beide volgordes.
 - (b) Geland met `20261009-creatie-initialisatie-leest-groeiende-waarde` (zie
   hierboven); bij het oppakken alleen nameten dat ref beide goldens speelt. Geen
-  bestaande verwachting in `corpus/golden` of `corpus/rood` verandert.
+  bestaande verwachting in `corpus/golden` of `corpus/red` verandert.
 - (c) Gates 5, 6, 8 en 12 groen (in `scripts/check-drools.sh` gaan de pins
   `EXPECTED_PLAYED` en `EXPECTED_DRL_PLAYED` elk één omhoog; voorstel); de
   corpusgetuige van de tak met truth maintenance noemt haar weigering; alle gates
@@ -117,6 +117,6 @@ De eindlens van die kaart wijst op twee plekken in deze kaart (gelezen, niet gem
   objectcreatie zonder connectingRole-binding, waarvan de terugkoppeling uit het typenpaar volgt". Die zin bestaat niet
   meer. De exec-model-tak leidt `havenpost` (Haven en Post, exacte vullers) nu af uit het typenpaar, en weigert het
   document zonder binding dus niet meer.
-- Een `bron.rgs`-versie krijgt wel een binding, omdat de rol `post` heet zoals het type `Post`.
+- Een `source.rgs`-versie krijgt wel een binding, omdat de rol `post` heet zoals het type `Post`.
 
 Bij het oppakken opnieuw meten en (c) aanscherpen.

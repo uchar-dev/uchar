@@ -47,11 +47,11 @@ class NameNormWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
-    private static final Path RED = Path.of("..", "..", "corpus", "rood");
+    private static final Path RED = Path.of("..", "..", "corpus", "red");
 
     private static final Path STRANDREGISTER = GOLDEN.resolve("anchor/jutterswet-strandregister/ir.json");
     private static final Path NUMMERREGISTER = GOLDEN.resolve("anchor/jutterswet-nummerregister/ir.json");
-    private static final Path TWO_TEMPORAL = RED.resolve("uni-two-temporal-keys/ir.json");
+    private static final Path TWO_TEMPORAL = RED.resolve("uniqueness-two-temporal-keys/ir.json");
 
     @TempDir static Path tmp;
 

@@ -1,5 +1,5 @@
 # shellcheck shell=sh
-# The Drools shaded jar, FRESH OR REBUILT, for the gates that only replay it: 8 (check-rood),
+# The Drools shaded jar, FRESH OR REBUILT, for the gates that only replay it: 8 (check-red),
 # 11 (check-toka-parity) and 13 (check-reftype-derivation). Sourced from the repository root:
 #
 #     . scripts/lib/drools-jar.sh

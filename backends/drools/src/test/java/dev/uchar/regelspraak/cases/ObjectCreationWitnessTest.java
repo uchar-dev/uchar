@@ -64,7 +64,7 @@ class ObjectCreationWitnessTest {
      *  is derived from the type pair, and the jutter reads the besluit back over the relation in both directions. */
     private static final String PENNINGBESLUIT = "jutterswet-penningbesluit";
     /** The red model whose creation subject and created type are related by TWO feittypen. */
-    private static final Path AMBIGUOUS = Path.of("..", "..", "corpus", "rood", "ambiguous-backlink", "ir.json");
+    private static final Path AMBIGUOUS = Path.of("..", "..", "corpus", "red", "ambiguous-backlink", "ir.json");
 
     // ---------------- 1. the mint itself: a fact, its members, both link ends ----------------
 
@@ -456,7 +456,7 @@ class ObjectCreationWitnessTest {
         // stratum above it (RUNTIME-SEMANTICS ch. 6.1, 6.3). The strata of this branch see that only because Kringen
         // derives the back-link of a creation without a binding as well; declared first, the first creation would
         // otherwise fire in the same generation and give J1 an Afwijzing (measured on the subtype twin, see the row
-        // above). The document comes from the RegelSpraak frontend, its bron.rgs beside it; verifier PASS, ref and
+        // above). The document comes from the RegelSpraak frontend, its source.rgs beside it; verifier PASS, ref and
         // clingo PASS (J1 penninggerechtigd and 0 afwijzingen, J2 1). The DRL-text branch gives J1 1 afwijzing.
         Path map = Path.of("src", "test", "resources", "object-creation", "rejection-after-the-decision");
         assertNull(play(map.resolve("ir.json"), JSON.readTree(Files.readString(map.resolve("case.json")))),

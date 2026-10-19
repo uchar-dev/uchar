@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The carrier check of the registers of the two OCaml executors (card fragment-cleanup, 2026-10-19; design
-# spec/proposals/MESSAGE-CODES.md §2.3). Called from gate 8 (scripts/check-rood.sh); runs alone as well.
+# spec/proposals/MESSAGE-CODES.md §2.3). Called from gate 8 (scripts/check-red.sh); runs alone as well.
 #
 # `ref` and the clingo backend code a place on demand: a place that a red case pins, that a list of gate 8 names, or
 # that is the bottom arm of a dispatch (kind `fallback`) carries a code `REF-###` or `CLINGO-###` beside its text,

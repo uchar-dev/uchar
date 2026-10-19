@@ -718,7 +718,7 @@ class IrEmitterTest {
         // enumeratiewaarde reaches the wire as the bare label typed with its domain. The delimited form
         // ("'gaaf'", type the unknown sentinel) is doubly ill-formed — WF-039 crosses the
         // label byte-exactly against the declared value list and WF-034 (r) refuses the sentinel —
-        // so the frontend could not emit the construct at all and no bron.rgs golden carried one.
+        // so the frontend could not emit the construct at all and no source.rgs golden carried one.
         // Derivation rule, first half: the domain comes from the WRITE TARGET, i.e. the declared
         // datatype of the attribute being assigned (§13.3.4.2 / WF-023's keuzetype clause).
         String c = emitCompact(enumSource("""

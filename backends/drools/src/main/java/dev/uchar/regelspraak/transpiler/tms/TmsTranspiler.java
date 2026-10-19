@@ -3125,7 +3125,7 @@ public final class TmsTranspiler {
      * ({@code visited} holds those already looked at, the reference graph being acyclic by WF-085): no definition; a
      * parameter, which WF-031 admits and the reference interpreter reads, and which this branch does not read, since
      * the day-kind compiler binds nothing; a day-kind test on another day than the bound day, which no executor carries
-     * (RUNTIME-SEMANTICS ch. 3.8, red case {@code dagsoortverwijzing-andere-dag}); and else a shape of its condition
+     * (RUNTIME-SEMANTICS ch. 3.8, red case {@code day-kind-reference-other-day}); and else a shape of its condition
      * outside what the compiler carries.
      */
     private Reason dayKindRefusal(String naam, Set<String> visited) {

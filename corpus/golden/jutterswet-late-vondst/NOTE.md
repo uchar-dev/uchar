@@ -13,7 +13,7 @@ subselection, which reads the sluitdag of the jutter of each Vondst:
 The subselection is evaluated per vondst, with the vondst as its subject
 (RUNTIME-SEMANTICS ch. 3.4a), so "de sluitdag van de jutter van de Vondst"
 is a navigated read over the role `jutter`. The sluitdag is derived by a
-rule, which `bron.rgs` declares after the two folds.
+rule, which `source.rgs` declares after the two folds.
 
 ## Hand computation
 
@@ -49,5 +49,5 @@ again, and case 1 failed with the eerste late vinddag leeg and the count
 0. The DRL-text branch refuses the document on its marker `TODO
 aggregatie EERSTE`; behind it the count is refused by name, because that
 branch writes such a subselection into the pattern of the vondst. Every
-case refutes the do-nothing executor. The IR from `bron.rgs` alone is
+case refutes the do-nothing executor. The IR from `source.rgs` alone is
 byte-identical to the one written beside the cases.

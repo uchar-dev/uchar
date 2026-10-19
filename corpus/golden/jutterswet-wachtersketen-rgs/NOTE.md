@@ -3,7 +3,7 @@
 The RegelSpraak-source twin of `anchor/jutterswet-wachtersketen`, the worked
 example of `RUNTIME-SEMANTICS.md` ch. 5.5 for recursive creation: a Wachter of
 rang n recruits an opvolger of rang n + 1 while n < 5, linked over
-`opvolging`. Written in `bron.rgs` and emitted by the RegelSpraak frontend;
+`opvolging`. Written in `source.rgs` and emitted by the RegelSpraak frontend;
 gate 10 re-emits `ir.json` byte for byte. The two `case*.json` are the
 anchor's, copied byte for byte, with the same absolute expectations.
 
@@ -16,7 +16,7 @@ pair has no answer and no link is laid). The anchor, the golden
 `jutterswet-opvolgerquorum` and `synth2-budgetgrens-onder` are hand-written for
 that reason.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - `Feittype opvolging` with the roles `voorganger` and `opvolger` (plural
   `opvolgers`), both filled by `Wachter`, one to one.

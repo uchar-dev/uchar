@@ -65,7 +65,7 @@ class SelfReadCycleTest {
 
     private static final String HANGS = " hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij "
             + "buiten een recursieve creatie (WF-045)";
-    private static final String NEGATIEF = ", en een kring draagt geen negatieve rand, zoals een ontkenning (WF-046)";
+    private static final String NEGATIVE = ", en een kring draagt geen negatieve rand, zoals een ontkenning (WF-046)";
     private static final String CYCLE_SENTENCE = ": dependency cycle through no recursive creation: ";
 
     private static String refusal(String regel, String cycle) {
@@ -73,7 +73,7 @@ class SelfReadCycleTest {
     }
 
     private static String negativeRefusal(String regel, String cycle) {
-        return "regel '" + regel + "'" + HANGS + NEGATIEF + CYCLE_SENTENCE + cycle;
+        return "regel '" + regel + "'" + HANGS + NEGATIVE + CYCLE_SENTENCE + cycle;
     }
 
     private static List<String> cycleMessages(RegelSpraakModel m) {

@@ -1,6 +1,6 @@
 # jutterswet-vondsttarief
 
-The **frontend bare-%-literal** witness. This golden's `bron.rgs` uses a
+The **frontend bare-%-literal** witness. This golden's `source.rgs` uses a
 BARE percentage literal (`21%`, no `van`) in two value positions the grammar
 admits, so uchar's own frontend (`getalWaarde : NUMBER PERCENT_SIGN`,
 RegelSpraak.g4:973; resolver `ExpressieBouwer.java:200`) emits a

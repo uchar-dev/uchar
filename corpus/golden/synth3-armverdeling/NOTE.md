@@ -2,7 +2,7 @@
 
 A **nested `Let` between the need and the branch node**, in the shape where
 the nested binder's value is independent of the outer need. Hand-written
-`ir.json`, no `bron.rgs` (no source language emits an `IfThenElse`,
+`ir.json`, no `source.rgs` (no source language emits an `IfThenElse`,
 IR-SPEC ch. 4.10).
 
 Two rules over one object type, deliberately: the bare form and the same

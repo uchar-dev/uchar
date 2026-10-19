@@ -2,7 +2,7 @@
 
 The **route-split witness** of `het totaal van`. One document carries all
 three readings of one operator over one unit (`€/mnd`), so the emitter can
-no longer move either route unnoticed (gate 10 re-emits `bron.rgs`
+no longer move either route unnoticed (gate 10 re-emits `source.rgs`
 byte-identically):
 
 | rule | operator | operand | operand type | result type |
@@ -71,7 +71,7 @@ honest declaration the accepted one. On the wire it is one field:
 operand is a set read, and still **dropped** when it is not.
 
 The strip itself is untouched, and so is every temporal golden: all 28
-`bron.rgs` goldens re-emit byte-identically (gate 10). No corpus
+`source.rgs` goldens re-emit byte-identically (gate 10). No corpus
 `total` node before this one carried a unit at all, which is exactly why
 the flank was reachable in valid source and pinned nowhere.
 

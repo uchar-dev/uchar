@@ -5,7 +5,7 @@
 #   1. the frontend builds and its full test suite passes
 #      (frontends/catala/test: E2E through verifier+ref+clingo, the
 #      refusal fixtures, the third-verdict cases);
-#   2. every corpus golden that carries a bron.catala_en regenerates
+#   2. every corpus golden that carries a source.catala_en regenerates
 #      through the plugin and, after canonicalisation (the same
 #      serialiser shape gate 2 enforces), is byte-identical to the
 #      checked-in ir.json — the toolchain's emitter-golden conformance
@@ -25,10 +25,10 @@ fail() { echo "check-catala: FAIL — $*" >&2; exit 1; }
 # content shifted passes; the name-carrying lists are what cover that direction. A deliberate
 # removal lowers the floor in the same commit.
 # Both counts are unseen elsewhere: the suite is not corpus files at all, and the golden count is
-# the number of bron.catala_en sources, which no other gate reads (gate 2 floors the ir.json beside
+# the number of source.catala_en sources, which no other gate reads (gate 2 floors the ir.json beside
 # them, so a deleted source would otherwise cost frontend coverage in silence).
 EXPECTED_MIN_CHECKS=201   # 2026-09-10: measured 201 (frontends/catala/test, the runtest alias)
-EXPECTED_MIN_GOLDENS=12   # 2026-09-10: measured 12 (corpus/golden/**/bron.catala_en)
+EXPECTED_MIN_GOLDENS=12   # 2026-09-10: measured 12 (corpus/golden/**/source.catala_en)
 
 command -v dune >/dev/null 2>&1 || fail "dune not found (run: eval \$(opam env))"
 command -v catala >/dev/null 2>&1 \
@@ -74,7 +74,7 @@ PYEOF
 pass=0; diffcount=0; genfail=0
 while IFS= read -r src; do
   d=$(dirname "$src"); n=${d#corpus/golden/}
-  [ -f "$d/ir.json" ] || fail "$n carries bron.catala_en but no ir.json"
+  [ -f "$d/ir.json" ] || fail "$n carries source.catala_en but no ir.json"
   raw=$(mktemp -t catala-gate-XXXXXX.json)
   out=$(mktemp -t catala-gate-canon-XXXXXX.json)
   if ! "$BIN" "$src" "$raw" >/dev/null 2>&1; then
@@ -89,7 +89,7 @@ while IFS= read -r src; do
     diffcount=$((diffcount + 1))
   fi
   rm -f "$raw" "$out"
-done < <(find corpus/golden -name bron.catala_en | sort)
+done < <(find corpus/golden -name source.catala_en | sort)
 
 [ $((pass + diffcount + genfail)) -gt 0 ] \
   || fail "no catala goldens found under corpus/golden (an empty set is a failure)"

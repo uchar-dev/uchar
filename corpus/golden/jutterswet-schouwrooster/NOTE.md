@@ -97,7 +97,7 @@ document the spelling lives in, not a document that computes with it.
   the day at all: the two pre-existing definitions compare two literals to
   each other and degenerate to a constant. Until the L4 landing the four
   positions were a `Constante` named `de dag`. Before this golden,
-  `Rekendatum` was the only `Constante` name in golden, rood and negatief
+  `Rekendatum` was the only `Constante` name in golden, red and negative
   together (2 occurrences in 2 documents), and ch. 4.1 enumerated the
   context-value row as `Rekendatum` or `Rekenjaar` and nothing else, so the
   day-kind reference was a third name that row did not name. Nothing checked
@@ -108,14 +108,14 @@ document the spelling lives in, not a document that computes with it.
   compiler), so a misspelling there degraded to an unrecognised operand, not
   to a diagnosis. Since L4 the bound day carries no name, so that mutant has
   no wire form, and a `ContextValue` named `de dag` is refused by WF-098
-  (`corpus/negatief/wf098-de-dag-als-contextwaarde`).
+  (`corpus/negative/wf098-de-dag-as-context-value`).
 - **A bare `later` comparison.** `laterOrEqual` already existed (3
   documents); the strict `later` existed nowhere in the repository. It arrives
   inside a day-kind condition, which no executor evaluates — so the operator
   is on the wire, schema-valid and verifier-checked, with **zero** executed
   coverage. Worth knowing before anyone treats its presence as evidence that
   strict date ordering is exercised.
-- **A `Dagsoort` declaration in a `bron.rgs`**, and with it the first
+- **A `Dagsoort` declaration in a `source.rgs`**, and with it the first
   frontend-emitted `DayKindDefinition` entries in `dayKindDefinitions`.
   Gate 10 re-emits this source byte-identically, so the frontend's day-kind
   path — declaration, the plural on the day kind, compound condition — is

@@ -35,7 +35,7 @@ dus geen laag beslist en M is penninggerechtigd. Elke case pint ook dat
 het kanaal leeg is.
 
 Zonder rekendatum kan geen uitvoerder de geldigheid toetsen; die case
-staat als rode case in `corpus/rood/jutterswet-uitsluiting-zonder-rekendatum`.
+staat als rode case in `corpus/red/jutterswet-uitsluiting-zonder-rekendatum`.
 
 ## Herkomst
 

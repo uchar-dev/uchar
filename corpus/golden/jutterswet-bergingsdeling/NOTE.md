@@ -16,7 +16,7 @@ resolver read the subtype's own declaration maps only — so no written form of
 an inherited attribute bound and the plural stayed on the wire, where no
 declaration carries it and WF-034 refuses the document. An allocation to a
 subtype with an inherited target attribute was therefore unreachable from a
-`bron.rgs` at all, and `jutterswet-hoofdberging` has no source twin for that
+`source.rgs` at all, and `jutterswet-hoofdberging` has no source twin for that
 reason.
 
 Two positions, one document, both of them a member of an ancestor read from a

@@ -384,7 +384,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
 
     /** WF-034: a VariableReference is the frontend's marker of a variable it could not bind, and the wire serializes no
      *  binding site for it — a rule-local variable is a Let, read by a BinderRef — so the loader refuses it at the node,
-     *  in the sentence of the verifier and the shared OCaml loader (corpus/negatief/wf034-variabele-zonder-binding). */
+     *  in the sentence of the verifier and the shared OCaml loader (corpus/negative/wf034-variable-without-binding). */
     @Test void a_variable_reference_is_refused() throws Exception {
         ObjectNode ir = golden(PREMIEVENSTER);
         set(ir, VALUE, "{\"node\":\"VariableReference\",\"name\":\"vrijstelling\","

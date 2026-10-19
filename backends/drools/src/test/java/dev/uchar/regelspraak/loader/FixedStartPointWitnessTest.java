@@ -94,20 +94,20 @@ class FixedStartPointWitnessTest {
     }
 
     private static void refuses(String witness, String site, String sentence) throws Exception {
-        JsonNode ir = read("negatief/" + witness);
+        JsonNode ir = read("negative/" + witness);
         IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir), witness);
         assertEquals(site, e.site(), e.getMessage());
         assertTrue(e.getMessage().endsWith(": " + sentence), e.getMessage());
     }
 
     @Test void the_three_witnesses_are_refused_in_the_sentence_of_the_verifier() throws Exception {
-        refuses("wf115-vast-startpunt-bij-variabel", "/model/timelines/0/fixedStart",
+        refuses("wf115-fixed-start-point-at-variable", "/model/timelines/0/fixedStart",
                 "timeline 'het stormjaar' has a variable start and a fixedStart '--10-01': its periods run from the "
                         + "anchor its start-point determination binds per object, and a timeline has one start");
-        refuses("wf115-vast-startpunt-buiten-raster", "/model/objectTypes/0/attributes/1/timeline/fixedStart",
+        refuses("wf115-fixed-start-point-outside-grid", "/model/objectTypes/0/attributes/1/timeline/fixedStart",
                 "fixed start point '2024-01-31' does not fit a month grid of count 1: a month, quarter or year grid "
                         + "of one unit starts on a day-month, written --mm-dd, a day of month mm in a leap year");
-        refuses("wf115-vast-startpunt-niet-overgenomen", "/model/objectTypes/0/attributes/0/timeline/timelineName",
+        refuses("wf115-fixed-start-point-negated-adopted", "/model/objectTypes/0/attributes/0/timeline/timelineName",
                 "named-timeline adoption is partial: fixed start point none on the facet, '--10-01' on timeline "
                         + "'stormjaar'");
     }

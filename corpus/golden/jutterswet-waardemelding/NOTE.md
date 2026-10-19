@@ -50,6 +50,6 @@ ch. 3.9, decided 2026-09-26), and `corpus/golden/jutterswet-gehele-periode-leeg`
 carries the four forms there. Until that date the form was refused under
 the qualifier, and four red cases held the refusal.
 
-No `bron.rgs`: RegelSpraak spells no "is niet leeg", and the frontend
+No `source.rgs`: RegelSpraak spells no "is niet leeg", and the frontend
 never writes `negated: true` on these two kinds. The document is hand-written
 IR, and the rules illustrate the form; no Jutterswet article renders them.

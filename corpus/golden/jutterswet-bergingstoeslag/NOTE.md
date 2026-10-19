@@ -1,7 +1,7 @@
 # jutterswet-bergingstoeslag
 
 The **Let-in-a-defaults-consequence witness**: a hand-written `ir.json`
-with no `bron.rgs`, whose job is to bring one corpus-uncovered path under
+with no `source.rgs`, whose job is to bring one corpus-uncovered path under
 the gates — a ch. 4.10 `Let` sitting in the **consequence** of a ch. 7
 `prioritizedDefaults` default. Every other `Let` in the corpus lives in a
 rule value, and every other defaults consequence is `Let`-free, so no

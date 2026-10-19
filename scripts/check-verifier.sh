@@ -4,11 +4,11 @@
 # Three checks:
 #   1. the verifier builds (dune build in spec/verifier/);
 #   2. every corpus/golden/**/ir.json is verifier-clean (exit 0);
-#   3. every corpus/negatief/<case>/ir.json is rejected (non-zero exit) AND
+#   3. every corpus/negative/<case>/ir.json is rejected (non-zero exit) AND
 #      the verifier reports the WF rule the case declares in its directory
 #      name (convention: wf###-<slug>, e.g. wf001-duplicate-parameter).
 #      Additional incidental violations are allowed; a case that passes, or
-#      fails only for other rules, turns the gate red. A negatief corpus
+#      fails only for other rules, turns the gate red. A negative corpus
 #      without cases is reported explicitly, never silently green. A case
 #      directory that carries an expect.txt must also be rejected on the ARM
 #      that file names. Every violation carries a key `WF-###.<slug>` (the
@@ -21,11 +21,11 @@
 #      match, values byte for byte). An expect.txt in the old form (a message
 #      fragment), a blank line, a duplicate line or an empty file fails, so a
 #      rewording of a message breaks no pin and a changed key or value does.
-#      Two more checks run over all negatief reports: one key stands for ONE
+#      Two more checks run over all negative reports: one key stands for ONE
 #      message template (the message with each parameter value replaced by a
 #      placeholder and every number by '#'; a key with two templates is
 #      refused), and in checks.ml no site builds a violation without a key.
-#   4. every JSON pointer a negatief report cites resolves in that case's
+#   4. every JSON pointer a negative report cites resolves in that case's
 #      document (RFC 6901): a report that sends its reader to a position
 #      the document does not have is refused, whatever its rule and arm.
 #      The pointer is read up to the first ": ", spaces included, and a
@@ -73,16 +73,16 @@ fi
 status=0
 
 # --- monotone floor (maintainer decision 2026-09-09) ---------------------------------------------
-# A lower bound, never an equality: it catches SHRINK — the negatief corpus that quietly halves —
+# A lower bound, never an equality: it catches SHRINK — the negative corpus that quietly halves —
 # while growth needs no bump, so an ordinary corpus card touches no protected script. Raised
 # deliberately, at an occasion. Accepted weakness, recorded rather than hidden: a count that stays
 # equal while its content shifted passes; the name-carrying lists are what cover that direction. A
 # deliberate removal lowers the floor in the same commit.
-# The negatief cases are floored HERE because this is the only gate that sees them at all: a
+# The negative cases are floored HERE because this is the only gate that sees them at all: a
 # vanished wf###-case takes a MUST's failing witness with it (CLAUDE.md, Spec discipline) and no
 # other check would notice. NO floor on n_golden: that is byte-for-byte the file set gate 2 already
-# floors (both scan corpus/golden + corpus/rood for ir.json), and one quantity wants one floor.
-EXPECTED_MIN_NEGATIVE=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.json)
+# floors (both scan corpus/golden + corpus/red for ir.json), and one quantity wants one floor.
+EXPECTED_MIN_NEGATIVE=350   # 2026-09-10: measured 350 (corpus/negative/**/ir.json)
 # The arm fragments (U1) are floored for the same reason and in the same regime: a vanished
 # expect.txt takes the arm pin of a rewritten witness with it, and its directory keeps passing on
 # the rule number alone. Measured at the L2 landing: every rewritten or replaced witness of the
@@ -101,18 +101,18 @@ EXPECTED_MIN_NEGATIVE=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.js
 # range on a node that is no instance fold) and three that never had one (WF-030's source type and
 # key resolution, WF-037's bucketing builtin without a granularity) — and three more WF-037 arms the
 # fix round found without one (the two builtin arities, a value fold with fewer than two operands).
-EXPECTED_MIN_EXPECT=354     # 2026-10-19: measured 354 (corpus/negatief/*/expect.txt), card verifier-arm-keys; before that 260 (2026-09-25, L5)
+EXPECTED_MIN_EXPECT=354     # 2026-10-19: measured 354 (corpus/negative/*/expect.txt), card verifier-arm-keys; before that 260 (2026-09-25, L5)
 # The arm keys and their parameter lines (card verifier-arm-keys, 2026-10-19), floored for the same
 # reason: a pin that quietly lost its `name=value` lines would still pass on its key.
 EXPECTED_MIN_ARMS=213         # 2026-10-19: measured 213 distinct keys named by the expect.txt files
 EXPECTED_MIN_PARAM_LINES=572  # 2026-10-19: measured 572 `name=value` lines over the expect.txt files
-# The key and template check reads every negatief report; a parse that stopped finding keys would
+# The key and template check reads every negative report; a parse that stopped finding keys would
 # check nothing. The static count is the key literals in checks.ml (two sites may share one).
-EXPECTED_MIN_REPORT_KEYS=318  # 2026-10-19: measured 318 distinct keys over the negatief reports
+EXPECTED_MIN_REPORT_KEYS=318  # 2026-10-19: measured 318 distinct keys over the negative reports
 EXPECTED_MIN_ARM_SITES=421    # 2026-10-19: measured 421 key literals "WF-###.<slug>" in spec/verifier/lib/checks.ml
 # The cited pointers (check 4) are floored in the same regime: a parse that stopped finding the
 # pointer in a report line would check nothing and pass.
-EXPECTED_MIN_POINTERS=619   # 2026-10-19: measured 619 pointers over the negatief reports, all resolving (547 on 2026-09-25)
+EXPECTED_MIN_POINTERS=619   # 2026-10-19: measured 619 pointers over the negative reports, all resolving (547 on 2026-09-25)
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.
@@ -122,7 +122,7 @@ noptr=$(mktemp) || exit 2
 trap 'rm -f "$list" "$ptrs" "$noptr"' EXIT
 
 n_golden=0
-find corpus/golden corpus/rood -name ir.json 2>/dev/null | sort > "$list"
+find corpus/golden corpus/red -name ir.json 2>/dev/null | sort > "$list"
 while IFS= read -r f; do
     n_golden=$((n_golden + 1))
     if ! out=$("$BIN" "$f" 2>&1); then
@@ -131,27 +131,27 @@ while IFS= read -r f; do
     fi
 done < "$list"
 
-# check 3: negatief cases are rejected for the declared rule, and on the
+# check 3: negative cases are rejected for the declared rule, and on the
 # declared arm where the case names one (expect.txt).
 n_neg=0
-find corpus/negatief -name ir.json 2>/dev/null | sort > "$list"
+find corpus/negative -name ir.json 2>/dev/null | sort > "$list"
 while IFS= read -r f; do
     n_neg=$((n_neg + 1))
     dir=$(basename "$(dirname "$f")")
     id=$(printf '%s' "$dir" | sed -n 's/^wf0*\([0-9][0-9]*\)-.*/\1/p')
     if [ -z "$id" ]; then
-        echo "FAIL: negatief case directory '$dir' does not follow wf###-<slug>" >&2
+        echo "FAIL: negative case directory '$dir' does not follow wf###-<slug>" >&2
         status=1
         continue
     fi
     expect=$(printf 'WF-%03d' "$id")
     rejected=0
     if out=$("$BIN" "$f" 2>&1); then
-        printf 'FAIL: negatief case %s passed the verifier (must violate %s):\n%s\n' \
+        printf 'FAIL: negative case %s passed the verifier (must violate %s):\n%s\n' \
             "$f" "$expect" "$out" >&2
         status=1
     elif ! printf '%s\n' "$out" | grep -q "$expect"; then
-        printf 'FAIL: negatief case %s rejected, but not for %s:\n%s\n' \
+        printf 'FAIL: negative case %s rejected, but not for %s:\n%s\n' \
             "$f" "$expect" "$out" >&2
         status=1
     else
@@ -174,7 +174,7 @@ done < "$list"
 if [ -s "$noptr" ]; then
     tab=$(printf '\t')
     while IFS="$tab" read -r f line; do
-        printf 'FAIL: negatief case %s reports a line with no readable pointer (no ": " after "FAIL "): %s\n' "$f" "$line" >&2
+        printf 'FAIL: negative case %s reports a line with no readable pointer (no ": " after "FAIL "): %s\n' "$f" "$line" >&2
     done < "$noptr"
     status=1
 fi
@@ -199,18 +199,18 @@ for line in open(sys.argv[1], encoding="utf-8"):
     if not ok:
         bad.append((f, ptr))
 for f, ptr in bad:
-    sys.stderr.write("FAIL: negatief case %s cites %s, which does not resolve in the document: the "
+    sys.stderr.write("FAIL: negative case %s cites %s, which does not resolve in the document: the "
                      "report sends its reader to a position the document does not have\n" % (f, ptr))
 print(n)
 sys.exit(1 if bad else 0)
 PY
 ) || status=1
 if [ "${n_ptr:-0}" -lt "$EXPECTED_MIN_POINTERS" ]; then
-    echo "FAIL: ${n_ptr:-0} cited pointer(s) found in the negatief reports, but EXPECTED_MIN_POINTERS pins at least $EXPECTED_MIN_POINTERS — the pointer check read fewer than it did (a deliberate removal lowers the floor in the same commit)" >&2
+    echo "FAIL: ${n_ptr:-0} cited pointer(s) found in the negative reports, but EXPECTED_MIN_POINTERS pins at least $EXPECTED_MIN_POINTERS — the pointer check read fewer than it did (a deliberate removal lowers the floor in the same commit)" >&2
     status=1
 fi
 
-# check 5 (card verifier-arm-keys, 2026-10-19): the arm keys. Over every negatief report: (a) each
+# check 5 (card verifier-arm-keys, 2026-10-19): the arm keys. Over every negative report: (a) each
 # expect.txt is a key line plus `name=value` lines, the key is of the rule its directory declares,
 # and the verifier reports that key with every pair among the parameters of one violation; (b) one
 # key stands for one message template across all reports; (c) checks.ml builds no violation
@@ -293,7 +293,7 @@ for f in docs:
         pinned.add(lines[0])
         mine = [p for k, p in viol if k == lines[0]]
         if not any(all(w in p for w in wanted) for p in mine):
-            fail("negatief case %s rejected, but not on the arm %s names: key %s with %s expected, the %s keys reported are %s%s"
+            fail("negative case %s rejected, but not on the arm %s names: key %s with %s expected, the %s keys reported are %s%s"
                  % (f, arm, lines[0], wanted, rule, sorted({k for k, _ in viol if k[:6] == rule}),
                     "" if not mine else "; the parameters of that key are %s" % [dict(p) for p in mine]))
 for key, ts in sorted(templates.items()):
@@ -317,7 +317,7 @@ PY
 set -- $counts
 n_expect=$1; n_params=$2; n_arms=$3; n_keys=$4; n_sites=$5
 [ "$6" -eq 0 ] || status=1
-for floor in "n_arms:EXPECTED_MIN_ARMS:arm keys named by expect.txt files" "n_params:EXPECTED_MIN_PARAM_LINES:name=value lines" "n_keys:EXPECTED_MIN_REPORT_KEYS:keys in the negatief reports" "n_sites:EXPECTED_MIN_ARM_SITES:key literals in checks.ml"; do
+for floor in "n_arms:EXPECTED_MIN_ARMS:arm keys named by expect.txt files" "n_params:EXPECTED_MIN_PARAM_LINES:name=value lines" "n_keys:EXPECTED_MIN_REPORT_KEYS:keys in the negative reports" "n_sites:EXPECTED_MIN_ARM_SITES:key literals in checks.ml"; do
     var=${floor%%:*}; rest=${floor#*:}; name=${rest%%:*}; what=${rest#*:}
     eval "have=\$$var; min=\$$name"
     if [ "$have" -lt "$min" ]; then
@@ -329,17 +329,17 @@ done
 # The floor is evaluated BEFORE the unpopulated-corpus exit, or that exit would answer the very
 # case the floor exists for: with the zones moved aside both counts are 0 and an "all zero -> exit
 # 0" branch placed first never lets the floor run. Measured 2026-09-10, before this order: both
-# zones aside gave PASS at 0. The floor also precedes the no-negatief check, so the zero case is
+# zones aside gave PASS at 0. The floor also precedes the no-negative check, so the zero case is
 # reported with BOTH numbers rather than by the weaker non-empty message.
 if [ "$n_neg" -lt "$EXPECTED_MIN_NEGATIVE" ]; then
-    echo "FAIL: $n_neg negatief case(s) found, but EXPECTED_MIN_NEGATIVE pins at least $EXPECTED_MIN_NEGATIVE — the negatief corpus shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    echo "FAIL: $n_neg negative case(s) found, but EXPECTED_MIN_NEGATIVE pins at least $EXPECTED_MIN_NEGATIVE — the negative corpus shrank (a deliberate removal lowers the floor in the same commit)" >&2
     status=1
 elif [ "$n_golden" -eq 0 ] && [ "$n_neg" -eq 0 ]; then
     # Only reachable while no floor is pinned yet (floor 0) — the genuinely empty corpus.
     echo 'check-verifier: build OK; 0 corpus files (corpus not yet populated)'
     exit 0
 elif [ "$n_neg" -eq 0 ]; then
-    echo 'FAIL: no negatief cases — every implemented WF check needs a failing case (spec discipline)' >&2
+    echo 'FAIL: no negative cases — every implemented WF check needs a failing case (spec discipline)' >&2
     status=1
 fi
 if [ "$n_expect" -lt "$EXPECTED_MIN_EXPECT" ]; then
@@ -348,6 +348,6 @@ if [ "$n_expect" -lt "$EXPECTED_MIN_EXPECT" ]; then
 fi
 
 if [ "$status" -eq 0 ]; then
-    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negatief rejected for their declared rule, floor $EXPECTED_MIN_NEGATIVE; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT, $n_arms arm keys, floor $EXPECTED_MIN_ARMS, $n_params name=value lines, floor $EXPECTED_MIN_PARAM_LINES; $n_keys keys of one template each in the reports, floor $EXPECTED_MIN_REPORT_KEYS, $n_sites key literals in checks.ml, floor $EXPECTED_MIN_ARM_SITES; $n_ptr cited pointers resolve in their documents, floor $EXPECTED_MIN_POINTERS)"
+    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negative rejected for their declared rule, floor $EXPECTED_MIN_NEGATIVE; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT, $n_arms arm keys, floor $EXPECTED_MIN_ARMS, $n_params name=value lines, floor $EXPECTED_MIN_PARAM_LINES; $n_keys keys of one template each in the reports, floor $EXPECTED_MIN_REPORT_KEYS, $n_sites key literals in checks.ml, floor $EXPECTED_MIN_ARM_SITES; $n_ptr cited pointers resolve in their documents, floor $EXPECTED_MIN_POINTERS)"
 fi
 exit "$status"

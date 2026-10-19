@@ -34,7 +34,7 @@ Een telling over een lege verzameling is 0, nooit leeg (ch. 1.2e). Het
 waaktarief blijft leeg waar de voorwaarde onwaar is: de regel schrijft
 dan niets. Elke case pint ook dat het kanaal leeg is.
 
-## Waarom er geen `bron.rgs` bij staat
+## Waarom er geen `source.rgs` bij staat
 
 Het document is in RegelSpraak geschreven:
 
@@ -68,7 +68,7 @@ een aggregatie-operand wordt nog niet omgezet"). In `ir.json` is dat
 filter met de hand vervangen door de kenmerktoets `bemand` met de
 kwalificatie van het jaar, en de waarschuwing is weggelaten. De bron
 levert dus niet byte voor byte deze IR op, en gate 10 eist dat van elke
-golden met een `bron.rgs`. De IR is daarom handgeschreven, zoals een
+golden met een `source.rgs`. De IR is daarom handgeschreven, zoals een
 golden voor een vorm die geen frontend nog maakt (`corpus/golden/README.md`).
 
 ## Herkomst

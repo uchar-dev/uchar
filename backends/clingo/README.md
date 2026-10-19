@@ -345,7 +345,7 @@ spec bug.
   program is UNSAT and never a second value. Writers whose conditions
   exclude each other, or that write the same value, derive no witness
   (`corpus/golden/jutterswet-melding-naar-aard`,
-  `corpus/rood/jutterswet-dubbele-melding`). On a standing target the
+  `corpus/red/jutterswet-dubbele-melding`). On a standing target the
   case input stands only where no writer of the subject decides, a
   standing writer on another type of the chain included. Two computing
   rules on a temporal target are refused by name: a timeline is no
@@ -456,7 +456,7 @@ Recorded limitations:
   guard) derive named `viol/2` witnesses closed by one global integrity
   constraint; on UNSAT the runner re-runs without that constraint and
   reports the fired witnesses, so the fault kind and the
-  parameters read off the fired witness (`Translate.viol_code`; corpus/rood,
+  parameters read off the fired witness (`Translate.viol_code`; corpus/red,
   gate 8) pin the *reason*, never merely "some constraint fired".
 
 ## Run

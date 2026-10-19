@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The red case {@code corpus/rood/datumtijdstap-buiten-bereik} through both branches. Gate 8's Drools leg replays
+ * The red case {@code corpus/red/date-time-step-outside-range} through both branches. Gate 8's Drools leg replays
  * a red case on the exec-model branch alone; the date step is one runtime function that both branches call
  * ({@code RegelSpraakRuntime.rsDatumReken}), and this witness holds that each branch reaches it with the case's count
  * and faults in the sentence the case pins for the backend: the two ch. 3.8 examples in hours, plus and min, the one in
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * examples had answered +228160941-04-01T08:00, -228156894-10-02T16:00 and +164276444-06-02T00:00, and the count of
  * 2^64 + 1 days one day, 2024-01-02T00:00.
  *
- * <p>The red case {@code corpus/rood/dagsoortstap-buiten-bereik} goes through the same replay: a step to the last day
+ * <p>The red case {@code corpus/red/day-kind-step-outside-range} goes through the same replay: a step to the last day
  * of the range in one rule, and one day of a kind further in the next. The day kind's step is its own runtime function
  * ({@code RegelSpraakRuntime.rsDatumTijdPlusDagsoort}), called by both branches. RED FIRST, measured on this
  * branch at 16905a6d: the exec-model and the DRL-text branch answered +146140482-05-01T00:00 without a fault. The
@@ -50,7 +50,7 @@ class DateStepRangeBranchesWitnessTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
-    private static final Path RED = Path.of("..", "..", "corpus", "rood", "datumtijdstap-buiten-bereik");
+    private static final Path RED = Path.of("..", "..", "corpus", "red", "date-time-step-outside-range");
 
     @Test void each_case_fails_in_each_branch_with_the_fixed_sentence() throws Exception {
         Path ir = RED.resolve("ir.json");
@@ -66,7 +66,7 @@ class DateStepRangeBranchesWitnessTest {
     }
 
     @Test void the_compound_day_kind_step_fails_in_the_branches_that_carry_day_kinds() throws Exception {
-        Path map = RED.resolveSibling("dagsoortstap-buiten-bereik");
+        Path map = RED.resolveSibling("day-kind-step-outside-range");
         Path ir = map.resolve("ir.json"), casePath = map.resolve("case1.json");
         JsonNode c = JSON.readTree(Files.readString(casePath));
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) fails(ir, casePath, c, branch);

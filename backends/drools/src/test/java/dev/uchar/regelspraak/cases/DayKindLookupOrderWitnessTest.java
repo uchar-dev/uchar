@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>Why the witness lives here and not in the corpus.</b> The document that tells the two orders apart
  * has to register a CALENDAR spelling as a day-kind unit, and WF-017 (widened to the thirty spellings of
- * that table on 2026-09-20) refuses exactly that. So it cannot be a golden, a red case or a negatief with a
+ * that table on 2026-09-20) refuses exactly that. So it cannot be a golden, a red case or a negative with a
  * case file: it is ill-formed on the wire by design, and the transpilers are the only place left that can be
  * asked what they would make of it. That is the shape of the flank this card closed — the wire stopped
  * carrying the contradiction, and this class is why an executor could not act on it either way.

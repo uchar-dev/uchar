@@ -3,8 +3,8 @@ package dev.uchar.regelspraak.cases;
 import java.nio.file.Path;
 
 /**
- * The Drools-backend RED-PATH CLI the red fence (scripts/check-rood.sh) drives, jar-only (the gate-12
- * pattern): given one rood golden's {@code ir.json} and ONE {@code expectedFault} {@code case.json}, it
+ * The Drools-backend RED-PATH CLI the red fence (scripts/check-red.sh) drives, jar-only (the gate-12
+ * pattern): given one red golden's {@code ir.json} and ONE {@code expectedFault} {@code case.json}, it
  * loads the IR off the wire, builds the Drools KieBase through the exec-model branch, and replays
  * the case to see what the v0 backend OBSERVES. It prints exactly one status line and exits with a code the
  * gate classifies:

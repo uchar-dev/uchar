@@ -85,7 +85,7 @@ Shape, in brief:
   non-null string (spelled `name` since L3 on the first two and since L5 on the
   last two). With the map key gone it is the declaration's only name (delta
   B2), so a `null` there would be a declaration without a name; the schema no
-  longer admits it, and no golden, red or negatief document carried one
+  longer admits it, and no golden, red or negative document carried one
   (measured 2026-09-23). `Timeline` and `Role` keep their nullable `name`:
   timelines were a list in v0 already, and a role is not a model-list entry.
 - Every node object carries a `"node"` discriminator holding its subtype name.
@@ -106,7 +106,7 @@ removed; a binding L2 derives is appended after the node's last key, where
 every producer already writes it. L5 renames in place: a renamed node keeps its
 L4 order, and the `properties` order of its definition is that order.
 Measured 2026-09-24 on the L4 shape, 20 of the 11509 node objects and version
-records in `corpus/golden` and `corpus/rood` deviate from their definition's
+records in `corpus/golden` and `corpus/red` deviate from their definition's
 `properties` order (kinds `Default`, `PrioritizedDefaults`, `QuantifierFold` (then `Kwantorvouw`),
 `Let`; none of the L3 or L4 nodes and no version record; on the L3 shape the
 three function nodes among the 23 deviating objects were the only ones of a
@@ -118,8 +118,8 @@ emitters that write the key (the RegelSpraak frontend, pinned by gate 10 on
 order for a `Default`'s `exceptions` (before `source`, where the RegelSpraak
 frontend writes it); and the hand-written objects that still deviated were put
 in this order. Measured that day, none of the 12091 node objects and version
-records of `corpus/golden` and `corpus/rood` deviates, nor any of the 11592 of
-`corpus/negatief`. Gate 2 does not check key order: its round-trip preserves
+records of `corpus/golden` and `corpus/red` deviates, nor any of the 11592 of
+`corpus/negative`. Gate 2 does not check key order: its round-trip preserves
 the order of the document it reads.
 Beyond key order: two-space indentation, empty containers inline, numbers in
 plain (non-exponential) form, non-ASCII and control characters escaped as
@@ -360,7 +360,7 @@ name and a JSON pointer into the L4 input, an empty `bron` or one that is
 neither a string nor null, an `Onopgelost` whose `bron` is null or absent, a
 `line` that is not an integer of at least 1, that stands without a `bron` beside
 it or that stands on another node than the two carriers and a `Diagnostic`, and
-a document that mixes the two shapes; the two negatief witnesses of WF-113 (b)
+a document that mixes the two shapes; the two negative witnesses of WF-113 (b)
 whose marker it refuses are written by hand.
 
 The second step renames. The nine lists under `rules` take the keys of IR-SPEC
@@ -439,7 +439,7 @@ Three admissions are deliberate and leave the refusal to the verifier:
 `Attribute.datatype` admits `null`, as the v0 attribute map did, so a
 datatype-less attribute stays a loadable document that the verifier refuses
 (WF-059); `TimelineFacet.count` admits any integer, because `count ≥ 1` is
-WF-005, a verifier check with its own negatief witness; and `Diagnostic.line`
+WF-005, a verifier check with its own negative witness; and `Diagnostic.line`
 admits any integer, because `line ≥ 0` (0 = the producer reports no source
 position: a hand-built document, or a frontend warning without a token) is
 WF-113 (a), likewise with its own witness.
@@ -533,7 +533,7 @@ The repo's second CI gate. It performs three checks, and two self-tests:
 
 1. **Metaschema** — the schema is itself a valid draft 2020-12 schema.
    - **Self-tests** — what the schema refuses by itself has no corpus witness
-     (golden and rood must validate, negatief is not validated here), so it is
+     (golden and red must validate, negative is not validated here), so it is
      held against the schema directly, in both polarities: the patterns (the
      validity bounds, and since L4 a literal's number, date and dateTime
      values and the form name) against a lexeme table per kind, and the

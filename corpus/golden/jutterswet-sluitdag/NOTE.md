@@ -14,7 +14,7 @@ the Berging that other rules derive:
 | afrekendag | de vinddag van geen van de vondsten van de Berging leeg is | gesteld op zijn uiterste meldingsdag | a rule on the laatste bergdag, two steps from the bergdag |
 | controledag | de bergdag van ten minste één van de vondsten van de Berging gevuld is | zijn laatste bergdag plus zijn wachttijd | the fold, and a rule on the openingsdag |
 
-`bron.rgs` declares the three readers before the rules that derive their
+`source.rgs` declares the three readers before the rules that derive their
 operands. RUNTIME-SEMANTICS ch. 5.1 re-evaluates a rule whenever a value it
 reads changes, so the order does not matter to the answer; the sluitdag is
 the plus form of the reproduction of the card

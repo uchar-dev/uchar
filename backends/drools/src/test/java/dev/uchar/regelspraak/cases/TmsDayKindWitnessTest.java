@@ -76,7 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>C, definitions that do not compile.</b> A schouwdag is a day later than 28-02-2026 and earlier than 01-10-2026;
  * a hoogschouwdag is defined as "21-06-2026 is een schouwdag", a test of a day kind on another day than the bound day,
- * which no executor carries (red case {@code dagsoortverwijzing-andere-dag}). "De termijn van een Schouwer … als zijn
+ * which no executor carries (red case {@code day-kind-reference-other-day}). "De termijn van een Schouwer … als zijn
  * vinddatum plus zijn wachttijd", in schouwdagen, plays beside the unused hoogschouwdag in both orders of the two
  * definitions: S1 (2026-03-10 plus 2) 2026-03-12, S2 (2026-02-27 plus 2) 2026-03-02. A rule that steps in
  * hoogschouwdagen is refused by name, and so is one that steps in havendagen, whose definition reads the parameter

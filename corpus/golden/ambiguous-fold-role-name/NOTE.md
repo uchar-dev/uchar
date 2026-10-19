@@ -36,5 +36,5 @@ reports the same mismatch, and the verifier refuses the mutant with WF-047
 The singular key `vriend` stays ambiguous from `Jutter` in a case. The case
 loader of ref and clingo refuses it at load, `role key "vriend" is
 ambiguous from "Jutter"` (measured 2026-09-24), which is the refusal
-`corpus/rood/ambiguous-case-role-key` pins; that refusal belongs to the
+`corpus/red/ambiguous-case-role-key` pins; that refusal belongs to the
 OCaml case loader, not to the document.

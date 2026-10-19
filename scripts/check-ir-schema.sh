@@ -14,7 +14,7 @@
 #   3. every such file round-trips: parsed with raw number lexemes preserved and
 #      re-emitted canonically, the output is byte-identical to the input (this is
 #      the guarantee that the schema-blessed form and the emitter's form coincide);
-#   4. every object of every golden, rood AND negatief document is in the key
+#   4. every object of every golden, red AND negative document is in the key
 #      order of the subschema it instantiates, the 'properties' order the
 #      schema's description makes canonical; an object no subschema admits
 #      is counted apart.
@@ -50,15 +50,15 @@ fi
 # content shifted passes; the name-carrying lists are what cover that direction. A deliberate
 # removal lowers the floor in the same commit. Corpus mode only — explicit mode checks a dump.
 # This is the document floor for BOTH artifact zones; gate 3 scans the same set and therefore
-# floors only its own, unshared quantity (the negatief cases).
-EXPECTED_MIN_DOCS=192   # 2026-09-10: measured 192 (corpus/golden + corpus/rood ir.json)
+# floors only its own, unshared quantity (the negative cases).
+EXPECTED_MIN_DOCS=192   # 2026-09-10: measured 192 (corpus/golden + corpus/red ir.json)
 
 if [ "$#" -gt 0 ]; then
     MODE='explicit'
     set -- "$SCHEMA" "$MODE" "$EXPECTED_MIN_DOCS" "$@"
 else
     MODE='corpus'
-    files=$(find corpus/golden corpus/rood -name ir.json 2>/dev/null | sort)
+    files=$(find corpus/golden corpus/red -name ir.json 2>/dev/null | sort)
     # shellcheck disable=SC2086
     set -- "$SCHEMA" "$MODE" "$EXPECTED_MIN_DOCS" $files
 fi
@@ -124,9 +124,9 @@ validator = IrValidator(schema)
 # A schema pattern is a MUST with no failing witness of its own: taking it out leaves every gate
 # green. Measured 2026-09-11 with both Geldigheid patterns deleted and the schema re-serialised —
 # this gate reported PASS at 194 files and the Drools witness stayed 18/18. No CORPUS document can
-# close that: this gate validates corpus/golden and corpus/rood only, and a document that VIOLATES a
+# close that: this gate validates corpus/golden and corpus/red only, and a document that VIOLATES a
 # pattern cannot sit in either zone without turning the gate permanently red, while one in
-# corpus/negatief is never validated here at all. So the witness is held HERE, against the schema
+# corpus/negative is never validated here at all. So the witness is held HERE, against the schema
 # itself, with no corpus document involved — the mechanism decided on the geldigheidsgrens card.
 #
 # SCOPE is this schema's WHOLE pattern surface, which is these six positions and nothing else: the
@@ -174,7 +174,7 @@ BOUND_LEXEMES = [
 
 # (lexeme, must the schema accept it, why this row is here), per kind; the value patterns of a
 # literal are the case schema's (gate 4 holds the same three there), so its rows are carried over,
-# with the spellings the verifier's lexeme rules have negatief witnesses for beside them
+# with the spellings the verifier's lexeme rules have negative witnesses for beside them
 LEXEMES = {
     NUMBER: [
         ("5",      True,  "an integer"),
@@ -317,10 +317,10 @@ if selftest_bad:
 # domain's declaration position, a null name on a model-list declaration, a null where an optional
 # field is written whole or not at all, a v0 side-map on an ObjectType, a timeline name on a
 # characteristic's facet, an empty dimension list. As with the patterns, no corpus document can
-# witness such a refusal (golden and rood must validate; negatief is never validated here), so each
+# witness such a refusal (golden and red must validate; negative is never validated here), so each
 # is held against the schema itself: one small valid M1 document, one mutation per row. The rows
 # that must PASS pin the deliberate admissions of spec/schema/README.md: where a value's refusal is
-# a verifier rule with its own negatief witness, the schema admits the value so that the witness
+# a verifier rule with its own negative witness, the schema admits the value so that the witness
 # stays a document the schema admits.
 def _m1_base():
     # written in the L5 shape (since L3 the number node, the parameter and the day kinds; since L4
@@ -378,11 +378,11 @@ M1_SHAPE_ROWS = [
     ("the base document", lambda d: None, True,
      "the M1 shape itself, with a warning and a timeline name on an ATTRIBUTE's facet"),
     ("TimelineFacet.count = 0", lambda d: _attr(d)["timeline"].update(count=0), True,
-     "count >= 1 is WF-005, a verifier check with its own negatief witness"),
+     "count >= 1 is WF-005, a verifier check with its own negative witness"),
     ("Diagnostic.line = -1", lambda d: _diag(d).update(line=-1), True,
-     "line >= 0 is WF-113 (a), a verifier check with its own negatief witness"),
+     "line >= 0 is WF-113 (a), a verifier check with its own negative witness"),
     ("Attribute.datatype = null", lambda d: _attr(d).update(datatype=None), True,
-     "a datatype-less attribute is WF-059's, a verifier check with its own negatief witness"),
+     "a datatype-less attribute is WF-059's, a verifier check with its own negative witness"),
     ("root carries 'regels'", lambda d: d.update(regels=[]), False,
      "B3: the inert v0 stubs left the wire, as a key and as an empty list"),
     ("root carries 'formaat'", lambda d: d.update(formaat="regelspraak-ir-v0"), False,
@@ -700,7 +700,7 @@ L2_SHAPE_ROWS = [
 # document — the L2 base plus one node of every class L3 writes, in canonical key order — and one
 # mutation per row. The rows that must PASS pin the deliberate admissions: the presentation tag on
 # a type annotation and a factor not in lowest terms, both refused by the verifier (WF-007,
-# WF-092) with a negatief witness of their own, because one datatype union serves declarations and
+# WF-092) with a negative witness of their own, because one datatype union serves declarations and
 # annotations alike and a schema cannot state a greatest common divisor. In the reasons, a
 # B-number is a delta of spec/proposals/V1-WIREMIGRATIE.md. Since L4 the rule the base adds is a
 # Rule with one version and its literal a typed value, as the L4 schema writes them, and since L5
@@ -942,7 +942,7 @@ L3_SHAPE_ROWS = [
 # plus a form of every named kind with its versions, an aggregation and a builtin call with their
 # optional fields, a literal of every variant, a context value and a bound day, in canonical key
 # order — and one mutation per row. The rows that must PASS pin the deliberate admissions, each a
-# verifier rule with a negatief witness of its own: a nameless or blank form (WF-107), a null
+# verifier rule with a negative witness of its own: a nameless or blank form (WF-107), a null
 # reference name (WF-029, WF-034), an empty allocation attribute (WF-034), a padded statute
 # annotation (WF-082), a builtin call without a type (WF-038), a typeless literal (WF-034), a value
 # variant its literal's type does not name (WF-114), and a context value named outside the closed
@@ -1730,7 +1730,7 @@ L5_SHAPE_ROWS = [
      "the snippet is always written: a record without it has no source text"),
     ("source.snippet = ''", _set(_BOUND, "source", {"snippet": ""}), False,
      "a snippet is never empty: a node without source text carries no source"),
-    ("source with file", lambda d: _BOUND(d)["source"].update(file="bron.rgs"), False,
+    ("source with file", lambda d: _BOUND(d)["source"].update(file="source.rgs"), False,
      "file and column wait for the card that first writes positions and fixes their conventions"),
     ("source with column", lambda d: _BOUND(d)["source"].update(column=1), False,
      "file and column wait for the card that first writes positions and fixes their conventions"),
@@ -1942,12 +1942,12 @@ if failed:
 
 # check 4: the canonical key order. The schema's own description makes its 'properties' order the
 # order every emitter and migration writes, and until 2026-09-25 nothing held a hand-written document
-# to it; measured that day, 0 of the 36497 objects in golden, rood and negatief deviated, so the check
+# to it; measured that day, 0 of the 36497 objects in golden, red and negative deviated, so the check
 # cost nothing. Each object is compared with the subschema it instantiates, found by walking the
 # schema along the document: $ref, then oneOf/anyOf narrowed by the 'node' constant, the required
 # keys and additionalProperties:false. A map whose keys are data (additionalProperties as a schema)
-# has no order. In corpus mode the walk covers corpus/negatief too, which this gate does not validate;
-# an object no subschema admits (a negatief document that breaks the schema on purpose) has no order
+# has no order. In corpus mode the walk covers corpus/negative too, which this gate does not validate;
+# an object no subschema admits (a negative document that breaks the schema on purpose) has no order
 # to follow and is counted apart, never passed off as checked.
 import glob
 
@@ -2028,7 +2028,7 @@ def _key_order(inst, s, path, doc):
 
 ko_files = list(files)
 if mode == "corpus":
-    ko_files += sorted(glob.glob("corpus/negatief/**/ir.json", recursive=True))
+    ko_files += sorted(glob.glob("corpus/negative/**/ir.json", recursive=True))
 for path in ko_files:
     try:
         with open(path, encoding="utf-8") as fh:

@@ -171,7 +171,7 @@ class FixedStartPointTest {
     /** Emitted through the real CLI path; the bytes of the document it wrote. */
     private static String emission(String source) throws Exception {
         Path dir = Files.createTempDirectory("vaststartpunt");
-        Path rgs = dir.resolve("bron.rgs");
+        Path rgs = dir.resolve("source.rgs");
         Path out = dir.resolve("ir.json");
         Files.writeString(rgs, source, StandardCharsets.UTF_8);
         PrintStream oud = System.out;
@@ -185,7 +185,7 @@ class FixedStartPointTest {
         assertEquals(0, rc, "het kalenderstartpunt emitteert");
         return Files.readString(out, StandardCharsets.UTF_8)
                 // the Bron coordinates carry the file name, which differs per temp dir
-                .replace(rgs.toString(), "bron.rgs");
+                .replace(rgs.toString(), "source.rgs");
     }
 
     @Test void the_calendar_start_point_falls_away_deliberately_and_losslessly() throws Exception {

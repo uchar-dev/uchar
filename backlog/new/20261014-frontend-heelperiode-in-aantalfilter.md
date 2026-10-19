@@ -10,16 +10,16 @@ het Kustvak die gedurende het gehele jaar bemand zijn", zet de frontend niet om:
 en een waarschuwing. De vorm zelf is in de IR uit te drukken. Voor de getuigen van `20260923-drl-aantal-filter-zink`
 is het filter met de hand in de IR ingevuld; die IR is verifier-schoon, en ref, clingo en beide Drools-takken spelen
 haar. Sinds de landing van `drl-teksttak-op-truth-maintenance` staan die twee documenten als handgeschreven golden in
-het corpus, zonder `bron.rgs`, met de bron als toelichting in hun `NOTE.md`: `jutterswet-aantalfilter-gehele-jaar`
+het corpus, zonder `source.rgs`, met de bron als toelichting in hun `NOTE.md`: `jutterswet-aantalfilter-gehele-jaar`
 en `jutterswet-aantalfilter-gehele-jaar-creatieguard`.
 
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) De frontend zet de subselectie met een heelperiode om naar het filter dat de twee goldens met de hand dragen,
   byte voor byte.
-- (b) De twee goldens krijgen hun `bron.rgs`; gate 10 houdt ze byte voor byte gelijk.
+- (b) De twee goldens krijgen hun `source.rgs`; gate 10 houdt ze byte voor byte gelijk.
 - (c) Een frontendtest, rood eerst; de frontendsuite en gate 10 groen.
 
-May touch: `frontends/regelspraak/**`, de twee goldens (`bron.rgs` erbij, `NOTE.md`), kaartverplaatsing.
+May touch: `frontends/regelspraak/**`, de twee goldens (`source.rgs` erbij, `NOTE.md`), kaartverplaatsing.
 
 Out of scope: `ref/`, `backends/`, `spec/`.

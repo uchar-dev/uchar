@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>These tests pin BOTH sides. The refusal fixtures are the frontend's share of the four-rule
  * family — WF-103 (the parent is a declared object type), WF-104 (acyclic, self-reference
  * included), WF-105 (no shadowing along the chain) and WF-106 (at most one direct supertype). WF-106
- * is the one that can have NO verifier check and NO corpus/negatief: on the wire a second parent is
+ * is the one that can have NO verifier check and NO corpus/negative: on the wire a second parent is
  * unwritable, so the rule bounds the language ABOVE the wire and this fixture is one of its two
  * witnesses (IR-SPEC ch. 2.2, SUBTYPING §3.1). The happy-path tests pin the parse position, the
  * order-free document-wide resolution, the emitted wire key, and the additivity invariant — a
@@ -60,7 +60,7 @@ class SubtypeDialectTest {
     // -------------------------------------------------------------------- rood-eerst: de weigeringen
 
     @Test void two_is_a_clauses_refuse_under_wf106() {
-        // The second direct parent. WF-106 has no verifier check and no negatief — a bare-string
+        // The second direct parent. WF-106 has no verifier check and no negative — a bare-string
         // `supertype` cannot WRITE two parents — so this fixture is one of its two witnesses.
         String src = """
             Objecttype het Strandrecht (mv: Strandrechten)

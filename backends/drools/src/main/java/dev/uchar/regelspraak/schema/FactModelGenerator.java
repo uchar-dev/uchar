@@ -517,7 +517,7 @@ public final class FactModelGenerator {
      * wrong for its use site — the bound role filled by the anchor's type instead of the created object's — and
      * this method hands that pair back without a word. That is division of labour, not oversight: <b>WF-047 is
      * the fence</b> ("role binding resolves; fillers agree with the use site"), checked by gate 3 with its own
-     * negatief cases, {@code wf047-bound-role-fills-source} and {@code wf047-creation-binding-wrong-filler}, so
+     * negative cases, {@code wf047-bound-role-fills-source} and {@code wf047-creation-binding-wrong-filler}, so
      * no corpus artefact reaches this method mis-filled. Measured on an {@code anchor/jutterswet-rekenkamer}
      * variant whose creation binding names the SIBLING role: the verifier FAILS it twice on WF-047, while ref
      * does not fault at all — it takes the wrong binding silently and reads a MISMATCH. A duplicate filler check

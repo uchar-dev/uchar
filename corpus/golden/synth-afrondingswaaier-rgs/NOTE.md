@@ -3,7 +3,7 @@
 The RegelSpraak-source twin of `synth-afrondingswaaier`: one division,
 `opbrengst / kavels` on a `Veilingronde`, rounded in each of the five modes
 to whole numbers and once more half away from zero to one decimal. The
-source is `bron.rgs`, the document is the RegelSpraak frontend's emission,
+source is `source.rgs`, the document is the RegelSpraak frontend's emission,
 and gate 10 re-emits it byte for byte, so the four directions beside
 `naar beneden` — `naar boven`, `rekenkundig`, `richting nul` and
 `weg van nul` (RUNTIME-SEMANTICS ch. 2.5; on the wire `ceiling`,
@@ -12,7 +12,7 @@ output for the first time. The five case files are the carrier's, copied
 byte for byte, with the same absolute expectations. The directory name
 follows the carrier; the document itself is not synthesized.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 Six rules of one shape, `De <prijs> van een Veilingronde moet berekend worden
 als de opbrengst van de Veilingronde gedeeld door de kavels van de

@@ -1,6 +1,6 @@
 (* The oracle runner: replay one uchar-case-v0 file against its ir.json.
    Exit 0: every expectation matches exactly — or, on an expectedFault
-   case (corpus/rood), the LOADING OR the evaluation faults with the pinned
+   case (corpus/red), the LOADING OR the evaluation faults with the pinned
    code and parameters. Exit 1: a mismatch, an unexpected fault, a fault that
    does not occur, or a fault of another code or parameters (the whole report
    then goes to stderr). Exit 2: a load or cross-check error that no

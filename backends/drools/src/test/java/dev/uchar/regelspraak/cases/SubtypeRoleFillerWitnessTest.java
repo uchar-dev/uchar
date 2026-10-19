@@ -50,7 +50,7 @@ class SubtypeRoleFillerWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path WRAKMELDING = Path.of("..", "..", "corpus", "golden", "jutterswet-wrakmelding");
-    private static final Path ROLE_KEY = Path.of("..", "..", "corpus", "rood", "ambiguous-case-role-key");
+    private static final Path ROLE_KEY = Path.of("..", "..", "corpus", "red", "ambiguous-case-role-key");
 
     private static final List<String> CASES = List.of("case1-een-wrakvondst-in-de-rol-van-de-vondst.json",
             "case2-een-scheepswrak-twee-niveaus-onder-de-vuller.json", "case3-een-rapport-van-beide-kanten.json");

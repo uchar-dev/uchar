@@ -101,9 +101,9 @@ faults with file/position context — never a silent fallback.
   stand at 0. A mint at depth 101 is the fault, never a truncation:
   "creation budget exhausted: object creation "werf eeuwig" of
   stratum 0 would mint at creation depth 101, on oc0::…::W1 — …"
-  (`corpus/rood/runaway-recursion`,
-  `corpus/rood/finite-chain-over-budget`,
-  `corpus/rood/jutterswet-budgetgrens-over`). The depth follows the
+  (`corpus/red/runaway-recursion`,
+  `corpus/red/finite-chain-over-budget`,
+  `corpus/red/jutterswet-budgetgrens-over`). The depth follows the
   chain of makings, so neither the passes between two generations nor
   the generations a mint waits for a link or a value count, and a fact
   creation, which mints nothing, has no budget. The generations of a
@@ -125,7 +125,7 @@ faults with file/position context — never a silent fallback.
   100 passes — divergence is a fault (ch. 5.7): two writers of one
   target disagree: rule "melding op vinddag" writes 2026-03-04 and
   rule "melding op aanspoeldag" writes 2026-03-01 to the attribute
-  meldingsdatum of V, a Vondst" (`corpus/rood/jutterswet-dubbele-melding`).
+  meldingsdatum of V, a Vondst" (`corpus/red/jutterswet-dubbele-melding`).
   Two conditional writers whose conditions both hold on one instance
   reach this (WF-079 refuses two unconditional ones), also when they
   sit in different strata, because the fixpoint of each stratum runs

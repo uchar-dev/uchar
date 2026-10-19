@@ -31,10 +31,10 @@ ongeldige invoer geweigerd. Wat ref en clingo daar doen, is niet gemeten.
   voor een label dat twee keer voorkomt, en meet ref en clingo op elk van de drie gevallen.
 - (b) De Drools-caselezer volgt die regel op beide takken; waar ref weigert, weigert hij met een zin die gate 8 kan
   pinnen.
-- (c) Rode cases onder `corpus/rood/` waar de invoer ongeldig is (`expectedFault` voor ref, clingo en drools), en een
+- (c) Rode cases onder `corpus/red/` waar de invoer ongeldig is (`expectedFault` voor ref, clingo en drools), en een
   golden waar ref de invoer aanvaardt; rood eerst.
 
-May touch: `backends/drools/**` (`cases/`, `schema/`), `corpus/rood/**`, `corpus/golden/**`, `scripts/check-rood.sh`
+May touch: `backends/drools/**` (`cases/`, `schema/`), `corpus/red/**`, `corpus/golden/**`, `scripts/check-red.sh`
 (**voorstel**, als de Drools-poot een regel nodig heeft).
 
 Out of scope: `ref/`, `backends/clingo` (tenzij (a) daar een afwijking van de regel vindt; dan een eigen kaart).

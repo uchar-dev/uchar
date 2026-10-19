@@ -2,10 +2,10 @@
 
 A hand-computed Jutterswet golden for the RegelSpraak rational number
 (§13.2.5): the mixed fraction `1_1/2`, its negative `-0_1/2`, and the proper
-fraction `3/4`. It is written in `bron.rgs`, and its `ir.json` is the
+fraction `3/4`. It is written in `source.rgs`, and its `ir.json` is the
 RegelSpraak frontend's emission; gate 10 re-emits it byte for byte.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 A `Vondst` with two whole, non-negative inputs, `gewicht` and `taxatie`, and
 three results of 2 decimals. Three rules:

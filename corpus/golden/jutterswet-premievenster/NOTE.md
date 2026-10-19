@@ -66,10 +66,10 @@ date attribute. Both shapes are carried here (four literal windows, one
 own-attribute window), which makes this document WF-111's passing golden. The
 general date expression is an OPEN wire decision and ill-formed until it is
 taken; its failing witness is
-`corpus/negatief/wf111-periodegrens-parameterdatum`, which was the red case
+`corpus/negative/wf111-period-boundary-parameter-date`, which was the red case
 `periodegrens-parameterdatum` until that day. The same holds for the window's
 POSITION: `borgpremie`'s `all` member is WF-112's passing golden, and the window
-under `none` is `corpus/negatief/wf112-periodevenster-tellende-kwantor`.
+under `none` is `corpus/negative/wf112-time-window-counting-quantifier`.
 
 The chapter's SECOND case is a period condition on a TEMPORAL target,
 where the window clips the written timeline instead of gating the rule.

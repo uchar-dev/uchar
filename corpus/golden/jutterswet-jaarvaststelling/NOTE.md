@@ -27,7 +27,7 @@ the strandvoogd pays the penning of that year (12 December 2025, 11
 December 2026). They give the set a percentage and a date beside a
 threshold and an amount.
 
-## The source (`bron.rgs`)
+## The source (`source.rgs`)
 
 Four parameters without granularity and one `Jutter` with a
 characteristic and four attributes. Four rules:
@@ -41,7 +41,7 @@ characteristic and four attributes. Four rules:
 - `betaaldatum van de penning`: his `betaaldatum` is the uitbetaaldag if he
   is penninggerechtigd.
 
-Gate 10 re-emits `ir.json` from `bron.rgs` alone byte-identically; the
+Gate 10 re-emits `ir.json` from `source.rgs` alone byte-identically; the
 scenario route writes the same document, since the scenarios carry no
 scope.
 

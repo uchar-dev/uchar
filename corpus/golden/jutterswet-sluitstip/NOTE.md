@@ -1,6 +1,6 @@
 # jutterswet-sluitstip — the emitter's millisecond-precision date literal on the wire
 
-The first `bron.rgs` golden that carries a date literal at millisecond
+The first `source.rgs` golden that carries a date literal at millisecond
 precision. Until
 2026-09-22 the RegelSpraak emitter wrote the day-first source snippet into
 a datum-tijd literal's `waarde`, and WF-095 admitted it as a second
@@ -8,7 +8,7 @@ spelling for that reason. The emitter now writes the canonical ISO lexeme
 into the literal's value — since L4 the `dateTime` variant of `value` — and
 keeps the snippet in `source`, as it already did for a day-precision date
 (WF-084), and WF-095 admits the ISO lexeme alone. This
-golden holds that route: gate 10 re-emits it from `bron.rgs`
+golden holds that route: gate 10 re-emits it from `source.rgs`
 byte-identically, gate 3 holds it WF-095-clean, and gates 5, 6 and 12
 replay it on the values below.
 
@@ -71,4 +71,4 @@ move too — but it is the one that lands on it exactly.
 Case 1 carries V1–V4, case 2 carries V5–V7.
 
 Own-authored Jutterswet material; `ir.json` is the frontend's output of
-`bron.rgs`, not hand-written.
+`source.rgs`, not hand-written.

@@ -1,7 +1,7 @@
 # synth3-takbarriere
 
 The **unread-binder witness** (probe B1 of the let-lowering card,
-2026-09-01): a hand-written `ir.json` with no `bron.rgs`, like its
+2026-09-01): a hand-written `ir.json` with no `source.rgs`, like its
 `synth3-*` siblings, whose only job is to separate **call-by-need** from
 the strict binding at corpus level (`RUNTIME-SEMANTICS.md` ch. 10.6
 clause 3).

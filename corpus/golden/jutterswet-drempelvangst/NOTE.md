@@ -36,7 +36,7 @@ Daarbij geldt:
 
 Together they fence the boundary from both sides: a resolver that
 lowered too little loses the `Let` in `drempelaandeel`; one that lowered
-too much loses the `19` in `drempelgewicht`. Gate 10 re-emits `bron.rgs`
+too much loses the `19` in `drempelgewicht`. Gate 10 re-emits `source.rgs`
 byte-identically, so either drift is caught at the source level too.
 
 ## Hand-computed absolutes

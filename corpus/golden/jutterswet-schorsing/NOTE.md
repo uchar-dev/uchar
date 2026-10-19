@@ -26,7 +26,7 @@ an exception on the art. 3 target, because that sentence denies the right
 itself. With one ground on each side the two models give the same answer:
 the right holds iff the count reaches 12 and the vergunning is not geschorst.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - Base rule **penningrecht art 3**: `Een Jutter heeft recht op de penning
   indien zijn aantal aangemelde vondsten groter of gelijk is aan 12.`

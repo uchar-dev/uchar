@@ -18,7 +18,7 @@ Werkloosheidswet (BWBR0004045, toestand 2026-07-01): art. 15, art. 16
 lid 1, art. 20 lid 1 onderdeel c, art. 21 lid 1 en lid 2 en art. 43 lid 1,
 verbatim in `corpus/golden/anchor/ww-herleving-inkomen/NOTE.md`.
 
-## De bron (`bron.rgs`)
+## De bron (`source.rgs`)
 
 De bron van `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md` §8.2,
 letterlijk: het objecttype `Werknemer`, een basisregel, drie rekenregels en

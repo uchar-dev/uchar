@@ -22,7 +22,7 @@ Het sloeptal van een Reddingsvloot moet berekend worden als het aantal sloepen
 `RUNTIME-SEMANTICS.md` ch. 3.9a, whose counting worked examples are this
 document's cells verbatim.
 
-`bron.rgs` is the source: the §8.2-qualified sentence is exactly what
+`source.rgs` is the source: the §8.2-qualified sentence is exactly what
 `RuleChecker.kwantorvouw` lowers, and since this card it lowers all five
 quantifiers rather than two, carrying the written telwoord as the fold's
 `threshold`. Gate 10 re-emits the document byte-identically.

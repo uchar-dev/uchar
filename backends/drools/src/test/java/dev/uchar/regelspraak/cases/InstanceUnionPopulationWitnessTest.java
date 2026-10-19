@@ -13,8 +13,8 @@ import java.nio.file.Path;
  * IR-SPEC ch. 4.3 / WF-110 (d) — an instance-set union over TWO POPULATIONS, refused BY NAME in both
  * transpiler branches.
  *
- * <p>Why this needs a witness of its own. The wire refuses the shape (WF-110 (d), negatief
- * {@code wf110-unie-ongelijke-elementtypes}) and so does the RegelSpraak frontend, so no golden can carry it
+ * <p>Why this needs a witness of its own. The wire refuses the shape (WF-110 (d), negative
+ * {@code wf110-union-unequal-element-types}) and so does the RegelSpraak frontend, so no golden can carry it
  * and no gate-12 channel will ever name it. What remains is the executor's own answer to a document that
  * reached it anyway: one accumulate has ONE source pattern and therefore one element CLASS, so a second
  * population would have to be dropped — and dropping it counts the wrong number silently, which is exactly
@@ -39,7 +39,7 @@ class InstanceUnionPopulationWitnessTest {
 
     /** IR-SPEC ch. 4.3 / WF-110 (a) — the union standing where a VALUE is written.
      *
-     *  <p>Rood-eerst, measured 2026-09-22 on {@code corpus/negatief/wf110-unie-als-regelwaarde}: ref answered an
+     *  <p>Rood-eerst, measured 2026-09-22 on {@code corpus/negative/wf110-union-as-rule-value}: ref answered an
      *  EVALUATION FAULT and the ASP backend a TRANSLATION FAULT, both citing WF-110; the exec-model branch
      *  skipped with the GENERIC {@code regel (waarde buiten scope)}, which names no construct; and the DRL-TEXT
      *  branch CRASHED — {@code NullPointerException} on {@code r.value().type().isNumber()}, because the

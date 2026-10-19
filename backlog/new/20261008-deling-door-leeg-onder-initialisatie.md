@@ -60,7 +60,7 @@ producent.
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Een golden met deze vorm, eigen Jutterswet-casus, rechtenvrij, met
-  `bron.rgs`, `ir.json` en cases voor beide gevallen hierboven. Overweeg een
+  `source.rgs`, `ir.json` en cases voor beide gevallen hierboven. Overweeg een
   derde case met een voorwaardelijke initialisatie waarvan de voorwaarde niet
   geldt.
 - (b) De exec-modeltak en clingo gerepareerd, rood eerst: ref ≡ clingo ≡

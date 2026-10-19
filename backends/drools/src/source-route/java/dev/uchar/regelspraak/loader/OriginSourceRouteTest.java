@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The origins along the two routes to a model (IR-SPEC ch. 2.13): for every corpus golden with a {@code bron.rgs},
+ * The origins along the two routes to a model (IR-SPEC ch. 2.13): for every corpus golden with a {@code source.rgs},
  * the table {@code gegenereerd} of the model the loader reads from the committed {@code ir.json} equals the table of
  * the model the resolver makes of the source. A consumer that holds only the IR document then knows which
  * declarations the frontend made, and from what, as the frontend does. Gate 10 holds the committed document to the
@@ -31,7 +31,7 @@ class OriginSourceRouteTest {
         List<Path> directories;
         try (var s = Files.list(GOLDEN)) { directories = s.sorted().toList(); }
         for (Path map : directories) {
-            Path source = map.resolve("bron.rgs");
+            Path source = map.resolve("source.rgs");
             if (!Files.exists(source)) continue;
             RegelSpraakModel viaSource = Resolver.resolve(Files.readString(source));
             assertTrue(viaSource.isOk(), () -> map + " resolvet niet: " + viaSource.diagnostics);

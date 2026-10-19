@@ -65,5 +65,5 @@ the same cases pass in all four executors before the change and after it:
 `oracle: PASS`, `clingo: PASS`, `PLAYED 4` in both Drools branches. With
 the order of this source, only the guard that reads the input passes them.
 
-The source is `bron.rgs`; gate 10 re-emits this document from it
+The source is `source.rgs`; gate 10 re-emits this document from it
 byte-identically.

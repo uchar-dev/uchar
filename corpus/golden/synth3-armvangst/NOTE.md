@@ -2,7 +2,7 @@
 
 The nested `Let` whose **own value reads the outer need**, with the body
 reading that need through nothing else. Hand-written `ir.json`, no
-`bron.rgs` (no source language emits an `IfThenElse`, IR-SPEC ch. 4.10).
+`source.rgs` (no source language emits an `IfThenElse`, IR-SPEC ch. 4.10).
 
 This is the sharpest of the four branch documents, because the outer
 need's read place is not visible in either arm: syntactically the arms

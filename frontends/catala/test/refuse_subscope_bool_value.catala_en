@@ -2,7 +2,7 @@
 
 Een boolean OUTPUT van een gedeclareerde subscope is een kenmerk op de callee.
 Gelezen als VOORWAARDE verlaagt hij tot een genavigeerde `CharacteristicCheck`
-(`overzeelezing.catala_en`). Gelezen in WAARDE-positie — hier als operand van
+(`overzee_reading.catala_en`). Gelezen in WAARDE-positie — hier als operand van
 een gelijkheid `eig_a.overzees = eig_b.overzees` — heeft hij geen beeld: de
 plugin zou een dangling `AttributeReference` tegen de callee-karakteristiek emitteren
 (verifier-clean, maar ref leest hem leeg en antwoordt stil fout, clingo faalt op

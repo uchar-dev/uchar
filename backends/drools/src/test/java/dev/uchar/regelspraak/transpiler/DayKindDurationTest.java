@@ -100,7 +100,7 @@ class DayKindDurationTest {
                         () ->
                                 RegelSpraakRuntime.rsDatumPlusDagsoort(
                                         d("2024-12-20"), BigDecimal.ONE, NEVER, true));
-        // the same fragment ref and clingo pin, and corpus/rood/dagsoort-onvervulbare-wandeling
+        // the same fragment ref and clingo pin, and corpus/red/day-kind-unsatisfiable-walk
         assertEquals(
                 true,
                 e.getMessage()

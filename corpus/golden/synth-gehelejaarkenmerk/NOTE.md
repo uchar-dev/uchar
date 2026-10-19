@@ -2,7 +2,7 @@
 
 The corpus witness of `RUNTIME-SEMANTICS.md` ch. 3.9's
 **characteristic-holds** test, and of its three vacuous passes. Hand-written
-(synth family, no `bron.rgs`): the shape it pins is a kernel question about
+(synth family, no `source.rgs`): the shape it pins is a kernel question about
 where a timeline stops being a timeline, not a surface-language question.
 
 Until 2026-09-11 no golden carried the form at all. The only `GeheelPeriode`

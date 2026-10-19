@@ -38,7 +38,7 @@ type expectation =
       (* [code]: the EF code (RUNTIME-SEMANTICS ch. 5.7b) a matching channel
          fact must carry among the codes deposited for it *)
 
-(* the red-path case form (corpus/rood): LOADING OR evaluation MUST fail
+(* the red-path case form (corpus/red): LOADING OR evaluation MUST fail
    observably in every executor, with the fault kind's EF code (RUNTIME-SEMANTICS
    ch. 5.7b) and the parameters the case pins; gate 8 compares both with what
    each executor reports. No fragment of a message is pinned. *)

@@ -229,7 +229,7 @@ fence: `unordered comparison: 2026-06-21 vs @…ms`).
 document in the corpus whose verdict tells the family reading from the
 v0 letter — measured, restoring that letter refuses its four numeric
 `eerste`/`laatste` operand positions and moves no other document's
-verdict. It carries no `bron.rgs`, and it could not: the frontend still
+verdict. It carries no `source.rgs`, and it could not: the frontend still
 refuses a non-date operand at typing, so the widening is **wire-first**,
 and the frontend's own doc comment still states the v0 letter it
 enforces. That gap is a recorded flank, not a claim of agreement — the
@@ -548,7 +548,7 @@ existing does-not-fit fence. This is the ch. 2.4 delta (a
 possibly-non-terminating value MUST pass an explicit rounding before a
 bounded write) realised for Catala decimals; a 4-dec target fed `1,0000
 ÷ 3,0000` faults in **both** executors (the differential holds where it
-runs — the red witness `corpus/rood/decimal-nonterminating`, landing
+runs — the red witness `corpus/red/decimal-nonterminating`, landing
 with the executor card).
 
 **The scale is a boundary, not a step (maintainer decision 2026-08-24,
@@ -732,7 +732,7 @@ annotation against the type derived from the operands per that
 clause's table. Two priced exclusions stay open there, measured and
 recorded in the clause itself: the SIGN is crossed at no derived
 position (documents may narrow it truthfully; crossing it turns seven
-golden+rood documents red), and the multiplicative precision follows
+golden+red documents red), and the multiplicative precision follows
 the stated ch. 2.3 formula only in prose (crossing it costs eleven
 documents across three producers with three precision policies). The
 fourth class — **positions** whose result unit v0 does not derive —
@@ -755,7 +755,7 @@ type, and answered **3.750,00** where `ref` and clingo answered **3,75** on
 a unit-lying aggregation result — a divergence the verifier could not see,
 because a derived type has no single declaration to be crossed against.
 It could not until the derivation law landed (2026-09-04): that shape is
-`wf091-foldwortel-eenheid`'s negatief today, refused at the fold root on
+`wf091-fold-maximum-unit`'s negative today, refused at the fold root on
 the unit facet.
 
 ---
@@ -1185,7 +1185,7 @@ carries its range, so nothing is derived and nothing falls back. The
 migration derived the missing ranges once, with this derivation, and
 refused the documents where it found zero or several candidates
 (`wf034-ambigu-typenpaar`, removed at L2 on that ground,
-`corpus/negatief/README.md`).
+`corpus/negative/README.md`).
 
 Worked example (the `jutterswet-kaveltelling` golden, verbatim in gates
 5–6 and as WV-3.4a-typenpaar in `ref/` tests), in its L2 form. The role
@@ -1338,8 +1338,8 @@ The result is a whole, unitless number whatever unit the folded attribute
 carries, so a filled count has no rounding question and no unit derivation.
 It is the result type the instance count has, reached by a different fold.
 That type is DERIVED and not declared, so a wire annotation saying anything
-else is ill-formed rather than believed (`IR-SPEC.md` WF-091; negatief
-`wf091-aantalgevulde-eenheid`).
+else is ill-formed rather than believed (`IR-SPEC.md` WF-091; negative
+`wf091-filled-count-unit`).
 
 **One exclusion, and it is normative rather than a note: the folded
 attribute is NOT time-dependent.** "Whatever its type" is about the value
@@ -1355,7 +1355,7 @@ naming the attribute AND the fold, and never reads a value the timeline does
 not have at an instant (`ref` and the ASP backend, word for word: *the
 temporal attribute … of a set has no moment at which a filled count can ask
 a timeline whether it is filled*; worked example WV-3.4c-temporeel-faalt,
-red case `aantalgevulde-temporele-setbron`). Naming the FOLD is part of the
+red case `filled-count-temporal-set-source`). Naming the FOLD is part of the
 clause and not presentation: the ranking folds are refused at the same
 position on the same ground, so a refusal that named only the position would
 be one sentence for five constructs and would identify none of them.
@@ -2051,7 +2051,7 @@ session value — ch. 8.2's evaluation date is — but the arbitrary day the
 definition is about, and it denotes nothing anywhere else. An executor that
 meets the bound day outside a day-kind evaluation **faults**, naming the form; it never reads as leeg and never
 falls back on the evaluation date (red case
-`contextwaarde-de-dag-buiten-dagsoort` pins both executors).
+`context-value-de-dag-outside-day-kind` pins both executors).
 
 `P_k` is a function of **the day alone**. WF-031's purity clause is what
 makes that true: the condition reaches no fact base, and — the position
@@ -2063,7 +2063,7 @@ bound day, the §9.8 composition); the reference graph is acyclic
 looping. The composition is carried **on the bound day only**: a nested
 test on some OTHER date ("… indien 15-03-2026 een ankerdag is") is a
 recognised, unexecuted form, refused by name in all three executors
-(red case `dagsoortverwijzing-andere-dag`). The narrow route is
+(red case `day-kind-reference-other-day`). The narrow route is
 deliberate and was measured: before 2026-09-19 `ref` and the Drools
 day-kind compiler answered that shape while the ASP backend refused it,
 and one executor computing what another refuses is not a semantics. The
@@ -2104,7 +2104,7 @@ calendar days** — a little over 109 years — without finding a day of the
 kind is a **fault**, never an endless walk. It is a fence on the GAP, not
 on the total: "datum plus 5 000 werkdagen" walks some nineteen years and
 is answerable, while a day kind no calendar day satisfies faults after
-40 000 days. Red case `dagsoort-onvervulbare-wandeling` pins the fault in
+40 000 days. Red case `day-kind-unsatisfiable-walk` pins the fault in
 all three executors.
 
 **What the fence claims, and what it does not.** It is a limit of REACH:
@@ -2128,7 +2128,7 @@ amount of correctness in the definition changes that. Three properties
 are what make the trade acceptable. **The refusal of a step beyond the
 reach is a FAULT and never a value** — this rule admits no arm that
 answers leeg, and each executor is held to that by red case
-`dagsoort-reikwijdte-buiten-tabel`, which exists because an early ASP
+`day-kind-scope-outside-table`, which exists because an early ASP
 lowering did answer leeg there in silence. **The fence itself is the same
 distance in every executor**, so how far a model may reach is a property
 of the language and not of an engine. And **the distance is written
@@ -2186,8 +2186,8 @@ hand-computed day-precision values — the step forward and backward, the
 zero and leeg counts, the signed and absolute counts — and golden
 `jutterswet-getijklok` closes it on the datum-tijd step, clock-time
 preservation and all. The three red cases pin the three refusals
-(`dagsoort-onvervulbare-wandeling`, `contextwaarde-de-dag-buiten-dagsoort`,
-`dagsoortverwijzing-andere-dag`).
+(`day-kind-unsatisfiable-walk`, `context-value-de-dag-outside-day-kind`,
+`day-kind-reference-other-day`).
 
 **How the ASP backend answers without walking.** A 40 000-day reach makes
 a ground per-day walk impossible, so the backend does not build one: it
@@ -2907,11 +2907,11 @@ hide that:
 | as a rule's whole condition | executed by all four (five rules in the golden, one per spelling) |
 | as a member of an `all` or `the` composite | executed by all four (the golden's `borgpremie`). In a consistency assertion, as its whole criterion or an `all` member, executed by all four since 2026-09-23: both Drools branches refused it until card `drools-venster-vouwtoets` (witness `WindowAssertionWitnessTest` in the Drools backend; no golden) |
 | in the `test` or the `filter` of an `all` quantifier fold, or in the die/dat `filter` of an aggregation | executed by all four since 2026-09-23, the member as the window's subject: a bound that is an attribute is read on each member. The Drools exec-model branch refused all three positions until card `drools-venster-vouwtoets`; golden `corpus/golden/jutterswet-wachtvenster` pins them, each ploeg carrying a same-named date of its own that a reading on the fold's subject would take |
-| under `none` or a counting quantifier | ill-formed since 2026-09-23 (WF-112; negatief `wf112-periodevenster-tellende-kwantor`). Before that all four executors refused it, and their refusals remain as fail-fast checks — both Drools branches' by name since card `drools-venster-vouwtoets`, at every position that holds a condition: a rule condition, a quantifier fold's `filter` and `test`, an aggregation filter, a consistency assertion and a fact-creation guard. The rule reaches into a quantifier fold's `filter` and `test` too: measured that day, the Drools DRL-text branch answered the fold under all five quantifiers, the complement included |
+| under `none` or a counting quantifier | ill-formed since 2026-09-23 (WF-112; negative `wf112-time-window-counting-quantifier`). Before that all four executors refused it, and their refusals remain as fail-fast checks — both Drools branches' by name since card `drools-venster-vouwtoets`, at every position that holds a condition: a rule condition, a quantifier fold's `filter` and `test`, an aggregation filter, a consistency assertion and a fact-creation guard. The rule reaches into a quantifier fold's `filter` and `test` too: measured that day, the Drools DRL-text branch answered the fold under all five quantifiers, the complement included |
 
 Both bound shapes WF-111 admits are executed (a date literal and the
 subject's own scalar date attribute). Any other bound is ill-formed:
-`corpus/negatief/wf111-periodegrens-parameterdatum`, a date parameter, was
+`corpus/negative/wf111-period-boundary-parameter-date`, a date parameter, was
 until 2026-09-23 the red witness that all four executors refused. The two
 OCaml executors keep their refusal by name, with the phase in the sentence,
 as a fail-fast check on input that has not been verified.
@@ -2976,7 +2976,7 @@ one:
   says what the window does to a timeline. It does not say what the
   composite's other members then gate, clip or leave alone. OPEN.
 - the clip on a temporal CHARACTERISTIC target (red case
-  `corpus/rood/periodevenster-tijdlijnkenmerk`). Neither OCaml executor
+  `corpus/red/time-window-timeline-characteristic`). Neither OCaml executor
   writes a temporal characteristic (ch. 3.11), so the timeline the window
   would cut is never produced. "Time-dependent" is asked of BOTH declaration
   tables, the attribute's granularity and the characteristic's. An
@@ -3070,11 +3070,11 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
 | `minimum`/`maximum`/`first`/`last` (min/max/eerste/laatste) over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
 | §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses; as a rule's whole condition and as an `all`/`the` composite member) |
-| §8.4.3 period condition under `none` or a counting quantifier | **ill-formed (WF-112, maintainer decision 2026-09-23)**: the window gates the rule, and no reading is specified for its complemented or counted verdict (the time-free session is where the two readings part). Covers a quantifier fold's `filter` and `test` too. Negatief `wf112-periodevenster-tellende-kwantor`; the executors' refusals remain as fail-fast checks, both Drools branches' by name since card `drools-venster-vouwtoets` |
-| §8.4.3 period condition on a temporal target | **specified (delta) and executed: the clip, ch. 3.10** — `ref` and the ASP backend since 2026-09-23, on attribute targets with the ch. 3.7/3.8 producers. Corpus-pinned by `corpus/golden/jutterswet-pachtvenster` wherever the case lies on the grid (the evaluation date ignored — unset and outside every window alike —, a leeg or empty window writing the empty timeline); the SEGMENT-CUTTING clause is suite-pinned only, in both OCaml executors. Both Drools branches refuse it by name. Still refused by name in both OCaml executors: the window as a composite MEMBER on a temporal target (OPEN), and a temporal CHARACTERISTIC target (red case `periodevenster-tijdlijnkenmerk`), because no temporal characteristic is written (ch. 3.11) |
+| §8.4.3 period condition under `none` or a counting quantifier | **ill-formed (WF-112, maintainer decision 2026-09-23)**: the window gates the rule, and no reading is specified for its complemented or counted verdict (the time-free session is where the two readings part). Covers a quantifier fold's `filter` and `test` too. Negatief `wf112-time-window-counting-quantifier`; the executors' refusals remain as fail-fast checks, both Drools branches' by name since card `drools-venster-vouwtoets` |
+| §8.4.3 period condition on a temporal target | **specified (delta) and executed: the clip, ch. 3.10** — `ref` and the ASP backend since 2026-09-23, on attribute targets with the ch. 3.7/3.8 producers. Corpus-pinned by `corpus/golden/jutterswet-pachtvenster` wherever the case lies on the grid (the evaluation date ignored — unset and outside every window alike —, a leeg or empty window writing the empty timeline); the SEGMENT-CUTTING clause is suite-pinned only, in both OCaml executors. Both Drools branches refuse it by name. Still refused by name in both OCaml executors: the window as a composite MEMBER on a temporal target (OPEN), and a temporal CHARACTERISTIC target (red case `time-window-timeline-characteristic`), because no temporal characteristic is written (ch. 3.11) |
 | A corpus carrier for a clipped (off-grid) bucket | **OPEN** — a corpus carrier for a cut bucket needs the case schema (`uchar-case-v0`, `timelineValue`) to release EXPECTED timelines from the declared grid; until then the clause lives in the executors' suites. The alternative, a WF rule demanding on-grid bounds for a clip, is not taken |
 | A time window inside the `filter` of an `all` quantifier fold, in a time-free session | **OPEN, no WF-112 widening** (maintainer decision 2026-09-23): `ref`, the ASP backend and the Drools DRL-text branch answer consistently — the window never matches, the member is filtered out, the fold is vacuously true — so there is no unnamed complement reading and no ground for refusal. Since 2026-09-23 (card `drools-venster-vouwtoets`) the Drools exec-model branch carries it too, so all four executors answer it alike; `corpus/golden/jutterswet-wachtvenster` pins the vacuous reading in all four (`bevoegd` in `case3-tijdvrij`) |
-| A period-condition bound other than a literal or an own scalar attribute | **ill-formed (WF-111, maintainer decision 2026-09-23)**; negatief `wf111-periodegrens-parameterdatum`. The general date expression (a parameter, a navigated read, arithmetic) is an **OPEN wire decision**: no corpus document asks for it, and a bound not tied to the subject gives the ASP encoding no fault atom to attach to. A v1 card that takes it on moves WF-111 and gives ch. 5.11's `from`-before-`to` order its first witness |
+| A period-condition bound other than a literal or an own scalar attribute | **ill-formed (WF-111, maintainer decision 2026-09-23)**; negative `wf111-period-boundary-parameter-date`. The general date expression (a parameter, a navigated read, arithmetic) is an **OPEN wire decision**: no corpus document asks for it, and a bound not tied to the subject gives the ASP encoding no fault atom to attach to. A v1 card that takes it on moves WF-111 and gives ch. 5.11's `from`-before-`to` order its first witness |
 | Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN — as a WRITE producer only; the navigated whole-period READ is the row below |
 | Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |
 | Date-valued whole-period comparison | refused (mirrored) |
@@ -3083,11 +3083,11 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Whole-period qualifier, the **ordering/equality** test over a value timeline | **specified and executed, ch. 3.9** — the reference interpreter and the ASP backend built it 2026-09-16 (the heelperiode-forall card), the Drools backend carried it already; witnessed by `corpus/golden/jutterswet-ploegpremie` and by each executor's own suite. The **date-valued** form stays refused (its own row above), and the navigated form is untouched |
 | Whole-period qualifier, the **leeg/gevuld** tests | **specified and executed, ch. 3.9** (decided 2026-09-26: one threshold, days(B), for every test; the inner negation per day, so the negated leeg test is the gevuld test and the negated gevuld test the leeg test) — all three executors, both branches of the Drools backend included, over an own operand and one reached over one to-one hop, both grids and both negations; witnessed by `corpus/golden/jutterswet-gehele-periode-leeg`. Until that date all three refused the form by name, and four red cases held the refusals (`leegtest-heel-tijdvak`, `leegnegatie-heel-tijdvak`, `gevuldtest-heel-tijdvak`, `gevuldnegatie-heel-tijdvak`); they left the red zone with them. An operand reached over a CHAIN of to-one hops is executed by all three executors, both branches of the Drools backend included since 2026-09-26; the three suites pin it on one document (`ref`, the ASP backend, and the Drools backend's `WholePeriodChainWitnessTest`), and no golden carries it. Until then both Drools branches declined it with a reason that named no form, because they lowered one hop only; a whole-period comparison over a chain stays declined in both, as `ref` folds no navigated comparison. A time-dependent PARAMETER as the operand passes WF-043 and is executed by no executor: all three refuse it by name in one sentence, the Drools backend in its loader for both branches |
 | **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — `all` and `none` in all three executors, over a WHOLE-PERIOD matrix (witness `corpus/golden/jutterswet-ploegpremie`) and, since 2026-09-16, over a NON-temporal one (witness `corpus/golden/jutterswet-schouwploeg`: five cases carrying six verdict rows — two ploegen share one of them, which is what pins the RANGE — both quantifiers, two matrix shapes and a negated matrix). The executor asymmetry this row used to record is **gone**: the ASP backend REIFIES the matrix into a helper predicate and negates that one atom (negation-as-failure over a reified conjunction is an ordinary ASP body, where the complement of an arbitrary conjunction of atoms is not), and both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject — the exec branch collecting the contributors, the DRL-text branch denying the failure witness with a `not` pattern. What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. **All five quantifiers are executed since 2026-09-16**: the counting three — the named extension point this row used to record — are built in all three executors over BOTH matrix routes, each of them reading the SIZE of the satisfier set where `all` and `none` read a witness (the ASP backend a `#count` with the range join INSIDE the aggregate, the Drools exec branch a counting twin of the ch. 3.9 fold helpers and a count over the collected contributors, the DRL-text branch a count accumulate over the element pattern). Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 matrix, seven verdict rows), `corpus/golden/jutterswet-vuurtoren` (a non-temporal one, six) and `corpus/golden/jutterswet-sleepvloot` (the NIET prefix, which under a threshold lands on the COUNT because there is no quantifier to flip into — three rows, four of whose cells invert if `count(P)` is read for `count(¬P)`). What is left on the quantifier field is `the`, refused by name by WF-108 (a); all matrix routes of this node are executed by all four executors since 2026-09-18; what stays bounded is which matrix FORMS each executor's condition translation carries, per form and by name. Since 2026-09-19 the node also has a SOURCE language: `corpus/golden/jutterswet-vuurtoren-flogic` is the F-logic-emitted twin of the hand-written `jutterswet-vuurtoren`, over the same five case files byte for byte, played by all four executors |
-| **Day-kind duration forms** (§6.10 count, §6.11 step) over day-precision operands | **specified and executed, ch. 3.8** — ref and clingo since 2026-09-19, the Drools backend playing the same values (golden `jutterswet-bergingsklok`; red case `dagsoort-onvervulbare-wandeling`). The reach fence and the backward step are DELTAS: the source gives neither, and the source's N = 0 sentence contradicts its own "always a day of the kind" sentence, which ch. 3.8 resolves in favour of the zero rule |
+| **Day-kind duration forms** (§6.10 count, §6.11 step) over day-precision operands | **specified and executed, ch. 3.8** — ref and clingo since 2026-09-19, the Drools backend playing the same values (golden `jutterswet-bergingsklok`; red case `day-kind-unsatisfiable-walk`). The reach fence and the backward step are DELTAS: the source gives neither, and the source's N = 0 sentence contradicts its own "always a day of the kind" sentence, which ch. 3.8 resolves in favour of the zero rule |
 | **`datum-tijd ± N <dagsoort>`** | **specified and executed, ch. 3.8** (maintainer decision 2026-09-19): the day kind is judged on the civil day part and the original clock time rides through unchanged; golden `jutterswet-getijklok` closes the square. The DELTA is the rule itself — the source admits datum-tijd operands and settles nothing about the time of day |
 | **`duration` (tijdsduur) in a day kind over datum-tijd operands** | **refused by name** in both OCaml executors, no corpus case (maintainer decision 2026-09-19, split from the row above): counting whole days of a kind between two INSTANTS needs a rule for the part-day at each end, and none is fixed. OPEN — it is the partial-day/boundary-instant question, not the day-kind question. The Drools backend counts over the bare date parts, a reading this spec has not adopted |
 | The day-kind **predicate as a rule condition** (§8.1.5, "… is een werkdag") | refused by name in both OCaml executors (ch. 5.4's framing: a day kind is consulted as a stratum-0 classifier, never as a derived read inside the rule fixpoint). It IS evaluated inside a day-kind condition, where the nested reference is the §9.8 composition — that arm is executed, **on the bound day only** |
-| The §9.8 composition **on a date other than the bound day** | **refused by name in all three executors** since 2026-09-19 (red case `dagsoortverwijzing-andere-dag`); the narrow route, taken because ref and the Drools compiler answered it while the ASP backend refused. OPEN — the carrying reading needs a source for what the test MEANS inside a definition about an arbitrary day |
+| The §9.8 composition **on a date other than the bound day** | **refused by name in all three executors** since 2026-09-19 (red case `day-kind-reference-other-day`); the narrow route, taken because ref and the Drools compiler answered it while the ASP backend refused. OPEN — the carrying reading needs a source for what the test MEANS inside a definition about an arbitrary day |
 | Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |
@@ -3459,7 +3459,7 @@ name-less creations can never collide. The to-many and linkless shapes realise t
 the deterministic mint itself. More than one connecting relation is a
 **fault** — v0 silently drops the back-link there ("onopgelost
 terugkoppeling"); execution refuses to guess (recorded delta, the red
-witness `corpus/rood/ambiguous-backlink`). And a to-one connecting
+witness `corpus/red/ambiguous-backlink`). And a to-one connecting
 relation admits at most **one** creating writer (WF-052, `IR-SPEC.md`
 ch. 3.4): a second writer's inevitable second filler is excluded
 statically, never left to diverge between a faulting interpreter and
@@ -3563,7 +3563,7 @@ The Drools backend fires a case at most 100 000 times, in each of its
 three branches. Its exec-model and DRL-text branches carry no creation
 budget at all and run a finite chain past the budget to its end (gate
 8, whose red run drives the exec-model branch, lists each such case with
-that reason, `scripts/check-rood.sh`); a run that needs more firings, a
+that reason, `scripts/check-red.sh`); a run that needs more firings, a
 closure of more than 100 000 links among them, ends at the cap without a
 fixpoint and is reported as such ("geen fixpunt"). Measured 2026-10-09
 on the anchor `jutterswet-erflijn` over a chain of 450 input Wachters,
@@ -3739,7 +3739,7 @@ labelled start reads **2** (from rank 4: **5**), the rank-detector
 consistency (rank < 5) turns the case **inconsistent** exactly because
 generation five exists, and an ineligible start (rank 7) recruits
 nothing (fold **0**). The runaway variant (condition rank ≥ 1) is the
-red witness `corpus/rood/runaway-recursion`: both executors fault
+red witness `corpus/red/runaway-recursion`: both executors fault
 their budget, loudly.
 
 ### 5.6 The error channel, operationally
@@ -3855,7 +3855,7 @@ none (WF-045). Where at most one of the conditions holds, or the writers
 write the same value, the equations hold together and the document plays.
 WF-079 refuses two unconditional writers statically; a pair with
 conditions is well-formed and is decided here. Worked example
-(`corpus/rood/jutterswet-dubbele-melding`,
+(`corpus/red/jutterswet-dubbele-melding`,
 `corpus/golden/jutterswet-melding-naar-aard`): "De meldingsdatum van een
 Vondst moet gesteld worden op zijn vinddatum indien zijn vinddatum gevuld
 is" beside the same rule on its aanspoeldatum; V with vinddatum 04-03-2026
@@ -4011,9 +4011,9 @@ parameters, the clause that defines it and its witnesses.
   Gate 8 holds each executor's emitted keys to this column: a key outside the
   column of its code fails with the code, the executor and the key.
 - **Witnesses.** A code enters the table together with its witness: a red
-  case (`corpus/rood/<dir>`) whose `expectedFault.code` names it, or, for a
+  case (`corpus/red/<dir>`) whose `expectedFault.code` names it, or, for a
   kind on the §9.5 channel, a golden case (`corpus/golden/<dir>`) whose
-  `inconsistent` expectation names it. Gate 8 (`scripts/check-rood.sh`)
+  `inconsistent` expectation names it. Gate 8 (`scripts/check-red.sh`)
   reads this table: every row parses, every witness exists and pins the
   code of its row, every code a red case pins is a row, every parameter an
   executor emits is a key of the column of its code, and every code a golden
@@ -4036,30 +4036,30 @@ parameters, the clause that defines it and its witnesses.
 
 | Code | Kind | Channel | Parameters | Spec home | Witnesses |
 |---|---|---|---|---|---|
-| EF-001 | a role key of the case input resolves to two roles | case input | `roleKey`, `objectType` | ch. 5.7 step 3; IR-SPEC ch. 2.6 | `corpus/rood/ambiguous-case-role-key` |
-| EF-002 | a role link of the case input names a label the case does not declare | case input | `role`, `label`, `target` | ch. 5.7 step 3 | `corpus/rood/unknown-role-target-label` |
-| EF-003 | a date lexeme of the case input names no calendar day | case input | `field`, `lexeme` | ch. 5.7 step 3 | `corpus/rood/asofdate-kalender`, `corpus/rood/inputdatum-kalender` |
-| EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 11.3 | `corpus/rood/input-overprecision`, `corpus/rood/input-overprecision-param`, `corpus/rood/list-element-overprecision`, `corpus/rood/struct-field-overprecision` |
-| EF-005 | division by a numeric zero | fault; decided to move to §9.5 (ch. 1.4 point 4) | `rule`, `dividend` | ch. 1.4 point 4 | `corpus/rood/aantalgevulde-ongewaakte-deling`, `corpus/rood/atmost-reads-until-settled`, `corpus/rood/begrensd-reads-bounds-in-order`, `corpus/rood/closed-runtime-division-by-zero`, `corpus/rood/division-abs-by-numeric-zero`, `corpus/rood/division-by-numeric-zero`, `corpus/rood/som-fallback-always-evaluated`, `corpus/rood/vouwfilter-deelt-door-nul` |
-| EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4 | `corpus/rood/closed-nonexact-division`, `corpus/rood/closed-runtime-nonexact-division`, `corpus/rood/decimal-nonterminating` |
-| EF-007 | a datum-tijd step leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/rood/dagsoortstap-buiten-bereik`, `corpus/rood/datumtijdstap-buiten-bereik` |
-| EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/rood/datumtijdstap-buiten-bereik` |
-| EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/rood/dagsoort-onvervulbare-wandeling`, `corpus/rood/dagsoort-reikwijdte-buiten-tabel` |
-| EF-010 | the bound day is read outside a day-kind evaluation | fault | — | ch. 3.8 | `corpus/rood/contextwaarde-de-dag-buiten-dagsoort` |
-| EF-011 | a context value needs an evaluation date the case does not carry | fault | `contextValue` | ch. 8.2 | `corpus/rood/rekenjaar-zonder-rekendatum`, `corpus/rood/tijdsduur-reads-van-before-tot` |
-| EF-012 | a validity-bounded form in a session without an evaluation date | fault | — | ch. 8.1 | `corpus/rood/jutterswet-uitsluiting-zonder-rekendatum` |
-| EF-013 | the Parameterset timeline of a parameter does not cover the evaluation date | fault | `parameter`, `date` | ch. 8.4 | `corpus/rood/vintage-uncovered-date` |
-| EF-014 | a parameter the case does not bind is read | fault | `parameter` | ch. 5.7 step 2 | `corpus/rood/aanvoergeld-parameter-ongebonden`, `corpus/rood/dagsoortparameter-ongebonden` |
-| EF-015 | the creation budget is exhausted | fault | `creation`, `stratum`, `depth` | ch. 5.5 | `corpus/rood/finite-chain-over-budget`, `corpus/rood/jutterswet-budgetgrens-over`, `corpus/rood/runaway-recursion` |
-| EF-016 | two writers of one target disagree | fault | `rules`, `values`, `attribute`, `label`, `objectType` | ch. 5.7 | `corpus/rood/jutterswet-dubbele-melding` |
-| EF-017 | a to-one role gets a second filler | fault | `role`, `label`, `filler` | ch. 5.5 | `corpus/rood/to-one-second-filler` |
-| EF-018 | the back-link of a created object is ambiguous | fault | `objectType`, `createdType` | ch. 5.5 | `corpus/rood/ambiguous-backlink` |
-| EF-019 | an `Unresolved` node is reached, at an expression or a condition position | fault | `position` | ch. 5.7; WF-044 | `corpus/rood/wf044-onopgelost-guard`, `corpus/rood/wf044-onopgelost-reached` |
-| EF-020 | a temporal key component is supplied as a scalar | fault | `key`, `label` | ch. 5.9 | `corpus/rood/uni-temporal-key-scalar`, `corpus/rood/uu-temporal-key-scalar` |
-| EF-021 | a filled count over a temporal attribute of a set | declined | `attribute` | ch. 3.4c | `corpus/rood/aantalgevulde-temporele-setbron` |
-| EF-022 | a nested day-kind test on a date other than the bound day | declined | — | ch. 3.8; ch. 3.12 | `corpus/rood/dagsoortverwijzing-andere-dag` |
-| EF-023 | a period condition on a temporal characteristic target | declined | `characteristic` | ch. 3.10; ch. 3.11 | `corpus/rood/periodevenster-tijdlijnkenmerk` |
-| EF-024 | a uniqueness key with more than one temporal component | declined | `key` | ch. 5.9 | `corpus/rood/uni-two-temporal-keys`, `corpus/rood/uu-two-temporal-keys` |
+| EF-001 | a role key of the case input resolves to two roles | case input | `roleKey`, `objectType` | ch. 5.7 step 3; IR-SPEC ch. 2.6 | `corpus/red/ambiguous-case-role-key` |
+| EF-002 | a role link of the case input names a label the case does not declare | case input | `role`, `label`, `target` | ch. 5.7 step 3 | `corpus/red/unknown-role-target-label` |
+| EF-003 | a date lexeme of the case input names no calendar day | case input | `field`, `lexeme` | ch. 5.7 step 3 | `corpus/red/as-of-date-calendar`, `corpus/red/input-date-calendar` |
+| EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 11.3 | `corpus/red/input-overprecision`, `corpus/red/input-overprecision-param`, `corpus/red/list-element-overprecision`, `corpus/red/struct-field-overprecision` |
+| EF-005 | division by a numeric zero | fault; decided to move to §9.5 (ch. 1.4 point 4) | `rule`, `dividend` | ch. 1.4 point 4 | `corpus/red/filled-count-unguarded-division`, `corpus/red/at-most-reads-until-settled`, `corpus/red/clamp-reads-bounds-in-order`, `corpus/red/closed-runtime-division-by-zero`, `corpus/red/division-abs-by-numeric-zero`, `corpus/red/division-by-numeric-zero`, `corpus/red/sum-fallback-always-evaluated`, `corpus/red/fold-filter-divides-by-zero` |
+| EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4 | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating` |
+| EF-007 | a datum-tijd step leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range` |
+| EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/red/date-time-step-outside-range` |
+| EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/red/day-kind-unsatisfiable-walk`, `corpus/red/day-kind-scope-outside-table` |
+| EF-010 | the bound day is read outside a day-kind evaluation | fault | — | ch. 3.8 | `corpus/red/context-value-de-dag-outside-day-kind` |
+| EF-011 | a context value needs an evaluation date the case does not carry | fault | `contextValue` | ch. 8.2 | `corpus/red/evaluation-year-without-evaluation-date`, `corpus/red/duration-reads-van-before-tot` |
+| EF-012 | a validity-bounded form in a session without an evaluation date | fault | — | ch. 8.1 | `corpus/red/jutterswet-uitsluiting-zonder-rekendatum` |
+| EF-013 | the Parameterset timeline of a parameter does not cover the evaluation date | fault | `parameter`, `date` | ch. 8.4 | `corpus/red/vintage-uncovered-date` |
+| EF-014 | a parameter the case does not bind is read | fault | `parameter` | ch. 5.7 step 2 | `corpus/red/aanvoergeld-parameter-unbound`, `corpus/red/day-kind-parameter-unbound` |
+| EF-015 | the creation budget is exhausted | fault | `creation`, `stratum`, `depth` | ch. 5.5 | `corpus/red/finite-chain-over-budget`, `corpus/red/jutterswet-budgetgrens-over`, `corpus/red/runaway-recursion` |
+| EF-016 | two writers of one target disagree | fault | `rules`, `values`, `attribute`, `label`, `objectType` | ch. 5.7 | `corpus/red/jutterswet-dubbele-melding` |
+| EF-017 | a to-one role gets a second filler | fault | `role`, `label`, `filler` | ch. 5.5 | `corpus/red/to-one-second-filler` |
+| EF-018 | the back-link of a created object is ambiguous | fault | `objectType`, `createdType` | ch. 5.5 | `corpus/red/ambiguous-backlink` |
+| EF-019 | an `Unresolved` node is reached, at an expression or a condition position | fault | `position` | ch. 5.7; WF-044 | `corpus/red/wf044-unresolved-guard`, `corpus/red/wf044-unresolved-reached` |
+| EF-020 | a temporal key component is supplied as a scalar | fault | `key`, `label` | ch. 5.9 | `corpus/red/uniqueness-temporal-key-scalar`, `corpus/red/ever-unique-temporal-key-scalar` |
+| EF-021 | a filled count over a temporal attribute of a set | declined | `attribute` | ch. 3.4c | `corpus/red/filled-count-temporal-set-source` |
+| EF-022 | a nested day-kind test on a date other than the bound day | declined | — | ch. 3.8; ch. 3.12 | `corpus/red/day-kind-reference-other-day` |
+| EF-023 | a period condition on a temporal characteristic target | declined | `characteristic` | ch. 3.10; ch. 3.11 | `corpus/red/time-window-timeline-characteristic` |
+| EF-024 | a uniqueness key with more than one temporal component | declined | `key` | ch. 5.9 | `corpus/red/uniqueness-two-temporal-keys`, `corpus/red/ever-unique-two-temporal-keys` |
 | EF-025 | a consistency assertion does not hold for its subject | §9.5 | `rule`, `label` | ch. 5.6 | `corpus/golden/jutterswet-vondstnummer`, `corpus/golden/jutterswet-keurcriteria` |
 | EF-026 | a key of a uniqueness occurs more than once, within one source or across the sources of a union | §9.5 | `rule`, `label` | ch. 5.6; ch. 5.9 | `corpus/golden/jutterswet-vondstnummer`, `corpus/golden/jutterswet-uniciteit-drie-bronnen` |
 | EF-027 | the defaults groups of a declared-unordered group decide differently, at the root or in a nested exception group | §9.5 | `rule`, `label` | ch. 7.2; ch. 7.9 | `corpus/golden/jutterswet-wachtgeld`, `corpus/golden/synth3-nestkorting` |
@@ -4069,10 +4069,10 @@ parameters, the clause that defines it and its witnesses.
 | EF-031 | a filled dividend is divided by an empty divisor | §9.5 | `rule`, `label` | ch. 1.2; ch. 1.4 point 4 | `corpus/golden/jutterswet-bergloon`, `corpus/golden/synth3-takhek`, `corpus/golden/synth3-operandvolgorde` |
 
 The four declined kinds are static properties of the document. Each ends
-as a WF rule (its witness moves to `corpus/negatief`) or as a specified
+as a WF rule (its witness moves to `corpus/negative`) or as a specified
 form (its witness moves to the golden corpus), and its code then retires.
 
-Worked example (`corpus/rood/division-by-numeric-zero`, replayed by gate
+Worked example (`corpus/red/division-by-numeric-zero`, replayed by gate
 8): the case pins `"code": "EF-005"` and `"params": {}` (the parameters `rule`
 and `dividend` that the row names are not emitted by every executor, so the
 case pins none). The reference interpreter reports the
@@ -4158,7 +4158,7 @@ in this scalar slot (rule 2; WV-5.8-4-vreemde-rol) and is never read as an
 own read. *History until L2:* that last form was the written "het
 strandtegoed van de vondst", a same-typed reference naming a role the
 subject does not fill, refused by WF-053's self-denotation narrowing (the
-negatief `wf053-zelfverwijzing-vreemde-rol`, removed at L2 with the
+negative `wf053-zelfverwijzing-vreemde-rol`, removed at L2 with the
 written step).
 
 ### 5.8a The role check
@@ -4245,7 +4245,7 @@ row 5) merged the two into `RoleMembership`, which names the relation and
 the subject's role instead of deriving them and carries the far side's
 narrowing as `counterpartType`. Two meanings changed with it: the to-many
 near-side check answers with existence where it faulted
-(`corpus/golden/near-side-rolcheck-to-many`, a red case until L2), and the
+(`corpus/golden/near-side-role-check-to-many`, a red case until L2), and the
 top-level restriction is gone.
 
 Worked example — the near side (the `jutterswet-wachtindeling` golden,
@@ -4262,7 +4262,7 @@ ASP backend agree on all four (link × {positive, negation}). The `ref/`
 suite also declares the other role to-many: J1's check still holds and
 J2's does not (WV-5.8a-naar-veel-*).
 
-Worked example — a to-many other role (the `near-side-rolcheck-to-many`
+Worked example — a to-many other role (the `near-side-role-check-to-many`
 golden, verbatim in gates 5, 6 and 12): "Een Wachtpost is bemand indien hij
 een toegewezen wachtpost is" makes the Wachtpost the subject and names the
 role the post fills, `RoleMembership {factType: wachtindeling, role:
@@ -4719,7 +4719,7 @@ validates and round-trips green. Measured: swapping the two keys in a
 golden leaves gates 2, 3 and 5 passing. What the schema gives is the
 **convention** that spells the order, and what pins it mechanically is
 narrower: gates 9 and 10 re-emit 50 of the corpus's 192 documents (38
-`bron.rgs`, 12 `bron.catala_en`) byte-identically from source, so for
+`source.rgs`, 12 `source.catala_en`) byte-identically from source, so for
 those the emitter's slot order is fixed. For the remaining 142
 hand-written documents nothing checks it. This does not weaken the
 clause — the order that matters here is the order a consumer **reads
@@ -4799,7 +4799,7 @@ runs, whether or not the contributors leave its value to be used. Its
 faults and its §9.5 deposits therefore happen on documents where the
 value is discarded — the row above orders it, and this sentence says that
 ordering it is not the same as skipping it. Witness:
-`som-fallback-always-evaluated` (gate 8), which stops failing the moment
+`sum-fallback-always-evaluated` (gate 8), which stops failing the moment
 an executor makes the stand-in lazy.
 
 Rule- and form-level order — which rule fires first, which member of a
@@ -4807,7 +4807,7 @@ defaults group is tried — is **not** this clause's subject: ch. 5.2 makes
 the fixpoint independent of it, and ch. 7.1 fixes the defaults chain by
 priority rather than by evaluation.
 
-**Worked example — `Clamp` (absolute; the `begrensd-reads-bounds-in-order`
+**Worked example — `Clamp` (absolute; the `clamp-reads-bounds-in-order`
 red case verbatim, gate 8).** A `Jutter` with `teller` = 1, `noemer` = 0
 and `grens` **absent**:
 
@@ -4829,7 +4829,7 @@ quietly write nothing. The two orders do not differ in a value; one has
 an answer and the other does not.
 
 **Worked example — tijdsduur (absolute; the
-`tijdsduur-reads-van-before-tot` red case verbatim, gate 8).** A `Vaart`
+`duration-reads-van-before-tot` red case verbatim, gate 8).** A `Vaart`
 with `vertrek` **absent**, in a session with no evaluation date:
 
 ```
@@ -4920,7 +4920,7 @@ different question from what it walks, and it splits the three rows:
   exactly the laziness the **unconditional** clause above forbids, and
   it is a runtime divergence, not bookkeeping: a stand-in that faults or
   deposits does so in ref and not in the pin, on any document whose
-  contributors are filled. `som-fallback-always-evaluated` is the case
+  contributors are filled. `sum-fallback-always-evaluated` is the case
   that separates them.
 
 So the correction owed there is of two kinds, and the second is the
@@ -4945,14 +4945,14 @@ what reaches the rows a barrier cannot, because a closed fold body
 | what is pinned | witness |
 |----------------|---------|
 | `Binary` `left` before `right`, by channel count | `synth3-operandvolgorde` (gates 5–6, and Drools: the full square) |
-| `Clamp` `minimum` before `maximum` | `begrensd-reads-bounds-in-order` (gate 8; ref by which fault, clingo by which bound is refused first) |
-| `duration` (tijdsduur) `van` before `tot` | `tijdsduur-reads-van-before-tot` (gate 8; the ref leg — clingo carries the form and fails, but does not order it) |
+| `Clamp` `minimum` before `maximum` | `clamp-reads-bounds-in-order` (gate 8; ref by which fault, clingo by which bound is refused first) |
+| `duration` (tijdsduur) `van` before `tot` | `duration-reads-van-before-tot` (gate 8; the ref leg — clingo carries the form and fails, but does not order it) |
 | composite members, wire order + short circuit | ch. 5.10's own witness table |
 | `Comparison` `left` before `right` | `ref/` `WV-5.11-vergelijking-…` (pair) |
 | aggregation contributors, in wire order | `ref/` `WV-5.11-som-bijdrager…` (pair) |
 | the **instance** fold: the filter per member, members in fold order | `ref/` `WV-5.11-instantiefold-…` and `WV-5.11-instantiesom-…` (two pairs — the `Instances` walk a `count` (aantal) takes and the `Values` walk a set-read `sum` (som) takes) |
 | aggregation contributors **before** the `emptyFallback` | `ref/` `WV-5.11-som-…-leegwaarde` (pair) |
-| the `emptyFallback` evaluates unconditionally | `som-fallback-always-evaluated` (gate 8) + `ref/` `WV-5.11-som-leegwaarde-onvoorwaardelijk` |
+| the `emptyFallback` evaluates unconditionally | `sum-fallback-always-evaluated` (gate 8) + `ref/` `WV-5.11-som-leegwaarde-onvoorwaardelijk` |
 | `concatenation` (concatenatie) and `TextComposition` part order | `ref/` `WV-5.11-concat-…`, `WV-5.11-tekstreeks-…` (pairs) |
 | `ListLiteral` element order | `ref/` `WV-5.11-listliteral-…` (pair) |
 | `StructLiteral` field order | `ref/` `WV-5.11-structliteral-…` (pair) |
@@ -5294,11 +5294,11 @@ many strata as the chain is deep.
   J2 premiegerechtigd, J3 not (WV-6.4-h). Until 2026-10-06 this was a
   WF-045 cycle through the relation creation's population proxy (ch. 6.1).
 - Ill-formed: `a ← b + 1` and `b ← a + 1` on one object type is a
-  WF-045 cycle through no creation (negatief case
+  WF-045 cycle through no creation (negative case
   `wf045-cyclic-attribute-dependency`). A recursive creation whose
   condition negates a characteristic derived from its own output is a
   WF-045-admissible cycle carrying a negative edge — a WF-046
-  violation (negatief case `wf046-negated-read-in-recursive-cycle`).
+  violation (negative case `wf046-negated-read-in-recursive-cycle`).
   So is a recursive creation guarded by a leeg/gevuld test on what its
   own cycle produces, in either polarity (`IR-SPEC.md` ch. 5.2): the R1
   shape (the creation mints a successor while "het merk is leeg", and
@@ -5306,10 +5306,10 @@ many strata as the chain is deep.
   "gevuld"), the R3 shape spelled with `negated: true` (both tests "niet
   gevuld"), a presence-true test alone ("het merk is niet leeg") and
   the test as the matrix of an `all` fold over the minted successors —
-  negatief cases `wf046-leegtest-recursieve-creatie`,
-  `wf046-leegtest-negatie-recursieve-creatie`,
-  `wf046-leegtest-aanwezigheid-recursieve-creatie` and
-  `wf046-leegtest-kwantorvouw-recursieve-creatie`. `ref/` re-runs the
+  negative cases `wf046-empty-test-recursive-creation`,
+  `wf046-empty-test-negated-recursive-creation`,
+  `wf046-empty-test-presence-recursive-creation` and
+  `wf046-empty-test-quantifier-fold-recursive-creation`. `ref/` re-runs the
   check and refuses R1 and R3 with the WF-046 report (WV-6.4-g). Before
   the rule it answered them: R1 with a chain of five whose creations
   are each justified by a leeg merk the final world fills (the ASP
@@ -5328,12 +5328,12 @@ many strata as the chain is deep.
   opvolger heeft een kleur ongelijk aan 7" with kleur input only, "ten
   hoogste 1" and "precies 1 ploeglid heeft een merk groter dan 0", and
   "geen van: ten minste 1 opvolger heeft een rang groter dan 0" —
-  negatief cases
-  `wf046-kwantorvouw-alle-bereik`, `wf046-kwantorvouw-geen-vergelijking`,
-  `wf046-kwantorvouw-geen-matrix`, `wf046-kwantorvouw-bereik-ander-type`,
-  `wf046-kwantorvouw-tenhoogste-bereik`, `wf046-kwantorvouw-precies-bereik`,
-  `wf046-kwantorvouw-tenhoogste-matrix`, `wf046-kwantorvouw-precies-matrix`
-  and `wf046-kwantorvouw-onder-geen`. Before the rule, where the range
+  negative cases
+  `wf046-quantifier-fold-all-range`, `wf046-quantifier-fold-none-comparison`,
+  `wf046-quantifier-fold-none-matrix`, `wf046-quantifier-fold-range-other-type`,
+  `wf046-quantifier-fold-at-most-range`, `wf046-quantifier-fold-exactly-range`,
+  `wf046-quantifier-fold-at-most-matrix`, `wf046-quantifier-fold-exactly-matrix`
+  and `wf046-quantifier-fold-under-none`. Before the rule, where the range
   or an enclosing negation closed the cycle, the reference interpreter
   minted on a condition that the mint itself falsified (a chain, one
   successor, or — where the creation mints a Post for a Wachter — one
@@ -5343,8 +5343,8 @@ many strata as the chain is deep.
   So, too, since 2026-10-06, is a recursive creation guarded by a negated
   role check on the relation it creates: "een Wachter heeft een opvolger
   … indien hij geen voorganger is" reads `opvolging` negatively and lays
-  the link that makes it false (negatief case
-  `wf046-ontkende-rolcheck-recursieve-creatie`). Before the role check
+  the link that makes it false (negative case
+  `wf046-negated-role-check-recursive-creation`). Before the role check
   read its relation the reference interpreter answered it in pass order
   and the ASP backend found no stable model.
 - Well-formed, the monotone parts of the same fold on the same kind of
@@ -5458,7 +5458,7 @@ of a day-kind definition, and its runtime meaning is stated where that
 binding is made — ch. 3.8, the day-kind duration forms. Two consequences
 follow, and both are checked. Outside a day-kind evaluation the bound day
 denotes nothing and every executor
-faults by name (red case `contextwaarde-de-dag-buiten-dagsoort`); and the
+faults by name (red case `context-value-de-dag-outside-day-kind`); and the
 converse, a SESSION value inside a day-kind condition, is refused
 statically (WF-031's position arm, `IR-SPEC.md` ch. 3.7), because a
 stratum-0 classification that moved with the session would classify the
@@ -5558,7 +5558,7 @@ date 2026-03-15; Parameterset `penningbedrag` = [2025: 4, 2026: 5]
 
 *Status: normative design, with **prioritized defaults landed in both
 target kinds** (`IR-SPEC.md` ch. 6.1: the `prioritizedDefaults` extension
-form, WF-050/051 with verifier checks and negatief cases). The art. 4
+form, WF-050/051 with verifier checks and negative cases). The art. 4
 characteristic defaults are the anchor
 `corpus/golden/anchor/jutterswet-uitsluiting` (worked example 7.6.1
 machine-checked); the attribute defaults with **leeg fall-through**, the
@@ -6285,7 +6285,7 @@ concrete type, through the chain: outside the gate an unconditional
 computing rule on a type and one on an ancestor both write the type's
 instances, with nothing to rank them, so the pair is refused as two such
 rules on one type are (`IR-SPEC.md` WF-079; witness
-`corpus/negatief/wf079-keten-kale-schrijvers`). A rule beside a group the
+`corpus/negative/wf079-chain-unconditional-writers`). A rule beside a group the
 level declares **itself** is likewise not this chapter's business: that is
 WF-050's single-writer lift, refused at the document. An allocation is never
 folded — this section folds ordinary rules only — so WF-026 speaks through
@@ -6293,8 +6293,8 @@ the chain without a gate: an allocation over a type and one over an ancestor
 both write the type's instances whatever defaults groups the chain declares,
 and so do an allocation and a defaults group on two levels of one chain,
 which WF-050's lift refuses the same way (`IR-SPEC.md` WF-026 and WF-050;
-witnesses `corpus/negatief/wf026-keten-twee-toewijzingen` and
-`corpus/negatief/wf050-keten-toewijzing-naast-groep`).
+witnesses `corpus/negative/wf026-chain-two-allocations` and
+`corpus/negative/wf050-chain-assignment-beside-group`).
 
 **A rule carrying a VALIDITY WINDOW is not folded**, and is refused by name
 instead. A windowed base would put version selection inside the stack, and
@@ -7041,8 +7041,8 @@ Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
   input-precision fence recurses into record fields and list elements,
   refusing a field or element whose exact rational does not fit its
   declared decimals in **both** executors
-  (`corpus/rood/struct-field-overprecision`,
-  `corpus/rood/list-element-overprecision` — ref now matches the ASP
+  (`corpus/red/struct-field-overprecision`,
+  `corpus/red/list-element-overprecision` — ref now matches the ASP
   backend's per-field/per-element scaling, which faulted there all along).
   The anchor's `dossier` rides as `{"struct": {"waarde": {"number":
   "120.50"}, "telling": {"number": "3"}}}`.

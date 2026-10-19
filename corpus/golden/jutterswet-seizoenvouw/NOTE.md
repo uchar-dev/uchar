@@ -2,18 +2,18 @@
 
 The first golden that carries a `dimensionSelection` (IR-SPEC ch. 4.3,
 `CONSTRUCTS.md` row 28): a sum, a maximum and a minimum over the labels of the
-subject's own dimensioned attribute, written in `bron.rgs` and emitted by the
+subject's own dimensioned attribute, written in `source.rgs` and emitted by the
 RegelSpraak frontend. Gate 10 re-emits `ir.json` byte for byte. Until the
 card frontend-emitterrestanten the frontend refused every such fold, so no
-document carried one outside the negatief witness
-`wf037-aantalgevulde-dimensieselectie`.
+document carried one outside the negative witness
+`wf037-filled-count-dimension-selection`.
 
 It is a **verifier-only** golden, the third after `jutterswet-vormenkabinet`
 and `jutterswet-seizoenvondst` (see the witness-cabinet section of
 `corpus/golden/README.md`): it carries no `case*.json`, and gate 5 lists it as
 not replayed. The section below is the measurement that makes that true.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 A dimension `seizoen` with the labels `voorjaar`, `zomer`, `najaar`, and on
 the `Jutter` a `vondstgewicht` in `kg` dimensioned by it. Four rules, one per

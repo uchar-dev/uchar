@@ -7,9 +7,9 @@ observes the object creation's execution: the new rule reads the minted
 `Strandrecht` back from its subject through the back-link the creation
 writes. `jutterswet-wrakboeking` and its twin pin that such a document is
 admitted and computes; their case cannot see the minted instance. Gate 10
-re-emits `ir.json` from `bron.rgs` byte for byte.
+re-emits `ir.json` from `source.rgs` byte for byte.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - From the twin, unchanged: `Objecttype het Wrakrecht is een Strandrecht`
   (the subtype dialect, `frontends/regelspraak/grammar/DIVERGENCES.md` §5);

@@ -38,6 +38,6 @@ plaats van hem te laten vallen. `J2`: {} ∪ {V7} = **1**. `J3`: **0**.
 
 Gemeten op de frontend van vóór deze kaart (5b42e5b9): beide zinnen werden
 geweigerd met de WF-037-ariteitsfout en het document bereikte de schijf niet.
-Sinds de kaart emitteert `bron.rgs` byte-identiek aan de gecommitte `ir.json`
+Sinds de kaart emitteert `source.rgs` byte-identiek aan de gecommitte `ir.json`
 (poort 10), is het document verifier-schoon (poort 3) en antwoorden `ref` en
 clingo dezelfde zes absolute getallen (poorten 5 en 6).

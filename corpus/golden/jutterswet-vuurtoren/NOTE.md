@@ -22,7 +22,7 @@ Het lampental van een Vuurtoren moet berekend worden als het aantal lampen
 `IR-SPEC.md` ch. 4.5 (`QuantifierFold`, WF-108); semantics
 `RUNTIME-SEMANTICS.md` ch. 3.9a.
 
-## This ir.json was written by hand; its bron.rgs arrived later
+## This ir.json was written by hand; its source.rgs arrived later
 
 For the same reason `jutterswet-schouwploeg` was, measured again and unchanged
 at the time: `RuleChecker.kwantorvouw` opened with "only the §8.2-QUALIFIED
@@ -31,7 +31,7 @@ refused (`setlezing buiten een vouwbron`, a message that cited WF-096 until L2;
 since L2 the same refusal cites WF-053, measured 2026-09-24 on this document's
 first sentence with "ten minste 0 van de lampen", a form the lowering still
 declines) and the characteristic spelling resolved to `Onopgelost`. The counting quantifiers did not move that gate.
-The frontend card that did move it landed on 2026-09-19, and `bron.rgs` now
+The frontend card that did move it landed on 2026-09-19, and `source.rgs` now
 sits beside this document and re-emits it byte for byte. The hand-written IR
 is unchanged; gate 10 sees it.
 

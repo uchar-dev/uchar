@@ -151,7 +151,7 @@ the **holder is the rule subject** — the Jutter the attribute hangs on — and
 the **counterparty is fixed by the rule itself**, nowhere named in the value.
 The register is a document-level parameter, and that is a choice of this
 golden, not a limit of the kernel. The choice is what makes the form new: this
-is the only fold in `corpus/golden` and `corpus/rood` whose source is a list
+is the only fold in `corpus/golden` and `corpus/red` whose source is a list
 PARAMETER with sum-typed elements. A per-subject register carries just as well
 — moving `meldreeks` to an attribute and the fold source to an attribute
 reference leaves the document verifier-clean and replays all eight cases
@@ -194,4 +194,4 @@ literal is not translated. That is a carrier fence over constructor arguments,
 no corpus case pins it today, and it is its own question — not this one.
 
 The text half of the existing payload fence is already pinned negatively by
-`corpus/negatief/wf060-text-payload`.
+`corpus/negative/wf060-text-payload`.

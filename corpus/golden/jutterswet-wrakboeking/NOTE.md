@@ -72,6 +72,6 @@ their `source` records the two documents are equal.
 Sibling documents: `anchor/jutterswet-strandrechtketen` and
 `jutterswet-wrakrecht` pin the two-spelling member write between RULES (both
 directions, correctly); `jutterswet-zustervondst` pins that two incomparable
-subtypes stay apart; `corpus/negatief/wf045-subtypecreatie-cyclus` and
-`corpus/negatief/wf045-erfattribuut-spelling-cyclus` are the two cycles the
+subtypes stay apart; `corpus/negative/wf045-subtype-creation-cycle` and
+`corpus/negative/wf045-inherited-attribute-spelling-cycle` are the two cycles the
 closure does catch.

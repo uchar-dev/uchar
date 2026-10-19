@@ -11,7 +11,7 @@ everywhere (`jutterswet-keurhouder`, owner equal to the subject's own type) was
 one no producer writes. This document closes that gap: source, wire and all
 four executors, one answer.
 
-The file is authored, not patched: `bron.rgs` goes through the frontend and
+The file is authored, not patched: `source.rgs` goes through the frontend and
 `ir.json` is its byte-identical emission (gate 10).
 
 ## What makes the reading identifiable
@@ -63,7 +63,7 @@ polarities state.
 
 Move the first creation's host field and the document stops being this one:
 to `Post` it names an object no pattern carries
-(`corpus/negatief/wf109-gastheer-derde-type`), to `Kustvak` it reads the anker
+(`corpus/negative/wf109-host-third-type`), to `Kustvak` it reads the anker
 and `vakseinaantal` becomes 2, and emptied it reads the anker too. Nest the
 guard in a composite, or make it navigate, and WF-109's two scope fences refuse
-it (`wf109-doelgastheer-samengesteld`, `wf109-doelgastheer-genavigeerd`).
+it (`wf109-target-host-compound`, `wf109-target-host-navigated`).

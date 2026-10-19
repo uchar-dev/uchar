@@ -6,9 +6,9 @@
 
    The corpus differential (gate 5 ≡ gate 6 over the respelled
    vindersloon/synth2 anchors) is the ref-parity witness; this suite pins the
-   fence a rood corpus case cannot hold — ref does not fault on a km left
+   fence a red corpus case cannot hold — ref does not fault on a km left
    operand (Arith.pct_of discards the left unit), only the integer-encoding
-   translator does, so the two-executor rood contract does not apply.
+   translator does, so the two-executor red contract does not apply.
 
    The pure-% admission is red under the old code path (unit_free_ok refused
    every unit-carrying multiplicative operand) and green after; the km and
@@ -1344,7 +1344,7 @@ let () =
        EERSTE ordering fold is sumtype, must be a number or a date
 
    — so no valid route reaches the arm. That is exactly why the check lives
-   here and not in corpus/rood: a translator must refuse EVERY input with a
+   here and not in corpus/red: a translator must refuse EVERY input with a
    reason, including input that arrives past the verifier, and the fence is
    measured where the verifier is not standing in front of it. *)
 let sumfold_doc =
@@ -2184,7 +2184,7 @@ let () =
    val("J1","bewaarlast",-2135021296)) where ref and the Drools backend give
    21 599 460.00. clingo 5.8.2 wraps without a word, at grounding too.
 
-   This cannot become a corpus/rood case: gate 8 demands an OBSERVABLE fault
+   This cannot become a corpus/red case: gate 8 demands an OBSERVABLE fault
    in BOTH executors, and ref simply replays the document (pinned below).
    So the fault text is pinned here, with the boundary beside it. *)
 let () =
@@ -2201,9 +2201,9 @@ let () =
     ~needle:
       "the per-element temporal fold of \"bewaartarief\" covers 54000 whole units across the \
        case's member timelines, beyond the guarded sum range";
-  (* why the pin lives here and not in corpus/rood: ref answers this
+  (* why the pin lives here and not in corpus/red: ref answers this
      document, so there is no two-executor fault to declare *)
-  ref_matches ~name:"§7.1 wrap fence: ref replays the refused document (no rood case possible)"
+  ref_matches ~name:"§7.1 wrap fence: ref replays the refused document (no red case possible)"
     ~ir:straight ~case_text:over;
   (* the BOUNDARY, exact: 20 members × 2317 whole months = 46340 = the
      guard itself, which must still play — the fence refuses ABOVE the
@@ -2243,7 +2243,7 @@ let () =
    sister and had not.
 
    It cannot become a corpus case in EITHER zone: the verifier refuses the
-   shape outright (WF-055), and corpus/rood must be verifier-clean (gate 3),
+   shape outright (WF-055), and corpus/red must be verifier-clean (gate 3),
    so no document carrying it can live in the corpus. The gate is pinned
    here, with its own over-rejection control beside it: the SAME frame with
    the characteristic temporal must still ANSWER — a pinned 60 through both
@@ -2663,7 +2663,7 @@ let () =
    as the interpreter's. It belongs here rather than in the corpus for the
    reason this suite exists: no corpus witness can hold it. A case that must be
    REJECTED cannot live in `corpus/golden` (gate 5 replays it) and cannot live
-   in `corpus/rood` either — both runners load the case BEFORE reaching their
+   in `corpus/red` either — both runners load the case BEFORE reaching their
    expected-fault branch, so a load-time refusal exits 2 and gate 8 reads that
    as a failure, never as the pinned fault.
 
@@ -2747,7 +2747,7 @@ let () =
    — which is exactly why the loader arm behind it was pinned HERE and could
    have no corpus witness. A document that reached it was hand-built and
    schema-invalid by construction, so it fit in no zone: gate 2 schema-gates
-   golden and rood, and a load-time refusal exits 2, which gate 8 reads as a
+   golden and red, and a load-time refusal exits 2, which gate 8 reads as a
    failure rather than as the pinned fault — the same argument the
    characteristic block above makes, one side table over. On the uchar-ir-v1
    wire (M1) the grid is the required `granularity` of the attribute's
@@ -6159,7 +6159,7 @@ let () =
    is het enige wat een backend niet mag produceren, dus de arm weigert nu bij
    naam. Het corpus pint de ordenende helft (`golden/jutterswet-vondstbereik`)
    en van de optellende alleen de verifierweigering
-   (`negatief/wf091-setbron-som-datum` en zijn `total`-tweeling: WF-091 eist
+   (`negative/wf091-set-source-sum-date` en zijn `total`-tweeling: WF-091 eist
    een Number als operand van `sum` en `total`); deze suite pint de weigering
    van de vertaling. Verder staat hier wat het corpus niet kan zeggen — dat
    `minimum` en `maximum` op HETZELFDE frame dezelfde waarden geven als
@@ -6208,7 +6208,7 @@ let () =
      `{"number": "0"}` tegen een datumdeclaratie af met "value variant
      \"number\" does not match the declared datatype". Dat de uitkomst niet
      eens op te schrijven is, is scherper dan een pin zou zijn geweest; zij
-     staat in corpus/negatief/wf091-setbron-totaal-datum/NOTE.md. *)
+     staat in corpus/negative/wf091-set-source-total-date/NOTE.md. *)
   faults_with ~name:"de datum-setbron-weigering gaat over het document, niet over de casus"
     ~ir:(window_doc ~kind:"sum" ~attribute_ref:"vondstdatum" ~objective:"eerste vondstdag")
     ~case_text:(window_empty_case ~attribute_ref:"eerste vondstdag")
@@ -6237,9 +6237,9 @@ let () =
    negatiefs zonder casus en draaien door geen uitvoerder. Deze vertaling
    houdt haar eigen weigering als tweede linie, met de zinnen ongewijzigd; het
    corpus pint alleen de verifierweigering, deze suite pint die van de
-   vertaling. Per vorm het document van de negatief
-   (`corpus/negatief/wf091-tijdlijntotaal-datum`, `wf091-klipvouw-datum`,
-   `wf091-prorata-datumbasis`; geminificeerd, als JSON gelijk) met de invoer
+   vertaling. Per vorm het document van de negative
+   (`corpus/negative/wf091-timeline-total-date`, `wf091-clip-fold-date`,
+   `wf091-pro-rata-date-base`; geminificeerd, als JSON gelijk) met de invoer
    van de vroegere rode casus. De weigering hangt aan de DECLARATIE, dus de
    casus bepaalt alleen wat de vertaling te lezen krijgt. *)
 
@@ -6303,7 +6303,7 @@ let () =
    vorm uitlokt, precies terwijl een rode getuige dat doet.
 
    Het corpus pint de vorm op de §13.4.7-creatieguard
-   (corpus/rood/wf044-onopgelost-guard, de guard die de frontend aflevert als
+   (corpus/red/wf044-unresolved-guard, de guard die de frontend aflevert als
    doel en anker hetzelfde objecttype zijn). Deze getuige pint de ANDERE
    conditiepositie — de voorwaarde van een gewone rekenregel — die geen
    corpusdocument draagt: een golden zou erop falen en de rode zone houdt één
@@ -6367,7 +6367,7 @@ let () =
 
    De expressiebodem van deze vertaler luidt "expression kind not translated
    (no corpus case exercises it)", en tot deze kaart viel
-   `corpus/rood/som-fallback-always-evaluated` er precies op — dus was die zin
+   `corpus/red/sum-fallback-always-evaluated` er precies op — dus was die zin
    live onwaar: dezelfde onwaarheid die de WF-044-arm hierboven zojuist van de
    CONDITIEpositie had gehaald, stond hier nog op de EXPRESSIEpositie. De
    gelijste som heeft nu een arm die de VORM noemt, en de bodem is weer door
@@ -6947,7 +6947,7 @@ let () =
   (* F1: a parameter the case does not bind has NO truth value in the table
      build — the backend must fault in ref's terms, not answer Empty and ship
      a confident table. (The corpus witness is red case
-     dagsoortparameter-ongebonden; this is the translation-level twin.) *)
+     day-kind-parameter-unbound; this is the translation-level twin.) *)
   faults_with ~name:"ongebonden parameter in een dagsoortvoorwaarde faalt fail-fast"
     ~ir:
       (dk_doc
@@ -7037,7 +7037,7 @@ let () =
    (jutterswet-gevuldepad); this witnesses the SHAPE that produces it, which
    is what a future rewrite would break silently. Second, the temporal
    refusal's own sentence, which has a red pin on it
-   (corpus/rood/aantalgevulde-temporele-setbron) and would otherwise be free
+   (corpus/red/filled-count-temporal-set-source) and would otherwise be free
    to drift.
 
    The documents are well-formed on purpose: they are the shapes the
@@ -7431,7 +7431,7 @@ let () =
    De evaluatiedatum-poort zelf staat groen in het corpus
    (corpus/golden/jutterswet-premievenster, vier uitvoerders, zes
    clausules). Wat hier staat: de grensvorm die WF-111 sinds 2026-09-23
-   verbiedt (negatief wf111-periodegrens-parameterdatum; deze arm is nu
+   verbiedt (negative wf111-period-boundary-parameter-date; deze arm is nu
    het faalsnel-hek achter de verifier), en ch. 3.10's ANDERE geval, de
    clip op een tijdlijndoel, met de clausule die geen corpusgolden kan
    dragen en de weigering die blijft.
@@ -7789,7 +7789,7 @@ let () =
      Since L2 an elementType alone does not load (B12): a
      single-argument fold that names one carries its range. With the range
      written beside it the node loads and reaches the arm, the shape of
-     corpus/negatief/wf110-unie-naast-vouwbron. *)
+     corpus/negative/wf110-union-beside-fold-source. *)
   refused_at_load ~name:"WF-110 een eigen bron naast de unie"
     ~ir:
       (substitute ir ~truth:{|"source": { "snippet": "het aantal ..." }|}
@@ -12841,7 +12841,7 @@ let () =
       ("source als string", (heffing, {|"source": "De heffing"|}), {|expected object, got "De heffing"|});
       ("source null", (heffing, {|"source": null|}), "expected object, got null");
       ("source zonder snippet", (heffing, {|"source": {}|}), "missing field 'snippet'");
-      ("source met file", (heffing, {|"source": { "snippet": "De heffing", "file": "bron.rgs" }|}), "unknown field 'file'");
+      ("source met file", (heffing, {|"source": { "snippet": "De heffing", "file": "source.rgs" }|}), "unknown field 'file'");
       ("source met column", (heffing, {|"source": { "snippet": "De heffing", "column": 1 }|}), "unknown field 'column'");
       ( "source met line 0",
         (cluster, {|"source": { "snippet": "Regelgroep heffingsregels", "line": 0 }|}),
@@ -14384,7 +14384,7 @@ let () =
 (* WF-038 on the two numeric builtins: a text operand under a square root or
    an absolute value is refused in the verifier's sentence, ahead of this
    backend's own refusal of the two builtins (the clingo side of
-   corpus/negatief/wf038-absolute-waarde-tekst and wf038-wortel-tekst) *)
+   corpus/negative/wf038-absolute-value-text and wf038-square-root-text) *)
 let () =
   let body_text = pf_l ~typ:{|{ "node": "Text" }|} "vier" in
   let builtin kind =
@@ -14409,8 +14409,8 @@ let () =
 (* WF-038 on the duration builtins: a counted unit that is neither a time
    unit nor a declared day kind is refused in the verifier's sentence, which
    names the builtin's own kind (the clingo side of
-   corpus/negatief/wf038-duur-onbekende-eenheid and
-   wf038-absolute-duur-onbekende-eenheid) *)
+   corpus/negative/wf038-duration-unknown-unit and
+   wf038-absolute-duration-unknown-unit) *)
 let () =
   let vadem =
     {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": { "node": "Unit", "abbreviation": "vadem" } }|}
@@ -15304,7 +15304,7 @@ let () =
    generation mints one instance on the last, depth and generation are one
    number, so those frames hold under both.
 
-   The chain of corpus/rood/finite-chain-over-budget without its
+   The chain of corpus/red/finite-chain-over-budget without its
    consistency: "werf de lange keten" while the rang is below N, from W1 of
    rang 1, N - 1 mints. 99 and 100 play and 101 faults; until 2026-10-09
    this backend was UNSAT at 100 already, where ref plays (the card's

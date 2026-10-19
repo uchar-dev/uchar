@@ -60,7 +60,7 @@ two rules.
 
 `ref` ≡ `clingo` over all six expectations (gate 5 ≡ gate 6), anchored to
 the hand-written absolutes above; gate 12 replays them in Drools. Gate 10
-re-emits `bron.rgs` to a byte-identical `ir.json`. NOOP-REFUTING:
+re-emits `source.rgs` to a byte-identical `ir.json`. NOOP-REFUTING:
 `minsteteken` on `W1`/`W2` and `geenteken` on `W3` are derived and absent
 from the raw input, so a do-nothing run mismatches three expectations
 (gate 7).

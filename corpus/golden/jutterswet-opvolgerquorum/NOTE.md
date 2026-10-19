@@ -6,7 +6,7 @@ negative edge under `all`, `none`, `atMost` and `exactly` and positive under
 `atLeast`; the MATRIX is negative under `none`, `atMost` and `exactly` and
 positive under `atLeast` and `all`. This document puts both positive parts
 on a cycle through a recursive creation, and it is verifier-clean. The
-negative parts are pinned by the `corpus/negatief/wf046-kwantorvouw-*`
+negative parts are pinned by the `corpus/negative/wf046-kwantorvouw-*`
 cases.
 
 One recursive creation and one rule, over Wachters in two relations:
@@ -69,5 +69,5 @@ self-supporting model beside the least fixpoint (`IR-SPEC.md` ch. 5.5,
 recorded flank). A case like that would pin a backend defect rather than
 the rule this golden is about.
 
-No `bron.rgs`: the document is hand-written IR, and the rules illustrate the
+No `source.rgs`: the document is hand-written IR, and the rules illustrate the
 form; no Jutterswet article renders them.

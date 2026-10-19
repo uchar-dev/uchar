@@ -18,7 +18,7 @@ falls through to it. Own Jutterswet-flavoured casus and own dates.
 > lid eindigt de meldtermijn van een strandjutter op de dag waarop zijn
 > vergunning eindigt.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 `Strandjutter is een Jutter`; `meldtermijn` and `vinddag` are declared on the
 Jutter, `vergunningseinde` on the Strandjutter.
@@ -73,9 +73,9 @@ carry, so each refutes the do-nothing executor.
 ## Scenario document (`scenario.rgs`)
 
 The two cases are written as two scenarios. The frontend's `--cases` mode
-lowers `bron.rgs` with `scenario.rgs` to the two case files and to the
+lowers `source.rgs` with `scenario.rgs` to the two case files and to the
 `ir.json` of the production route, and gate 16 regenerates them byte for
-byte; `bron.rgs` alone emits the same `ir.json` (gate 10).
+byte; `source.rgs` alone emits the same `ir.json` (gate 10).
 
 ## Executors
 

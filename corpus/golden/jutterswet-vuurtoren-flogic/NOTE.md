@@ -3,7 +3,7 @@
 The **second source twin** of `corpus/golden/jutterswet-vuurtoren`: the same
 two object types, the same relation, the same five rules and the same five
 cases with the same absolute values — but with an `ir.json` the F-logic
-frontend (`frontends/flogic`) emitted from a `bron.flogic`. The twin's
+frontend (`frontends/flogic`) emitted from a `source.flogic`. The twin's
 `ir.json` is hand-written, because no RegelSpraak source reaches this node
 (the reason is in that golden's own NOTE); this one is emitted, so the
 quantifier fold has a SOURCE LANGUAGE for the first time. The five
@@ -15,7 +15,7 @@ alone. It now also rests on two unrelated source languages reaching the same
 node — the guard `corpus/golden/jutterswet-wrakrecht-flogic` gives the
 subtype kernel, for the quantifier.
 
-## Source (`bron.flogic`)
+## Source (`source.flogic`)
 
 The slice is a subset of Flora-2 2.2 syntax; `frontends/flogic/README.md`
 carries the full table. What this document needs from it:

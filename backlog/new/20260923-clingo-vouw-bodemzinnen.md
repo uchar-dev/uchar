@@ -31,6 +31,6 @@ meenemen in de meting.
   Drools-been met reden in de gate-8-lijst — voorstel).
 - (d) Alle veertien gates groen; pins bewegen niet.
 
-May touch: `backends/clingo/**`, `corpus/rood/**`,
-`scripts/check-rood.sh` (**voorstel**, telling/lijst),
+May touch: `backends/clingo/**`, `corpus/red/**`,
+`scripts/check-red.sh` (**voorstel**, telling/lijst),
 kaartverplaatsing. NB: serieel met andere translate.ml-kaarten.

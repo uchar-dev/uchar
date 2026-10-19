@@ -6,7 +6,7 @@
 #   1. the frontend builds jar-only (ANTLR-generated parser + resolver +
 #      IR emitter, JDK 21+) and its JUnit suite passes with a NON-ZERO
 #      test count — a suite that ran nothing is a silent greenlight;
-#   2. every corpus golden that carries a bron.rgs re-emits through the
+#   2. every corpus golden that carries a source.rgs re-emits through the
 #      frontend's --ir mode byte-identically to the checked-in ir.json —
 #      the emitter-golden conformance the toolchain ran against this
 #      repo's pin, now self-hosted;
@@ -31,10 +31,10 @@ fail() { echo "check-regelspraak: FAIL — $*" >&2; exit 1; }
 # content shifted passes; the name-carrying lists are what cover that direction. A deliberate
 # removal lowers the floor in the same commit.
 # Both counts are unseen elsewhere: the JUnit suite is not corpus files at all, and the golden count
-# is the number of bron.rgs sources, which no other gate reads (gate 2 floors the ir.json beside
+# is the number of source.rgs sources, which no other gate reads (gate 2 floors the ir.json beside
 # them, so a deleted source would otherwise cost frontend coverage in silence).
 EXPECTED_MIN_TESTS=173    # 2026-09-10: measured 173 (frontends/regelspraak, `make test`)
-EXPECTED_MIN_GOLDENS=80   # 2026-09-25: measured 80 (corpus/golden/**/bron.rgs). RAISED from 38
+EXPECTED_MIN_GOLDENS=80   # 2026-09-25: measured 80 (corpus/golden/**/source.rgs). RAISED from 38
                           # (measured 2026-09-10): five sources give object creation, the power, a
                           # rounding other than floor, the ordered allocation and a decision table
                           # with rows their first RegelSpraak golden (the card
@@ -77,14 +77,14 @@ JAR=$(ls "$FE"/lib/antlr-*-complete.jar 2>/dev/null | head -1)
 [ -n "$JAR" ] || fail "no ANTLR jar under $FE/lib after the build"
 [ -d "$FE/out" ] || fail "no compiled classes under $FE/out after the build"
 
-# Re-emit every emitter golden (a bron.rgs beside its ir.json) and
+# Re-emit every emitter golden (a source.rgs beside its ir.json) and
 # require byte-identity — byte-identity implies schema-validity and
 # verifier-cleanliness, because gates 2 and 3 pin those on the same
 # checked-in files.
 pass=0; diffcount=0; emitfail=0
 while IFS= read -r src; do
   d=$(dirname "$src"); n=${d#corpus/golden/}
-  [ -f "$d/ir.json" ] || fail "$n carries bron.rgs but no ir.json"
+  [ -f "$d/ir.json" ] || fail "$n carries source.rgs but no ir.json"
   out=$(mktemp -t regelspraak-gate-XXXXXX.json)
   if ! java -cp "$JAR:$FE/out" \
       dev.uchar.regelspraak.resolver.Resolver --ir "$out" "$src" \
@@ -99,7 +99,7 @@ while IFS= read -r src; do
     diffcount=$((diffcount + 1))
   fi
   rm -f "$out"
-done < <(find corpus/golden -name bron.rgs | sort)
+done < <(find corpus/golden -name source.rgs | sort)
 
 [ $((pass + diffcount + emitfail)) -gt 0 ] \
   || fail "no rgs goldens found under corpus/golden (an empty set is a failure)"

@@ -313,7 +313,7 @@ re-assumed per backend. (d) A golden corpus of (source → IR-JSON) pairs in
 
 The spec's own test discipline, from day one: every normative MUST carries an
 ID (`WF-###`) with a verifier check, at least one passing golden case, and
-one deliberately malformed failing case in `corpus/negatief/` — the
+one deliberately malformed failing case in `corpus/negative/` — the
 negatief-corpus discipline `regelspraak-java` already runs as gate 7bis,
 applied to the IR itself. Every semantics clause carries a worked example
 with concrete expected output; those examples become the reference
@@ -355,7 +355,7 @@ one.
 **Exit criteria:** a second program — the verifier in `spec/verifier/`, not
 the Java resolver — can load and verify an IR file; the golden corpus and
 round-trip tests gate CI; every well-formedness rule in the spec has a
-verifier check, a passing case, and a failing negatief case; the corpus is
+verifier check, a passing case, and a failing negative case; the corpus is
 rights-free (Jutterswet-based) from its first commit. **Met (2026-08-19):**
 all four hold (the WF index carries no unmotivated OPEN), and the normative
 documents graduated into the self-containedness gate. The §9 decision 10
@@ -754,7 +754,7 @@ and P11 (zone removal plus history rewrite) executes at the public flip.
 `uchar-ir-v1` with the nested root `{format, model, rules, diagnostics}`,
 the six registries as lists, `ObjectType` with member nodes, the `Domain`
 wrapper, the `regels` stubs gone, `diagnostics` kept under WF-113; 21
-negatief witnesses removed with reason, one rewritten; all fourteen gates
+negative witnesses removed with reason, one rewritten; all fourteen gates
 green on the landing (gate 12 pins 185/164 with the WF-113 golden
 `jutterswet-kaletabel`).
 **L2 landed (2026-09-24, `fd3f0a73`, card `backlog/done/20260923-l2-referentielaag.md`):**
@@ -762,7 +762,7 @@ the reference layer — every reference symbolic (B11 one explicit path, B13 no
 `type` on the five reference positions, B12 bindings required with WF-048
 retired, B7/B8 bean fields gone, B9 one `RoleMembership` with the optional
 `counterpartType`, B16 `Onbekend` gone, `Kenmerk.navigatie` gone); migration
-`spec/proposals/v1-migratie/m2.py`; negatief 444 → 400 with the stamp list and
+`spec/proposals/v1-migratie/m2.py`; negative 444 → 400 with the stamp list and
 a per-witness `expect.txt` arm fragment checked by gate 3; gate 13 revised to
 the derived positions (38 twists); gate 12 pins 188/166; two red cases became
 goldens; all fourteen gates green on the landing.
@@ -773,7 +773,7 @@ the type system — `Number` with the `%` unit and the declaration tag (B14),
 timeline facet (B18), `UnitSystem {name, units}` with spellings and `DayKind
 {name, plural?}`; migration `spec/proposals/v1-migratie/m3.py` (the parity
 zone's 540 pre-rounded factors reconstructed and confirmed byte-identical by
-the frontend's re-emission); negatief 400 → 407 with 165 arm fragments; no
+the frontend's re-emission); negative 400 → 407 with 165 arm fragments; no
 gate-5/6/12 outcome moved; all fourteen gates green on the landing.
 **L4 landed (2026-09-24, `1cdcd9fc`, card `backlog/done/20260924-l4-regel-en-expressielaag.md`):**
 the rule and expression layer — the six named forms as `{node, name,
@@ -786,7 +786,7 @@ form (B19), `initialisation` + `presentation?` for the v0 kind (B20),
 characteristic; the member kind against the tag); B24, B25 and B28 not
 taken (deferred additively, the parity golden, the timeline anchor);
 migration `spec/proposals/v1-migratie/m4.py`; the parity dump loses its two
-`COMPLEX` allocations to WARNING diagnostics; negatief 407 → 417 with 228 arm
+`COMPLEX` allocations to WARNING diagnostics; negative 407 → 417 with 228 arm
 fragments; no gate-5/6/12 outcome moved; all fourteen gates green on the
 landing.
 **L5 landed (2026-09-25, `71f5303d`, card `backlog/done/20260924-l5-bronrecord-en-hernoeming.md`):**
@@ -800,7 +800,7 @@ no v0 name for), every enumeration value under one spelling rule (English
 lowerCamel; one translation table per language, checked against the naming
 table), and the v0 `null` absent on the eighteen optional positions;
 `Regelversie` keeps its v0 form (B25 waits for the parity golden); migration
-`spec/proposals/v1-migratie/m5.py`; negatief 417 → 418 with 260 arm
+`spec/proposals/v1-migratie/m5.py`; negative 417 → 418 with 260 arm
 fragments; no gate-5/6/12 outcome moved; all fourteen gates green on the
 landing. With L5 the wire `uchar-ir-v1` is complete and phase 2 of the wire
 migration is closed; the one toolchain pin bump (phase 3) is now due, in the
@@ -811,7 +811,7 @@ or goldens landed as one union ahead of phase 3, so the bump carries them —
 WF-079 read through the type chain per concrete type
 (`verifier-supertype-dubbele-schrijver`), the converse WF-037 arm
 (`aantal-bronargument-welgevormd`), the numeric-operand arm of WF-091 with
-five red witnesses moved to `corpus/negatief` (`ref-klipvouw-nul`), the
+five red witnesses moved to `corpus/negative` (`ref-klipvouw-nul`), the
 ch. 7.8 sentence on characteristic input beside the form-3 proposal
 (`kenmerkinvoer-en-invoer-boven-berekening`), a RegelSpraak source for each
 of the five constructs no golden carried (`rgs-getuigen-bronloze-constructen`)
@@ -1006,7 +1006,7 @@ plays 216 and 186). The open point "a scenario has no surface for an absent
 parameter" is closed without a new form: the one pinned case leaves out a
 list parameter, a datatype RegelSpraak does not declare, and a scalar
 parameter that is read and left out faults in ref and clingo
-(RUNTIME-SEMANTICS ch. 5.7; red case `aanvoergeld-parameter-ongebonden`), so
+(RUNTIME-SEMANTICS ch. 5.7; red case `aanvoergeld-parameter-unbound`), so
 the parameter gate refuses what the executors would. Open for the
 distribution: its service reads the set from the same document instead of
 its JSON file (a card there). Recorded: the frontend's phrase tokens force no
@@ -1207,7 +1207,7 @@ card's own documents with expectations became goldens
 (`jutterswet-verdeling-dubbelbezet`, `jutterswet-uniciteit-drie-bronnen`,
 `jutterswet-uitsluiting-gedateerd`, `jutterswet-aantalfilter-gehele-jaar` and
 `jutterswet-aantalfilter-gehele-jaar-creatieguard`, the last two without a
-`bron.rgs` because the frontend does not convert their filter), with the red
+`source.rgs` because the frontend does not convert their filter), with the red
 case `jutterswet-uitsluiting-zonder-rekendatum`; and a non-terminating
 fraction at rest got a behaviour witness before the landing
 (`RationalAtRestWitnessTest`: ref writes 1/3, clingo refuses by name, both Drools

@@ -219,7 +219,7 @@ let characteristic_temporal (ot : object_type) name =
    the ASP backend the attribute one only, so a temporal CHARACTERISTIC target
    passed the test there and got the scalar gate. The fix left both target
    tests unshared, on purpose, and gave the position a red witness
-   (`corpus/rood/periodevenster-tijdlijnkenmerk`). Share the syntax walk,
+   (`corpus/red/time-window-timeline-characteristic`). Share the syntax walk,
    never the judgement it feeds. *)
 let rec contains_time_window (c : condition_expr) =
   match c with
@@ -1305,7 +1305,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                  Before it, a StructLiteral of domain B assigned to an
                  attribute of domain A was verifier-clean and landed here while
                  the ASP backend answered wrong (the wf090 cases under
-                 corpus/negatief).
+                 corpus/negative).
 
                  WF-072's widened walk (same chapter, same day) settles WHICH
                  FIELDS that domain has ON THE WIRE. It has to, because the
@@ -1825,7 +1825,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
            The wire refuses the shape and so does the frontend, so this arm is
            out of reach through a well-formed document — but without it this
            evaluator ANSWERED a union over two populations (measured
-           2026-09-22 on `wf110-unie-ongelijke-elementtypes`: a silent 3,
+           2026-09-22 on `wf110-union-unequal-element-types`: a silent 3,
            where both Drools branches refuse by name). ch. 4.3 says the rule
            refuses instead of picking an answer by side effect, and an
            executor that answers anyway makes that sentence untrue where it
@@ -2670,7 +2670,7 @@ let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
    only inside a defaults group, where it keeps the group from attributing; a
    flat rule with another value has no reading. Until 2026-09-23 the
    attribution arm below evaluated the value and let false write nothing:
-   corpus/negatief/wf022-kenmerk-onwaar, forced past the verifier, answered
+   corpus/negative/wf022-characteristic-false, forced past the verifier, answered
    with the characteristic absent without a word, and a computed boolean was
    written like the constant, while the ASP backend refused both at
    translation.

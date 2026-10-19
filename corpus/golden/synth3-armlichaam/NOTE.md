@@ -31,7 +31,7 @@ really computes with `m` rather than skipping it, case 3 interleaves the two
 arms over one accumulator, and case 4 pins the fold base.
 
 **The nearest relative in the corpus is not the falsification.**
-`corpus/rood/closed-runtime-division-by-zero` folds the same runtime division
+`corpus/red/closed-runtime-division-by-zero` folds the same runtime division
 over the same `grondslag = 60` and faults in both executors on a `0` divisor —
 but it is NOT this document minus its branch node. It carries no `Let` at all
 (its body is `acc + grondslag / x` directly), its element type is

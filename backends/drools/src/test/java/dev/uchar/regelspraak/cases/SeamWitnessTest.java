@@ -37,7 +37,7 @@ class SeamWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
     private static final Path CORPUS = Path.of("..", "..", "corpus");
-    private static final Path WITHOUT_FIXPOINT = CORPUS.resolve("rood").resolve("runaway-recursion");
+    private static final Path WITHOUT_FIXPOINT = CORPUS.resolve("red").resolve("runaway-recursion");
     private static final Path WITH_FIXPOINT = CORPUS.resolve("golden").resolve("jutterswet-penningdrempel");
 
     @Test void the_seam_dumps_every_session_of_both_branches_also_without_fixpoint() throws Exception {

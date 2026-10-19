@@ -446,7 +446,7 @@ class DeclarationHeadNameTest {
      *  ir.json and gate 16 lowers its scenario document, whose instances are written 'een Recht op premie R1', to its
      *  case files. */
     @Test void the_golden_reads_without_diagnostic() throws Exception {
-        RegelSpraakModel m = clean(Files.readString(GOLDEN.resolve("bron.rgs")));
+        RegelSpraakModel m = clean(Files.readString(GOLDEN.resolve("source.rgs")));
         assertEquals(List.of("Jutter", "Recht op premie"), new ArrayList<>(m.objecttypen.keySet()));
         assertEquals("Rechten op premie", m.objecttypen.get("Recht op premie").plural);
         assertEquals(List.of("jutter heeft premierecht"), new ArrayList<>(m.feittypen.keySet()));

@@ -77,7 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       after an update of V1 without a further {@code vuur}, the first reading, J1's totaalgewicht 14 and V1 zwaar with
  *       bonus 7, heffing 40, uitkering 20 and vindloon 15.</li>
  *   <li>{@code lees} with labels (the fix round of step 3, point 5): on the red case
- *       {@code corpus/rood/jutterswet-dubbele-melding}, case 1, two writers give V's meldingsdatum two dates, and the
+ *       {@code corpus/red/jutterswet-dubbele-melding}, case 1, two writers give V's meldingsdatum two dates, and the
  *       fault of the fixpoint names V as "V, een Vondst", where {@code lees} without labels names it by type and
  *       identity; the write-back with the same labels throws the fault in the same sentence. The reference interpreter
  *       names V alike, "V, a Vondst", and the ASP runner gives "V" beside the fault (measured 2026-10-10; gate 8 pins
@@ -310,7 +310,7 @@ class TmsConsumerWitnessTest {
     }
 
     @Test void read_with_labels_names_the_object_of_a_fault_at_its_label() throws Exception {
-        Path ir = Path.of("..", "..", "corpus", "rood", "jutterswet-dubbele-melding", "ir.json");
+        Path ir = Path.of("..", "..", "corpus", "red", "jutterswet-dubbele-melding", "ir.json");
         JsonNode c = TmsDocuments.JSON.readTree(Files.readString(ir.resolveSibling("case1-beide-schrijvers-gelden.json")));
         CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL).withSession(c, (build, session, labels) -> {
             Map<Object, String> toLabel = new IdentityHashMap<>();

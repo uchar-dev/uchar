@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class RedBranchChoiceWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
-    private static final Path CASE = Path.of("..", "..", "corpus", "rood", "division-by-numeric-zero");
+    private static final Path CASE = Path.of("..", "..", "corpus", "red", "division-by-numeric-zero");
 
     @Test void the_red_entry_builds_the_branch_that_it_gets() throws Exception {
         Path map = Files.createTempDirectory("rode-takkeuze");

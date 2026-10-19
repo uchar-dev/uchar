@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * </pre>
  * Both documents were verifier-CLEAN then. A whole-file compile failure names the generated text, not the
  * construct; the marker names the fold, the timeline and the member type. WF-091 rejects both since the card
- * ref-klipvouw-nul (a total over a Date operand), so they are negatief witnesses without a case file; this
+ * ref-klipvouw-nul (a total over a Date operand), so they are negative witnesses without a case file; this
  * backend does not run the verifier, and the inputs of their former red cases are held below.
  *
  * <p>Until the card ref-klipvouw-nul the two branches refused at DIFFERENT phases: the exec branch's case
@@ -41,14 +41,14 @@ class TimelineDateFoldWitnessTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
-    private static final Path NEGATIEF = Path.of("..", "..", "corpus", "negatief");
+    private static final Path NEGATIVE = Path.of("..", "..", "corpus", "negative");
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
 
-    private static final String TOTAL = "wf091-tijdlijntotaal-datum";
-    private static final String CLIP = "wf091-klipvouw-datum";
+    private static final String TOTAL = "wf091-timeline-total-date";
+    private static final String CLIP = "wf091-clip-fold-date";
 
-    // The inputs of the two former red cases (corpus/rood/datumtijdlijn-totaalvouw and
-    // corpus/rood/datumtijdlijn-klipvouw, case1.json), without their expectedFault pins, which were ref's and
+    // The inputs of the two former red cases (corpus/red/datumtijdlijn-totaalvouw and
+    // corpus/red/datumtijdlijn-klipvouw, case1.json), without their expectedFault pins, which were ref's and
     // clingo's.
     private static final String TOTAL_CASE = """
             {"format": "uchar-case-v0", "asOfDate": "2026-03-15",
@@ -89,7 +89,7 @@ class TimelineDateFoldWitnessTest {
                 "[{\"kind\":\"attributeEmpty\",\"label\":\"J1\",\"attribute\":\"bewaargeld\"}]"));
         // Until card drl-teksttak-op-truth-maintenance the DRL-text branch named it in its own words ("vouw TOTAAL over
         // de tijdlijn 'bewaarvergoeding per maand' …"); both branches refuse in the sentence of the analysis since.
-        BothBranches.refused(NEGATIEF.resolve(TOTAL).resolve("ir.json"), empty, "een totaal over de eigen tijdlijn ('het"
+        BothBranches.refused(NEGATIVE.resolve(TOTAL).resolve("ir.json"), empty, "een totaal over de eigen tijdlijn ('het"
                 + " totaal van zijn bewaarvergoeding per maand') over 'bewaarvergoeding per maand', dat geen getal is"
                 + " (WF-091)", "the refusal hangs on the declaration");
     }
@@ -104,11 +104,11 @@ class TimelineDateFoldWitnessTest {
 
     // ---------------- fixtures ----------------
 
-    /** Both branches refuse the negatief document {@code dir} in the one sentence of the analysis, which names
+    /** Both branches refuse the negative document {@code dir} in the one sentence of the analysis, which names
      *  {@code tms}; until card drl-teksttak-op-truth-maintenance the DRL-text branch named the fold in its own words. */
     private static void refuses(String dir, JsonNode c, String tms) throws Exception {
-        Path ir = NEGATIEF.resolve(dir).resolve("ir.json");
-        assertTrue(Files.exists(ir), "negatief ir.json present: " + ir.toAbsolutePath());
+        Path ir = NEGATIVE.resolve(dir).resolve("ir.json");
+        assertTrue(Files.exists(ir), "negative ir.json present: " + ir.toAbsolutePath());
         BothBranches.refused(ir, c, tms, "the timeline total over dates");
     }
 

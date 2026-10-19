@@ -27,7 +27,7 @@ Jutterswet-flavoured casus, own numbers, rights-free.
 Amounts are computed without a unit, because the marker stands on a number
 without a unit only (DIVERGENCES.md §7).
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - `waarde` of a Vondst, `wachtgeld` of a Jutter and `stukprijs` of an
   Aanspoelsel carry the marker (lid 7). The three names differ: the form names

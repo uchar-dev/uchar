@@ -72,7 +72,7 @@ threshold is neither earlier nor later. A4 pins the empty operand: no
 `meldstip` makes both comparisons false (the ch. 1.2d date row — any empty
 operand is false), so silence, not a fault.
 
-## Why the wire is hand-written (no `bron.rgs`)
+## Why the wire is hand-written (no `source.rgs`)
 
 When this golden was written the RegelSpraak emitter could not produce
 it: for a millisecond-precision date literal it wrote the day-first source snippet into
@@ -88,12 +88,12 @@ the lexeme: its references read `haar meldstip` (an `Aanmelding` is feminine, a
 lens decision of the card that wrote it), and the RegelSpraak grammar has no
 `haar`, so the frontend cannot emit these source snippets. The emitter's own
 route for that literal is held by `jutterswet-sluitstip` instead, which is a
-`bron.rgs` golden.
+`source.rgs` golden.
 
 The snippet `15-03-2026 12:00:00.000` in this document's `source` is no
 longer a wire lexeme: written into `value`
 (`{"dateTime": "15-03-2026 12:00:00.000"}`) it is refused by WF-095
-(`corpus/negatief/wf095-bronsnippet`). Every executor refuses it at load
+(`corpus/negative/wf095-source-snippet`). Every executor refuses it at load
 with the verifier's own WF-095 sentence (since the L4 fix round; until
 2026-09-23 the readers still read it as the same instant, tolerance behind
 the fence and not a second spelling).

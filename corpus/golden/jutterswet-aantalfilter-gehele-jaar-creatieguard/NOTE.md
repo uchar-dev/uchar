@@ -30,7 +30,7 @@ De creatie maakt per Kustvak hoogstens één Wachtbrief; het brieftal is
 een telling en dus 0 waar geen brief bestaat, nooit leeg (ch. 1.2e). Elke
 case pint ook dat het kanaal leeg is.
 
-## Waarom er geen `bron.rgs` bij staat
+## Waarom er geen `source.rgs` bij staat
 
 Het document is in RegelSpraak geschreven:
 
@@ -71,7 +71,7 @@ een aggregatie-operand wordt nog niet omgezet"). In `ir.json` is dat
 filter met de hand vervangen door de kenmerktoets `bemand` met de
 kwalificatie van het jaar, en de waarschuwing is weggelaten. De bron
 levert dus niet byte voor byte deze IR op, en gate 10 eist dat van elke
-golden met een `bron.rgs`. De IR is daarom handgeschreven, zoals een
+golden met een `source.rgs`. De IR is daarom handgeschreven, zoals een
 golden voor een vorm die geen frontend nog maakt (`corpus/golden/README.md`).
 
 ## Herkomst

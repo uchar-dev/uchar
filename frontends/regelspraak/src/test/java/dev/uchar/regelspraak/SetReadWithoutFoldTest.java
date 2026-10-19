@@ -97,13 +97,13 @@ class SetReadWithoutFoldTest {
             """;
 
     @Test void set_read_as_whole_rule_value_is_named() {
-        // The card's first witness, verbatim: corpus/negatief/wf096-setlezing-regelwaarde is this
+        // The card's first witness, verbatim: corpus/negative/wf096-setlezing-regelwaarde is this
         // sentence's emission, byte for byte, from before the check existed.
         assertEquals(List.of(MESSAGE), meldingen(RULE_VALUE));
     }
 
     @Test void set_read_as_operand_of_a_compound_node_is_named() {
-        // The card's second witness (corpus/negatief/wf096-setlezing-operand): the SAME node, now the
+        // The card's second witness (corpus/negative/wf096-setlezing-operand): the SAME node, now the
         // left operand of a Binair PLUS. One rule for both positions — they measure identically, and
         // the frontend has no reason to split them that the IR does not have.
         assertEquals(List.of(MESSAGE), meldingen("""

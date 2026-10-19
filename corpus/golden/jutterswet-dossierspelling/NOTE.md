@@ -22,7 +22,7 @@ Why the case exists: WF-090 (struct-domain identity,
 `spec/IR-SPEC.md` ch. 2.4) compares a use site's struct domain against
 the declaration's **ci**, following WF-001's naming rule, at every read
 position and at all three write positions. That ci clause was normative
-but unpinned — no golden, rood or parity document spelled a struct use
+but unpinned — no golden, red or parity document spelled a struct use
 site differently from its declaration, so making the comparison
 case-sensitive left the whole corpus green and nothing failed. This
 document is the falsifier: it is verifier-clean only because the
@@ -43,7 +43,7 @@ WF-089.
         reference 'dossier' is typed with struct domain 'DOSSIER', but
         the declaration it reads from names struct domain 'dossier'
 
-    while every other golden stays clean and every negatief case keeps
+    while every other golden stays clean and every negative case keeps
     failing for its own declared rule.
 
 What does NOT pin it, both variants measured under that same mutant:
@@ -75,7 +75,7 @@ clause — which is what this document, and only this document, carries.
 
 **Re-measured 2026-09-25, the write half.** Making that one comparison
 case-sensitive (`norm a = norm b` -> `a = b` in the struct clause of
-`wf023_assignment`) turns this golden, and no other golden or rood document,
+`wf023_assignment`) turns this golden, and no other golden or red document,
 red:
 
     WF-090 FAIL /rules/rules/1/versions/0: a value of the struct domain
@@ -84,9 +84,9 @@ red:
 The read half (`wf090_struct_identity`) has no position left where a struct
 stands in a verifier-clean document — the element-passing folds take numbers
 and dates only (WF-038), the composite positions are numeric — and making it
-case-sensitive leaves every golden and rood document clean.
+case-sensitive leaves every golden and red document clean.
 
-Deliberately carries no `bron.rgs` and no `bron.catala_en`: the drift is
+Deliberately carries no `source.rgs` and no `source.catala_en`: the drift is
 a wire-level spelling that neither frontend emits — both derive a
 reference's and a literal's type from the declaration — so a source file
 would have to be round-tripped away. Hand-authored, in the Jutterswet's

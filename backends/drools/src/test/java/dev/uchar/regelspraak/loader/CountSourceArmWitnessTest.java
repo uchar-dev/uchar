@@ -30,14 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * {@code TODO aggregatie}) or, for the {@code ListLiteral}, as a node this backend does not carry — never by the
  * shape. The verifier refuses all of them under WF-037, and {@code ref} and the ASP backend in the same sentences.
  *
- * <p>Every document here is a corpus negatief of that rule, read and never written, or an in-memory variant of
+ * <p>Every document here is a corpus negative of that rule, read and never written, or an in-memory variant of
  * one; each row pins the full sentence at the node's position, character for character as the verifier reports
- * it (the negatief's own {@code expect.txt} pins a fragment of it for gate 3).
+ * it (the negative's own {@code expect.txt} pins a fragment of it for gate 3).
  */
 class CountSourceArmWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final Path NEGATIEF = Path.of("..", "..", "corpus", "negatief");
+    private static final Path NEGATIVE = Path.of("..", "..", "corpus", "negative");
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
     private static final String SITE = "/rules/rules/0/versions/0/value";
     private static final String SOURCE_ARM = " operand: the source of an instance fold is an AttributeReference";
@@ -53,17 +53,17 @@ class CountSourceArmWitnessTest {
     // ---------------- 1. the fold-source arm: one node that is no AttributeReference ----------------
 
     @Test void a_literal_as_count_source_is_refused() throws Exception {
-        refuses("wf037-aantal-elementtype-literaal", "a count aggregation carries elementType \"Vondst\" and a Literal"
+        refuses("wf037-count-element-type-literal", "a count aggregation carries elementType \"Vondst\" and a Literal"
                 + SOURCE_ARM);
     }
 
     @Test void a_binary_as_count_source_is_refused() throws Exception {
-        refuses("wf037-aantal-elementtype-binair", "a count aggregation carries elementType \"Vondst\" and a Binary"
+        refuses("wf037-count-element-type-binary", "a count aggregation carries elementType \"Vondst\" and a Binary"
                 + SOURCE_ARM);
     }
 
     @Test void a_parameter_as_count_source_is_refused() throws Exception {
-        refuses("wf037-aantal-elementtype-parameter", "a count aggregation carries elementType \"Vondst\" and a"
+        refuses("wf037-count-element-type-parameter", "a count aggregation carries elementType \"Vondst\" and a"
                 + " ParameterReference" + SOURCE_ARM);
     }
 
@@ -72,26 +72,26 @@ class CountSourceArmWitnessTest {
     @Test void a_variable_as_count_source_is_refused() throws Exception {
         String arg = SITE + "/arguments/0";
         IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class,
-                () -> IrLoader.loadAll(negative("wf037-aantal-elementtype-variabele")));
+                () -> IrLoader.loadAll(negative("wf037-count-element-type-variable")));
         assertEquals(arg, e.site(), e.getMessage());
         assertEquals("malformed uchar-ir-v1 document at '" + arg + "': "
                 + IrLoader.variableReferenceRefusal("x"), e.getMessage());
     }
 
     @Test void a_builtin_as_count_source_is_refused() throws Exception {
-        refuses("wf037-aantal-elementtype-builtin", "a count aggregation carries elementType \"Vondst\" and a"
+        refuses("wf037-count-element-type-built-in", "a count aggregation carries elementType \"Vondst\" and a"
                 + " BuiltinCall" + SOURCE_ARM);
     }
 
     @Test void a_marker_as_count_source_is_refused_and_not_lowered() throws Exception {
         // before: PLAYED in both branches, so the marker was lowered silently — the article follows the vowel
-        refuses("wf037-aantal-elementtype-onopgelost", "a count aggregation carries elementType \"Vondst\" and an"
+        refuses("wf037-count-element-type-unresolved", "a count aggregation carries elementType \"Vondst\" and an"
                 + " Unresolved" + SOURCE_ARM);
     }
 
     @Test void a_nested_aggregation_as_count_source_is_refused() throws Exception {
         // the argument is itself a well-formed count; what is refused is its position, not its content
-        ObjectNode ir = negative("wf037-aantal-elementtype-literaal");
+        ObjectNode ir = negative("wf037-count-element-type-literal");
         ObjectNode count = (ObjectNode) value(ir);
         ObjectNode within = count.deepCopy();
         within.putArray("arguments").addObject().put("node", "AttributeReference").put("attribute", "vondsten")
@@ -107,7 +107,7 @@ class CountSourceArmWitnessTest {
     @Test void a_non_carried_node_as_count_source_is_refused_as_form_and_not_as_node() throws Exception {
         for (String node : List.of("Lambda", "ListLength", "Match", "Construct", "StructLiteral", "FieldAccess",
                 "Invoke", "Fold", "MapList", "FilterList", "TemporalRead")) {
-            ObjectNode ir = negative("wf037-aantal-elementtype-literaal");
+            ObjectNode ir = negative("wf037-count-element-type-literal");
             ObjectNode arg = ((ObjectNode) value(ir)).putArray("arguments").addObject().put("node", node);
             if (node.equals("TemporalRead")) {
                 arg.set("base", JSON.readTree("{ \"node\": \"ParameterReference\", \"parameter\": \"p\" }"));
@@ -121,7 +121,7 @@ class CountSourceArmWitnessTest {
     }
 
     @Test void a_non_carried_node_as_source_of_the_sum_is_refused() throws Exception {
-        ObjectNode ir = negative("wf037-som-elementtype-literaal");
+        ObjectNode ir = negative("wf037-sum-element-type-literal");
         ((ObjectNode) value(ir)).putArray("arguments").addObject().put("node", "ListLength");
         refuses(ir, "a sum aggregation carries elementType \"Vondst\" and a ListLength" + SOURCE_ARM);
     }
@@ -129,67 +129,67 @@ class CountSourceArmWitnessTest {
     @Test void a_non_carried_node_under_the_count_source_is_refused() throws Exception {
         // the argument is a Binary the loader reads, and the Lambda in it is what it cannot: the sentence names the
         // argument, as the verifier's does. Before the fix: the Refusal of the Lambda, in both branches
-        ObjectNode ir = negative("wf037-aantal-elementtype-binair");
+        ObjectNode ir = negative("wf037-count-element-type-binary");
         ((ObjectNode) value(ir).get("arguments").get(0)).putObject("left").put("node", "Lambda");
         refuses(ir, "a count aggregation carries elementType \"Vondst\" and a Binary" + SOURCE_ARM);
     }
 
     @Test void a_literal_as_source_of_the_filled_count_is_refused() throws Exception {
         // before: the DRL-text branch played it as an ordinary count, the exec-model branch skipped the rule
-        refuses("wf037-aantalgevulde-niet-setbron", "a filledCount aggregation carries elementType \"Vondst\" and a"
+        refuses("wf037-filled-count-not-set-source", "a filledCount aggregation carries elementType \"Vondst\" and a"
                 + " Literal" + SOURCE_ARM);
     }
 
     @Test void a_literal_as_source_of_the_sum_is_refused() throws Exception {
         // before: the DRL-text branch crashed on it (ClassCastException), the exec-model branch skipped the rule
-        refuses("wf037-som-elementtype-literaal", "a sum aggregation carries elementType \"Vondst\" and a Literal"
+        refuses("wf037-sum-element-type-literal", "a sum aggregation carries elementType \"Vondst\" and a Literal"
                 + SOURCE_ARM);
     }
 
     @Test void a_parameter_as_source_of_the_sum_is_refused() throws Exception {
-        refuses("wf037-som-elementtype-parameter", "a sum aggregation carries elementType \"Vondst\" and a"
+        refuses("wf037-sum-element-type-parameter", "a sum aggregation carries elementType \"Vondst\" and a"
                 + " ParameterReference" + SOURCE_ARM);
     }
 
     @Test void a_literal_as_own_read_of_the_total_is_refused() throws Exception {
         // a total without a range: the argument is the subject's own read, and a literal is no read. Before: the
         // verifier passed it, and no branch ran it (transpiler SKIP, DRL marker)
-        refuses("wf037-totaal-elementtype-literaal", "a total aggregation carries elementType \"Jutter\" and a Literal"
+        refuses("wf037-total-element-type-literal", "a total aggregation carries elementType \"Jutter\" and a Literal"
                 + SOURCE_ARM);
     }
 
     // ---------------- 2. the converse arm: no argument, or one ListLiteral ----------------
 
     @Test void a_count_without_argument_is_refused() throws Exception {
-        refuses("wf037-aantal-elementtype-zonder-operand", "a count aggregation carries elementType \"Vondst\""
+        refuses("wf037-count-element-type-without-operand", "a count aggregation carries elementType \"Vondst\""
                 + NO_SOURCE);
     }
 
     @Test void a_count_without_argument_beside_its_range_is_refused() throws Exception {
         // the variant that PLAYED in both branches before: the range written, the argument list empty
-        ObjectNode ir = negative("wf037-aantal-elementtype-zonder-operand");
+        ObjectNode ir = negative("wf037-count-element-type-without-operand");
         ((ObjectNode) value(ir)).putObject("sourceRole").put("node", "RoleBinding")
                 .put("factType", "vondstaanmelding").put("role", "vondst");
         refuses(ir, "a count aggregation carries elementType \"Vondst\"" + NO_SOURCE);
     }
 
     @Test void a_filled_count_without_argument_is_refused() throws Exception {
-        refuses("wf037-gevuldetelling-elementtype-zonder-operand", "a filledCount aggregation carries elementType"
+        refuses("wf037-filled-count-element-type-without-operand", "a filledCount aggregation carries elementType"
                 + " \"Vondst\"" + NO_SOURCE);
     }
 
     @Test void a_sum_without_argument_is_refused() throws Exception {
-        refuses("wf037-som-elementtype-zonder-operand", "a sum aggregation carries elementType \"Vondst\""
+        refuses("wf037-sum-element-type-without-operand", "a sum aggregation carries elementType \"Vondst\""
                 + NO_SOURCE);
     }
 
     @Test void a_list_literal_as_count_source_is_refused_as_form_and_not_as_node() throws Exception {
-        refuses("wf037-aantal-elementtype-lijstliteraal", "a count aggregation carries elementType \"Vondst\" and a"
+        refuses("wf037-count-element-type-list-literal", "a count aggregation carries elementType \"Vondst\" and a"
                 + " ListLiteral operand: a listed value is no source of instances");
     }
 
     @Test void a_list_literal_as_source_of_the_filled_count_is_refused() throws Exception {
-        refuses("wf037-gevuldetelling-elementtype-lijstliteraal", "a filledCount aggregation carries elementType"
+        refuses("wf037-filled-count-element-type-list-literal", "a filledCount aggregation carries elementType"
                 + " \"Vondst\" and a ListLiteral operand: a listed value is no source of instances");
     }
 
@@ -197,17 +197,17 @@ class CountSourceArmWitnessTest {
 
     @Test void an_element_type_with_range_beside_the_union_is_refused() throws Exception {
         // before: PLAYED in both branches, the union counted and the node's own source never read
-        refuses("wf110-unie-naast-vouwbron", UNION + "elementType + sourceRole" + UNION_TAIL);
+        refuses("wf110-union-beside-fold-source", UNION + "elementType + sourceRole" + UNION_TAIL);
     }
 
     @Test void a_range_only_beside_the_union_is_refused() throws Exception {
-        ObjectNode ir = negative("wf110-unie-naast-vouwbron");
+        ObjectNode ir = negative("wf110-union-beside-fold-source");
         ((ObjectNode) value(ir)).remove("elementType");
         refuses(ir, UNION + "sourceRole" + UNION_TAIL);
     }
 
     @Test void a_filter_only_beside_the_union_is_refused() throws Exception {
-        ObjectNode ir = negative("wf110-unie-naast-vouwbron");
+        ObjectNode ir = negative("wf110-union-beside-fold-source");
         ObjectNode count = (ObjectNode) value(ir);
         count.remove("elementType");
         count.remove("sourceRole");
@@ -223,14 +223,14 @@ class CountSourceArmWitnessTest {
      *  executor names the path first. Before the fix this loader named the list literal first: it judged that node
      *  before the range, while ref and the ASP backend judged it after. */
     @Test void a_list_literal_beside_a_source_path_is_first_refused_as_source_path() throws Exception {
-        ObjectNode ir = negative("wf037-aantal-elementtype-lijstliteraal");
+        ObjectNode ir = negative("wf037-count-element-type-list-literal");
         withPath((ObjectNode) value(ir), 2);
         refusedAt(ir, SITE + "/sourcePath", SOURCE_PATH_C);
     }
 
     @Test void a_list_literal_as_source_of_the_filled_count_beside_a_source_path_is_first_refused_as_source_path()
             throws Exception {
-        ObjectNode ir = negative("wf037-gevuldetelling-elementtype-lijstliteraal");
+        ObjectNode ir = negative("wf037-filled-count-element-type-list-literal");
         withPath((ObjectNode) value(ir), 2);
         refusedAt(ir, SITE + "/sourcePath", SOURCE_PATH_C);
     }
@@ -239,7 +239,7 @@ class CountSourceArmWitnessTest {
      *  the position (WF-102 (c)) before the number of steps, and this loader now does too. Before the fix it named the
      *  steps first, as a form it does not carry. */
     @Test void a_literal_beside_a_source_path_of_a_step_is_refused_as_source_path() throws Exception {
-        ObjectNode ir = negative("wf037-som-elementtype-literaal");
+        ObjectNode ir = negative("wf037-sum-element-type-literal");
         withPath((ObjectNode) value(ir), 1);
         refusedAt(ir, SITE + "/sourcePath", SOURCE_PATH_C);
     }
@@ -247,7 +247,7 @@ class CountSourceArmWitnessTest {
     /** No range at all beside a list literal: the shared loader refuses the missing range while loading, before any
      *  source question, and so does this loader now. Before the fix it named the list literal. */
     @Test void a_list_literal_without_range_is_refused_for_the_range() throws Exception {
-        ObjectNode ir = negative("wf037-aantal-elementtype-lijstliteraal");
+        ObjectNode ir = negative("wf037-count-element-type-list-literal");
         ((ObjectNode) value(ir)).remove("sourceRole");
         refusedAt(ir, SITE, "a single-argument fold with an elementType carries its range (sourceRole or sourcePath)"
                 + " under every kind but total: the range is written, never derived");
@@ -265,7 +265,7 @@ class CountSourceArmWitnessTest {
     // ---------------- fixtures ----------------
 
     private static ObjectNode negative(String name) throws Exception {
-        return (ObjectNode) JSON.readTree(Files.readString(NEGATIEF.resolve(name).resolve("ir.json")));
+        return (ObjectNode) JSON.readTree(Files.readString(NEGATIVE.resolve(name).resolve("ir.json")));
     }
 
     private static com.fasterxml.jackson.databind.JsonNode value(ObjectNode ir) {

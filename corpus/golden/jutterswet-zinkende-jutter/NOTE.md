@@ -11,7 +11,7 @@ words after the name the anchor writes the subject with as part of the
 predicate, so the negation lands on the matrix and a multi-word name is
 bound whole.
 
-`bron.rgs` declares a Jutter with nine adjectival characteristics and a
+`source.rgs` declares a Jutter with nine adjectival characteristics and a
 Vondst with five: `drijfvermogen` and `recht op berging` (possessive),
 `waardevol`, `gekeurd` and `dubbel gekeurd` (adjectival), joined by the
 fact type `vinder van vondst`, whose Jutter role `vinder` is not the type's

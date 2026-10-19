@@ -74,6 +74,6 @@ is dead for every input, which is the point.
 
 `ref` ≡ `clingo` over all six expectations (gate 5 ≡ gate 6), anchored to
 the hand-written absolutes above; gate 12 replays them in Drools. Gate 10
-re-emits `bron.rgs` to a byte-identical `ir.json`. NOOP-REFUTING: `S2`'s
+re-emits `source.rgs` to a byte-identical `ir.json`. NOOP-REFUTING: `S2`'s
 `hoogsteteken` and `preciesteken` are derived and absent from the raw
 input, so a do-nothing run mismatches two expectations (gate 7).

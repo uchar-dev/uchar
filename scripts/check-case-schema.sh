@@ -7,11 +7,11 @@
 #      polarities and through the validator the corpus check uses, with no
 #      corpus document involved (the gate-2 model, 2026-09-23). A clamp
 #      fails when a pattern appears at a position the table does not carry;
-#   2. every corpus/golden/**/case*.json and corpus/rood/**/case*.json
+#   2. every corpus/golden/**/case*.json and corpus/red/**/case*.json
 #      validates against it;
 #   3. every case file sits beside an ir.json;
 #   4. zone discipline: a golden case carries `expected` (never
-#      `expectedFault`), a rood case carries `expectedFault` — a red
+#      `expectedFault`), a red case carries `expectedFault` — a red
 #      case can never hide inside the green corpus, or vice versa.
 # An empty case set is reported explicitly, never silently green.
 #
@@ -41,7 +41,7 @@ fi
 
 list=$(mktemp) || exit 2
 trap 'rm -f "$list"' EXIT
-find corpus/golden corpus/rood -name 'case*.json' 2>/dev/null | sort > "$list"
+find corpus/golden corpus/red -name 'case*.json' 2>/dev/null | sort > "$list"
 
 status=0
 n=0
@@ -121,7 +121,7 @@ LEXEMES = {
         ("2026-06-01",          True,  "the strict lexeme itself"),
         ("2026-02-30",          True,  "THE LAYER BOUNDARY, pinned deliberately: a pattern cannot check "
                                        "a calendar, so this one is admitted here and refused by the case "
-                                       "readers (corpus/rood/inputdatum-kalender pins that refusal)"),
+                                       "readers (corpus/red/input-date-calendar pins that refusal)"),
         ("2026-06-01\n",        False, "a trailing newline: Python's `$` also matches before a final "
                                        "newline, ECMA-262's only at the end"),
         ("2026-06-01 ",         False, "a trailing space"),
@@ -261,10 +261,10 @@ for path in files:
     # case can never hide inside the green corpus, or vice versa.
     if path.startswith("corpus/golden/") and "expectedFault" in doc:
         sys.stderr.write("FAIL: %s carries expectedFault inside corpus/golden — "
-                         "red cases live in corpus/rood\n" % path)
+                         "red cases live in corpus/red\n" % path)
         failed += 1
-    elif path.startswith("corpus/rood/") and "expectedFault" not in doc:
-        sys.stderr.write("FAIL: %s carries no expectedFault inside corpus/rood — "
+    elif path.startswith("corpus/red/") and "expectedFault" not in doc:
+        sys.stderr.write("FAIL: %s carries no expectedFault inside corpus/red — "
                          "green cases live in corpus/golden\n" % path)
         failed += 1
 if failed:

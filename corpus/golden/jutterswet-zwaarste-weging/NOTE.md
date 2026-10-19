@@ -22,7 +22,7 @@ side. Own Jutterswet-flavoured casus, own values, rights-free.
 > van de boten waarop haar jutters varen; elke boot telt één keer. 4. Een
 > jutter is actief als zijn startdag bekend is.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - **zwaarste gewicht** (lid 1): the maximum over the jutters of the Ploeg
   that are actief, of the gewicht of the weging of the vondst of the jutter —
@@ -85,7 +85,7 @@ aggregatie EERSTE` (the earliest vinddag over a set source). Every case refutes
 the do-nothing executor, and twelve counter-cases (each one expectation moved:
 a number by 0,01, a date by a day, a characteristic turned, an empty expectation
 turned into a value) fail in ref, clingo and the exec branch. The IR from
-`bron.rgs` alone is byte-identical to the one written beside the cases. Before
+`source.rgs` alone is byte-identical to the one written beside the cases. Before
 the frontend lowered the form (uchar `921fcc64`), the three folds were markers
 with the WARNING that "gewicht van de weging van de vondst" and its siblings
 are no declared attribute of Jutter, and the subselection was refused with an

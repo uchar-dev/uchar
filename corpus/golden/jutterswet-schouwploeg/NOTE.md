@@ -22,7 +22,7 @@ Het wachttal van een Schouwploeg moet berekend worden als het aantal
 `RUNTIME-SEMANTICS.md` ch. 3.9a, whose formula is stated over an arbitrary
 `test` and whose worked examples until now only ran the temporal one.
 
-## This ir.json was written by hand; its bron.rgs arrived later
+## This ir.json was written by hand; its source.rgs arrived later
 
 The document was written against the schema, because at the time no
 RegelSpraak source produced these nodes. Measured on the frontend of this
@@ -46,7 +46,7 @@ were written:
 
 Since 2026-09-19 the frontend carries both. Quantification and the
 whole-period check are independent productions in v2.3.0, so the
-unqualified spelling was never the language's boundary. `bron.rgs` now sits
+unqualified spelling was never the language's boundary. `source.rgs` now sits
 beside this document, holds exactly the five sentences quoted above, and
 re-emits this `ir.json` byte for byte — the hand-written IR is unchanged,
 and gate 10 sees it. That the hand-computed cells below and the emitted

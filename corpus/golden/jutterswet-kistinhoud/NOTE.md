@@ -6,10 +6,10 @@ ch. 2.2). No golden outside the anchor zone carried a power that RegelSpraak
 can write: `jutterswet-kindermacht` raises inside a fold over a list
 parameter, a form the language does not have, and the anchor
 `jutterswet-taxatie` writes the power by hand. This golden is new, written in
-`bron.rgs`, and its `ir.json` is the RegelSpraak frontend's emission; gate 10
+`source.rgs`, and its `ir.json` is the RegelSpraak frontend's emission; gate 10
 re-emits it byte for byte.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 A `Wrakkist` with three unitless attributes, `ribbe`, `zijvlakte` and
 `inhoud`, each `niet-negatief getal met 2 decimalen`; a power's operands

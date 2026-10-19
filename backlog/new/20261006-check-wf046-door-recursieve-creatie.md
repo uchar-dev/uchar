@@ -7,7 +7,7 @@ de eigenaar, zodat het vindbaar blijft; geen bouwdatum. Bron: open punt 4 van
 `0a378588`: de frontend opnieuw gebouwd (`make -C frontends/regelspraak
 compile`), `dune build`, de shaded jar van `backends/drools` van na de laatste
 backendcommit `fdae9fc1`. De proefbestanden stonden onder `/tmp/kaart1-probe/`
-(`bron.rgs`, `bron-obs.rgs`, `case-*.json`, `meting.txt`,
+(`source.rgs`, `bron-obs.rgs`, `case-*.json`, `meting.txt`,
 `meting-leegtest.txt`); wat nodig is om de meting te herhalen, staat hieronder.*
 
 ## Aanleiding
@@ -34,7 +34,7 @@ Sinds 2026-10-06 leest een rolcheck de relatie die hij noemt, en ontkend is dat
 een negatieve rand (record feitcreatie-zonder-populatie, "Stap 1"). Daardoor
 valt ook een ontkende rolcheck op de relatie die een recursieve creatie zelf
 legt onder deze grens. Het negatief
-`corpus/negatief/wf046-ontkende-rolcheck-recursieve-creatie` is zo'n document;
+`corpus/negative/wf046-negated-role-check-recursive-creation` is zo'n document;
 zijn `NOTE.md` geeft de regel:
 
     Regelgroep estafette is recursief
@@ -47,8 +47,8 @@ zijn `NOTE.md` geeft de regel:
 
 ## Gemeten (2026-10-06)
 
-`bron.rgs` is deze regel met de declaraties van
-`corpus/golden/jutterswet-wachtersketen-rgs/bron.rgs` (de Wachter met zijn
+`source.rgs` is deze regel met de declaraties van
+`corpus/golden/jutterswet-wachtersketen-rgs/source.rgs` (de Wachter met zijn
 rang, het feittype opvolging met voorganger en opvolger). De case: één Wachter
 W1 met rang 1.
 
@@ -97,10 +97,10 @@ creatie**, met dezelfde case (W1, rang 1; de case verwacht alleen rang 1):
 
 | Negatief | exec-modeltak | DRL-teksttak |
 |---|---|---|
-| `wf046-leegtest-recursieve-creatie` | `EXCLUDE transpiler SKIP: regel: merk van een wachter — regel (een leeg- of gevuld-toets op rang van Wachter, dat de objectcreatie werf de opvolger, die op deze regel wacht, schrijft: een kring zonder volgorde (WF-046)): merk van een wachter` | `PLAYED 1` |
-| `wf046-leegtest-negatie-recursieve-creatie` | dezelfde `EXCLUDE` | `PLAYED 1` |
-| `wf046-leegtest-aanwezigheid-recursieve-creatie` | `PLAYED 1` | `PLAYED 1` |
-| `wf046-leegtest-kwantorvouw-recursieve-creatie` | `PLAYED 1` | `PLAYED 1` |
+| `wf046-empty-test-recursive-creation` | `EXCLUDE transpiler SKIP: regel: merk van een wachter — regel (een leeg- of gevuld-toets op rang van Wachter, dat de objectcreatie werf de opvolger, die op deze regel wacht, schrijft: een kring zonder volgorde (WF-046)): merk van een wachter` | `PLAYED 1` |
+| `wf046-empty-test-negated-recursive-creation` | dezelfde `EXCLUDE` | `PLAYED 1` |
+| `wf046-empty-test-presence-recursive-creation` | `PLAYED 1` | `PLAYED 1` |
+| `wf046-empty-test-quantifier-fold-recursive-creation` | `PLAYED 1` | `PLAYED 1` |
 
 De exec-modeltak weigert dus alleen een leeg- of gevuld-toets in een gewone
 regel op zo'n kring met naam en reden (`kringWeigering`,

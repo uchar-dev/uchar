@@ -122,7 +122,7 @@ belong to executing goldens, not to a scaffold.
 | Stays | WF rows | Measured 2026-09-19 |
 |---|---|---|
 | `vakcijfer uit voorjaarsopbrengst`, the dimensioned `opbrengst`, the `seizoen` dimension | WF-004, WF-014, WF-040 | The only other corpus document carrying a `Dimension` or a `DimensionCellRead` is `jutterswet-seizoenvondst`, and that golden carries **no case file either** — it is the second verifier-only golden (`corpus/golden/README.md`). No *executing* document carries the form, so the row stays. The shrinking card's 2026-09-17 reading that `jutterswet-seizoenvondst` covers it had measured the construct without measuring the execution |
-| the variable-start `boekjaar` timeline, its `StartPointDetermination`, the `meetdatum` anchor and the `waterstand` member | WF-016, WF-032 | `jutterswet-penningjaar` is the corpus's other timeline golden, but its `het penningjaar` declares `variableStart: false`; this is the only GOLDEN with a non-empty `startPointDeterminations`, so both halves of the row are uncovered. (Two negatief cases carried the node — `wf032-fixed-start-anchor` and `wf034-wees-attribuutdimensies`, the second removed at M1 — but a refusal pins no positive form) |
+| the variable-start `boekjaar` timeline, its `StartPointDetermination`, the `meetdatum` anchor and the `waterstand` member | WF-016, WF-032 | `jutterswet-penningjaar` is the corpus's other timeline golden, but its `het penningjaar` declares `variableStart: false`; this is the only GOLDEN with a non-empty `startPointDeterminations`, so both halves of the row are uncovered. (Two negative cases carried the node — `wf032-fixed-start-anchor` and `wf034-wees-attribuutdimensies`, the second removed at M1 — but a refusal pins no positive form) |
 | the `TimeWindow` member of `peiling bij dubbele borging` | WF-042 | `"node": "TimeWindow"` occurs in no other GOLDEN, and both executors still refuse it (the table above). Its host composite therefore stays, with the counting quantifier that *did* leave replaced by `all`. (`wf042-empty-window` carries the node on the refusing side, as `wf034-wees-attribuutdimensies` did until M1 removed it) |
 | the two day kinds, each with its plural | WF-017 (positive side) | the section below. Until L3 the row also carried the four registry entries and WF-034 arm (s)'s identity half; both left the wire with the registry (same section) |
 
@@ -195,7 +195,7 @@ here and took gate 3 down; arm (b) comparing against the FIRST declared day
 kind instead of the key's OWN reported `/model/dagsoortPerEenheid/stormvloeddag`
 here and was caught by `corpus/golden/jutterswet-schouwrooster` as well. Since
 L3 neither arm has a key to read; the refusing side of WF-017 is pinned by the
-`wf017-*` cases of `corpus/negatief/`.
+`wf017-*` cases of `corpus/negative/`.
 
 Cost, then and now: the day kinds move no verdict and no report line
 anywhere else, and the cabinet still carries no `case*.json`, so gate 5 keeps

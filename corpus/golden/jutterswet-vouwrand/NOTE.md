@@ -8,7 +8,7 @@ This golden covers the fold, whose fence fires only when its operands
 carry **different scales** — the fold harmonises them, and the operand
 with the coarser scale is multiplied up.
 
-## Why this golden has no `bron.rgs`
+## Why this golden has no `source.rgs`
 
 It is authored as IR on purpose. The frontend refuses `de eerste van`
 over numerics — `eerste van vereist datumexpressies` — and over dates all

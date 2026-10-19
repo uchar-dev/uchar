@@ -28,7 +28,7 @@ marked date. Own Jutterswet-flavoured casus, own dates, rights-free.
 > vastgestelde dag als controledag. 7. De vondst kan worden afgehaald tot en
 > met de dertigste dag na de dag van aanmelding.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 Three types in one chain: `Barnsteenvondst is een Strandvondst`,
 `Strandvondst is een Vondst`.
@@ -136,7 +136,7 @@ type what `meldingsdatum` carries without the marker.
 
 The twelve cases are written as twelve scenarios, one instance each, and the
 expectations above are their expectation bullets. The frontend's `--cases` mode
-lowers `bron.rgs` with `scenario.rgs` to the twelve case files and to the
+lowers `source.rgs` with `scenario.rgs` to the twelve case files and to the
 `ir.json` of the production route, and gate 16 regenerates them byte for byte.
 
 ## Executors

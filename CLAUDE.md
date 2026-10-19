@@ -64,7 +64,7 @@ Within that claim, per item:
 ## Spec discipline
 
 - Every normative MUST carries an ID (`WF-###`) with a verifier check, at
-  least one passing golden case, and one failing negatief case.
+  least one passing golden case, and one failing negative case.
 - Every semantics clause carries a worked example with concrete expected
   output; those examples become the reference interpreter's tests verbatim.
 - **A spec sentence without a machine-checkable artifact is not done** — the
@@ -144,7 +144,7 @@ workflow; what is enforced is the local run, and gate 9 there is the
 reviewer's duty on a machine that has catala. Current gates:
 
 1. `scripts/check-self-contained.sh` — artifact zones (`corpus/golden`,
-   `corpus/negatief`, `corpus/rood`, `spec/schema`, `spec/verifier`,
+   `corpus/negative`, `corpus/red`, `spec/schema`, `spec/verifier`,
    `ref`, `backends`, `frontends` — since the Phase-5a skeleton — and,
    since the Phase-1 exit, `spec/IR-SPEC.md`
    and `spec/RUNTIME-SEMANTICS.md`)
@@ -157,32 +157,32 @@ reviewer's duty on a machine that has catala. Current gates:
    Working prose (plan, backlog, reviews) may reference the private source
    repos during development — see `WAY-OF-WORKING.md` §5–6.
 2. `scripts/check-ir-schema.sh` — the schema file is metaschema-valid;
-   every `corpus/golden/**/ir.json` and `corpus/rood/**/ir.json`
+   every `corpus/golden/**/ir.json` and `corpus/red/**/ir.json`
    validates against
    `spec/schema/uchar-ir-v1.schema.json` (since L1 of the v1 wire
    migration, 2026-09-24; `regelspraak-ir-v0` until then) and round-trips
    byte-identically; and, since the card-less fix round of 2026-09-25,
-   every object in `corpus/golden`, `corpus/rood` and `corpus/negatief`
+   every object in `corpus/golden`, `corpus/red` and `corpus/negative`
    carries its keys in the canonical order of the subschema it instantiates
    (the `properties` order the schema's description makes canonical; an
    object no subschema admits is counted apart, never skipped), failing
    with the path and both orders on a deviation; an unpopulated corpus is
    reported explicitly, never silently green.
 3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`)
-   builds; every `corpus/golden/**/ir.json` and `corpus/rood/**/ir.json`
+   builds; every `corpus/golden/**/ir.json` and `corpus/red/**/ir.json`
    is verifier-clean; every
-   `corpus/negatief/<wf###-slug>/ir.json` is rejected, citing the WF
+   `corpus/negative/<wf###-slug>/ir.json` is rejected, citing the WF
    rule its directory name declares — and, since L2 of the v1 wire
    migration (2026-09-24), on the ARM its `expect.txt` names where that
    file is present (one literal fragment of the verifier's sentence,
    pointer-free; a blank or multi-line file fails; the count carries a
    floor `EXPECTED_MIN_EXPECT`), so a witness that drifts to another arm
    of its own rule no longer passes unseen; and, since the card-less fix
-   round of 2026-09-25, every JSON pointer a negatief report cites resolves
+   round of 2026-09-25, every JSON pointer a negative report cites resolves
    in that case's document (RFC 6901; the pointer is read up to the first
    `: `, spaces included, and a FAIL line without that separator fails the
    gate; the count carries a floor `EXPECTED_MIN_POINTERS`), so a witness
-   whose report points into the void no longer passes; an empty negatief
+   whose report points into the void no longer passes; an empty negative
    corpus is a failure, never silently green. Since 2026-10-19 (card
    `verifier-arm-keys`) every violation carries a key `WF-###.<slug>` (one
    per message template within a rule) and named parameters, the report
@@ -191,16 +191,16 @@ reviewer's duty on a machine that has catala. Current gates:
    declared rule plus `name=value` lines, matched as a subset against the
    parameters of one violation, so a rewording of a message breaks no pin
    (the fragment form above is history); gate 3 also refuses a key with two
-   message templates over the negatief reports and a violation built
+   message templates over the negative reports and a violation built
    without a key in `checks.ml`; floors `EXPECTED_MIN_ARMS=213`,
    `EXPECTED_MIN_PARAM_LINES=572`, `EXPECTED_MIN_REPORT_KEYS=318` and
    `EXPECTED_MIN_ARM_SITES=421` (measured 2026-10-19), `EXPECTED_MIN_EXPECT`
    raised to 354 and `EXPECTED_MIN_POINTERS` to 619.
 4. `scripts/check-case-schema.sh` — the case schema
    (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
-   `corpus/golden/**/case*.json` and `corpus/rood/**/case*.json`
+   `corpus/golden/**/case*.json` and `corpus/red/**/case*.json`
    validates against it and sits beside an `ir.json`; zone discipline
-   holds (golden carries `expected`, rood carries `expectedFault`); an
+   holds (golden carries `expected`, red carries `expectedFault`); an
    empty case set is reported explicitly, never silently green. Since
    2026-10-19 (card `fragment-cleanup`) the gate carries self-test rows for the shape of `expectedFault` (a `params`
    object of strings, no fragment key).
@@ -231,7 +231,7 @@ reviewer's duty on a machine that has catala. Current gates:
    `jutterswet-uniciteit-drie-bronnen/case2-zonder-botsing`) — live in
    the script's explicit, reason-carrying survivor list, which fails
    when stale; an empty case set is a failure.
-8. `scripts/check-rood.sh` — the red corpus: every `corpus/rood/**/case*.json` declares `expectedFault {code, params}`
+8. `scripts/check-red.sh` — the red corpus: every `corpus/red/**/case*.json` declares `expectedFault {code, params}`
    (the EF code of the fault kind, RUNTIME-SEMANTICS ch. 5.7b, and its parameters as an object of strings; the schema
    refuses every other key, so no piece of message text is pinned) and MUST fail observably — at load or at evaluation —
    in **both** executors as that kind: `ref` and clingo print one `CODE <code> <json>` line per observed code and the
@@ -248,7 +248,7 @@ reviewer's duty on a machine that has catala. Current gates:
    `fallback` code — the bottom arm of a dispatch — is named by no pin (`expectedFault.code` is an `EF` code), no
    divergence entry, no exclusion entry of the Drools leg and no `EXPECTED_CHANNEL` entry of gate 12, and a fault that
    reports only a `fallback` code is a code other than the pinned one. Every parameter an executor emits is a key of the
-   parameter column of ch. 5.7b, and the two pairs of cases that differ in a parameter only (`aanvoergeld-parameter-ongebonden`,
+   parameter column of ch. 5.7b, and the two pairs of cases that differ in a parameter only (`aanvoergeld-parameter-unbound`,
    `jutterswet-dubbele-melding`) are told apart by their pinned `params` (stale-guarded). An empty red set is a failure,
    never silently green. Floors: `EXPECTED_MIN_RED_CASES=26`, `EXPECTED_MIN_RED_CODES=93`, `EXPECTED_MIN_RED_PARAMS=131`,
    `EXPECTED_MIN_EF_CODES=31`, `EXPECTED_MIN_GOLDEN_CODES=73`, `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=19`,
@@ -263,7 +263,7 @@ reviewer's duty on a machine that has catala. Current gates:
 9. `scripts/check-catala.sh` — the Catala frontend builds and its
    full test suite passes (E2E through verifier, ref and clingo plus
    the refusal fixtures), and every corpus golden carrying a
-   `bron.catala_en` regenerates through the plugin byte-identically
+   `source.catala_en` regenerates through the plugin byte-identically
    after canonicalisation (gate 2's serialiser shape, executed from
    that script — one source of truth); an empty catala-golden set,
    a suite that ran zero checks, or
@@ -283,7 +283,7 @@ reviewer's duty on a machine that has catala. Current gates:
     (`frontends/regelspraak`, jar-only: JDK 21+, ANTLR + JUnit jars
     fetched into a gitignored `lib/`) builds and its JUnit suite
     passes with a non-zero test count; every corpus golden carrying a
-    `bron.rgs` re-emits through `--ir` byte-identically to the
+    `source.rgs` re-emits through `--ir` byte-identically to the
     committed `ir.json`; an empty rgs-golden set or a zero-test run
     is a failure, never silently green. Its CI leg is unconditional
     and blocking (maintainer decision 2026-08-27). Since the card
@@ -479,7 +479,7 @@ reviewer's duty on a machine that has catala. Current gates:
     verifier-clean, replays its cases through `ref` AND clingo, and drives
     one fixture per refusal, checking both the reason and the citation of
     the mandate document the refusal list belongs to. Every corpus golden
-    carrying a `bron.flogic` re-emits through the frontend
+    carrying a `source.flogic` re-emits through the frontend
     byte-identically after canonicalisation (gate 2's serialiser shape,
     executed from that script — one source of truth, as in gate 9). An
     empty flogic-golden set, a suite that ran zero checks, or a missing
@@ -489,7 +489,7 @@ reviewer's duty on a machine that has catala. Current gates:
     9 this frontend links no external toolchain, so every runner can run
     it.
 
-15. `scripts/check-graaf.sh` — the rule graph of the Drools backend
+15. `scripts/check-graph.sh` — the rule graph of the Drools backend
     (`backends/drools/.../graph/`, a reading of the IR the distribution's
     scope analysis consumes; card `graaf-samenvoeging-en-gate`, 2026-09-26)
     holds to IR-SPEC ch. 5. SPEC LEG: the graph is built for every golden
@@ -505,7 +505,7 @@ reviewer's duty on a machine that has catala. Current gates:
     listed in `DELIBERATE_DIFFERENCE`, one projected line per entry with both
     forms' lists and its reason, stale-failing in both directions; a golden
     the loader refuses cannot be compared and is reported with its form.
-    ROUTE LEG: on every golden with a `bron.rgs` the graph from the source
+    ROUTE LEG: on every golden with a `source.rgs` the graph from the source
     route equals the graph from the wire route byte for byte, and the
     graph's own unit tests (under `backends/drools/src/source-route`, compiled
     by the gate against the frontend and the backend jar) pass with a
@@ -518,7 +518,7 @@ reviewer's duty on a machine that has catala. Current gates:
 16. `scripts/check-scenario.sh` — the scenariotoetsen extension of the
     RegelSpraak frontend (`frontends/regelspraak/grammar/DIVERGENCES.md`,
     "Scenariotoetsen"; card `scenariolaag-in-uchar`, 2026-09-26): every
-    corpus golden carrying a `scenario.rgs` beside its `bron.rgs`
+    corpus golden carrying a `scenario.rgs` beside its `source.rgs`
     regenerates, through the frontend's `--cases` mode, exactly its pinned
     case files (the same names, none missing and none extra)
     byte-identically, and its `ir.json` byte-identically — without a scope

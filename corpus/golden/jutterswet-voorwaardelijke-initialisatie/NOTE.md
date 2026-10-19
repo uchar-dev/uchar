@@ -54,7 +54,7 @@ emptiness guard case3 answers `MISMATCH: V1.bergloon = [4000;2400],
 expected 4000`, and without the condition case2 answers
 `MISMATCH: V1.bergloon = [2000], expected leeg`.
 
-The source is `bron.rgs`; gate 10 re-emits this document from it
+The source is `source.rgs`; gate 10 re-emits this document from it
 byte-identically. An initialisation beside a computing rule on the same
 target is pinned in the ASP backend's own suite, not here: case input on
 a computed target stays refused there, so the third branch could not

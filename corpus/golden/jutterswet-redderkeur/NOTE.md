@@ -36,7 +36,7 @@ Het redderstal van een Reddingspost moet berekend worden als het aantal redders
 semantics `RUNTIME-SEMANTICS.md` ch. 3.9a, whose `test` is an ORDINARY condition
 evaluated per contributor with the element as subject — a composite is one.
 
-## Why this ir.json is hand-written and carries no bron.rgs
+## Why this ir.json is hand-written and carries no source.rgs
 
 When it was written, for the reason its two siblings were:
 `RuleChecker.kwantorvouw` lowered only the §8.2-QUALIFIED condition, so an

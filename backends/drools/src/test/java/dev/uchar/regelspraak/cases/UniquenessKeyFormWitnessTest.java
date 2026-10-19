@@ -40,7 +40,7 @@ class UniquenessKeyFormWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
-    private static final Path RED = Path.of("..", "..", "corpus", "rood");
+    private static final Path RED = Path.of("..", "..", "corpus", "red");
 
     // ---------------- 1. two temporal components -> refused by name ----------------
 
@@ -49,7 +49,7 @@ class UniquenessKeyFormWitnessTest {
         // wide, which would need the same-moment tuple join. ref faults on it per instance with the shared ch. 5.9
         // wording, "a uniqueness key list carries at most one temporal key component (the same-moment tuple join has
         // no corpus case; ch. 5.9)"; the exec-model branch refuses the uniqueness by name.
-        refused(RED.resolve("uni-two-temporal-keys").resolve("ir.json"), caseOf("Strandvondst", "kavelnummer"),
+        refused(RED.resolve("uniqueness-two-temporal-keys").resolve("ir.json"), caseOf("Strandvondst", "kavelnummer"),
                 "uniciteit: dubbel temporeel enkelvoudig", "kavelnummer");
     }
 
@@ -57,7 +57,7 @@ class UniquenessKeyFormWitnessTest {
         // the union arm of the same guard: vondstnummer + volgnummer over Strandvondst ∪ Wrakvondst. NB both
         // sources are malformed here, so per-source vs per-construct arity is indistinguishable on this case;
         // WF-030 keeps the asymmetric-arity union out of the corpus.
-        refused(RED.resolve("uu-two-temporal-keys").resolve("ir.json"), caseOf("Strandvondst", "volgnummer"),
+        refused(RED.resolve("ever-unique-two-temporal-keys").resolve("ir.json"), caseOf("Strandvondst", "volgnummer"),
                 "uniciteit-unie: dubbel temporeel", "volgnummer");
     }
 
@@ -73,9 +73,9 @@ class UniquenessKeyFormWitnessTest {
                   "input": { "instances": [], "parameters": {} },
                   "expected": [ { "kind": "consistent" } ] }
                 """;
-        refused(RED.resolve("uni-two-temporal-keys").resolve("ir.json"), empty, "uniciteit: dubbel temporeel enkelvoudig",
+        refused(RED.resolve("uniqueness-two-temporal-keys").resolve("ir.json"), empty, "uniciteit: dubbel temporeel enkelvoudig",
                 "kavelnummer");
-        refused(RED.resolve("uu-two-temporal-keys").resolve("ir.json"), empty, "uniciteit-unie: dubbel temporeel",
+        refused(RED.resolve("ever-unique-two-temporal-keys").resolve("ir.json"), empty, "uniciteit-unie: dubbel temporeel",
                 "volgnummer");
     }
 
@@ -143,11 +143,11 @@ class UniquenessKeyFormWitnessTest {
         // faults in neither ref nor Drools — clingo faults on it for an UNRELATED reason (uniqueness validity
         // windows are not translated) — verified against ref on this exact model (lens 1, 2026-08-30, who
         // also proved by mutation that no gate covers this arm: dropping the guard leaves gate 8 green).
-        // Authored on an in-memory ir copy; the corpus rood case itself stays unwindowed. The truth-maintenance
+        // Authored on an in-memory ir copy; the corpus red case itself stays unwindowed. The truth-maintenance
         // branch refuses the shape at build, outside the window too: the narrowing of card tms-omschakeling.
         com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
                 JSON.readTree(java.nio.file.Files.readString(
-                        RED.resolve("uni-two-temporal-keys").resolve("ir.json")));
+                        RED.resolve("uniqueness-two-temporal-keys").resolve("ir.json")));
         ((com.fasterxml.jackson.databind.node.ObjectNode) IrPath.version(ir, "uniquenesses", 0, 0).get("validity"))
                 .put("from", "2030-01-01");
         Path tmp = java.nio.file.Files.createTempFile("venster-sleutelvorm", ".json");
@@ -166,7 +166,7 @@ class UniquenessKeyFormWitnessTest {
         // stays silent; the exec-model branch refuses the shape at build, as the row above.
         com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
                 JSON.readTree(java.nio.file.Files.readString(
-                        RED.resolve("uu-two-temporal-keys").resolve("ir.json")));
+                        RED.resolve("ever-unique-two-temporal-keys").resolve("ir.json")));
         ((com.fasterxml.jackson.databind.node.ObjectNode) IrPath.version(ir, "uniquenesses", 0, 0).get("validity"))
                 .put("from", "2030-01-01");
         Path tmp = java.nio.file.Files.createTempFile("venster-unie-sleutelvorm", ".json");

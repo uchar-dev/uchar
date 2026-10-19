@@ -53,4 +53,4 @@ beide takken: unie 1, som der delen 2).
 
 Handgeschreven, net als de zuster: de frontend lost geen van beide
 negatiespellingen op naar een kenmerk van het element en weigert de zin bij
-naam, dus er is geen `bron.rgs` en geen producentroute.
+naam, dus er is geen `source.rgs` en geen producentroute.

@@ -68,6 +68,6 @@ members have been read, not only on the empty prefix.
 
 `ref` ≡ `clingo` over all six expectations (gate 5 ≡ gate 6), anchored to
 the hand-written absolutes above; gate 12 replays them in Drools. Gate 10
-re-emits `bron.rgs` to a byte-identical `ir.json`. NOOP-REFUTING: five of
+re-emits `source.rgs` to a byte-identical `ir.json`. NOOP-REFUTING: five of
 the six expectations are derived values absent from the raw input
 (gate 7).

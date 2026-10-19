@@ -2,14 +2,14 @@
 
 The RegelSpraak-source twin of `anchor/jutterswet-dagentelling`: the same type,
 the same two temporal attributes, the same temporal characteristic and the
-same two day counts, written in `bron.rgs` and emitted by the RegelSpraak
+same two day counts, written in `source.rgs` and emitted by the RegelSpraak
 frontend. Gate 10 re-emits `ir.json` from the source byte for byte, so this is
 the first golden in which the frontend's emission of the day count
 (`BuiltinCall` of kind `dayCount`, `RUNTIME-SEMANTICS.md` ch. 3.8) is pinned.
 The four `case*.json` are the anchor's, copied byte for byte, with the same
 absolute expectations.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - `is borgplichtig kenmerk (bijvoeglijk) voor elke maand`: the temporal
   characteristic the counts read.

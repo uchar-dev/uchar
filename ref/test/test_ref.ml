@@ -516,8 +516,8 @@ let () =
    copy with a canonical-`m` `km` stripped of its factor, 2,5 km + 300 m
    came out 302,5 instead of 2,8 km, and surfaced only as a DECIMALS
    complaint about a number whose unit was already wrong. (b) A factor with
-   no canonical target: measured on the wf092-factor-zonder-canoniek
-   negatief, ref and the ASP backend both replayed a clean 2800 while a
+   no canonical target: measured on the wf092-factor-without-canonical
+   negative, ref and the ASP backend both replayed a clean 2800 while a
    third executor computed 302.5 — nothing refused. Both now fault by name,
    so no executor computes quietly on a shape the verifier rejects. *)
 let mnd_bare : Ir_v0.Ast.measure_unit =
@@ -2986,7 +2986,7 @@ let () =
 
 (* WF-115's sentences, which this interpreter's loader speaks when it refuses a
    fixed start point ([Loader.reader]): one per reason of arm (b), and arms (a)
-   and (c). The golden and the three negatief witnesses pin the verifier's
+   and (c). The golden and the three negative witnesses pin the verifier's
    side; these pin every reason of (b) the witnesses do not reach. *)
 let () =
   let rejects g n s frag =
@@ -3033,12 +3033,12 @@ let () =
 (* WF-091's second line in this evaluator (ch. 3.6, 3.7, 1.2e). Since the
    card ref-klipvouw-nul, WF-091 (IR-SPEC ch. 4.1) demands a Number as the
    operand of `sum` and `total` and as the pro-rata base; the five documents
-   that pinned these refusals as red cases are therefore negatief witnesses
-   without a case file, and a negatief runs through no executor. The refusals
+   that pinned these refusals as red cases are therefore negative witnesses
+   without a case file, and a negative runs through no executor. The refusals
    stay as a second line with their sentences unchanged: the pro-rata fold
    names its base, and a total or sum over a Date faults on the
    multiplication or the addition itself. The corpus pins the verifier's
-   refusal; these rows pin this evaluator's. Each row loads the negatief's
+   refusal; these rows pin this evaluator's. Each row loads the negative's
    document (minified, equal as JSON) and the input of its former red case,
    and evaluates them as the runner does. *)
 let () =
@@ -4679,7 +4679,7 @@ let () =
      position — so the check passed identically for minimum, maximum, eerste and
      laatste, and the worked example proved nothing about the filled count. The
      chapter's own sentence is the one pinned here now, and the red case
-     `aantalgevulde-temporele-setbron` pins the same words. *)
+     `filled-count-temporal-set-source` pins the same words. *)
   expect_fault_msg "WV-3.4c-temporeel-faalt"
     (fun () ->
       Eval.eval_expr env_t w (World.get w "J1") ~err:no_err
@@ -4811,7 +4811,7 @@ let () =
   (* the SECOND LINE for clause (d): one population for the whole union. The
      wire refuses the shape, so this arm is out of reach through a well-formed
      document — and without it this evaluator ANSWERED it (measured 2026-09-22
-     on `wf110-unie-ongelijke-elementtypes`: a silent 3, while both Drools
+     on `wf110-union-unequal-element-types`: a silent 3, while both Drools
      branches refused by name). ch. 4.3 says the rule refuses instead of
      picking an answer by side effect; an executor that answers anyway makes
      that sentence untrue exactly where it matters. *)
@@ -5803,7 +5803,7 @@ let () =
    SKIP on one branch, a `TODO kenmerk 'risicopost' hoort bij Post` marker on
    the other). That form had NO answering executor at all, deliberately, and
    WF-109 has since taken it off the wire (a navigating check's host must be a
-   type the subject satisfies, `wf109-doelgastheer-genavigeerd`). This block
+   type the subject satisfies, `wf109-target-host-navigated`). This block
    stays the machine-checked witness that the reader does not soften the fence
    into a fallback. *)
 
@@ -8272,7 +8272,7 @@ let () =
 
 (* WF-022's value clause, held for every KENMERKTOEKENNING: the rule writes
    the boolean constant waar and nothing else. The document below is
-   corpus/negatief/wf022-kenmerk-onwaar rebuilt by hand (rule "geen herleving"
+   corpus/negative/wf022-characteristic-false rebuilt by hand (rule "geen herleving"
    attributes "herleefd" with onwaar when "nieuw recht ontstaan" holds). Forced
    past the verifier, ref used to run the rule and leave the characteristic
    absent without a word, where the ASP backend refuses the document at
@@ -8508,7 +8508,7 @@ let () =
     "context value 'rekendatum' is not one of the two admissible names evaluationDate, \
      evaluationYear";
   (* the v0 spelling of the session value is outside the set since L5, like
-     any other name (the ref side of corpus/negatief/wf098-v0-naam-rekendatum) *)
+     any other name (the ref side of corpus/negative/wf098-v0-name-evaluation-date) *)
   expect_fault_msg "WV-4.1-contextwaarde-v0-spelling-faalt"
     (fun () -> run_date (context_value "Rekendatum"))
     "context value 'Rekendatum' is not one of the two admissible names evaluationDate, \
@@ -8589,7 +8589,7 @@ let () =
    binding site, so it resolves against nothing. ref loads the wire as an
    executor and refuses it there, at the verifier's pointer and in the
    verifier's sentence (the ref side of
-   corpus/negatief/wf034-variabele-zonder-binding) *)
+   corpus/negative/wf034-variable-without-binding) *)
 let () =
   let irf = Filename.temp_file "ref-wf034" ".ir.json" in
   let oc = open_out irf in
@@ -8614,8 +8614,8 @@ let () =
 
 (* WV-4.3-numerieke-builtin (WF-038): a square root and an absolute value take
    one number; a text operand is refused before it is read, in the verifier's
-   sentence (the ref side of corpus/negatief/wf038-absolute-waarde-tekst and
-   corpus/negatief/wf038-wortel-tekst) *)
+   sentence (the ref side of corpus/negative/wf038-absolute-value-text and
+   corpus/negative/wf038-square-root-text) *)
 let () =
   let body_text : Ir_v0.Ast.expr = Literal { variant = Lv_text "vier"; typ = Some Text_type; source_name = None } in
   let builtin kind : Ir_v0.Ast.expr =
@@ -8646,8 +8646,8 @@ let () =
 (* WV-3.8-duur-onbekende-eenheid (WF-038): the counted unit of a duration is
    a time unit or a declared day kind; any other is refused in the verifier's
    sentence, which names the builtin's own kind (the ref side of
-   corpus/negatief/wf038-duur-onbekende-eenheid and
-   wf038-absolute-duur-onbekende-eenheid) *)
+   corpus/negative/wf038-duration-unknown-unit and
+   wf038-absolute-duration-unknown-unit) *)
 let () =
   let vadem : Ir_v0.Ast.datatype =
     Number

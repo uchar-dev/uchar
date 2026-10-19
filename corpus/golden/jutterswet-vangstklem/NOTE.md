@@ -5,7 +5,7 @@ The **unit-bearing clamp** witness (`IR-SPEC.md` WF-099, ch. 4.6;
 clamp's *both-unitless* reading; this golden pins the other admitted one — a
 bound in a **convertible sister unit** of the base — so the reading WF-099
 turns on is carried by a gated document and not only by the verifier's
-negatief witness.
+negative witness.
 
 One unit system, `Gewicht`: `kg` (canonical, factor 1) and `t` (canonical
 `kg`, factor 1000). The base `ruwgewicht` is `kg` on every arm; the three

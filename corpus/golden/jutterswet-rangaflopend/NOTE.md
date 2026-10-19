@@ -4,13 +4,13 @@ A `Sluitkas` distributes its `sluitpremie` over its `sluitjutters` in
 descending order of `strandrang`, in equal shares within a tie, each share
 floored at 0 decimals, and the undistributed rest goes to its `sluitrest`.
 The golden was hand-written; since 2026-09-25 (card
-rgs-getuigen-bronloze-constructen) it also carries its source `bron.rgs`
+rgs-getuigen-bronloze-constructen) it also carries its source `source.rgs`
 (§13.4.10 verdeling, `op volgorde van`), because the RegelSpraak frontend's
 emission of that source is byte for byte the hand-written `ir.json`. Gate 10
 re-emits it byte for byte, so an `Allocation` with `method: "ordered"`
 (IR-SPEC ch. 3.2) is pinned as frontend output. `case.json` is unchanged.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 ```
 De sluitpremie van een sluitkas wordt verdeeld over het sluitdeel van alle

@@ -21,8 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The graph works from {@code ir.json}: for every corpus golden that carries its RegelSpraak source, the graph of
  * the model the loader rebuilds from the committed {@code ir.json} renders byte-identically to the graph of the
- * model the resolver builds from {@code bron.rgs}. A consumer without sources therefore gets the same graph. (That
- * the committed {@code ir.json} is what the frontend emits of {@code bron.rgs} is gate 10's to hold.)
+ * model the resolver builds from {@code source.rgs}. A consumer without sources therefore gets the same graph. (That
+ * the committed {@code ir.json} is what the frontend emits of {@code source.rgs} is gate 10's to hold.)
  */
 class GraphSourceRouteTest {
 
@@ -33,9 +33,9 @@ class GraphSourceRouteTest {
     @TestFactory Stream<DynamicTest> the_graph_of_the_wire_is_the_graph_of_the_source() throws Exception {
         List<Path> sources;
         try (Stream<Path> s = Files.walk(CORPUS)) {
-            sources = s.filter(p -> p.getFileName().toString().equals("bron.rgs")).sorted().toList();
+            sources = s.filter(p -> p.getFileName().toString().equals("source.rgs")).sorted().toList();
         }
-        assertFalse(sources.isEmpty(), "geen corpus/golden/**/bron.rgs gevonden (een lege set is nooit groen)");
+        assertFalse(sources.isEmpty(), "geen corpus/golden/**/source.rgs gevonden (een lege set is nooit groen)");
         return sources.stream().map(rgs -> DynamicTest.dynamicTest(CORPUS.relativize(rgs.getParent()).toString(), () -> {
             // read exactly as the frontend's --ir mode reads one file
             RegelSpraakModel m = Resolver.resolve(Files.readString(rgs) + "\n", rgs.toString());

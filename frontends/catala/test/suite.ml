@@ -77,49 +77,49 @@ let () =
   (* ref + clingo passing programs: source -> its case files *)
   let passing =
     [ ("trial.catala_en",
-       [ "cases/proef_12.json"; "cases/proef_6.json"; "cases/proef_25.json" ]);
+       [ "cases/trial_12.json"; "cases/trial_6.json"; "cases/trial_25.json" ]);
       ("root_unordered.catala_en",
        [ "cases/root_12.json"; "cases/root_3.json"; "cases/root_7.json" ]);
       (* overlapping unordered grounds -> the §9.5 conflict deviation *)
       ("root_conflict.catala_en", [ "cases/conflict_12.json" ]);
-      ("geld.catala_en",
-       [ "cases/geld_1.json"; "cases/geld_2.json"; "cases/geld_3.json" ]);
+      ("money.catala_en",
+       [ "cases/money_1.json"; "cases/money_2.json"; "cases/money_3.json" ]);
       (* row-36 sum types: a payload enum with a total match (Construct,
          Match, BinderRef, nullary arms and sum-equality) through the full
          differential *)
       ("enum.catala_en",
-       [ "cases/enum_gehonoreerd.json"; "cases/enum_afgewezen.json";
+       [ "cases/enum_gehonoreerd.json"; "cases/enum_rejected.json";
          "cases/enum_aangehouden.json" ]);
       (* a wildcard match: the desugarer makes it total before scopelang, so
          the plugin never sees a wildcard *)
       ("enum_wildcard.catala_en",
-       [ "cases/wild_een.json"; "cases/wild_twee.json" ]);
+       [ "cases/wild_one.json"; "cases/wild_two.json" ]);
       (* WF-087: an ALL-NULLARY enum normalises to the Enumeration domain — the
          value Literal, the enumeration-scrutinee Match and the ordinary enum
          equality through the full differential. The wire SHAPE is asserted
          separately below (an E2E run is blind to which variant carried it) *)
-      ("enum_nullair.catala_en",
+      ("enum_nullary.catala_en",
        [ "cases/getij_eb.json"; "cases/getij_vloed.json";
          "cases/getij_doodtij.json" ]);
       (* WF-087's LOWER boundary on the plugin side: ONE nullary constructor.
          A unit type is a nullary keuzetype too, so it lands on the Enumeration
          domain as well — the shape a [List.length > 1] weakening of
          [choice_type_of] would let escape into a SumType (its verifier twin is
-         negatief `wf087-unit-sumtype`). The wire assertion below is what
+         negative `wf087-unit-sumtype`). The wire assertion below is what
          makes that weakening red *)
-      ("enum_unit.catala_en", [ "cases/meld_gemeld.json" ]);
+      ("enum_unit.catala_en", [ "cases/report_reported.json" ]);
       (* row-10 fold family: a map + explicit numeric fold (MapList as a fold
          source, the aanspraaktelling pattern) *)
-      ("element_list.catala_en", [ "cases/lijst_twee.json"; "cases/lijst_leeg.json" ]);
+      ("element_list.catala_en", [ "cases/list_two.json"; "cases/list_empty.json" ]);
       (* row-10 + row-36: maximum … or if list empty then … — the §3.5 reduce
          lowering (Optional-som, IfThenElse reducer, Fold, extraction Match)
          through the full differential, including the empty-list default *)
-      ("maximum.catala_en", [ "cases/max_drie.json"; "cases/max_leeg.json" ]);
+      ("maximum.catala_en", [ "cases/max_three.json"; "cases/max_empty.json" ]);
       (* row-5c structs: a record input, a field projection as an arithmetic
          operand, and a list of records with map-over-field + fold — the
          tutorial's struct shape without a subscope, through the full
          differential (StructType as a list element is WF-065) *)
-      ("struct.catala_en", [ "cases/struct_gevuld.json"; "cases/struct_leeg.json" ]);
+      ("struct.catala_en", [ "cases/struct_filled.json"; "cases/struct_empty.json" ]);
       (* row-5c/ch. 7.9 nested exception groups: the tutorial article-3 tree
          (a base with an exception carrying two unordered exceptions) rides one
          [Default.exceptions] slot. The binding spurious-conflict test of
@@ -143,7 +143,7 @@ let () =
          Minus_rat) and the ToRat cast, plus a money × rate product that Catala
          rounds to the cent (Rounding{halfAwayFromZero,2}) on tutorial magnitude,
          which clingo encodes SPLIT so the scale-6 product never wraps int31 *)
-      ("decimals.catala_en", [ "cases/dec_drie.json"; "cases/dec_vijf.json" ]);
+      ("decimals.catala_en", [ "cases/dec_three.json"; "cases/dec_five.json" ]);
       (* PHASE5C-TUTORIAL §3: a declared subscope lowered onto existing kernel —
          one ObjectCreation of the callee (the call's args as MemberInits on
          its inputs, plus the connectingRole back-link) and the output read as
@@ -159,8 +159,8 @@ let () =
          overseas doubles the heffing (registratiezone 200 → $6000), binnengaats
          the base decides (zone 50 → $3000), both pinned against `catala
          interpret`. Through the full differential (ref AND clingo) *)
-      ("overzeelezing.catala_en",
-       [ "cases/overzee_hoog.json"; "cases/binnengaats.json" ]);
+      ("overzee_reading.catala_en",
+       [ "cases/overzee_high.json"; "cases/binnengaats.json" ]);
       (* besluit 6: a context (reentrant) subscope input lowered to a generated
          highest default above the callee's own defaults group (PHASE5-CATALA
          decision 6, Reading B). The caller's override rides above the callee's
@@ -170,7 +170,7 @@ let () =
          and pas_toe = false → it falls through and the callee base decides
          (100 − 10 = 90), pinned against `catala interpret`. Through the full
          differential (ref AND clingo) *)
-      ("context.catala_en", [ "cases/context_wel.json"; "cases/context_niet.json" ]);
+      ("context.catala_en", [ "cases/context_holds.json"; "cases/context_fails.json" ]);
       (* PHASE5C-TUTORIAL §3 exit witness: the Catala book's tutorial_end_2_3
          through the plugin — structs, decimals, a branching exception tree with
          a total date-complementary base group, the money × computed-rate product
@@ -183,8 +183,8 @@ let () =
          $4,999.70 — article_6's 25% against article_5's 30%), all pinned against
          `catala interpret`. Through the full differential (ref AND clingo) *)
       ("tutorial_end_2_3.catala_en",
-       [ "cases/tutorial_binnengaats_laag.json"; "cases/tutorial_overzee_hoog.json";
-         "cases/tutorial_binnengaats_hoog.json" ]);
+       [ "cases/tutorial_binnengaats_low.json"; "cases/tutorial_overzee_high.json";
+         "cases/tutorial_binnengaats_high.json" ]);
       (* CONSTRUCTS row 2: labeled variable states as sugar over chained
          assignment. A three-step chain (bruto → na_aftrek → definitief), each
          step an ordinary internal attribute reading the previous, with an
@@ -193,7 +193,7 @@ let () =
          the highest default, false → 180 via the base), calibrated against
          `catala interpret`. Through the full differential (ref AND clingo) *)
       ("states.catala_en",
-       [ "cases/states_normaal.json"; "cases/states_verhoogd.json" ]);
+       [ "cases/states_normal.json"; "cases/states_raised.json" ]);
       (* CONSTRUCTS row 2 / WF-020 guard: two scopes declare the SAME
          state-bearing output variable `heffing`. The cross-scope ambiguity
          detector mangles the `#` exactly as the rule labeller does, so the
@@ -212,7 +212,7 @@ let () =
          the caller folds the mapped list to a SCALAR — the covered, triple-green
          form. grondslagen [1;2;3] -> each +100 -> sum 306, through the full
          differential (ref AND clingo) *)
-      ("subscope_perelement.catala_en", [ "cases/perelement_drie.json" ]);
+      ("subscope_per_element.catala_en", [ "cases/per_element_three.json" ]);
       (* PHASE5C-TUTORIAL §3a (the fusie-lowering): the Catala book's tutorial 2-4
          through the plugin — a whole-struct per-element map landing in an INTERNAL
          [list of HouseholdTaxIndividualComputation], consumed only per field and
@@ -226,16 +226,16 @@ let () =
          cap flank ($11,500; total_deduction capped at $8,500), and the exempt-rate
          edge ($25,000; $0). Through the full differential (ref AND clingo) *)
       ("tutorial_end_2_4.catala_en",
-       [ "cases/tutorial24_meerpersoons.json"; "cases/tutorial24_capflank.json";
-         "cases/tutorial24_randgeval.json" ]);
+       [ "cases/tutorial24_multi_person.json"; "cases/tutorial24_capflank.json";
+         "cases/tutorial24_edge_case.json" ]);
       (* PHASE5C-TUTORIAL §3a MULTI-OUTPUT, the direct-map-body sibling: a
          per-element callee with two outputs, of which only `.bedrag` is read in
          the map body, synthesises exactly `KamerMulti bedrag` (grondslag + 100)
          and folds to a scalar. grondslagen [1;2;3] -> 306, ref AND clingo *)
-      ("subscope_perelement_multi.catala_en", [ "cases/perelement_drie.json" ]);
+      ("subscope_per_element_multi.catala_en", [ "cases/per_element_three.json" ]);
       (* an integer division, a decimal in Catala: 7 / 2 and 9 / 4, exact at
          the pinned scale *)
-      ("division.catala_en", [ "cases/deling_zeven.json"; "cases/deling_negen.json" ]) ]
+      ("division.catala_en", [ "cases/division_seven.json"; "cases/division_nine.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
   (* ref-only passing programs. datum: clingo cannot translate a date literal
@@ -244,8 +244,8 @@ let () =
      (the aanspraaktelling anchor) but not yet a rule-level Invoke — a recorded
      backend limit, not a plugin bug. *)
   let passing_ref_only =
-    [ ("date_value.catala_en", [ "cases/datum_najaar.json"; "cases/datum_voorjaar.json" ]);
-      ("function_name.catala_en", [ "cases/functie_tien.json" ]) ]
+    [ ("date_value.catala_en", [ "cases/date_autumn.json"; "cases/date_spring.json" ]);
+      ("function_name.catala_en", [ "cases/function_ten.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:true src cases) passing_ref_only;
   (* Wire-shape assertions for the keuzetype normalisation (WF-087, maintainer
@@ -259,7 +259,7 @@ let () =
      Domain wrapper's "name", and "domain" is left only at the reference
      positions, so both are asserted. *)
   let wire =
-    [ ("enum_nullair.catala_en",
+    [ ("enum_nullary.catala_en",
        [ "\"node\": \"Enumeration\""; "\"name\": \"Getijstand\"";
          "\"domain\": \"Getijstand\""; "\"constructor\": \"Doodtij\""; "\"binder\": null" ],
        [ "SumType"; "Construct" ]);
@@ -352,7 +352,7 @@ let () =
       ("refuse_context_owndefault.catala_en", "root-level unordered own default");
       (* PHASE5C-TUTORIAL §3 subscope flanks — declared subscopes lower
          (subscope.catala_en), and the per-element PURE-FUNCTION call now lowers
-         too (subscope_perelement.catala_en, besluit 1-A), but these shapes stay
+         too (subscope_per_element.catala_en, besluit 1-A), but these shapes stay
          refused, each loudly: the inline/anonymous call (2-1), a whole-struct
          output read, and a subscope reading a callee's multi-state output (a
          standalone state chain now lands as sugar — states.catala_en — only the
@@ -362,7 +362,7 @@ let () =
       ("refuse_subscope_multistate.catala_en", "multi-state");
       (* besluit 1-A weiger-grens (refined 2026-08-25, PHASE5C-TUTORIAL §3a) —
          the functie-route lowers a PURE callee; multi-output and a nested
-         pure-function subscope now LAND (subscope_perelement_multi.catala_en,
+         pure-function subscope now LAND (subscope_per_element_multi.catala_en,
          tutorial_end_2_4.catala_en), but these impurities stay refused, each
          loudly: a top-level non-input read (an internal/output variable in the
          body); a top-level unordered/conflict-group output (no single closed
@@ -371,11 +371,11 @@ let () =
          sub-callee with a non-input read (niet-zuivere sub-callee); and a
          whole-struct per-element map declared as an OUTPUT (a list that must
          exist on the wire, no clingo image) *)
-      ("refuse_perelement_noninput.catala_en", "non-input read");
-      ("refuse_perelement_conflict.catala_en", "unordered/conflict exception groups");
-      ("refuse_perelement_creation.catala_en", "unordered/conflict exception groups");
-      ("refuse_perelement_nested_noninput.catala_en", "non-input read");
-      ("refuse_perelement_wholestruct_output.catala_en", "OUTPUT");
+      ("refuse_per_element_noninput.catala_en", "non-input read");
+      ("refuse_per_element_conflict.catala_en", "unordered/conflict exception groups");
+      ("refuse_per_element_creation.catala_en", "unordered/conflict exception groups");
+      ("refuse_per_element_nested_noninput.catala_en", "non-input read");
+      ("refuse_per_element_wholestruct_output.catala_en", "OUTPUT");
       (* the fusie-lowering lens flank (2026-08-25): a fused whole-struct
          per-element map INTERNAL is excluded from [vars], so any consumption
          OTHER than a bare per-field map — a list-length (`number of shares`) or
@@ -383,8 +383,8 @@ let () =
          must refuse loudly, not raise [Not_found] on the absent [vars] entry
          (exit 2, an uncaught internal error). Both scalar_read and characteristic_read
          now mirror the sibling [is_subscope] guard *)
-      ("refuse_perelement_wholestruct_read.catala_en", "read other than per field");
-      ("refuse_perelement_wholestruct_whole.catala_en", "read other than per field");
+      ("refuse_per_element_wholestruct_read.catala_en", "read other than per field");
+      ("refuse_per_element_wholestruct_whole.catala_en", "read other than per field");
       (* besluit 1-A lens round — two ref-only lowerings the map-body/functie
          route let slip past: (1) the same inline call written directly in a
          FOLD reducer body (not the map body) — its Invoke would land as a
@@ -394,8 +394,8 @@ let () =
          additive fence (Plus/Min; card clingo-bodymult widened it to ×, the
          money×rate cent product and a constant-divisor division, but NOT binary
          subtraction). Each refuses loudly per element, not ref-only IR *)
-      ("refuse_perelement_foldcall.catala_en", "non-map closed body");
-      ("refuse_perelement_subtraction.catala_en", "non-carried binary operator");
+      ("refuse_per_element_foldcall.catala_en", "non-map closed body");
+      ("refuse_per_element_subtraction.catala_en", "non-carried binary operator");
       (* a shared non-trivial base under all members of a root-level unordered
          group stays refused (PHASE4-DEFAULTS §7; nested groups carry
          below-root branching, not this) *)
@@ -404,7 +404,7 @@ let () =
       (* besluit 4-A, the navigated sibling: a boolean OUTPUT of a declared
          subscope (a callee characteristic) read in a VALUE position — here an
          equality operand — refuses loudly, mirroring the own-boolean value
-         guard. Read as a CONDITION it lowers (overzeelezing.catala_en); the
+         guard. Read as a CONDITION it lowers (overzee_reading.catala_en); the
          value position has no image and would emit a dangling AttributeReference the
          verifier admits but ref/clingo split on *)
       ("refuse_subscope_bool_value.catala_en", "value position");

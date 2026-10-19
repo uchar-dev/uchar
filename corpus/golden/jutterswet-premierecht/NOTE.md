@@ -2,7 +2,7 @@
 
 The golden of the names this frontend reads in a declaration head
 (`frontends/regelspraak/grammar/DIVERGENCES.md`, "Namen in
-declaratiekoppen"). `bron.rgs` declares three names the frontend cut short
+declaratiekoppen"). `source.rgs` declares three names the frontend cut short
 before, each written as it reads:
 
 - the object type `Recht op premie`, plural `Rechten op premie`: a

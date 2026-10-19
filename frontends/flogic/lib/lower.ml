@@ -66,7 +66,7 @@ let sign_of ~line = function
   | "negatief" -> A.Negative
   | "positief" -> A.Positive
   | other ->
-      refuse ~line "the sign %s: numeriek(...) takes onbepaald, niet_negatief, negatief or positief"
+      refuse ~line "the sign %s: numeriek(...) takes onbepaald, niet_negatief, negative or positief"
         other
 
 let characteristic_kind_of ~line = function

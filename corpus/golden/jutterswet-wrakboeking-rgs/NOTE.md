@@ -2,13 +2,13 @@
 
 The RegelSpraak-source twin of `jutterswet-wrakboeking`: the same two types,
 the same fact type, the same rule and the same object creation, written in
-`bron.rgs` and emitted by the RegelSpraak frontend. Gate 10 re-emits
+`source.rgs` and emitted by the RegelSpraak frontend. Gate 10 re-emits
 `ir.json` from the source byte for byte, so this is the first golden in which
 the frontend's emission of `rules.objectCreations` (§13.4.6 objectcreatie,
 IR-SPEC ch. 3.3) is pinned. `case.json` is the carrier's case file, copied
 byte for byte, with the same absolute expectations.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - `Objecttype het Wrakrecht is een Strandrecht`: the subtype dialect
   (`frontends/regelspraak/grammar/DIVERGENCES.md` §5).

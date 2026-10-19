@@ -23,7 +23,7 @@ marked amount. Own Jutterswet-flavoured casus, own amounts, rights-free.
 > controle. 5. De verzekerde waarde van een vondst is de waarde vermeerderd met
 > 2,50 €.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - `waarde` of a Vondst, a Numeriek with the unit € (declared as `EUR` with the
   symbol €), carries the marker (lid 3).
@@ -75,7 +75,7 @@ them (`PLAYED 7`); the DRL-text branch refuses the document on its defaults
 sentence. Every case refutes the do-nothing executor, and 32 counter-cases,
 each one expectation moved (an amount by 0,01, a characteristic turned, an
 empty expectation turned into a value), fail in ref, clingo and the exec
-branch. The IR from `bron.rgs` alone is byte-identical to the one written
+branch. The IR from `source.rgs` alone is byte-identical to the one written
 beside the cases. Before the frontend admitted the marker on a number with a
 unit (uchar `921fcc64`), the declaration was refused with the ERROR "…
 '(mag opgegeven worden)' staat alleen op een Numeriek attribuut zonder eenheid

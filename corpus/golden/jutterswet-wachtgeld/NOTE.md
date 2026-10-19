@@ -7,7 +7,7 @@ frontend to THREE sibling declared-unordered `PrioritizedDefaults` entries
 (the `toelagegronden` anchor shape). Own Jutterswet-flavoured domain, own
 numbers.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 An `Uitzonderingen ongeordend:` group with three members, each a gelijkstelling
 writing `wachtgeld`:

@@ -12,8 +12,8 @@ additive siblings are ill-formed. The ordering folds RETURN one
 contributed value: a date goes in and the same date comes out, so the
 reading is well defined over a date source exactly as ch. 1.2e states it
 for any comparable family. The additive folds ADD their contributors, and
-a sum of two calendar positions is not a position — `corpus/negatief/
-wf091-setbron-som-datum` and its `total` twin pin that WF-091 refuses
+a sum of two calendar positions is not a position — `corpus/negative/
+wf091-set-source-sum-date` and its `total` twin pin that WF-091 refuses
 them (until the card ref-klipvouw-nul they were red cases pinning the
 refusal of both OCaml executors). One document shape, two verdicts, and
 the line between them is whether the fold combines its members or selects
@@ -27,7 +27,7 @@ of ch. 1.2e that eerste/laatste are min/max under another name — if they
 ever stopped agreeing, one of the two goldens would move and the pair
 would say which.
 
-Hand-written IR with no `bron.rgs`: the RegelSpraak frontend types the
+Hand-written IR with no `source.rgs`: the RegelSpraak frontend types the
 sentence out (`minimale waarde van vereist numerieke operanden, kreeg
 Datum in dagen`), so there is no producer route to re-emit and gate 10
 has nothing to check. Measured 2026-09-20; the eerste/laatste spelling of

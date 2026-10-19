@@ -25,7 +25,7 @@ The forms: a count, a sum with a filter over a derived characteristic
 against a parameter, a minimum and a maximum in a composite, a comparison two
 and three roles away, and characteristic targets beside attribute targets.
 The premie that the Melding and the Controle read is itself written by a
-defaults group, and `bron.rgs` declares the Melding and the Controle, and
+defaults group, and `source.rgs` declares the Melding and the Controle, and
 their groups, before the Jutter: a group reads what a group declared after it
 writes.
 
@@ -91,7 +91,7 @@ the Controle decided on a leeg premie, before the group of the Jutter had
 written it, and nothing made them decide again; a characteristic once
 attributed would stay in any case (ch. 5.3). The branch now adds every group
 after the groups that write what it reads and gives it their salience, and
-plays both cases in the order of `bron.rgs`.
+plays both cases in the order of `source.rgs`.
 
 Not in this golden, with its reason: a quantifier fold and an aggregation
 inside an arithmetic expression in a justification (refused by name in the

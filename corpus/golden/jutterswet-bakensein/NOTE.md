@@ -7,7 +7,7 @@ legal and must be carried. This golden is that sentence's only corpus witness,
 and it exists because the sentence was false in two of the four executors when
 it was written.
 
-**Hand-written IR, deliberately: there is no `bron.rgs`.** The RegelSpraak
+**Hand-written IR, deliberately: there is no `source.rgs`.** The RegelSpraak
 frontend tags a fact-creation guard with the doel's own type and never with an
 ancestor, so no source can produce this document. Writing one would mean
 changing the frontend, which would mean a toolchain re-pin, for a form the
@@ -34,7 +34,7 @@ Anker reading 2, intermediate reading 0, **doel reading 1**. And the host cannot
 reach the anker: no declared type is below both `Kustvak` and `Baken`, so the
 populations do not overlap and WF-109's ambiguity flank stays silent — which is
 exactly what makes this document legal where
-`corpus/negatief/wf109-gastheer-ambigu-supertype` (a common supertype over BOTH)
+`corpus/negative/wf109-host-ambiguous-supertype` (a common supertype over BOTH)
 is not.
 
 ## Hand-computed absolutes

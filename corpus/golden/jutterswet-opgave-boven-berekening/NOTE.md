@@ -25,7 +25,7 @@ casus, own numbers, rights-free.
 Amounts are in euros; the model computes them without a unit, because the
 marker stands on a number without a unit only (DIVERGENCES.md §7).
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 - `waarde` and `bergloon` of a Vondst carry the marker (lid 4).
 - **waardering** (lid 1): `waarde` = `taxatie` verminderd met 5,00.

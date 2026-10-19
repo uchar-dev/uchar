@@ -3941,7 +3941,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          ch. 4.3 gives for the rule itself — it refuses instead of picking an
          answer by side effect. Measured 2026-09-22: without this arm the
          backend ANSWERED a union over two populations (a silent 3 on
-         `wf110-unie-ongelijke-elementtypes`, matching ref and diverging from
+         `wf110-union-unequal-element-types`, matching ref and diverging from
          both Drools branches, which refuse it by name). *)
       (match branches with
       | [] -> ()
@@ -5677,7 +5677,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          OCaml's unspecified choice, and [bound] is effectful — it faults, it
          mutates [ctx.fresh] and it can emit — so on a node whose two bounds are
          both refusable the reported reason would be whichever the compiler
-         happened to run. The visiting order is now the spec's, and the rood
+         happened to run. The visiting order is now the spec's, and the red
          witness pins it. *)
       let lo = bound "minimum" minimum in
       let hi = bound "maximum" maximum in
@@ -5960,7 +5960,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          fold hands it nothing to range over.
          The arm exists for its NAME. Without it the form fell into the
          fall-through below, whose "no corpus case exercises it" the red
-         witness corpus/rood/som-fallback-always-evaluated falsified by being
+         witness corpus/red/sum-fallback-always-evaluated falsified by being
          exactly such a case — the untruth the WF-044 arm above had just
          cleared off the condition position, still live here. Naming the form
          puts that fall-through back on forms that really have no corpus case.
@@ -9612,7 +9612,7 @@ let translate_rule ctx (r : resolved_rule) =
                  true-periods, and heeft/2 is the scalar reading. Until
                  2026-09-23 this arm wrote heeft/2 on such a target anyway —
                  measured on the document of red case
-                 periodevenster-tijdlijnkenmerk without its window: PASS
+                 time-window-timeline-characteristic without its window: PASS
                  here, where ref refuses. Refused now, in ref's words. *)
               if characteristic_temporal ctx ~otype:ot ~characteristic:a then
                 fault "temporal characteristic %S: temporal writes are not implemented" a;

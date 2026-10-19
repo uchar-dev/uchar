@@ -36,4 +36,4 @@ en nooit leeg (ch. 1.2e).
 ## Gemeten
 
 Verifier PASS; `ref` en clingo beide 4 verwachtingen exact; beide
-Drools-takken PLAYED. `bron.rgs` re-emitteert byte-identiek (poort 10).
+Drools-takken PLAYED. `source.rgs` re-emitteert byte-identiek (poort 10).

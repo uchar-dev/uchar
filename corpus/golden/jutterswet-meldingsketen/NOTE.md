@@ -19,7 +19,7 @@ condition:
 and three rules on the Jutter derive what they read: the erkende
 meldingsdatum through a defaults group (`Uitzondering op erkende
 meldingsdatum`: the herstelde meldingsdatum where it is gevuld, else the
-meldingsdatum), and the characteristic erkend from it. In `bron.rgs` the
+meldingsdatum), and the characteristic erkend from it. In `source.rgs` the
 five readers come first and the derivations last.
 
 The forms, one per rule: a gevuld test, a compound with an own and a
@@ -101,5 +101,5 @@ the ongemeld rule answered, on that branch, in case 1 the aanmelddatum,
 controledatum and meldingsgewicht of V1 leeg and tijdig aangemeld
 absent, and in case 2 both aanmelddatums, the controledatum of V3 and the
 meldingsgewicht of V4 leeg and the case consistent.
-The branch now plays all three cases in the order of `bron.rgs`, and
+The branch now plays all three cases in the order of `source.rgs`, and
 also with the three derivations declared first.

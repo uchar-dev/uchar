@@ -3,7 +3,7 @@
 Until L2 the **`ParameterRef` unit witness** of the reference-type identity
 rule (`IR-SPEC.md` ch. 4.1, WF-091). Before this golden the `ParameterRef`
 arm of that rule had **no positive witness anywhere in the corpus**: 44
-parameter references over golden + rood, not one of them unit-bearing, so a
+parameter references over golden + red, not one of them unit-bearing, so a
 verifier that OVER-rejected at that arm left every gate green. This document
 closed that half. Since L2 a parameter reference carries no type of its own
 (`spec/proposals/V1-WIREMIGRATIE.md` B13), so WF-091 has no copy to cross at
@@ -54,9 +54,9 @@ WF-091 FAIL /rules/resolvedRegels/0/voorwaarde/rechts/type: unit mismatch:
 
 Since L2 that mutant has no wire form: a `type` on a `ParameterReference` is an
 unknown field and is refused at load (the L2 load table in
-`backends/clingo/test/test_clingo.ml`), and the negatief
+`backends/clingo/test/test_clingo.ml`), and the negative
 `wf091-parameterref-eenheid` left the corpus with that field
-(`corpus/negatief/README.md`).
+(`corpus/negative/README.md`).
 
 ## Hand-computed absolutes
 
@@ -81,7 +81,7 @@ characteristic is present. No consistency rule fires → `consistent`.
 expectations above, anchored to the hand computation, never to parity.
 NOOP-REFUTING: `aanvoergeld` and `aanvoerplichtig` are absent from the
 raw input world, so a do-nothing run mismatches all six derived
-expectations (gate 7). Gate 10 re-emits `bron.rgs` byte-identically.
+expectations (gate 7). Gate 10 re-emits `source.rgs` byte-identically.
 
 ## Measured boundary of the form
 

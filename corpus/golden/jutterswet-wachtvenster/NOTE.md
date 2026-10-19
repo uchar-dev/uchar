@@ -44,11 +44,11 @@ Drools jar of the card's base, before the change:
 
 and after it both branches report `PLAYED 3`.
 
-## Hand-written IR: there is no `bron.rgs`
+## Hand-written IR: there is no `source.rgs`
 
 The RegelSpraak frontend emits none of the three positions. Measured
 2026-09-23 on this repository's frontend (`make ir`), with the sentences
-above in `bron.rgs` form:
+above in `source.rgs` form:
 
 - a window as the quantified predicate ("indien alle wachten van de
   Schouwploeg aan de volgende voorwaarde voldoen: het is de periode vanaf de

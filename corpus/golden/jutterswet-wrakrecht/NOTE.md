@@ -4,14 +4,14 @@ The **source twin** of the hand-written anchor
 `corpus/golden/anchor/jutterswet-strandrechtketen`: the same three object
 types, the same chain, the same fact type and the same four cases with the
 same absolute values — but with an `ir.json` the RegelSpraak frontend
-**emitted** from a `bron.rgs`. The anchor pins that all three executors agree
+**emitted** from a `source.rgs`. The anchor pins that all three executors agree
 on inheritance; this golden pins that the dialect frontend produces exactly
 that IR, so `Objecttype.supertype` is emitter-borne and not only hand-written.
 The four `case*.json` files are byte-identical to the anchor's on purpose: one
 set of expectations, replayed against a hand-written and against an emitted
 document.
 
-## Source (`bron.rgs`)
+## Source (`source.rgs`)
 
 The uchar-dialect head form (`frontends/regelspraak/grammar/DIVERGENCES.md`
 §5) declares the single direct supertype:

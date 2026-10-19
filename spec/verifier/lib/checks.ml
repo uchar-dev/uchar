@@ -1654,7 +1654,7 @@ let calendar_spelling s = time_unit_of_spelling (norm s) <> None
    case — the ch. 2.1 identity a consumer applies when it resolves a
    spelling, so the three positions agree on what "the same spelling" means.
    A byte-exact comparison would under-report, and the witness
-   `corpus/negatief/wf017-meervoud-botst-met-vreemd-meervoud` pins it: its two
+   `corpus/negative/wf017-plural-collides-with-foreign-plural` pins it: its two
    plurals differ in case alone. *)
 let wf017 ctx =
   let kinds = List.mapi (fun i (d : day_kind) -> (i, d)) ctx.doc.day_kinds in
@@ -2144,8 +2144,8 @@ let wf034_allocation_names ctx =
    "missing bronType" / "missing doelType"). The clause makes the verifier say
    before the run what both executors say during it.
 
-   Two arms, two witnesses: `wf034-verdeling-zonder-brontype` and
-   `wf034-verdeling-zonder-doeltype`. Each arm is exact — replacing one of the
+   Two arms, two witnesses: `wf034-allocation-without-source-type` and
+   `wf034-allocation-without-target-type`. Each arm is exact — replacing one of the
    two matches by [] frees only its own document over the four zones (486
    compared; the type-less allocation negatiefs lose an incidental line and
    keep their verdict) — and dropping the whole clause frees those two and
@@ -2214,8 +2214,8 @@ let wf034_allocation_types ctx =
    agreement proves nothing there, and only the hand-pinned anchor
    expectations stand between the corpus and the defect.
 
-   Each of the six sub-arms carries its own negatief witness
-   (`corpus/negatief/wf034-verdeling-onbekend-<field>`), and each is ARM-exact:
+   Each of the six sub-arms carries its own negative witness
+   (`corpus/negative/wf034-verdeling-onbekend-<field>`), and each is ARM-exact:
    deleting one [resolve] line frees that one document and no other over the
    four zones (486 documents compared; the `targetAttribute` line additionally
    costs the parity casus its six incidental lines, without moving its
@@ -2282,8 +2282,8 @@ let wf034_allocation_name_resolution ctx =
    a wrong ANSWER, while an absent one makes both of them LOUD (`ref` "missing
    ObjectCreatie.subject in IR node", clingo "missing ObjectCreatie.subject").
    Carried by zero of the 30 object creations the four zones hold on
-   2026-09-05; witnesses `wf034-objectcreatie-onbekend-subject` and
-   `wf034-objectcreatie-loos-subject`. *)
+   2026-09-05; witnesses `wf034-object-creation-unknown-subject` and
+   `wf034-object-creation-without-subject`. *)
 let wf034_object_creation_subject ctx =
   List.concat
     (List.map
@@ -2898,7 +2898,7 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
    and the ch. 2.6 unit rules, and the node's annotation is crossed against
    it by the facet engine, under the number-follows-the-facet rule — so the
    DOMAIN facet reports under WF-089/WF-090 at a composite
-   (`wf089-composiet-domein`).
+   (`wf089-composite-domain`).
 
    How far the chain reaches. An operand's own type is anchored in turn — a
    reference IS its declaration's type since L2, a composite is crossed
@@ -2910,7 +2910,7 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
    unitless operands may be annotated `kg`, nothing crosses it, and a rounding
    above it then derives `kg` all the way into a `kg` target, verifier-clean
    (measured 2026-09-04: 26 such operand positions over 19 of the 174
-   golden+rood documents). The deferral proper is not self-servable — a
+   golden+red documents). The deferral proper is not self-servable — a
    value node carrying no type at all is already WF-034-ill-formed, and a
    reference or an Unresolved whose type nothing declares is reported by
    its own rule — but a fabricated fourth-class annotation is the stronger
@@ -2923,7 +2923,7 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
    narrows it truthfully (a clamp with a minimum of 0 IS non-negative whatever
    its base says), and it over-claims at the count arm, where two anchor
    goldens widen nonNegative to unspecified. Measured 2026-09-04: crossing it
-   costs 5 golden+rood documents on the additive arm, 7 over all arms. *)
+   costs 5 golden+red documents on the additive arm, 7 over all arms. *)
 
 let dt_decimals = function Number { decimal_places; _ } | Percentage { decimal_places; _ } -> decimal_places | _ -> 0
 let dt_whole = function Number { whole_part; _ } | Percentage { whole_part; _ } -> whole_part | _ -> false
@@ -2954,8 +2954,8 @@ let derived_number ~whole_part ~decimal_places (measure_unit : measure_unit opti
    require. The fourth — an unspellable rate factor — is the shape the
    frontend refuses outright (RUNTIME-SEMANTICS ch. 2.10). This function
    makes no claim at either, and the corpus carries zero of both (measured
-   2026-09-04: no times node in golden, rood, negatief or the parity zone has
-   two unit-bearing operands, so the cancel arm is pinned by a negatief and
+   2026-09-04: no times node in golden, red, negative or the parity zone has
+   two unit-bearing operands, so the cancel arm is pinned by a negative and
    nothing else). *)
 let times_unit (a : measure_unit option) (b : measure_unit option) : measure_unit option option =
   match (a, b) with
@@ -2989,7 +2989,7 @@ let times_unit (a : measure_unit option) (b : measure_unit option) : measure_uni
    null branch means the reference did not resolve at all) and no
    verifier-admissible document can either — an empty half is WF-034-
    ill-formed in a fold source since the widening. The corpus carries none
-   of the three shapes: every total operand in golden, rood, negatief and
+   of the three shapes: every total operand in golden, red, negative and
    the parity zone resolves (measured 2026-09-04). *)
 let set_reading ctx ~ranged (args : expr list) : bool option =
   match args with
@@ -3064,7 +3064,7 @@ let composite_expectation ctx ~binders (e : expr) :
                  plugin does not share (it writes its pinned ch. 2.9 scale), and
                  this derivation writes a placeholder 0 there. The wholeness was
                  unclaimed for the same reason until 2026-09-25; by then no
-                 product in golden, rood, negatief or the parity zone was
+                 product in golden, red, negative or the parity zone was
                  annotated whole any more (measured: 0 of 57). *)
               Some
                 ( "the times composite", "the type derived from its operands",
@@ -3077,8 +3077,8 @@ let composite_expectation ctx ~binders (e : expr) :
          so the unit exception set stays gate 13's; their decimals, maxDec, are
          the under-report ch. 2.4 names; and the soort goes with the unit,
          since a derivation that names no unit cannot tell a percentage from a
-         number. Measured 2026-09-25: no quotient or power in golden, rood,
-         negatief or the parity zone is annotated whole (0 of 74). *)
+         number. Measured 2026-09-25: no quotient or power in golden, red,
+         negative or the parity zone is annotated whole (0 of 74). *)
       match (operand_t left_side, operand_t right_side) with
       | Some l, Some r when is_number_like l && is_number_like r ->
           Some
@@ -3468,7 +3468,7 @@ let day_kind_scan at (c0 : condition_expr) : violation list * string list =
 
        The arm names those two and nothing else, which keeps it exact: a name
        OUTSIDE the set is WF-098's to reject (and does not become a WF-031
-       report as well — measured on `wf098-onbekende-contextwaarde-naam`,
+       report as well — measured on `wf098-unknown-context-value-name`,
        whose `de dagX` sits in exactly this position). A context value
        without a name cannot be written since L4. *)
     | Context_value { ident = Some n; _ }
@@ -3894,7 +3894,7 @@ let fields_agree (a : (string * datatype) list) (b : (string * datatype) list) =
    no declared struct domain is caught at the same spot (the pre-walk clause
    of the rule).
 
-   Two positions are deliberately NOT walked, each because no negatief could
+   Two positions are deliberately NOT walked, each because no negative could
    isolate it. A matched struct's own `velden`: [fields_agree] is an equality
    on the WHOLE field datatype, so a drifted nested copy already makes the
    enclosing copy disagree — the argument WF-073/074 make for their nested
@@ -5728,7 +5728,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
               cell type: replacing the reference by a literal turned that
               refusal off and the document CLEAN. Since L2 the cell carries
               no type (B13), and with this arm disabled
-              `wf034-dimensiecel-geen-referentie` turns clean while no other
+              `wf034-dimension-cell-none-reference` turns clean while no other
               report changes (measured in the L2 fix round). *)
            [ v "WF-034.cell-attribute-kind" (sub "attribute")
                "dimension-cell read whose attribute position is not an attribute reference: it \
@@ -5739,7 +5739,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
               one field further: measured verifier-clean on both golden cell
               positions and, until L2, on `wf091-dimensiecel-eenheid`, which
               turned CLEAN when its cell's `attribute` was emptied; with this
-              arm disabled `wf034-dimensiecel-zonder-attribuut` turns clean
+              arm disabled `wf034-dimension-cell-without-attribute` turns clean
               while no other report changes (measured in the L2 fix round) *)
            [ v "WF-034.cell-without-reference" at
                "dimension-cell read without an attribute reference: it resolves against no \
@@ -6623,8 +6623,8 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
          document, with nothing said.
 
          Carried by 2 of the 190 characteristic checks the four zones hold
-         (2026-09-05), both of them in the negatief zone, and both resolving:
-         `wf031-dagsoort-leest-kenmerk` (a day-kind condition, where the walk
+         (2026-09-05), both of them in the negative zone, and both resolving:
+         `wf031-day-kind-reads-characteristic` (a day-kind condition, where the walk
          knows no subject at all, so this field is the only owner there is)
          and `wf046-negated-read-in-recursive-cycle` (where it repeats the
          subject). No golden carries the form.
@@ -6903,7 +6903,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
 
      The range arms (c) deliberately carry their OWN number rather than
      widening WF-102: that rule is scoped to a fold's ARGUMENT — the source
-     position, which this node does not have — and a negatief directory must
+     position, which this node does not have — and a negative directory must
      be able to name the rule it violates. What is shared is the MACHINERY,
      not the number: [wf047_binding] and [resolve_binding] are the fold's,
      called from here, so a range can never be judged by two different
@@ -7493,7 +7493,7 @@ and dep_cond ctx ~subject ~neg acc (c : condition_expr) =
      answered merk(W1) = 1 because its pass runs rules before creations;
      the opposite order leaves merk(W1) leeg, and the ASP backend found five
      stable models, one per chain length. The witnesses are
-     corpus/negatief/wf046-leegtest-*.
+     corpus/negative/wf046-leegtest-*.
 
      Every node the operand reads turns negative, the hop relations of a
      navigated operand included: an absent link makes the operand leeg, so
@@ -7569,7 +7569,7 @@ and dep_cond ctx ~subject ~neg acc (c : condition_expr) =
      rang > 3", on which ref and clingo agree (nothing is minted, at rang 1
      and at rang 4). That document is the golden
      corpus/golden/jutterswet-opvolgerquorum; the negative witnesses are
-     corpus/negatief/wf046-kwantorvouw-*.
+     corpus/negative/wf046-kwantorvouw-*.
 
      The range is written since L2 (B12): the loader admits the node with
      exactly one of sourceRole and sourcePath, so the reach is always the relations
@@ -7921,7 +7921,7 @@ let dep_edges (forms : dep_form array) =
    char:<type>:<characteristic>, chan:<rule>, pop:<type> or
    rel:<fact type>. It is printed for a reader
    that must agree with this graph, such as the Drools backend's rule graph
-   (scripts/check-graaf.sh). *)
+   (scripts/check-graph.sh). *)
 let dependency_edges (doc : document) =
   let forms = Array.of_list (dep_forms { doc }) in
   let kind = function Dep_pos -> "positive" | Dep_strict -> "strict" | Dep_neg -> "negative" in
@@ -9583,7 +9583,7 @@ let wf086 ctx =
 (* --- WF-103/104/105: the supertype reference (IR-SPEC ch. 2.2) ------------
    Three rules on one field. WF-106 — an object type declares at most one
    direct supertype — is deliberately absent from this file and has no
-   negatief either: `supertype` is a bare string, so a second direct parent
+   negative either: `supertype` is a bare string, so a second direct parent
    is not a document a check could reject but one that cannot be written.
    Its witnesses live in the frontends that read the language above this
    wire. *)

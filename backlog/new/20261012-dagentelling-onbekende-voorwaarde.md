@@ -39,7 +39,7 @@ IR van een bron zonder diagnose is verifier-schoon.
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Rood eerst: een frontendtest met de bron hierboven, die de diagnose pint.
-- (b) Gate 10 groen, en elke golden met een `bron.rgs` emitteert byte-gelijk.
+- (b) Gate 10 groen, en elke golden met een `source.rgs` emitteert byte-gelijk.
 - (c) Alle gates van `CLAUDE.md` groen.
 
 ## Omvang

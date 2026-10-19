@@ -353,7 +353,7 @@ EXPECTED_CHANNEL=(
 # runner verifies the channel count itself (consistent = no Inconsistentie fact at all). The square
 # holds on it. NB the SAME backend does NOT hold ch. 5.11 for a Begrensd's two bounds — it evaluates
 # the maximum first — which is why that order is witnessed in the red corpus with a reason-carrying
-# entry in check-rood.sh rather than here.
+# entry in check-red.sh rather than here.
 # 2026-09-10: 119 -> 120, jutterswet-keurhouder (the WF-100 owner witness, IR-SPEC ch. 4.6 (q1)).
 # It arrived playing: both of its checks name the SUBJECT's own type as owner, and on that shape the
 # transpiler's owner test (`eigenaar != null && eigenaar != subject`) does not fire, so the two rules
@@ -448,7 +448,7 @@ EXPECTED_CHANNEL=(
 # 129 -> 130 (2026-09-12, card subtype-regelspraak-dialect): `jutterswet-wrakrecht`, the
 # RegelSpraak-SOURCE twin of the kernel anchor above — the same three types, the same chain, the
 # same four cases with the same absolute values, but with an `ir.json` the frontend EMITTED from a
-# `bron.rgs` carrying `Objecttype het Wrakrecht is een Strandrecht`. The anchor proves the three
+# `source.rgs` carrying `Objecttype het Wrakrecht is een Strandrecht`. The anchor proves the three
 # executors agree on inheritance; this one proves the dialect frontend produces exactly that IR, so
 # the `supertype` field is emitter-borne and not only hand-written. It has to be a PLAYER and not a
 # refusal: a golden whose values only two of the three executors reproduce would leave the emitted
@@ -468,7 +468,7 @@ EXPECTED_CHANNEL=(
 # square rather than merely schema-valid.
 # 132 -> 133 (2026-09-12, card flogic-frontend): `jutterswet-wrakrecht-flogic`, the SECOND source
 # twin of the kernel anchor — the same three types, the same chain, the same fact type and the same
-# four case files, but emitted from a `bron.flogic` by an F-logic frontend that shares no code and
+# four case files, but emitted from a `source.flogic` by an F-logic frontend that shares no code and
 # no grammar with the RegelSpraak one. It has to be a PLAYER for the reason its RegelSpraak sibling
 # is: the point of a source twin is that the SAME expectations hold over the emitted document, and
 # a refusal here would leave the second language's document outside the square its two siblings sit
@@ -510,7 +510,7 @@ EXPECTED_CHANNEL=(
 # the SOURCE twin of `jutterswet-hoofdberging`, which had to be hand-written because the frontend
 # could not resolve an allocation target naming a SUBTYPE whose relation hangs on the ancestor. It
 # plays for the same reason hoofdberging does and pins the same three hand-computed numbers; what is
-# new is only that the document now comes out of a `bron.rgs`. Nothing else moved.
+# new is only that the document now comes out of a `source.rgs`. Nothing else moved.
 # 2026-09-16 (card heelperiode-forall), 137 -> 138: `jutterswet-ploegpremie` joins as a NEW PLAYER —
 # the QUANTIFIER FOLD (IR-SPEC ch. 4.5, WF-108; RUNTIME-SEMANTICS ch. 3.9a), a condition quantified
 # over the members of a linked instance set, carrying ALLE and GEEN in one document. It plays all six
@@ -616,7 +616,7 @@ EXPECTED_CHANNEL=(
 # channel or reason, which also pins that giving every accumulate count its element variable (needed because
 # a source-less count leaves its bindings unresolved over the path's subnetwork) is semantics-free.
 # 2026-09-19 (card flogic-kwantorvouw-borg), 150 -> 151: `jutterswet-vuurtoren-flogic` joins as a NEW
-# PLAYER — the counting quantifiers over a NON-temporal matrix, emitted from a `bron.flogic` instead of
+# PLAYER — the counting quantifiers over a NON-temporal matrix, emitted from a `source.flogic` instead of
 # hand-written. Nothing in this backend moved for it: the node, the filter and the threshold are the ones
 # `jutterswet-vuurtoren` already plays, and the twin shares that golden's five case files byte for byte,
 # so a played pass here says the F-logic frontend reached exactly the wire the hand-written document
@@ -722,7 +722,7 @@ EXPECTED_CHANNEL=(
 # ref and the ASP backend carried the document: measured 2026-09-19, one verifier-clean form with
 # two executors answering and two refusing. Both now ask it through the declared chain, from one
 # shared place (transpiler/kern/Host), and both play. The golden is hand-written IR with no
-# bron.rgs: the frontend tags a guard with the doel's own type and never with an ancestor, so no
+# source.rgs: the frontend tags a guard with the doel's own type and never with an ancestor, so no
 # source produces this shape and gate 10 has nothing to re-emit. EXPECTED_DRL_PLAYED moves by one
 # as well.
 #
@@ -733,7 +733,7 @@ EXPECTED_CHANNEL=(
 # hand-computed expectations before anything else moved. What the card changed is the other two
 # executors: ref and the ASP backend caught the form in a residual arm and refused it with a
 # BOTTOM SENTENCE, so they now carry a named arm for it and the square closes on the values. The
-# golden is hand-written IR with no bron.rgs (a wire witness needs no producer route), so gate 10
+# golden is hand-written IR with no source.rgs (a wire witness needs no producer route), so gate 10
 # has nothing to re-emit. EXPECTED_DRL_PLAYED moves by one as well.
 #
 # 165 -> 168 (2026-09-20, card aantal-gevulde-backends): THREE new players, and all three needed a
@@ -747,7 +747,7 @@ EXPECTED_CHANNEL=(
 # multi-step range under the one kind that can carry it, with a bergplaats reached along two boten
 # contributing once; `jutterswet-gevuldesoorten` pins the typelessness of the presence test over
 # tekst, datum, enumeratie and booleaan, the last with `onwaar` as a FILLED value. All three are
-# hand-written IR with no bron.rgs — the source language has no spelling for the operation, so the
+# hand-written IR with no source.rgs — the source language has no spelling for the operation, so the
 # kind is wire-first and gate 10 has nothing to re-emit. The one form still refused is the TEMPORAL
 # set source, which has no defined moment to fold (RUNTIME-SEMANTICS ch. 3.4c); it lives in the red
 # zone, where this backend's refusal is listed in gate 8 beside ref's and clingo's pinned fragments.
@@ -759,7 +759,7 @@ EXPECTED_CHANNEL=(
 # filled count gives back is a GUARD that is writable, since it may stand in a rule's condition where
 # the instance count reads 1 for a member with no value and would let the division through. The
 # golden pins that the guard is reached and that the division is not; its red twin
-# (corpus/rood/aantalgevulde-ongewaakte-deling) pins the fault the guard prevents in all THREE
+# (corpus/red/filled-count-unguarded-division) pins the fault the guard prevents in all THREE
 # executors, this backend among them. EXPECTED_DRL_PLAYED moves by one as well.
 #
 # 169 -> 171 (2026-09-20, card drools-enumlabel-lezer): TWO new players, jutterswet-keurstaat and
@@ -825,7 +825,7 @@ EXPECTED_CHANNEL=(
 # (`verwacht afwezig, werkelijk aanwezig`) — two answers, two executors each, on a verifier-clean
 # document. The gap was NOT the union's: the ordinary single-source fold with the same filter diverged
 # identically and had since that filter landed, so one walk closes both and the suite pins both halves
-# (FoldFilterStratumWitnessTest). Hand-written golden, no bron.rgs: the frontend refuses "die niet
+# (FoldFilterStratumWitnessTest). Hand-written golden, no source.rgs: the frontend refuses "die niet
 # gemerkt zijn" by name, so the form lives on the wire alone. EXPECTED_DRL_PLAYED moves by one as well.
 #
 # 176 -> 177 (2026-09-22, fix round 3): jutterswet-uniekwantor, the same order law along a different
@@ -856,7 +856,7 @@ EXPECTED_CHANNEL=(
 # left null) and play all four cases; case 3 is the control in the other direction, two DIFFERENT
 # labels that must stay two labels. EXPECTED_DRL_PLAYED moves by one as well.
 #
-# 178 -> 179 (2026-09-22, card p5-datumtijd-lexeem): jutterswet-sluitstip, the first bron.rgs golden
+# 178 -> 179 (2026-09-22, card p5-datumtijd-lexeem): jutterswet-sluitstip, the first source.rgs golden
 # with a DatumTijd literal. The emitter now writes the ISO lexeme into waarde and keeps the day-first
 # snippet in bron (WF-095 narrowed to the one spelling), and the golden carries three source spellings
 # of one instant — the dd. prefix with one-digit day and month, two-digit, and mixed — in a write and
@@ -865,7 +865,7 @@ EXPECTED_CHANNEL=(
 # Its verdeling runs over a REPEATED type pair (bergingsdeelname and bergingstoezicht both relate Berging
 # and Berger), where the type-pair derivation both branches used for the recipient join answers nothing,
 # so both refused it as an unresolved naar_rato. They now read the wire's verbindendeRol, as ref does
-# (FactModelGenerator.allocationJoin), and play it; measured over every golden and rood document in both
+# (FactModelGenerator.allocationJoin), and play it; measured over every golden and red document in both
 # branches, no other document changed a byte of its runner output.
 # 180 -> 181 (2026-09-23, card clingo-leeg-negatie): jutterswet-waardemelding, the negated leeg/gevuld
 # test (LEEG and GEVULD with negatie: true, own attribute and one bound navigation step). Both branches
@@ -915,7 +915,7 @@ EXPECTED_CHANNEL=(
 # with ref's and clingo's values. The DRL-text branch refuses it on its defaults sentence (class (A) of
 # DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
 # 186 -> 188 (2026-09-24, card l2-referentielaag, builder C2): ambiguous-fold-role-name and
-# near-side-rolcheck-to-many, new — both came from corpus/rood at L2 (builder B), where their L1 fault
+# near-side-role-check-to-many, new — both came from corpus/red at L2 (builder B), where their L1 fault
 # (a count's range derived from a role name two fact types declare; a near-side role check read as a
 # null-test on a to-many reference) has no spelling on the L2 wire: the count carries its bronRol and
 # the role check is one RoleMembership, an existence question over the relation.
@@ -923,7 +923,7 @@ EXPECTED_CHANNEL=(
 # values. L2 itself moves no golden: measured with this gate's own jar, no pinned golden changed
 # channel and the played set is the 186 of the base plus these two. EXPECTED_DRL_PLAYED moves by two.
 # 188 -> 192 (2026-09-25, card rgs-getuigen-bronloze-constructen): four new goldens, one for each
-# construct the RegelSpraak frontend parsed while no golden with a bron.rgs carried it — three are source
+# construct the RegelSpraak frontend parsed while no golden with a source.rgs carried it — three are source
 # twins of hand-written goldens, with the carrier's case files: jutterswet-wrakboeking-rgs (an object
 # creation), synth-afrondingswaaier-rgs (the four rounding directions beside floor) and
 # jutterswet-rubriektabel-rgs (a decision table with rows, desugared to two rules); the fourth,
@@ -1008,13 +1008,13 @@ EXPECTED_CHANNEL=(
 # clingo answered; both branches now negate the fold their rule conditions carry for these quantifiers,
 # and play its two cases, PLAYED 2, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as
 # well.
-# 203 -> 204 (2026-09-25, the WF-052 decision): jutterswet-opvolgerversies, new, from bron.rgs and
+# 203 -> 204 (2026-09-25, the WF-052 decision): jutterswet-opvolgerversies, new, from source.rgs and
 # hand-computed — one object creation in two disjoint versions on a to-one created-side role, which
 # WF-052 refused until the versions of one creation became one writer. No source file of this backend
 # changed: the exec branch plays its three cases on the first run, PLAYED 3, with ref's and clingo's
 # values. EXPECTED_DRL_PLAYED moves by one as well.
 # 204 -> 205 (2026-09-25, card dialect-opgave-boven-berekening, lens round):
-# jutterswet-opgave-vormen, new, from bron.rgs and hand-computed — the RegelSpraak frontend's opgave
+# jutterswet-opgave-vormen, new, from source.rgs and hand-computed — the RegelSpraak frontend's opgave
 # marker (grammar/DIVERGENCES.md §7) over the three authored forms that are no plain rule: a tree of
 # `Uitzondering op` blocks with a nested exception, an `Uitzonderingen ongeordend:` block moved as a
 # set (its conflict recorded under the moved target), and the rows of a decision table, each moved to
@@ -1028,14 +1028,14 @@ EXPECTED_CHANNEL=(
 # this backend changed: the exec branch plays its two cases on the first run, PLAYED 2, with ref's and
 # clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
 # 206 -> 207 (2026-09-25, the ASP initialisation arm): jutterswet-voorwaardelijke-initialisatie, new,
-# from bron.rgs and hand-computed — an initialisation with a condition as its target's only writer
+# from source.rgs and hand-computed — an initialisation with a condition as its target's only writer
 # (RUNTIME-SEMANTICS ch. 5.4): written where the target is empty and the condition holds, leeg where the
 # condition fails, a case input left standing, and the three side by side per Vondst. The ch. 7.7
 # desugaring excludes the form, and the ASP backend refused it on its wildcard over rule kinds until it
 # got an arm of its own. No source file of this backend changed: the exec branch plays the four cases
 # on the first run, PLAYED 4, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
 # 207 -> 208 (2026-09-25, the fold keeps an initialisation's condition): jutterswet-wrakinitialisatie,
-# new, from bron.rgs and hand-computed — a conditional initialisation on Vondst folded into the defaults
+# new, from source.rgs and hand-computed — a conditional initialisation on Vondst folded into the defaults
 # stack of Wrakvondst (RUNTIME-SEMANTICS ch. 7.10): leeg where its condition fails, its value where it
 # holds, the stack's base and exception above it, a case input standing, and the rule itself on a plain
 # Vondst. The exec branch needed two changes: ruleMember keeps the initialisation's condition, and every
@@ -1044,13 +1044,13 @@ EXPECTED_CHANNEL=(
 # DRL-text branch refuses it on its defaults sentence (class (A) of DRL_CHANNEL), so
 # EXPECTED_DRL_PLAYED does not move.
 # 208 -> 209 (2026-09-25, an initialisation's guard reads the input): jutterswet-initialisatievolgorde,
-# new, from bron.rgs and hand-computed — two initialisations whose value reads an attribute a rule
+# new, from source.rgs and hand-computed — two initialisations whose value reads an attribute a rule
 # written after them computes (RUNTIME-SEMANTICS ch. 5.4). The exec branch needed its guard changed:
 # with the leeg-guard alone it kept the value computed against the leeg read (0 and 5 where 26 and 18
 # are right), and now an initialisatie's own write does not switch the guard off. It plays the four
 # cases, PLAYED 4, with ref's and clingo's values. The DRL-text branch keeps the transient values
 # (class (D) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-# 209 -> 210 (2026-09-26, card rekenjaar-als-waarde): jutterswet-rekenjaar, new, from bron.rgs and
+# 209 -> 210 (2026-09-26, card rekenjaar-als-waarde): jutterswet-rekenjaar, new, from source.rgs and
 # hand-computed — the context value evaluationYear as a rule value, as an arithmetic operand and as a
 # comparison operand on either side, in two sessions one day and one year apart (RUNTIME-SEMANTICS
 # ch. 8.2). Until this card the replay refused every document that carried the node before either
@@ -1068,7 +1068,7 @@ EXPECTED_CHANNEL=(
 # (its gevuld check now skips an explicit leeg segment, which no case input can carry).
 # The exec branch plays the three cases, PLAYED 3, with ref's and clingo's values. EXPECTED_DRL_PLAYED
 # moves by one as well.
-# 211 -> 212 (2026-09-26, card vast-startpunt-tijdlijn): jutterswet-vast-startpunt, new, from bron.rgs
+# 211 -> 212 (2026-09-26, card vast-startpunt-tijdlijn): jutterswet-vast-startpunt, new, from source.rgs
 # and hand-computed — a timeline with a fixed start point off the calendar (IR-SPEC ch. 2.8, fixedStart;
 # RUNTIME-SEMANTICS ch. 3.2): a named year grid from 1 October and an inline month grid from the 31st,
 # each written by a day count, and a total over a case timeline on the October grid. The loader reads
@@ -1077,45 +1077,45 @@ EXPECTED_CHANNEL=(
 # runner lays a case timeline on the fixed grid. Both branches play the four cases, PLAYED 4, with ref's
 # and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
 # 212 -> 213 (2026-09-26, fix round on the union of the wave): jutterswet-breukliteral, new, from
-# bron.rgs and hand-computed — the RegelSpraak fraction as the wire's rational (IR-SPEC ch. 4.1): a mixed
+# source.rgs and hand-computed — the RegelSpraak fraction as the wire's rational (IR-SPEC ch. 4.1): a mixed
 # fraction and its negative, which the frontend writes reduced (1_1/2 as 3/2, -0_1/2 as -1/2), and a
 # proper fraction, each in a product. The golden waited outside the repository for the ASP backend,
 # which read a literal's scale from the digits after its point and faulted on 3/2; it now reads a
 # rational at the smallest scale that holds its value (ASP-TRANSLATION S4). No source file of this
 # backend changed: both branches play the two cases, PLAYED 2, with ref's and clingo's values.
 # EXPECTED_DRL_PLAYED moves by one as well.
-# 213 -> 214 (2026-09-26, fix round on the union of the wave): jutterswet-erfketen, new, from bron.rgs and
+# 213 -> 214 (2026-09-26, fix round on the union of the wave): jutterswet-erfketen, new, from source.rgs and
 # hand-computed — rule -> rule dependencies over the subtype chain Klipjutter of Jutter in both directions: an
 # attribute written on the supertype and read on the subtype, an attribute and a characteristic written on the
 # subtype and read on the supertype. It is the golden gate 15's spec leg needed to see the rule graph's
 # declarant key. No source file of this backend changed: both branches play the two cases, PLAYED 2, with ref's
 # and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
-# 214 -> 215 (2026-09-26, the same fix round): jutterswet-gehele-periode-leeg-rgs, new, from bron.rgs — the
+# 214 -> 215 (2026-09-26, the same fix round): jutterswet-gehele-periode-leeg-rgs, new, from source.rgs — the
 # RegelSpraak twin of jutterswet-gehele-periode-leeg with the five rules RegelSpraak can spell (the leeg and
 # gevuld tests under the whole-period qualifier, its negation, the month grid, a navigated operand); the two
 # rules with the inner negation stay hand-written in the original. Its emission equals those five rules of the
 # original, so gate 10 now holds the form. No source file of this backend changed: both branches play the three
 # cases, PLAYED 3, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
-# 215 -> 216 (2026-09-27, card scenario-parametersets): jutterswet-jaarvaststelling, new, from bron.rgs and
+# 215 -> 216 (2026-09-27, card scenario-parametersets): jutterswet-jaarvaststelling, new, from source.rgs and
 # scenario.rgs — the corpus witness of the frontend's parameter set: one set with two jaargangen of four
 # parameters without granularity (a whole-number threshold, a euro amount, a percentage and a date), chosen
 # by two scenarios whose peildatum lies one day apart and in different jaargangen, so the two case files
 # differ in their scalar parameters alone. No source file of this backend changed: both branches play the
 # two cases on the first run, PLAYED 2 each, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by
 # one as well.
-# 216 -> 217 (2026-09-27, card vocabulaires-benamingen): jutterswet-vocabulaires, new, from bron.rgs and
+# 216 -> 217 (2026-09-27, card vocabulaires-benamingen): jutterswet-vocabulaires, new, from source.rgs and
 # hand-computed — two named vocabularies with a designation on every designatable kind (IR-SPEC ch. 2.12),
 # over rules that compute a premium, a sum, a count and a threshold. This backend's loader reads the side
 # table into the model and no transpiler reads it: both branches play the two cases on the first run,
 # PLAYED 2 each, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
-# 217 -> 218 (2026-09-28, card namen-in-declaratiekoppen): jutterswet-premierecht, new, from bron.rgs and
+# 217 -> 218 (2026-09-28, card namen-in-declaratiekoppen): jutterswet-premierecht, new, from source.rgs and
 # scenario.rgs and hand-computed — the object type 'Recht op premie', the role plural 'rechten op premie' and
 # the fact type 'jutter heeft premierecht', names the RegelSpraak frontend cut short before
 # (grammar/DIVERGENCES.md, "Namen in declaratiekoppen"), over rules that compute a premium, a sum, a filtered
 # count and a threshold. The first corpus golden whose object-type name carries spaces. No source file of this
 # backend changed: both branches play the two cases on the first run, PLAYED 2 each, with ref's and clingo's
 # values. EXPECTED_DRL_PLAYED moves by one as well.
-# 218 -> 219 (2026-09-28, card opgave-markering-datum): jutterswet-opgave-datum, new, from bron.rgs and
+# 218 -> 219 (2026-09-28, card opgave-markering-datum): jutterswet-opgave-datum, new, from source.rgs and
 # scenario.rgs and hand-computed — the RegelSpraak frontend's opgave marker (grammar/DIVERGENCES.md §7) on an
 # attribute of datatype Datum in dagen, which the frontend refused until that day: the marked date is computed
 # from another date by `plus`, the authored initialisation with a date literal is the group's lowest default, a
@@ -1123,7 +1123,7 @@ EXPECTED_CHANNEL=(
 # backend changed: the exec branch plays its seven cases on the first run, PLAYED 7, with ref's and clingo's
 # values, the date literal of the initialisation default among them. The DRL-text branch refuses it on its
 # defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-# 219 -> 220 (2026-09-28, card drools-subtype-in-supertype-rol): jutterswet-wrakmelding, new, from bron.rgs and
+# 219 -> 220 (2026-09-28, card drools-subtype-in-supertype-rol): jutterswet-wrakmelding, new, from source.rgs and
 # scenario.rgs and hand-computed — an instance of a subtype of a role's declared filler in that role (IR-SPEC
 # ch. 2.6: the filler is an upper bound), one level down and two, read from both ends: the to-one read on the
 # side that stores the link, and from the subtype a count, a sum, a quantifier, a role check and an
@@ -1140,14 +1140,14 @@ EXPECTED_CHANNEL=(
 # the reached object was never seen; the branch now tests such a condition after a far-side join on that object.
 # anchor/jutterswet-kustwacht leaves EXCLUDE_KNOWN and EXPECTED_CHANNEL: its rustwacht was this form (reason at
 # EXCLUDE_KNOWN), and the branch plays its two cases, PLAYED 2, against the unchanged pins. jutterswet-meldingsketen,
-# new, from bron.rgs and scenario.rgs and hand-computed: five rules on the Vondst whose condition reads a value
+# new, from source.rgs and scenario.rgs and hand-computed: five rules on the Vondst whose condition reads a value
 # of its vinder that a defaults group or a characteristic assignment derives — a gevuld test, a compound with an
 # own part, a comparison with a parameter, a characteristic check and its negation, and a §6.5 division under the
 # condition — played in the exec branch, PLAYED 3, with ref's and clingo's values. Measured before and after over
 # ALL goldens in the exec branch: exactly the kustwacht line moves. The DRL-text branch refuses the new golden on
 # its defaults sentence (class (A) of DRL_CHANNEL) and still answers kustwacht wrong, so EXPECTED_DRL_PLAYED does
 # not move.
-# 222 -> 223 (2026-09-29, card frontend-ontkende-kwantor): jutterswet-zinkende-jutter, new, from bron.rgs and
+# 222 -> 223 (2026-09-29, card frontend-ontkende-kwantor): jutterswet-zinkende-jutter, new, from source.rgs and
 # scenario.rgs and hand-computed — nine characteristic checks folded over the finds of a Jutter: 'alle', 'geen
 # van de' and 'ten minste één van de' over a possessive and an adjectival characteristic, affirmed and negated
 # with 'niet' and 'geen', two multi-word names, the anchor written as the role name, and the negated possessive
@@ -1157,7 +1157,7 @@ EXPECTED_CHANNEL=(
 # backend changed: both branches play the two cases on the first run, PLAYED 2, with ref's and clingo's
 # values. EXPECTED_DRL_PLAYED moves by one as well.
 # 223 -> 224 (2026-09-30, the justification that counts or reads further than one role): jutterswet-premiestaffel,
-# new, from bron.rgs and scenario.rgs and hand-computed: defaults groups whose justification counts (a count, a sum
+# new, from source.rgs and scenario.rgs and hand-computed: defaults groups whose justification counts (a count, a sum
 # over a filter against a parameter, a minimum and a maximum in a composite) or reads two and three roles away, on
 # attribute and characteristic targets, where the groups of the Melding and the Controle read the premie that the
 # Jutter's group writes and are declared before it. The exec branch refused such a group whole ("niet-reduceerbare
@@ -1166,7 +1166,7 @@ EXPECTED_CHANNEL=(
 # at their salience, so it plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after
 # over ALL goldens in both branches: no report line moves. The DRL-text branch refuses the new golden on its defaults
 # sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-# 224 -> 225 (2026-09-30, the operand under a quantifier condition): jutterswet-sluitdag, new, from bron.rgs and
+# 224 -> 225 (2026-09-30, the operand under a quantifier condition): jutterswet-sluitdag, new, from source.rgs and
 # scenario.rgs and hand-computed: three rules on the Berging whose condition is a quantifier fold over its vondsten
 # ('alle' over a derived bergdag, 'geen' over the vinddag, 'ten minste één' over the derived bergdag) and whose value
 # reads own attributes that rules declared after them derive (the laatste bergdag, a fold; the uiterste meldingsdag,
@@ -1178,7 +1178,7 @@ EXPECTED_CHANNEL=(
 # after over ALL goldens in both branches: no report line moves. The DRL-text branch plays the new golden, PLAYED 3,
 # so EXPECTED_DRL_PLAYED moves by one as well.
 # 225 -> 226 (2026-09-30, card opgave-markering-schrijver-op-subtype): jutterswet-opgave-subtype, new, from
-# bron.rgs and scenario.rgs and hand-computed — the RegelSpraak frontend's opgave marker (grammar/DIVERGENCES.md
+# source.rgs and scenario.rgs and hand-computed — the RegelSpraak frontend's opgave marker (grammar/DIVERGENCES.md
 # §7) on a date of the Vondst whose computing writers stand on its subtypes, which the frontend refused until that
 # day: an exception tree on the Strandvondst and an own base on the Barnsteenvondst, a subtype of the
 # Strandvondst, write the generated 'berekende meldingsdatum' each on its own type, and the one generated group
@@ -1194,7 +1194,7 @@ EXPECTED_CHANNEL=(
 # minimum or maximum. A fold over a set source inside a rule's value now becomes an accumulate beside the subject
 # pattern, and the value reads its result as an operand, EERSTE and LAATSTE as ordering folds over a Comparable.
 # jutterswet-vondstvenster leaves EXPECTED_CHANNEL: its two rules are this form, and the branch plays its two
-# cases, PLAYED 2, against the unchanged pins. jutterswet-vroegste-vondst, new, from bron.rgs and scenario.rgs and
+# cases, PLAYED 2, against the unchanged pins. jutterswet-vroegste-vondst, new, from source.rgs and scenario.rgs and
 # hand-computed: the earliest and the latest vinddag over the vondsten of a Jutter, the earliest over the zware
 # vondsten with zwaar derived later, the earliest plus 30 dagen, a startdag plus the maximum of a zoekduur, the
 # tijdsduur between the earliest and the latest, the minimum of a gewicht plus 1, 10% of a sum, and the earliest
@@ -1213,7 +1213,7 @@ EXPECTED_CHANNEL=(
 # line moves in the exec branch; in the DRL-text branch the same golden keeps its channel and its refusal now names that
 # branch as the one that does not carry the fold (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
 # 229 -> 230 (2026-09-30, the fold whose subselection tests a value derived later): jutterswet-zwaarste-vondst, new,
-# from bron.rgs and scenario.rgs and hand-computed: four folds over the vondsten of a Berging whose subselection tests
+# from source.rgs and scenario.rgs and hand-computed: four folds over the vondsten of a Berging whose subselection tests
 # a value other rules derive after them, the afgeleide dag of a defaults group (a maximum two roles away and a
 # quantifier in a condition, both on "zijn afgeleide dag is leeg"), a characteristic on it (a sum over "hij is niet
 # gedateerd") and a registratiedag an initialisatie and then a berekening write (a maximum over "later dan"), over
@@ -1225,7 +1225,7 @@ EXPECTED_CHANNEL=(
 # values. Measured before and after over ALL goldens in both branches: no report line moves. The DRL-text branch
 # refuses the new golden on its defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
 # 230 -> 231 (2026-10-01, the consequence of a default that folds over a role): jutterswet-sluitdag-gemeld, new, from
-# bron.rgs and scenario.rgs and hand-computed: defaults groups whose consequence folds over the vondsten of a Berging —
+# source.rgs and scenario.rgs and hand-computed: defaults groups whose consequence folds over the vondsten of a Berging —
 # the latest bergdag as the base under a gemelde sluitdag; the latest meldingsdag plus 14 dagen as the base of a tree the
 # opgave marker moves to 'berekende uiterste meldingsdag', under an exception that counts and reads the sluitdag another
 # group writes; the latest of two folds as the initialisation the marker lifts into its generated group; a sum in an
@@ -1235,7 +1235,7 @@ EXPECTED_CHANNEL=(
 # and plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in both
 # branches: no report line moves. The DRL-text branch refuses the new golden on its defaults sentence (class (A) of
 # DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-# 231 -> 232 (2026-10-01, a condition over a chain of roles): jutterswet-havenketen, new, from bron.rgs and
+# 231 -> 232 (2026-10-01, a condition over a chain of roles): jutterswet-havenketen, new, from source.rgs and
 # scenario.rgs and hand-computed: conditions on a Vondst that read two roles away (later than the afgeleide
 # openingsdag of the haven of its jutter; the openingsdag of that haven gevuld) and one role away inside a date
 # computation (its vinddag min 6 mnd later than the vergunningsdag of its jutter), and a value that reads the same
@@ -1246,7 +1246,7 @@ EXPECTED_CHANNEL=(
 # ref's and clingo's values. With a join on the reached haven alone the second case failed: the value read leeg.
 # Measured before and after over ALL goldens in both branches: no report line moves. The DRL-text branch refuses the
 # new golden on its marker 'TODO voorwaarde' (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-# 232 -> 233 (2026-10-01, a fold in the toekenning of an object creation): jutterswet-afrekening, new, from bron.rgs
+# 232 -> 233 (2026-10-01, a fold in the toekenning of an object creation): jutterswet-afrekening, new, from source.rgs
 # and scenario.rgs and hand-computed: a creation whose four toekenningen each fold over the vondsten of a Jutter (10% of
 # a sum, a minimum plus 1, the earliest date, a count), and a creation over a to-many role whose toekenning is the
 # latest date over the zware vondsten plus 30 dagen under a condition that counts, over four source shapes, a tie, and
@@ -1257,18 +1257,18 @@ EXPECTED_CHANNEL=(
 # PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in both branches: no report
 # line moves. The DRL-text branch refuses the new golden on its marker 'TODO aggregatie LAATSTE' (class (C) of
 # DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-# 233 -> 234 (2026-10-01, two writers of one target): jutterswet-melding-naar-aard, new, from bron.rgs and scenario.rgs
+# 233 -> 234 (2026-10-01, two writers of one target): jutterswet-melding-naar-aard, new, from source.rgs and scenario.rgs
 # and hand-computed: two pairs of conditional writers whose conditions exclude each other, the meldingsdatum on a Vondst
 # and on its subtype Strandvondst (the aanspoeldatum leeg or filled) and the vindersloon on a threshold of the gewicht,
 # with a rule that reads the meldingsdatum, over vondsten of both types, a threshold value and a vondst without values.
-# It is the green twin of rood/jutterswet-dubbele-melding, where both conditions hold on one Vondst: there the exec
+# It is the green twin of red/jutterswet-dubbele-melding, where both conditions hold on one Vondst: there the exec
 # branch ran into its fire cap and reported "geen fixpunt (kringverwijzing?)", a cycle the document does not contain,
 # and the replay now names the two rules, their values and the attribute (cases.Schrijfconflict). The form whose
 # conditions exclude each other played before and plays after, PLAYED 2, with ref's and clingo's values. Measured
 # before and after over ALL goldens in both branches: no report line moves. The DRL-text branch played the new golden
 # too, PLAYED 2, so EXPECTED_DRL_PLAYED moved by one as well.
 # 234 -> 235 (2026-10-01, an exception of a subtype under its supertype's base): jutterswet-meldtermijn-strandjutter,
-# new, from bron.rgs and scenario.rgs and hand-computed: an `Afwijking van` written for the Strandjutter under the base
+# new, from source.rgs and scenario.rgs and hand-computed: an `Afwijking van` written for the Strandjutter under the base
 # rule of the Jutter, which the RegelSpraak frontend lowers as the Strandjutter's own exception without an own base, a
 # defaults group on the Strandjutter whose one default is a group-default, so the composition of RUNTIME-SEMANTICS
 # ch. 7.10 keeps the Jutter's base below it and a Strandjutter without a vergunningseinde falls through to that base. No
@@ -1276,7 +1276,7 @@ EXPECTED_CHANNEL=(
 # clingo's values. The DRL-text branch refused the new golden on its defaults sentence (class (A) of DRL_CHANNEL), so
 # EXPECTED_DRL_PLAYED did not move.
 # 235 -> 236 (2026-10-01, a fold whose subselection reads through a role of the element): jutterswet-late-vondst, new,
-# from bron.rgs and scenario.rgs and hand-computed: the earliest vinddag and the number of the vondsten of a Jutter whose
+# from source.rgs and scenario.rgs and hand-computed: the earliest vinddag and the number of the vondsten of a Jutter whose
 # vinddag is later than the sluitdag of the jutter of the Vondst, the sluitdag derived by a rule declared after the folds,
 # over three vondsten around the sluitdag, and over a sluitdag nothing is later than, a jutter without a sluitdag and one
 # without vondsten. The exec branch tested the subselection on the pattern of the vondst, which an update of the jutter
@@ -1285,14 +1285,14 @@ EXPECTED_CHANNEL=(
 # join, and plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in
 # both branches: no report line moves. The DRL-text branch refused the new golden on its marker 'TODO aggregatie EERSTE'
 # (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED did not move.
-# 236 -> 237 (2026-10-02, the percentage of a navigated read): jutterswet-havengeld, new, from bron.rgs and scenario.rgs
+# 236 -> 237 (2026-10-02, the percentage of a navigated read): jutterswet-havengeld, new, from source.rgs and scenario.rgs
 # and hand-computed: "het percentage P van Y" with P a Percentage parameter written without the '%', and Y read one step
 # over a role, Y a sum between parentheses, and Y a variable of a "Daarbij geldt" part, over four cases, among them a
 # vondst without a taxatie. The RegelSpraak frontend refused the three rules before (an undeclared member, a syntax
 # error, a variable that names no role); it now lowers each to the percentageOf node the '%' form emits. No source file
 # of this backend changed: the exec branch plays the four cases on the first run, PLAYED 4, with ref's and clingo's
 # values. The DRL-text branch played the new golden too, PLAYED 4, so EXPECTED_DRL_PLAYED moved by one as well.
-# 237 -> 238 (2026-10-02, a fold over a set followed by to-one steps): jutterswet-zwaarste-weging, new, from bron.rgs
+# 237 -> 238 (2026-10-02, a fold over a set followed by to-one steps): jutterswet-zwaarste-weging, new, from source.rgs
 # and scenario.rgs and hand-computed: the maximum, the earliest date and the sum over the jutters of a Ploeg of a member
 # read through to-one steps after the set (two steps under a subselection on the jutter, one step to a date, one step
 # to a boat two jutters share), beside the sum over all boats of all jutters, a two-step sourcePath. The RegelSpraak
@@ -1301,7 +1301,7 @@ EXPECTED_CHANNEL=(
 # first run, PLAYED 2, with ref's and clingo's values (the per-jutter sum 240 beside the union 140). The DRL-text branch
 # refused the new golden on its marker 'TODO aggregatie EERSTE' (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED did
 # not move.
-# 238 -> 239 (2026-10-02, the opgave marker on a number with a unit): jutterswet-opgave-bedrag, new, from bron.rgs and
+# 238 -> 239 (2026-10-02, the opgave marker on a number with a unit): jutterswet-opgave-bedrag, new, from source.rgs and
 # scenario.rgs and hand-computed: the opgave marker on an amount in €, computed by an addition in the same unit and
 # initialised with an amount as the lowest default, with a rule that reads the generated characteristic and one that
 # reads the marked amount, over the seven cases of the date golden's shape. The RegelSpraak frontend refused the marker
@@ -1309,14 +1309,14 @@ EXPECTED_CHANNEL=(
 # changed: the exec branch plays the seven cases on the first run, PLAYED 7, with ref's and clingo's values. The
 # DRL-text branch refused the new golden on its defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED
 # did not move.
-# 239 -> 240 (2026-10-06, a fact creation writes no population): jutterswet-premiepot, new, from bron.rgs and
+# 239 -> 240 (2026-10-06, a fact creation writes no population): jutterswet-premiepot, new, from source.rgs and
 # scenario.rgs and hand-computed: an object creation gives every Haven a Premiepot whose pot counts its havenjutters,
 # a fact creation links those Jutters to the Premiepot, and a role check reads the link. The verifier and ref refused
 # the document under WF-045 before, through the fact creation's population proxy (RUNTIME-SEMANTICS ch. 6.1); this
 # backend played it all along. No source file of this backend changed: the exec branch plays the case, PLAYED 1, with
 # ref's and clingo's values. The DRL-text branch played it too, PLAYED 1, so EXPECTED_DRL_PLAYED moved by one as well.
 # 240 -> 241 (2026-10-09, a fold whose subselection divides, under a condition that does not hold):
-# jutterswet-filterwacht, new, from bron.rgs and scenario.rgs and hand-computed: "het aantal vondsten van de Jutter die
+# jutterswet-filterwacht, new, from source.rgs and scenario.rgs and hand-computed: "het aantal vondsten van de Jutter die
 # aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2" as the value of a
 # computation under "indien hij actief is" and as the second member of a composite after "hij is actief", over a Jutter
 # that is not actief with a vondst whose deelnemers is 0, and over two actieve Jutters whose vondsten divide cleanly.
@@ -1326,13 +1326,13 @@ EXPECTED_CHANNEL=(
 # plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in both
 # branches: no report line moves but this golden's. The DRL-text branch played it too, PLAYED 2, so EXPECTED_DRL_PLAYED
 # moved by one as well.
-# 241 -> 242 (2026-10-09, card creatiebudget-ref-en-clingo): jutterswet-budgetgrens-op, new, from bron.rgs and
+# 241 -> 242 (2026-10-09, card creatiebudget-ref-en-clingo): jutterswet-budgetgrens-op, new, from source.rgs and
 # hand-computed: a recursive creation makes a chain of 100 Wachters in one stratum, exactly the ch. 5.5 creation budget,
 # read back through a rule in the chain's stratum and a consistency that flags the Wachter of rang 101; a second case
 # runs two such chains side by side. ref, clingo and the branch with truth maintenance faulted on it before the card
 # chain of 2026-10-09; the exec branch, which has no creation budget, played it all along and needed no change: it plays
 # the two cases, PLAYED 2, with ref's and clingo's values. The DRL-text branch played them too, PLAYED 2, so
-# EXPECTED_DRL_PLAYED moved by one as well. Its red twin jutterswet-budgetgrens-over is listed in check-rood.sh.
+# EXPECTED_DRL_PLAYED moved by one as well. Its red twin jutterswet-budgetgrens-over is listed in check-red.sh.
 # 242 -> 248 (2026-10-10, card tms-omschakeling): the exec-model branch is the lowering with truth maintenance
 # (transpiler/tms); the destructive lowering is gone. The corpus did not change. Measured over every golden with cases
 # before the switch, the new branch plays all 242 the destructive lowering played, with the same pinned values, and six
@@ -1345,7 +1345,7 @@ EXPECTED_CHANNEL=(
 # creation without a connectingRole binding again, the form the frontend writes when the sentence names the type
 # instead of a role. The back-link is the one the shared decision (FactModelGenerator.creationLink) derives from
 # the type pair, read and written as with a binding; an ambiguous pair stays refused at build. Two goldens move.
-# jutterswet-penningbesluit, new, from bron.rgs and hand-computed, plays its three cases, PLAYED 3, with ref's and
+# jutterswet-penningbesluit, new, from source.rgs and hand-computed, plays its three cases, PLAYED 3, with ref's and
 # clingo's values. anchor/jutterswet-penninguitgifte, whose two creations have no binding, leaves EXPECTED_CHANNEL: its
 # creations make 'penningbezit', and the branch reads a created relation over its link facts, not over the one bean
 # field the §13.3.9 refusal stands on (as it already did for a creation with a binding); it plays its three cases,
@@ -1361,7 +1361,7 @@ EXPECTED_CHANNEL=(
 # computation rule and in the guard of an object creation). Each is hand-written IR; ref and clingo replay every case,
 # and both branches play each golden with the same status line, PLAYED 1, 2, 5, 4 and 3. No source file of this backend
 # changed. The sixth case of the dated document, without an evaluation date, is the red case
-# jutterswet-uitsluiting-zonder-rekendatum (check-rood.sh), fault-pinned on the backend's own sentence.
+# jutterswet-uitsluiting-zonder-rekendatum (check-red.sh), fault-pinned on the backend's own sentence.
 EXPECTED_PLAYED=255
 
 

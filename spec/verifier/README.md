@@ -55,6 +55,6 @@ spec/verifier/_build/default/bin/verifier.exe corpus/golden/<case>/ir.json
 
 Gate 3 (`scripts/check-verifier.sh`) runs the verifier over the corpus:
 every `corpus/golden/**/ir.json` must be clean, every
-`corpus/negatief/<wf###-slug>/ir.json` must be rejected, citing the rule
+`corpus/negative/<wf###-slug>/ir.json` must be rejected, citing the rule
 its directory name declares (incidental extra violations are allowed; a
 case that passes, or fails only for other rules, turns the gate red).

@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * constant true and nothing else. A flat {@code KENMERKTOEKENNING} carrying {@code onwaar} is ill-formed, and
  * both Drools branches refuse it themselves, by name, instead of answering it.
  *
- * <p><b>Why.</b> The document is the negatief {@code corpus/negatief/wf022-kenmerk-onwaar} (built on the rood
+ * <p><b>Why.</b> The document is the negative {@code corpus/negative/wf022-characteristic-false} (built on the red
  * card, 2026-09-23), loaded as gate 12 and the replay API load a document: without the verifier. Measured that
  * day with the case below: the verifier rejects the document on WF-022, the ASP backend stops at
  * translation ("characteristic attribution with a non-waar value") and {@code ref} runs the rule and leaves
@@ -37,13 +37,13 @@ class CharacteristicValueWitnessTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
-    private static final Path NEGATIEF =
-            Path.of("..", "..", "corpus", "negatief", "wf022-kenmerk-onwaar", "ir.json");
+    private static final Path NEGATIVE =
+            Path.of("..", "..", "corpus", "negative", "wf022-characteristic-false", "ir.json");
 
     @TempDir Path tmp;
 
     @Test void a_characteristic_attribution_with_false_is_refused_in_both_branches_by_name() throws Exception {
-        Path ir = NEGATIEF;
+        Path ir = NEGATIVE;
         Path casePath = write("casus.json", CASE_ABSENT);
         for (boolean viaDrl : new boolean[] { false, true }) {
             String branch = viaDrl ? "drl-tekst" : "exec-model";
@@ -72,9 +72,9 @@ class CharacteristicValueWitnessTest {
         return p;
     }
 
-    /** The negatief's document with the attribution's value set to {@code waarde}. */
+    /** The negative's document with the attribution's value set to {@code waarde}. */
     private static String document(String value) throws Exception {
-        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(NEGATIEF));
+        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(NEGATIVE));
         ObjectNode literal = (ObjectNode) IrPath.version(doc, "rules", 0, 0).get("value");
         literal.putObject("value").put("boolean", value.equals("waar"));
         literal.set("source", IrPath.sourceReference(value));

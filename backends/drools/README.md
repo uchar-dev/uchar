@@ -530,7 +530,7 @@ accumulate over the attribute's `Value` facts on the object) inserts a logical
 "melding op vinddag" schrijft 2026-03-04 en de regel "melding op aanspoeldag" schrijft 2026-03-01 in het attribuut
 meldingsdatum van V, een Vondst; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)", the writers in the order of the
 document and the object by its case label, as the reference interpreter names them, so the Drools pin of
-`corpus/rood/jutterswet-dubbele-melding` matches it. Like every fault it counts at the fixpoint, so a difference on an
+`corpus/red/jutterswet-dubbele-melding` matches it. Like every fault it counts at the fixpoint, so a difference on an
 intermediate state only is no fault. With three writers the sentence names every writer that stands, where the
 reference interpreter names the two its last passes saw change the attribute. The writers are keyed per object, so per
 concrete type (WF-079, ch. 7.10): rules on sister subtypes never meet, and a rule on a supertype meets one on a subtype
@@ -674,7 +674,7 @@ fact creations and a phase of object creations with the rule layer at rest betwe
 counts the maatgevers of a Wachter, over a relation a fact creation in the same recursive group lays, gave 1 where the
 reference interpreter gives 0. A stratum ends at its first generation that makes nothing, and the creation budget
 (below) ends a chain of mints that does not stop, at its mint at depth 101 ("creation budget exhausted"), the bound
-that `corpus/rood` `finite-chain-over-budget` and `corpus/golden/synth2-budgetgrens-onder` pin from both sides for
+that `corpus/red` `finite-chain-over-budget` and `corpus/golden/synth2-budgetgrens-onder` pin from both sides for
 every executor. An agenda filter cannot
 keep the creations back while the rule layer fires: Drools 8.44 drops a match the filter rejects from the agenda for
 good. The groups do: Drools evaluates a rule lazily, when the agenda takes it from the group that has the focus, so a
@@ -782,7 +782,7 @@ never as a silent fall:
 - of day kinds: the dayKind predicate as a condition, which the reference interpreter and the ASP backend refuse
   outside a definition (ch. 3.12, 5.4); a duration in whole days of a kind between two date-times, which they refuse as
   well (ch. 3.8, 3.12); and a form that steps or counts in a day kind whose definition does not compile: one that tests
-  a day kind on another day than the bound day, which no executor carries (red case `dagsoortverwijzing-andere-dag`),
+  a day kind on another day than the bound day, which no executor carries (red case `day-kind-reference-other-day`),
   one that reads a parameter, which WF-031 admits and the other two executors read and this branch does not (golden
   `jutterswet-havenrooster`, which the destructive DRL-text lowering refused as well), and any other shape outside the compiler.
   Witness `TmsDayKindWitnessTest`;
@@ -850,10 +850,10 @@ supertype and a read on a subtype meet on one node. It is built from the records
 `ir.json`, and each route to a model supplies what rides beside it: the defaults groups (`model.prioritizedDefaults`
 of a resolver's model, `Loaded.prioritizedDefaults()` beside a loaded one) and the type a navigated characteristic
 check reaches (`ProducerConsumer.sourceNavigation(model)` from the role the record names,
-`ProducerConsumer.wireNavigation(loaded)` from the binding beside the model). `scripts/check-graaf.sh` holds it:
+`ProducerConsumer.wireNavigation(loaded)` from the binding beside the model). `scripts/check-graph.sh` holds it:
 over every golden the loader reads, the graph's dependencies (`GraphProjection`) must equal the verifier's ch. 5
 edges (`verifier --dependency-edges`) over an attribute or characteristic node, whatever forms they join, and the
-graph of every golden with a `bron.rgs` must render the same from the source as from the wire. Outside the
+graph of every golden with a `source.rgs` must render the same from the source as from the wire. Outside the
 comparison, and reported per class by the gate: the edges over a population, a relation or a channel, nodes the
 graph does not draw, and the edges of a golden the loader refuses. Two readings differ by design, recorded in the
 gate beside its list of deliberate differences: keyed on the declaring type, the graph draws a dependency between

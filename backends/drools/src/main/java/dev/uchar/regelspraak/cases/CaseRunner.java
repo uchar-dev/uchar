@@ -391,7 +391,7 @@ public final class CaseRunner {
         return runner;
     }
 
-    // ---------------- the red path (corpus/rood, gate 8's Drools leg) ----------------
+    // ---------------- the red path (corpus/red, gate 8's Drools leg) ----------------
 
     /** What the v0 Drools backend OBSERVES when it replays one {@code expectedFault} case, by exception TYPE: FAULT
      *  (any runtime exception after the build other than an {@link Excluded}, at fire or while the case is read, a
@@ -411,12 +411,12 @@ public final class CaseRunner {
         }
     }
 
-    /** Replay a single {@code corpus/rood} case and report what the backend observes. The split is by exception
+    /** Replay a single {@code corpus/red} case and report what the backend observes. The split is by exception
      *  TYPE, not by phase. A loader refusal, or an {@link Excluded} from the build or from a case-input form, is an
      *  EXCLUDE. An I/O failure, and any other exception while the IR is loaded and the KieBase built, leaves this
      *  method and the CLI reports it as ERROR. Every other runtime exception after the build is a FAULT: a fault
      *  AT fire (a division by zero, a fixpoint failure), a named refusal while the case is read (a date lexeme
-     *  that names no day, corpus/rood/asofdate-kalender), and equally a CRASH while the case is read — measured
+     *  that names no day, corpus/red/as-of-date-calendar), and equally a CRASH while the case is read — measured
      *  2026-09-23: meldwaarde written as a boolean gives "IllegalArgumentException: argument type mismatch", an
      *  undeclared characteristic a failed setter call. A run without a fixpoint is a FAULT too, and raises no
      *  exception: on the exec-model branch, which this path drives, it says what {@link DroolsBackend#fire} says,

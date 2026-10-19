@@ -11,7 +11,7 @@ the reference arms of all three rules left the wire with it (the index rows
 WF-089, WF-090 and WF-091 in `IR-SPEC.md`). What the golden pins since then:
 the verifier passes a well-formed `DimensionCellRead` over a unit-bearing
 dimensioned attribute, the cell's own shape checks stay live (WF-034,
-`corpus/negatief/wf034-dimensiecel-*`), and gate 10 re-emits it byte for
+`corpus/negative/wf034-dimensiecel-*`), and gate 10 re-emits it byte for
 byte.
 
 It is the **second verifier-only golden** (see the "witness cabinet"
@@ -58,9 +58,9 @@ WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: dimension-cell
 
 Since L2 that mutant has no wire form: a `type` on a `DimensionCellRead` is an
 unknown field and is refused at load (the L2 load table in
-`backends/clingo/test/test_clingo.ml`), and the negatief
+`backends/clingo/test/test_clingo.ml`), and the negative
 `wf091-dimensiecel-eenheid` left the corpus with that field
-(`corpus/negatief/README.md`). The other half, that the verifier does not
+(`corpus/negative/README.md`). The other half, that the verifier does not
 over-reject at that arm, has no arm left to witness: no unit or domain rule
 crosses a cell read since L2. What stays is that the verifier passes the
 cell read.
@@ -89,5 +89,5 @@ cabinet must not carry. When the cell read becomes executable — a case
 format that carries cells, plus the `ref`/ASP arms — this witness moves
 into an executing document and this NOTE goes with it.
 
-Gate 10 still applies in full: `bron.rgs` re-emits byte-identically to
+Gate 10 still applies in full: `source.rgs` re-emits byte-identically to
 the checked-in `ir.json`, so the source-level shape is pinned too.

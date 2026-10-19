@@ -1,7 +1,7 @@
 # synth3-operatortak
 
 `synth3-takhek`'s form with **an arithmetic operator above the branch
-node**. Hand-written `ir.json`, no `bron.rgs` (no source language emits an
+node**. Hand-written `ir.json`, no `source.rgs` (no source language emits an
 `IfThenElse`, IR-SPEC ch. 4.10).
 
 The two documents differ by one `plus`, and that one `plus` is the point:

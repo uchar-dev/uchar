@@ -5,7 +5,7 @@ belongs to the `Let` that bound the binder that was read: a nested `Let`
 empties **itself**, never an enclosing one"* — and, read the other way,
 a read of an **enclosing** binder empties the **enclosing** `Let`, right
 through any nested one in between. Hand-written (synth3 family, no
-`bron.rgs`): the shape is a kernel-level question, not a source-language
+`source.rgs`): the shape is a kernel-level question, not a source-language
 one.
 
 ## The shape

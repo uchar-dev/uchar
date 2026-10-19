@@ -230,7 +230,7 @@ class ComparisonWitnessTest {
     /** A fault at the fixpoint: the rules give no answer, the write-back throws instead of writing, and the entry says
      *  so with the fault, where it would otherwise report "not written back". */
     @Test void an_evaluation_fault_at_the_fixpoint_is_named() throws Exception {
-        Path division = Path.of("..", "..", "corpus", "rood", "division-by-numeric-zero");
+        Path division = Path.of("..", "..", "corpus", "red", "division-by-numeric-zero");
         JsonNode c = read(division.resolve("case1.json"));
         IllegalStateException e = refusal(IllegalStateException.class, division, c, caselabels(),
                 TmsDocuments.JSON.readTree("[{\"kind\": \"consistent\"}]"),

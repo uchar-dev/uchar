@@ -81,7 +81,7 @@ the assertion does. The same strict `ten minste` fails `keurig` on V1 in
 case 1 and on V7 in case 2 (measured). Each case gained the `keurig` pins of
 its finds.
 
-The document is emitted from `bron.rgs` by the RegelSpraak frontend. Until
+The document is emitted from `source.rgs` by the RegelSpraak frontend. Until
 the card it was written by hand: the frontend parsed the subject-led form
 ("Een Vondst moet voldoen aan ten minste twee van de volgende criteria: …")
 and lifted a composite consistency only under `alle` with criteria that

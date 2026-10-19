@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * ({@code if (wholePeriodOf(c) == null) return c;}) and refused the plain spelling: the comparison form
  * fell on WF-096 ("setlezing buiten een vouwbron") and the membership form resolved to an
  * {@code Onopgelost} marker. That put a FRONTEND boundary where the language has none — measured on
- * the two corpus goldens whose hand-written IR carried exactly these nodes with no {@code bron.rgs}
+ * the two corpus goldens whose hand-written IR carried exactly these nodes with no {@code source.rgs}
  * beside them, because no RegelSpraak source could produce them. Maintainer reading 2026-09-17: the
  * unqualified form is valid RegelSpraak and the frontend must carry it.
  *

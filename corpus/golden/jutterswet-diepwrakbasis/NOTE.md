@@ -14,7 +14,7 @@ ancestor only outside the gate of `RUNTIME-SEMANTICS.md` ch. 7.10: where the
 lower type's chain declares no defaults group on the target (`IR-SPEC.md`
 ch. 3.1). The `Diepwrak`'s chain declares one, on the middle type, so the
 fold makes the two rules one writer per concrete type and the verifier
-passes the pair. `corpus/negatief/wf079-keten-kale-schrijvers` pins the
+passes the pair. `corpus/negative/wf079-chain-unconditional-writers` pins the
 other half: a chain without a group, where the pair is refused.
 
 No other document in the corpus exercises this gate: in
@@ -32,7 +32,7 @@ norm a) (chain_group_keys ctx.doc low))` in `wf079`,
     defaults group, whose subtype base replaces the inherited base, ch. 7.10),
     never implicit agenda order (ch. 7.7)
 
-and none of the other 754 documents in golden, rood, negatief and the
+and none of the other 754 documents in golden, red, negative and the
 parity zone changes its report.
 
 ## The fold per concrete type (ch. 7.10, `spec/proposals/SUBTYPING.md` §4.1)
