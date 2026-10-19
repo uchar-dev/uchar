@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.refusal.DroolsCode;
+import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
@@ -40,12 +41,13 @@ final class Stapels {
 
     /** A composition this branch does not lower, with the reason. */
     static final class Uncomposable extends RuntimeException {
-        private final DroolsCode code;
-        Uncomposable(DroolsCode code, String reason) {
-            super(reason);
-            this.code = code;
+        private final Reason reason;
+        Uncomposable(Reason reason) {
+            super(reason.text());
+            this.reason = reason;
         }
-        DroolsCode code() { return code; }
+        DroolsCode code() { return reason.code(); }
+        Reason reason() { return reason; }
     }
 
     /** The vacuously true justification an unconditional rule gets when it becomes a base, the shape of the ch. 7.7
@@ -123,15 +125,9 @@ final class Stapels {
                 return;
             }
             if (ownMembers.size() == 1 && parentMembers.size() > 1)
-                throw new Uncomposable(DroolsCode.DEFAULTS_OWN_GROUP_OVER_SET, "het doel " + targetName(k) + " op " + type.naam + " zet één eigen groep op een"
-                        + " geërfde ongeordende set van " + parentMembers.size() + " groepen: SUBTYPING §4.1 regel 3"
-                        + " definieert die lezing (het geërfde blok verhuist heel, boven de basis en onder de eigen"
-                        + " uitzonderingen), maar ze is niet verlaagd, want ze is een prioriteit in drie lagen en de leden"
-                        + " van een groep verzoenen als gelijken (RUNTIME-SEMANTICS ch. 7.10)");
+                throw new Uncomposable(DroolsCode.DEFAULTS_OWN_GROUP_OVER_SET.reason("targetName", targetName(k), "objectType", type.naam, "groupCount", parentMembers.size()));
             if (ownMembers.size() != 1 || parentMembers.size() != 1)
-                throw new Uncomposable(DroolsCode.DEFAULTS_OWN_SET_OVER_STACK, "het doel " + targetName(k) + " op " + type.naam + " draagt " + ownMembers.size()
-                        + " eigen en " + parentMembers.size() + " geërfde groep(en): een vouw van een eigen ongeordende set"
-                        + " over een geërfde stapel heeft geen gedefinieerde lezing (RUNTIME-SEMANTICS ch. 7.10)");
+                throw new Uncomposable(DroolsCode.DEFAULTS_OWN_SET_OVER_STACK.reason("targetName", targetName(k), "objectType", type.naam, "ownCount", ownMembers.size(), "inheritedCount", parentMembers.size()));
             out.put(k, List.of(merge(ownMembers.get(0), parentMembers.get(0))));
         });
         return out;
@@ -155,20 +151,12 @@ final class Stapels {
         if (all.isEmpty()) return null;
         for (ResolvedRule r : all)
             if (r.validity() != null && !r.validity().always())
-                throw new Uncomposable(DroolsCode.DEFAULTS_BASE_WITH_VALIDITY, "het doel " + targetName(key) + " op " + level.naam + " wordt naast een geërfde"
-                        + " defaultsstapel geschreven door de regel \"" + r.naam() + "\" met een geldigheidsvenster: een"
-                        + " basis met een venster zet versiekeuze in de stapel, die ch. 7.4 van verdedigbaarheid scheidt"
-                        + " (RUNTIME-SEMANTICS ch. 7.10)");
+                throw new Uncomposable(DroolsCode.DEFAULTS_BASE_WITH_VALIDITY.reason("targetName", targetName(key), "objectType", level.naam, "rule", r.naam()));
         for (ResolvedRule r : all)
             if (r.value() == null)
-                throw new Uncomposable(DroolsCode.DEFAULTS_BASE_WITHOUT_VALUE, "het doel " + targetName(key) + " op " + level.naam + " wordt naast een geërfde"
-                        + " defaultsstapel geschreven door de regel \"" + r.naam() + "\" zonder waarde: een basis zonder"
-                        + " consequentie beslist niets en wordt niet gevouwen (RUNTIME-SEMANTICS ch. 7.10)");
+                throw new Uncomposable(DroolsCode.DEFAULTS_BASE_WITHOUT_VALUE.reason("targetName", targetName(key), "objectType", level.naam, "rule", r.naam()));
         if (comps.size() > 1 || inits.size() > 1)
-            throw new Uncomposable(DroolsCode.DEFAULTS_TWO_WRITERS_OVER_STACK, "het doel " + targetName(key) + " op " + level.naam + " wordt naast een geërfde"
-                    + " defaultsstapel geschreven door " + comps.size() + " rekenende regel(s) en " + inits.size()
-                    + " initialisatie(s): de v0-betekenis van twee schrijvers op één doel is de volgorde op de agenda,"
-                    + " die prioritized defaults vervangen (RUNTIME-SEMANTICS ch. 7.10)");
+            throw new Uncomposable(DroolsCode.DEFAULTS_TWO_WRITERS_OVER_STACK.reason("targetName", targetName(key), "objectType", level.naam, "computationCount", comps.size(), "initialisationCount", inits.size()));
         List<Default> ds = new ArrayList<>();
         String attr = null;
         for (ResolvedRule r : comps) {

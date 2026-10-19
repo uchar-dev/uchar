@@ -244,6 +244,34 @@ subject, and after the write-back the reference fields reach it.
   `fire` that reaches the fixpoint makes the session readable again; with one the way is a fresh session.
 - A second `fire` on a model with a creation: refused, with the reason and the way, a fresh session per input.
 
+## The language of the messages
+
+The sentence of a refusal or a fault is not written at the place that raises it: the place hands a register code
+(`DROOLS-###`, or `EF-###` for a fault kind of RUNTIME-SEMANTICS ch. 5.7b) and its named parameters, and the sentence
+is the entry of the catalogue (`src/main/resources/dev/uchar/regelspraak/message/messages-drools.nl.tsv` and
+`.en.tsv`, one `key<TAB>template` per line, `{name}` for a parameter, a brace written twice for a literal one). The
+renderer (`dev.uchar.regelspraak.message`, compiled from the frontend's source tree like the IR records, beside the
+frontend's own catalogues, which carry `RGS-345..347`) refuses a key without an entry, a place without a parameter and a
+language other than `nl` and `en`, each with the key in the message.
+
+The language is English unless told otherwise. A consumer chooses it in one of two ways: the system property
+`uchar.messages.locale` (`nl` or `en`) sets the default of the whole process, and the carriers render in a language of
+the call:
+
+```java
+System.setProperty("uchar.messages.locale", "nl");                      // once, at start-up
+String text = refusal.message(Locale.forLanguageTag("nl"));              // per request: IrLoader.Refusal,
+// CaseRunner.Excluded, WritersConflict, CreationBudget; a Reason (refusal.Reason) renders with text(Locale)
+```
+
+The distribution asks for Dutch with the first line. The backend's own suite runs under `nl` (`maven-surefire-plugin`
+in `pom.xml`, the property and `JAVA_TOOL_OPTIONS` for the JVMs that tests start), since its assertions are the Dutch
+sentences. A sentence that was English before the card and that a test pins keeps its English text in the Dutch
+catalogue (the card's Result lists them); the others are translated. The fixed sentences of an evaluation fault
+(`ComputeFault`) are rendered when the class is initialised, in the language the property then names, because a KieBase
+embeds them; the faults with parameters, the refusals and the diagnostics render per call. `scripts/check-drools-codes.sh`
+holds the catalogues to the register (gate 12).
+
 ## Build (the shaded runtime uber-jar — decision V2-B)
 
 The gate runs **jar-only** (the gate-10 pattern). Build the shaded uber-jar once; rebuild

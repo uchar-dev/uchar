@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Validity;
 import dev.uchar.regelspraak.ir.ResolvedAllocation;
@@ -162,8 +163,12 @@ public final class ComputeHelpers {
 
     /** The opening of the runtime's fault of a day-kind walk past its reach ({@code rsDatumPlusDagsoort}), which is the
      *  reference interpreter's sentence word for word, the reach and the date after it. */
-    static final String DAY_KIND_WALK = "day-kind walk: no day of the kind within "
-            + RegelSpraakRuntime.DAGSOORT_REIKWIJDTE + " calendar days of ";
+    static final String DAY_KIND_WALK;
+    static {
+        // the sentence up to the place of the date, which is where the sentinel stands
+        String walk = Msg.drools("EF-009", "reach", RegelSpraakRuntime.DAGSOORT_REIKWIJDTE, "from", "\u0000").text();
+        DAY_KIND_WALK = walk.substring(0, walk.indexOf('\u0000'));
+    }
 
     /** easterSunday of a whole year without a unit (RUNTIME-SEMANTICS ch. 3.8, WF-038), by the algorithm of that chapter
      *  ({@code rsEerstePaasdag}); a leeg year leeg. A year that is not whole is a fault in the reference interpreter's
@@ -984,10 +989,7 @@ public final class ComputeHelpers {
             if (g.stratum() == stratum) depth = g.depth() + 1;
         }
         if (depth > budget)
-            throw new CreationBudget("creation budget exhausted: objectcreatie \"" + naam + "\" van stratum " + stratum
-                    + " zou een object maken op aanmaakdiepte " + depth + ", voor een " + type + " op diepte "
-                    + (depth - 1) + " — een keten van aanmaken die niet stopt is een fout, nooit een stille afkapping"
-                    + " (RUNTIME-SEMANTICS ch. 5.5)");
+            throw new CreationBudget(naam, stratum, depth, type, depth - 1);
         return depth;
     }
 

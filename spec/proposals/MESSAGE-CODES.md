@@ -668,13 +668,12 @@ since 2026-08-27; the divergence list extends it to clingo.
   the catalogue card; the Dutch `drools` fragments of 26 red cases would no
   longer match. The fragment cleanup (card 5) therefore precedes the
   catalogue card (card 6).
-- **Open for the maintainer: the Drools backend's default language**
-  (Fable §2 (e); not decided here). The distribution ships the backend; its
-  users see Dutch runtime sentences today and would see English after
-  card 6 unless the distribution passes a locale. Before card 6 it must be
-  decided whether the default locale is a setting the distribution sets —
-  then its pin bump must set `nl` — and that decision belongs in card 6;
-  otherwise the switch lands as a silent behaviour change at the bump.
+- **Decided 2026-10-19 (card 6): the default languages.** The Drools
+  backend gives English by default, the frontend Dutch (RegelSpraak is
+  Dutch by origin); the distribution sets `nl` for the backend in a card of
+  its own, one call at start-up or per request (`backends/drools/README.md`,
+  "The language of the messages"), so the switch does not land silently at
+  the pin bump.
 
 ## 7. Follow-up cards: order, size, model
 
@@ -691,6 +690,20 @@ work is normative design.
 | 5 | **Cleanup of the fragments**: `params` emitted by the three executors on the `CODE` line and pinned as `expectedFault.params` (mandatory before any fragment goes, §3.3); `ref` and clingo coded on demand (§2.3: the 36 bottom sentences as `fallback`, the sites a pin or a list names, no `contract` codes) with a two-way carrier check; the `CLINGO` code column of the divergence list; the fence on codes; the fragments out of the 50 cases and the schema, `ref --bottom-sentence` out | 1, 3 (both edit `scripts/check-rood.sh`) | ~100 OCaml sites; 50 case files; gate 8 ~150 lines out, ~80 in; the gate-8 paragraph of `CLAUDE.md` (main session) | Haiku codes the sites; Sonnet builds |
 | 6 | **Catalogues NL/EN** of the frontend and the Drools backend, the renderer, the locale API, the catalogue gate; first the maintainer's decision on the Drools default language (§6) | 3, 4, 5 | ~248 frontend and ~260 Drools messages in two languages; the Drools tests' ~258 text assertions and the frontend's 211 either run under the Dutch catalogue or move to codes — a change to test files, which needs the maintainer's consent in the card | Haiku translates; Sonnet builds |
 | 7 | **§9.5 codes** (added by this design, §4.2): the code set on a channel fact, `inconsistent.code`, golden witnesses; executes EF-005's decided move to §9.5 (§4.1) | 1; serial with 5 (both change the case schema and gate 8's neighbourhood) | ten kinds plus EF-005; three executors' channel; schema; ~10 golden cases | Opus (normative) |
+
+*Card 6 done 2026-10-19 (card `message-catalogues`; a proposal until the
+maintainer merges it).* The text of a message stands in a catalogue per
+component and language (`messages-frontend.nl|en.tsv`: 347 codes, 16 frames,
+131 parts, 21 shared parts; `messages-drools.nl|en.tsv`: 290 codes, 15 fault
+kinds with 8 parts, 12 frames, 37 parts, 3 shared parts); a place hands code
+and parameters and the renderer (`dev.uchar.regelspraak.message`, shared by
+both components) makes the sentence in the language of the call, else of
+`uchar.messages.locale`, else of the component. A part the code chose
+(`RGS-009.attribute-phrase`), a list of sentences and a frame round a sentence
+(`FRAME.operation`) are catalogue entries too. Gates 10 and 12 hold the
+catalogues to the register and the places to code and parameters only; ref,
+verifier and clingo have no catalogue. 29 Drools sentences that were English
+and that a test pins stay English in the Dutch catalogue.
 
 *Card 7 done 2026-10-19 (card `channel-fact-codes`; a proposal until the
 maintainer merges it).* Seven codes on the §9.5 channel, EF-025..EF-031: a

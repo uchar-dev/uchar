@@ -1,0 +1,365 @@
+DROOLS-001	form not carried by the v0 Drools backend: format ({format})
+DROOLS-002	form not carried by the v0 Drools backend: functionDefs (unknown model section)
+DROOLS-003	form not carried by the v0 Drools backend: {form} ({value} at '{path}' is outside this backend's integer range [{lowerBound}, {upperBound}])
+DROOLS-004	form not carried by the v0 Drools backend: PrioritizedDefaults (defaults without a subject)
+DROOLS-005	form not carried by the v0 Drools backend: PrioritizedDefaults (defaults must carry exactly one of characteristic/attribute)
+DROOLS-006	form not carried by the v0 Drools backend: Objecttype.supertype (an INHERITED attribute ('{attribute}') riding a NAMED tijdlijn with a VARIABEL STARTPUNT (§13.3.6.9/§9.9) on the chain of '{objectType}': the anchor family keys on the DECLARED subject name, so a subtype reads such an attribute as unanchored)
+DROOLS-007	form not carried by the v0 Drools backend: Objecttype.supertype (a §9.9 startpuntbepaling declared on an ANCESTOR of '{objectType}': the anchor family keys on the declared subject name, so the §6.8 leeg-fout companion is not emitted for the subtype)
+DROOLS-008	form not carried by the v0 Drools backend: Datatype:{node} (unknown datatype node)
+DROOLS-009	form not carried by the v0 Drools backend: Datatype:{node} (unknown datatype node)
+DROOLS-010	form not carried by the v0 Drools backend: Datatype:{node} (unknown datatype node)
+DROOLS-011	form not carried by the v0 Drools backend: InstanceSetUnion.branches (an instance-set union carries at least TWO selections, found {branchCount} — a single selection IS the ordinary instance count and has a spelling of its own (WF-110 (b)))
+DROOLS-012	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-013	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-014	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-015	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-016	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-017	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-018	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-019	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-020	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-021	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-022	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-023	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-024	form not carried by the v0 Drools backend: Aggregation.sourcePath (a sourcePath carries at least TWO steps, found {pathLength} — the one-step range is spelled sourceRole)
+DROOLS-025	form not carried by the v0 Drools backend: {form} (malformed node: missing required field '{field}')
+DROOLS-026	form not carried by the v0 Drools backend: Kwantorvouw.bronPad (a multi-step quantifier range (WF-108 (c)); the accumulate source carries one join role)
+DROOLS-027	form not carried by the v0 Drools backend: Kwantorvouw.drempel (a threshold is written exactly under a counting quantifier (WF-108 (e)); this node has quantifier {quantifier}{thresholdClause})
+DROOLS-027.and-no-threshold	 and no threshold
+DROOLS-027.and-one	 and one
+DROOLS-028	form not carried by the v0 Drools backend: Predicate.operand (a whole-period leeg/gevuld test over the parameter '{parameter}' is not executed: the fold reads the timeline of an attribute)
+DROOLS-029	form not carried by the v0 Drools backend: RuleVersion.value (the characteristic assignment '{rule}' assigns the characteristic '{characteristic}' {value}; WF-022 requires the boolean constant true, and a negative decision about a characteristic exists only in a defaults group)
+DROOLS-030	granular (timeline) parameter '{parameter}' is not carried by the v0 backend
+DROOLS-031	{site}: the declared grid is {count} {granularity} units, a multi-period grid, which carries no operation, a case input included (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case
+DROOLS-032	{site}: the declared grid is laid per object from the anchor of a variable start, which this loader does not read (RUNTIME-SEMANTICS ch. 3.2): refused as a v0 limit, not as a defect of the case
+DROOLS-033	a multi-period grid ({count} {granularity} periods) carries no operation (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12)
+DROOLS-034	a variable-start grid is laid per object from the anchor its start-point determination binds, which this interpreter does not execute (ch. 3.2)
+DROOLS-035	bucketing is defined for month and year only (ch. 3.2)
+DROOLS-036	{site}: the declared grid is day, which every day boundary sits on, yet this loader checks a timeline's grid through the calendar bucketing and v0 defines buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case
+DROOLS-037	{site}: the declared grid is {granularity}, and v0 defines calendar buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so this loader has no {granularity} grid to check the segment boundaries against: refused as a v0 limit, not as a defect of the case
+DROOLS-038	non-numeric timeline value on '{attribute}' is not carried by the v0 backend — the generated Segment holds a BigDecimal waarde
+DROOLS-039	unknown expectation kind: {kind}
+DROOLS-040	dimensioned attribute read-back '{attribute}' (§3.6, a Map bean member) is not carried by the v0 backend
+DROOLS-041	scalar read-back of temporal attribute '{attribute}' is not carried by the v0 backend — the bean holds a List<Segment>; use an attributeTimeline expectation
+DROOLS-042	rational value on '{field}' is not carried by the v0 backend
+DROOLS-043	timeline value on '{field}' is not carried by the v0 backend
+DROOLS-044	value form on '{field}' is not carried by the v0 backend: {value}
+DROOLS-045	case names an unknown objectType: {objectType}
+DROOLS-046	case sets undeclared attribute '{attribute}' on {objectType}
+DROOLS-047	dimensioned attribute input '{attribute}' (§3.6, a Map bean member) is not carried by the v0 backend
+DROOLS-048	role '{role}' names unknown label {label}
+DROOLS-049	role '{role}' ({fromType} -> {toType}) reaches no to-one reference field: {viaReason}, and {directionReason}
+DROOLS-049.direction-far	the far direction resolves the to-many role '{role}'
+DROOLS-049.direction-near	this direction resolves the to-many role '{role}'
+DROOLS-049.direction-none	neither direction of the type pair derives a to-one role
+DROOLS-049.via-none	the written role name resolves to no unique role
+DROOLS-049.via-to-many	the written role name resolves to '{role}', which is TO-MANY — its storage is the far end's field, not a scalar reference here
+DROOLS-049.via-to-one	the written role name resolves to the to-one role '{role}', which is not one of the §13.3.9 reference fields the bean model derives
+DROOLS-050	role '{role}' resolves to the to-one role '{targetRole}' on {objectType}, {cause} — the bean cannot carry the reference field (name-sharing bean limit: attribute > characteristic > reference)
+DROOLS-051	scalar input on temporal attribute '{attribute}' without an asOfDate: the bucket convention (corpus/golden/README.md) has no evaluation date to place it in
+DROOLS-052	wederkerig self-relation (§13.3.9.2) on {objectType} derives no scalar reference field (an ambiguous or to-many self-pair role) — not carried by the v0 backend
+DROOLS-053	wederkerig self-pair role '{role}' on {objectType} shares its name with a declared member — the bean cannot carry the self-typed reference field (name-sharing bean limit)
+DROOLS-054	{reason}; {form} reads or writes it
+DROOLS-055	exec-model: Duplicate rule name: {rule} — two rules with one name in package {package}; the KieBase keeps one rule per name, so the second would replace the first (form names are unique, WF-020)
+DROOLS-056	the DRL rendering does not yet carry {category}
+DROOLS-056.bean-class	a bean class as the constant of a term
+DROOLS-057	the DRL rendering does not yet carry {category}
+DROOLS-057.global-not-identifier	the day kind '{dayKind}', whose global is no Java identifier
+DROOLS-058	the DRL rendering does not yet carry {category}
+DROOLS-058.member	the member {member}
+DROOLS-059	sourcePath without a subject or element type (WF-102)
+DROOLS-060	a sourcePath carries at least TWO steps, found {steps} — the one-step range is called sourceRole (WF-102 (b))
+DROOLS-061	sourcePath step {step} names the fact type '{factType}', which this document does not declare (WF-047)
+DROOLS-062	sourcePath step {step} names the role '{role}', which the fact type '{factType}' does not declare (WF-047)
+DROOLS-063	sourcePath step {step} binds the role '{role}' of the fact type '{factType}', which has no opposite role (WF-047)
+DROOLS-064	sourcePath step {step}: the opposite role '{role}' fills '{fillerType}', but this step starts at '{startType}' ({startReason}) — a sourcePath is a connected walk (WF-102 (d))
+DROOLS-064.fold-subject	the fold subject
+DROOLS-064.previous-step	the type that the previous step reaches
+DROOLS-065	sourcePath step {step}: the bound role '{role}' fills '{objectType}', an object type this document does not declare (WF-047)
+DROOLS-066	sourcePath step {step}: the bound role '{role}' fills '{objectType}', but the elementType is '{elementType}' — the path must land on the element type (WF-102 (d))
+DROOLS-067	sourcePath step {step} ({fromType} -> {toType}) has no bean field — {reason} (§13.3.9 storage direction)
+DROOLS-068	bean name collision: {displaced} falls on the bean property {property} of {owner} and has no field of its own
+DROOLS-069	bean name collision: {displaced} falls on the reference field {property} of {owner}, a field of the same type, and the bean carries one relation per field
+DROOLS-070	bean name collision: the object types '{earlierObjectType}' and '{objectType}' fall on one fact class, {className}, and the bean model makes one class per name
+DROOLS-071	bean name collision: the object type '{objectType}' falls on the fact class {className}, the helper class the bean model itself generates for {helper}
+DROOLS-072	bean name collision: the object type '{objectType}' falls on the fact class {className}, and that hides java.lang.{simpleName} for the generated beans and the DRL text
+DROOLS-073	the role '{role}' on {objectType} shares its name with a declared member — the bean field carries that member (attribute or characteristic) and not the reference (members(): attribute > characteristic > reference), so the link to {targetType} has no field
+DROOLS-074	the role '{role}' on {objectType} has no reference field of its own to {targetType}: the bean property {beanClass}.{property} carries {holder}
+DROOLS-075	the bean model derives no reference field to {targetType} for the role '{role}' on {objectType}
+DROOLS-076	{sentence}
+DROOLS-077	{sentence}, and that field is missing: {reason}
+DROOLS-078	{sentence}, and there too the bean model derives none (both sides are many)
+DROOLS-079	the connectingRole binding '{factType}.{role}' designates no role pair
+DROOLS-080	more than one fact type relates "{subjectType}" to "{createdType}"; the created object's back-link is ambiguous (ch. 5.5)
+DROOLS-081	{sentence}, so the created object would be unreachable
+DROOLS-081.both-many	both roles are to-many ('{backRole}' and '{fwdRole}'), so FactModelGenerator derives a reference field on neither side
+DROOLS-081.no-fact-type	no unique connecting fact type: the back-link cannot be derived and ch. 5.5 does not guess
+DROOLS-081.self-typed	self-typed role pair without a connectingRole binding: from two equally typed roles the bean derives no reference field and the wire names no role
+DROOLS-082	object type '{objectType}': fact class {javaClass} is missing from the classpath
+DROOLS-083	{objectType}.{property}: getter {getter}() is missing from {javaClass}
+DROOLS-084	{objectType}.{property}: getter {getter}() returns {returnType}, the model requires {javaType}
+DROOLS-085	{objectType}.{property}: setter {setter}({javaType}) is missing from {javaClass}
+DROOLS-086	{objectType}.{property}: setter {setter} takes {parameterType}, the model requires {javaType}
+DROOLS-087	Segment.{getter}() is missing (temporal model)
+DROOLS-088	temporal model without {packageName}.Segment on the classpath
+DROOLS-089	Segment(LocalDate, LocalDate, BigDecimal) constructor is missing (temporal model)
+DROOLS-090	consistency/uniqueness rules without {packageName}.Inconsistentie on the classpath
+DROOLS-091	Inconsistentie(String, Object) constructor is missing (consistency/uniqueness rules)
+DROOLS-092	exec-model: {sentence} — a cycle that does not run through a creation member of a recursive rule group is ill-formed (WF-045), and truth maintenance gives no unambiguous fixpoint for it: a positive cycle keeps itself alive after its entry lapses, an even negation cycle decides on the order of the rules in the model, and an odd negation cycle alternates up to the firing ceiling
+DROOLS-092.one	cycle in the dependencies {cycle}
+DROOLS-092.several	{count} cycles in the dependencies: {cycles}
+DROOLS-093	exec-model: {sentence} — no cycle may carry a negation, also not a cycle through a creation member of a recursive rule group (WF-046): the creation then acts on an absence that the cycle fills afterwards
+DROOLS-093.one	a negating dependency on a cycle: {negation}
+DROOLS-093.several	{count} negating dependencies on a cycle: {negations}
+DROOLS-094	a period window with a boundary that is neither a date literal nor an own scalar date attribute of the element (WF-111)
+DROOLS-095	period window in a {quantifier}-compound (WF-112): the quantifier counts or negates the window verdict, while the window gates the rule (RUNTIME-SEMANTICS ch. 3.10), and for that reading nothing is specified
+DROOLS-096	period window in {site} of a quantifier fold under {quantifier} over {elementType} (WF-112): {reason}, while the window gates the rule (RUNTIME-SEMANTICS ch. 3.10), and for that reading nothing is specified
+DROOLS-096.chooses	the window chooses the members over which the quantifier counts or negates
+DROOLS-096.counts	the quantifier counts or negates the window verdict
+DROOLS-096.filter	the filter
+DROOLS-096.filter-and-test	the filter and the test
+DROOLS-096.test	the test
+DROOLS-096.unresolved-element-type	<unresolved element type>
+DROOLS-097	a parameter with the Java name 'rekendatum' beside a form that reads the evaluation date: the case runner sets the evaluation date under that name, so the two share one global
+DROOLS-098	a rule without a name (WF-107)
+DROOLS-099	a rule without a resolved target
+DROOLS-100	a rule on a navigated target
+DROOLS-101	a characteristic assignment with a value other than the constant true (WF-022)
+DROOLS-102	the time-dependent characteristic '{attribute}' of {declarant} as target: this branch does not yet carry this form; no golden with cases writes one (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-103	a time-dependent target with a second writer ('{attribute}' of {declarant} is also written by {writers}): this branch does not yet carry this form; a target with more writers stays fenced (RUNTIME-SEMANTICS ch. 7.8), and no golden with cases has one
+DROOLS-104	a period window in the condition of a rule with the time-dependent target '{attribute}' of {declarant}: there the window cuts the timeline (RUNTIME-SEMANTICS ch. 3.10), and this branch does not yet carry this form
+DROOLS-105	a value of the time-dependent target '{attribute}' of {declarant} that is neither a time-proportional part nor a day count ('{snippet}'): this branch does not yet carry this form (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); no golden with cases writes one
+DROOLS-105.without-value	without a value
+DROOLS-106	{description} per {sourceGranularity} to the target '{attribute}' with the granularity {targetGranularity}: the bucket is that of the target ({ruleReference})
+DROOLS-107	{description} per {targetGranularity}: only a month and a year are buckets (RUNTIME-SEMANTICS ch. 3.2)
+DROOLS-108	{description} with a fallback value or a dimension selection: this branch does not yet carry this form
+DROOLS-109	{description} with {argumentCount} arguments: a day count takes none (WF-058)
+DROOLS-110	{description} over a base that is not an own time-dependent member: this branch does not yet carry this form; the reference interpreter takes only an own member as base (RUNTIME-SEMANTICS ch. 3.7)
+DROOLS-111	{description} over the base '{attribute}', which is not a number (WF-091)
+DROOLS-112	{description} over the base '{attribute}' with the unit {unit}: the recalculation of a rate is fenced in the reference interpreter and in this branch (RUNTIME-SEMANTICS ch. 3.7); no golden
+DROOLS-113	{description} over the base '{attribute}' with the granularity {baseGranularity}, finer than the bucket {targetGranularity}: the base is not fixed over a bucket (RUNTIME-SEMANTICS ch. 3.7)
+DROOLS-114	{description} with a condition that is not a characteristic of the subject{condition}: this branch does not yet carry this form; the reference interpreter takes only an own time-dependent characteristic (RUNTIME-SEMANTICS ch. 3.7, 3.8)
+DROOLS-114.condition	 ('{snippet}')
+DROOLS-114.no-condition	 (no condition)
+DROOLS-115	{description} with a characteristic with an owner or a whole-period test in the clip ('{snippet}', WF-097)
+DROOLS-116	{description} with a negated or navigated characteristic ('{characteristic}'): this branch does not yet carry this form; the reference interpreter takes only an own time-dependent characteristic, not a negated one (RUNTIME-SEMANTICS ch. 3.7, 3.8)
+DROOLS-117	a rule beside a defaults group of the same type on the same target ('{attribute}' of {objectType}): a target has one writer, the group or the rule (WF-050)
+DROOLS-118	an initialisation of the time-dependent member '{attribute}' of {declarant}: this branch does not yet carry this form; no golden with cases has one
+DROOLS-119	two or more initialisations on one target ('{attribute}' of {declarant}: {rules}), conditional or not: where both hold, nothing ranks them and the fixpoint does not determine the value (RUNTIME-SEMANTICS ch. 5.4, WF-079)
+DROOLS-120	a division in an initialisation whose target still has a writer ('{division}'; '{attribute}' of {declarant} is also written by {writers}): beside another writer an initialisation is the lowest default (RUNTIME-SEMANTICS ch. 5.4, 7.7), and this branch computes it as soon as what it reads stands, also where the other writer later supersedes it; a division by zero there is an error at an intermediate state, which this branch withdraws as soon as the other writer decides, where the reference gives an error or the value depending on the order of the rules: whether such an error counts waits for a norm decision (ch. 5.2, 7.1)
+DROOLS-121	a consistency without a name (WF-107)
+DROOLS-122	a consistency without a subject or assertion
+DROOLS-123	a Uniqueness without a source or key
+DROOLS-124	a Uniqueness over several sources with {sourceCount} source: a union carries at least two (WF-030)
+DROOLS-125	a Uniqueness over several sources with keys of unequal arity or a source without a type: the keys are compared position by position (WF-030)
+DROOLS-126	a Uniqueness without a name (WF-107)
+DROOLS-127	{description} beside a second: a key has at most one time-dependent part; the simultaneous link of two has no corpus case (RUNTIME-SEMANTICS ch. 5.9); this branch does not yet carry this form
+DROOLS-128	{description} that is not a number: this branch does not yet carry this form
+DROOLS-129	a Regelversie 'is gevuurd' in the condition ('{snippet}'): not a form of the core but a predicate of the RegelSpraak dialect over the fixpoint (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS row 30), which the reference interpreter and the ASP backend do not evaluate
+DROOLS-130	a Regelversie 'is inconsistent' over "{producer}" in the condition ('{snippet}'): this branch carries as producer of the §9.5 channel only a Consistency, a Uniqueness and a rule with a division or a square root in its condition or its value (§6.5, §6.6)
+DROOLS-131	an allocation without a name (WF-107)
+DROOLS-132	an allocation without a resolved source, target or method
+DROOLS-133	an allocation without connectingRole (IR-SPEC ch. 3.2)
+DROOLS-134	an allocation in proportion without a weight (WF-025)
+DROOLS-135	an allocation in equal parts with a weight (WF-025)
+DROOLS-136	an allocation with a maximum without a weight (WF-025)
+DROOLS-137	an ordering key on an allocation that does not allocate in order (WF-025)
+DROOLS-138	the ordering key '{attribute}' of type {datatype} is not orderable (WF-025)
+DROOLS-139	an allocation of which {role} is the member '{attribute}' of {declarant}, of type {datatype} and not a number: this branch does not yet carry this form
+DROOLS-140	two allocations write the member '{attribute}' of {objectType} (also {allocations}): a target has at most one allocation (WF-026)
+DROOLS-141	an allocation beside the defaults group {groups} on the member '{attribute}' of {objectType}: a target of a defaults group has no other writer (WF-050)
+DROOLS-142	an allocation beside the rule {rules} on the member '{attribute}' of {objectType}: an allocation beside a computing rule or an initialisation on one target; this branch does not yet carry this form
+DROOLS-143	the connectingRole of the allocation names no declared role ({factType}, {role})
+DROOLS-144	an allocation over the single recipient role '{recipientRole}' whose sister role '{sourceRole}' is many: that fact type has one bean field for both directions, as a fold over such a role refuses (§13.3.9 storage direction)
+DROOLS-145	the join of the allocation has no bean field — {reason} (§13.3.9 storage direction)
+DROOLS-146	an object creation without a name (WF-107)
+DROOLS-147	an object creation without a resolved type
+DROOLS-148	an object creation without a connectingRole binding whose back-link from the type pair ('{backRole}' and '{fwdRole}') runs through a supertype of the subject or of the created type: the strata of this branch derive the relation of the back-link from the exact types and then do not see it written: this branch does not yet carry this form
+DROOLS-149	an object creation over the relation '{factType}', which is not a relation of two roles: this branch does not yet carry this form
+DROOLS-150	a member initialisation without a member or value
+DROOLS-151	a characteristic initialisation of '{attribute}' with a value of type {datatype} ('{snippet}'): a characteristic is true or false (WF-027), and the reference interpreter fails on such a value
+DROOLS-152	a division in a member initialisation ('{division}'), of which this branch does not make the §6.5 deposit: this branch does not yet carry this form
+DROOLS-153	a square root in a member initialisation ('{squareRoot}'), of which this branch does not make the §6.6 deposit: this branch does not yet carry this form
+DROOLS-154	a fact creation without a name (WF-107)
+DROOLS-155	a fact creation without a resolved anchor, target, fact type or path
+DROOLS-156	a fact creation of the relation '{factType}', which is not a relation of two roles: this branch does not carry this form yet
+DROOLS-157	{reason}
+DROOLS-158	{description}: a step that does not name a role pair of two roles
+DROOLS-159	{description}: the role '{role}' has no declared filler
+DROOLS-160	{description}: {reason} (§13.3.9 storage direction)
+DROOLS-161	{description}: the step over '{factType}' has two to-many roles, for which the bean model has no field (§13.3.9 storage direction)
+DROOLS-162	a characteristic target with the name of a member ('{attribute}' of {objectType}): the bean carries one field per name and the member takes precedence, so that the characteristic cannot be written and cannot be told apart
+DROOLS-163	an initialisation default on a characteristic target ('{attribute}' of {declarant}): a characteristic has no initialisation (WF-075)
+DROOLS-164	a deciding default without justification ('{source}', target '{attribute}')
+DROOLS-164.without-source	without a source
+DROOLS-165	a division in a default ('{division}'): this branch calculates a default as soon as what it reads is in place, also one that displaces a higher default; a division by zero there is an error at an intermediate state, which this branch withdraws as soon as the higher default decides: whether such an error counts waits for a normative decision (RUNTIME-SEMANTICS ch. 5.2, 7.1)
+DROOLS-166	a square root in a default ('{squareRoot}'), for which this branch does not make the §6.6 deposit: a default deposits only where it decides (RUNTIME-SEMANTICS ch. 7.1)
+DROOLS-167	an InstanceSetUnion in a value ('{snippet}'): it denotes the instances of a §5.7 concatenation, and only an instance count consumes them (WF-110 (a))
+DROOLS-168	a VariableReference in a value ('{snippet}'): the marker of a variable that the frontend did not bind, which the loader refuses (WF-034), so that this branch reaches it only in a model built by hand
+DROOLS-169	a number that cannot be read ('{valueText}')
+DROOLS-170	a date that cannot be read ('{valueText}')
+DROOLS-171	a date-time that cannot be read ('{valueText}')
+DROOLS-172	a Literal of type {datatype}: this branch does not carry this form yet
+DROOLS-173	a power with an exponent that is not a whole number of at least 0 as a literal ('{snippet}'): the real power is OPEN (RUNTIME-SEMANTICS ch. 2.1), where the reference interpreter gives an exact root or fails
+DROOLS-174	a Binary {operator} with a date ('{snippet}')
+DROOLS-175	a calculation of two dates, or a duration minus a date ('{snippet}')
+DROOLS-176	a duration without a time unit ('{snippet}')
+DROOLS-177	a clock unit on a date without a time ('{snippet}')
+DROOLS-178	the 'dagsoort' '{dayKind}' has no definition (WF-031)
+DROOLS-179	the definition of the 'dagsoort' '{dayKind}' reads the parameter '{parameter}', which this branch does not read in a 'dagsoort' definition (WF-031 allows it)
+DROOLS-180	the definition of the 'dagsoort' '{dayKind}' tests the 'dagsoort' '{testedDayKind}' on a different day than the bound day ('{snippet}'), a form that no executor runs (RUNTIME-SEMANTICS ch. 3.8)
+DROOLS-181	the definition of the 'dagsoort' '{dayKind}' has a condition ('{snippet}') outside what the backend's 'dagsoort' compiler carries: comparisons of the bound day, its date parts, the first Easter day and literals, and other 'dagsoorten' on the bound day
+DROOLS-182	a squareRoot with {argumentCount} arguments ('{snippet}'): the root takes one (WF-037)
+DROOLS-183	a text part of type {datatype} in a {where} ('{snippet}'): RUNTIME-SEMANTICS ch. 1.2 only fixes that an empty part reads ""; the text of a number, a truth value or a date is not decided by the spec, and the reference interpreter and the runtime helper rsTekst give a different one
+DROOLS-184	a DimensionCellRead over {dimensionCount} dimensions ('{snippet}'): this branch reads only a cell of one dimension
+DROOLS-185	an Aggregation {kind} over a dimension selection ('{snippet}'): only a sum, a minimum and a maximum fold a dimension selection (WF-037)
+DROOLS-186	an emptyFallback on an Aggregation {kind} ('{snippet}'): only a sum has one (WF-037)
+DROOLS-187	an Aggregation over a dimension selection over something else than one member ('{snippet}')
+DROOLS-188	an unresolved AttributeReference in {description} ('{snippet}')
+DROOLS-189	{description} over a path ('{snippet}'): this branch reads a dimensioned member only on its own subject
+DROOLS-190	an own read that names {objectType} on a {subject} ('{snippet}', WF-053)
+DROOLS-191	{description} over the member '{attribute}', which writes a form ('{snippet}'): this branch reads a dimensioned member only as input
+DROOLS-192	a Let without a binder ('{snippet}')
+DROOLS-193	a BinderRef '{binder}' of a Let over a fold, in the filter or the matrix of that fold ('{snippet}'): the contribution rules of the fold compute the filter and the matrix per element and do not bind the value of the Let: this branch does not carry this form yet
+DROOLS-194	a BinderRef '{binder}' without an enclosing Let that binds it ('{snippet}', WF-064)
+DROOLS-195	the context value '{name}' ('{snippet}'): the loader admits only evaluationDate, evaluationYear and the bound day (WF-098)
+DROOLS-196	a BuiltinCall {spelling} in a value ('{snippet}'): this branch calculates a time-proportional part and a day count only over the timeline of a time-dependent target (RUNTIME-SEMANTICS ch. 3.7, 3.8, 3.11)
+DROOLS-197	a BuiltinCall {spelling} with a filter ('{snippet}'): only a bucketing over a timeline carries one
+DROOLS-198	a {spelling} with {count} arguments ('{snippet}'): this builtin takes one (WF-037)
+DROOLS-199	a {spelling} with {count} arguments ('{snippet}'): a duration takes two (WF-037)
+DROOLS-200	a {spelling} that does not measure two dates of one precision ('{snippet}', WF-038)
+DROOLS-201	a {spelling} without a time unit ('{snippet}', WF-038)
+DROOLS-202	a {spelling} in a clock unit between dates without a time ('{snippet}', WF-038)
+DROOLS-203	{description} between two date-times: the reference interpreter and the ASP backend refuse it by name, because counting whole days of a kind between two points in time requires a rule for the part of the day at each end, which RUNTIME-SEMANTICS ch. 3.8 does not fix (ch. 3.12)
+DROOLS-204	a {spelling} from something other than a {dateType} ('{snippet}')
+DROOLS-204.date	date
+DROOLS-204.date-time	date-time
+DROOLS-205	a {spelling} of a year with the unit {unit} ('{snippet}'): the year is a whole number without a unit (WF-038)
+DROOLS-206	a {spelling} with {count} arguments ('{snippet}'): this builtin takes {itemCount} (WF-037)
+DROOLS-207	an Aggregation {kind} without an element type ('{snippet}')
+DROOLS-208	an Aggregation {kind} over {count} operands with an element type ('{snippet}'): a fold over a range takes one argument (WF-037)
+DROOLS-209	an Aggregation {kind} over something else than a member of the element ('{snippet}')
+DROOLS-210	an Aggregation {kind} over the time-dependent member '{attribute}' in a value ('{snippet}'): it has no moment at which it ranks, counts or tests a timeline; only a sum and a total fold the timeline of each element over time first (RUNTIME-SEMANTICS ch. 3.4c, 3.6)
+DROOLS-211	an Aggregation {kind} without a range ('{snippet}'): IR-SPEC ch. 4.3 requires a sourceRole or sourcePath
+DROOLS-212	a {kind} per element over the time-dependent member '{attribute}' in a fold over the created relation '{factType}' ('{snippet}'): a created link has no place in the fold order, which determines which element the fold names with a bucket scalar as input (RUNTIME-SEMANTICS ch. 3.6, 5.11, 8.4); this branch does not carry this form yet, and no golden with cases has it
+DROOLS-213	{head} and not number-like; addition is arithmetic over numbers (WF-091), and the reference interpreter fails on the addition itself: no executor carries this form
+DROOLS-214	{head} and have no ordering; an ordering fold requires a number or a date (WF-038), and the reference interpreter fails on the comparison itself: no executor carries this form
+DROOLS-215	{description} over a member of another object than the subject: without a range the total reads the timeline of the subject itself (WF-083 (c)); this branch does not carry this form yet over a path
+DROOLS-216	{description} without a clip over the timeline of '{member}', which writes a form: the reference interpreter takes the total without a clip only from the scalar input over the period of the evaluation date, and refuses a full timeline (RUNTIME-SEMANTICS ch. 3.6); this branch does not carry this form yet, and no golden with cases has it
+DROOLS-217	{description} with a navigated characteristic in the clip ('{snippet}'): this branch does not carry this form yet; no golden with cases has it
+DROOLS-218	{description} with a part of the compound clip that is not a characteristic ('{snippet}'): this branch does not carry this form yet; the reference interpreter takes only characteristics (RUNTIME-SEMANTICS ch. 3.6)
+DROOLS-219	{description} with the clip '{snippet}': this branch does not carry this form yet; the reference interpreter takes an own time-dependent characteristic, a comparison of an own time-dependent member, and an 'all' of those (RUNTIME-SEMANTICS ch. 3.6)
+DROOLS-220	{description} with a whole-period test in the clip ('{snippet}', WF-097)
+DROOLS-221	{description} with a date comparison in the clip ('{snippet}'): this branch does not carry this form yet
+DROOLS-222	{description} with '{operator}' in the clip ('{snippet}'): this branch does not carry this form yet; the calculation helper rsTijdConditie reads an empty side, a gap in the compared timeline, or an empty boundary as no period, whereas RUNTIME-SEMANTICS ch. 3.6 and the reference interpreter apply the comparison of ch. 1.2 per period: two empty sides are equal, and exactly one empty side is unequal; no golden with cases has it
+DROOLS-222.equal	equal to
+DROOLS-222.unequal	unequal to
+DROOLS-223	{description} with a comparison in the clip whose left side is not an own time-dependent member ('{snippet}'): this branch does not carry this form yet
+DROOLS-224	{description} with a comparison in the clip that does not compare numbers ('{snippet}'): this branch does not carry this form yet
+DROOLS-225	{description} with a comparison in the clip over two units ('{snippet}'): this branch does not carry this form yet
+DROOLS-226	{description} over '{member}', which is not a number (WF-091)
+DROOLS-227	{description} over '{member}': the temporal total of a {unit} value: {reason}
+DROOLS-228	{description} over '{member}' with the rate {rate} on a grid of {grid}: the denominator is not the unit of the grid, and this branch does not recalculate it (RUNTIME-SEMANTICS ch. 3.6); no golden with cases has it
+DROOLS-229	an InstanceSetUnion over two populations ('{population}' and '{elementType}', '{snippet}'): one count answers how many over one declared type, and whether two selections then share an instance is a question about the subtype relation (WF-110 (d))
+DROOLS-230	a selection without an element type in an InstanceSetUnion ('{snippet}')
+DROOLS-231	the range of '{description}' names no role pair (IR-SPEC ch. 4.3)
+DROOLS-232	an Aggregation over the single element role '{role}' whose sister role '{siblingRole}' is many ('{description}'): that fact type has one bean field for both directions, and this branch cautiously refuses the form until a card of its own measures it (§13.3.9 storage direction)
+DROOLS-233	the aggregation join of '{description}' has no bean field — {reason} (§13.3.9 storage direction)
+DROOLS-234	a filter that can fail in a fold over the created relation '{factType}' ('{description}'): a created link has no place in the fold order, which determines which error the fold gives (RUNTIME-SEMANTICS ch. 5.11); this branch does not carry this form yet
+DROOLS-235	the range of '{description}' over the created relation '{factType}', which is not a relation of two roles: this branch does not carry this form yet
+DROOLS-236	a fold with a range of more steps over the created relation '{factType}' ('{description}'): this branch does not carry this form yet
+DROOLS-237	an unresolved AttributeReference ('{snippet}')
+DROOLS-238	a VerreRollidmaatschap in the condition ('{snippet}'): the far role check of v0, which since L2 is the one node RoleMembership (IR-SPEC ch. 4.5) and which the loader does not make
+DROOLS-239	a period window without a boundary ('{snippet}'): there is no window to gate on
+DROOLS-240	a CharacteristicCheck with a host that is not the subject ('{snippet}')
+DROOLS-241	a CharacteristicCheck with a navigation without a binding ('{snippet}')
+DROOLS-242	{description} with the negation within the qualification: this branch does not carry this form yet, as the other two branches do not (RUNTIME-SEMANTICS ch. 3.9, 3.12); no golden with cases has it
+DROOLS-243	{description} with a navigation without a binding
+DROOLS-244	{description} over a timeline along a path ('{snippet}'): the reference interpreter folds only an own time-dependent member of the subject (RUNTIME-SEMANTICS ch. 3.9, 3.12)
+DROOLS-245	{description}{sideDescription}: the fold tests one timeline of the subject against a boundary (RUNTIME-SEMANTICS ch. 3.9)
+DROOLS-245.between-timelines	 between two timelines
+DROOLS-245.one-sided	 without an own time-dependent attribute on one side
+DROOLS-246	{description} with a date comparison: a date over a whole period has no read (RUNTIME-SEMANTICS ch. 3.9, 3.12)
+DROOLS-247	{description} that does not compare numbers: the fold tests the value of a segment as a number (RUNTIME-SEMANTICS ch. 3.9)
+DROOLS-248	{description} of the kind {spelling}: only the empty and the filled test have a read under the qualification (RUNTIME-SEMANTICS ch. 3.9)
+DROOLS-249	{description} over something else than a member: the fold reads the timeline of a time-dependent member (RUNTIME-SEMANTICS ch. 3.9)
+DROOLS-250	{description} over an own read that names {objectType} on a {subject} (WF-053)
+DROOLS-251	a RoleMembership in the condition ('{snippet}'): the binding ({binding}) names no declared role
+DROOLS-251.none	none
+DROOLS-252	a RoleMembership in the condition ('{snippet}'): over the created relation '{factType}', which is not a relation of two roles: this branch does not carry this form yet
+DROOLS-253	a RoleMembership in the condition ('{snippet}'): {reason}
+DROOLS-254	a RoleMembership in the condition ('{snippet}'): {reason} (§13.3.9 storage direction)
+DROOLS-255	a QuantifierFold in the condition ('{snippet}'): without a resolved element type
+DROOLS-256	a QuantifierFold in the condition ('{snippet}'): without a matrix: a quantifier over no condition has no verdict (WF-108 (d))
+DROOLS-257	a QuantifierFold in the condition ('{snippet}'): under the quantifier DE, which names one element and quantifies no set (WF-108 (a))
+DROOLS-258	a QuantifierFold in the condition ('{snippet}'): without a range of one step: the loader refuses a range of more steps (WF-108 (c))
+DROOLS-259	a member condition that can fail or deposit in a QuantifierFold over the created relation '{factType}' ('{description}'): a created link has no place in the order of the members, which determines which member the short-circuit still reaches (RUNTIME-SEMANTICS ch. 3.9a, 5.10); this branch does not carry this form yet
+DROOLS-260	a Comparison of a date with a date-time ('{snippet}', §5.3 Table 36)
+DROOLS-261	a Comparison {spelling} between {leftType} and {rightType} ('{snippet}'): the types of the two sides do not allow this comparison (RUNTIME-SEMANTICS ch. 1.2)
+DROOLS-262	a Predicate dayKind as a condition ('{snippet}'): the reference interpreter and the ASP backend refuse it by name outside a 'dagsoort' definition (RUNTIME-SEMANTICS ch. 3.12, 5.4)
+DROOLS-263	a Predicate {spelling} over a path ('{snippet}'): the operand is read as a value, in which an absent link is empty (RUNTIME-SEMANTICS ch. 5.8, rule 1), so that the test cannot tell an absent link here apart from an empty value
+DROOLS-264	a condition that reads {count} values ('{snippet}'): the test of this branch takes at most {limit} bound values
+DROOLS-265	the scope of a Uniqueness names no declared role ({factType}, {role})
+DROOLS-266	the scope of a Uniqueness over the created relation '{factType}': this branch does not carry this form yet
+DROOLS-267	the scope of a Uniqueness: {reason} (§13.3.9 storage direction)
+DROOLS-268	the time-dependent characteristic '{member}' of {objectType}, which writes a form: this branch does not carry this form yet (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-269	the time-dependent parameter '{parameter}': this branch does not carry this form yet; the goldens with cases that read one do so in a TemporalRead, which the loader refuses for all branches
+DROOLS-270	the parameter '{parameter}' of type {typeName}: this branch does not carry this form yet
+DROOLS-271	the time-dependent {category} '{member}' of {objectType} at a place that reads or writes one value: this branch reads a timeline only in a total, the clip of it, a time-proportional part, a day count and a uniqueness key, and writes it only with a time-proportional part or a day count (RUNTIME-SEMANTICS ch. 3.3, 3.6–3.8, 3.11, 5.9)
+DROOLS-272	{description} over the {category} '{member}' of {objectType}, which is not time-dependent
+DROOLS-273	{description} over the {category} '{member}' of {objectType} on a grid of more periods, which carries no operation (RUNTIME-SEMANTICS ch. 3.2, 3.12)
+DROOLS-274	{description} over the member '{member}' of {objectType} on a timeline with a variable start point: this branch does not carry this form yet; no golden with cases reads or writes one, and the case reader places no timeline on such a grid
+DROOLS-275	the dimensioned member '{attribute}' of {objectType}, read or written outside a DimensionCellRead or a fold over a dimension selection: this branch does not carry this form yet; no golden with cases has it
+DROOLS-276	the {category} '{member}' is not declared on {objectType} or a supertype
+DROOLS-277	a dimension read of the member '{attribute}' of {objectType}, which is not dimensioned
+DROOLS-278	the dimensioned member '{attribute}' of {objectType} on a timeline: this branch does not carry this form yet; no golden with cases has one
+DROOLS-279	the member '{attribute}' is not declared on {objectType} or a supertype
+DROOLS-280	{description}: the navigation does not resolve from {subject}
+DROOLS-281	{description}: the navigation goes over a to-many role
+DROOLS-282	{description}: {objectType} has no reference field '{role}' to {targetType} (§13.3.9 storage direction)
+DROOLS-283	a step over the created relation '{factType}' which is not a relation of two roles: this branch does not carry this form yet
+DROOLS-284	the target {targetName} on {objectType} sets one own group on an inherited unordered set of {groupCount} groups: SUBTYPING §4.1 rule 3 defines that read (the inherited block moves as a whole, above the base and below the own exceptions), but it is not lowered, because it is a priority in three layers and the members of a group reconcile as equals (RUNTIME-SEMANTICS ch. 7.10)
+DROOLS-285	the target {targetName} on {objectType} carries {ownCount} own and {inheritedCount} inherited group(s): a fold of an own unordered set over an inherited stack has no defined read (RUNTIME-SEMANTICS ch. 7.10)
+DROOLS-286	the target {targetName} on {objectType} is written alongside an inherited defaults stack by the rule "{rule}" with a validity window: a base with a window puts a version choice in the stack, which ch. 7.4 separates from defensibility (RUNTIME-SEMANTICS ch. 7.10)
+DROOLS-287	the target {targetName} on {objectType} is written alongside an inherited defaults stack by the rule "{rule}" without a value: a base without a consequence decides nothing and is not folded (RUNTIME-SEMANTICS ch. 7.10)
+DROOLS-288	the target {targetName} on {objectType} is written alongside an inherited defaults stack by {computationCount} calculating rule(s) and {initialisationCount} initialisation(s): the v0 meaning of two writers on one target is the order on the agenda, which prioritized defaults replace (RUNTIME-SEMANTICS ch. 7.10)
+DROOLS-289	{description}: {reason}
+DROOLS-290	a division and a root that deposit in one condition or in the filters of one fold ({form}): the test of this branch puts their §9.5 deposits together, and the fact cannot say which kind deposited, while a division has the code EF-031 and a root has none (RUNTIME-SEMANTICS ch. 5.7b)
+EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
+EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
+EF-005.bare	rational division by 0
+EF-005.in-rule	division by zero in the rule "{rule}": {dividend} divided by 0 — a numeric zero as divisor is an error, not an empty value (RUNTIME-SEMANTICS ch. 1.4, point 4)
+EF-007	datum-tijd arithmetic leaves the representable millisecond range
+EF-008	duration count {count} is out of range
+EF-009	day-kind walk: no day of the kind within {reach} calendar days of {from} (the walk reaches no further; a day kind whose next occurrence lies beyond the reach is refused, not diagnosed)
+EF-010	a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind evaluation it denotes nothing
+EF-011.date	the evaluationDate context value needs an evaluation date; the case carries asOfDate null
+EF-011.year	the evaluationYear context value needs an evaluation date; the case carries asOfDate null
+EF-012	a validity-bounded form needs an evaluation date; this session is time-free
+EF-015	creation budget exhausted: object creation "{creation}" of stratum {stratum} would make an object at creation depth {depth}, for a {type} at depth {parentDepth} — a chain of creations that does not stop is an error, never a silent truncation (RUNTIME-SEMANTICS ch. 5.5)
+EF-016	no fixpoint: {count} writers of one target give different values — {enumeration} in the member {attribute} of {object}; divergence is an error (RUNTIME-SEMANTICS ch. 5.7)
+EF-016.count-four	four
+EF-016.count-three	three
+EF-016.count-two	two
+EF-016.empty	empty
+EF-016.object-created	a created {type}
+EF-016.object-identity	a {type} ({identity})
+EF-016.object-labelled	{label}, a {type}
+EF-016.write	the rule "{rule}" writes {value}
+EF-019.condition	Unresolved condition reached in evaluation
+EF-019.expression	Unresolved reached in evaluation: this rule fails observably
+FRAME.case-reads	{sentence}; the case reads it
+FRAME.case-sets	{sentence}; the case sets it
+FRAME.contract	contract: {sentence}
+FRAME.described	{description}: {sentence}
+FRAME.drl	drl: {sentence}
+FRAME.fault-in-rule	error in the rule "{rule}": {sentence}
+FRAME.loader	loader: {sentence}
+FRAME.still-not	{sentence}; this branch does not yet carry this form
+FRAME.transpiler-verdict	transpiler {verdict}: {key}{reasonClause}
+FRAME.verdict-reason	 — {reason}
+FRAME.with-description	{sentence} ('{description}')
+FRAME.with-snippet	{sentence}: {snippet}
+PART.and	and
+PART.member-kind.attribute	attribute
+PART.member-kind.characteristic-kind	characteristic

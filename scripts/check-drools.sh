@@ -86,7 +86,10 @@ command -v java >/dev/null 2>&1 || fail "java not found (the Drools runtime need
 # Every place where the backend refuses a form or a case carries a code `DROOLS-###` from one register, beside its
 # sentence. The report of a refusal opens with it, `EXCLUDE DROOLS-014: <sentence>`, and EXPECTED_CHANNEL below pins the
 # code of each EXCLUDE golden. The script checks the register in both directions (every code raised, every raised code
-# registered, numbers without a gap, keys unique, every ef a row of ch. 5.7b) and holds a floor on its size.
+# registered, numbers without a gap, keys unique, every ef a row of ch. 5.7b) and holds a floor on its size. Since the
+# card message-catalogues (2026-10-19) the sentence is the entry of the code in the catalogue of the language (English
+# unless told otherwise), and the same script holds both catalogues to the register and the places to passing code and
+# parameters only; the backend's own suite runs under the Dutch catalogue (`uchar.messages.locale=nl`, pom.xml).
 bash scripts/check-drools-codes.sh || fail "the register of refusal codes does not hold (scripts/check-drools-codes.sh)"
 
 # --- build + the backend's own JUnit suite, with a NON-ZERO test count (maintainer decision 2026-08-30) ----

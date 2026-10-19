@@ -166,9 +166,7 @@ public record PeriodCoverage(String regel, String parameter, Validity rulePeriod
         }
         var w = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                 "RGS-347", RegelSpraakModel.Diagnostic.params("rule", regel, "period", show(rulePeriod),
-                        "parameter", parameter, "holes", holes),
-                "periodedekking: regel '" + regel + "' (geldig " + show(rulePeriod) + ") verwijst naar parameter '"
-                        + parameter + "' zonder geldige waarde in " + holes, 0);
+                        "parameter", parameter, "holes", holes), 0);
         if (!model.diagnostics.contains(w)) model.diagnostics.add(w);
     }
 

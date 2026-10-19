@@ -1,5 +1,7 @@
 package dev.uchar.regelspraak.model;
 
+import dev.uchar.regelspraak.message.Component;
+import dev.uchar.regelspraak.message.Msg;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1492,24 +1494,41 @@ public final class RegelSpraakModel {
     public record Rule(String naam, String category) {}
 
     public enum Severity { ERROR, WARNING, INFO }
-    /** A message of the frontend: {@code code} (an {@code RGS-###} of the register) and {@code params} name its
-     *  template apart from the {@code message}, which stays the Dutch text. A diagnostic read off the wire carries
-     *  neither (IR-SPEC ch. 2 {@code diagnostics} has no code), so {@code code} is null there. */
-    public record Diagnostic(Severity severity, String code, Map<String, String> params, String message, int line) {
+    /** A message of the frontend: {@code code} (an {@code RGS-###} of the register) and {@code args} (its named
+     *  parameters, a value a string or a {@link Msg}, a sentence part) name the template that {@code message} is
+     *  rendered from, in the default language of the frontend. A diagnostic read off the wire carries neither
+     *  (IR-SPEC ch. 2 {@code diagnostics} has no code): {@code code} and {@code text} are null there and
+     *  {@code message} is the wire's own. {@code text} is the message to render when it is a frame around the
+     *  sentence of {@code code} ({@code FRAME.*}), else the code's own template. */
+    public record Diagnostic(Severity severity, String code, Map<String, Object> args, Msg text, String message,
+                             int line) {
         public Diagnostic {
-            params = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(params));
+            args = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(args));
+            // rendered at once: a missing entry or a wrong parameter fails where the message arises
+            if (text != null) message = text.text();
         }
         /** A message without a code: the wire's, and the form the tests build. */
         public Diagnostic(Severity severity, String message, int line) {
-            this(severity, null, Map.of(), message, line);
+            this(severity, null, Map.of(), null, message, line);
         }
-        /** The parameters of a template, in the order given; a value renders as the message renders it. */
-        public static Map<String, String> params(Object... namesAndValues) {
-            if (namesAndValues.length % 2 != 0) throw new IllegalArgumentException("params takes name/value pairs");
+        /** A message that code and parameters name; its text is the catalogue entry of the code. */
+        public Diagnostic(Severity severity, String code, Map<String, Object> args, int line) {
+            this(severity, code, args, new Msg(Component.FRONTEND, code, args), null, line);
+        }
+        /** The parameters of a template, in the order given; a value is kept as a {@link Msg} when it is a
+         *  sentence part, and renders as the message renders it otherwise. */
+        public static Map<String, Object> params(Object... namesAndValues) {
+            return Msg.args(namesAndValues);
+        }
+        /** The parameters as strings, a sentence part in the default language. */
+        public Map<String, String> params() {
             Map<String, String> m = new LinkedHashMap<>();
-            for (int i = 0; i < namesAndValues.length; i += 2) m.put((String) namesAndValues[i], String.valueOf(namesAndValues[i + 1]));
+            args.forEach((k, v) -> m.put(k, dev.uchar.regelspraak.message.Messages.valueText(v,
+                    dev.uchar.regelspraak.message.Messages.defaultLocale(Component.FRONTEND))));
             return m;
         }
+        /** The message in {@code locale}; the wire's own text for a diagnostic without a code. */
+        public String message(java.util.Locale locale) { return text == null ? message : text.text(locale); }
         public boolean isError() { return severity == Severity.ERROR; }
         @Override public String toString() { return severity + " (line " + line + "): " + message; }
     }

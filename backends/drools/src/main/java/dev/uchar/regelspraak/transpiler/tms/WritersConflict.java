@@ -1,5 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.message.Component;
+import dev.uchar.regelspraak.message.Msg;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -31,11 +33,13 @@ public final class WritersConflict extends IllegalStateException {
     private final String type;
     private final List<WriteAct> writers;
     private final String label;
+    private final transient Msg msg;
 
     /** {@code writers} in the order of the document; {@code type} is the object's own type, {@code attribute} the
      *  attribute as declared. The object is named by type and identity until {@link #named} gives it a label. */
     WritersConflict(Object onderwerp, String attribute, String type, List<WriteAct> writers) {
-        this(onderwerp, attribute, type, writers, "een " + type + " (" + FactNames.object(onderwerp) + ")", null);
+        this(onderwerp, attribute, type, writers,
+                Msg.drools("EF-016.object-identity", "type", type, "identity", FactNames.object(onderwerp)), null);
     }
 
     /** The conflict of the value facts {@code waarden} on attribute {@code attribute} of {@code onderwerp}: the
@@ -76,8 +80,9 @@ public final class WritersConflict extends IllegalStateException {
     }
 
     private WritersConflict(Object onderwerp, String attribute, String type, List<WriteAct> writers,
-                               String object, String label) {
-        super(sentence(writers, attribute, object));
+                               Msg object, String label) {
+        super(sentence(writers, attribute, object).text());
+        this.msg = sentence(writers, attribute, object);
         if (writers.size() < 2) throw new IllegalArgumentException("een conflict heeft twee schrijvers: " + writers);
         this.onderwerp = onderwerp;
         this.attribute = attribute;
@@ -91,7 +96,8 @@ public final class WritersConflict extends IllegalStateException {
     public WritersConflict named(Function<Object, String> label) {
         String l = label.apply(onderwerp);
         return new WritersConflict(onderwerp, attribute, type, writers,
-                l == null ? "een aangemaakte " + type : l + ", een " + type, l);
+                l == null ? Msg.drools("EF-016.object-created", "type", type)
+                        : Msg.drools("EF-016.object-labelled", "label", l, "type", type), l);
     }
 
     /** The fault kind (RUNTIME-SEMANTICS ch. 5.7b): two writers of one target that disagree. */
@@ -122,17 +128,20 @@ public final class WritersConflict extends IllegalStateException {
         return writers;
     }
 
-    private static String sentence(List<WriteAct> writers, String attribute, String object) {
-        List<String> parts = new ArrayList<>();
+    /** The sentence in {@code locale}. */
+    public String message(java.util.Locale locale) { return msg.text(locale); }
+
+    private static Msg sentence(List<WriteAct> writers, String attribute, Msg object) {
+        List<Msg> acts = new ArrayList<>();
         for (WriteAct d : writers)
-            parts.add("de regel \"" + d.writer() + "\" schrijft " + (d.value() == null ? "leeg" : d.value()));
-        String enumeration = String.join(", ", parts.subList(0, parts.size() - 1)) + " en " + parts.get(parts.size() - 1);
-        return "geen fixpunt: " + count(writers.size()) + " schrijvers van één doel geven verschillende waarden — "
-                + enumeration + " in het attribuut " + attribute + " van " + object
-                + "; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)";
+            acts.add(Msg.drools("EF-016.write", "rule", d.writer(),
+                    "value", d.value() == null ? Msg.drools("EF-016.empty") : d.value()));
+        return Msg.drools("EF-016", "count", count(writers.size()),
+                "enumeration", new Msg.Enumeration(Component.DROOLS, acts), "attribute", attribute, "object", object);
     }
 
-    private static String count(int n) {
-        return switch (n) { case 2 -> "twee"; case 3 -> "drie"; case 4 -> "vier"; default -> String.valueOf(n); };
+    private static Object count(int n) {
+        return switch (n) { case 2 -> Msg.drools("EF-016.count-two"); case 3 -> Msg.drools("EF-016.count-three");
+            case 4 -> Msg.drools("EF-016.count-four"); default -> String.valueOf(n); };
     }
 }

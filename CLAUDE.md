@@ -298,7 +298,19 @@ reviewer's duty on a machine that has catala. Current gates:
     (every code a site passes is registered, every registered code is
     passed, the parameter names agree, no `new Diagnostic(` with three
     arguments outside `IrLoader`) and carries `EXPECTED_MIN_RGS_CODES=347`
-    (measured 2026-10-19); an empty scan is a failure.
+    (measured 2026-10-19); an empty scan is a failure. Since the card
+    `message-catalogues` (2026-10-19) the same script holds the frontend's
+    two catalogues (`frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/message/`,
+    Dutch and English) to the register: every code has an entry in both
+    languages, every entry belongs to a code, a part, a frame or a shared
+    part, the places of an entry are parameters of its code and every brace
+    is a place or doubled, an entry in one language only fails, an English
+    entry carries no Dutch function word except a reason-carrying (entry,
+    word) pair that fails when stale, and a site passes code and parameters
+    and no text (the argument count of every call form); floor
+    `EXPECTED_MIN_RGS_MESSAGES=363` (measured 2026-10-19). The frontend
+    renders Dutch by default; the frontend Makefile copies
+    `src/main/resources` to `out/`.
 
 11. `scripts/check-toka-parity.sh` — the `toka/` parity zone (maintainer
     decision 2026-08-27; a regular gate of the set since 2026-10-13, when
@@ -366,7 +378,15 @@ reviewer's duty on a machine that has catala. Current gates:
     the sources in both directions (every code raised, every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
-    `EXPECTED_MIN_DROOLS_CODES=289`. Since 2026-09-06 an expected-channel floor IN THE SCRIPT pins
+    `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`
+    (2026-10-19) that script holds the Drools backend's catalogues
+    (`backends/drools/src/main/resources/.../message/`) to the register in
+    the same way, with for a fault kind of ch. 5.7b the places `EF_PLACES`
+    names; a site that names a code names it as
+    `DroolsCode.X.reason(name, value, ...)` or `.part(...)` with parameter
+    names of the register; floor `EXPECTED_MIN_DROOLS_MESSAGES=325`. The
+    Drools backend renders English by default; its own suite runs under
+    `uchar.messages.locale=nl` (`backends/drools/pom.xml`). Since 2026-09-06 an expected-channel floor IN THE SCRIPT pins
     the played channel itself: every NON-played golden is listed by name
     with its reason (played is the default), so a golden that SHIFTS
     CHANNEL and loses its PLAYED status fails the gate by name instead of

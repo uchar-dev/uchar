@@ -1,0 +1,365 @@
+DROOLS-001	vorm niet gedragen door de v0-Drools-backend: format ({format})
+DROOLS-002	vorm niet gedragen door de v0-Drools-backend: functionDefs (onbekende modelsectie)
+DROOLS-003	form not carried by the v0 Drools backend: {form} ({value} at '{path}' is outside this backend's integer range [{lowerBound}, {upperBound}])
+DROOLS-004	vorm niet gedragen door de v0-Drools-backend: PrioritizedDefaults (defaults zonder onderwerp)
+DROOLS-005	vorm niet gedragen door de v0-Drools-backend: PrioritizedDefaults (defaults moeten precies één van kenmerk/attribuut dragen)
+DROOLS-006	form not carried by the v0 Drools backend: Objecttype.supertype (an INHERITED attribute ('{attribute}') riding a NAMED tijdlijn with a VARIABEL STARTPUNT (§13.3.6.9/§9.9) on the chain of '{objectType}': the anchor family keys on the DECLARED subject name, so a subtype reads such an attribute as unanchored)
+DROOLS-007	form not carried by the v0 Drools backend: Objecttype.supertype (a §9.9 startpuntbepaling declared on an ANCESTOR of '{objectType}': the anchor family keys on the declared subject name, so the §6.8 leeg-fout companion is not emitted for the subtype)
+DROOLS-008	vorm niet gedragen door de v0-Drools-backend: Datatype:{node} (onbekend datatypeknooppunt)
+DROOLS-009	vorm niet gedragen door de v0-Drools-backend: Datatype:{node} (onbekend datatypeknooppunt)
+DROOLS-010	vorm niet gedragen door de v0-Drools-backend: Datatype:{node} (onbekend datatypeknooppunt)
+DROOLS-011	form not carried by the v0 Drools backend: InstanceSetUnion.branches (an instance-set union carries at least TWO selections, found {branchCount} — a single selection IS the ordinary instance count and has a spelling of its own (WF-110 (b)))
+DROOLS-012	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-013	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-014	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-015	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-016	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-017	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-018	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-019	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-020	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-021	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-022	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-023	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-024	form not carried by the v0 Drools backend: Aggregation.sourcePath (a sourcePath carries at least TWO steps, found {pathLength} — the one-step range is spelled sourceRole)
+DROOLS-025	vorm niet gedragen door de v0-Drools-backend: {form} (misvormd knooppunt: verplicht veld '{field}' ontbreekt)
+DROOLS-026	vorm niet gedragen door de v0-Drools-backend: Kwantorvouw.bronPad (een meerstapsbereik van een kwantor (WF-108 (c)); de accumulate-bron draagt één joinrol)
+DROOLS-027	vorm niet gedragen door de v0-Drools-backend: Kwantorvouw.drempel (een drempel staat exact bij een tellende kwantor (WF-108 (e)); dit knooppunt heeft kwantor {quantifier}{thresholdClause})
+DROOLS-027.and-no-threshold	 en geen drempel
+DROOLS-027.and-one	 en één
+DROOLS-028	form not carried by the v0 Drools backend: Predicate.operand (a whole-period leeg/gevuld test over the parameter '{parameter}' is not executed: the fold reads the timeline of an attribute)
+DROOLS-029	form not carried by the v0 Drools backend: RuleVersion.value (de kenmerktoekenning '{rule}' kent het kenmerk '{characteristic}' {value} toe; WF-022 eist de booleaanse constante waar, en een negatief besluit over een kenmerk bestaat alleen in een defaultsgroep)
+DROOLS-030	granular (timeline) parameter '{parameter}' is not carried by the v0 backend
+DROOLS-031	{site}: the declared grid is {count} {granularity} units, a multi-period grid, which carries no operation, a case input included (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case
+DROOLS-032	{site}: the declared grid is laid per object from the anchor of a variable start, which this loader does not read (RUNTIME-SEMANTICS ch. 3.2): refused as a v0 limit, not as a defect of the case
+DROOLS-033	a multi-period grid ({count} {granularity} periods) carries no operation (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12)
+DROOLS-034	a variable-start grid is laid per object from the anchor its start-point determination binds, which this interpreter does not execute (ch. 3.2)
+DROOLS-035	bucketing is defined for month and year only (ch. 3.2)
+DROOLS-036	{site}: the declared grid is day, which every day boundary sits on, yet this loader checks a timeline's grid through the calendar bucketing and v0 defines buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case
+DROOLS-037	{site}: the declared grid is {granularity}, and v0 defines calendar buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so this loader has no {granularity} grid to check the segment boundaries against: refused as a v0 limit, not as a defect of the case
+DROOLS-038	non-numeric timeline value on '{attribute}' is not carried by the v0 backend — the generated Segment holds a BigDecimal waarde
+DROOLS-039	unknown expectation kind: {kind}
+DROOLS-040	teruglezing van een attribuut met dimensie '{attribute}' (§3.6, een Map-beanlid) wordt niet gedragen door de v0-backend
+DROOLS-041	scalar read-back of temporal attribute '{attribute}' is not carried by the v0 backend — the bean holds a List<Segment>; use an attributeTimeline expectation
+DROOLS-042	rational value on '{field}' is not carried by the v0 backend
+DROOLS-043	timeline value on '{field}' is not carried by the v0 backend
+DROOLS-044	de vorm van de waarde op '{field}' wordt niet gedragen door de v0-backend: {value}
+DROOLS-045	de casus noemt een onbekend objectType: {objectType}
+DROOLS-046	de casus zet het niet-gedeclareerde attribuut '{attribute}' op {objectType}
+DROOLS-047	invoer van een attribuut met dimensie '{attribute}' (§3.6, een Map-beanlid) wordt niet gedragen door de v0-backend
+DROOLS-048	role '{role}' names unknown label {label}
+DROOLS-049	role '{role}' ({fromType} -> {toType}) reaches no to-one reference field: {viaReason}, and {directionReason}
+DROOLS-049.direction-far	the far direction resolves the to-many role '{role}'
+DROOLS-049.direction-near	this direction resolves the to-many role '{role}'
+DROOLS-049.direction-none	neither direction of the type pair derives a to-one role
+DROOLS-049.via-none	the written role name resolves to no unique role
+DROOLS-049.via-to-many	the written role name resolves to '{role}', which is TO-MANY — its storage is the far end's field, not a scalar reference here
+DROOLS-049.via-to-one	the written role name resolves to the to-one role '{role}', which is not one of the §13.3.9 reference fields the bean model derives
+DROOLS-050	role '{role}' resolves to the to-one role '{targetRole}' on {objectType}, {cause} — the bean cannot carry the reference field (name-sharing bean limit: attribute > characteristic > reference)
+DROOLS-051	scalaire invoer op temporeel attribuut '{attribute}' zonder een asOfDate: de bucketconventie (corpus/golden/README.md) heeft geen rekendatum om hem in te plaatsen
+DROOLS-052	wederkerig self-relation (§13.3.9.2) on {objectType} derives no scalar reference field (an ambiguous or to-many self-pair role) — not carried by the v0 backend
+DROOLS-053	wederkerig self-pair role '{role}' on {objectType} shares its name with a declared member — the bean cannot carry the self-typed reference field (name-sharing bean limit)
+DROOLS-054	{reason}; {form} leest of schrijft het
+DROOLS-055	exec-model: Duplicate rule name: {rule} — twee regels van één naam in pakket {package}; de KieBase houdt één regel per naam, zodat de tweede de eerste zou vervangen (vormnamen zijn uniek, WF-020)
+DROOLS-056	de DRL-weergave draagt {category} nog niet
+DROOLS-056.bean-class	een beanklasse als constante van een term
+DROOLS-057	de DRL-weergave draagt {category} nog niet
+DROOLS-057.global-not-identifier	de dagsoort '{dayKind}', waarvan de global geen Java-identifier is
+DROOLS-058	de DRL-weergave draagt {category} nog niet
+DROOLS-058.member	het lid {member}
+DROOLS-059	sourcePath zonder onderwerp of elementtype (WF-102)
+DROOLS-060	een sourcePath draagt minstens TWEE stappen, gevonden {steps} — het eenstapsbereik heet sourceRole (WF-102 (b))
+DROOLS-061	sourcePath-stap {step} noemt het feittype '{factType}', dat dit document niet declareert (WF-047)
+DROOLS-062	sourcePath-stap {step} noemt de rol '{role}', die het feittype '{factType}' niet declareert (WF-047)
+DROOLS-063	sourcePath-stap {step} bindt de rol '{role}' van feittype '{factType}', dat geen tegenoverliggende rol heeft (WF-047)
+DROOLS-064	sourcePath-stap {step}: de tegenoverliggende rol '{role}' vult '{fillerType}', maar deze stap begint bij '{startType}' ({startReason}) — een sourcePath is een verbonden wandeling (WF-102 (d))
+DROOLS-064.fold-subject	het vouwonderwerp
+DROOLS-064.previous-step	het type dat de vorige stap bereikt
+DROOLS-065	sourcePath-stap {step}: de gebonden rol '{role}' vult '{objectType}', een objecttype dat dit document niet declareert (WF-047)
+DROOLS-066	sourcePath-stap {step}: de gebonden rol '{role}' vult '{objectType}', maar het elementType is '{elementType}' — het pad moet op het elementtype landen (WF-102 (d))
+DROOLS-067	sourcePath-stap {step} ({fromType} -> {toType}) heeft geen beanveld — {reason} (§13.3.9 opslagrichting)
+DROOLS-068	beannaambotsing: {displaced} valt op de beaneigenschap {property} van {owner} en heeft geen eigen veld
+DROOLS-069	beannaambotsing: {displaced} valt op het referentieveld {property} van {owner}, een veld van hetzelfde type, en de bean draagt per veld één relatie
+DROOLS-070	beannaambotsing: de objecttypen '{earlierObjectType}' en '{objectType}' vallen op één feitklasse, {className}, en het beanmodel maakt één klasse per naam
+DROOLS-071	beannaambotsing: het objecttype '{objectType}' valt op de feitklasse {className}, de hulpklasse die het beanmodel zelf genereert voor {helper}
+DROOLS-072	beannaambotsing: het objecttype '{objectType}' valt op de feitklasse {className}, en die verbergt java.lang.{simpleName} voor de gegenereerde beans en de DRL-tekst
+DROOLS-073	de rol '{role}' op {objectType} deelt haar naam met een gedeclareerd lid — het beanveld draagt dat attribuut/kenmerk en niet de referentie (leden(): attribuut > kenmerk > referentie), dus de koppeling naar {targetType} heeft geen veld
+DROOLS-074	de rol '{role}' op {objectType} heeft geen eigen referentieveld naar {targetType}: de beaneigenschap {beanClass}.{property} draagt {holder}
+DROOLS-075	het beanmodel leidt voor de rol '{role}' op {objectType} geen referentieveld naar {targetType} af
+DROOLS-076	{sentence}
+DROOLS-077	{sentence}, en dat veld ontbreekt: {reason}
+DROOLS-078	{sentence}, en ook daar leidt het beanmodel er geen af (beide zijden meervoudig)
+DROOLS-079	de connectingRole-binding '{factType}.{role}' wijst geen rolpaar aan
+DROOLS-080	more than one fact type relates "{subjectType}" to "{createdType}"; the created object's back-link is ambiguous (ch. 5.5)
+DROOLS-081	{sentence}, dus het gecreëerde object zou onbereikbaar zijn
+DROOLS-081.both-many	beide rollen zijn meervoudig ('{backRole}' en '{fwdRole}'), dus FactModelGenerator leidt aan geen van beide zijden een referentieveld af
+DROOLS-081.no-fact-type	geen uniek verbindend feittype: de terugkoppeling is niet af te leiden en ch. 5.5 gist niet
+DROOLS-081.self-typed	zelfgetypeerd rollenpaar zonder connectingRole-binding: uit twee gelijkgetypeerde rollen leidt de bean geen referentieveld af en de draad wijst geen rol aan
+DROOLS-082	objecttype '{objectType}': feitklasse {javaClass} ontbreekt op het classpath
+DROOLS-083	{objectType}.{property}: getter {getter}() ontbreekt op {javaClass}
+DROOLS-084	{objectType}.{property}: getter {getter}() geeft {returnType}, het model vraagt {javaType}
+DROOLS-085	{objectType}.{property}: setter {setter}({javaType}) ontbreekt op {javaClass}
+DROOLS-086	{objectType}.{property}: setter {setter} neemt {parameterType}, het model vraagt {javaType}
+DROOLS-087	Segment.{getter}() ontbreekt (temporeel model)
+DROOLS-088	temporeel model zonder {packageName}.Segment op het classpath
+DROOLS-089	Segment(LocalDate, LocalDate, BigDecimal) constructor ontbreekt (temporeel model)
+DROOLS-090	consistentie-/uniciteitsregels zonder {packageName}.Inconsistentie op het classpath
+DROOLS-091	Inconsistentie(String, Object) constructor ontbreekt (consistentie-/uniciteitsregels)
+DROOLS-092	exec-model: {sentence} — een kring die niet door een creatielid van een recursieve regelgroep loopt, is onwelgevormd (WF-045), en truth maintenance geeft er geen eenduidig fixpunt voor: een positieve kring houdt zichzelf in stand nadat haar ingang vervalt, een even ontkenningskring beslist op de volgorde van de regels in het model, en een oneven ontkenningskring wisselt tot het vuurplafond
+DROOLS-092.one	kring in de afhankelijkheden {cycle}
+DROOLS-092.several	{count} kringen in de afhankelijkheden: {cycles}
+DROOLS-093	exec-model: {sentence} — geen kring mag een ontkenning dragen, ook niet een kring door een creatielid van een recursieve regelgroep (WF-046): de creatie handelt dan op een afwezigheid die de kring daarna vult
+DROOLS-093.one	een ontkennende afhankelijkheid op een kring: {negation}
+DROOLS-093.several	{count} ontkennende afhankelijkheden op een kring: {negations}
+DROOLS-094	een periodevenster met een grens die geen datumliteral en geen eigen scalair datumattribuut van het element is (WF-111)
+DROOLS-095	periodevenster in een {quantifier}-samenstelling (WF-112): de kwantor telt of ontkent het vensterverdict, terwijl het venster de regel poort (RUNTIME-SEMANTICS ch. 3.10), en voor die lezing is niets gespecificeerd
+DROOLS-096	periodevenster in {site} van een kwantorvouw onder {quantifier} over {elementType} (WF-112): {reason}, terwijl het venster de regel poort (RUNTIME-SEMANTICS ch. 3.10), en voor die lezing is niets gespecificeerd
+DROOLS-096.chooses	het venster kiest de leden waarover de kwantor telt of ontkent
+DROOLS-096.counts	de kwantor telt of ontkent het vensterverdict
+DROOLS-096.filter	het filter
+DROOLS-096.filter-and-test	het filter en de toets
+DROOLS-096.test	de toets
+DROOLS-096.unresolved-element-type	<onopgelost elementtype>
+DROOLS-097	een parameter met de Java-naam 'rekendatum' naast een vorm die de rekendatum leest: de caserunner zet de rekendatum onder die naam, zodat de twee één global delen
+DROOLS-098	een regel zonder naam (WF-107)
+DROOLS-099	een regel zonder opgelost doel
+DROOLS-100	een regel op een genavigeerd doel
+DROOLS-101	een kenmerktoekenning met een andere waarde dan de constante waar (WF-022)
+DROOLS-102	het tijdsafhankelijke kenmerk '{attribute}' van {declarant} als doel: deze tak draagt deze vorm nog niet; geen golden met cases schrijft er een (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-103	een tijdsafhankelijk doel met een tweede schrijver ('{attribute}' van {declarant} wordt ook geschreven door {writers}): deze tak draagt deze vorm nog niet; een doel met meer schrijvers blijft omheind (RUNTIME-SEMANTICS ch. 7.8), en geen golden met cases heeft er een
+DROOLS-104	een periodevenster in de voorwaarde van een regel met het tijdsafhankelijke doel '{attribute}' van {declarant}: daar knipt het venster de tijdlijn (RUNTIME-SEMANTICS ch. 3.10), en deze tak draagt deze vorm nog niet
+DROOLS-105	een waarde van het tijdsafhankelijke doel '{attribute}' van {declarant} die geen tijdsevenredig deel en geen dagentelling is ('{snippet}'): deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); geen golden met cases schrijft er een
+DROOLS-105.without-value	zonder waarde
+DROOLS-106	{description} per {sourceGranularity} naar het doel '{attribute}' met de granulariteit {targetGranularity}: de emmer is die van het doel ({ruleReference})
+DROOLS-107	{description} per {targetGranularity}: alleen een maand en een jaar zijn emmers (RUNTIME-SEMANTICS ch. 3.2)
+DROOLS-108	{description} met een terugvalwaarde of een dimensieselectie: deze tak draagt deze vorm nog niet
+DROOLS-109	{description} met {argumentCount} argumenten: een dagentelling neemt er geen (WF-058)
+DROOLS-110	{description} over een basis die geen eigen tijdsafhankelijk attribuut is: deze tak draagt deze vorm nog niet; de referentie-interpreter neemt alleen een eigen attribuut als basis (RUNTIME-SEMANTICS ch. 3.7)
+DROOLS-111	{description} over de basis '{attribute}', die geen getal is (WF-091)
+DROOLS-112	{description} over de basis '{attribute}' met de eenheid {unit}: de herrekening van een tarief is omheind in de referentie-interpreter en deze tak (RUNTIME-SEMANTICS ch. 3.7); geen golden
+DROOLS-113	{description} over de basis '{attribute}' met de granulariteit {baseGranularity}, fijner dan de emmer {targetGranularity}: de basis staat niet vast over een emmer (RUNTIME-SEMANTICS ch. 3.7)
+DROOLS-114	{description} met een voorwaarde die geen kenmerk van het onderwerp is{condition}: deze tak draagt deze vorm nog niet; de referentie-interpreter neemt alleen een eigen tijdsafhankelijk kenmerk (RUNTIME-SEMANTICS ch. 3.7, 3.8)
+DROOLS-114.condition	 ('{snippet}')
+DROOLS-114.no-condition	 (geen voorwaarde)
+DROOLS-115	{description} met een kenmerk met een eigenaar of een geheleperiodetoets in de knip ('{snippet}', WF-097)
+DROOLS-116	{description} met een ontkend of genavigeerd kenmerk ('{characteristic}'): deze tak draagt deze vorm nog niet; de referentie-interpreter neemt alleen een eigen tijdsafhankelijk kenmerk, niet ontkend (RUNTIME-SEMANTICS ch. 3.7, 3.8)
+DROOLS-117	een regel naast een defaultsgroep van hetzelfde type op hetzelfde doel ('{attribute}' van {objectType}): een doel heeft één schrijver, de groep of de regel (WF-050)
+DROOLS-118	een initialisatie van het tijdsafhankelijke attribuut '{attribute}' van {declarant}: deze tak draagt deze vorm nog niet; geen golden met cases heeft er een
+DROOLS-119	twee of meer initialisaties op één doel ('{attribute}' van {declarant}: {rules}), voorwaardelijk of niet: waar ze allebei gelden rangschikt niets ze en bepaalt het fixpunt de waarde niet (RUNTIME-SEMANTICS ch. 5.4, WF-079)
+DROOLS-120	een deling in een initialisatie waarvan het doel nog een schrijver heeft ('{division}'; '{attribute}' van {declarant} wordt ook geschreven door {writers}): naast een andere schrijver is een initialisatie de laagste default (RUNTIME-SEMANTICS ch. 5.4, 7.7), en deze tak rekent haar uit zodra wat zij leest staat, ook waar de andere schrijver haar later verdringt; een deling door nul daar is een fout op een tussenstand, die deze tak intrekt zodra de andere schrijver beslist, waar de referentie afhankelijk van de volgorde van de regels een fout of de waarde geeft: of zo'n fout telt, wacht op een normbesluit (ch. 5.2, 7.1)
+DROOLS-121	een consistentie zonder naam (WF-107)
+DROOLS-122	een consistentie zonder subject of assertie
+DROOLS-123	een Uniqueness zonder bron of sleutel
+DROOLS-124	een Uniqueness over meer bronnen met {sourceCount} bron: een unie draagt er ten minste twee (WF-030)
+DROOLS-125	een Uniqueness over meer bronnen met sleutels van ongelijke ariteit of een bron zonder type: de sleutels worden positie voor positie vergeleken (WF-030)
+DROOLS-126	een Uniqueness zonder naam (WF-107)
+DROOLS-127	{description} naast een tweede: een sleutel heeft hoogstens één tijdsafhankelijk deel, de gelijktijdige koppeling van twee heeft geen corpuscase (RUNTIME-SEMANTICS ch. 5.9); deze tak draagt deze vorm nog niet
+DROOLS-128	{description} die geen getal is: deze tak draagt deze vorm nog niet
+DROOLS-129	een Regelversie 'is gevuurd' in de voorwaarde ('{snippet}'): geen vorm van de kern maar een predicaat van het RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30), dat de referentie-interpreter en de ASP-backend niet evalueren
+DROOLS-130	een Regelversie 'is inconsistent' over "{producer}" in de voorwaarde ('{snippet}'): deze tak draagt als producent van het §9.5-kanaal alleen een Consistency, een Uniqueness en een regel met een deling of een wortel in haar voorwaarde of haar waarde (§6.5, §6.6)
+DROOLS-131	een verdeling zonder naam (WF-107)
+DROOLS-132	een verdeling zonder opgeloste bron, doel of methode
+DROOLS-133	een verdeling zonder connectingRole (IR-SPEC ch. 3.2)
+DROOLS-134	een verdeling naar rato zonder gewicht (WF-025)
+DROOLS-135	een verdeling in gelijke delen met een gewicht (WF-025)
+DROOLS-136	een verdeling met een maximum zonder gewicht (WF-025)
+DROOLS-137	een volgordesleutel op een verdeling die niet op volgorde verdeelt (WF-025)
+DROOLS-138	de volgordesleutel '{attribute}' van type {datatype} is niet ordenbaar (WF-025)
+DROOLS-139	een verdeling waarvan {role} het attribuut '{attribute}' van {declarant} is, van type {datatype} en geen getal: deze tak draagt deze vorm nog niet
+DROOLS-140	twee verdelingen schrijven het attribuut '{attribute}' van {objectType} (ook {allocations}): een doel heeft hoogstens één verdeling (WF-026)
+DROOLS-141	een verdeling naast de defaultsgroep {groups} op het attribuut '{attribute}' van {objectType}: een doel van een defaultsgroep heeft geen andere schrijver (WF-050)
+DROOLS-142	een verdeling naast de regel {rules} op het attribuut '{attribute}' van {objectType}: een verdeling naast een rekenende regel of een initialisatie op één doel; deze tak draagt deze vorm nog niet
+DROOLS-143	de connectingRole van de verdeling noemt geen gedeclareerde rol ({factType}, {role})
+DROOLS-144	een verdeling over de enkelvoudige ontvangerrol '{recipientRole}' wiens zusterrol '{sourceRole}' meervoudig is: dat feittype heeft één beanveld voor beide richtingen, zoals een vouw over zo'n rol weigert (§13.3.9 opslagrichting)
+DROOLS-145	de join van de verdeling heeft geen beanveld — {reason} (§13.3.9 opslagrichting)
+DROOLS-146	een objectcreatie zonder naam (WF-107)
+DROOLS-147	een objectcreatie zonder opgelost type
+DROOLS-148	een objectcreatie zonder connectingRole-binding waarvan de terugkoppeling uit het typenpaar ('{backRole}' en '{fwdRole}') via een supertype van het onderwerp of van het gemaakte type loopt: de strata van deze tak leiden de relatie van de terugkoppeling af uit de exacte typen en zien haar dan niet geschreven: deze tak draagt deze vorm nog niet
+DROOLS-149	een objectcreatie over de relatie '{factType}', die geen relatie van twee rollen is: deze tak draagt deze vorm nog niet
+DROOLS-150	een ledeninitialisatie zonder lid of waarde
+DROOLS-151	een kenmerkinitialisatie van '{attribute}' met een waarde van type {datatype} ('{snippet}'): een kenmerk is waar of onwaar (WF-027), en de referentie-interpreter faalt op zo'n waarde
+DROOLS-152	een deling in een ledeninitialisatie ('{division}'), waarvan deze tak de §6.5-deponering niet maakt: deze tak draagt deze vorm nog niet
+DROOLS-153	een wortel in een ledeninitialisatie ('{squareRoot}'), waarvan deze tak de §6.6-deponering niet maakt: deze tak draagt deze vorm nog niet
+DROOLS-154	een feitcreatie zonder naam (WF-107)
+DROOLS-155	een feitcreatie zonder opgelost anker, doel, feittype of pad
+DROOLS-156	een feitcreatie van de relatie '{factType}', die geen relatie van twee rollen is: deze tak draagt deze vorm nog niet
+DROOLS-157	{reason}
+DROOLS-158	{description}: een stap die geen rolpaar van twee rollen noemt
+DROOLS-159	{description}: de rol '{role}' heeft geen gedeclareerde vuller
+DROOLS-160	{description}: {reason} (§13.3.9 opslagrichting)
+DROOLS-161	{description}: de stap over '{factType}' heeft twee rollen naar veel, waarvoor het beanmodel geen veld heeft (§13.3.9 opslagrichting)
+DROOLS-162	een kenmerkdoel met de naam van een attribuut ('{attribute}' van {objectType}): de bean draagt één veld per naam en het attribuut gaat voor, zodat het kenmerk niet te schrijven en niet te onderscheiden is
+DROOLS-163	een initialisatiedefault op een kenmerkdoel ('{attribute}' van {declarant}): een kenmerk kent geen initialisatie (WF-075)
+DROOLS-164	een beslissende default zonder rechtvaardiging ('{source}', doel '{attribute}')
+DROOLS-164.without-source	zonder bron
+DROOLS-165	een deling in een default ('{division}'): deze tak rekent een default uit zodra wat hij leest staat, ook een die een hogere default verdringt; een deling door nul daar is een fout op een tussenstand, die deze tak intrekt zodra de hogere default beslist: of zo'n fout telt, wacht op een normbesluit (RUNTIME-SEMANTICS ch. 5.2, 7.1)
+DROOLS-166	een wortel in een default ('{squareRoot}'), waarvan deze tak de §6.6-deponering niet maakt: een default deponeert alleen waar hij beslist (RUNTIME-SEMANTICS ch. 7.1)
+DROOLS-167	een InstanceSetUnion in een waarde ('{snippet}'): zij duidt de instanties van een §5.7-concatenatie aan, en alleen een instantietelling verbruikt ze (WF-110 (a))
+DROOLS-168	een VariableReference in een waarde ('{snippet}'): het merkteken van een variabele die de frontend niet bond, dat de lader weigert (WF-034), zodat het deze tak alleen in een met de hand gebouwd model bereikt
+DROOLS-169	een getal dat niet te lezen is ('{valueText}')
+DROOLS-170	een datum die niet te lezen is ('{valueText}')
+DROOLS-171	een datum-tijd die niet te lezen is ('{valueText}')
+DROOLS-172	een Literal van type {datatype}: deze tak draagt deze vorm nog niet
+DROOLS-173	een macht met een exponent die geen geheel getal van ten minste 0 als literal is ('{snippet}'): de reële macht is OPEN (RUNTIME-SEMANTICS ch. 2.1), waar de referentie-interpreter een exacte wortel geeft of faalt
+DROOLS-174	een Binary {operator} met een datum ('{snippet}')
+DROOLS-175	een rekensom van twee datums of een duur min een datum ('{snippet}')
+DROOLS-176	een duur zonder tijdseenheid ('{snippet}')
+DROOLS-177	een klokeenheid bij een datum zonder tijd ('{snippet}')
+DROOLS-178	de dagsoort '{dayKind}' heeft geen definitie (WF-031)
+DROOLS-179	de definitie van de dagsoort '{dayKind}' leest de parameter '{parameter}', die deze tak in een dagsoortdefinitie niet leest (WF-031 laat haar toe)
+DROOLS-180	de definitie van de dagsoort '{dayKind}' toetst de dagsoort '{testedDayKind}' op een andere dag dan de gebonden dag ('{snippet}'), een vorm die geen executor uitvoert (RUNTIME-SEMANTICS ch. 3.8)
+DROOLS-181	de definitie van de dagsoort '{dayKind}' heeft een voorwaarde ('{snippet}') buiten wat de dagsoortcompiler van de backend draagt: vergelijkingen van de gebonden dag, zijn datumdelen, de eerste paasdag en literalen, en andere dagsoorten op de gebonden dag
+DROOLS-182	een squareRoot met {argumentCount} argumenten ('{snippet}'): de wortel heeft er één (WF-037)
+DROOLS-183	een tekstdeel van type {datatype} in een {where} ('{snippet}'): RUNTIME-SEMANTICS ch. 1.2 legt alleen vast dat een leeg deel "" leest; de tekst van een getal, een waarheidswaarde of een datum beslist de spec niet, en de referentie-interpreter en de runtimehulp rsTekst geven er een verschillende
+DROOLS-184	een DimensionCellRead over {dimensionCount} dimensies ('{snippet}'): deze tak leest alleen een cel van één dimensie
+DROOLS-185	een Aggregation {kind} over een dimensieselectie ('{snippet}'): alleen een som, een minimum en een maximum vouwen een dimensieselectie (WF-037)
+DROOLS-186	een emptyFallback op een Aggregation {kind} ('{snippet}'): alleen een som heeft er een (WF-037)
+DROOLS-187	een Aggregation over een dimensieselectie over iets anders dan één attribuut ('{snippet}')
+DROOLS-188	een onopgeloste AttributeReference in {description} ('{snippet}')
+DROOLS-189	{description} over een pad ('{snippet}'): de tak leest een gedimensioneerd attribuut alleen op het eigen onderwerp
+DROOLS-190	een eigen lezing die {objectType} noemt op een {subject} ('{snippet}', WF-053)
+DROOLS-191	{description} over het attribuut '{attribute}', dat een vorm schrijft ('{snippet}'): de tak leest een gedimensioneerd attribuut alleen als invoer
+DROOLS-192	een Let zonder binder ('{snippet}')
+DROOLS-193	een BinderRef '{binder}' van een Let om een vouw, in het filter of de matrix van die vouw ('{snippet}'): de bijdrageregels van de vouw rekenen het filter en de matrix per lid uit en binden de waarde van de Let niet: deze tak draagt deze vorm nog niet
+DROOLS-194	een BinderRef '{binder}' zonder omsluitende Let die hem bindt ('{snippet}', WF-064)
+DROOLS-195	de contextwaarde '{name}' ('{snippet}'): de lader laat alleen evaluationDate, evaluationYear en de gebonden dag toe (WF-098)
+DROOLS-196	een BuiltinCall {spelling} in een waarde ('{snippet}'): deze tak rekent een tijdsevenredig deel en een dagentelling alleen als de tijdlijn van een tijdsafhankelijk doel (RUNTIME-SEMANTICS ch. 3.7, 3.8, 3.11)
+DROOLS-197	een BuiltinCall {spelling} met een filter ('{snippet}'): alleen een bucketing over een tijdlijn draagt er een
+DROOLS-198	een {spelling} met {count} argumenten ('{snippet}'): deze builtin heeft er één (WF-037)
+DROOLS-199	een {spelling} met {count} argumenten ('{snippet}'): een tijdsduur heeft er twee (WF-037)
+DROOLS-200	een {spelling} die niet twee datums van één precisie meet ('{snippet}', WF-038)
+DROOLS-201	een {spelling} zonder tijdseenheid ('{snippet}', WF-038)
+DROOLS-202	een {spelling} in een klokeenheid tussen datums zonder tijd ('{snippet}', WF-038)
+DROOLS-203	{description} tussen twee datum-tijden: de referentie-interpreter en de ASP-backend weigeren haar met naam, omdat het tellen van hele dagen van een soort tussen twee tijdstippen een regel voor de deeldag aan elk eind vraagt, die RUNTIME-SEMANTICS ch. 3.8 niet vastlegt (ch. 3.12)
+DROOLS-204	een {spelling} uit iets anders dan een {dateType} ('{snippet}')
+DROOLS-204.date	datum
+DROOLS-204.date-time	datum-tijd
+DROOLS-205	een {spelling} van een jaar met de eenheid {unit} ('{snippet}'): het jaar is een geheel getal zonder eenheid (WF-038)
+DROOLS-206	een {spelling} met {count} argumenten ('{snippet}'): deze builtin heeft er {itemCount} (WF-037)
+DROOLS-207	een Aggregation {kind} zonder elementtype ('{snippet}')
+DROOLS-208	een Aggregation {kind} over {count} operanden met een elementtype ('{snippet}'): een vouw over een bereik heeft één argument (WF-037)
+DROOLS-209	een Aggregation {kind} over iets anders dan een attribuut van het element ('{snippet}')
+DROOLS-210	een Aggregation {kind} over het tijdsafhankelijke attribuut '{attribute}' in een waarde ('{snippet}'): zij heeft geen moment waarop zij een tijdlijn rangschikt, telt of toetst; alleen een som en een totaal vouwen de tijdlijn van elk lid eerst over de tijd (RUNTIME-SEMANTICS ch. 3.4c, 3.6)
+DROOLS-211	een Aggregation {kind} zonder bereik ('{snippet}'): IR-SPEC ch. 4.3 eist een sourceRole of sourcePath
+DROOLS-212	een {kind} per lid over het tijdsafhankelijke attribuut '{attribute}' in een vouw over de gecreëerde relatie '{factType}' ('{snippet}'): een gemaakte link heeft geen plaats in de vouwvolgorde, die bepaalt welk lid met een emmerscalair als invoer de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11, 8.4); deze tak draagt deze vorm nog niet, en geen golden met cases heeft het
+DROOLS-213	{head} en niet getalachtig; optellen is rekenkunde over getallen (WF-091), en de referentie-interpreter faalt op de optelling zelf: geen enkele uitvoerder draagt deze vorm
+DROOLS-214	{head} en kennen geen ordening; een ordenende vouw vraagt een getal of een datum (WF-038), en de referentie-interpreter faalt op de vergelijking zelf: geen enkele uitvoerder draagt deze vorm
+DROOLS-215	{description} over een attribuut van een ander object dan het onderwerp: zonder bereik leest het totaal de tijdlijn van het onderwerp zelf (WF-083 (c)); deze tak draagt deze vorm nog niet over een pad
+DROOLS-216	{description} zonder knip over de tijdlijn van '{member}', die een vorm schrijft: de referentie-interpreter neemt het totaal zonder knip alleen van de scalaire invoer op de periode van de rekendatum en weigert een volle tijdlijn (RUNTIME-SEMANTICS ch. 3.6); deze tak draagt deze vorm nog niet, en geen golden met cases heeft het
+DROOLS-217	{description} met een genavigeerd kenmerk in de knip ('{snippet}'): deze tak draagt deze vorm nog niet; geen golden met cases heeft het
+DROOLS-218	{description} met een lid van de samengestelde knip dat geen kenmerk is ('{snippet}'): deze tak draagt deze vorm nog niet; de referentie-interpreter neemt alleen kenmerken (RUNTIME-SEMANTICS ch. 3.6)
+DROOLS-219	{description} met de knip '{snippet}': deze tak draagt deze vorm nog niet; de referentie-interpreter neemt een eigen tijdsafhankelijk kenmerk, een vergelijking van een eigen tijdsafhankelijk attribuut en een 'alle' daarvan (RUNTIME-SEMANTICS ch. 3.6)
+DROOLS-220	{description} met een geheleperiodetoets in de knip ('{snippet}', WF-097)
+DROOLS-221	{description} met een datumvergelijking in de knip ('{snippet}'): deze tak draagt deze vorm nog niet
+DROOLS-222	{description} met '{operator}' in de knip ('{snippet}'): deze tak draagt deze vorm nog niet; de rekenhulp rsTijdConditie leest een lege kant, een gat in de vergeleken tijdlijn of een lege grens, als geen periode, waar RUNTIME-SEMANTICS ch. 3.6 en de referentie-interpreter de vergelijking van ch. 1.2 per periode toepassen: twee lege kanten zijn gelijk, en precies één lege kant is ongelijk; geen golden met cases heeft het
+DROOLS-222.equal	gelijk aan
+DROOLS-222.unequal	ongelijk aan
+DROOLS-223	{description} met een vergelijking in de knip waarvan de linkerkant geen eigen tijdsafhankelijk attribuut is ('{snippet}'): deze tak draagt deze vorm nog niet
+DROOLS-224	{description} met een vergelijking in de knip die geen getallen vergelijkt ('{snippet}'): deze tak draagt deze vorm nog niet
+DROOLS-225	{description} met een vergelijking in de knip over twee eenheden ('{snippet}'): deze tak draagt deze vorm nog niet
+DROOLS-226	{description} over '{member}', dat geen getal is (WF-091)
+DROOLS-227	{description} over '{member}': the temporal total of a {unit} value: {reason}
+DROOLS-228	{description} over '{member}' met het tarief {rate} op een raster van {grid}: de noemer is niet de eenheid van het raster, en de tak herrekent hem niet (RUNTIME-SEMANTICS ch. 3.6); geen golden met cases heeft het
+DROOLS-229	een InstanceSetUnion over twee populaties ('{population}' en '{elementType}', '{snippet}'): één telling antwoordt een aantal over één gedeclareerd type, en of twee selecties dan een instantie delen, is een vraag over de subtyperelatie (WF-110 (d))
+DROOLS-230	een selectie zonder elementtype in een InstanceSetUnion ('{snippet}')
+DROOLS-231	het bereik van '{description}' noemt geen rolpaar (IR-SPEC ch. 4.3)
+DROOLS-232	een Aggregation over de enkelvoudige elementrol '{role}' wiens zusterrol '{siblingRole}' meervoudig is ('{description}'): dat feittype heeft één beanveld voor beide richtingen, en deze tak weigert de vorm voorzichtig tot een eigen kaart haar meet (§13.3.9 opslagrichting)
+DROOLS-233	de aggregatie-join van '{description}' heeft geen beanveld — {reason} (§13.3.9 opslagrichting)
+DROOLS-234	een filter dat kan falen in een vouw over de gecreëerde relatie '{factType}' ('{description}'): een gemaakte link heeft geen plaats in de vouwvolgorde, die bepaalt welke fout de vouw geeft (RUNTIME-SEMANTICS ch. 5.11); deze tak draagt deze vorm nog niet
+DROOLS-235	het bereik van '{description}' over de gecreëerde relatie '{factType}', die geen relatie van twee rollen is: deze tak draagt deze vorm nog niet
+DROOLS-236	een vouw met een bereik van meer stappen over de gecreëerde relatie '{factType}' ('{description}'): deze tak draagt deze vorm nog niet
+DROOLS-237	een onopgeloste AttributeReference ('{snippet}')
+DROOLS-238	een VerreRollidmaatschap in de voorwaarde ('{snippet}'): de verre rolcontrole van v0, die sinds L2 de ene knoop RoleMembership is (IR-SPEC ch. 4.5) en die de lader niet maakt
+DROOLS-239	een periodevenster zonder grens ('{snippet}'): er is geen venster om op te poorten
+DROOLS-240	een CharacteristicCheck met een host die het onderwerp niet is ('{snippet}')
+DROOLS-241	een CharacteristicCheck met een navigatie zonder binding ('{snippet}')
+DROOLS-242	{description} met de ontkenning binnen de kwalificatie: deze tak draagt deze vorm nog niet, zoals de andere twee takken (RUNTIME-SEMANTICS ch. 3.9, 3.12); geen golden met cases heeft haar
+DROOLS-243	{description} met een navigatie zonder binding
+DROOLS-244	{description} over een tijdlijn langs een pad ('{snippet}'): de referentie-interpreter vouwt alleen een eigen tijdsafhankelijk attribuut van het onderwerp (RUNTIME-SEMANTICS ch. 3.9, 3.12)
+DROOLS-245	{description}{sideDescription}: de vouw toetst één tijdlijn van het onderwerp tegen een grens (RUNTIME-SEMANTICS ch. 3.9)
+DROOLS-245.between-timelines	 tussen twee tijdlijnen
+DROOLS-245.one-sided	 zonder eigen tijdsafhankelijk attribuut aan één kant
+DROOLS-246	{description} met een datumvergelijking: een datum over een gehele periode heeft geen lezing (RUNTIME-SEMANTICS ch. 3.9, 3.12)
+DROOLS-247	{description} die geen getallen vergelijkt: de vouw toetst de waarde van een segment als getal (RUNTIME-SEMANTICS ch. 3.9)
+DROOLS-248	{description} van de soort {spelling}: alleen de leeg- en de gevuldtoets hebben een lezing onder de kwalificatie (RUNTIME-SEMANTICS ch. 3.9)
+DROOLS-249	{description} over iets anders dan een attribuut: de vouw leest de tijdlijn van een tijdsafhankelijk attribuut (RUNTIME-SEMANTICS ch. 3.9)
+DROOLS-250	{description} over een eigen lezing die {objectType} noemt op een {subject} (WF-053)
+DROOLS-251	een RoleMembership in de voorwaarde ('{snippet}'): de binding ({binding}) noemt geen gedeclareerde rol
+DROOLS-251.none	geen
+DROOLS-252	een RoleMembership in de voorwaarde ('{snippet}'): over de gecreëerde relatie '{factType}', die geen relatie van twee rollen is: deze tak draagt deze vorm nog niet
+DROOLS-253	een RoleMembership in de voorwaarde ('{snippet}'): {reason}
+DROOLS-254	een RoleMembership in de voorwaarde ('{snippet}'): {reason} (§13.3.9 opslagrichting)
+DROOLS-255	een QuantifierFold in de voorwaarde ('{snippet}'): zonder opgelost elementtype
+DROOLS-256	een QuantifierFold in de voorwaarde ('{snippet}'): zonder matrix: een kwantor over geen voorwaarde heeft geen oordeel (WF-108 (d))
+DROOLS-257	een QuantifierFold in de voorwaarde ('{snippet}'): onder de kwantor DE, die één lid noemt en geen verzameling kwantificeert (WF-108 (a))
+DROOLS-258	een QuantifierFold in de voorwaarde ('{snippet}'): zonder bereik van één stap: de lader weigert een bereik van meer stappen (WF-108 (c))
+DROOLS-259	een lidvoorwaarde die kan falen of deponeren in een QuantifierFold over de gecreëerde relatie '{factType}' ('{description}'): een gemaakte link heeft geen plaats in de volgorde van de leden, die bepaalt welk lid de kortsluiting nog bereikt (RUNTIME-SEMANTICS ch. 3.9a, 5.10); deze tak draagt deze vorm nog niet
+DROOLS-260	een Comparison van een datum met een datum-tijd ('{snippet}', §5.3 Tabel 36)
+DROOLS-261	een Comparison {spelling} tussen {leftType} en {rightType} ('{snippet}'): de typen van de twee kanten laten deze vergelijking niet toe (RUNTIME-SEMANTICS ch. 1.2)
+DROOLS-262	een Predicate dayKind als voorwaarde ('{snippet}'): de referentie-interpreter en de ASP-backend weigeren haar met naam buiten een dagsoortdefinitie (RUNTIME-SEMANTICS ch. 3.12, 5.4)
+DROOLS-263	een Predicate {spelling} over een pad ('{snippet}'): de operand wordt als een waarde gelezen, waarin een afwezige link leeg is (RUNTIME-SEMANTICS ch. 5.8, regel 1), zodat de toets een afwezige link hier niet van een lege waarde kan onderscheiden
+DROOLS-264	een voorwaarde die {count} waarden leest ('{snippet}'): de toets van deze tak neemt hoogstens {limit} gebonden waarden
+DROOLS-265	de scope van een Uniqueness noemt geen gedeclareerde rol ({factType}, {role})
+DROOLS-266	de scope van een Uniqueness over de gecreëerde relatie '{factType}': deze tak draagt deze vorm nog niet
+DROOLS-267	de scope van een Uniqueness: {reason} (§13.3.9 opslagrichting)
+DROOLS-268	het tijdsafhankelijke kenmerk '{member}' van {objectType}, dat een vorm schrijft: deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-269	de tijdsafhankelijke parameter '{parameter}': deze tak draagt deze vorm nog niet; de goldens met cases die er een lezen, doen dat in een TemporalRead, die de lader voor alle takken weigert
+DROOLS-270	de parameter '{parameter}' van type {typeName}: deze tak draagt deze vorm nog niet
+DROOLS-271	het tijdsafhankelijke {category} '{member}' van {objectType} op een plek die één waarde leest of schrijft: deze tak leest een tijdlijn alleen in een totaal, de knip ervan, een tijdsevenredig deel, een dagentelling en een uniciteitssleutel, en schrijft haar alleen met een tijdsevenredig deel of een dagentelling (RUNTIME-SEMANTICS ch. 3.3, 3.6–3.8, 3.11, 5.9)
+DROOLS-272	{description} over het {category} '{member}' van {objectType}, dat niet tijdsafhankelijk is
+DROOLS-273	{description} over het {category} '{member}' van {objectType} op een raster van meer perioden, dat geen bewerking draagt (RUNTIME-SEMANTICS ch. 3.2, 3.12)
+DROOLS-274	{description} over het attribuut '{member}' van {objectType} op een tijdlijn met een variabel startpunt: deze tak draagt deze vorm nog niet; geen golden met cases leest of schrijft er een, en de caselezer legt geen tijdlijn op zo'n raster
+DROOLS-275	het gedimensioneerde attribuut '{attribute}' van {objectType}, gelezen of geschreven buiten een DimensionCellRead of een vouw over een dimensieselectie: deze tak draagt deze vorm nog niet; geen golden met cases heeft het
+DROOLS-276	het {category} '{member}' is niet gedeclareerd op {objectType} of een supertype
+DROOLS-277	een dimensielezing van het attribuut '{attribute}' van {objectType}, dat niet gedimensioneerd is
+DROOLS-278	het gedimensioneerde attribuut '{attribute}' van {objectType} op een tijdlijn: deze tak draagt deze vorm nog niet; geen golden met cases heeft er een
+DROOLS-279	het attribuut '{attribute}' is niet gedeclareerd op {objectType} of een supertype
+DROOLS-280	{description}: de navigatie resolvet niet vanaf {subject}
+DROOLS-281	{description}: de navigatie gaat over een rol naar veel
+DROOLS-282	{description}: {objectType} heeft geen referentieveld '{role}' naar {targetType} (§13.3.9 opslagrichting)
+DROOLS-283	een stap over de gecreëerde relatie '{factType}' die geen relatie van twee rollen is: deze tak draagt deze vorm nog niet
+DROOLS-284	het doel {targetName} op {objectType} zet één eigen groep op een geërfde ongeordende set van {groupCount} groepen: SUBTYPING §4.1 regel 3 definieert die lezing (het geërfde blok verhuist heel, boven de basis en onder de eigen uitzonderingen), maar ze is niet verlaagd, want ze is een prioriteit in drie lagen en de leden van een groep verzoenen als gelijken (RUNTIME-SEMANTICS ch. 7.10)
+DROOLS-285	het doel {targetName} op {objectType} draagt {ownCount} eigen en {inheritedCount} geërfde groep(en): een vouw van een eigen ongeordende set over een geërfde stapel heeft geen gedefinieerde lezing (RUNTIME-SEMANTICS ch. 7.10)
+DROOLS-286	het doel {targetName} op {objectType} wordt naast een geërfde defaultsstapel geschreven door de regel "{rule}" met een geldigheidsvenster: een basis met een venster zet versiekeuze in de stapel, die ch. 7.4 van verdedigbaarheid scheidt (RUNTIME-SEMANTICS ch. 7.10)
+DROOLS-287	het doel {targetName} op {objectType} wordt naast een geërfde defaultsstapel geschreven door de regel "{rule}" zonder waarde: een basis zonder consequentie beslist niets en wordt niet gevouwen (RUNTIME-SEMANTICS ch. 7.10)
+DROOLS-288	het doel {targetName} op {objectType} wordt naast een geërfde defaultsstapel geschreven door {computationCount} rekenende regel(s) en {initialisationCount} initialisatie(s): de v0-betekenis van twee schrijvers op één doel is de volgorde op de agenda, die prioritized defaults vervangen (RUNTIME-SEMANTICS ch. 7.10)
+DROOLS-289	{description}: {reason}
+DROOLS-290	een deling en een wortel die deponeren in één voorwaarde of in de filters van één vouw ({form}): de toets van deze tak hoort hun §9.5-deponeringen samen, en het feit kan niet zeggen welke soort deponeerde, terwijl een deling de code EF-031 heeft en een wortel geen (RUNTIME-SEMANTICS ch. 5.7b)
+EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
+EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
+EF-005.bare	Breuk deling door 0
+EF-005.in-rule	deling door nul in de regel "{rule}": {dividend} gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)
+EF-007	datum-tijd arithmetic leaves the representable millisecond range
+EF-008	duration count {count} is out of range
+EF-009	day-kind walk: no day of the kind within {reach} calendar days of {from} (the walk reaches no further; a day kind whose next occurrence lies beyond the reach is refused, not diagnosed)
+EF-010	a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind evaluation it denotes nothing
+EF-011.date	the evaluationDate context value needs an evaluation date; the case carries asOfDate null
+EF-011.year	the evaluationYear context value needs an evaluation date; the case carries asOfDate null
+EF-012	a validity-bounded form needs an evaluation date; this session is time-free
+EF-015	creation budget exhausted: objectcreatie "{creation}" van stratum {stratum} zou een object maken op aanmaakdiepte {depth}, voor een {type} op diepte {parentDepth} — een keten van aanmaken die niet stopt is een fout, nooit een stille afkapping (RUNTIME-SEMANTICS ch. 5.5)
+EF-016	geen fixpunt: {count} schrijvers van één doel geven verschillende waarden — {enumeration} in het attribuut {attribute} van {object}; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)
+EF-016.count-four	vier
+EF-016.count-three	drie
+EF-016.count-two	twee
+EF-016.empty	leeg
+EF-016.object-created	een aangemaakte {type}
+EF-016.object-identity	een {type} ({identity})
+EF-016.object-labelled	{label}, een {type}
+EF-016.write	de regel "{rule}" schrijft {value}
+EF-019.condition	Unresolved condition reached in evaluation
+EF-019.expression	Unresolved reached in evaluation: this rule fails observably
+FRAME.case-reads	{sentence}; de case leest het
+FRAME.case-sets	{sentence}; de case zet het
+FRAME.contract	contract: {sentence}
+FRAME.described	{description}: {sentence}
+FRAME.drl	drl: {sentence}
+FRAME.fault-in-rule	fout in de regel "{rule}": {sentence}
+FRAME.loader	loader: {sentence}
+FRAME.still-not	{sentence}; deze tak draagt deze vorm nog niet
+FRAME.transpiler-verdict	transpiler {verdict}: {key}{reasonClause}
+FRAME.verdict-reason	 — {reason}
+FRAME.with-description	{sentence} ('{description}')
+FRAME.with-snippet	{sentence}: {snippet}
+PART.and	en
+PART.member-kind.attribute	attribuut
+PART.member-kind.characteristic-kind	kenmerk

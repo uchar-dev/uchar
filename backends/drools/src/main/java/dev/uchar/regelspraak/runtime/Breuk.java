@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.runtime;
 
+import dev.uchar.regelspraak.message.Msg;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -104,7 +105,7 @@ public final class Breuk extends Number implements Comparable<Breuk> {
         private final String regel;
 
         DelingDoorNul(Breuk deeltal) {
-            super("Breuk deling door 0");
+            super(Msg.drools("EF-005.bare").text());
             this.deeltal = deeltal;
             this.regel = null;
         }
@@ -121,8 +122,7 @@ public final class Breuk extends Number implements Comparable<Breuk> {
         public DelingDoorNul inDeRegel(String regel, Throwable oorzaak) {
             String getal = deeltal.isTerminerend() ? deeltal.naarDecimal().toPlainString()
                     : deeltal.teller + "/" + deeltal.noemer;
-            return new DelingDoorNul("deling door nul in de regel \"" + regel + "\": " + getal + " gedeeld door 0 — een "
-                    + "numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)", regel, deeltal,
+            return new DelingDoorNul(Msg.drools("EF-005.in-rule", "rule", regel, "dividend", getal).text(), regel, deeltal,
                     oorzaak);
         }
 

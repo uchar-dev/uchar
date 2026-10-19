@@ -1,7 +1,9 @@
 package dev.uchar.regelspraak.transpiler.core;
 
+import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.refusal.DroolsCode;
+import dev.uchar.regelspraak.refusal.Reason;
 
 /**
  * One entry in a back-end's coverage manifest: for one named construct, did the back-end lower it
@@ -15,20 +17,21 @@ import dev.uchar.regelspraak.refusal.DroolsCode;
  * construct regressed) and the silent marker (a semantically inert rule with no diagnostic). Every
  * non-LOWERED verdict therefore also surfaces as a deduplicated WARNING via {@link #report}.
  */
-public record Coverage(String category, String naam, Verdict verdict, String reason, String spec, DroolsCode code) {
+public record Coverage(String category, String naam, Verdict verdict, String reason, String spec, DroolsCode code,
+                       Msg reasonText) {
 
     public enum Verdict { LOWERED, MARKER, SKIP }
 
     public static Coverage lowered(String category, String naam) {
-        return new Coverage(category, naam, Verdict.LOWERED, "", "", null);
+        return new Coverage(category, naam, Verdict.LOWERED, "", "", null, null);
     }
 
     public static Coverage marker(String category, String naam, String reason) {
-        return new Coverage(category, naam, Verdict.MARKER, reason, specOut(reason), null);
+        return new Coverage(category, naam, Verdict.MARKER, reason, specOut(reason), null, null);
     }
 
-    public static Coverage skip(DroolsCode code, String category, String naam, String reason) {
-        return new Coverage(category, naam, Verdict.SKIP, reason, specOut(reason), code);
+    public static Coverage skip(Reason reason, String category, String naam) {
+        return new Coverage(category, naam, Verdict.SKIP, reason.text(), specOut(reason.text()), reason.code(), reason.msg());
     }
 
     /** The construct's identity across back-ends — soort plus its RegelSpraak name. */
@@ -40,11 +43,11 @@ public record Coverage(String category, String naam, Verdict verdict, String rea
      *  re-transpile of the same model (or both back-ends reaching the same verdict) does not pile up. */
     public void report(RegelSpraakModel model) {
         if (lowered()) return;
+        Object why = reasonText != null ? reasonText : reason;
         var w = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                 "RGS-346", RegelSpraakModel.Diagnostic.params("category", category, "name", naam, "verdict", verdict,
-                        "reason", reason),
-                "dekking: " + category + " '" + naam + "' " + verdict
-                + (reason.isEmpty() ? "" : " — " + reason), 0);
+                        "reason", why, "reasonClause", Msg.frontendIf(!reason.isEmpty(), "RGS-346.reason", "reason", why)),
+                0);
         if (!model.diagnostics.contains(w)) model.diagnostics.add(w);
     }
 

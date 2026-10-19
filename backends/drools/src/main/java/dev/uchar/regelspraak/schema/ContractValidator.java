@@ -30,7 +30,7 @@ public final class ContractValidator {
             Class<?> c;
             try { c = Class.forName(javaClass, false, cl); }
             catch (ClassNotFoundException e) {
-                out.add(new Reason(DroolsCode.FACT_CLASS_MISSING, "objecttype '" + ot.naam + "': feitklasse " + javaClass + " ontbreekt op het classpath"));
+                out.add(DroolsCode.FACT_CLASS_MISSING.reason("objectType", ot.naam, "javaClass", javaClass));
                 continue;
             }
             for (Member l : FactModelGenerator.members(model, ot)) {
@@ -42,16 +42,14 @@ public final class ContractValidator {
                 // a scalar kenmerk may also be exposed as get<X>() (mvel resolves the property either way)
                 if (getter == null && l.isForm()) getter = find(c, n.getter(), 0);
                 if (getter == null)
-                    out.add(new Reason(DroolsCode.GETTER_MISSING, ot.naam + "." + p + ": getter " + getterName + "() ontbreekt op " + javaClass));
+                    out.add(DroolsCode.GETTER_MISSING.reason("objectType", ot.naam, "property", p, "getter", getterName, "javaClass", javaClass));
                 else if (!typeOk(l.javaType(), getter.getReturnType()))
-                    out.add(new Reason(DroolsCode.GETTER_TYPE_MISMATCH, ot.naam + "." + p + ": getter " + getter.getName() + "() geeft " + getter.getReturnType().getName()
-                            + ", het model vraagt " + l.javaType()));
+                    out.add(DroolsCode.GETTER_TYPE_MISMATCH.reason("objectType", ot.naam, "property", p, "getter", getter.getName(), "returnType", getter.getReturnType().getName(), "javaType", l.javaType()));
                 Method setter = find(c, n.setter(), 1);
                 if (setter == null)
-                    out.add(new Reason(DroolsCode.SETTER_MISSING, ot.naam + "." + p + ": setter " + n.setter() + "(" + l.javaType() + ") ontbreekt op " + javaClass));
+                    out.add(DroolsCode.SETTER_MISSING.reason("objectType", ot.naam, "property", p, "setter", n.setter(), "javaType", l.javaType(), "javaClass", javaClass));
                 else if (!typeOk(l.javaType(), setter.getParameterTypes()[0]))
-                    out.add(new Reason(DroolsCode.SETTER_TYPE_MISMATCH, ot.naam + "." + p + ": setter " + n.setter() + " neemt " + setter.getParameterTypes()[0].getName()
-                            + ", het model vraagt " + l.javaType()));
+                    out.add(DroolsCode.SETTER_TYPE_MISMATCH.reason("objectType", ot.naam, "property", p, "setter", n.setter(), "parameterType", setter.getParameterTypes()[0].getName(), "javaType", l.javaType()));
             }
         }
         if (!model.objecttypen.isEmpty()) {
@@ -76,11 +74,11 @@ public final class ContractValidator {
             Class<?> seg = Class.forName(FactModelGenerator.PACKAGE + ".Segment", false, cl);
             seg.getConstructor(java.time.LocalDate.class, java.time.LocalDate.class, java.math.BigDecimal.class);
             for (String m : new String[]{"getVan", "getTot", "getWaarde"})
-                if (find(seg, m, 0) == null) out.add(new Reason(DroolsCode.SEGMENT_GETTER_MISSING, "Segment." + m + "() ontbreekt (temporeel model)"));
+                if (find(seg, m, 0) == null) out.add(DroolsCode.SEGMENT_GETTER_MISSING.reason("getter", m));
         } catch (ClassNotFoundException e) {
-            out.add(new Reason(DroolsCode.SEGMENT_CLASS_MISSING, "temporeel model zonder " + FactModelGenerator.PACKAGE + ".Segment op het classpath"));
+            out.add(DroolsCode.SEGMENT_CLASS_MISSING.reason("packageName", FactModelGenerator.PACKAGE));
         } catch (NoSuchMethodException e) {
-            out.add(new Reason(DroolsCode.SEGMENT_CONSTRUCTOR_MISSING, "Segment(LocalDate, LocalDate, BigDecimal) constructor ontbreekt (temporeel model)"));
+            out.add(DroolsCode.SEGMENT_CONSTRUCTOR_MISSING.reason());
         }
     }
 
@@ -89,9 +87,9 @@ public final class ContractValidator {
             Class<?> inc = Class.forName(FactModelGenerator.PACKAGE + ".Inconsistentie", false, cl);
             inc.getConstructor(String.class, Object.class);
         } catch (ClassNotFoundException e) {
-            out.add(new Reason(DroolsCode.INCONSISTENCY_CLASS_MISSING, "consistentie-/uniciteitsregels zonder " + FactModelGenerator.PACKAGE + ".Inconsistentie op het classpath"));
+            out.add(DroolsCode.INCONSISTENCY_CLASS_MISSING.reason("packageName", FactModelGenerator.PACKAGE));
         } catch (NoSuchMethodException e) {
-            out.add(new Reason(DroolsCode.INCONSISTENCY_CONSTRUCTOR_MISSING, "Inconsistentie(String, Object) constructor ontbreekt (consistentie-/uniciteitsregels)"));
+            out.add(DroolsCode.INCONSISTENCY_CONSTRUCTOR_MISSING.reason());
         }
     }
 

@@ -78,6 +78,9 @@ class ReaderSentenceBoundaryTest {
 
     private static final Pattern WORD = Pattern.compile("[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\\-']*");
     private static final Pattern SPECIFIER = Pattern.compile("%[sdS]");
+    private static final Pattern PLACE = Pattern.compile("\\{[A-Za-z][A-Za-z0-9]*\\}");
+    private static final String CATALOGUE =
+            "frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/message/messages-frontend.nl.tsv";
 
     private static Path root() {
         for (Path p = Path.of("").toAbsolutePath(); p != null; p = p.getParent())
@@ -213,6 +216,17 @@ class ReaderSentenceBoundaryTest {
                     String kern = kern(part);
                     if (kern != null) result.add(new Fragment(p.getFileName().toString(), regel, kern));
                 }
+            }
+        }
+        // since the card message-catalogues the sentences stand in the catalogue, not in the literals above
+        Path catalogue = w.resolve(CATALOGUE);
+        assertTrue(Files.isRegularFile(catalogue), () -> catalogue + " ontbreekt");
+        int regel = 0;
+        for (String line : Files.readAllLines(catalogue, UTF_8)) {
+            regel++;
+            for (String part : PLACE.split(line.substring(line.indexOf('\t') + 1).replace("{{", "{").replace("}}", "}"), -1)) {
+                String kern = kern(part);
+                if (kern != null) result.add(new Fragment(catalogue.getFileName().toString(), regel, kern));
             }
         }
         return result;

@@ -98,18 +98,14 @@ public final class Cycles {
         List<Edge> edges = edges(graphForms);
         List<String> cycles = cycles45(g, graphForms, edges);
         if (!cycles.isEmpty())
-            return new Reason(DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION, "exec-model: " + (cycles.size() == 1 ? "kring in de afhankelijkheden " + cycles.get(0)
-                    : cycles.size() + " kringen in de afhankelijkheden: " + String.join("; ", cycles))
-                    + " — een kring die niet door een creatielid van een recursieve regelgroep loopt, is onwelgevormd"
-                    + " (WF-045), en truth maintenance geeft er geen eenduidig fixpunt voor: een positieve kring houdt"
-                    + " zichzelf in stand nadat haar ingang vervalt, een even ontkenningskring beslist op de volgorde van"
-                    + " de regels in het model, en een oneven ontkenningskring wisselt tot het vuurplafond");
+            return DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.reason("sentence", cycles.size() == 1
+                    ? DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.part("one", "cycle", cycles.get(0))
+                    : DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.part("several", "count", cycles.size(), "cycles", String.join("; ", cycles)));
         List<String> negations = negations46(g, graphForms, edges);
         if (negations.isEmpty()) return null;
-        return new Reason(DroolsCode.NEGATION_ON_CYCLE, "exec-model: " + (negations.size() == 1 ? "een ontkennende afhankelijkheid op een kring: " + negations.get(0)
-                : negations.size() + " ontkennende afhankelijkheden op een kring: " + String.join("; ", negations))
-                + " — geen kring mag een ontkenning dragen, ook niet een kring door een creatielid van een recursieve"
-                + " regelgroep (WF-046): de creatie handelt dan op een afwezigheid die de kring daarna vult");
+        return DroolsCode.NEGATION_ON_CYCLE.reason("sentence", negations.size() == 1
+                ? DroolsCode.NEGATION_ON_CYCLE.part("one", "negation", negations.get(0))
+                : DroolsCode.NEGATION_ON_CYCLE.part("several", "count", negations.size(), "negations", String.join("; ", negations)));
     }
 
     /**

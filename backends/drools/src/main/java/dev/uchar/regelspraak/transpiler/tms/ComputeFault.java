@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
@@ -27,25 +28,22 @@ public final class ComputeFault extends RuntimeException {
 
     /** RUNTIME-SEMANTICS ch. 8.2: the evaluationDate context value in a session without an evaluation date, in the
      *  reference interpreter's words. */
-    public static final String EVALUATION_DATE_WITHOUT_DATE =
-            "the evaluationDate context value needs an evaluation date; the case carries asOfDate null";
+    public static final String EVALUATION_DATE_WITHOUT_DATE = Msg.drools("EF-011.date").text();
 
     /** RUNTIME-SEMANTICS ch. 8.1: a version with a bounded validity in a session without an evaluation date, in the
      *  reference interpreter's words. */
-    public static final String VALIDITY_WITHOUT_DATE =
-            "a validity-bounded form needs an evaluation date; this session is time-free";
+    public static final String VALIDITY_WITHOUT_DATE = Msg.drools("EF-012").text();
 
     /** RUNTIME-SEMANTICS ch. 8.2: the bound day of a day-kind definition read where no day-kind evaluation binds it, in
      *  the reference interpreter's words. */
-    public static final String DAY_OUTSIDE_DAY_KIND = "a BoundDay is the bound day of a day-kind definition"
-            + " (ch. 3.7); outside a day-kind evaluation it denotes nothing";
+    public static final String DAY_OUTSIDE_DAY_KIND = Msg.drools("EF-010").text();
 
     /** RUNTIME-SEMANTICS ch. 5.7 and WF-044: an expression marker the evaluation reaches, in the reference interpreter's
      *  words. */
-    public static final String UNRESOLVED = "Unresolved reached in evaluation: this rule fails observably";
+    public static final String UNRESOLVED = Msg.drools("EF-019.expression").text();
 
     /** The condition marker's sentence, in the reference interpreter's words. */
-    public static final String UNRESOLVED_CONDITION = "Unresolved condition reached in evaluation";
+    public static final String UNRESOLVED_CONDITION = Msg.drools("EF-019.condition").text();
 
     private final String sentence;
     private final String regel;
@@ -59,7 +57,7 @@ public final class ComputeFault extends RuntimeException {
     }
 
     private ComputeFault(String sentence, String regel, Throwable cause) {
-        super(regel == null ? sentence : "fout in de regel \"" + regel + "\": " + sentence, cause);
+        super(regel == null ? sentence : Msg.drools("FRAME.fault-in-rule", "rule", regel, "sentence", sentence).text(), cause);
         this.sentence = sentence;
         this.regel = regel;
     }

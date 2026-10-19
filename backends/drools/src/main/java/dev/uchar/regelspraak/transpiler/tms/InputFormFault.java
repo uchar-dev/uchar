@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.message.Msg;
 import java.util.function.Function;
 
 /**
@@ -32,7 +33,8 @@ public final class InputFormFault extends RuntimeException {
     }
 
     private InputFormFault(String before, Object object, String objectName, String after, String regel) {
-        super(regel == null ? before + objectName + after : "fout in de regel \"" + regel + "\": " + before + objectName + after);
+        super(regel == null ? before + objectName + after
+                : Msg.drools("FRAME.fault-in-rule", "rule", regel, "sentence", before + objectName + after).text());
         this.before = before;
         this.object = object;
         this.objectName = objectName;

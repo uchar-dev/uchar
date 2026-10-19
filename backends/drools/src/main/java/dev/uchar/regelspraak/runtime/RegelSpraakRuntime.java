@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.runtime;
 
+import dev.uchar.regelspraak.message.Msg;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
@@ -392,7 +393,7 @@ public final class RegelSpraakRuntime {
 
     /** The fault of a datum-tijd step that leaves {@link #MS_MIN}..{@link #MS_MAX}, in the reference interpreter's
      *  words. */
-    public static final String DATUMTIJD_BUITEN_BEREIK = "datum-tijd arithmetic leaves the representable millisecond range";
+    public static final String DATUMTIJD_BUITEN_BEREIK = Msg.drools("EF-007").text();
 
     /** The fault of a step on a date without a time that leaves the years a {@link LocalDate} holds. ch. 3.8 bounds no
      *  such step, and the reference interpreter answers a date there; this backend has none to give and says so in its
@@ -437,8 +438,8 @@ public final class RegelSpraakRuntime {
         Breuk q = Breuk.van(aantal);
         BigInteger n = q.teller().divide(q.noemer());   // BigInteger#divide truncates toward zero
         if (n.compareTo(BigInteger.valueOf(MS_MIN)) < 0 || n.compareTo(BigInteger.valueOf(MS_MAX)) > 0)
-            throw new IllegalStateException("duration count "
-                    + (q.noemer().equals(BigInteger.ONE) ? q.teller().toString() : q.toString()) + " is out of range");
+            throw new IllegalStateException(Msg.drools("EF-008",
+                    "count", q.noemer().equals(BigInteger.ONE) ? q.teller().toString() : q.toString()).text());
         return n.longValue();
     }
 
@@ -546,9 +547,7 @@ public final class RegelSpraakRuntime {
         // ported production semantics, as with the ch. 7 prioritizedDefaults lowering.
         while (geteld < n) {
             if (gat >= DAGSOORT_REIKWIJDTE) throw new IllegalStateException(
-                    "day-kind walk: no day of the kind within " + DAGSOORT_REIKWIJDTE + " calendar days of "
-                    + anker + " (the walk reaches no further; a day kind whose next occurrence lies beyond the "
-                    + "reach is refused, not diagnosed)");
+                    Msg.drools("EF-009", "reach", DAGSOORT_REIKWIJDTE, "from", anker).text());
             d = op ? d.plusDays(1) : d.minusDays(1);
             if (isDagsoort.test(d)) { geteld++; gat = 0; anker = d; }
             else gat++;
@@ -610,8 +609,7 @@ public final class RegelSpraakRuntime {
     }
 
     /** The fault of {@link #rsRekenjaar} without an evaluation date, verbatim as the two OCaml executors word it. */
-    public static final String REKENJAAR_ZONDER_REKENDATUM =
-            "the evaluationYear context value needs an evaluation date; the case carries asOfDate null";
+    public static final String REKENJAAR_ZONDER_REKENDATUM = Msg.drools("EF-011.year").text();
 
     /** §13.4.17.37 "de eerste paasdag van" a year — Gauss/Anonymous Easter algorithm; a leeg year -> leeg.
      *  The single implementation (single-runtime principle). */

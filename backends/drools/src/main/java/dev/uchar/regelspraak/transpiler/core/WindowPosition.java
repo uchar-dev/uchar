@@ -35,15 +35,13 @@ public final class WindowPosition {
     private WindowPosition() {}
 
     /** The refusal for a window whose bound is neither shape WF-111 admits. */
-    public static final Reason BOUND_FORM = new Reason(DroolsCode.WINDOW_BOUND_NOT_DATE,
-            "een periodevenster met een grens die geen datumliteral en geen eigen"
-            + " scalair datumattribuut van het element is (WF-111)");
+    public static final Reason BOUND_FORM = DroolsCode.WINDOW_BOUND_NOT_DATE.reason();
 
     /** The refusal for the first WF-112 position in {@code c}, or null when it has none. Null-safe. */
     public static Reason refusal(Condition c) {
         if (c instanceof Condition.Compound s) {
             if (counts(s.quantifier()) && s.components().stream().anyMatch(Condition::containsTimeWindow))
-                return sentence(DroolsCode.COMPOUND_COUNTING_WINDOW, "een " + s.quantifier() + "-samenstelling", COUNTS);
+                return DroolsCode.COMPOUND_COUNTING_WINDOW.reason("quantifier", s.quantifier());
             for (Condition part : s.components()) {
                 Reason w = refusal(part);
                 if (w != null) return w;
@@ -54,10 +52,14 @@ public final class WindowPosition {
             if (counts(kv.quantifier())) {
                 boolean inFilter = Condition.containsTimeWindow(kv.filter()), inTest = Condition.containsTimeWindow(kv.test());
                 if (inFilter || inTest) {
-                    String site = inFilter && inTest ? "het filter en de toets" : inFilter ? "het filter" : "de toets";
-                    return sentence(DroolsCode.QUANTIFIER_FOLD_WINDOW_POSITION, site + " van een kwantorvouw onder " + kv.quantifier() + " over "
-                            + (kv.elementObjectType() == null ? "<onopgelost elementtype>" : kv.elementObjectType().naam),
-                            inTest ? COUNTS : CHOOSES);
+                    return DroolsCode.QUANTIFIER_FOLD_WINDOW_POSITION.reason(
+                            "site", DroolsCode.QUANTIFIER_FOLD_WINDOW_POSITION.part(
+                                    inFilter && inTest ? "filter-and-test" : inFilter ? "filter" : "test"),
+                            "quantifier", kv.quantifier(),
+                            "elementType", kv.elementObjectType() == null
+                                    ? DroolsCode.QUANTIFIER_FOLD_WINDOW_POSITION.part("unresolved-element-type")
+                                    : kv.elementObjectType().naam,
+                            "reason", DroolsCode.QUANTIFIER_FOLD_WINDOW_POSITION.part(inTest ? "counts" : "chooses"));
                 }
             }
             Reason w = refusal(kv.filter());
@@ -108,13 +110,5 @@ public final class WindowPosition {
      *  conjoin it, which is the reading ch. 3.10 gives. */
     private static boolean counts(Condition.Quantifier k) {
         return k != Condition.Quantifier.ALLE && k != Condition.Quantifier.DE;
-    }
-
-    private static final String COUNTS = "de kwantor telt of ontkent het vensterverdict";
-    private static final String CHOOSES = "het venster kiest de leden waarover de kwantor telt of ontkent";
-
-    private static Reason sentence(DroolsCode code, String site, String why) {
-        return new Reason(code, "periodevenster in " + site + " (WF-112): " + why + ", terwijl het venster de regel poort"
-                + " (RUNTIME-SEMANTICS ch. 3.10), en voor die lezing is niets gespecificeerd");
     }
 }

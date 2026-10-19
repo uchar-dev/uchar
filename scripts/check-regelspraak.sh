@@ -15,7 +15,10 @@
 #      absent is a silent greenlight);
 #   4. every message the frontend raises carries a code from one register,
 #      held in both directions by scripts/check-rgs-codes.sh (card
-#      frontend-codes, 2026-10-19), which carries its own floor.
+#      frontend-codes, 2026-10-19), which carries its own floor; since the
+#      card message-catalogues (2026-10-19) the same script holds the Dutch and
+#      the English catalogue of the message texts to the register, and the
+#      sites to passing no text.
 set -u
 cd "$(dirname "$0")/.."
 
@@ -46,10 +49,12 @@ FE=frontends/regelspraak
 [ -d "$FE" ] || fail "$FE is missing"
 
 # --- the carrier check of the message register (card frontend-codes, 2026-10-19) ---------------------------------
-# Every message the frontend raises carries a code `RGS-###` and named parameters beside its text, from one register
-# (diagnostic-codes.tsv). The script checks register and sources in both directions (every code a site passes is
-# registered, every registered code is passed, the parameter names agree, no site without a code) and holds a floor on
-# the register's size. It runs first: it reads sources and needs no build.
+# Every message the frontend raises carries a code `RGS-###` and named parameters, from one register
+# (diagnostic-codes.tsv); its text is the entry of the code in the catalogue of the language (card message-catalogues).
+# The script checks register and sources in both directions (every code a site passes is registered, every
+# registered code is passed, the parameter names agree, no site without a code or with a text), the catalogues against
+# the register, and holds floors on the register's and the catalogues' size. It runs first: it reads sources and needs
+# no build.
 bash scripts/check-rgs-codes.sh || fail "the register of message codes does not hold (scripts/check-rgs-codes.sh)"
 
 # Build + run the JUnit suite via the standalone console launcher. The

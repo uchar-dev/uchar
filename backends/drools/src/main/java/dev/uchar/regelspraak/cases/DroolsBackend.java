@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.refusal.DroolsCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -183,18 +184,15 @@ public final class DroolsBackend {
             //   objecttype) or a to-many reciprocal role: the transpilers navigate by the written role name
             //   toward a getter no bean carries, an unclassified fire-time ERROR (lens 2, 2026-08-30).
             if (selfRole == null)
-                throw new Excluded(DroolsCode.SELF_RELATION_NO_FIELD, "wederkerig self-relation (§13.3.9.2) on " + ot.naam + " derives no scalar "
-                        + "reference field (an ambiguous or to-many self-pair role) — not carried by the v0 backend");
+                throw new Excluded(DroolsCode.SELF_RELATION_NO_FIELD.reason("objectType", ot.naam));
             if (!FactModelGenerator.hasReferenceField(model, ot, selfRole, ot))
-                throw new Excluded(DroolsCode.SELF_PAIR_ROLE_SHARED, "wederkerig self-pair role '" + selfRole + "' on " + ot.naam + " shares its name "
-                        + "with a declared member — the bean cannot carry the self-typed reference field "
-                        + "(name-sharing bean limit)");
+                throw new Excluded(DroolsCode.SELF_PAIR_ROLE_SHARED.reason("role", selfRole, "objectType", ot.naam));
         }
 
         Map<String, String> sources = FactModelGenerator.generate(model);
         ClassLoader cl = BeanCompiler.compile(sources);
         List<Reason> violations = ContractValidator.validate(model, cl);
-        if (!violations.isEmpty()) throw new Excluded(violations.get(0).code(), "contract: " + violations.get(0).text());
+        if (!violations.isEmpty()) throw new Excluded(violations.get(0).framed("contract"));
 
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
@@ -219,11 +217,11 @@ public final class DroolsBackend {
     private static void refuseBeanNameCollision(IrLoader.Loaded loaded) {
         RegelSpraakModel model = loaded.model();
         Reason javaClass = FactModelGenerator.classCollision(model);
-        if (javaClass != null) throw new Excluded(javaClass.code(), javaClass.text());
+        if (javaClass != null) throw new Excluded(javaClass);
         List<FactModelGenerator.Displacement> displacements = FactModelGenerator.displacements(model);
         if (displacements.isEmpty()) return;
         Reason role = FactModelGenerator.roleCollision(displacements);
-        if (role != null) throw new Excluded(role.code(), role.text());
+        if (role != null) throw new Excluded(role);
         Map<ProducerConsumer.ElementKey, String> use = new java.util.HashMap<>();
         for (ProducerConsumer.Form v : ProducerConsumer.forms(model, loaded.prioritizedDefaults(),
                 ProducerConsumer.wireNavigation(loaded))) {
@@ -241,7 +239,7 @@ public final class DroolsBackend {
             if (h.category() == FactModelGenerator.Origin.Kind.ROL) continue;
             String formName = use.get(ProducerConsumer.ElementKey.van(h.source(), h.naam(),
                     h.category() == FactModelGenerator.Origin.Kind.KENMERK));
-            if (formName != null) throw new Excluded(DroolsCode.BEAN_NAME_COLLISION_USE, FactModelGenerator.displacementReason(v).text() + "; " + formName + " leest of schrijft het");
+            if (formName != null) throw new Excluded(DroolsCode.BEAN_NAME_COLLISION_USE.reason("reason", FactModelGenerator.displacementReason(v).text(), "form", formName));
         }
     }
 
@@ -255,9 +253,7 @@ public final class DroolsBackend {
         java.util.Set<String> names = new java.util.HashSet<>();
         for (org.drools.model.Rule r : model.getRules())
             if (r.getName() != null && !names.add(r.getFullName()))
-                throw new Excluded(DroolsCode.DUPLICATE_RULE_NAME, "exec-model: Duplicate rule name: " + r.getName() + " — twee regels van één naam in "
-                        + "pakket " + r.getPackage() + "; de KieBase houdt één regel per naam, zodat de tweede de eerste "
-                        + "zou vervangen (vormnamen zijn uniek, WF-020)");
+                throw new Excluded(DroolsCode.DUPLICATE_RULE_NAME.reason("rule", r.getName(), "package", r.getPackage()));
     }
 
     /** The exec-model branch: {@link TmsTranspiler} lowers the forms it carries to an executable model that derives with
@@ -282,12 +278,13 @@ public final class DroolsBackend {
         TmsTranspiler t = TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.roleBindings(),
                 loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings());
         for (Coverage d : t.coverage())
-            if (!d.lowered()) throw new Excluded(d.code(), "transpiler " + d.verdict() + ": " + d.key()
-                    + (d.reason().isEmpty() ? "" : " — " + d.reason()));
+            if (!d.lowered()) throw new Excluded(new Reason(d.code(), Msg.drools("FRAME.transpiler-verdict",
+                    "verdict", d.verdict(), "key", d.key(), "reasonClause", d.reason().isEmpty() ? ""
+                            : Msg.drools("FRAME.verdict-reason", "reason", d.reasonText()))));
         // past the manifest every form of the document is one this branch lowers, so the graph over all forms is the
         // graph over the forms it carries
         Reason cycle = Cycles.refusal(loaded);
-        if (cycle != null) throw new Excluded(cycle.code(), cycle.text());
+        if (cycle != null) throw new Excluded(cycle);
         refuseDuplicateRuleName(t.model());
         return t;
     }
@@ -307,7 +304,7 @@ public final class DroolsBackend {
         try {
             drl = t.drl();
         } catch (TmsTranspiler.DrlRefusal w) {
-            throw new Excluded(w.code(), "drl: " + w.getMessage());
+            throw new Excluded(w.reason().framed("drl"));
         }
         KieHelper helper = new KieHelper();
         helper.setClassLoader(cl);
@@ -688,7 +685,11 @@ public final class DroolsBackend {
      *  phase; and the sentence of a run that ends without a fixpoint, at the cap or at the
      *  creation budget ({@code CreationBudget}), and null at a fixpoint. A run that ends at the budget counts the firings
      *  of its fires before the one in which the creation rule threw. */
-    public record Firing(int firings, int cap, String noFixpoint) {
+    public record Firing(int firings, int cap, String noFixpoint, java.util.Map<String, String> budget) {
+
+        public Firing(int firings, int cap, String noFixpoint) {
+            this(firings, cap, noFixpoint, java.util.Map.of());
+        }
 
         /** The EF code of the fault kind of {@link #noFixpoint} (RUNTIME-SEMANTICS ch. 5.7b), beside the sentence and
          *  never inside it: EF-015 where the run ended at the creation budget; null at a fixpoint and at the cap, which
@@ -699,20 +700,10 @@ public final class DroolsBackend {
             return noFixpoint != null && firings < cap ? "EF-015" : null;
         }
 
-        private static final java.util.regex.Pattern BUDGET = java.util.regex.Pattern.compile(
-                "creation budget exhausted: objectcreatie \"(.*)\" van stratum (\\d+) zou een object maken op aanmaakdiepte (\\d+)");
-
         /** The parameters of {@link #code}'s kind (ch. 5.7b) the sentence of the creation budget carries: the creation,
          *  its stratum and the depth the mint would reach. Empty where there is no code. */
         public java.util.Map<String, String> params() {
-            java.util.Map<String, String> p = new java.util.LinkedHashMap<>();
-            var m = noFixpoint == null ? null : BUDGET.matcher(noFixpoint);
-            if (code() != null && m != null && m.find()) {
-                p.put("creation", m.group(1));
-                p.put("stratum", m.group(2));
-                p.put("depth", m.group(3));
-            }
-            return p;
+            return code() == null ? java.util.Map.of() : budget;
         }
     }
 
@@ -1205,7 +1196,7 @@ public final class DroolsBackend {
                     } catch (ConsequenceException e) {
                         CreationBudget budget = creationBudget(e);
                         if (budget == null) throw e;
-                        return new Firing(fired, cap.value, budget.getMessage());
+                        return new Firing(fired, cap.value, budget.getMessage(), budget.params());
                     }
                     if (made[0] == 0) break;
                 }

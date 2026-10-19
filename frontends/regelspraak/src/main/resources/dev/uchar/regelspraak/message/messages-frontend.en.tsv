@@ -1,0 +1,515 @@
+FRAME.allocation	allocation: {sentence}
+FRAME.category	{category}: {sentence}
+FRAME.comparison	comparison: {sentence}
+FRAME.condition	condition: {sentence}
+FRAME.context	{contextPrefix}: {sentence}
+FRAME.day-kind-definition	day-kind definition '{dayKind}' (rule '{rule}'): {sentence}
+FRAME.decision-table	decision table '{name}': {sentence}
+FRAME.duration	the (absolute) duration from … to …: {sentence}
+FRAME.object-creation	object creation: {sentence}
+FRAME.operation	{operation}: {sentence}
+FRAME.power	to the power: {sentence}
+FRAME.rule-target	rule target '{written}': {sentence} (WF-022, IR-SPEC ch. 3.1)
+FRAME.scenario	scenario: {sentence}
+FRAME.start-point	start point determination (rule '{rule}'): {sentence}
+FRAME.subselection-predicate	subselection predicate: {sentence}
+FRAME.what	{what}: {sentence}
+PART.and	and
+PART.designation.attribute	the attribute '{name}' of '{owner}'
+PART.designation.attribute.head	The attribute '{name}' of '{owner}'
+PART.designation.characteristic-of-type	the characteristic '{name}' of '{owner}'
+PART.designation.characteristic-of-type.head	The characteristic '{name}' of '{owner}'
+PART.designation.enumeration-value	the enumeration value '{name}' of '{owner}'
+PART.designation.enumeration-value.head	The enumeration value '{name}' of '{owner}'
+PART.designation.fact-type	the fact type '{name}'
+PART.designation.fact-type.head	The fact type '{name}'
+PART.designation.objecttype	the objecttype '{name}'
+PART.designation.objecttype.head	The objecttype '{name}'
+PART.designation.parameter-declaration	the parameter '{name}'
+PART.designation.parameter-declaration.head	The parameter '{name}'
+PART.designation.role	the role '{name}' of '{owner}'
+PART.designation.role.head	The role '{name}' of '{owner}'
+PART.designation.rule	the rule '{name}'
+PART.designation.rule-group	the rule group '{name}'
+PART.designation.rule-group.head	The rule group '{name}'
+PART.designation.rule.head	The rule '{name}'
+PART.member-kind.attribute	attribute
+PART.member-kind.characteristic-kind	characteristic
+RGS-001	allocation '{name}' is not written: the frontend determined none of the three allocation methods (in equal parts, in proportion, in order) for it, and an allocation without a method has no spelling in uchar-ir-v1
+RGS-002	objecttype '{objectType}' declares more than one supertype ({names}) — WF-106: an objecttype declares at most one direct supertype. The two known cases with two direct parents (RechtOpUitkeringWazo, RechtUitkeringZw) are refused here and not flattened: choose one parent, or lift the shared part to a common supertype
+RGS-003	objecttype '{objectType}' is its own supertype — WF-104: the supertype graph is acyclic, self-reference included (a chain without a root lets member resolution stop nowhere)
+RGS-004	objecttype '{objectType}': supertype '{supertype}' is not declared anywhere as an objecttype{rationale}
+RGS-004.wf103	 — WF-103: a supertype names a declared objecttype, because a chain that does not end on it resolves no member
+RGS-005	objecttype '{objectType}': supertype '{supertype}' is a {category}, not an objecttype{rationale}
+RGS-006	objecttype '{objectType}': supertype cycle {names} — WF-104: the supertype graph is acyclic (a type would be its own ancestor, so member resolution has no root to stop at)
+RGS-007	objecttype '{objectType}': {category} '{name}' (source line {sourceLine}) is already declared on '{ancestor}' (source line {ancestorLine}) higher up in the chain — WF-105: a subtype does not redeclare an inherited name (one instance would carry two declarations of that name, and which one a reader finds determines the datatype, dimensions and timeline facet of every read of it)
+RGS-008	{kind} '{name}' is already declared (source line {earlierLine}); a name appears once in its kind of declaration, case not counted (WF-001): namespace '{namespace}': names '{earlierName}' and '{name}' collide case-insensitively
+RGS-009	objecttype '{objectType}': the extension declares {kindPhrase} '{name}' (source line {sourceLine}), which {objectType} already carries (source line {earlierLine}), and {reason} — an extension adds members and replaces none: a member that the objecttype already carries, it merely repeats literally, and '(mag opgegeven worden)' is added at most once (WF-002, dialect §7)
+RGS-009.already-marked	that already carries '(mag opgegeven worden)' (source line {line})
+RGS-009.attribute-phrase	the attribute
+RGS-009.characteristic-phrase	the characteristic
+RGS-009.not-literal	'{declaration}' is not literally '{earlier}'
+RGS-010	objecttype '{objectType}': the extension declares '{name}' with the objecttype '{fillerType}' (source line {sourceLine}), and that is the role '{role}' of fact type '{factType}' (source line {roleLine}) — an extension adds attributes and characteristics and no roles: a role stands in its fact type
+RGS-011	member '{name}' of objecttype '{objectType}' differs only in case from an earlier member; names are not case-distinguishing (§13.2.30), so the reference is ambiguous
+RGS-012	member '{name}' with unit '{unit}': {reason}
+RGS-012.has-unit	the number already carries the unit '{existing}'
+RGS-012.no-unit	a {type} carries no unit
+RGS-012.percentage	a percentage carries the unit % ('Percentage (…) met eenheid %/<eenheid>' for a ratio)
+RGS-013	Numeric datatype without a required number specification (§13.3.3); unlimited decimals assumed
+RGS-014	'getal met 0 decimalen' is not a valid number specification (§13.3.3.7 requires >= 1 decimal); read as 'geheel getal'
+RGS-015	unit '{unit}' of unit system '{unitSystem}': a conversion factor is an exact rational {{num, den}} whose two integers are at least 1 and at most 4611686018427387903 (2^62 - 1), got {factor}
+RGS-016	unit system '{unitSystem}', {writtenAs}already declared for the unit '{earlierUnit}': the unit '{abbreviation}' is declared twice in the unit system '{unitSystem}': one Unit per abbreviation
+RGS-016.written-as	as '{earlierAbbreviation}' 
+RGS-017	unreadable conversion factor '{value}' for unit '{unit}'
+RGS-018	parameter '{name}': the timeline facet of parameter '{name}' has count {count} > 1: a parameter's timeline is one period while multi-period grids are open (RUNTIME-SEMANTICS ch. 3.12)
+RGS-019	timeline '{name}' is defined several times with different periodicity; a 'voor elke <naam>' reference takes that of the first (§13.3.6.10)
+RGS-020	timeline: the fixed start point '{value}' ({section}) names no day of the month
+RGS-021	timeline: the fixed start point '{value}' ({section}) names no series of quarter months: it is 1, 4, 7 and 10, 2, 5, 8 and 11, or 3, 6, 9 and 12
+RGS-022	timeline: the fixed start point '{value}' ({section}) names no month
+RGS-023	timeline: the fixed start point '{value}' ({section}) names a day that month {month} does not have
+RGS-024	timeline: the fixed start point '{value}' ({section}) {reason}
+RGS-024.no-calendar-day	names no day of the calendar
+RGS-024.time-of-day	carries a time of day, and a period begins on a day
+RGS-025	timeline 'voor elke {name}': a timeline of several periods states its start date ('voor elke {name} startend op <datum>', §13.3.6.7); without a start date this frontend reads '{name}' as the name of a timeline, and that is not declared
+RGS-026	timeline 'voor elke {name}': the timeline '{name}' is not declared ('Tijdlijn {name} heeft tijdvakken van …', §13.3.6.10)
+RGS-027	fact type '{factType}': the role name '{role}' contains an article (de/het) after a nominal word — probably the fact type name contains a 'de'/'het' that truncates the name and is absorbed into the role (§13.3.9.3); rename the fact type without the article
+RGS-028	{carrier}: {member} begins with '{word}' on the line where {previousSentence} ends, directly after '{preceding}'; {memberKind} begins on a line of its own{hint}
+RGS-028.member	a member
+RGS-028.role	a role
+RGS-029	fact type '{factType}': the role '{role}' has objecttype '{fillerType}', and that is a {category}, not an objecttype — WF-003: the filler of a role is a declared objecttype
+RGS-030	fact type '{factType}': the role '{role}' has objecttype '{fillerType}', and that is {status} — WF-003: the filler of a role is a declared objecttype; '{objectType}' is, though: a role name ends at the first word with a capital letter, so '{prefix}' has been read as part of the objecttype
+RGS-030.other-kind	a {category}, not an objecttype
+RGS-030.undeclared	not declared anywhere as an objecttype
+RGS-031	fact type '{factType}': the role '{role}' has objecttype '{fillerType}', and that is not declared anywhere as an objecttype — WF-003: the filler of a role is a declared objecttype; if it is in another file of the model, read the files together
+RGS-032	{carrier}: line text does not read {category} '{name}' as one name, because '{word}' is not a word of a name there; join it with a hyphen to a neighbouring word ('{example}')
+RGS-033	day kind '{name}': day-kind '{name}' shadows a built-in calendar unit
+RGS-034	'dagsoort-eenheid' '{unit}' coincides with a built-in time unit and is not registered as a 'dagsoort-eenheid'
+RGS-035	day kind '{dayKind}': the plural '{spelling}' of day kind '{dayKind}' is the name of day kind '{earlierDayKind}': one spelling names two day kinds
+RGS-036	day kind '{dayKind}': the plural '{spelling}' of day kind '{dayKind}' is the plural '{earlierPlural}' of day kind '{earlierDayKind}': one spelling names two day kinds
+RGS-037	day kind '{dayKind}': the plural '{earlierPlural}' of day kind '{earlierDayKind}' is the name of day kind '{dayKind}': one spelling names two day kinds
+RGS-038	the vocabularies '{vocabulary}' and '{otherVocabulary}' are both the default vocabulary; a document has at most one (WF-116)
+RGS-039	'beslistabel' '{name}' carries a designation, and a 'beslistabel' has none: it stands for the rules of its rows, which get their names from the frontend; write the designation on a rule
+RGS-040	the block '{name}' carries a designation, and an 'Uitzondering op'- or 'Afwijking van'-block has none: it becomes a default in the group of its base rule, and a default has no name on the wire; write the designation on the base rule
+RGS-041	vocabulary 'mv': that name is reserved, because '(mv:' opens the plural form of a name, and a designation in this vocabulary would be read as a plural
+RGS-042	vocabulary '{name}' is already declared{renamed}; the names of the vocabularies are unique, case-insensitive (WF-116)
+RGS-042.as	 as '{earlierName}'
+RGS-043	vocabulary '{vocabulary}' carries '(standaard)' twice
+RGS-044	vocabulary '{vocabulary}': '({property}: …)' is not a property of a vocabulary; a vocabulary heading knows '(standaard)' and '(taal: <code>)'
+RGS-045	vocabulary '{vocabulary}' carries '(taal: …)' twice
+RGS-046	vocabulary '{vocabulary}': the language code '{code}' is empty or contains whitespace; a language code is one word (WF-116)
+RGS-047	the designation of {element} in the vocabulary '{vocabulary}' is empty; a designation is text between the colon and the closing parenthesis (WF-117)
+RGS-048	the designation '{text}' of {element} in the vocabulary '{vocabulary}' contains a parenthesis; a designation is text without parentheses, because the closing parenthesis closes the annotation (WF-117)
+RGS-049	the designation '{text}' of {element} names the vocabulary '{vocabulary}', which the document does not declare ('Vocabulaire {vocabulary}', WF-117)
+RGS-050	{element} carries two designations in the vocabulary '{vocabulary}', '{earlierText}' and '{text}'; a declaration has at most one designation per vocabulary (WF-117)
+RGS-051	the annotation '({key}:{text}' at {element} is not closed on its line; a designation stands between parentheses on one line
+RGS-051.vocabulary	vocabulary '{name}'
+RGS-052	the rule '{name}' carries a designation, but on the wire it becomes no named form (a rule, creation, allocation, consistency, uniqueness or defaults group): a 'dagsoort'-definition and a start-point determination have no name, and an allocation without a method is not written; without a form the designation has no place
+RGS-053	{element} carries no designation in the default vocabulary '{vocabulary}', which names every declaration (WF-119); the frontend composes the designation of this declaration from those of {sources}{outcome}
+RGS-053.none-of-many	, and none of them carries one
+RGS-053.none-of-one	, and that one carries none
+RGS-054	{element} carries no designation in the default vocabulary '{vocabulary}', which names every declaration (WF-119)
+RGS-055	{element} carries no designation in the default vocabulary '{vocabulary}', which names every declaration (WF-119); the frontend wrote this declaration itself, without a place for an annotation
+RGS-056	the designation '{text}' of {element} in the vocabulary '{vocabulary}' spells its canonical name and is redundant: the effective name is the same without it (WF-120)
+RGS-057	{element} and {otherElement} have the same effective name '{name}' in the vocabulary '{vocabulary}'; within their reach it is unique, case-insensitive, so that the way back to the declaration has one answer (WF-118){compound}{otherCompound}
+RGS-057.compound	; the frontend composed the designation of {element} from {sources}
+RGS-057.source-designation	the designation '{designation}' of {element}
+RGS-058	date {operation} duration '{expression}': the duration '{duration}' {cause}, and the executors truncate a fractional count in {unit} toward zero before the calendar step (RUNTIME-SEMANTICS ch. 3.8: {example}); write the truncation out as '{truncate}'{suffix}
+RGS-058.example-fraction	1,9 {unit} counts as 1 {unit} and -1,9 {unit} as -1 {unit}
+RGS-058.example-literal	{duration} counts as {whole}
+RGS-058.no-smaller-day	a date in days has no unit smaller than a day
+RGS-058.no-smaller-day-kind	a day kind has no smaller unit
+RGS-058.no-smaller-millisecond	a millisecond is the smallest unit
+RGS-058.no-smaller-unit	; {reason}
+RGS-058.site-cause	can carry a fraction: '{site}' {reason}
+RGS-058.smaller-unit	, or include the part in a smaller unit ('{truncate} {operation} … {smaller}')
+RGS-058.truncate-literal	{left} {operation} {whole}
+RGS-058.truncate-rounded	{left} {operation} ({duration} rounded toward zero to 0 decimals)
+RGS-059	rounding '{source}': '{base}' is {category}, and a rounding rounds a number{durationHint}
+RGS-059.as-boolean	true or false
+RGS-059.as-date	a date
+RGS-059.as-date-time	a date-time
+RGS-059.as-enumeration	a value of {domain}
+RGS-059.as-text	a text
+RGS-059.round-the-duration	; round the duration instead: '{left} {operation} ({right} {rounding})'
+RGS-060	clamp {bound} and base have incompatible units
+RGS-061	datetime literal '{literal}' is not a valid date-time (§13.2.21)
+RGS-062	date literal '{literal}' is not a valid date (§13.2.19)
+RGS-063	'{expression}' reads as the percentage function without percent sign (§13.4.17.12), but '{name}' is not a parameter or variable of the type Percentage — write the percent sign ('… % van …') or name a percentage
+RGS-064	fold '{expression}': the steps after the set become the generated member '{name}' of {objectType}, and {occupiedBy} already declares that name — a generated member does not yet exist in the inheritance line of the element
+RGS-065	sum fallback of a summation must be numeric, got {type} (§5.8.2)
+RGS-066	sum fallback of a summation: sum fallback is {kind}, must be numeric
+RGS-067	filled count '{expression}': the filled count is an INSTANCE fold and MUST carry an element type: without one its argument is no fold source at all, and the count has no contributors whose values it could test for presence (ch. 4.3)
+RGS-068	'{attribute}' is not a declared member (or plural of one) of {objectType} — the aggregation remains unresolved (§13.4.17) — '{expression}'
+RGS-069	a 'die/dat'-subselection on an aggregation operand is not yet lowered; the aggregation is left out of account instead of taking all instances along (§5.6) — '{filter}'
+RGS-070	a dimension selection / 'gedurende de tijd dat' on an aggregation is not yet lowered; the aggregation is left out of account instead of ignoring the selection (§13.4.17.51-.58) — '{expression}'
+RGS-071	{fold}: value fold with fewer than two operands
+RGS-072	count '{expression}' is {reason}
+RGS-073	chain without sourcePath in a fold source: {reason} — a sourcePath runs from the rule subject to the elements and binds each step to exactly one role (IR-SPEC ch. 4.3/WF-102), so the aggregation remains unresolved (§13.4.17){exitClause} — '{expression}'
+RGS-073.exit	; {exit}
+RGS-073.not-at-subject	'{range}' does not begin at the rule subject
+RGS-073.not-at-subject-named	'{range}' does not begin at the rule subject {subject}
+RGS-074	role anchor in a fold source: '{expression}' anchors the set on the role '{role}', which from {subject} points to a DIFFERENT instance — a fold source without sourcePath names one relation from the rule subject itself (IR-SPEC ch. 4.3/WF-102), so the step to that instance would vanish without a trace and the aggregation remains unresolved (§13.4.1/§13.4.17) — '{source}'
+RGS-075	intermediate step in a fold source: '{expression}' reaches the elements via {anchor}, but a fold source carries exactly one relation from the rule subject {subject} (IR-SPEC ch. 4.3: one elementType plus one sourceRole) — the intermediate step would vanish without a trace, so the aggregation remains unresolved (§13.4.1/§13.4.17) — '{source}'
+RGS-076	fold source does not bind to the written name: the sentence names '{writtenName}', but the only fact type that connects {subject} with {objectType} is '{factType}' with the role '{role}' — the type-pair derivation would fold a different set than the sentence names, so the aggregation remains unresolved (§13.4.1/§13.4.17) — '{source}'
+RGS-077	listed count '{expression}'{noUnion}: a count folds INSTANCES and has no LISTED form, and this node carries {operandCount} operands: the source language spells a count over a subject expression alone (ch. 4.3), so there is no articulated operand list to admit — the only reading an operand list leaves a count is the number of FILLED operands, and that meaning belongs to the filled count over its set source, never to this kind
+RGS-077.no-union	, no union of selections: {unionRefusal}
+RGS-078	count without a source{quoted}{detail}: the count is an INSTANCE fold and MUST carry an element type: without one its argument is no fold source at all — and with no argument there is none — so the count has no contributors to count, only its operand, whatever that operand holds (ch. 4.3)
+RGS-078.detail	, {context}
+RGS-078.quoted	 '{expression}'
+RGS-079	eerste paasdag van: easterSunday operand is {kind}, must be a whole unitless number
+RGS-080	{builtin} operand is {kind}, must be a number
+RGS-081	{sentences}
+RGS-081.operand-attribute	'{attribute}' on '{objectType}'
+RGS-081.operand-parameter	the parameter '{parameter}'
+RGS-081.operand-position	its operand {position}
+RGS-081.rationale-date	Date values are calendar positions
+RGS-081.rationale-other	{typeName} values are not amounts
+RGS-081.sentence	the {fold} of {operand} folds {typeName} values: a total, sum or pro-rata part is arithmetic over a Number, and {rationale}
+RGS-082	total of requires a unit per time unit (§4.20 Tabel 30), got '{unit}'
+RGS-083	een tijd-component (uur/minuut/seconde/milliseconde uit): sub-day extractor operand is {kind}, must be a millisecond-precision date
+RGS-084	the (absolute) duration from … to …: {sentences}
+RGS-084.operand-sentence	{category} operand is {kind}, must be a date
+RGS-085	the (absolute) duration of … to …: {category} operands mix date precisions (both must share one precision)
+RGS-086	{category} without a recognised time unit on its node type
+RGS-087	{category}: the counted unit '{unit}' is neither a recognised time unit nor a declared day kind
+RGS-088	sub-day {category} unit on day-precision operands (millisecond precision required)
+RGS-089	ordinal number: the rule names no {position} subjects '{name}' (§5.5.3)
+RGS-090	ordinal number: the rule binds {bindings} subjects '{name}'; §5.5.3 defines no binding/ordering semantics for such a reference per mention — the reference remains a marker (not yet supported) — '{expression}'
+RGS-091	syntax error: {message}
+RGS-092	unresolved: {reason} — '{expression}' remains as a marker on the wire
+RGS-093	head form: 'is {word}' lacks the article — a supertype is written as 'is een {word}'
+RGS-094	head form: the 'is een' clause stands after the (mv: …) group — it belongs directly after the objecttype name, before (mv: …) and (bezield)
+RGS-095	scenario: the document carries no scenario, so no case file can be written
+RGS-096	{kind} '{name}' depends on itself through a cycle; the dependencies are cycle-free outside a recursive creation ({wf}){negativeEdgeClause}: {sentence}
+RGS-096.negative-edge	, and a cycle carries no negative edge, such as a negation (WF-046)
+RGS-097	{kind} '{name}' lies on a dependency cycle, and a cycle through a defaults group has no strata ({wf}): {sentence}
+RGS-098	rule '{name}'{inTable} is already declared on line {earlierLine}{earlierRow}; form names are unique (WF-020): {sentence}
+RGS-098.duplicate-name	duplicate name '{name}' in {array}
+RGS-098.earlier-row	, as a row of 'beslistabel' '{earlierTable}'
+RGS-098.in-table	 of 'beslistabel' '{table}'
+RGS-098.name-collision	name '{name}' collides with '{other}' in {array} (unique across all named forms)
+RGS-099	the 'die/dat' subselection '{expression}' is not lowered and would silently vanish: a subselection chooses WHICH instances the sentence means, so omitting it answers a different question than the one written. A subselection is ALWAYS MANY in RegelSpraak v2.3.0 (§5.8), and a many-read has exactly two consumers there: an aggregation (§5.8) or a condition with a quantification before the subject expression (hfst. 10). At this writing position neither of the two is present, so the sentence has no reading in v2.3.0 — this refusal is the final state and not an extension point. Write the selection as a fold range (IR-SPEC ch. 4.3 or ch. 4.5, field 'filter') or put a quantification before it (§5.6)
+RGS-100	the fold over the steps after the set generates the rule '{rule}' for the member of that name on {objectType}, and {occupiedBy} already bears that name (source line {sourceLine}) — a form name is unique in the whole model, case not counted (WF-020)
+RGS-101	recursive rule group '{name}' without an object creation rule — the 'is recursief' marking cannot let the chain advance (§9.10, documented extension)
+RGS-102	recursive rule group '{name}': recursive group without a creation member
+RGS-103	recursive rule group '{name}': unguarded object creation '{creation}' in a recursive group
+RGS-104	rule '{rule}'{table}: characteristic target's value must be the boolean constant true
+RGS-105	{head}: the defaults group {groupNames} on the characteristic {subject}.{target} never assigns it — every default decides 'false', and a decision 'false' writes nothing. That is well-formed, but then the group does nothing that leaving out the group does not also do; check whether an exception is missing that decides 'true' (dialect §4)
+RGS-105.plural	{head}: the defaults groups {groupNames} on the characteristic {subject}.{target} never assign it — every default decides 'false', and a decision 'false' writes nothing. That is well-formed, but then the groups do nothing that leaving out the groups does not also do; check whether an exception is missing that decides 'true' (dialect §4)
+RGS-106	{head} ({groupsLabel}{groupNames}, target also written by {othersLabel}{others}): a rule also writes defaults target '{target}' — an unordered plain writer would silently defeat the group's decisions
+RGS-106.group-label	defaults group 
+RGS-106.groups-label	defaults groups 
+RGS-106.rule-label	rule 
+RGS-106.rules-label	the rules 
+RGS-107	{head} (defaults groups {groupNames}): multiple defaults groups on target '{target}' without the declared-unordered marking — priority is explicit (defaults) or explicitly absent ('unordered'), never implicit (ch. 7.2)
+RGS-108	{head} (its base rule is {memberKind} of rule group '{group}'{placement}): group member '{member}' does not resolve to a rule form
+RGS-108.member	a member
+RGS-108.placement	, and the block stands directly after the last member of rule group '{groupBefore}'
+RGS-108.table-row	a row of 'beslistabel' '{table}', member
+RGS-109	{head}: an exception block is not allowed in the dialect within the reach of a rule group, nor with a group member as base rule — it stands directly after the last member of rule group '{groupBefore}', where the group silently ends, so that the block and every rule after it would fall outside the group. A rule group exists only to mark recursion (§9.10) and contains only rules and decision tables; a defaults block (dialect §4) does not belong in it. Place the block{carrierPart} outside every rule group: before the first rule group heading of the document ('Regelgroep {firstGroup}'), or after a definition that closes the group
+RGS-109.and-base	 and its base rule
+RGS-109.and-carrier	 and its carrier
+RGS-110	rule target '{written}': target '{attribute}' names both an attribute and a characteristic of '{objectType}': which member a rule writes decides its kind, and this name decides nothing
+RGS-111	the target navigates via '{subjectSource}': a rule writes a member of its own universal subject; write the rule on the objecttype that carries the member ('De <attribuut> van een <Objecttype> …')
+RGS-112	the target is a navigated read: '{attribute}' is not a member of {objectType} — the name swallowed the navigation. A rule writes a member of its own universal subject; write the rule on the objecttype that carries the member ('De <attribuut> van een <Objecttype> …')
+RGS-113	'{attribute}' is not a declared member of {objectType}
+RGS-114	'{name}' as a value ('{expression}'): context value '{name}' is not one of the two admissible names evaluationDate, evaluationYear: the context-value name is a closed set, spelled byte for byte
+RGS-115	read '{expression}', in which '{prefix} van' before the attribute '{attribute}' became one name: '{name}' is neither an attribute nor a characteristic of '{objectType}'
+RGS-116	role check '{expression}' without binding (no fact type knows the role '{roleName}'{against}): missing field 'factType'
+RGS-117	role check '{expression}' without binding ({count} fact types know the role '{roleName}'{against}): missing field 'factType'
+RGS-118	navigated read '{expression}' without a binding ({reason}): an attribute reference without a path is the subject's own read, so its subjectType is the subject type '{subject}' — '{objectType}' names another type, which only a navigation reaches
+RGS-118.chain-unbound	the written chain cannot be bound step by step {from}
+RGS-118.from-subject	from {subject}
+RGS-118.pair-many	{count} relations join {subject} with {target}, and '{written}' names no role that points to exactly one
+RGS-118.pair-none	no relation joins {subject} with {target}
+RGS-118.pair-reciprocal	the only relation between {subject} and {target} is reciprocal
+RGS-118.role-ambiguous	the written role '{role}' does not point to exactly one relation {from}
+RGS-118.without-subject	without a subject
+RGS-119	navigated read '{expression}' without a binding ({reason}): without a path the wire would read it as an own attribute of the subject, and that is not what is written
+RGS-120	navigated read '{expression}' across a to-many role: {sentences}
+RGS-120.hop	hop {hop} reaches the to-many role '{role}' in a scalar slot — a to-many step needs an aggregation, never a silent first pick
+RGS-121	read '{expression}': the declared member '{attribute}' of '{objectType}' wins; the same words also read as the member '{member}' of '{otherObjectType}' across the role '{role}', and that reading does not apply here
+RGS-122	navigated read '{expression}' does not bind ({reason}), so it is read as the member '{attribute}' of '{objectType}': '{attribute}' is neither an attribute nor a characteristic of '{objectType}'
+RGS-122.no-relation	no relation joins '{from}' with '{type}'
+RGS-122.reads-as-type	'{step}' reads as the objecttype '{type}', and {connection}
+RGS-122.relations	{count} relations join '{from}' with '{type}'
+RGS-122.role-ambiguous	the role '{step}' does not point to exactly one relation from '{from}'
+RGS-123	navigated read '{expression}' names the subtype '{endpoint}', but the role '{roleName}' lands on '{fillerType}': the navigation reaches '{fillerType}', not the endpoint '{endpoint}'
+RGS-124	read '{expression}': {subjectPhrase} names no role and no object type from '{subject}': attribute reference '{attribute}' without a subjectType: it resolves against no declaration
+RGS-124.own-subject	its subject
+RGS-124.written-source	'{source}'
+RGS-125	navigated read '{expression}': the member '{member}' does not exist on '{fillerType}', the filler of the role '{roleName}'{where}: {sentence}
+RGS-125.neither-member	'{member}' is neither an attribute nor a characteristic of '{fillerType}'
+RGS-125.nowhere	, and on no other objecttype
+RGS-125.other-type	, but on {types}, which is no subtype of '{fillerType}'
+RGS-125.other-types	, but on {types}, which are no subtypes of '{fillerType}'
+RGS-125.reaches	the navigation reaches '{fillerType}', not the endpoint '{endpoint}'
+RGS-125.subtype	, but on the subtype {types}
+RGS-125.subtypes	, but on the subtypes {types}
+RGS-126	navigated read '{expression}': the member '{member}' of '{fillerType}', the filler of the role '{roleName}', is a characteristic and not an attribute: '{member}' is a characteristic of '{fillerType}', not an attribute — a characteristic endpoint is ill-formed in a value position
+RGS-127	fold '{expression}' with a written step on its source: a path on a fold source is ill-formed (the fold's relation is its range, sourceRole or sourcePath)
+RGS-128	fold '{expression}' over '{attribute}' on {objectType}, a different type from the subject{range}
+RGS-128.range-anchor	: fold-source subjectType '{sourceType}' is not the fold's anchor '{subject}' ({hint}): the executors resolve '{attribute}' against the anchor, never against this field, so the two spellings name different declarations
+RGS-128.range-element	: the elementType '{elementType}' of a total without a range is not the fold subject '{subject}': without a range the fold is the subject's own read, so its elementType must name the subject type
+RGS-128.range-own	: without a range the wire would read it as the total of an own attribute of the subject
+RGS-128.range-written	: a single-argument fold with an elementType carries its range (sourceRole or sourcePath) under every kind but total: the range is written, never derived
+RGS-128.reads-own	a fold without a range reads the subject's own attribute
+RGS-129	fold '{expression}' over an own attribute of the subject, which counts no instances{range}
+RGS-130	fold '{expression}' without a subject to determine its range from{range}
+RGS-131	fold '{expression}' without a range ({cause}){range}
+RGS-131.written-anchor	the written source '{source}' runs via '{anchor}', an anchor other than the subject, and this frontend does not write a range from such an anchor
+RGS-132	period comparison under '{words}' ({place}): a time window under none or a counting quantifier: the window gates the RULE, and no reading is specified for a verdict that is counted or complemented
+RGS-133	{head}: the base rule is not a characteristic assignment or an equation (e.g. an initialisation) — no defaults group is built over it (§4)
+RGS-134	{head}: the carrier '{carrier}' also has {siblings} — the children of one carrier form either one ordered chain ('Uitzondering op', 'Afwijking van') or the members of one unordered block, because the precedence between them is nowhere fixed. Write them all as ordered, or take them all as members in one block 'Uitzonderingen ongeordend op {carrier}:' (dialect §4)
+RGS-134.ordered	ordered exceptions ({names})
+RGS-134.other-block	another 'Uitzonderingen ongeordend op' block
+RGS-135	{head}: {node} yielded no characteristic assignment/equation (§4)
+RGS-136	{head}: {node} is not a characteristic assignment or an equation (e.g. an initialisation) (§4)
+RGS-137	{head}: '{carrier}' is {carrierKind}, not a base rule — a deviation inherits no condition and therefore stands only directly above a base rule; in the middle of the tree it would decide where the condition of its carrier does not hold. Write 'Uitzondering op {carrier}: {member}' if it inherits the condition of '{carrier}', or 'Afwijking van {root}: {member}' with the full condition (dialect §4)
+RGS-138	{head}: '{carrier}' is {carrierKind} of {supertype}, and {designation} prescribes for the subtype {subtype} — a subtype inherits the exceptions of its supertype with whatever is nested under them, and addresses none of them (RUNTIME-SEMANTICS ch. 7.10). Write it as its own exception of {subtype} under {under}: 'Afwijking van {name}: {member}', with the full condition of '{carrier}' and its own condition: the own exceptions of {subtype} precede the inherited ones, so it decides exactly where both hold (dialect §4)
+RGS-139	{head}: {designation} carries a different validity window than the base rule — the defaults group carries one window; split by window or make the windows equal (§4)
+RGS-140	{head}: {designation} writes a different target ({ownTarget}) than {carrierPart} ({baseTarget}) — a {what} must concern the same subject and characteristic/member (§4, WF-050)
+RGS-140.base-rule	the base rule
+RGS-140.her-carrier	its carrier '{carrier}'
+RGS-140.his-carrier	its carrier '{carrier}'
+RGS-141	{head}: {designation} prescribes for the subtype {subtype}, and {has}, which replaces '{root}' for {subtype} (RUNTIME-SEMANTICS ch. 7.10) — an own exception of {subtype} hangs under that base rule. Write {form} (dialect §4)
+RGS-142	{head}: group member '{member}' prescribes for the subtype {subtype} under the base rule '{root}' of {rootType} — an 'Uitzonderingen ongeordend op'-block among the own exceptions of a subtype under the base rule of its supertype is not lowered by this frontend: a conflict between the members would get a key of the compound stack (RUNTIME-SEMANTICS ch. 7.9 and 7.10). Write the members as ordered blocks ('Uitzondering op' or 'Afwijking van'), or give {subtype} an own base rule and hang the block under it (dialect §4)
+RGS-143	Uitzonderingen ongeordend: group member '{member}' yielded no characteristic assignment/equation (§4)
+RGS-144	Uitzonderingen ongeordend: group member '{member}' is not a characteristic assignment or an equation (§4)
+RGS-145	Uitzonderingen ongeordend: group member '{member}' writes a different target ({target}) than an earlier member ({sharedTarget}) — an unordered group concerns one shared target (§4, §9.5)
+RGS-146	{head}: the // Bron:-annotation '{annotation}' above the head belongs to no rule — an annotation belongs to the rule directly below it, and the head is no rule — and therefore does not reach the wire. Put it above the member or the members for which it holds ({reference})
+RGS-147	Uitzondering op: the {role} '{name}' has more than one rule version — multiple versions on one defaults group are not yet supported in this card (§4)
+RGS-148	characteristic '{characteristic}' of {objectType}: {marking} stands only on a member — case input on a characteristic is already against every decision of a defaults group (RUNTIME-SEMANTICS ch. 7.8), and an input 'not present' above a computed assignment asks for an input with three values, which the case does not know for a characteristic (dialect §7)
+RGS-149	{head}: '(mag opgegeven worden)' stands only on a 'Numeriek' member without a unit or with one unit, or on a 'Datum' in days, and '{attribute}' is {datatype} — a defaults group on a member of another datatype or with a compound unit has not yet been measured in all three executors (dialect §7)
+RGS-150	{head}: '(mag opgegeven worden)' does not stand on a time-dependent member — a defaults group decides once and has no timeline to write to (WF-086) (dialect §7)
+RGS-151	{head}: '(mag opgegeven worden)' does not stand on a dimensioned member, and '{attribute}' is dimensioned with {dimensions} — a defaults group on a dimensioned member does not yet play in all three executors (dialect §7)
+RGS-152	{head}: '(mag opgegeven worden)' generates nothing, because no rule computes or establishes '{attribute}', but the model reads '{read}' — that name exists only where the marking redirects a computation of '{attribute}' (dialect §7)
+RGS-153	{head}: '(mag opgegeven worden)' stands on a member that no rule computes or establishes — '{attribute}' is already input, and the marking generates nothing (dialect §7)
+RGS-154	{head}: '(mag opgegeven worden)', but the allocation '{allocation}' writes '{attribute}' — the marking does not redirect an allocation to '{computedAttribute}', and beside the defaults group on '{attribute}' it is a second writer (WF-050) (dialect §7)
+RGS-155	{head}: '(mag opgegeven worden)', but the object creation '{objectCreation}' assigns '{attribute}' on creation — the marking does not redirect that assignment to '{computedAttribute}', and beside the defaults group on '{attribute}' it is a second writer (WF-050) (dialect §7)
+RGS-156	{head} (source line {line}): '(mag opgegeven worden)' generates {formKind} '{name}', and {earlierForm} already has that name (source line {earlierLine}) — a form name is unique in the whole model, case not counted (WF-020) (dialect §7)
+RGS-157	{head} (source line {line}): '(mag opgegeven worden)' generates {formKind} '{name}', and the marking on {otherHead} already generates that name (source line {otherLine}) — a form name is unique in the whole model, case not counted (WF-020) (dialect §7)
+RGS-158	{head}: '(mag opgegeven worden)', and '{attribute}' has more than one initialisation ({names}) — the generated defaults group carries one initialisation default, the lowest (WF-050) (dialect §7)
+RGS-159	{head}: '(mag opgegeven worden)', and the initialisation '{name}' of '{attribute}' has {problem} — the generated defaults group always holds, and a default carries no window of its own (dialect §7)
+RGS-159.other-window	a validity window other than always
+RGS-159.versions	more than one version
+RGS-160	{head}: '(mag opgegeven worden)', and the initialisation '{name}' of '{attribute}' has a condition — the initialisation default of the generated defaults group is justified only where '{attribute}' is empty in the input, and carries no condition of its own (WF-050) (dialect §7)
+RGS-161	{head}: '(mag opgegeven worden)', and '{attribute}' has two initialisations in one lineage ('{highName}' for {highType} and '{lowName}' for {lowType}) — the effective stack of {lowType} would carry two initialisation defaults, and RUNTIME-SEMANTICS ch. 7.10 knows one; without the marking WF-079 refuses this pair (dialect §7)
+RGS-162	{head}: '(mag opgegeven worden)', and the initialisation '{name}' of '{attribute}' for {subtype} has {problem} — beside the generated defaults group on {objectType} it becomes a default in the effective stack of {subtype} (RUNTIME-SEMANTICS ch. 7.10), and that includes no rule with a window (dialect §7)
+RGS-163	cycle reference between calculations: {cycle} -> {start} — recalculation may reach no fixed point (the engine bounds the count of activations)
+RGS-164	set read outside a fold source '{source}': the source of this count aggregation reads '{attribute}', a member of the element type '{elementType}': a count folds INSTANCES, so its source is a count source naming the relation's role, never a value read per contributor
+RGS-165	set read outside a fold source '{source}': {sentences}
+RGS-166	set read outside a fold source: '{source}' names the value of each member of the set — allowed only as the source of one value fold (som, totaal, minimum, maximum, eerste, laatste, aantal gevulde waarden); an instance count folds the members themselves and reads no value per member, so not as the source of 'aantal' either (WF-093 (b), IR-SPEC ch. 4.3)
+RGS-167	set read outside a fold source: '{source}' names the value of each member of the set — allowed only as the source of one value fold (som, totaal, minimum, maximum, eerste, laatste, aantal gevulde waarden); one value is expected here, and a to-many step in a read needs an aggregation (WF-053, IR-SPEC ch. 4.1a)
+RGS-168	beslistabel '{name}' has no table content (a head only) — is not converted to IR/DRL
+RGS-169	decision table '{name}': {sentences}
+RGS-169.duplicate-name	duplicate name '{name}' in {array}
+RGS-170	beslistabel-desugar: syntax error in generated rule: {message}
+RGS-171	rule '{name}': validity windows of versions '{name} #{earlierVersion}' and '{name} #{laterVersion}' overlap ({row})
+RGS-172	validity periods of rule versions overlap (rule '{name}')
+RGS-173	invalid version validity bound '{bound}' (expects a date dd-mm-jjjj or a year of four digits)
+RGS-174	version validity bound '{bound}' carries a time component; the validity is date-granular (expects a date dd-mm-jjjj or a year of four digits)
+RGS-175	undefined {reason} (used by '{user}')
+RGS-176	dagsoortdefinitie '{day}' lacks a condition (rule '{name}')
+RGS-177	day-kind definition with a bounded validity window; must be always (from and to both absent)
+RGS-178	more than one definition for day kind '{dayKind}'
+RGS-179	resultaatdeel 'resultaatdeel' is not yet converted to IR/DRL (rule '{name}')
+RGS-180	consistentieregel is not yet (fully) converted to IR/DRL (rule '{name}')
+RGS-181	uniqueness '{name}' within '{scopeParent}' without a binding ({relationCount} relations know a role '{parentRole}' opposite {elementType}, and '{writtenRole}' names no role that points to exactly one of them): without a binding the wire would read it as a uniqueness over all instances of {elementType}, and that is not what is written
+RGS-182	uniqueness '{name}' within '{scopeParent}': the relation that carries the clamp is reciprocal, and a clamp over a reciprocal fact type is not written by this frontend (the wire writes it as a role binding of a fact type with two roles)
+RGS-183	uniqueness '{name}' within '{scopeParent}': the scope role '{role}' is to-many — a scope parent is one instance
+RGS-184	allocation with rounding/maximum without a recognizable undivided remainder (§9.7.3/§9.7.4): the remainder is not recorded (rule '{name}')
+RGS-185	allocation '{name}' without a connecting role ({reason}): missing field 'connectingRole'
+RGS-186	object creation '{name}': a {objectType} creates a {objectType}, and the sentence names no role that binds the new object; then the link comes from the type pair, and that derivation links nothing for a self-typed pair (RUNTIME-SEMANTICS ch. 5.5). Name the role: 'Een {objectType} heeft een <rol> met …', with {roles} as <rol>
+RGS-187	characteristic value assignment '{characteristic}': characteristic initialisation's value must be a boolean-typed expression
+RGS-188	kenmerkwaardetoekenning '{characteristic}' requires true or false (§13.4.6.4), not '{value}'
+RGS-189	object creation: '{name}' is not a declared attribute of '{objectType}'
+RGS-190	feitcreatie is not yet converted to IR/DRL (rule '{name}'): {sentence}
+RGS-190.ambiguous	role or fact type cannot be derived unambiguously
+RGS-190.indirect	the target chain does not refer directly to the anchor (no back-reference)
+RGS-190.many-side	the reference field belongs on the many side; the target is not the many side here
+RGS-190.no-anchor	anchor objecttype cannot be derived
+RGS-190.same-relation	the new and the existing relation coincide (same reference field)
+RGS-190.step-field	reference-field side for intermediate step '{role}' cannot be derived
+RGS-190.step-role	intermediate-step role '{role}' cannot be derived unambiguously
+RGS-191	rule '{name}'{rowTable}: 'is niet een {characteristic}' — the form 'is niet een' negates a nominal characteristic (Tabel 16), and '{characteristic}' is {category}; write {spelling} (dialect §4)
+RGS-192	startpuntbepaling (rule '{name}'): start point for undeclared timeline '{timeline}'
+RGS-193	startpuntbepaling (rule '{name}'): start point for fixed-start timeline '{timeline}'
+RGS-194	start point determination (rule '{name}'): object type '{objectType}' is not declared
+RGS-195	startpuntbepaling: member name '{member}' is reserved for the start point anchor but already declared as {existing} (rule '{name}')
+RGS-196	start point determination (rule '{name}'): anchor member '{member}' is {kind}, must be a day-precision date
+RGS-197	sign restriction: {description} is written into a target under a {sign} sign restriction
+RGS-197.negative-literal	negative literal '{lexeme}'
+RGS-197.other-literal	literal '{lexeme}'
+RGS-198	enumeration label '{label}' is not in the declared domain
+RGS-199	period comparison '{comparison}' follows a last bullet 'het is de periode' of a compound subselection: the parser reads that bullet as a characteristic 'het is de periode' and its boundary as a window on the whole rule — a different document from what is written (§8.4.3). Write the window as the condition part of the rule ('… {comparison}' after the resultaatdeel: before that boundary the rule does not fire), or do not put the period bullet last in the subselection (then the parser reads it as a member of the filter)
+RGS-200	period comparison: window bound is {kind}, must be a date
+RGS-201	period comparison (the {side} bound '{bound}'): the {fromTo} bound of a time window is a millisecond-precision date: the window is a range of civil days and no clause reads an instant bound
+RGS-202	period comparison (the {side} bound '{bound}'): the {fromTo} bound of a time window is {what} — a bound is a date literal or an own scalar date attribute of the subject; the general date expression is an OPEN wire decision
+RGS-202.computed	a computed date expression
+RGS-202.navigated-read	a navigated read of '{attribute}'
+RGS-202.no-subject	the attribute '{attribute}' at a position with no subject to own it
+RGS-202.parameter-bound	the parameter '{parameter}'
+RGS-202.time-dependent	the time-dependent attribute '{attribute}'
+RGS-203	numeral of a quantifier: counting quantifier with threshold {threshold} < 1
+RGS-204	numeral of a quantification must be a positive whole number (>= 1)
+RGS-205	invalid digit count '{lexeme}' at 'numeriek met exact … cijfers' (expects a whole number, §8.1.4)
+RGS-206	the check on 'volledige periode' (gedurende de/het gehele jaar/maand): wholePeriod qualifier on a non-time-dependent operand
+RGS-207	the check on 'volledige periode' (gedurende de/het gehele jaar/maand): wholePeriod qualifier on a non-time-dependent characteristic
+RGS-208	the check on 'volledige periode' (gedurende de/het gehele jaar/maand) can only be applied to a time-dependent subject (§8.2): {source}
+RGS-209	the numeral of the quantifier in '{source}' is not a positive whole number (>= 1), so the fold is NOT lowered: a threshold below 1 sets no count that can be satisfied and is refused on the wire (WF-041, IR-SPEC ch. 4.5); the set read stays outside a fold source (WF-053)
+RGS-210	the 'die/dat' subselection in '{source}' is not converted to a quantifier-fold filter: {reason}; the fold is therefore NOT lowered — a fold over the full range would quantify a different collection than the sentence names, so the set read stays outside a fold source (WF-053)
+RGS-211	the numeral of the quantifier in '{source}' is not a positive whole number (>= 1), so the fold is NOT lowered: a threshold below 1 sets no count that can be satisfied and is refused on the wire (WF-041, IR-SPEC ch. 4.5)
+RGS-212	the 'die/dat' subselection in '{source}' is not converted to a quantifier-fold filter: {reason}; the fold is therefore NOT lowered — a fold over the full range would quantify a different collection than the sentence names
+RGS-213	the quantifier fold over '{subject}' is NOT lowered: {reason}; the condition therefore remains a marker
+RGS-214	the spelling 'is niet een <rolnaam>' is not provided for a role check; Tabel 16 knows only 'is/heeft geen <rolnaam>' as negation (§8.1.7): {source}
+RGS-215	the {category} characteristic '{characteristic}' is negated with the verb '{verb}', but Tabel 16 requires '{required}' for this kind of characteristic (§8.1.8): {source}
+RGS-216	syntax error: {message}
+RGS-217	the scenarios of one document run against one IR document, but the scenario '{scenario}' tests other rules than the scenario '{firstScenario}'; put scenarios with a different scope in a document of their own
+RGS-218	the situation '{situation}' is declared more than once
+RGS-219	the situation '{situation}' is declared nowhere in the document
+RGS-220	the situations form a cycle via 'gebaseerd op': {cycle}
+RGS-221	the name of the scenario '{name}' yields no file name: it carries no letter or digit
+RGS-222	the parameterset '{name}' is declared nowhere in the document
+RGS-223	the scenario '{name}' has no situation: it is based on nothing and carries no 'Gegeven is de volgende situatie:'
+RGS-224	the as-of date '{date}' carries a time, but a case file carries only a day as its as-of date (asOfDate)
+RGS-225	the as-of date '{date}' is not a valid date
+RGS-226	a scope in a document with a startpuntbepaling is refused: the determination and the rule that writes its anchor belong together, and a scope that drops one of them puts the timeline on a different grid
+RGS-227	the rule group '{group}' from the scope does not exist in the document
+RGS-228	'{name}' from the scope is a rule group; write 'toetst de regelgroep {name}'
+RGS-229	the rule '{name}' from the scope has merged into a defaults group; the scope names that group by the name of its base rule
+RGS-230	the rule '{name}' from the scope does not exist in the document
+RGS-231	the rule '{rule}' has a validity window, but the scenario '{scenario}' has no as-of date (add 'met peildatum <datum>')
+RGS-232	the rule '{rule}' reads the evaluation date, but the scenario '{scenario}' has no as-of date (add 'met peildatum <datum>')
+RGS-233	the rule '{rule}' reads the parameter '{parameter}', which {where} has no value
+RGS-234	the object type '{objectType}' is not declared
+RGS-235	the label '{label}' collides with (the first word of) the object type name '{objectType}'
+RGS-236	the object type '{objectType}' has no member '{attribute}'
+RGS-237	the member '{attribute}' is dimensioned, and a case file carries no dimension coordinates
+RGS-238	the member '{attribute}' receives in this block both periods and a fixed value
+RGS-239	the member '{attribute}' is not time-dependent; a period ('van … tot …') belongs to a member with a timeline
+RGS-240	the member '{attribute}' receives in this block both a fixed value and periods
+RGS-241	the object type '{objectType}' has no characteristic '{characteristic}'
+RGS-242	the characteristic '{characteristic}' is time-dependent; a case file supplies it as periods ('is {characteristic} van <datum> tot <datum>'), not as a fixed value
+RGS-243	the characteristic '{characteristic}' is not time-dependent; a period ('van … tot …') belongs to a characteristic with a timeline
+RGS-244	the characteristic '{characteristic}' is possessive; write 'heeft {characteristic}'
+RGS-245	the characteristic '{characteristic}' is not possessive; write 'is {characteristic}'
+RGS-246	the object type '{objectType}' has no role '{role}'
+RGS-247	the role '{role}' from the object type '{objectType}' is ambiguous: more than one fact type has it
+RGS-248	the role '{role}' is a to-many role; write the 'zijn' list form ('de {role} zijn …')
+RGS-249	the role '{role}' is a to-one role; write the 'is' form ('de {role} is …')
+RGS-250	the parameter '{parameter}' is not declared
+RGS-251	the parameter '{parameter}' gets both periods and a fixed value in this block
+RGS-252	the parameter '{parameter}' is not time-dependent; a period ('van … tot …') belongs to a parameter with a timeline
+RGS-253	the parameter '{parameter}' gets both a fixed value and periods in this block
+RGS-254	the parameter set '{name}' is declared more than once
+RGS-255	{what} gets {combination} in this block
+RGS-256	the parameter set '{parameterSet}' gives the parameter '{parameter}' two vintages that overlap ({first} and {second}); the as-of date of a scenario selects exactly one vintage
+RGS-257	the parameter '{parameter}' gets a value from the parameter set '{parameterSet}' and from the situation of the scenario '{scenario}'; a parameter gets its value from one of the two
+RGS-258	the parameter '{parameter}' has vintages in the parameter set '{parameterSet}', but the scenario '{scenario}' has no as-of date that selects one of them (add 'met peildatum <datum>')
+RGS-259	the parameter set '{parameterSet}' has no vintage for the parameter '{parameter}' that contains the as-of date {asOfDate} of the scenario '{scenario}'
+RGS-260	the period bound '{bound}' carries a time, but a period counts in whole days
+RGS-261	the period bound '{bound}' is not a valid date
+RGS-262	the period from {from} to {until} is empty or runs backwards
+RGS-263	the period from {from} to {until} starts before the end of the previous one ({previousUntil}); the periods of one timeline are in order and do not overlap
+RGS-264	the period bound {limit} of {what} does not lie on the {grid} of the declaration{fixedStart}; a case file supplies a timeline in the periods of that grid
+RGS-265	the label '{label}' was declared earlier as '{firstType}', here as '{secondType}'
+RGS-266	the role '{role}' refers to the label '{label}', which is declared nowhere in the compound situation
+RGS-267	the role '{role}' expects a {expectedType}, but the label '{label}' is a {objectType}
+RGS-268	the expectation that '{attribute}' of {label} is always empty contradicts the periods for it
+RGS-269	the period for '{attribute}' of {label} contradicts the expectation that the member is always empty
+RGS-270	the rule '{rule}' of the inconsistency does not exist in the document and is not a conflict channel ('<Objecttype>.<member or characteristic>', optionally with '/<path>')
+RGS-271	the label '{label}' in the expectation is declared nowhere in the situation
+RGS-272	the expectation '{expectation}' is not recognised syntactically
+RGS-273	the member '{attribute}' is not time-dependent; a timeline expectation belongs to a member with a timeline
+RGS-274	{what}: the date '{date}' is not a valid date
+RGS-275	{what}: an enumeration value ('{label}') does not fit a {targetType}
+RGS-276	{what}: '{label}' is not a value of the enumeration {domain} ({values})
+RGS-277	{what}: there is no value
+RGS-278	{what}: the value '{value}' was not read
+RGS-279	{what}: the text value carries an «expression», and a value in a scenario is literal
+RGS-280	{operation}: sub-day time unit on a day-precision date (millisecond precision required)
+RGS-281	{operator} requires numeric operands, got {left} and {right}
+RGS-282	divided by: a unitless numerator divided by the unit '{unit}' gives an inverse unit (1/{unit}) that the unit model cannot express
+RGS-283	to the power: power operands must be unitless
+RGS-284	operator '{operator}' requires numeric operands, got {left} and {right}
+RGS-285	gelijk: equality across families: {left} vs {right}
+RGS-286	equality operands have incompatible units
+RGS-287	equal/unequal requires operands of the same datatype, got {left} and {right}
+RGS-288	gelijk: equality across date precisions
+RGS-289	gelijk: equality across different enumeration domains
+RGS-290	elfproef: elevenTest operand is {kind}, must be text or a whole unitless number
+RGS-291	numeriek met exact: exactDigits operand is {kind}, must be text
+RGS-292	dagsoort: day-kind predicate operand is {kind}, must be a date
+RGS-293	times: the compound unit of '{left}' and '{right}' (a product unit with a denominator) cannot be expressed by the unit model
+RGS-294	divided by: the quotient of '{left}' and '{right}' (a unit with an inverted denominator) cannot be expressed by the unit model
+RGS-295	date ± date is ill-formed (date arithmetic takes a date and a duration)
+RGS-296	duration − date is ill-formed (subtraction admits the date on the left only)
+RGS-297	duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)
+RGS-298	date ± duration: the duration operand is {kind}, must be a number carrying a time unit
+RGS-299	date ± duration: the duration operand carries no time unit
+RGS-300	row {row}: more than one concatenation cell (OR list) in one EN row is not supported — row skipped
+RGS-301	row {row}: empty conclusion cell — a result part is mandatory (§12)
+RGS-302	row {row}: 'indien' may not appear in a conclusion cell (§12)
+RGS-303	row {row}: a 'beslistabel'-conclusion must use 'moet gesteld worden op', not 'berekend als' (§12)
+RGS-304	row {row}: a characteristic conclusion 'onwaar' cannot be expressed as a negative assignment — row skipped
+RGS-305	row {row}: only an equation ('… moet gesteld worden op') or a characteristic assignment ('… is …' with cell 'waar') is allowed in a 'beslistabel'-conclusion (§12)
+RGS-306	the subject '{subjectSource}' does not resolve to an object type: a rule writes a member or characteristic of its own universal subject ('een <Objecttype>'), and a navigation to another instance is not built by this frontend as a rule target
+RGS-307	'{attribute}' is a {cell} — a rule assigns a member on the wire and not a cell (the target is a member reference; the dimension cell exists only as a read)
+RGS-308	the target is a {cell} — a rule assigns a member on the wire and not a cell (the target is a member reference; the dimension cell exists only as a read); without this guard the sentence wrote the whole member
+RGS-309	navigated read '{expression}' is not laid as a navigation: '{attribute}' sits on '{fillerType}', the filler of the role '{role}', but it is read as the member '{name}' of '{objectType}': '{name}' is neither an attribute nor a characteristic of '{objectType}'
+RGS-310	{head}: {designation} for {subtype} stands before {laterDesignation} for {supertype} under '{root}', and the block written later takes precedence; RUNTIME-SEMANTICS ch. 7.10 puts the own exceptions of {subtype} above the inherited ones of {supertype}, so for a {subtype} '{name}' takes precedence over '{laterName}'. Write '{name}' after '{laterName}' (dialect §4)
+RGS-311	{head}: the own exceptions of {subtype} under '{root}' become the defaults group '{name}', and {form} is already called that (source line {sourceLine}) — a form name is unique in the whole model, case not counted (WF-020) (dialect §4)
+RGS-312	{head}: no base rule with that name found{reason} — the carrier of a deviation is an ordinary flat rule (characteristic assignment or equation) (dialect §4)
+RGS-313	{head}: no base rule with that name found, and also no exception or deviation{reason} — name as the carrier an ordinary flat rule (characteristic assignment or equation), a 'Uitzondering op'-block or 'Afwijking van'-block, or a member of an 'Uitzonderingen ongeordend op'-block (dialect §4)
+RGS-314	{head}: '{carrier}' is a member of an 'Uitzonderingen ongeordend:'-block without a carrier — such a member is its own defaults group next to the other members, and not a carrier. Write the members under a base rule ('Uitzonderingen ongeordend op <basisregel>:'): a member of such a block can be a carrier (dialect §4)
+RGS-315	{head}: the carriers form a cycle ({path}) — an exception hangs on one carrier, and the chain of carriers ends at the base rule that carries the defaults group; a cycle has no base rule. Let one block of the cycle name an ordinary flat rule or a block outside the cycle as carrier (dialect §4)
+RGS-316	{head} (source line {line}): '(mag opgegeven worden)' generates the {generatedKind} '{generated}', and {declaringType} already declares that name as {declaredKind} (source line {declaredLine}) — a name that the marking generates does not yet exist in the inheritance line of {objectType} (dialect §7)
+RGS-317	{head} (source line {line}): {writer} writes '{member}'{writerAt}, a member that '(mag opgegeven worden)' generates — '{inputMember}' supplies the case, '{computedMember}' gets the writers of '{attribute}', and '{deviatingMember}' assigns the rule '{rule}'; another writer does not tolerate such a member (dialect §7)
+RGS-317.at	 (source line {line})
+RGS-318	day-kind condition reads {category} '{name}' — a day-kind condition references only dates, date-components, easterSunday, literals, parameters and other day kinds, never derived object state (an attribute or characteristic read)
+RGS-319	day-kind condition reads the session value '{value}' — a day kind classifies a bare date at stratum 0 (ch. 5.4), so its predicate is a function of THE DAY alone; the bound day (BoundDay) is admitted, a ContextValue naming a session value is refused
+RGS-320	rule '{name}'{rowTable}: '{written}' negates no characteristic of {subject} — {reason} (§3.5, dialect §4)
+RGS-320.attribute	'{rest}' is an attribute of {subject} and not a characteristic, and only a characteristic is assigned or negated
+RGS-320.boolean-attribute	'{rest}' is an attribute of {subject} and not a characteristic, and an attribute has no polarity: this Boolean attribute gets false as its value, to be written as 'moet gesteld worden op onwaar'
+RGS-320.not-characteristic	'{rest}' is no characteristic of {subject}{alsoWhole}. Declare the characteristic at {subject}, or write the name as it is declared
+RGS-320.whole-too	, and neither is '{written}'
+RGS-321	rule '{name}'{rowTable}: '{verb} een {written}' negates nothing — after 'een' the frontend reads the name as a whole, as a condition does, and '{written}' is not a characteristic of {subject}. A negation does not stand after 'een'{spellingClause} (§8.1.8, dialect §4)
+RGS-321.write	; write {spelling}
+RGS-322	period comparison (§8.4.3): the {side} boundary '{bound}' is {reason} — a window boundary is a date literal or an own, not time-dependent date-in-days member of the subject; the general date expression that §13.4.15.68 admits is an open wire decision (WF-111, IR-SPEC ch. 4.6)
+RGS-322.navigated-read	a navigated or collecting read of '{attribute}'
+RGS-322.other-type	a read of '{attribute}' on '{type}', an objecttype other than the subject '{subject}': a navigation, and a window boundary never navigates
+RGS-322.subtype	the attribute '{attribute}' of '{type}', a subtype of the subject '{subject}': not every subject is a {type}
+RGS-322.supertype	the attribute '{attribute}' of '{type}', a supertype of the subject '{subject}': this frontend reads that name as another instance, reached along a fact type, and a window boundary never navigates. Read the date of the subject itself ('zijn {attribute}' or with the name {subject})
+RGS-323	{sentences}
+RGS-323.side	operand of a numeric operator is {kind}
+RGS-324	additive operands have incompatible units
+RGS-325	{sentences}
+RGS-325.side	ordering operand is {kind}
+RGS-326	ordering operands have incompatible units
+RGS-327	{sentences}
+RGS-327.side	date-ordering operand is {kind}
+RGS-328	clamp {position} is {kind}, must be numeric
+RGS-329	{function} requires numeric operands, got {type}
+RGS-330	{function}: if one operand has a unit, all operands must have one
+RGS-331	{function}: units '{left}' and '{right}' cannot be converted into each other
+RGS-332	{function} requires date expressions, got {type}
+RGS-333	{function}: {fold} orders dates of two precisions (day and millisecond), which share no order
+RGS-334	assignment: a {value} value is assigned to a {target} target
+RGS-335	assignment across incompatible units
+RGS-336	cannot assign a value of type {valueType} to a {targetType}
+RGS-337	assignment: a value of the {domainWord} '{valueDomain}' is assigned to a target of the {domainWord} '{targetDomain}'
+RGS-338	the result to be assigned has more decimals ({valueDecimals}) than the member allows ({targetDecimals}); round the result explicitly first (§6.1.2)
+RGS-339	cannot allocate a value of type {sourceType} over a {targetType}
+RGS-340	the share to be assigned has more decimals ({shareDecimals}) than the member allows ({targetDecimals}); round the allocation explicitly first (§6.1.2/§9.7.4)
+RGS-341	if one operand has a unit, both must have one
+RGS-342	the units '{left}' and '{right}' cannot be converted into each other
+RGS-343	date ± duration: the duration unit '{unit}' is neither a recognised time unit nor a declared day kind
+RGS-344	{sentences}
+RGS-344.dates-of-two-precisions	{fold} orders dates of two precisions (day and millisecond), which share no order
+RGS-344.numbers-and-dates	{fold} orders operands of two comparable families, numbers and dates, which share no ordering
+RGS-344.operand-sentence	operand of the {fold} ordering fold is {kind}, must be a number or a date
+RGS-345	fact model contract: {violation}
+RGS-346	coverage: {category} '{name}' {verdict}{reasonClause}
+RGS-346.reason	 — {reason}
+RGS-347	period coverage: rule '{rule}' (valid {period}) refers to parameter '{parameter}' without a valid value in {holes}

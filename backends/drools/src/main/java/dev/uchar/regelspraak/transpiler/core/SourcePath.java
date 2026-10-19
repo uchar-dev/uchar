@@ -97,7 +97,7 @@ public final class SourcePath {
         }
     }
 
-    private static Plan refuse(DroolsCode code, String reason) { return new Plan(List.of(), List.of(), 0, 0, new Reason(code, reason)); }
+    private static Plan refuse(Reason reason) { return new Plan(List.of(), List.of(), 0, 0, reason); }
 
     /**
      * Resolve {@code path} against the model. {@code subject} is the fold subject (node 0) and {@code element} the
@@ -107,10 +107,9 @@ public final class SourcePath {
      */
     public static Plan parse(RegelSpraakModel model, Objecttype subject, List<RoleBindingRef> path, Objecttype element) {
         if (model == null || subject == null || element == null)
-            return refuse(DroolsCode.SOURCE_PATH_WITHOUT_SUBJECT, "sourcePath zonder onderwerp of elementtype (WF-102)");
+            return refuse(DroolsCode.SOURCE_PATH_WITHOUT_SUBJECT.reason());
         if (path == null || path.size() < 2)
-            return refuse(DroolsCode.SOURCE_PATH_ONE_STEP, "een sourcePath draagt minstens TWEE stappen, gevonden " + (path == null ? 0 : path.size())
-                    + " — het eenstapsbereik heet sourceRole (WF-102 (b))");
+            return refuse(DroolsCode.SOURCE_PATH_ONE_STEP.reason("steps", path == null ? 0 : path.size()));
         List<Step> steps = new ArrayList<>();
         List<Objecttype> nodes = new ArrayList<>();
         nodes.add(subject);
@@ -120,33 +119,25 @@ public final class SourcePath {
             boolean last = i == path.size() - 1;
             FactType ft = factTypeByName(model, rb == null ? null : rb.factType());
             if (ft == null)
-                return refuse(DroolsCode.SOURCE_PATH_UNKNOWN_FACT, "sourcePath-stap " + i + " noemt het feittype '" + (rb == null ? null : rb.factType())
-                        + "', dat dit document niet declareert (WF-047)");
+                return refuse(DroolsCode.SOURCE_PATH_UNKNOWN_FACT.reason("step", i, "factType", rb == null ? null : rb.factType()));
             Role bound = roleByName(ft, rb.role());
             if (bound == null)
-                return refuse(DroolsCode.SOURCE_PATH_UNDECLARED_ROLE, "sourcePath-stap " + i + " noemt de rol '" + rb.role() + "', die het feittype '"
-                        + ft.naam + "' niet declareert (WF-047)");
+                return refuse(DroolsCode.SOURCE_PATH_UNDECLARED_ROLE.reason("step", i, "role", rb.role(), "factType", ft.naam));
             Role opposite = oppositeRole(ft, bound);
             if (opposite == null)
-                return refuse(DroolsCode.SOURCE_PATH_NO_OPPOSITE, "sourcePath-stap " + i + " bindt de rol '" + bound.naam() + "' van feittype '"
-                        + ft.naam + "', dat geen tegenoverliggende rol heeft (WF-047)");
+                return refuse(DroolsCode.SOURCE_PATH_NO_OPPOSITE.reason("step", i, "role", bound.naam(), "factType", ft.naam));
             // (d) the walk is CONNECTED: the opposite role must be filled by what the previous step reaches.
             if (!fills(van, opposite))
-                return refuse(DroolsCode.SOURCE_PATH_DISCONNECTED_STEP, "sourcePath-stap " + i + ": de tegenoverliggende rol '" + opposite.naam() + "' vult '"
-                        + opposite.objecttypeNaam() + "', maar deze stap begint bij '" + van.naam + "' ("
-                        + (i == 0 ? "het vouwonderwerp" : "het type dat de vorige stap bereikt")
-                        + ") — een sourcePath is een verbonden wandeling (WF-102 (d))");
+                return refuse(DroolsCode.SOURCE_PATH_DISCONNECTED_STEP.reason("step", i, "role", opposite.naam(), "fillerType", opposite.objecttypeNaam(), "startType", van.naam,
+                        "startReason", DroolsCode.SOURCE_PATH_DISCONNECTED_STEP.part(i == 0 ? "fold-subject" : "previous-step")));
             Objecttype filler = model.objectTypeByName(bound.objecttypeNaam());
             if (filler == null)
-                return refuse(DroolsCode.SOURCE_PATH_UNKNOWN_OBJECT, "sourcePath-stap " + i + ": de gebonden rol '" + bound.naam() + "' vult '"
-                        + bound.objecttypeNaam() + "', een objecttype dat dit document niet declareert (WF-047)");
+                return refuse(DroolsCode.SOURCE_PATH_UNKNOWN_OBJECT.reason("step", i, "role", bound.naam(), "objectType", bound.objecttypeNaam()));
             // (d) the LANDING, two-sided exactly as WF-102 has it: elementType may be a strict SUBTYPE of
             // what the last step's role fills (ch. 2.2's exclusion direction), and the pattern class is then the
             // narrower one — which is what makes the element the population and the relation merely the reach.
             if (last && !compatible(element, filler))
-                return refuse(DroolsCode.SOURCE_PATH_OFF_ELEMENT, "sourcePath-stap " + i + ": de gebonden rol '" + bound.naam() + "' vult '"
-                        + filler.naam + "', maar het elementType is '" + element.naam
-                        + "' — het pad moet op het elementtype landen (WF-102 (d))");
+                return refuse(DroolsCode.SOURCE_PATH_OFF_ELEMENT.reason("step", i, "role", bound.naam(), "objectType", filler.naam, "elementType", element.naam));
             Objecttype destination = last ? element : filler;
             // §13.3.9 the storage direction. A to-many bound role keeps its link at the FAR end, named after the
             // opposite role; a to-one bound role keeps it here, named after itself. The question is asked of the
@@ -156,9 +147,7 @@ public final class SourcePath {
             Objecttype carrier = toMany ? destination : van, target = toMany ? van : destination;
             String roleField = toMany ? opposite.naam() : bound.naam();
             if (!FactModelGenerator.hasReferenceField(model, carrier, roleField, target))
-                return refuse(DroolsCode.SOURCE_PATH_NO_JOIN, "sourcePath-stap " + i + " (" + van.naam + " -> " + destination.naam + ") heeft geen beanveld — "
-                        + FactModelGenerator.noJoinFieldReason(model, van, bound.naam(), destination).text()
-                        + " (§13.3.9 opslagrichting)");
+                return refuse(DroolsCode.SOURCE_PATH_NO_JOIN.reason("step", i, "fromType", van.naam, "toType", destination.naam, "reason", FactModelGenerator.noJoinFieldReason(model, van, bound.naam(), destination).text()));
             steps.add(new Step(toMany, Namen.ident(roleField, false)));
             nodes.add(destination);
         }

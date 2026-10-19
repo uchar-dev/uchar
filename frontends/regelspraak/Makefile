@@ -78,6 +78,7 @@ compile: parser
 	mkdir -p $(OUT_DIR)
 	javac -cp $(ANTLR4_JAR) -d $(OUT_DIR) $(GEN_DIR)/*.java
 	javac -cp $(ANTLR4_JAR):$(OUT_DIR) -d $(OUT_DIR) $(MAIN_SRC)
+	cp -R src/main/resources/. $(OUT_DIR)/
 
 # Build + run the JUnit 5 tests via the standalone console launcher.
 test: compile $(JUNIT_JAR)

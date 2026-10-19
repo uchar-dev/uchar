@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.graph.ProducerConsumer;
+import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
@@ -226,7 +227,6 @@ public final class TmsTranspiler {
      *  bound variables. A consequence has no such ceiling ({@link Consequence}). */
     static final int MAX_READS = 13;
 
-    private static final String STILL_NOT = "deze tak draagt deze vorm nog niet";
     static final String INCONSISTENCY = FactModelGenerator.PACKAGE + ".Inconsistentie";
 
     private final RegelSpraakModel model;
@@ -433,20 +433,17 @@ public final class TmsTranspiler {
      *  kind, never left out of the text: a consequence the rendering does not spell yet, by its simple name, or a member
      *  of a bean that Drools reads as something else where a pattern spells it. */
     public static final class DrlRefusal extends RuntimeException {
-        private final String category;
-        private final DroolsCode code;
+        private final Reason reason;
 
-        DrlRefusal(DroolsCode code, String category, String message, Throwable cause) {
-            super(message, cause);
-            this.category = category;
-            this.code = code;
+        DrlRefusal(Reason reason, Throwable cause) {
+            super(reason.text(), cause);
+            this.reason = reason;
         }
 
         /** The register code of the refusal of the rendering. */
-        public DroolsCode code() { return code; }
+        public DroolsCode code() { return reason.code(); }
 
-        /** The kind refused, such as the simple name of a consequence. */
-        public String category() { return category; }
+        public Reason reason() { return reason; }
     }
 
     /** The outcome of the one rendering into DRL text ({@link #drl}): the text with the predicates of its day-kind
@@ -472,7 +469,7 @@ public final class TmsTranspiler {
             }
         }
         if (drlRefused != null)
-            throw new DrlRefusal(drlRefused.code(), drlRefused.category(), drlRefused.getMessage(), drlRefused);
+            throw new DrlRefusal(drlRefused.reason(), drlRefused);
         return drl;
     }
 
@@ -804,7 +801,7 @@ public final class TmsTranspiler {
             rules.addAll(meet("feitcreatie", nameOf(f.naam()), () -> factCreation(f)));
         for (ResolvedUniquenessUnion u : model.uniquenessUnions)
             rules.addAll(meet("uniciteit-unie", nameOf(u.naam()), () -> uniquenessUnionRules(u)));
-        if (composition != null) refuse(composition.code(), "defaults", "effectieve stapels", composition.getMessage());
+        if (composition != null) refuse(composition.reason(), "defaults", "effectieve stapels");
         for (Stapels.Stack st : effective) {
             generated.put(stackName(st), new RegelSpraakModel.GeneratedFrom(stackTarget(st),
                     RegelSpraakModel.OriginForm.DEFAULTS_STACK));
@@ -834,9 +831,7 @@ public final class TmsTranspiler {
             // the case runner sets the evaluation date under this name after the parameters, so a parameter of the same
             // Java name would read the date, or the date the parameter
             if (globals.containsKey(REKENDATUM))
-                refuse(DroolsCode.PARAMETER_EVALUATION_DATE_NAME, "parameter", REKENDATUM, "een parameter met de Java-naam '" + REKENDATUM + "' naast een vorm die"
-                        + " de rekendatum leest: de caserunner zet de rekendatum onder die naam, zodat de twee één global"
-                        + " delen");
+                refuse(DroolsCode.PARAMETER_EVALUATION_DATE_NAME.reason(), "parameter", REKENDATUM);
             else {
                 declarations.add(new Modelplan.Global(REKENDATUM, LocalDate.class));
                 states.add(evaluationDateStateRule());
@@ -868,35 +863,36 @@ public final class TmsTranspiler {
             for (RulePlan r : rules) formOfRule.put(r.naam(), naam);
             return rules;
         } catch (Refusal w) {
-            refuse(w.code(), category, naam, w.getMessage());
+            refuse(w.reason(), category, naam);
             return List.of();
         }
     }
 
-    private void refuse(DroolsCode code, String category, String naam, String reason) {
-        Coverage d = Coverage.skip(code, category, naam, reason);
+    private void refuse(Reason reason, String category, String naam) {
+        Coverage d = Coverage.skip(reason, category, naam);
         coverage.add(d);
         d.report(model);
     }
 
     /** A form, or a part of one, this branch does not lower; the message is the manifest's reason. */
     private static final class Refusal extends RuntimeException {
-        private final DroolsCode code;
-        Refusal(DroolsCode code, String reason) {
-            super(reason);
-            this.code = code;
+        private final Reason reason;
+        Refusal(Reason reason) {
+            super(reason.text());
+            this.reason = reason;
         }
-        DroolsCode code() { return code; }
+        DroolsCode code() { return reason.code(); }
+        Reason reason() { return reason; }
     }
 
     // ---------------- a rule ----------------
 
     private List<RulePlan> regel(ResolvedRule r) {
         // the rule of a form is named by the form, and a KieBase keeps one rule per name
-        if (r.naam() == null) throw new Refusal(DroolsCode.RULE_WITHOUT_NAME, "een regel zonder naam (WF-107)");
+        if (r.naam() == null) throw new Refusal(DroolsCode.RULE_WITHOUT_NAME.reason());
         if (!(r.target() instanceof Expr.AttributeReference target) || target.objectType() == null || target.attribute() == null)
-            throw new Refusal(DroolsCode.RULE_TARGET_UNRESOLVED, "een regel zonder opgelost doel");
-        if (navigationBindings.containsKey(target)) throw new Refusal(DroolsCode.RULE_NAVIGATED_TARGET, "een regel op een genavigeerd doel");
+            throw new Refusal(DroolsCode.RULE_TARGET_UNRESOLVED.reason());
+        if (navigationBindings.containsKey(target)) throw new Refusal(DroolsCode.RULE_NAVIGATED_TARGET.reason());
         // a version with a bounded validity gates on the evaluation date: its rules bind the date where the window
         // admits it (Reads.valid), and beside them a rule faults the session that carries no date
         List<RulePlan> out = new ArrayList<>(switch (r.category()) {
@@ -952,11 +948,10 @@ public final class TmsTranspiler {
     private List<RulePlan> characteristicRule(ResolvedRule r, Expr.AttributeReference target) {
         // the loader refuses any other value (WF-022); asked again because this rule writes true whatever it says
         if (!(r.value() instanceof Expr.Literal l && "waar".equals(l.valueText()) && l.type() instanceof Datatype.BooleanType))
-            throw new Refusal(DroolsCode.CHARACTERISTIC_ASSIGNMENT_NOT_TRUE, "een kenmerktoekenning met een andere waarde dan de constante waar (WF-022)");
+            throw new Refusal(DroolsCode.CHARACTERISTIC_ASSIGNMENT_NOT_TRUE.reason());
         Member time = declared(target.objectType(), target.attribute(), true);
         if (time.time() != null)
-            throw new Refusal(DroolsCode.TIME_CHARACTERISTIC_TARGET, "het tijdsafhankelijke kenmerk '" + time.naam() + "' van " + time.declarant().naam
-                    + " als doel: " + STILL_NOT + "; geen golden met cases schrijft er een (RUNTIME-SEMANTICS ch. 3.11)");
+            throw new Refusal(DroolsCode.TIME_CHARACTERISTIC_TARGET.reason("attribute", time.naam(), "declarant", time.declarant().naam));
         Member member = member(target.objectType(), target.attribute(), true);
         Supplier<Reads> fresh = () -> new Reads(target.objectType()).valid(r.validity());
         Reads reads = fresh.get();
@@ -1036,21 +1031,13 @@ public final class TmsTranspiler {
         Member member = timeMember(target.objectType(), target.attribute(), false, "een tijdsafhankelijk doel");
         List<String> others = otherWriters(r, target.objectType(), member.key());
         if (!others.isEmpty())
-            throw new Refusal(DroolsCode.TIME_TARGET_SECOND_WRITER, "een tijdsafhankelijk doel met een tweede schrijver ('" + member.naam() + "' van "
-                    + member.declarant().naam + " wordt ook geschreven door "
-                    + String.join(", ", others.stream().map(x -> "\"" + x + "\"").toList()) + "): " + STILL_NOT
-                    + "; een doel met meer schrijvers blijft omheind (RUNTIME-SEMANTICS ch. 7.8), en geen golden met"
-                    + " cases heeft er een");
+            throw new Refusal(DroolsCode.TIME_TARGET_SECOND_WRITER.reason("attribute", member.naam(), "declarant", member.declarant().naam, "writers", String.join(", ", others.stream().map(x -> "\"" + x + "\"").toList())));
         if (Condition.containsTimeWindow(r.condition()))
-            throw new Refusal(DroolsCode.PERIOD_WINDOW_TIME_TARGET, "een periodevenster in de voorwaarde van een regel met het tijdsafhankelijke doel '"
-                    + member.naam() + "' van " + member.declarant().naam + ": daar knipt het venster de tijdlijn"
-                    + " (RUNTIME-SEMANTICS ch. 3.10), en " + STILL_NOT);
+            throw new Refusal(DroolsCode.PERIOD_WINDOW_TIME_TARGET.reason("attribute", member.naam(), "declarant", member.declarant().naam));
         if (!(r.value() instanceof Expr.FunctionCall f && (f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL
                 || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN)))
-            throw new Refusal(DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE, "een waarde van het tijdsafhankelijke doel '" + member.naam() + "' van "
-                    + member.declarant().naam + " die geen tijdsevenredig deel en geen dagentelling is ('"
-                    + (r.value() == null ? "zonder waarde" : snippet(r.value().source())) + "'): " + STILL_NOT
-                    + " (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); geen golden met cases schrijft er een");
+            throw new Refusal(DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.reason("attribute", member.naam(), "declarant", member.declarant().naam, "snippet", r.value() == null ? DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.part("without-value")
+                    : snippet(r.value().source())));
         return writeRule(r, target.objectType(), member, null, Set.of(), !standingTargets.standingTemporal(target));
     }
 
@@ -1078,20 +1065,16 @@ public final class TmsTranspiler {
         boolean part = f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL;
         String description = (part ? "een tijdsevenredig deel" : "een dagentelling") + " ('" + snippet(f.source()) + "')";
         if (f.granulariteit() != target.time())
-            throw new Refusal(DroolsCode.TIMELINE_VALUE_GRANULARITY_MISMATCH, description + " per " + f.granulariteit() + " naar het doel '" + target.naam() + "' met de"
-                    + " granulariteit " + target.time() + ": de emmer is die van het doel (" + (part ? "WF-056" : "WF-058")
-                    + ")");
+            throw new Refusal(DroolsCode.TIMELINE_VALUE_GRANULARITY_MISMATCH.reason("description", description, "sourceGranularity", f.granulariteit(), "attribute", target.naam(), "targetGranularity", target.time(), "ruleReference", part ? "WF-056" : "WF-058"));
         if (target.time() != RegelSpraakModel.Granulariteit.MAAND && target.time() != RegelSpraakModel.Granulariteit.JAAR)
-            throw new Refusal(DroolsCode.TIMELINE_VALUE_NOT_BUCKET, description + " per " + target.time() + ": alleen een maand en een jaar zijn emmers"
-                    + " (RUNTIME-SEMANTICS ch. 3.2)");
+            throw new Refusal(DroolsCode.TIMELINE_VALUE_NOT_BUCKET.reason("description", description, "targetGranularity", target.time()));
         if (f.emptyFallback() != null || f.dimensieSelectie() != null)
-            throw new Refusal(DroolsCode.TIMELINE_VALUE_FALLBACK_SELECTION, description + " met een terugvalwaarde of een dimensieselectie: " + STILL_NOT);
+            throw new Refusal(DroolsCode.TIMELINE_VALUE_FALLBACK_SELECTION.reason("description", description));
         int condition = clipTimeline(f.filter(), subject, reads, description);
         String gran = target.time().name();
         if (!part) {
             if (!f.arguments().isEmpty())
-                throw new Refusal(DroolsCode.DAY_COUNT_WITH_ARGUMENTS, description + " met " + f.arguments().size() + " argumenten: een dagentelling neemt er"
-                        + " geen (WF-058)");
+                throw new Refusal(DroolsCode.DAY_COUNT_WITH_ARGUMENTS.reason("description", description, "argumentCount", f.arguments().size()));
             // RUNTIME-SEMANTICS ch. 3.2: a target on a fixed start point buckets from the constant anchor its walls are
             // computed from
             LocalDate anchor = model.fixedStartPointAnchor(target.declarant(), target.naam());
@@ -1105,21 +1088,16 @@ public final class TmsTranspiler {
         }
         if (f.arguments().size() != 1 || !(f.arguments().get(0) instanceof Expr.AttributeReference b)
                 || b.attribute() == null || b.objectType() != subject || navigationBindings.containsKey(b))
-            throw new Refusal(DroolsCode.TIME_BASE_NOT_OWN, description + " over een basis die geen eigen tijdsafhankelijk attribuut is: " + STILL_NOT
-                    + "; de referentie-interpreter neemt alleen een eigen attribuut als basis (RUNTIME-SEMANTICS ch. 3.7)");
+            throw new Refusal(DroolsCode.TIME_BASE_NOT_OWN.reason("description", description));
         Member base = timeMember(subject, b.attribute(), false, description);
         if (!base.datatype().isNumber())
-            throw new Refusal(DroolsCode.TIME_BASE_NOT_NUMBER, description + " over de basis '" + base.naam() + "', die geen getal is (WF-091)");
+            throw new Refusal(DroolsCode.TIME_BASE_NOT_NUMBER.reason("description", description, "attribute", base.naam()));
         if (base.datatype().unitOf() != null)
-            throw new Refusal(DroolsCode.RATE_RECALCULATION_WITH_UNIT, description + " over de basis '" + base.naam() + "' met de eenheid "
-                    + base.datatype().unitOf().rendering() + ": de herrekening van een tarief is omheind in de"
-                    + " referentie-interpreter en deze tak (RUNTIME-SEMANTICS ch. 3.7); geen golden");
+            throw new Refusal(DroolsCode.RATE_RECALCULATION_WITH_UNIT.reason("description", description, "attribute", base.naam(), "unit", base.datatype().unitOf().rendering()));
         if (base.time().ordinal() < target.time().ordinal())
-            throw new Refusal(DroolsCode.TIME_BASE_FINER_BUCKET, description + " over de basis '" + base.naam() + "' met de granulariteit " + base.time()
-                    + ", fijner dan de emmer " + target.time() + ": de basis staat niet vast over een emmer (RUNTIME-SEMANTICS"
-                    + " ch. 3.7)");
+            throw new Refusal(DroolsCode.TIME_BASE_FINER_BUCKET.reason("description", description, "attribute", base.naam(), "baseGranularity", base.time(), "targetGranularity", target.time()));
         String fixed = Timelines.proRataFixedGrid(subject, target.naam(), f);
-        if (fixed != null) throw new Refusal(DroolsCode.PRO_RATA_FIXED_GRID, description + ": " + fixed);
+        if (fixed != null) throw new Refusal(DroolsCode.PRO_RATA_FIXED_GRID.reason("description", description, "reason", fixed));
         int baseValue = reads.timeline(base);
         int onderwerp = reads.member();
         reads.markFail();
@@ -1140,17 +1118,12 @@ public final class TmsTranspiler {
      */
     private int clipTimeline(Condition c, Objecttype subject, Reads reads, String description) {
         if (!(c instanceof Condition.CharacteristicCheck k))
-            throw new Refusal(DroolsCode.CLIP_CONDITION_NOT_CHARACTERISTIC, description + " met een voorwaarde die geen kenmerk van het onderwerp is"
-                    + (c == null ? " (geen voorwaarde)" : " ('" + snippet(c) + "')") + ": " + STILL_NOT
-                    + "; de referentie-interpreter neemt alleen een eigen tijdsafhankelijk kenmerk (RUNTIME-SEMANTICS"
-                    + " ch. 3.7, 3.8)");
+            throw new Refusal(DroolsCode.CLIP_CONDITION_NOT_CHARACTERISTIC.reason("description", description, "condition", c == null ? DroolsCode.CLIP_CONDITION_NOT_CHARACTERISTIC.part("no-condition")
+                    : DroolsCode.CLIP_CONDITION_NOT_CHARACTERISTIC.part("condition", "snippet", snippet(c))));
         if (k.owner() != null || k.periode() != null)
-            throw new Refusal(DroolsCode.CLIP_OWNED_WHOLE_PERIOD, description + " met een kenmerk met een eigenaar of een geheleperiodetoets in de knip ('"
-                    + snippet(k) + "', WF-097)");
+            throw new Refusal(DroolsCode.CLIP_OWNED_WHOLE_PERIOD.reason("description", description, "snippet", snippet(k)));
         if (k.negation() || k.navigation() != null || navigationBindings.containsKey(k))
-            throw new Refusal(DroolsCode.CLIP_NEGATED_OR_NAVIGATED, description + " met een ontkend of genavigeerd kenmerk ('" + snippet(k) + "'): " + STILL_NOT
-                    + "; de referentie-interpreter neemt alleen een eigen tijdsafhankelijk kenmerk, niet ontkend"
-                    + " (RUNTIME-SEMANTICS ch. 3.7, 3.8)");
+            throw new Refusal(DroolsCode.CLIP_NEGATED_OR_NAVIGATED.reason("description", description, "characteristic", snippet(k)));
         return reads.timeline(timeMember(subject, k.characteristic(), true, description));
     }
 
@@ -1200,8 +1173,7 @@ public final class TmsTranspiler {
     private Set<Class<?>> absorbed(Expr.AttributeReference target, Member member) {
         if (!defaultsTargets.contains(member.key())) return Set.of();
         if (stapels.ownGroup(target.objectType(), target.attribute()))
-            throw new Refusal(DroolsCode.RULE_BESIDE_DEFAULTS_GROUP, "een regel naast een defaultsgroep van hetzelfde type op hetzelfde doel ('" + member.naam()
-                    + "' van " + target.objectType().naam + "): een doel heeft één schrijver, de groep of de regel (WF-050)");
+            throw new Refusal(DroolsCode.RULE_BESIDE_DEFAULTS_GROUP.reason("attribute", member.naam(), "objectType", target.objectType().naam));
         Set<Class<?>> out = new LinkedHashSet<>();
         for (Objecttype t : stapels.absorbedOn(target.objectType(), target.attribute())) out.add(beanClass(t));
         return out;
@@ -1244,32 +1216,21 @@ public final class TmsTranspiler {
     private List<RulePlan> initialisationRule(ResolvedRule r, Expr.AttributeReference target) {
         Member time = declared(target.objectType(), target.attribute(), false);
         if (time.time() != null)
-            throw new Refusal(DroolsCode.INITIALISATION_OF_TIME_ATTRIBUTE, "een initialisatie van het tijdsafhankelijke attribuut '" + time.naam() + "' van "
-                    + time.declarant().naam + ": " + STILL_NOT + "; geen golden met cases heeft er een");
+            throw new Refusal(DroolsCode.INITIALISATION_OF_TIME_ATTRIBUTE.reason("attribute", time.naam(), "declarant", time.declarant().naam));
         Member member = member(target.objectType(), target.attribute(), false);
         ElementKey key = member.key();
         Set<Class<?>> absorbed = absorbed(target, member);
         List<ResolvedRule> writing = initialisations.get(key).stream()
                 .filter(x -> related(((Expr.AttributeReference) x.target()).objectType(), target.objectType())).toList();
         if (writing.size() > 1)
-            throw new Refusal(DroolsCode.MULTIPLE_INITIALISATIONS_ON_TARGET, "twee of meer initialisaties op één doel ('" + member.naam() + "' van " + member.declarant().naam
-                    + ": " + String.join(", ", writing.stream().map(x -> "\"" + x.naam() + "\"").toList())
-                    + "), voorwaardelijk of niet: waar ze allebei gelden rangschikt niets ze en bepaalt het fixpunt de"
-                    + " waarde niet (RUNTIME-SEMANTICS ch. 5.4, WF-079)");
+            throw new Refusal(DroolsCode.MULTIPLE_INITIALISATIONS_ON_TARGET.reason("attribute", member.naam(), "declarant", member.declarant().naam, "rules", String.join(", ", writing.stream().map(x -> "\"" + x.naam() + "\"").toList())));
         // a computing rule outside the standing domain writes a computed leeg, which empties the target for the guard
         boolean emptyBeside = computeRules.getOrDefault(key, List.of()).stream().anyMatch(x ->
                 !standingTargets.standingScalar(x) && related(((Expr.AttributeReference) x.target()).objectType(), target.objectType()));
         List<String> others = otherWriters(r, target.objectType(), key);
         String division = division(r.condition(), r.value());
         if (division != null && !others.isEmpty())
-            throw new Refusal(DroolsCode.INITIALISATION_DIVISION_SHARED_TARGET, "een deling in een initialisatie waarvan het doel nog een schrijver heeft ('" + division
-                    + "'; '" + member.naam() + "' van " + member.declarant().naam + " wordt ook geschreven door "
-                    + String.join(", ", others.stream().map(x -> "\"" + x + "\"").toList()) + "): naast een andere"
-                    + " schrijver is een initialisatie de laagste default (RUNTIME-SEMANTICS ch. 5.4, 7.7), en deze tak"
-                    + " rekent haar uit zodra wat zij leest staat, ook waar de andere schrijver haar later verdringt; een"
-                    + " deling door nul daar is een fout op een tussenstand, die deze tak intrekt zodra de andere"
-                    + " schrijver beslist, waar de referentie afhankelijk van de volgorde van de regels een fout of de"
-                    + " waarde geeft: of zo'n fout telt, wacht op een normbesluit (ch. 5.2, 7.1)");
+            throw new Refusal(DroolsCode.INITIALISATION_DIVISION_SHARED_TARGET.reason("division", division, "attribute", member.naam(), "declarant", member.declarant().naam, "writers", String.join(", ", others.stream().map(x -> "\"" + x + "\"").toList())));
         String naam = r.naam();
         Alpha.FieldTest ofTarget = new Alpha.FieldTest("attribute", Alpha.Comparator.GELIJK, key);
         Alpha.FieldTest ofOther = new Alpha.FieldTest("writer", Alpha.Comparator.NOT_EQUAL, naam);
@@ -1491,8 +1452,8 @@ public final class TmsTranspiler {
      */
     private List<RulePlan> consistencyRules(ResolvedConsistency c) {
         // the rule is named by the form, and the channel test reads the error facts by that name
-        if (c.naam() == null) throw new Refusal(DroolsCode.CONSISTENCY_WITHOUT_NAME, "een consistentie zonder naam (WF-107)");
-        if (c.subject() == null || c.assertie() == null) throw new Refusal(DroolsCode.CONSISTENCY_MISSING_SUBJECT_ASSERTION, "een consistentie zonder subject of assertie");
+        if (c.naam() == null) throw new Refusal(DroolsCode.CONSISTENCY_WITHOUT_NAME.reason());
+        if (c.subject() == null || c.assertie() == null) throw new Refusal(DroolsCode.CONSISTENCY_MISSING_SUBJECT_ASSERTION.reason());
         Supplier<Reads> fresh = () -> new Reads(c.subject()).valid(c.validity());
         Reads reads = fresh.get();
         Set<Integer> read = reads.follow();
@@ -1517,7 +1478,7 @@ public final class TmsTranspiler {
 
     /** A uniqueness over one source (RUNTIME-SEMANTICS ch. 5.9), unscoped or scoped by a parent ({@link #unionUniquenessRules}). */
     private List<RulePlan> uniquenessRules(ResolvedUniqueness u) {
-        if (u.subject() == null || u.keys().isEmpty()) throw new Refusal(DroolsCode.UNIQUENESS_MISSING_SOURCE_KEY, "een Uniqueness zonder bron of sleutel");
+        if (u.subject() == null || u.keys().isEmpty()) throw new Refusal(DroolsCode.UNIQUENESS_MISSING_SOURCE_KEY.reason());
         return unionUniquenessRules(u.naam(), List.of(new ResolvedUniquenessUnion.Source(u.subject(), u.keys())),
                 u.scopeBinding(), u.validity());
     }
@@ -1526,13 +1487,11 @@ public final class TmsTranspiler {
      *  position, so every source carries as many keys (WF-030); a union has no scope (rule 3). */
     private List<RulePlan> uniquenessUnionRules(ResolvedUniquenessUnion u) {
         if (u.sources().size() < 2)
-            throw new Refusal(DroolsCode.UNION_UNIQUENESS_SINGLE_SOURCE, "een Uniqueness over meer bronnen met " + u.sources().size() + " bron: een unie draagt er"
-                    + " ten minste twee (WF-030)");
+            throw new Refusal(DroolsCode.UNION_UNIQUENESS_SINGLE_SOURCE.reason("sourceCount", u.sources().size()));
         int arity = u.sources().get(0).keys().size();
         for (ResolvedUniquenessUnion.Source b : u.sources())
             if (b.type() == null || b.keys().size() != arity)
-                throw new Refusal(DroolsCode.UNION_UNIQUENESS_UNEQUAL_ARITY, "een Uniqueness over meer bronnen met sleutels van ongelijke ariteit of een bron zonder"
-                        + " type: de sleutels worden positie voor positie vergeleken (WF-030)");
+                throw new Refusal(DroolsCode.UNION_UNIQUENESS_UNEQUAL_ARITY.reason());
         return unionUniquenessRules(u.naam(), u.sources(), null, u.validity());
     }
 
@@ -1555,7 +1514,7 @@ public final class TmsTranspiler {
     private List<RulePlan> unionUniquenessRules(String naam, List<ResolvedUniquenessUnion.Source> sources,
                                              RoleBindingRef scopeRole, Validity validity) {
         // the rules are named by the form, and the channel test reads the error facts by that name
-        if (naam == null) throw new Refusal(DroolsCode.UNIQUENESS_WITHOUT_NAME, "een Uniqueness zonder naam (WF-107)");
+        if (naam == null) throw new Refusal(DroolsCode.UNIQUENESS_WITHOUT_NAME.reason());
         String ruleName = model.emittedRuleName(naam);
         List<RulePlan> out = new ArrayList<>();
         for (int b = 0; b < sources.size(); b++) {
@@ -1611,12 +1570,10 @@ public final class TmsTranspiler {
             if (declared(type, key, false).time() != null) {
                 String description = "een uniciteitssleutel '" + key + "' van " + type.naam + " op een tijdlijn";
                 if (ever >= 0)
-                    throw new Refusal(DroolsCode.TIME_KEY_BESIDE_SECOND, description + " naast een tweede: een sleutel heeft hoogstens één tijdsafhankelijk deel,"
-                            + " de gelijktijdige koppeling van twee heeft geen corpuscase (RUNTIME-SEMANTICS ch. 5.9); "
-                            + STILL_NOT);
+                    throw new Refusal(DroolsCode.TIME_KEY_BESIDE_SECOND.reason("description", description));
                 Member member = timeMember(type, key, false, description);
                 if (!member.datatype().isNumber())
-                    throw new Refusal(DroolsCode.TIME_KEY_NOT_NUMBER, description + " die geen getal is: " + STILL_NOT);
+                    throw new Refusal(DroolsCode.TIME_KEY_NOT_NUMBER.reason("description", description));
                 ever = keySlots.size();
                 keySlots.add(reads.timeline(member));
                 enumeration.add(false);
@@ -1698,15 +1655,10 @@ public final class TmsTranspiler {
         // decided as a predicate of the dialect over the fixpoint, never a construct of the core: the reference
         // interpreter faults on it ("not implemented") and the ASP backend does not translate it
         if (!rv.inconsistent())
-            throw notRead(DroolsCode.DIALECT_FIRED_PREDICATE, "Regelversie 'is gevuurd'", rv, "geen vorm van de kern maar een predicaat van het"
-                    + " RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30), dat de"
-                    + " referentie-interpreter en de ASP-backend niet evalueren");
+            throw new Refusal(DroolsCode.DIALECT_FIRED_PREDICATE.reason("snippet", snippet(rv)));
         String producer = rv.regel();
         if (!channelProducer(producer))
-            throw new Refusal(DroolsCode.INCONSISTENT_PRODUCER_NOT_CARRIED, "een Regelversie 'is inconsistent' over \"" + producer + "\" in de voorwaarde ('"
-                    + snippet(rv) + "'): deze tak draagt als producent van het §9.5-kanaal alleen een"
-                    + " Consistency, een Uniqueness en een regel met een deling of een wortel in haar voorwaarde of haar"
-                    + " waarde (§6.5, §6.6)");
+            throw new Refusal(DroolsCode.INCONSISTENT_PRODUCER_NOT_CARRIED.reason("producer", producer, "snippet", snippet(rv)));
         int i = reads.channel(producer);
         return new Term.Call(StaticFunction.CHANNEL, List.of(new Term.SlotValue(i, null)), source(rv.source()));
     }
@@ -1803,10 +1755,7 @@ public final class TmsTranspiler {
             squareRoot |= deposits(c, TmsTranspiler::squareRootSite);
         }
         if (division && squareRoot)
-            throw new Refusal(DroolsCode.DEPOSIT_KINDS_MIXED, "een deling en een wortel die deponeren in één voorwaarde of"
-                    + " in de filters van één vouw (" + what + "): de toets van deze tak hoort hun §9.5-deponeringen samen,"
-                    + " en het feit kan niet zeggen welke soort deponeerde, terwijl een deling de code " + DIVISION_BY_EMPTY
-                    + " heeft en een wortel geen (RUNTIME-SEMANTICS ch. 5.7b)");
+            throw new Refusal(DroolsCode.DEPOSIT_KINDS_MIXED.reason("form", what));
         return division ? List.of(DIVISION_BY_EMPTY) : List.of();
     }
 
@@ -1868,23 +1817,23 @@ public final class TmsTranspiler {
     private List<RulePlan> allocation(ResolvedAllocation v) {
         String naam = v.naam();
         // the rules of a form are named by the form, and the deposits and shares carry that name
-        if (naam == null) throw new Refusal(DroolsCode.ALLOCATION_WITHOUT_NAME, "een verdeling zonder naam (WF-107)");
+        if (naam == null) throw new Refusal(DroolsCode.ALLOCATION_WITHOUT_NAME.reason());
         Objecttype source = v.sourceType(), target = v.targetType();
         ResolvedAllocation.Method method = v.method();
         if (source == null || target == null || v.sourceAttribute() == null || v.targetAttribute() == null || method == null)
-            throw new Refusal(DroolsCode.ALLOCATION_UNRESOLVED_OPERAND, "een verdeling zonder opgeloste bron, doel of methode");
+            throw new Refusal(DroolsCode.ALLOCATION_UNRESOLVED_OPERAND.reason());
         RoleBindingRef rb = roleBindings.get(v);
-        if (rb == null) throw new Refusal(DroolsCode.ALLOCATION_WITHOUT_CONNECTING_ROLE, "een verdeling zonder connectingRole (IR-SPEC ch. 3.2)");
+        if (rb == null) throw new Refusal(DroolsCode.ALLOCATION_WITHOUT_CONNECTING_ROLE.reason());
         // WF-025, which the verifier holds and this backend does not run: the fields each method carries
         boolean equal = method == ResolvedAllocation.Method.GELIJKE_DELEN;
         if (method == ResolvedAllocation.Method.NAAR_RATO && v.ratioAttribute() == null)
-            throw new Refusal(DroolsCode.RATIO_ALLOCATION_WITHOUT_WEIGHT, "een verdeling naar rato zonder gewicht (WF-025)");
+            throw new Refusal(DroolsCode.RATIO_ALLOCATION_WITHOUT_WEIGHT.reason());
         if (equal && v.ratioAttribute() != null)
-            throw new Refusal(DroolsCode.EQUAL_ALLOCATION_WITH_WEIGHT, "een verdeling in gelijke delen met een gewicht (WF-025)");
+            throw new Refusal(DroolsCode.EQUAL_ALLOCATION_WITH_WEIGHT.reason());
         if (v.maximumAttribute() != null && v.ratioAttribute() == null)
-            throw new Refusal(DroolsCode.ALLOCATION_MAXIMUM_WITHOUT_WEIGHT, "een verdeling met een maximum zonder gewicht (WF-025)");
+            throw new Refusal(DroolsCode.ALLOCATION_MAXIMUM_WITHOUT_WEIGHT.reason());
         if (method != ResolvedAllocation.Method.OP_VOLGORDE && v.orderingAttribute() != null)
-            throw new Refusal(DroolsCode.ORDERING_KEY_WITHOUT_METHOD, "een volgordesleutel op een verdeling die niet op volgorde verdeelt (WF-025)");
+            throw new Refusal(DroolsCode.ORDERING_KEY_WITHOUT_METHOD.reason());
         Member pot = numberMember(source, v.sourceAttribute(), "de pot");
         Member aandeel = numberMember(target, v.targetAttribute(), "het aandeel");
         Member rest = v.remainderAttribute() == null ? null : numberMember(source, v.remainderAttribute(), "het restant");
@@ -1892,8 +1841,7 @@ public final class TmsTranspiler {
         Member maximum = v.maximumAttribute() == null ? null : numberMember(target, v.maximumAttribute(), "het maximum");
         Member key = v.orderingAttribute() == null ? null : member(target, v.orderingAttribute(), false);
         if (key != null && !key.datatype().isOrderable())
-            throw new Refusal(DroolsCode.ORDERING_KEY_NOT_ORDERABLE, "de volgordesleutel '" + key.naam() + "' van type " + typeName(key.datatype())
-                    + " is niet ordenbaar (WF-025)");
+            throw new Refusal(DroolsCode.ORDERING_KEY_NOT_ORDERABLE.reason("attribute", key.naam(), "datatype", typeName(key.datatype())));
         allocationWriters(v, target, aandeel);
         if (rest != null) allocationWriters(v, source, rest);
 
@@ -1946,8 +1894,7 @@ public final class TmsTranspiler {
     private Member numberMember(Objecttype houder, String naam, String role) {
         Member member = member(houder, naam, false);
         if (!member.datatype().isNumberLike())
-            throw new Refusal(DroolsCode.ALLOCATION_NON_NUMERIC_MEMBER, "een verdeling waarvan " + role + " het attribuut '" + member.naam() + "' van "
-                    + member.declarant().naam + " is, van type " + typeName(member.datatype()) + " en geen getal: " + STILL_NOT);
+            throw new Refusal(DroolsCode.ALLOCATION_NON_NUMERIC_MEMBER.reason("role", role, "attribute", member.naam(), "declarant", member.declarant().naam, "datatype", typeName(member.datatype())));
         return member;
     }
 
@@ -1976,8 +1923,7 @@ public final class TmsTranspiler {
             if (writes) allocations.add("\"" + nameOf(o.naam()) + "\"");
         }
         if (!allocations.isEmpty())
-            throw new Refusal(DroolsCode.TWO_ALLOCATIONS_WRITE_TARGET, "twee verdelingen schrijven het attribuut '" + member.naam() + "' van " + type.naam
-                    + " (ook " + String.join(", ", allocations) + "): een doel heeft hoogstens één verdeling (WF-026)");
+            throw new Refusal(DroolsCode.TWO_ALLOCATIONS_WRITE_TARGET.reason("attribute", member.naam(), "objectType", type.naam, "allocations", String.join(", ", allocations)));
         for (int i = 0; i < defaults.size(); i++) {
             PrioritizedDefaults pd = defaults.get(i);
             Objecttype t = model.objectTypeByName(pd.onderwerp());
@@ -1986,9 +1932,7 @@ public final class TmsTranspiler {
                 groups.add(pd.naam() != null ? "\"" + pd.naam() + "\"" : "/rules/prioritizedDefaults/" + i);
         }
         if (!groups.isEmpty())
-            throw new Refusal(DroolsCode.ALLOCATION_BESIDE_DEFAULTS_GROUP, "een verdeling naast de defaultsgroep " + String.join(", ", groups) + " op het attribuut '"
-                    + member.naam() + "' van " + type.naam + ": een doel van een defaultsgroep heeft geen andere schrijver"
-                    + " (WF-050)");
+            throw new Refusal(DroolsCode.ALLOCATION_BESIDE_DEFAULTS_GROUP.reason("groups", String.join(", ", groups), "attribute", member.naam(), "objectType", type.naam));
         for (ResolvedRule r : model.resolvedRegels)
             if (r.category() != ResolvedRule.Kind.KENMERKTOEKENNING
                     && r.target() instanceof Expr.AttributeReference d && d.objectType() != null && d.attribute() != null
@@ -1996,9 +1940,7 @@ public final class TmsTranspiler {
                     && ProducerConsumer.elementOf(d.objectType(), d.attribute(), false).equals(el))
                 rules.add("\"" + nameOf(r.naam()) + "\"");
         if (!rules.isEmpty())
-            throw new Refusal(DroolsCode.ALLOCATION_BESIDE_COMPUTING_RULE, "een verdeling naast de regel " + String.join(", ", rules) + " op het attribuut '"
-                    + member.naam() + "' van " + type.naam + ": een verdeling naast een rekenende regel of een initialisatie"
-                    + " op één doel; " + STILL_NOT);
+            throw new Refusal(DroolsCode.ALLOCATION_BESIDE_COMPUTING_RULE.reason("rules", String.join(", ", rules), "attribute", member.naam(), "objectType", type.naam));
     }
 
     /**
@@ -2013,8 +1955,7 @@ public final class TmsTranspiler {
     private Consumer<Reads> recipientsJoin(RoleBindingRef rb, Objecttype source, Objecttype target, String naam) {
         RegelSpraakModel.Role[] pair = FactModelGenerator.boundRolePair(model, rb);
         if (pair == null)
-            throw new Refusal(DroolsCode.CONNECTING_ROLE_UNDECLARED, "de connectingRole van de verdeling noemt geen gedeclareerde rol (" + rb.factType() + ", "
-                    + rb.role() + ")");
+            throw new Refusal(DroolsCode.CONNECTING_ROLE_UNDECLARED.reason("factType", rb.factType(), "role", rb.role()));
         if (rb.factType() != null && createdRelations.contains(Namen.norm(rb.factType()))) {
             LinkRelation relation = linkRelation(rb, pair[0], "de verdeling '" + naam + "'");
             return member -> member.addToRangePlan(linkExists(relation));
@@ -2022,14 +1963,11 @@ public final class TmsTranspiler {
         String recipientRole = pair[0].naam(), sourceRole = pair[1].naam();
         boolean forward = !model.toManyRole(source, target, recipientRole);
         if (forward && model.toManyRole(target, source, sourceRole))
-            throw new Refusal(DroolsCode.ALLOCATION_SHARED_BEAN_FIELD, "een verdeling over de enkelvoudige ontvangerrol '" + recipientRole + "' wiens zusterrol '"
-                    + sourceRole + "' meervoudig is: dat feittype heeft één beanveld voor beide richtingen, zoals een vouw"
-                    + " over zo'n rol weigert (§13.3.9 opslagrichting)");
+            throw new Refusal(DroolsCode.ALLOCATION_SHARED_BEAN_FIELD.reason("recipientRole", recipientRole, "sourceRole", sourceRole));
         Objecttype carrier = forward ? source : target, another = forward ? target : source;
         String role = forward ? recipientRole : sourceRole;
         if (!FactModelGenerator.hasReferenceField(model, carrier, role, another))
-            throw new Refusal(DroolsCode.ROLE_WITHOUT_BEAN_FIELD, "de join van de verdeling heeft geen beanveld — "
-                    + FactModelGenerator.noJoinFieldReason(model, carrier, role, another).text() + " (§13.3.9 opslagrichting)");
+            throw new Refusal(DroolsCode.ROLE_WITHOUT_BEAN_FIELD.reason("reason", FactModelGenerator.noJoinFieldReason(model, carrier, role, another).text()));
         // forward the source's reference field names the recipient, else the recipient's names the source
         Binding.Field field = new Binding.Field(beanClass(carrier), role);
         return member -> member.subjectJoin(forward ? new Join(id("verdelingsbereik"), null, FOLD_SUBJECT, field)
@@ -2072,23 +2010,19 @@ public final class TmsTranspiler {
      * interpreter evaluates the condition first, in every pass.
      */
     private List<RulePlan> objectCreation(ResolvedObjectCreation oc) {
-        if (oc.naam() == null) throw new Refusal(DroolsCode.OBJECT_CREATION_WITHOUT_NAME, "een objectcreatie zonder naam (WF-107)");
+        if (oc.naam() == null) throw new Refusal(DroolsCode.OBJECT_CREATION_WITHOUT_NAME.reason());
         Objecttype fresh = oc.createdType(), subject = oc.subject();
-        if (fresh == null || subject == null) throw new Refusal(DroolsCode.OBJECT_CREATION_UNRESOLVED_TYPE, "een objectcreatie zonder opgelost type");
+        if (fresh == null || subject == null) throw new Refusal(DroolsCode.OBJECT_CREATION_UNRESOLVED_TYPE.reason());
         RoleBindingRef vr = roleBindings.get(oc);
         FactModelGenerator.CreationLink k = FactModelGenerator.creationLink(model, fresh, subject, vr, oc.naam());
         if (k.ambiguous() != null)
-            throw new Refusal(k.ambiguous().code(), k.ambiguous().text() + "; " + STILL_NOT);
-        if (k.refusal() != null) throw new Refusal(k.refusal().code(), k.refusal().text());
+            throw new Refusal(k.ambiguous().framed("still-not"));
+        if (k.refusal() != null) throw new Refusal(k.refusal());
         RegelSpraakModel.FactType ft = vr != null ? factType(vr.factType()) : typePairRelation(subject, fresh, k);
         if (vr == null && ft == null)
-            throw new Refusal(DroolsCode.CREATION_BACK_LINK_SUPERTYPE, "een objectcreatie zonder connectingRole-binding waarvan de terugkoppeling uit het typenpaar"
-                    + " ('" + k.backRole() + "' en '" + k.fwdRole() + "') via een supertype van het onderwerp of van het"
-                    + " gemaakte type loopt: de strata van deze tak leiden de relatie van de terugkoppeling af uit de exacte"
-                    + " typen en zien haar dan niet geschreven: " + STILL_NOT);
+            throw new Refusal(DroolsCode.CREATION_BACK_LINK_SUPERTYPE.reason("backRole", k.backRole(), "fwdRole", k.fwdRole()));
         if (ft == null || ft.rollen.size() != 2 || ft.reciprocal)
-            throw new Refusal(DroolsCode.CREATION_RELATION_NOT_BINARY, "een objectcreatie over de relatie '" + (vr != null ? vr.factType() : ft.naam)
-                    + "', die geen relatie van twee rollen is: " + STILL_NOT);
+            throw new Refusal(DroolsCode.CREATION_RELATION_NOT_BINARY.reason("factType", vr != null ? vr.factType() : ft.naam));
         String relation = Namen.norm(ft.naam);
         boolean newIsFirst = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(k.fwdRole()));
         String naam = oc.naam();
@@ -2103,22 +2037,18 @@ public final class TmsTranspiler {
         List<Initialisation> inits = new ArrayList<>();
         for (ResolvedObjectCreation.MemberInit t : oc.initialisations()) {
             if (t.attribute() == null || t.value() == null)
-                throw new Refusal(DroolsCode.MEMBER_INITIALISATION_INCOMPLETE, "een ledeninitialisatie zonder lid of waarde");
+                throw new Refusal(DroolsCode.MEMBER_INITIALISATION_INCOMPLETE.reason());
             // a characteristic is true or false (WF-027): the reference interpreter faults on a value of another type,
             // and the consequence below would read it as not true and leave the characteristic unset
             Datatype characteristicValue = t.characteristic() ? eff.typeOf(t.value()) : null;
             if (characteristicValue != null && !characteristicValue.isBoolean() && !characteristicValue.isUnknown())
-                throw new Refusal(DroolsCode.CHARACTERISTIC_INIT_NON_BOOLEAN, "een kenmerkinitialisatie van '" + t.attribute() + "' met een waarde van type "
-                        + characteristicValue.naam() + " ('" + snippet(t.value().source()) + "'): een kenmerk is waar of onwaar"
-                        + " (WF-027), en de referentie-interpreter faalt op zo'n waarde");
+                throw new Refusal(DroolsCode.CHARACTERISTIC_INIT_NON_BOOLEAN.reason("attribute", t.attribute(), "datatype", characteristicValue.naam(), "snippet", snippet(t.value().source())));
             String division = division(t.value());
             if (division != null)
-                throw new Refusal(DroolsCode.MEMBER_INIT_DIVISION, "een deling in een ledeninitialisatie ('" + division + "'), waarvan deze tak de §6.5-"
-                        + "deponering niet maakt: " + STILL_NOT);
+                throw new Refusal(DroolsCode.MEMBER_INIT_DIVISION.reason("division", division));
             String squareRoot = squareRoot(t.value());
             if (squareRoot != null)
-                throw new Refusal(DroolsCode.MEMBER_INIT_SQUARE_ROOT, "een wortel in een ledeninitialisatie ('" + squareRoot + "'), waarvan deze tak de §6.6-"
-                        + "deponering niet maakt: " + STILL_NOT);
+                throw new Refusal(DroolsCode.MEMBER_INIT_SQUARE_ROOT.reason("squareRoot", squareRoot));
             Member member = member(fresh, t.attribute(), t.characteristic());
             Term w = value(t.value(), reads);
             if (!t.characteristic())
@@ -2261,21 +2191,20 @@ public final class TmsTranspiler {
      * other branches refuse it. A second distinct filler of a to-one role is a fault ({@link #linkRules}).
      */
     private List<RulePlan> factCreation(ResolvedFactCreation fc) {
-        if (fc.naam() == null) throw new Refusal(DroolsCode.FACT_CREATION_WITHOUT_NAME, "een feitcreatie zonder naam (WF-107)");
+        if (fc.naam() == null) throw new Refusal(DroolsCode.FACT_CREATION_WITHOUT_NAME.reason());
         Objecttype anchor = fc.anchor(), target = fc.target();
         if (anchor == null || target == null || fc.factType() == null || fc.path() == null || fc.anchorRole() == null)
-            throw new Refusal(DroolsCode.FACT_CREATION_UNRESOLVED_OPERAND, "een feitcreatie zonder opgelost anker, doel, feittype of pad");
+            throw new Refusal(DroolsCode.FACT_CREATION_UNRESOLVED_OPERAND.reason());
         RegelSpraakModel.FactType ft = factType(fc.factType());
         if (ft == null || ft.rollen.size() != 2 || ft.reciprocal)
-            throw new Refusal(DroolsCode.FACT_CREATION_NOT_BINARY, "een feitcreatie van de relatie '" + fc.factType() + "', die geen relatie van twee rollen"
-                    + " is: " + STILL_NOT);
+            throw new Refusal(DroolsCode.FACT_CREATION_NOT_BINARY.reason("factType", fc.factType()));
         String relation = Namen.norm(ft.naam);
         boolean anchorIsFirst = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(fc.anchorRole()));
         Condition c = fc.condition();
         Condition.CharacteristicCheck targetCheck = c instanceof Condition.CharacteristicCheck k && k.owner() != null && !Host.hostOp(k, anchor)
                 && Host.hostOp(k, target) && !navigationBindings.containsKey(k) && k.periode() == null ? k : null;
         if (targetCheck == null && c != null && Host.targetHostOutsideRange(c, target, navigationBindings::containsKey))
-            throw new Refusal(DroolsCode.TARGET_CONDITION_NESTED_HOST, Host.TARGET_ATTEMPT_NESTED);
+            throw new Refusal(DroolsCode.TARGET_CONDITION_NESTED_HOST.reason("reason", Host.TARGET_ATTEMPT_NESTED));
         String ruleName = model.emittedRuleName(fc.naam());
         Condition anchorGuard = targetCheck == null ? c : null;
         Supplier<Reads> fresh = () -> new Reads(anchor).valid(fc.validity());
@@ -2334,25 +2263,22 @@ public final class TmsTranspiler {
     private Hop step(RoleBindingRef step, Objecttype van, String description) {
         RegelSpraakModel.Role[] pair = step == null ? null : FactModelGenerator.boundRolePair(model, step);
         if (pair == null || pair[0] == pair[1])
-            throw new Refusal(DroolsCode.STEP_NOT_ROLE_PAIR, description + ": een stap die geen rolpaar van twee rollen noemt");
+            throw new Refusal(DroolsCode.STEP_NOT_ROLE_PAIR.reason("description", description));
         Objecttype destination = model.objectTypeByName(pair[0].objecttypeNaam());
-        if (destination == null) throw new Refusal(DroolsCode.STEP_ROLE_WITHOUT_FILLER, description + ": de rol '" + pair[0].naam() + "' heeft geen gedeclareerde vuller");
+        if (destination == null) throw new Refusal(DroolsCode.STEP_ROLE_WITHOUT_FILLER.reason("description", description, "role", pair[0].naam()));
         Hop created = linkHop(step, van, destination);
         if (created != null) return created;
         if (!pair[0].meervoudig()) {
             if (!FactModelGenerator.hasReferenceField(model, van, pair[0].naam(), destination))
-                throw new Refusal(DroolsCode.ONE_HOP_NO_FIELD, description + ": " + FactModelGenerator.noReferenceFieldReason(model, van, pair[0].naam(), destination).text()
-                        + " (§13.3.9 opslagrichting)");
+                throw new Refusal(DroolsCode.ONE_HOP_NO_FIELD.reason("description", description, "reason", FactModelGenerator.noReferenceFieldReason(model, van, pair[0].naam(), destination).text()));
             return new Hop(van, destination, pair[0].naam(), true, null, false);
         }
         if (!pair[1].meervoudig()) {
             if (!FactModelGenerator.hasReferenceField(model, destination, pair[1].naam(), van))
-                throw new Refusal(DroolsCode.ONE_HOP_NO_FIELD, description + ": " + FactModelGenerator.noReferenceFieldReason(model, destination, pair[1].naam(), van).text()
-                        + " (§13.3.9 opslagrichting)");
+                throw new Refusal(DroolsCode.ONE_HOP_NO_FIELD.reason("description", description, "reason", FactModelGenerator.noReferenceFieldReason(model, destination, pair[1].naam(), van).text()));
             return new Hop(van, destination, pair[1].naam(), false, null, false);
         }
-        throw new Refusal(DroolsCode.MANY_PAIR_NO_FIELD, description + ": de stap over '" + step.factType() + "' heeft twee rollen naar veel, waarvoor het"
-                + " beanmodel geen veld heeft (§13.3.9 opslagrichting)");
+        throw new Refusal(DroolsCode.MANY_PAIR_NO_FIELD.reason("description", description, "factType", step.factType()));
     }
 
     /** The guard of a fact creation on each target ({@code check}, hosted on a type the target satisfies), for the
@@ -2536,9 +2462,7 @@ public final class TmsTranspiler {
         boolean characteristic = l0.isCharacteristic();
         String target = l0.target();
         if (characteristic && owner.attribute(target) != null)
-            throw new Refusal(DroolsCode.CHARACTERISTIC_TARGET_NAME_CLASH, "een kenmerkdoel met de naam van een attribuut ('" + target + "' van " + owner.naam
-                    + "): de bean draagt één veld per naam en het attribuut gaat voor, zodat het kenmerk niet te schrijven"
-                    + " en niet te onderscheiden is");
+            throw new Refusal(DroolsCode.CHARACTERISTIC_TARGET_NAME_CLASH.reason("attribute", target, "objectType", owner.naam));
         Member member = member(owner, target, characteristic);
         Objecttype declarant = owner.declarantOf(target);
         StackBuild b = new StackBuild(stackName(st), member, characteristic, beanClass(owner),
@@ -2618,21 +2542,16 @@ public final class TmsTranspiler {
     /** The refusals per default. */
     private void verifyDefault(StackBuild b, Default d) {
         if (d.initialisatie() && b.characteristic)
-            throw new Refusal(DroolsCode.DEFAULT_INITIALISATION_ON_CHARACTERISTIC, "een initialisatiedefault op een kenmerkdoel ('" + b.member.naam() + "' van "
-                    + b.member.declarant().naam + "): een kenmerk kent geen initialisatie (WF-075)");
+            throw new Refusal(DroolsCode.DEFAULT_INITIALISATION_ON_CHARACTERISTIC.reason("attribute", b.member.naam(), "declarant", b.member.declarant().naam));
         if (!d.initialisatie() && d.condition() == null && d.hasOwnContent())
-            throw new Refusal(DroolsCode.DEFAULT_WITHOUT_JUSTIFICATION, "een beslissende default zonder rechtvaardiging ('" + (d.source() != null ? d.source()
-                    : "zonder bron") + "', doel '" + b.member.naam() + "')");
+            throw new Refusal(DroolsCode.DEFAULT_WITHOUT_JUSTIFICATION.reason("source", d.source() != null ? d.source() : DroolsCode.DEFAULT_WITHOUT_JUSTIFICATION.part("without-source"),
+                    "attribute", b.member.naam()));
         String division = division(d.condition(), d.consequence());
         if (division != null)
-            throw new Refusal(DroolsCode.DEFAULT_DIVISION_INTERMEDIATE, "een deling in een default ('" + division + "'): deze tak rekent een default uit zodra wat"
-                    + " hij leest staat, ook een die een hogere default verdringt; een deling door nul daar is een fout op"
-                    + " een tussenstand, die deze tak intrekt zodra de hogere default beslist: of zo'n fout telt, wacht op"
-                    + " een normbesluit (RUNTIME-SEMANTICS ch. 5.2, 7.1)");
+            throw new Refusal(DroolsCode.DEFAULT_DIVISION_INTERMEDIATE.reason("division", division));
         String squareRoot = squareRoot(d.condition(), d.consequence());
         if (squareRoot != null)
-            throw new Refusal(DroolsCode.DEFAULT_SQUARE_ROOT, "een wortel in een default ('" + squareRoot + "'), waarvan deze tak de §6.6-deponering niet"
-                    + " maakt: een default deponeert alleen waar hij beslist (RUNTIME-SEMANTICS ch. 7.1)");
+            throw new Refusal(DroolsCode.DEFAULT_SQUARE_ROOT.reason("squareRoot", squareRoot));
     }
 
     /** The snippet of the first division in {@code conditionTerm} or {@code waarde}, or null: in the justification or the
@@ -2990,14 +2909,11 @@ public final class TmsTranspiler {
             // vouw; here it stands where a value is read, which the verifier refuses (WF-110 (a)) and the reference
             // interpreter faults on; both branches refuse it in this sentence, which the destructive DRL-text lowering
             // gave until card drl-teksttak-op-truth-maintenance
-            case Expr.InstanceSetUnion u -> throw notComputed(DroolsCode.INSTANCE_UNION_IN_VALUE, "InstanceSetUnion", u.source(), "zij duidt de instanties van"
-                    + " een §5.7-concatenatie aan, en alleen een instantietelling verbruikt ze (WF-110 (a))");
+            case Expr.InstanceSetUnion u -> throw new Refusal(DroolsCode.INSTANCE_UNION_IN_VALUE.reason("snippet", snippet(u.source())));
             case Expr.Rounding a -> rounding(a, reads);
             case Expr.Clamp b -> clamp(b, reads);
             case Expr.DimensionCellRead c -> dimensionCell(c, reads);
-            case Expr.VariableRef v -> throw notComputed(DroolsCode.UNBOUND_VARIABLE_REFERENCE, "VariableReference", v.source(), "het merkteken van een"
-                    + " variabele die de frontend niet bond, dat de lader weigert (WF-034), zodat het deze tak alleen in een"
-                    + " met de hand gebouwd model bereikt");
+            case Expr.VariableRef v -> throw new Refusal(DroolsCode.UNBOUND_VARIABLE_REFERENCE.reason("snippet", snippet(v.source())));
             case Expr.Let l -> let(l, reads);
             case Expr.BinderRef b -> binderRead(b, reads);
             case Expr.IfThenElse i -> choice(i, reads);
@@ -3039,10 +2955,6 @@ public final class TmsTranspiler {
         return source == null ? null : source.snippet();
     }
 
-    private static Refusal notComputed(DroolsCode code, String form, dev.uchar.regelspraak.ir.Source source, String reason) {
-        return new Refusal(code, "een " + form + " in een waarde ('" + snippet(source) + "'): " + reason);
-    }
-
     private static String snippet(dev.uchar.regelspraak.ir.Source source) {
         return source == null || source.snippet() == null ? "zonder bron" : source.snippet();
     }
@@ -3058,7 +2970,7 @@ public final class TmsTranspiler {
         String source = source(l.source());
         if (t instanceof Datatype.Numeriek || t instanceof Datatype.Percentage) {
             BigDecimal[] r = RationalParser.van(l.valueText());
-            if (r == null) throw new Refusal(DroolsCode.NUMERIC_LITERAL_UNREADABLE, "een getal dat niet te lezen is ('" + l.valueText() + "')");
+            if (r == null) throw new Refusal(DroolsCode.NUMERIC_LITERAL_UNREADABLE.reason("valueText", l.valueText()));
             Breuk b = Breuk.van(r[0]).delen(Breuk.van(r[1]));
             Object v = b.isTerminerend() ? b.naarDecimal() : b;
             return new Term.Const(v, t, source);
@@ -3069,16 +2981,16 @@ public final class TmsTranspiler {
         }
         if (t instanceof Datatype.DatumInDagen) {
             LocalDate v = Literals.parseDate(l.valueText());
-            if (v == null) throw new Refusal(DroolsCode.DATE_LITERAL_UNREADABLE, "een datum die niet te lezen is ('" + l.valueText() + "')");
+            if (v == null) throw new Refusal(DroolsCode.DATE_LITERAL_UNREADABLE.reason("valueText", l.valueText()));
             return new Term.Const(v, t, source);
         }
         if (t instanceof Datatype.DateTime) {
             LocalDateTime v = Literals.parseDateTime(l.valueText());
-            if (v == null) throw new Refusal(DroolsCode.DATETIME_LITERAL_UNREADABLE, "een datum-tijd die niet te lezen is ('" + l.valueText() + "')");
+            if (v == null) throw new Refusal(DroolsCode.DATETIME_LITERAL_UNREADABLE.reason("valueText", l.valueText()));
             return new Term.Const(v, t, source);
         }
         String label = Literals.textOrEnumLabel(l);
-        if (label == null) throw new Refusal(DroolsCode.LITERAL_DATATYPE_NOT_CARRIED, "een Literal van type " + t + ": " + STILL_NOT);
+        if (label == null) throw new Refusal(DroolsCode.LITERAL_DATATYPE_NOT_CARRIED.reason("datatype", t));
         return new Term.Const(label, t, source);
     }
 
@@ -3123,9 +3035,7 @@ public final class TmsTranspiler {
     private Term power(Expr.Binary b, Reads reads) {
         Integer n = b.right() instanceof Expr.Literal lit && lit.type().isNumberLike() ? wholeExponent(lit.valueText()) : null;
         if (n == null)
-            throw new Refusal(DroolsCode.POWER_NON_INTEGER_EXPONENT, "een macht met een exponent die geen geheel getal van ten minste 0 als literal is ('"
-                    + snippet(b.source()) + "'): de reële macht is OPEN (RUNTIME-SEMANTICS ch. 2.1), waar de"
-                    + " referentie-interpreter een exacte wortel geeft of faalt");
+            throw new Refusal(DroolsCode.POWER_NON_INTEGER_EXPONENT.reason("snippet", snippet(b.source())));
         Term base = value(b.left(), reads);
         return new Term.Call(StaticFunction.RS_POWER, List.of(base, constant(n)), source(b.source()));
     }
@@ -3151,22 +3061,21 @@ public final class TmsTranspiler {
     private Term dateCalculation(Expr.Binary b, Reads reads) {
         Expr.BinOp op = b.op();
         if (op != Expr.BinOp.PLUS && op != Expr.BinOp.MIN && op != Expr.BinOp.VERMINDERD_MET)
-            throw new Refusal(DroolsCode.DATE_BINARY_OPERATOR_UNSUPPORTED, "een Binary " + Spelling.BINARY_OP.spelling(op) + " met een datum ('" + snippet(b.source())
-                    + "')");
+            throw new Refusal(DroolsCode.DATE_BINARY_OPERATOR_UNSUPPORTED.reason("operator", Spelling.BINARY_OP.spelling(op), "snippet", snippet(b.source())));
         boolean dateLeft = eff.typeOf(b.left()).isDate();
         Expr dateExpr = dateLeft ? b.left() : b.right();
         Expr durationExpr = dateLeft ? b.right() : b.left();
         boolean optellen = op == Expr.BinOp.PLUS;
         if (eff.typeOf(durationExpr).isDate() || (!optellen && !dateLeft))
-            throw new Refusal(DroolsCode.DATE_ARITHMETIC_INVALID_OPERANDS, "een rekensom van twee datums of een duur min een datum ('" + snippet(b.source()) + "')");
+            throw new Refusal(DroolsCode.DATE_ARITHMETIC_INVALID_OPERANDS.reason("snippet", snippet(b.source())));
         // ch. 3.8 puts the calendar table first, as TimeCalculation.dayKindForUnit looks a spelling up for every branch
         String dayKind = TimeCalculation.dayKindForUnit(model, eff.typeOf(durationExpr).unitOf());
         if (dayKind != null) return dayKindStep(b, dateExpr, durationExpr, optellen, dayKind, reads);
         String unit = TimeCalculation.chronoUnit(eff.typeOf(durationExpr));
-        if (unit == null) throw new Refusal(DroolsCode.DURATION_WITHOUT_TIME_UNIT, "een duur zonder tijdseenheid ('" + snippet(b.source()) + "')");
+        if (unit == null) throw new Refusal(DroolsCode.DURATION_WITHOUT_TIME_UNIT.reason("snippet", snippet(b.source())));
         boolean clock = switch (unit) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
         if (clock && !(eff.typeOf(dateExpr) instanceof Datatype.DateTime))
-            throw new Refusal(DroolsCode.CLOCK_UNIT_ON_DATE, "een klokeenheid bij een datum zonder tijd ('" + snippet(b.source()) + "')");
+            throw new Refusal(DroolsCode.CLOCK_UNIT_ON_DATE.reason("snippet", snippet(b.source())));
         reads.markFail();
         Term d = value(dateExpr, reads), n = value(durationExpr, reads);
         return new Term.Call(StaticFunction.DATE_STEP, List.of(d, n, constant(unit), constant(optellen)),
@@ -3206,7 +3115,7 @@ public final class TmsTranspiler {
         java.util.function.Predicate<LocalDate> p = dayKinds.datePredicate(naam);
         if (p == null) {
             Reason why = dayKindRefusal(naam, new LinkedHashSet<>());
-            throw new Refusal(why.code(), description + ": " + why.text());
+            throw new Refusal(why.framed("described", "description", description));
         }
         return p;
     }
@@ -3224,29 +3133,24 @@ public final class TmsTranspiler {
         for (ResolvedDayKindDefinition d : model.resolvedDayKindDefinitions)
             if (d.naam() != null && d.naam().equalsIgnoreCase(naam)) def = d;
         if (def == null)
-            return new Reason(DroolsCode.DAY_KIND_WITHOUT_DEFINITION, "de dagsoort '" + naam + "' heeft geen definitie (WF-031)");
+            return DroolsCode.DAY_KIND_WITHOUT_DEFINITION.reason("dayKind", naam);
         if (!visited.add(naam.toLowerCase())) return null;
         String[] parameter = {null};
         Condition.containsOperand(def.condition(), e -> e instanceof Expr.ParameterRef pr
                 && (parameter[0] = pr.parameter() == null ? "(onopgelost)" : pr.parameter().naam()) != null);
         if (parameter[0] != null)
-            return new Reason(DroolsCode.DAY_KIND_READS_PARAMETER, "de definitie van de dagsoort '" + naam + "' leest de parameter '" + parameter[0] + "', die deze"
-                    + " tak in een dagsoortdefinitie niet leest (WF-031 laat haar toe)");
+            return DroolsCode.DAY_KIND_READS_PARAMETER.reason("dayKind", naam, "parameter", parameter[0]);
         List<Condition.Predicate> tests = new ArrayList<>();
         dayKindTests(def.condition(), tests);
         for (Condition.Predicate t : tests) {
             if (!(t.operand() == null || t.operand() instanceof Expr.Constant c && "de dag".equalsIgnoreCase(c.naam())))
-                return new Reason(DroolsCode.DAY_KIND_TESTS_OTHER, "de definitie van de dagsoort '" + naam + "' toetst de dagsoort '" + t.dayKind() + "' op een andere"
-                        + " dag dan de gebonden dag ('" + snippet(t) + "'), een vorm die geen executor uitvoert"
-                        + " (RUNTIME-SEMANTICS ch. 3.8)");
+                return DroolsCode.DAY_KIND_TESTS_OTHER.reason("dayKind", naam, "testedDayKind", t.dayKind(), "snippet", snippet(t));
             if (t.dayKind() != null && dayKinds.datePredicate(t.dayKind()) == null) {
                 Reason nested = dayKindRefusal(t.dayKind(), visited);
                 if (nested != null) return nested;
             }
         }
-        return new Reason(DroolsCode.DAY_KIND_CONDITION_UNSUPPORTED, "de definitie van de dagsoort '" + naam + "' heeft een voorwaarde ('" + snippet(def.condition()) + "')"
-                + " buiten wat de dagsoortcompiler van de backend draagt: vergelijkingen van de gebonden dag, zijn"
-                + " datumdelen, de eerste paasdag en literalen, en andere dagsoorten op de gebonden dag");
+        return DroolsCode.DAY_KIND_CONDITION_UNSUPPORTED.reason("dayKind", naam, "snippet", snippet(def.condition()));
     }
 
     /** The day-kind tests in {@code c}, in wire order, through its composites. */
@@ -3300,8 +3204,7 @@ public final class TmsTranspiler {
      *  {@link DepositFlag}). */
     private Term squareRootValue(Expr.FunctionCall f, Reads reads) {
         if (f.arguments().size() != 1)
-            throw new Refusal(DroolsCode.SQUARE_ROOT_ARGUMENT_COUNT, "een squareRoot met " + f.arguments().size() + " argumenten ('" + snippet(f.source())
-                    + "'): de wortel heeft er één (WF-037)");
+            throw new Refusal(DroolsCode.SQUARE_ROOT_ARGUMENT_COUNT.reason("argumentCount", f.arguments().size(), "snippet", snippet(f.source())));
         Term radicand = value(f.arguments().get(0), reads);
         int depositFlag = depositSite(f) ? reads.depositFlag() : -1;
         return new Term.SquareRoot(StaticFunction.SQUARE_ROOT, radicand, depositFlag, source(f.source()));
@@ -3341,10 +3244,7 @@ public final class TmsTranspiler {
     private Term textPart(Expr e, Reads reads, String where) {
         Datatype t = eff.typeOf(e);
         if (!(t instanceof Datatype.Tekst) && !(t instanceof Datatype.Enumeratie))
-            throw new Refusal(DroolsCode.TEXT_PART_NON_TEXT, "een tekstdeel van type " + typeName(t) + " in een " + where + " ('" + snippet(e.source())
-                    + "'): RUNTIME-SEMANTICS ch. 1.2 legt alleen vast dat een leeg deel \"\" leest; de tekst van een getal,"
-                    + " een waarheidswaarde of een datum beslist de spec niet, en de referentie-interpreter en de"
-                    + " runtimehulp rsTekst geven er een verschillende");
+            throw new Refusal(DroolsCode.TEXT_PART_NON_TEXT.reason("datatype", typeName(t), "where", where, "snippet", snippet(e.source())));
         Term f = value(e, reads);
         return new Term.Call(StaticFunction.RS_TEXT, List.of(f), f.source());
     }
@@ -3355,8 +3255,7 @@ public final class TmsTranspiler {
      *  name, as that branch refuses it. The reference interpreter and the ASP backend do not read a cell. */
     private Term dimensionCell(Expr.DimensionCellRead c, Reads reads) {
         if (c.labels() == null || c.labels().size() != 1)
-            throw new Refusal(DroolsCode.DIMENSION_CELL_MULTI_DIMENSION, "een DimensionCellRead over " + (c.labels() == null ? 0 : c.labels().size())
-                    + " dimensies ('" + snippet(c.source()) + "'): deze tak leest alleen een cel van één dimensie");
+            throw new Refusal(DroolsCode.DIMENSION_CELL_MULTI_DIMENSION.reason("dimensionCount", c.labels() == null ? 0 : c.labels().size(), "snippet", snippet(c.source())));
         int i = dimensionRead(c.attribute(), reads, "een DimensionCellRead");
         String label = c.labels().get(0);
         return new Term.Call(StaticFunction.CELL, List.of(new Term.SlotValue(i, source(c.attribute().source())), constant(label)),
@@ -3371,14 +3270,11 @@ public final class TmsTranspiler {
     private Term dimensionFold(Expr.FunctionCall f, Reads reads) {
         Expr.FunctionKind kind = f.kind();
         if (kind != Expr.FunctionKind.SOM && kind != Expr.FunctionKind.MINIMUM && kind != Expr.FunctionKind.MAXIMUM)
-            throw new Refusal(DroolsCode.DIMENSION_FOLD_UNSUPPORTED_KIND, "een Aggregation " + kind + " over een dimensieselectie ('" + snippet(f.source())
-                    + "'): alleen een som, een minimum en een maximum vouwen een dimensieselectie (WF-037)");
+            throw new Refusal(DroolsCode.DIMENSION_FOLD_UNSUPPORTED_KIND.reason("kind", kind, "snippet", snippet(f.source())));
         if (f.emptyFallback() != null && kind != Expr.FunctionKind.SOM)
-            throw new Refusal(DroolsCode.EMPTY_FALLBACK_NON_SUM, "een emptyFallback op een Aggregation " + kind + " ('" + snippet(f.source()) + "'): alleen"
-                    + " een som heeft er een (WF-037)");
+            throw new Refusal(DroolsCode.EMPTY_FALLBACK_NON_SUM.reason("kind", kind, "snippet", snippet(f.source())));
         if (f.arguments().size() != 1 || !(f.arguments().get(0) instanceof Expr.AttributeReference a))
-            throw new Refusal(DroolsCode.DIMENSION_FOLD_NON_ATTRIBUTE, "een Aggregation over een dimensieselectie over iets anders dan één attribuut ('"
-                    + snippet(f.source()) + "')");
+            throw new Refusal(DroolsCode.DIMENSION_FOLD_NON_ATTRIBUTE.reason("snippet", snippet(f.source())));
         int i = dimensionRead(a, reads, "een Aggregation over een dimensieselectie");
         List<String> labels = List.copyOf(f.dimensieSelectie().labels());
         Term fallback = f.emptyFallback() == null ? null : restated(value(f.emptyFallback(), reads),
@@ -3399,17 +3295,14 @@ public final class TmsTranspiler {
      *  writes, bound off its bean. A dimensioned attribute over a path, or one a form writes, is refused by name. */
     private int dimensionRead(Expr.AttributeReference a, Reads reads, String description) {
         if (a.objectType() == null || a.attribute() == null)
-            throw new Refusal(DroolsCode.DIMENSION_READ_UNRESOLVED_ATTRIBUTE, "een onopgeloste AttributeReference in " + description + " ('" + snippet(a.source()) + "')");
+            throw new Refusal(DroolsCode.DIMENSION_READ_UNRESOLVED_ATTRIBUTE.reason("description", description, "snippet", snippet(a.source())));
         if (navigationBindings.containsKey(a))
-            throw new Refusal(DroolsCode.DIMENSION_READ_OVER_PATH, description + " over een pad ('" + snippet(a.source()) + "'): de tak leest een gedimensioneerd"
-                    + " attribuut alleen op het eigen onderwerp");
+            throw new Refusal(DroolsCode.DIMENSION_READ_OVER_PATH.reason("description", description, "snippet", snippet(a.source())));
         if (a.objectType() != reads.subject)
-            throw new Refusal(DroolsCode.OWN_READ_FOREIGN_SUBJECT, "een eigen lezing die " + a.objectType().naam + " noemt op een " + reads.subject.naam
-                    + " ('" + snippet(a.source()) + "', WF-053)");
+            throw new Refusal(DroolsCode.OWN_READ_FOREIGN_SUBJECT.reason("objectType", a.objectType().naam, "subject", reads.subject.naam, "snippet", snippet(a.source())));
         Member member = dimensionedMember(reads.subject, a.attribute());
         if (writers.containsKey(member.key()))
-            throw new Refusal(DroolsCode.DIMENSION_READ_WRITTEN_ATTRIBUTE, description + " over het attribuut '" + member.naam() + "', dat een vorm schrijft ('"
-                    + snippet(a.source()) + "'): de tak leest een gedimensioneerd attribuut alleen als invoer");
+            throw new Refusal(DroolsCode.DIMENSION_READ_WRITTEN_ATTRIBUTE.reason("description", description, "attribute", member.naam(), "snippet", snippet(a.source())));
         return reads.own(member);
     }
 
@@ -3426,7 +3319,7 @@ public final class TmsTranspiler {
      * else of it can fault, deposit or end an evaluation ({@link #readsFirst}).
      */
     private Term let(Expr.Let l, Reads reads) {
-        if (l.binder() == null) throw new Refusal(DroolsCode.LET_WITHOUT_BINDER, "een Let zonder binder ('" + snippet(l.source()) + "')");
+        if (l.binder() == null) throw new Refusal(DroolsCode.LET_WITHOUT_BINDER.reason("snippet", snippet(l.source())));
         Term value = value(l.value(), reads);
         int slot = reads.binder();
         String key = Namen.norm(l.binder());
@@ -3511,12 +3404,9 @@ public final class TmsTranspiler {
         String naam = b.naam() == null ? null : Namen.norm(b.naam());
         Integer slot = naam == null ? null : reads.binders.get(naam);
         if (slot == null && naam != null && reads.outside.contains(naam))
-            throw new Refusal(DroolsCode.BINDER_READ_FOLD_FILTER, "een BinderRef '" + b.naam() + "' van een Let om een vouw, in het filter of de matrix"
-                    + " van die vouw ('" + snippet(b.source()) + "'): de bijdrageregels van de vouw rekenen het filter en"
-                    + " de matrix per lid uit en binden de waarde van de Let niet: " + STILL_NOT);
+            throw new Refusal(DroolsCode.BINDER_READ_FOLD_FILTER.reason("binder", b.naam(), "snippet", snippet(b.source())));
         if (slot == null)
-            throw new Refusal(DroolsCode.BINDER_WITHOUT_ENCLOSING_LET, "een BinderRef '" + b.naam() + "' zonder omsluitende Let die hem bindt ('"
-                    + snippet(b.source()) + "', WF-064)");
+            throw new Refusal(DroolsCode.BINDER_WITHOUT_ENCLOSING_LET.reason("binder", b.naam(), "snippet", snippet(b.source())));
         return new Term.Binder(slot, b.naam(), source(b.source()));
     }
 
@@ -3553,8 +3443,7 @@ public final class TmsTranspiler {
                 reads.markFail();
                 return new Term.Fail(ComputeFault.DAY_OUTSIDE_DAY_KIND, source);
             }
-            default -> throw new Refusal(DroolsCode.CONTEXT_VALUE_UNSUPPORTED, "de contextwaarde '" + naam + "' ('" + snippet(c.source()) + "'): de lader laat"
-                    + " alleen evaluationDate, evaluationYear en de gebonden dag toe (WF-098)");
+            default -> throw new Refusal(DroolsCode.CONTEXT_VALUE_UNSUPPORTED.reason("name", naam, "snippet", snippet(c.source())));
         }
     }
 
@@ -3631,12 +3520,9 @@ public final class TmsTranspiler {
         Expr.FunctionKind kind = f.kind();
         String spelling = Spelling.BUILTIN_KIND.spelling(kind);
         if (kind == Expr.FunctionKind.TIJDSEVENREDIG_DEEL || kind == Expr.FunctionKind.AANTAL_DAGEN_IN)
-            throw notComputed(DroolsCode.PROPORTIONAL_DAY_COUNT_UNTIMED, "BuiltinCall " + spelling, f.source(), "deze tak rekent een tijdsevenredig"
-                    + " deel en een dagentelling alleen als de tijdlijn van een tijdsafhankelijk doel (RUNTIME-SEMANTICS"
-                    + " ch. 3.7, 3.8, 3.11)");
+            throw new Refusal(DroolsCode.PROPORTIONAL_DAY_COUNT_UNTIMED.reason("spelling", spelling, "snippet", snippet(f.source())));
         if (f.filter() != null)
-            throw new Refusal(DroolsCode.BUILTIN_FILTER_WITHOUT_TIMELINE, "een BuiltinCall " + spelling + " met een filter ('" + snippet(f.source()) + "'): alleen een"
-                    + " bucketing over een tijdlijn draagt er een");
+            throw new Refusal(DroolsCode.BUILTIN_FILTER_WITHOUT_TIMELINE.reason("spelling", spelling, "snippet", snippet(f.source())));
         List<Expr> a = f.arguments();
         return switch (kind) {
             case WORTEL -> exactSquareRoot(f, reads);
@@ -3668,8 +3554,7 @@ public final class TmsTranspiler {
      *  {@link DepositFlag}). The destructive lowering computed a binary approximation here. */
     private Term exactSquareRoot(Expr.FunctionCall f, Reads reads) {
         if (f.arguments().size() != 1)
-            throw new Refusal(DroolsCode.SQUARE_ROOT_ARGUMENT_COUNT, "een squareRoot met " + f.arguments().size() + " argumenten ('" + snippet(f.source())
-                    + "'): de wortel heeft er één (WF-037)");
+            throw new Refusal(DroolsCode.SQUARE_ROOT_ARGUMENT_COUNT.reason("argumentCount", f.arguments().size(), "snippet", snippet(f.source())));
         reads.markFail();
         Term radicand = value(f.arguments().get(0), reads);
         int depositFlag = depositSite(f) ? reads.depositFlag() : -1;
@@ -3679,8 +3564,7 @@ public final class TmsTranspiler {
     /** The one argument of {@code f}; a call with another number is refused (WF-037). */
     private static Expr oneArgument(Expr.FunctionCall f, String spelling) {
         if (f.arguments().size() != 1)
-            throw new Refusal(DroolsCode.ONE_ARGUMENT_BUILTIN_ARITY, "een " + spelling + " met " + f.arguments().size() + " argumenten ('" + snippet(f.source())
-                    + "'): deze builtin heeft er één (WF-037)");
+            throw new Refusal(DroolsCode.ONE_ARGUMENT_BUILTIN_ARITY.reason("spelling", spelling, "count", f.arguments().size(), "snippet", snippet(f.source())));
         return f.arguments().get(0);
     }
 
@@ -3690,23 +3574,20 @@ public final class TmsTranspiler {
     private Term duration(Expr.FunctionCall f, Reads reads, String spelling) {
         List<Expr> a = f.arguments();
         if (a.size() != 2)
-            throw new Refusal(DroolsCode.DURATION_ARGUMENT_COUNT, "een " + spelling + " met " + a.size() + " argumenten ('" + snippet(f.source()) + "'): een"
-                    + " tijdsduur heeft er twee (WF-037)");
+            throw new Refusal(DroolsCode.DURATION_ARGUMENT_COUNT.reason("spelling", spelling, "count", a.size(), "snippet", snippet(f.source())));
         Datatype van = eff.typeOf(a.get(0)), to = eff.typeOf(a.get(1));
         if (!van.isDate() || !to.isDate() || !sameDateKind(van, to))
-            throw new Refusal(DroolsCode.DURATION_MIXED_DATE_PRECISION, "een " + spelling + " die niet twee datums van één precisie meet ('" + snippet(f.source())
-                    + "', WF-038)");
+            throw new Refusal(DroolsCode.DURATION_MIXED_DATE_PRECISION.reason("spelling", spelling, "snippet", snippet(f.source())));
         Datatype type = eff.typeOf(f);
         // ch. 3.8 puts the calendar table first, as TimeCalculation.dayKindForUnit looks a spelling up for every branch
         String dayKind = TimeCalculation.dayKindForUnit(model, type.unitOf());
         if (dayKind != null) return dayKindDuration(f, reads, spelling, dayKind, van instanceof Datatype.DateTime);
         String unit = TimeCalculation.chronoUnit(type);
         if (unit == null)
-            throw new Refusal(DroolsCode.DURATION_SPELLING_NO_UNIT, "een " + spelling + " zonder tijdseenheid ('" + snippet(f.source()) + "', WF-038)");
+            throw new Refusal(DroolsCode.DURATION_SPELLING_NO_UNIT.reason("spelling", spelling, "snippet", snippet(f.source())));
         boolean clock = switch (unit) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
         if (clock && !(van instanceof Datatype.DateTime))
-            throw new Refusal(DroolsCode.CLOCK_UNIT_WITHOUT_DATETIME, "een " + spelling + " in een klokeenheid tussen datums zonder tijd ('" + snippet(f.source())
-                    + "', WF-038)");
+            throw new Refusal(DroolsCode.CLOCK_UNIT_WITHOUT_DATETIME.reason("spelling", spelling, "snippet", snippet(f.source())));
         Term from = value(a.get(0), reads), upTo = value(a.get(1), reads);
         boolean absolute = f.kind() == Expr.FunctionKind.ABSOLUTE_TIJDSDUUR;
         return new Term.Call(StaticFunction.RS_DURATION, List.of(from, upTo, constant(unit), constant(absolute)),
@@ -3725,9 +3606,7 @@ public final class TmsTranspiler {
     private Term dayKindDuration(Expr.FunctionCall f, Reads reads, String spelling, String dayKind, boolean dateTime) {
         String description = "een " + spelling + " in dagsoorten ('" + snippet(f.source()) + "')";
         if (dateTime)
-            throw new Refusal(DroolsCode.DAY_KIND_COUNT_DATETIMES, description + " tussen twee datum-tijden: de referentie-interpreter en de ASP-backend weigeren haar"
-                    + " met naam, omdat het tellen van hele dagen van een soort tussen twee tijdstippen een regel voor de"
-                    + " deeldag aan elk eind vraagt, die RUNTIME-SEMANTICS ch. 3.8 niet vastlegt (ch. 3.12)");
+            throw new Refusal(DroolsCode.DAY_KIND_COUNT_DATETIMES.reason("description", description));
         java.util.function.Predicate<LocalDate> datePredicate = dayKindPredicate(dayKind, description);
         Term from = value(f.arguments().get(0), reads), upTo = value(f.arguments().get(1), reads);
         boolean absolute = f.kind() == Expr.FunctionKind.ABSOLUTE_TIJDSDUUR;
@@ -3741,8 +3620,7 @@ public final class TmsTranspiler {
         Expr arg = oneArgument(f, spelling);
         Datatype t = eff.typeOf(arg);
         if (!t.isDate() || (clock && !(t instanceof Datatype.DateTime)))
-            throw new Refusal(DroolsCode.DATE_PART_NON_DATE, "een " + spelling + " uit iets anders dan een " + (clock ? "datum-tijd" : "datum") + " ('"
-                    + snippet(f.source()) + "')");
+            throw new Refusal(DroolsCode.DATE_PART_NON_DATE.reason("spelling", spelling, "dateType", DroolsCode.DATE_PART_NON_DATE.part(clock ? "date-time" : "date"), "snippet", snippet(f.source())));
         Term d = value(arg, reads);
         return new Term.Call(StaticFunction.RS_DATE_PART, List.of(d, constant(field)), source(f.source()));
     }
@@ -3754,8 +3632,7 @@ public final class TmsTranspiler {
         Expr arg = oneArgument(f, spelling);
         Unit unit = eff.unitOf(arg);
         if (unit != null)
-            throw new Refusal(DroolsCode.EASTER_SUNDAY_YEAR_UNIT, "een " + spelling + " van een jaar met de eenheid " + unit.rendering() + " ('"
-                    + snippet(f.source()) + "'): het jaar is een geheel getal zonder eenheid (WF-038)");
+            throw new Refusal(DroolsCode.EASTER_SUNDAY_YEAR_UNIT.reason("spelling", spelling, "unit", unit.rendering(), "snippet", snippet(f.source())));
         reads.markFail();
         Term year = value(arg, reads);
         return new Term.Call(StaticFunction.EASTER_SUNDAY, List.of(year), source(f.source()));
@@ -3770,8 +3647,7 @@ public final class TmsTranspiler {
         boolean time = f.kind() == Expr.FunctionKind.DATUMTIJD_MET;
         int itemCount = time ? 7 : 3;
         if (f.arguments().size() != itemCount)
-            throw new Refusal(DroolsCode.DATE_CONSTRUCTION_ARGUMENT_COUNT, "een " + spelling + " met " + f.arguments().size() + " argumenten ('" + snippet(f.source())
-                    + "'): deze builtin heeft er " + itemCount + " (WF-037)");
+            throw new Refusal(DroolsCode.DATE_CONSTRUCTION_ARGUMENT_COUNT.reason("spelling", spelling, "count", f.arguments().size(), "snippet", snippet(f.source()), "itemCount", itemCount));
         reads.markFail();
         List<Term> arguments = new ArrayList<>();
         // the spelling first: the sentence of a fault names the builtin
@@ -3837,31 +3713,25 @@ public final class TmsTranspiler {
                     fragment);
         }
         Objecttype elem = f.elementObjectType();
-        if (elem == null) throw new Refusal(DroolsCode.AGGREGATION_WITHOUT_ELEMENT_TYPE, "een Aggregation " + kind + " zonder elementtype ('" + snippet(f.source()) + "')");
+        if (elem == null) throw new Refusal(DroolsCode.AGGREGATION_WITHOUT_ELEMENT_TYPE.reason("kind", kind, "snippet", snippet(f.source())));
         if (f.arguments().size() != 1)
-            throw new Refusal(DroolsCode.AGGREGATION_OPERAND_COUNT, "een Aggregation " + kind + " over " + f.arguments().size() + " operanden met een"
-                    + " elementtype ('" + snippet(f.source()) + "'): een vouw over een bereik heeft één argument (WF-037)");
+            throw new Refusal(DroolsCode.AGGREGATION_OPERAND_COUNT.reason("kind", kind, "count", f.arguments().size(), "snippet", snippet(f.source())));
         if (f.emptyFallback() != null && kind != Expr.FunctionKind.SOM)
-            throw new Refusal(DroolsCode.EMPTY_FALLBACK_NON_SUM, "een emptyFallback op een Aggregation " + kind + " ('" + snippet(f.source()) + "'): alleen"
-                    + " een som heeft er een (WF-037)");
+            throw new Refusal(DroolsCode.EMPTY_FALLBACK_NON_SUM.reason("kind", kind, "snippet", snippet(f.source())));
         boolean count = kind == Expr.FunctionKind.AANTAL;
         Expr.AttributeReference arg = null;
         if (!count) {
             if (!(f.arguments().get(0) instanceof Expr.AttributeReference a) || a.attribute() == null)
-                throw new Refusal(DroolsCode.AGGREGATION_NON_ATTRIBUTE_OPERAND, "een Aggregation " + kind + " over iets anders dan een attribuut van het element ('"
-                        + snippet(f.source()) + "')");
+                throw new Refusal(DroolsCode.AGGREGATION_NON_ATTRIBUTE_OPERAND.reason("kind", kind, "snippet", snippet(f.source())));
             arg = a;
         }
         boolean withRange = sourcePaths.containsKey(f) || roleBindings.containsKey(f);
         if (kind == Expr.FunctionKind.TOTAAL && !withRange) return ownTotal(f, reads);
         if (arg != null && Namen.containsName(elem.granularityMembers(), arg.attribute())
                 && kind != Expr.FunctionKind.SOM && kind != Expr.FunctionKind.TOTAAL)
-            throw notComputed(DroolsCode.TIMELINE_AGGREGATION_NON_SUM, "Aggregation " + kind + " over het tijdsafhankelijke attribuut '" + arg.attribute() + "'",
-                    f.source(), "zij heeft geen moment waarop zij een tijdlijn rangschikt, telt of toetst; alleen een som en"
-                    + " een totaal vouwen de tijdlijn van elk lid eerst over de tijd (RUNTIME-SEMANTICS ch. 3.4c, 3.6)");
+            throw new Refusal(DroolsCode.TIMELINE_AGGREGATION_NON_SUM.reason("kind", kind, "attribute", arg.attribute(), "snippet", snippet(f.source())));
         if (!withRange)
-            throw new Refusal(DroolsCode.AGGREGATION_WITHOUT_SOURCE_PATH, "een Aggregation " + kind + " zonder bereik ('" + snippet(f.source()) + "'): IR-SPEC ch. 4.3"
-                    + " eist een sourceRole of sourcePath");
+            throw new Refusal(DroolsCode.AGGREGATION_WITHOUT_SOURCE_PATH.reason("kind", kind, "snippet", snippet(f.source())));
         Expr.AttributeReference member = arg;
         // a member on a timeline the case gives as the asOfDate-bucket scalar faults, naming the first such member in
         // fold order (RUNTIME-SEMANTICS ch. 3.6, 8.4), and a made link has no place in that order
@@ -3869,16 +3739,12 @@ public final class TmsTranspiler {
         // a member on a timeline is asked by the per-element fold, which refuses one that is no number (integreerbaar)
         if (member != null && !timelineMember) {
             Reason setSource = setSourceRefusal(kind, elem, member);
-            if (setSource != null) throw new Refusal(setSource.code(), setSource.text());
+            if (setSource != null) throw new Refusal(setSource);
         }
         RoleBindingRef source = roleBindings.get(f);
         if (timelineMember && source != null && source.factType() != null
                 && createdRelations.contains(Namen.norm(source.factType())))
-            throw new Refusal(DroolsCode.CREATED_LINK_FOLD_ORDER, "een " + kind + " per lid over het tijdsafhankelijke attribuut '" + member.attribute()
-                    + "' in een vouw over de gecreëerde relatie '" + source.factType() + "' ('" + snippet(f.source()) + "'): een"
-                    + " gemaakte link heeft geen plaats in de vouwvolgorde, die bepaalt welk lid met een emmerscalair als"
-                    + " invoer de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11, 8.4); " + STILL_NOT + ", en geen golden met"
-                    + " cases heeft het");
+            throw new Refusal(DroolsCode.CREATED_LINK_FOLD_ORDER.reason("kind", kind, "attribute", member.attribute(), "factType", source.factType(), "snippet", snippet(f.source())));
         Fold v = foldFor(f, reads, (key, naam) -> {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
@@ -3931,11 +3797,9 @@ public final class TmsTranspiler {
         String head = "vouw " + kind + " over de setbron '" + arg.attribute() + "' van " + elem.naam
                 + ": die leden zijn van type " + t.naam();
         if (summing && !t.isNumberLike())
-            return new Reason(DroolsCode.SUM_NON_NUMERIC_SETSOURCE, head + " en niet getalachtig; optellen is rekenkunde over getallen (WF-091), en de"
-                    + " referentie-interpreter faalt op de optelling zelf: geen enkele uitvoerder draagt deze vorm");
+            return DroolsCode.SUM_NON_NUMERIC_SETSOURCE.reason("head", head);
         if (ordering && !t.isOrderable())
-            return new Reason(DroolsCode.ORDERING_NON_ORDERABLE_SETSOURCE, head + " en kennen geen ordening; een ordenende vouw vraagt een getal of een datum (WF-038), en de"
-                    + " referentie-interpreter faalt op de vergelijking zelf: geen enkele uitvoerder draagt deze vorm");
+            return DroolsCode.ORDERING_NON_ORDERABLE_SETSOURCE.reason("head", head);
         return null;
     }
 
@@ -3965,14 +3829,10 @@ public final class TmsTranspiler {
         String description = "een totaal over de eigen tijdlijn ('" + snippet(f.source()) + "')";
         Expr.AttributeReference a = (Expr.AttributeReference) f.arguments().get(0);
         if (a.objectType() != reads.subject || navigationBindings.containsKey(a))
-            throw new Refusal(DroolsCode.OWN_TOTAL_FOREIGN_ATTRIBUTE, description + " over een attribuut van een ander object dan het onderwerp: zonder bereik leest"
-                    + " het totaal de tijdlijn van het onderwerp zelf (WF-083 (c)); " + STILL_NOT + " over een pad");
+            throw new Refusal(DroolsCode.OWN_TOTAL_FOREIGN_ATTRIBUTE.reason("description", description));
         Member member = integrable(timeMember(reads.subject, a.attribute(), false, description), description);
         if (f.filter() == null && writers.containsKey(member.key()))
-            throw new Refusal(DroolsCode.TOTAL_NO_CUT_WRITTEN, description + " zonder knip over de tijdlijn van '" + member.naam() + "', die een vorm schrijft:"
-                    + " de referentie-interpreter neemt het totaal zonder knip alleen van de scalaire invoer op de periode"
-                    + " van de rekendatum en weigert een volle tijdlijn (RUNTIME-SEMANTICS ch. 3.6); " + STILL_NOT
-                    + ", en geen golden met cases heeft het");
+            throw new Refusal(DroolsCode.TOTAL_NO_CUT_WRITTEN.reason("description", description, "member", member.naam()));
         int timeline = reads.timeline(member);
         int onderwerp = reads.member();
         reads.markFail();
@@ -4021,11 +3881,9 @@ public final class TmsTranspiler {
     private Term clip(Condition c, Reads reads, String description, String cut, Term timeline) {
         if (c instanceof Condition.CharacteristicCheck k) {
             if (k.owner() != null || k.periode() != null)
-                throw new Refusal(DroolsCode.CLIP_OWNED_WHOLE_PERIOD, description + " met een kenmerk met een eigenaar of een geheleperiodetoets in de knip ('"
-                        + snippet(k) + "', WF-097)");
+                throw new Refusal(DroolsCode.CLIP_OWNED_WHOLE_PERIOD.reason("description", description, "snippet", snippet(k)));
             if (k.navigation() != null || navigationBindings.containsKey(k))
-                throw new Refusal(DroolsCode.CLIP_NAVIGATED_CHARACTERISTIC, description + " met een genavigeerd kenmerk in de knip ('" + snippet(k) + "'): " + STILL_NOT
-                        + "; geen golden met cases heeft het");
+                throw new Refusal(DroolsCode.CLIP_NAVIGATED_CHARACTERISTIC.reason("description", description, "snippet", snippet(k)));
             int periods = reads.timeline(timeMember(reads.subject, k.characteristic(), true, description));
             return new Term.Call(k.negation() ? StaticFunction.RS_TIME_CLIP_NOT : StaticFunction.RS_TIME_CLIP,
                     List.of(timeline, new Term.SlotValue(periods, null), constant(Period.class)), source(k.source()));
@@ -4035,17 +3893,13 @@ public final class TmsTranspiler {
             Term out = timeline;
             for (Condition part : s.components()) {
                 if (!(part instanceof Condition.CharacteristicCheck))
-                    throw new Refusal(DroolsCode.CLIP_COMPOSITE_NON_CHARACTERISTIC, description + " met een lid van de samengestelde knip dat geen kenmerk is ('"
-                            + snippet(part) + "'): " + STILL_NOT + "; de referentie-interpreter neemt alleen kenmerken"
-                            + " (RUNTIME-SEMANTICS ch. 3.6)");
+                    throw new Refusal(DroolsCode.CLIP_COMPOSITE_NON_CHARACTERISTIC.reason("description", description, "snippet", snippet(part)));
                 out = clip(part, reads, description, cut, out);
             }
             return out;
         }
         if (c instanceof Condition.Comparison v) return comparisonClip(v, reads, description, cut, timeline);
-        throw new Refusal(DroolsCode.CLIP_UNSUPPORTED_CUT_FORM, description + " met de knip '" + snippet(c) + "': " + STILL_NOT + "; de referentie-interpreter"
-                + " neemt een eigen tijdsafhankelijk kenmerk, een vergelijking van een eigen tijdsafhankelijk attribuut"
-                + " en een 'alle' daarvan (RUNTIME-SEMANTICS ch. 3.6)");
+        throw new Refusal(DroolsCode.CLIP_UNSUPPORTED_CUT_FORM.reason("description", description, "snippet", snippet(c)));
     }
 
     /** The comparison clip of {@link #clip} of the timeline of {@code cut}: the left side an own attribute on a
@@ -4053,29 +3907,21 @@ public final class TmsTranspiler {
      *  ({@link InputFormFault}, RUNTIME-SEMANTICS ch. 8.4) before the bound is evaluated; the right side a value. */
     private Term comparisonClip(Condition.Comparison v, Reads reads, String description, String cut, Term timeline) {
         if (v.periode() != null)
-            throw new Refusal(DroolsCode.CLIP_WHOLE_PERIOD_TEST, description + " met een geheleperiodetoets in de knip ('" + snippet(v) + "', WF-097)");
+            throw new Refusal(DroolsCode.CLIP_WHOLE_PERIOD_TEST.reason("description", description, "snippet", snippet(v)));
         Integer testCode = TimeCalculation.test(v.op());
         if (testCode == null)
-            throw new Refusal(DroolsCode.CLIP_DATE_COMPARISON_UNSUPPORTED, description + " met een datumvergelijking in de knip ('" + snippet(v) + "'): " + STILL_NOT);
+            throw new Refusal(DroolsCode.CLIP_DATE_COMPARISON_UNSUPPORTED.reason("description", description, "snippet", snippet(v)));
         // an ordering with a leeg side holds nowhere, in ch. 1.2 and in that helper alike; the equalities differ
         if (v.op() == Condition.Operator.GELIJK || v.op() == Condition.Operator.ONGELIJK)
-            throw new Refusal(DroolsCode.CLIP_EQUALITY_EMPTY_SIDE, description + " met '" + (v.op() == Condition.Operator.GELIJK ? "gelijk aan" : "ongelijk aan")
-                    + "' in de knip ('" + snippet(v) + "'): " + STILL_NOT + "; de rekenhulp rsTijdConditie leest een"
-                    + " lege kant, een gat in de vergeleken tijdlijn of een lege grens, als geen periode, waar"
-                    + " RUNTIME-SEMANTICS ch. 3.6 en de referentie-interpreter de vergelijking van ch. 1.2 per periode"
-                    + " toepassen: twee lege kanten zijn gelijk, en precies één lege kant is ongelijk; geen golden met"
-                    + " cases heeft het");
+            throw new Refusal(DroolsCode.CLIP_EQUALITY_EMPTY_SIDE.reason("description", description, "operator", DroolsCode.CLIP_EQUALITY_EMPTY_SIDE.part(v.op() == Condition.Operator.GELIJK ? "equal" : "unequal"), "snippet", snippet(v)));
         if (!(v.left() instanceof Expr.AttributeReference a) || a.attribute() == null || a.objectType() != reads.subject
                 || navigationBindings.containsKey(a))
-            throw new Refusal(DroolsCode.CLIP_LEFT_NOT_TIMED, description + " met een vergelijking in de knip waarvan de linkerkant geen eigen"
-                    + " tijdsafhankelijk attribuut is ('" + snippet(v) + "'): " + STILL_NOT);
+            throw new Refusal(DroolsCode.CLIP_LEFT_NOT_TIMED.reason("description", description, "snippet", snippet(v)));
         Member tested = timeMember(reads.subject, a.attribute(), false, description);
         if (!tested.datatype().isNumber() || !eff.typeOf(v.right()).isNumber())
-            throw new Refusal(DroolsCode.CLIP_COMPARISON_NON_NUMERIC, description + " met een vergelijking in de knip die geen getallen vergelijkt ('" + snippet(v)
-                    + "'): " + STILL_NOT);
+            throw new Refusal(DroolsCode.CLIP_COMPARISON_NON_NUMERIC.reason("description", description, "snippet", snippet(v)));
         if (!Objects.equals(eff.unitOf(v.left()), eff.unitOf(v.right())))
-            throw new Refusal(DroolsCode.CLIP_COMPARISON_TWO_UNITS, description + " met een vergelijking in de knip over twee eenheden ('" + snippet(v) + "'): "
-                    + STILL_NOT);
+            throw new Refusal(DroolsCode.CLIP_COMPARISON_TWO_UNITS.reason("description", description, "snippet", snippet(v)));
         int testedTimeline = reads.timeline(tested);
         int onderwerp = reads.member();
         reads.markFail();
@@ -4104,7 +3950,7 @@ public final class TmsTranspiler {
      */
     private Member integrable(Member member, String description) {
         if (!member.datatype().isNumber())
-            throw new Refusal(DroolsCode.TEMPORAL_TOTAL_NON_NUMBER, description + " over '" + member.naam() + "', dat geen getal is (WF-091)");
+            throw new Refusal(DroolsCode.TEMPORAL_TOTAL_NON_NUMBER.reason("description", description, "member", member.naam()));
         Unit e = member.datatype().unitOf();
         if (e == null || e.denominator() == null) return member;
         String grid = switch (member.time()) {
@@ -4118,12 +3964,9 @@ public final class TmsTranspiler {
         // one is refused for that whatever the denominator
         String withoutGridUnit = gridUnit(member.time(), grid);
         if (withoutGridUnit != null)
-            throw new Refusal(DroolsCode.TEMPORAL_TOTAL_RATE_UNIT, description + " over '" + member.naam() + "': the temporal total of a " + e.rendering() + " value: "
-                    + withoutGridUnit);
+            throw new Refusal(DroolsCode.TEMPORAL_TOTAL_RATE_UNIT.reason("description", description, "member", member.naam(), "unit", e.rendering(), "reason", withoutGridUnit));
         if (!grid.equals(TimeCalculation.chronoUnit(e.denominator())))
-            throw new Refusal(DroolsCode.RATE_DENOMINATOR_NOT_GRID, description + " over '" + member.naam() + "' met het tarief " + e.rendering() + " op een raster van "
-                    + member.time() + ": de noemer is niet de eenheid van het raster, en de tak herrekent hem niet"
-                    + " (RUNTIME-SEMANTICS ch. 3.6); geen golden met cases heeft het");
+            throw new Refusal(DroolsCode.RATE_DENOMINATOR_NOT_GRID.reason("description", description, "member", member.naam(), "rate", e.rendering(), "grid", member.time()));
         return member;
     }
 
@@ -4210,10 +4053,7 @@ public final class TmsTranspiler {
             if (t.elementType() == null) continue;
             if (population == null) population = t.elementType();
             else if (t.elementType() != population)
-                throw new Refusal(DroolsCode.UNION_TWO_POPULATIONS, "een InstanceSetUnion over twee populaties ('" + population.naam + "' en '"
-                        + t.elementType().naam + "', '" + snippet(u.source()) + "'): één telling antwoordt een aantal over"
-                        + " één gedeclareerd type, en of twee selecties dan een instantie delen, is een vraag over de"
-                        + " subtyperelatie (WF-110 (d))");
+                throw new Refusal(DroolsCode.UNION_TWO_POPULATIONS.reason("population", population.naam, "elementType", t.elementType().naam, "snippet", snippet(u.source())));
         }
         return foldFor(f, reads, (key, naam) -> {
             List<RulePlan> rules = new ArrayList<>();
@@ -4223,7 +4063,7 @@ public final class TmsTranspiler {
             for (int k = 0; k < u.branches().size(); k++) {
                 Expr.InstanceSetUnion.Branch t = u.branches().get(k);
                 if (t.elementType() == null)
-                    throw new Refusal(DroolsCode.UNION_BRANCH_WITHOUT_TYPE, "een selectie zonder elementtype in een InstanceSetUnion ('" + snippet(t.source()) + "')");
+                    throw new Refusal(DroolsCode.UNION_BRANCH_WITHOUT_TYPE.reason("snippet", snippet(t.source())));
                 canFail |= contributionRules(key, naam + ", selectie " + k, Expr.FunctionKind.AANTAL, subject,
                         t.elementType(), oneStepRange(t.sourceRole(), subject, t.elementType(), snippet(t.source())), k,
                         t.filter(), null, rules, readings);
@@ -4442,20 +4282,17 @@ public final class TmsTranspiler {
      */
     private Range oneStepRange(RoleBindingRef rb, Objecttype subject, Objecttype elem, String description) {
         RegelSpraakModel.Role[] pair = FactModelGenerator.boundRolePair(model, rb);
-        if (pair == null) throw new Refusal(DroolsCode.RANGE_WITHOUT_ROLE_PAIR, "het bereik van '" + description + "' noemt geen rolpaar (IR-SPEC ch. 4.3)");
+        if (pair == null) throw new Refusal(DroolsCode.RANGE_WITHOUT_ROLE_PAIR.reason("description", description));
         if (rb.factType() != null && createdRelations.contains(Namen.norm(rb.factType())))
             return linkRange(rb, pair[0], description);
         String elemRole = pair[0].naam(), backRoleName = pair[1].naam();
         boolean forward = !model.toManyRole(subject, elem, elemRole);
         if (forward && model.toManyRole(elem, subject, backRoleName))
-            throw new Refusal(DroolsCode.AGGREGATION_SINGLE_ROLE_SIBLING, "een Aggregation over de enkelvoudige elementrol '" + elemRole + "' wiens zusterrol '"
-                    + backRoleName + "' meervoudig is ('" + description + "'): dat feittype heeft één beanveld voor beide richtingen, en"
-                    + " deze tak weigert de vorm voorzichtig tot een eigen kaart haar meet (§13.3.9 opslagrichting)");
+            throw new Refusal(DroolsCode.AGGREGATION_SINGLE_ROLE_SIBLING.reason("role", elemRole, "siblingRole", backRoleName, "description", description));
         Objecttype carrier = forward ? subject : elem, target = forward ? elem : subject;
         String role = forward ? elemRole : backRoleName;
         if (!FactModelGenerator.hasReferenceField(model, carrier, role, target))
-            throw new Refusal(DroolsCode.JOIN_WITHOUT_BEAN_FIELD, "de aggregatie-join van '" + description + "' heeft geen beanveld — "
-                    + FactModelGenerator.noJoinFieldReason(model, carrier, role, target).text() + " (§13.3.9 opslagrichting)");
+            throw new Refusal(DroolsCode.JOIN_WITHOUT_BEAN_FIELD.reason("description", description, "reason", FactModelGenerator.noJoinFieldReason(model, carrier, role, target).text()));
         // forward the fold subject's reference field names the member, else the member's names the fold's subject
         Binding.Field field = new Binding.Field(beanClass(carrier), role);
         Consumer<Reads> join = member -> member.subjectJoin(forward
@@ -4475,9 +4312,7 @@ public final class TmsTranspiler {
     private Range linkRange(RoleBindingRef rb, RegelSpraakModel.Role memberRole, String description) {
         LinkRelation r = linkRelation(rb, memberRole, description);
         return new Range(member -> member.addToRangePlan(linkExists(r)), member -> {
-            throw new Refusal(DroolsCode.CREATED_RELATION_FAILING_FILTER, "een filter dat kan falen in een vouw over de gecreëerde relatie '" + rb.factType()
-                    + "' ('" + description + "'): een gemaakte link heeft geen plaats in de vouwvolgorde, die bepaalt welke fout"
-                    + " de vouw geeft (RUNTIME-SEMANTICS ch. 5.11); " + STILL_NOT);
+            throw new Refusal(DroolsCode.CREATED_RELATION_FAILING_FILTER.reason("factType", rb.factType(), "description", description));
         });
     }
 
@@ -4490,8 +4325,7 @@ public final class TmsTranspiler {
     private LinkRelation linkRelation(RoleBindingRef rb, RegelSpraakModel.Role memberRole, String description) {
         RegelSpraakModel.FactType ft = factType(rb.factType());
         if (ft == null || ft.rollen.size() != 2 || ft.reciprocal)
-            throw new Refusal(DroolsCode.CREATED_RELATION_NOT_BINARY, "het bereik van '" + description + "' over de gecreëerde relatie '" + rb.factType()
-                    + "', die geen relatie van twee rollen is: " + STILL_NOT);
+            throw new Refusal(DroolsCode.CREATED_RELATION_NOT_BINARY.reason("description", description, "factType", rb.factType()));
         return new LinkRelation(Namen.norm(ft.naam),
                 Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(memberRole.naam())));
     }
@@ -4522,10 +4356,9 @@ public final class TmsTranspiler {
     private Range pathRange(List<RoleBindingRef> path, Objecttype subject, Objecttype elem, String description) {
         for (RoleBindingRef step : path)
             if (step.factType() != null && createdRelations.contains(Namen.norm(step.factType())))
-                throw new Refusal(DroolsCode.CREATED_RELATION_MULTI_STEP, "een vouw met een bereik van meer stappen over de gecreëerde relatie '"
-                        + step.factType() + "' ('" + description + "'): " + STILL_NOT);
+                throw new Refusal(DroolsCode.CREATED_RELATION_MULTI_STEP.reason("factType", step.factType(), "description", description));
         SourcePath.Plan plan = SourcePath.parse(model, subject, path, elem);
-        if (plan.refusal() != null) throw new Refusal(plan.refusal().code(), plan.refusal().text() + " ('" + description + "')");
+        if (plan.refusal() != null) throw new Refusal(plan.refusal().framed("with-description", "description", description));
         if (plan.meets()) {
             int m = plan.meeting();
             List<String> fromMember = List.copyOf(plan.chainFromElement(m)),
@@ -4608,12 +4441,11 @@ public final class TmsTranspiler {
      *  WF-053), else over its path of roles. */
     private int attributeRead(Expr.AttributeReference a, Reads reads) {
         if (a.objectType() == null || a.attribute() == null)
-            throw new Refusal(DroolsCode.UNRESOLVED_ATTRIBUTE_REFERENCE, "een onopgeloste AttributeReference ('" + snippet(a.source()) + "')");
+            throw new Refusal(DroolsCode.UNRESOLVED_ATTRIBUTE_REFERENCE.reason("snippet", snippet(a.source())));
         List<RoleBindingRef> path = navigationBindings.get(a);
         if (path == null) {
             if (a.objectType() != reads.subject)
-                throw new Refusal(DroolsCode.OWN_READ_FOREIGN_SUBJECT, "een eigen lezing die " + a.objectType().naam + " noemt op een " + reads.subject.naam
-                        + " ('" + snippet(a.source()) + "', WF-053)");
+                throw new Refusal(DroolsCode.OWN_READ_FOREIGN_SUBJECT.reason("objectType", a.objectType().naam, "subject", reads.subject.naam, "snippet", snippet(a.source())));
             return reads.own(member(reads.subject, a.attribute(), false));
         }
         Path p = path(reads.subject, path, a.objectType(), "de lezing '" + snippet(a.source()) + "'");
@@ -4636,8 +4468,7 @@ public final class TmsTranspiler {
             case Condition.RoleMembership role -> roleCheck(role, reads);
             // the v0 far-side record, which the loader no longer makes: since L2 a role check is one node (IR-SPEC
             // ch. 4.5), so only a hand-built model reaches this
-            case Condition.FarRoleMembership role -> throw notRead(DroolsCode.FAR_ROLE_CHECK_UNMADE, "VerreRollidmaatschap", c, "de verre rolcontrole"
-                    + " van v0, die sinds L2 de ene knoop RoleMembership is (IR-SPEC ch. 4.5) en die de lader niet maakt");
+            case Condition.FarRoleMembership role -> throw new Refusal(DroolsCode.FAR_ROLE_CHECK_UNMADE.reason("snippet", snippet(c)));
             case Condition.RuleStatusCheck rv -> channelRead(rv, reads);
             // RUNTIME-SEMANTICS ch. 5.7 and WF-044: the marker fails the evaluation of the form where the evaluation
             // reaches it, so a composite that settles before it reads it plays
@@ -4660,11 +4491,10 @@ public final class TmsTranspiler {
      */
     private Term timeWindow(Condition.TimeWindow p, Reads reads) {
         if (p.from() == null && p.until() == null)
-            throw new Refusal(DroolsCode.PERIOD_WINDOW_WITHOUT_BOUND, "een periodevenster zonder grens ('" + snippet(p) + "'): er is geen venster om op te"
-                    + " poorten");
+            throw new Refusal(DroolsCode.PERIOD_WINDOW_WITHOUT_BOUND.reason("snippet", snippet(p)));
         for (Expr bound : java.util.Arrays.asList(p.from(), p.until()))
             if (bound != null && !WindowPosition.boundLowerable(bound, reads.subject, navigationBindings::containsKey))
-                throw new Refusal(WindowPosition.BOUND_FORM.code(), WindowPosition.BOUND_FORM.text() + ": " + snippet(p));
+                throw new Refusal(WindowPosition.BOUND_FORM.framed("with-snippet", "snippet", snippet(p)));
         Term from = p.from() == null ? null : value(p.from(), reads);
         Term to = p.until() == null ? null : value(p.until(), reads);
         int date = reads.evaluationDate();
@@ -4675,10 +4505,6 @@ public final class TmsTranspiler {
                 constant(p.toInclusive()), new Term.SlotValue(date, null)), source(p.source()));
     }
 
-    private static Refusal notRead(DroolsCode code, String form, Condition c, String reason) {
-        return new Refusal(code, "een " + form + " in de voorwaarde ('" + snippet(c) + "'): " + reason);
-    }
-
     /** A characteristic check: of the subject, a bound truth value, complemented where the check is negated; over a
      *  role, the reached object's, and a check over an absent link holds in neither polarity (RUNTIME-SEMANTICS ch. 5.8
      *  rule 3). The standings are total, so no negation is needed here. Under the whole-period qualifier the check
@@ -4687,13 +4513,13 @@ public final class TmsTranspiler {
         // WF-109: the host is satisfied extensionally; a host the subject is no instance of names another object, which
         // a rule condition does not bind
         if (!Host.hostOp(k, reads.subject))
-            throw new Refusal(DroolsCode.CHARACTERISTIC_HOST_NOT_SUBJECT, "een CharacteristicCheck met een host die het onderwerp niet is ('" + snippet(k) + "')");
+            throw new Refusal(DroolsCode.CHARACTERISTIC_HOST_NOT_SUBJECT.reason("snippet", snippet(k)));
         if (k.periode() != null) return wholePeriodCharacteristicCheck(k, reads);
         boolean desired = !k.negation();
         List<RoleBindingRef> nav = navigationBindings.get(k);
         if (nav == null) {
             if (k.navigation() != null)
-                throw new Refusal(DroolsCode.NAVIGATION_WITHOUT_BINDING, "een CharacteristicCheck met een navigatie zonder binding ('" + snippet(k) + "')");
+                throw new Refusal(DroolsCode.NAVIGATION_WITHOUT_BINDING.reason("snippet", snippet(k)));
             int i = reads.own(member(reads.subject, k.characteristic(), true));
             return new Term.Call(StaticFunction.KENMERK, List.of(new Term.SlotValue(i, null), constant(desired)),
                     source(k.source()));
@@ -4718,11 +4544,10 @@ public final class TmsTranspiler {
     private Term wholePeriodCharacteristicCheck(Condition.CharacteristicCheck k, Reads reads) {
         String description = "een CharacteristicCheck met wholePeriod ('" + snippet(k) + "')";
         if (k.negation())
-            throw new Refusal(DroolsCode.WHOLE_PERIOD_CHARACTERISTIC_NEGATION, description + " met de ontkenning binnen de kwalificatie: " + STILL_NOT + ", zoals de andere twee"
-                    + " takken (RUNTIME-SEMANTICS ch. 3.9, 3.12); geen golden met cases heeft haar");
+            throw new Refusal(DroolsCode.WHOLE_PERIOD_CHARACTERISTIC_NEGATION.reason("description", description));
         List<RoleBindingRef> nav = navigationBindings.get(k);
         if (nav == null) {
-            if (k.navigation() != null) throw new Refusal(DroolsCode.WHOLE_PERIOD_UNBOUND_NAVIGATION, description + " met een navigatie zonder binding");
+            if (k.navigation() != null) throw new Refusal(DroolsCode.WHOLE_PERIOD_UNBOUND_NAVIGATION.reason("description", description));
             return wholePeriod(k.periode(), new Term.SlotValue(reads.timeline(timeMember(reads.subject, k.characteristic(), true, description)),
                     null), CHARACTERISTIC_TEST, null, source(k.source()));
         }
@@ -4747,24 +4572,18 @@ public final class TmsTranspiler {
         for (Expr side : java.util.Arrays.asList(v.left(), v.right()))
             if (side instanceof Expr.AttributeReference a && navigationBindings.containsKey(a) && a.objectType() != null
                     && a.attribute() != null && declared(a.objectType(), a.attribute(), false).time() != null)
-                throw new Refusal(DroolsCode.PERIOD_TIMELINE_ALONG_PATH, description + " over een tijdlijn langs een pad ('" + snippet(a.source()) + "'): de"
-                        + " referentie-interpreter vouwt alleen een eigen tijdsafhankelijk attribuut van het onderwerp"
-                        + " (RUNTIME-SEMANTICS ch. 3.9, 3.12)");
+                throw new Refusal(DroolsCode.PERIOD_TIMELINE_ALONG_PATH.reason("description", description, "snippet", snippet(a.source())));
         boolean left = ownTimeline(v.left(), reads), right = ownTimeline(v.right(), reads);
         if (left == right)
-            throw new Refusal(DroolsCode.PERIOD_COMPARISON_ONE_SIDE, description + (left ? " tussen twee tijdlijnen" : " zonder eigen tijdsafhankelijk attribuut aan"
-                    + " één kant") + ": de vouw toetst één tijdlijn van het onderwerp tegen een grens (RUNTIME-SEMANTICS"
-                    + " ch. 3.9)");
+            throw new Refusal(DroolsCode.PERIOD_COMPARISON_ONE_SIDE.reason("description", description, "sideDescription", DroolsCode.PERIOD_COMPARISON_ONE_SIDE.part(left ? "between-timelines" : "one-sided")));
         Expr.AttributeReference time = (Expr.AttributeReference) (left ? v.left() : v.right());
         Expr boundExpr = left ? v.right() : v.left();
         Integer testCode = TimeCalculation.test(left ? v.op() : Operators.reverse(v.op()));
         if (testCode == null)
-            throw new Refusal(DroolsCode.WHOLE_PERIOD_DATE_COMPARISON, description + " met een datumvergelijking: een datum over een gehele periode heeft geen lezing"
-                    + " (RUNTIME-SEMANTICS ch. 3.9, 3.12)");
+            throw new Refusal(DroolsCode.WHOLE_PERIOD_DATE_COMPARISON.reason("description", description));
         Member member = timeMember(reads.subject, time.attribute(), false, description);
         if (!member.datatype().isNumberLike() || !eff.typeOf(boundExpr).isNumberLike())
-            throw new Refusal(DroolsCode.PERIOD_NON_NUMERIC_COMPARE, description + " die geen getallen vergelijkt: de vouw toetst de waarde van een segment als getal"
-                    + " (RUNTIME-SEMANTICS ch. 3.9)");
+            throw new Refusal(DroolsCode.PERIOD_NON_NUMERIC_COMPARE.reason("description", description));
         int timeline = reads.timeline(member);
         Term bound = restated(value(boundExpr, reads), eff.unitOf(boundExpr), eff.unitOf(time),
                 "een §8.2 tijdlijngrens");
@@ -4786,18 +4605,15 @@ public final class TmsTranspiler {
         boolean filled = switch (p.category()) {
             case LEEG -> p.negation();
             case GEVULD -> !p.negation();
-            default -> throw new Refusal(DroolsCode.WHOLE_PERIOD_PREDICATE_KIND, description + " van de soort " + Spelling.PREDICATE_KIND.spelling(p.category()) + ": alleen"
-                    + " de leeg- en de gevuldtoets hebben een lezing onder de kwalificatie (RUNTIME-SEMANTICS ch. 3.9)");
+            default -> throw new Refusal(DroolsCode.WHOLE_PERIOD_PREDICATE_KIND.reason("description", description, "spelling", Spelling.PREDICATE_KIND.spelling(p.category())));
         };
         if (!(p.operand() instanceof Expr.AttributeReference a) || a.objectType() == null || a.attribute() == null)
-            throw new Refusal(DroolsCode.PERIOD_PREDICATE_NON_ATTRIBUTE, description + " over iets anders dan een attribuut: de vouw leest de tijdlijn van een"
-                    + " tijdsafhankelijk attribuut (RUNTIME-SEMANTICS ch. 3.9)");
+            throw new Refusal(DroolsCode.PERIOD_PREDICATE_NON_ATTRIBUTE.reason("description", description));
         int testCode = filled ? FILLED_TEST : TEST_EMPTY;
         List<RoleBindingRef> path = navigationBindings.get(a);
         if (path == null) {
             if (a.objectType() != reads.subject)
-                throw new Refusal(DroolsCode.PERIOD_PREDICATE_FOREIGN_READ, description + " over een eigen lezing die " + a.objectType().naam + " noemt op een "
-                        + reads.subject.naam + " (WF-053)");
+                throw new Refusal(DroolsCode.PERIOD_PREDICATE_FOREIGN_READ.reason("description", description, "objectType", a.objectType().naam, "subject", reads.subject.naam));
             Member member = timeMember(reads.subject, a.attribute(), false, description);
             return wholePeriod(p.periode(), fullTimeline(reads.timeline(member), member, null, reads, source(a.source())),
                     testCode, null, source(p.source()));
@@ -4872,35 +4688,31 @@ public final class TmsTranspiler {
         RoleBindingRef rb = roleBindings.get(r);
         RegelSpraakModel.Role[] pair = FactModelGenerator.boundRolePair(model, rb);
         if (pair == null)
-            throw notRead(DroolsCode.ROLE_MEMBERSHIP_UNDECLARED_ROLE, "RoleMembership", r, "de binding (" + (rb == null ? "geen" : rb.factType() + ", " + rb.role())
-                    + ") noemt geen gedeclareerde rol");
+            throw new Refusal(DroolsCode.ROLE_MEMBERSHIP_UNDECLARED_ROLE.reason("snippet", snippet(r), "binding", rb == null ? DroolsCode.ROLE_MEMBERSHIP_UNDECLARED_ROLE.part("none") : rb.factType() + ", " + rb.role()));
         Objecttype counterpart = dev.uchar.regelspraak.loader.IrLoader.counterpart(r);
         Class<?> javaClass = counterpart == null ? null : beanClass(counterpart);
         boolean negated = r.negation();
         if (rb.factType() != null && createdRelations.contains(Namen.norm(rb.factType()))) {
             RegelSpraakModel.FactType ft = factType(rb.factType());
             if (ft == null || ft.rollen.size() != 2 || ft.reciprocal)
-                throw notRead(DroolsCode.ROLE_MEMBERSHIP_NOT_BINARY, "RoleMembership", r, "over de gecreëerde relatie '" + rb.factType() + "', die geen"
-                        + " relatie van twee rollen is: " + STILL_NOT);
+                throw new Refusal(DroolsCode.ROLE_MEMBERSHIP_NOT_BINARY.reason("snippet", snippet(r), "factType", rb.factType()));
             boolean subjectIsFirst = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(pair[0].naam()));
             int i = reads.roleLinks(Namen.norm(ft.naam), subjectIsFirst, javaClass);
             return new Term.Call(StaticFunction.ROLE_COUNT, List.of(new Term.SlotValue(i, null), constant(negated)),
                     source(r.source()));
         }
         FactModelGenerator.MembershipStorage o = FactModelGenerator.membershipStorage(model, rb);
-        if (o.refusal() != null) throw notRead(DroolsCode.ROLE_MEMBERSHIP_STORAGE_REFUSED, "RoleMembership", r, o.refusal());
+        if (o.refusal() != null) throw new Refusal(DroolsCode.ROLE_MEMBERSHIP_STORAGE_REFUSED.reason("snippet", snippet(r), "reason", o.refusal()));
         if (o.opSubject()) {
             if (!FactModelGenerator.hasReferenceField(model, reads.subject, o.beanField(), o.otherType()))
-                throw notRead(DroolsCode.ROLE_MEMBERSHIP_NO_FIELD, "RoleMembership", r, FactModelGenerator.noReferenceFieldReason(model, reads.subject,
-                        o.beanField(), o.otherType()).text() + " (§13.3.9 opslagrichting)");
+                throw new Refusal(DroolsCode.ROLE_MEMBERSHIP_NO_FIELD.reason("snippet", snippet(r), "reason", FactModelGenerator.noReferenceFieldReason(model, reads.subject, o.beanField(), o.otherType()).text()));
             int i = reads.roleField(o.beanField(), javaClass);
             return new Term.Call(StaticFunction.ROLE_FIELD, List.of(new Term.SlotValue(i, null), constant(negated)),
                     source(r.source()));
         }
         Objecttype filler = counterpart != null ? counterpart : o.otherType();
         if (!FactModelGenerator.hasReferenceField(model, filler, o.beanField(), reads.subject))
-            throw notRead(DroolsCode.ROLE_MEMBERSHIP_NO_FIELD, "RoleMembership", r, FactModelGenerator.noReferenceFieldReason(model, filler,
-                    o.beanField(), reads.subject).text() + " (§13.3.9 opslagrichting)");
+            throw new Refusal(DroolsCode.ROLE_MEMBERSHIP_NO_FIELD.reason("snippet", snippet(r), "reason", FactModelGenerator.noReferenceFieldReason(model, filler, o.beanField(), reads.subject).text()));
         int i = reads.roleFillers(beanClass(filler), o.beanField());
         return new Term.Call(StaticFunction.ROLE_COUNT, List.of(new Term.SlotValue(i, null), constant(negated)),
                 source(r.source()));
@@ -4913,7 +4725,7 @@ public final class TmsTranspiler {
         // a window under GEEN or a counting quantifier has no reading (WF-112), refused in the sentence both other
         // branches give
         Reason window = WindowPosition.refusal(s);
-        if (window != null) throw new Refusal(window.code(), window.text() + ": " + snippet(s));
+        if (window != null) throw new Refusal(window.framed("with-snippet", "snippet", snippet(s)));
         List<Term> members = new ArrayList<>();
         for (Condition part : s.components()) members.add(conditionTerm(part, reads));
         return new Term.Compound(s.quantifier(), s.threshold(), members, source(s.source()));
@@ -4942,18 +4754,15 @@ public final class TmsTranspiler {
         // WF-112, in the sentence of Vensterpositie, on both branches: a window in the filter or the test under none
         // or a counting quantifier has no reading
         Reason window = WindowPosition.refusal(kv);
-        if (window != null) throw new Refusal(window.code(), window.text() + ": " + snippet(kv));
+        if (window != null) throw new Refusal(window.framed("with-snippet", "snippet", snippet(kv)));
         Objecttype elem = kv.elementObjectType();
-        if (elem == null) throw notRead(DroolsCode.QUANTIFIER_FOLD_UNRESOLVED_ELEMENT, "QuantifierFold", kv, "zonder opgelost elementtype");
+        if (elem == null) throw new Refusal(DroolsCode.QUANTIFIER_FOLD_UNRESOLVED_ELEMENT.reason("snippet", snippet(kv)));
         if (kv.test() == null)
-            throw notRead(DroolsCode.QUANTIFIER_FOLD_WITHOUT_MATRIX, "QuantifierFold", kv, "zonder matrix: een kwantor over geen voorwaarde heeft geen oordeel"
-                    + " (WF-108 (d))");
+            throw new Refusal(DroolsCode.QUANTIFIER_FOLD_WITHOUT_MATRIX.reason("snippet", snippet(kv)));
         if (kv.quantifier() == Condition.Quantifier.DE)
-            throw notRead(DroolsCode.QUANTIFIER_DE_SINGLE_MEMBER, "QuantifierFold", kv, "onder de kwantor DE, die één lid noemt en geen verzameling"
-                    + " kwantificeert (WF-108 (a))");
+            throw new Refusal(DroolsCode.QUANTIFIER_DE_SINGLE_MEMBER.reason("snippet", snippet(kv)));
         if (kv.sourceRole() == null || !kv.sourcePath().isEmpty())
-            throw notRead(DroolsCode.QUANTIFIER_FOLD_MULTI_STEP, "QuantifierFold", kv, "zonder bereik van één stap: de lader weigert een bereik van meer"
-                    + " stappen (WF-108 (c))");
+            throw new Refusal(DroolsCode.QUANTIFIER_FOLD_MULTI_STEP.reason("snippet", snippet(kv)));
         Condition.Quantifier kw = kv.quantifier();
         int threshold = kv.threshold();
         Fold v = foldFor(kv, reads, (key, naam) -> quantifierContributions(kv, key, naam, reads.subject, elem));
@@ -5003,10 +4812,7 @@ public final class TmsTranspiler {
         List<Consequence.FoldPlace.Step> places = new ArrayList<>();
         if (ordered) {
             if (kv.sourceRole().factType() != null && createdRelations.contains(Namen.norm(kv.sourceRole().factType())))
-                throw new Refusal(DroolsCode.QUANTIFIER_MEMBER_CREATED_RELATION, "een lidvoorwaarde die kan falen of deponeren in een QuantifierFold over de gecreëerde"
-                        + " relatie '" + kv.sourceRole().factType() + "' ('" + description + "'): een gemaakte link heeft geen plaats"
-                        + " in de volgorde van de leden, die bepaalt welk lid de kortsluiting nog bereikt"
-                        + " (RUNTIME-SEMANTICS ch. 3.9a, 5.10); " + STILL_NOT);
+                throw new Refusal(DroolsCode.QUANTIFIER_MEMBER_CREATED_RELATION.reason("factType", kv.sourceRole().factType(), "description", description));
             places.addAll(range.perRoute().apply(reads));
             for (Consequence.FoldPlace.Step p : places) {
                 use.add(p.count());
@@ -5058,7 +4864,7 @@ public final class TmsTranspiler {
         if (lt.isDate() && rt.isDate() && (isDateOperator(op) || op == Condition.Operator.GELIJK
                 || op == Condition.Operator.ONGELIJK)) {
             if (!sameDateKind(lt, rt))
-                throw new Refusal(DroolsCode.COMPARISON_DATE_WITH_DATETIME, "een Comparison van een datum met een datum-tijd ('" + snippet(v) + "', §5.3 Tabel 36)");
+                throw new Refusal(DroolsCode.COMPARISON_DATE_WITH_DATETIME.reason("snippet", snippet(v)));
             return new Term.Call(StaticFunction.DATE_COMPARE, List.of(leftTerm, rightTerm, constant(op)), source);
         }
         if ((op == Condition.Operator.GELIJK || op == Condition.Operator.ONGELIJK) && equalityType(lt)
@@ -5069,9 +4875,7 @@ public final class TmsTranspiler {
             return new Term.Call(StaticFunction.TEXT_EQUAL, List.of(left, right,
                     constant(op == Condition.Operator.GELIJK)), source);
         }
-        throw new Refusal(DroolsCode.COMPARISON_INCOMPATIBLE_TYPES, "een Comparison " + Spelling.COMPARISON_OP.spelling(op) + " tussen " + typeName(lt) + " en "
-                + typeName(rt) + " ('" + snippet(v) + "'): de typen van de twee kanten laten deze vergelijking niet toe"
-                + " (RUNTIME-SEMANTICS ch. 1.2)");
+        throw new Refusal(DroolsCode.COMPARISON_INCOMPATIBLE_TYPES.reason("spelling", Spelling.COMPARISON_OP.spelling(op), "leftType", typeName(lt), "rightType", typeName(rt), "snippet", snippet(v)));
     }
 
     /** {@code t}, an enumeration label or leeg, up to its normalisation ({@link StaticFunction#RS_ENUM_NAME}); the call has no
@@ -5116,9 +4920,7 @@ public final class TmsTranspiler {
             }
             // a day kind is consulted as a classifier of a bare date before the rule graph, never as a read inside the
             // fixpoint (ch. 5.4); inside a day-kind definition the test is the definition's own (dagsoortpredikaat)
-            case DAGSOORT -> throw new Refusal(DroolsCode.DAY_KIND_PREDICATE_OUTSIDE, "een Predicate dayKind als voorwaarde ('" + snippet(p) + "'): de"
-                    + " referentie-interpreter en de ASP-backend weigeren haar met naam buiten een dagsoortdefinitie"
-                    + " (RUNTIME-SEMANTICS ch. 3.12, 5.4)");
+            case DAGSOORT -> throw new Refusal(DroolsCode.DAY_KIND_PREDICATE_OUTSIDE.reason("snippet", snippet(p)));
             default -> throw new IllegalStateException("predicaatsoort " + p.category());
         }
     }
@@ -5130,10 +4932,7 @@ public final class TmsTranspiler {
      *  operand is refused by name. The reference interpreter and the ASP backend do not evaluate these predicates. */
     private Term digitTrial(Condition.Predicate p, Reads reads) {
         if (p.operand() instanceof Expr.AttributeReference a && navigationBindings.containsKey(a))
-            throw new Refusal(DroolsCode.PREDICATE_OVER_NAVIGATED_PATH, "een Predicate " + Spelling.PREDICATE_KIND.spelling(p.category()) + " over een pad ('"
-                    + snippet(p) + "'): de operand wordt als een waarde gelezen, waarin een afwezige link leeg is"
-                    + " (RUNTIME-SEMANTICS ch. 5.8, regel 1), zodat de toets een afwezige link hier niet van een lege"
-                    + " waarde kan onderscheiden");
+            throw new Refusal(DroolsCode.PREDICATE_OVER_NAVIGATED_PATH.reason("spelling", Spelling.PREDICATE_KIND.spelling(p.category()), "snippet", snippet(p)));
         Term operand = value(p.operand(), reads);
         boolean desired = !p.negation();
         if (p.category() == Condition.PredicateKind.ELFPROEF)
@@ -5251,8 +5050,7 @@ public final class TmsTranspiler {
             if (testTerm == null) return null;
             int[] pos = positions(read);
             if (pos.length > MAX_READS)
-                throw new Refusal(DroolsCode.TEST_ITEM_MANY_READS, "een voorwaarde die " + pos.length + " waarden leest ('" + snippet(conditionTerm)
-                        + "'): de toets van deze tak neemt hoogstens " + MAX_READS + " gebonden waarden");
+                throw new Refusal(DroolsCode.TEST_ITEM_MANY_READS.reason("count", pos.length, "snippet", snippet(conditionTerm), "limit", MAX_READS));
             return new TestItem(id("voorwaarde"), role, testTerm, role == TestItem.Role.DEPOSIT ? depositFlag : -1,
                     List.copyOf(read), slots.size());
         }
@@ -5591,15 +5389,12 @@ public final class TmsTranspiler {
             if (known >= 0) return known;
             RegelSpraakModel.Role[] pair = FactModelGenerator.boundRolePair(model, scopeRole);
             if (pair == null)
-                throw new Refusal(DroolsCode.UNIQUENESS_SCOPE_ROLE_UNDECLARED, "de scope van een Uniqueness noemt geen gedeclareerde rol (" + scopeRole.factType() + ", "
-                        + scopeRole.role() + ")");
+                throw new Refusal(DroolsCode.UNIQUENESS_SCOPE_ROLE_UNDECLARED.reason("factType", scopeRole.factType(), "role", scopeRole.role()));
             if (scopeRole.factType() != null && createdRelations.contains(Namen.norm(scopeRole.factType())))
-                throw new Refusal(DroolsCode.UNIQUENESS_SCOPE_CREATED_RELATION, "de scope van een Uniqueness over de gecreëerde relatie '" + scopeRole.factType()
-                        + "': " + STILL_NOT);
+                throw new Refusal(DroolsCode.UNIQUENESS_SCOPE_CREATED_RELATION.reason("factType", scopeRole.factType()));
             Objecttype parent = model.objectTypeByName(pair[0].objecttypeNaam());
             if (!FactModelGenerator.hasReferenceField(model, subject, pair[0].naam(), parent))
-                throw new Refusal(DroolsCode.UNIQUENESS_SCOPE_NO_FIELD, "de scope van een Uniqueness: " + FactModelGenerator.noReferenceFieldReason(model,
-                        subject, pair[0].naam(), parent).text() + " (§13.3.9 opslagrichting)");
+                throw new Refusal(DroolsCode.UNIQUENESS_SCOPE_NO_FIELD.reason("reason", FactModelGenerator.noReferenceFieldReason(model, subject, pair[0].naam(), parent).text()));
             String w = readName(pair[0].naam());
             bindSubject(new Binding(w, List.of(), new Binding.Field(beanClass(subject), pair[0].naam()),
                     Binding.ReadForm.VALUE, null));
@@ -5699,8 +5494,7 @@ public final class TmsTranspiler {
             ElementKey lk = member.key();
             if (member.characteristic()) {
                 if (writers.containsKey(lk))
-                    throw new Refusal(DroolsCode.TIMELINE_CHARACTERISTIC_WRITTEN, "het tijdsafhankelijke kenmerk '" + member.naam() + "' van " + member.declarant().naam
-                            + ", dat een vorm schrijft: " + STILL_NOT + " (RUNTIME-SEMANTICS ch. 3.11)");
+                    throw new Refusal(DroolsCode.TIMELINE_CHARACTERISTIC_WRITTEN.reason("member", member.naam(), "objectType", member.declarant().naam));
                 bindSubject(new Binding(w, List.of(), new Binding.Field(member.javaClass(), member.naam()),
                         Binding.ReadForm.PERIODS, null));
             } else {
@@ -5722,8 +5516,7 @@ public final class TmsTranspiler {
             String w = readName(String.join(" ", path.roles()) + " " + member.naam());
             ElementKey lk = member.key();
             if (member.time() != null && member.characteristic() && writers.containsKey(lk))
-                throw new Refusal(DroolsCode.TIMELINE_CHARACTERISTIC_WRITTEN, "het tijdsafhankelijke kenmerk '" + member.naam() + "' van " + member.declarant().naam
-                        + ", dat een vorm schrijft: " + STILL_NOT + " (RUNTIME-SEMANTICS ch. 3.11)");
+                throw new Refusal(DroolsCode.TIMELINE_CHARACTERISTIC_WRITTEN.reason("member", member.naam(), "objectType", member.declarant().naam));
             // a derived member, an attribute on a timeline, or any member at the end of a path whose links a form
             // creates: through the path's standing, whose rules bind every link and the member in their left-hand sides
             if (writers.containsKey(lk) || timelineAttribute(member) || path.created()) {
@@ -5997,15 +5790,14 @@ public final class TmsTranspiler {
         String naam = Namen.ident(p.naam(), false);
         if (globals.containsKey(naam)) return;
         if (p.granulariteit() != null)
-            throw new Refusal(DroolsCode.TEMPORAL_PARAMETER_GRANULARITY, "de tijdsafhankelijke parameter '" + p.naam() + "': " + STILL_NOT + "; de goldens met"
-                    + " cases die er een lezen, doen dat in een TemporalRead, die de lader voor alle takken weigert");
+            throw new Refusal(DroolsCode.TEMPORAL_PARAMETER_GRANULARITY.reason("parameter", p.naam()));
         Datatype t = p.datatype();
         Class<?> javaClass = t.isNumber() || t.isPercentage() ? BigDecimal.class
                 : t instanceof Datatype.DatumInDagen ? java.time.LocalDate.class
                 : t instanceof Datatype.DateTime ? java.time.LocalDateTime.class
                 : t.isText() || t instanceof Datatype.Enumeratie ? String.class
                 : t.isBoolean() ? Boolean.class : null;
-        if (javaClass == null) throw new Refusal(DroolsCode.PARAMETER_DATATYPE_NOT_CARRIED, "de parameter '" + p.naam() + "' van type " + typeName(t) + ": " + STILL_NOT);
+        if (javaClass == null) throw new Refusal(DroolsCode.PARAMETER_DATATYPE_NOT_CARRIED.reason("parameter", p.naam(), "typeName", typeName(t)));
         globals.put(naam, javaClass);
     }
 
@@ -6300,11 +6092,7 @@ public final class TmsTranspiler {
     private Member member(Objecttype houder, String naam, boolean characteristic) {
         Member member = declared(houder, naam, characteristic);
         if (member.time() != null)
-            throw new Refusal(DroolsCode.TIMED_MEMBER_SINGLE_PLACE, "het tijdsafhankelijke " + (characteristic ? "kenmerk" : "attribuut") + " '" + member.naam()
-                    + "' van " + member.declarant().naam + " op een plek die één waarde leest of schrijft: deze"
-                    + " tak leest een tijdlijn alleen in een totaal, de knip ervan, een tijdsevenredig"
-                    + " deel, een dagentelling en een uniciteitssleutel, en schrijft haar alleen met een tijdsevenredig"
-                    + " deel of een dagentelling (RUNTIME-SEMANTICS ch. 3.3, 3.6–3.8, 3.11, 5.9)");
+            throw new Refusal(DroolsCode.TIMED_MEMBER_SINGLE_PLACE.reason("category", Msg.drools(characteristic ? "PART.member-kind.characteristic-kind" : "PART.member-kind.attribute"), "member", member.naam(), "objectType", member.declarant().naam));
         return member;
     }
 
@@ -6320,16 +6108,12 @@ public final class TmsTranspiler {
         Member member = declared(houder, naam, characteristic);
         String category = characteristic ? "kenmerk" : "attribuut";
         if (member.time() == null)
-            throw new Refusal(DroolsCode.TIMED_MEMBER_NOT_TEMPORAL, description + " over het " + category + " '" + member.naam() + "' van " + member.declarant().naam
-                    + ", dat niet tijdsafhankelijk is");
+            throw new Refusal(DroolsCode.TIMED_MEMBER_NOT_TEMPORAL.reason("description", description, "category", category, "member", member.naam(), "objectType", member.declarant().naam));
         if (Timelines.morePeriodic(characteristic ? member.declarant().characteristicTimelineCountMembers()
                 : member.declarant().timelineCountMembers(), member.naam()))
-            throw new Refusal(DroolsCode.TIMED_MEMBER_PERIOD_GRID, description + " over het " + category + " '" + member.naam() + "' van " + member.declarant().naam
-                    + " op een raster van meer perioden, dat geen bewerking draagt (RUNTIME-SEMANTICS ch. 3.2, 3.12)");
+            throw new Refusal(DroolsCode.TIMED_MEMBER_PERIOD_GRID.reason("description", description, "category", category, "member", member.naam(), "objectType", member.declarant().naam));
         if (!characteristic && model.hasVariableStart(member.declarant(), member.naam()))
-            throw new Refusal(DroolsCode.TIMED_ATTRIBUTE_VARIABLE_START, description + " over het attribuut '" + member.naam() + "' van " + member.declarant().naam + " op een"
-                    + " tijdlijn met een variabel startpunt: " + STILL_NOT + "; geen golden met cases leest of schrijft er"
-                    + " een, en de caselezer legt geen tijdlijn op zo'n raster");
+            throw new Refusal(DroolsCode.TIMED_ATTRIBUTE_VARIABLE_START.reason("description", description, "member", member.naam(), "objectType", member.declarant().naam));
         return member;
     }
 
@@ -6349,16 +6133,13 @@ public final class TmsTranspiler {
                         // every position that asks this method reads or writes the member whole, as one value or as a
                         // timeline; a dimensioned one is read only per cell, through dimensionedMember
                         if (t.attributeDimensions.containsKey(a))
-                            throw new Refusal(DroolsCode.DIMENSIONED_READ_OUTSIDE_CELL, "het gedimensioneerde attribuut '" + a + "' van " + t.naam + ", gelezen"
-                                    + " of geschreven buiten een DimensionCellRead of een vouw over een"
-                                    + " dimensieselectie: " + STILL_NOT + "; geen golden met cases heeft het");
+                            throw new Refusal(DroolsCode.DIMENSIONED_READ_OUTSIDE_CELL.reason("attribute", a, "objectType", t.naam));
                         return new Member(ProducerConsumer.elementOf(houder, naam, false), t, a, false, e.getValue(),
                                 beanClass(t), t.attribuutGranulariteit.get(a));
                     }
             }
         }
-        throw new Refusal(DroolsCode.MEMBER_NOT_DECLARED, "het " + (characteristic ? "kenmerk" : "attribuut") + " '" + naam + "' is niet gedeclareerd op "
-                + houder.naam + " of een supertype");
+        throw new Refusal(DroolsCode.MEMBER_NOT_DECLARED.reason("category", Msg.drools(characteristic ? "PART.member-kind.characteristic-kind" : "PART.member-kind.attribute"), "member", naam, "objectType", houder.naam));
     }
 
     /** The dimensioned attribute {@code naam} as declared on {@code houder}'s chain (§3.6): its bean member is a
@@ -6370,15 +6151,13 @@ public final class TmsTranspiler {
                 if (Namen.norm(e.getKey()).equals(Namen.norm(naam))) {
                     String a = e.getKey();
                     if (!t.attributeDimensions.containsKey(a))
-                        throw new Refusal(DroolsCode.DIMENSION_READ_NOT_DIMENSIONED, "een dimensielezing van het attribuut '" + a + "' van " + t.naam + ", dat niet"
-                                + " gedimensioneerd is");
+                        throw new Refusal(DroolsCode.DIMENSION_READ_NOT_DIMENSIONED.reason("attribute", a, "objectType", t.naam));
                     if (t.attribuutGranulariteit.containsKey(a))
-                        throw new Refusal(DroolsCode.DIMENSIONED_ATTRIBUTE_TIMELINE, "het gedimensioneerde attribuut '" + a + "' van " + t.naam + " op een"
-                                + " tijdlijn: " + STILL_NOT + "; geen golden met cases heeft er een");
+                        throw new Refusal(DroolsCode.DIMENSIONED_ATTRIBUTE_TIMELINE.reason("attribute", a, "objectType", t.naam));
                     return new Member(ProducerConsumer.elementOf(houder, naam, false), t, a, false, e.getValue(),
                             beanClass(t), null);
                 }
-        throw new Refusal(DroolsCode.ATTRIBUTE_NOT_DECLARED, "het attribuut '" + naam + "' is niet gedeclareerd op " + houder.naam + " of een supertype");
+        throw new Refusal(DroolsCode.ATTRIBUTE_NOT_DECLARED.reason("attribute", naam, "objectType", houder.naam));
     }
 
     /** A path of to-one roles from a subject type over the reference fields of the beans: the walk
@@ -6410,8 +6189,8 @@ public final class TmsTranspiler {
     private Path path(Objecttype subject, List<RoleBindingRef> bindings, Objecttype endpoint, String description) {
         FactModelGenerator.NavigationWalk w =
                 FactModelGenerator.navigationWalk(model, subject, bindings, endpoint);
-        if (w == null) throw new Refusal(DroolsCode.NAVIGATION_DOES_NOT_RESOLVE, description + ": de navigatie resolvet niet vanaf " + subject.naam);
-        if (w.toMany()) throw new Refusal(DroolsCode.NAVIGATION_TO_MANY_ROLE, description + ": de navigatie gaat over een rol naar veel");
+        if (w == null) throw new Refusal(DroolsCode.NAVIGATION_DOES_NOT_RESOLVE.reason("description", description, "subject", subject.naam));
+        if (w.toMany()) throw new Refusal(DroolsCode.NAVIGATION_TO_MANY_ROLE.reason("description", description));
         if (w.roles().size() != bindings.size())
             throw new IllegalStateException(description + ": de wandeling telt " + w.roles().size() + " stappen en de draad "
                     + bindings.size() + " bindingen");
@@ -6429,8 +6208,7 @@ public final class TmsTranspiler {
             }
             // a role whose name a declared member took has no reference field of its own (§13.3.9)
             if (!FactModelGenerator.hasReferenceField(model, cur, role, next))
-                throw new Refusal(DroolsCode.NAVIGATION_ROLE_NO_FIELD, description + ": " + cur.naam + " heeft geen referentieveld '" + role + "' naar " + next.naam
-                        + " (§13.3.9 opslagrichting)");
+                throw new Refusal(DroolsCode.NAVIGATION_ROLE_NO_FIELD.reason("description", description, "objectType", cur.naam, "role", role, "targetType", next.naam));
             fields.add(new Binding.Field(beanClass(cur), role));
             hops.add(new Hop(cur, next, role, true, null, false));
             cur = next;
@@ -6447,8 +6225,7 @@ public final class TmsTranspiler {
             return null;
         RegelSpraakModel.FactType ft = factType(binding.factType());
         if (ft == null || ft.rollen.size() != 2 || ft.reciprocal)
-            throw new Refusal(DroolsCode.CREATED_RELATION_STEP_NONBINARY, "een stap over de gecreëerde relatie '" + binding.factType() + "' die geen relatie van twee"
-                    + " rollen is: " + STILL_NOT);
+            throw new Refusal(DroolsCode.CREATED_RELATION_STEP_NONBINARY.reason("factType", binding.factType()));
         boolean farIsSecond = Namen.norm(ft.rollen.get(1).naam()).equals(Namen.norm(binding.role()));
         return new Hop(van, destination, null, false, Namen.norm(ft.naam), farIsSecond);
     }

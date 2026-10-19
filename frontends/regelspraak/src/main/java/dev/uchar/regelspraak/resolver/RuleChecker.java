@@ -12,6 +12,8 @@ import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.ir.ResolvedAllocation;
 import dev.uchar.regelspraak.ir.Source;
 import dev.uchar.regelspraak.ir.ResolvedUniquenessUnion;
+import dev.uchar.regelspraak.message.Component;
+import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.*;
@@ -328,24 +330,15 @@ final class RuleChecker {
             String naam = Dependencies.withoutVersion(form.naam());
             String[] site = sites.get(dev.uchar.regelspraak.emit.IrEmitter.norm(naam));
             boolean wf045 = "WF-045".equals(k.wf());
-            String text = FORM_KIND.get(form.category()) + " '" + naam + "' "
-                    + (wf045
-                        ? "hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een recursieve creatie"
-                        : "ligt op een afhankelijkheidskring, en een kring door een defaults-groep heeft geen strata")
-                    + " (" + k.wf() + ")"
-                    + (wf045 && Dependencies.carriesNegativeEdge(k)
-                        ? ", en een kring draagt geen negatieve rand, zoals een ontkenning (WF-046)" : "")
-                    + ": " + k.sentence();
             int cycleLine = site == null ? 0 : Integer.parseInt(site[1]);
             if (wf045)
                 error(cycleLine, "RGS-096",
                         params("kind", FORM_KIND.get(form.category()), "name", naam, "wf", k.wf(), "sentence", k.sentence(),
-                                "negativeEdge", Dependencies.carriesNegativeEdge(k)),
-                        text);
+                                "negativeEdge", Dependencies.carriesNegativeEdge(k),
+                                "negativeEdgeClause", Msg.frontendIf(Dependencies.carriesNegativeEdge(k), "RGS-096.negative-edge")));
             else
                 error(cycleLine, "RGS-097",
-                        params("kind", FORM_KIND.get(form.category()), "name", naam, "wf", k.wf(), "sentence", k.sentence()),
-                        text);
+                        params("kind", FORM_KIND.get(form.category()), "name", naam, "wf", k.wf(), "sentence", k.sentence()));
         }
     }
 
@@ -401,18 +394,15 @@ final class RuleChecker {
             String[] first = carriers.get(0);
             List<String> arrays = e.getValue().stream().distinct()
                     .sorted(java.util.Comparator.comparingInt(FORM_LISTS::indexOf)).toList();
-            String verifier = arrays.size() == 1
-                    ? "duplicate name '" + first[0] + "' in " + arrays.get(0)
-                    : "name '" + first[0] + "' collides with '" + carriers.get(1)[0] + "' in " + arrays.get(1)
-                            + " (unique across all named forms)";
+            Msg verifier = arrays.size() == 1
+                    ? Msg.frontend("RGS-098.duplicate-name", "name", first[0], "array", arrays.get(0))
+                    : Msg.frontend("RGS-098.name-collision", "name", first[0], "other", carriers.get(1)[0],
+                            "array", arrays.get(1));
             for (String[] following : carriers.subList(1, carriers.size()))
                 error(Integer.parseInt(following[1]),
-                        "RGS-098", params("name", following[0], "table", following[2], "earlierLine", first[1], "earlierTable", first[2], "sentence", verifier),
-                        "regel '" + following[0] + "'"
-                        + (following[2] == null ? "" : " van beslistabel '" + following[2] + "'")
-                        + " is al gedeclareerd op regel " + first[1]
-                        + (first[2] == null ? "" : ", als rij van beslistabel '" + first[2] + "'")
-                        + "; vormnamen zijn uniek (WF-020): " + verifier);
+                        "RGS-098", params("name", following[0], "table", following[2], "earlierLine", first[1], "earlierTable", first[2], "sentence", verifier,
+                                "inTable", Msg.frontendIf(following[2] != null, "RGS-098.in-table", "table", following[2]),
+                                "earlierRow", Msg.frontendIf(first[2] != null, "RGS-098.earlier-row", "earlierTable", first[2])));
         }
     }
 
@@ -442,15 +432,6 @@ final class RuleChecker {
         for (PredicaatContext p : all) {
             if (consumed.contains(p)) continue;
             model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-099", params("expression", src(p)),
-                "de 'die/dat'-deelselectie '" + src(p) + "' wordt niet omgezet en zou stil wegvallen: een "
-                + "deelselectie kiest WELKE exemplaren de zin bedoelt, dus haar weglaten beantwoordt een "
-                + "andere vraag dan er staat. Een subselectie is in RegelSpraak v2.3.0 ALTIJD MEERVOUDIG "
-                + "(§5.8), en een meervoudige lezing kent daar precies twee verbruikers: een aggregatie "
-                + "(§5.8) of een voorwaarde met een kwantificatie vóór de onderwerpexpressie (hfst. 10). "
-                + "Op deze schrijfpositie staat geen van beide, dus de zin heeft in v2.3.0 geen lezing — "
-                + "deze weigering is de eindtoestand en geen uitbreidingspunt. Schrijf de selectie als "
-                + "vouwbereik (IR-SPEC ch. 4.3 of ch. 4.5, veld 'filter') of zet er een kwantificatie voor "
-                + "(§5.6)",
                 p.getStart().getLine()));
         }
     }
@@ -474,11 +455,7 @@ final class RuleChecker {
             String[] site = forms.get(dev.uchar.regelspraak.emit.IrEmitter.norm(h.naam()));
             if (site != null) {
                 error(h.targetSource().line(),
-                        "RGS-100", params("rule", h.naam(), "objectType", h.element().naam, "occupiedBy", site[0], "sourceLine", site[1]),
-                        "de vouw over de stappen na de verzameling genereert de regel '" + h.naam()
-                        + "' voor het lid van die naam op " + h.element().naam + ", en " + site[0] + " heet al zo "
-                        + "(bronregel " + site[1] + ") — een vormnaam is uniek in het hele model, hoofdletters niet "
-                        + "meegeteld (WF-020)");
+                        "RGS-100", params("rule", h.naam(), "objectType", h.element().naam, "occupiedBy", site[0], "sourceLine", site[1]));
                 continue;
             }
             Expr.AttributeReference targetName = new Expr.AttributeReference(h.naam(), h.element(), "een " + h.element().naam, null,
@@ -531,13 +508,10 @@ final class RuleChecker {
                         .anyMatch(fc -> members.stream().anyMatch(l -> withoutVersion(l).equals(withoutVersion(fc.naam()))));
                 if (hasFactCreation)
                     model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-101",
-                            params("name", naam),
-                            "recursieve regelgroep '" + naam + "' zonder objectcreatieregel — de 'is recursief'-markering "
-                            + "kan de keten niet laten voortschrijden (§9.10, gedocumenteerde extensie)", line));
+                            params("name", naam), line));
                 else
                     model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-102",
-                            params("name", naam),
-                            "recursieve regelgroep '" + naam + "': recursive group without a creation member", line));
+                            params("name", naam), line));
                 continue;
             }
             // each generation of a recursive group mints new instances, so its object creation carries a guard: the
@@ -545,9 +519,7 @@ final class RuleChecker {
             for (ResolvedObjectCreation oc : creations)
                 if (oc.condition() == null)
                     model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                            "RGS-103", params("name", naam, "creation", oc.naam()),
-                            "recursieve regelgroep '" + naam
-                            + "': unguarded object creation '" + oc.naam() + "' in a recursive group", line));
+                            "RGS-103", params("name", naam, "creation", oc.naam()), line));
         }
     }
 
@@ -638,8 +610,6 @@ final class RuleChecker {
             // the lowered rule writes false into the characteristic, which the verifier refuses in these words
             model.diagnostics.add(new Diagnostic(Severity.ERROR,
                     "RGS-104", params("rule", withoutVersion(r.naam()), "table", rowTable(r.naam())),
-                    "regel '" + withoutVersion(r.naam()) + "'"
-                    + rowTable(r.naam()) + ": characteristic target's value must be the boolean constant true",
                     table >= 0 ? table : targetName.source() == null ? 0 : targetName.source().line()));
         }
     }
@@ -681,16 +651,10 @@ final class RuleChecker {
             if (otherCharacteristicWriter(model.objectTypeByName(first.onderwerp()), first.target())) continue;
             boolean more = groups.size() > 1;
             Origin h = pdOrigin.getOrDefault(first, new Origin(0, "defaults-groep"));
-            model.diagnostics.add(new Diagnostic(Severity.WARNING,
-                    "RGS-105", params("head", h.head(), "groupNames", enumeration(groups.stream().map(PrioritizedDefaults::naam).toList()), "subject", first.onderwerp(), "target", first.target(), "plural", more),
-                    h.head() + ": "
-                    + (more ? "de defaults-groepen " : "de defaults-groep ")
-                    + enumeration(groups.stream().map(PrioritizedDefaults::naam).toList()) + " op het kenmerk "
-                    + first.onderwerp() + "." + first.target() + (more ? " kennen" : " kent") + " het nooit toe — "
-                    + "elke default beslist 'onwaar', en een besluit 'onwaar' schrijft niets. Dat is welgevormd, maar "
-                    + "zo " + (more ? "doen de groepen" : "doet de groep") + " niets wat het weglaten van "
-                    + (more ? "de groepen" : "de groep") + " niet ook doet; ga na of er een uitzondering ontbreekt die "
-                    + "'waar' beslist (dialect §4)", h.line()));
+            // one template for one group and one for several: the verb and the nouns around it agree with the number
+            model.diagnostics.add(new Typing.Coded("RGS-105",
+                    params("head", h.head(), "groupNames", enumeration(groups.stream().map(PrioritizedDefaults::naam).toList()), "subject", first.onderwerp(), "target", first.target(), "plural", more))
+                    .variant(more ? ".plural" : "").at(Severity.WARNING, h.line()));
         }
     }
 
@@ -743,7 +707,7 @@ final class RuleChecker {
         for (var e : perTarget.entrySet()) {
             List<PrioritizedDefaults> groups = e.getValue();
             String targetText = groups.get(0).onderwerp() + "." + groups.get(0).target();
-            String groupNames = enumeration(groups.stream().map(PrioritizedDefaults::naam).toList());
+            Msg.Enumeration groupNames = enumeration(groups.stream().map(PrioritizedDefaults::naam).toList());
             List<String> others = new ArrayList<>();
             for (ResolvedRule r : model.resolvedRegels) {
                 if (refusedTargets.contains(r) || blockNames.contains(withoutVersion(r.naam()))) continue;
@@ -755,21 +719,15 @@ final class RuleChecker {
             if (!others.isEmpty()) {
                 Origin h = pdOrigin.getOrDefault(groups.get(0), new Origin(0, "defaults-groep"));
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                        "RGS-106", params("head", h.head(), "groupNames", groupNames, "others", String.join(", ", others), "target", targetText),
-                        h.head() + " ("
-                        + (groups.size() == 1 ? "defaults-groep " : "defaults-groepen ") + groupNames
-                        + ", doel ook geschreven door " + (others.size() == 1 ? "regel " : "de regels ")
-                        + String.join(", ", others) + "): a rule also writes defaults target '" + targetText
-                        + "' — an unordered plain writer would silently defeat the group's decisions", h.line()));
+                        "RGS-106", params("head", h.head(), "groupNames", groupNames, "others", String.join(", ", others), "target", targetText,
+                                "groupsLabel", Msg.frontend(groups.size() == 1 ? "RGS-106.group-label" : "RGS-106.groups-label"),
+                                "othersLabel", Msg.frontend(others.size() == 1 ? "RGS-106.rule-label" : "RGS-106.rules-label")),
+                        h.line()));
             }
             if (groups.size() > 1 && !groups.stream().allMatch(PrioritizedDefaults::unordered)) {
                 Origin h = pdOrigin.getOrDefault(groups.get(groups.size() - 1), new Origin(0, "defaults-groep"));
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                        "RGS-107", params("head", h.head(), "groupNames", groupNames, "target", targetText),
-                        h.head() + " (defaults-groepen " + groupNames
-                        + "): multiple defaults groups on target '" + targetText + "' without the declared-unordered "
-                        + "marking — priority is explicit (defaults) or explicitly absent ('unordered'), never implicit "
-                        + "(ch. 7.2)", h.line()));
+                        "RGS-107", params("head", h.head(), "groupNames", groupNames, "target", targetText), h.line()));
             }
         }
     }
@@ -839,31 +797,18 @@ final class RuleChecker {
                     // names it (WF-033); the placement, where it holds too, stays in the context
                     refused.add(block);
                     model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                            "RGS-108", params("head", blockHead(block), "table", member.table(), "group", member.group(), "groupBefore", groupBefore, "member", base),
-                            blockHead(block) + " (zijn basisregel is "
-                            + (member.table() == null ? "lid" : "een rij van beslistabel '" + member.table() + "', lid")
-                            + " van regelgroep '" + member.group() + "'" + (groupBefore == null ? "" : ", en het blok "
-                                    + "staat direct na het laatste lid van regelgroep '" + groupBefore + "'")
-                            + "): group member '" + base + "' does not resolve to a rule form",
+                            "RGS-108", params("head", blockHead(block), "table", member.table(), "group", member.group(), "groupBefore", groupBefore, "member", base,
+                                    "memberKind", Msg.frontend(member.table() == null ? "RGS-108.member" : "RGS-108.table-row", "table", member.table()),
+                                    "placement", Msg.frontendIf(groupBefore != null, "RGS-108.placement", "groupBefore", groupBefore)),
                             block.getStart().getLine()));
                 } else if (groupBefore != null) {
                     // the placement alone: every group keeps its members, so the document is well-formed, with the
                     // block and every rule after it outside the group, and no reader refuses it
                     refused.add(block);
                     model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                            "RGS-109", params("head", blockHead(block), "groupBefore", groupBefore, "carrier", base, "firstGroup", firstGroup),
-                            blockHead(block) + ": een uitzonderingsblok "
-                            + "is in het dialect niet toegestaan binnen de reikwijdte van een regelgroep, noch met "
-                            + "een groepslid als basisregel — het staat direct na het laatste lid van regelgroep '"
-                            + groupBefore + "', waar de groep stil eindigt, zodat het blok en elke regel erna buiten de "
-                            + "groep zouden vallen. Een regelgroep bestaat alleen om recursie te "
-                            + "markeren (§9.10) en omvat alleen regels en beslistabellen; een defaults-blok "
-                            + "(dialect §4) hoort er niet in. Plaats het blok"
-                            // a carrier that is itself a block is no base rule: the message names what was written
-                            + (base == null ? "" : nodeNames.contains(base) ? " en zijn drager"
-                                    : " en zijn basisregel")
-                            + " buiten elke regelgroep: vóór de eerste regelgroepkop van het document ('Regelgroep "
-                            + firstGroup + "'), of achter een definitie die de groep afsluit",
+                            "RGS-109", params("head", blockHead(block), "groupBefore", groupBefore, "carrier", base, "firstGroup", firstGroup,
+                                    // a carrier that is itself a block is no base rule: the message names what was written
+                                    "carrierPart", base == null ? "" : Msg.frontend(nodeNames.contains(base) ? "RGS-109.and-carrier" : "RGS-109.and-base")),
                             block.getStart().getLine()));
                 }
             }
@@ -905,59 +850,37 @@ final class RuleChecker {
                     && a.objectType().characteristicName(a.attribute()) != null) {
                 refusedTargets.add(r);
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                        "RGS-110", params("written", written, "attribute", a.attribute(), "objectType", a.objectType().naam),
-                        "regeldoel '" + written + "': target '"
-                        + a.attribute() + "' names both an attribute and a characteristic of '" + a.objectType().naam
-                        + "': which member a rule writes decides its kind, and this name decides nothing", line));
+                        "RGS-110", params("written", written, "attribute", a.attribute(), "objectType", a.objectType().naam), line));
                 continue;
             }
             Typing.Coded error = null;
             if (a.objectType() == null)
-                error = new Typing.Coded("RGS-306", params("written", written, "subjectSource", a.subjectSource()),
-                        "het onderwerp '" + a.subjectSource() + "' lost niet op tot een objecttype: een regel schrijft "
-                        + "een attribuut of kenmerk van zijn eigen universele onderwerp ('een <Objecttype>'), en een "
-                        + "navigatie naar een ander exemplaar bouwt deze frontend niet als regeldoel");
+                error = new Typing.Coded("RGS-306", params("written", written, "subjectSource", a.subjectSource()));
             else if (r.category() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) == null
                     && cellAsName(a.objectType(), a.attribute()) != null)
                 error = new Typing.Coded("RGS-307",
-                        params("written", written, "attribute", a.attribute(), "cell", cellAsName(a.objectType(), a.attribute())),
-                        "'" + a.attribute() + "' is een " + cellAsName(a.objectType(), a.attribute()) + NO_CELL_TARGET);
+                        params("written", written, "attribute", a.attribute(), "cell", cellAsName(a.objectType(), a.attribute())));
             else if (r.category() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) != null
                     && cellAfterSubject(a.objectType(), a.attribute(), a.subjectSource()) != null)
                 error = new Typing.Coded("RGS-308",
-                        params("written", written, "cell", cellAfterSubject(a.objectType(), a.attribute(), a.subjectSource())),
-                        "het doel is een " + cellAfterSubject(a.objectType(), a.attribute(), a.subjectSource())
-                        + NO_CELL_TARGET + "; zonder dit hek schreef de zin het hele attribuut");
+                        params("written", written, "cell", cellAfterSubject(a.objectType(), a.attribute(), a.subjectSource())));
             else if (a.navigationRole() != null || (a.navigationPath() != null && !a.navigationPath().isEmpty()))
                 // "Het kadegeld van zijn thuishaven moet …": the target reads another instance's attribute, which
                 // ended in the emitter's exception, since the target fixes the rule's subject
-                error = new Typing.Coded("RGS-111", params("written", written, "subjectSource", a.subjectSource()),
-                        "het doel navigeert via '" + a.subjectSource() + "': een regel schrijft een attribuut van zijn "
-                        + "eigen universele onderwerp; schrijf de regel op het objecttype dat het attribuut draagt ('De "
-                        + "<attribuut> van een <Objecttype> …')");
+                error = new Typing.Coded("RGS-111", params("written", written, "subjectSource", a.subjectSource()));
             else if (r.category() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) == null)
                 error = a.attribute().matches("(?i).*\\svan\\s.*")
                         ? new Typing.Coded("RGS-112",
-                                params("written", written, "attribute", a.attribute(), "objectType", a.objectType().naam),
-                                "het doel is een genavigeerde lezing: '" + a.attribute() + "' is geen attribuut van "
-                                + a.objectType().naam + " — de naam slokte de navigatie op. Een regel schrijft een "
-                                + "attribuut van zijn eigen universele onderwerp; schrijf de regel op het objecttype dat "
-                                + "het attribuut draagt ('De <attribuut> van een <Objecttype> …')")
+                                params("written", written, "attribute", a.attribute(), "objectType", a.objectType().naam))
                         : new Typing.Coded("RGS-113",
-                                params("written", written, "attribute", a.attribute(), "objectType", a.objectType().naam),
-                                "'" + a.attribute() + "' is geen gedeclareerd attribuut van " + a.objectType().naam);
+                                params("written", written, "attribute", a.attribute(), "objectType", a.objectType().naam));
             if (error != null) {
                 refusedTargets.add(r);
-                model.diagnostics.add(error.framed("regeldoel '" + written + "': ", " (WF-022, IR-SPEC ch. 3.1)")
+                model.diagnostics.add(error.frame("rule-target", "written", written)
                         .at(Severity.ERROR, line));
             }
         }
     }
-
-    /** The wire has no cell assignment: a rule's target is an attribute reference (WF-022 refuses any other node
-     *  there), and the dimension-cell node is a READ (IR-SPEC ch. 4.3). */
-    private static final String NO_CELL_TARGET = " — een regel kent op de wire een attribuut toe en geen cel (het doel "
-            + "is een attribuutverwijzing; de dimensiecel bestaat alleen als lezing)";
 
     /** "cel van het gedimensioneerde attribuut 'premie' (dimensie seizoen, label 'voorjaar')" when {@code naam} is
      *  a dimensioned attribute of {@code ot} with its preposition and one of its labels written behind it as one
@@ -1160,9 +1083,6 @@ final class RuleChecker {
                     && reported.add(c))
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
                         "RGS-114", params("name", c.naam(), "expression", c.source()),
-                        "'" + c.naam() + "' als waarde ('" + c.source()
-                        + "'): context value '" + c.naam() + "' is not one of the two admissible names evaluationDate, "
-                        + "evaluationYear: the context-value name is a closed set, spelled byte for byte",
                         c.source() == null ? 0 : c.source().line()));
             return false;
         });
@@ -1209,10 +1129,7 @@ final class RuleChecker {
             if (attribute != null)
                 return new Typing.Coded("RGS-115",
                         params("expression", a.source(), "prefix", naam.substring(0, m.start()), "attribute", attribute,
-                                "name", naam, "objectType", ot.naam),
-                        "lezing '" + a.source() + "', waarin '" + naam.substring(0, m.start()) + " van' vóór het "
-                        + "attribuut '" + attribute + "' één naam werd: '" + naam
-                        + "' is neither an attribute nor a characteristic of '" + ot.naam + "'");
+                                "name", naam, "objectType", ot.naam));
         }
         return null;
     }
@@ -1329,14 +1246,10 @@ final class RuleChecker {
         String against = " van " + subject.naam + " tegenover " + (other == null ? "?" : other.naam);
         if (n == 0)
             model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-116",
-                    params("expression", source, "roleName", roleName, "against", against),
-                    "rolcheck '" + source + "' zonder binding (geen feittype kent de rol '" + roleName + "'" + against
-                    + "): missing field 'factType'", source == null ? 0 : source.line()));
+                    params("expression", source, "roleName", roleName, "against", against), source == null ? 0 : source.line()));
         else
             model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-117",
-                    params("expression", source, "count", n, "roleName", roleName, "against", against),
-                    "rolcheck '" + source + "' zonder binding (" + n + " feittypen kennen de rol '" + roleName + "'"
-                    + against + "): missing field 'factType'", source == null ? 0 : source.line()));
+                    params("expression", source, "count", n, "roleName", roleName, "against", against), source == null ? 0 : source.line()));
     }
 
     /** The refusal of a read without a binding: what did not bind, then the verifier's WF-053 sentence for the
@@ -1344,23 +1257,17 @@ final class RuleChecker {
      *  Where the read names the subject's own type, or there is no subject, that document is the subject's own
      *  read, which no reader refuses, and the refusal keeps this frontend's words. */
     private Typing.Coded unboundReadError(Expr.AttributeReference a, Objecttype subject) {
-        String van = subject == null ? "zonder onderwerp" : "vanaf " + subject.naam;
-        String reason;
+        Msg van = subject == null ? Msg.frontend("RGS-118.without-subject") : Msg.frontend("RGS-118.from-subject", "subject", subject.naam);
+        Msg reason;
         if (a.navigationPath() != null && !a.navigationPath().isEmpty())
-            reason = "de geschreven keten is " + van + " niet stap voor stap te binden";
+            reason = Msg.frontend("RGS-118.chain-unbound", "from", van);
         else if (a.navigationRole() != null)
-            reason = "de geschreven rol '" + a.navigationRole() + "' wijst " + van + " niet precies één relatie aan";
+            reason = Msg.frontend("RGS-118.role-ambiguous", "role", a.navigationRole(), "from", van);
         else reason = pairReason(subject, a.objectType(), a.subjectSource());
-        String head = "genavigeerde lezing '" + a.source() + "' zonder binding (" + reason + ")";
         if (subject != null && a.objectType() != null && a.objectType() != subject)
             return new Typing.Coded("RGS-118",
-                    params("expression", a.source(), "reason", reason, "subject", subject.naam, "objectType", a.objectType().naam),
-                    head + ": an attribute reference without a path is the subject's own read, so its subjectType is "
-                    + "the subject type '" + subject.naam + "' — '" + a.objectType().naam + "' names another type, "
-                    + "which only a navigation reaches");
-        return new Typing.Coded("RGS-119", params("expression", a.source(), "reason", reason),
-                head + ": zonder pad zou de wire haar lezen als een eigen attribuut van het onderwerp, en dat is niet "
-                + "wat er staat");
+                    params("expression", a.source(), "reason", reason, "subject", subject.naam, "objectType", a.objectType().naam));
+        return new Typing.Coded("RGS-119", params("expression", a.source(), "reason", reason));
     }
 
     /** The refusal of a read whose path reaches a to-many role in a slot that takes one value, in the verifier's
@@ -1370,24 +1277,24 @@ final class RuleChecker {
     private Typing.Coded manyStepError(Expr.AttributeReference a, Objecttype subject) {
         List<RegelSpraakModel.RoleBindingRef> bindingPath =
                 dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, subject, a);
-        List<String> sentences = new ArrayList<>(), hops = new ArrayList<>(), roles = new ArrayList<>();
+        List<Msg> sentences = new ArrayList<>();
+        List<String> hops = new ArrayList<>(), roles = new ArrayList<>();
         for (int i = 0; i < bindingPath.size(); i++)
             if (toMany(bindingPath.get(i))) {
                 sentences.add(manyStepSentence(i, bindingPath.get(i).role()));
                 hops.add(String.valueOf(i));
                 roles.add(bindingPath.get(i).role());
             }
-        // the sentences are joined, so one template carries the hops and their roles, in path order
+        // one sentence per to-many hop, in path order; the template renders them joined
         return sentences.isEmpty() ? null
                 : new Typing.Coded("RGS-120",
-                        params("expression", a.source(), "hops", String.join(", ", hops), "roles", String.join(", ", roles)),
-                        "genavigeerde lezing '" + a.source() + "' over een meervoudige rol: " + String.join("; ", sentences));
+                        params("expression", a.source(), "hops", String.join(", ", hops), "roles", String.join(", ", roles),
+                                "sentences", sentences));
     }
 
     /** WF-053's sentence for hop {@code i} over the to-many role {@code roleName} of a read that takes one value. */
-    private static String manyStepSentence(int i, String roleName) {
-        return "hop " + i + " reaches the to-many role '" + roleName + "' in a scalar slot — a to-many step needs an "
-                + "aggregation, never a silent first pick";
+    private static Msg manyStepSentence(int i, String roleName) {
+        return Msg.frontend("RGS-120.hop", "hop", i, "role", roleName);
     }
 
     /** A window bound that is an own read: {@link #memberError} for the role its name took in. A bound that navigates is
@@ -1419,9 +1326,6 @@ final class RuleChecker {
             if (member != null) {
                 var d = new Diagnostic(Severity.WARNING,
                         "RGS-121", params("expression", a.source(), "attribute", naam, "objectType", t.naam, "member", member, "otherObjectType", cur.naam, "role", hop.role()),
-                        "lezing '" + a.source() + "': het gedeclareerde attribuut '"
-                        + naam + "' van '" + t.naam + "' wint; dezelfde woorden lezen ook als het attribuut '" + member
-                        + "' van '" + cur.naam + "' over de rol '" + hop.role() + "', en die lezing geldt hier niet",
                         a.source() == null ? 0 : a.source().line());
                 if (!model.diagnostics.contains(d)) model.diagnostics.add(d);
                 return;
@@ -1472,19 +1376,15 @@ final class RuleChecker {
             RegelSpraakModel.ChainHop hop = model.writtenHop(cur, step);
             if (hop == null) {
                 // a role or type name that binds no step from here: the author wrote a navigation, not this name
-                String reason = stepReason(cur, step);
+                Msg reason = stepReason(cur, step);
                 if (reason == null) break;
                 return new Typing.Coded("RGS-122",
-                        params("expression", a.source(), "reason", reason, "attribute", naam, "objectType", t.naam),
-                        "genavigeerde lezing '" + a.source() + "' bindt niet (" + reason + "), dus zij is gelezen als het "
-                        + "attribuut '" + naam + "' van '" + t.naam + "': '" + naam
-                        + "' is neither an attribute nor a characteristic of '" + t.naam + "'");
+                        params("expression", a.source(), "reason", reason, "attribute", naam, "objectType", t.naam));
             }
             if (model.toManyRole(cur, hop.targetName(), hop.role()))
                 return new Typing.Coded("RGS-120",
-                        params("expression", a.source(), "hops", hops, "roles", hop.role()),
-                        "genavigeerde lezing '" + a.source() + "' over een meervoudige rol: "
-                        + manyStepSentence(hops, hop.role()));
+                        params("expression", a.source(), "hops", hops, "roles", hop.role(),
+                                "sentences", List.of(manyStepSentence(hops, hop.role()))));
             hops++;
             fillerType = model.roleTargetTypeToSubject(cur, hop.role());
             cur = hop.targetName();
@@ -1495,11 +1395,7 @@ final class RuleChecker {
                 return downward(fillerType, cur) ? downwardError(a, cur, fillerType, roleName)
                         : new Typing.Coded("RGS-309",
                                 params("expression", a.source(), "attribute", attribute, "fillerType", cur.naam,
-                                        "role", roleName, "name", naam, "objectType", t.naam),
-                                "genavigeerde lezing '" + a.source() + "' is niet als navigatie gelegd: '" + attribute
-                                + "' staat op '" + cur.naam + "', de vuller van de rol '" + roleName + "', maar zij is gelezen als het "
-                                + "attribuut '" + naam + "' van '" + t.naam + "': '" + naam
-                                + "' is neither an attribute nor a characteristic of '" + t.naam + "'");
+                                        "role", roleName, "name", naam, "objectType", t.naam));
         }
         if (hops == 0) return null;
         if (downward(fillerType, cur)) return downwardError(a, cur, fillerType, roleName);
@@ -1510,18 +1406,18 @@ final class RuleChecker {
     /** Why the step {@code step} binds no hop from {@code van}, where it names an object type or a role anywhere in
      *  the model — a word that only stands in a navigation; null where it names neither. A type name is read as the
      *  type, as {@link RegelSpraakModel#chainHop} reads it, so the pair decides. */
-    private String stepReason(Objecttype van, String step) {
+    private Msg stepReason(Objecttype van, String step) {
         Objecttype type = model.objectTypeByName(step);
         if (type != null) {
             int n = model.connectingRoleCount(van, type);
-            return "'" + step + "' leest als het objecttype '" + type.naam + "', en " + (n == 0
-                    ? "geen relatie verbindt '" + van.naam + "' met '" + type.naam + "'"
-                    : n + " relaties verbinden '" + van.naam + "' met '" + type.naam + "'");
+            return Msg.frontend("RGS-122.reads-as-type", "step", step, "type", type.naam,
+                    "connection", n == 0 ? Msg.frontend("RGS-122.no-relation", "from", van.naam, "type", type.naam)
+                            : Msg.frontend("RGS-122.relations", "count", n, "from", van.naam, "type", type.naam));
         }
         for (FactType ft : model.feittypen.values())
             for (Role r : ft.rollen)
                 if (r.naam().equalsIgnoreCase(step) || r.plural() != null && r.plural().equalsIgnoreCase(step))
-                    return "de rol '" + step + "' wijst vanaf '" + van.naam + "' niet precies één relatie aan";
+                    return Msg.frontend("RGS-122.role-ambiguous", "step", step, "from", van.naam);
         return null;
     }
 
@@ -1541,21 +1437,15 @@ final class RuleChecker {
 
     private static Typing.Coded downwardError(Expr.AttributeReference a, Objecttype endpoint, Objecttype fillerType, String roleName) {
         return new Typing.Coded("RGS-123",
-                params("expression", a.source(), "endpoint", endpoint.naam, "roleName", roleName, "fillerType", fillerType.naam),
-                "genavigeerde lezing '" + a.source() + "' noemt het subtype '" + endpoint.naam + "', maar de rol '" + roleName
-                + "' komt uit op '" + fillerType.naam + "': the navigation reaches '" + fillerType.naam + "', not the endpoint '"
-                + endpoint.naam + "'");
+                params("expression", a.source(), "endpoint", endpoint.naam, "roleName", roleName, "fillerType", fillerType.naam));
     }
 
     /** A read whose subject phrase names no role and no type from the subject: the emitter writes it without a type. */
     private static Typing.Coded withoutTypeError(Expr.AttributeReference a, Objecttype subject, String naam) {
-        String onderwerp = a.subjectSource() == null || a.subjectSource().isBlank() ? "haar onderwerp"
-                : "'" + a.subjectSource() + "'";
+        Msg onderwerp = a.subjectSource() == null || a.subjectSource().isBlank() ? Msg.frontend("RGS-124.own-subject")
+                : Msg.frontend("RGS-124.written-source", "source", a.subjectSource());
         return new Typing.Coded("RGS-124",
-                params("expression", a.source(), "subjectPhrase", onderwerp, "subject", subject.naam, "attribute", naam),
-                "lezing '" + a.source() + "': " + onderwerp + " noemt vanaf '" + subject.naam + "' geen rol en geen "
-                + "objecttype: attribute reference '" + naam + "' without a subjectType: it resolves against no "
-                + "declaration");
+                params("expression", a.source(), "subjectPhrase", onderwerp, "subject", subject.naam, "attribute", naam));
     }
 
     /** A member read on {@code fillerType} that neither it nor a supertype declares: where it does stand, and the
@@ -1565,28 +1455,22 @@ final class RuleChecker {
         List<String> subTypes = new ArrayList<>(), otherTypes = new ArrayList<>();
         for (Objecttype o : model.objecttypen.values())
             if (o != fillerType && declaresMember(o, member)) (o.isA(fillerType) ? subTypes : otherTypes).add(o.naam);
-        String where = !subTypes.isEmpty()
-                ? (subTypes.size() == 1 ? ", wel op het subtype " : ", wel op de subtypen ") + enumeration(subTypes)
-                : otherTypes.size() == 1 ? ", wel op " + enumeration(otherTypes) + ", dat geen subtype van '" + fillerType.naam + "' is"
-                : !otherTypes.isEmpty() ? ", wel op " + enumeration(otherTypes) + ", die geen subtype van '" + fillerType.naam + "' zijn"
-                : ", en op geen ander objecttype";
-        String sentence = subTypes.size() == 1
-                ? "the navigation reaches '" + fillerType.naam + "', not the endpoint '" + subTypes.get(0) + "'"
-                : "'" + member + "' is neither an attribute nor a characteristic of '" + fillerType.naam + "'";
+        Msg where = !subTypes.isEmpty()
+                ? Msg.frontend(subTypes.size() == 1 ? "RGS-125.subtype" : "RGS-125.subtypes", "types", enumeration(subTypes))
+                : otherTypes.size() == 1 ? Msg.frontend("RGS-125.other-type", "types", enumeration(otherTypes), "fillerType", fillerType.naam)
+                : !otherTypes.isEmpty() ? Msg.frontend("RGS-125.other-types", "types", enumeration(otherTypes), "fillerType", fillerType.naam)
+                : Msg.frontend("RGS-125.nowhere");
+        Msg sentence = subTypes.size() == 1
+                ? Msg.frontend("RGS-125.reaches", "fillerType", fillerType.naam, "endpoint", subTypes.get(0))
+                : Msg.frontend("RGS-125.neither-member", "member", member, "fillerType", fillerType.naam);
         return new Typing.Coded("RGS-125",
                 params("expression", a.source(), "member", member, "fillerType", fillerType.naam, "roleName", roleName,
-                        "where", where, "sentence", sentence),
-                "genavigeerde lezing '" + a.source() + "': het lid '" + member + "' bestaat niet op '" + fillerType.naam
-                + "', de vuller van de rol '" + roleName + "'" + where + ": " + sentence);
+                        "where", where, "sentence", sentence));
     }
 
     private Typing.Coded characteristicAsValueError(Expr.AttributeReference a, String member, Objecttype fillerType, String roleName) {
         return new Typing.Coded("RGS-126",
-                params("expression", a.source(), "member", member, "fillerType", fillerType.naam, "roleName", roleName),
-                "genavigeerde lezing '" + a.source() + "': het lid '" + member + "' van '" + fillerType.naam
-                + "', de vuller van de rol '" + roleName + "', is een kenmerk en geen attribuut: '" + member
-                + "' is a characteristic of '" + fillerType.naam + "', not an attribute — a characteristic endpoint is "
-                + "ill-formed in a value position");
+                params("expression", a.source(), "member", member, "fillerType", fillerType.naam, "roleName", roleName));
     }
 
     /** Whether {@code o} itself — not a supertype — declares a member {@code lid}, case-insensitively. */
@@ -1600,36 +1484,26 @@ final class RuleChecker {
      *  one for the fold without a range ({@link #withoutRange}). */
     private Typing.Coded foldError(Expr.FunctionCall f, Objecttype subject, dev.uchar.regelspraak.emit.IrEmitter.FoldRefusal w) {
         Expr.AttributeReference source = (Expr.AttributeReference) f.arguments().get(0);
-        String fold = "vouw '" + f.source() + "' ";
         return switch (w) {
             case WRITTEN_PATH, WRITTEN_STEP -> new Typing.Coded("RGS-127",
-                    params("expression", f.source()),
-                    fold + "met een geschreven stap op haar bron: a path on a fold "
-                    + "source is ill-formed (the fold's relation is its range, sourceRole or sourcePath)");
+                    params("expression", f.source()));
             case FOREIGN_ATTRIBUTE -> new Typing.Coded("RGS-128",
                     params("expression", f.source(), "attribute", source.attribute(), "objectType", source.objectType().naam,
-                            "range", withoutRange(f, subject, source)),
-                    fold + "over '" + source.attribute() + "' op " + source.objectType().naam
-                    + ", een ander type dan het onderwerp" + withoutRange(f, subject, source));
+                            "range", withoutRange(f, subject, source)));
             case OWN_ATTRIBUTE -> new Typing.Coded("RGS-129",
-                    params("expression", f.source(), "range", withoutRange(f, subject, source)),
-                    fold + "over een eigen attribuut van het onderwerp, dat geen instanties telt"
-                    + withoutRange(f, subject, source));
+                    params("expression", f.source(), "range", withoutRange(f, subject, source)));
             case NO_SUBJECT -> new Typing.Coded("RGS-130",
-                    params("expression", f.source(), "range", withoutRange(f, subject, source)),
-                    fold + "zonder onderwerp om haar bereik vanaf te bepalen" + withoutRange(f, subject, source));
+                    params("expression", f.source(), "range", withoutRange(f, subject, source)));
             case NO_RELATION -> new Typing.Coded("RGS-131",
                     params("expression", f.source(), "anchor", writtenAnchor(source, subject) != null ? writtenAnchor(source, subject) : "",
                             "reason", writtenAnchor(source, subject) != null ? ""
                                     : pairReason(subject, f.elementObjectType(),
                                             source.type() instanceof Datatype.Unknown ? source.attribute() : source.subjectSource()),
-                            "range", withoutRange(f, subject, source)),
-                    fold + "zonder bereik (" + (writtenAnchor(source, subject) != null
-                    ? "de geschreven bron '" + source.subjectSource() + "' loopt via '" + writtenAnchor(source, subject) + "', een "
-                            + "ander anker dan het onderwerp, en een bereik vanaf zo'n anker schrijft deze frontend niet"
-                    : pairReason(subject, f.elementObjectType(),
-                            source.type() instanceof Datatype.Unknown ? source.attribute() : source.subjectSource())) + ")"
-                    + withoutRange(f, subject, source));
+                            "cause", writtenAnchor(source, subject) != null
+                                    ? Msg.frontend("RGS-131.written-anchor", "source", source.subjectSource(), "anchor", writtenAnchor(source, subject))
+                                    : pairReason(subject, f.elementObjectType(),
+                                            source.type() instanceof Datatype.Unknown ? source.attribute() : source.subjectSource()),
+                            "range", withoutRange(f, subject, source)));
         };
     }
 
@@ -1649,30 +1523,25 @@ final class RuleChecker {
      *  total WF-083's, for an element type or a source type that is not the subject's. A total over the subject's
      *  own attribute without a range is the subject's own total, which no reader refuses, and the refusal keeps
      *  this frontend's words. */
-    private static String withoutRange(Expr.FunctionCall f, Objecttype subject, Expr.AttributeReference source) {
+    private static Msg withoutRange(Expr.FunctionCall f, Objecttype subject, Expr.AttributeReference source) {
         if (f.kind() != Expr.FunctionKind.TOTAAL)
-            return ": a single-argument fold with an elementType carries its range (sourceRole or sourcePath) "
-                    + "under every kind but total: the range is written, never derived";
+            return Msg.frontend("RGS-128.range-written");
         if (subject != null && f.elementObjectType() != subject)
-            return ": the elementType '" + f.elementObjectType().naam + "' of a total without a range is not "
-                    + "the fold subject '" + subject.naam + "': without a range the fold is the subject's own read, "
-                    + "so its elementType must name the subject type";
+            return Msg.frontend("RGS-128.range-element", "elementType", f.elementObjectType().naam, "subject", subject.naam);
         if (subject != null && source.objectType() != null && source.objectType() != subject)
-            return ": fold-source subjectType '" + source.objectType().naam + "' is not the fold's anchor '"
-                    + subject.naam + "' (" + "a fold without a range reads the subject's own attribute"
-                    + "): the executors resolve '" + source.attribute() + "' against the anchor, never against this "
-                    + "field, so the two spellings name different declarations";
-        return ": zonder bereik zou de wire haar lezen als het totaal van een eigen attribuut van het onderwerp";
+            return Msg.frontend("RGS-128.range-anchor", "sourceType", source.objectType().naam, "subject", subject.naam,
+                    "attribute", source.attribute(), "hint", Msg.frontend("RGS-128.reads-own"));
+        return Msg.frontend("RGS-128.range-own");
     }
 
     /** Why the type pair gave no relation: none joins the two types, the one that does is reciprocal (the
      *  two-role binding does not take it), or several do and the written name names none of their roles alone. */
-    private String pairReason(Objecttype subject, Objecttype targetName, String written) {
+    private Msg pairReason(Objecttype subject, Objecttype targetName, String written) {
         int n = model.connectingRoleCount(subject, targetName);
-        if (n == 0) return "geen relatie verbindt " + subject.naam + " met " + targetName.naam;
-        if (n == 1) return "de enige relatie tussen " + subject.naam + " en " + targetName.naam + " is wederkerig";
-        return n + " relaties verbinden " + subject.naam + " met " + targetName.naam + ", en '" + written
-                + "' noemt geen rol die er precies één aanwijst";
+        if (n == 0) return Msg.frontend("RGS-118.pair-none", "subject", subject.naam, "target", targetName.naam);
+        if (n == 1) return Msg.frontend("RGS-118.pair-reciprocal", "subject", subject.naam, "target", targetName.naam);
+        return Msg.frontend("RGS-118.pair-many", "count", n, "subject", subject.naam, "target", targetName.naam,
+                "written", written);
     }
 
     private void windowError(Condition.Quantifier k, int threshold, Source source, String place) {
@@ -1683,10 +1552,7 @@ final class RuleChecker {
             case PRECIES -> "precies " + threshold;
             default -> k.name().toLowerCase();
         };
-        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-132", params("words", words, "place", place),
-                "periodevergelijking onder '" + words + "' (" + place + "): a time window under none or a counting "
-                + "quantifier: the window gates the RULE, and no reading is specified for a verdict that is counted "
-                + "or complemented", source == null ? 0 : source.line()));
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-132", params("words", words, "place", place), source == null ? 0 : source.line()));
     }
 
     /** The head a refusal names an extension block by, in the spelling the other §4 refusals use. */
@@ -1823,9 +1689,7 @@ final class RuleChecker {
             DefaultsTarget targetName = targetOf(baseRule);
             if (targetName == null || baseRule.category() == ResolvedRule.Kind.INITIALISATIE) {
                 error(head.line,
-                        "RGS-133", params("head", head.head),
-                        head.head + ": de basisregel is geen kenmerktoekenning of gelijkstelling (bv. een "
-                        + "initialisatie) — daarover wordt geen defaults-groep gebouwd (§4)");
+                        "RGS-133", params("head", head.head));
                 continue;
             }
             if (!checkChildren(null, root, rootChildren, baseRule, targetName, nodeNames)) continue;
@@ -1890,14 +1754,9 @@ final class RuleChecker {
             ParserRuleContext block = ordered.isEmpty() ? blocks.get(1) : blocks.get(0);
             refusedBlocks.add(block);
             error(block.getStart().getLine(),
-                    "RGS-134", params("head", blockHead(block), "carrier", carrierName, "siblings", ordered.isEmpty() ? "een ander 'Uitzonderingen ongeordend op'-blok" : "geordende uitzonderingen (" + enumeration(ordered.stream().map(k -> k.naam).toList()) + ")"),
-                    blockHead(block) + ": de drager '" + carrierName + "' heeft ook "
-                    + (ordered.isEmpty() ? "een ander 'Uitzonderingen ongeordend op'-blok"
-                            : "geordende uitzonderingen (" + enumeration(ordered.stream().map(k -> k.naam).toList()) + ")")
-                    + " — de kinderen van één drager vormen óf één geordende keten ('Uitzondering op', 'Afwijking van') "
-                    + "óf de leden van één ongeordend blok, want de voorrang daartussen ligt nergens vast. Schrijf ze "
-                    + "allemaal geordend, of neem ze allemaal als lid op in één blok 'Uitzonderingen ongeordend op "
-                    + carrierName + ":' (dialect §4)");
+                    "RGS-134", params("head", blockHead(block), "carrier", carrierName, "siblings", ordered.isEmpty()
+                            ? Msg.frontend("RGS-134.other-block")
+                            : Msg.frontend("RGS-134.ordered", "names", enumeration(ordered.stream().map(k -> k.naam).toList()))));
             goed = false;
         }
         for (Node k : children) {
@@ -1930,13 +1789,7 @@ final class RuleChecker {
                 return new Refusal(k.line, new Typing.Coded("RGS-310",
                         params("head", k.head, "designation", designation(k), "subtype", sk.naam,
                                 "laterDesignation", designation(later), "supertype", sl.naam, "root", root,
-                                "name", k.naam, "laterName", later.naam),
-                        k.head + ": " + designation(k) + " voor " + sk.naam + " staat vóór "
-                        + designation(later) + " voor " + sl.naam + " onder '" + root + "', en het later geschreven "
-                        + "blok gaat voor; RUNTIME-SEMANTICS ch. 7.10 zet de eigen uitzonderingen van " + sk.naam
-                        + " echter boven de geërfde van " + sl.naam + ", zodat bij een " + sk.naam + " '" + k.naam
-                        + "' vóór '" + later.naam + "' gaat. Schrijf '" + k.naam + "' na '" + later.naam
-                        + "' (dialect §4)"));
+                                "name", k.naam, "laterName", later.naam)));
             }
         return null;
     }
@@ -1957,11 +1810,7 @@ final class RuleChecker {
             Node k = s.getValue().get(0);
             return new Refusal(k.line, new Typing.Coded("RGS-311",
                     params("head", k.head, "subtype", s.getKey().naam, "root", root, "name", naam, "form", site[0],
-                            "sourceLine", site[1]),
-                    k.head + ": de eigen uitzonderingen van " + s.getKey().naam + " onder '"
-                    + root + "' worden de defaults-groep '" + naam + "', en " + site[0] + " heet al zo (bronregel "
-                    + site[1] + ") — een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020) "
-                    + "(dialect §4)"));
+                            "sourceLine", site[1])));
         }
         return null;
     }
@@ -2134,8 +1983,7 @@ final class RuleChecker {
         List<ResolvedRule> r = resolvedOf(k.naam);
         if (r.isEmpty()) {
             error(k.line,
-                    "RGS-135", params("head", k.head, "node", withArticle(k)),
-                    k.head + ": " + withArticle(k) + " leverde geen kenmerktoekenning/gelijkstelling op (§4)");
+                    "RGS-135", params("head", k.head, "node", withArticle(k)));
             return false;
         }
         if (r.size() > 1) { multiVersionError(what(k), k.naam, k.line); return false; }
@@ -2144,19 +1992,12 @@ final class RuleChecker {
         DefaultsTarget own = targetOf(regel);
         if (own == null || regel.category() == ResolvedRule.Kind.INITIALISATIE) {
             error(k.line,
-                    "RGS-136", params("head", k.head, "node", withArticle(k)),
-                    k.head + ": " + withArticle(k) + " is geen kenmerktoekenning of gelijkstelling (bv. een "
-                    + "initialisatie) (§4)");
+                    "RGS-136", params("head", k.head, "node", withArticle(k)));
             return false;
         }
         if (k.category == Block.DEVIATION && carrier != null) {
             error(k.line,
-                    "RGS-137", params("head", k.head, "carrier", carrier.naam, "carrierKind", kindText(carrier), "member", k.naam, "root", k.root),
-                    k.head + ": '" + carrier.naam + "' is " + kindText(carrier) + ", geen basisregel — een "
-                    + "afwijking erft geen voorwaarde en staat daarom alleen direct boven een basisregel; midden in de "
-                    + "boom zou zij beslissen waar de voorwaarde van haar drager niet geldt. Schrijf 'Uitzondering op "
-                    + carrier.naam + ": " + k.naam + "' als zij de voorwaarde van '" + carrier.naam + "' erft, of "
-                    + "'Afwijking van " + k.root + ": " + k.naam + "' met de volledige voorwaarde (dialect §4)");
+                    "RGS-137", params("head", k.head, "carrier", carrier.naam, "carrierKind", kindText(carrier), "member", k.naam, "root", k.root));
             return false;
         }
         boolean subtype = own.characteristic() == targetName.characteristic() && own.naam().equalsIgnoreCase(targetName.naam())
@@ -2172,14 +2013,7 @@ final class RuleChecker {
                     : b.type() == own.onderwerp() ? "zijn eigen basisregel '" + b.regel() + "'"
                     : "de basisregel '" + b.regel() + "' van " + b.type().naam + ", die " + sub + " erft";
             error(k.line,
-                    "RGS-138", params("head", k.head, "carrier", carrier.naam, "carrierKind", kindText(carrier), "supertype", sup, "designation", designation(k), "subtype", sub, "under", under, "name", naam, "member", k.naam),
-                    k.head + ": '" + carrier.naam + "' is " + kindText(carrier) + " van " + sup + ", en "
-                    + designation(k) + " schrijft voor het subtype " + sub + " — een subtype erft de uitzonderingen van "
-                    + "zijn supertype met wat eronder genest is, en adresseert er geen (RUNTIME-SEMANTICS ch. 7.10). "
-                    + "Schrijf haar als eigen uitzondering van " + sub + " onder " + under + ": 'Afwijking van " + naam
-                    + ": " + k.naam + "', met de volledige voorwaarde van '" + carrier.naam + "' en de eigen voorwaarde: "
-                    + "de eigen uitzonderingen van " + sub + " gaan vóór de geërfde, dus zij beslist precies waar beide "
-                    + "gelden (dialect §4)");
+                    "RGS-138", params("head", k.head, "carrier", carrier.naam, "carrierKind", kindText(carrier), "supertype", sup, "designation", designation(k), "subtype", sub, "under", under, "name", naam, "member", k.naam));
             return false;
         }
         if (subtype) {
@@ -2194,19 +2028,14 @@ final class RuleChecker {
         // diverging window must refuse — the same fence the multi-version case gets.
         if (!regel.validity().equals(base.validity())) {
             error(k.line,
-                    "RGS-139", params("head", k.head, "designation", designation(k)),
-                    k.head + ": " + designation(k) + " draagt een ander geldigheidsvenster dan de basisregel — de "
-                    + "defaults-groep draagt één venster; splits per venster of maak de vensters gelijk (§4)");
+                    "RGS-139", params("head", k.head, "designation", designation(k)));
             return false;
         }
         if (!subtype && !targetName.equal(own)) {
             error(k.line,
-                    "RGS-140", params("head", k.head, "designation", designation(k), "ownTarget", targetText(own), "carrierPart", carrier == null ? "de basisregel" : (k.category == Block.MEMBER ? "zijn" : "haar") + " drager '" + carrierName + "'", "baseTarget", targetText(targetName), "what", what(k)),
-                    k.head + ": " + designation(k) + " schrijft een ander doel (" + targetText(own) + ") dan "
-                    + (carrier == null ? "de basisregel" : (k.category == Block.MEMBER ? "zijn" : "haar") + " drager '"
-                            + carrierName + "'")
-                    + " (" + targetText(targetName) + ") — een " + what(k) + " moet hetzelfde onderwerp en kenmerk/attribuut "
-                    + "betreffen (§4, WF-050)");
+                    "RGS-140", params("head", k.head, "designation", designation(k), "ownTarget", targetText(own), "carrierPart", carrier == null ? Msg.frontend("RGS-140.base-rule")
+                            : Msg.frontend(k.category == Block.MEMBER ? "RGS-140.his-carrier" : "RGS-140.her-carrier", "carrier", carrierName),
+                            "baseTarget", targetText(targetName), "what", what(k)));
             return false;
         }
         k.regel = regel;
@@ -2254,10 +2083,7 @@ final class RuleChecker {
             };
             return new Typing.Coded("RGS-141",
                     params("head", k.head, "designation", designation(k), "subtype", sub, "has", has, "root", k.root,
-                            "form", form),
-                    k.head + ": " + designation(k) + " schrijft voor het subtype " + sub + ", en " + has + ", die '"
-                    + k.root + "' voor " + sub + " vervangt (RUNTIME-SEMANTICS ch. 7.10) — een eigen uitzondering van "
-                    + sub + " hangt onder die basisregel. Schrijf " + form + " (dialect §4)");
+                            "form", form));
         }
         return k.category == Block.MEMBER ? subtypeMemberError(k, own.onderwerp(), rootType) : null;
     }
@@ -2267,13 +2093,7 @@ final class RuleChecker {
      *  keyed on the path of the composed stack (RUNTIME-SEMANTICS ch. 7.9 and 7.10). */
     private static Typing.Coded subtypeMemberError(Node k, Objecttype sub, Objecttype rootType) {
         return new Typing.Coded("RGS-142",
-                params("head", k.head, "member", k.naam, "subtype", sub.naam, "root", k.root, "rootType", rootType.naam),
-                k.head + ": groepslid '" + k.naam + "' schrijft voor het subtype " + sub.naam + " onder de basisregel '"
-                + k.root + "' van " + rootType.naam + " — een 'Uitzonderingen ongeordend op'-blok in de eigen "
-                + "uitzonderingen van een subtype onder de basisregel van zijn supertype lowert deze frontend niet: een "
-                + "conflict tussen de leden zou een sleutel van de samengestelde stapel krijgen (RUNTIME-SEMANTICS ch. 7.9 "
-                + "en 7.10). Schrijf de leden als geordende blokken ('Uitzondering op' of 'Afwijking van'), of geef "
-                + sub.naam + " een eigen basisregel en hang het blok daaronder (dialect §4)");
+                params("head", k.head, "member", k.naam, "subtype", sub.naam, "root", k.root, "rootType", rootType.naam));
     }
 
     /** The default a node becomes. An 'Uitzondering op' block and a member of an 'Uitzonderingen ongeordend op'
@@ -2378,34 +2198,20 @@ final class RuleChecker {
 
     private Typing.Coded unknownCarrier(Node k) {
         if (k.category == Block.DEVIATION)
-            return new Typing.Coded("RGS-312", params("head", k.head, "reason", baseReason(k.carrier)),
-                    k.head + ": geen basisregel met die naam gevonden" + baseReason(k.carrier) + " — de drager van een "
-                    + "afwijking is een gewone platte regel (kenmerktoekenning of gelijkstelling) (dialect §4)");
-        return new Typing.Coded("RGS-313", params("head", k.head, "reason", baseReason(k.carrier)),
-                k.head + ": geen basisregel met die naam gevonden, en ook geen uitzondering of afwijking"
-                + baseReason(k.carrier) + " — noem als drager een gewone platte regel (kenmerktoekenning of "
-                + "gelijkstelling), een 'Uitzondering op'- of 'Afwijking van'-blok, of een lid van een 'Uitzonderingen "
-                + "ongeordend op'-blok (dialect §4)");
+            return new Typing.Coded("RGS-312", params("head", k.head, "reason", baseReason(k.carrier)));
+        return new Typing.Coded("RGS-313", params("head", k.head, "reason", baseReason(k.carrier)));
     }
 
     private static Typing.Coded looseMemberAsCarrier(Node k) {
-        return new Typing.Coded("RGS-314", params("head", k.head, "carrier", k.carrier),
-                k.head + ": '" + k.carrier + "' is een lid van een 'Uitzonderingen ongeordend:'-blok zonder drager — zo'n "
-                + "lid is een eigen defaults-groep naast de andere leden en geen drager. Schrijf de leden onder een "
-                + "basisregel ('Uitzonderingen ongeordend op <basisregel>:'): een lid van zo'n blok kan wel drager zijn "
-                + "(dialect §4)");
+        return new Typing.Coded("RGS-314", params("head", k.head, "carrier", k.carrier));
     }
 
     private static Typing.Coded cycle(Node k, String bindingPath) {
-        return new Typing.Coded("RGS-315", params("head", k.head, "path", bindingPath),
-                k.head + ": de dragers vormen een kring (" + bindingPath + ") — een uitzondering hangt aan één drager, en de "
-                + "keten van dragers eindigt bij de basisregel die de defaults-groep draagt; een kring heeft geen "
-                + "basisregel. Laat één blok van de kring een gewone platte regel of een blok buiten de kring als drager "
-                + "noemen (dialect §4)");
+        return new Typing.Coded("RGS-315", params("head", k.head, "path", bindingPath));
     }
 
-    private void error(int line, String code, java.util.Map<String, String> params, String message) {
-        model.diagnostics.add(new Diagnostic(Severity.ERROR, code, params, message, line));
+    private void error(int line, String code, java.util.Map<String, Object> params) {
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, code, params, line));
     }
 
     private void error(int line, Typing.Coded refusal) {
@@ -2429,27 +2235,20 @@ final class RuleChecker {
                 String naam = DefinitionResolver.src(member.regelNaam());
                 List<ResolvedRule> rr = resolvedOf(naam);
                 if (rr.isEmpty()) {
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-143", params("member", naam),
-                            "Uitzonderingen ongeordend: groepslid '" + naam + "' leverde geen "
-                            + "kenmerktoekenning/gelijkstelling op (§4)", line));
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-143", params("member", naam), line));
                     error = true; break;
                 }
                 if (rr.size() > 1) { multiVersionError("groepslid", naam, line); error = true; break; }
                 if (refusedTargets.contains(rr.get(0))) { error = true; break; }   // refused already, by name
                 DefaultsTarget d = targetOf(rr.get(0));
                 if (d == null || rr.get(0).category() == ResolvedRule.Kind.INITIALISATIE) {
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-144", params("member", naam),
-                            "Uitzonderingen ongeordend: groepslid '" + naam + "' is geen kenmerktoekenning of "
-                            + "gelijkstelling (§4)", line));
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-144", params("member", naam), line));
                     error = true; break;
                 }
                 if (shared == null) shared = d;
                 else if (!shared.equal(d)) {
                     model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                            "RGS-145", params("member", naam, "target", targetText(d), "sharedTarget", targetText(shared)),
-                            "Uitzonderingen ongeordend: groepslid '" + naam + "' schrijft een ander doel ("
-                            + targetText(d) + ") dan een eerder lid (" + targetText(shared) + ") — een ongeordende "
-                            + "groep betreft één gedeeld doel (§4, §9.5)", line));
+                            "RGS-145", params("member", naam, "target", targetText(d), "sharedTarget", targetText(shared)), line));
                     error = true; break;
                 }
                 members.add(rr.get(0));
@@ -2516,10 +2315,7 @@ final class RuleChecker {
         String tekst = annotationText(statuteAnnotations(head));
         if (tekst == null) return;
         model.diagnostics.add(new Diagnostic(Severity.WARNING,
-                "RGS-146", params("head", headName, "annotation", tekst, "reference", reference),
-                headName + ": de // Bron:-annotatie '" + tekst + "' boven de kop hoort bij geen regel — "
-                + "een annotatie hoort bij de regel direct eronder, en de kop is geen regel — en komt daarom niet op "
-                + "de wire. Zet haar boven het lid of de leden waarvoor zij geldt (" + reference + ")", line));
+                "RGS-146", params("head", headName, "annotation", tekst, "reference", reference), line));
     }
 
     /** The vacuously true justification. WF-050 requires EVERY non-initialisation default to carry one,
@@ -2571,16 +2367,12 @@ final class RuleChecker {
     }
 
     /** "'a'", "'a' en 'b'", "'a', 'b' en 'c'": names as a Dutch list. */
-    private static String enumeration(List<String> names) {
-        List<String> q = names.stream().map(n -> "'" + n + "'").toList();
-        return q.size() == 1 ? q.get(0)
-                : String.join(", ", q.subList(0, q.size() - 1)) + " en " + q.get(q.size() - 1);
+    private static Msg.Enumeration enumeration(List<String> names) {
+        return new Msg.Enumeration(Component.FRONTEND, names.stream().map(n -> "'" + n + "'").toList());
     }
 
     private void multiVersionError(String roleName, String naam, int line) {
-        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-147", params("role", roleName, "name", naam),
-                "Uitzondering op: de " + roleName + " '" + naam + "' heeft meer dan één regelversie — meerdere versies op "
-                + "één defaults-groep worden in deze kaart nog niet ondersteund (§4)", line));
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-147", params("role", roleName, "name", naam), line));
     }
 
     // ==============================================================================================
@@ -2659,12 +2451,7 @@ final class RuleChecker {
             ObjectTypeMemberContext member = marked.get(i);
             if (member.kenmerkSpecificatie() != null) {
                 error(member.getStart().getLine(),
-                        "RGS-148", params("characteristic", characteristicDeclarationName(member.kenmerkSpecificatie()), "objectType", t.naam, "marking", MARKING),
-                        "kenmerk '" + characteristicDeclarationName(member.kenmerkSpecificatie()) + "' van "
-                        + t.naam + ": " + MARKING + " staat alleen op een attribuut — casusinvoer op een kenmerk staat "
-                        + "al tegen elk besluit van een defaults-groep (RUNTIME-SEMANTICS ch. 7.8), en een opgave 'niet "
-                        + "aanwezig' boven een berekende toekenning vraagt een opgave met drie waarden, die de casus voor "
-                        + "een kenmerk niet kent (dialect §7)");
+                        "RGS-148", params("characteristic", characteristicDeclarationName(member.kenmerkSpecificatie()), "objectType", t.naam, "marking", MARKING));
                 continue;
             }
             AttribuutSpecificatieContext a = member.attribuutSpecificatie();
@@ -2724,23 +2511,14 @@ final class RuleChecker {
                     : dt instanceof Datatype.Numeriek && memberUnit ? "Numeriek met eenheid " + src(a.eenheidExpressie())
                     : dt == null ? "onbekend" : dt.naam();
             return new Typing.Coded("RGS-149",
-                    params("head", o.head(), "attribute", x, "datatype", named),
-                    o.head() + ": " + MARKING + " staat alleen op een Numeriek attribuut zonder eenheid of met één "
-                    + "eenheid, of op een Datum in dagen, en '" + x + "' is " + named + " — een defaults-groep op een "
-                    + "attribuut van een ander datatype of met een samengestelde eenheid is nog niet in alle drie de "
-                    + "uitvoerders gemeten (dialect §7)");
+                    params("head", o.head(), "attribute", x, "datatype", named));
         }
         if (t.attribuutGranulariteit.containsKey(x))
-            return new Typing.Coded("RGS-150", params("head", o.head()),
-                    o.head() + ": " + MARKING + " staat niet op een tijdsafhankelijk attribuut — een defaults-groep "
-                    + "beslist één keer en heeft geen tijdlijn om op te schrijven (WF-086) (dialect §7)");
+            return new Typing.Coded("RGS-150", params("head", o.head()));
         List<String> dimensies = t.attributeDimensions.get(x);
         if (dimensies != null && !dimensies.isEmpty())
             return new Typing.Coded("RGS-151",
-                    params("head", o.head(), "attribute", x, "dimensions", String.join(" en ", dimensies)),
-                    o.head() + ": " + MARKING + " staat niet op een gedimensioneerd attribuut, en '" + x + "' is "
-                    + "gedimensioneerd met " + String.join(" en ", dimensies) + " — een defaults-groep op een "
-                    + "gedimensioneerd attribuut speelt nog niet in alle drie de uitvoerders (dialect §7)");
+                    params("head", o.head(), "attribute", x, "dimensions", String.join(" en ", dimensies)));
         // a subtype inherits the generated members, a supertype's members are inherited by T: either way one
         // instance would carry two declarations of one name (WF-105)
         for (String g : List.of(o.opgegeven(), o.computed(), o.deviating())) {
@@ -2754,14 +2532,9 @@ final class RuleChecker {
                 if (!attribute && !characteristic) continue;
                 int regel = memberLines.getOrDefault(u, Map.of()).getOrDefault(key, 0);
                 return new Typing.Coded("RGS-316",
-                        params("head", o.head(), "line", o.line(), "generatedKind", g.equals(o.deviating()) ? "kenmerk" : "attribuut",
-                                "generated", g, "declaringType", u.naam, "declaredKind", attribute ? "attribuut" : "kenmerk",
-                                "declaredLine", regel, "objectType", t.naam),
-                        o.head() + " (bronregel " + o.line() + "): " + MARKING + " genereert "
-                        + (g.equals(o.deviating()) ? "het kenmerk '" : "het attribuut '") + g + "', en " + u.naam
-                        + " declareert die naam al als " + (attribute ? "attribuut" : "kenmerk") + " (bronregel " + regel
-                        + ") — een naam die de markering genereert, bestaat nog niet in de erflijn van " + t.naam
-                        + " (dialect §7)");
+                        params("head", o.head(), "line", o.line(), "generatedKind", Msg.frontend(g.equals(o.deviating()) ? "PART.member-kind.characteristic-kind" : "PART.member-kind.attribute"),
+                                "generated", g, "declaringType", u.naam, "declaredKind", Msg.frontend(attribute ? "PART.member-kind.attribute" : "PART.member-kind.characteristic-kind"),
+                                "declaredLine", regel, "objectType", t.naam));
             }
         }
         return null;
@@ -2821,16 +2594,10 @@ final class RuleChecker {
                 String read = readGenerated(o);
                 if (read != null)
                     error(o.line(),
-                            "RGS-152", params("head", o.head(), "attribute", o.attribute(), "read", read),
-                            o.head() + ": " + MARKING + " genereert niets, omdat geen regel '" + o.attribute()
-                            + "' berekent of vaststelt, maar het model leest '" + read + "' — die naam bestaat alleen "
-                            + "waar de markering een berekening van '" + o.attribute() + "' verlegt (dialect §7)");
+                            "RGS-152", params("head", o.head(), "attribute", o.attribute(), "read", read));
                 else
                     model.diagnostics.add(new Diagnostic(Severity.WARNING,
-                            "RGS-153", params("head", o.head(), "attribute", o.attribute()),
-                            o.head() + ": " + MARKING + " staat op een "
-                            + "attribuut dat geen regel berekent of vaststelt — '" + o.attribute() + "' is al invoer, en "
-                            + "de markering genereert niets (dialect §7)", o.line()));
+                            "RGS-153", params("head", o.head(), "attribute", o.attribute()), o.line()));
                 continue;
             }
             if (reason == null) reason = formNameError(o, forms, generated);
@@ -2932,19 +2699,13 @@ final class RuleChecker {
             if (sameName(v.targetAttribute(), x) && inLine(t, v.targetType()))
                 return new Typing.Coded("RGS-154",
                         params("head", o.head(), "allocation", withoutVersion(v.naam()), "attribute", x,
-                                "computedAttribute", o.computed()),
-                        o.head() + ": " + MARKING + ", maar de verdeling '" + withoutVersion(v.naam()) + "' schrijft '"
-                        + x + "' — de markering verlegt een verdeling niet naar '" + o.computed() + "', en naast de "
-                        + "defaults-groep op '" + x + "' is zij een tweede schrijver (WF-050) (dialect §7)");
+                                "computedAttribute", o.computed()));
         for (ResolvedObjectCreation oc : model.objectCreations)
             if (inLine(t, oc.createdType())
                     && oc.initialisations().stream().anyMatch(k -> !k.characteristic() && sameName(k.attribute(), x)))
                 return new Typing.Coded("RGS-155",
                         params("head", o.head(), "objectCreation", withoutVersion(oc.naam()), "attribute", x,
-                                "computedAttribute", o.computed()),
-                        o.head() + ": " + MARKING + ", maar de objectcreatie '" + withoutVersion(oc.naam()) + "' kent '"
-                        + x + "' toe bij het aanmaken — de markering verlegt die toekenning niet naar '" + o.computed()
-                        + "', en naast de defaults-groep op '" + x + "' is zij een tweede schrijver (WF-050) (dialect §7)");
+                                "computedAttribute", o.computed()));
         // a generated member has one writer or none: the case supplies 'opgegeven X', the moved writers compute
         // 'berekende X', the generated rule attributes 'afwijkende opgave X'
         for (String g : List.of(o.opgegeven(), o.computed(), o.deviating())) {
@@ -2984,12 +2745,7 @@ final class RuleChecker {
                         params("head", o.head(), "line", o.line(), "writer", writer, "member", g,
                                 "writerLine", regel > 0 ? regel : "", "inputMember", o.opgegeven(),
                                 "computedMember", o.computed(), "attribute", x, "deviatingMember", o.deviating(),
-                                "rule", o.regel()),
-                        o.head() + " (bronregel " + o.line() + "): " + writer + " schrijft '" + g + "'"
-                        + (regel > 0 ? " (bronregel " + regel + ")" : "") + ", een lid dat " + MARKING + " genereert — '"
-                        + o.opgegeven() + "' levert de casus, '" + o.computed() + "' krijgt de schrijvers van '" + x
-                        + "', en '" + o.deviating() + "' kent de regel '" + o.regel() + "' toe; een andere schrijver "
-                        + "verdraagt zo'n lid niet (dialect §7)");
+                                "rule", o.regel(), "writerAt", Msg.frontendIf(regel > 0, "RGS-317.at", "line", regel)));
         }
         return null;
     }
@@ -3029,22 +2785,16 @@ final class RuleChecker {
         String[][] names = {{"de defaults-groep", o.group()}, {"de regel", o.regel()}, {"de consistentie", o.consistencyCheck()}};
         for (String[] form : names) {
             String key = dev.uchar.regelspraak.emit.IrEmitter.norm(form[1]);
-            String head = o.head() + " (bronregel " + o.line() + "): " + MARKING + " genereert " + form[0] + " '"
-                    + form[1] + "', en ";
-            String suffix = " — een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020) (dialect §7)";
             String[] site = forms.get(key);
             if (site != null)
                 return new Typing.Coded("RGS-156",
                         params("head", o.head(), "line", o.line(), "formKind", form[0], "name", form[1], "earlierForm", site[0],
-                                "earlierLine", site[1]),
-                        head + site[0] + " heet al zo (bronregel " + site[1] + ")" + suffix);
+                                "earlierLine", site[1]));
             Input other = generated.get(key);
             if (other != null)
                 return new Typing.Coded("RGS-157",
                         params("head", o.head(), "line", o.line(), "formKind", form[0], "name", form[1],
-                                "otherHead", other.head(), "otherLine", other.line()),
-                        head + "de markering op " + other.head() + " genereert die naam al (bronregel " + other.line() + ")"
-                        + suffix);
+                                "otherHead", other.head(), "otherLine", other.line()));
         }
         return null;
     }
@@ -3057,25 +2807,14 @@ final class RuleChecker {
         List<String> names = init.stream().map(r -> withoutVersion(r.naam())).distinct().toList();
         if (names.size() > 1)
             return new Typing.Coded("RGS-158",
-                    params("head", o.head(), "attribute", o.attribute(), "names", enumeration(names)),
-                    o.head() + ": " + MARKING + ", en '" + o.attribute() + "' heeft meer dan één initialisatie ("
-                    + enumeration(names) + ") — de gegenereerde defaults-groep draagt één initialisatiedefault, de "
-                    + "laagste (WF-050) (dialect §7)");
+                    params("head", o.head(), "attribute", o.attribute(), "names", enumeration(names)));
         if (names.size() == 1 && (init.size() > 1 || !init.get(0).validity().always()))
             return new Typing.Coded("RGS-159",
                     params("head", o.head(), "attribute", o.attribute(), "name", names.get(0),
-                            "problem", init.size() > 1 ? "meer dan één versie" : "een ander geldigheidsvenster dan altijd"),
-                    o.head() + ": " + MARKING + ", en de initialisatie '" + names.get(0) + "' van '" + o.attribute()
-                    + "' heeft " + (init.size() > 1 ? "meer dan één versie" : "een ander geldigheidsvenster dan altijd")
-                    + " — de gegenereerde defaults-groep geldt altijd, en een default draagt geen eigen venster "
-                    + "(dialect §7)");
+                            "problem", Msg.frontend(init.size() > 1 ? "RGS-159.versions" : "RGS-159.other-window")));
         if (names.size() == 1 && init.get(0).condition() != null)
             return new Typing.Coded("RGS-160",
-                    params("head", o.head(), "attribute", o.attribute(), "name", names.get(0)),
-                    o.head() + ": " + MARKING + ", en de initialisatie '" + names.get(0) + "' van '" + o.attribute()
-                    + "' heeft een voorwaarde — de initialisatiedefault van de gegenereerde defaults-groep is alleen "
-                    + "gerechtvaardigd waar '" + o.attribute() + "' in de invoer leeg is, en draagt geen eigen "
-                    + "voorwaarde (WF-050) (dialect §7)");
+                    params("head", o.head(), "attribute", o.attribute(), "name", names.get(0)));
         return null;
     }
 
@@ -3100,12 +2839,7 @@ final class RuleChecker {
                 Objecttype th = aHigh ? ta : tb, tl = aHigh ? tb : ta;
                 return new Typing.Coded("RGS-161",
                         params("head", o.head(), "attribute", o.attribute(), "highName", withoutVersion(high.naam()),
-                                "highType", th.naam, "lowName", withoutVersion(low.naam()), "lowType", tl.naam),
-                        o.head() + ": " + MARKING + ", en '" + o.attribute() + "' heeft twee initialisaties in één "
-                        + "erflijn ('" + withoutVersion(high.naam()) + "' voor " + th.naam + " en '"
-                        + withoutVersion(low.naam()) + "' voor " + tl.naam + ") — de effectieve stapel van " + tl.naam
-                        + " zou twee initialisatiedefaults dragen, en RUNTIME-SEMANTICS ch. 7.10 kent er één; zonder "
-                        + "de markering weigert WF-079 dit paar (dialect §7)");
+                                "highType", th.naam, "lowName", withoutVersion(low.naam()), "lowType", tl.naam));
             }
         for (ResolvedRule s : subInit) {
             long versions = subInit.stream().filter(r -> withoutVersion(r.naam()).equals(withoutVersion(s.naam()))).count();
@@ -3113,14 +2847,8 @@ final class RuleChecker {
             String type = ownTarget(s.target(), o.attribute()).naam;
             return new Typing.Coded("RGS-162",
                     params("head", o.head(), "name", withoutVersion(s.naam()), "attribute", o.attribute(), "subtype", type,
-                            "problem", versions > 1 ? "meer dan één versie" : "een ander geldigheidsvenster dan altijd",
-                            "objectType", o.type().naam),
-                    o.head() + ": " + MARKING + ", en de initialisatie '" + withoutVersion(s.naam()) + "' van '"
-                    + o.attribute() + "' voor " + type + " heeft "
-                    + (versions > 1 ? "meer dan één versie" : "een ander geldigheidsvenster dan altijd")
-                    + " — naast de gegenereerde defaults-groep op " + o.type().naam + " wordt zij een default in de "
-                    + "effectieve stapel van " + type + " (RUNTIME-SEMANTICS ch. 7.10), en die neemt geen regel met "
-                    + "een venster op (dialect §7)");
+                            "problem", Msg.frontend(versions > 1 ? "RGS-159.versions" : "RGS-159.other-window"),
+                            "objectType", o.type().naam));
         }
         return null;
     }
@@ -3292,10 +3020,7 @@ final class RuleChecker {
             List<ReadNode> bindingPath = findCycle(start, start, uses, new java.util.HashSet<>(), new ArrayList<>());
             if (bindingPath != null && cycleNodes.addAll(bindingPath.stream().map(k -> toAuthor.getOrDefault(k, k)).toList()))
                 model.diagnostics.add(new Diagnostic(Severity.WARNING,
-                        "RGS-163", params("cycle", String.join(" -> ", bindingPath.stream().map(tekst::get).toList()), "start", tekst.get(start)),
-                        "kringverwijzing tussen berekeningen: " + String.join(" -> ", bindingPath.stream().map(tekst::get).toList())
-                        + " -> " + tekst.get(start)
-                        + " — herberekening bereikt mogelijk geen fixpunt (de engine begrenst het aantal activaties)", 0));
+                        "RGS-163", params("cycle", String.join(" -> ", bindingPath.stream().map(tekst::get).toList()), "start", tekst.get(start)), 0));
         }
     }
 
@@ -3570,41 +3295,29 @@ final class RuleChecker {
      *  writes no such read — no path is derivable, no hop is to-many, or the count's source names no member of its
      *  element type — no reader refuses the document in these words, and the refusal keeps this frontend's. */
     private Typing.Coded setReadError(Expr.AttributeReference a, Objecttype subject, Objecttype countSource) {
-        String head = "setlezing buiten een vouwbron '" + a.source() + "': ";
         if (countSource != null && countSource.hasMember(a.attribute()))
             return new Typing.Coded("RGS-164",
-                    params("source", a.source(), "attribute", a.attribute(), "elementType", countSource.naam),
-                    head + "the source of this count aggregation reads '" + a.attribute() + "', a member of the "
-                    + "element type '" + countSource.naam + "': a count folds INSTANCES, so its source is a count source "
-                    + "naming the relation's role, never a value read per contributor");
+                    params("source", a.source(), "attribute", a.attribute(), "elementType", countSource.naam));
         if (countSource == null) {
             List<RegelSpraakModel.RoleBindingRef> bindingPath =
                     dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, subject, a);
-            List<String> sentences = new ArrayList<>(), hops = new ArrayList<>(), roles = new ArrayList<>();
+            List<Msg> sentences = new ArrayList<>();
+            List<String> hops = new ArrayList<>(), roles = new ArrayList<>();
             for (int i = 0; i < bindingPath.size(); i++)
                 if (toMany(bindingPath.get(i))) {
-                    sentences.add("hop " + i + " reaches the to-many role '" + bindingPath.get(i).role() + "' in a scalar slot "
-                            + "— a to-many step needs an aggregation, never a silent first pick");
+                    sentences.add(manyStepSentence(i, bindingPath.get(i).role()));
                     hops.add(String.valueOf(i));
                     roles.add(bindingPath.get(i).role());
                 }
-            // the sentences are joined, so one template carries the hops and their roles, in path order
+            // one sentence per to-many hop, in path order; the template renders them joined
             if (!sentences.isEmpty())
                 return new Typing.Coded("RGS-165",
-                        params("source", a.source(), "hops", String.join(", ", hops), "roles", String.join(", ", roles)),
-                        head + String.join("; ", sentences));
+                        params("source", a.source(), "hops", String.join(", ", hops), "roles", String.join(", ", roles),
+                                "sentences", sentences));
         }
-        String text = "setlezing buiten een vouwbron: '" + a.source() + "' noemt de waarde van elk lid van de "
-                + "verzameling — alleen toegestaan als bron van één waardevouw (som, totaal, minimum, "
-                + "maximum, eerste, laatste, aantal gevulde waarden); "
-                + (countSource != null
-                        ? "een instantietelling vouwt de leden zelf en leest geen waarde per lid, dus als "
-                          + "bron van 'aantal' ook niet (WF-093 (b), IR-SPEC ch. 4.3)"
-                        : "hier wordt één waarde verwacht, en een meervoudige stap in een lezing "
-                          + "vraagt een aggregatie (WF-053, IR-SPEC ch. 4.1a)");
         return countSource != null
-                ? new Typing.Coded("RGS-166", params("source", a.source()), text)
-                : new Typing.Coded("RGS-167", params("source", a.source()), text);
+                ? new Typing.Coded("RGS-166", params("source", a.source()))
+                : new Typing.Coded("RGS-167", params("source", a.source()));
     }
 
     /** Whether the role a hop reaches is to-many, as its fact type declares it. */
@@ -3679,7 +3392,6 @@ final class RuleChecker {
             rowRules.put(b, rows);
             if (grid.size() < 2) { // need a header row + ≥1 data row to produce anything
                 model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-168", params("name", naam),
-                        "beslistabel '" + naam + "' heeft geen tabelinhoud (alleen een kop) — wordt niet naar IR/DRL omgezet",
                         b.getStart().getLine()));
                 continue;
             }
@@ -3690,7 +3402,7 @@ final class RuleChecker {
             // a row the desugar cannot faithfully render (kenmerk "onwaar" conclusie, >1 OR-cel in an EN-rij) is
             // surfaced as a WARNING — never silently dropped.
             java.util.function.Consumer<Typing.Coded> warn = msg -> model.diagnostics.add(
-                    msg.prefixed("beslistabel '" + naam + "': ").at(Severity.WARNING, line));
+                    msg.frame("decision-table", "name", naam).at(Severity.WARNING, line));
             // The table's // Bron: annotations go onto EVERY rule it desugars to — the multi-version precedent of
             // IR-SPEC ch. 3.1 (one comment block above a shared header, stamped per flattened entry). Each row is
             // re-parsed in a stream of its own, where no comment stands above it, so the annotations are read here,
@@ -3711,10 +3423,9 @@ final class RuleChecker {
             // number, or with the same one, share a name: two rule forms of one name, which the verifier refuses
             // in the rules array (WF-020), one sentence per name
             if (!duplicates.isEmpty()) {
-                String sentences = String.join("; ",
-                        duplicates.stream().map(n -> String.format("duplicate name '%s' in %s", n, "rules")).toList());
                 model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-169",
-                        params("name", naam, "names", String.join("; ", duplicates)), "beslistabel '" + naam + "': " + sentences,
+                        params("name", naam, "names", String.join("; ", duplicates), "sentences",
+                                duplicates.stream().map(n -> Msg.frontend("RGS-169.duplicate-name", "name", n, "array", "rules")).toList()),
                         line));
             }
         }
@@ -3787,8 +3498,7 @@ final class RuleChecker {
             @Override public void syntaxError(Recognizer<?, ?> r, Object sym, int l, int col,
                                               String msg, RecognitionException e) {
                 error[0] = true;
-                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-170", params("message", msg),
-                        "beslistabel-desugar: syntaxfout in gegenereerde regel: " + msg, line));
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-170", params("message", msg), line));
             }
         };
         lexer.removeErrorListeners(); lexer.addErrorListener(listener);
@@ -3814,14 +3524,10 @@ final class RuleChecker {
                     if (oneRow)
                         model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-171",
                                 params("name", naam, "earlierVersion", writtenPlace(validities, i),
-                                        "laterVersion", writtenPlace(validities, j), "row", rows.get(0)),
-                                "regel '" + naam + "': validity windows of versions '" + naam + " #"
-                                + writtenPlace(validities, i) + "' and '" + naam + " #" + writtenPlace(validities, j)
-                                + "' overlap (" + rows.get(0) + ")", line));
+                                        "laterVersion", writtenPlace(validities, j), "row", rows.get(0)), line));
                     else
                         model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-172",
-                                params("name", naam),
-                                "geldigheidsperioden van regelversies overlappen (regel '" + naam + "')", line));
+                                params("name", naam), line));
                     return;
                 }
             }
@@ -3890,16 +3596,12 @@ final class RuleChecker {
     private LocalDate boundOrReport(DatumOfJaarContext d, boolean under, int line) {
         LocalDate b = limit(d, under);
         if (b == null)
-            reportOnce(new Diagnostic(Severity.ERROR, "RGS-173", params("bound", d != null ? src(d) : ""),
-                    "ongeldige versiegeldigheidsgrens '" + (d != null ? src(d) : "")
-                            + "' (verwacht een datum dd-mm-jjjj of een jaartal van vier cijfers)", line));
+            reportOnce(new Diagnostic(Severity.ERROR, "RGS-173", params("bound", d != null ? src(d) : ""), line));
         // The DATE token admits a time of day, but Geldigheid holds LocalDates: there is no
         // carrier for it, and reading only the date part used to drop the time silently.
         boolean time = d != null && d.DATE() != null && d.DATE().getText().contains(":");
         if (time)
-            reportOnce(new Diagnostic(Severity.ERROR, "RGS-174", params("bound", src(d)),
-                    "versiegeldigheidsgrens '" + src(d) + "' draagt een tijdcomponent; de geldigheid "
-                            + "is datumgranulair (verwacht een datum dd-mm-jjjj of een jaartal van vier cijfers)", line));
+            reportOnce(new Diagnostic(Severity.ERROR, "RGS-174", params("bound", src(d)), line));
         return time ? null : b;
     }
 
@@ -3945,8 +3647,7 @@ final class RuleChecker {
     }
     private void reportUnknownDomain(Datatype dt, String where) {
         if (dt instanceof Datatype.Unknown o && o.reason().startsWith("domein ")) {
-            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-175", params("reason", o.reason(), "user", where),
-                    "ongedefinieerd " + o.reason() + " (gebruikt door '" + where + "')", 0));
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-175", params("reason", o.reason(), "user", where), 0));
         }
     }
 
@@ -3983,23 +3684,18 @@ final class RuleChecker {
             // can compile it to a per-date boolean predicate (§8.1.5 controls + §6 dagsoort durations consume it).
             String day = src(rd.dagsoortResultaat().kaleNaam()).trim();
             if (condition == null)
-                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-176", params("day", day, "name", naam),
-                        "dagsoortdefinitie '" + day + "' mist een voorwaarde (regel '" + naam + "')", rd.getStart().getLine()));
+                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-176", params("day", day, "name", naam), rd.getStart().getLine()));
             else {
                 // No executor consults a day-kind window, and the predicate compilers key on the dagsoort NAME, so a
                 // second definitie (e.g. per §13.4.2.5 version window) is not version-dispatched: the verifier refuses
                 // both (WF-031), and so does the frontend, in its words
-                String head = "dagsoortdefinitie '" + day + "' (regel '" + naam + "'): ";
                 if (validity.from() != null || validity.until() != null)
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                            "RGS-177", params("day", day, "name", naam),
-                            head + "day-kind definition with a bounded "
-                            + "validity window; must be always (from and to both absent)", rd.getStart().getLine()));
+                    model.diagnostics.add(new Typing.Coded("RGS-177", params("day", day, "name", naam))
+                            .frame("day-kind-definition", "dayKind", day, "rule", naam).at(Severity.ERROR, rd.getStart().getLine()));
                 model.resolvedDayKindDefinitions.stream().filter(earlier -> earlier.naam().equalsIgnoreCase(day)).findFirst()
-                        .ifPresent(earlier -> model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                                "RGS-178", params("day", day, "name", naam, "dayKind", earlier.naam()),
-                                head
-                                + "more than one definition for day kind '" + earlier.naam() + "'", rd.getStart().getLine())));
+                        .ifPresent(earlier -> model.diagnostics.add(new Typing.Coded("RGS-178",
+                                params("day", day, "name", naam, "dayKind", earlier.naam()))
+                                .frame("day-kind-definition", "dayKind", day, "rule", naam).at(Severity.ERROR, rd.getStart().getLine())));
                 dayKindPurity(condition, day, naam, rd.getStart().getLine());
                 model.resolvedDayKindDefinitions.add(new dev.uchar.regelspraak.ir.ResolvedDayKindDefinition(day, condition, validity));
             }
@@ -4009,7 +3705,6 @@ final class RuleChecker {
             // parsed but not yet lifted into the IR. Surface it as a diagnostic
             // rather than letting the rule silently disappear from the model.
             model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-179", params("name", naam),
-                    "resultaatdeel 'resultaatdeel' wordt nog niet naar IR/DRL omgezet (regel '" + naam + "')",
                     rd.getStart().getLine()));
         }
     }
@@ -4022,16 +3717,13 @@ final class RuleChecker {
      *  and no descent below a read it refuses. */
     private void dayKindPurity(Condition condition, String day, String rule, int regel) {
         dayKindCondition(condition, (sentence, source) -> model.diagnostics.add(sentence
-                .prefixed("dagsoortdefinitie '" + day + "' (regel '" + rule + "'): ")
+                .frame("day-kind-definition", "dayKind", day, "rule", rule)
                 .at(Severity.ERROR, source != null && source.line() > 0 ? source.line() : regel)), day, rule);
     }
 
     private static Typing.Coded dayKindImpure(String day, String rule, String category, String naam) {
         return new Typing.Coded("RGS-318",
-                params("day", day, "rule", rule, "category", category, "name", naam == null ? "?" : naam),
-                String.format("day-kind condition reads %s '%s' — a day-kind condition references only dates, "
-                + "date-components, easterSunday, literals, parameters and other day kinds, never derived object "
-                + "state (an attribute or characteristic read)", category, naam == null ? "?" : naam));
+                params("day", day, "rule", rule, "category", category, "name", naam == null ? "?" : naam));
     }
 
     private static void dayKindExpr(Expr e, java.util.function.BiConsumer<Typing.Coded, Source> report,
@@ -4044,11 +3736,7 @@ final class RuleChecker {
                 if (c.naam() != null && dev.uchar.regelspraak.ir.Spelling.CONTEXT_VALUE_NAME.rows().containsKey(c.naam()))
                     report.accept(new Typing.Coded("RGS-319",
                             params("day", day, "rule", rule,
-                                    "value", dev.uchar.regelspraak.ir.Spelling.CONTEXT_VALUE_NAME.spelling(c.naam())),
-                            String.format("day-kind condition reads the session value '%s' — a day kind "
-                            + "classifies a bare date at stratum 0 (ch. 5.4), so its predicate is a function of THE "
-                            + "DAY alone; the bound day (BoundDay) is admitted, a ContextValue naming a session value "
-                            + "is refused", dev.uchar.regelspraak.ir.Spelling.CONTEXT_VALUE_NAME.spelling(c.naam()))),
+                                    "value", dev.uchar.regelspraak.ir.Spelling.CONTEXT_VALUE_NAME.spelling(c.naam()))),
                             c.source());
             }
             case Expr.DimensionCellRead dc -> dayKindExpr(dc.attribute(), report, day, rule);
@@ -4160,7 +3848,6 @@ final class RuleChecker {
         // Surface the gap as a WARNING rather than lift it into a silent inert rule (which would
         // both drop the check and lose the diagnostic the §13.4.7/.11/.12 path still gives).
         model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-180", params("name", naam),
-                "consistentieregel wordt nog niet (volledig) naar IR/DRL omgezet (regel '" + naam + "')",
                 cr.getStart().getLine()));
     }
 
@@ -4289,12 +3976,7 @@ final class RuleChecker {
         // instance, a document no reader refuses (IR-SPEC ch. 3.6), so the refusal keeps this frontend's words
         if (scope.size() > 1) {
             model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                    "RGS-181", params("name", naam, "scopeParent", src(parts.get(1)), "relationCount", scope.size(), "parentRole", parentNav, "elementType", elem.naam, "writtenRole", src(parts.get(0))),
-                    "uniciteit '" + naam + "' binnen '" + src(parts.get(1))
-                    + "' zonder binding (" + scope.size() + " relaties kennen een rol '" + parentNav + "' tegenover "
-                    + elem.naam + ", en '" + src(parts.get(0)) + "' noemt geen rol die er precies één aanwijst): zonder "
-                    + "binding zou de wire haar lezen als een uniciteit over alle instanties van " + elem.naam
-                    + ", en dat is niet wat er staat", source.line()));
+                    "RGS-181", params("name", naam, "scopeParent", src(parts.get(1)), "relationCount", scope.size(), "parentRole", parentNav, "elementType", elem.naam, "writtenRole", src(parts.get(0))), source.line()));
             return REFUSED;
         }
         RoleBindingRef scopeBinding = scope.get(0);
@@ -4302,11 +3984,7 @@ final class RuleChecker {
         // until the fix round of 2026-09-26
         if (model.feittypen.get(scopeBinding.factType()).reciprocal) {
             model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                    "RGS-182", params("name", naam, "scopeParent", src(parts.get(1))),
-                    "uniciteit '" + naam + "' binnen '" + src(parts.get(1))
-                    + "': de relatie die de begrenzing draagt is wederkerig, en een begrenzing over een wederkerig "
-                    + "feittype schrijft deze frontend niet (de wire schrijft haar als rolbinding van een feittype met "
-                    + "twee rollen)", source.line()));
+                    "RGS-182", params("name", naam, "scopeParent", src(parts.get(1))), source.line()));
             return REFUSED;
         }
         // a scope parent is one instance: over a to-many role the document went to disk without a diagnostic and the
@@ -4314,8 +3992,6 @@ final class RuleChecker {
         if (toMany(scopeBinding)) {
             model.diagnostics.add(new Diagnostic(Severity.ERROR,
                     "RGS-183", params("name", naam, "scopeParent", src(parts.get(1)), "role", scopeBinding.role()),
-                    "uniciteit '" + naam + "' binnen '" + src(parts.get(1))
-                    + "': the scope role '" + scopeBinding.role() + "' is to-many — a scope parent is one instance",
                     source.line()));
             return REFUSED;
         }
@@ -4397,9 +4073,7 @@ final class RuleChecker {
                 // §9.7.3/§9.7.4: a maximum OR an afronding can leave the plafond under-distributed, so the spec
                 // REQUIRES an onverdeelde rest. Without a captured one the leftover is silently lost — surface it.
                 // Only when the bron resolves (an unresolved-verdeler fragment markers anyway, so warning is noise).
-                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-184", params("name", naam),
-                        "verdeling met afronding/maximum zonder herkenbare onverdeelde rest (§9.7.3/§9.7.4): het "
-                        + "restant wordt niet vastgelegd (regel '" + naam + "')", v.getStart().getLine()));
+                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-184", params("name", naam), v.getStart().getLine()));
         }
 
         ResolvedAllocation.Method method = ResolvedAllocation.Method.COMPLEX;
@@ -4466,7 +4140,7 @@ final class RuleChecker {
                 Typing.Coded error = Typing.allocationAssignment(d.objectType().attribute(d.attribute()),
                         b.objectType().attribute(b.attribute()), weightType, roundDec);
                 if (error != null)
-                    model.diagnostics.add(error.prefixed("verdeling: ").at(Severity.ERROR, v.getStart().getLine()));
+                    model.diagnostics.add(error.frame("allocation").at(Severity.ERROR, v.getStart().getLine()));
             }
         }
         model.allocations.add(new ResolvedAllocation(naam, b.objectType(), b.attribute(),
@@ -4494,9 +4168,7 @@ final class RuleChecker {
         if (rb != null) return rb;
         String head = RegelSpraakModel.nameCandidates(written).stream().findFirst().orElse(written);
         model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                "RGS-185", params("name", naam, "reason", pairReason(verdeler, recipient, head)),
-                "verdeling '" + naam + "' zonder verbindende rol ("
-                + pairReason(verdeler, recipient, head) + "): missing field 'connectingRole'", line));
+                "RGS-185", params("name", naam, "reason", pairReason(verdeler, recipient, head)), line));
         return null;
     }
 
@@ -4522,15 +4194,6 @@ final class RuleChecker {
             if (!blockade.isEmpty())
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
                         "RGS-186", params("name", naam, "objectType", subject.naam, "roles", blockade.stream().map(ft -> ft.rollen.stream().map(r -> "'" + r.naam() + "'").collect(java.util.stream.Collectors.joining(" of ")) + " (feittype '" + ft.naam + "')").collect(java.util.stream.Collectors.joining(", "))),
-                        "objectcreatie '" + naam + "': een " + subject.naam
-                        + " maakt een " + subject.naam + ", en de zin noemt geen rol die het nieuwe object bindt; dan "
-                        + "komt de koppeling uit het typenpaar, en die afleiding koppelt bij een zelfgetypeerd paar "
-                        + "niets (RUNTIME-SEMANTICS ch. 5.5). Noem de rol: 'Een " + subject.naam + " heeft een <rol> met "
-                        + "…', met als <rol> " + blockade.stream()
-                                .map(ft -> ft.rollen.stream().map(r -> "'" + r.naam() + "'")
-                                        .collect(java.util.stream.Collectors.joining(" of "))
-                                        + " (feittype '" + ft.naam + "')")
-                                .collect(java.util.stream.Collectors.joining(", ")),
                         oc.getStart().getLine()));
         }
 
@@ -4562,7 +4225,7 @@ final class RuleChecker {
                 Typing.Coded error = Typing.assignment(targetType, t.value().type(),
                         ExpressionBuilder.unitlessNumberLiteral(t.value()));
                 if (error != null)
-                    model.diagnostics.add(error.prefixed("objectcreatie: ").at(Severity.ERROR, oc.getStart().getLine()));
+                    model.diagnostics.add(error.frame("object-creation").at(Severity.ERROR, oc.getStart().getLine()));
             }
 
         model.objectCreations.add(new ResolvedObjectCreation(naam, createdType, subject, assignments, condition, validity,
@@ -4617,19 +4280,14 @@ final class RuleChecker {
             if (!(value instanceof Expr.Literal lit && lit.type() instanceof Datatype.BooleanType))
                 if (value.type() != null && !value.type().isUnknown() && !(value.type() instanceof Datatype.BooleanType))
                     model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-187",
-                            params("characteristic", characteristic),
-                            "kenmerkwaardetoekenning '" + characteristic + "': characteristic initialisation's value must be "
-                            + "a boolean-typed expression", oc.getStart().getLine()));
+                            params("characteristic", characteristic), oc.getStart().getLine()));
                 else
                     model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-188",
-                            params("characteristic", characteristic, "value", value.source()),
-                            "kenmerkwaardetoekenning '" + characteristic + "' vereist waar of onwaar (§13.4.6.4), niet '"
-                            + value.source() + "'", oc.getStart().getLine()));
+                            params("characteristic", characteristic, "value", value.source()), oc.getStart().getLine()));
             return new ResolvedObjectCreation.MemberInit(characteristic, value, true);
         }
         // the member goes out as an attribute initialisation, which the verifier refuses in these words (WF-027)
         model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-189", params("name", naam, "objectType", createdType.naam),
-                "objectcreatie: '" + naam + "' is not a declared attribute of '" + createdType.naam + "'",
                 oc.getStart().getLine()));
         return new ResolvedObjectCreation.MemberInit(naam, value);
     }
@@ -4665,9 +4323,9 @@ final class RuleChecker {
                 && ((anchorNoun != null && stripArticle(backNoun).equalsIgnoreCase(stripArticle(anchorNoun)))
                     || model.objectTypeByName(stripArticle(backNoun)) == anchor);
 
-        String reason = null;
-        if (anchor == null) reason = "anker-objecttype niet herleidbaar";
-        else if (!directAnchor) reason = "doelketen verwijst niet rechtstreeks naar de anker (geen back-reference)";
+        Msg reason = null;
+        if (anchor == null) reason = Msg.frontend("RGS-190.no-anchor");
+        else if (!directAnchor) reason = Msg.frontend("RGS-190.indirect");
         else {
             // Walk the §9.4 navigation chain anker -> … -> doel-parent. The written kaleNaamDeel are outside-in
             // (roleC at index 0, the innermost hop last), so the hops from the anker are the segments in REVERSE
@@ -4679,9 +4337,9 @@ final class RuleChecker {
             for (int i = parts.size() - 1; i >= 1; i--) {
                 String role = stripArticle(src(parts.get(i)));
                 Objecttype next = model.roleTargetTypeToSubject(cur, role);
-                if (next == null) { reason = "tussenstap-rol '" + role + "' niet eenduidig te herleiden"; break; }
+                if (next == null) { reason = Msg.frontend("RGS-190.step-role", "role", role); break; }
                 ResolvedFactCreation.PathStep step = pathStep(cur, next, role);
-                if (step == null) { reason = "referentieveld-zijde voor tussenstap '" + role + "' niet af te leiden"; break; }
+                if (step == null) { reason = Msg.frontend("RGS-190.step-field", "role", role); break; }
                 steps.add(step);
                 cur = next;
             }
@@ -4690,15 +4348,15 @@ final class RuleChecker {
                 String joinField = model.connectingRoleViaElementName(cur, roleC); // existing roleC relation's field on doel
                 String setField  = model.connectingRoleViaElementName(anchor, roleB); // the NEW relation's field on doel -> anker
                 if (targetName == null || joinField == null || setField == null)
-                    reason = "rol of feittype niet eenduidig te herleiden";
+                    reason = Msg.frontend("RGS-190.ambiguous");
                 else if (joinField.equalsIgnoreCase(setField))
-                    reason = "de nieuwe en de bestaande relatie vallen samen (zelfde referentieveld)";
+                    reason = Msg.frontend("RGS-190.same-relation");
                 // The reference field lives on the MANY side, pointing at the ONE side (§13.3.9.1 cardinaliteit;
                 // the convention objectCreatie links by). Both the final join (roleC, from the last hop) and the
                 // set (roleB, from the anker) field exist on doel only when doel is the MANY side of BOTH — else
                 // the field belongs on the other side and a setter would be rejected or link the wrong way. WARN.
                 else if (!(model.toManyRole(cur, targetName, roleC) && model.toManyRole(anchor, targetName, roleB)))
-                    reason = "referentieveld hoort aan de meervoudige kant; het doel is hier niet de meervoudige kant";
+                    reason = Msg.frontend("RGS-190.many-side");
                 else {
                     Condition effective = targetCondition(condition, vd, anchor, targetName, roleC);
                     // uchar symbolic form (WF-028, all-or-nothing): the created relation (anker/doel via
@@ -4728,7 +4386,6 @@ final class RuleChecker {
             }
         }
         model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-190", params("name", naam, "sentence", reason),
-                "feitcreatie wordt nog niet naar IR/DRL omgezet (regel '" + naam + "'): " + reason,
                 fc.getStart().getLine()));
     }
 
@@ -4888,11 +4545,7 @@ final class RuleChecker {
                 withoutCharacteristic = new Typing.Coded("RGS-191",
                         params("name", naam, "rowTable", rowTable(naam), "characteristic", g,
                                 "category", category.name().toLowerCase(java.util.Locale.ROOT),
-                                "spelling", negationSpelling(category, g)),
-                        "regel '" + naam + "'" + rowTable(naam) + ": 'is niet een " + g + "' — de vorm "
-                        + "'is niet een' ontkent een zelfstandig kenmerk (Tabel 16), en '" + g + "' is "
-                        + category.name().toLowerCase(java.util.Locale.ROOT) + "; schrijf "
-                        + negationSpelling(category, g) + " (dialect §4)");
+                                "spelling", negationSpelling(category, g)));
             } else if (g != null) characteristic = g;
             else if (subject != null)
                 withoutCharacteristic = negationWithoutCharacteristic(naam, subject, "niet een " + characteristic, characteristic, false);
@@ -4948,20 +4601,14 @@ final class RuleChecker {
     private Typing.Coded negationWithoutCharacteristic(String regel, Objecttype subject, String written, String rest,
                                            boolean wholeNameAlso) {
         Datatype attribute = subject.attribute(rest);
-        String why = attribute instanceof Datatype.BooleanType
-                ? "'" + rest + "' is een attribuut van " + subject.naam + " en geen kenmerk, en een attribuut heeft geen "
-                        + "polariteit: dit Boolean-attribuut krijgt onwaar als waarde, te schrijven als 'moet gesteld "
-                        + "worden op onwaar'"
+        Msg why = attribute instanceof Datatype.BooleanType
+                ? Msg.frontend("RGS-320.boolean-attribute", "rest", rest, "subject", subject.naam)
                 : attribute != null
-                ? "'" + rest + "' is een attribuut van " + subject.naam + " en geen kenmerk, en alleen een kenmerk "
-                        + "wordt toegekend of ontkend"
-                : "'" + rest + "' is geen kenmerk van " + subject.naam
-                        + (wholeNameAlso ? ", en '" + written + "' evenmin" : "") + ". Declareer het kenmerk bij "
-                        + subject.naam + ", of schrijf de naam zoals hij gedeclareerd is";
+                ? Msg.frontend("RGS-320.attribute", "rest", rest, "subject", subject.naam)
+                : Msg.frontend("RGS-320.not-characteristic", "rest", rest, "subject", subject.naam,
+                        "alsoWhole", Msg.frontendIf(wholeNameAlso, "RGS-320.whole-too", "written", written));
         return new Typing.Coded("RGS-320",
-                params("name", regel, "rowTable", rowTable(regel), "written", written, "subject", subject.naam, "reason", why),
-                "regel '" + regel + "'" + rowTable(regel) + ": '" + written + "' ontkent geen kenmerk van "
-                + subject.naam + " — " + why + " (§3.5, dialect §4)");
+                params("name", regel, "rowTable", rowTable(regel), "written", written, "subject", subject.naam, "reason", why));
     }
 
     /** The refusal of a negation written AFTER 'een' ("is een niet X", "heeft een geen X"). The condition side
@@ -4974,11 +4621,8 @@ final class RuleChecker {
         Objecttype.CharacteristicKind category = g == null ? null : subject.characteristicKind(g);
         return new Typing.Coded("RGS-321",
                 params("name", regel, "rowTable", rowTable(regel), "verb", verb, "written", naam, "subject", subject.naam,
-                        "spelling", category != null ? negationSpelling(category, g) : ""),
-                "regel '" + regel + "'" + rowTable(regel) + ": '" + verb + " een " + naam + "' ontkent niets — "
-                + "achter 'een' leest de frontend de naam als geheel, zoals een voorwaarde dat doet, en '" + naam
-                + "' is geen kenmerk van " + subject.naam + ". Een ontkenning staat niet achter 'een'"
-                + (category != null ? "; schrijf " + negationSpelling(category, g) : "") + " (§8.1.8, dialect §4)");
+                        "spelling", category != null ? negationSpelling(category, g) : "",
+                        "spellingClause", Msg.frontendIf(category != null, "RGS-321.write", "spelling", category != null ? negationSpelling(category, g) : "")));
     }
 
     /** The negated spelling Tabel 16 gives a characteristic of this kind (§8.1.8). */
@@ -5006,30 +4650,24 @@ final class RuleChecker {
         // StartPointDetermination, WF-023 on the rule that writes the anchor
         if (tijdlijn == null) {
             model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                    "RGS-192", params("name", naam, "timeline", tijdlijnNaam),
-                    "startpuntbepaling (regel '" + naam
-                    + "'): start point for undeclared timeline '" + tijdlijnNaam + "'", line));
+                    "RGS-192", params("name", naam, "timeline", tijdlijnNaam), line));
             return;
         }
         if (!tijdlijn.variabelStartpunt())
             // §9.9 defines the startpuntbepaling for a tijdlijn MET variabel startpunt, and the verifier refuses one
             // for a fixed-startpunt tijdlijn (WF-032), so the frontend refuses it too, in the verifier's words
             model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                    "RGS-193", params("name", naam, "timeline", tijdlijnNaam),
-                    "startpuntbepaling (regel '" + naam
-                    + "'): start point for fixed-start timeline '" + tijdlijnNaam + "'", line));
+                    "RGS-193", params("name", naam, "timeline", tijdlijnNaam), line));
         Objecttype subject = model.resolveObjectType(src(sb.universeelOnderwerp().kaleNaam()));
         if (subject == null) {
             model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                    "RGS-194", params("name", naam, "objectType", src(sb.universeelOnderwerp().kaleNaam())),
-                    "startpuntbepaling (regel '" + naam
-                    + "'): object type '" + src(sb.universeelOnderwerp().kaleNaam()) + "' is not declared", line));
+                    "RGS-194", params("name", naam, "objectType", src(sb.universeelOnderwerp().kaleNaam())), line));
             return;
         }
         Expr anchor = builder.buildResult(sb.expressie());   // §11: the anchor IS a rule's `waarde` slot (see registreer)
         if (!anchor.type().isUnknown() && !(anchor.type() instanceof Datatype.DatumInDagen))
             model.diagnostics.add(Typing.assignment(new Datatype.DatumInDagen(), anchor.type())
-                    .prefixed("startpuntbepaling (regel '" + naam + "'): ").at(Severity.ERROR, line));
+                    .frame("start-point", "rule", naam).at(Severity.ERROR, line));
         String member = "startpunt " + tijdlijnNaam;
         // the synthetic anchor name is reserved: an author-declared attribute of another type under this
         // exact name would otherwise silently merge with the anchor (a latent type-mismatched write).
@@ -5041,14 +4679,10 @@ final class RuleChecker {
             // an undeclared domain has no kind word, and its own refusal names it
             if (existing.isUnknown())
                 model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-195",
-                        params("name", naam, "member", member, "existing", existing.naam()),
-                        "startpuntbepaling: attribuutnaam '" + member + "' is gereserveerd voor het startpunt-anker "
-                        + "maar al gedeclareerd als " + existing.naam() + " (regel '" + naam + "')", line));
+                        params("name", naam, "member", member, "existing", existing.naam()), line));
             else
                 model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-196",
-                        params("name", naam, "member", member, "kind", Typing.kindWord(existing)),
-                        "startpuntbepaling (regel '" + naam + "'): anchor member '" + member + "' is "
-                        + Typing.kindWord(existing) + ", must be a day-precision date", line));
+                        params("name", naam, "member", member, "kind", Typing.kindWord(existing)), line));
             return;
         }
         subject.attributen.putIfAbsent(member, new Datatype.DatumInDagen());
@@ -5119,7 +4753,7 @@ final class RuleChecker {
         if (targetType.isUnknown() || valueType.isUnknown()) return; // not enough resolved to judge
         Typing.Coded error = Typing.assignment(targetType, valueType, ExpressionBuilder.unitlessNumberLiteral(valueExpr));
         if (error != null)
-            model.diagnostics.add(error.prefixed(category.name().toLowerCase() + ": ").at(Severity.ERROR, line));
+            model.diagnostics.add(error.frame("category", "category", category.name().toLowerCase()).at(Severity.ERROR, line));
     }
 
     /** The expression a ch. 4.10 {@code Let} chain ultimately DENOTES, for the shape-sensitive static checks:
@@ -5153,16 +4787,14 @@ final class RuleChecker {
         java.math.BigDecimal v = Literals.number(lit);
         if (v == null) return;
         String w = dev.uchar.regelspraak.emit.IrEmitter.numberLexeme(lit.valueText());   // the lexeme IrEmitter writes
-        String sentence = switch (n.teken()) {
-            case NIET_NEGATIEF -> v.signum() < 0 ? "negative literal '" + w + "'" : null;
-            case POSITIEF      -> v.signum() > 0 ? null : "literal '" + w + "'";
-            case NEGATIEF      -> v.signum() < 0 ? null : "literal '" + w + "'";
+        Msg sentence = switch (n.teken()) {
+            case NIET_NEGATIEF -> v.signum() < 0 ? Msg.frontend("RGS-197.negative-literal", "lexeme", w) : null;
+            case POSITIEF      -> v.signum() > 0 ? null : Msg.frontend("RGS-197.other-literal", "lexeme", w);
+            case NEGATIEF      -> v.signum() < 0 ? null : Msg.frontend("RGS-197.other-literal", "lexeme", w);
             case ONBEPAALD     -> null;   // unreachable (guarded above)
         };
         if (sentence != null) model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                "RGS-197", params("description", sentence, "sign", signWord(n.teken())),
-                "teken-beperking: " + sentence
-                + " is written into a target under a " + signWord(n.teken()) + " sign restriction", line));
+                "RGS-197", params("description", sentence, "sign", signWord(n.teken())), line));
     }
 
     /** The verifier's word for a sign restriction in WF-039's sentences. */
@@ -5182,8 +4814,7 @@ final class RuleChecker {
     private void checkEnumLabel(Datatype context, String label, int line) {
         if (!(context instanceof Datatype.Enumeratie enumDatatype) || label == null || enumDatatype.waarden().contains(label)) return;
         // the verifier refuses the same literal with WF-039's sentence (the literal carries the context domain)
-        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-198", params("label", label),
-                "enumeration label '" + label + "' is not in the declared domain", line));
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-198", params("label", label), line));
     }
 
     /** The enum label when the WHOLE expressie is a single quoted enumeratiewaarde, else null. An
@@ -5218,13 +4849,6 @@ final class RuleChecker {
             if (followsPeriodBullet(v.periodevergelijkingEnkelvoudig()))
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
                         "RGS-199", params("comparison", src(v.periodevergelijkingEnkelvoudig())),
-                        "periodevergelijking '" + src(v.periodevergelijkingEnkelvoudig()) + "' volgt op een laatste "
-                        + "bullet 'het is de periode' van een samengestelde deelselectie: de parser leest die bullet als "
-                        + "een kenmerk 'het is de periode' en haar grens als een venster op de hele regel — een ander "
-                        + "document dan er staat (§8.4.3). Schrijf het venster als voorwaardendeel van de regel ('… "
-                        + src(v.periodevergelijkingEnkelvoudig()) + "' achter het resultaatdeel: vóór die grens vuurt "
-                        + "de regel niet), of zet de periodebullet niet als laatste in de deelselectie (dan leest de "
-                        + "parser haar als lid van het filter)",
                         v.getStart().getLine()));
             return buildTimeWindow(v.periodevergelijkingEnkelvoudig());
         }
@@ -5270,9 +4894,7 @@ final class RuleChecker {
         for (Expr limit : new Expr[]{van, until})
             if (limit != null && limit.type() != null && !limit.type().isUnknown() && !limit.type().isDate())
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                        "RGS-200", params("kind", Typing.kindWord(limit.type())),
-                        "periodevergelijking: window bound is "
-                        + Typing.kindWord(limit.type()) + ", must be a date", p.getStart().getLine()));
+                        "RGS-200", params("kind", Typing.kindWord(limit.type())), p.getStart().getLine()));
         for (Typing.Coded error : new Typing.Coded[]{periodBoundaryError(van, "vanaf"), periodBoundaryError(until, "tot")})
             if (error != null) model.diagnostics.add(error.at(Severity.ERROR, p.getStart().getLine()));
         return new Condition.TimeWindow(van, until, p.TOT_EN_MET() != null, source(p));
@@ -5298,13 +4920,10 @@ final class RuleChecker {
         if (limit == null || limit instanceof Expr.Unresolved) return null;
         if (limit.type() != null && !limit.type().isUnknown() && !limit.type().isDate()) return null;
         Objecttype subject = builder.subject();
-        String before = "periodevergelijking (de " + side + "-grens '" + limit.source() + "'): the "
-                + (side.equals("vanaf") ? "from" : "to") + " bound of a time window is ";
+        String fromTo = side.equals("vanaf") ? "from" : "to";
         Typing.Coded moment = new Typing.Coded("RGS-201",
-                params("side", side, "bound", limit.source()),
-                before + "a millisecond-precision date: the window is a range of civil days and no clause "
-                + "reads an instant bound");
-        String what;
+                params("side", side, "bound", limit.source(), "fromTo", fromTo));
+        Msg what;
         if (limit instanceof Expr.Literal) {
             return limit.type() instanceof Datatype.DateTime ? moment : null;
         } else if (limit instanceof Expr.AttributeReference a) {
@@ -5312,50 +4931,39 @@ final class RuleChecker {
                     || subject != null && a.objectType() != subject) {
                 if (dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, subject, a).isEmpty())
                     return periodBoundaryWithoutReader(a, side, subject);
-                what = "a navigated read of '" + a.attribute() + "'";
+                what = Msg.frontend("RGS-202.navigated-read", "attribute", a.attribute());
             } else if (subject == null)
-                what = "the attribute '" + a.attribute() + "' at a position with no subject to own it";
+                what = Msg.frontend("RGS-202.no-subject", "attribute", a.attribute());
             else if (subject.granularityOf(a.attribute()) != null)
-                what = "the time-dependent attribute '" + a.attribute() + "'";
+                what = Msg.frontend("RGS-202.time-dependent", "attribute", a.attribute());
             else if (a.type() instanceof Datatype.DateTime)
                 return moment;
             else return null;
         } else if (limit instanceof Expr.ParameterRef pr) {
-            what = "the parameter '" + pr.parameter().naam() + "'";
+            what = Msg.frontend("RGS-202.parameter-bound", "parameter", pr.parameter().naam());
         } else {
-            what = "a computed date expression";
+            what = Msg.frontend("RGS-202.computed");
         }
         return new Typing.Coded("RGS-202",
-                params("side", side, "bound", limit.source(), "what", what),
-                before + what + " — a bound is a date literal or an own scalar date attribute of the subject; the general "
-                + "date expression is an OPEN wire decision");
+                params("side", side, "bound", limit.source(), "what", what, "fromTo", fromTo));
     }
 
     /** A bound that navigates, written or by naming another object type, where no path is derivable: the emitter
      *  then writes no navigation — it refuses such a model, or writes a zero-hop self-reference as the subject's own
      *  read, which the verifier admits — so no reader refuses the bound, and the refusal keeps this frontend's words. */
     private static Typing.Coded periodBoundaryWithoutReader(Expr.AttributeReference a, String side, Objecttype subject) {
-        String reason;
+        Msg reason;
         if (a.navigationRole() != null || !a.navigationPath().isEmpty() || a.set())
-            reason = "een genavigeerde of verzamelende lezing van '" + a.attribute() + "'";
+            reason = Msg.frontend("RGS-322.navigated-read", "attribute", a.attribute());
         else if (a.objectType() != null && subject.isA(a.objectType()))
-            reason = "het attribuut '" + a.attribute() + "' van '" + a.objectType().naam + "', een supertype van "
-                    + "het onderwerp '" + subject.naam + "': deze frontend leest die naam als een ander exemplaar, "
-                    + "langs een feittype bereikt, en een venstergrens navigeert nooit. Lees de datum van het "
-                    + "onderwerp zelf ('zijn " + a.attribute() + "' of met de naam " + subject.naam + ")";
+            reason = Msg.frontend("RGS-322.supertype", "attribute", a.attribute(), "type", a.objectType().naam, "subject", subject.naam);
         else if (a.objectType() != null && a.objectType().isA(subject))
-            reason = "het attribuut '" + a.attribute() + "' van '" + a.objectType().naam + "', een subtype van het "
-                    + "onderwerp '" + subject.naam + "': niet elk onderwerp is een " + a.objectType().naam;
+            reason = Msg.frontend("RGS-322.subtype", "attribute", a.attribute(), "type", a.objectType().naam, "subject", subject.naam);
         else
-            reason = "een lezing van '" + a.attribute() + "' op '"
-                    + (a.objectType() == null ? "?" : a.objectType().naam) + "', een ander objecttype dan het "
-                    + "onderwerp '" + subject.naam + "': een navigatie, en een venstergrens navigeert nooit";
+            reason = Msg.frontend("RGS-322.other-type", "attribute", a.attribute(),
+                    "type", a.objectType() == null ? "?" : a.objectType().naam, "subject", subject.naam);
         return new Typing.Coded("RGS-322",
-                params("side", side, "bound", a.source(), "reason", reason),
-                "periodevergelijking (§8.4.3): de " + side + "-grens '" + a.source() + "' is " + reason
-                + " — een venstergrens is een datumliteraal of een eigen, niet-tijdsafhankelijk "
-                + "datum-in-dagen-attribuut van het onderwerp; de algemene datumexpressie die §13.4.15.68 toelaat "
-                + "is een open wirebeslissing (WF-111, IR-SPEC ch. 4.6)");
+                params("side", side, "bound", a.source(), "reason", reason));
     }
 
     private Condition buildCompound(VoorwaardeKwantificatieContext k,
@@ -5415,11 +5023,9 @@ final class RuleChecker {
             // or fraction reaches it as 0, a number the author did not write, so that refusal keeps its own words
             if (wholeNumeral(k))
                 model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-203",
-                        params("threshold", threshold),
-                        "telwoord van een kwantificatie: counting quantifier with threshold " + threshold + " < 1", regel));
+                        params("threshold", threshold), regel));
             else
-                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-204", params(),
-                        "telwoord van een kwantificatie moet een positief geheel getal (>= 1) zijn", regel));
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-204", params(), regel));
     }
 
     /** Whether the telwoord is written as a whole number that {@link #numeralValue} reads as such. */
@@ -5754,8 +5360,7 @@ final class RuleChecker {
         if (num == null) return 0;
         String t = num.getText();
         if (!t.matches("-?\\d+")) {
-            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-205", params("lexeme", t),
-                "ongeldig aantal cijfers '" + t + "' bij 'numeriek met exact … cijfers' (verwacht een geheel getal, §8.1.4)", 0));
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-205", params("lexeme", t), 0));
             return 0;
         }
         return Integer.parseInt(t);
@@ -5860,21 +5465,13 @@ final class RuleChecker {
         if (periode == null || subjectIsTemporal(c)) return c;
         // the verifier refuses the qualifier on a comparison, a predicate and an own characteristic (WF-043); a
         // navigated characteristic and the other condition kinds it does not check, so those keep their own words
-        String sentence = c instanceof Condition.Comparison || c instanceof Condition.Predicate
-                ? "wholePeriod qualifier on a non-time-dependent operand"
-                : c instanceof Condition.CharacteristicCheck k && k.navigation() == null
-                ? "wholePeriod qualifier on a non-time-dependent characteristic" : null;
         if (c instanceof Condition.Comparison || c instanceof Condition.Predicate)
-            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-206", params(),
-                    "de check op volledige periode (gedurende de/het gehele jaar/maand): " + sentence, source.line()));
-        else if (sentence != null)
-            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-207", params(),
-                    "de check op volledige periode (gedurende de/het gehele jaar/maand): " + sentence, source.line()));
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-206", params(), source.line()));
+        else if (c instanceof Condition.CharacteristicCheck k && k.navigation() == null)
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-207", params(), source.line()));
         else
             model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-208",
-                    params("source", source),
-                    "de check op volledige periode (gedurende de/het gehele jaar/maand) kan alleen op een tijdsafhankelijk "
-                    + "onderwerp worden toegepast (§8.2): " + source, source.line()));
+                    params("source", source), source.line()));
         return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
     }
 
@@ -5933,11 +5530,7 @@ final class RuleChecker {
                 || q == Condition.Quantifier.PRECIES;
         int threshold = counting ? set.threshold() : 0;
         if (counting && threshold < 1) {
-            model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-209", params("source", set.source()),
-                "het telwoord van de kwantor in '" + set.source() + "' is geen positief geheel getal (>= 1), dus de "
-                + "vouw wordt NIET gelowerd: een drempel onder 1 stelt geen telling die iets kan voldoen en wordt "
-                + "op de wire geweigerd (WF-041, IR-SPEC ch. 4.5); de setlezing blijft daarmee buiten een vouwbron "
-                + "staan (WF-053)", set.source().line()));
+            model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-209", params("source", set.source()), set.source().line()));
             return c;
         }
         Objecttype elem = set.objectType();
@@ -5956,11 +5549,7 @@ final class RuleChecker {
                 c instanceof Condition.Comparison v && v.right() == set ? rhsCtx : lhsCtx, elem, set);
         if (ds != null && ds.filter() == null) {
             model.diagnostics.add(new Diagnostic(Severity.WARNING,
-                    "RGS-210", params("source", set.source(), "reason", ds.reason()),
-                "de 'die/dat'-deelselectie in '" + set.source() + "' wordt niet omgezet naar een "
-                + "kwantorvouw-filter: " + ds.reason() + "; de vouw wordt daarom NIET gelowerd — een vouw "
-                + "over het volle bereik zou een andere verzameling kwantificeren dan de zin noemt, dus de "
-                + "setlezing blijft buiten een vouwbron staan (WF-053)", set.source().line()));
+                    "RGS-210", params("source", set.source(), "reason", ds.reason()), set.source().line()));
             return c;
         }
         Condition filter = ds == null ? null : ds.filter();
@@ -6069,10 +5658,7 @@ final class RuleChecker {
                 || g.quantifier() == Condition.Quantifier.TEN_HOOGSTE || g.quantifier() == Condition.Quantifier.PRECIES;
         int threshold = counting ? g.threshold() : 0;
         if (counting && threshold < 1) {
-            model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-211", params("source", g.subjectSource()),
-                "het telwoord van de kwantor in '" + g.subjectSource() + "' is geen positief geheel getal "
-                + "(>= 1), dus de vouw wordt NIET gelowerd: een drempel onder 1 stelt geen telling die iets "
-                + "kan voldoen en wordt op de wire geweigerd (WF-041, IR-SPEC ch. 4.5)", source.line()));
+            model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-211", params("source", g.subjectSource()), source.line()));
             return null;
         }
         // the member phrase without its counting quantifier: "ten minste twee van de liggers van de Haven" names the
@@ -6112,9 +5698,6 @@ final class RuleChecker {
             builder.returnSubselection(lhsCtx);
             model.diagnostics.add(new Diagnostic(Severity.WARNING,
                     "RGS-212", params("source", g.subjectSource(), "reason", ds.reason()),
-                "de 'die/dat'-deelselectie in '" + g.subjectSource() + "' wordt niet omgezet naar een "
-                + "kwantorvouw-filter: " + ds.reason() + "; de vouw wordt daarom NIET gelowerd — een vouw "
-                + "over het volle bereik zou een andere verzameling kwantificeren dan de zin noemt",
                 source.line()));
             return null;
         }
@@ -6154,9 +5737,7 @@ final class RuleChecker {
      *  that writes no quantifier gets no word about folds — and always a WARNING: the caller's marker is
      *  the honest wire form and the document stays emittable. */
     private void reportFoldRefusal(String subjectSource, String reason, Source source) {
-        model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-213", params("subject", subjectSource, "reason", reason),
-                "de kwantorvouw over '" + subjectSource + "' wordt NIET gelowerd: " + reason
-                + "; de voorwaarde blijft daarom een marker", source.line()));
+        model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-213", params("subject", subjectSource, "reason", reason), source.line()));
     }
 
     /** The §8.1.8 kenmerkcheck of {@code elem} written as the predicate of a quantified onderwerp — the
@@ -6266,9 +5847,7 @@ final class RuleChecker {
             // Tabel 16 sanctions "is niet een <k>" only for a KENMERK; a rolcheck negates as "is/heeft geen <rol>"
             // (§8.1.7). Lower it the same way (inverse rolcheck), but surface the unsanctioned writing as a WARNING.
             if (pos instanceof Condition.RoleMembership || pos instanceof Condition.FarRoleMembership)
-                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-214", params("source", source),
-                    "de schrijfwijze 'is niet een <rolnaam>' is voor een rolcheck niet voorzien; Tabel 16 kent alleen "
-                    + "'is/heeft geen <rolnaam>' als ontkenning (§8.1.7): " + source, 0));
+                model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-214", params("source", source), 0));
             return negate(pos, source);
         }
         Condition characteristic = characteristicCheckPredicate(lhs, op.kaleNaam(), op.EEN() != null,
@@ -6345,10 +5924,7 @@ final class RuleChecker {
         boolean owns = category == Objecttype.CharacteristicKind.BEZITTELIJK;
         if (owns != hasVerb)
             model.diagnostics.add(new Diagnostic(Severity.WARNING,
-                    "RGS-215", params("category", category.name().toLowerCase(), "characteristic", k.characteristic(), "verb", (hasVerb ? "heeft" : "is"), "required", (owns ? "heeft" : "is"), "source", k.source()),
-                "het " + category.name().toLowerCase() + " kenmerk '" + k.characteristic() + "' wordt ontkend met het werkwoord '"
-                + (hasVerb ? "heeft" : "is") + "', maar Tabel 16 vereist '" + (owns ? "heeft" : "is")
-                + "' bij dit soort kenmerk (§8.1.8): " + k.source(), line));
+                    "RGS-215", params("category", category.name().toLowerCase(), "characteristic", k.characteristic(), "verb", (hasVerb ? "heeft" : "is"), "required", (owns ? "heeft" : "is"), "source", k.source()), line));
     }
 
     private Condition characteristicCheckPredicateBare(Expr lhs, KaleNaamContext nameCtx, boolean withIndefiniteArticle, boolean hasVerb, Source source) {
@@ -6762,7 +6338,7 @@ final class RuleChecker {
         if (rLit && l.isNumber() && l.unitOf() != null) r = withUnit(r, l.unitOf());
         else if (lLit && r.isNumber() && r.unitOf() != null) l = withUnit(l, r.unitOf());
         var res = Typing.compare(op, l, r, lLit, rLit);   // Onbekend operands -> ok, so no false positive
-        if (!res.ok()) model.diagnostics.add(res.failure().prefixed("voorwaarde: ").at(Severity.ERROR, line));
+        if (!res.ok()) model.diagnostics.add(res.failure().frame("condition").at(Severity.ERROR, line));
     }
 
     /** A bare numeric literal ("0", "18", "3,5") with NO trailing eenheid — getText collapses whitespace, so a
@@ -6777,7 +6353,7 @@ final class RuleChecker {
     }
     private void reportPredicate(Typing.UnairePred p, Datatype operand, int line) {
         var res = Typing.predicaat(p, operand);
-        if (!res.ok()) model.diagnostics.add(res.failure().prefixed("voorwaarde: ").at(Severity.ERROR, line));
+        if (!res.ok()) model.diagnostics.add(res.failure().frame("condition").at(Severity.ERROR, line));
     }
 
     /** Tabel 57 (§5.15): the written name resolved to a DECLARED dagsoort but the operand is not datum-typed —

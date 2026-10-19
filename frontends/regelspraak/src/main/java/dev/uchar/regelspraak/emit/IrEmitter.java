@@ -93,11 +93,7 @@ public final class IrEmitter {
     public static List<Diagnostic> unwrittenAllocations(RegelSpraakModel m) {
         return m.allocations.stream().filter(v -> v.method() == ResolvedAllocation.Method.COMPLEX)
                 .map(v -> new Diagnostic(RegelSpraakModel.Severity.WARNING,
-                        "RGS-001", params("name", v.naam()),
-                        "verdeling '" + v.naam() + "' wordt niet "
-                        + "geschreven: de frontend bepaalde voor haar geen van de drie verdeelmethoden (in gelijke "
-                        + "delen, naar rato, op volgorde), en een verdeling zonder methode heeft geen spelling in "
-                        + "uchar-ir-v1", 0))
+                        "RGS-001", params("name", v.naam()), 0))
                 .toList();
     }
 

@@ -4,6 +4,7 @@ import dev.uchar.regelspraak.ir.Source;
 import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.Spelling;
+import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Unit;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
@@ -328,27 +329,24 @@ final class ExpressionBuilder {
         String onName = op == Expr.BinOp.PLUS ? "plus" : "min";
         String duration = withoutOutsideParentheses(writtenRight);
         String eenheid = right.type().unitOf().rendering();
-        String cause = b.site() == right ? b.reason()
-                : "kan een breuk dragen: '" + b.site().source() + "' " + b.reason();
-        String example, truncate;
+        Object cause = b.site() == right ? b.reason()
+                : Msg.frontend("RGS-058.site-cause", "site", b.site().source(), "reason", b.reason());
+        Msg example, truncate;
         if (b.site() == right && right instanceof Expr.Literal l) {
             String whole = truncated(l, duration);
-            example = duration + " telt als " + whole;
-            truncate = writtenLeft + " " + onName + " " + whole;
+            example = Msg.frontend("RGS-058.example-literal", "duration", duration, "whole", whole);
+            truncate = Msg.frontend("RGS-058.truncate-literal", "left", writtenLeft, "operation", onName, "whole", whole);
         } else {
-            example = "1,9 " + eenheid + " telt als 1 " + eenheid + " en -1,9 " + eenheid + " als -1 " + eenheid;
-            truncate = writtenLeft + " " + onName + " (" + duration + " richting nul afgerond op 0 decimalen)";
+            example = Msg.frontend("RGS-058.example-fraction", "unit", eenheid);
+            truncate = Msg.frontend("RGS-058.truncate-rounded", "left", writtenLeft, "operation", onName, "duration", duration);
         }
         String smaller = smallerUnit(right.type(), left.type());
-        String suffix = smaller != null
-                ? ", of neem het deel in een kleinere eenheid mee ('" + truncate + " " + onName + " … " + smaller + "')"
-                : "; " + noSmallerUnit(right.type());
+        Msg suffix = smaller != null
+                ? Msg.frontend("RGS-058.smaller-unit", "truncate", truncate, "operation", onName, "smaller", smaller)
+                : Msg.frontend("RGS-058.no-smaller-unit", "reason", noSmallerUnit(right.type()));
         return new Typing.Coded("RGS-058",
                 params("operation", onName, "expression", source, "duration", duration, "cause", cause, "unit", eenheid,
-                        "example", example, "truncate", truncate, "suffix", suffix),
-                "datum " + onName + " duur '" + source + "': de duur '" + duration + "' " + cause
-                + ", en de uitvoerders kappen een gebroken telling in " + eenheid + " naar nul af vóór de kalenderstap "
-                + "(RUNTIME-SEMANTICS ch. 3.8: " + example + "); schrijf de afkapping uit als '" + truncate + "'" + suffix);
+                        "example", example, "truncate", truncate, "suffix", suffix));
     }
 
     /** Where a count can take a fraction in, and why: {@code site} is the sub-expression that brings it, in the
@@ -477,11 +475,11 @@ final class ExpressionBuilder {
         };
     }
 
-    private static String noSmallerUnit(Datatype duration) {
+    private static Msg noSmallerUnit(Datatype duration) {
         String eenheid = TimeCalculation.chronoUnit(duration);
-        if (eenheid == null) return "een dagsoort kent geen kleinere eenheid";
-        if (eenheid.equals("DAYS")) return "een datum in dagen kent geen eenheid kleiner dan een dag";
-        return "een milliseconde is de kleinste eenheid";
+        if (eenheid == null) return Msg.frontend("RGS-058.no-smaller-day-kind");
+        if (eenheid.equals("DAYS")) return Msg.frontend("RGS-058.no-smaller-day");
+        return Msg.frontend("RGS-058.no-smaller-millisecond");
     }
 
     /** The written operand without one pair of parentheses around the whole of it, so the rounding can wrap it. */
@@ -539,22 +537,22 @@ final class ExpressionBuilder {
     private static Typing.Coded roundingError(Expr base, Source source, String afronding) {
         Datatype t = base.type();
         if (t == null || t.isUnknown() || t.isNumberLike()) return null;
-        String category = switch (t) {
-            case Datatype.DatumInDagen d -> "een datum";
-            case Datatype.DateTime d -> "een datum-tijd";
-            case Datatype.Tekst x -> "een tekst";
-            case Datatype.BooleanType b -> "waar of onwaar";
-            case Datatype.Enumeratie e -> "een waarde van " + e.domain();
+        Object category = switch (t) {
+            case Datatype.DatumInDagen d -> Msg.frontend("RGS-059.as-date");
+            case Datatype.DateTime d -> Msg.frontend("RGS-059.as-date-time");
+            case Datatype.Tekst x -> Msg.frontend("RGS-059.as-text");
+            case Datatype.BooleanType b -> Msg.frontend("RGS-059.as-boolean");
+            case Datatype.Enumeratie e -> Msg.frontend("RGS-059.as-enumeration", "domain", e.domain());
             default -> t.naam();
         };
-        String sentence = "afronding '" + source + "': '" + base.source() + "' is " + category + ", en een afronding rondt een "
-                + "getal af";
-        if (base instanceof Expr.Binary b && b.left().type() != null && b.left().type().isDate()
-                && (b.op() == Expr.BinOp.PLUS || b.op() == Expr.BinOp.MIN))
-            sentence += "; rond de duur af: '" + b.left().source() + " " + (b.op() == Expr.BinOp.PLUS ? "plus" : "min")
-                    + " (" + b.right().source() + " " + afronding + ")'";
-        return new Typing.Coded("RGS-059", params("source", source, "base", base.source(), "category", category),
-                sentence);
+        Object durationHint = base instanceof Expr.Binary b && b.left().type() != null && b.left().type().isDate()
+                && (b.op() == Expr.BinOp.PLUS || b.op() == Expr.BinOp.MIN)
+                ? Msg.frontend("RGS-059.round-the-duration", "left", b.left().source(),
+                        "operation", b.op() == Expr.BinOp.PLUS ? "plus" : "min", "right", b.right().source(),
+                        "rounding", afronding)
+                : "";
+        return new Typing.Coded("RGS-059", params("source", source, "base", base.source(), "category", category,
+                "durationHint", durationHint));
     }
 
     /** Emit a §6.1.4 ERROR when a begrenzing bound is not order-comparable with the bounded
@@ -570,8 +568,7 @@ final class ExpressionBuilder {
         // tolerates carries it and an ERROR writes no document at all for it
         if (oneSidedUnit(base, limit))
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                    "RGS-060", params("bound", which),
-                    "clamp " + which + " and base have incompatible units", ctx.getStart().getLine()));
+                    "RGS-060", params("bound", which), ctx.getStart().getLine()));
     }
 
     /** WF-099: a clamp restates each bound into its base's unit, so a unit on one side alone leaves nothing to
@@ -681,7 +678,6 @@ final class ExpressionBuilder {
                 if (t == null) {
                     RegelSpraakModel.Diagnostic error = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                             "RGS-061", params("literal", source.snippet()),
-                            "datum-tijd-literal '" + source.snippet() + "' is geen geldige datum-tijd (§13.2.21)",
                             p.getStart().getLine());
                     if (!model.diagnostics.contains(error)) model.diagnostics.add(error);
                     return new Expr.Literal(source.snippet(), new Datatype.DateTime(), source);
@@ -702,7 +698,6 @@ final class ExpressionBuilder {
             if (d == null) {
                 RegelSpraakModel.Diagnostic error = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                         "RGS-062", params("literal", source.snippet()),
-                        "datum-literal '" + source.snippet() + "' is geen geldige datum (§13.2.19)",
                         p.getStart().getLine());
                 if (!model.diagnostics.contains(error)) model.diagnostics.add(error);
                 return new Expr.Literal(source.snippet(), new Datatype.DatumInDagen(), source);
@@ -745,10 +740,7 @@ final class ExpressionBuilder {
         Expr left = nameRef(naam, false, source(h.kaleNaamDeel())), right = build(h.expressie());
         if (!(left.type() instanceof Datatype.Percentage)) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                    "RGS-063", params("expression", source.snippet(), "name", naam),
-                    "'" + source.snippet() + "' leest als de percentagefunctie zonder procentteken (§13.4.17.12), maar '"
-                    + naam + "' is geen parameter of variabele van het type Percentage — schrijf het procentteken "
-                    + "('… % van …') of noem een percentage", h.getStart().getLine()));
+                    "RGS-063", params("expression", source.snippet(), "name", naam), h.getStart().getLine()));
             // the ERROR keeps the document off disk, so the node is typed unknown and never reaches a wire
             return new Expr.Binary(Expr.BinOp.PERCENTAGE_VAN, left, right, unknown(), source);
         }
@@ -907,10 +899,7 @@ final class ExpressionBuilder {
                     || u.kenmerken.stream().anyMatch(k -> dev.uchar.regelspraak.emit.IrEmitter.norm(k).equals(keyName));
             if (!occupied) continue;
             RegelSpraakModel.Diagnostic error = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                    "RGS-064", params("expression", source(f).snippet(), "name", naam, "objectType", element.naam, "occupiedBy", u.naam),
-                    "vouw '" + source(f).snippet() + "': de stappen na de verzameling worden het gegenereerde lid '" + naam
-                    + "' van " + element.naam + ", en " + u.naam + " declareert die naam al — een gegenereerd lid "
-                    + "bestaat nog niet in de erflijn van het element", f.getStart().getLine());
+                    "RGS-064", params("expression", source(f).snippet(), "name", naam, "objectType", element.naam, "occupiedBy", u.naam), f.getStart().getLine());
             if (!model.diagnostics.contains(error)) model.diagnostics.add(error);
             return null;
         }
@@ -975,7 +964,7 @@ final class ExpressionBuilder {
         if (f instanceof TijdsduurFuncContext) {
             Typing.Coded unitError = durationUnitError(kind, type.unitOf(), arguments);
             if (unitError != null)
-                model.diagnostics.add(unitError.prefixed("de (absolute) tijdsduur van … tot …: ")
+                model.diagnostics.add(unitError.frame("duration")
                         .at(RegelSpraakModel.Severity.ERROR, f.getStart().getLine()));
         }
         Expr emptyFallback = emptyFallbackOf(f);
@@ -986,14 +975,10 @@ final class ExpressionBuilder {
         if (emptyFallback != null && !emptyFallback.type().isNumber() && !emptyFallback.type().isUnknown()) {
             if (emptyFallback.type().isNumberLike())
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                        "RGS-065", params("type", emptyFallback.type().naam()),
-                        "leegwaarde-alternatief van een sommatie moet numeriek zijn, kreeg "
-                                + emptyFallback.type().naam() + " (§5.8.2)", f.getStart().getLine()));
+                        "RGS-065", params("type", emptyFallback.type().naam()), f.getStart().getLine()));
             else
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                        "RGS-066", params("kind", Typing.kindWord(emptyFallback.type())),
-                        "leegwaarde-alternatief van een sommatie: sum fallback is "
-                                + Typing.kindWord(emptyFallback.type()) + ", must be numeric", f.getStart().getLine()));
+                        "RGS-066", params("kind", Typing.kindWord(emptyFallback.type())), f.getStart().getLine()));
         }
         // declared-names-only IR: an aggregation over a SET read ("de <x> van alle <elem>") whose written form binds NO
         // declared member of the (known) element type is Onopgelost — with a WARNING — so both back-ends
@@ -1016,9 +1001,6 @@ final class ExpressionBuilder {
             // written, the fold carries no element type, which the verifier refuses in these words
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                     "RGS-067", params("expression", source.snippet()),
-                    "gevulde telling '" + source.snippet() + "': the filled count is an INSTANCE fold and MUST carry "
-                            + "an element type: without one its argument is no fold source at all, and the count has "
-                            + "no contributors whose values it could test for presence (ch. 4.3)",
                     f.getStart().getLine()));
             // the aggregation's OWN type, not the unknown sentinel: a refused fold must still leave a
             // well-formed marker (IR-SPEC ch. 2.4), exactly as checkFoldSource's three refusals do
@@ -1029,9 +1011,6 @@ final class ExpressionBuilder {
                 && sa.objectType() != null && !sa.objectType().hasMember(sa.attribute())) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                     "RGS-068", params("attribute", sa.attribute(), "objectType", sa.objectType().naam, "expression", source(f)),
-                    "'" + sa.attribute() + "' is geen (meervoud van een) gedeclareerd attribuut van "
-                            + sa.objectType().naam + " — de aggregatie blijft onopgelost (§13.4.17) — '"
-                            + source(f) + "'",
                     f.getStart().getLine()));
             return unresolvedMarker(f, null);   // the WARNING above is this marker's diagnosis
         }
@@ -1043,11 +1022,7 @@ final class ExpressionBuilder {
         Condition filter = aggregationFilter(f, elem, arguments);
         if (filter instanceof Condition.Unresolved)   // a resolved kenmerk-filter is lowered; only an
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                    "RGS-069", params("filter", filter.source()),
-                    // unresolved one warns
-                    "een 'die/dat'-subselectie op een aggregatie-operand wordt nog niet omgezet; de aggregatie "
-                            + "blijft buiten beschouwing in plaats van alle instanties mee te nemen (§5.6) — '"
-                            + filter.source() + "'", f.getStart().getLine()));
+                    "RGS-069", params("filter", filter.source()), f.getStart().getLine()));
         // §13.4.17.51-.54: a dimensieselectie over a gedimensioneerd attribuut ("over alle <dim>",
         // "over de <dim> vanaf … t/m …", "in {…}", or the bare "… vanaf <label> t/m <label>") aggregates
         // over a DIMENSION's label set, not over object instances. When it resolves — a single dimensioned
@@ -1075,10 +1050,7 @@ final class ExpressionBuilder {
                 filter = during;
             } else {
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                        "RGS-070", params("expression", dimSource),
-                        "een dimensieselectie / 'gedurende de tijd dat' op een aggregatie wordt nog niet omgezet; "
-                                + "de aggregatie blijft buiten beschouwing in plaats van de selectie te negeren "
-                                + "(§13.4.17.51-.58) — '" + dimSource + "'", f.getStart().getLine()));
+                        "RGS-070", params("expression", dimSource), f.getStart().getLine()));
                 if (!(filter instanceof Condition.Unresolved)) filter = new Condition.Unresolved(dimSource, null);
             }
         }
@@ -1124,8 +1096,7 @@ final class ExpressionBuilder {
         };
         if (valueFold != null && elem == null && arguments.size() < 2)
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                    "RGS-071", params("fold", valueFold),
-                    valueFold + ": value fold with fewer than two operands", f.getStart().getLine()));
+                    "RGS-071", params("fold", valueFold), f.getStart().getLine()));
         Expr function = new Expr.FunctionCall(kind, arguments, elem, emptyFallback, filter, null, type, source, operatorGran);
         // A count whose written source walks further than the one relation it counts, where the emitter would still
         // write a range: by the head's name or by the type pair of subject and element (IrEmitter.foldRange), the
@@ -1142,8 +1113,6 @@ final class ExpressionBuilder {
             if (steps != null && steps.size() > 1) {
                 RegelSpraakModel.Diagnostic error = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                         "RGS-072", params("expression", source.snippet(), "reason", countPath(steps, "deze frontend telt alleen over één relatie vanaf het onderwerp (IR-SPEC ch. 4.3, WF-102 (c))")),
-                        "telling '" + source.snippet() + "' is " + countPath(steps,
-                                "deze frontend telt alleen over één relatie vanaf het onderwerp (IR-SPEC ch. 4.3, WF-102 (c))"),
                         f.getStart().getLine());
                 if (!model.diagnostics.contains(error)) model.diagnostics.add(error);
             }
@@ -1209,15 +1178,12 @@ final class ExpressionBuilder {
         // or a last segment that is no name.
         RangeWalk walk = walkRange(o);
         if (walk.refusal() != null || nestedSetStep(o) != null) {
-            String reason = walk.refusal() != null ? walk.refusal()
-                    : "'" + src(o) + "' begint niet bij het regelonderwerp"
-                            + (huidigSubject == null ? "" : " " + huidigSubject.naam);
+            Object reason = walk.refusal() != null ? walk.refusal()
+                    : Msg.frontend(huidigSubject == null ? "RGS-073.not-at-subject" : "RGS-073.not-at-subject-named",
+                            "range", src(o), "subject", huidigSubject == null ? "" : huidigSubject.naam);
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                    "RGS-073", params("reason", reason, "exit", walk.exit(), "expression", source(f)),
-                    "keten zonder sourcePath in een vouwbron: " + reason + " — een sourcePath loopt van het "
-                            + "regelonderwerp naar de elementen en bindt elke stap aan precies één rol (IR-SPEC "
-                            + "ch. 4.3/WF-102), dus de aggregatie blijft onopgelost (§13.4.17)"
-                            + (walk.exit() == null ? "" : "; " + walk.exit()) + " — '" + source(f) + "'",
+                    "RGS-073", params("reason", reason, "exit", walk.exit(), "expression", source(f),
+                            "exitClause", Msg.frontendIf(walk.exit() != null, "RGS-073.exit", "exit", walk.exit())),
                     f.getStart().getLine()));
             return new Expr.Unresolved(type, source(f), null);
         }
@@ -1242,23 +1208,12 @@ final class ExpressionBuilder {
                     // pre-existing silence: there is nothing to say about it.
                     if (model.roleHitsToSubject(huidigSubject, kandidaat) == 0) continue;
                     model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                            "RGS-074", params("expression", src(o), "role", kandidaat, "subject", huidigSubject.naam, "source", source(f)),
-                            "rolanker in een vouwbron: '" + src(o) + "' verankert de verzameling op de rol '"
-                                    + kandidaat + "', die vanaf " + huidigSubject.naam + " een ANDER exemplaar "
-                                    + "aanwijst — een vouwbron zonder sourcePath noemt één relatie vanaf het "
-                                    + "regelonderwerp zelf (IR-SPEC ch. 4.3/WF-102), dus de stap naar dat "
-                                    + "exemplaar zou spoorloos wegvallen en de aggregatie blijft onopgelost "
-                                    + "(§13.4.1/§13.4.17) — '" + source(f) + "'", f.getStart().getLine()));
+                            "RGS-074", params("expression", src(o), "role", kandidaat, "subject", huidigSubject.naam, "source", source(f)), f.getStart().getLine()));
                     return new Expr.Unresolved(type, source(f), null);
                 }
                 if (anchor == huidigSubject) break;       // the chain starts at the subject, as the wire needs
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                        "RGS-075", params("expression", src(o), "anchor", anchor.naam, "subject", huidigSubject.naam, "source", source(f)),
-                        "tussenstap in een vouwbron: '" + src(o) + "' bereikt de elementen via " + anchor.naam
-                                + ", maar een vouwbron draagt precies één relatie vanaf het regelonderwerp "
-                                + huidigSubject.naam + " (IR-SPEC ch. 4.3: één elementType plus één "
-                                + "sourceRole) — de tussenstap zou spoorloos wegvallen, dus de aggregatie blijft "
-                                + "onopgelost (§13.4.1/§13.4.17) — '" + source(f) + "'", f.getStart().getLine()));
+                        "RGS-075", params("expression", src(o), "anchor", anchor.naam, "subject", huidigSubject.naam, "source", source(f)), f.getStart().getLine()));
                 return new Expr.Unresolved(type, source(f), null);
             }
         // (c): the written element name, under every form the element type's own binding was tried with, so a
@@ -1275,11 +1230,6 @@ final class ExpressionBuilder {
         if (pair == null || names.stream().anyMatch(n -> model.roleNamedAs(pair, n))) return null;
         model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                 "RGS-076", params("writtenName", names.get(0), "subject", huidigSubject.naam, "objectType", source.objectType().naam, "factType", pair.factType(), "role", pair.role(), "source", source(f)),
-                "vouwbron bindt niet op de geschreven naam: de zin noemt '" + names.get(0) + "', maar het enige "
-                        + "feittype dat " + huidigSubject.naam + " met " + source.objectType().naam
-                        + " verbindt is '" + pair.factType() + "' met de rol '" + pair.role() + "' — de "
-                        + "type-paar-afleiding zou een andere verzameling vouwen dan de zin noemt, dus de "
-                        + "aggregatie blijft onopgelost (§13.4.1/§13.4.17) — '" + source(f) + "'",
                 f.getStart().getLine()));
         return new Expr.Unresolved(type, source(f), null);
     }
@@ -2113,7 +2063,7 @@ final class ExpressionBuilder {
         // does), so a type-mismatched filter (a Numeriek attribute vs a Tekst literal) is an ERROR, not silent bad DRL.
         Typing.Result tr = Typing.compare(cmp, lhs.type(), rhs.type(), false, unitlessNumberLiteral(rhs));
         if (!tr.ok()) {
-            model.diagnostics.add(tr.failure().prefixed("subselectie-predicaat: ")
+            model.diagnostics.add(tr.failure().frame("subselection-predicate")
                     .at(RegelSpraakModel.Severity.ERROR, p.getStart().getLine()));
             return null;
         }
@@ -2221,14 +2171,8 @@ final class ExpressionBuilder {
         boolean unionRefused = f instanceof AantalFuncContext && unionRefusal != null;
         return new Typing.Coded("RGS-077",
                 params("expression", source(f).snippet(), "unionRefusal", unionRefused ? unionRefusal : "",
-                        "operandCount", arguments.size()),
-                "opgesomde telling '" + source(f).snippet() + "'"
-                + (unionRefused ? ", geen unie van selecties: " + unionRefusal : "")
-                + ": a count folds INSTANCES and has no LISTED form, and this node carries " + arguments.size()
-                + " operands: the source language spells a count over a subject expression alone (ch. 4.3), so "
-                + "there is no articulated operand list to admit — the only reading an operand list leaves a count "
-                + "is the number of FILLED operands, and that meaning belongs to the filled count over its set "
-                + "source, never to this kind");
+                        "operandCount", arguments.size(),
+                        "noUnion", Msg.frontendIf(unionRefused, "RGS-077.no-union", "unionRefusal", unionRefusal)));
     }
 
     /** WF-037's count-source arm (IR-SPEC ch. 4.3, maintainer decision 2026-09-23): a count MUST
@@ -2254,12 +2198,9 @@ final class ExpressionBuilder {
         String context = countAttributeCollision(arguments, f);
         if (context == null) context = countOverObjectType(arguments, f);
         return new Typing.Coded("RGS-078",
-                params("expression", arguments.isEmpty() ? "" : source(f).snippet(), "context", context == null ? "" : context),
-                "telling zonder bron" + (arguments.isEmpty() ? "" : " '" + source(f).snippet() + "'")
-                + (context == null ? "" : ", " + context) + ": the count is an INSTANCE fold and MUST carry an "
-                + "element type: without one its argument is no fold source at all — and with no argument there is "
-                + "none — so the count has no contributors to count, only its operand, whatever that operand holds "
-                + "(ch. 4.3)");
+                params("expression", arguments.isEmpty() ? "" : source(f).snippet(), "context", context == null ? "" : context,
+                        "quoted", Msg.frontendIf(!arguments.isEmpty(), "RGS-078.quoted", "expression", source(f).snippet()),
+                        "detail", Msg.frontendIf(context != null, "RGS-078.detail", "context", context)));
     }
 
     /** "het aantal Vondsten": a count whose one operand names an OBJECT TYPE — by name or plural, bare, with an
@@ -2328,15 +2269,14 @@ final class ExpressionBuilder {
 
     /** The verifier refuses every operand this check refuses (WF-038: a whole unitless number or nothing). */
     private static Typing.Coded easterSundaySentence(Datatype d) {
-        return new Typing.Coded("RGS-079", params("kind", Typing.kindWord(d)),
-                "eerste paasdag van: easterSunday operand is " + Typing.kindWord(d) + ", must be a whole unitless number");
+        return new Typing.Coded("RGS-079", params("kind", Typing.kindWord(d)));
     }
 
     /** The verifier's sentence in place of RegelSpraak's refusal {@code error} where the verifier refuses the same
      *  operands ({@code sentence} non-null), after the Dutch context {@code contextPrefix}; RegelSpraak's own words where it
      *  admits them. */
     private static Typing.Coded verifierzin(String contextPrefix, Typing.Coded error, Typing.Coded sentence) {
-        return error == null ? null : sentence != null ? sentence.prefixed(contextPrefix + ": ") : error;
+        return error == null ? null : sentence != null ? sentence.frame("context", "contextPrefix", contextPrefix) : error;
     }
 
     /** WF-038's sentence for the one operand of a square root or an absolute value where the verifier refuses it; a
@@ -2344,36 +2284,35 @@ final class ExpressionBuilder {
     private static Typing.Coded numericBuiltinSentence(Expr.FunctionKind kind, List<Datatype> types) {
         if (types.size() != 1 || types.get(0).isUnknown() || types.get(0).isNumberLike()) return null;
         return new Typing.Coded("RGS-080",
-                params("builtin", Spelling.BUILTIN_KIND.spelling(kind), "kind", Typing.kindWord(types.get(0))),
-                Spelling.BUILTIN_KIND.spelling(kind) + " operand is " + Typing.kindWord(types.get(0))
-                + ", must be a number");
+                params("builtin", Spelling.BUILTIN_KIND.spelling(kind), "kind", Typing.kindWord(types.get(0))));
     }
 
     /** WF-091's sentence for an arithmetic fold ({@code fold}: sum or total on the wire) over an operand that is no
      *  number, one per such operand and joined by "; ", naming the operand as the verifier does. Null where every
      *  operand is a number to the verifier, a percentage included. */
     private static Typing.Coded arithmeticFoldSentence(String fold, List<Expr> arguments) {
-        List<String> sentences = new ArrayList<>();
+        List<Msg> sentences = new ArrayList<>();
         List<String> operands = new ArrayList<>(), typeNames = new ArrayList<>();
         for (int i = 0; i < arguments.size(); i++) {
             Expr a = arguments.get(i);
             Datatype d = a.type();
             if (d.isUnknown() || d.isNumberLike()) continue;
-            String operand = a instanceof Expr.AttributeReference r && r.attribute() != null && r.objectType() != null
-                    ? "'" + r.attribute() + "' on '" + r.objectType().naam + "'"
-                    : a instanceof Expr.ParameterRef p && p.parameter() != null ? "the parameter '" + p.parameter().naam() + "'"
-                    : "its operand " + i;
+            Msg operand = a instanceof Expr.AttributeReference r && r.attribute() != null && r.objectType() != null
+                    ? Msg.frontend("RGS-081.operand-attribute", "attribute", r.attribute(), "objectType", r.objectType().naam)
+                    : a instanceof Expr.ParameterRef p && p.parameter() != null
+                    ? Msg.frontend("RGS-081.operand-parameter", "parameter", p.parameter().naam())
+                    : Msg.frontend("RGS-081.operand-position", "position", i);
             String t = Typing.typeName(d);
-            operands.add(operand);
+            operands.add(operand.text());
             typeNames.add(t);
-            sentences.add("the " + fold + " of " + operand + " folds " + t + " values: a total, sum or pro-rata part is "
-                    + "arithmetic over a Number, and " + (d.isDate() ? "Date values are calendar positions"
-                            : t + " values are not amounts"));
+            sentences.add(Msg.frontend("RGS-081.sentence", "fold", fold, "operand", operand, "typeName", t,
+                    "rationale", d.isDate() ? Msg.frontend("RGS-081.rationale-date")
+                            : Msg.frontend("RGS-081.rationale-other", "typeName", t)));
         }
-        // the sentences are joined, so one template carries each operand and type name, in operand order
+        // one sentence per operand that is no number, in operand order; the template renders them joined
         return sentences.isEmpty() ? null : new Typing.Coded("RGS-081",
-                params("fold", fold, "operands", String.join("; ", operands), "typeNames", String.join(", ", typeNames)),
-                String.join("; ", sentences));
+                params("fold", fold, "operands", String.join("; ", operands), "typeNames", String.join(", ", typeNames),
+                        "sentences", sentences));
     }
 
     /** §4.20 Tabel 30 (totaal van): the operand is "numeriek met een eenheid per tijdseenheid". The NUMERIEK
@@ -2392,8 +2331,7 @@ final class ExpressionBuilder {
             boolean temporal = arg instanceof Expr.AttributeReference a && a.objectType() != null
                     && a.objectType().granularityOf(a.attribute()) != null;
             if (!temporal)
-                return new Typing.Coded("RGS-082", params("unit", e.rendering()),
-                        "totaal van vereist een eenheid per tijdseenheid (§4.20 Tabel 30), kreeg '" + e.rendering() + "'");
+                return new Typing.Coded("RGS-082", params("unit", e.rendering()));
         }
         return null;
     }
@@ -2403,9 +2341,7 @@ final class ExpressionBuilder {
      *  DatumInDagen operand, else null (Onbekend and any non-date type are not this check's concern). */
     private static Typing.Coded timeComponentError(List<Datatype> types) {
         if (types.size() != 1 || !(types.get(0) instanceof Datatype.DatumInDagen)) return null;
-        return new Typing.Coded("RGS-083", params("kind", Typing.kindWord(types.get(0))),
-                "een tijd-component (uur/minuut/seconde/milliseconde uit): sub-day extractor operand is "
-                + Typing.kindWord(types.get(0)) + ", must be a millisecond-precision date");   // the verifier's WF-038
+        return new Typing.Coded("RGS-083", params("kind", Typing.kindWord(types.get(0))));   // the verifier's WF-038
     }
 
     /** §4.16/§4.17 (typeringen, normative): the two operands (van, tot) of a (absolute) tijdsduur must BOTH be a
@@ -2423,15 +2359,12 @@ final class ExpressionBuilder {
                 // the sentences are joined, so one template carries the kinds of the operands that are no date
                 return new Typing.Coded("RGS-084", params("category", category, "kinds",
                         String.join(", ", types.stream().filter(x -> !x.isUnknown() && !x.isDate())
-                                .map(Typing::kindWord).toList())),
-                        "de (absolute) tijdsduur van … tot …: " + String.join("; ", types.stream()
-                        .filter(x -> !x.isUnknown() && !x.isDate())
-                        .map(x -> category + " operand is " + Typing.kindWord(x) + ", must be a date").toList()));
+                                .map(Typing::kindWord).toList()),
+                        "sentences", types.stream().filter(x -> !x.isUnknown() && !x.isDate())
+                                .map(x -> Msg.frontend("RGS-084.operand-sentence", "category", category, "kind", Typing.kindWord(x))).toList()));
             if (ref == null) ref = d;
             else if (!ref.getClass().equals(d.getClass()))      // both datum but a different tijd-precisie: WF-038
-                return new Typing.Coded("RGS-085", params("category", category),
-                        "de (absolute) tijdsduur van … tot …: " + category + " operands mix date precisions (both must share one "
-                        + "precision)");
+                return new Typing.Coded("RGS-085", params("category", category));
         }
         return null;
     }
@@ -2442,17 +2375,13 @@ final class ExpressionBuilder {
     private Typing.Coded durationUnitError(Expr.FunctionKind kind, Unit e, List<Expr> arguments) {
         String category = Spelling.BUILTIN_KIND.spelling(kind);   // the verifier names the builtin's own kind
         if (e == null)
-            return new Typing.Coded("RGS-086", params("category", category),
-                    category + " without a recognised time unit on its node type");
+            return new Typing.Coded("RGS-086", params("category", category));
         String eenheid = TimeCalculation.chronoUnit(e);
         if (eenheid == null)
             return TimeCalculation.dayKindForUnit(model, e) != null ? null
-                    : new Typing.Coded("RGS-087", params("category", category, "unit", e.afkorting()),
-                            category + ": the counted unit '" + e.afkorting()
-                            + "' is neither a recognised time unit nor a declared day kind");
+                    : new Typing.Coded("RGS-087", params("category", category, "unit", e.afkorting()));
         return Typing.subDayUnit(eenheid) && arguments.stream().anyMatch(a -> a.type() instanceof Datatype.DatumInDagen)
-                ? new Typing.Coded("RGS-088", params("category", category),
-                        "sub-day " + category + " unit on day-precision operands (millisecond precision required)") : null;
+                ? new Typing.Coded("RGS-088", params("category", category)) : null;
     }
 
     /** The §5.8.2 "of … als die er niet zijn" fallback expression of a sommatie, or null.
@@ -2717,7 +2646,6 @@ final class ExpressionBuilder {
         if (position > Math.max(bindings, 1)) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                     "RGS-089", params("position", position, "name", naam),
-                    "rangtelwoord: de regel noemt geen " + position + " onderwerpen '" + naam + "' (§5.5.3)",
                     r.getStart().getLine()));
             return unresolvedMarker(source, null);   // the ERROR above is this marker's diagnosis
         }
@@ -2730,9 +2658,6 @@ final class ExpressionBuilder {
             // silent alias of one binding (which is what dropping the ordinal used to mean).
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                     "RGS-090", params("bindings", bindings, "name", naam, "expression", source),
-                    "rangtelwoord: de regel bindt " + bindings + " onderwerpen '" + naam
-                    + "'; §5.5.3 definieert geen bindings-/ordeningssemantiek voor zo'n verwijzing per vermelding — "
-                    + "de verwijzing blijft een marker (wordt nog niet ondersteund) — '" + source + "'",
                     r.getStart().getLine()));
             return unresolvedMarker(source, null);   // the WARNING above is this marker's diagnosis
         }

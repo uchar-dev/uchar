@@ -3,6 +3,8 @@ package dev.uchar.regelspraak.resolver;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Unit;
 import dev.uchar.regelspraak.core.TimeCalculation;
+import dev.uchar.regelspraak.message.Component;
+import dev.uchar.regelspraak.message.Msg;
 import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
 /**
@@ -18,22 +20,35 @@ import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 public final class Typing {
     private Typing() {}
 
-    /** A refusal's sentence with the template it fills: the {@code RGS-###} code and its named parameters beside
-     *  the Dutch (or verifier-English) {@code text}, which is the message as it always was. */
-    public record Coded(String code, java.util.Map<String, String> params, String text) {
-        /** The same template under a text that a construct's name opens ({@code "plus: "}). */
-        Coded prefixed(String prefix) { return new Coded(code, params, prefix + text); }
-        /** The same template under a text that a construct's name opens and a rule of the spec closes. */
-        Coded framed(String prefix, String suffix) { return new Coded(code, params, prefix + text + suffix); }
+    /** A refusal: the {@code RGS-###} code and its named parameters, and the message they render to. A frame
+     *  ({@link #frame}) puts a construct's name round the sentence; the code stays the refusal's own. */
+    public record Coded(String code, java.util.Map<String, Object> params, Msg msg) {
+        public Coded(String code, java.util.Map<String, Object> params) {
+            this(code, params, new Msg(Component.FRONTEND, code, params));
+        }
+        /** The same refusal inside the {@code FRAME.<frame>} sentence, whose parameters {@code frameParams} name
+         *  beside {@code sentence}, the refusal's own message. */
+        Coded frame(String frame, Object... frameParams) {
+            java.util.Map<String, Object> args = new java.util.LinkedHashMap<>(dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params(frameParams));
+            args.put("sentence", msg);
+            return new Coded(code, params, new Msg(Component.FRONTEND, "FRAME." + frame, args));
+        }
+        /** The same refusal under the variant template {@code code + suffix}: one template for each form of a
+         *  sentence that agrees with a number or a combination of operands. */
+        Coded variant(String suffix) {
+            return suffix.isEmpty() ? this : new Coded(code, params, new Msg(Component.FRONTEND, code + suffix, params));
+        }
+        /** The refusal's text in the default language of the frontend. */
+        public String text() { return msg.text(); }
         /** The diagnostic this refusal is, at {@code line}. */
         dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic at(
                 dev.uchar.regelspraak.model.RegelSpraakModel.Severity severity, int line) {
-            return new dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic(severity, code, params, text, line);
+            return new dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic(severity, code, params, msg, null, line);
         }
     }
 
     /** The verifier's own sentence for a unit mismatch at one position, with its template. */
-    private record VerifierSentence(String code, java.util.Map<String, String> params, String text) {}
+    private record VerifierSentence(String code, java.util.Map<String, Object> params) {}
 
     /** Outcome of a typeringen check: a result datatype, or a refusal. */
     public record Result(Datatype type, Coded failure) {
@@ -82,11 +97,9 @@ public final class Typing {
                 String onName = op == BinOp.PLUS ? "plus" : "min";
                 if (l.isDate() && r instanceof Datatype.Numeriek rn && rn.hasUnit()) {
                     if (l instanceof Datatype.DatumInDagen && subDayUnit(TimeCalculation.chronoUnit(r)))
-                        yield Result.error(new Coded("RGS-280", params("operation", onName),
-                                onName + ": sub-day time unit on a day-precision date (millisecond "
-                                + "precision required)"));
+                        yield Result.error(new Coded("RGS-280", params("operation", onName)));
                     if (dayKindUnitRight || TimeCalculation.chronoUnit(r) != null) yield Result.ok(l);
-                    yield Result.error(unknownDurationUnit(onName, rn.unitOf().afkorting()).prefixed(onName + ": "));
+                    yield Result.error(unknownDurationUnit(onName, rn.unitOf().afkorting()).frame("operation", "operation", onName));
                 }
                 yield numericBinary(l, r, onName, lLit, rLit);
             }
@@ -101,12 +114,11 @@ public final class Typing {
                 if (!l.isNumber() || !r.isNumber()) {
                     // WF-035 per operand that is no number; a percentage is a number to the verifier, which
                     // admits the product with it, so that refusal is RegelSpraak's own (Tabel 11/14)
-                    Coded sentence = perSide("RGS-323", naam(op), "operand of a numeric operator is ", l, r,
+                    Coded sentence = perSide("RGS-323", naam(op), l, r,
                             Datatype::isNumberLike);
-                    yield Result.error(sentence != null ? sentence.prefixed(naam(op) + ": ")
+                    yield Result.error(sentence != null ? sentence.frame("operation", "operation", naam(op))
                             : new Coded("RGS-281",
-                                    params("operator", naam(op), "left", l.naam(), "right", r.naam()),
-                                    naam(op) + " vereist numerieke operanden, kreeg " + l.naam() + " en " + r.naam()));
+                                    params("operator", naam(op), "left", l.naam(), "right", r.naam())));
                 }
                 // §4.4 Tabel 13: a product gets the SUM of the operands' decimals ("X,X maal X,XX = X,XXX"),
                 // not the max — so a 2dec × 2dec product is 4dec and §6.1.2 rightly demands an
@@ -131,22 +143,19 @@ public final class Typing {
                 // dimensionally UNSOUND — a unitless numerator over a unit denominator is a reciprocal 1/E (a rate the
                 // Eenheid model cannot spell), NOT E. Besluit 17b KNOWINGLY diverges from the arbiter here: a LOUD
                 // error, never a wire type.
-                yield Result.error(new Coded("RGS-282", params("unit", rightUnit.rendering()),
-                        "gedeeld door: een eenheidloze teller gedeeld door de eenheid '" + rightUnit.rendering()
-                        + "' geeft een omgekeerde eenheid (1/" + rightUnit.rendering() + ") die het Eenheid-model niet kan uitdrukken"));
+                yield Result.error(new Coded("RGS-282", params("unit", rightUnit.rendering())));
             }
             // §4.7 tot de macht: Numeriek without a unit on either side; result without a unit.
             case TOT_DE_MACHT -> {
                 if (!l.isNumber() || !r.isNumber()) {
                     // WF-035 per operand that is no number; a percentage's '%' is a unit to the verifier
-                    Coded sentence = perSide("RGS-323", naam(op), "operand of a numeric operator is ", l, r,
+                    Coded sentence = perSide("RGS-323", naam(op), l, r,
                             Datatype::isNumberLike);
-                    yield Result.error(sentence != null ? sentence.prefixed("tot de macht: ")
-                            : new Coded("RGS-283", params(), "tot de macht: power operands must be unitless"));
+                    yield Result.error(sentence != null ? sentence.frame("power")
+                            : new Coded("RGS-283", params()));
                 }
                 if (l.unitOf() != null || r.unitOf() != null)
-                    yield Result.error(new Coded("RGS-283", params(),
-                            "tot de macht: power operands must be unitless"));   // the verifier's WF-035
+                    yield Result.error(new Coded("RGS-283", params()));   // the verifier's WF-035
                 yield Result.ok(new Datatype.Numeriek(false, maxDec(l, r), Datatype.Teken.ONBEPAALD, null));
             }
         };
@@ -155,16 +164,14 @@ public final class Typing {
     private static Result numericBinary(Datatype l, Datatype r, String op, boolean lLit, boolean rLit) {
         if (!l.isNumberLike() || !r.isNumberLike()) {
             Coded sentence = op.equals("plus") || op.equals("min") ? dateComputeSentence(op, l, r)
-                    : perSide("RGS-323", op, "operand of a numeric operator is ", l, r,
+                    : perSide("RGS-323", op, l, r,
                             Datatype::isNumberLike);
-            return Result.error(sentence != null ? sentence.prefixed(op + ": ")
+            return Result.error(sentence != null ? sentence.frame("operation", "operation", op)
                     : new Coded("RGS-284",
-                            params("operator", op, "left", l.naam(), "right", r.naam()),
-                            "operator '" + op + "' vereist numerieke operanden, kreeg " + l.naam() + " en " + r.naam()));
+                            params("operator", op, "left", l.naam(), "right", r.naam())));
         }
         Coded unitMismatch = unitsCompatible(l, r, op, lLit, rLit,
-                new VerifierSentence("RGS-324", params("operation", op),
-                        "additive operands have incompatible units"));
+                new VerifierSentence("RGS-324", params("operation", op)));
         if (unitMismatch != null) return Result.error(unitMismatch);
         // §4.1/§4.2/§4.3 (plus/min/verminderd met — the only callers): geheel ± geheel IS geheel, so the
         // result keeps geheel-ness instead of erasing it — a geheel-demanding gate downstream (§5.13
@@ -190,11 +197,10 @@ public final class Typing {
         return switch (op) {
             case KLEINER, KLEINER_OF_GELIJK, GROTER, GROTER_OF_GELIJK -> {
                 if (!l.isNumberLike() || !r.isNumberLike())
-                    yield Result.error(perSide("RGS-325", "vergelijking", "ordering operand is ", l, r,
-                            Datatype::isNumberLike).prefixed("vergelijking: "));
+                    yield Result.error(perSide("RGS-325", "vergelijking", l, r,
+                            Datatype::isNumberLike).frame("comparison"));
                 Coded u = unitsCompatible(l, r, "vergelijking", lLit, rLit,
-                        new VerifierSentence("RGS-326", params(),
-                                "ordering operands have incompatible units"));
+                        new VerifierSentence("RGS-326", params()));
                 yield u != null ? Result.error(u) : Result.ok(new Datatype.BooleanType());
             }
             // The ordering comparisons deliberately do NOT require equal tijd-precisie: Tabellen 45-52 list
@@ -202,8 +208,8 @@ public final class Typing {
             // whose prose demands "dezelfde tijd-precisie") — the asymmetry is the spec's, kept as-is.
             case EERDER, EERDER_OF_GELIJK, LATER, LATER_OF_GELIJK -> {
                 if (!l.isDate() || !r.isDate())
-                    yield Result.error(perSide("RGS-327", "vergelijking", "date-ordering operand is ", l, r,
-                            Datatype::isDate).prefixed("vergelijking: "));
+                    yield Result.error(perSide("RGS-327", "vergelijking", l, r,
+                            Datatype::isDate).frame("comparison"));
                 yield Result.ok(new Datatype.BooleanType());
             }
             case GELIJK, ONGELIJK -> {
@@ -212,24 +218,18 @@ public final class Typing {
                     // which reads the percentage's '%' as a unit and refuses the pair on units where no literal adopts it
                     if (!(l.isNumberLike() && r.isNumberLike()))
                         yield Result.error(new Coded("RGS-285",
-                                params("left", kindWord(l), "right", kindWord(r)),
-                                "gelijk: equality across families: " + kindWord(l) + " vs " + kindWord(r)));
+                                params("left", kindWord(l), "right", kindWord(r))));
                     if (verifierRefusesUnits(l, r, lLit, rLit))
-                        yield Result.error(new Coded("RGS-286", params(),
-                                "gelijk: equality operands have incompatible units"));
-                    yield Result.error(new Coded("RGS-287", params("left", l.naam(), "right", r.naam()),
-                            "gelijk/ongelijk vereist operanden van hetzelfde datatype, kreeg " + l.naam() + " en " + r.naam()));
+                        yield Result.error(new Coded("RGS-286", params()).frame("operation", "operation", "gelijk"));
+                    yield Result.error(new Coded("RGS-287", params("left", l.naam(), "right", r.naam())));
                 }
                 if (otherPrecision(l, r))
-                    yield Result.error(new Coded("RGS-288", params(),
-                            "gelijk: equality across date precisions"));
+                    yield Result.error(new Coded("RGS-288", params()));
                 if (anotherDomain(l, r))
-                    yield Result.error(new Coded("RGS-289", params(),
-                            "gelijk: equality across different enumeration domains"));
+                    yield Result.error(new Coded("RGS-289", params()));
                 if (l.isNumberLike()) {
                     Coded u = unitsCompatible(l, r, "gelijk", lLit, rLit,
-                            new VerifierSentence("RGS-286", params(),
-                                    "equality operands have incompatible units"));
+                            new VerifierSentence("RGS-286", params()));
                     if (u != null) yield Result.error(u);
                 }
                 yield Result.ok(new Datatype.BooleanType());
@@ -257,8 +257,7 @@ public final class Typing {
             return clampNonNumeric(which, limit);
         Unit eb = base.unitOf(), eg = limit.unitOf();
         if (eb != null && eg != null && !eb.convertibleTo(eg))
-            return new Coded("RGS-060", params("bound", which),
-                    "clamp " + which + " and base have incompatible units");
+            return new Coded("RGS-060", params("bound", which));
         return null;
     }
 
@@ -272,8 +271,7 @@ public final class Typing {
     /** WF-035's sentence for a clamp position (base, minimum or maximum) that holds no number, one template for the
      *  three positions as in the verifier. */
     private static Coded clampNonNumeric(String position, Datatype d) {
-        return new Coded("RGS-328", params("position", position, "kind", kindWord(d)),
-                "clamp " + position + " is " + kindWord(d) + ", must be numeric");
+        return new Coded("RGS-328", params("position", position, "kind", kindWord(d)));
     }
 
     /** §4.12/4.13 Tabel 22/23 — minimale/maximale waarde van (getalaggregatiefunctie): every
@@ -291,18 +289,14 @@ public final class Typing {
         for (Datatype d : operands) {
             if (d.isUnknown()) continue;
             if (!d.isNumber())
-                return new Coded("RGS-329", params("function", function, "type", d.naam()),
-                        function + " vereist numerieke operanden, kreeg " + d.naam());
+                return new Coded("RGS-329", params("function", function, "type", d.naam()));
             Unit e = d.unitOf();
             if (!refSet) { ref = e; refSet = true; continue; }
             if ((ref == null) != (e == null))
-                return new Coded("RGS-330", params("function", function),
-                        function + ": als één operand een eenheid heeft, moeten alle operanden er een hebben");
+                return new Coded("RGS-330", params("function", function));
             if (ref != null && !ref.convertibleTo(e))
                 return new Coded("RGS-331",
-                        params("function", function, "left", ref.rendering(), "right", e.rendering()),
-                        function + ": eenheden '" + ref.rendering() + "' en '" + e.rendering()
-                        + "' zijn niet in elkaar om te rekenen");
+                        params("function", function, "left", ref.rendering(), "right", e.rendering()));
         }
         return null;
     }
@@ -322,13 +316,10 @@ public final class Typing {
         for (Datatype d : operands) {
             if (d.isUnknown()) continue;
             if (!d.isDate())
-                return new Coded("RGS-332", params("function", function, "type", d.naam()),
-                        function + " vereist datumexpressies, kreeg " + d.naam());
+                return new Coded("RGS-332", params("function", function, "type", d.naam()));
             if (ref == null) { ref = d; continue; }
             if (!ref.getClass().equals(d.getClass()))   // WF-038, with the fold's wire name ({@code fold})
-                return new Coded("RGS-333", params("function", function, "fold", fold),
-                        function + ": " + fold + " orders dates of two precisions (day and millisecond), which share no "
-                        + "order");
+                return new Coded("RGS-333", params("function", function, "fold", fold));
         }
         return null;
     }
@@ -342,17 +333,13 @@ public final class Typing {
                     operand.isText()
                         || (operand instanceof Datatype.Numeriek n && n.geheel() && !n.hasUnit())
                     ? Result.ok(new Datatype.BooleanType())
-                    : Result.error(new Coded("RGS-290", params("kind", kindWord(operand)),
-                            "elfproef: elevenTest operand is " + kindWord(operand)
-                            + ", must be text or a whole unitless number"));   // the verifier's WF-036
+                    : Result.error(new Coded("RGS-290", params("kind", kindWord(operand))));   // the verifier's WF-036
             case NUMERIEK_MET_EXACT -> operand.isText()                 // §5.16 Tekst only
                     ? Result.ok(new Datatype.BooleanType())
-                    : Result.error(new Coded("RGS-291", params("kind", kindWord(operand)),
-                            "numeriek met exact: exactDigits operand is " + kindWord(operand) + ", must be text"));
+                    : Result.error(new Coded("RGS-291", params("kind", kindWord(operand))));
             case DAGSOORT -> operand.isDate()                           // §5.15 Datum only
                     ? Result.ok(new Datatype.BooleanType())
-                    : Result.error(new Coded("RGS-292", params("kind", kindWord(operand)),
-                            "dagsoort: day-kind predicate operand is " + kindWord(operand) + ", must be a date"));
+                    : Result.error(new Coded("RGS-292", params("kind", kindWord(operand))));
         };
     }
 
@@ -368,29 +355,21 @@ public final class Typing {
             // as in the equality arm of vergelijk: two kinds are WF-023's family sentence, a number beside a
             // percentage its units sentence where no literal adopts the '%'
             if (!(target.isNumberLike() && value.isNumberLike()))
-                return new Coded("RGS-334", params("value", kindWord(value), "target", kindWord(target)),
-                        "toekenning: a " + kindWord(value) + " value is assigned to a " + kindWord(target) + " target");
+                return new Coded("RGS-334", params("value", kindWord(value), "target", kindWord(target)));
             if (verifierRefusesUnits(target, value, false, valueLit))
-                return new Coded("RGS-335", params(),
-                        "toekenning: assignment across incompatible units");
-            return new Coded("RGS-336", params("valueType", value.naam(), "targetType", target.naam()),
-                    "kan een waarde van type " + value.naam() + " niet toekennen aan een " + target.naam());
+                return new Coded("RGS-335", params()).frame("operation", "operation", "toekenning");
+            return new Coded("RGS-336", params("valueType", value.naam(), "targetType", target.naam()));
         }
         if (otherPrecision(target, value))
-            return new Coded("RGS-334", params("value", kindWord(value), "target", kindWord(target)),
-                    "toekenning: a " + kindWord(value) + " value is assigned to a " + kindWord(target) + " target");
+            return new Coded("RGS-334", params("value", kindWord(value), "target", kindWord(target)));
         if (anotherDomain(target, value))
             // the verifier's WF-023 domain clause, its format string with its variant word
             return new Coded("RGS-337",
                     params("valueDomain", ((Datatype.Enumeratie) value).domain(),
-                            "targetDomain", ((Datatype.Enumeratie) target).domain()),
-                    "toekenning: " + String.format("a value of the %s '%s' is assigned to a target of the %s '%s'",
-                    "enumeration domain", ((Datatype.Enumeratie) value).domain(), "enumeration domain",
-                    ((Datatype.Enumeratie) target).domain()));
+                            "targetDomain", ((Datatype.Enumeratie) target).domain(), "domainWord", "enumeration domain"));
         if (!target.isNumberLike()) return null;
         Coded unitError = unitsCompatible(target, value, "toekenning", false, valueLit,
-                new VerifierSentence("RGS-335", params(),
-                        "assignment across incompatible units"));
+                new VerifierSentence("RGS-335", params()));
         if (unitError != null) return unitError;
         // §6.1.2: a result may be assigned only when its decimal count does not exceed the
         // attribute's; a higher-precision result must first be explicitly rounded (§6.1.3). The
@@ -402,9 +381,7 @@ public final class Typing {
         if (target.unbounded()) return null;
         int dv = decimalsOf(value), dd = decimalsOf(target);
         if (dv > dd)
-            return new Coded("RGS-338", params("valueDecimals", dv, "targetDecimals", dd),
-                    "het toe te kennen resultaat heeft meer decimalen (" + dv + ") dan het attribuut toelaat ("
-                    + dd + "); rond het resultaat eerst expliciet af (§6.1.2)");
+            return new Coded("RGS-338", params("valueDecimals", dv, "targetDecimals", dd));
         return null;
     }
 
@@ -430,8 +407,7 @@ public final class Typing {
         // doel) is flagged as the family mismatch it is — exactly the fout the ordinary regel raises — instead
         // of slipping through to an uncompilable numeric setter.
         if (!sameFamily(target, source))
-            return new Coded("RGS-339", params("sourceType", source.naam(), "targetType", target.naam()),
-                    "kan een waarde van type " + source.naam() + " niet verdelen over een " + target.naam());
+            return new Coded("RGS-339", params("sourceType", source.naam(), "targetType", target.naam()));
         // Same family but not getalachtig (e.g. both Datum/Tekst) — no unit/precision rule applies.
         if (!target.isNumberLike()) return null;
         // The share carries the BRON's eenheid: equal-shares (total/count) and naar rato (total·w/Σw) both keep
@@ -444,9 +420,7 @@ public final class Typing {
                 : decimalsOf(source) + (weight != null ? decimalsOf(weight) : 0);
         int dd = decimalsOf(target);
         return share > dd
-                ? new Coded("RGS-340", params("shareDecimals", share, "targetDecimals", dd),
-                        "het toe te kennen aandeel heeft meer decimalen (" + share + ") dan het attribuut toelaat ("
-                        + dd + "); rond de verdeling eerst expliciet af (§6.1.2/§9.7.4)")
+                ? new Coded("RGS-340", params("shareDecimals", share, "targetDecimals", dd))
                 : null;
     }
 
@@ -473,18 +447,14 @@ public final class Typing {
                 return Result.ok(new Datatype.Numeriek(false, dec, Datatype.Teken.ONBEPAALD, Unit.product(el, rightUnit)));
             // a rate factor (a second denominator / "€·m/jr") is UNSPELLABLE — besluit 17c: a loud error, not Onbekend.
             return Result.error(new Coded("RGS-293",
-                    params("left", el.rendering(), "right", rightUnit.rendering()),
-                    "maal: de samengestelde eenheid van '" + el.rendering() + "' en '" + rightUnit.rendering()
-                    + "' (een producteenheid met een noemer) kan het Eenheid-model niet uitdrukken"));
+                    params("left", el.rendering(), "right", rightUnit.rendering())));
         }
         if (el.denominator() == null && rightUnit.denominator() == null)   // GEDEELD: only two plain units are representable
             return el.convertibleTo(rightUnit)
                     ? Result.ok(new Datatype.Numeriek(false, dec, Datatype.Teken.ONBEPAALD, null))                        // €/€ -> getal
                     : Result.ok(new Datatype.Numeriek(false, dec, Datatype.Teken.ONBEPAALD, Unit.compound(el, rightUnit))); // €/jr
         // a rate divisor (its result needs a second denominator / "1/jr") is UNSPELLABLE — besluit 17c: a loud error.
-        return Result.error(new Coded("RGS-294", params("left", el.rendering(), "right", rightUnit.rendering()),
-                "gedeeld door: het quotiënt van '" + el.rendering() + "' en '" + rightUnit.rendering()
-                + "' (een eenheid met een omgekeerde noemer) kan het Eenheid-model niet uitdrukken"));
+        return Result.error(new Coded("RGS-294", params("left", el.rendering(), "right", rightUnit.rendering())));
     }
 
     /** Same datatype family for gelijk/ongelijk/toekenning. Numeriek and Percentage are
@@ -530,35 +500,37 @@ public final class Typing {
                                              VerifierSentence verifierSentence) {
         Unit el = l.unitOf(), rightUnit = r.unitOf();
         if (el == null && rightUnit == null) return null;
-        String pre = where.isEmpty() ? "" : where + ": ";
         if (el == null || rightUnit == null) {
             boolean literalWithoutUnit = el == null ? lLit : rLit;
-            return verifierSentence != null && !literalWithoutUnit
-                    ? new Coded(verifierSentence.code(), verifierSentence.params(), pre + verifierSentence.text())
-                    : new Coded("RGS-341", params("operation", where),
-                            pre + "als één operand een eenheid heeft, moeten beide er een hebben");
+            return framed(verifierSentence != null && !literalWithoutUnit
+                    ? new Coded(verifierSentence.code(), verifierSentence.params())
+                    : new Coded("RGS-341", params("operation", where)), where);
         }
         if (!el.convertibleTo(rightUnit))
-            return verifierSentence != null
-                    ? new Coded(verifierSentence.code(), verifierSentence.params(), pre + verifierSentence.text())
+            return framed(verifierSentence != null
+                    ? new Coded(verifierSentence.code(), verifierSentence.params())
                     : new Coded("RGS-342",
-                            params("operation", where, "left", el.rendering(), "right", rightUnit.rendering()),
-                            pre + "eenheden '" + el.rendering() + "' en '" + rightUnit.rendering()
-                            + "' zijn niet in elkaar om te rekenen");
+                            params("operation", where, "left", el.rendering(), "right", rightUnit.rendering())), where);
         return null;
     }
 
-    /** The verifier's sentence for each operand {@code goed} refuses, in operand order and joined by "; " as its two
-     *  reports would be read; null when both pass. */
-    private static Coded perSide(String code, String operation, String sentenceStart, Datatype l, Datatype r,
+    /** {@code c} under the sentence of the construct {@code where} names; an empty {@code where} adds none. */
+    private static Coded framed(Coded c, String where) {
+        return where.isEmpty() ? c : c.frame("operation", "operation", where);
+    }
+
+    /** The verifier's sentence for each operand {@code goed} refuses, in operand order, which the template renders
+     *  joined; null when both pass. */
+    private static Coded perSide(String code, String operation, Datatype l, Datatype r,
                                  java.util.function.Predicate<Datatype> goed) {
-        java.util.List<String> sentences = new java.util.ArrayList<>();
-        if (!goed.test(l)) sentences.add(sentenceStart + kindWord(l));
-        if (!goed.test(r)) sentences.add(sentenceStart + kindWord(r));
-        // an operand that passes has no sentence, so its kind is empty: one template, two optional sentences
-        return sentences.isEmpty() ? null : new Coded(code, params("operation", operation,
-                "left", goed.test(l) ? "" : kindWord(l), "right", goed.test(r) ? "" : kindWord(r)),
-                String.join("; ", sentences));
+        boolean left = !goed.test(l), right = !goed.test(r);
+        if (!left && !right) return null;
+        java.util.List<Msg> sentences = new java.util.ArrayList<>();
+        if (left) sentences.add(Msg.frontend(code + ".side", "kind", kindWord(l)));
+        if (right) sentences.add(Msg.frontend(code + ".side", "kind", kindWord(r)));
+        // an operand that passes has no sentence, so its kind is empty
+        return new Coded(code, params("operation", operation,
+                "left", left ? kindWord(l) : "", "right", right ? kindWord(r) : "", "sentences", sentences));
     }
 
     /** WF-035's sentences for a plus or min over an operand that is no number (RUNTIME-SEMANTICS ch. 3.8): date
@@ -566,22 +538,17 @@ public final class Typing {
      *  neither operand is a date: the verifier admits that pair, and RegelSpraak's refusal keeps its own words. */
     private static Coded dateComputeSentence(String op, Datatype l, Datatype r) {
         if (l.isDate() && r.isDate())
-            return new Coded("RGS-295", params("operation", op),
-                    "date \u00b1 date is ill-formed (date arithmetic takes a date and a duration)");
+            return new Coded("RGS-295", params("operation", op));
         if (r.isDate())
             return op.equals("min")
-                    ? new Coded("RGS-296", params(),
-                            "duration \u2212 date is ill-formed (subtraction admits the date on the left only)")
-                    : new Coded("RGS-297", params(),
-                            "duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)");
+                    ? new Coded("RGS-296", params())
+                    : new Coded("RGS-297", params());
         if (!l.isDate()) return null;
         if (!r.isNumberLike())
-            return new Coded("RGS-298", params("operation", op, "kind", kindWord(r)),
-                    "date \u00b1 duration: the duration operand is " + kindWord(r) + ", must be a number carrying a time unit");
+            return new Coded("RGS-298", params("operation", op, "kind", kindWord(r)));
         Unit e = r.unitOf();
         if (e == null)
-            return new Coded("RGS-299", params("operation", op),
-                    "date \u00b1 duration: the duration operand carries no time unit");
+            return new Coded("RGS-299", params("operation", op));
         return unknownDurationUnit(op, e.afkorting());
     }
 
@@ -592,9 +559,7 @@ public final class Typing {
 
     /** WF-035's sentence for a duration unit that is neither a recognised time unit nor a declared day kind. */
     private static Coded unknownDurationUnit(String operation, String afkorting) {
-        return new Coded("RGS-343", params("operation", operation, "unit", afkorting),
-                "date \u00b1 duration: the duration unit '" + afkorting
-                + "' is neither a recognised time unit nor a declared day kind");
+        return new Coded("RGS-343", params("operation", operation, "unit", afkorting));
     }
 
     /** WF-038's sentences for the operands of an ordering fold ({@code fold}: its wire name, first, last, minimum or
@@ -602,7 +567,7 @@ public final class Typing {
      *  precisions among the rest, in the verifier's order and joined by "; ". Null where the verifier admits the
      *  operands; an unknown type makes no claim. */
     static Coded orderingFoldSentence(String fold, java.util.List<Datatype> types) {
-        java.util.List<String> sentences = new java.util.ArrayList<>();
+        java.util.List<Msg> sentences = new java.util.ArrayList<>();
         java.util.List<String> kinds = new java.util.ArrayList<>();
         java.util.Set<String> families = new java.util.LinkedHashSet<>();
         for (Datatype d : types) {
@@ -612,20 +577,20 @@ public final class Typing {
             else if (d instanceof Datatype.DateTime) families.add("milliseconde");
             else {
                 kinds.add(kindWord(d));
-                sentences.add("operand of the " + fold + " ordering fold is " + kindWord(d) + ", must be a number or a date");
+                sentences.add(new Msg(Component.FRONTEND, "RGS-344.operand-sentence", params("fold", fold, "kind", kindWord(d))));
             }
         }
         String mixed = "";
         if (families.size() > 1) {
             mixed = families.contains("getal") ? "numbers-and-dates" : "dates-of-two-precisions";
-            sentences.add(families.contains("getal")
-                    ? fold + " orders operands of two comparable families, numbers and dates, which share no ordering"
-                    : fold + " orders dates of two precisions (day and millisecond), which share no order");
+            sentences.add(new Msg(Component.FRONTEND,
+                    families.contains("getal") ? "RGS-344.numbers-and-dates" : "RGS-344.dates-of-two-precisions",
+                    params("fold", fold)));
         }
-        // the sentences are joined, so one template carries the kinds of the operands that are no number and no
-        // date, in operand order, and the mixture of families when there is one; either may be empty
+        // one sentence per operand that is no number and no date, in operand order, and one for the mixture of
+        // families when there is one; the template renders the list, joined, and either part may be empty
         return sentences.isEmpty() ? null : new Coded("RGS-344",
-                params("fold", fold, "kinds", String.join(", ", kinds), "mixture", mixed), String.join("; ", sentences));
+                params("fold", fold, "kinds", String.join(", ", kinds), "mixture", mixed, "sentences", sentences));
     }
 
     /** The type name the verifier writes in WF-091's numeric-operand sentence ({@code wire_type_name}). */
