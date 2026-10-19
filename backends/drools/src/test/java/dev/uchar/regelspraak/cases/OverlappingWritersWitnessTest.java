@@ -85,7 +85,7 @@ class OverlappingWritersWitnessTest {
         Files.writeString(irPath, ir);
         Files.writeString(casePath, "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":["
                 + vondst("V", "Vondst", "2026-03-04", "2026-03-01", null) + "],\"parameters\":{}},\"expectedFault\":"
-                + "{\"ref\":\"two writers of one target disagree\",\"clingo\":\"two writers of one target disagree\"}}");
+                + "{\"code\":\"EF-016\",\"params\":{}}}");
         irPath.toFile().deleteOnExit();
         casePath.toFile().deleteOnExit();
         CaseRunner.RedResult r = CaseRunner.runRed(irPath, casePath);

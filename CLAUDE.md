@@ -201,7 +201,9 @@ reviewer's duty on a machine that has catala. Current gates:
    `corpus/golden/**/case*.json` and `corpus/rood/**/case*.json`
    validates against it and sits beside an `ir.json`; zone discipline
    holds (golden carries `expected`, rood carries `expectedFault`); an
-   empty case set is reported explicitly, never silently green.
+   empty case set is reported explicitly, never silently green. Since
+   2026-10-19 (card `fragment-cleanup`) the gate carries self-test rows for the shape of `expectedFault` (a `params`
+   object of strings, no fragment key).
 5. `scripts/check-oracle.sh` — the reference interpreter (`ref/`) builds
    and replays every `corpus/golden/**/case*.json` with exact expectation
    match (the oracle guard of PLAN §8); goldens without a case file are
@@ -229,27 +231,34 @@ reviewer's duty on a machine that has catala. Current gates:
    `jutterswet-uniciteit-drie-bronnen/case2-zonder-botsing`) — live in
    the script's explicit, reason-carrying survivor list, which fails
    when stale; an empty case set is a failure.
-8. `scripts/check-rood.sh` — the red corpus: every
-   `corpus/rood/**/case*.json` declares `expectedFault {ref, clingo}`
-   and MUST fail observably — at load or at
-   evaluation (contract widened 2026-09-19) — in **both** executors with the
-   pinned fragment in each report (the unsolved-state guard among them:
-   `Unresolved` — the v0 `Onopgelost` — reached in evaluation faults with WF-044, never
-   vanishes); an empty red set is a failure, never silently green; and no pinned fragment cites a BOTTOM SENTENCE of `ref` or clingo — a fall-through arm's refusal, which is the same sentence for every form that arm catches because it describes the position and what is carried there rather than the construct rejected. Such a pin witnesses nothing of its own, and where the sentence claims no corpus case reaches it, it makes that claim untrue. The thirty-six sentences are listed in the script with source, function and reason; the fragments are decoded and compared by `ref --bottom-sentence`, the red path's own reader and matcher, so a JSON-escaped pin cannot slip past, and a standing self-test in the gate fails if that decoding is ever replaced by a text scrape. The cure is a named arm for the form, never a reworded bottom. Since
-   2026-10-19 (card `meldingscodes`) every red case pins `expectedFault.code`, the EF code of its fault kind
-   (RUNTIME-SEMANTICS ch. 5.7b), and ref, clingo, and Drools where a `drools` fragment is pinned, must report it
-   — the runners print `CODE`/`CODE-PINNED`, Drools heads its status line with it — unless the executor stands in
-   the script's reason-carrying divergence list (category REFUSAL or LIMIT, stale both ways); the gate parses the
-   ch. 5.7b table strictly, holds every witness to its row's code and every pinned code to a row; floors
-   `EXPECTED_MIN_RED_CODES=93` (measured 2026-10-18) and `EXPECTED_MIN_EF_CODES=31` (24 measured 2026-10-18,
-   raised 2026-10-19 with the seven §9.5 codes). An `EXCLUDE` entry of the Drools list pins the
+8. `scripts/check-rood.sh` — the red corpus: every `corpus/rood/**/case*.json` declares `expectedFault {code, params}`
+   (the EF code of the fault kind, RUNTIME-SEMANTICS ch. 5.7b, and its parameters as an object of strings; the schema
+   refuses every other key, so no piece of message text is pinned) and MUST fail observably — at load or at evaluation —
+   in **both** executors as that kind: `ref` and clingo print one `CODE <code> <json>` line per observed code and the
+   case's own `CODE-PINNED <code> <json>`, decoded by the runner's case reader (never a shell scrape: a JSON string may
+   spell any character as an escape), and the gate demands the pinned code with the pinned parameters among the emitted
+   ones (a subset; the Drools leg reads the same from its status line `FAULT EF-005 {…}: …`, for every case not in its
+   exclusion list), the unsolved-state guard among them (`Unresolved` reached in evaluation faults with EF-019,
+   WF-044, never vanishes). An executor that fails a case for a reason of its own stands in the divergence list
+   `<case>|<executor>|<CODE>|<CATEGORY> <reason>`, with the `REF-###` or `CLINGO-###` code it reports and a category
+   equal to the kind of that code in its register (`REFUSAL` ↔ `refusal`, `LIMIT` ↔ `limit`); the list is stale-guarded in
+   both directions. The registers of the executors (`ref/codes.tsv`, `backends/clingo/codes.tsv`) are held to their
+   sources in both directions, parameters included, by `scripts/check-exec-codes.sh`, which gate 8 calls (floors
+   `EXPECTED_MIN_REF_CODES=12`, `EXPECTED_MIN_CLINGO_CODES=27`). The fence on codes replaces the bottom-sentence list: a
+   `fallback` code — the bottom arm of a dispatch — is named by no pin (`expectedFault.code` is an `EF` code), no
+   divergence entry, no exclusion entry of the Drools leg and no `EXPECTED_CHANNEL` entry of gate 12, and a fault that
+   reports only a `fallback` code is a code other than the pinned one. Every parameter an executor emits is a key of the
+   parameter column of ch. 5.7b, and the two pairs of cases that differ in a parameter only (`aanvoergeld-parameter-ongebonden`,
+   `jutterswet-dubbele-melding`) are told apart by their pinned `params` (stale-guarded). An empty red set is a failure,
+   never silently green. Floors: `EXPECTED_MIN_RED_CASES=26`, `EXPECTED_MIN_RED_CODES=93`, `EXPECTED_MIN_RED_PARAMS=131`,
+   `EXPECTED_MIN_EF_CODES=31`, `EXPECTED_MIN_GOLDEN_CODES=73`, `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=19`,
+   `EXPECTED_MIN_DROOLS_PARAMS=33` (the last two on the Drools leg). An `EXCLUDE` entry of the Drools list pins the
    register code of the refusal (`name|EXCLUDE DROOLS-###  <reason>`) and the leg compares it with the head of the
-   status line, failing by case name with both codes; a `NOFAULT` entry carries none (card `drools-refusal-codes`,
-   floor `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=19`). Since 2026-10-19 (card `channel-fact-codes`) a §9.5 channel fact carries the EF
-   codes of its kinds beside its identity rule × subject (RUNTIME-SEMANTICS ch. 5.6), and a golden `inconsistent`
-   expectation may pin one (`code`), which gates 5, 6 and 12 hold ref, clingo and both Drools branches to; this gate
-   holds every code a golden pins to a row of the ch. 5.7b table on the §9.5 channel, floor
-   `EXPECTED_MIN_GOLDEN_CODES=73` (measured 2026-10-19).
+   status line, failing by case name with both codes; a `NOFAULT` entry carries none (card `drools-refusal-codes`).
+   Since 2026-10-19 (card `channel-fact-codes`) a §9.5 channel fact carries the EF codes of its kinds beside its
+   identity rule × subject (RUNTIME-SEMANTICS ch. 5.6), and a golden `inconsistent` expectation may pin one (`code`),
+   which gates 5, 6 and 12 hold ref, clingo and both Drools branches to; this gate holds every code a golden pins to
+   a row of the ch. 5.7b table on the §9.5 channel.
 
 9. `scripts/check-catala.sh` — the Catala frontend builds and its
    full test suite passes (E2E through verifier, ref and clingo plus

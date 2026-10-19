@@ -22,8 +22,8 @@ let run_clingo = Clingo_backend.Solve.run_clingo
 let diagnostic = Clingo_backend.Solve.diagnostic
 
 (* run clingo on [program]; [`Sat json] with the outf2 payload, or
-   [`Unsat (msg, codes)] with the diagnosed report the expectedFault fragment
-   matches and the fault kinds of its witnesses, in report order, each once
+   [`Unsat (msg, codes)] with the diagnosed report and the fault kinds of its
+   witnesses with their parameters, in report order, each pair once
    ([Translate.viol_code]) *)
 let solve program =
   match run_clingo program with
@@ -55,15 +55,31 @@ let solve program =
       exit 2
 
 (* the report with its codes at the head, "EF-005: clingo: UNSATISFIABLE — …" *)
-let with_codes codes msg = match codes with [] -> msg | cs -> String.concat ", " cs ^ ": " ^ msg
+let with_codes codes msg =
+  let names = List.fold_left (fun acc (c, _) -> if List.mem c acc then acc else acc @ [ c ]) [] codes in
+  match names with [] -> msg | _ -> String.concat ", " names ^ ": " ^ msg
 
-(* The two machine lines of the red path, as ref's runner prints them: the codes
-   this executor observed, comma-separated, and the case's own expectedFault.code
-   as the shared case reader decoded it; "-" stands for none. *)
-let print_codes ~observed ~pinned =
-  Printf.printf "CODE %s\nCODE-PINNED %s\n"
-    (match observed with [] -> "-" | cs -> String.concat "," cs)
-    (Option.value pinned ~default:"-")
+(* The machine lines of the red path, as ref's runner prints them: one CODE line
+   per code this executor observed with its parameters (a JSON object of
+   strings), in report order, and the case's own expectedFault code and params as
+   the shared case reader decoded them; "-" stands for no code. *)
+let print_codes ~observed ~(pinned : Uchar_ref.Case.expected_fault) =
+  (match observed with
+  | [] -> print_endline "CODE -"
+  | cs ->
+      List.iter (fun (c, ps) -> Printf.printf "CODE %s %s\n" c (Uchar_ref.Case.params_json ps)) cs);
+  Printf.printf "CODE-PINNED %s %s\n" pinned.ef_code (Uchar_ref.Case.params_json pinned.ef_params)
+
+(* the verdict on an observed fault: some observed code is the pinned one, with
+   the pinned parameters among its own; else the whole report is shown *)
+let verdict ~(pinned : Uchar_ref.Case.expected_fault) ~observed ~what report =
+  print_codes ~observed ~pinned;
+  if List.exists (fun (code, params) -> Uchar_ref.Case.pin_matches pinned ~code:(Some code) ~params) observed
+  then Printf.printf "clingo: expected fault observed%s (%s)\n" what pinned.ef_code
+  else (
+    Printf.eprintf "EXPECTED FAULT MISMATCH: wanted %s %s in:\n%s\n" pinned.ef_code
+      (Uchar_ref.Case.params_json pinned.ef_params) report;
+    exit 1)
 
 let () =
   match Sys.argv with
@@ -79,25 +95,22 @@ let () =
         let doc = Ir_v0.Loader.load_file ir_path in
         let case =
           try Uchar_ref.Case.load_file doc case_path
-          with Uchar_ref.Case.Error { code; text = msg } -> (
+          with Uchar_ref.Case.Error { code; params; text = msg } -> (
             match pinned with
             | None ->
                 Printf.eprintf "CASE ERROR: %s\n" (Uchar_ref.Value.report ~code msg);
                 exit 2
-            | Some { ef_clingo; ef_code; _ } ->
-                let report = "CASE ERROR: " ^ Uchar_ref.Value.report ~code msg in
-                print_codes ~observed:(Option.to_list code) ~pinned:ef_code;
-                if Uchar_ref.Case.contains ~needle:ef_clingo report then (
-                  Printf.printf "clingo: expected fault observed at load (%s)\n" ef_clingo;
-                  exit 0)
-                else (
-                  Printf.eprintf "EXPECTED FAULT MISMATCH: wanted %S in:\n%s\n" ef_clingo report;
-                  exit 1))
+            | Some pinned ->
+                verdict ~pinned
+                  ~observed:(match code with Some c -> [ (c, params) ] | None -> [])
+                  ~what:" at load"
+                  ("CASE ERROR: " ^ Uchar_ref.Value.report ~code msg);
+                exit 0)
         in
         match case.expected_fault with
-        | Some { ef_clingo; ef_code; _ } -> (
+        | Some pinned -> (
             (* the red path: translation or solving MUST fail with the
-               pinned fragment — never a silent model *)
+               pinned code — never a silent model *)
             let observed =
               match
                 let program = Clingo_backend.Translate.translate doc case in
@@ -105,20 +118,16 @@ let () =
               with
               | `Sat _ -> None
               | `Unsat (msg, codes) -> Some (with_codes codes msg, codes)
-              | exception Uchar_ref.Value.Fault { code; text } ->
-                  Some ("TRANSLATION FAULT: " ^ Uchar_ref.Value.report ~code text, Option.to_list code)
+              | exception Uchar_ref.Value.Fault { code; params; text } ->
+                  Some
+                    ( "TRANSLATION FAULT: " ^ Uchar_ref.Value.report ~code text,
+                      match code with Some c -> [ (c, params) ] | None -> [] )
             in
             match observed with
             | None ->
                 prerr_endline "EXPECTED FAULT DID NOT OCCUR: clingo found a model";
                 exit 1
-            | Some (msg, codes) ->
-                print_codes ~observed:codes ~pinned:ef_code;
-                if Uchar_ref.Case.contains ~needle:ef_clingo msg then
-                  Printf.printf "clingo: expected fault observed (%s)\n" ef_clingo
-                else (
-                  Printf.eprintf "EXPECTED FAULT MISMATCH: wanted %S in:\n%s\n" ef_clingo msg;
-                  exit 1))
+            | Some (msg, codes) -> verdict ~pinned ~observed:codes ~what:"" msg)
         | None -> (
             let program = Clingo_backend.Translate.translate doc case in
             let out =
@@ -136,10 +145,10 @@ let () =
                 List.iter (fun m -> Printf.printf "MISMATCH: %s\n" m) mismatches;
                 exit 1)
       with
-      | Uchar_ref.Value.Fault { code; text } ->
+      | Uchar_ref.Value.Fault { code; text; _ } ->
           Printf.eprintf "TRANSLATION FAULT: %s\n" (Uchar_ref.Value.report ~code text);
           exit 1
-      | Uchar_ref.Case.Error { code; text } ->
+      | Uchar_ref.Case.Error { code; text; _ } ->
           Printf.eprintf "CASE ERROR: %s\n" (Uchar_ref.Value.report ~code text);
           exit 2
       | Ir_v0.Loader.Error (path, msg) ->

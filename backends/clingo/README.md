@@ -455,9 +455,9 @@ Recorded limitations:
   difference. All fail-fast guards (these, and the to-one creation
   guard) derive named `viol/2` witnesses closed by one global integrity
   constraint; on UNSAT the runner re-runs without that constraint and
-  reports the fired witnesses, so an expectedFault fragment
-  (corpus/rood, gate 8) pins the *reason*, never merely "some
-  constraint fired".
+  reports the fired witnesses, so the fault kind and the
+  parameters read off the fired witness (`Translate.viol_code`; corpus/rood,
+  gate 8) pin the *reason*, never merely "some constraint fired".
 
 ## Run
 

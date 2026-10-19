@@ -653,7 +653,7 @@ let whole_units_between_ms (tu : Ir_v0.Checks.time_unit) ta tb =
 let whole_count_of q =
   match Z.to_int (Z.div (Q.num q) (Q.den q)) with
   | n -> n
-  | exception Z.Overflow -> faultc "EF-008" "duration count %s is out of range" (Q.to_string q)
+  | exception Z.Overflow -> faultc ~params:[ ("count", (Q.to_string q)) ] "EF-008" "duration count %s is out of range" (Q.to_string q)
 
 (* --- the day-kind walk (ch. 3.8) ---------------------------------------
    A declared day kind is a PREDICATE over a calendar day, so neither
@@ -689,7 +689,7 @@ let nth_day_of_kind ~matches ~forward ~from n =
   let step = if forward then 1 else -1 in
   let rec go d found gap =
     if gap >= day_kind_reach then
-      faultc "EF-009"
+      faultc ~params:[ ("reach", string_of_int day_kind_reach); ("from", (iso_of_date (d - (gap * step)))) ] "EF-009"
         "day-kind walk: no day of the kind within %d calendar days of %s (the walk reaches no \
          further; a day kind whose next occurrence lies beyond the reach is refused, not \
          diagnosed)"

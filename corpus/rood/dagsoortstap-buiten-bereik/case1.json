@@ -25,8 +25,6 @@
   },
   "expectedFault": {
     "code": "EF-007",
-    "ref": "datum-tijd arithmetic leaves the representable millisecond range",
-    "clingo": "value 53375975860 at 0 decimals exceeds clingo's integer range",
-    "drools": "datum-tijd arithmetic leaves the representable millisecond range"
+    "params": {}
   }
 }

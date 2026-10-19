@@ -192,10 +192,12 @@ let scaled_of_value ?fit_code ~decimals (v : Value.t) : int =
   | Num (q, _) ->
       let s = Q.mul q (Q.of_int (pow10 decimals)) in
       if not (Z.equal (Q.den s) Z.one) then
-        (match fit_code with Some c -> faultc c | None -> fault)
+        (match fit_code with
+        | Some c -> faultc ~params:[ ("value", Value.lexeme_of_q q); ("decimals", string_of_int decimals) ] c
+        | None -> fault)
           "value %s does not fit %d decimals" (Q.to_string q) decimals
       else if Z.gt (Z.abs (Q.num s)) (Z.of_int max_int31) then
-        fault
+        faultc ~params:[ ("value", Value.lexeme_of_q q); ("decimals", string_of_int decimals) ] "CLINGO-001"
           "value %s at %d decimals exceeds clingo's integer range (grounding would wrap \
            silently)"
           (Q.to_string q) decimals
@@ -522,27 +524,84 @@ let non_exact_division ctx =
      unbounded form as a whole number"
   else non_exact_division_bounded
 
+(* [s] cut at every occurrence of [sep] *)
+let split_on_string sep s =
+  let n = String.length sep and l = String.length s in
+  let rec go start i acc =
+    if i + n > l then List.rev (String.sub s start (l - start) :: acc)
+    else if String.sub s i n = sep then go (i + n) (i + n) (String.sub s start (i - start) :: acc)
+    else go start (i + 1) acc
+  in
+  go 0 0 []
+
 (* The fault kind (RUNTIME-SEMANTICS ch. 5.7b) of a viol/2 witness, as the UNSAT
    diagnosis returns it ([Solve.diagnostic]: `viol("<reason>",<subject>)`, the
-   string escapes undone). The code is not an argument of viol/2: red pins quote
-   the atom (`viol("creation budget exhausted",oc0(`), and a code spliced into it
-   would break them. So the translator, which writes the reasons, knows the code
-   per reason, and the runner renders it beside the report. Each arm reads the
-   opening of a reason the emitters in this file write, up to its first
-   interpolation. A reason no arm names has no code: a guard of this backend's own
-   limits ("arithmetic range exceeded …"), the unbounded form it holds as a whole
-   number, or a kind no red case witnesses yet. *)
+   string escapes undone), with the parameters its reason and its subject
+   carry. The code is not an argument of viol/2: a code spliced into the atom
+   would move the words of the reason. So the translator, which writes the
+   reasons, knows the code per reason, and the runner renders it beside the
+   report. Each arm reads the opening of a reason the emitters in this file
+   write, up to its first interpolation, and reads its parameters out of the
+   same sentence (a viol/2 atom has no other room for them); the subject, a
+   label as a quoted string, is the `label` of the kinds that name one. A
+   parameter the sentence does not carry is not emitted. A reason no arm names
+   has no code: a guard of this backend's own limits ("arithmetic range exceeded
+   …"), the unbounded form it holds as a whole number, or a kind no red case
+   witnesses yet. *)
 let viol_code witness =
   let opens p = String.starts_with ~prefix:("viol(\"" ^ p) witness in
   let holds s = Case.contains ~needle:s witness in
-  if opens "division by numeric zero\"" then Some "EF-005"
-  else if opens (non_exact_division_bounded ^ "\"") then Some "EF-006"
-  else if opens "result of " && holds " does not fit its declared decimals\"" then Some "EF-006"
-  else if opens "day-kind walk: no day of the kind within " then Some "EF-009"
-  else if opens "parameter \"" && holds "\" is unbound in this case" then Some "EF-014"
-  else if opens "creation budget exhausted\"" then Some "EF-015"
-  else if opens "two writers of one target disagree: " then Some "EF-016"
-  else if opens "to-one second filler on role " then Some "EF-017"
+  let find ?(from = 0) needle =
+    let n = String.length needle and l = String.length witness in
+    let rec go i = if i + n > l then None else if String.sub witness i n = needle then Some i else go (i + 1) in
+    go from
+  in
+  (* the text between [after] and the next [before] *)
+  let between ?(from = 0) after before =
+    Option.bind (find ~from after) (fun i ->
+        let start = i + String.length after in
+        Option.map (fun j -> String.sub witness start (j - start)) (find ~from:start before))
+  in
+  (* the subject, when it is a label (a quoted string): the argument after the reason *)
+  let label =
+    match between ~from:6 "\"," ")" with
+    | Some a when String.length a >= 2 && a.[0] = '"' && a.[String.length a - 1] = '"' ->
+        [ ("label", String.sub a 1 (String.length a - 2)) ]
+    | _ -> []
+  in
+  let found k = function Some v -> [ (k, v) ] | None -> [] in
+  if opens "division by numeric zero\"" then Some ("EF-005", [])
+  else if opens (non_exact_division_bounded ^ "\"") then Some ("EF-006", [])
+  else if opens "result of " && holds " does not fit its declared decimals\"" then
+    Some ("EF-006", found "place" (between "result of " " does not fit its declared decimals"))
+  else if opens "day-kind walk: no day of the kind within " then
+    Some ("EF-009", found "reach" (between "within " " calendar days"))
+  else if opens "parameter \"" && holds "\" is unbound in this case" then
+    Some ("EF-014", found "parameter" (between "parameter \"" "\" is unbound in this case"))
+  else if opens "creation budget exhausted\"" then Some ("EF-015", [])
+  else if opens "two writers of one target disagree: " then
+    (* the rule names are quoted and joined by " and ": rules "A" and "B" write … *)
+    let rules =
+      Option.map
+        (fun r ->
+          let inner = String.sub r 1 (String.length r - 2) in
+          String.concat ", " (split_on_string "\" and \"" inner))
+        (between "rules " " write different values")
+    in
+    let attribute_of =
+      match between "to the attribute " " — no fixpoint" with
+      | None -> (None, None)
+      | Some t -> (
+          match split_on_string " of a " t with
+          | [ a; o ] -> (Some a, Some o)
+          | _ -> (None, None))
+    in
+    Some
+      ( "EF-016",
+        found "rules" rules @ found "attribute" (fst attribute_of) @ label
+        @ found "objectType" (snd attribute_of) )
+  else if opens "to-one second filler on role " then
+    Some ("EF-017", found "role" (between "second filler on role " "\",") @ label)
   else None
 
 (* the conjunctions under which term [t] is negative ([~neg:true]) or positive
@@ -2868,7 +2927,7 @@ let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
   | Function_call { kind; call_arguments = [ a ]; element_object_type = Some el; _ } when non_source kind a ->
       non_source_fold kind el a
   | _ ->
-      fault
+      faultc "CLINGO-002"
         "a text/enum/boolean operand here is an own-subject attribute read or a literal (no \
          corpus case for more)"
 
@@ -4395,7 +4454,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                    refuses in the shared sentence, in the translation phase —
                    the day-kind table's posture *)
                 (match List.find_opt (param_unbound ctx) (cond_param_names c) with
-                | Some p -> faultc "EF-014" "%s" (unbound_param_reason p)
+                | Some p -> faultc ~params:[ ("parameter", p) ] "EF-014" "%s" (unbound_param_reason p)
                 | None -> ());
                 fun (i : Uchar_ref.World.instance) ->
                   (* a filter that cannot be evaluated at all keeps the member:
@@ -4629,7 +4688,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          refusal sits at the same position on the same ground and a pin must be
          able to tell which one spoke. *)
       if attr_temporal ctx ~otype:el ~attr:a then
-        faultc "EF-021"
+        faultc ~params:[ ("attribute", a) ] "EF-021"
           "the temporal attribute %S of a set has no moment at which a filled count can ask a \
            timeline whether it is filled (ch. 3.4c); ref refuses the form on that ground, so this \
            arm must not answer from a bucket it picked itself"
@@ -4930,7 +4989,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               (member_fn (List.hd components))
               (List.tl components)
         | _ ->
-            fault
+            faultc "CLINGO-003"
               "unsupported gedurende condition shape (an own temporal \
                characteristic, a per-segment comparison of an own temporal attribute, or \
                an all composite of such shapes)"
@@ -5160,7 +5219,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 v,
                 pow10 (decimals_of_datatype pr.par_datatype) )
           | None -> fault "unknown parameter %S" p)
-      | _ -> fault "unsupported temporal-read base shape")
+      | _ -> faultc "CLINGO-004" "unsupported temporal-read base shape")
   | Function_call { kind = (Duration | Absolute_duration) as kind; call_arguments; filter; typ; _ }
     ->
       (* tijdsduur van A tot B (ch. 3.8): whole declared units between two
@@ -5607,7 +5666,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             units_identical_ok ~what:"a Clamp bound" base_unit (eff_unit ctx e);
             let atoms, term, scale = expr_term ctx ~subject ~subject_ot e in
             if atoms <> [] then
-              fault
+              faultc ~params:[ ("bound", name) ] "CLINGO-005"
                 "a Clamp %s bound that is not a ground literal could be empty; ref reads an empty \
                  bound as no bound, which the bare join cannot express (no corpus case)"
                 name;
@@ -5696,7 +5755,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               scale payload_scale;
           (atoms, Printf.sprintf "%s(%s)" f term, 0))
   | Construct _ ->
-      fault
+      faultc "CLINGO-006"
         "a Construct payload other than a literal or an own attribute read is not translated at \
          rule level (a parameter read, a Match or a composite payload has no corpus case)"
   | Match { typ; scrutinee; arms; _ } ->
@@ -5920,12 +5979,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          reason: `total`'s temporal subject-own arms carry an absent stamp, so
          absence does not mean listed there, and `count`'s listed form is no
          som. *)
-      fault
+      faultc "CLINGO-007"
         "a sum over listed operands is not translated: every sum this backend carries ranges a \
          #sum over an instance source, and a listed fold has none; and where it carries a \
          ch. 5.11 emptyFallback, the addition chain that would carry it must evaluate that stand-in \
          unconditionally. No corpus case pins a value for the form"
-  | _ -> fault "expression kind not translated (no corpus case exercises it)"
+  | _ -> faultc "CLINGO-008" "expression kind not translated (no corpus case exercises it)"
 
 (* gedeeld-door (§6.5, arith.div_gen) — three edges plus the value:
    an empty dividend collapses to 0 before the divisor is read (also
@@ -6073,7 +6132,7 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
          SHAPE with no corpus case, each measured verifier-clean and replayed
          by ref (2026-09-06) — so the refusal here is this backend declining a
          form the wire admits, never a claim the form is ill-formed. *)
-      fault
+      faultc "CLINGO-009"
         "datum-tijd here is not the pair term's arithmetic. Carried: a datum-tijd literal, an \
          own-subject read, datetime \xc2\xb1 duration, and first/last over listed operands. \
          A loud flank, no corpus case: a datum-tijd PARAMETER read, a Let/BinderRef-bound \
@@ -6396,7 +6455,7 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
            comparison is — for this subject, inside its enclosing context *)
         expr_term ctx ~subject ~subject_ot bound
     | _ ->
-        fault
+        faultc "CLINGO-010"
           "a whole-period comparison against a bound other than a literal or a scalar parameter \
            is not translated: the bound rides inside the per-segment rule, which binds only the \
            timeline's own subject (no corpus case)"
@@ -6555,7 +6614,7 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
                  every duration over it — a confident wrong answer. The shared
                  sentence, in the translation phase: the table is EVALUATED
                  here, before any rule body exists that could carry a guard. *)
-              faultc "EF-014" "%s" (unbound_param_reason nm))
+              faultc ~params:[ ("parameter", nm) ] "EF-014" "%s" (unbound_param_reason nm))
       | None -> fault "unknown parameter %S" nm)
   | Function_call { kind; grain = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
   | Function_call { kind = (Year_of | Month_of | Day_of) as k; call_arguments; filter = None; _ } -> (
@@ -7892,7 +7951,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
              | Some (atoms, term) -> atoms @ [ Printf.sprintf "%d %s %s" today sym term ]
            in
            part ">=" v @ part (if to_inclusive then "<=" else "<") t)
-  | _ -> fault "condition kind not translated (no corpus case exercises it)"
+  | _ -> faultc "CLINGO-011" "condition kind not translated (no corpus case exercises it)"
 
 (* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the
    constructor's DECLARED payload datatype; the nullary case is the bare
@@ -7958,7 +8017,7 @@ and construct_ground_term ctx typ constructor_ argument =
         (scaled_of_value ~decimals:(decimals_of_datatype (Some d))
            (Value.Num (Value.q_of_lexeme (Ir_v0.Loader.literal_lexeme variant), Value.Unitless)))
   | Some _, Some _ ->
-      fault
+      faultc "CLINGO-012"
         "a Construct payload other than a literal is not a ground term (a payload that must be \
          bound needs a body atom this position cannot carry; no corpus case)"
 
@@ -7978,7 +8037,7 @@ and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
       let v = fresh ctx "V" in
       ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
   | _ ->
-      fault
+      faultc "CLINGO-013"
         "a sum-typed operand here is an own-subject attribute read or a Construct (no corpus case \
          for more)"
 
@@ -8034,7 +8093,7 @@ and struct_base ctx ~subject ~subject_ot (e : expr) : string list * string =
       let unif, fvar, _fscale = project_field ctx ~base ~bterm ~field_name in
       (batoms @ [ unif ], fvar)
   | _ ->
-      fault
+      faultc "CLINGO-014"
         "a struct field-access base here is an own-subject attribute read, a bound binder or a \
          struct-typed field access (no corpus case for more)"
 
@@ -8083,7 +8142,7 @@ and scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern =
         fault "temporal sum carriage is a recorded flank; no corpus case";
       [ Printf.sprintf "val(%s,%s,%s)" subject (str a) pattern ]
   | _ ->
-      fault
+      faultc "CLINGO-015"
         "a match scrutinee here is an own-subject sum-typed attribute read (no corpus case for more)"
 
 (* total match (ch. 9.2): one rule per arm into a matchN(S,Result) helper —
@@ -8256,7 +8315,7 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
       fault "a ListLiteral list source is not translated (no corpus case; S19 inventory)"
   | Fold _ -> fault "a Fold is a scalar, not a list source"
   | _ ->
-      fault
+      faultc "CLINGO-016"
         "a list source here is an own list-typed attribute, a list parameter, a MapList or a \
          FilterList (no corpus case for more)"
 
@@ -8455,7 +8514,7 @@ and body_condition ctx ~guard_body ~witness (c : condition_expr) : string list *
         Printf.sprintf "%s %s %s" lt (cmp_sym op) rt,
         Printf.sprintf "%s %s %s" lt (cmp_complement op) rt )
   | _ ->
-      fault
+      faultc "CLINGO-017"
         "an IfThenElse condition in a closed body is a comparison over bound terms (no corpus \
          case for more)"
 
@@ -8558,7 +8617,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
             | None ->
                 fault "unbound binder %S in a closed-body field access (the verifier should preclude this)"
                   ident)
-        | _ -> fault "a closed-body field access reads a bound struct binder (no corpus case for more)"
+        | _ -> faultc "CLINGO-018" "a closed-body field access reads a bound struct binder (no corpus case for more)"
       in
       let unif, fvar, fscale = project_field ctx ~base ~bterm ~field_name in
       ([ unif ], fvar, fscale)
@@ -8668,7 +8727,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          body and a fold init are subject-free); only a Fold init whose own SHAPE is an attribute \
          read, bare or directly under a Construct, takes the subject-keyed rule-level route"
   | _ ->
-      fault
+      faultc "CLINGO-019"
         "a closed-body term here is a bound binder, a literal, a parameter, a +/-/×/percentage-of \
          combination, a division (bare or abs), a power by a constant integer exponent, a Construct \
          or a Let (no corpus case for more)"
@@ -8685,7 +8744,7 @@ and sum_operand ctx (e : expr) : string =
       | None -> fault "unbound binder %S in a closed body (the verifier should preclude this)" ident)
   | Construct { typ; constructor_; argument; _ } -> construct_ground_term ctx typ constructor_ argument
   | _ ->
-      fault
+      faultc "CLINGO-020"
         "a sum-typed operand in a closed body is a bound binder or a Construct (no corpus case \
          for more)"
 
@@ -8702,7 +8761,7 @@ and filter_condition ctx (c : condition_expr) : string list =
       let rt = sum_operand ctx (req "right" right_side) in
       [ Printf.sprintf "%s %s %s" lt (if op = Equal then "==" else "!=") rt ]
   | _ ->
-      fault
+      faultc "CLINGO-021"
         "a FilterList condition here is a sum-typed (in)equality over the bound element (no \
          corpus case for more)"
 
@@ -8893,7 +8952,7 @@ and closed_division ctx ~guard_body ~witness ~rounding ~left_side ~right_side : 
       (bl @ br @ nonzero, Printf.sprintf "(%s/%s)" numt dent, out_scale)
   | Some (mode_kind, _) ->
       ignore mode_kind;
-      fault
+      faultc "CLINGO-022"
         "a closed-body rounded division supports only the towardZero abs-division collapse (no \
          corpus case for another rounding mode)"
 
@@ -8951,7 +9010,7 @@ and value_condition ctx ~subject ~subject_ot (c : condition_expr) : string list 
         Printf.sprintf "%s %s %s" lt (cmp_sym op) rt,
         Printf.sprintf "%s %s %s" lt (cmp_complement op) rt )
   | _ ->
-      fault
+      faultc "CLINGO-023"
         "a value-position IfThenElse condition is a comparison over bound operands (no corpus case for more)"
 
 (* ch. 10.2 at an ORDINARY expression position — an IfThenElse inside a Let
@@ -9512,7 +9571,7 @@ let translate_rule ctx (r : resolved_rule) =
             then
               match (r.rr_presentation, r.rr_condition) with
               | Some Characteristic_attribution, _ ->
-                  faultc "EF-023"
+                  faultc ~params:[ ("characteristic", a) ] "EF-023"
                     "a period condition on the temporal characteristic target %S is ch. 3.10's \
                      CLIP over a characteristic timeline, and no temporal characteristic is \
                      written here (ch. 3.11), so there is no timeline to cut. Declined in \
@@ -9685,7 +9744,7 @@ let translate_rule ctx (r : resolved_rule) =
                   clip_member_qualifications fc;
                   translate_day_count ?clip ctx ~subject ~ot ~a ~cond ~k ~g
               | _ ->
-                  fault
+                  faultc "CLINGO-024"
                     "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count \
                      shape (a gedurende condition over an own temporal characteristic); no \
                      corpus case for more")
@@ -9882,8 +9941,8 @@ let translate_rule ctx (r : resolved_rule) =
                          (norm a) subject)
                       (body @ fit_guards @ [ Printf.sprintf "comp_fires(%s,%s)" subject (str a) ]))
                 branches
-          | _ -> fault "rule kind not translated")
-      | _ -> fault "unsupported rule target")
+          | _ -> faultc "CLINGO-025" "rule kind not translated")
+      | _ -> faultc "CLINGO-026" "unsupported rule target")
   end
 
 (* a boolean-typed characteristic-initialisation EXPRESSION → the body atoms
@@ -9901,7 +9960,7 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
     when norm ot = norm subject_ot ->
       [ Printf.sprintf "has(%s,%s)" subject (str a) ]
   | _ ->
-      fault
+      faultc "CLINGO-027"
         "a characteristic-initialisation expression here is an own-subject boolean attribute read \
          (no corpus case for more)"
 
@@ -10968,7 +11027,7 @@ let uni_key_guards ctx ~otype ~keys =
               && Uchar_ref.World.timeline inst k = None
               && Uchar_ref.World.attr inst k <> Value.Empty
             then
-              faultc "EF-020"
+              faultc ~params:[ ("key", k); ("label", inst.label) ] "EF-020"
                 "the ever-unique key %S needs the full timeline; %S supplies only a scalar \
                  (ch. 5.9)"
                 k inst.label)

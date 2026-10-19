@@ -40,7 +40,8 @@
   },
   "expectedFault": {
     "code": "EF-014",
-    "ref": "parameter \"aanvoerdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)",
-    "clingo": "parameter \"aanvoerdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"
+    "params": {
+      "parameter": "aanvoerdrempel"
+    }
   }
 }

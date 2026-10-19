@@ -698,6 +698,22 @@ public final class DroolsBackend {
         public String code() {
             return noFixpoint != null && firings < cap ? "EF-015" : null;
         }
+
+        private static final java.util.regex.Pattern BUDGET = java.util.regex.Pattern.compile(
+                "creation budget exhausted: objectcreatie \"(.*)\" van stratum (\\d+) zou een object maken op aanmaakdiepte (\\d+)");
+
+        /** The parameters of {@link #code}'s kind (ch. 5.7b) the sentence of the creation budget carries: the creation,
+         *  its stratum and the depth the mint would reach. Empty where there is no code. */
+        public java.util.Map<String, String> params() {
+            java.util.Map<String, String> p = new java.util.LinkedHashMap<>();
+            var m = noFixpoint == null ? null : BUDGET.matcher(noFixpoint);
+            if (code() != null && m != null && m.find()) {
+                p.put("creation", m.group(1));
+                p.put("stratum", m.group(2));
+                p.put("depth", m.group(3));
+            }
+            return p;
+        }
     }
 
     /**

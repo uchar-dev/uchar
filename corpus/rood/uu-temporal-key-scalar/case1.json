@@ -38,7 +38,9 @@
   },
   "expectedFault": {
     "code": "EF-020",
-    "ref": "ever-unique key",
-    "clingo": "ever-unique key"
+    "params": {
+      "key": "vondstnummer",
+      "label": "S1"
+    }
   }
 }

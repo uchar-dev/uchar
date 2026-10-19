@@ -389,8 +389,15 @@ public final class CaseRunner {
      *  (the case ran to a model — the backend does not enforce this red-path constraint, so its form is not
      *  Drools-carried). {@code code} is the EF code of a FAULT's kind (RUNTIME-SEMANTICS ch. 5.7b), several
      *  comma-separated in the order of the report, beside the text and never inside it; null where the fault names no
-     *  kind and for every other status. */
-    public record RedResult(String status, String detail, String code, DroolsCode droolsCode) {}
+     *  kind and for every other status. {@code params} holds one map per code of {@code code}, in the same order: the
+     *  parameters of that kind (RUNTIME-SEMANTICS ch. 5.7b) this backend has structurally, beside the text and never
+     *  inside it; empty where there is no code. */
+    public record RedResult(String status, String detail, String code, DroolsCode droolsCode,
+                            List<Map<String, String>> params) {
+        public RedResult(String status, String detail, String code, DroolsCode droolsCode) {
+            this(status, detail, code, droolsCode, List.of());
+        }
+    }
 
     /** Replay a single {@code corpus/rood} case and report what the backend observes. The split is by exception
      *  TYPE, not by phase. A loader refusal, or an {@link Excluded} from the build or from a case-input form, is an
@@ -431,7 +438,8 @@ public final class CaseRunner {
             DroolsBackend.Firing firing = runner.fireRed(c);
             return firing.noFixpoint() == null
                     ? new RedResult("NOFAULT", "ran to a model without faulting", null, null)
-                    : new RedResult("FAULT", firing.noFixpoint(), firing.code(), null);
+                    : new RedResult("FAULT", firing.noFixpoint(), firing.code(), null,
+                            firing.code() == null ? List.of() : List.of(firing.params()));
         } catch (Excluded e) {
             return new RedResult("EXCLUDE", e.getMessage(), null, e.code());
         } catch (java.io.IOException e) {
@@ -439,7 +447,10 @@ public final class CaseRunner {
         } catch (RuntimeException e) {
             // a fault raised while loading inputs or firing rules — a division by zero surfaces here, wrapped by
             // Drools; the whole cause chain is the report so the pinned fragment can match the deepest message.
-            return new RedResult("FAULT", faultText(e), faultCode(e), null);
+            List<FaultKind> kinds = faultKinds(e);
+            return new RedResult("FAULT", faultText(e),
+                    kinds.isEmpty() ? null : String.join(", ", kinds.stream().map(FaultKind::code).toList()), null,
+                    kinds.stream().map(FaultKind::params).toList());
         }
     }
 
@@ -465,31 +476,36 @@ public final class CaseRunner {
         }
     }
 
-    /** The EF codes (RUNTIME-SEMANTICS ch. 5.7b) of the red-path fault {@code t}, comma-separated in the order of its
-     *  report, each once; null where it names no kind. Classified here, at the catch, by exception type: the production
-     *  runtime's {@link Breuk.DelingDoorNul} gets no field for a concern of this backend, so its kind is read off its
-     *  class; the backend's own fault exceptions name theirs ({@code code()}); several faults at the fixpoint
-     *  ({@link EvaluationFaults}) give the code of each. In a cause chain the outermost exception that names a kind
-     *  decides: a fault named after its rule wraps the same fault unnamed. */
-    static String faultCode(Throwable t) {
-        List<String> codes = new ArrayList<>();
-        addCode(codes, t);
-        return codes.isEmpty() ? null : String.join(", ", codes);
+    /** A fault kind (RUNTIME-SEMANTICS ch. 5.7b) of a red-path fault with its parameters. */
+    record FaultKind(String code, Map<String, String> params) {}
+
+    /** The fault kinds of the red-path fault {@code t}, in the order of its report, each code once; empty where it names
+     *  no kind. Classified here, at the catch, by exception type: the production runtime's {@link Breuk.DelingDoorNul}
+     *  gets no field for a concern of this backend, so its kind is read off its class (and its parameter off the rule
+     *  it already carries); the backend's own fault exceptions name theirs ({@code code()}, {@code params()}); several
+     *  faults at the fixpoint ({@link EvaluationFaults}) give the kind of each. In a cause chain the outermost exception
+     *  that names a kind decides: a fault named after its rule wraps the same fault unnamed. */
+    static List<FaultKind> faultKinds(Throwable t) {
+        List<FaultKind> kinds = new ArrayList<>();
+        addKind(kinds, t);
+        return kinds;
     }
 
-    private static void addCode(List<String> codes, Throwable t) {
+    private static void addKind(List<FaultKind> kinds, Throwable t) {
         for (Throwable c = t; c != null; c = c.getCause() == c ? null : c.getCause()) {
             if (c instanceof EvaluationFaults several) {
-                for (RuntimeException f : several.faults()) addCode(codes, f);
+                for (RuntimeException f : several.faults()) addKind(kinds, f);
                 return;
             }
-            String code = c instanceof Breuk.DelingDoorNul ? "EF-005"
-                    : c instanceof ComputeFault f ? f.code()
-                    : c instanceof WritersConflict w ? w.code()
-                    : c instanceof CaseDateFault d ? d.code()
-                    : null;
-            if (code != null) {
-                if (!codes.contains(code)) codes.add(code);
+            FaultKind kind = null;
+            if (c instanceof Breuk.DelingDoorNul z)
+                kind = new FaultKind("EF-005", z.regel() == null ? Map.of() : Map.of("rule", z.regel()));
+            else if (c instanceof ComputeFault f && f.code() != null) kind = new FaultKind(f.code(), f.params());
+            else if (c instanceof WritersConflict w) kind = new FaultKind(w.code(), w.params());
+            else if (c instanceof CaseDateFault d) kind = new FaultKind(d.code(), d.params());
+            if (kind != null) {
+                String code = kind.code();
+                if (kinds.stream().noneMatch(k -> k.code().equals(code))) kinds.add(kind);
                 return;
             }
         }
@@ -1128,28 +1144,38 @@ public final class CaseRunner {
      *  an {@link Excluded}. */
     private static LocalDate caseWireDate(String lexeme, String field) {
         if (!CASE_DATE.matcher(lexeme).matches())
-            throw new CaseDateFault("malformed date '" + lexeme + "' on '" + field
+            throw new CaseDateFault(field, lexeme, "malformed date '" + lexeme + "' on '" + field
                     + "': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only,"
                     + " no sign and no extended year");
         try { return LocalDate.parse(lexeme); }
         catch (java.time.format.DateTimeParseException e) {
-            throw new CaseDateFault("malformed date '" + lexeme + "' on '" + field
+            throw new CaseDateFault(field, lexeme, "malformed date '" + lexeme + "' on '" + field
                     + "': the field widths are right but the calendar is not (" + e.getMessage() + ")");
         }
     }
 
     /** The refusal of a case date lexeme that names no calendar day (RUNTIME-SEMANTICS ch. 5.7b, EF-003). A document
      *  defect, so a hard error and never an {@link Excluded}, as before; a type of its own only so that the red path
-     *  can name its kind ({@link #faultCode}). */
+     *  can name its kind ({@link #faultKinds}). */
     static final class CaseDateFault extends IllegalArgumentException {
         private static final long serialVersionUID = 1L;
 
-        CaseDateFault(String message) {
+        private final String field;
+        private final String lexeme;
+
+        CaseDateFault(String field, String lexeme, String message) {
             super(message);
+            this.field = field;
+            this.lexeme = lexeme;
         }
 
         String code() {
             return "EF-003";
+        }
+
+        /** The parameters of the kind (ch. 5.7b): the field of the case input and the lexeme it holds. */
+        java.util.Map<String, String> params() {
+            return java.util.Map.of("field", field, "lexeme", lexeme);
         }
     }
 

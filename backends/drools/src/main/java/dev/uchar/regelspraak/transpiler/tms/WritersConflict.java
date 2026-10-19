@@ -30,11 +30,12 @@ public final class WritersConflict extends IllegalStateException {
     private final String attribute;
     private final String type;
     private final List<WriteAct> writers;
+    private final String label;
 
     /** {@code writers} in the order of the document; {@code type} is the object's own type, {@code attribute} the
      *  attribute as declared. The object is named by type and identity until {@link #named} gives it a label. */
     WritersConflict(Object onderwerp, String attribute, String type, List<WriteAct> writers) {
-        this(onderwerp, attribute, type, writers, "een " + type + " (" + FactNames.object(onderwerp) + ")");
+        this(onderwerp, attribute, type, writers, "een " + type + " (" + FactNames.object(onderwerp) + ")", null);
     }
 
     /** The conflict of the value facts {@code waarden} on attribute {@code attribute} of {@code onderwerp}: the
@@ -75,13 +76,14 @@ public final class WritersConflict extends IllegalStateException {
     }
 
     private WritersConflict(Object onderwerp, String attribute, String type, List<WriteAct> writers,
-                               String object) {
+                               String object, String label) {
         super(sentence(writers, attribute, object));
         if (writers.size() < 2) throw new IllegalArgumentException("een conflict heeft twee schrijvers: " + writers);
         this.onderwerp = onderwerp;
         this.attribute = attribute;
         this.type = type;
         this.writers = List.copyOf(writers);
+        this.label = label;
     }
 
     /** The same conflict with the object named by {@code label}, which gives the case label of an input object and null
@@ -89,12 +91,25 @@ public final class WritersConflict extends IllegalStateException {
     public WritersConflict named(Function<Object, String> label) {
         String l = label.apply(onderwerp);
         return new WritersConflict(onderwerp, attribute, type, writers,
-                l == null ? "een aangemaakte " + type : l + ", een " + type);
+                l == null ? "een aangemaakte " + type : l + ", een " + type, l);
     }
 
     /** The fault kind (RUNTIME-SEMANTICS ch. 5.7b): two writers of one target that disagree. */
     public String code() {
         return "EF-016";
+    }
+
+    /** The parameters of the fault kind (RUNTIME-SEMANTICS ch. 5.7b), in the order of the table: the writers and their
+     *  values (leeg for no value), the attribute as declared, the case label of the object where it has one, and its
+     *  type. */
+    public java.util.Map<String, String> params() {
+        java.util.Map<String, String> p = new java.util.LinkedHashMap<>();
+        p.put("rules", String.join(", ", writers.stream().map(WriteAct::writer).toList()));
+        p.put("values", String.join(", ", writers.stream().map(w -> w.value() == null ? "leeg" : w.value().toString()).toList()));
+        p.put("attribute", attribute);
+        if (label != null) p.put("label", label);
+        p.put("objectType", type);
+        return p;
     }
 
     /** The object whose attribute the writers disagree on. */

@@ -71,9 +71,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Two initialisations on sister subtypes play, and one on their supertype beside them is refused (WF-079 per
  * concrete type). A rule on a member an object creation sets: {@code TmsCreationInputWitnessTest}.
  *
- * <p>The red case {@code corpus/rood/jutterswet-dubbele-melding} gives on this branch the fault in the sentence its
- * {@code expectedFault} pins for Drools, the writers in the order of the document, as the reference interpreter names
- * them.
+ * <p>The red case {@code corpus/rood/jutterswet-dubbele-melding} gives on this branch the fault its
+ * {@code expectedFault} pins (EF-016 and its parameters), the writers in the order of the document, as the reference
+ * interpreter names them.
  *
  * <p><b>Measured in the reference interpreter and the ASP backend</b> (2026-10-09, on these documents in every order
  * of their rules, written out with their cases and run through {@code ref/bin/runner.exe} and
@@ -351,10 +351,16 @@ class TmsWritersWitnessTest {
         assertEquals(2, cases.size());
         for (Path z : cases) {
             JsonNode c = TmsDocuments.JSON.readTree(Files.readString(z));
-            String pin = c.path("expectedFault").path("drools").asText();
-            assertTrue(pin.startsWith("twee schrijvers van één doel"), () -> z + ": " + pin);
-            String sentence = fault(DOUBLE_MESSAGE.resolve("ir.json"), c);
-            assertTrue(sentence.contains(pin), () -> z + ": de zin\n" + sentence + "\nbevat de pin niet\n" + pin);
+            JsonNode pin = c.path("expectedFault");
+            RuntimeException e = assertThrows(RuntimeException.class,
+                    () -> CaseRunner.playCase(DOUBLE_MESSAGE.resolve("ir.json"), c, DroolsBackend.Branch.EXEC_MODEL));
+            assertTrue(e.getMessage().contains("twee schrijvers van één doel"), () -> z + ": " + e.getMessage());
+            // the pin is the fault kind and its parameters: the code and every pinned parameter are the backend's own
+            CaseRunner.FaultKind kind = CaseRunner.faultKinds(e).stream()
+                    .filter(k -> k.code().equals(pin.path("code").asText())).findFirst().orElse(null);
+            assertTrue(kind != null, () -> z + ": " + pin.path("code").asText() + " is not among " + CaseRunner.faultKinds(e));
+            pin.path("params").fields().forEachRemaining(p ->
+                    assertEquals(p.getValue().asText(), kind.params().get(p.getKey()), () -> z + ": " + p.getKey()));
         }
     }
 

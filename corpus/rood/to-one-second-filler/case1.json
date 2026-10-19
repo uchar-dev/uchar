@@ -43,7 +43,9 @@
   },
   "expectedFault": {
     "code": "EF-017",
-    "ref": "a second filler is ill-typed",
-    "clingo": "to-one second filler"
+    "params": {
+      "role": "bergende gemeente",
+      "label": "V1"
+    }
   }
 }

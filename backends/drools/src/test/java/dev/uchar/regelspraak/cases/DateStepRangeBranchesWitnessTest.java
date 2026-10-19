@@ -72,15 +72,17 @@ class DateStepRangeBranchesWitnessTest {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) fails(ir, casePath, c, branch);
     }
 
-    /** {@code c} replayed on {@code branch} faults at fire, with the fragment it pins for the backend in the cause chain. */
+    /** {@code c} replayed on {@code branch} faults at fire, as the fault kind it pins: its code among the kinds of the
+     *  fault in the cause chain. */
     private static void fails(Path ir, Path casePath, JsonNode c, DroolsBackend.Branch branch) {
-        String sentence = c.get("expectedFault").get("drools").asText();
+        String code = c.get("expectedFault").get("code").asText();
         String row = casePath.getFileName() + " on " + branch;
         RuntimeException e = assertThrows(RuntimeException.class,
                 () -> CaseRunner.playCase(ir, withoutFault(c), branch), row);
         assertFalse(e instanceof CaseRunner.Excluded, row + " faults at fire, it does not refuse the form: "
                 + e.getMessage());
-        assertTrue(chain(e).contains(sentence), row + " names '" + sentence + "': " + chain(e));
+        assertTrue(CaseRunner.faultKinds(e).stream().anyMatch(k -> k.code().equals(code)),
+                row + " is the fault kind " + code + ": " + chain(e));
     }
 
     /** The case as written, with its {@code expectedFault} swapped for an empty {@code expected}. */

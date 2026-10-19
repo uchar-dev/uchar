@@ -22,8 +22,8 @@
   },
   "expectedFault": {
     "code": "EF-008",
-    "ref": "duration count 18446744073709551617 is out of range",
-    "clingo": "value 18446744073709551617 at 0 decimals exceeds clingo's integer range",
-    "drools": "duration count 18446744073709551617 is out of range"
+    "params": {
+      "count": "18446744073709551617"
+    }
   }
 }

@@ -14,8 +14,8 @@
   },
   "expectedFault": {
     "code": "EF-003",
-    "ref": "P4.meldingsdatum \"2026-02-30\" is not the uchar-case-v0 date lexeme yyyy-mm-dd (day out of range in date lexeme \"2026-02-30\")",
-    "clingo": "P4.meldingsdatum \"2026-02-30\" is not the uchar-case-v0 date lexeme yyyy-mm-dd (day out of range in date lexeme \"2026-02-30\")",
-    "drools": "malformed date '2026-02-30' on 'meldingsdatum': the field widths are right but the calendar is not"
+    "params": {
+      "lexeme": "2026-02-30"
+    }
   }
 }

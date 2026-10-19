@@ -1,30 +1,35 @@
 #!/bin/sh
 # Gate 8: the red corpus — expected-fault cases (corpus/rood). Each
 # directory holds a verifier-clean ir.json whose case*.json declares
-# `expectedFault {ref, clingo}`: LOADING OR evaluation MUST fail
-# observably in BOTH executors, with the pinned fragment in each report
-# (the runners verify the fragment themselves and exit 0 only on the
-# expected fault). Both phases count, since 2026-09-19: the runners read
-# expectedFault on its own, BEFORE the world, so a refusal by the case
-# reader — an ambiguous role key, a link to an undeclared label — is
-# pinnable exactly like a fault at evaluation. Read the other way round
-# that whole class could only crash on exit 2, and no zone held it.
+# `expectedFault {code, params}`: LOADING OR evaluation MUST fail
+# observably in BOTH executors, as the fault kind the pin names
+# (RUNTIME-SEMANTICS ch. 5.7b): the same EF code, and the pinned parameters among
+# the ones the executor emits. No piece of message text is pinned (card
+# fragment-cleanup, 2026-10-19; before it a case pinned a fragment of the report
+# of each executor, and this gate kept a list of bottom sentences to hold the pins
+# honest). Both phases count: the runners read expectedFault on its own, BEFORE
+# the world, so a refusal by the case reader — an ambiguous role key, a link to an
+# undeclared label — is pinnable exactly like a fault at evaluation.
 # This is the standing regression fence for red paths — the WF-044
 # unsolved state among them: Unresolved surfaces, never vanishes.
 #
 #   1. ref/ and backends/ build; clingo must be available;
-#   2. every corpus/rood/**/case*.json passes both runners in
-#      expected-fault mode (exit 0);
+#   2. every corpus/rood/**/case*.json is replayed by both runners, which print
+#      one `CODE <code> <params as JSON>` line per code they observed and the
+#      case's own `CODE-PINNED <code> <params>`, decoded by the runner's own case
+#      reader (never a shell scrape: a JSON string may spell any character as an
+#      escape);
 #   3. an empty red set is a failure, never silently green;
-#   4. no pinned fragment cites a BOTTOM SENTENCE of ref or clingo — the
-#      refusal a node-kind match falls through to, which names no form
-#      (the bottom-sentence fence, 2026-09-19);
-#   5. every red case pins `expectedFault.code`, the EF code of its fault
-#      kind (RUNTIME-SEMANTICS ch. 5.7b), and ref, clingo, and Drools where
-#      the case pins a `drools` fragment, each REPORT that code — or the
-#      executor stands, with its reason, in the divergence list below,
-#      which fails when stale in either direction (card meldingscodes,
-#      2026-10-18);
+#   4. every red case pins `expectedFault.code`, the EF code of its fault
+#      kind, and ref, clingo, and Drools where the case is not listed in the Drools
+#      leg's exclusion list, each REPORT that code with the pinned parameters among
+#      its own — or the executor stands, with the code of its own refusal and its
+#      reason, in the divergence list below, which fails when stale in either
+#      direction;
+#   5. the parameters an executor emits are keys of the parameter column of the
+#      table of fault kinds (an EF code) or of the line of its register (a REF or
+#      CLINGO code); two cases of one document that differ in a parameter only are
+#      told apart by their pinned parameters (the list of pairs below);
 #   6. the fault-kind table of RUNTIME-SEMANTICS ch. 5.7b is read here,
 #      strictly: every row parses, every witness it names exists and pins
 #      the row's code, and every code a red case pins is a row;
@@ -32,7 +37,10 @@
 #      channel is §9.5, the codes a channel fact carries beside its
 #      identity rule × subject (ch. 5.6; card channel-fact-codes,
 #      2026-10-19). Gates 5, 6 and 12 replay those expectations; this gate
-#      holds their codes to the table.
+#      holds their codes to the table;
+#   8. the registers of the two executors hold (scripts/check-exec-codes.sh),
+#      and no list of this gate or of gate 12 names a `fallback` code as what a
+#      witness proves (the fence on codes, below).
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -76,6 +84,13 @@ EXPECTED_MIN_RED_CASES=26   # 2026-09-10: measured 26 (corpus/rood/**/case*.json
 # has none (below): each is a case with a `drools` fragment, held by that pin and by the name-carrying
 # exclusion list.
 EXPECTED_MIN_RED_CODES=93   # 2026-10-18: measured 93 (ref 50 + clingo 43)
+# The parameter checks (card fragment-cleanup, 2026-10-19). RED_PARAMS counts, over the code checks of ref and clingo that
+# did not stand in the divergence list, the pinned parameter pairs the executor confirmed among its own, an empty pin
+# counting once: it is the one count that says the pins carry parameters at all, so a corpus whose params quietly emptied
+# would keep every other check green. DROOLS_PARAMS is the same count over the Drools leg, kept apart because that leg
+# may be skipped and the floor of the two OCaml executors must not move with it.
+EXPECTED_MIN_RED_PARAMS=131   # 2026-10-19: measured 131 (ref 69 + clingo 62: the pinned pairs of the 50 cases, an empty pin once, clingo on 43 of them)
+EXPECTED_MIN_DROOLS_PARAMS=33 # 2026-10-19: measured 33 (the 26 cases that FAULT on Drools)
 EXPECTED_MIN_EF_CODES=31    # 2026-10-19: measured 31 (RUNTIME-SEMANTICS ch. 5.7b; 24 at card meldingscodes, 2026-10-18,
                             # raised with the seven §9.5 codes of card channel-fact-codes)
 # GOLDEN_CODES counts the golden `inconsistent` expectations that pin a code (card channel-fact-codes): the codes
@@ -88,77 +103,203 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 2
 fi
 
-# --- the code divergence list (card meldingscodes, 2026-10-18) -----------------------------------
-# A red case states the ONE fault kind the semantics demands (`expectedFault.code`); what an executor
-# does instead is executor conduct, kept here beside the other conduct lists (the Drools leg's
-# exclusion list below, gate 12's EXPECTED_CHANNEL), never in the case: the corpus does not move when
-# an executor moves. An entry admits that the executor reports NO code on the case, because it fails
-# for a reason of its own; it never admits ANOTHER EF code, which would be a disagreement about the
-# kind, not conduct. The first word of the reason is its category: REFUSAL (a form the executor does
-# not carry) or LIMIT (a limit of its own representation). FALLBACK (a bottom sentence, fenced above)
-# and CONTRACT (an ill-formed document; a red document is verifier-clean) are not admitted. The
-# entries carry no code of their own: the fragment pins keep covering the actual reason, and a code
-# column joins when executor codes land (spec/proposals/MESSAGE-CODES.md §7, card 5); until then the
-# category is checked against this vocabulary only.
+# --- the code divergence list (card meldingscodes, 2026-10-18; code column since card fragment-cleanup) -----------
+# A red case states the ONE fault kind the semantics demands (`expectedFault.code`, with its parameters); what an
+# executor does instead is executor conduct, kept here beside the other conduct lists (the Drools leg's exclusion
+# list below, gate 12's EXPECTED_CHANNEL), never in the case: the corpus does not move when an executor moves. An
+# entry admits that the executor fails the case for a reason of its own and names the code of that reason, a
+# `REF-###` or `CLINGO-###` of its register (ref/codes.tsv, backends/clingo/codes.tsv): the executor must report
+# exactly that code, never another EF code, which would be a disagreement about the kind, not conduct. The first word of
+# the reason is its category, and it must be the kind of the code in the register: REFUSAL (a form the executor does
+# not carry) for `refusal`, LIMIT (a limit of its own representation) for `limit`. A `fallback` code, the bottom arm of
+# a dispatch, is never admitted: it is the same sentence for every form its arm catches, so a witness that rests on it
+# witnesses nothing of its own (see the fence on codes below). CONTRACT (an ill-formed document; a red document is
+# verifier-clean) is not admitted either.
 #
-# Stale-guarded both ways: an entry whose executor now reports a code — the case's or another — fails,
-# and so does an entry that no check consulted (its case is gone, or its executor makes no check on
-# it); an unlisted check whose executor reports no code, or another one, fails as well.
+# Stale-guarded both ways: an entry whose executor now reports the case's code, or reports another code than the
+# entry's, fails, and so does an entry that no check consulted (its case is gone, or its executor makes no check on
+# it); an unlisted check whose executor reports no code, or another one than the case's, fails as well.
 #
-# <case, relative to corpus/rood, without .json>|<executor>|<CATEGORY> <reason>
+# <case, relative to corpus/rood, without .json>|<executor>|<CODE>|<CATEGORY> <reason>
 divergence=$(mktemp) || exit 2
-cat > "$divergence" <<'EOF'
-begrensd-reads-bounds-in-order/case1|clingo|REFUSAL measured 2026-10-18: the backend refuses the Clamp whose minimum bound is not a ground literal, "a Clamp minimum bound that is not a ground literal could be empty; ref reads an empty bound as no bound, which the bare join cannot express", at translation, so the division by numeric zero that ref and Drools fault on (EF-005) is never reached
-som-fallback-always-evaluated/case1|clingo|REFUSAL measured 2026-10-18: the backend does not translate a sum over listed operands, "a sum over listed operands is not translated: …", so the stand-in whose division by numeric zero ref faults on (EF-005) is never evaluated
-dagsoortstap-buiten-bereik/case1|clingo|LIMIT measured 2026-10-18: the step's millisecond value 53375975860 "exceeds clingo's integer range (grounding would wrap silently)" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
-datumtijdstap-buiten-bereik/case1-plus-uren|clingo|LIMIT measured 2026-10-18: the step's millisecond value 2000000000000 "exceeds clingo's integer range" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
-datumtijdstap-buiten-bereik/case2-min-uren|clingo|LIMIT measured 2026-10-18: the step's millisecond value 2000000000000 "exceeds clingo's integer range" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
-datumtijdstap-buiten-bereik/case3-plus-dagen|clingo|LIMIT measured 2026-10-18: the step's millisecond value 60000000000 "exceeds clingo's integer range" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
-datumtijdstap-buiten-bereik/case4-telling-buiten-bereik|clingo|LIMIT measured 2026-10-18: the duration count 18446744073709551617 "exceeds clingo's integer range" at translation, where ref and Drools refuse the count itself as out of range (EF-008)
-EOF
+cat > "$divergence" <<'EOF2'
+begrensd-reads-bounds-in-order/case1|clingo|CLINGO-005|REFUSAL measured 2026-10-18: the backend refuses the Clamp whose minimum bound is not a ground literal, "a Clamp minimum bound that is not a ground literal could be empty; ref reads an empty bound as no bound, which the bare join cannot express", at translation, so the division by numeric zero that ref and Drools fault on (EF-005) is never reached
+som-fallback-always-evaluated/case1|clingo|CLINGO-007|REFUSAL measured 2026-10-18: the backend does not translate a sum over listed operands, "a sum over listed operands is not translated: …", so the stand-in whose division by numeric zero ref faults on (EF-005) is never evaluated
+dagsoortstap-buiten-bereik/case1|clingo|CLINGO-001|LIMIT measured 2026-10-18: the step's millisecond value 53375975860 "exceeds clingo's integer range (grounding would wrap silently)" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
+datumtijdstap-buiten-bereik/case1-plus-uren|clingo|CLINGO-001|LIMIT measured 2026-10-18: the step's millisecond value 2000000000000 "exceeds clingo's integer range" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
+datumtijdstap-buiten-bereik/case2-min-uren|clingo|CLINGO-001|LIMIT measured 2026-10-18: the step's millisecond value 2000000000000 "exceeds clingo's integer range" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
+datumtijdstap-buiten-bereik/case3-plus-dagen|clingo|CLINGO-001|LIMIT measured 2026-10-18: the step's millisecond value 60000000000 "exceeds clingo's integer range" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
+datumtijdstap-buiten-bereik/case4-telling-buiten-bereik|clingo|CLINGO-001|LIMIT measured 2026-10-18: the duration count 18446744073709551617 "exceeds clingo's integer range" at translation, where ref and Drools refuse the count itself as out of range (EF-008)
+EOF2
 div_used=$(mktemp) || exit 2
 pinned_map=$(mktemp) || exit 2
 n_red_codes=0
+n_red_params=0
+n_drools_params=0
 n_div=0
 
-# One code check: <case key> <executor> <observed codes, comma-separated, or -> <pinned code>.
-# Returns 0 when the executor reports the case's code, or when it reports none and is listed;
-# the caller counts the first kind (it alone has a code to count).
-code_check() {
-    ck_case=$1; ck_exec=$2; ck_seen=$3; ck_pin=$4
-    ck_entry=$(awk -F'|' -v c="$ck_case" -v e="$ck_exec" '$1 == c && $2 == e { print $3; exit }' "$divergence")
-    case ",$ck_seen," in
-        *",$ck_pin,"*) ck_has=1 ;;
-        *) ck_has=0 ;;
-    esac
-    if [ -n "$ck_entry" ]; then
-        printf '%s|%s\n' "$ck_case" "$ck_exec" >> "$div_used"
-        if [ "$ck_seen" = "-" ]; then
-            n_div=$((n_div + 1))
-            return 0
-        fi
-        if [ "$ck_has" -eq 1 ]; then
-            printf 'FAIL: stale divergence — %s: %s now reports the case'"'"'s code %s; drop the entry (%s)\n' \
-                "$ck_case" "$ck_exec" "$ck_pin" "$ck_entry" >&2
-        else
-            printf 'FAIL: %s: %s is listed as failing for a reason of its own, but reports the code %s where the case pins %s — another kind is a disagreement, not conduct (%s)\n' \
-                "$ck_case" "$ck_exec" "$ck_seen" "$ck_pin" "$ck_entry" >&2
-        fi
-        return 1
-    fi
-    if [ "$ck_has" -eq 1 ]; then
-        return 0
-    fi
-    printf 'FAIL: %s: %s reports the code %s, but the case pins %s (expectedFault.code). Correct the executor, or list it in the divergence list with its reason where it fails for a reason of its own\n' \
-        "$ck_case" "$ck_exec" "$ck_seen" "$ck_pin" >&2
-    return 1
-}
+# The pairs of cases of one document that differ in a parameter of their fault ONLY (card fragment-cleanup, acceptance
+# (c)): their code is the same, so before the fragments left the text told them apart, and now their pinned `params`
+# must. Gate 8 fails when the two cases of a pair pin the same params, and when a pair names a case that is gone.
+# <case>|<case>|<reason>
+pairs=$(mktemp) || exit 2
+cat > "$pairs" <<'EOF2'
+aanvoergeld-parameter-ongebonden/case1-tarief-ongebonden|aanvoergeld-parameter-ongebonden/case2-drempel-ongebonden|one document, two parameters the case leaves unbound: EF-014 differs in `parameter` only (aanvoertarief, aanvoerdrempel)
+jutterswet-dubbele-melding/case1-beide-schrijvers-gelden|jutterswet-dubbele-melding/case2-een-van-twee-vondsten|one document, two instances whose writers disagree: EF-016 differs in `label` only (V, V2)
+EOF2
+
+# The comparison of one executor's observation with the pin, in python (the gate requires python3 already): the lines
+# the runner printed (or the status line of the Drools red run) on stdin; arguments: executor, case key, the pinned code,
+# the pinned params as JSON. Prints `OK <code seen: 0|1> <pinned parameter pairs confirmed, or 1 for an empty pin>`, or
+# `DIV`, on stdout; a failure explains itself on stderr and exits 1. Holds, besides the pin, that every parameter the
+# executor emits is a key of the parameter column of its code (the table of fault kinds for an EF code, the register of
+# the executor for its own), and the fence on codes: a `fallback` code is never what the divergence list admits.
+cmp=$(mktemp) || exit 2
+cat > "$cmp" <<'PYEOF'
+import json, sys
+
+executor, key, pin_code, pin_params_json, divergence, params_file, ref_reg, clingo_reg = sys.argv[1:9]
+pin_params = json.loads(pin_params_json)
+text = sys.stdin.read()
+
+
+def fail(msg):
+    sys.stderr.write("FAIL: %s: %s\n" % (key, msg))
+    sys.exit(1)
+
+
+columns, kinds = {}, {}
+for line in open(params_file, encoding="utf-8"):
+    f = line.rstrip("\n").split(" ")
+    if f[0] == "PARAMS":
+        columns[f[1]] = [p for p in (f[2] if len(f) > 2 else "").split(",") if p]
+for reg in (ref_reg, clingo_reg):
+    for n, line in enumerate(open(reg, encoding="utf-8").read().split("\n")[1:]):
+        c = line.split("\t")
+        if len(c) == 5:
+            columns[c[0]] = [p for p in c[3].split(",") if p]
+            kinds[c[0]] = c[1]
+
+# the observation: a list of (code, params), in report order
+observed = []
+if executor == "drools":
+    line = text.strip().splitlines()[-1] if text.strip() else ""
+    if not line.startswith("FAULT "):
+        fail("Drools did not FAULT: %s" % line[:200])
+    rest, dec = line[len("FAULT "):], json.JSONDecoder()
+    while rest.startswith("EF-"):
+        code, rest = rest[:6], rest[6:]
+        if not rest.startswith(" {"):
+            fail("the Drools status line gives %s no parameters (`FAULT EF-### {…}: …`): %s" % (code, line[:200]))
+        params, end = dec.raw_decode(rest[1:])
+        observed.append((code, params))
+        rest = rest[1 + end:]
+        if rest.startswith(", "):
+            rest = rest[2:]
+else:
+    for l in text.splitlines():
+        if l.startswith("CODE ") and not l.startswith("CODE-PINNED"):
+            f = l.split(" ", 2)
+            observed.append((f[1], json.loads(f[2])))
+seen = [c for c, _ in observed]
+for code, params in observed:
+    if code not in columns:
+        fail("%s reports the code %s, which is in no register or table (RUNTIME-SEMANTICS ch. 5.7b; the registers of the executors)" % (executor, code))
+    for k in params:
+        if k not in columns[code]:
+            fail("%s emits the parameter %s on %s, which is no key of the parameter column of that code (%s)" % (executor, k, code, ",".join(columns[code]) or "—"))
+
+entry = None
+for line in open(divergence, encoding="utf-8"):
+    f = line.rstrip("\n").split("|", 3)
+    if len(f) == 4 and f[0] == key and f[1] == executor:
+        entry = f
+if entry is not None:
+    _, _, ecode, reason = entry
+    if executor not in ("ref", "clingo"):
+        fail("the divergence list names the executor '%s' (ref or clingo; the Drools leg has its own exclusion list)" % executor)
+    kind = kinds.get(ecode)
+    category = reason.split(" ", 1)[0]
+    if kind is None:
+        fail("the divergence entry names %s, which is no code of the registers of ref or clingo" % ecode)
+    if kind == "fallback":
+        fail("the divergence entry names %s, a fallback code (the bottom arm of a dispatch): a fallback code is never what a witness rests on — give the form a named arm with a code of its own" % ecode)
+    if {"refusal": "REFUSAL", "limit": "LIMIT"}.get(kind) != category:
+        fail("the divergence entry %s|%s says %s, but %s is a code of the kind %s in its register" % (key, executor, category, ecode, kind))
+    if not seen:
+        fail("%s is listed as failing for a reason of its own (%s), but reports no code: every refusal that stands in the list carries one" % (executor, ecode))
+    if pin_code in seen:
+        fail("stale divergence — %s now reports the case's code %s; drop the entry (%s)" % (executor, pin_code, reason))
+    if ecode not in seen:
+        fail("%s is listed as reporting %s, but reports %s — a divergence entry names the code the executor reports (%s)" % (executor, ecode, ", ".join(seen), reason))
+    print("DIV")
+    sys.exit(0)
+
+if pin_code not in seen:
+    note = ""
+    if seen and all(kinds.get(c) == "fallback" for c in seen):
+        note = " (a fallback code, the bottom arm of a dispatch, is no witness of any kind: give the form a named arm)"
+    fail("%s reports %s, but the case pins %s (expectedFault.code). Correct the executor, or list it in the divergence list with the code of its own refusal and its reason%s"
+          % (executor, ", ".join(seen) or "no code", pin_code, note))
+emitted = [p for c, p in observed if c == pin_code]
+best = None
+for params in emitted:
+    miss = [(k, v, params.get(k)) for k, v in pin_params.items() if params.get(k) != v]
+    if not miss:
+        best = params
+        break
+    best = best or params
+    first_miss = miss
+if not any(all(p.get(k) == v for k, v in pin_params.items()) for p in emitted):
+    k, v, got = first_miss[0]
+    fail("%s emits %s for %s %s, but the case pins %s %s: the pinned parameters must be among the emitted ones (a parameter this executor cannot name is left out of the pin)"
+          % (executor, json.dumps(best, ensure_ascii=False), pin_code, "without that key" if got is None else "with another value", k, json.dumps(v, ensure_ascii=False)))
+print("OK 1 %d" % (len(pin_params) or 1))
+PYEOF
 
 status=0
 n_cases=0
 list=$(mktemp) || exit 2
-trap 'rm -f "$list"' EXIT
 find corpus/rood -name 'case*.json' 2>/dev/null | sort > "$list"
+# the params file the python comparison reads: the parameter column of every row of the table of fault kinds
+# (`PARAMS EF-### a,b`), written by the table block below; the loop needs it first, so the table is parsed here and
+# the strict row checks stay with the block below
+params_file=$(mktemp) || exit 2
+trap 'rm -f "$list" "$cmp" "$pairs" "$params_file"' EXIT
+python3 -I - spec/RUNTIME-SEMANTICS.md > "$params_file" <<'PYEOF'
+import re, sys
+for line in open(sys.argv[1], encoding="utf-8").read().split("\n"):
+    m = re.match(r"^\| (EF-[0-9]{3}) \| [^|]+ \| [^|]+ \| (—|`[^|]*?`) \| [^|]* \| [^|]* \|$", line)
+    if m:
+        print("PARAMS %s %s" % (m.group(1), "" if m.group(2) == "—" else ",".join(re.findall(r"`([^`]+)`", m.group(2)))))
+PYEOF
+if ! grep -q '^PARAMS ' "$params_file"; then
+    echo 'FAIL: the parameter column of the table of fault kinds (RUNTIME-SEMANTICS ch. 5.7b) reads no row — the parameters cannot be checked' >&2
+    exit 1
+fi
+
+# One code check: <case key> <executor> <runner output> <pinned code> <pinned params as JSON>.
+# Returns 0 when the executor reports the case's code with the pinned parameters among its own, or when it is listed in
+# the divergence list and reports the code of that entry; counts into n_red_codes, n_red_params and n_div.
+code_check() {
+    ck_key=$1; ck_exec=$2
+    ck_res=$(printf '%s\n' "$3" | python3 -I "$cmp" "$ck_exec" "$ck_key" "$4" "$5" "$divergence" "$params_file" ref/codes.tsv backends/clingo/codes.tsv) || return 1
+    if [ "$ck_res" = DIV ]; then
+        printf '%s|%s\n' "$ck_key" "$ck_exec" >> "$div_used"
+        n_div=$((n_div + 1))
+    else
+        set -- $ck_res
+        # the Drools leg counts its own: it may be skipped, and the floors of the two OCaml executors must not move with it
+        if [ "$ck_exec" = drools ]; then
+            n_drools_params=$((n_drools_params + $3))
+        else
+            n_red_codes=$((n_red_codes + $2))
+            n_red_params=$((n_red_params + $3))
+        fi
+    fi
+    return 0
+}
+
 while IFS= read -r case; do
     n_cases=$((n_cases + 1))
     ir=$(dirname "$case")/ir.json
@@ -169,43 +310,32 @@ while IFS= read -r case; do
     fi
     key=${case#corpus/rood/}
     key=${key%.json}
-    if ! out=$("$REF" "$ir" "$case" 2>&1); then
-        printf 'FAIL: %s — ref did not observe the expected fault:\n%s\n' "$case" "$out" >&2
-        status=1
-    fi
-    # the case's own code, as the runner's case reader decoded it (never a shell scrape: a JSON string
+    out=$("$REF" "$ir" "$case" 2>&1)
+    # the case's own pin, as the runner's case reader decoded it (never a shell scrape: a JSON string
     # may spell any character as an escape)
     pin=$(printf '%s\n' "$out" | awk '$1 == "CODE-PINNED" { print $2; exit }')
-    seen=$(printf '%s\n' "$out" | awk '$1 == "CODE" { print $2; exit }')
-    if [ -z "$pin" ] || [ -z "$seen" ]; then
-        printf 'FAIL: %s — ref printed no CODE and CODE-PINNED line (runner/gate contract broken)\n' "$case" >&2
+    pinparams=$(printf '%s\n' "$out" | awk '$1 == "CODE-PINNED" { $1 = ""; $2 = ""; sub(/^  /, ""); print; exit }')
+    if [ -z "$pin" ] || ! printf '%s\n' "$out" | grep -q '^CODE '; then
+        printf 'FAIL: %s — ref did not observe the expected fault:\n%s\n' "$case" "$out" >&2
         status=1
-    elif [ "$pin" = "-" ]; then
-        printf 'FAIL: %s carries no expectedFault.code — every red case pins the EF code of its fault kind (RUNTIME-SEMANTICS ch. 5.7b)\n' "$case" >&2
-        status=1
-    else
-        printf '%s|%s\n' "$key" "$pin" >> "$pinned_map"
-        if code_check "$key" ref "$seen" "$pin"; then
-            [ "$seen" = "-" ] || n_red_codes=$((n_red_codes + 1))
-        else
-            status=1
-        fi
+        continue
     fi
-    if ! out=$("$CLINGO" "$ir" "$case" 2>&1); then
+    case "$pin" in
+        EF-[0-9][0-9][0-9]) ;;
+        *)
+            printf 'FAIL: %s pins the code %s — expectedFault.code is the EF code of a fault kind (RUNTIME-SEMANTICS ch. 5.7b), never the code of an executor (the fence on codes)\n' "$case" "$pin" >&2
+            status=1
+            continue ;;
+    esac
+    printf '%s|%s|%s\n' "$key" "$pin" "$pinparams" >> "$pinned_map"
+    code_check "$key" ref "$out" "$pin" "$pinparams" || status=1
+    out=$("$CLINGO" "$ir" "$case" 2>&1)
+    if ! printf '%s\n' "$out" | grep -q '^CODE '; then
         printf 'FAIL: %s — clingo did not observe the expected fault:\n%s\n' "$case" "$out" >&2
         status=1
+        continue
     fi
-    seen=$(printf '%s\n' "$out" | awk '$1 == "CODE" { print $2; exit }')
-    if [ -z "$seen" ]; then
-        printf 'FAIL: %s — clingo printed no CODE line (runner/gate contract broken)\n' "$case" >&2
-        status=1
-    elif [ -n "$pin" ] && [ "$pin" != "-" ]; then
-        if code_check "$key" clingo "$seen" "$pin"; then
-            [ "$seen" = "-" ] || n_red_codes=$((n_red_codes + 1))
-        else
-            status=1
-        fi
-    fi
+    code_check "$key" clingo "$out" "$pin" "$pinparams" || status=1
 done < "$list"
 
 if [ "$n_cases" -eq 0 ]; then
@@ -220,6 +350,24 @@ if [ "$n_red_codes" -lt "$EXPECTED_MIN_RED_CODES" ]; then
     echo "FAIL: $n_red_codes ref and clingo code check(s) reported the case's code, but EXPECTED_MIN_RED_CODES pins at least $EXPECTED_MIN_RED_CODES — the code checks shrank (a deliberate removal lowers the floor in the same commit)" >&2
     status=1
 fi
+if [ "$n_red_params" -lt "$EXPECTED_MIN_RED_PARAMS" ]; then
+    echo "FAIL: ref and clingo confirmed $n_red_params pinned parameter(s) (an empty pin counts once per check), but EXPECTED_MIN_RED_PARAMS pins at least $EXPECTED_MIN_RED_PARAMS — the parameter checks shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    status=1
+fi
+
+# the pairs: two cases of one document that differ in a parameter only must pin different params
+while IFS='|' read -r pa pb preason; do
+    [ -z "$pa" ] && continue
+    ja=$(awk -F'|' -v c="$pa" '$1 == c { i = index($0, "|"); r = substr($0, i + 1); j = index(r, "|"); print substr(r, j + 1); exit }' "$pinned_map")
+    jb=$(awk -F'|' -v c="$pb" '$1 == c { i = index($0, "|"); r = substr($0, i + 1); j = index(r, "|"); print substr(r, j + 1); exit }' "$pinned_map")
+    if [ -z "$ja" ] || [ -z "$jb" ]; then
+        echo "FAIL: stale pair — $pa and $pb are listed as a pair (parameters only tell them apart), but one of them is no red case any more" >&2
+        status=1
+    elif [ "$ja" = "$jb" ]; then
+        printf 'FAIL: %s and %s pin the same params %s: the pair differs in a parameter only (%s), and a code alone does not tell them apart\n' "$pa" "$pb" "$ja" "$preason" >&2
+        status=1
+    fi
+done < "$pairs"
 
 # --- the fault-kind table (RUNTIME-SEMANTICS ch. 5.7b), read strictly (card meldingscodes) --------
 # A sidecar registry would duplicate the normative table, so this gate parses the table itself — the
@@ -318,7 +466,7 @@ fi
 # a red witness pins its row's code in at least one of its cases
 while read -r tok code dir; do
     [ "$tok" = "WITNESS" ] || continue
-    if ! grep -q "^$dir/[^|]*|$code\$" "$pinned_map"; then
+    if ! grep -q "^$dir/[^|]*|$code|" "$pinned_map"; then
         echo "FAIL: $code names the red witness corpus/rood/$dir, but no case there pins expectedFault.code $code" >&2
         status=1
     fi
@@ -332,263 +480,46 @@ for code in $(cut -d'|' -f2 "$pinned_map" | sort -u); do
 done
 rm -f "$table"
 
-# --- the bottom-sentence fence: a pin may not cite a bottom sentence (2026-09-19) ---------------------
-# Both executors match on node KIND and end those matches in a fall-through arm. A BOTTOM SENTENCE
-# is such an arm's refusal, and its defining property is that it is INVARIANT over everything the
-# arm catches: it describes the position and what the backend does carry there — "expression kind
-# not translated", "a list source here is an own list-typed attribute, a list parameter, a MapList
-# or a FilterList", "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape"
-# — and never the construct actually rejected. A red case that pins one witnesses nothing of its
-# own: every other uncarried form at that position satisfies the same fragment, so the witness
-# stops witnessing its form, and where the sentence also claims no corpus case reaches it, the pin
-# makes that claim live-false. Not hypothetical — som-fallback-always-evaluated pinned "expression
-# kind not translated" until 2026-09-19, when the listed som finally got the named arm it deserved,
-# and only a reader's eye caught it. The cure is always that one: give the form its own arm with
-# its own sentence, then pin THAT. This fence makes the recidive fail by name.
+# --- the fence on codes (card fragment-cleanup, 2026-10-19; it replaces the bottom-sentence fence, 2026-09-19) -----
+# Both executors match on node KIND and end those matches in a fall-through arm. The refusal of such an arm, a BOTTOM
+# SENTENCE, is invariant over everything the arm catches: it describes the position and what the backend does carry
+# there ("expression kind not translated", "a list source here is an own list-typed attribute, a list parameter, a
+# MapList or a FilterList", "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape") and never the
+# construct actually rejected. A red case that pins one witnesses nothing of its own: every other uncarried form at that
+# position satisfies the same pin, and where the sentence also claims that no corpus case reaches it, the pin makes the
+# claim false. That happened (som-fallback-always-evaluated pinned "expression kind not translated" until 2026-09-19)
+# and only a reader's eye caught it, so a list of 36 such sentences and a fence that normalised the sources to find
+# them stood here, with a mechanism to decode the fragments of the pins (`ref --bottom-sentence`) because a JSON string
+# may spell any character as an escape.
 #
-# THE BOUNDARY, and it is the whole difficulty of the list. A refusal that identifies the REJECTED
-# construct is not a bottom sentence and stays freely pinnable, whether it names it outright ("a
-# ListLiteral list source is not translated", "allocation validity windows are not translated"),
-# interpolates it ("the fold source %S is not a list-typed own attribute"), or states the one
-# property that defines it ("non-numeric arithmetic operand", "negative exponent", "sum fallback
-# other than 0"). Listed instead is every refusal that delimits only against the set of forms the
-# implementation happens to carry TODAY — the "X here is A, B or C", "takes only", "supports only",
-# "Carried: …", "other than <the carried list>" formulations — because that set moves with the
-# code, so the sentence tells a reader nothing stable about the witness. Well-formedness
-# diagnostics are outside the question entirely ("duration expects two arguments"): they name a
-# violated expectation, not an unreached capacity, and their arm catches one thing.
-#
-# Two entries carry the INTERPOLATION-FREE part of their sentence (ref's literal_value and
-# run_rule): the runtime tail is a lexeme or a rule name and differs per document, so no pin can
-# ever match it.
-#
-# BOTH match directions count: the fragment inside the sentence (the som defect's shape) and the
-# sentence inside the fragment (a pin that quotes a bottom sentence whole and adds a tail).
-# Accepted consequence of the first direction, and intended: a pin short and generic enough to sit
-# inside a bottom sentence — "not translated" — is refused even where it would describe a
-# form-naming refusal at replay. That is a pin-quality rule, not an accident: a fragment that short
-# does not identify its witness either, and the red contract is that a pin names what it witnesses.
-#
-# Scope is ref + clingo, the two executors that carry fragments. The Drools leg below pins its
-# not-carried forms by NAME in its exclusion list rather than by fragment, so it needs no fence.
-#
-# Known weakness, recorded rather than hidden — the weakness of every pinned list in this gate set:
-# a bottom sentence reworded, moved or newly added in ref/clingo without this list moving with it
-# leaves the fence blind to exactly that sentence.
-#
-# The list SHRINKS when a sentence loses its last carrier, and that is a deliberate, dated act with
-# its reason in the commit — never a quiet delete. A listed sentence no arm can produce is an
-# untruth of the same kind the fence exists to catch: it tells a reader that a residual arm is
-# waiting there when none is. ONE removal so far. 2026-09-20 (card ref-periodeconditie-arm):
-# `ref/lib/eval.ml eval_cond|condition kind not implemented in this card` left, because that match
-# is exhaustive over the condition constructors and its last catch, Time_window, became the
-# ch. 3.10 evaluation-date GATE (golden `jutterswet-premievenster`, six clauses, four executors),
-# with its own named refusals for the two halves ch. 3.10 defers. Its clingo sister `cond_atoms` is
-# a genuine wildcard and still catches the uncarried Predicaat kinds and Regelversie, so that entry
-# STAYS. Since the same day the shrink has a MACHINE fence below: a listed sentence its named
-# source no longer contains fails the gate by itself.
-#
-# <source file> <function>|<bottom sentence, verbatim>|<what it delimits against instead of naming>
-bottom=$(mktemp) || exit 2
-cat > "$bottom" <<'EOF'
-ref/lib/eval.ml literal_value|literal of this datatype not implemented|the residual arm over declared datatypes: it says "this datatype" and interpolates the LEXEME, never which datatype has no reader
-ref/lib/eval.ml eval_expr|expression kind not implemented in this card|the residual arm over expr node kinds — it names the node CLASS, not the kind it rejected
-ref/lib/eval.ml eval_expr|unsupported temporal-read base shape|the wildcard arm under Temporal_read: it says "shape" and names none
-ref/lib/eval.ml eval_functie|unsupported gedurende condition shape (an own temporal characteristic, a per-segment comparison of an own temporal attribute, or an all composite of such shapes)|the wildcard arm of the gedurende period reader: the parenthetical enumerates the three CARRIED shapes, so the rejected one stays unnamed
-ref/lib/eval.ml eval_functie|unsupported instance-fold source shape|the residual arm over fold-source combinations — the rejected combination is not named
-ref/lib/eval.ml eval_functie|of a set has no defined moment to fold (ch. 3.6: only sum and total carry the per-element timeline fold)|the fall-through of the per-element timeline fold, whose match carries sum and total and sends every other kind here: it names the position and the two kinds that ARE carried, never the fold rejected, so it is one sentence for minimum, maximum, first, last and any kind added later. Listed 2026-09-20 after a reader measured it: the filled count's red case pinned this sentence, and the identical document with kind minimum matched that pin word for word. The interpolation-free tail is listed because the attribute name differs per document. The cure is the one this fence always names — a named arm per kind — and the filled count now has one (ch. 3.4c: "no moment at which a filled count can ask a timeline whether it is filled"); the four ranking folds still share this sentence and will need theirs when a red case wants to pin one
-ref/lib/eval.ml eval_functie|function kind not implemented in this card|the wildcard arm over function kinds
-ref/lib/eval.ml eval_cond|predicate kind not implemented in this card|the residual Predicaat arm, after the carried predicate kinds
-ref/lib/eval.ml run_pro_rata|unsupported pro-rata condition shape (an own temporal characteristic; no corpus case for more)|the wildcard arm over pro-rata conditions: it names the one carried shape and claims no corpus case for the rest
-ref/lib/eval.ml run_pro_rata|unsupported day-count condition shape (an own temporal characteristic; no corpus case for more)|the wildcard arm over day-count conditions, the mirror of the pro-rata one above
-ref/lib/eval.ml run_pro_rata|a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a gedurende condition over an own temporal characteristic); no corpus case for more|the wildcard arm over temporal targets: "takes only" enumerates the carried shapes, the rejected target stays unnamed
-ref/lib/eval.ml run_rule|unsupported target shape|the wildcard arm over rule targets; the sentence prefixes the RULE name, never the shape it refuses
-backends/clingo/lib/translate.ml symbolic_term|a text/enum/boolean operand here is an own-subject attribute read or a literal (no corpus case for more)|the wildcard arm over text/enum/boolean operands: "here is A or B" is the carried list
-backends/clingo/lib/translate.ml expr_term|unsupported gedurende condition shape (an own temporal characteristic, a per-segment comparison of an own temporal attribute, or an all composite of such shapes)|the wildcard arm of the gedurende period reader, word for word ref's
-backends/clingo/lib/translate.ml expr_term|unsupported temporal-read base shape|the wildcard arm under the temporal read, the mirror of ref's
-backends/clingo/lib/translate.ml expr_term|a Construct payload other than a literal or an own attribute read is not translated at rule level (a parameter read, a Match or a composite payload has no corpus case)|the residual Construct arm: "other than a literal or an own attribute read" delimits against the carried pair; the parenthetical lists three candidates and settles none
-backends/clingo/lib/translate.ml expr_term|expression kind not translated (no corpus case exercises it)|the wildcard arm over expr node kinds; its parenthetical is the claim a red pin falsifies — the 2026-09-19 defect itself
-backends/clingo/lib/translate.ml dt_term|datum-tijd here is not the pair term's arithmetic. Carried: a datum-tijd literal, an own-subject read, datetime ± duration, and first/last over listed operands. A loud flank, no corpus case: a datum-tijd PARAMETER read, a Let/BinderRef-bound datum-tijd (and the residual VariableReference), a set-typed fold, a dateWith or dateTimeWith constructor, and a navigated datum-tijd read|the wildcard arm over datum-tijd terms: it spells out what is "Carried:" and what is a flank, never which of them arrived
-backends/clingo/lib/translate.ml whole_period_fails|a whole-period comparison against a bound other than a literal or a scalar parameter is not translated: the bound rides inside the per-segment rule, which binds only the timeline's own subject (no corpus case)|the wildcard arm over whole-period bounds: "other than a literal or a scalar parameter" is the carried pair in complement form
-backends/clingo/lib/translate.ml cond_atoms|condition kind not translated (no corpus case exercises it)|the wildcard arm over condition kinds, carrying the same no-corpus-case claim as the expression one
-backends/clingo/lib/translate.ml construct_ground_term|a Construct payload other than a literal is not a ground term (a payload that must be bound needs a body atom this position cannot carry; no corpus case)|the residual arm over Construct payloads in ground position: "other than a literal" delimits against the one carried form
-backends/clingo/lib/translate.ml sum_term|a sum-typed operand here is an own-subject attribute read or a Construct (no corpus case for more)|the wildcard arm over sum-typed operands: "here is A or B" is the carried list
-backends/clingo/lib/translate.ml struct_base|a struct field-access base here is an own-subject attribute read, a bound binder or a struct-typed field access (no corpus case for more)|the wildcard arm over struct field-access bases: "here is A, B or C" is the carried list
-backends/clingo/lib/translate.ml scrutinee_pattern|a match scrutinee here is an own-subject sum-typed attribute read (no corpus case for more)|the wildcard arm over match scrutinees: "here is A" is the one carried form
-backends/clingo/lib/translate.ml list_source|a list source here is an own list-typed attribute, a list parameter, a MapList or a FilterList (no corpus case for more)|the wildcard arm over list sources: "here is A, B, C or D" is the carried list
-backends/clingo/lib/translate.ml body_condition|an IfThenElse condition in a closed body is a comparison over bound terms (no corpus case for more)|the wildcard arm over closed-body IfThenElse conditions: it states the carried shape, not the rejected one
-backends/clingo/lib/translate.ml closed_term|a closed-body field access reads a bound struct binder (no corpus case for more)|the wildcard arm over closed-body field accesses: it states the one carried base
-backends/clingo/lib/translate.ml closed_term|a closed-body term here is a bound binder, a literal, a parameter, a +/-/×/percentage-of combination, a division (bare or abs), a power by a constant integer exponent, a Construct or a Let (no corpus case for more)|the wildcard arm over closed-body terms: "here is" followed by the whole carried inventory
-backends/clingo/lib/translate.ml sum_operand|a sum-typed operand in a closed body is a bound binder or a Construct (no corpus case for more)|the wildcard arm over sum-typed operands in a closed body: the carried pair, not the rejection
-backends/clingo/lib/translate.ml filter_condition|a FilterList condition here is a sum-typed (in)equality over the bound element (no corpus case for more)|the wildcard arm over FilterList conditions: "here is" the one carried shape
-backends/clingo/lib/translate.ml closed_division|a closed-body rounded division supports only the towardZero abs-division collapse (no corpus case for another rounding mode)|the residual arm over closed-body rounding modes: "supports only" names the carried collapse, and "another rounding mode" is the complement of it
-backends/clingo/lib/translate.ml value_condition|a value-position IfThenElse condition is a comparison over bound operands (no corpus case for more)|the wildcard arm over value-position IfThenElse conditions: the carried shape, not the rejected one
-backends/clingo/lib/translate.ml translate_regel|a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a gedurende condition over an own temporal characteristic); no corpus case for more|the wildcard arm over temporal targets, word for word ref's
-backends/clingo/lib/translate.ml translate_regel|rule kind not translated|the wildcard arm over rule kinds
-backends/clingo/lib/translate.ml translate_regel|unsupported rule target|the wildcard arm over rule targets
-backends/clingo/lib/translate.ml bool_atoms|a characteristic-initialisation expression here is an own-subject boolean attribute read (no corpus case for more)|the wildcard arm over characteristic-initialisation expressions: "here is" the one carried read
-EOF
-n_bottom=$(grep -c '|' "$bottom")
-
-# --- the CARRIER fence: a listed sentence must still exist in its named source (2026-09-20) -----
-# Until this fence the list shrank by hand and nothing checked it; a carrier-less entry waited for a
-# reader's eye. Its FIRST version passed three ways it should not have (found by a reader the same
-# day, and each is now a rule): it read the source column and ignored it, so an invented file name
-# passed; it searched the CONCATENATION of both sources, so the six sentences both files carry were
-# unguarded in either; and it counted a COMMENT as a carrier, so a historical measurement quoted in
-# prose kept the fence green after the arm itself was gone. Hence: normalise and search PER FILE,
-# only the file the source column names, and only in CODE.
-#
-# Four things stand between a sentence in this list and its spelling in OCaml, and all four are
-# normalised away before a plain substring search: COMMENTS (nesting-aware, depth-tracked across
-# lines), the WRAP (a long literal ends in a backslash, and the compiler elides that plus the
-# newline and the next line's leading blanks), the escaped QUOTES, and the escaped BYTES —
-# `translate.ml` writes ± as \xc2\xb1 rather than as the character, so hex escapes go on the source
-# side and every non-ASCII byte on BOTH sides, which makes the two spellings meet.
-#
-# Accepted limits, recorded rather than hidden: two sentences differing only in non-ASCII characters
-# are one sentence to this fence; a source line ending in an escaped backslash would be joined
-# wrongly (neither file has one); and a literal containing "(*" would open a comment here (neither
-# file has one, checked).
-strip_ocaml() {
-    LC_ALL=C awk '
-      function strip(s,   i, n, c2, o) {
-        n = length(s); o = ""
-        for (i = 1; i <= n; i++) {
-          c2 = substr(s, i, 2)
-          if (c2 == "(*") { depth++; i++; continue }
-          if (c2 == "*)" && depth > 0) { depth--; i++; continue }
-          if (depth == 0) o = o substr(s, i, 1)
-        }
-        return o
-      }
-      { l = strip($0)
-        if (cont) { sub(/^[ \t]*/, "", l); cont = 0 } else { out = out "\n" }
-        if (l ~ /\\$/) { sub(/\\$/, "", l); cont = 1 }
-        out = out l }
-      END { gsub(/\\x[0-9a-fA-F][0-9a-fA-F]/, "", out); gsub(/\\"/, "\"", out); print out }' "$1" \
-    | LC_ALL=C tr -d '\200-\377'
-}
-carries() {  # <normalised file> <sentence> -> 0 when the file's CODE contains it
-    printf '%s' "$2" | LC_ALL=C tr -d '\200-\377' | grep -Ff - "$1" >/dev/null 2>&1
-}
-
-# Standing self-test of the MECHANISM, in the \u probe's style beside it: one synthetic source
-# carrying three sentences — one wrapped across lines, one written with hex escapes, one that exists
-# ONLY inside a comment — and the fence must find the first two and miss the third. It tests the
-# normaliser, never the inventory, so rewording a real sentence never touches it.
-probe_src=$(mktemp) || exit 2
-probe_norm=$(mktemp) || exit 2
-cat > "$probe_src" <<'PROBE'
-(* a probe sentence that lives only in a comment *)
-let a () =
-  fault
-    "a probe sentence that is wrapped across \
-     two source lines"
-let b () = fault "a probe sentence with an escaped \xc2\xb1 byte"
-PROBE
-strip_ocaml "$probe_src" > "$probe_norm"
-carries "$probe_norm" "a probe sentence that is wrapped across two source lines" \
-    || { echo 'FAIL: the carrier fence does not rejoin a wrapped OCaml literal — every long listed sentence would be reported carrier-less' >&2; status=1; }
-carries "$probe_norm" "a probe sentence with an escaped ± byte" \
-    || { echo 'FAIL: the carrier fence does not see through an escaped byte (\xc2\xb1) — the sentences that spell one would be reported carrier-less' >&2; status=1; }
-if carries "$probe_norm" "a probe sentence that lives only in a comment"; then
-    echo 'FAIL: the carrier fence counts a COMMENT as a carrier — a historical measurement quoted in prose would keep it green after the arm is gone' >&2
-    status=1
-fi
-rm -f "$probe_src" "$probe_norm"
-
-norm=$(mktemp) || exit 2
-last=''
-while IFS='|' read -r src sentence _reason; do
-    [ -z "$sentence" ] && continue
-    file=${src%% *}
-    if [ ! -f "$file" ]; then
-        printf 'FAIL: the bottom-sentence list names the source %s, which does not exist — the entry cannot be checked at all\n' "$file" >&2
-        status=1
-        continue
-    fi
-    if [ "$file" != "$last" ]; then strip_ocaml "$file" > "$norm"; last=$file; fi
-    carries "$norm" "$sentence" || {
-        printf 'FAIL: the bottom-sentence list carries "%s" (%s), but that file produces it no longer. A listed sentence without a carrier tells a reader a residual arm is waiting where none is: remove the entry, deliberately and with its reason in the commit.\n' \
-            "$sentence" "$src" >&2
-        status=1
-    }
-done < "$bottom"
-rm -f "$norm"
-
-# The fragments are DECODED, not scraped. A pinned fragment is a JSON string and may spell any
-# character as an escape; a shell-side text scrape compares the escape and misses the match, which
-# is the one failure mode a fence like this may not have. So the reading and the comparing happen
-# where the red path already does both: `ref --bottom-sentence` reads expectedFault with the same reader
-# the runner above uses, and compares with Case.contains, the same substring matcher it runs a
-# fault report through — so the fence tests exactly the relation the pin has at replay. No new
-# build or install requirement: ref is already built and required by this gate, and the shell side
-# adds only POSIX text handling (a read loop, an awk line lookup).
-sent=$(mktemp) || exit 2
-while IFS='|' read -r _src sentence _reason; do printf '%s\n' "$sentence"; done < "$bottom" > "$sent"
-
-# Standing proof that the DECODING path is the live one (the \u mutation, permanent). A synthetic
-# pin spells its first character as an escape and must still be caught; a text scrape cannot catch
-# it. The pair is self-contained on purpose — it tests the mechanism, not the inventory, so
-# rewording a real bottom sentence never touches it.
-probe_s=$(mktemp) || exit 2
-probe_c=$(mktemp) || exit 2
-printf 'expression kind not translated (no corpus case exercises it)\n' > "$probe_s"
-printf '{ "expectedFault": { "ref": "\\u0065xpression kind not translated", "clingo": "a pin that cites nothing" } }\n' > "$probe_c"
-probe_out=$("$REF" --bottom-sentence "$probe_s" "$probe_c" 2>&1)
-probe_hits=$(printf '%s\n' "$probe_out" | grep -c '^HIT ')
-if [ "$probe_hits" != "1" ] || ! printf '%s\n' "$probe_out" | grep -q '^HIT ref '; then
-    printf 'FAIL: the bottom-sentence self-test did not catch an escaped citation (expected exactly one HIT on ref, got %s) — the fence is comparing escapes instead of the characters they stand for, so every pin it clears is cleared for the wrong reason:\n%s\n' \
-        "$probe_hits" "$probe_out" >&2
-    status=1
-fi
-rm -f "$probe_s" "$probe_c"
-
-n_frag=0
-hits=$(mktemp) || exit 2
-while IFS= read -r case; do
-    name=$(basename "$(dirname "$case")")
-    if ! out=$("$REF" --bottom-sentence "$sent" "$case" 2>&1); then
-        printf 'FAIL: %s — the pinned fragments could not be read; the red contract pins both executors, and a pin this fence cannot read is a fence that holds nothing:\n%s\n' \
-            "$name" "$out" >&2
-        status=1
-        continue
-    fi
-    printf '%s\n' "$out" > "$hits"
-    pins=$(awk '$1 == "PINS" { print $2; exit }' "$hits")
-    if [ -z "$pins" ]; then
-        printf 'FAIL: %s — the fence reported no PINS count (script/runner contract broken):\n%s\n' "$name" "$out" >&2
-        status=1
-        continue
-    fi
-    n_frag=$((n_frag + pins))
-    while read -r tok key line frag; do
-        [ "$tok" = "HIT" ] || continue
-        entry=$(awk -v n="$line" 'NR == n' "$bottom")
-        printf 'FAIL: %s pins expectedFault.%s = %s, which cites the bottom sentence on line %s of the list (%s). A bottom sentence is the same refusal for every form its arm catches, so the pin witnesses nothing of its own: give the form its own arm with its own sentence, then pin that.\n' \
-            "$name" "$key" "$frag" "$line" "$entry" >&2
-        status=1
-    done < "$hits"
-done < "$list"
-rm -f "$bottom" "$sent" "$hits"
-if [ "$n_frag" -eq 0 ]; then
-    echo 'FAIL: the bottom-sentence fence read no fragment at all — an unmeasured fence is never silently green' >&2
-    status=1
-fi
+# A pin is now a fault kind and its parameters, never text, so a pin cannot cite a sentence at all; what the fence
+# still has to stop is a case resting on a bottom arm's CODE. The bottom arms carry codes of the kind `fallback` in the
+# registers of the executors (ref/codes.tsv, backends/clingo/codes.tsv), and this gate holds them out of every place that
+# says what a witness proves: `expectedFault.code` is an EF code (the schema's pattern, and the check in the loop above),
+# the divergence list may not name a `fallback` code (the check of the comparison above), and neither the exclusion list
+# of the Drools leg nor gate 12's EXPECTED_CHANNEL may name a `fallback` code of the Drools register (the leg below). A
+# fault in a red case of which an executor reports only a `fallback` code is a code other than the pinned one, and fails
+# as such. The cure for a bottom arm is the one the old fence named, a named arm for the form with a code of its own,
+# never another wording of the bottom; the carrier check (scripts/check-exec-codes.sh) holds each register to its source
+# in both directions, as the carrier fence held the sentence list.
+bash scripts/check-exec-codes.sh || status=1
 
 # --- the Drools leg (decision V3-b, 2026-08-27) -----------------------------------------------
 # The Drools backend CONSUMES the uchar IR (loads ir.json off the wire). For each rood case it
-# either reports a FAULT — the report this leg matches the case's `expectedFault.drools` fragment
-# against — or it does not carry the red-path form (an EXCLUDE from the loader, a transpiler or
-# the case reader, or a NOFAULT where the backend does not enforce the constraint and runs to a
-# model). A carried form pins a fragment; a not-carried form is listed below with a reason. An EXCLUDE
-# entry also pins the register code of the refusal (`name|EXCLUDE DROOLS-014 <reason>`, card
+# either reports a FAULT — the status line this leg reads the code and the parameters of — or it does not
+# carry the red-path form (an EXCLUDE from the loader, a transpiler or the case reader, or a NOFAULT
+# where the backend does not enforce the constraint and runs to a model). A not-carried form is listed
+# below with a reason; every other case MUST FAULT with the pinned code and the pinned parameters among
+# the ones the status line carries (`FAULT EF-005 {"rule":"…"}: <report>`, one `<code> <json>` per code, in
+# report order). Until the card fragment-cleanup (2026-10-19) a case carried a `drools` fragment of the
+# backend's own sentence, which told this leg whether the backend carried the case; the exclusion list
+# says it now, and a case that is neither listed nor FAULTs fails the gate (completeness). An EXCLUDE entry also pins the register code of the refusal (`name|EXCLUDE DROOLS-014 <reason>`, card
 # drools-refusal-codes, 2026-10-19), which the status line carries at its head (`EXCLUDE DROOLS-014:
 # <sentence>`); the leg compares the two, so a refusal that moves to another code fails by case name
 # with both codes. A NOFAULT entry refuses nothing and carries no code. The
-# exclusion list is stale-guarded: a listed case that now FAULTS, or is gone, fails the gate; a
-# case that is neither pinned nor listed fails the gate (completeness).
+# exclusion list is stale-guarded: a listed case that now FAULTS, or is gone, fails the gate. Neither
+# this list nor gate 12's EXPECTED_CHANNEL may name a DROOLS code of the kind FALLBACK (the fence on
+# codes above).
 #
 # HOW THE RED RUN CLASSIFIES: by exception TYPE, never by phase, and so since the leg landed
 # (e1f779aa, 2026-08-27). A refusal of a form the backend does not carry — a loader refusal, or an
@@ -608,14 +539,8 @@ fi
 # undeclared attribute gives "EXCLUDE case sets undeclared attribute", while meldwaarde written as
 # {"boolean": true} gives "FAULT IllegalArgumentException: argument type mismatch" and an
 # undeclared characteristic gives "FAULT RuntimeException: kon setter setVerzonnen(boolean) niet
-# aanroepen …". Hence the PIN RULE: a `drools` fragment cites the backend's OWN sentence and never
-# platform text — a JDK exception message, or the parse message the backend appends in
-# parentheses. Its own sentence may be a runtime message ("Breuk deling door 0", "creation
-# budget exhausted: …"); for a refusal while the case is read it is a sentence that names position
-# and lexeme (asofdate-kalender: "malformed date '2026-02-30' on 'asOfDate': the field widths are
-# right but the calendar is not"). A pin on platform text pins a crash: this leg accepted a trial
-# red case pinned on "argument type mismatch" (lens, 2026-09-23). The rule is a review rule;
-# nothing below checks it.
+# aanroepen …". A crash after the build is a FAULT without a code: such a case cannot be pinned, and
+# the leg fails it as a case that reports no code.
 #
 # Conditional on a JDK + python3 (gate-9 pattern for the RUNNER: skip loudly where java is
 # absent; the ref/clingo legs above remain the CI blocker). WITHIN the leg, mvn is a hard
@@ -681,6 +606,33 @@ uu-temporal-key-scalar|EXCLUDE DROOLS-051 the case sets a temporal attribute (vo
 uu-two-temporal-keys|EXCLUDE DROOLS-127 measured 2026-10-10 (card tms-omschakeling): the refusal of uni-two-temporal-keys for the uniqueness over more sources, "transpiler SKIP: uniciteit-unie: dubbel temporeel — een uniciteitssleutel 'volgnummer' van Strandvondst op een tijdlijn naast een tweede: een sleutel heeft hoogstens één tijdsafhankelijk deel, …", an EXCLUDE where ref and clingo fault; until the switch-over the destructive lowering faulted in ref's words and the case pinned them
 vintage-uncovered-date|EXCLUDE DROOLS-023 the v0 loader refuses the TemporalRead expression node (the vintage read) — the temporal-read form is not carried
 EOF
+        # the fence on codes: neither this list nor gate 12's EXPECTED_CHANNEL names a DROOLS code of the kind FALLBACK
+        # (the bottom arm of a dispatch), as a code a witness rests on; read from the register itself, in the one form
+        # scripts/check-drools-codes.sh reads it by
+        if ! python3 -I - "$excl" scripts/check-drools.sh backends/drools/src/main/java/dev/uchar/regelspraak/refusal/DroolsCode.java <<'PYEOF'
+import re, sys
+excl, channel, register = sys.argv[1:4]
+kinds = dict(re.findall(r'\("(DROOLS-[0-9]{3})", Kind\.([A-Z]+),', open(register, encoding="utf-8").read()))
+if not kinds:
+    sys.exit("FAIL: the register %s holds no code in the form the fence reads — the fence would hold nothing" % register)
+bad, seen = 0, 0
+for path, pattern in ((excl, r"^[^|]+\|EXCLUDE (DROOLS-[0-9]{3}) "), (channel, r'^\s*"[^"|]+\|EXCLUDE (DROOLS-[0-9]{3})\|')):
+    for line in open(path, encoding="utf-8"):
+        m = re.match(pattern, line)
+        if not m:
+            continue
+        seen += 1
+        if kinds.get(m.group(1)) is None:
+            sys.stderr.write("FAIL: %s names %s, which the Drools register does not hold\n" % (path, m.group(1))); bad += 1
+        elif kinds[m.group(1)] == "FALLBACK":
+            sys.stderr.write("FAIL: %s names %s, a fallback code of the Drools register: the bottom arm of a dispatch is never what a witness rests on — give the form a named arm with a code of its own\n" % (path, m.group(1))); bad += 1
+if seen == 0:
+    sys.stderr.write("FAIL: the fence on codes read no EXCLUDE entry in the Drools exclusion list or in EXPECTED_CHANNEL — an empty scan is never silently green\n"); bad += 1
+sys.exit(1 if bad else 0)
+PYEOF
+        then
+            status=1
+        fi
         d_fault=0
         d_excl=0
         d_excl_codes=0
@@ -688,7 +640,6 @@ EOF
         while IFS= read -r case; do
             name=$(basename "$(dirname "$case")")
             ir=$(dirname "$case")/ir.json
-            frag=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("expectedFault",{}).get("drools",""))' "$case")
             reason=$(awk -F'|' -v n="$name" '$1==n {i=index($0,"|"); print substr($0,i+1); exit}' "$excl")
             # DroolsRedMain prints exactly one status line (FAULT|NOFAULT|EXCLUDE|ERROR <detail>) last on
             # stdout; the leg classifies on that STATUS TOKEN, never the bare exit code, so an ERROR (an I/O
@@ -697,82 +648,66 @@ EOF
             # (head of this leg): a listed case that shows one fails as stale, and a pin may not match it.
             out=$(java -cp "$JAR" "$MAIN" "$ir" "$case" 2>/dev/null | tail -1)
             tok=${out%% *}
-            if [ -n "$frag" ]; then
-                if [ -n "$reason" ]; then
-                    echo "FAIL: $name carries a drools fragment AND sits in the Drools exclusion list — drop the static entry" >&2
-                    status=1
-                fi
-                # a carried case MUST be a FAULT whose report contains the pinned fragment, the backend's own
-                # sentence and never platform text (head of this leg); any other token (NOFAULT / EXCLUDE /
-                # ERROR) is a regression, never a pass.
+            if [ -z "$reason" ]; then
+                # a carried case MUST be a FAULT with the pinned code and parameters; any other token
+                # (NOFAULT / EXCLUDE / ERROR) is a regression, never a pass
                 case "$tok" in
                     FAULT)
-                        case "$out" in
-                            *"$frag"*) d_fault=$((d_fault + 1)) ;;
-                            *) printf 'FAIL: %s — Drools faulted but the pinned fragment is absent (drools="%s"):\n%s\n' "$name" "$frag" "$out" >&2
-                               status=1 ;;
-                        esac
-                        # the code at the head of the status line, `FAULT EF-005: …` (several: `EF-005, EF-016: …`)
+                        d_fault=$((d_fault + 1))
                         key=${case#corpus/rood/}
                         key=${key%.json}
                         pin=$(awk -F'|' -v c="$key" '$1 == c { print $2; exit }' "$pinned_map")
-                        seen=$(printf '%s\n' "$out" | sed -n 's/^FAULT \(EF-[0-9][0-9][0-9]\(, EF-[0-9][0-9][0-9]\)*\): .*/\1/p' | tr -d ' ')
-                        seen=${seen:--}
+                        pinparams=$(awk -F'|' -v c="$key" '$1 == c { i = index($0, "|"); r = substr($0, i + 1); j = index(r, "|"); print substr(r, j + 1); exit }' "$pinned_map")
                         if [ -z "$pin" ]; then
                             printf 'FAIL: %s — no pinned code was decoded for the Drools code check (see the ref leg above)\n' "$name" >&2
                             status=1
-                        elif code_check "$key" drools "$seen" "$pin"; then
-                            [ "$seen" = "-" ] || d_codes=$((d_codes + 1))
+                        elif code_check "$key" drools "$out" "$pin" "$pinparams"; then
+                            d_codes=$((d_codes + 1))
                         else
                             status=1
                         fi ;;
-                    *) printf 'FAIL: %s — Drools did not FAULT (pinned drools="%s"), observed %s:\n%s\n' "$name" "$frag" "$tok" "$out" >&2
+                    *) printf 'FAIL: %s — Drools did not FAULT (the case is not in the exclusion list, so the backend must carry it), observed %s:\n%s\n' "$name" "$tok" "$out" >&2
                        status=1 ;;
                 esac
             else
-                if [ -z "$reason" ]; then
-                    printf 'FAIL: %s carries no drools fragment and is not in the Drools exclusion list — pin a fragment or list it with a reason:\n%s\n' "$name" "$out" >&2
-                    status=1
-                else
-                    # the listed reason's first word is its declared not-carried category; it is machine-checked
-                    # against the observed token, so a reason that drifts (EXCLUDE<->NOFAULT) or a case that now
-                    # FAULTs or ERRORs fails the gate — the stale-guard is no longer exit-code-blind.
-                    rcat=${reason%% *}
-                    case "$tok" in
-                        FAULT)
-                            printf 'FAIL: stale exclusion — %s is listed (%s) but Drools now FAULTS; drop the entry and pin its fragment:\n%s\n' "$name" "$reason" "$out" >&2
-                            status=1 ;;
-                        ERROR)
-                            printf 'FAIL: %s is listed (%s) but Drools ERRORED — a backend crash is never a not-carried outcome; fix the crash or reclassify:\n%s\n' "$name" "$reason" "$out" >&2
-                            status=1 ;;
-                        EXCLUDE|NOFAULT)
-                            if [ "$tok" != "$rcat" ]; then
-                                printf 'FAIL: reason drift — %s is listed as %s but Drools now reports %s; correct the reason category to match the observed status:\n%s\n' "$name" "$rcat" "$tok" "$out" >&2
+                # the listed reason's first word is its declared not-carried category; it is machine-checked
+                # against the observed token, so a reason that drifts (EXCLUDE<->NOFAULT) or a case that now
+                # FAULTs or ERRORs fails the gate — the stale-guard is no longer exit-code-blind.
+                rcat=${reason%% *}
+                case "$tok" in
+                    FAULT)
+                        printf 'FAIL: stale exclusion — %s is listed (%s) but Drools now FAULTS; drop the entry (the case is then pinned on Drools too):\n%s\n' "$name" "$reason" "$out" >&2
+                        status=1 ;;
+                    ERROR)
+                        printf 'FAIL: %s is listed (%s) but Drools ERRORED — a backend crash is never a not-carried outcome; fix the crash or reclassify:\n%s\n' "$name" "$reason" "$out" >&2
+                        status=1 ;;
+                    EXCLUDE|NOFAULT)
+                        if [ "$tok" != "$rcat" ]; then
+                            printf 'FAIL: reason drift — %s is listed as %s but Drools now reports %s; correct the reason category to match the observed status:\n%s\n' "$name" "$rcat" "$tok" "$out" >&2
+                            status=1
+                        elif [ "$tok" = EXCLUDE ]; then
+                            # an EXCLUDE entry pins the register code of the refusal (`EXCLUDE DROOLS-014 <reason>`)
+                            # and the report carries it at its head (`EXCLUDE DROOLS-014: <sentence>`); the two must
+                            # be the same code, so a refusal that moves to another code, or a report without one,
+                            # fails by case name with both codes
+                            rcode=$(printf '%s\n' "$reason" | sed -n 's/^EXCLUDE \(DROOLS-[0-9][0-9][0-9]\) .*/\1/p')
+                            scode=$(printf '%s\n' "$out" | sed -n 's/^EXCLUDE \(DROOLS-[0-9][0-9][0-9]\): .*/\1/p')
+                            if [ -z "$rcode" ]; then
+                                printf 'FAIL: %s is listed as EXCLUDE without a register code (EXCLUDE DROOLS-### <reason>):\n%s\n' "$name" "$reason" >&2
                                 status=1
-                            elif [ "$tok" = EXCLUDE ]; then
-                                # an EXCLUDE entry pins the register code of the refusal (`EXCLUDE DROOLS-014 <reason>`)
-                                # and the report carries it at its head (`EXCLUDE DROOLS-014: <sentence>`); the two must
-                                # be the same code, so a refusal that moves to another code, or a report without one,
-                                # fails by case name with both codes
-                                rcode=$(printf '%s\n' "$reason" | sed -n 's/^EXCLUDE \(DROOLS-[0-9][0-9][0-9]\) .*/\1/p')
-                                scode=$(printf '%s\n' "$out" | sed -n 's/^EXCLUDE \(DROOLS-[0-9][0-9][0-9]\): .*/\1/p')
-                                if [ -z "$rcode" ]; then
-                                    printf 'FAIL: %s is listed as EXCLUDE without a register code (EXCLUDE DROOLS-### <reason>):\n%s\n' "$name" "$reason" >&2
-                                    status=1
-                                elif [ "$rcode" != "$scode" ]; then
-                                    printf 'FAIL: code drift — %s is pinned %s but Drools reports %s:\n%s\n' "$name" "$rcode" "${scode:-no code}" "$out" >&2
-                                    status=1
-                                else
-                                    d_excl=$((d_excl + 1)); d_excl_codes=$((d_excl_codes + 1))
-                                fi
+                            elif [ "$rcode" != "$scode" ]; then
+                                printf 'FAIL: code drift — %s is pinned %s but Drools reports %s:\n%s\n' "$name" "$rcode" "${scode:-no code}" "$out" >&2
+                                status=1
                             else
-                                d_excl=$((d_excl + 1))
-                            fi ;;
-                        *)
-                            printf 'FAIL: %s — unexpected Drools status token "%s" (expected FAULT/EXCLUDE/NOFAULT/ERROR):\n%s\n' "$name" "$tok" "$out" >&2
-                            status=1 ;;
-                    esac
-                fi
+                                d_excl=$((d_excl + 1)); d_excl_codes=$((d_excl_codes + 1))
+                            fi
+                        else
+                            d_excl=$((d_excl + 1))
+                        fi ;;
+                    *)
+                        printf 'FAIL: %s — unexpected Drools status token "%s" (expected FAULT/EXCLUDE/NOFAULT/ERROR):\n%s\n' "$name" "$tok" "$out" >&2
+                        status=1 ;;
+                esac
             fi
         done < "$list"
         # gone-guard: every exclusion entry must name an existing rood case (a double-list is caught above)
@@ -798,8 +733,12 @@ EOF
             printf 'check-rood: FAIL — Drools leg: %s EXCLUDE cases compared on their DROOLS code, but EXPECTED_MIN_DROOLS_EXCLUDE_CODES pins at least %s — the list shrank or lost its code pins\n' "$d_excl_codes" "$EXPECTED_MIN_DROOLS_EXCLUDE_CODES" >&2
             status=1
         fi
+        if [ "$n_drools_params" -lt "$EXPECTED_MIN_DROOLS_PARAMS" ]; then
+            printf 'check-rood: FAIL — Drools leg: %s pinned parameter(s) confirmed, but EXPECTED_MIN_DROOLS_PARAMS pins at least %s — the parameter checks of the leg shrank\n' "$n_drools_params" "$EXPECTED_MIN_DROOLS_PARAMS" >&2
+            status=1
+        fi
         if [ "$status" -eq 0 ]; then
-            printf 'check-rood: Drools leg PASS (%s fault-pinned, %s of them reporting the case'"'"'s code; %s not-carried with reason, %s of them EXCLUDE pinned by their DROOLS code)\n' "$d_fault" "$d_codes" "$d_excl" "$d_excl_codes"
+            printf 'check-rood: Drools leg PASS (%s fault-pinned, %s of them reporting the case'"'"'s code, %s pinned parameter checks confirmed, floor %s; %s not-carried with reason, %s of them EXCLUDE pinned by their DROOLS code)\n' "$d_fault" "$d_codes" "$n_drools_params" "$EXPECTED_MIN_DROOLS_PARAMS" "$d_excl" "$d_excl_codes"
         fi
         drools_ran=1
     fi
@@ -807,19 +746,22 @@ else
     echo 'check-rood: Drools leg SKIPPED — needs java + python3 (and, once running, mvn: the leg takes the jar fresh or rebuilt). Not a blocker on a machine without java; the ref/clingo legs above are the CI blocker. NB hosted ubuntu runners DO carry java, so there the leg runs (and needs a warm ~/.m2).' >&2
 fi
 
-# the divergence list's gone-guard: every entry was consulted by a check. A Drools entry is consulted
-# only when the Drools leg ran; on a machine without java it is skipped with the leg, loudly above.
-while IFS='|' read -r c e reason; do
+# the divergence list's gone-guard: every entry was consulted by a check, and names an executor that carries a
+# fragment-free register (ref or clingo; the Drools backend lists its not-carried cases in its own exclusion list above)
+while IFS='|' read -r c e ecode reason; do
     [ -z "$c" ] && continue
     case "$e" in
-        ref|clingo|drools) ;;
-        *) echo "FAIL: the divergence entry $c names the executor '$e' (ref, clingo or drools)" >&2; status=1; continue ;;
+        ref|clingo) ;;
+        *) echo "FAIL: the divergence entry $c names the executor '$e' (ref or clingo)" >&2; status=1; continue ;;
+    esac
+    case "$ecode" in
+        REF-[0-9][0-9][0-9]|CLINGO-[0-9][0-9][0-9]) ;;
+        *) echo "FAIL: the divergence entry $c|$e names '$ecode' as its code (a REF-### or CLINGO-### of the register of the executor)" >&2; status=1 ;;
     esac
     case "$reason" in
         "REFUSAL "*|"LIMIT "*) ;;
         *) echo "FAIL: the divergence entry $c|$e has no category REFUSAL or LIMIT as the first word of its reason" >&2; status=1 ;;
     esac
-    if [ "$e" = drools ] && [ "${drools_ran:-0}" -eq 0 ]; then continue; fi
     if ! grep -qx "$c|$e" "$div_used"; then
         echo "FAIL: stale divergence — the entry $c|$e was consulted by no code check (its case is gone, or the executor makes no check on it)" >&2
         status=1
@@ -830,7 +772,7 @@ rm -f "$divergence" "$div_used" "$pinned_map"
 if [ "$status" -eq 0 ]; then
     printf 'check-rood: %s golden inconsistent expectations pin a §9.5 code, each a row on that channel, floor %s\n' \
         "$n_golden_codes" "$EXPECTED_MIN_GOLDEN_CODES"
-    printf 'check-rood: PASS (%s red cases fault observably in ref and clingo, floor %s; %s pinned fragments cite none of the %s listed bottom sentences; %s ref and clingo code checks report the case'"'"'s code, floor %s, %s listed as divergence; %s fault kinds in RUNTIME-SEMANTICS ch. 5.7b, floor %s)\n' \
-        "$n_cases" "$EXPECTED_MIN_RED_CASES" "$n_frag" "$n_bottom" "$n_red_codes" "$EXPECTED_MIN_RED_CODES" "$n_div" "$n_ef" "$EXPECTED_MIN_EF_CODES"
+    printf 'check-rood: PASS (%s red cases fault observably in ref and clingo, floor %s; %s ref and clingo code checks report the case'"'"'s code, floor %s, %s listed as divergence; %s pinned parameter checks confirmed, floor %s; %s fault kinds in RUNTIME-SEMANTICS ch. 5.7b, floor %s)\n' \
+        "$n_cases" "$EXPECTED_MIN_RED_CASES" "$n_red_codes" "$EXPECTED_MIN_RED_CODES" "$n_div" "$n_red_params" "$EXPECTED_MIN_RED_PARAMS" "$n_ef" "$EXPECTED_MIN_EF_CODES"
 fi
 exit "$status"

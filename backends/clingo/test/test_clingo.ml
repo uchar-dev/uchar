@@ -37,7 +37,7 @@ let check name ok =
 let translate doc case =
   try Translate.translate doc case with
   | Uchar_ref.Value.Fault _ as f -> raise f
-  | e -> raise (Uchar_ref.Value.Fault { code = None; text = ("a CRASH, not a fault: " ^ Printexc.to_string e) })
+  | e -> raise (Uchar_ref.Value.Fault { code = None; params = []; text = ("a CRASH, not a fault: " ^ Printexc.to_string e) })
 
 (* the frontend-faithful pure-% spelling (jutterswet-vondsttarief) *)
 let pct_unit =
@@ -3484,7 +3484,7 @@ let substitute ~truth ~via body_text =
   let n = String.length truth in
   let rec search i =
     if i + n > String.length body_text then
-      raise (Uchar_ref.Value.Fault { code = None; text = ("test twist: substring not found: " ^ truth) })
+      raise (Uchar_ref.Value.Fault { code = None; params = []; text = ("test twist: substring not found: " ^ truth) })
     else if String.sub body_text i n = truth then
       String.sub body_text 0 i ^ via ^ String.sub body_text (i + n) (String.length body_text - i - n)
     else search (i + 1)
@@ -5039,8 +5039,7 @@ let () =
     ~case_text:
       (arm_case ~inkomen:"5" ~restpost:"0" ~parameters:arm_params12
          ~expected_value:
-           {|"expectedFault": { "ref": "division by numeric zero",
-                                "clingo": "division by numeric zero" }|}
+           {|"expectedFault": { "code": "EF-005", "params": {} }|}
          ())
     ~needle:"division by numeric zero";
   (* vorm 3 — één behoefte in de armen van twee knopen: 40,00 boven de drempel
@@ -5111,8 +5110,7 @@ let () =
     ~case_text:
       (arm_case ~inkomen:"5" ~restpost:"0" ~parameters:arm_params12
          ~expected_value:
-           {|"expectedFault": { "ref": "division by numeric zero",
-                                "clingo": "division by numeric zero" }|}
+           {|"expectedFault": { "code": "EF-005", "params": {} }|}
          ())
     ~needle:"division by numeric zero";
   (* vorm 4 — de behoefte wordt alleen in de niet-betreden arm gelezen, dus
@@ -5284,8 +5282,7 @@ let () =
     ~case_text:
       (cb_case ~kindertallen:zero_value
          ~expected_value:
-           {|"expectedFault": { "ref": "division by numeric zero",
-                                "clingo": "division by numeric zero" }|})
+           {|"expectedFault": { "code": "EF-005", "params": {} }|})
     ~needle:"division by numeric zero";
   (* dezelfde grens langs ch. 10.6, binnen de gesloten body: de deling zit
      achter een behoefte die alleen de anders-arm leest *)
@@ -5300,8 +5297,7 @@ let () =
     ~case_text:
       (cb_case ~kindertallen:zero_value
          ~expected_value:
-           {|"expectedFault": { "ref": "division by numeric zero",
-                                "clingo": "division by numeric zero" }|})
+           {|"expectedFault": { "code": "EF-005", "params": {} }|})
     ~needle:"division by numeric zero"
 
 (* --- en dezelfde behoefte-grens op regelniveau ONDER een operator ---------
@@ -5453,8 +5449,7 @@ let () =
     ~case_text:
       (arm_case ~inkomen:"5" ~restpost:"0" ~parameters:arm_params12
          ~expected_value:
-           {|"expectedFault": { "ref": "division by numeric zero",
-                                "clingo": "division by numeric zero" }|}
+           {|"expectedFault": { "code": "EF-005", "params": {} }|}
          ())
     ~needle:"division by numeric zero";
   (* DE WIKKELGETUIGE. De rechterhand van de `plus` draagt zelf een
@@ -5612,8 +5607,7 @@ let arm_val n =
     n
 
 let arm_breaks =
-  {|"expectedFault": { "ref": "division by numeric zero",
-                       "clingo": "division by numeric zero" }|}
+  {|"expectedFault": { "code": "EF-005", "params": {} }|}
 
 (* de vier hoeken van elke vorm: de niet-betreden arm met een lege en met een
    nul-deler, en de betreden arm met dezelfde twee *)
@@ -5839,8 +5833,7 @@ let cb_three ~ident ~lambda_body =
     ~case_text:
       (cb_case ~kindertallen:zero_value
          ~expected_value:
-           {|"expectedFault": { "ref": "division by numeric zero",
-                                "clingo": "division by numeric zero" }|})
+           {|"expectedFault": { "code": "EF-005", "params": {} }|})
     ~needle:"division by numeric zero"
 
 let () =

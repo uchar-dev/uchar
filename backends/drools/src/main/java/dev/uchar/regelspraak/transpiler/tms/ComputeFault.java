@@ -96,6 +96,26 @@ public final class ComputeFault extends RuntimeException {
         return null;
     }
 
+    private static final java.util.regex.Pattern COUNT_OUT_OF_RANGE =
+            java.util.regex.Pattern.compile("duration count (.*) is out of range");
+    private static final java.util.regex.Pattern WALK_PAST_REACH =
+            java.util.regex.Pattern.compile("no day of the kind within (\\d+) calendar days of (\\S+)");
+
+    /** The parameters of this fault's kind (RUNTIME-SEMANTICS ch. 5.7b) that its sentence carries, in the order of the
+     *  table: the count of EF-008, the reach and the starting day of EF-009. The sentence is the one place they stand
+     *  (a plan term carries a sentence, not fields); a kind whose sentence names none has none. */
+    public java.util.Map<String, String> params() {
+        java.util.Map<String, String> p = new java.util.LinkedHashMap<>();
+        var count = COUNT_OUT_OF_RANGE.matcher(sentence);
+        if ("EF-008".equals(code()) && count.matches()) p.put("count", count.group(1));
+        var walk = WALK_PAST_REACH.matcher(sentence);
+        if ("EF-009".equals(code()) && walk.find()) {
+            p.put("from", walk.group(2));
+            p.put("reach", walk.group(1));
+        }
+        return p;
+    }
+
     /** Whether {@code t} is an evaluation fault this branch turns into a {@link Fault}: a division by a numeric zero, a
      *  fault of this class, or an input in the other convention of an attribute on a timeline ({@link InputFormFault}).
      *  Every other exception is a broken contract or a bug and leaves the fire as it is. */

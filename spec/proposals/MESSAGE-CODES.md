@@ -711,6 +711,24 @@ the test suites of all three executors, which the card's mandate does not
 cover, and two of its eight red witnesses are forms clingo refuses; the
 card's Result records what the move needs.
 
+*Card 5 done 2026-10-19 (card `fragment-cleanup`; a proposal until the
+maintainer merges it).* The three executors emit the parameters of a fault
+as data (`CODE EF-005 {"rule": "…"}`, per code one JSON object of strings;
+the Drools status line puts the object behind each code) and a red case pins
+`expectedFault {code, params}`, nothing else: the fragments of the 50 cases,
+the bottom-sentence list with its carrier fence and `ref --bottom-sentence`
+are gone, and the schema refuses a fragment key. `ref` and clingo code on
+demand: 12 `REF` and 27 `CLINGO` codes, the 36 bottom sentences as
+`fallback`, the three places of the divergence list as `refusal` and `limit`,
+in a table file per component (`ref/codes.tsv`, `backends/clingo/codes.tsv`)
+that `scripts/check-exec-codes.sh` holds to its source in both directions,
+parameters included. The divergence list of gate 8 has a code column and the
+fence on codes keeps a `fallback` code out of every list. The parameter
+column of ch. 5.7b is read by the gate (every emitted key is a key of the
+column) and says per executor what is emitted; a parameter not every
+executor emits is not pinned. The two pairs of cases are told apart by their
+pinned params (`parameter`, `label`).
+
 **Order (revised after Fable's review, §2 (b)):** 1 → 2 ∥ (3 → 4) → 5 → 6;
 card 7 after 1, serial with 5. Card 2 runs beside the pair 3 → 4 (disjoint
 files: `spec/verifier/` with gate 3 and `corpus/negatief/`), and may as

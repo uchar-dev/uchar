@@ -66,8 +66,9 @@ ref reports an inconsistency beside its values (`RUNTIME-SEMANTICS.md`
 ch. 1.4). `viol/2` is fenced by the global constraint `:- viol(_,_).`
 — any `viol/2` derivation makes the program UNSAT, which is the
 encoding of ref's *hard faults*; the runner then re-runs relaxed,
-shows the `viol/2` witnesses, and gate 8 pins the reason fragment in
-`expectedFault.clingo`. Nothing ever degrades silently: a value the
+shows the `viol/2` witnesses, and gate 8 reads the fault kind and its
+parameters off the witness (`CODE EF-005 {…}`, RUNTIME-SEMANTICS ch. 5.7b) and
+compares them with `expectedFault {code, params}`. Nothing ever degrades silently: a value the
 encoding cannot carry exactly becomes a `viol/2` witness, never a
 truncated number.
 

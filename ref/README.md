@@ -27,7 +27,11 @@ normalisation.
 - `bin/runner.ml` — `runner <ir.json> <case.json>`; exit 0 = every
   expectation matches exactly, 1 = mismatch or evaluation fault,
   2 = a load or cross-check error that no expectedFault pins (a
-  pinned load fault observes as exit 0 since 2026-09-19).
+  pinned load fault observes as exit 0 since 2026-09-19). On an
+  expectedFault case the runner prints `CODE <code> <params as JSON>` for the
+  fault it observed and `CODE-PINNED <code> <params>` for the case's pin, and
+  exits 0 only if the observed code is the pinned one with the pinned
+  parameters among its own; gate 8 compares the two lines.
 - `test/test_ref.ml` — the worked examples of ch. 1–2 verbatim, plus the
   ch. 4.6 allocation examples (`dune build @ref/runtest`).
 

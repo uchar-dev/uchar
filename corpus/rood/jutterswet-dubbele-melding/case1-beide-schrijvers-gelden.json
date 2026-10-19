@@ -22,8 +22,11 @@
   },
   "expectedFault": {
     "code": "EF-016",
-    "ref": "two writers of one target disagree: rule \"melding op vinddag\" writes 2026-03-04 and rule \"melding op aanspoeldag\" writes 2026-03-01 to the attribute meldingsdatum of V, a Vondst",
-    "clingo": "two writers of one target disagree: rules \"melding op vinddag\" and \"melding op aanspoeldag\" write different values to the attribute meldingsdatum of a Vondst — no fixpoint, divergence is a fault (ch. 5.7)\",\"V\")",
-    "drools": "twee schrijvers van één doel geven verschillende waarden — de regel \"melding op vinddag\" schrijft 2026-03-04 en de regel \"melding op aanspoeldag\" schrijft 2026-03-01 in het attribuut meldingsdatum van V, een Vondst"
+    "params": {
+      "rules": "melding op vinddag, melding op aanspoeldag",
+      "attribute": "meldingsdatum",
+      "label": "V",
+      "objectType": "Vondst"
+    }
   }
 }

@@ -11,7 +11,9 @@
  },
  "expectedFault": {
   "code": "EF-004",
-  "ref": "does not fit 0 decimals",
-  "clingo": "does not fit 0 decimals"
+  "params": {
+   "value": "7.5",
+   "decimals": "0"
+  }
  }
 }

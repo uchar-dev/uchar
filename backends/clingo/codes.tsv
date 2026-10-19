@@ -1,0 +1,28 @@
+code	kind	key	params	functions
+CLINGO-001	limit	scaled-value-range	value,decimals	scaled_of_value
+CLINGO-002	fallback	text-operand-shape		symbolic_term
+CLINGO-003	fallback	gedurende-condition-shape		expr_term
+CLINGO-004	fallback	temporal-read-base-shape		expr_term
+CLINGO-005	refusal	clamp-bound-not-literal	bound	expr_term
+CLINGO-006	fallback	construct-payload-rule-level		expr_term
+CLINGO-007	refusal	sum-over-listed-operands		expr_term
+CLINGO-008	fallback	expression-node-kind		expr_term
+CLINGO-009	fallback	datum-tijd-term-shape		dt_term
+CLINGO-010	fallback	whole-period-bound-shape		whole_period_fails
+CLINGO-011	fallback	condition-node-kind		cond_atoms_raw
+CLINGO-012	fallback	construct-payload-ground-term		construct_ground_term
+CLINGO-013	fallback	sum-operand-shape		sum_term
+CLINGO-014	fallback	struct-field-base-shape		struct_base
+CLINGO-015	fallback	match-scrutinee-shape		scrutinee_pattern
+CLINGO-016	fallback	list-source-shape		list_source
+CLINGO-017	fallback	closed-ifthenelse-condition-shape		body_condition
+CLINGO-018	fallback	closed-field-access-base		closed_term
+CLINGO-019	fallback	closed-body-term-shape		closed_term
+CLINGO-020	fallback	closed-sum-operand-shape		sum_operand
+CLINGO-021	fallback	filter-condition-shape		filter_condition
+CLINGO-022	fallback	rounded-division-mode		closed_division
+CLINGO-023	fallback	value-ifthenelse-condition-shape		value_condition
+CLINGO-024	fallback	temporal-target-shape		translate_rule
+CLINGO-025	fallback	rule-kind-shape		translate_rule
+CLINGO-026	fallback	rule-target-shape		translate_rule
+CLINGO-027	fallback	characteristic-init-expression-shape		bool_atoms

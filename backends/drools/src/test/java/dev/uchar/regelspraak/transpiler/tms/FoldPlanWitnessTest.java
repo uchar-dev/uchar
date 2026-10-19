@@ -629,8 +629,7 @@ class FoldPlanWitnessTest {
               {"label": "H2", "objectType": "Haven", "attributes": {"havengeld": {"number": "30"},
                "ligplaatsen": {"number": "0"}}, "roles": {}, "characteristics": []}],
               "parameters": {}},
-             "expectedFault": {"ref": "division by numeric zero", "clingo": "division by numeric zero",
-              "drools": "4 gedeeld door 0"}}
+             "expectedFault": {"code": "EF-005", "params": {}}}
             """;
 
     /** {@link #havenketen} fired where the filter faults (fix round 1c-B2): the rule of the filter's fault binds the

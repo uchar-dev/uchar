@@ -25,7 +25,6 @@
  },
  "expectedFault": {
   "code": "EF-005",
-  "ref": "division by numeric zero",
-  "clingo": "a sum over listed operands is not translated"
+  "params": {}
  }
 }

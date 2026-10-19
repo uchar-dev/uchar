@@ -19,8 +19,6 @@
   },
   "expectedFault": {
     "code": "EF-011",
-    "ref": "the evaluationYear context value needs an evaluation date; the case carries asOfDate null",
-    "clingo": "the evaluationYear context value needs an evaluation date; the case carries asOfDate null",
-    "drools": "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"
+    "params": {}
   }
 }

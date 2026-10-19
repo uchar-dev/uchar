@@ -11,8 +11,8 @@
   },
   "expectedFault": {
     "code": "EF-009",
-    "ref": "no day of the kind within 40000 calendar days",
-    "clingo": "no day of the kind within 40000 calendar days",
-    "drools": "no day of the kind within 40000 calendar days"
+    "params": {
+      "reach": "40000"
+    }
   }
 }

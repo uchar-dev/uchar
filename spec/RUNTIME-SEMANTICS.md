@@ -3984,23 +3984,43 @@ parameters, the clause that defines it and its witnesses.
   a message is the executor's own and differs between executors; the code
   does not. A kind on the `§9.5` channel has no report: its code travels on
   the channel fact (ch. 5.6).
-- **Parameters.** The column names the parameters that identify the object
-  of a fault; their values are declared names, labels and lexemes as they
-  stand in the document and the case, untranslated. No executor emits them
-  as data yet and no gate checks them: the column is checked from the card
-  that emits them on (`spec/proposals/MESSAGE-CODES.md` §7, card 5). It is
-  the one column of this table without a machine check, recorded rather
-  than hidden.
+- **Parameters.** The column names the parameters that identify the object of a
+  fault; their values are declared names, labels and lexemes as they stand in
+  the document and the case, untranslated, and the writers or values of a list
+  (EF-016) are its elements joined by `, `. An executor emits them as data
+  beside its report and never inside the text: on the machine line of its
+  runner, `CODE EF-005 {"rule": "…"}`, one JSON object of strings per code (the
+  red run of the Drools backend puts the object after each code of its status
+  line, `FAULT EF-005 {"rule": "…"}: …`; `{}` where the executor names none). A
+  red case pins them (`expectedFault.params`, an object of strings) and gate 8
+  holds every executor that checks the case to them as a subset: it emits at least
+  the pinned ones. An executor emits what it has in hand at the place that
+  raises the fault, so the column is what the table names, not what each
+  executor emits; a parameter that not every executor emits is not pinned by
+  any case (an executor that does not name it would fail the pin). Measured
+  2026-10-19, of the column of each row: `ref` emits all of it except
+  `dividend` (EF-005), `contextValue` (EF-011), `position` (EF-019) and `key`
+  (EF-024), which no executor emits yet, and `rule` (EF-005), which only the
+  Drools backend emits. The ASP backend lacks, beside those, `place` (EF-004),
+  `value` and `decimals` (EF-006), `place` (EF-006) in all but one of its
+  reasons, `from` (EF-009), `creation`, `stratum` and `depth` (EF-015),
+  `values` (EF-016) and `filler` (EF-017). The Drools backend emits only `field` and
+  `lexeme` (EF-003), `count` (EF-008), `from` and `reach` (EF-009), `creation`,
+  `stratum` and `depth` (EF-015), `rules`, `values`, `attribute`, `label` and
+  `objectType` (EF-016), and `rule` (EF-005), and no other.
+  Gate 8 holds each executor's emitted keys to this column: a key outside the
+  column of its code fails with the code, the executor and the key.
 - **Witnesses.** A code enters the table together with its witness: a red
   case (`corpus/rood/<dir>`) whose `expectedFault.code` names it, or, for a
   kind on the §9.5 channel, a golden case (`corpus/golden/<dir>`) whose
   `inconsistent` expectation names it. Gate 8 (`scripts/check-rood.sh`)
   reads this table: every row parses, every witness exists and pins the
-  code of its row, every code a red case pins is a row, and every code a
-  golden `inconsistent` expectation pins is a row on the `§9.5` channel. An executor
+  code of its row, every code a red case pins is a row, every parameter an
+  executor emits is a key of the column of its code, and every code a golden
+  `inconsistent` expectation pins is a row on the `§9.5` channel. An executor
   that fails on a witness for a reason of its own — a form it does not
   carry, a limit of its representation — stands in that gate's
-  reason-carrying divergence list.
+  reason-carrying divergence list, with the code of its own refusal.
 - **Kinds without a code.** A normative fault without a witness keeps its
   text and gets a code when a red case for it lands: today, among others,
   the pass budget of ch. 5.7 step 4 where no divergence by two writers is
@@ -4053,12 +4073,14 @@ as a WF rule (its witness moves to `corpus/negatief`) or as a specified
 form (its witness moves to the golden corpus), and its code then retires.
 
 Worked example (`corpus/rood/division-by-numeric-zero`, replayed by gate
-8): the case pins `"code": "EF-005"`. The reference interpreter reports the
+8): the case pins `"code": "EF-005"` and `"params": {}` (the parameters `rule`
+and `dividend` that the row names are not emitted by every executor, so the
+case pins none). The reference interpreter reports the
 code beside its message "division by numeric zero"; the ASP backend
 reports it for its witness `viol("division by numeric zero","V1")`; the
-Drools backend's red run reports `FAULT EF-005: DelingDoorNul: deling door
-nul in de regel "deel van een vondst": 90 gedeeld door 0 — …`. Three texts,
-one code.
+Drools backend's red run reports `FAULT EF-005 {"rule": "deel van een
+vondst"}: DelingDoorNul: deling door nul in de regel "deel van een vondst":
+90 gedeeld door 0 — …`. Three texts, one code.
 
 ### 5.8 The navigated read
 

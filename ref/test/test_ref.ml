@@ -8089,11 +8089,11 @@ let () =
     (bare ~rest:{|, "expectedFault": []|} ())
     "expectedFault: expected an object, got []";
   refuses_text "caselader-vorm-expectedfault-veld-ontbreekt"
-    (bare ~rest:{|, "expectedFault": { "ref": "x" }|} ())
-    {|expectedFault: missing field "clingo"|};
+    (bare ~rest:{|, "expectedFault": { "code": "EF-005" }|} ())
+    {|expectedFault: missing field "params"|};
   refuses_text "caselader-vorm-expectedfault-geen-tekst"
-    (bare ~rest:{|, "expectedFault": { "ref": 1, "clingo": "x" }|} ())
-    "expectedFault.ref: expected a string, got 1";
+    (bare ~rest:{|, "expectedFault": { "code": "EF-005", "params": { "rule": 1 } }|} ())
+    "expectedFault.params.rule: expected a string, got 1";
   (* an instance: by its array position until its label is read, by the
      label from then on *)
   refuses_text "caselader-vorm-instantie-geen-object" (with_instance "5")

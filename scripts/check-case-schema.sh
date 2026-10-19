@@ -211,8 +211,34 @@ for pos, kind in sorted(PATTERN_POSITIONS.items()):
                 "FAIL: pattern self-test, %s = %r: schema %s it, expected %s\n  %s\n"
                 % (pos, lexeme, "accepts" if got_ok else "refuses",
                    "accept" if want_ok else "refuse", why))
+# The shape of the pin of a red case (card fragment-cleanup, 2026-10-19): `expectedFault` is a code and its params,
+# an object of strings, and nothing else, so a fragment of message text (`ref`, `clingo`, `drools`) left in a case is
+# refused here and not only by the case reader. No case of the corpus can fail these rows; they are held HERE,
+# against the schema itself, through the same validator.
+EXPECTED_FAULT_ROWS = [
+    ({"code": "EF-005", "params": {}},                              True,  "a kind without parameters pins the empty object"),
+    ({"code": "EF-016", "params": {"label": "V", "rules": "a, b"}}, True,  "parameters are an object of strings"),
+    ({"code": "EF-005"},                                            False, "params is required: a pin states its parameters, or states that it has none"),
+    ({"params": {}},                                                False, "the code is required"),
+    ({"code": "EF-005", "params": {"rule": 5}},                     False, "a parameter value is a string, a lexeme"),
+    ({"code": "EF-005", "params": {"rule": None}},                  False, "no null parameter value"),
+    ({"code": "EF-005", "params": ["rule"]},                        False, "params is an object, not a list"),
+    ({"code": "EF-005", "params": "rule"},                          False, "params is an object, not a string"),
+    ({"code": "EF-005", "params": {}, "ref": "division by zero"},   False, "a ref fragment is refused: no pin is a piece of message text"),
+    ({"code": "EF-005", "params": {}, "clingo": "division"},        False, "a clingo fragment is refused"),
+    ({"code": "EF-005", "params": {}, "drools": "deling"},          False, "a drools fragment is refused"),
+]
+probe = CaseValidator({"properties": schema["properties"], "$defs": schema["$defs"],
+                       "$ref": "#/properties/expectedFault"})
+for doc, want_ok, why in EXPECTED_FAULT_ROWS:
+    n_selftest += 1
+    got_ok = not list(probe.iter_errors(doc))
+    if got_ok != want_ok:
+        selftest_bad += 1
+        sys.stderr.write("FAIL: expectedFault self-test, %r: schema %s it, expected %s\n  %s\n"
+                         % (doc, "accepts" if got_ok else "refuses", "accept" if want_ok else "refuse", why))
 if selftest_bad:
-    sys.stderr.write("check-case-schema: FAIL (%d pattern self-test row(s) bad)\n" % selftest_bad)
+    sys.stderr.write("check-case-schema: FAIL (%d self-test row(s) bad)\n" % selftest_bad)
     sys.exit(1)
 
 failed = 0
@@ -248,10 +274,10 @@ PY
 ) || status=1
 
 if [ "$n" -eq 0 ]; then
-    echo "check-case-schema: schema valid; ${selftest:-no} pattern self-test row(s); 0 case files (cases not yet populated)"
+    echo "check-case-schema: schema valid; ${selftest:-no} self-test row(s); 0 case files (cases not yet populated)"
     exit "$status"
 fi
 if [ "$status" -eq 0 ]; then
-    echo "check-case-schema: PASS (schema valid; $selftest pattern self-test row(s); $n case file(s) validate)"
+    echo "check-case-schema: PASS (schema valid; $selftest self-test row(s); $n case file(s) validate)"
 fi
 exit "$status"

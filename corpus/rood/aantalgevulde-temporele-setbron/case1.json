@@ -34,7 +34,8 @@
   },
   "expectedFault": {
     "code": "EF-021",
-    "ref": "of a set has no moment at which a filled count can ask a timeline whether it is filled (ch. 3.4c)",
-    "clingo": "of a set has no moment at which a filled count can ask a timeline whether it is filled (ch. 3.4c)"
+    "params": {
+      "attribute": "gewicht"
+    }
   }
 }

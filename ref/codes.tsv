@@ -1,0 +1,13 @@
+code	kind	key	params	functions
+REF-001	fallback	literal-datatype-unread	lexeme	literal_value
+REF-002	fallback	expression-node-kind		eval_expr
+REF-003	fallback	temporal-read-base-shape		eval_expr
+REF-004	fallback	gedurende-condition-shape		eval_function_call
+REF-005	fallback	temporal-fold-kind-unread	attribute	eval_function_call
+REF-006	fallback	instance-fold-source-shape		eval_function_call
+REF-007	fallback	function-kind-unread		eval_function_call
+REF-008	fallback	predicate-kind-unread		eval_cond
+REF-009	fallback	pro-rata-condition-shape		run_pro_rata
+REF-010	fallback	day-count-condition-shape		run_pro_rata
+REF-011	fallback	temporal-target-shape		run_pro_rata
+REF-012	fallback	rule-target-shape	rule	run_rule

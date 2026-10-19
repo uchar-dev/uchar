@@ -48,14 +48,16 @@ type t =
 
    [code] is the fault kind's EF code (RUNTIME-SEMANTICS ch. 5.7b) where the
    raising site names one, beside the text and never inside it: a report
-   renders it at its head ([report]), so no substring of the text moves and
-   every fragment a red case pins keeps matching. *)
-exception Fault of { code : string option; text : string }
+   renders it at its head ([report]), so no substring of the text moves.
+   [params] are the parameters of the code (ch. 5.7b) as name/lexeme pairs, in
+   the order of the table: data beside the text, never inside it. *)
+exception Fault of { code : string option; params : (string * string) list; text : string }
 
-let fault fmt = Printf.ksprintf (fun s -> raise (Fault { code = None; text = s })) fmt
+let fault fmt = Printf.ksprintf (fun s -> raise (Fault { code = None; params = []; text = s })) fmt
 
 (* a fault of the kind [code] *)
-let faultc code fmt = Printf.ksprintf (fun s -> raise (Fault { code = Some code; text = s })) fmt
+let faultc ?(params = []) code fmt =
+  Printf.ksprintf (fun s -> raise (Fault { code = Some code; params; text = s })) fmt
 
 (* the report of a fault: its code at the head, "EF-005: division by numeric zero" *)
 let report ~code text = match code with None -> text | Some c -> c ^ ": " ^ text

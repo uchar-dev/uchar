@@ -15,8 +15,6 @@
   },
   "expectedFault": {
     "code": "EF-011",
-    "ref": "the evaluationDate context value needs an evaluation date",
-    "clingo": "the evaluationDate context value needs an evaluation date",
-    "drools": "fout in de regel \"vaartduur van een vaart\": the evaluationDate context value needs an evaluation date"
+    "params": {}
   }
 }

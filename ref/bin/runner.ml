@@ -1,100 +1,49 @@
 (* The oracle runner: replay one uchar-case-v0 file against its ir.json.
    Exit 0: every expectation matches exactly — or, on an expectedFault
-   case (corpus/rood), the LOADING OR the evaluation faults and the
-   report contains the pinned fragment. Exit 1: a mismatch, an
-   unexpected fault, a fault that does not occur, or a fault report
-   without the fragment. Exit 2: a load or cross-check error that no
+   case (corpus/rood), the LOADING OR the evaluation faults with the pinned
+   code and parameters. Exit 1: a mismatch, an unexpected fault, a fault that
+   does not occur, or a fault of another code or parameters (the whole report
+   then goes to stderr). Exit 2: a load or cross-check error that no
    expectedFault pins.
 
    With --noop the evaluation is skipped and the expectations are
    checked against the raw input world — the gate-7 guard: a corpus a
-   do-nothing executor satisfies has stopped testing anything.
+   do-nothing executor satisfies has stopped testing anything. *)
 
-   With --bottom-sentence the case's PINS are read and compared against a list
-   of refusal sentences; no ir.json, no world, no evaluation. See
-   [bottom_sentence] below. *)
-
-(* --- the bottom-sentence fence, gate 8's fourth leg ----------------------------
-   A red pin must cite a refusal that NAMES the form it refuses, never a
-   fall-through arm's message, which is the same sentence for every form
-   that arm catches. The gate owns the reason-carrying sentence list; this
-   mode owns the two things that must not be approximated in shell:
-   DECODING the fragment (a JSON string may spell any character as an
-   escape — \u00XX, or a backslashed quote — and a text scrape would
-   compare the escape instead of the character it stands for) and
-   COMPARING it — with [Case.contains], the very matcher the
-   red path above runs a fault report through, so the fence tests exactly
-   the relation the pin will have at replay.
-
-     runner --bottom-sentence <sentences-file> <case.json>
-
-   stdout: "PINS <n>", then one "HIT <key> <line> <fragment>" per
-   citation, the fragment printed %S so a control character in it cannot
-   break the line the gate reads back. A case declaring no readable
-   expectedFault exits 2: the fence may not be hollowed out by silence. *)
-let bottom_sentence sentences_path case_path =
-  let sentences =
-    let ic = open_in_bin sentences_path in
-    let rec go acc n =
-      match input_line ic with
-      | line -> go ((n, line) :: acc) (n + 1)
-      | exception End_of_file ->
-          close_in ic;
-          List.rev acc
-    in
-    go [] 1
+(* The two machine lines of the red path, which gate 8 reads: the code and
+   parameters this executor observed (RUNTIME-SEMANTICS ch. 5.7b), and the case's
+   own expectedFault code and params as the case reader decoded them. The runner
+   decodes them, never the shell: a JSON string may spell any character as an
+   escape. "-" stands for no code. Printed whenever the red path observed a fault,
+   before the verdict. *)
+let print_codes ~observed ~params ~(pinned : Uchar_ref.Case.expected_fault) =
+  let line tag code params =
+    match code with
+    | None -> Printf.printf "%s -\n" tag
+    | Some c -> Printf.printf "%s %s %s\n" tag c (Uchar_ref.Case.params_json params)
   in
-  if sentences = [] then (
-    Printf.eprintf "BOTTOM_SENTENCE: %s lists no sentence — an empty fence is never green\n"
-      sentences_path;
-    exit 2);
-  match
-    try Uchar_ref.Case.expected_fault_of_file case_path with
-    | Uchar_ref.Case.Error { text = msg; _ } | Sys_error msg | Yojson.Json_error msg ->
-        Printf.eprintf "BOTTOM_SENTENCE: %s is unreadable: %s\n" case_path msg;
-        exit 2
-  with
-  | None ->
-      Printf.eprintf "BOTTOM_SENTENCE: %s declares no expectedFault to check\n" case_path;
-      exit 2
-  | Some { ef_ref; ef_clingo; _ } ->
-      print_endline "PINS 2";
-      List.iter
-        (fun (key, frag) ->
-          List.iter
-            (fun (n, sentence) ->
-              (* an empty line would match everything (contains ~needle:"" is
-                 true), so it is skipped rather than allowed to indict the corpus *)
-              if
-                sentence <> ""
-                && (Uchar_ref.Case.contains ~needle:frag sentence
-                   || Uchar_ref.Case.contains ~needle:sentence frag)
-              then Printf.printf "HIT %s %d %S\n" key n frag)
-            sentences)
-        [ ("ref", ef_ref); ("clingo", ef_clingo) ]
+  line "CODE" observed params;
+  line "CODE-PINNED" (Some pinned.ef_code) pinned.ef_params
 
-(* The two machine lines of the red path, which gate 8 reads: the code this
-   executor observed (RUNTIME-SEMANTICS ch. 5.7b), and the case's own
-   expectedFault.code as the case reader decoded it. The runner decodes it,
-   never the shell: a JSON string may spell any character as an escape (the
-   --bottom-sentence precedent). "-" stands for none. Printed whenever the red
-   path observed a fault, before the fragment verdict, so a fragment mismatch
-   and a code mismatch are told apart. *)
-let print_codes ~observed ~pinned =
-  let one = function None -> "-" | Some c -> c in
-  Printf.printf "CODE %s\nCODE-PINNED %s\n" (one observed) (one pinned)
+(* the verdict on an observed fault: the pin matches, or the whole report is shown *)
+let verdict ~(pinned : Uchar_ref.Case.expected_fault) ~code ~params ~what report =
+  print_codes ~observed:code ~params ~pinned;
+  if Uchar_ref.Case.pin_matches pinned ~code ~params then
+    Printf.printf "oracle: expected fault observed%s (%s)\n" what pinned.ef_code
+  else begin
+    Printf.eprintf "EXPECTED FAULT MISMATCH: wanted %s %s in:\n%s\n" pinned.ef_code
+      (Uchar_ref.Case.params_json pinned.ef_params) report;
+    exit 1
+  end
 
 let () =
   let noop, ir_path, case_path =
     match Sys.argv with
-    | [| _; "--bottom-sentence"; sentences; case |] ->
-        bottom_sentence sentences case;
-        exit 0
     | [| _; "--noop"; ir; case |] -> (true, ir, case)
     | [| _; ir; case |] -> (false, ir, case)
     | _ ->
         prerr_endline
-          "usage: runner [--noop] <ir.json> <case.json> | runner --bottom-sentence <sentences> <case.json>";
+          "usage: runner [--noop] <ir.json> <case.json>";
         exit 2
   in
   try
@@ -112,23 +61,18 @@ let () =
     let doc = Ir_v0.Loader.load_file ir_path in
     let case =
       try Uchar_ref.Case.load_file doc case_path
-      with Uchar_ref.Case.Error { code; text = msg } -> (
+      with Uchar_ref.Case.Error { code; params; text = msg } -> (
         match pinned with
         | None ->
             Printf.eprintf "CASE ERROR: %s\n" (Uchar_ref.Value.report ~code msg);
             exit 2
-        | Some { ef_ref; ef_code; _ } ->
+        | Some pinned ->
             (* the red path's LOAD arm: the case reader refused, and
                that refusal is as observable a failure as a fault at
                evaluation — it is matched against the same pin *)
-            let report = "CASE ERROR: " ^ Uchar_ref.Value.report ~code msg in
-            print_codes ~observed:code ~pinned:ef_code;
-            if Uchar_ref.Case.contains ~needle:ef_ref report then (
-              Printf.printf "oracle: expected fault observed at load (%s)\n" ef_ref;
-              exit 0)
-            else (
-              Printf.eprintf "EXPECTED FAULT MISMATCH: wanted %S in:\n%s\n" ef_ref report;
-              exit 1))
+            verdict ~pinned ~code ~params ~what:" at load"
+              ("CASE ERROR: " ^ Uchar_ref.Value.report ~code msg);
+            exit 0)
     in
     let env =
       {
@@ -141,23 +85,15 @@ let () =
       }
     in
     match case.expected_fault with
-    | Some { ef_ref; ef_code; _ } -> (
+    | Some pinned -> (
         (* the red path's EVALUATION arm (the load arm is above): the
-           run MUST fault, observably, with the pinned fragment in the
-           report — never a silent success *)
+           run MUST fault, observably, as pinned — never a silent success *)
         match Uchar_ref.Eval.evaluate env case.world with
         | (_ : Uchar_ref.World.t) ->
             prerr_endline "EXPECTED FAULT DID NOT OCCUR: evaluation succeeded";
             exit 1
-        | exception Uchar_ref.Value.Fault { code; text } ->
-            let report = Uchar_ref.Value.report ~code text in
-            print_codes ~observed:code ~pinned:ef_code;
-            if Uchar_ref.Case.contains ~needle:ef_ref report then
-              Printf.printf "oracle: expected fault observed (%s)\n" ef_ref
-            else begin
-              Printf.eprintf "EXPECTED FAULT MISMATCH: wanted %S in:\n%s\n" ef_ref report;
-              exit 1
-            end)
+        | exception Uchar_ref.Value.Fault { code; params; text } ->
+            verdict ~pinned ~code ~params ~what:"" (Uchar_ref.Value.report ~code text))
     | None -> (
         let final = if noop then case.world else Uchar_ref.Eval.evaluate env case.world in
         match Uchar_ref.Case.check case final with
@@ -168,10 +104,10 @@ let () =
             List.iter (fun m -> Printf.printf "MISMATCH: %s\n" m) mismatches;
             exit 1)
   with
-  | Uchar_ref.Value.Fault { code; text } ->
+  | Uchar_ref.Value.Fault { code; text; _ } ->
       Printf.eprintf "EVALUATION FAULT: %s\n" (Uchar_ref.Value.report ~code text);
       exit 1
-  | Uchar_ref.Case.Error { code; text } ->
+  | Uchar_ref.Case.Error { code; text; _ } ->
       Printf.eprintf "CASE ERROR: %s\n" (Uchar_ref.Value.report ~code text);
       exit 2
   | Ir_v0.Loader.Error (path, msg) ->

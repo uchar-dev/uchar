@@ -17,13 +17,15 @@ module SMap = World.SMap
 let norm = Ir_v0.Checks.norm
 
 (* [code] as in [Value.Fault]: the EF code of a refusal of the case input
-   (RUNTIME-SEMANTICS ch. 5.7b) where the raising site names one *)
-exception Error of { code : string option; text : string }
+   (RUNTIME-SEMANTICS ch. 5.7b) where the raising site names one, [params] its
+   parameters as in [Value.Fault] *)
+exception Error of { code : string option; params : (string * string) list; text : string }
 
-let fail fmt = Printf.ksprintf (fun s -> raise (Error { code = None; text = s })) fmt
+let fail fmt = Printf.ksprintf (fun s -> raise (Error { code = None; params = []; text = s })) fmt
 
 (* a refusal of the kind [code] *)
-let failc code fmt = Printf.ksprintf (fun s -> raise (Error { code = Some code; text = s })) fmt
+let failc ?(params = []) code fmt =
+  Printf.ksprintf (fun s -> raise (Error { code = Some code; params; text = s })) fmt
 
 type expectation =
   | Attribute_value of { label : string; attr : string; value : Value.t }
@@ -36,12 +38,11 @@ type expectation =
       (* [code]: the EF code (RUNTIME-SEMANTICS ch. 5.7b) a matching channel
          fact must carry among the codes deposited for it *)
 
-(* the red-path case form (corpus/rood): LOADING OR evaluation MUST
-   fail observably in every executor; each fragment is a substring the
-   executor's own fault report must contain, and [ef_code] the fault kind's
-   EF code (RUNTIME-SEMANTICS ch. 5.7b), one for every executor, which gate 8
-   compares with the codes each executor reports *)
-type expected_fault = { ef_ref : string; ef_clingo : string; ef_code : string option }
+(* the red-path case form (corpus/rood): LOADING OR evaluation MUST fail
+   observably in every executor, with the fault kind's EF code (RUNTIME-SEMANTICS
+   ch. 5.7b) and the parameters the case pins; gate 8 compares both with what
+   each executor reports. No fragment of a message is pinned. *)
+type expected_fault = { ef_code : string; ef_params : (string * string) list }
 
 type t = {
   as_of : string option;
@@ -52,14 +53,19 @@ type t = {
   expected_fault : expected_fault option;
 }
 
-(* naive substring search, for matching a fault report against the
-   pinned expectedFault fragment *)
+(* naive substring search *)
 let contains ~needle hay =
   let nh = String.length hay and nn = String.length needle in
   nn = 0
   ||
   let rec go i = i + nn <= nh && (String.sub hay i nn = needle || go (i + 1)) in
   go 0
+
+(* the parameters of a code as one JSON object of strings, in the order given:
+   the machine form both runners print on their CODE lines (a JSON string may
+   spell any character as an escape, so nobody scrapes it with a shell) *)
+let params_json params =
+  Yojson.Safe.to_string (`Assoc (List.map (fun (k, v) -> (k, `String v)) params))
 
 (* --- json helpers (strict, positioned) ---------------------------------- *)
 
@@ -143,7 +149,8 @@ let ms_of_datetime s =
 let date_at ~at s =
   try Value.date_of_iso s
   with Value.Fault { text = why; _ } ->
-    failc "EF-003" "%s %S is not the uchar-case-v0 date lexeme yyyy-mm-dd (%s)" at s why
+    failc ~params:[ ("field", at); ("lexeme", s) ] "EF-003"
+      "%s %S is not the uchar-case-v0 date lexeme yyyy-mm-dd (%s)" at s why
 
 (* a period or segment boundary, as its day number *)
 let day_at ~at s = match date_at ~at s with Value.Date d -> d | _ -> assert false
@@ -424,7 +431,9 @@ let resolve_role_ft (doc : document) ~otype ~key =
   match hits with
   | [ p ] -> p
   | [] -> fail "role key %S does not resolve to a declared role opposite %S" key otype
-  | _ -> failc "EF-001" "role key %S is ambiguous from %S" key otype
+  | _ ->
+      failc ~params:[ ("roleKey", key); ("objectType", otype) ] "EF-001"
+        "role key %S is ambiguous from %S" key otype
 
 let resolve_role doc ~otype ~key =
   let _, far, _ = resolve_role_ft doc ~otype ~key in
@@ -680,7 +689,10 @@ let check_role_targets (doc : document) (world : World.t) =
           List.iter
             (fun l ->
               match SMap.find_opt l world.instances with
-              | None -> failc "EF-002" "role %S on %S links unknown label %S" key i.label l
+              | None ->
+                  failc
+                    ~params:[ ("role", key); ("label", i.label); ("target", l) ]
+                    "EF-002" "role %S on %S links unknown label %S" key i.label l
               | Some target ->
                   (* upper bound, not equality: a subtype instance fills
                      a supertype-typed role (ch. 2.6) *)
@@ -849,21 +861,29 @@ let expected_fault_of_kvs kvs =
   | Some j ->
       let at = "expectedFault" in
       let fk = obj ~at j in
-      let frag what =
-        let s = str_field ~at fk what in
-        if s = "" then fail "expectedFault.%s: an empty fragment would match any fault" what;
-        s
+      (* a leftover fragment key (ref, clingo, drools) is refused here, beside the schema *)
+      List.iter
+        (fun (k, _) ->
+          if k <> "code" && k <> "params" then fail "%s: unknown field %S" (where at) k)
+        fk;
+      let params =
+        List.map (fun (k, v) -> (k, str ~at:(child (child at "params") k) v)) (obj_field ~at fk "params")
       in
-      (* optional in the schema (additive); gate 8 demands it of every red case *)
-      let code = Option.map (str ~at:(child at "code")) (List.assoc_opt "code" fk) in
-      Some { ef_ref = frag "ref"; ef_clingo = frag "clingo"; ef_code = code }
+      Some { ef_code = str_field ~at fk "code"; ef_params = params }
 
-(* The pinned fragments read on their OWN, without the world — the
+(* whether an observed fault is the pinned one: the same code, and every pinned
+   parameter among the observed (a subset: an executor may name more than a
+   case pins, never less) *)
+let pin_matches (pin : expected_fault) ~code ~params =
+  code = Some pin.ef_code
+  && List.for_all (fun (k, v) -> List.assoc_opt k params = Some v) pin.ef_params
+
+(* The pinned code and parameters read on their OWN, without the world — the
    split every executor's runner performs before loading anything
    else. A case whose expected fault falls while the INPUT is being
    read (an ambiguous role key, a link to an undeclared label) never
-   reaches a parse that sits behind that input, so its fragments would
-   be unreachable in precisely the file that names them, and the whole
+   reaches a parse that sits behind that input, so its pin would
+   be unreachable in precisely the file that names it, and the whole
    class of case-reader refusals could not be pinned at all. The field
    is the case's contract, not part of its input, so it is parsed
    without one. *)

@@ -22,8 +22,6 @@
   },
   "expectedFault": {
     "code": "EF-015",
-    "ref": "creation budget exhausted: object creation \"werf de lange keten\" of stratum 0 would mint at creation depth 101",
-    "clingo": "a fail-fast guard fired: viol(\"creation budget exhausted\",oc0(",
-    "drools": "creation budget exhausted: objectcreatie \"werf de lange keten\" van stratum 0 zou een object maken op aanmaakdiepte 101"
+    "params": {}
   }
 }

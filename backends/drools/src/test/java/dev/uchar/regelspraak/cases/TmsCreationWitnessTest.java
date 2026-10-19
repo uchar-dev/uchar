@@ -736,11 +736,10 @@ class TmsCreationWitnessTest {
             assertEquals("case: " + TmsCreationStratumWitnessTest.budget(red.getValue(), 0, "Wachter"), sentence,
                     red.getKey());
             JsonNode pin = caseDocument.get("expectedFault");
-            assertEquals("creation budget exhausted: object creation \"" + red.getValue()
-                    + "\" of stratum 0 would mint at creation depth 101", pin.get("ref").asText(),
-                    () -> red.getKey() + ": het fragment van ref noemt de creatie, het stratum en de diepte van deze tak");
-            assertEquals("a fail-fast guard fired: viol(\"creation budget exhausted\",oc0(", pin.get("clingo").asText(),
-                    () -> red.getKey() + ": het fragment van clingo noemt de getuige op een aanmaak van de creatie");
+            assertEquals("EF-015", pin.get("code").asText(), () -> red.getKey() + ": the pin is the creation budget");
+            CaseRunner.RedResult red1 = CaseRunner.runRed(d.resolve("ir.json"), d.resolve("case1.json"));
+            assertEquals(List.of(Map.of("creation", red.getValue(), "stratum", "0", "depth", "101")), red1.params(),
+                    () -> red.getKey() + ": the parameters name the creation, the stratum and the depth of this branch");
         }
     }
 

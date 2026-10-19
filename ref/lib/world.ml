@@ -100,7 +100,7 @@ let collapse ~at (decl : Ir_v0.Ast.datatype option) (v : Value.t) =
          spelling, not a scale *)
       if Z.equal (Q.den scaled) Z.one || ((not whole_part) && decimal_places = 0) then Value.Num (q, target_u)
       else
-        Value.faultc "EF-006"
+        Value.faultc ~params:[ ("place", at); ("value", (Q.to_string q)); ("decimals", string_of_int decimal_places) ] "EF-006"
           "%s: value %s does not fit the declared %d decimals — an explicit rounding is \
            mandatory (ch. 2.4)"
           at (Q.to_string q) decimal_places
@@ -189,7 +189,7 @@ let add_link w ~label ~keys ~many ~target =
   let existing = left_side i key in
   if List.mem target existing then (w, false)
   else if (not many) && existing <> [] then
-    Value.faultc "EF-017" "to-one role %S on %S already links %s; a second filler is ill-typed (ch. 5.5)"
+    Value.faultc ~params:[ ("role", key); ("label", label); ("filler", (String.concat ", " existing)) ] "EF-017" "to-one role %S on %S already links %s; a second filler is ill-typed (ch. 5.5)"
       key label
       (String.concat ", " existing)
   else (update w { i with left_side = SMap.add (norm key) (existing @ [ target ]) i.left_side }, true)

@@ -20,7 +20,9 @@
   },
   "expectedFault": {
     "code": "EF-013",
-    "ref": "does not cover the evaluation date",
-    "clingo": "does not cover the evaluation date"
+    "params": {
+      "parameter": "penningbedrag",
+      "date": "2028-03-15"
+    }
   }
 }

@@ -50,8 +50,6 @@
   },
   "expectedFault": {
     "code": "EF-005",
-    "ref": "division by numeric zero",
-    "clingo": "division by numeric zero",
-    "drools": "9 gedeeld door 0 — een numerieke nul als deler is een fout"
+    "params": {}
   }
 }

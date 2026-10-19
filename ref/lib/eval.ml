@@ -528,7 +528,7 @@ let connecting_pair env ~from_type ~to_type =
          beside a blocked two-role shape — is v0's null: no link *)
       None
   | _ ->
-      Value.faultc "EF-018"
+      Value.faultc ~params:[ ("objectType", from_type); ("createdType", to_type) ] "EF-018"
         "more than one fact type relates %S to %S; the created object's back-link is \
          ambiguous (ch. 5.5)"
         from_type to_type
@@ -751,7 +751,7 @@ let literal_value (variant : literal_variant) (typ : datatype option) =
      with the position, never silently becoming some other instant. *)
   | Some Date_time_type, Lv_date_time s -> Value.datetime_of_lexeme s
   | Some _, v ->
-      Value.fault "literal of this datatype not implemented: %S" (Ir_v0.Loader.literal_lexeme v)
+      Value.faultc ~params:[ ("lexeme", (Ir_v0.Loader.literal_lexeme v)) ] "REF-001" "literal of this datatype not implemented: %S" (Ir_v0.Loader.literal_lexeme v)
 
 (* --- expression evaluation --------------------------------------------- *)
 
@@ -871,7 +871,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           match decl.par_datatype with
           | Some (List_type _) -> Value.Empty
           | _ ->
-              Value.faultc "EF-014" "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)"
+              Value.faultc ~params:[ ("parameter", name) ] "EF-014" "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)"
                 name))
   | Attribute_reference { attribute_ref; object_type = ot; navigation_bindings; _ } -> (
       let name = req "AttributeReference.attribute" attribute_ref in
@@ -1112,7 +1112,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
             "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind \
              evaluation it denotes nothing")
   | Dimension_cell_read _ | Variable_reference _ | Context_value _ ->
-      Value.fault "expression kind not implemented in this card"
+      Value.faultc "REF-002" "expression kind not implemented in this card"
   | Temporal_read { base_expr; date_value; typ = _; source_name = _ } -> (
       (* ch. 3.3, the point-in-time read: read(tl, d). The base is never
          evaluated as a scalar (that is the refused shape); it names the
@@ -1145,7 +1145,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
               | None ->
                   Value.fault
                     "the temporal read of parameter %S needs its timeline in the case" p)
-          | _ -> Value.fault "unsupported temporal-read base shape")
+          | _ -> Value.faultc "REF-003" "unsupported temporal-read base shape")
       | v ->
           Value.fault "temporal-read date operand is %s, must be a day-precision date"
             (Value.to_string v))
@@ -1621,7 +1621,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                   (member_periods (List.hd components))
                   (List.tl components)
             | _ ->
-                Value.fault
+                Value.faultc "REF-004"
                   "unsupported gedurende condition shape (an own temporal \
                    characteristic, a per-segment comparison of an own temporal attribute, \
                    or an all composite of such shapes)"
@@ -1739,14 +1739,14 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                  and a timeline answers it differently at every one.
                  The construct is named AFTER the interpolation on purpose — the
                  interpolation-free tail is all a pin can quote. *)
-              Value.faultc "EF-021"
+              Value.faultc ~params:[ ("attribute", name) ] "EF-021"
                 "the temporal attribute %S of a set has no moment at which a filled count can ask \
                  a timeline whether it is filled (ch. 3.4c); presence is a question about an \
                  instant, and only sum and total define the per-element collapse that would \
                  supply one"
                 name
           | _ ->
-              Value.fault
+              Value.faultc ~params:[ ("attribute", name) ] "REF-005"
                 "this aggregation over the temporal attribute %S of a set has no defined moment \
                  to fold (ch. 3.6: only sum and total carry the per-element timeline fold)"
                 name);
@@ -1907,7 +1907,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
            fold is an AttributeReference"
           (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
           el (Ir_v0.Spelling.a_node a)
-    | Some _, _ -> Value.fault "unsupported instance-fold source shape"
+    | Some _, _ -> Value.faultc "REF-006" "unsupported instance-fold source shape"
   in
   let values () =
     match contributors () with
@@ -1995,7 +1995,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
   | Duration | Absolute_duration ->
       (* unreachable: eval_expr routes both variants on the node-type unit *)
       assert false
-  | _ -> Value.fault "function kind not implemented in this card"
+  | _ -> Value.faultc "REF-007" "function kind not implemented in this card"
 
 (* ch. 3.10's two bounds, read once for BOTH of the chapter's cases — the
    scalar gate in [eval_cond] and the clip in [run_rule] — so the two can
@@ -2177,7 +2177,7 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
          day-kind definition (ch. 5.4): a day kind classifies a bare date at stratum 0, and no \
          executor reads one inside the rule fixpoint"
         (Option.value day_kind ~default:"?")
-  | Predicate _ -> Value.fault "predicate kind not implemented in this card"
+  | Predicate _ -> Value.faultc "REF-008" "predicate kind not implemented in this card"
   | Characteristic_check { characteristic; navigation_binding = None; negation; holder; time_period; _ } ->
       owner_hosts env.doc ~otype:self.otype ~characteristic holder;
       let k = req "CharacteristicCheck.characteristic" characteristic in
@@ -2601,7 +2601,7 @@ let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
               Value.fault "gedurende over %S, which is not a temporal characteristic" k;
             Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
         | _ ->
-            Value.fault
+            Value.faultc "REF-009"
               "unsupported pro-rata condition shape (an own temporal characteristic; no corpus \
                case for more)"
       in
@@ -2641,7 +2641,7 @@ let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
               Value.fault "gedurende over %S, which is not a temporal characteristic" k;
             Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
         | _ ->
-            Value.fault
+            Value.faultc "REF-010"
               "unsupported day-count condition shape (an own temporal characteristic; no corpus \
                case for more)"
       in
@@ -2659,7 +2659,7 @@ let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
       then (w, false)
       else World.write_timeline w ~label:self.label ~attr result
   | _ ->
-      Value.fault
+      Value.faultc "REF-011"
         "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a \
          gedurende condition over an own temporal characteristic); no corpus case for more"
 
@@ -2768,7 +2768,7 @@ let run_rule env world (r : resolved_rule) =
           if target_timeline && Option.fold ~none:false ~some:contains_time_window r.rr_condition then
             match (r.rr_presentation, r.rr_condition) with
             | Some Characteristic_attribution, _ ->
-                Value.faultc "EF-023"
+                Value.faultc ~params:[ ("characteristic", attr) ] "EF-023"
                   "a period condition on the temporal characteristic target %S is ch. 3.10's \
                    CLIP over a characteristic timeline, and no temporal characteristic is written \
                    here (ch. 3.11), so there is no timeline to cut. Declined at evaluation"
@@ -2867,7 +2867,7 @@ let run_rule env world (r : resolved_rule) =
                     World.write_attr_init w ~label:self.label ~attr
                       ~decl:(attr_decl env ~otype:ot ~attr) v
               | None -> Value.fault "rule %S has no kind" (rule_name r))
-    | _ -> Value.fault "rule %S: unsupported target shape" (rule_name r)
+    | _ -> Value.faultc ~params:[ ("rule", (rule_name r)) ] "REF-012" "rule %S: unsupported target shape" (rule_name r)
 
 let run_allocation env world (v : resolved_allocation) =
   if not (applies env v.vd_validity) then (world, false)
@@ -3112,7 +3112,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
           else begin
             let depth = subject_depth + 1 in
             if depth > creation_budget then
-              Value.faultc "EF-015"
+              Value.faultc ~params:[ ("creation", name); ("stratum", string_of_int stratum); ("depth", string_of_int depth) ] "EF-015"
                 "creation budget exhausted: object creation \"%s\" of stratum %d would mint at \
                  creation depth %d, on %s — a stratum mints to depth %d, and a chain of creations \
                  without end is a fault, never a silent truncation (ch. 5.5)"
@@ -3436,7 +3436,7 @@ let ever_tuples env ~otype ~keys (i : World.instance) : string list =
       | Some tl -> List.map (fun (s : Timeline.segment) -> s.s_value) tl
       | None ->
           if World.attr i k <> Value.Empty then
-            Value.faultc "EF-020"
+            Value.faultc ~params:[ ("key", k); ("label", i.label) ] "EF-020"
               "the ever-unique key %S needs the full timeline; %S supplies only a scalar \
                (ch. 5.9)"
               k i.label
@@ -3668,7 +3668,7 @@ let parameter_set_check env =
                 p
           | Some tl ->
               if Timeline.read tl day = Value.Empty then
-                Value.faultc "EF-013"
+                Value.faultc ~params:[ ("parameter", p); ("date", d) ] "EF-013"
                   "session start: the Parameterset timeline of %S does not cover the \
                    evaluation date %s — ch. 8.4"
                   p d))
@@ -3681,10 +3681,10 @@ let fixpoint ~budget ~cause step world =
   let rec go n world =
     if n > budget then
       match cause world with
-      | Some why ->
+      | Some (why, params) ->
           (* [cause] names one divergence only, two writers of one target that
              disagree (ch. 5.7) *)
-          Value.faultc "EF-016" "no fixpoint within %d passes — divergence is a fault (ch. 5.7): %s"
+          Value.faultc ~params "EF-016" "no fixpoint within %d passes — divergence is a fault (ch. 5.7): %s"
             budget why
       | None -> Value.fault "no fixpoint within %d passes — divergence is a fault (ch. 5.7)" budget
     else
@@ -3712,7 +3712,7 @@ let validate_input_precision env world =
     | Some (Number { decimal_places; _ }), Value.Num (q, _)
     | Some (Percentage { decimal_places; _ }), Value.Num (q, _) ->
         if not (fits ~decimals:decimal_places q) then
-          Value.faultc "EF-004" "input %s = %s does not fit %d decimals" what (Value.lexeme_of_q q)
+          Value.faultc ~params:[ ("place", what); ("value", (Value.lexeme_of_q q)); ("decimals", string_of_int decimal_places) ] "EF-004" "input %s = %s does not fit %d decimals" what (Value.lexeme_of_q q)
             decimal_places
     (* recurse into composite values: an over-precise field of a record or
        element of a list is refused at the boundary too, exactly as the ASP
@@ -4025,6 +4025,12 @@ let evaluate env world =
      different values in both passes is named with its writers and their
      values, in the order the pass runs them. The writes are read off the
      world (World.changed_attrs), so the replay is the pass itself. *)
+  (* a writer is named `rule "<name>"` in the sentence; the parameter is the declared name alone *)
+  let rule_name_of who =
+    let prefix = "rule \"" in
+    let n = String.length who and k = String.length prefix in
+    if n > k && String.sub who 0 k = prefix && who.[n - 1] = '"' then String.sub who k (n - k - 1) else who
+  in
   let disagreement steps world =
     let writes w =
       List.fold_left
@@ -4080,8 +4086,11 @@ let evaluate env world =
           | [] -> ""
         in
         Some
-          (Printf.sprintf "%s writers of one target disagree: %s to the attribute %s of %s, a %s" count
-             listed declared label otype)
+          ( Printf.sprintf "%s writers of one target disagree: %s to the attribute %s of %s, a %s" count
+              listed declared label otype,
+            [ ("rules", String.concat ", " (List.map (fun (who, _) -> rule_name_of who) writers));
+              ("values", String.concat ", " (List.map (fun (_, v) -> Value.to_string v) writers));
+              ("attribute", declared); ("label", label); ("objectType", otype) ] )
   in
   (* The forms that make nothing come to rest stratum by stratum: for j = 0,
      1, …, k those of stratum <= j reach their fixpoint before a form of
