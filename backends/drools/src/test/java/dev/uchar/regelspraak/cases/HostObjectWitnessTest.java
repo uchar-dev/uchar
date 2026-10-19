@@ -141,13 +141,13 @@ class HostObjectWitnessTest {
     // ---------------- fixtures ----------------
 
     /** A committed golden's IR, unmodified — a temp copy, so the corpus file is never handed to a writer. */
-    private Path golden(String naam) throws Exception {
-        return write(JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve("ir.json"))));
+    private Path golden(String name) throws Exception {
+        return write(JSON.readTree(Files.readString(CORPUS.resolve(name).resolve("ir.json"))));
     }
 
     /** The same IR with creation {@code nr}'s guard re-hosted on {@code type} — one field, nothing else. */
-    private Path withHost(String naam, int nr, String type) throws Exception {
-        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve("ir.json")));
+    private Path withHost(String name, int nr, String type) throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(name).resolve("ir.json")));
         ((ObjectNode) IrPath.version(ir, "factCreations", nr, 0).get("condition")).put("host", type);
         return write(ir);
     }
@@ -160,14 +160,14 @@ class HostObjectWitnessTest {
     }
 
     /** The golden's own case, verbatim. */
-    private JsonNode caseOf(String naam) throws Exception {
-        return JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve("case.json")));
+    private JsonNode caseOf(String name) throws Exception {
+        return JSON.readTree(Files.readString(CORPUS.resolve(name).resolve("case.json")));
     }
 
     /** The golden's own case with ONE expected attribute value replaced — the population is untouched, so a
      *  divergence can only come from the reading. */
-    private JsonNode withExpectation(String naam, String attribute, String value) throws Exception {
-        ObjectNode c = (ObjectNode) caseOf(naam);
+    private JsonNode withExpectation(String name, String attribute, String value) throws Exception {
+        ObjectNode c = (ObjectNode) caseOf(name);
         for (JsonNode e : c.get("expected"))
             if ("attributeValue".equals(e.path("kind").asText()) && attribute.equals(e.path("attribute").asText()))
                 ((ObjectNode) e.get("value")).put("number", value);

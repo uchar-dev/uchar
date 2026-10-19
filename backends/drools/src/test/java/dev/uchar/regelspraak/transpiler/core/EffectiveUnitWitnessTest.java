@@ -5,7 +5,7 @@ import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Unit;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Parameter;
 
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ class EffectiveUnitWitnessTest {
     private static final Unit EUR_PER_JR = Unit.compound(EUR, JR);
 
     private static Datatype num(Unit e) {
-        return new Datatype.Numeriek(false, 2, Datatype.Teken.ONBEPAALD, e);
+        return new Datatype.Numeric(false, 2, Datatype.Sign.ONBEPAALD, e);
     }
 
     private static Source source() { return Source.synthetic("witness"); }
@@ -53,30 +53,30 @@ class EffectiveUnitWitnessTest {
     private static EffectiveUnit bare() { return new EffectiveUnit(List.of()); }
 
     /** A Vondst declaring "gewicht" in kg — the source every reference to it must read. */
-    private static Objecttype vondst() {
-        Objecttype ot = new Objecttype("Vondst");
-        ot.attributen.put("gewicht", num(KG));
+    private static ObjectType vondst() {
+        ObjectType ot = new ObjectType("Vondst");
+        ot.attributes.put("gewicht", num(KG));
         return ot;
     }
 
     /** A reference to Vondst.gewicht whose ANNOTATION claims tonnes. */
-    private static Expr.AttributeReference lyingRef(Objecttype ot) {
+    private static Expr.AttributeReference lyingRef(ObjectType ot) {
         return new Expr.AttributeReference("gewicht", ot, "een vondst", null, num(TON), source());
     }
 
     /** A Vracht declaring a RATE ("tarief" in €/jr), a plain time ("looptijd" in jr), a plain weight and a
      *  plain amount — the four declarations the §4.4 product rules need. */
-    private static Objecttype vracht() {
-        Objecttype ot = new Objecttype("Vracht");
-        ot.attributen.put("tarief", num(EUR_PER_JR));
-        ot.attributen.put("looptijd", num(JR));
-        ot.attributen.put("gewicht", num(KG));
-        ot.attributen.put("prijs", num(EUR));
+    private static ObjectType vracht() {
+        ObjectType ot = new ObjectType("Vracht");
+        ot.attributes.put("tarief", num(EUR_PER_JR));
+        ot.attributes.put("looptijd", num(JR));
+        ot.attributes.put("gewicht", num(KG));
+        ot.attributes.put("prijs", num(EUR));
         return ot;
     }
 
     /** A reference to {@code ot.attr} whose ANNOTATION lies (tonnes, always). */
-    private static Expr.AttributeReference lyingRef(Objecttype ot, String attr) {
+    private static Expr.AttributeReference lyingRef(ObjectType ot, String attr) {
         return new Expr.AttributeReference(attr, ot, "een vracht", null, num(TON), source());
     }
 
@@ -95,7 +95,7 @@ class EffectiveUnitWitnessTest {
         Expr.AttributeReference loose = new Expr.AttributeReference("gewicht", null, "iets", null, num(TON), source());
         assertNull(bare().unitOf(loose));
         assertTrue(bare().van(loose).isUnknown(), "geen declaratie, dus geen datatype");
-        Objecttype empty = new Objecttype("Vondst");   // declares no member of that name
+        ObjectType empty = new ObjectType("Vondst");   // declares no member of that name
         assertNull(bare().unitOf(new Expr.AttributeReference("gewicht", empty, "een vondst", null, num(TON), source())));
     }
 
@@ -114,13 +114,13 @@ class EffectiveUnitWitnessTest {
     // ---------------- clause 2: composite positions compute the effective type ----------------
 
     @Test void an_additive_binary_carries_the_unit_of_its_left_operand() {
-        Objecttype ot = vondst();
+        ObjectType ot = vondst();
         Expr.Binary sum = new Expr.Binary(Expr.BinOp.PLUS, lyingRef(ot), lyingRef(ot), num(TON), source());
         assertEquals(KG, bare().unitOf(sum), "ch. 2.6: de som draagt de eenheid van links, niet haar eigen claim");
     }
 
     @Test void a_unitless_side_takes_the_other_over() {
-        Objecttype ot = vondst();
+        ObjectType ot = vondst();
         Expr.Literal number = new Expr.Literal("2", num(null), source());
         Expr.Binary prod = new Expr.Binary(Expr.BinOp.MAAL, number, lyingRef(ot), num(TON), source());
         assertEquals(KG, bare().unitOf(prod), "ch. 2.6: het factorvrije product draagt de eenheid door");
@@ -130,7 +130,7 @@ class EffectiveUnitWitnessTest {
         // §4.4 / ch. 2.6, the cancel clause the frontend's Typing.compoundUnit spells: a RATE times its
         // (convertible) denominator unit is the numerator — "€/jr maal jr = €". Reading left-then-right here (the
         // additive rule) would answer €/jr, a unit the result does NOT have.
-        Objecttype ot = vracht();
+        ObjectType ot = vracht();
         assertEquals(EUR, bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL,
                 lyingRef(ot, "tarief"), lyingRef(ot, "looptijd"), num(TON), source())));
         assertEquals(EUR, bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL,
@@ -143,11 +143,11 @@ class EffectiveUnitWitnessTest {
         // IDENTICAL product and nothing else. That opacity is this backend's only protection against a two-unit
         // product silently rescaling into a €-target (DrlTranspiler's four "an OPAQUE product unit stays an honest
         // marker" sites); handing back the LEFT unit would hand that protection away.
-        Objecttype ot = vracht();
+        ObjectType ot = vracht();
         Unit out = bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL,
                 lyingRef(ot, "prijs"), lyingRef(ot, "gewicht"), num(TON), source()));
         assertEquals(Unit.product(EUR, KG), out);
-        assertNull(out.canoniek(), "een opaak product draagt geen canoniek");
+        assertNull(out.canonical(), "een opaak product draagt geen canoniek");
         assertNull(out.exactRestateFactors(EUR), "en dus geen exacte herschaalfactoren naar een concrete eenheid");
         assertFalse(out.convertibleTo(EUR), "€·kg herschaalt niet naar €");
         assertFalse(out.convertibleTo(KG), "en niet naar kg");
@@ -157,7 +157,7 @@ class EffectiveUnitWitnessTest {
     @Test void a_value_aggregation_carries_the_unit_of_operand_zero() {
         // §4.6 Eenheid1 — and the exact class the WF-091 card left open: a fold RESULT type has no single
         // declaration behind it, so the verifier cannot cross it and only this derivation can.
-        Objecttype ot = vondst();
+        ObjectType ot = vondst();
         for (Expr.FunctionKind kind : List.of(Expr.FunctionKind.SOM, Expr.FunctionKind.TOTAAL,
                 Expr.FunctionKind.MINIMUM, Expr.FunctionKind.MAXIMUM,
                 Expr.FunctionKind.EERSTE, Expr.FunctionKind.LAATSTE)) {
@@ -167,7 +167,7 @@ class EffectiveUnitWitnessTest {
     }
 
     @Test void rounding_and_clamp_carry_the_unit_of_their_base() {
-        Objecttype ot = vondst();
+        ObjectType ot = vondst();
         assertEquals(KG, bare().unitOf(
                 new Expr.Rounding(lyingRef(ot), Expr.RoundingMode.REKENKUNDIG, 2, source())));
         assertEquals(KG, bare().unitOf(
@@ -186,7 +186,7 @@ class EffectiveUnitWitnessTest {
 
     @Test void a_binder_read_deep_in_the_body_reads_the_bound_value() {
         // Let g = <Vondst.gewicht, annotated t> in (<read g, annotated t> plus <read g, annotated t>)
-        Objecttype ot = vondst();
+        ObjectType ot = vondst();
         // two DISTINCT reads that are record-EQUAL: the table is identity-keyed, so both must be recorded
         Expr read1 = new Expr.BinderRef("g", num(TON), source());
         Expr read2 = new Expr.BinderRef("g", num(TON), source());
@@ -204,7 +204,7 @@ class EffectiveUnitWitnessTest {
     @Test void an_innermost_binder_overshadows_the_outermost() {
         // Let g = <gewicht in kg> in (Let g = <literal in t> in <read g>) — WF-064: the NEAREST binder wins,
         // so the read is tonnes here and the outer kg must not leak in.
-        Objecttype ot = vondst();
+        ObjectType ot = vondst();
         Expr read = new Expr.BinderRef("g", num(KG), source());
         Expr.Literal inTonnes = new Expr.Literal("2", num(TON), source());
         Expr inside = new Expr.Let("g", inTonnes, read, num(KG), source());
@@ -240,7 +240,7 @@ class EffectiveUnitWitnessTest {
     }
 
     @Test void a_choice_reads_the_branch_not_its_own_claim() {
-        Objecttype ot = vondst();
+        ObjectType ot = vondst();
         Expr choice = new Expr.IfThenElse(null, lyingRef(ot), lyingRef(ot), num(TON), source());
         assertEquals(KG, overLets().unitOf(choice));
     }
@@ -301,7 +301,7 @@ class EffectiveUnitWitnessTest {
         // ch. 2.10 exception 3 (WF-038): "de tijdsduur van A tot B in jaren" — the unit is the OPERATOR's
         // parameter. Deriving it from operand 0 (a date) would erase the operator's own statement.
         Unit year = new Unit("jr", "Tijd", "mnd", new BigDecimal("12"));
-        Expr.Literal date = new Expr.Literal("2026-01-01", new Datatype.DatumInDagen(), source());
+        Expr.Literal date = new Expr.Literal("2026-01-01", new Datatype.DateInDays(), source());
         for (Expr.FunctionKind kind : List.of(Expr.FunctionKind.TIJDSDUUR, Expr.FunctionKind.ABSOLUTE_TIJDSDUUR)) {
             Expr.FunctionCall f = new Expr.FunctionCall(kind, List.of(date, date), null, null, null, num(year), source());
             assertEquals(year, bare().unitOf(f), kind + " draagt haar eigen 'in <eenheid>'");
@@ -315,7 +315,7 @@ class EffectiveUnitWitnessTest {
     // ---------------- shape preservation ----------------
 
     @Test void a_non_numeric_type_comes_back_unchanged() {
-        Expr.Literal text = new Expr.Literal("aap", new Datatype.Tekst(), source());
+        Expr.Literal text = new Expr.Literal("aap", new Datatype.Text(), source());
         assertSame(text.type(), bare().van(text));
         assertNull(bare().unitOf(text));
         assertNull(bare().van(null));
@@ -324,21 +324,21 @@ class EffectiveUnitWitnessTest {
     @Test void only_the_unit_is_grafted_the_rest_of_the_annotation_stays() {
         // The derivation replaces exactly one facet of a derived position's annotation. Soort and precision
         // are equally repetitions, but this backend reads neither for a restatement (it reads
-        // Rounding.decimalen, a NODE field), so grafting more than the unit would move behaviour the clause
+        // Rounding.decimals, a NODE field), so grafting more than the unit would move behaviour the clause
         // does not ask to move. (A reference has no annotation to graft onto since L2: its datatype is its
         // declaration's, whole.)
-        Objecttype ot = vondst();
+        ObjectType ot = vondst();
         Expr.Binary sum = new Expr.Binary(Expr.BinOp.PLUS, lyingRef(ot), lyingRef(ot),
-                new Datatype.Numeriek(true, 7, Datatype.Teken.POSITIEF, TON), source());
+                new Datatype.Numeric(true, 7, Datatype.Sign.POSITIEF, TON), source());
         Datatype out = bare().van(sum);
-        assertEquals(new Datatype.Numeriek(true, 7, Datatype.Teken.POSITIEF, KG), out);
+        assertEquals(new Datatype.Numeric(true, 7, Datatype.Sign.POSITIEF, KG), out);
         assertSame(ot.attribute("gewicht"), bare().van(lyingRef(ot)), "de lezing draagt de declaratie zelf");
     }
 
     @Test void an_annotation_that_already_holds_yields_the_same_object() {
         // The no-op path a verifier-clean document takes: nothing is rebuilt, so a document that obeys
         // WF-091 lowers exactly as it did before this derivation existed.
-        Objecttype ot = vondst();
+        ObjectType ot = vondst();
         Expr.AttributeReference read = new Expr.AttributeReference("gewicht", ot, "een vondst", null, null, source());
         Expr.Binary honest = new Expr.Binary(Expr.BinOp.PLUS, read, read, num(KG), source());
         assertSame(honest.type(), bare().van(honest));

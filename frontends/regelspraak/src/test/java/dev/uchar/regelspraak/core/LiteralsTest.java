@@ -14,8 +14,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /** The single literal reader both back-ends share (single shared implementation) — what a literal MEANS lives here once. */
 class LiteralsTest {
 
-    private static Expr.Literal num(String w) { return new Expr.Literal(w, new Datatype.Numeriek(false, 0, null, null), Source.synthetic(w)); }
-    private static Expr.Literal tekst(String w) { return new Expr.Literal(w, new Datatype.Tekst(), Source.synthetic(w)); }
+    private static Expr.Literal num(String w) { return new Expr.Literal(w, new Datatype.Numeric(false, 0, null, null), Source.synthetic(w)); }
+    private static Expr.Literal text(String w) { return new Expr.Literal(w, new Datatype.Text(), Source.synthetic(w)); }
 
     /* Until 2026-09-23 these pins read the day-first source snippet through this reader ("dd. 25-12-2024",
      * "dd. 8-9-2024", "dd. 25-12-2024 10:30:00.500") and held the snippet and the ISO lexeme to the same
@@ -80,18 +80,18 @@ class LiteralsTest {
     @Test void textOfEnumLabel_reads_text_verbatim() {
         // IR-SPEC ch. 4.1: waarde IS the value. Ref reads it verbatim and a case input carries it verbatim, so
         // whatever this reader removes is compared against a string no other executor ever sees.
-        assertEquals("Flevoland", Literals.textOrEnumLabel(tekst("Flevoland")), "een rauw lexeem is zijn eigen waarde");
-        assertEquals("\"Flevoland\"", Literals.textOrEnumLabel(tekst("\"Flevoland\"")),
+        assertEquals("Flevoland", Literals.textOrEnumLabel(text("Flevoland")), "een rauw lexeem is zijn eigen waarde");
+        assertEquals("\"Flevoland\"", Literals.textOrEnumLabel(text("\"Flevoland\"")),
                 "buitenste aanhalingstekens horen bij de waarde — Tekst heeft geen delimiters om te strippen");
-        assertEquals("merk \"AA\"", Literals.textOrEnumLabel(tekst("merk \"AA\"")),
+        assertEquals("merk \"AA\"", Literals.textOrEnumLabel(text("merk \"AA\"")),
                 "een ingebed aanhalingsteken overleeft (de keurmerk-golden)");
     }
 
     @Test void textOfEnumLabel_does_not_normalise_silently() {
         // The mutation witness of the pair above: a reader that strips quotes folds these two DIFFERENT wire values
         // onto one string, and an equality then fires on a document that does not license it.
-        assertNotEquals(Literals.textOrEnumLabel(tekst("Flevoland")),
-                Literals.textOrEnumLabel(tekst("\"Flevoland\"")),
+        assertNotEquals(Literals.textOrEnumLabel(text("Flevoland")),
+                Literals.textOrEnumLabel(text("\"Flevoland\"")),
                 "rauw en quote-dragend zijn twee waarden, niet een");
     }
 
@@ -117,8 +117,8 @@ class LiteralsTest {
                 "de lezer verzint geen label bij een waarde die de verifier al afkeurt");
     }
 
-    private static Expr.Literal enumLit(String w, String... waarden) {
-        return new Expr.Literal(w, new Datatype.Enumeratie("Vondstklasse", java.util.List.of(waarden)),
+    private static Expr.Literal enumLit(String w, String... values) {
+        return new Expr.Literal(w, new Datatype.Enumeration("Vondstklasse", java.util.List.of(values)),
                 Source.synthetic("'" + w + "'"));
     }
 

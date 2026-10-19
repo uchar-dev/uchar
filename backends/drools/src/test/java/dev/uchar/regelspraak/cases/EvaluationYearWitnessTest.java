@@ -115,7 +115,7 @@ class EvaluationYearWitnessTest {
 
     @Test void the_evaluation_date_plays_beside_it_in_both_branches() throws Exception {
         // The sibling context value in the same position, read as the evaluation date.
-        BothBranches.green(document(IrPath.regel("peildatum", "GELIJKSTELLING", target("peildatum"), REKENDATUM, "null")),
+        BothBranches.green(document(IrPath.rule("peildatum", "GELIJKSTELLING", target("peildatum"), REKENDATUM, "null")),
                 caseDocument("\"2026-03-15\"", "peildatum", "{\"date\":\"2026-03-15\"}"), "Rekendatum as a rule value still plays");
     }
 
@@ -124,9 +124,9 @@ class EvaluationYearWitnessTest {
     /** The manifest of the analysis, which both branches render; until card drl-teksttak-op-truth-maintenance the
      *  DRL-text branch had a lowering, and a manifest, of its own, and the row asked both. */
     @Test void the_analysis_lowers_the_node() throws Exception {
-        for (String regel : List.of(valueRule(), computeRule(), compareRule())) {
-            IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(document(regel))));
-            String key = "regel: " + l.model().resolvedRegels.get(0).naam();
+        for (String rule : List.of(valueRule(), computeRule(), compareRule())) {
+            IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(document(rule))));
+            String key = "regel: " + l.model().resolvedRules.get(0).name();
             Coverage tms = coverageOf(tmsCoverage(l), key);
             assertEquals(Coverage.Verdict.LOWERED, tms.verdict(), "tms — " + key + ": " + tms.reason());
         }
@@ -139,7 +139,7 @@ class EvaluationYearWitnessTest {
      *  means both branches must play the patched case. Until card drl-teksttak-op-truth-maintenance the DRL-text
      *  branch had a refusal of its own per position, "the DRL-text branch has no defaults lowering" on the two
      *  positions in a prioritized default. */
-    private record Site(String golden, String pointer, String caseFileName, String date, Map<String, String> waarden,
+    private record Site(String golden, String pointer, String caseFileName, String date, Map<String, String> values,
                         boolean inconsistent, String refusal, String description) {}
 
     @Test void at_the_other_sites_the_answer_of_ref_or_the_refusal_of_the_branch() throws Exception {
@@ -209,10 +209,10 @@ class EvaluationYearWitnessTest {
         for (JsonNode e : c.get("expected")) {
             String category = e.path("kind").asText();
             String key = e.path("label").asText() + "." + e.path("attribute").asText();
-            if ((category.equals("attributeValue") || category.equals("attributeEmpty")) && p.waarden().containsKey(key)) {
+            if ((category.equals("attributeValue") || category.equals("attributeEmpty")) && p.values().containsKey(key)) {
                 touched.add(key);
                 ObjectNode n = JSON.createObjectNode();
-                String w = p.waarden().get(key);
+                String w = p.values().get(key);
                 n.put("kind", w == null ? "attributeEmpty" : "attributeValue");
                 n.put("label", e.path("label").asText());
                 n.put("attribute", e.path("attribute").asText());
@@ -224,23 +224,23 @@ class EvaluationYearWitnessTest {
                 expected.add(e);
             }
         }
-        assertEquals(p.waarden().keySet(), touched, "every patched expectation exists in " + p.golden() + "/" + p.caseFileName());
+        assertEquals(p.values().keySet(), touched, "every patched expectation exists in " + p.golden() + "/" + p.caseFileName());
         c.set("expected", expected);
         return c;
     }
 
     private static String valueRule() {
-        return IrPath.regel("meldjaar", "GELIJKSTELLING", target("meldjaar"), REKENJAAR, "null");
+        return IrPath.rule("meldjaar", "GELIJKSTELLING", target("meldjaar"), REKENJAAR, "null");
     }
 
     private static String computeRule() {
-        return IrPath.regel("ouderdom", "BEREKENING", target("ouderdom"),
+        return IrPath.rule("ouderdom", "BEREKENING", target("ouderdom"),
                 "{\"node\":\"Binary\",\"op\":\"minus\",\"left\":" + REKENJAAR + ",\"right\":" + read("vondstjaar")
                         + ",\"type\":" + GETAL + ",\"source\":{\"snippet\":\"het Rekenjaar min zijn vondstjaar\"}}", "null");
     }
 
     private static String compareRule() {
-        return IrPath.regel("meldcode", "GELIJKSTELLING", target("meldcode"), IrPath.literal("1", GETAL, "1"),
+        return IrPath.rule("meldcode", "GELIJKSTELLING", target("meldcode"), IrPath.literal("1", GETAL, "1"),
                 "{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":" + REKENJAAR + ",\"right\":" + read("vondstjaar")
                         + ",\"source\":{\"snippet\":\"het Rekenjaar groter is dan zijn vondstjaar\"}}");
     }
@@ -255,8 +255,8 @@ class EvaluationYearWitnessTest {
                 + "\"source\":{\"snippet\":\"zijn " + attribute + "\"}}";
     }
 
-    private static Path document(String regel) throws Exception {
-        return temporary("rekenjaar", (ObjectNode) JSON.readTree(DOCUMENT.formatted(GETAL, DAG, regel)));
+    private static Path document(String rule) throws Exception {
+        return temporary("rekenjaar", (ObjectNode) JSON.readTree(DOCUMENT.formatted(GETAL, DAG, rule)));
     }
 
     /** One Vondst found in 2000, in a session on {@code asOf} (a JSON date string, or {@code null}). */
@@ -308,8 +308,8 @@ class EvaluationYearWitnessTest {
         }
     }
 
-    private static Path temporary(String naam, ObjectNode ir) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, ObjectNode ir) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         return tmp;

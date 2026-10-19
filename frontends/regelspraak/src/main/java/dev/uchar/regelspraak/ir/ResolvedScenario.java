@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.ir;
 
 import dev.uchar.regelspraak.model.RegelSpraakModel.FactType;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,7 +26,7 @@ import java.util.List;
  *                      the position of its first bullet
  * @param line          the 1-based source line of the {@code Scenario} header
  */
-public record ResolvedScenario(String naam, Scope scope, LocalDate asOfDate, Situation situation,
+public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Situation situation,
                                List<Expectation> expectations, int line) {
 
     /** The rules a scenario tests: {@code forms} holds the names of the model forms the scope carries, as the model
@@ -39,7 +39,7 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate asOfDate, Sit
 
     /** The source lines {@code van} to {@code until}, both inclusive. */
     public record LineRange(int van, int until) {
-        public boolean contains(int regel) { return regel >= van && regel <= until; }
+        public boolean contains(int rule) { return rule >= van && rule <= until; }
     }
 
     /** The merged situation: the instances by label, in first-seen order, and the parameter values (a later
@@ -48,34 +48,34 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate asOfDate, Sit
      *  resolver refuses one the set and the situation both give. */
     public record Situation(List<Instance> instances, List<ParameterValue> parameters) {
         /** The instance carrying label {@code label}, or null. */
-        public Instance instantie(String label) {
+        public Instance instance(String label) {
             return instances.stream().filter(i -> i.label().equals(label)).findFirst().orElse(null);
         }
     }
 
     /** One instance: its label, its declared type, and its assignments. A later assignment of the same attribute,
      *  role or characteristic has replaced the earlier one in place, so each appears once. */
-    public record Instance(String label, Objecttype objectType, List<AttributeValue> attributen,
-                            List<RoleValue> rollen, List<CharacteristicValue> kenmerken) {}
+    public record Instance(String label, ObjectType objectType, List<AttributeValue> attributes,
+                            List<RoleValue> roles, List<CharacteristicValue> characteristics) {}
 
     /** An attribute assignment under its declared name: a scalar {@code value}, or for a time-dependent
-     *  attribute a {@code tijdlijn} of segments in written order. Exactly one of the two is non-null. */
-    public record AttributeValue(String attribute, ScenarioValue value, List<Segment> tijdlijn, int line) {}
+     *  attribute a {@code timeline} of segments in written order. Exactly one of the two is non-null. */
+    public record AttributeValue(String attribute, ScenarioValue value, List<Segment> timeline, int line) {}
 
     /** A role assignment: the key as the case file writes it (the declared role name, or its declared plural where
      *  the source wrote the plural), the fact type the role was resolved in — one role name can stand in several
      *  fact types, and the type of the instance decides which one the assignment means —, the declared type of the
      *  role it names, the labels it links, and whether the role is to-many. */
-    public record RoleValue(String key, FactType factType, Objecttype targetType, List<String> targetLabels,
-                            boolean meervoudig, int line) {}
+    public record RoleValue(String key, FactType factType, ObjectType targetType, List<String> targetLabels,
+                            boolean many, int line) {}
 
     /** A characteristic asserted on an instance under its declared name. {@code periods} is null for a static
      *  characteristic and holds the periods in which a time-dependent one holds, in written order. */
     public record CharacteristicValue(String characteristic, List<TimeWindow> periods, int line) {}
 
     /** A parameter value under its declared name: a scalar {@code value} or, for a time-dependent parameter, a
-     *  {@code tijdlijn}. Exactly one of the two is non-null. */
-    public record ParameterValue(String parameter, ScenarioValue value, List<Segment> tijdlijn, int line) {}
+     *  {@code timeline}. Exactly one of the two is non-null. */
+    public record ParameterValue(String parameter, ScenarioValue value, List<Segment> timeline, int line) {}
 
     /** One timeline segment, {@code van} inclusive and {@code until} exclusive. */
     public record Segment(LocalDate van, LocalDate until, ScenarioValue value) {}
@@ -83,11 +83,11 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate asOfDate, Sit
     /** One period in which a time-dependent characteristic holds, {@code van} inclusive and {@code until} exclusive. */
     public record TimeWindow(LocalDate van, LocalDate until) {}
 
-    /** One expectation; {@code category} selects the meaningful fields. {@code tijdlijn} is the expected timeline of an
-     *  {@link ExpectationKind#ATTRIBUTE_TIMELINE} (empty when the whole timeline is expected empty); {@code regel}
+    /** One expectation; {@code category} selects the meaningful fields. {@code timeline} is the expected timeline of an
+     *  {@link ExpectationKind#ATTRIBUTE_TIMELINE} (empty when the whole timeline is expected empty); {@code rule}
      *  and {@code label} of an {@link ExpectationKind#INCONSISTENT} are its optional key. */
     public record Expectation(ExpectationKind category, String label, String attribute, String characteristic,
-                              ScenarioValue expectedValue, List<Segment> tijdlijn, String regel, int line) {}
+                              ScenarioValue expectedValue, List<Segment> timeline, String rule, int line) {}
     public enum ExpectationKind {
         ATTRIBUTE_VALUE,    // de <attr> van <LABEL> is <waarde>
         ATTRIBUTE_EMPTY,      // de <attr> van <LABEL> is leeg
@@ -100,7 +100,7 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate asOfDate, Sit
 
     /** A normalised value — exactly one field is non-null. {@code number} is the exact case lexeme (a decimal with a
      *  dot, or a reduced fraction {@code p/q}) in the declared unit of its target. */
-    public record ScenarioValue(String number, LocalDate date, LocalDateTime dateTime, Boolean bool, String tekst,
+    public record ScenarioValue(String number, LocalDate date, LocalDateTime dateTime, Boolean bool, String text,
                          String enumValue) {
         public static ScenarioValue fromNumber(String lexemeText) { return new ScenarioValue(lexemeText, null, null, null, null, null); }
         public static ScenarioValue fromDate(LocalDate d) { return new ScenarioValue(null, d, null, null, null, null); }

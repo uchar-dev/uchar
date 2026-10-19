@@ -25,21 +25,21 @@ final class TmsDocuments {
 
     private static final String WAAR = IrPath.literal("waar", "{\"node\":\"Boolean\"}", "waar");
 
-    /** A model with one object type, Jutter, carrying {@code kenmerken} and no attribute. */
-    static String model(List<String> kenmerken) {
+    /** A model with one object type, Jutter, carrying {@code characteristics} and no attribute. */
+    static String model(List<String> characteristics) {
         List<String> k = new ArrayList<>();
-        for (String naam : kenmerken)
-            k.add("{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"adjectival\"}");
+        for (String name : characteristics)
+            k.add("{\"node\":\"Characteristic\",\"name\":\"" + name + "\",\"kind\":\"adjectival\"}");
         return "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
                 + "\"attributes\":[],\"characteristics\":[" + String.join(",", k) + "]}],\"factTypes\":[],"
                 + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
     }
 
     /** "Een Jutter is {@code doel} indien {@code condition}"; a voorwaarde of "null" writes none. */
-    static String characteristicRule(String naam, String targetName, String condition) {
+    static String characteristicRule(String name, String targetName, String condition) {
         String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + targetName + "\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"Een Jutter is " + targetName + "\"}}";
-        return IrPath.regel(naam, "KENMERKTOEKENNING", target, WAAR, condition);
+        return IrPath.rule(name, "KENMERKTOEKENNING", target, WAAR, condition);
     }
 
     /** "hij is [niet] {@code kenmerk}": a check of the subject's own characteristic. */
@@ -79,9 +79,9 @@ final class TmsDocuments {
     }
 
     /** A Jutter of the case, with the characteristics its input sets. */
-    static String jutter(String label, List<String> kenmerken) {
+    static String jutter(String label, List<String> characteristics) {
         List<String> k = new ArrayList<>();
-        for (String naam : kenmerken) k.add("\"" + naam + "\"");
+        for (String name : characteristics) k.add("\"" + name + "\"");
         return "{\"label\":\"" + label + "\",\"objectType\":\"Jutter\",\"attributes\":{},\"roles\":{},\"characteristics\":["
                 + String.join(",", k) + "]}";
     }
@@ -100,29 +100,29 @@ final class TmsDocuments {
     static JsonNode caseDocument(List<String> instances, Map<String, String> parameters, List<String> expectations)
             throws Exception {
         List<String> p = new ArrayList<>();
-        parameters.forEach((naam, lexeme) -> p.add("\"" + naam + "\":{\"number\":\"" + lexeme + "\"}"));
+        parameters.forEach((name, lexeme) -> p.add("\"" + name + "\":{\"number\":\"" + lexeme + "\"}"));
         return JSON.readTree("{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":["
                 + String.join(",", instances) + "],\"parameters\":{" + String.join(",", p) + "}},\"expected\":["
                 + String.join(",", expectations) + "]}");
     }
 
-    /** A Jutter bean of {@code beanLoader} with the characteristics of {@code kenmerken} set, as the case input sets
+    /** A Jutter bean of {@code beanLoader} with the characteristics of {@code characteristics} set, as the case input sets
      *  them, for a witness that fires a session itself. */
-    static Object jutterBean(ClassLoader beanLoader, List<String> kenmerken) throws Exception {
+    static Object jutterBean(ClassLoader beanLoader, List<String> characteristics) throws Exception {
         Object beanObject = Class.forName(FactModelGenerator.PACKAGE + ".Jutter", true, beanLoader).getConstructor().newInstance();
-        for (String k : kenmerken) beanObject.getClass().getMethod(Namen.setter(k), boolean.class).invoke(beanObject, true);
+        for (String k : characteristics) beanObject.getClass().getMethod(Namen.setter(k), boolean.class).invoke(beanObject, true);
         return beanObject;
     }
 
     /** A bean of {@code type} with whole-number attributes and characteristics set as the case input sets them. */
-    static Object beanObject(ClassLoader beanLoader, String type, Map<String, String> numbers, List<String> kenmerken)
+    static Object beanObject(ClassLoader beanLoader, String type, Map<String, String> numbers, List<String> characteristics)
             throws Exception {
         Object beanObject = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(type, true), true, beanLoader)
                 .getConstructor().newInstance();
         for (Map.Entry<String, String> e : numbers.entrySet())
             beanObject.getClass().getMethod(Namen.setter(e.getKey()), java.math.BigDecimal.class)
                     .invoke(beanObject, new java.math.BigDecimal(e.getValue()));
-        for (String k : kenmerken) beanObject.getClass().getMethod(Namen.setter(k), boolean.class).invoke(beanObject, true);
+        for (String k : characteristics) beanObject.getClass().getMethod(Namen.setter(k), boolean.class).invoke(beanObject, true);
         return beanObject;
     }
 
@@ -141,30 +141,30 @@ final class TmsDocuments {
     static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
 
     /** An object type with attributes ({@link #attribute}) and characteristics. */
-    static String objectType(String naam, List<String> attributes, List<String> kenmerken) {
+    static String objectType(String name, List<String> attributes, List<String> characteristics) {
         List<String> k = new ArrayList<>();
-        for (String characteristic : kenmerken)
+        for (String characteristic : characteristics)
             k.add("{\"node\":\"Characteristic\",\"name\":\"" + characteristic + "\",\"kind\":\"adjectival\"}");
-        return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":true,\"plural\":\"" + naam + "s\","
+        return "{\"node\":\"ObjectType\",\"name\":\"" + name + "\",\"animate\":true,\"plural\":\"" + name + "s\","
                 + "\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + String.join(",", k) + "]}";
     }
 
-    static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
     /** A fact type of two to-one roles. */
-    static String factType(String naam, String roleA, String typeA, String roleB, String typeB) {
-        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\""
+    static String factType(String name, String roleA, String typeA, String roleB, String typeB) {
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\""
                 + roleA + "\",\"objectType\":\"" + typeA + "\",\"many\":false},{\"node\":\"Role\",\"name\":\"" + roleB
                 + "\",\"objectType\":\"" + typeB + "\",\"many\":false}]}";
     }
 
     /** A fact type of a to-one role {@code roleOne} played by {@code typeOne} and a to-many role {@code roleMany}, plural
      *  {@code plural}, played by {@code typeMany}: each {@code typeMany} relates to at most one {@code typeOne}. */
-    static String factTypeOneToMany(String naam, String roleOne, String typeOne, String roleMany, String typeMany,
+    static String factTypeOneToMany(String name, String roleOne, String typeOne, String roleMany, String typeMany,
                                       String plural) {
-        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\""
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\""
                 + roleOne + "\",\"objectType\":\"" + typeOne + "\",\"many\":false},{\"node\":\"Role\",\"name\":\"" + roleMany
                 + "\",\"objectType\":\"" + typeMany + "\",\"plural\":\"" + plural + "\",\"many\":true}]}";
     }
@@ -204,11 +204,11 @@ final class TmsDocuments {
     }
 
     /** An instance of the case whose roles may link several instances each, by role name. */
-    static String instanceWithRoles(String label, String type, Map<String, String> numbers, List<String> kenmerken,
+    static String instanceWithRoles(String label, String type, Map<String, String> numbers, List<String> characteristics,
                                      Map<String, List<String>> roles) {
         List<String> a = new ArrayList<>(), k = new ArrayList<>(), r = new ArrayList<>();
-        numbers.forEach((naam, lexeme) -> a.add("\"" + naam + "\":{\"number\":\"" + lexeme + "\"}"));
-        for (String characteristic : kenmerken) k.add("\"" + characteristic + "\"");
+        numbers.forEach((name, lexeme) -> a.add("\"" + name + "\":{\"number\":\"" + lexeme + "\"}"));
+        for (String characteristic : characteristics) k.add("\"" + characteristic + "\"");
         roles.forEach((role, targets) -> {
             List<String> d = new ArrayList<>();
             for (String targetName : targets) d.add("\"" + targetName + "\"");
@@ -225,8 +225,8 @@ final class TmsDocuments {
     /** A model with {@code parameters}, each a whole-number Parameter named by its entry. */
     static String model(List<String> objectTypes, List<String> factTypes, List<String> parameters) {
         List<String> p = new ArrayList<>();
-        for (String naam : parameters)
-            p.add("{\"node\":\"Parameter\",\"name\":\"" + naam + "\",\"datatype\":" + WHOLE + "}");
+        for (String name : parameters)
+            p.add("{\"node\":\"Parameter\",\"name\":\"" + name + "\",\"datatype\":" + WHOLE + "}");
         return "{\"objectTypes\":[" + String.join(",", objectTypes) + "],\"factTypes\":[" + String.join(",", factTypes)
                 + "],\"parameters\":[" + String.join(",", p) + "],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]}";
@@ -280,26 +280,26 @@ final class TmsDocuments {
                 + "\"source\":{\"snippet\":\"" + kind + "\"}}";
     }
 
-    /** An assignment of attribute {@code targetName} of {@code type} ({@code soort} as {@link IrPath#regel} names it). */
-    static String computingRule(String naam, String category, String type, String targetName, String value, String condition) {
+    /** An assignment of attribute {@code targetName} of {@code type} ({@code soort} as {@link IrPath#rule} names it). */
+    static String computingRule(String name, String category, String type, String targetName, String value, String condition) {
         String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + targetName + "\",\"subjectType\":\"" + type + "\","
                 + "\"source\":{\"snippet\":\"De " + targetName + " van een " + type + "\"}}";
-        return IrPath.regel(naam, category, target, value, condition);
+        return IrPath.rule(name, category, target, value, condition);
     }
 
     /** "Een {@code type} is {@code doel} indien {@code condition}". */
-    static String characteristicRule(String naam, String type, String targetName, String condition) {
+    static String characteristicRule(String name, String type, String targetName, String condition) {
         String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + targetName + "\",\"subjectType\":\"" + type + "\","
                 + "\"source\":{\"snippet\":\"Een " + type + " is " + targetName + "\"}}";
-        return IrPath.regel(naam, "KENMERKTOEKENNING", target, WAAR, condition);
+        return IrPath.rule(name, "KENMERKTOEKENNING", target, WAAR, condition);
     }
 
     /** An instance of the case: whole-number attributes by name, characteristics, and to-one roles by role name. */
-    static String instance(String label, String type, Map<String, String> numbers, List<String> kenmerken,
+    static String instance(String label, String type, Map<String, String> numbers, List<String> characteristics,
                             Map<String, String> roles) {
         List<String> a = new ArrayList<>(), k = new ArrayList<>(), r = new ArrayList<>();
-        numbers.forEach((naam, lexeme) -> a.add("\"" + naam + "\":{\"number\":\"" + lexeme + "\"}"));
-        for (String characteristic : kenmerken) k.add("\"" + characteristic + "\"");
+        numbers.forEach((name, lexeme) -> a.add("\"" + name + "\":{\"number\":\"" + lexeme + "\"}"));
+        for (String characteristic : characteristics) k.add("\"" + characteristic + "\"");
         roles.forEach((role, targetName) -> r.add("\"" + role + "\":[\"" + targetName + "\"]"));
         return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{" + String.join(",", a)
                 + "},\"roles\":{" + String.join(",", r) + "},\"characteristics\":[" + String.join(",", k) + "]}";
@@ -314,29 +314,29 @@ final class TmsDocuments {
     }
 
     /** A Consistency of one always-valid version: {@code assertion} must hold for every {@code subject}. */
-    static String consistency(String naam, String subject, String assertion) {
-        return "{\"node\":\"Consistency\",\"name\":\"" + naam + "\",\"versions\":[{\"subject\":\"" + subject
+    static String consistency(String name, String subject, String assertion) {
+        return "{\"node\":\"Consistency\",\"name\":\"" + name + "\",\"versions\":[{\"subject\":\"" + subject
                 + "\",\"assertion\":" + assertion + ",\"validity\":{\"node\":\"Validity\"},\"source\":{\"snippet\":\""
-                + naam + "\"}}]}";
+                + name + "\"}}]}";
     }
 
     /** An object type that is a {@code supertype} (IR-SPEC ch. 2.2), with attributes and characteristics of its own. */
-    static String subtype(String naam, String supertype, List<String> attributes, List<String> kenmerken) {
-        String t = objectType(naam, attributes, kenmerken);
-        return t.replace("\"name\":\"" + naam + "\",", "\"name\":\"" + naam + "\",\"supertype\":\"" + supertype + "\",");
+    static String subtype(String name, String supertype, List<String> attributes, List<String> characteristics) {
+        String t = objectType(name, attributes, characteristics);
+        return t.replace("\"name\":\"" + name + "\",", "\"name\":\"" + name + "\",\"supertype\":\"" + supertype + "\",");
     }
 
     // ---------------- prioritized defaults ----------------
 
     /** A defaults group on attribute {@code attribute} of {@code type}, its {@code defaults} highest first. */
-    static String attributeGroup(String naam, String type, String attribute, List<String> defaults) {
-        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type + "\",\"attribute\":\""
+    static String attributeGroup(String name, String type, String attribute, List<String> defaults) {
+        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + name + "\",\"subject\":\"" + type + "\",\"attribute\":\""
                 + attribute + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
     /** A defaults group on characteristic {@code characteristic} of {@code type}, its {@code defaults} highest first. */
-    static String characteristicGroup(String naam, String type, String characteristic, List<String> defaults) {
-        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type
+    static String characteristicGroup(String name, String type, String characteristic, List<String> defaults) {
+        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + name + "\",\"subject\":\"" + type
                 + "\",\"characteristic\":\"" + characteristic + "\",\"defaults\":[" + String.join(",", defaults)
                 + "],\"validity\":{\"node\":\"Validity\"}}";
     }
@@ -370,10 +370,10 @@ final class TmsDocuments {
         return "{\"unordered\":true,\"members\":[" + String.join(",", m) + "]}";
     }
 
-    /** "regelversie {@code regel} is inconsistent": a test of the §9.5 channel of the named form. */
-    static String channelTest(String regel) {
-        return "{\"node\":\"Regelversie\",\"regel\":\"" + regel + "\",\"inconsistent\":true,\"source\":{\"snippet\":"
-                + "\"regelversie " + regel + " is inconsistent\"}}";
+    /** "regelversie {@code rule} is inconsistent": a test of the §9.5 channel of the named form. */
+    static String channelTest(String rule) {
+        return "{\"node\":\"Regelversie\",\"regel\":\"" + rule + "\",\"inconsistent\":true,\"source\":{\"snippet\":"
+                + "\"regelversie " + rule + " is inconsistent\"}}";
     }
 
     /** The expectation that the session holds no §9.5 Inconsistency at all. */
@@ -381,15 +381,15 @@ final class TmsDocuments {
         return "{\"kind\":\"consistent\"}";
     }
 
-    /** The expectation of a §9.5 Inconsistency that rule {@code regel} deposited on {@code label}. */
-    static String inconsistent(String regel, String label) {
-        return "{\"kind\":\"inconsistent\",\"rule\":\"" + regel + "\",\"label\":\"" + label + "\"}";
+    /** The expectation of a §9.5 Inconsistency that rule {@code rule} deposited on {@code label}. */
+    static String inconsistent(String rule, String label) {
+        return "{\"kind\":\"inconsistent\",\"rule\":\"" + rule + "\",\"label\":\"" + label + "\"}";
     }
 
     /** As {@link #inconsistent(String, String)}, a fact that carries the EF code {@code code} among its codes
      *  (RUNTIME-SEMANTICS ch. 5.6, 5.7b). */
-    static String inconsistent(String regel, String label, String code) {
-        return "{\"kind\":\"inconsistent\",\"rule\":\"" + regel + "\",\"label\":\"" + label + "\",\"code\":\"" + code
+    static String inconsistent(String rule, String label, String code) {
+        return "{\"kind\":\"inconsistent\",\"rule\":\"" + rule + "\",\"label\":\"" + label + "\",\"code\":\"" + code
                 + "\"}";
     }
 
@@ -462,9 +462,9 @@ final class TmsDocuments {
             if (perName.put(r.getName(), r) != null)
                 throw new IllegalStateException("twee regels heten " + r.getName());
         List<org.drools.model.Rule> order = new ArrayList<>();
-        for (String naam : names) {
-            org.drools.model.Rule r = perName.remove(naam);
-            if (r == null) throw new IllegalArgumentException("geen regel " + naam + " (of twee keer) in " + names);
+        for (String name : names) {
+            org.drools.model.Rule r = perName.remove(name);
+            if (r == null) throw new IllegalArgumentException("geen regel " + name + " (of twee keer) in " + names);
             order.add(r);
         }
         if (!perName.isEmpty()) throw new IllegalArgumentException("de volgorde mist " + perName.keySet());
@@ -507,9 +507,9 @@ final class TmsDocuments {
         List<String> out = new ArrayList<>();
         for (Object f : session.getObjects(o -> o.getClass().getSimpleName().equals("Inconsistentie"))) {
             try {
-                Object regel = f.getClass().getMethod("getRegel").invoke(f);
+                Object rule = f.getClass().getMethod("getRegel").invoke(f);
                 Object subject = f.getClass().getMethod("getSubject").invoke(f);
-                out.add(regel + " @ " + labels.getOrDefault(subject, String.valueOf(subject)));
+                out.add(rule + " @ " + labels.getOrDefault(subject, String.valueOf(subject)));
             } catch (ReflectiveOperationException e) {
                 throw new IllegalStateException(e);
             }
@@ -553,8 +553,8 @@ final class TmsDocuments {
     static final String PERCENT = unit("%", null, "%", 1, 1);
 
     /** A unit system of {@code units}, Unit nodes of that system. */
-    static String unitSystem(String naam, List<String> units) {
-        return "{\"node\":\"UnitSystem\",\"name\":\"" + naam + "\",\"units\":[" + String.join(",", units) + "]}";
+    static String unitSystem(String name, List<String> units) {
+        return "{\"node\":\"UnitSystem\",\"name\":\"" + name + "\",\"units\":[" + String.join(",", units) + "]}";
     }
 
     /** A model with object types, fact types, parameters as written ({@link #parameter}) and unit systems. */
@@ -566,8 +566,8 @@ final class TmsDocuments {
     }
 
     /** A Parameter of datatype {@code type}. */
-    static String parameter(String naam, String type) {
-        return "{\"node\":\"Parameter\",\"name\":\"" + naam + "\",\"datatype\":" + type + "}";
+    static String parameter(String name, String type) {
+        return "{\"node\":\"Parameter\",\"name\":\"" + name + "\",\"datatype\":" + type + "}";
     }
 
     /** A Literal of {@code type}, its snippet the lexeme. */
@@ -609,9 +609,9 @@ final class TmsDocuments {
         return builtin("squareRoot", List.of(operand), WHOLE, source);
     }
 
-    /** The sentence of the fault of {@link #root} over the radicand {@code radicand} in the rule {@code regel}. */
-    static String irrational(String regel, String radicand) {
-        return "fout in de regel \"" + regel + "\": irrational square root of " + radicand + " reached without an explicit"
+    /** The sentence of the fault of {@link #root} over the radicand {@code radicand} in the rule {@code rule}. */
+    static String irrational(String rule, String radicand) {
+        return "fout in de regel \"" + rule + "\": irrational square root of " + radicand + " reached without an explicit"
                 + " rounding (§13.4.17.13 mandates one)";
     }
 
@@ -633,9 +633,9 @@ final class TmsDocuments {
     }
 
     /** The context value {@code naam} (evaluationDate, evaluationYear) of {@code type}. */
-    static String contextValue(String naam, String type) {
-        return "{\"node\":\"ContextValue\",\"name\":\"" + naam + "\",\"type\":" + type + ",\"source\":{\"snippet\":\"het "
-                + naam + "\"}}";
+    static String contextValue(String name, String type) {
+        return "{\"node\":\"ContextValue\",\"name\":\"" + name + "\",\"type\":" + type + ",\"source\":{\"snippet\":\"het "
+                + name + "\"}}";
     }
 
     /** A TimeWindow from {@code van} to {@code to}, each "null" for an open bound. */
@@ -675,10 +675,10 @@ final class TmsDocuments {
 
     /** An instance whose attributes are given as case values in the wire's shape ({@code {"number":"5"}},
      *  {@code {"date":"2026-01-01"}}, {@code {"text":"…"}}), by attribute. */
-    static String instanceWith(String label, String type, Map<String, String> waarden, List<String> kenmerken) {
+    static String instanceWith(String label, String type, Map<String, String> values, List<String> characteristics) {
         List<String> a = new ArrayList<>(), k = new ArrayList<>();
-        waarden.forEach((naam, value) -> a.add("\"" + naam + "\":" + value));
-        for (String characteristic : kenmerken) k.add("\"" + characteristic + "\"");
+        values.forEach((name, value) -> a.add("\"" + name + "\":" + value));
+        for (String characteristic : characteristics) k.add("\"" + characteristic + "\"");
         return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{" + String.join(",", a)
                 + "},\"roles\":{},\"characteristics\":[" + String.join(",", k) + "]}";
     }

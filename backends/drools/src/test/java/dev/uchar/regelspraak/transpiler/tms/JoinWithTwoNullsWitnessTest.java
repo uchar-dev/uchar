@@ -69,8 +69,8 @@ class JoinWithTwoNullsWitnessTest {
             List<String> outcome = new ArrayList<>();
             for (Object[] posten : new Object[][] { { null, null }, { p1, p1 }, { p1, null } }) {
                 String input = (posten[0] == null ? "leeg" : "P1") + "/" + (posten[1] == null ? "leeg" : "P1");
-                outcome.add(input + " model " + kenmerken(model, wachter, posten));
-                outcome.add(input + " drl " + kenmerken(drl, wachter, posten));
+                outcome.add(input + " model " + characteristics(model, wachter, posten));
+                outcome.add(input + " drl " + characteristics(drl, wachter, posten));
             }
             assertEquals(List.of("leeg/leeg model []", "leeg/leeg drl []", "P1/P1 model [W1, W2]", "P1/P1 drl [W1, W2]",
                     "P1/leeg model [W1]", "P1/leeg drl [W1]"), outcome);
@@ -83,17 +83,17 @@ class JoinWithTwoNullsWitnessTest {
     /** One rule: the Wachter {@code $onderwerp} binds its post, and a Wachter whose post is that post gives it the
      *  characteristic rustwacht. */
     private static Modelplan plan(Class<?> wachter) {
-        Subject onderwerp = new Subject(wachter, "$onderwerp", List.of(), List.of(),
+        Subject subject = new Subject(wachter, "$onderwerp", List.of(), List.of(),
                 List.of(Binding.van("$post", wachter, "post")));
         FactPattern other = new FactPattern(wachter, "$ander", List.of(), List.of(new Join("ander-post", "post", "$post")),
                 List.of());
         return new Modelplan(List.of(), List.of(new RulePlan("join op de post", null, null, new ReadTable(List.of()),
-                List.of(onderwerp, other), new Consequence.Characteristic("$onderwerp", RUSTWACHT, Consequence.Insertion.LOGICAL))));
+                List.of(subject, other), new Consequence.Characteristic("$onderwerp", RUSTWACHT, Consequence.Insertion.LOGICAL))));
     }
 
     /** The labels of the Wachters W1 and W2, with the posts {@code posten}, that have the characteristic at the fixpoint
      *  of a session of {@code kb}. */
-    private static List<String> kenmerken(KieBase kb, Class<?> wachter, Object[] posten) throws Exception {
+    private static List<String> characteristics(KieBase kb, Class<?> wachter, Object[] posten) throws Exception {
         KieSession session = kb.newKieSession();
         try {
             List<Object> wachters = new ArrayList<>();
@@ -107,7 +107,7 @@ class JoinWithTwoNullsWitnessTest {
             List<String> out = new ArrayList<>();
             for (int i = 0; i < wachters.size(); i++)
                 for (Object f : session.getObjects(new ClassObjectFilter(HasCharacteristic.class)))
-                    if (((HasCharacteristic) f).onderwerp() == wachters.get(i) && ((HasCharacteristic) f).characteristic().equals(RUSTWACHT))
+                    if (((HasCharacteristic) f).subject() == wachters.get(i) && ((HasCharacteristic) f).characteristic().equals(RUSTWACHT))
                         out.add("W" + (i + 1));
             return out;
         } finally {

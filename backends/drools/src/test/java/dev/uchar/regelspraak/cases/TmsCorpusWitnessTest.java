@@ -97,12 +97,12 @@ class TmsCorpusWitnessTest {
                 cases = s.filter(f -> f.getFileName().toString().matches("case.*\\.json")).sorted().toList();
             }
             if (cases.isEmpty()) { withoutCases++; continue; }
-            String naam = GOLDEN.relativize(g).toString();
+            String name = GOLDEN.relativize(g).toString();
             CaseRunner.Result r = CaseRunner.viaExecModel(g.resolve("ir.json"), cases);
             switch (r.status()) {
                 case "PLAYED" -> count.merge("PLAYED", 1, Integer::sum);
                 case "EXCLUDE" -> count.merge(family(r.reason()), 1, Integer::sum);
-                default -> fault.add(naam + ": " + r);
+                default -> fault.add(name + ": " + r);
             }
         }
         assertEquals(List.of(), fault, "goldens die de tak draagt maar verkeerd uitrekent");

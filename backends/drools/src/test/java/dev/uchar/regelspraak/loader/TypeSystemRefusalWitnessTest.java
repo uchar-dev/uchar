@@ -9,7 +9,7 @@ import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Unit;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.UnitSystem;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Granularity;
 
 import org.junit.jupiter.api.Test;
 
@@ -142,14 +142,14 @@ class TypeSystemRefusalWitnessTest {
         ObjectNode bound = golden(PENNINGJAAR);
         ((ObjectNode) bound.at(UNIT)).set("factorToCanonical",
                 JSON.readTree("{\"num\":4611686018427387903,\"den\":1}"));
-        Unit large = ((Datatype.Numeriek) IrLoader.load(bound).parameters.get("penningbedrag").datatype()).eenheid();
-        assertEquals("4611686018427387903", large.factorNaarCanoniek().toPlainString());
+        Unit large = ((Datatype.Numeric) IrLoader.load(bound).parameters.get("penningbedrag").datatype()).unit();
+        assertEquals("4611686018427387903", large.factorToCanonical().toPlainString());
 
         // not in lowest terms is WF-092 (c), the verifier's: the loader reads the value
         ObjectNode ir = golden(PENNINGJAAR);
         ((ObjectNode) ir.at(UNIT)).set("factorToCanonical", JSON.readTree("{\"num\":2,\"den\":4}"));
-        Unit half = ((Datatype.Numeriek) IrLoader.load(ir).parameters.get("penningbedrag").datatype()).eenheid();
-        assertEquals("0.5", half.factorNaarCanoniek().toPlainString());
+        Unit half = ((Datatype.Numeric) IrLoader.load(ir).parameters.get("penningbedrag").datatype()).unit();
+        assertEquals("0.5", half.factorToCanonical().toPlainString());
     }
 
     @Test void a_rational_becomes_the_decimal_factor_of_the_record_and_stays_in_the_system() throws Exception {
@@ -164,10 +164,10 @@ class TypeSystemRefusalWitnessTest {
         units.add(JSON.readTree("{\"node\":\"Unit\",\"abbreviation\":\"daalder\",\"system\":\"Munt\","
                 + "\"canonical\":\"EUR\",\"factorToCanonical\":{\"num\":12,\"den\":1}}"));
         UnitSystem unitSystem = IrLoader.load(ir).unitSystems.get("Munt");
-        assertEquals("0.01", unitSystem.units.get("ct").factorNaarCanoniek().toPlainString());
-        assertEquals("0.04166666666666667", unitSystem.units.get("kwartje").factorNaarCanoniek().toPlainString());
-        assertEquals("12", unitSystem.units.get("daalder").factorNaarCanoniek().toPlainString());
-        assertEquals("1", unitSystem.units.get("EUR").factorNaarCanoniek().toPlainString());
+        assertEquals("0.01", unitSystem.units.get("ct").factorToCanonical().toPlainString());
+        assertEquals("0.04166666666666667", unitSystem.units.get("kwartje").factorToCanonical().toPlainString());
+        assertEquals("12", unitSystem.units.get("daalder").factorToCanonical().toPlainString());
+        assertEquals("1", unitSystem.units.get("EUR").factorToCanonical().toPlainString());
         assertEquals(new UnitSystem.Factor(BigInteger.ONE, BigInteger.valueOf(24)), unitSystem.exactFactors.get("kwartje"));
         assertEquals(new UnitSystem.Factor(BigInteger.valueOf(12), BigInteger.ONE), unitSystem.exactFactors.get("daalder"));
         assertEquals(UnitSystem.Factor.EEN, unitSystem.exactFactors.get("EUR"));
@@ -289,24 +289,24 @@ class TypeSystemRefusalWitnessTest {
     @Test void the_loader_lays_the_wire_one_to_one_on_the_records() throws Exception {
         RegelSpraakModel m = IrLoader.load(golden(PENNINGJAAR));
         // a number declared without a sign restriction reads as the record's ONBEPAALD, the wire's unspecified
-        Datatype.Numeriek threshold = assertInstanceOf(Datatype.Numeriek.class, m.parameters.get("vondstdrempel").datatype());
-        assertEquals(Datatype.Teken.ONBEPAALD, threshold.teken());
-        assertNull(threshold.eenheid());
-        assertNull(m.parameters.get("vondstdrempel").granulariteit());
-        assertEquals(Granulariteit.JAAR, m.parameters.get("penningbedrag").granulariteit());
+        Datatype.Numeric threshold = assertInstanceOf(Datatype.Numeric.class, m.parameters.get("vondstdrempel").datatype());
+        assertEquals(Datatype.Sign.ONBEPAALD, threshold.sign());
+        assertNull(threshold.unit());
+        assertNull(m.parameters.get("vondstdrempel").granularity());
+        assertEquals(Granularity.JAAR, m.parameters.get("penningbedrag").granularity());
         UnitSystem unitSystem = m.unitSystems.get("Munt");
         Unit eur = unitSystem.units.get("EUR");
         assertEquals(List.of("EUR"), List.copyOf(unitSystem.units.keySet()));
         assertEquals(List.of("€", "euro", "euros"), List.copyOf(unitSystem.spellings.keySet()));
         for (Unit e : unitSystem.spellings.values()) assertEquals(eur, e);
-        assertEquals(eur, ((Datatype.Numeriek) m.parameters.get("penningbedrag").datatype()).eenheid());
+        assertEquals(eur, ((Datatype.Numeric) m.parameters.get("penningbedrag").datatype()).unit());
 
         // a number with the unit '%' is the record's percentage, tagged or not, and its unit is the built-in one
         m = IrLoader.load(golden(VONDSTTARIEF));
         Datatype.Percentage rate = assertInstanceOf(Datatype.Percentage.class,
-                m.objecttypen.get("Vondst").attributen.get("vondsttarief"));
-        assertEquals(Datatype.Percentage.PERCENT, rate.eenheid());
-        assertInstanceOf(Datatype.Percentage.class, m.resolvedRegels.get(0).value().type());
+                m.objectTypes.get("Vondst").attributes.get("vondsttarief"));
+        assertEquals(Datatype.Percentage.PERCENT, rate.unit());
+        assertInstanceOf(Datatype.Percentage.class, m.resolvedRules.get(0).value().type());
 
         // the two precisions are the two date records
         ObjectNode ir = golden(MELDSTIP);
@@ -314,13 +314,13 @@ class TypeSystemRefusalWitnessTest {
         assertEquals("millisecond", ir.at(date + "/precision").asText());
         assertTrue(contains(IrLoader.load(ir), Datatype.DateTime.class));
         ((ObjectNode) ir.at(date)).put("precision", "day");
-        assertTrue(contains(IrLoader.load(ir), Datatype.DatumInDagen.class));
+        assertTrue(contains(IrLoader.load(ir), Datatype.DateInDays.class));
     }
 
     // ---------------- helpers ----------------
 
     private static boolean contains(RegelSpraakModel m, Class<? extends Datatype> kind) {
-        return m.objecttypen.values().stream().flatMap(ot -> ot.attributen.values().stream()).anyMatch(kind::isInstance);
+        return m.objectTypes.values().stream().flatMap(ot -> ot.attributes.values().stream()).anyMatch(kind::isInstance);
     }
 
     /** The pointer of the first node of kind {@code kind} under {@code n}, in document order. */

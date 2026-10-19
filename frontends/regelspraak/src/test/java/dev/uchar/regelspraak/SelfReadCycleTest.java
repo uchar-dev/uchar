@@ -47,8 +47,8 @@ class SelfReadCycleTest {
             de y Numeriek (geheel getal);
         """;
 
-    private static String regel(String naam, String sentence) {
-        return "\nRegel " + naam + "\n    geldig altijd\n        " + sentence + "\n";
+    private static String rule(String name, String sentence) {
+        return "\nRegel " + name + "\n    geldig altijd\n        " + sentence + "\n";
     }
 
     /** The diagnostics of one cycle: first its WARNING, which is returned, then exactly the ERRORs {@code faults}. */
@@ -68,12 +68,12 @@ class SelfReadCycleTest {
     private static final String NEGATIVE = ", en een kring draagt geen negatieve rand, zoals een ontkenning (WF-046)";
     private static final String CYCLE_SENTENCE = ": dependency cycle through no recursive creation: ";
 
-    private static String refusal(String regel, String cycle) {
-        return "regel '" + regel + "'" + HANGS + CYCLE_SENTENCE + cycle;
+    private static String refusal(String rule, String cycle) {
+        return "regel '" + rule + "'" + HANGS + CYCLE_SENTENCE + cycle;
     }
 
-    private static String negativeRefusal(String regel, String cycle) {
-        return "regel '" + regel + "'" + HANGS + NEGATIVE + CYCLE_SENTENCE + cycle;
+    private static String negativeRefusal(String rule, String cycle) {
+        return "regel '" + rule + "'" + HANGS + NEGATIVE + CYCLE_SENTENCE + cycle;
     }
 
     private static List<String> cycleMessages(RegelSpraakModel m) {
@@ -90,7 +90,7 @@ class SelfReadCycleTest {
 
     @Test void a_direct_self_read_gets_the_message_of_the_cycle() {
         Diagnostic d = warningAndErrors(Resolver.resolve(DING
-                + regel("ophoog x", "De x van een Ding moet berekend worden als de x van de Ding plus 1.")),
+                + rule("ophoog x", "De x van een Ding moet berekend worden als de x van de Ding plus 1.")),
                 refusal("ophoog x", "ophoog x -> ophoog x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + TAIL, d.message());
         assertEquals(0, d.line(), "zoals de melding van de kring over twee attributen: zonder regel");
@@ -110,28 +110,28 @@ class SelfReadCycleTest {
     }
 
     @Test void a_clamp_of_something_else_than_the_target_itself_is_reported() {
-        Diagnostic d = warningAndErrors(Resolver.resolve(DING + regel("begrens x",
+        Diagnostic d = warningAndErrors(Resolver.resolve(DING + rule("begrens x",
                 "De x van een Ding moet gesteld worden op de x van de Ding plus 1, met een maximum van de y van de Ding.")),
                 refusal("begrens x", "begrens x -> begrens x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + TAIL, d.message());
     }
 
     @Test void a_bound_that_reads_the_target_is_reported() {
-        Diagnostic d = warningAndErrors(Resolver.resolve(DING + regel("begrens x",
+        Diagnostic d = warningAndErrors(Resolver.resolve(DING + rule("begrens x",
                 "De x van een Ding moet gesteld worden op de y van de Ding, met een maximum van de x van de Ding.")),
                 refusal("begrens x", "begrens x -> begrens x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + TAIL, d.message());
     }
 
     @Test void the_clamp_idiom_gets_the_message() {
-        Diagnostic d = warningAndErrors(Resolver.resolve(DING + regel("begrens x",
+        Diagnostic d = warningAndErrors(Resolver.resolve(DING + rule("begrens x",
                 "De x van een Ding moet gesteld worden op de x van de Ding, met een maximum van de y van de Ding.")),
                 refusal("begrens x", "begrens x -> begrens x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + TAIL, d.message());
     }
 
     @Test void a_self_read_in_the_condition_gets_the_message() {
-        Diagnostic d = warningAndErrors(Resolver.resolve(DING + regel("zet x",
+        Diagnostic d = warningAndErrors(Resolver.resolve(DING + rule("zet x",
                 "De x van een Ding moet gesteld worden op 5 indien de x van de Ding groter is dan 3.")),
                 refusal("zet x", "zet x -> zet x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + TAIL, d.message());
@@ -153,61 +153,61 @@ class SelfReadCycleTest {
     }
 
     @Test void a_condition_on_another_attribute_without_cycle_reports_nothing() {
-        RegelSpraakModel m = Resolver.resolve(DING + regel("zet x",
+        RegelSpraakModel m = Resolver.resolve(DING + rule("zet x",
                 "De x van een Ding moet gesteld worden op 5 indien de y van de Ding groter is dan 3."));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }
 
     @Test void a_cycle_through_a_condition_over_another_attribute_is_reported() {
         Diagnostic d = warningAndErrors(Resolver.resolve(DING
-                + regel("a", "De x van een Ding moet gesteld worden op 5 indien de y van de Ding groter is dan 3.")
-                + regel("b", "De y van een Ding moet berekend worden als de x van de Ding plus 1.")),
+                + rule("a", "De x van een Ding moet gesteld worden op 5 indien de y van de Ding groter is dan 3.")
+                + rule("b", "De y van een Ding moet berekend worden als de x van de Ding plus 1.")),
                 refusal("a", "a -> b -> a"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.y -> Ding.x" + TAIL, d.message());
     }
 
     @Test void a_characteristic_rule_that_reads_its_own_characteristic_is_reported() {
         Diagnostic d = warningAndErrors(Resolver.resolve(DING_CHARACTERISTIC
-                + regel("oud", "Een Ding is oud indien hij oud is.")),
+                + rule("oud", "Een Ding is oud indien hij oud is.")),
                 refusal("oud", "oud -> oud"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.oud" + TAIL, d.message());
     }
 
     @Test void a_cycle_over_two_characteristics_is_reported() {
         Diagnostic d = warningAndErrors(Resolver.resolve(DING_CHARACTERISTIC
-                + regel("oud", "Een Ding is oud indien hij versleten is.")
-                + regel("versleten", "Een Ding is versleten indien hij oud is.")),
+                + rule("oud", "Een Ding is oud indien hij versleten is.")
+                + rule("versleten", "Een Ding is versleten indien hij oud is.")),
                 refusal("oud", "oud -> versleten -> oud"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.versleten -> Ding.oud" + TAIL, d.message());
     }
 
     @Test void a_cycle_over_two_negated_characteristics_is_reported() {
         Diagnostic d = warningAndErrors(Resolver.resolve(DING_CHARACTERISTIC
-                + regel("oud", "Een Ding is oud indien hij niet versleten is.")
-                + regel("versleten", "Een Ding is versleten indien hij niet oud is.")),
+                + rule("oud", "Een Ding is oud indien hij niet versleten is.")
+                + rule("versleten", "Een Ding is versleten indien hij niet oud is.")),
                 negativeRefusal("oud", "oud -> versleten -> oud"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.versleten -> Ding.oud" + TAIL, d.message());
     }
 
     @Test void a_cycle_over_a_characteristic_and_an_attribute_is_reported() {
         Diagnostic d = warningAndErrors(Resolver.resolve(DING_CHARACTERISTIC
-                + regel("oud", "Een Ding is oud indien zijn x groter is dan 3.")
-                + regel("x", "De x van een Ding moet gesteld worden op 5 indien hij oud is.")),
+                + rule("oud", "Een Ding is oud indien zijn x groter is dan 3.")
+                + rule("x", "De x van een Ding moet gesteld worden op 5 indien hij oud is.")),
                 refusal("oud", "oud -> x -> oud"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.x -> Ding.oud" + TAIL, d.message());
     }
 
     @Test void a_characteristic_check_in_the_condition_without_cycle_reports_nothing() {
         RegelSpraakModel m = Resolver.resolve(DING_CHARACTERISTIC
-                + regel("oud", "Een Ding is oud indien zijn x groter is dan 3.")
-                + regel("y", "De y van een Ding moet gesteld worden op 1 indien hij oud is."));
+                + rule("oud", "Een Ding is oud indien zijn x groter is dan 3.")
+                + rule("y", "De y van een Ding moet gesteld worden op 1 indien hij oud is."));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }
 
     @Test void the_cycle_over_two_attributes_keeps_its_message() {
         RegelSpraakModel m = Resolver.resolve(DING
-                + regel("a", "De x van een Ding moet berekend worden als de y van de Ding plus 1.")
-                + regel("b", "De y van een Ding moet berekend worden als de x van de Ding plus 1."));
+                + rule("a", "De x van een Ding moet berekend worden als de y van de Ding plus 1.")
+                + rule("b", "De y van een Ding moet berekend worden als de x van de Ding plus 1."));
         assertEquals(List.of("kringverwijzing tussen berekeningen: Ding.x -> Ding.y -> Ding.x" + TAIL),
                 cycleMessages(m));
     }
@@ -239,7 +239,7 @@ class SelfReadCycleTest {
         """;
 
     @Test void a_computation_that_reads_its_own_computed_value_is_reported() {
-        RegelSpraakModel m = Resolver.resolve(VONDST_MARKED + regel("waardering",
+        RegelSpraakModel m = Resolver.resolve(VONDST_MARKED + rule("waardering",
                 "De waarde van een Vondst moet berekend worden als de berekende waarde van de Vondst plus 1."));
         Diagnostic d = warningAndErrors(m,
                 refusal("waardering", "waardering -> waardering"));
@@ -250,7 +250,7 @@ class SelfReadCycleTest {
     }
 
     @Test void a_condition_on_the_generated_characteristic_closes_a_cycle() {
-        Diagnostic d = warningAndErrors(Resolver.resolve(VONDST_MARKED + regel("waardering",
+        Diagnostic d = warningAndErrors(Resolver.resolve(VONDST_MARKED + rule("waardering",
                 "De waarde van een Vondst moet berekend worden als de taxatie van de Vondst "
                 + "indien hij geen afwijkende opgave waarde heeft.")),
                 negativeRefusal("waardering", "waardering -> afwijking opgave waarde -> waardering"));
@@ -260,8 +260,8 @@ class SelfReadCycleTest {
 
     @Test void a_cycle_via_another_attribute_by_the_computed_value_is_reported() {
         Diagnostic d = warningAndErrors(Resolver.resolve(VONDST_MARKED
-                + regel("waardering", "De waarde van een Vondst moet berekend worden als de premie van de Vondst plus 1.")
-                + regel("premieregel",
+                + rule("waardering", "De waarde van een Vondst moet berekend worden als de premie van de Vondst plus 1.")
+                + rule("premieregel",
                         "De premie van een Vondst moet berekend worden als de berekende waarde van de Vondst.")),
                 refusal("waardering", "waardering -> premieregel -> waardering"));
         assertEquals("kringverwijzing tussen berekeningen: Vondst.berekende waarde -> Vondst.premie "
@@ -270,9 +270,9 @@ class SelfReadCycleTest {
 
     @Test void a_read_of_the_input_or_of_the_target_without_cycle_reports_nothing() {
         RegelSpraakModel m = Resolver.resolve(VONDST_MARKED
-                + regel("waardering", "De waarde van een Vondst moet berekend worden als de opgegeven waarde van de "
+                + rule("waardering", "De waarde van een Vondst moet berekend worden als de opgegeven waarde van de "
                         + "Vondst plus de taxatie van de Vondst.")
-                + regel("premieregel", "De premie van een Vondst moet berekend worden als de waarde van de Vondst maal 2."));
+                + rule("premieregel", "De premie van een Vondst moet berekend worden als de waarde van de Vondst maal 2."));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }
 }

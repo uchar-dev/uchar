@@ -6,7 +6,7 @@ import dev.uchar.regelspraak.ir.ResolvedObjectCreation;
 import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.ir.ResolvedAllocation;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -87,14 +87,14 @@ public final class StandingTargets {
         if (temporal != null) return temporal;
         Map<String, Integer> count = writersPerTarget();
         Set<String> out = new LinkedHashSet<>();
-        for (ResolvedRule r : model.resolvedRegels) {
+        for (ResolvedRule r : model.resolvedRules) {
             boolean executable = r.value() instanceof Expr.FunctionCall f
                     && (f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN);
             String k = key(r.target());
             if (!isComputing(r) || !executable || k == null || count.getOrDefault(k, 0) != 1) continue;
             Expr.AttributeReference d = (Expr.AttributeReference) r.target();
             if (!temporalAttribute(d.objectType(), d.attribute())) continue;   // ref's wanted_shape
-            if (otherWriter(d.objectType().naam, d.attribute())) continue;
+            if (otherWriter(d.objectType().name, d.attribute())) continue;
             out.add(k);
         }
         temporal = out;
@@ -113,12 +113,12 @@ public final class StandingTargets {
         if (scalar != null) return scalar;
         Map<String, Integer> count = writersPerTarget();
         Set<String> out = new LinkedHashSet<>();
-        for (ResolvedRule r : model.resolvedRegels) {
+        for (ResolvedRule r : model.resolvedRules) {
             String k = key(r.target());
             if (!isComputing(r) || k == null || count.getOrDefault(k, 0) != 1) continue;
             Expr.AttributeReference d = (Expr.AttributeReference) r.target();
             if (temporalAttribute(d.objectType(), d.attribute())) continue;   // ref's wanted_shape, ~temporal:false
-            if (otherWriter(d.objectType().naam, d.attribute())) continue;
+            if (otherWriter(d.objectType().name, d.attribute())) continue;
             out.add(k);
         }
         scalar = out;
@@ -136,7 +136,7 @@ public final class StandingTargets {
     public Set<String> desugaredTargets() {
         if (desugared != null) return desugared;
         Map<String, List<ResolvedRule>> perTarget = new LinkedHashMap<>();
-        for (ResolvedRule r : model.resolvedRegels) {
+        for (ResolvedRule r : model.resolvedRules) {
             if (r.category() == ResolvedRule.Kind.KENMERKTOEKENNING) continue;
             String k = key(r.target());
             if (k != null) perTarget.computeIfAbsent(k, x -> new ArrayList<>()).add(r);
@@ -167,7 +167,7 @@ public final class StandingTargets {
     private Map<String, Integer> writersPerTarget() {
         if (writers != null) return writers;
         Map<String, Integer> count = new LinkedHashMap<>();
-        for (ResolvedRule r : model.resolvedRegels) {
+        for (ResolvedRule r : model.resolvedRules) {
             if (r.category() == ResolvedRule.Kind.KENMERKTOEKENNING) continue;
             String k = key(r.target());
             if (k != null) count.merge(k, 1, Integer::sum);
@@ -188,12 +188,12 @@ public final class StandingTargets {
      *  writing the same objecttype × attribuut — any of them takes the target out of the standing domain. */
     private boolean otherWriter(String ot, String attr) {
         for (PrioritizedDefaults pd : prioritizedDefaults)
-            if (equalName(pd.onderwerp(), ot) && pd.attribute() != null && equalName(pd.attribute(), attr)) return true;
+            if (equalName(pd.subject(), ot) && pd.attribute() != null && equalName(pd.attribute(), attr)) return true;
         for (ResolvedAllocation v : model.allocations)
-            if (v.targetType() != null && equalName(v.targetType().naam, ot)
+            if (v.targetType() != null && equalName(v.targetType().name, ot)
                     && v.targetAttribute() != null && equalName(v.targetAttribute(), attr)) return true;
         for (ResolvedObjectCreation oc : model.objectCreations)
-            if (oc.createdType() != null && equalName(oc.createdType().naam, ot))
+            if (oc.createdType() != null && equalName(oc.createdType().name, ot))
                 for (var t : oc.initialisations())
                     if (!t.characteristic() && equalName(t.attribute(), attr)) return true;
         return false;
@@ -202,7 +202,7 @@ public final class StandingTargets {
     /** ref's {@code Checks.attr_temporal}: the attribuut carries a declared granulariteit. Delegates to the
      *  SHARED name contract ({@link Namen#containsName}), so a key written in another capitalisation classifies
      *  the same way here as it resolves at the write site. */
-    private static boolean temporalAttribute(Objecttype ot, String attr) {
+    private static boolean temporalAttribute(ObjectType ot, String attr) {
         return ot != null && Namen.containsName(ot.granularityMembers(), attr);
     }
 
@@ -211,7 +211,7 @@ public final class StandingTargets {
      *  {@code Checks.norm} mirror, null-safe. */
     public static String key(Expr target) {
         return target instanceof Expr.AttributeReference d && d.objectType() != null && d.attribute() != null
-                ? Namen.norm(d.objectType().naam) + "|" + Namen.norm(d.attribute()) : null;
+                ? Namen.norm(d.objectType().name) + "|" + Namen.norm(d.attribute()) : null;
     }
 
     private static boolean equalName(String a, String b) {

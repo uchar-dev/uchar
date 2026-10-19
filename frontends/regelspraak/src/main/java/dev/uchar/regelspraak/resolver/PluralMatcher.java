@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.resolver;
 
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,13 +36,13 @@ final class PluralMatcher {
      *  DECLARANT, where the author wrote it. And the ambiguity guard ranges over the chain too — a
      *  written plural that fits one attribute here and another one hop up binds NEITHER; guarding per
      *  type instead would return the nearest and make the answer depend on where the author declared. */
-    static String findAttribute(Objecttype ot, String written) {
+    static String findAttribute(ObjectType ot, String written) {
         if (ot == null || written == null) return null;
         String exact = ot.attributeName(written);                     // singular, exact — preferred
         if (exact != null) return exact;
         String only = null;
-        for (Objecttype t : ot.chain())
-            for (String attr : t.attributen.keySet()) {
+        for (ObjectType t : ot.chain())
+            for (String attr : t.attributes.keySet()) {
                 String mv = t.attributePlural.get(attr);               // declared (mv: …), §3.3 — spec-sanctioned
                 boolean matches = mv != null && mv.equalsIgnoreCase(written);
                 if (!matches)                                             // else the synthesised regular plural
@@ -61,19 +61,19 @@ final class PluralMatcher {
      *  names are unique by declaration, but two types MAY declare the same {@code (mv: …)}, and a
      *  first-hit bind there would be the silent mis-bind the resolver refuses everywhere else — so a
      *  shared written form binds neither and stays an honest non-bind. */
-    static Objecttype findObjectType(Collection<Objecttype> types, String written) {
+    static ObjectType findObjectType(Collection<ObjectType> types, String written) {
         if (written == null) return null;
-        for (Objecttype ot : types)
-            if (ot.naam.equalsIgnoreCase(written)) return ot;         // singular name, exact & unique
-        Objecttype only = null;
-        for (Objecttype ot : types)
+        for (ObjectType ot : types)
+            if (ot.name.equalsIgnoreCase(written)) return ot;         // singular name, exact & unique
+        ObjectType only = null;
+        for (ObjectType ot : types)
             if (ot.plural != null && ot.plural.equalsIgnoreCase(written)) {
                 if (only != null && only != ot) return null;           // shared declared plural → no bind
                 only = ot;
             }
         if (only != null) return only;
-        for (Objecttype ot : types)
-            for (String mv : pluralForms(ot.naam))
+        for (ObjectType ot : types)
+            for (String mv : pluralForms(ot.name))
                 if (mv.equalsIgnoreCase(written)) {
                     if (only != null && only != ot) return null;       // ambiguous → marker
                     only = ot;

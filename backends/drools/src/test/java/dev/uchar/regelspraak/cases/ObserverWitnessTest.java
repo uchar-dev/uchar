@@ -57,9 +57,9 @@ class ObserverWitnessTest {
 
     private static Observed observed(DroolsBackend.Build build, DroolsBackend.Observer w) {
         List<String> trace = new ArrayList<>();
-        for (ScenarioResult.Firing v : w.firings()) trace.add(v.regel() + " " + v.labels() + " " + v.count());
+        for (ScenarioResult.Firing v : w.firings()) trace.add(v.rule() + " " + v.labels() + " " + v.count());
         List<String> coverage = new ArrayList<>();
-        for (ScenarioResult.CoverageRule d : DroolsBackend.coverage(build, w.forms())) coverage.add(d.regel() + " " + d.category());
+        for (ScenarioResult.CoverageRule d : DroolsBackend.coverage(build, w.forms())) coverage.add(d.rule() + " " + d.category());
         return new Observed(trace, w.forms(), coverage);
     }
 
@@ -103,8 +103,8 @@ class ObserverWitnessTest {
         for (String caseFileName : List.of("case1-geweigerd.json", "case4-kaal.json")) {
             ScenarioResult r = report(EXCLUSION, caseFileName);
             Observed w = play(EXCLUSION, caseFileName, DroolsBackend.Branch.EXEC_MODEL);
-            assertEquals(w.trace(), r.trace().firings().stream().map(v -> v.regel() + " " + v.labels() + " " + v.count()).toList(), caseFileName);
-            assertEquals(w.coverage(), r.coverage().stream().map(d -> d.regel() + " " + d.category()).toList(), caseFileName);
+            assertEquals(w.trace(), r.trace().firings().stream().map(v -> v.rule() + " " + v.labels() + " " + v.count()).toList(), caseFileName);
+            assertEquals(w.coverage(), r.coverage().stream().map(d -> d.rule() + " " + d.category()).toList(), caseFileName);
         }
     }
 
@@ -132,7 +132,7 @@ class ObserverWitnessTest {
                     assertNull(DroolsBackend.fire(build, session, w).noFixpoint());
                     return w.firings();
                 });
-        ScenarioResult.Firing premie = firings.stream().filter(v -> v.regel().equals("defaults A:Jutter.premie"))
+        ScenarioResult.Firing premie = firings.stream().filter(v -> v.rule().equals("defaults A:Jutter.premie"))
                 .findFirst().orElseThrow(() -> new AssertionError("geen rij voor de premie: " + firings));
         assertEquals(20, premie.count());
         assertEquals(List.of("J1", "J2", "J3", "J4", "J5", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9"),

@@ -110,12 +110,12 @@ class VocabularyDialectTest {
         assertTrue(m.errors().isEmpty(), () -> m.errors().toString());
         assertEquals(List.of(new RegelSpraakModel.Vocabulary("handboek", false, "nl"),
                 new RegelSpraakModel.Vocabulary("cgm", true, "nl")), m.vocabularies);
-        assertEquals(Optional.of("totale premie"), m.benaming("handboek", Designatable.attribute("Jutter", "vondstbedrag")));
-        assertEquals(Optional.of("BARNSTEEN"), m.benaming("cgm", Designatable.enumerationValue("Vondstsoort", "barnsteen")));
-        assertEquals(Optional.of("GEMELDE_VONDST"), m.benaming("cgm", Designatable.role("vondstaanmelding", "vondst")));
+        assertEquals(Optional.of("totale premie"), m.designation("handboek", Designatable.attribute("Jutter", "vondstbedrag")));
+        assertEquals(Optional.of("BARNSTEEN"), m.designation("cgm", Designatable.enumerationValue("Vondstsoort", "barnsteen")));
+        assertEquals(Optional.of("GEMELDE_VONDST"), m.designation("cgm", Designatable.role("vondstaanmelding", "vondst")));
         assertEquals(Optional.of("premie per strandjutter"),
-                m.benaming("handboek", Designatable.form("vondstbedrag van een jutter")));
-        assertEquals(Optional.of("PREMIEBEREKENING"), m.benaming("cgm", Designatable.ruleGroup("premieberekening")));
+                m.designation("handboek", Designatable.form("vondstbedrag van een jutter")));
+        assertEquals(Optional.of("PREMIEBEREKENING"), m.designation("cgm", Designatable.ruleGroup("premieberekening")));
         assertEquals(Optional.of(Designatable.parameter("premietarief")),
                 m.namedElement("handboek", Designatable.Kind.PARAMETER, null, "Premie per kilogram"));
         assertEquals(23, m.designatable().size());
@@ -223,7 +223,7 @@ class VocabularyDialectTest {
                     Het vondstbedrag van een Jutter moet berekend worden als zijn tegoed plus 1.
             """);
         assertTrue(m.errors().isEmpty(), () -> m.errors().toString());
-        ResolvedRule r = m.resolvedRegels.get(0);
+        ResolvedRule r = m.resolvedRules.get(0);
         Expr.Binary plus = (Expr.Binary) r.value();
         assertEquals("tegoed", ((Expr.AttributeReference) plus.left()).attribute());
     }
@@ -233,11 +233,11 @@ class VocabularyDialectTest {
     /** The ERROR {@code fragment} stands on the first line of {@code source} that carries {@code merker}. */
     private static void error(String source, String merker, String fragment) {
         RegelSpraakModel m = Resolver.resolve(source);
-        String[] regels = source.split("\n", -1);
-        int regel = 0;
-        for (int i = 0; i < regels.length; i++) if (regels[i].contains(merker)) { regel = i + 1; break; }
-        assertTrue(regel > 0, "merker '" + merker + "' niet in de bron");
-        final int r = regel;
+        String[] rules = source.split("\n", -1);
+        int rule = 0;
+        for (int i = 0; i < rules.length; i++) if (rules[i].contains(merker)) { rule = i + 1; break; }
+        assertTrue(rule > 0, "merker '" + merker + "' niet in de bron");
+        final int r = rule;
         List<Diagnostic> faults = m.errors();
         assertTrue(faults.stream().anyMatch(d -> d.message().contains(fragment) && d.line() == r),
                 () -> "verwacht op regel " + r + ": " + fragment + "\nkreeg: " + faults);

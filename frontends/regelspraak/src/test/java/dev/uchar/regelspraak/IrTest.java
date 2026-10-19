@@ -35,28 +35,28 @@ class IrTest {
     @Test void calculation_becomes_a_typed_resolved_rule() {
         RegelSpraakModel m = Resolver.resolve(SRC);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        assertEquals(1, m.resolvedRegels.size());
+        assertEquals(1, m.resolvedRules.size());
 
-        ResolvedRule rr = m.resolvedRegels.get(0);
-        assertEquals("bereken totaal", rr.naam());
+        ResolvedRule rr = m.resolvedRules.get(0);
+        assertEquals("bereken totaal", rr.name());
         assertEquals(ResolvedRule.Kind.BEREKENING, rr.category());
     }
 
     @Test void target_is_a_bound_attribute_reference() {
         RegelSpraakModel m = Resolver.resolve(SRC);
-        ResolvedRule rr = m.resolvedRegels.get(0);
+        ResolvedRule rr = m.resolvedRules.get(0);
 
         Expr.AttributeReference target = assertInstanceOf(Expr.AttributeReference.class, rr.target());
         assertEquals("totaal", target.attribute());
         assertNotNull(target.objectType(), "doel-onderwerp niet opgelost");
-        assertSame(m.objecttypen.get("Verkoop"), target.objectType());
-        assertInstanceOf(Datatype.Numeriek.class, target.type());
-        assertEquals("€", ((Datatype.Numeriek) target.type()).eenheid().afkorting());
+        assertSame(m.objectTypes.get("Verkoop"), target.objectType());
+        assertInstanceOf(Datatype.Numeric.class, target.type());
+        assertEquals("€", ((Datatype.Numeric) target.type()).unit().abbreviation());
     }
 
     @Test void value_is_a_typed_summing_tree_with_bound_operands() {
         RegelSpraakModel m = Resolver.resolve(SRC);
-        ResolvedRule rr = m.resolvedRegels.get(0);
+        ResolvedRule rr = m.resolvedRules.get(0);
 
         Expr.Binary sum = assertInstanceOf(Expr.Binary.class, rr.value());
         assertEquals(Expr.BinOp.PLUS, sum.op());
@@ -65,7 +65,7 @@ class IrTest {
         // left operand: het bedrag van de Verkoop -> attribuut bound to objecttype Verkoop
         Expr.AttributeReference left = assertInstanceOf(Expr.AttributeReference.class, sum.left());
         assertEquals("bedrag", left.attribute());
-        assertSame(m.objecttypen.get("Verkoop"), left.objectType());
+        assertSame(m.objectTypes.get("Verkoop"), left.objectType());
 
         // right operand: de toeslag -> bound to the parameter
         Expr.ParameterRef right = assertInstanceOf(Expr.ParameterRef.class, sum.right());
@@ -89,7 +89,7 @@ class IrTest {
                         + "geen instanties telt: a single-argument fold with an elementType carries its range (sourceRole "
                         + "or sourcePath) under every kind but total: the range is written, never derived"),
                 m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList());
-        Expr value = m.resolvedRegels.get(0).value();
+        Expr value = m.resolvedRules.get(0).value();
         Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, value);
         assertEquals(Expr.FunctionKind.SOM, sum.kind());
         assertEquals(1, sum.arguments().size());
@@ -111,8 +111,8 @@ class IrTest {
                     De prijs van een Reis moet berekend worden als de som van de prijs van een Reis over alle jaardimensies.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).value());
-        assertNull(sum.dimensieSelectie(), "een scalair operand heeft geen oplosbare dimensieselectie");
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
+        assertNull(sum.dimensionSelection(), "een scalair operand heeft geen oplosbare dimensieselectie");
         Condition.Unresolved f = assertInstanceOf(Condition.Unresolved.class, sum.filter(),
                 () -> "de dimensieselectie moet als Onopgelost-marker vastliggen, niet stil verdwijnen");
         assertTrue(f.source().snippet().contains("over alle jaardimensies"), () -> "bron: " + f.source());
@@ -143,9 +143,9 @@ class IrTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
-        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).value());
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
         assertEquals(Expr.FunctionKind.SOM, sum.kind());
-        Expr.DimensionSelection sel = sum.dimensieSelectie();
+        Expr.DimensionSelection sel = sum.dimensionSelection();
         assertNotNull(sel, "de vanaf..t/m dimensieselectie moet opgelost zijn, geen marker");
         assertEquals("jaardimensie", sel.dimension());
         assertEquals(List.of("vier jaar geleden", "drie jaar geleden", "twee jaar geleden", "een jaar geleden"),
@@ -175,8 +175,8 @@ class IrTest {
                 De totaal van een Persoon moet berekend worden als de som van zijn inkomen over alle jaardimensies.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).value());
-        assertNull(sum.dimensieSelectie(), "een multidimensioneel attribuut mag (nog) niet over één as gevouwen worden");
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
+        assertNull(sum.dimensionSelection(), "een multidimensioneel attribuut mag (nog) niet over één as gevouwen worden");
         assertInstanceOf(Condition.Unresolved.class, sum.filter(), "moet de honest marker houden");
         assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().contains("dimensieselectie")),
                 () -> "verwachtte een marker-WARNING: " + m.diagnostics);
@@ -198,7 +198,7 @@ class IrTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "" + m.errors());
-        Expr.DimensionCellRead cell = assertInstanceOf(Expr.DimensionCellRead.class, m.resolvedRegels.get(0).value(),
+        Expr.DimensionCellRead cell = assertInstanceOf(Expr.DimensionCellRead.class, m.resolvedRules.get(0).value(),
                 "een gelabelde dimensielezing moet een DimensieCel zijn");
         assertEquals("betaalde belasting in jaar", cell.attribute().attribute(), "de kale attribuutnaam");
         assertEquals(List.of("huidig jaar"), cell.labels(), "het geselecteerde label");
@@ -218,7 +218,7 @@ class IrTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
-        Condition c = m.resolvedRegels.get(0).condition();
+        Condition c = m.resolvedRules.get(0).condition();
         Condition.Comparison v = assertInstanceOf(Condition.Comparison.class, c);
         assertEquals(Condition.Operator.GROTER, v.op());
         assertInstanceOf(Expr.AttributeReference.class, v.left());
@@ -240,7 +240,7 @@ class IrTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
-        Condition c = m.resolvedRegels.get(0).condition();
+        Condition c = m.resolvedRules.get(0).condition();
         Condition.Compound s = assertInstanceOf(Condition.Compound.class, c);
         assertEquals(Condition.Quantifier.ALLE, s.quantifier());
         assertEquals(2, s.components().size());
@@ -251,7 +251,7 @@ class IrTest {
 
     @Test void unconditional_rule_has_no_condition() {
         RegelSpraakModel m = Resolver.resolve(SRC);
-        assertNull(m.resolvedRegels.get(0).condition());
+        assertNull(m.resolvedRules.get(0).condition());
     }
 
     @Test void aggregation_takes_over_the_element_type_via_role_navigation() {
@@ -278,11 +278,11 @@ class IrTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
 
-        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).value());
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
         assertEquals(Expr.FunctionKind.SOM, sum.kind());
         assertTrue(sum.type().isNumber(), "som-elementtype niet via rol opgelost");
 
-        Expr.FunctionCall count = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(1).value());
+        Expr.FunctionCall count = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(1).value());
         assertEquals(Expr.FunctionKind.AANTAL, count.kind());
         assertTrue(count.type().isNumber(), "telling moet numeriek (een telling) zijn");
     }
@@ -305,11 +305,11 @@ class IrTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "valse fout op jaren/jr: " + m.errors());
 
-        Expr.FunctionCall td = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).value());
+        Expr.FunctionCall td = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
         assertEquals(Expr.FunctionKind.TIJDSDUUR, td.kind());
-        Datatype.Numeriek n = assertInstanceOf(Datatype.Numeriek.class, td.type());
-        assertTrue(n.geheel(), "hele jaren -> geheel");
-        assertTrue(n.eenheid().convertibleTo(m.resolveEenheid("jr")), "jaren niet inwisselbaar met jr");
+        Datatype.Numeric n = assertInstanceOf(Datatype.Numeric.class, td.type());
+        assertTrue(n.wholeNumber(), "hele jaren -> geheel");
+        assertTrue(n.unit().convertibleTo(m.resolveUnit("jr")), "jaren niet inwisselbaar met jr");
     }
 
     @Test void declared_plural_wins_over_guessed_morphology() {
@@ -331,11 +331,11 @@ class IrTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
 
-        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).value());
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
         assertEquals(Expr.FunctionKind.SOM, sum.kind());
         Expr.AttributeReference arg = assertInstanceOf(Expr.AttributeReference.class, sum.arguments().get(0));
         assertNotNull(arg.objectType(), "'steden' niet opgelost via gedeclareerd meervoud");
-        assertEquals("Stad", arg.objectType().naam);   // resolved via (mv: steden), not a guess
+        assertEquals("Stad", arg.objectType().name);   // resolved via (mv: steden), not a guess
     }
 
     @Test void references_resolve_via_fact_type_roles() {
@@ -362,14 +362,14 @@ class IrTest {
         assertTrue(m.errors().get(0).message().contains("setlezing buiten een vouwbron"),
                 () -> "valse fout via rolnavigatie: " + m.errors());
 
-        ResolvedRule rr = m.resolvedRegels.get(0);
+        ResolvedRule rr = m.resolvedRules.get(0);
         Expr.AttributeReference target = assertInstanceOf(Expr.AttributeReference.class, rr.target());
         assertNotNull(target.objectType(), "rol 'groep' niet opgelost");
-        assertEquals("Ploeg", target.objectType().naam);          // via role groep
+        assertEquals("Ploeg", target.objectType().name);          // via role groep
 
         Expr.AttributeReference value = assertInstanceOf(Expr.AttributeReference.class, rr.value());
         assertNotNull(value.objectType(), "meervoudige rol 'deelnemers' niet opgelost");
-        assertEquals("Persoon", value.objectType().naam);       // via plural role deelnemers
+        assertEquals("Persoon", value.objectType().name);       // via plural role deelnemers
         assertTrue(value.type().isNumber());
     }
 
@@ -385,7 +385,7 @@ class IrTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "valse fout op onopgeloste referentie: " + m.errors());
         // value is an attribuut-ref whose datatype stayed Onbekend (subject not resolved)
-        Expr value = m.resolvedRegels.get(0).value();
+        Expr value = m.resolvedRules.get(0).value();
         assertTrue(value.type().isUnknown());
     }
 }

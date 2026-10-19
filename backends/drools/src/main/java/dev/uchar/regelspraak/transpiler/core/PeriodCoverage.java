@@ -30,13 +30,13 @@ import java.util.Map;
  * {@code ScenarioResolver.regelParameters} (zie {@code resolver/ScenarioResolver.java}, ~regel 490): per resolved
  * construct de {@code ParameterRef}-namen via {@link Expr#contains} over de waarde/doel-{@code Expr}s en via
  * {@link Condition#containsOperand} over de voorwaarde/assertie. {@code regelParameters} loopt precies TWEE
- * resolved-collecties af — {@link RegelSpraakModel#resolvedRegels} (waarde + doel + voorwaarde) en
- * {@link RegelSpraakModel#consistenties} (assertie) — en die twee dekken we hier identiek. Wijzigt {@code regelParameters}
+ * resolved-collecties af — {@link RegelSpraakModel#resolvedRules} (waarde + doel + voorwaarde) en
+ * {@link RegelSpraakModel#consistencies} (assertie) — en die twee dekken we hier identiek. Wijzigt {@code regelParameters}
  * ooit zijn collectie-set, dan moet deze spiegel meebewegen.
  *
  * <p><b>Versies.</b> Een regel kan meerdere §13.4.2.5-VERSIES hebben (zelfde geschreven naam, verschillende
  * {@link Validity}). Elke versie is een aparte {@link dev.uchar.regelspraak.ir.ResolvedRule} met een eigen
- * {@code #k}-gesuffixte naam en eigen geldigheid, dus door direct over {@code resolvedRegels} te itereren checken we elke
+ * {@code #k}-gesuffixte naam en eigen geldigheid, dus door direct over {@code resolvedRules} te itereren checken we elke
  * versie afzonderlijk met de versie-{@link Validity} als regelperiode.
  *
  * <p><b>Dekking.</b> De dekking van één parameter is de UNIE van zijn intervallen over alle sets — de fase-1
@@ -54,7 +54,7 @@ import java.util.Map;
  * @param ontbrekend  de deelperiodes van {@code rulePeriod} die niet door enig parameter-interval gedekt zijn
  *                    ({@link Validity}-shape, {@code null} = open kant); nooit leeg voor een bestaande {@code PeriodCoverage}
  */
-public record PeriodCoverage(String regel, String parameter, Validity rulePeriod, List<Validity> missing) {
+public record PeriodCoverage(String rule, String parameter, Validity rulePeriod, List<Validity> missing) {
 
     /**
      * Puur: elke (regel-versie, parameter)-combinatie met minstens één gat tussen de regelperiode en de parameterdekking.
@@ -68,41 +68,41 @@ public record PeriodCoverage(String regel, String parameter, Validity rulePeriod
         Map<String, List<ValueInterval>> pool = ParameterSet.pool(sets);
         if (pool.isEmpty()) return out;
 
-        // Spiegelt ScenarioResolver.regelParameters: resolvedRegels (waarde + doel + voorwaarde) en consistenties (assertie).
-        for (var r : model.resolvedRegels) {
+        // Spiegelt ScenarioResolver.regelParameters: resolvedRules (waarde + doel + voorwaarde) en consistenties (assertie).
+        for (var r : model.resolvedRules) {
             LinkedHashSet<String> params = new LinkedHashSet<>();
             catchExpr(r.value(), params);
             catchExpr(r.target(), params);
             catchCondition(r.condition(), params);
-            checkConstruct(r.naam(), r.validity(), params, pool, out);
+            checkConstruct(r.name(), r.validity(), params, pool, out);
         }
-        for (var c : model.consistenties) {
+        for (var c : model.consistencies) {
             LinkedHashSet<String> params = new LinkedHashSet<>();
-            catchCondition(c.assertie(), params);
-            checkConstruct(c.naam(), c.validity(), params, pool, out);
+            catchCondition(c.assertion(), params);
+            checkConstruct(c.name(), c.validity(), params, pool, out);
         }
         return out;
     }
 
-    private static void checkConstruct(String naam, Validity rulePeriod, LinkedHashSet<String> params,
+    private static void checkConstruct(String name, Validity rulePeriod, LinkedHashSet<String> params,
                                             Map<String, List<ValueInterval>> pool, List<PeriodCoverage> out) {
         Validity period = rulePeriod == null ? Validity.ALTIJD : rulePeriod;
         for (String param : params) {
             List<ValueInterval> intervals = pool.get(param);
             if (intervals == null) continue;   // niet in de sets -> het andere kanaal, geen melding hier
             List<Validity> holes = holes(period, intervals);
-            if (!holes.isEmpty()) out.add(new PeriodCoverage(naam, param, period, holes));
+            if (!holes.isEmpty()) out.add(new PeriodCoverage(name, param, period, holes));
         }
     }
 
     /** De ParameterRef-namen in een waarde/doel-Expr — dezelfde {@code Expr.contains}-walk als {@code regelParameters}. */
     private static void catchExpr(Expr e, LinkedHashSet<String> out) {
-        Expr.contains(e, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().naam()); return false; });
+        Expr.contains(e, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().name()); return false; });
     }
 
     /** De ParameterRef-namen in een voorwaarde/assertie — dezelfde {@code Condition.containsOperand}-walk. */
     private static void catchCondition(Condition c, LinkedHashSet<String> out) {
-        Condition.containsOperand(c, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().naam()); return false; });
+        Condition.containsOperand(c, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().name()); return false; });
     }
 
     /**
@@ -165,7 +165,7 @@ public record PeriodCoverage(String regel, String parameter, Validity rulePeriod
             holes.append(show(missing.get(i)));
         }
         var w = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                "RGS-347", RegelSpraakModel.Diagnostic.params("rule", regel, "period", show(rulePeriod),
+                "RGS-347", RegelSpraakModel.Diagnostic.params("rule", rule, "period", show(rulePeriod),
                         "parameter", parameter, "holes", holes), 0);
         if (!model.diagnostics.contains(w)) model.diagnostics.add(w);
     }

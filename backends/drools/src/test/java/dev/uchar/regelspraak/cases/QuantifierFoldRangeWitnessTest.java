@@ -125,15 +125,15 @@ class QuantifierFoldRangeWitnessTest {
         return ir;
     }
 
-    private static ObjectNode role(String naam, String objectType, String plural, boolean many) {
-        ObjectNode r = JSON.createObjectNode().put("node", "Role").put("name", naam)
+    private static ObjectNode role(String name, String objectType, String plural, boolean many) {
+        ObjectNode r = JSON.createObjectNode().put("node", "Role").put("name", name)
                 .put("objectType", objectType);
         if (plural != null) r.put("plural", plural);
         return r.put("many", many);
     }
 
-    private static Path temporary(String naam, ObjectNode ir) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, ObjectNode ir) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         return tmp;

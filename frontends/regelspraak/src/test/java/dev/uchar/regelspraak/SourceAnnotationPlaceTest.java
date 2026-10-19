@@ -49,7 +49,7 @@ class SourceAnnotationPlaceTest {
         assertEquals(Severity.WARNING, d.severity());
         assertTrue(d.message().startsWith("Regelgroep 'berging': de // Bron:-annotatie 'art. 7 Jutterswet'"), d.message());
         assertTrue(d.message().contains("hoort bij geen regel") && d.message().contains("§9.10"), d.message());
-        assertTrue(m.resolvedRegels.get(0).statuteAnnotations().isEmpty(),
+        assertTrue(m.resolvedRules.get(0).statuteAnnotations().isEmpty(),
                 "de kopannotatie wordt niet stil aan het eerste lid gehangen");
         assertEquals("berging", m.ruleGroups.get(0).source().snippet(), "de bron van de groep blijft de naam");
     }
@@ -70,15 +70,15 @@ class SourceAnnotationPlaceTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertEquals(2, m.resolvedRegels.size(), "een regel per rij");
-        for (ResolvedRule r : m.resolvedRegels)
-            assertEquals(List.of("art. 8 Jutterswet"), r.statuteAnnotations(), () -> "rij '" + r.naam() + "' mist de annotatie");
+        assertEquals(2, m.resolvedRules.size(), "een regel per rij");
+        for (ResolvedRule r : m.resolvedRules)
+            assertEquals(List.of("art. 8 Jutterswet"), r.statuteAnnotations(), () -> "rij '" + r.name() + "' mist de annotatie");
     }
 
     @Test void annotation_under_the_rule_group_head_belongs_to_the_first_member() {
         String src = MODEL + "Regelgroep berging\n// Bron: art. 7 Jutterswet\n" + PREMIE;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertEquals(List.of("art. 7 Jutterswet"), m.resolvedRegels.get(0).statuteAnnotations());
+        assertEquals(List.of("art. 7 Jutterswet"), m.resolvedRules.get(0).statuteAnnotations());
     }
 }

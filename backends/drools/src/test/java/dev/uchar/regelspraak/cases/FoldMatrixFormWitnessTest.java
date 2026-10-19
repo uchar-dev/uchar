@@ -258,8 +258,8 @@ class FoldMatrixFormWitnessTest {
         IrPath.rules(doc).set("rules", out);
     }
 
-    private Path write(ObjectNode doc, String naam) throws Exception {
-        Path p = tmp.resolve(naam + "-" + (n++) + ".json");
+    private Path write(ObjectNode doc, String name) throws Exception {
+        Path p = tmp.resolve(name + "-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
         return p;
     }

@@ -25,7 +25,7 @@ import java.util.Set;
  *                    its id
  * @param gevolg      what the rule does when it fires
  */
-public record RulePlan(String naam, String form, String agendaGroup, ReadTable readings, List<LhsItem> leftSide,
+public record RulePlan(String name, String form, String agendaGroup, ReadTable readings, List<LhsItem> leftSide,
                         Consequence consequence) {
 
     public RulePlan {
@@ -34,43 +34,43 @@ public record RulePlan(String naam, String form, String agendaGroup, ReadTable r
         for (LhsItem item : leftSide) {
             switch (item) {
                 case Subject o -> {
-                    declare(naam, o.naam(), inScope);
-                    for (Binding b : o.bindings()) declare(naam, b.target(), inScope);
+                    declare(name, o.name(), inScope);
+                    for (Binding b : o.bindings()) declare(name, b.target(), inScope);
                 }
-                case FactPattern p -> declare(naam, p, inScope);
+                case FactPattern p -> declare(name, p, inScope);
                 case Accumulation a -> {
                     // the source's variables stay in scope, as the rendering into the executable model keeps them
-                    declare(naam, a.source(), inScope);
-                    for (Accumulation.Aggregation f : a.aggregations()) declare(naam, f.target(), inScope);
+                    declare(name, a.source(), inScope);
+                    for (Accumulation.Aggregation f : a.aggregations()) declare(name, f.target(), inScope);
                 }
-                case Not n -> inside(naam, n.inside(), inScope);
-                case Exists b -> inside(naam, b.inside(), inScope);
+                case Not n -> inside(name, n.inside(), inScope);
+                case Exists b -> inside(name, b.inside(), inScope);
                 case TestItem t -> { }
             }
         }
         Set<String> slotNames = new HashSet<>();
         for (Read l : readings.slots())
-            if (l.naam() != null && !slotNames.add(l.naam()))
-                throw new IllegalArgumentException("de regel " + naam + " geeft twee slots de variabele " + l.naam());
+            if (l.name() != null && !slotNames.add(l.name()))
+                throw new IllegalArgumentException("de regel " + name + " geeft twee slots de variabele " + l.name());
     }
 
-    private static void declare(String regel, FactPattern p, Set<String> inScope) {
-        declare(regel, p.naam(), inScope);
-        for (Binding b : p.bindings()) declare(regel, b.target(), inScope);
+    private static void declare(String rule, FactPattern p, Set<String> inScope) {
+        declare(rule, p.name(), inScope);
+        for (Binding b : p.bindings()) declare(rule, b.target(), inScope);
     }
 
-    private static void declare(String regel, String variable, Set<String> inScope) {
+    private static void declare(String rule, String variable, Set<String> inScope) {
         if (!inScope.add(variable))
-            throw new IllegalArgumentException("de regel " + regel + " declareert de variabele " + variable
+            throw new IllegalArgumentException("de regel " + rule + " declareert de variabele " + variable
                     + " twee keer");
     }
 
     /** The variables a quantification declares, which live only inside it: none may be in scope where it stands
      *  ({@link Exists} holds them distinct among themselves). */
-    private static void inside(String regel, List<String> inside, Set<String> inScope) {
+    private static void inside(String rule, List<String> inside, Set<String> inScope) {
         for (String v : inside)
             if (inScope.contains(v))
-                throw new IllegalArgumentException("de regel " + regel + " declareert de variabele " + v
+                throw new IllegalArgumentException("de regel " + rule + " declareert de variabele " + v
                         + " twee keer");
     }
 }

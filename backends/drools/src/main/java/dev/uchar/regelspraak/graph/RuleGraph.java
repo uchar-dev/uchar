@@ -117,11 +117,11 @@ public final class RuleGraph {
     public static RuleGraph build(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigation navigation) {
         List<Form> forms = ProducerConsumer.forms(model, defaults, navigation);
         // A form node is one form under its kind and base name, so the versions of a form are one node.
-        record FormKey(FormKind category, String naam) {}
+        record FormKey(FormKind category, String name) {}
         Map<ElementKey, Set<FormKey>> producers = new LinkedHashMap<>();
         for (Form v : forms)
             for (ElementKey el : v.writes())
-                producers.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(new FormKey(v.category(), v.naam()));
+                producers.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(new FormKey(v.category(), v.name()));
         // Every element that is consumed by at least one form, so we can tell producties zonder afnemer apart.
         Set<ElementKey> consumedElements = new LinkedHashSet<>();
         for (Form v : forms) consumedElements.addAll(v.reads());
@@ -150,9 +150,9 @@ public final class RuleGraph {
 
         // 2. form nodes: every form, whatever it writes or reads.
         for (Form v : forms)
-            formId.computeIfAbsent(new FormKey(v.category(), v.naam()), s -> {
+            formId.computeIfAbsent(new FormKey(v.category(), v.name()), s -> {
                 String id = "r" + formId.size();
-                nodes.add(new Node(id, s.naam(), NodeKind.RULE, false));
+                nodes.add(new Node(id, s.name(), NodeKind.RULE, false));
                 formKinds.put(id, s.category());
                 return id;
             });
@@ -162,7 +162,7 @@ public final class RuleGraph {
             for (FormKey s : e.getValue()) edgeSet.add(new Edge(formId.get(s), elemId.get(e.getKey())));
         // 4. consumer edges: element -> form that reads it.
         for (Form v : forms) {
-            String to = formId.get(new FormKey(v.category(), v.naam()));
+            String to = formId.get(new FormKey(v.category(), v.name()));
             for (ElementKey el : v.reads()) edgeSet.add(new Edge(elemId.get(el), to));
         }
         Map<String, ElementKey> elements = new LinkedHashMap<>();
@@ -172,7 +172,7 @@ public final class RuleGraph {
 
     /** The label of an element node: "attribuut van Objecttype" (or just the naam when the owner is unknown). */
     private static String elementLabel(ElementKey el) {
-        return el.objectType().isEmpty() ? el.naam() : el.naam() + " · " + el.objectType();
+        return el.objectType().isEmpty() ? el.name() : el.name() + " · " + el.objectType();
     }
 
     // ---------------- render ----------------
@@ -202,7 +202,7 @@ public final class RuleGraph {
         b.append("  classDef kenmerk fill:#fef9c3,stroke:#ca8a04,color:#713f12;\n");
         b.append("  classDef invoer fill:#fae8ff,stroke:#a21caf,color:#701a75;\n");
         b.append("  classDef eindoutput stroke-width:3px,stroke-dasharray:4 3;\n");
-        appendClass(b, "regel", NodeKind.RULE);
+        appendClass(b, "rule", NodeKind.RULE);
         appendClass(b, "attribuut", NodeKind.ATTRIBUTE);
         appendClass(b, "kenmerk", NodeKind.CHARACTERISTIC);
         appendClass(b, "invoer", NodeKind.INPUT);

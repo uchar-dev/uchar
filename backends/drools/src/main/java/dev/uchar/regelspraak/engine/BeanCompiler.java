@@ -91,10 +91,10 @@ public final class BeanCompiler {
         StringBuilder diag = new StringBuilder();
         try (StandardJavaFileManager std = javac.getStandardFileManager(null, null, null);
              JavaFileManager fm = new ForwardingJavaFileManager<>(std) {
-                 @Override public JavaFileObject getJavaFileForOutput(Location loc, String naam, JavaFileObject.Kind kind, FileObject source) {
+                 @Override public JavaFileObject getJavaFileForOutput(Location loc, String name, JavaFileObject.Kind kind, FileObject source) {
                      ByteArrayOutputStream out = new ByteArrayOutputStream();
-                     classes.put(naam, out);
-                     return new SimpleJavaFileObject(URI.create("mem:///" + naam.replace('.', '/') + ".class"), kind) {
+                     classes.put(name, out);
+                     return new SimpleJavaFileObject(URI.create("mem:///" + name.replace('.', '/') + ".class"), kind) {
                          @Override public OutputStream openOutputStream() { return out; }
                      };
                  }
@@ -106,20 +106,20 @@ public final class BeanCompiler {
             throw new IllegalStateException("kon de in-memory fact-compiler niet sluiten", e);
         }
         return new ClassLoader(BeanCompiler.class.getClassLoader()) {
-            @Override protected Class<?> loadClass(String naam, boolean resolve) throws ClassNotFoundException {
-                synchronized (getClassLoadingLock(naam)) {
-                    Class<?> c = findLoadedClass(naam);
-                    if (c == null && classes.containsKey(naam)) c = findClass(naam);
-                    if (c == null) return super.loadClass(naam, resolve);
+            @Override protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                synchronized (getClassLoadingLock(name)) {
+                    Class<?> c = findLoadedClass(name);
+                    if (c == null && classes.containsKey(name)) c = findClass(name);
+                    if (c == null) return super.loadClass(name, resolve);
                     if (resolve) resolveClass(c);
                     return c;
                 }
             }
-            @Override protected Class<?> findClass(String naam) throws ClassNotFoundException {
-                ByteArrayOutputStream b = classes.get(naam);
-                if (b == null) throw new ClassNotFoundException(naam);
+            @Override protected Class<?> findClass(String name) throws ClassNotFoundException {
+                ByteArrayOutputStream b = classes.get(name);
+                if (b == null) throw new ClassNotFoundException(name);
                 byte[] bytes = b.toByteArray();
-                return defineClass(naam, bytes, 0, bytes.length);
+                return defineClass(name, bytes, 0, bytes.length);
             }
         };
     }

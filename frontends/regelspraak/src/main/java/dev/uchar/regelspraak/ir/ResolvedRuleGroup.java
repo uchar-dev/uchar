@@ -26,5 +26,5 @@ import java.util.List;
  * @param bron      the source slice of the header (for diagnostics)
  * @param line      the 1-based source line of the header
  */
-public record ResolvedRuleGroup(String naam, boolean recursive, List<String> members, Source source, int line) {
+public record ResolvedRuleGroup(String name, boolean recursive, List<String> members, Source source, int line) {
 }

@@ -174,8 +174,8 @@ public class TestTermWitnessTest {
                         + "Wachter hebben een merk groter dan 1'",
                 "werf een opvolger CONDITION 0.0 Call bron 'de rang van de Wachter is kleiner dan 5'",
                 "werf een opvolger CONDITION 0.0.0 SlotValue bron 'de rang van de Wachter'",
-                "werf een opvolger CONDITION 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, "
-                        + "teken=ONBEPAALD, eenheid=null] bron '5'",
+                "werf een opvolger CONDITION 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, "
+                        + "sign=ONBEPAALD, unit=null] bron '5'",
                 "werf een opvolger CONDITION 0.0.2 Const String",
                 "werf een opvolger CONDITION 0.1 Call bron 'ten minste 1 opvolger van de Wachter heeft een rang "
                         + "groter dan 3'",
@@ -229,8 +229,8 @@ public class TestTermWitnessTest {
                 "controle saldo CONDITION 0 Call bron 'zijn saldo is groter dan of gelijk aan 0'",
                 "controle saldo CONDITION 0.0 Call bron 'zijn saldo is groter dan of gelijk aan 0'",
                 "controle saldo CONDITION 0.0.0 SlotValue bron 'zijn saldo'",
-                "controle saldo CONDITION 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, "
-                        + "teken=ONBEPAALD, eenheid=null] bron '0'",
+                "controle saldo CONDITION 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, "
+                        + "sign=ONBEPAALD, unit=null] bron '0'",
                 "controle saldo CONDITION 0.0.2 Const String"), fields(plans));
     }
 
@@ -311,8 +311,8 @@ public class TestTermWitnessTest {
                 "keurlast van een jutter WITHOUT_FAULT 0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "keurlast van een jutter WITHOUT_FAULT 0.0.0 SlotValue bron 'zijn gewicht'",
                 "keurlast van een jutter WITHOUT_FAULT 0.0.1 SlotValue bron 'zijn deelnemers'",
-                "keurlast van een jutter WITHOUT_FAULT 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, "
-                        + "teken=ONBEPAALD, eenheid=null] bron '2'",
+                "keurlast van een jutter WITHOUT_FAULT 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, "
+                        + "sign=ONBEPAALD, unit=null] bron '2'",
                 "keurlast van een jutter WITHOUT_FAULT 0.2 Const String",
                 "keurlast van een jutter FAULT: zoals de vorige toets",
                 "keurlast van een jutter VORM 0 Compound",
@@ -323,8 +323,8 @@ public class TestTermWitnessTest {
                 "keurlast van een jutter VORM 0.0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "keurlast van een jutter VORM 0.0.0.0.0 SlotValue bron 'zijn gewicht'",
                 "keurlast van een jutter VORM 0.0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "keurlast van een jutter VORM 0.0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, "
-                        + "teken=ONBEPAALD, eenheid=null] bron '2'",
+                "keurlast van een jutter VORM 0.0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, "
+                        + "sign=ONBEPAALD, unit=null] bron '2'",
                 "keurlast van een jutter VORM 0.0.0.2 Const String",
                 "keurlast van een jutter VORM 0.1 Call",
                 "keurlast van een jutter VORM 0.1.0 SlotValue",
@@ -335,8 +335,8 @@ public class TestTermWitnessTest {
                         + "deelnemers'",
                 "keurlast van een jutter DEPOSIT sonde 2 0.0.0 SlotValue bron 'zijn gewicht'",
                 "keurlast van een jutter DEPOSIT sonde 2 0.0.1 SlotValue bron 'zijn deelnemers'",
-                "keurlast van een jutter DEPOSIT sonde 2 0.1 Const BigDecimal type Numeriek[geheel=true, "
-                        + "decimalen=0, teken=ONBEPAALD, eenheid=null] bron '2'",
+                "keurlast van een jutter DEPOSIT sonde 2 0.1 Const BigDecimal type Numeric[wholeNumber=true, "
+                        + "decimals=0, sign=ONBEPAALD, unit=null] bron '2'",
                 "keurlast van een jutter DEPOSIT sonde 2 0.2 Const String"), fields(plans));
     }
 
@@ -362,8 +362,8 @@ public class TestTermWitnessTest {
         assertFalse(ClosureRendering.test(form).test(new Object[0]));
     }
 
-    private static JsonNode golden(String naam) throws Exception {
-        return JSON.readTree(GOLDEN.resolve(naam).resolve("ir.json").toFile());
+    private static JsonNode golden(String name) throws Exception {
+        return JSON.readTree(GOLDEN.resolve(name).resolve("ir.json").toFile());
     }
 
     /** The plans of the rules of the forms of {@code document}, in the order of the model. */
@@ -386,7 +386,7 @@ public class TestTermWitnessTest {
         for (RulePlan p : plans) {
             List<TestItem> tests = tests(p);
             if (tests.isEmpty()) out.add(p.form() + ": geen toets");
-            for (TestItem t : tests) out.add(naam(p, t) + ": " + TermTree.tree(t.test()));
+            for (TestItem t : tests) out.add(name(p, t) + ": " + TermTree.tree(t.test()));
         }
         return out;
     }
@@ -402,15 +402,15 @@ public class TestTermWitnessTest {
                 List<String> rules = new ArrayList<>();
                 TermTree.fields("", t.test(), "0", rules);
                 if (p.form().equals(previousForm) && rules.equals(previous))
-                    out.add(naam(p, t) + ": zoals de vorige toets");
-                else for (String r : rules) out.add(naam(p, t) + r);
+                    out.add(name(p, t) + ": zoals de vorige toets");
+                else for (String r : rules) out.add(name(p, t) + r);
                 previousForm = p.form();
                 previous = rules;
             }
         return out;
     }
 
-    private static String naam(RulePlan p, TestItem t) {
+    private static String name(RulePlan p, TestItem t) {
         return p.form() + " " + t.role() + (t.depositFlag() < 0 ? "" : " sonde " + t.depositFlag());
     }
 }

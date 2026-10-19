@@ -51,7 +51,7 @@ class PeriodBoundaryTest {
         Eén vakhouder heeft één strandvak
         """;
 
-    private static String regel(String subject, String window) {
+    private static String rule(String subject, String window) {
         return """
 
             Regel premie
@@ -75,7 +75,7 @@ class PeriodBoundaryTest {
             "Klipjutter | vanaf de peildatum van de Jutter         | een supertype van het onderwerp 'Klipjutter'"
     })
     void a_bound_outside_the_two_forms_is_refused(String subject, String window, String fragment) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel(subject, window));
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule(subject, window));
         List<Diagnostic> faults = m.errors();
         assertEquals(1, faults.size(), () -> "verwachtte precies één fout voor '" + window + "', kreeg: " + m.diagnostics);
         String t = faults.get(0).message();
@@ -98,7 +98,7 @@ class PeriodBoundaryTest {
             "Klipjutter | vanaf zijn klipdatum"
     })
     void the_two_forms_stay_clean(String subject, String window) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel(subject, window));
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule(subject, window));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek voor '" + window + "': " + m.diagnostics);
     }
 }

@@ -25,18 +25,18 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 class CasusTest {
 
-    @Test void volledige_toka_casus_resolveert_zonder_fouten() throws IOException {
+    @Test void the_full_toka_case_resolves_without_errors() throws IOException {
         Path dir = Path.of("toka/casus");
         assumeTrue(Files.isDirectory(dir), "TOKA fixtures absent (run tools/extract_corpus.py)");
 
-        String bron;
+        String sourceText;
         try (Stream<Path> files = Files.list(dir)) {
-            bron = files.filter(p -> p.toString().endsWith(".rgs")).sorted()
+            sourceText = files.filter(p -> p.toString().endsWith(".rgs")).sorted()
                     .map(CasusTest::read)
                     .collect(Collectors.joining("\n"));
         }
 
-        RegelSpraakModel m = Resolver.resolve(bron);
+        RegelSpraakModel m = Resolver.resolve(sourceText);
         // §11 "Daarbij geldt:" variabelen now inline into the rule, so the casus' variable DEFINITIONS get
         // type-checked (they were invisible while the references markered). This surfaces TWO genuine
         // casus-internal inconsistencies — a reason-carrying, fails-when-stale list mirroring the gate-11
@@ -52,35 +52,35 @@ class CasusTest {
         //            and uchar-v1 diverges from the toolchain here (it emitted an Onbekend degradation). The
         //            .rgs stays in original form; only its parity coverage moved to the holdout list.
         // the date arithmetic refusal speaks the verifier's WF-035 sentence since the card frontend-emitterrestanten
-        var datumQuirk = (java.util.function.Predicate<String>) msg -> msg.contains("date \u00b1 date is ill-formed");
+        var dateQuirk = (java.util.function.Predicate<String>) msg -> msg.contains("date \u00b1 date is ill-formed");
         // the unit refusal speaks the verifier's WF-035 sentence since the card frontend-emitterrestanten
         var afstandQuirk = (java.util.function.Predicate<String>) msg ->
                 msg.contains("min:") && msg.contains("additive operands have incompatible units");
-        var onverwacht = m.errors().stream()
-                .filter(d -> !datumQuirk.test(d.message()) && !afstandQuirk.test(d.message()))
+        var unexpected = m.errors().stream()
+                .filter(d -> !dateQuirk.test(d.message()) && !afstandQuirk.test(d.message()))
                 .toList();
-        assertTrue(onverwacht.isEmpty(), () -> "false positives op de TOKA casus: " + onverwacht);
-        assertTrue(m.errors().stream().anyMatch(d -> datumQuirk.test(d.message())),
+        assertTrue(unexpected.isEmpty(), () -> "false positives op de TOKA casus: " + unexpected);
+        assertTrue(m.errors().stream().anyMatch(d -> dateQuirk.test(d.message())),
                 () -> "verwachtte de bekende §4.1 datum+datum casus-quirk (toka-23 bevestigingsinterval): " + m.errors());
         assertTrue(m.errors().stream().anyMatch(d -> afstandQuirk.test(d.message())),
                 () -> "verwachtte de dimensioneel-inconsistente afstand-quirk (toka-45, besluit 16Y): " + m.errors());
 
         // the casus' GegevensSpraak, faithfully modelled
-        assertEquals(3, m.objecttypen.size(), "Natuurlijk persoon, Vlucht, Contingent treinmiles");
-        assertEquals(4, m.feittypen.size());
+        assertEquals(3, m.objectTypes.size(), "Natuurlijk persoon, Vlucht, Contingent treinmiles");
+        assertEquals(4, m.factTypes.size());
         assertTrue(m.parameters.size() >= 15, () -> "parameters: " + m.parameters.size());
-        assertTrue(m.objecttypen.get("Natuurlijk persoon").attributen.containsKey("leeftijd"));
-        assertTrue(m.regels.size() >= 20, () -> "regels: " + m.regels.size());
+        assertTrue(m.objectTypes.get("Natuurlijk persoon").attributes.containsKey("leeftijd"));
+        assertTrue(m.rules.size() >= 20, () -> "regels: " + m.rules.size());
 
         // §2.7 the named timeline with a variable start point
-        assertEquals(1, m.tijdlijnen.size());
-        assertTrue(m.tijdlijnen.get(0).variabelStartpunt());
+        assertEquals(1, m.timelines.size());
+        assertTrue(m.timelines.get(0).variableStartPoint());
 
         // §3.11 the consistency rule ("Controleer of vlucht geen rondvlucht is") now
         // lifts into IR rather than being warned-and-dropped.
-        assertFalse(m.consistenties.isEmpty(), "de rondvlucht-consistentieregel moet IR opleveren");
-        assertTrue(m.consistenties.stream().anyMatch(c -> c.subject() != null && c.assertie() != null),
-                () -> "consistentie zonder subject/assertie: " + m.consistenties);
+        assertFalse(m.consistencies.isEmpty(), "de rondvlucht-consistentieregel moet IR opleveren");
+        assertTrue(m.consistencies.stream().anyMatch(c -> c.subject() != null && c.assertion() != null),
+                () -> "consistentie zonder subject/assertie: " + m.consistencies);
     }
 
     private static String read(Path p) {

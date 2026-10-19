@@ -6,7 +6,7 @@ import dev.uchar.regelspraak.refusal.Reason;
 
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 
@@ -139,7 +139,7 @@ public final class CaseInput {
      *  on a temporal attribute in the bucket this date falls in ({@link #temporalInput}). */
     private final LocalDate evaluationDate;
     private final Map<String, Object> labelToBean = new LinkedHashMap<>();
-    private final Map<String, Objecttype> labelType = new LinkedHashMap<>();
+    private final Map<String, ObjectType> labelType = new LinkedHashMap<>();
     /** The to-many lists of the case input per holder bean and per reference field of their members, as
      *  {@link #setRoles} writes them: the order {@link #inputData()} gives each list ({@link Input#list}). */
     private final Map<Object, Map<String, ToManyList>> lists = new IdentityHashMap<>();
@@ -195,7 +195,7 @@ public final class CaseInput {
     }
 
     /** The object type of every instance, by label, in the order of the case. */
-    public Map<String, Objecttype> types() {
+    public Map<String, ObjectType> types() {
         return Collections.unmodifiableMap(labelType);
     }
 
@@ -229,10 +229,10 @@ public final class CaseInput {
         Object bean = labelToBean.get(label);
         if (bean != null) return bean;
         String otName = i.get("objectType").asText();
-        Objecttype ot = model.objectTypeByName(otName);
+        ObjectType ot = model.objectTypeByName(otName);
         if (ot == null) throw new CaseRunner.Excluded(DroolsCode.CASE_UNKNOWN_OBJECT_TYPE.reason("objectType", otName));
         try {
-            bean = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.naam, true), true, cl)
+            bean = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true), true, cl)
                     .getConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("kon bean voor label '" + label + "' niet maken", e);
@@ -244,11 +244,11 @@ public final class CaseInput {
 
     private void setAttributesAndCharacteristics(JsonNode i) {
         Object bean = labelToBean.get(i.get("label").asText());
-        Objecttype ot = model.objectTypeByName(i.get("objectType").asText());
+        ObjectType ot = model.objectTypeByName(i.get("objectType").asText());
         JsonNode attrs = i.get("attributes");
         if (attrs != null) for (Map.Entry<String, JsonNode> e : attrs.properties()) {
             Datatype dt = ot.attribute(e.getKey());
-            if (dt == null) throw new CaseRunner.Excluded(DroolsCode.CASE_UNDECLARED_ATTRIBUTE.reason("attribute", e.getKey(), "objectType", ot.naam));
+            if (dt == null) throw new CaseRunner.Excluded(DroolsCode.CASE_UNDECLARED_ATTRIBUTE.reason("attribute", e.getKey(), "objectType", ot.name));
             reader.ownField(ot, e.getKey(), false, "sets");
             if (reader.dimensioned(ot, e.getKey()))
                 throw new CaseRunner.Excluded(DroolsCode.DIMENSIONED_ATTRIBUTE_INPUT.reason("attribute", e.getKey()));
@@ -265,8 +265,8 @@ public final class CaseInput {
             CaseRunner.call(bean, Namen.setter(CaseRunner.attributeName(ot, e.getKey())), CaseRunner.argType(dt),
                     reader.valueToArg(e.getValue(), e.getKey()));
         }
-        JsonNode kenmerken = i.get("characteristics");
-        if (kenmerken != null) for (JsonNode k : kenmerken) {
+        JsonNode characteristics = i.get("characteristics");
+        if (characteristics != null) for (JsonNode k : characteristics) {
             // A CASE defect, not an uncarried form (maintainer decision 2026-09-09) — the sister arm below has
             // said so about the mirror-image mistake since it was written, and this arm is the same seam from
             // the other side. A TEMPORAL kenmerk's bean member is a List<Segment>, so a scalar-true assertion
@@ -278,7 +278,7 @@ public final class CaseInput {
             // is simply wrong, and the one classification that could keep it out of sight.
             if (Namen.containsName(ot.characteristicGranularityMembers(), k.asText()))
                 throw new IllegalArgumentException("scalar characteristic input '" + k.asText() + "' on the "
-                        + "time-dependent kenmerk of " + ot.naam + ": deliver it as a characteristicTimelines "
+                        + "time-dependent kenmerk of " + ot.name + ": deliver it as a characteristicTimelines "
                         + "entry — the static characteristics list asserts a scalar truth no temporal reader "
                         + "consults");
             reader.ownField(ot, k.asText(), true, "sets");
@@ -299,7 +299,7 @@ public final class CaseInput {
 
     private void setRoles(JsonNode i) {
         Object bean = labelToBean.get(i.get("label").asText());
-        Objecttype tI = model.objectTypeByName(i.get("objectType").asText());
+        ObjectType tI = model.objectTypeByName(i.get("objectType").asText());
         JsonNode roles = i.get("roles");
         if (roles == null) return;
         for (Map.Entry<String, JsonNode> e : roles.properties()) {
@@ -308,7 +308,7 @@ public final class CaseInput {
                 Object target = labelToBean.get(labelNode.asText());
                 if (target == null)
                     throw new RoleRefusal(DroolsCode.ROLE_UNKNOWN_LABEL.reason("role", e.getKey(), "label", labelNode.asText()), link);
-                Objecttype tL = beanObjectType(target);
+                ObjectType tL = beanObjectType(target);
                 // §13.4.1 the WRITTEN role IS the navigation — and wherever the type pair carries more than
                 // one role it is the ONLY route: the by-pair search below counts every candidate and derives
                 // null by construction (RegelSpraakModel.connectingRole; ref BLOCKS the same derivation in
@@ -372,7 +372,7 @@ public final class CaseInput {
                         // 2026-08-30): the erflijn shape resolves `erfvolger` by name PERFECTLY, and what stops it
                         // is its CARDINALITY — a to-many role's storage is the far end's field — where the old
                         // single sentence blamed a non-unique derivation that had in fact succeeded.
-                        throw new RoleRefusal(DroolsCode.CASE_ROLE_NO_FIELD.reason("role", e.getKey(), "fromType", tI.naam, "toType", tL.naam, "viaReason", viaName == null ? DroolsCode.CASE_ROLE_NO_FIELD.part("via-none")
+                        throw new RoleRefusal(DroolsCode.CASE_ROLE_NO_FIELD.reason("role", e.getKey(), "fromType", tI.name, "toType", tL.name, "viaReason", viaName == null ? DroolsCode.CASE_ROLE_NO_FIELD.part("via-none")
                                 : DroolsCode.CASE_ROLE_NO_FIELD.part(model.toManyRole(tI, tL, viaName) ? "via-to-many" : "via-to-one", "role", viaName),
                                 "directionReason", DroolsCode.CASE_ROLE_NO_FIELD.part(roleIL != null ? "direction-near" : roleLI != null ? "direction-far" : "direction-none",
                                         "role", roleIL != null ? roleIL : roleLI)), link);
@@ -413,8 +413,8 @@ public final class CaseInput {
      *  DIFFERENT failure with its own sentence ({@link #nameSharingGate}), and collapsing the two here would
      *  send the name-sharing shape back through the by-pair route to be blamed for an ambiguity it does not
      *  have. */
-    private boolean validRoleField(Objecttype carrier, String role, Objecttype target) {
-        return carrier.naam.equalsIgnoreCase(target.naam)
+    private boolean validRoleField(ObjectType carrier, String role, ObjectType target) {
+        return carrier.name.equalsIgnoreCase(target.name)
                 ? FactModelGenerator.selfPairRoles(model, carrier).contains(role)
                 : model.connectingRoles(carrier, target).contains(role);
     }
@@ -429,7 +429,7 @@ public final class CaseInput {
      *  fact — "kon setter setOpvolger(Wachter) niet aanroepen", an unclassified ERROR the gate refuses to excuse
      *  — where the honest outcome is a loud, reason-carrying exclusion (lens 2, 2026-08-30). The §13.3.9.2
      *  wederkerig twin of this limit is refused in {@link DroolsBackend} for the whole model. */
-    private void nameSharingGate(Objecttype carrier, String role, Objecttype target, RoleLink link) {
+    private void nameSharingGate(ObjectType carrier, String role, ObjectType target, RoleLink link) {
         if (FactModelGenerator.hasReferenceField(model, carrier, role, target)) return;
         // The cause is read off what holds the property, never assumed. Until 2026-09-28 every cause other than a
         // declared member was reported as a second role, and the commonest one was no second role at all: a target
@@ -437,7 +437,7 @@ public final class CaseInput {
         // the type gate then refused by equality. Two same-named roles toward different types
         // (corpus/red/ambiguous-case-role-key) are the cause that sentence was written for, and it now names them.
         FactModelGenerator.Origin houder = FactModelGenerator.fieldOrigin(model, carrier, role);
-        String field = Namen.ident(carrier.naam, true) + "." + Namen.ident(role, false);
+        String field = Namen.ident(carrier.name, true) + "." + Namen.ident(role, false);
         String cause;
         if (carrier.hasMember(role)) cause = "which shares its name with a declared member";
         else if (houder == null) cause = "for which the bean model derives no field";
@@ -445,16 +445,16 @@ public final class CaseInput {
             cause = "whose bean property " + field + " belongs to " + described(houder);
         else if (!houder.equals(FactModelGenerator.roleOrigin(model, carrier, target, role)))
             cause = "whose field " + field + " another role already holds, " + described(houder);
-        else cause = "whose field " + field + " cannot hold a " + target.naam;
-        throw new RoleRefusal(DroolsCode.NAME_SHARING_ONE_ROLE.reason("role", link.role(), "targetRole", role, "objectType", carrier.naam, "cause", cause), link);
+        else cause = "whose field " + field + " cannot hold a " + target.name;
+        throw new RoleRefusal(DroolsCode.NAME_SHARING_ONE_ROLE.reason("role", link.role(), "targetRole", role, "objectType", carrier.name, "cause", cause), link);
     }
 
     /** A declaration in the words of this reader's refusals. */
     private static String described(FactModelGenerator.Origin h) {
         return switch (h.category()) {
-            case ATTRIBUUT -> "the attribute '" + h.naam() + "' of " + h.source();
-            case KENMERK -> "the characteristic '" + h.naam() + "' of " + h.source();
-            case ROL -> "the role '" + h.naam() + "'" + (h.source() == null ? "" : " of fact type '" + h.source() + "'");
+            case ATTRIBUUT -> "the attribute '" + h.name() + "' of " + h.source();
+            case KENMERK -> "the characteristic '" + h.name() + "' of " + h.source();
+            case ROL -> "the role '" + h.name() + "'" + (h.source() == null ? "" : " of fact type '" + h.source() + "'");
         };
     }
 
@@ -518,7 +518,7 @@ public final class CaseInput {
             // the reciprocal role of an instance of a SUBTYPE of its filler is its ancestor's (IR-SPEC ch. 2.6):
             // asked of the bean's own type alone, such a leg went unmirrored and the partner read an empty relation
             String role = null;
-            for (Objecttype t : beanObjectType(bean).chain())
+            for (ObjectType t : beanObjectType(bean).chain())
                 if ((role = FactModelGenerator.selfPairRole(model, t)) != null) break;
             if (role == null) continue;
             Object partner = CaseRunner.invokeGetter(bean, Namen.getter(role));
@@ -541,9 +541,9 @@ public final class CaseInput {
         return link;
     }
 
-    private Objecttype beanObjectType(Object bean) {
-        for (Objecttype ot : model.objecttypen.values())
-            if (Namen.ident(ot.naam, true).equals(bean.getClass().getSimpleName())) return ot;
+    private ObjectType beanObjectType(Object bean) {
+        for (ObjectType ot : model.objectTypes.values())
+            if (Namen.ident(ot.name, true).equals(bean.getClass().getSimpleName())) return ot;
         throw new IllegalStateException("geen objecttype voor bean " + bean.getClass());
     }
 

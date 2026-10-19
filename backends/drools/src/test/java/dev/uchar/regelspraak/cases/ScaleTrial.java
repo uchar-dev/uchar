@@ -479,19 +479,19 @@ public final class ScaleTrial {
             throw new IllegalStateException("het model zonder (g) maakte " + f.objects().size() + " objecten en "
                     + f.links().size() + " koppelingen");
         List<String> out = new ArrayList<>();
-        for (Fixpoint.DerivedValue w : f.waarden())
-            out.add(naam(label, w.object()) + "." + w.attribute() + " = "
+        for (Fixpoint.DerivedValue w : f.values())
+            out.add(name(label, w.object()) + "." + w.attribute() + " = "
                     + (w.value() instanceof BigDecimal d ? d.toPlainString() : String.valueOf(w.value())));
-        for (Fixpoint.DerivedCharacteristic k : f.kenmerken()) out.add(naam(label, k.object()) + " is " + k.characteristic());
-        for (Fault fault : f.faults()) out.add("fout: " + naam(label, fault.onderwerp()) + ": " + fault.message());
+        for (Fixpoint.DerivedCharacteristic k : f.characteristics()) out.add(name(label, k.object()) + " is " + k.characteristic());
+        for (Fault fault : f.faults()) out.add("fout: " + name(label, fault.subject()) + ": " + fault.message());
         for (Object i : f.inconsistencies())
-            out.add("inconsistent: " + RegelSpraakRuntime.get(i, "regel") + " @ "
-                    + naam(label, RegelSpraakRuntime.get(i, "subject")));
+            out.add("inconsistent: " + RegelSpraakRuntime.get(i, "rule") + " @ "
+                    + name(label, RegelSpraakRuntime.get(i, "subject")));
         out.sort(null);
         return out;
     }
 
-    private static String naam(Map<Object, String> label, Object o) {
+    private static String name(Map<Object, String> label, Object o) {
         String l = label.get(o);
         if (l == null) throw new IllegalStateException("een object zonder caselabel in de lezing: " + o);
         return l;
@@ -529,12 +529,12 @@ public final class ScaleTrial {
         Process p = new ProcessBuilder(task).redirectError(ProcessBuilder.Redirect.INHERIT).start();
         String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         int code = p.waitFor();
-        String regel = out.lines().filter(l -> l.startsWith(category + "\t") || l.startsWith("WEIGERT\t")
+        String rule = out.lines().filter(l -> l.startsWith(category + "\t") || l.startsWith("WEIGERT\t")
                 || l.startsWith("GEENFIXPUNT\t")).reduce((a, z) -> z).orElse(null);
         System.err.println("schaalproef: " + String.join(" ", arguments) + " klaar");
-        if (code == 0 && regel != null && regel.startsWith(category + "\t"))
-            return new Result(branch, n, belasting, regel.split("\t"), null);
-        return new Result(branch, n, belasting, null, regel != null ? regel.replace('\t', ' ')
+        if (code == 0 && rule != null && rule.startsWith(category + "\t"))
+            return new Result(branch, n, belasting, rule.split("\t"), null);
+        return new Result(branch, n, belasting, null, rule != null ? rule.replace('\t', ' ')
                 : "kind-JVM eindigde met code " + code + " zonder regel");
     }
 

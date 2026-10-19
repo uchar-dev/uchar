@@ -192,18 +192,18 @@ final class SessionDump {
         labels.forEach((l, b) -> label.put(b, l));
         Fixpoint fp = DroolsBackend.fixpointOf(build, session, label::get);
         List<String> read = new ArrayList<>();
-        for (Fixpoint.DerivedValue w : fp.waarden())
+        for (Fixpoint.DerivedValue w : fp.values())
             read.add("waarde " + n.nameOf(w.object()) + "." + citeer(w.attribute()) + " = " + n.render(w.value()));
-        for (Fixpoint.DerivedCharacteristic k : fp.kenmerken())
+        for (Fixpoint.DerivedCharacteristic k : fp.characteristics())
             read.add("kenmerk " + n.nameOf(k.object()) + " " + citeer(k.characteristic()));
         for (Fixpoint.MadeObject g : fp.objects())
             read.add("object " + n.nameOf(g.object()) + " door " + citeer(g.creation()) + " voor "
-                    + n.nameOf(g.onderwerp()));
+                    + n.nameOf(g.subject()));
         for (Fixpoint.MadeLink k : fp.links())
             read.add("koppeling " + citeer(k.factType()) + " " + citeer(k.firstRole()) + "=" + n.nameOf(k.first())
                     + " " + citeer(k.secondRole()) + "=" + n.nameOf(k.second()));
         for (Fault f : fp.faults())
-            read.add("fout " + n.nameOf(f.onderwerp()) + " " + citeer(f.regel()) + ": " + n.sentence(f.fault()));
+            read.add("fout " + n.nameOf(f.subject()) + " " + citeer(f.rule()) + ": " + n.sentence(f.fault()));
         for (Object i : fp.inconsistencies()) read.add("inconsistentie " + n.render(i));
         rules(out, "lees", read);
         facts(out, n);
@@ -259,28 +259,28 @@ final class SessionDump {
 
     /**
      * The name of an object of a session: an input bean by its case label {@code label}; a made object by the creation
-     * {@code creatie} that made it, the name of its subject {@code onderwerp} and its number {@code nummer} among the
+     * {@code creatie} that made it, the name of its subject {@code subject} and its number {@code nummer} among the
      * objects that creation made for that subject.
      */
-    private record Name(String label, String creation, Name onderwerp, int number) {
+    private record Name(String label, String creation, Name subject, int number) {
 
         /** As the dump writes it: a case label quoted and escaped; a made object as {@code «"creatie"»(subject)#k},
          *  which no quoted label can be read as. */
         String inTheDump() {
-            return label != null ? citeer(label) : "«" + citeer(creation) + "»(" + onderwerp.inTheDump() + ")#" + number;
+            return label != null ? citeer(label) : "«" + citeer(creation) + "»(" + subject.inTheDump() + ")#" + number;
         }
 
         /** As a sentence of the branch names the object where it is given a label ({@code named}): the case label
          *  itself, as the replay names an input object, or {@code «creatie»(subject)#k}. */
         String inASentence() {
-            return label != null ? label : "«" + creation + "»(" + onderwerp.inASentence() + ")#" + number;
+            return label != null ? label : "«" + creation + "»(" + subject.inASentence() + ")#" + number;
         }
     }
 
     /** The names of one moment of a session and the rendering of its objects, values and sentences with them. */
     private static final class Naming {
         private final KieSession session;
-        private final Map<Object, Name> naam = new IdentityHashMap<>();
+        private final Map<Object, Name> name = new IdentityHashMap<>();
         /** What a sentence of the branch prints for each object the dump knows ({@code FactNames.object}): its type and
          *  identity; made at the first sentence. */
         private Map<String, Object> identities;
@@ -288,7 +288,7 @@ final class SessionDump {
         /** The input beans of {@code labels}, and the objects of {@code marks}, ordered by phase. */
         Naming(KieSession session, Map<String, Object> labels, List<CreationStamp> marks) {
             this.session = session;
-            labels.forEach((l, b) -> naam.put(b, new Name(l, null, null, 0)));
+            labels.forEach((l, b) -> name.put(b, new Name(l, null, null, 0)));
             Map<String, Integer> counter = new HashMap<>();
             int i = 0;
             while (i < marks.size()) {
@@ -297,22 +297,22 @@ final class SessionDump {
                 List<CreationStamp> phase = new ArrayList<>(marks.subList(i, j));
                 phase.sort(Comparator.comparing((CreationStamp g) -> key(g)));
                 for (CreationStamp g : phase)
-                    naam.putIfAbsent(g.object(), new Name(null, g.regel(), onderwerp(g),
+                    name.putIfAbsent(g.object(), new Name(null, g.rule(), subject(g),
                             counter.merge(key(g), 1, Integer::sum)));
                 i = j;
             }
         }
 
         /** The name of the subject of mark {@code g}, which an earlier phase or the input gave. */
-        private Name onderwerp(CreationStamp g) {
-            Name n = naam.get(g.onderwerp());
+        private Name subject(CreationStamp g) {
+            Name n = name.get(g.subject());
             if (n == null) throw new IllegalStateException("de dump heeft geen naam voor het onderwerp van de creatie "
-                    + citeer(g.regel()) + " in fase " + g.phase() + ", een " + g.onderwerp().getClass().getSimpleName());
+                    + citeer(g.rule()) + " in fase " + g.phase() + ", een " + g.subject().getClass().getSimpleName());
             return n;
         }
 
         private String key(CreationStamp g) {
-            return "«" + citeer(g.regel()) + "»(" + onderwerp(g).inTheDump() + ")";
+            return "«" + citeer(g.rule()) + "»(" + subject(g).inTheDump() + ")";
         }
 
         /** {@code o} where an object stands in a line: a bean by its name, null as {@code leeg}, any other object by
@@ -360,13 +360,13 @@ final class SessionDump {
             if (identities == null) {
                 identities = new HashMap<>();
                 for (Object o : session.getObjects()) identities.put(identity(o), o);
-                for (Object o : naam.keySet()) identities.put(identity(o), o);
+                for (Object o : name.keySet()) identities.put(identity(o), o);
             }
             for (Map.Entry<String, Object> i : identities.entrySet())
                 if (sentence.contains(i.getKey()))
                     throw new IllegalStateException("de dump schrijft geen identiteit: de zin " + citeer(sentence) + " noemt "
-                            + i.getKey() + ", " + (naam.containsKey(i.getValue()) ? "het object "
-                            + naam.get(i.getValue()).inTheDump() : "een object zonder naam") + " van de sessie");
+                            + i.getKey() + ", " + (name.containsKey(i.getValue()) ? "het object "
+                            + name.get(i.getValue()).inTheDump() : "een object zonder naam") + " van de sessie");
             return citeer(sentence);
         }
 
@@ -376,7 +376,7 @@ final class SessionDump {
 
         /** The name of {@code o} as a sentence of the branch gives it, null where the dump has none. */
         private String inASentence(Object o) {
-            Name n = naam.get(o);
+            Name n = name.get(o);
             return n == null ? null : n.inASentence();
         }
 
@@ -394,11 +394,11 @@ final class SessionDump {
         String render(Object o) {
             if (o == null) return "leeg";
             if (isBean(o)) {
-                Name n = naam.get(o);
+                Name n = name.get(o);
                 if (n != null) return n.inTheDump();
                 String type = o.getClass().getSimpleName();
                 if (type.equals("Inconsistentie"))
-                    return "Inconsistentie(" + render(RegelSpraakRuntime.get(o, "regel")) + ", "
+                    return "Inconsistentie(" + render(RegelSpraakRuntime.get(o, "rule")) + ", "
                             + render(RegelSpraakRuntime.get(o, "subject")) + ")";
                 if (type.equals("Segment"))
                     return "Segment(" + RegelSpraakRuntime.get(o, "van") + ", " + RegelSpraakRuntime.get(o, "tot") + ", "
@@ -410,7 +410,7 @@ final class SessionDump {
             if (o instanceof String s) return "String(" + citeer(s) + ")";
             if (o instanceof Enum<?> e) return e.getDeclaringClass().getSimpleName() + "." + e.name();
             if (o instanceof ElementKey k)
-                return citeer(k.objectType()) + "." + citeer(k.naam()) + (k.characteristic() ? " (kenmerk)" : "");
+                return citeer(k.objectType()) + "." + citeer(k.name()) + (k.characteristic() ? " (kenmerk)" : "");
             if (o instanceof Throwable e) return fault(e);
             if (o instanceof List<?> l) {
                 List<String> r = new ArrayList<>();

@@ -83,7 +83,7 @@ class BindingBeyondNineWitnessTest {
                 fold("last", "bergdag", DATE, "wrakhout"));
         String value = "{\"node\":\"Aggregation\",\"kind\":\"last\",\"arguments\":[" + String.join(",", five)
                 + "],\"type\":" + DATE + "}";
-        String regel = "{\"node\":\"Rule\",\"name\":\"meldtermijn\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+        String rule = "{\"node\":\"Rule\",\"name\":\"meldtermijn\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
                 + "\"target\":" + own("meldtermijn", "Jutter") + ",\"value\":" + value
                 + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
         String caseDocument = caseDocument(List.of(jutter("J", "Jutter", null), jutter("S", "Strandjutter", null),
@@ -93,7 +93,7 @@ class BindingBeyondNineWitnessTest {
                         vondst("V5", "T", "wrakhout", "2026-03-30", 2), vondst("V6", "T", "lading", "2026-04-11", 2)),
                 "", List.of(empty("J", "meldtermijn"), date("S", "meldtermijn", "2026-04-20"),
                         date("T", "meldtermijn", "2026-05-06"), empty("X", "meldtermijn")));
-        assertNull(play(document(List.of(regel)), caseDocument));
+        assertNull(play(document(List.of(rule)), caseDocument));
     }
 
     @Test void a_uniqueness_over_nine_sources() throws Exception {
@@ -139,8 +139,8 @@ class BindingBeyondNineWitnessTest {
         return "{\"node\":\"AttributeReference\",\"attribute\":\"" + attribute + "\",\"subjectType\":\"" + type + "\"}";
     }
 
-    private static String parameter(String naam) {
-        return "{\"node\":\"ParameterReference\",\"parameter\":\"" + naam + "\"}";
+    private static String parameter(String name) {
+        return "{\"node\":\"ParameterReference\",\"parameter\":\"" + name + "\"}";
     }
 
     private static String number(int n) {
@@ -193,13 +193,13 @@ class BindingBeyondNineWitnessTest {
                 + "]}]}";
     }
 
-    private static String group(String naam, String type, String... defaults) {
-        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type + "\",\"attribute\":"
+    private static String group(String name, String type, String... defaults) {
+        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + name + "\",\"subject\":\"" + type + "\",\"attribute\":"
                 + "\"meldtermijn\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
     /** Jutter, its subtype Strandjutter and the Vondst, JutterHeeftVondst, the parameters meldduur (mnd) and

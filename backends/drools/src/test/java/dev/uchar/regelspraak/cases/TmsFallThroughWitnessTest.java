@@ -88,7 +88,7 @@ class TmsFallThroughWitnessTest {
             defaultEntry(check("d", false), ownRead("bron2", "Vondst"))));
 
     /** The input characteristics of object {@code bits}: b, c, d and f by its four bits. */
-    private static List<String> kenmerken(int bits) {
+    private static List<String> characteristics(int bits) {
         List<String> k = new ArrayList<>();
         String[] names = {"b", "c", "d", "f"};
         for (int i = 0; i < 4; i++) if ((bits & (1 << i)) != 0) k.add(names[i]);
@@ -112,7 +112,7 @@ class TmsFallThroughWitnessTest {
     private static JsonNode caseDocument() throws Exception {
         List<String> instances = new ArrayList<>(), expectations = new ArrayList<>();
         for (int bits = 0; bits < 16; bits++) {
-            instances.add(instance(label(bits), "Vondst", Map.of(), kenmerken(bits), Map.of()));
+            instances.add(instance(label(bits), "Vondst", Map.of(), characteristics(bits), Map.of()));
             expectations.add(value(label(bits), "doel", expected(bits)));
         }
         expectations.add(consistent());
@@ -166,14 +166,14 @@ class TmsFallThroughWitnessTest {
         {
             List<Object> beans = new ArrayList<>();
             for (int bits = 0; bits < 16; bits++)
-                beans.add(TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of(), kenmerken(bits)));
+                beans.add(TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of(), characteristics(bits)));
             Map<Object, List<String>> fired = new IdentityHashMap<>();
             TmsDocuments.fire(b, kieBase, names, beans, session -> session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
-                    String regel = e.getMatch().getRule().getName();
+                    String rule = e.getMatch().getRule().getName();
                     for (Object o : e.getMatch().getObjects())
                         if (beans.stream().anyMatch(x -> x == o))
-                            fired.computeIfAbsent(o, x -> new ArrayList<>()).add(regel);
+                            fired.computeIfAbsent(o, x -> new ArrayList<>()).add(rule);
                 }
             }), session -> {
                 for (Object f : session.getObjects(o -> o instanceof ControlFact))

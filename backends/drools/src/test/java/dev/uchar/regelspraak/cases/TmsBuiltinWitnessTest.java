@@ -118,8 +118,8 @@ class TmsBuiltinWitnessTest {
                 List.of(valueJson("V1", target, v1), valueJson("V2", target, v2), value("V3", target, null), consistent()));
     }
 
-    private static String extractor(String naam, String kind, String target) {
-        return computingRule(naam, "BEREKENING", "Vondst", target, builtin(kind, List.of(AS_OF_DATE), WHOLE,
+    private static String extractor(String name, String kind, String target) {
+        return computingRule(name, "BEREKENING", "Vondst", target, builtin(kind, List.of(AS_OF_DATE), WHOLE,
                 kind + " van zijn peildatum"), "null");
     }
 
@@ -264,7 +264,7 @@ class TmsBuiltinWitnessTest {
                 textComposition(List.of(textPart("Bedrag: "), textExpression(ownRead("basis", "Vondst")))), "null");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
                 TmsDocuments.document(TEXT_MODEL, List.of(description)), DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals("transpiler SKIP: regel: omschrijving van een vondst — een tekstdeel van type Numeriek in een"
+        assertEquals("transpiler SKIP: regel: omschrijving van een vondst — een tekstdeel van type Numeric in een"
                 + " TextComposition ('zijn basis'): RUNTIME-SEMANTICS ch. 1.2 legt alleen vast dat een leeg deel \"\" leest;"
                 + " de tekst van een getal, een waarheidswaarde of een datum beslist de spec niet, en de"
                 + " referentie-interpreter en de runtimehulp rsTekst geven er een verschillende", e.getMessage());

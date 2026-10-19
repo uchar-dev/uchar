@@ -303,9 +303,9 @@ class WindowFoldWitnessTest {
         return p;
     }
 
-    private static void keepRule(ObjectNode doc, String naam) {
+    private static void keepRule(ObjectNode doc, String name) {
         ArrayNode out = JSON.createArrayNode();
-        for (JsonNode r : IrPath.rulesList(doc, "rules")) if (naam.equals(r.path("name").asText())) out.add(r);
+        for (JsonNode r : IrPath.rulesList(doc, "rules")) if (name.equals(r.path("name").asText())) out.add(r);
         IrPath.rules(doc).set("rules", out);
     }
 

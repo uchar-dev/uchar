@@ -45,14 +45,14 @@ class RuleNameWitnessTest {
         DroolsBackend.Build b = DroolsBackend.build(IR, DroolsBackend.Branch.EXEC_MODEL);
         Modelplan plan = b.execModelTranspiler().modelplan();
         // the second rule names itself in its consequence as well, as the writer of its value
-        RulePlan regel = plan.rules().get(1);
+        RulePlan rule = plan.rules().get(1);
         List<String> differences = new ArrayList<>();
-        for (String naam : NAMES) {
-            String text = DrlRendering.text(new Modelplan(plan.globals(), List.of(renamed(regel, naam))));
+        for (String name : NAMES) {
+            String text = DrlRendering.text(new Modelplan(plan.globals(), List.of(renamed(rule, name))));
             List<String> read = new ArrayList<>();
             for (Rule r : build(text, b.beanLoader()).getKiePackage(TmsTranspiler.PKG).getRules())
                 read.add(Namen.drlString(r.getName()));
-            if (!read.equals(List.of(Namen.drlString(naam)))) differences.add(Namen.drlString(naam) + " -> " + read);
+            if (!read.equals(List.of(Namen.drlString(name)))) differences.add(Namen.drlString(name) + " -> " + read);
         }
         assertEquals(List.of(), differences, "regels die in de KieBase een andere naam hebben dan in het plan");
     }
@@ -86,8 +86,8 @@ class RuleNameWitnessTest {
         throw new AssertionError("de weergave weigert twee regels met een naam niet; Drools meldt " + meldingen);
     }
 
-    private static RulePlan renamed(RulePlan p, String naam) {
-        return new RulePlan(naam, p.form(), p.agendaGroup(), p.readings(), p.leftSide(), p.consequence());
+    private static RulePlan renamed(RulePlan p, String name) {
+        return new RulePlan(name, p.form(), p.agendaGroup(), p.readings(), p.leftSide(), p.consequence());
     }
 
     /** The KieBase of {@code text}, built as {@code DrlRenderingWitnessTest.compile} compiles it. */

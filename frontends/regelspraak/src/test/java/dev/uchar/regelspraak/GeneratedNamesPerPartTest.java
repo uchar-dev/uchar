@@ -29,11 +29,11 @@ class GeneratedNamesPerPartTest {
 
     /** The designations the IR writes as the last field of the node {@code node} named {@code naam}, each
      *  "vocabulary: designation", in written order; empty where the node carries none. */
-    private static List<String> onTheWire(String ir, String node, String naam) {
+    private static List<String> onTheWire(String ir, String node, String name) {
         String[] r = ir.split("\n", -1);
         for (int i = 1; i + 1 < r.length; i++) {
             if (!r[i].trim().equals("\"node\": \"" + node + "\",")
-                    || !r[i + 1].trim().equals("\"name\": \"" + naam + "\",")) continue;
+                    || !r[i + 1].trim().equals("\"name\": \"" + name + "\",")) continue;
             String indent = r[i].substring(0, r[i].indexOf('"'));
             String closingLine = indent.substring(2) + "}";
             List<String> result = new ArrayList<>();
@@ -48,24 +48,24 @@ class GeneratedNamesPerPartTest {
             }
             return result;
         }
-        throw new AssertionError("geen knoop " + node + " '" + naam + "' in\n" + ir);
+        throw new AssertionError("geen knoop " + node + " '" + name + "' in\n" + ir);
     }
 
     /** The ERROR {@code fragment} stands on the first line of {@code source} that carries {@code merker}. */
     private static void error(String source, String merker, String fragment) {
         RegelSpraakModel m = Resolver.resolve(source);
-        String[] regels = source.split("\n", -1);
-        int regel = 0;
-        for (int i = 0; i < regels.length; i++) if (regels[i].contains(merker)) { regel = i + 1; break; }
-        assertTrue(regel > 0, "merker '" + merker + "' niet in de bron");
-        final int r = regel;
+        String[] rules = source.split("\n", -1);
+        int rule = 0;
+        for (int i = 0; i < rules.length; i++) if (rules[i].contains(merker)) { rule = i + 1; break; }
+        assertTrue(rule > 0, "merker '" + merker + "' niet in de bron");
+        final int r = rule;
         List<Diagnostic> faults = m.errors();
         assertTrue(faults.stream().anyMatch(d -> d.message().contains(fragment) && d.line() == r),
                 () -> "verwacht op regel " + r + ": " + fragment + "\nkreeg: " + faults);
     }
 
-    private static String benaming(RegelSpraakModel m, String vocabulary, Designatable element) {
-        return m.benaming(vocabulary, element).orElse("-");
+    private static String designation(RegelSpraakModel m, String vocabulary, Designatable element) {
+        return m.designation(vocabulary, element).orElse("-");
     }
 
     // --- the group 'B voor S' ------------------------------------------------------------------------
@@ -151,8 +151,8 @@ class GeneratedNamesPerPartTest {
         RegelSpraakModel g = clean(GROUP.formatted("(handboek: strandloper) (cgm: STRANDJUTTER)",
                 "(handboek: termijn van melding) (cgm: MELDTERMIJN)"));
         assertTrue(g.generatedFrom(THE_GROUP).isPresent(), () -> g.generated.toString());
-        assertEquals("termijn van melding voor strandloper", benaming(g, "handboek", THE_GROUP));
-        assertEquals("MELDTERMIJN voor STRANDJUTTER", benaming(g, "cgm", THE_GROUP));
+        assertEquals("termijn van melding voor strandloper", designation(g, "handboek", THE_GROUP));
+        assertEquals("MELDTERMIJN voor STRANDJUTTER", designation(g, "cgm", THE_GROUP));
         // the way back from the composed designation finds the group
         assertEquals(THE_GROUP, g.namedElement("handboek", Designatable.Kind.VORM, null,
                 "Termijn van melding voor strandloper").orElseThrow());
@@ -163,8 +163,8 @@ class GeneratedNamesPerPartTest {
                 "(handboek: vangst) (cgm: VONDST)", "(handboek: meting) (cgm: WEGING)"));
         assertTrue(v.generatedFrom(THE_MEMBER).isPresent(), () -> v.generated.toString());
         for (Designatable e : List.of(THE_MEMBER, THE_RULE)) {
-            assertEquals("massa via vangst en meting", benaming(v, "handboek", e), e::toString);
-            assertEquals("GEWICHT via VONDST en WEGING", benaming(v, "cgm", e), e::toString);
+            assertEquals("massa via vangst en meting", designation(v, "handboek", e), e::toString);
+            assertEquals("GEWICHT via VONDST en WEGING", designation(v, "cgm", e), e::toString);
         }
         assertEquals(THE_MEMBER, v.namedElement("handboek", Designatable.Kind.ATTRIBUUT, "Jutter", "Massa via vangst en meting")
                 .orElseThrow());
@@ -177,22 +177,22 @@ class GeneratedNamesPerPartTest {
     @Test void a_part_without_designation_stays_canonical() {
         // S carries a designation in cgm only, B in handboek only
         RegelSpraakModel g = clean(GROUP.formatted("(cgm: STRANDJUTTER)", "(handboek: termijn van melding)"));
-        assertEquals("termijn van melding voor Strandjutter", benaming(g, "handboek", THE_GROUP));
-        assertEquals("meldtermijn voor STRANDJUTTER", benaming(g, "cgm", THE_GROUP));
+        assertEquals("termijn van melding voor Strandjutter", designation(g, "handboek", THE_GROUP));
+        assertEquals("meldtermijn voor STRANDJUTTER", designation(g, "cgm", THE_GROUP));
         assertEquals(List.of("handboek: termijn van melding voor Strandjutter", "cgm: meldtermijn voor STRANDJUTTER"),
                 onTheWire(IrEmitter.emit(g), "PrioritizedDefaults", "meldtermijn voor Strandjutter"));
 
         // the second role carries none; the member none in cgm
         RegelSpraakModel v = clean(FOLD.formatted("", "(handboek: massa)", "(handboek: vangst) (cgm: VONDST)", ""));
         for (Designatable e : List.of(THE_MEMBER, THE_RULE)) {
-            assertEquals("massa via vangst en weging", benaming(v, "handboek", e), e::toString);
-            assertEquals("gewicht via VONDST en weging", benaming(v, "cgm", e), e::toString);
+            assertEquals("massa via vangst en weging", designation(v, "handboek", e), e::toString);
+            assertEquals("gewicht via VONDST en weging", designation(v, "cgm", e), e::toString);
         }
         // only the member carries one, as in the maintainer's example
         RegelSpraakModel member = clean(FOLD.formatted("", "(handboek: Bedrag gewicht)", "", ""));
         for (Designatable e : List.of(THE_MEMBER, THE_RULE)) {
-            assertEquals("Bedrag gewicht via vondst en weging", benaming(member, "handboek", e), e::toString);
-            assertEquals("-", benaming(member, "cgm", e), e::toString);
+            assertEquals("Bedrag gewicht via vondst en weging", designation(member, "handboek", e), e::toString);
+            assertEquals("-", designation(member, "cgm", e), e::toString);
         }
         String ir = IrEmitter.emit(member);
         for (String node : List.of("Attribute", "Rule"))
@@ -202,14 +202,14 @@ class GeneratedNamesPerPartTest {
 
     @Test void without_designation_of_any_part_the_name_has_none() {
         RegelSpraakModel g = clean(GROUP.formatted("", ""));
-        assertEquals(List.of("-", "-"), List.of(benaming(g, "handboek", THE_GROUP), benaming(g, "cgm", THE_GROUP)));
+        assertEquals(List.of("-", "-"), List.of(designation(g, "handboek", THE_GROUP), designation(g, "cgm", THE_GROUP)));
         assertEquals("meldtermijn voor Strandjutter", g.effectiveName("handboek", THE_GROUP));
         assertEquals(List.of(), onTheWire(IrEmitter.emit(g), "PrioritizedDefaults", "meldtermijn voor Strandjutter"));
 
         RegelSpraakModel v = clean(FOLD.formatted("", "", "", ""));
         for (Designatable e : List.of(THE_MEMBER, THE_RULE)) {
-            assertEquals("-", benaming(v, "handboek", e), e::toString);
-            assertEquals("-", benaming(v, "cgm", e), e::toString);
+            assertEquals("-", designation(v, "handboek", e), e::toString);
+            assertEquals("-", designation(v, "cgm", e), e::toString);
             assertEquals("gewicht via vondst en weging", v.effectiveName("cgm", e));
         }
         String ir = IrEmitter.emit(v);
@@ -219,11 +219,11 @@ class GeneratedNamesPerPartTest {
         // a designation that spells its part's canonical name composes the canonical name, which is not written in a
         // vocabulary that is not the default (WF-120); the part's own designation is warned once
         RegelSpraakModel redundant = clean(GROUP.formatted("", "(handboek: meldtermijn)"));
-        assertEquals("-", benaming(redundant, "handboek", THE_GROUP));
+        assertEquals("-", designation(redundant, "handboek", THE_GROUP));
         assertEquals(1, redundant.diagnostics.stream().filter(d -> d.message().endsWith("(WF-120)")).count(),
                 redundant.diagnostics::toString);
         RegelSpraakModel redundantMember = clean(FOLD.formatted("", "(handboek: gewicht)", "", ""));
-        assertEquals("-", benaming(redundantMember, "handboek", THE_MEMBER));
+        assertEquals("-", designation(redundantMember, "handboek", THE_MEMBER));
     }
 
     @Test void a_collision_under_WF_118_names_the_parts() {
@@ -284,7 +284,7 @@ class GeneratedNamesPerPartTest {
     @Test void a_default_vocabulary_names_the_group_if_it_names_its_parts() {
         // until this card WF-119 refused the group here, on line 0: it had no place for an annotation
         RegelSpraakModel m = clean(STANDAARD.formatted("(cgm: STRANDJUTTER)", "(cgm: R_MELDTERMIJN)"));
-        assertEquals("R_MELDTERMIJN voor STRANDJUTTER", benaming(m, "cgm", THE_GROUP));
+        assertEquals("R_MELDTERMIJN voor STRANDJUTTER", designation(m, "cgm", THE_GROUP));
 
         // a part without a designation is refused itself; the group carries the mixed name, and no refusal of its own
         String mixed = STANDAARD.formatted("(cgm: STRANDJUTTER)", "");
@@ -292,7 +292,7 @@ class GeneratedNamesPerPartTest {
                 + "'cgm', dat elke declaratie noemt (WF-119)");
         RegelSpraakModel g = Resolver.resolve(mixed);
         assertEquals(1, g.errors().size(), g.errors()::toString);
-        assertEquals("meldtermijn voor STRANDJUTTER", benaming(g, "cgm", THE_GROUP));
+        assertEquals("meldtermijn voor STRANDJUTTER", designation(g, "cgm", THE_GROUP));
 
         // no part carries one: the group is refused as well, with its parts named, on the line of B
         String plain = STANDAARD.formatted("", "");

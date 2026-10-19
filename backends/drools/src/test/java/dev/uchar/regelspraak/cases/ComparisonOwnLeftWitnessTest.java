@@ -76,11 +76,11 @@ class ComparisonOwnLeftWitnessTest {
                 + " voorwaarde voldoen\"}},\"sourceRole\":" + roleBinding("JutterHeeftVondst", "vondst") + ",\"type\":{\"node\":"
                 + "\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"},\"source\":{\"snippet\":\"het aantal vondsten"
                 + " van de Jutter die …\"}}";
-        String regel = "{\"node\":\"Rule\",\"name\":\"aantal zware vondsten\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+        String rule = "{\"node\":\"Rule\",\"name\":\"aantal zware vondsten\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
                 + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"aantal zware vondsten\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"Het aantal zware vondsten van een Jutter\"}},\"value\":" + count
                 + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
-        assertNull(play(document(regel), caseDocument(counter("J1", 2) + "," + counter("J2", 0) + "," + counter("J3", 0))),
+        assertNull(play(document(rule), caseDocument(counter("J1", 2) + "," + counter("J2", 0) + "," + counter("J3", 0))),
                 "in een subselectie");
     }
 
@@ -100,8 +100,8 @@ class ComparisonOwnLeftWitnessTest {
 
     private static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
 
-    private static String attribute(String naam) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + WHOLE + "}";
+    private static String attribute(String name) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + WHOLE + "}";
     }
 
     private static String roleBinding(String factType, String role) {

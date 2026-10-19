@@ -70,8 +70,8 @@ class QuantifierFoldTest {
                 indien het gewicht van %s vondsten van de Jutter gedurende het gehele jaar groter is dan 5 kg.
         """;
 
-    private static RegelSpraakModel resolve(String regels) {
-        return Resolver.resolve(MODEL + regels);
+    private static RegelSpraakModel resolve(String rules) {
+        return Resolver.resolve(MODEL + rules);
     }
 
     /** Sets the model's ERRORs aside ({@link Emission}): several rows read the node a REFUSED sentence built. */
@@ -212,10 +212,10 @@ class QuantifierFoldTest {
         RegelSpraakModel m = resolve(SENTENCE.formatted("ten minste 0 van de"));
         assertEquals(1, setReadErrors(m).size(), () -> "de setlezing hoort te blijven staan: " + m.diagnostics);
         assertEquals(Severity.ERROR, setReadErrors(m).get(0).severity());
-        List<Diagnostic> telwoord = m.diagnostics.stream()
+        List<Diagnostic> numeral = m.diagnostics.stream()
                 .filter(d -> d.message().contains("telwoord van de kwantor")).toList();
-        assertEquals(1, telwoord.size(), () -> "de geweigerde drempel hoort benoemd te worden: " + m.diagnostics);
-        assertEquals(Severity.WARNING, telwoord.get(0).severity());
+        assertEquals(1, numeral.size(), () -> "de geweigerde drempel hoort benoemd te worden: " + m.diagnostics);
+        assertEquals(Severity.WARNING, numeral.get(0).severity());
         assertFalse(emitCompact(m).contains("QuantifierFold"),
                 "een drempel onder 1 hoort niet op de wire te belanden");
     }

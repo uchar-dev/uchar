@@ -31,9 +31,9 @@ import java.util.Map;
  *
  * @param naam    de naam van de set (organisatorisch; verschijnt op /info)
  * @param waarden per parameternaam de lijst intervallen; de keys zijn de namen zoals in de set gebruikt
- *                (de lader normaliseert naar de canonieke {@code model}-Parameter.naam())
+ *                (de lader normaliseert naar de canonieke {@code model}-Parameter.name())
  */
-public record ParameterSet(String naam, Map<String, List<ValueInterval>> waarden) {
+public record ParameterSet(String name, Map<String, List<ValueInterval>> values) {
 
     /**
      * Eén geversioneerde parameterwaarde: de gedecodeerde {@code value} (Java-type per {@link Datatype}, {@code null}
@@ -51,8 +51,8 @@ public record ParameterSet(String naam, Map<String, List<ValueInterval>> waarden
     public static Map<String, List<ValueInterval>> pool(List<ParameterSet> sets) {
         Map<String, List<ValueInterval>> pool = new LinkedHashMap<>();
         for (ParameterSet s : sets)
-            if (s != null && s.waarden() != null)
-                for (var e : s.waarden().entrySet())
+            if (s != null && s.values() != null)
+                for (var e : s.values().entrySet())
                     pool.computeIfAbsent(e.getKey(), k -> new ArrayList<>()).addAll(e.getValue());
         return pool;
     }

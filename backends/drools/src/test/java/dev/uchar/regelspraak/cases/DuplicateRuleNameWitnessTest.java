@@ -30,32 +30,32 @@ class DuplicateRuleNameWitnessTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     /** The refusal of the exec-model branch after the label of its branch, which names the package of its rules. */
-    private static String sentence(String naam) {
-        return ": Duplicate rule name: " + naam + " — twee regels van één naam in pakket "
+    private static String sentence(String name) {
+        return ": Duplicate rule name: " + name + " — twee regels van één naam in pakket "
                 + dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.PKG + "; de KieBase houdt één regel per naam, zodat"
                 + " de tweede de eerste zou vervangen (vormnamen zijn uniek, WF-020)";
     }
 
     @Test void the_exec_branch_refuses_two_rules_of_one_name_by_name() throws Exception {
-        Path ir = document(regel("actief", ACTIEF) + "," + regel("actief", WEIGHT), "");
+        Path ir = document(rule("actief", ACTIEF) + "," + rule("actief", WEIGHT), "");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(ir));
         assertEquals("exec-model" + sentence("actief"), e.getMessage());
     }
 
     @Test void the_exec_branch_refuses_a_rule_and_a_consistency_of_one_name_by_name() throws Exception {
-        Path ir = document(regel("actief", ACTIEF) + "," + regel("gewicht", WEIGHT), CONSISTENTIE);
+        Path ir = document(rule("actief", ACTIEF) + "," + rule("gewicht", WEIGHT), CONSISTENCY);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(ir));
         assertEquals("exec-model" + sentence("gewicht"), e.getMessage());
     }
 
     @Test void the_drl_text_branch_refuses_the_same_document_by_name() throws Exception {
-        Path ir = document(regel("actief", ACTIEF) + "," + regel("actief", WEIGHT), "");
+        Path ir = document(rule("actief", ACTIEF) + "," + rule("actief", WEIGHT), "");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> play(ir, true));
         assertTrue(e.getMessage().contains("Duplicate rule name: actief"), e.getMessage());
     }
 
     @Test void two_names_play_in_both_branches() throws Exception {
-        Path ir = document(regel("actief", ACTIEF) + "," + regel("gewicht", WEIGHT), "");
+        Path ir = document(rule("actief", ACTIEF) + "," + rule("gewicht", WEIGHT), "");
         assertNull(play(ir, false), "exec-model");
         assertNull(play(ir, true), "DRL-tekst");
     }
@@ -86,15 +86,15 @@ class DuplicateRuleNameWitnessTest {
             + "\"initialisation\":false,\"presentation\":\"equation\"}";
 
     /** The consistency "gewicht": "Het gewicht van een Jutter moet groter zijn dan 0". */
-    private static final String CONSISTENTIE = "{\"node\":\"Consistency\",\"name\":\"gewicht\",\"versions\":[{\"subject\":"
+    private static final String CONSISTENCY = "{\"node\":\"Consistency\",\"name\":\"gewicht\",\"versions\":[{\"subject\":"
             + "\"Jutter\",\"assertion\":{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":{\"node\":\"AttributeReference\","
             + "\"attribute\":\"gewicht\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"Het gewicht van een Jutter\"}},"
             + "\"right\":{\"node\":\"Literal\",\"value\":{\"number\":\"0\"},\"type\":" + WHOLE + ",\"source\":{\"snippet\":\"0\"}},"
             + "\"source\":{\"snippet\":\"Het gewicht van een Jutter moet groter zijn dan 0\"}},\"validity\":{\"node\":\"Validity\"},"
             + "\"source\":{\"snippet\":\"Het gewicht van een Jutter moet groter zijn dan 0\",\"line\":12}}]}";
 
-    private static String regel(String naam, String version) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[" + version + "]}";
+    private static String rule(String name, String version) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[" + version + "]}";
     }
 
     private static Path document(String rules, String consistencies) throws Exception {

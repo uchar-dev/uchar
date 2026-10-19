@@ -244,8 +244,8 @@ class TmsQuantifierFoldWitnessTest {
                 TmsDocuments.fire(b, order, List.of(p1, w1, w2, w6), session -> session.addEventListener(
                         new DefaultRuleRuntimeEventListener() {
                             @Override public void objectInserted(ObjectInsertedEvent e) {
-                                if (e.getObject() instanceof HasCharacteristic h && h.onderwerp() == w2
-                                        && h.characteristic().naam().equals("bevoegd")) bevoegd[0]++;
+                                if (e.getObject() instanceof HasCharacteristic h && h.subject() == w2
+                                        && h.characteristic().name().equals("bevoegd")) bevoegd[0]++;
                             }
                         }), session -> { });
                 assertEquals(OUTCOME_B.get(characteristic).get(0), TmsDocuments.has(p1, characteristic),
@@ -270,12 +270,12 @@ class TmsQuantifierFoldWitnessTest {
             C = melder("C", 10, 0, false), D = melder("D", 10, 1, false);
 
 
-    /** {@code regel} beside the derivation of the deelnemers, in both orders, over P1 with {@code members} in that order
+    /** {@code rule} beside the derivation of the deelnemers, in both orders, over P1 with {@code members} in that order
      *  (and the members' instances {@code instances}), with the expectations {@code expectations}; each outcome is
      *  {@code outcome}. */
-    private static void playBoth(String regel, List<String> members, List<String> instances, List<String> expectations,
+    private static void playBoth(String rule, List<String> members, List<String> instances, List<String> expectations,
                                    String outcome, List<String> outcomes, List<String> expected) throws Exception {
-        for (List<String> order : TmsDocuments.permutations(List.of(DEELNEMERS, regel))) {
+        for (List<String> order : TmsDocuments.permutations(List.of(DEELNEMERS, rule))) {
             List<String> names = TmsDocuments.ruleNames(order);
             Path ir = TmsDocuments.document(MODEL, order);
             List<String> world = new ArrayList<>(List.of(ploeg("P1", members)));

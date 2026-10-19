@@ -191,20 +191,20 @@ class TmsTimelineWitnessTest {
             Object j1 = jutter(b.beanLoader(), "10", true), j2 = jutter(b.beanLoader(), "3", false);
             Map<Object, String> labels = new IdentityHashMap<>(Map.of(j1, "J1", j2, "J2"));
             int[] intermediate = {0};
-            Map<String, Integer> states = new TreeMap<>(), waarden = new TreeMap<>();
+            Map<String, Integer> states = new TreeMap<>(), values = new TreeMap<>();
             TmsDocuments.fire(b, order, List.of(j1, j2), session -> session.addEventListener(
                     new DefaultRuleRuntimeEventListener() {
                         @Override public void objectInserted(ObjectInsertedEvent e) {
-                            if (e.getObject() instanceof Value w && w.onderwerp() == j1
-                                    && w.attribute().naam().equals("wachtsom")
+                            if (e.getObject() instanceof Value w && w.subject() == j1
+                                    && w.attribute().name().equals("wachtsom")
                                     && ((BigDecimal) w.value()).compareTo(new BigDecimal("3178")) != 0) intermediate[0]++;
                         }
                     }), session -> {
                 for (Object f : session.getObjects(o -> o instanceof State))
-                    states.merge(labels.get(((State) f).onderwerp()) + "." + ((State) f).attribute().naam(), 1,
+                    states.merge(labels.get(((State) f).subject()) + "." + ((State) f).attribute().name(), 1,
                             Integer::sum);
                 for (Object f : session.getObjects(o -> o instanceof Value))
-                    waarden.merge(labels.get(((Value) f).onderwerp()) + "." + ((Value) f).attribute().naam(), 1,
+                    values.merge(labels.get(((Value) f).subject()) + "." + ((Value) f).attribute().name(), 1,
                             Integer::sum);
             });
             // the jaartarief and the bedrag no form writes stand as well, the bedrag of J2 as leeg: every attribute on a
@@ -213,7 +213,7 @@ class TmsTimelineWitnessTest {
             assertEquals(Map.of("J1.bedrag", 1, "J1.jaardeel", 1, "J1.jaartarief", 1, "J1.maanddeel", 1, "J2.bedrag", 1,
                     "J2.jaardeel", 1, "J2.jaartarief", 1, "J2.maanddeel", 1), states, () -> "standen in volgorde " + names);
             assertEquals(Map.of("J1.jaardeel", 1, "J1.maanddeel", 1, "J1.topsom", 1, "J1.wachtsom", 1, "J2.topsom", 1,
-                    "J2.wachtsom", 1), waarden, () -> "waarden in volgorde " + names);
+                    "J2.wachtsom", 1), values, () -> "waarden in volgorde " + names);
             assertEquals(List.of("[2024-01-01, 2025-01-01)=306", "[2025-01-01, 2026-01-01)=59"),
                     TmsTimelineWitnessTest.timelineOf(j1, "jaardeel"), () -> "jaardeel van J1 in volgorde " + names);
             assertEquals(12, TmsTimelineWitnessTest.timelineOf(j1, "maanddeel").size(), () -> "volgorde " + names);
@@ -327,7 +327,7 @@ class TmsTimelineWitnessTest {
             timeAttribute("jaartarief", WHOLE, "year"), timeAttribute("jaardeel", WHOLE, "year")),
             List.of(timeCharacteristic("borgplichtig", "month")))), List.of());
 
-    static final String YEAR_PART_DATED = IrPath.regel("jaardeel vanaf 2020", "BEREKENING",
+    static final String YEAR_PART_DATED = IrPath.rule("jaardeel vanaf 2020", "BEREKENING",
             "{\"node\":\"AttributeReference\",\"attribute\":\"jaardeel\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":"
                     + "\"Het jaardeel van een Jutter\"}}", timeProportional("jaartarief", "Jutter", BORGPLICHTIG, "year"),
             "null", TmsDocuments.validity("2020-01-01", null));

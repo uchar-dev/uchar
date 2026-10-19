@@ -90,7 +90,7 @@ class TmsSkeletonWitnessTest {
                 + "\"CharacteristicCheck\",\"characteristic\":\"helder\",\"negated\":false,\"source\":{\"snippet\":"
                 + "\"hij helder is\"}},\"granularity\":\"year\",\"type\":" + WHOLE + ",\"source\":{\"snippet\":"
                 + "\"het aantal dagen in het jaar dat hij helder is\"}}";
-        String lampental = IrPath.regel("lampental", "BEREKENING", "{\"node\":\"AttributeReference\",\"attribute\":"
+        String lampental = IrPath.rule("lampental", "BEREKENING", "{\"node\":\"AttributeReference\",\"attribute\":"
                 + "\"lampental\",\"subjectType\":\"Vuurtoren\",\"source\":{\"snippet\":\"Het lampental van een Vuurtoren\"}}",
                 days, "null");
         Path ir = TmsDocuments.document(VUURTOREN, List.of(lampental));
@@ -110,7 +110,7 @@ class TmsSkeletonWitnessTest {
         String snippet = "regelversie verlichting is gevuurd";
         String fired = "{\"node\":\"Regelversie\",\"regel\":\"verlichting\",\"inconsistent\":false,\"source\":"
                 + "{\"snippet\":\"" + snippet + "\"}}";
-        String helder = IrPath.regel("helder", "KENMERKTOEKENNING", "{\"node\":\"AttributeReference\",\"attribute\":"
+        String helder = IrPath.rule("helder", "KENMERKTOEKENNING", "{\"node\":\"AttributeReference\",\"attribute\":"
                 + "\"helder\",\"subjectType\":\"Vuurtoren\",\"source\":{\"snippet\":\"Een Vuurtoren is helder\"}}",
                 IrPath.literal("waar", "{\"node\":\"Boolean\"}", "waar"), fired);
         Path ir = TmsDocuments.document(VUURTOREN, List.of(helder));

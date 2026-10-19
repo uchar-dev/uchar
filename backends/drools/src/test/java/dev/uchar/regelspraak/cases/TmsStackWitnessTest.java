@@ -155,11 +155,11 @@ class TmsStackWitnessTest {
             List<String> onTheSubtype = new ArrayList<>();
             TmsDocuments.fire(b, kieBase, names, beans, session -> session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
-                    String regel = e.getMatch().getRule().getName();
+                    String rule = e.getMatch().getRule().getName();
                     for (Object o : e.getMatch().getObjects()) {
                         if (!wrakvondst.isInstance(o)) continue;
-                        if (regel.equals("standaardbergloon")) onTheSubtype.add(labels.get(o));
-                        if (regel.endsWith("default 2") && "W2".equals(labels.get(o))) folded[0]++;
+                        if (rule.equals("standaardbergloon")) onTheSubtype.add(labels.get(o));
+                        if (rule.endsWith("default 2") && "W2".equals(labels.get(o))) folded[0]++;
                     }
                 }
             }), session -> { });
@@ -177,7 +177,7 @@ class TmsStackWitnessTest {
     /** The fold is per concrete type: the Wrakvondst carries one stack, and the Vondst none. */
     @Test void a_stack_per_concrete_type() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
-        List<String> names = b.execModelTranspiler().defaultsGroups().stream().map(g -> g.naam()).toList();
+        List<String> names = b.execModelTranspiler().defaultsGroups().stream().map(g -> g.name()).toList();
         assertEquals(List.of("defaults A:Wrakvondst.bergloon"), names);
         assertFalse(b.execModelTranspiler().defaultsGroups().get(0).general());
     }

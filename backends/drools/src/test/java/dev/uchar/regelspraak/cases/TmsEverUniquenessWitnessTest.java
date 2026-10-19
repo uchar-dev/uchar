@@ -96,10 +96,10 @@ class TmsEverUniquenessWitnessTest {
     /** A Vondst of the case with the code {@code code}, bewaard on {@code [van, tot)} where {@code van} is not null, and
      *  the nummer {@code inputData} as input where it is not empty. */
     static String vondst(String label, String code, String van, String to, List<String> inputData) {
-        Map<String, String> waarden = new LinkedHashMap<>();
-        waarden.put("code", numberValue(code));
-        if (!inputData.isEmpty()) waarden.put("nummer", timeline(inputData));
-        return instance(label, "Vondst", waarden, List.of(),
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("code", numberValue(code));
+        if (!inputData.isEmpty()) values.put("nummer", timeline(inputData));
+        return instance(label, "Vondst", values, List.of(),
                 van == null ? Map.of() : Map.of("bewaard", List.of(period(van, to))), Map.of());
     }
 

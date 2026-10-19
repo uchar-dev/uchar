@@ -45,7 +45,7 @@ class NavigatedConditionWitnessTest {
         // afgeleide datum van de jutter van de Vondst gevuld is", with "De afgeleide datum van een Jutter moet
         // gesteld worden op de meldingsdatum van de Jutter" before it. ref and clingo: uitkomst 01-03-2026.
         String ir = document(model(JUTTER_DATES, List.of(VONDST_OUTCOME), List.of(JUTTER_VONDST), ""),
-                rules(DERIVED, regel("uitkomst", "Vondst", "uitkomst", viaJutter("meldingsdatum"),
+                rules(DERIVED, rule("uitkomst", "Vondst", "uitkomst", viaJutter("meldingsdatum"),
                         filled(viaJutter("afgeleide datum")))), "", "");
         assertNull(play(ir, caseDocument(List.of(jutter("J", MESSAGE_MARCH), vondst("V", "J", "")),
                         value("J", "afgeleide datum", "2026-03-01") + ", " + value("V", "uitkomst", "2026-03-01"))),
@@ -58,7 +58,7 @@ class NavigatedConditionWitnessTest {
         // V2 has no jutter (the null alternative, RUNTIME-SEMANTICS ch. 5.8 rule 1: an absent link reads leeg).
         // ref and clingo: both 01-01-2026.
         String ir = document(model(JUTTER_DATES, List.of(VONDST_OUTCOME), List.of(JUTTER_VONDST), ""),
-                rules(regel("uitkomst", "Vondst", "uitkomst", date("2026-01-01"),
+                rules(rule("uitkomst", "Vondst", "uitkomst", date("2026-01-01"),
                         empty(viaJutter("afgeleide datum"))), DERIVED), "", "");
         assertNull(play(ir, caseDocument(List.of(jutter("J", ""), vondst("V1", "J", ""), vondst("V2", null, "")),
                         value("V1", "uitkomst", "2026-01-01") + ", " + value("V2", "uitkomst", "2026-01-01"))),
@@ -72,7 +72,7 @@ class NavigatedConditionWitnessTest {
         // uitkomstwaarde leeg and inconsistent; with deler 2 uitkomstwaarde 5,00 and consistent.
         String ir = document(model(JUTTER_DATES, List.of(attribute("basisbedrag", WHOLE), attribute("deler", WHOLE),
                         attribute("uitkomstwaarde", TWO_DECIMALS)), List.of(JUTTER_VONDST), ""),
-                rules(DERIVED, regel("uitkomstwaarde", "Vondst", "uitkomstwaarde",
+                rules(DERIVED, rule("uitkomstwaarde", "Vondst", "uitkomstwaarde",
                         "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":" + own("basisbedrag", "Vondst")
                                 + ",\"right\":" + own("deler", "Vondst") + ",\"type\":{\"node\":\"Number\",\"whole\":false,"
                                 + "\"decimals\":0,\"sign\":\"unspecified\"},\"source\":{\"snippet\":\"deling\"}}",
@@ -103,7 +103,7 @@ class NavigatedConditionWitnessTest {
                 + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}},\"condition\":{\"node\":\"Regelversie\","
                 + "\"regel\":\"uitkomst\",\"inconsistent\":false,\"source\":{\"snippet\":\"regelversie uitkomst is gevuurd\"}},"
                 + "\"initialisation\":false}]}";
-        String ir = document(model, rules(DERIVED, regel("uitkomst", "Vondst", "uitkomst", viaJutter("meldingsdatum"),
+        String ir = document(model, rules(DERIVED, rule("uitkomst", "Vondst", "uitkomst", viaJutter("meldingsdatum"),
                 filled(viaJutter("afgeleide datum"))), afgehandeld), "", "");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(ir, caseDocument(List.of(jutter("J",
                 MESSAGE_MARCH), vondst("V", "J", "\"uitkomst\":{\"date\":\"2026-03-01\"}")), value("V", "uitkomst",
@@ -125,7 +125,7 @@ class NavigatedConditionWitnessTest {
                                 + "\"many\":true}]}"),
                         ",{\"node\":\"ObjectType\",\"name\":\"Melding\",\"animate\":false,\"plural\":\"Meldingen\","
                                 + "\"attributes\":[" + attribute("meldingsuitkomst", DATE) + "],\"characteristics\":[]}"),
-                rules(regel("meldingaantal", "Vondst", "meldingaantal", "{\"node\":\"Aggregation\",\"kind\":\"count\","
+                rules(rule("meldingaantal", "Vondst", "meldingaantal", "{\"node\":\"Aggregation\",\"kind\":\"count\","
                                 + "\"arguments\":[" + own("meldingen", "Vondst") + "],\"elementType\":\"Melding\","
                                 + "\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"VondstHeeftMelding\",\"role\":\"melding\"},"
                                 + "\"type\":" + WHOLE_NON_NEGATIVE + ",\"source\":{\"snippet\":\"het aantal meldingen\"}}", null),
@@ -162,11 +162,11 @@ class NavigatedConditionWitnessTest {
                 + "\"source\":{\"snippet\":\"de afgeleide aanwijzing van de strandvoogd van de Jutter\"},\"path\":[{\"node\":\"RoleBinding\","
                 + "\"factType\":\"Toezicht\",\"role\":\"strandvoogd\"}]}";
         String ir = document(model,
-                rules(regel("meldingaantal", "Jutter", "meldingaantal", "{\"node\":\"Aggregation\",\"kind\":\"count\","
+                rules(rule("meldingaantal", "Jutter", "meldingaantal", "{\"node\":\"Aggregation\",\"kind\":\"count\","
                                 + "\"arguments\":[" + own("aangemelde vondsten", "Jutter") + "],\"elementType\":\"Vondst\","
                                 + "\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"Aanmelding\",\"role\":\"aangemelde vondst\"},"
                                 + "\"type\":" + WHOLE_NON_NEGATIVE + ",\"source\":{\"snippet\":\"het aantal aangemelde vondsten\"}}", null),
-                        regel("afgeleid", "Strandvoogd", "afgeleide aanwijzing", own("aanwijzingsdatum", "Strandvoogd"), null)),
+                        rule("afgeleid", "Strandvoogd", "afgeleide aanwijzing", own("aanwijzingsdatum", "Strandvoogd"), null)),
                 "",
                 "\"factCreations\":[{\"node\":\"FactCreation\",\"name\":\"aanmelding\",\"versions\":[{\"factType\":\"Aanmelding\","
                         + "\"anchorRole\":\"aanmelder\",\"targetRole\":\"aangemelde vondst\",\"anchor\":\"Jutter\",\"path\":[{"
@@ -240,14 +240,14 @@ class NavigatedConditionWitnessTest {
     private static final String VONDST_OUTCOME = attribute("uitkomst", DATE);
     private static final String JUTTER_VONDST = factType("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst");
     /** "De afgeleide datum van een Jutter moet gesteld worden op de meldingsdatum van de Jutter." */
-    private static final String DERIVED = regel("afgeleid", "Jutter", "afgeleide datum", own("meldingsdatum", "Jutter"), null);
+    private static final String DERIVED = rule("afgeleid", "Jutter", "afgeleide datum", own("meldingsdatum", "Jutter"), null);
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
-    private static String factType(String naam, String role1, String type1, String role2, String plural2, String type2) {
-        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
+    private static String factType(String name, String role1, String type1, String role2, String plural2, String type2) {
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + role1 + "\",\"objectType\":\"" + type1 + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + role2 + "\",\"objectType\":\"" + type2 + "\",\"plural\":\"" + plural2
                 + "\",\"many\":true}]}";
@@ -288,8 +288,8 @@ class NavigatedConditionWitnessTest {
     }
 
     /** One rule with one version; {@code condition} null for none. */
-    private static String regel(String naam, String type, String target, String value, String condition) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+    private static String rule(String name, String type, String target, String value, String condition) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
                 + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type + "\","
                 + "\"source\":{\"snippet\":\"De " + target + "\"}},\"value\":" + value
                 + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false,\"presentation\":\"equation\"}]}";

@@ -106,7 +106,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
      *  null. */
     private String fact;
     /** The name of the first rule that fired outside the entry, or null. */
-    private String regel;
+    private String rule;
     /** The first change of the agenda outside the entry that Drools reports as an event, as a clause, or null. */
     private String agendaChange;
     /** The first insert or delete outside the entry of a fact of a kind {@link #input} holds, as a clause, or null. */
@@ -156,7 +156,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
     public void forget(String since) {
         this.since = Objects.requireNonNull(since, "sinds");
         fact = null;
-        regel = null;
+        rule = null;
         agendaChange = null;
         onOrOff = null;
         otherChange = null;
@@ -173,11 +173,11 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
     public String changedGlobal(KieSession session) {
         if (globals == null) return null;
         Map<String, Object> now = globals(session);
-        for (String naam : new TreeSet<>(union(globals.keySet(), now.keySet()))) {
-            Object oud = globals.get(naam);
-            Object fresh = now.get(naam);
+        for (String name : new TreeSet<>(union(globals.keySet(), now.keySet()))) {
+            Object oud = globals.get(name);
+            Object fresh = now.get(name);
             if (!Objects.equals(oud, fresh))
-                return "de global '" + naam + "' veranderde van " + value(oud) + " in " + value(fresh)
+                return "de global '" + name + "' veranderde van " + value(oud) + " in " + value(fresh)
                         + " na de eerste DroolsBackend.vuur van deze sessie";
         }
         return null;
@@ -185,7 +185,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
 
     private static Map<String, Object> globals(KieSession session) {
         Map<String, Object> out = new HashMap<>();
-        for (String naam : session.getGlobals().getGlobalKeys()) out.put(naam, session.getGlobals().get(naam));
+        for (String name : session.getGlobals().getGlobalKeys()) out.put(name, session.getGlobals().get(name));
         return out;
     }
 
@@ -250,7 +250,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
      *  or deleted, the first change of the agenda Drools reports as an event, and the first rule that fired, each where
      *  there was one; null where nothing happened. */
     public String outsideClause() {
-        return combined(fact, agendaChange, regel == null ? null : "de regel \"" + regel + "\" vuurde");
+        return combined(fact, agendaChange, rule == null ? null : "de regel \"" + rule + "\" vuurde");
     }
 
     /** What happened outside the entry since {@link #since} beyond an update of an attribute or a characteristic of a
@@ -258,7 +258,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
      *  the first other insert, update or delete; null where nothing did. A fire names its rule rather than the facts
      *  truth maintenance inserted and deleted on the way, which are its consequence. */
     public String moreThanOneUpdate() {
-        if (regel != null) return "de regel \"" + regel + "\" vuurde";
+        if (rule != null) return "de regel \"" + rule + "\" vuurde";
         return agendaChange != null ? agendaChange : otherChange;
     }
 
@@ -335,7 +335,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
     }
 
     @Override public void beforeMatchFired(BeforeMatchFiredEvent e) {
-        if (regel == null) regel = e.getMatch().getRule().getName();
+        if (rule == null) rule = e.getMatch().getRule().getName();
     }
 
     /** A match that a change of a fact cancels is the network at work during a fire; any other cancellation is a

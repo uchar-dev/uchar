@@ -3,9 +3,9 @@ package dev.uchar.regelspraak.ir;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Designatable;
 import dev.uchar.regelspraak.model.RegelSpraakModel.GeneratedFrom;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Granularity;
 import dev.uchar.regelspraak.model.RegelSpraakModel.OriginForm;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype.CharacteristicKind;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType.CharacteristicKind;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 
 import java.util.Collections;
@@ -43,7 +43,7 @@ public final class Spelling {
      * a {@link #free} family is a free string on the wire that a check closes, not the schema.
      */
     public static final class Family<K> {
-        private final String naam;
+        private final String name;
         private final List<String> places;
         private final Map<K, String> rows = new LinkedHashMap<>();
         private final Map<K, String> refused = new LinkedHashMap<>();
@@ -53,8 +53,8 @@ public final class Spelling {
         private final Map<K, String> unwritten = new LinkedHashMap<>();
         private final Map<String, K> back = new HashMap<>();
 
-        private Family(String naam, String... places) {
-            this.naam = naam;
+        private Family(String name, String... places) {
+            this.name = name;
             this.places = List.of(places);
         }
 
@@ -70,7 +70,7 @@ public final class Spelling {
 
         private void add(Map<K, String> target, K value, String spelling) {
             if (known(value) || back.containsKey(spelling))
-                throw new IllegalStateException("Spelling: the family " + naam + " spells '" + value + "' or '"
+                throw new IllegalStateException("Spelling: the family " + name + " spells '" + value + "' or '"
                         + spelling + "' twice; a family is a bijection");
             target.put(value, spelling);
             back.put(spelling, value);
@@ -78,7 +78,7 @@ public final class Spelling {
 
         private Family<K> unwritten(K value, String reason) {
             if (known(value))
-                throw new IllegalStateException("Spelling: the family " + naam + " both spells and leaves '"
+                throw new IllegalStateException("Spelling: the family " + name + " both spells and leaves '"
                         + value + "' unspelled");
             unwritten.put(value, reason);
             return this;
@@ -105,13 +105,13 @@ public final class Spelling {
 
         private String ownPlace(String place) {
             if (!places.contains(place))
-                throw new IllegalArgumentException("Spelling: the family " + naam + " is not written at '" + place
+                throw new IllegalArgumentException("Spelling: the family " + name + " is not written at '" + place
                         + "'; its places are " + places);
             return place;
         }
 
         /** The family's name in the section {@code waarden}. */
-        public String naam() { return naam; }
+        public String name() { return name; }
 
         /** The wire positions that carry the family, as {@code <Node>.<field>}. */
         public List<String> places() { return places; }
@@ -137,7 +137,7 @@ public final class Spelling {
         public String spelling(K value) {
             String s = rows.containsKey(value) ? rows.get(value) : refused.get(value);
             if (s == null)
-                throw new IllegalArgumentException("Spelling: the family " + naam + " has no wire spelling for '"
+                throw new IllegalArgumentException("Spelling: the family " + name + " has no wire spelling for '"
                         + value + "'" + (unwritten.containsKey(value) ? ": " + unwritten.get(value) : ""));
             return s;
         }
@@ -166,12 +166,12 @@ public final class Spelling {
         }
     }
 
-    public static final Family<Datatype.Teken> NUMBER_SIGN = new Family<Datatype.Teken>("Number.sign",
+    public static final Family<Datatype.Sign> NUMBER_SIGN = new Family<Datatype.Sign>("Number.sign",
             "Number.sign")
-            .row(Datatype.Teken.ONBEPAALD, "unspecified")
-            .row(Datatype.Teken.NEGATIEF, "negative")
-            .row(Datatype.Teken.NIET_NEGATIEF, "nonNegative")
-            .row(Datatype.Teken.POSITIEF, "positive");
+            .row(Datatype.Sign.ONBEPAALD, "unspecified")
+            .row(Datatype.Sign.NEGATIEF, "negative")
+            .row(Datatype.Sign.NIET_NEGATIEF, "nonNegative")
+            .row(Datatype.Sign.POSITIEF, "positive");
 
     public static final Family<CharacteristicKind> CHARACTERISTIC_KIND = new Family<CharacteristicKind>("Characteristic.kind",
             "Characteristic.kind")
@@ -179,13 +179,13 @@ public final class Spelling {
             .row(CharacteristicKind.BEZITTELIJK, "possessive")
             .row(CharacteristicKind.ZELFSTANDIG, "nominal");
 
-    public static final Family<Granulariteit> GRANULARITY = new Family<Granulariteit>("granularity",
+    public static final Family<Granularity> GRANULARITY = new Family<Granularity>("granularity",
             "TimelineFacet.granularity", "Timeline.granularity", "BuiltinCall.granularity")
-            .row(Granulariteit.DAG, "day")
-            .row(Granulariteit.WEEK, "week")
-            .row(Granulariteit.MAAND, "month")
-            .row(Granulariteit.KWARTAAL, "quarter")
-            .row(Granulariteit.JAAR, "year")
+            .row(Granularity.DAG, "day")
+            .row(Granularity.WEEK, "week")
+            .row(Granularity.MAAND, "month")
+            .row(Granularity.KWARTAAL, "quarter")
+            .row(Granularity.JAAR, "year")
             .nullStays("Timeline.granularity");
 
     public static final Family<ResolvedRule.Kind> PRESENTATION = new Family<ResolvedRule.Kind>(
@@ -326,7 +326,7 @@ public final class Spelling {
     /** The precision of a date: the datatype variant itself is the in-memory value (both records are
      *  component-free, so every instance of one is equal to every other). */
     public static final Family<Datatype> DATE_PRECISION = new Family<Datatype>("Date.precision", "Date.precision")
-            .row(new Datatype.DatumInDagen(), "day")
+            .row(new Datatype.DateInDays(), "day")
             .row(new Datatype.DateTime(), "millisecond");
 
     /** The form of an origin (IR-SPEC ch. 2.13): the five forms by which the frontend makes a declaration of its own

@@ -32,7 +32,7 @@ class DimensionTargetTest {
 
         """;
 
-    private static String regel(String result) {
+    private static String rule(String result) {
         return MODEL + """
             Regel doel
                 geldig altijd
@@ -46,7 +46,7 @@ class DimensionTargetTest {
             "De premie in voorjaar van een Jutter moet gesteld worden op 10."
     })
     void a_cell_assignment_refuses_with_the_dimension(String result) {
-        RegelSpraakModel m = Resolver.resolve(regel(result));
+        RegelSpraakModel m = Resolver.resolve(rule(result));
         List<Diagnostic> faults = m.errors();
         assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
         String t = faults.get(0).message();
@@ -55,7 +55,7 @@ class DimensionTargetTest {
     }
 
     @Test void reading_a_cell_stays_clean() {
-        RegelSpraakModel m = Resolver.resolve(regel(
+        RegelSpraakModel m = Resolver.resolve(rule(
                 "De bonus van een Jutter moet gesteld worden op zijn premie in voorjaar."));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }

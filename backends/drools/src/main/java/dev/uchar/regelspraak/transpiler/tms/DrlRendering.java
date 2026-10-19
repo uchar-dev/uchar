@@ -146,17 +146,17 @@ final class DrlRendering {
         Set<String> ruleNames = new HashSet<>();
         for (int n = 0; n < plan.rules().size(); n++) {
             // the header escapes a name one to one, so two rules of one name in the text are two plans of one name
-            if (!ruleNames.add(plan.rules().get(n).naam()))
-                throw new IllegalStateException("twee regels van het plan heten " + str(plan.rules().get(n).naam())
+            if (!ruleNames.add(plan.rules().get(n).name()))
+                throw new IllegalStateException("twee regels van het plan heten " + str(plan.rules().get(n).name())
                         + ", en een KieBase houdt één regel per naam");
             w.new Rule(n, plan.rules().get(n)).renderRule();
         }
         Set<String> declared = new HashSet<>();
         StringBuilder globals = new StringBuilder();
         for (Modelplan.Global g : plan.globals()) {
-            if (!declared.add(g.naam()))
-                throw new IllegalStateException("de global " + g.naam() + " wordt twee keer gedeclareerd");
-            globals.append("global ").append(w.typeName(g.javaClass())).append(' ').append(g.naam()).append(";\n");
+            if (!declared.add(g.name()))
+                throw new IllegalStateException("de global " + g.name() + " wordt twee keer gedeclareerd");
+            globals.append("global ").append(w.typeName(g.javaClass())).append(' ').append(g.name()).append(";\n");
         }
         for (String d : w.dayKinds.keySet()) {
             if (!declared.add(d)) throw new IllegalStateException("de global " + d + " wordt twee keer gedeclareerd");
@@ -210,14 +210,14 @@ final class DrlRendering {
     }
 
     /** The one public method of {@code javaClass} called {@code naam}; the witnesses of the routes hold that there is one. */
-    private static Method method(Class<?> javaClass, String naam) {
+    private static Method method(Class<?> javaClass, String name) {
         Method out = null;
         for (Method m : javaClass.getMethods())
-            if (m.getName().equals(naam)) {
-                if (out != null) throw new IllegalStateException(javaClass.getName() + "." + naam + " is overladen");
+            if (m.getName().equals(name)) {
+                if (out != null) throw new IllegalStateException(javaClass.getName() + "." + name + " is overladen");
                 out = m;
             }
-        if (out == null) throw new IllegalStateException("geen publieke methode " + javaClass.getName() + "." + naam);
+        if (out == null) throw new IllegalStateException("geen publieke methode " + javaClass.getName() + "." + name);
         return out;
     }
 
@@ -293,7 +293,7 @@ final class DrlRendering {
 
     /** The key of a member, as {@link ElementKey#van} makes every key of the plan. */
     private String key(ElementKey e) {
-        return typeName(ElementKey.class) + ".van(" + str(e.objectType()) + ", " + str(e.naam()) + ", "
+        return typeName(ElementKey.class) + ".van(" + str(e.objectType()) + ", " + str(e.name()) + ", "
                 + e.characteristic() + ")";
     }
 
@@ -301,16 +301,16 @@ final class DrlRendering {
      *  under this name before the session fires. The analysis compiles one predicate per day kind, so two nodes of one
      *  global carry one predicate; any other pair fails. */
     private String dayKind(Term.DayKind d) {
-        String naam = d.naam();
-        String global = "rsDagsoort_" + Namen.ident(naam, true);
+        String name = d.name();
+        String global = "rsDagsoort_" + Namen.ident(name, true);
         if (!global.codePoints().allMatch(Character::isJavaIdentifierPart))
-            throw new Refusal(DroolsCode.DAY_KIND_GLOBAL_INVALID.reason("category", DroolsCode.DAY_KIND_GLOBAL_INVALID.part("global-not-identifier", "dayKind", naam)));
+            throw new Refusal(DroolsCode.DAY_KIND_GLOBAL_INVALID.reason("category", DroolsCode.DAY_KIND_GLOBAL_INVALID.part("global-not-identifier", "dayKind", name)));
         Term.DayKind earlier = dayKinds.putIfAbsent(global, d);
-        if (earlier != null && !earlier.naam().equals(naam))
-            throw new IllegalStateException("de dagsoorten '" + earlier.naam() + "' en '" + naam + "' delen de global "
+        if (earlier != null && !earlier.name().equals(name))
+            throw new IllegalStateException("de dagsoorten '" + earlier.name() + "' en '" + name + "' delen de global "
                     + global);
         if (earlier != null && earlier.datePredicate() != d.datePredicate())
-            throw new IllegalStateException("de dagsoort '" + naam + "' heeft in het plan twee predicaten");
+            throw new IllegalStateException("de dagsoort '" + name + "' heeft in het plan twee predicaten");
         return global;
     }
 
@@ -326,14 +326,14 @@ final class DrlRendering {
         private final Map<Integer, String> binders = new HashMap<>();
         private int depositFlag = -1;
 
-        void parameter(String type, String naam, String argument) {
+        void parameter(String type, String name, String argument) {
             for (String[] p : parameters)
-                if (p[1].equals(naam)) throw new IllegalStateException("de parameter " + naam + " staat er twee keer");
-            parameters.add(new String[]{type, naam, argument});
+                if (p[1].equals(name)) throw new IllegalStateException("de parameter " + name + " staat er twee keer");
+            parameters.add(new String[]{type, name, argument});
         }
 
-        boolean has(String naam) {
-            for (String[] p : parameters) if (p[1].equals(naam)) return true;
+        boolean has(String name) {
+            for (String[] p : parameters) if (p[1].equals(name)) return true;
             return false;
         }
 
@@ -391,12 +391,12 @@ final class DrlRendering {
             for (LhsItem item : plan.leftSide()) when.add(item(item));
             String then = consequence(plan.consequence());
             for (String f : functions) {
-                if (f == null) throw new IllegalStateException("een functie van " + plan.naam() + " is niet geschreven");
+                if (f == null) throw new IllegalStateException("een functie van " + plan.name() + " is niet geschreven");
                 rules.append(f).append('\n');
             }
             // the plan's name escaped as a string literal, which the parser reads back as that name (RuleNameWitnessTest):
             // formOf, the scenario report and the creation driver look a fired rule up by the name of its plan
-            rules.append("rule ").append(str(plan.naam())).append("\n");
+            rules.append("rule ").append(str(plan.name())).append("\n");
             rules.append("    dialect \"mvel\"\n");
             if (plan.agendaGroup() != null) rules.append("    agenda-group ").append(str(plan.agendaGroup())).append('\n');
             rules.append("when\n");
@@ -411,7 +411,7 @@ final class DrlRendering {
             return functions.size() - 1;
         }
 
-        private String naam(String category, int place) {
+        private String name(String category, int place) {
             return "r" + n + "_" + category + place;
         }
 
@@ -427,16 +427,16 @@ final class DrlRendering {
         /** The variable of slot {@code slot}: the one a binding of the left-hand side binds. */
         private String variable(int slot) {
             Read l = plan.readings().slots().get(slot);
-            if (l.naam() == null)
-                throw new IllegalStateException("slot " + slot + " van " + plan.naam() + " heeft geen variabele: " + l);
-            return l.naam();
+            if (l.name() == null)
+                throw new IllegalStateException("slot " + slot + " van " + plan.name() + " heeft geen variabele: " + l);
+            return l.name();
         }
 
         // ---------------- the left-hand side ----------------
 
         private String item(LhsItem item) {
             return switch (item) {
-                case Subject o -> pattern(o.naam(), o.beanClass(), o.alpha(), o.joins(), o.betaTests(), List.of(),
+                case Subject o -> pattern(o.name(), o.beanClass(), o.alpha(), o.joins(), o.betaTests(), List.of(),
                         o.bindings());
                 case FactPattern p -> pattern(p);
                 case Not x -> "not( " + quantified(x.patterns()) + " )";
@@ -447,12 +447,12 @@ final class DrlRendering {
         }
 
         private String pattern(FactPattern p) {
-            return pattern(p.naam(), p.factClass(), p.alpha(), p.joins(), p.betaTests(), p.afterAlpha(), p.bindings());
+            return pattern(p.name(), p.factClass(), p.alpha(), p.joins(), p.betaTests(), p.afterAlpha(), p.bindings());
         }
 
         /** A pattern: its constraints on its object, its identity joins, its constraints between its object and
          *  another, its constraints on its object after those, and its bindings, in that order. */
-        private String pattern(String naam, Class<?> javaClass, List<Alpha> alpha, List<Join> joins,
+        private String pattern(String name, Class<?> javaClass, List<Alpha> alpha, List<Join> joins,
                                List<BetaTest> betaTests, List<Alpha> afterAlpha, List<Binding> bindings) {
             List<String> c = new ArrayList<>();
             for (Alpha a : alpha) c.add(alpha(javaClass, a));
@@ -460,8 +460,8 @@ final class DrlRendering {
             for (BetaTest b : betaTests) c.add(betaTest(b));
             for (Alpha a : afterAlpha) c.add(alpha(javaClass, a));
             for (Binding b : bindings) c.add(binding(javaClass, b));
-            patternVariables.add(naam);
-            return naam + " : " + typeName(javaClass) + (c.isEmpty() ? "()" : "( " + String.join(", ", c) + " )");
+            patternVariables.add(name);
+            return name + " : " + typeName(javaClass) + (c.isEmpty() ? "()" : "( " + String.join(", ", c) + " )");
         }
 
         /** The patterns of a negation or an existence; what they bind lives only inside it. */
@@ -477,7 +477,7 @@ final class DrlRendering {
             String source = pattern(a.source());
             List<String> f = new ArrayList<>();
             for (Accumulation.Aggregation x : a.aggregations()) {
-                String over = x.source() == null ? a.source().naam() : x.source();
+                String over = x.source() == null ? a.source().name() : x.source();
                 f.add(x.target() + " : " + switch (x.category()) {
                     case COUNT -> "count()";
                     case SUM -> "sumBD(" + over + ")";
@@ -495,7 +495,7 @@ final class DrlRendering {
         private List<String> join(Class<?> javaClass, Join j) {
             String left = j.field() == null ? "this" : fieldName(javaClass, j.property(), j.field());
             String right = j.targetField() == null ? j.target() : j.target() + "." + fieldName(j.targetField().javaClass(),
-                    j.targetField().property(), j.targetField().naam());
+                    j.targetField().property(), j.targetField().name());
             boolean rightEmpty = j.targetField() != null || !patternVariables.contains(j.target());
             List<String> out = new ArrayList<>();
             if (j.field() != null && rightEmpty) out.add(left + " != null");
@@ -507,7 +507,7 @@ final class DrlRendering {
          *  calls the plan's function with its constants. */
         private String betaTest(BetaTest b) {
             int place = reserveer();
-            String naam = naam("beta", place);
+            String name = name("beta", place);
             Method m = method(b.function().javaClass(), b.function().method());
             Class<?>[] p = m.getParameterTypes();
             if (p.length != 2 + b.constants().size())
@@ -517,9 +517,9 @@ final class DrlRendering {
                     cast(p[1], new Expr("ander", Object.class))));
             for (int i = 0; i < b.constants().size(); i++) a.add(cast(p[2 + i], constant(b.constants().get(i).value())));
             Expr call = new Expr(function(b.function()) + "(" + String.join(", ", a) + ")", m.getReturnType());
-            fill(place, null, "boolean " + naam + "(Object eigen, Object ander)", "    return " + asBoolean(call)
+            fill(place, null, "boolean " + name + "(Object eigen, Object ander)", "    return " + asBoolean(call)
                     + ";\n");
-            return naam + "(this, " + b.target() + ")";
+            return name + "(this, " + b.target() + ")";
         }
 
         /** A value a pattern binds: a field of a fact of the branch as it is; a member of a bean by its name in DRL,
@@ -534,7 +534,7 @@ final class DrlRendering {
                 return b.target() + " : " + b.field().property();
             }
             boolean own = b.field().javaClass().isAssignableFrom(javaClass);
-            String read = own ? fieldName(javaClass, b.field().property(), b.field().naam())
+            String read = own ? fieldName(javaClass, b.field().property(), b.field().name())
                     : route(Route.READ) + "(this, " + str(b.field().property()) + ")";
             if (b.form() == Binding.ReadForm.VALUE) return b.target() + " : " + (own ? read : "(" + read + ")");
             return b.target() + " : (" + readForm(read, b.form(), b.category()) + ")";
@@ -544,10 +544,10 @@ final class DrlRendering {
          *  the branch by its name, a member of a bean by the name Drools reads its getter under
          *  ({@code Namen.lidnamen}); a member {@code naam} that Drools reads as something else where a pattern spells
          *  its name is refused, by name, since a constraint on it could hold or fail without a word. */
-        private String fieldName(Class<?> javaClass, String property, String naam) {
+        private String fieldName(Class<?> javaClass, String property, String name) {
             if (!isBean(javaClass)) return property;
             String drl = Namen.lidnamen(property).drlProperty();
-            if (drl == null) throw new Refusal(DroolsCode.DRL_MEMBER_NO_PROPERTY.reason("category", DroolsCode.DRL_MEMBER_NO_PROPERTY.part("member", "member", str(naam))));
+            if (drl == null) throw new Refusal(DroolsCode.DRL_MEMBER_NO_PROPERTY.reason("category", DroolsCode.DRL_MEMBER_NO_PROPERTY.part("member", "member", str(name))));
             return drl;
         }
 
@@ -567,18 +567,18 @@ final class DrlRendering {
          *  (the object itself where it is null) as {@code form} says. */
         private String pathFunction(List<Binding.Field> path, String property, Binding.ReadForm form, Class<?> category) {
             int place = reserveer();
-            String naam = naam("pad", place);
+            String name = name("pad", place);
             List<String> steps = new ArrayList<>();
             for (Binding.Field v : path) steps.add(str(v.property()));
             String along = route(Route.ALONG) + "(o, java.util.Arrays.asList(" + String.join(", ", steps) + "))";
             if (property == null && form == Binding.ReadForm.VALUE) {
-                fill(place, null, "Object " + naam + "(Object o)", "    return " + along + ";\n");
-                return naam;
+                fill(place, null, "Object " + name + "(Object o)", "    return " + along + ";\n");
+                return name;
             }
             String read = property == null ? "bereikt" : route(Route.READ) + "(bereikt, " + str(property) + ")";
-            fill(place, null, "Object " + naam + "(Object o)", "    Object bereikt = " + along + ";\n"
+            fill(place, null, "Object " + name + "(Object o)", "    Object bereikt = " + along + ";\n"
                     + "    return bereikt == null ? null : " + readForm(read, form, category) + ";\n");
-            return naam;
+            return name;
         }
 
         /** An alpha constraint: its field tests in order, as one constraint. */
@@ -628,16 +628,16 @@ final class DrlRendering {
             if (elements.size() <= 6)
                 return route(Route.valueOf("LIST" + elements.size())) + "(" + String.join(", ", elements) + ")";
             int place = reserveer();
-            String naam = naam("lijst", place);
-            fill(place, null, "java.util.List " + naam + "()", "    return java.util.Arrays.asList("
+            String name = name("lijst", place);
+            fill(place, null, "java.util.List " + name + "()", "    return java.util.Arrays.asList("
                     + String.join(", ", elements) + ");\n");
-            return naam + "()";
+            return name + "()";
         }
 
         /** The test of the rule: a function that asks of the condition what its role says, called in an {@code eval}. */
         private String test(TestItem t) {
             int place = reserveer();
-            String naam = naam("toets", place);
+            String name = name("toets", place);
             boolean deposit = t.role() == TestItem.Role.DEPOSIT;
             Context c = context(t.slots(), deposit ? t.depositFlag() : -1, route(Route.FRESH_DEPOSIT_FLAG) + "()", t.test());
             String b = bool(t.test(), c);
@@ -650,8 +650,8 @@ final class DrlRendering {
                 case DEPOSIT -> tryCatch("        boolean uitkomst = " + b + ";\n", caught) + "    return "
                         + route(Route.REPORTED) + "(" + DEPOSIT_FLAG + ");\n";
             };
-            fill(place, t.test().source(), "boolean " + naam + "(" + c.declaration() + ")", body);
-            return "eval( " + naam + "(" + c.arguments() + ") )";
+            fill(place, t.test().source(), "boolean " + name + "(" + c.declaration() + ")", body);
+            return "eval( " + name + "(" + c.arguments() + ") )";
         }
 
         /** A try with {@code probeer} as its body and {@code vangst} as the body of its catch of a
@@ -697,14 +697,14 @@ final class DrlRendering {
                     String p = c.slots.get(l.slot());
                     if (p == null)
                         throw new IllegalStateException("de term leest slot " + l.slot() + ", dat haar plaats in "
-                                + plan.naam() + " niet doorgeeft");
+                                + plan.name() + " niet doorgeeft");
                     yield new Expr(p, Object.class);
                 }
                 case Term.Input i -> new Expr(readForm(route(Route.READ) + "(" + value(i.object(), c).text() + ", "
                         + str(i.field().property()) + ")", i.form(), null), Object.class);
                 case Term.Binder b -> {
                     String call = c.binders.get(b.slot());
-                    if (call == null) throw new IllegalStateException("de binder " + b.naam() + " buiten zijn Let");
+                    if (call == null) throw new IllegalStateException("de binder " + b.name() + " buiten zijn Let");
                     yield new Expr(call, Object.class);
                 }
                 case Term.Let l -> new Expr(let(l, c), Object.class);
@@ -738,7 +738,7 @@ final class DrlRendering {
                 case Term.WithoutFault z -> new Expr("Boolean.valueOf(" + withoutFault(z, c) + ")", Boolean.class);
                 case Term.DayKind d -> {
                     String global = dayKind(d);
-                    if (!c.has(global)) throw new IllegalStateException("de dagsoort " + d.naam() + " buiten haar context");
+                    if (!c.has(global)) throw new IllegalStateException("de dagsoort " + d.name() + " buiten haar context");
                     yield new Expr(global, java.util.function.Predicate.class);
                 }
             };
@@ -748,7 +748,7 @@ final class DrlRendering {
         private Expr depositFlag(int slot, Context c) {
             if (slot < 0) return new Expr("null", null);
             if (slot != c.depositFlag)
-                throw new IllegalStateException("een plaats in " + plan.naam() + " meldt aan slot " + slot
+                throw new IllegalStateException("een plaats in " + plan.name() + " meldt aan slot " + slot
                         + ", niet aan de sonde van haar positie");
             return new Expr(DEPOSIT_FLAG, Object.class);
         }
@@ -778,7 +778,7 @@ final class DrlRendering {
          *  each, the quantifier's verdict where none stops it. */
         private String compound(Term.Compound s, Context c) {
             int place = reserveer();
-            String naam = naam("samengesteld", place);
+            String name = name("samengesteld", place);
             String kw = enumlabel(s.quantifier());
             int n = s.members().size();
             StringBuilder b = new StringBuilder("    int raak = 0;\n    Boolean vast;\n");
@@ -790,29 +790,29 @@ final class DrlRendering {
             }
             b.append("    return ").append(route(Route.END_VERDICT)).append("(").append(kw).append(", ")
                     .append(s.threshold()).append(", raak, ").append(n).append(");\n");
-            fill(place, s.source(), "boolean " + naam + "(" + c.declaration() + ")", b.toString());
-            return naam + "(" + c.pass() + ")";
+            fill(place, s.source(), "boolean " + name + "(" + c.declaration() + ")", b.toString());
+            return name + "(" + c.pass() + ")";
         }
 
         /** A condition where its evaluation answers, and not holding where it faults. */
         private String withoutFault(Term.WithoutFault z, Context c) {
             int place = reserveer();
-            String naam = naam("zonderfout", place);
+            String name = name("zonderfout", place);
             String b = bool(z.condition(), c);
-            fill(place, z.source(), "boolean " + naam + "(" + c.declaration() + ")", tryCatch("        return " + b + ";\n",
+            fill(place, z.source(), "boolean " + name + "(" + c.declaration() + ")", tryCatch("        return " + b + ";\n",
                     "        " + route(Route.CAUGHT) + "(e);\n        return false;\n"));
-            return naam + "(" + c.pass() + ")";
+            return name + "(" + c.pass() + ")";
         }
 
         /** The evaluation of a fold in the rule that reads it: its filter's deposit heard by the position's probe, then
          *  the first filter fault, then the first member fault, then the fold's value. */
         private String foldRead(Term.FoldRead v, Context c) {
             int place = reserveer();
-            String naam = naam("vouwlezing", place);
+            String name = name("vouwlezing", place);
             StringBuilder b = new StringBuilder();
             if (v.depositFlag() >= 0) {
                 if (v.deposits() < 0)
-                    throw new IllegalStateException("een vouwlezing met een sonde en zonder deponeringen in " + plan.naam());
+                    throw new IllegalStateException("een vouwlezing met een sonde en zonder deponeringen in " + plan.name());
                 b.append("    ").append(route(Route.REPORT_FILTER_DEPOSITS)).append("(")
                         .append(depositFlag(v.depositFlag(), c).text()).append(", ").append(slot(v.deposits(), c))
                         .append(");\n");
@@ -828,25 +828,25 @@ final class DrlRendering {
                         .append(") ").append(f).append(").fault();\n    }\n");
             }
             b.append("    return ").append(value(v.outcome(), c).text()).append(";\n");
-            fill(place, v.source(), "Object " + naam + "(" + c.declaration() + ")", b.toString());
-            return naam + "(" + c.pass() + ")";
+            fill(place, v.source(), "Object " + name + "(" + c.declaration() + ")", b.toString());
+            return name + "(" + c.pass() + ")";
         }
 
         private String slot(int slot, Context c) {
             String p = c.slots.get(slot);
             if (p == null)
-                throw new IllegalStateException("slot " + slot + " staat niet in de context van een term van " + plan.naam());
+                throw new IllegalStateException("slot " + slot + " staat niet in de context van een term van " + plan.name());
             return p;
         }
 
         /** The verdict of a quantifier fold whose matrix can fault or deposit, through its function. */
         private String quantifierRead(Term.QuantifierRead q, Context c) {
             int place = reserveer();
-            String naam = naam("kwantorlezing", place);
+            String name = name("kwantorlezing", place);
             Expr call = call(q.function(), List.of(value(q.count(), c), value(q.contributions(), c),
                     constant(q.quantifier()), constant(q.threshold()), depositFlag(q.depositFlag(), c)));
-            fill(place, q.source(), "Object " + naam + "(" + c.declaration() + ")", "    return " + call.text() + ";\n");
-            return naam + "(" + c.pass() + ")";
+            fill(place, q.source(), "Object " + name + "(" + c.declaration() + ")", "    return " + call.text() + ";\n");
+            return name + "(" + c.pass() + ")";
         }
 
         /**
@@ -857,9 +857,9 @@ final class DrlRendering {
          */
         private String let(Term.Let l, Context c) {
             int place = reserveer();
-            String naam = naam("let", place);
+            String name = name("let", place);
             int binderPlace = reserveer();
-            String binder = naam("binder", binderPlace);
+            String binder = name("binder", binderPlace);
             String cell = "cel_" + l.slot();
             Context inside = c.withCell(cell);
             inside.binders.put(l.slot(), binder + "(" + inside.pass() + ")");
@@ -869,11 +869,11 @@ final class DrlRendering {
                     "    if (!" + route(Route.BINDER_CELL_FILLED) + "(" + cell + ")) {\n        "
                             + route(Route.FILL_BINDER_CELL) + "(" + cell + ", " + value + ");\n    }\n    return "
                             + route(Route.BINDER_VALUE) + "(" + cell + ");\n");
-            fill(place, l.source(), "Object " + naam + "(" + c.declaration() + ")",
+            fill(place, l.source(), "Object " + name + "(" + c.declaration() + ")",
                     "    Object " + cell + " = " + route(Route.BINDER_CELL) + "();\n    try {\n        return " + body
                             + ";\n    } catch (" + typeName(EmptyBarrier.class) + " barriere) {\n        return "
                             + route(Route.INTERCEPTED) + "(barriere, " + cell + ");\n    }\n");
-            return naam + "(" + c.pass() + ")";
+            return name + "(" + c.pass() + ")";
         }
 
         // ---------------- the consequence ----------------
@@ -883,18 +883,18 @@ final class DrlRendering {
             switch (g) {
                 case Consequence.Value x -> value(x, b);
                 case Consequence.Characteristic x -> insert(b, "    ", x.insertion(), "new " + typeName(HasCharacteristic.class) + "("
-                        + x.onderwerp() + ", " + key(x.characteristic()) + ")");
+                        + x.subject() + ", " + key(x.characteristic()) + ")");
                 case Consequence.TestFault x -> testFault(x, b);
                 case Consequence.Fault x -> insert(b, "    ", x.insertion(), "new " + typeName(Fault.class) + "("
-                        + x.onderwerp() + ", " + str(x.fault().form()) + ", " + route(Route.COMPUTE_FAULT) + "("
-                        + str(x.sentence()) + ", " + str(x.fault().regel()) + "))");
+                        + x.subject() + ", " + str(x.fault().form()) + ", " + route(Route.COMPUTE_FAULT) + "("
+                        + str(x.sentence()) + ", " + str(x.fault().rule()) + "))");
                 case Consequence.Inconsistency x -> insert(b, "    ", x.insertion(), route(Route.INCONSISTENCY) + "("
-                        + str(x.form()) + ", " + x.onderwerp() + ", " + list(texts(x.codes())) + ")");
+                        + str(x.form()) + ", " + x.subject() + ", " + list(texts(x.codes())) + ")");
                 case Consequence.ConditionDeposit x -> insert(b, "    ", x.insertion(), route(Route.INCONSISTENCY) + "("
-                        + str(x.form()) + ", " + x.onderwerp() + ", " + depositCodesAgain(x.condition(), x.depositFlag(),
+                        + str(x.form()) + ", " + x.subject() + ", " + depositCodesAgain(x.condition(), x.depositFlag(),
                                 x.slots(), "de voorwaarde van \"" + x.form() + "\"") + ")");
                 case Consequence.WritersConflict x -> insert(b, "    ", x.insertion(), route(Route.WRITERS_CONFLICT)
-                        + "(" + x.onderwerp() + ", " + variable(x.waarden()) + ", " + str(x.attribute()) + ", "
+                        + "(" + x.subject() + ", " + variable(x.values()) + ", " + str(x.attribute()) + ", "
                         + list(texts(x.documentOrder())) + ", " + list(texts(x.typeClasses())) + ", "
                         + list(texts(x.types())) + ")");
                 case Consequence.InsertParameterState x -> insert(b, "    ", x.insertion(), "new "
@@ -902,29 +902,29 @@ final class DrlRendering {
                 case Consequence.EvaluationDateState x -> insert(b, "    ", x.insertion(), "new " + typeName(EvaluationDate.class)
                         + "(" + x.global() + ")");
                 case Consequence.InsertCharacteristicState x -> insert(b, "    ", x.insertion(), "new " + typeName(CharacteristicState.class)
-                        + "(" + x.onderwerp() + ", " + key(x.characteristic()) + ", " + x.holds() + ")");
+                        + "(" + x.subject() + ", " + key(x.characteristic()) + ", " + x.holds() + ")");
                 case Consequence.State x -> insert(b, "    ", x.insertion(), "new " + typeName(State.class) + "("
-                        + x.onderwerp() + ", " + key(x.attribute()) + ", " + (x.bucketScalar()
+                        + x.subject() + ", " + key(x.attribute()) + ", " + (x.bucketScalar()
                         ? route(Route.BUCKET_SCALAR) + "(" + variable(x.value()) + ")" : variable(x.value())) + ")");
                 case Consequence.InsertPathState x -> insert(b, "    ", x.insertion(), "new " + typeName(PathState.class) + "("
-                        + x.onderwerp() + ", " + str(x.path()) + ", " + key(x.member()) + ", "
+                        + x.subject() + ", " + str(x.path()) + ", " + key(x.member()) + ", "
                         + (x.source() == Consequence.StateSource.MISSING_LINK ? "null" : variable(x.value())) + ")");
                 case Consequence.Contribution x -> contribution(x, b);
                 case Consequence.FilterDeposit x -> insert(b, "    ", x.insertion(), "new "
-                        + typeName(FilterDeposit.class) + "(" + str(x.fold()) + ", " + x.onderwerp() + ", "
+                        + typeName(FilterDeposit.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "
                         + variable(x.member()) + ", " + depositCodesAgain(x.filter(), x.depositFlag(), x.slots(),
                                 "het filter van " + x.fold()) + ")");
                 case Consequence.FilterFault x -> filterFault(x, b);
                 case Consequence.MemberFault x -> insert(b, "    ", x.insertion(), "new " + typeName(MemberFault.class) + "("
-                        + str(x.fold()) + ", " + x.onderwerp() + ", " + variable(x.member()) + ", "
+                        + str(x.fold()) + ", " + x.subject() + ", " + variable(x.member()) + ", "
                         + route(Route.INPUT_FORM_FAULT) + "(" + str(x.before()) + ", " + variable(x.member()) + ", "
                         + str(x.after()) + ", null), " + foldPlace(x.place(), x.fold(), x.member(), null) + ")");
                 case Consequence.UniquenessKey x -> uniquenessKey(x, b);
                 case Consequence.UniquenessViolation x -> insert(b, "    ", x.insertion(), "new "
-                        + typeName(UniquenessViolation.class) + "(" + str(x.uniqueness()) + ", " + x.onderwerp() + ")");
+                        + typeName(UniquenessViolation.class) + "(" + str(x.uniqueness()) + ", " + x.subject() + ")");
                 case Consequence.InputFormFault x -> insert(b, "    ", x.insertion(), "new " + typeName(Fault.class) + "("
-                        + x.onderwerp() + ", " + str(x.fault().form()) + ", " + route(Route.INPUT_FORM_FAULT) + "("
-                        + str(x.before()) + ", " + x.onderwerp() + ", " + str(x.after()) + ", " + str(x.fault().regel())
+                        + x.subject() + ", " + str(x.fault().form()) + ", " + route(Route.INPUT_FORM_FAULT) + "("
+                        + str(x.before()) + ", " + x.subject() + ", " + str(x.after()) + ", " + str(x.fault().rule())
                         + "))");
                 case Consequence.InsertChannelState x -> insert(b, "    ", x.insertion(), "new " + typeName(ChannelState.class)
                         + "(" + str(x.producer()) + ", " + x.inconsistent() + ")");
@@ -935,19 +935,19 @@ final class DrlRendering {
                         + str(x.relation()) + ", " + x.first() + ", " + x.second() + ", "
                         + (x.phase() < 0 ? "0" : variable(x.phase())) + ")");
                 case Consequence.SecondFilling x -> insert(b, "    ", x.insertion(), "new " + typeName(Fault.class) + "("
-                        + x.onderwerp() + ", " + str(x.relation()) + ", new " + typeName(IllegalStateException.class)
+                        + x.subject() + ", " + str(x.relation()) + ", new " + typeName(IllegalStateException.class)
                         + "(" + str(x.sentence()) + "))");
                 case Consequence.Recipient x -> insert(b, "    ", x.insertion(), "new " + typeName(Recipient.class) + "("
-                        + str(x.allocation()) + ", " + x.onderwerp() + ", " + variable(x.recipient()) + ", "
+                        + str(x.allocation()) + ", " + x.subject() + ", " + variable(x.recipient()) + ", "
                         + slotOfNull(x.weight()) + ", " + slotOfNull(x.key()) + ", " + slotOfNull(x.maximum()) + ")");
                 case Consequence.Payout x -> payout(x, b);
             }
             return b.toString();
         }
 
-        private List<String> texts(List<String> waarden) {
+        private List<String> texts(List<String> values) {
             List<String> out = new ArrayList<>();
-            for (String w : waarden) out.add(str(w));
+            for (String w : values) out.add(str(w));
             return out;
         }
 
@@ -962,25 +962,25 @@ final class DrlRendering {
         private void value(Consequence.Value x, StringBuilder b) {
             Consequence.Deposit d = x.deposit();
             int place = reserveer();
-            String naam = naam("waarde", place);
+            String name = name("waarde", place);
             Context c = context(x.slots(), d == null ? -1 : d.depositFlag(), DEPOSIT_FLAG, x.value());
             Expr e = value(x.value(), c);
             String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
-            fill(place, x.value().source(), "Object " + naam + "(" + c.declaration() + ")",
+            fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")",
                     tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
             if (d != null) b.append("    Object ").append(DEPOSIT_FLAG).append(" = ").append(route(Route.FRESH_DEPOSIT_FLAG)).append("();\n");
-            b.append("    Object v = ").append(naam).append("(").append(c.arguments()).append(");\n");
+            b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
             b.append("    if (").append(route(Route.IS_EVALUATION_FAULT)).append("(v)) {\n");
-            insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.onderwerp() + ", "
-                    + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().regel()) + "))");
+            insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
+                    + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
             b.append("    } else {\n");
             if (d != null) {
                 b.append("        if (").append(route(Route.REPORTED)).append("(").append(DEPOSIT_FLAG).append(")) {\n");
                 insert(b, "            ", x.insertion(), route(Route.INCONSISTENCY) + "(" + str(d.form()) + ", "
-                        + x.onderwerp() + ", " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + "))");
+                        + x.subject() + ", " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + "))");
                 b.append("        }\n");
             }
-            String fact = "new " + typeName(Value.class) + "(" + x.onderwerp() + ", " + key(x.target()) + ", v, "
+            String fact = "new " + typeName(Value.class) + "(" + x.subject() + ", " + key(x.target()) + ", v, "
                     + str(x.writer()) + ")";
             if (x.writesEmpty()) {
                 insert(b, "        ", x.insertion(), fact);
@@ -998,7 +998,7 @@ final class DrlRendering {
          *  that heard nothing a broken contract of {@code what}; returns its call. */
         private String depositCodesAgain(Term condition, int depositFlag, List<Integer> slots, String what) {
             int place = reserveer();
-            String naam = naam("deponering", place);
+            String name = name("deponering", place);
             Context c = context(slots, depositFlag, route(Route.FRESH_DEPOSIT_FLAG) + "()", condition);
             String body = tryCatch("        boolean uitkomst = " + bool(condition, c) + ";\n",
                     "        " + route(Route.CAUGHT) + "(e);\n")
@@ -1006,27 +1006,27 @@ final class DrlRendering {
                     + route(Route.CONTRACT_BREACH) + "(" + str(what + " deponeerde in de toets en niet in het gevolg,"
                             + " over dezelfde gebonden waarden") + ");\n    }\n"
                     + "    return " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + ");\n";
-            fill(place, condition.source(), "java.util.List " + naam + "(" + c.declaration() + ")", body);
-            return naam + "(" + c.arguments() + ")";
+            fill(place, condition.source(), "java.util.List " + name + "(" + c.declaration() + ")", body);
+            return name + "(" + c.arguments() + ")";
         }
 
         /** The fault of {@link Consequence.TestFault}: the condition evaluated again over the same bound values, its
          *  evaluation fault inserted, and an answer there a broken contract. */
         private void testFault(Consequence.TestFault x, StringBuilder b) {
             int place = reserveer();
-            String naam = naam("fout", place);
+            String name = name("fout", place);
             Context c = context(x.slots(), -1, null, x.test());
             String t = bool(x.test(), c);
-            fill(place, x.test().source(), "Object " + naam + "(" + c.declaration() + ")",
+            fill(place, x.test().source(), "Object " + name + "(" + c.declaration() + ")",
                     tryCatch("        boolean uitkomst = " + t + ";\n        return null;\n",
                             "        return " + route(Route.CAUGHT) + "(e);\n"));
-            b.append("    Object f = ").append(naam).append("(").append(c.arguments()).append(");\n");
+            b.append("    Object f = ").append(name).append("(").append(c.arguments()).append(");\n");
             b.append("    if (!").append(route(Route.IS_EVALUATION_FAULT)).append("(f)) {\n        ")
                     .append(route(Route.CONTRACT_BREACH)).append("(").append(str("de voorwaarde van \"" + x.fault().form()
                             + "\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden"))
                     .append(");\n    }\n");
-            insert(b, "    ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.onderwerp() + ", "
-                    + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(f, " + str(x.fault().regel()) + "))");
+            insert(b, "    ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
+                    + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(f, " + str(x.fault().rule()) + "))");
         }
 
         /** The contribution of {@link Consequence.Contribution} on the fold's subject: the member itself; its value through
@@ -1035,13 +1035,13 @@ final class DrlRendering {
          *  evaluates the matrix with the probe where the plan names one, and gives the verdict or the evaluation
          *  fault. */
         private void contribution(Consequence.Contribution x, StringBuilder b) {
-            String fresh = "new " + typeName(Contribution.class) + "(" + str(x.fold()) + ", " + x.onderwerp() + ", "
+            String fresh = "new " + typeName(Contribution.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "
                     + variable(x.member()) + ", ";
             switch (x.input()) {
                 case Consequence.Input.Count t -> insert(b, "    ", x.insertion(), fresh + "null)");
                 case Consequence.Input.MemberValue l -> {
                     b.append("    Object v = ").append(route(Route.CONTRIBUTION)).append("(").append(str(x.fold()))
-                            .append(", ").append(x.onderwerp()).append(", ").append(variable(x.member())).append(", ")
+                            .append(", ").append(x.subject()).append(", ").append(variable(x.member())).append(", ")
                             .append(variable(l.value())).append(", ")
                             .append(l.total() == null ? "null" : str(l.total())).append(", ").append(l.filled())
                             .append(");\n");
@@ -1051,16 +1051,16 @@ final class DrlRendering {
                 }
                 case Consequence.Input.Verdict o -> {
                     int place = reserveer();
-                    String naam = naam("matrix", place);
+                    String name = name("matrix", place);
                     Context c = context(x.slots(), -1, null, o.matrix());
-                    fill(place, o.matrix().source(), "boolean " + naam + "(" + c.declaration() + ")",
+                    fill(place, o.matrix().source(), "boolean " + name + "(" + c.declaration() + ")",
                             "    return " + bool(o.matrix(), c) + ";\n");
-                    insert(b, "    ", x.insertion(), fresh + route(Route.VERDICT) + "(" + naam + "(" + c.arguments()
+                    insert(b, "    ", x.insertion(), fresh + route(Route.VERDICT) + "(" + name + "(" + c.arguments()
                             + ")))");
                 }
                 case Consequence.Input.MemberTest l -> {
                     int place = reserveer();
-                    String naam = naam("lidtoets", place);
+                    String name = name("lidtoets", place);
                     Context c = context(x.slots(), l.depositFlag(), route(Route.FRESH_DEPOSIT_FLAG) + "()", l.matrix());
                     // the place first, so that a member without one breaks the contract before the matrix is evaluated
                     String body = "    java.util.List plaats = " + foldPlace(l.place(), x.fold(), x.member(), c)
@@ -1070,8 +1070,8 @@ final class DrlRendering {
                             + "    return new " + typeName(MemberTest.class) + "(plaats, waar, fout, "
                             + route(Route.REPORTED) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "), "
                             + route(Route.DEPOSIT_CODES) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "));\n";
-                    fill(place, l.matrix().source(), "Object " + naam + "(" + c.declaration() + ")", body);
-                    insert(b, "    ", x.insertion(), fresh + naam + "(" + c.arguments() + "))");
+                    fill(place, l.matrix().source(), "Object " + name + "(" + c.declaration() + ")", body);
+                    insert(b, "    ", x.insertion(), fresh + name + "(" + c.arguments() + "))");
                 }
             }
         }
@@ -1083,7 +1083,7 @@ final class DrlRendering {
          *  reach the parser of the text. */
         private void uniquenessKey(Consequence.UniquenessKey x, StringBuilder b) {
             int place = reserveer();
-            String naam = naam("componenten", place);
+            String name = name("componenten", place);
             Context c = context(x.slots(), -1, null, x.components().toArray(new Term[0]));
             StringBuilder body = new StringBuilder("    java.util.List waarden = new java.util.ArrayList();\n");
             List<String> sources = new ArrayList<>();
@@ -1093,10 +1093,10 @@ final class DrlRendering {
             }
             body.append("    return waarden;\n");
             fill(place, sources.isEmpty() ? null : String.join("; ", sources),
-                    "java.util.List " + naam + "(" + c.declaration() + ")", body.toString());
+                    "java.util.List " + name + "(" + c.declaration() + ")", body.toString());
             b.append("    for (Object k : ").append(route(Route.UNIQUENESS_KEYS)).append("(").append(str(x.uniqueness()))
-                    .append(", ").append(x.source()).append(", ").append(x.onderwerp()).append(", ")
-                    .append(x.scope() < 0 ? "null" : variable(x.scope())).append(", ").append(naam).append("(")
+                    .append(", ").append(x.source()).append(", ").append(x.subject()).append(", ")
+                    .append(x.scope() < 0 ? "null" : variable(x.scope())).append(", ").append(name).append("(")
                     .append(c.arguments()).append("), ").append(x.timeline()).append(")) {\n");
             insert(b, "        ", x.insertion(), "k");
             b.append("    }\n");
@@ -1109,23 +1109,23 @@ final class DrlRendering {
          *  else the facts of the decision in the order of the plan. */
         private void decisionOf(Consequence.Decision x, StringBuilder b) {
             int place = reserveer();
-            String naam = naam("afloop", place);
+            String name = name("afloop", place);
             Context c = context(x.slots(), -1, null, x.value());
             Expr e = value(x.value(), c);
             String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
-            fill(place, x.value().source(), "Object " + naam + "(" + c.declaration() + ")", x.fault() == null
+            fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")", x.fault() == null
                     ? "    return " + v + ";\n"
                     : tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
-            b.append("    Object v = ").append(naam).append("(").append(c.arguments()).append(");\n");
+            b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
             if (x.fault() != null) {
                 b.append("    if (").append(route(Route.IS_EVALUATION_FAULT)).append("(v)) {\n");
-                insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.onderwerp() + ", "
-                        + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().regel()) + "))");
+                insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
+                        + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
                 b.append("    } else if (v != null) {\n");
             } else {
                 b.append("    if (v != null) {\n");
             }
-            for (Consequence.StackFact f : x.facts()) insert(b, "        ", x.insertion(), stackFact(f, x.onderwerp()));
+            for (Consequence.StackFact f : x.facts()) insert(b, "        ", x.insertion(), stackFact(f, x.subject()));
             b.append("    }\n");
         }
 
@@ -1133,28 +1133,28 @@ final class DrlRendering {
          *  conflicting member bound off its outcome, and the rule inserts the fact of the plan under it. */
         private void conflict(Consequence.Conflict x, StringBuilder b) {
             int place = reserveer();
-            String naam = naam("conflict", place);
+            String name = name("conflict", place);
             Context c = context(x.slots(), -1, null, x.key());
-            fill(place, x.key().source(), "Object " + naam + "(" + c.declaration() + ")",
+            fill(place, x.key().source(), "Object " + name + "(" + c.declaration() + ")",
                     "    return " + value(x.key(), c).text() + ";\n");
-            b.append("    Object v = ").append(naam).append("(").append(c.arguments()).append(");\n");
-            insert(b, "    ", x.insertion(), stackFact(x.fact(), x.onderwerp()));
+            b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
+            insert(b, "    ", x.insertion(), stackFact(x.fact(), x.subject()));
         }
 
-        /** The fact {@code f} of a defaults stack on {@code onderwerp}, with the local {@code v} of the consequence: the
+        /** The fact {@code f} of a defaults stack on {@code subject}, with the local {@code v} of the consequence: the
          *  decision, or the key of a conflict. */
-        private String stackFact(Consequence.StackFact f, String onderwerp) {
+        private String stackFact(Consequence.StackFact f, String subject) {
             return switch (f) {
-                case Consequence.StackFact.Value x -> "new " + typeName(Value.class) + "(" + onderwerp + ", "
+                case Consequence.StackFact.Value x -> "new " + typeName(Value.class) + "(" + subject + ", "
                         + key(x.target()) + ", v, " + str(x.writer()) + ")";
-                case Consequence.StackFact.Characteristic x -> "new " + typeName(HasCharacteristic.class) + "(" + onderwerp + ", "
+                case Consequence.StackFact.Characteristic x -> "new " + typeName(HasCharacteristic.class) + "(" + subject + ", "
                         + key(x.characteristic()) + ")";
-                case Consequence.StackFact.Decides x -> "new " + typeName(Decides.class) + "(" + onderwerp + ", "
+                case Consequence.StackFact.Decides x -> "new " + typeName(Decides.class) + "(" + subject + ", "
                         + str(x.stack()) + ", " + x.index() + ")";
-                case Consequence.StackFact.Outcome x -> "new " + typeName(Outcome.class) + "(" + onderwerp + ", "
+                case Consequence.StackFact.Outcome x -> "new " + typeName(Outcome.class) + "(" + subject + ", "
                         + str(x.stack()) + ", " + x.chain() + ", " + x.position() + ", " + enumlabel(x.category()) + ", "
                         + (x.category() == Outcome.Kind.DECIDED ? "v, null" : "null, (String) v") + ")";
-                case Consequence.StackFact.Inconsistency x -> route(Route.INCONSISTENCY) + "((String) v, " + onderwerp + ", "
+                case Consequence.StackFact.Inconsistency x -> route(Route.INCONSISTENCY) + "((String) v, " + subject + ", "
                         + list(texts(Consequence.StackFact.Inconsistency.CODES)) + ")";
             };
         }
@@ -1173,55 +1173,55 @@ final class DrlRendering {
          */
         private void creation(Consequence.Creation x, StringBuilder b) {
             int place = reserveer();
-            String naam = naam("creatie", place);
-            List<Term> waarden = new ArrayList<>();
+            String name = name("creatie", place);
+            List<Term> values = new ArrayList<>();
             List<String> sources = new ArrayList<>();
             for (Consequence.Initialisation i : x.initialisations()) {
-                waarden.add(i.value());
+                values.add(i.value());
                 if (i.value().source() != null) sources.add(i.value().source());
             }
-            Context c = context(x.slots(), -1, null, waarden.toArray(new Term[0]));
+            Context c = context(x.slots(), -1, null, values.toArray(new Term[0]));
             // the subject is the variable of the rule's subject pattern, and a slot only where the plan reads it as one
-            if (!c.has(x.onderwerp())) c.parameter("Object", x.onderwerp(), x.onderwerp());
+            if (!c.has(x.subject())) c.parameter("Object", x.subject(), x.subject());
             Consequence.CreationDepth d = x.depth();
             StringBuilder f = new StringBuilder();
             f.append("    int diepte = ").append(route(Route.CREATION_DEPTH)).append("(").append(str(x.creation()))
                     .append(", ").append(d.stratum()).append(", ").append(str(d.type())).append(", (java.util.List) ")
                     .append(slot(d.origin(), c)).append(", ").append(d.budget()).append(");\n");
-            if (!waarden.isEmpty()) {
+            if (!values.isEmpty()) {
                 StringBuilder probeer = new StringBuilder();
-                for (int i = 0; i < waarden.size(); i++) {
+                for (int i = 0; i < values.size(); i++) {
                     f.append("    Object i").append(i).append(" = null;\n");
                     probeer.append("        i").append(i).append(" = ")
-                            .append(call(StaticFunction.COLLAPSE, List.of(value(waarden.get(i), c))).text()).append(";\n");
+                            .append(call(StaticFunction.COLLAPSE, List.of(value(values.get(i), c))).text()).append(";\n");
                 }
                 f.append(tryCatch(probeer.toString(), "        return " + route(Route.CAUGHT) + "(e);\n"));
             }
-            f.append("    Object nieuw = ").append(route(Route.NEW_OBJECT)).append("(").append(x.onderwerp())
+            f.append("    Object nieuw = ").append(route(Route.NEW_OBJECT)).append("(").append(x.subject())
                     .append(", ").append(str(x.construction().javaClass().getName())).append(");\n");
             for (Consequence.Construction.Setting z : x.construction().settings())
                 f.append("    ").append(route(Route.SET)).append("(nieuw, ").append(str(z.field().property()))
-                        .append(", i").append(z.initialisatie()).append(");\n");
+                        .append(", i").append(z.initialisation()).append(");\n");
             f.append("    int fase = ((Integer) ").append(slot(x.phase(), c)).append(").intValue();\n");
             f.append("    java.util.List feiten = new java.util.ArrayList();\n");
             for (Consequence.Insert i : x.insertions())
                 f.append("    feiten.add(").append(switch (i) {
                     case Consequence.Insert.New n -> "nieuw";
                     case Consequence.Insert.Mark m -> "new " + typeName(CreationStamp.class) + "(" + str(x.creation()) + ", "
-                            + x.onderwerp() + ", nieuw, fase, " + d.stratum() + ", diepte)";
+                            + x.subject() + ", nieuw, fase, " + d.stratum() + ", diepte)";
                     case Consequence.Insert.Link l -> "new " + typeName(RelationLink.class) + "(" + str(l.relation()) + ", "
-                            + (l.newIsFirst() ? "nieuw, " + x.onderwerp() : x.onderwerp() + ", nieuw") + ", fase)";
-                    case Consequence.Insert.Characteristic k -> "Boolean.TRUE.equals(i" + k.initialisatie() + ") ? new "
+                            + (l.newIsFirst() ? "nieuw, " + x.subject() : x.subject() + ", nieuw") + ", fase)";
+                    case Consequence.Insert.Characteristic k -> "Boolean.TRUE.equals(i" + k.initialisation() + ") ? new "
                             + typeName(HasCharacteristic.class) + "(nieuw, "
-                            + key(x.initialisations().get(k.initialisatie()).member()) + ") : null";
+                            + key(x.initialisations().get(k.initialisation()).member()) + ") : null";
                 }).append(");\n");
             f.append("    return feiten;\n");
             fill(place, sources.isEmpty() ? null : String.join("; ", sources),
-                    "Object " + naam + "(" + c.declaration() + ")", f.toString());
-            b.append("    Object v = ").append(naam).append("(").append(c.arguments()).append(");\n");
+                    "Object " + name + "(" + c.declaration() + ")", f.toString());
+            b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
             b.append("    if (").append(route(Route.IS_EVALUATION_FAULT)).append("(v)) {\n");
-            insert(b, "        ", x.faultInsertion(), "new " + typeName(Fault.class) + "(" + x.onderwerp() + ", "
-                    + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().regel()) + "))");
+            insert(b, "        ", x.faultInsertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
+                    + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
             b.append("    } else {\n        java.util.List feiten = (java.util.List) v;\n");
             for (int i = 0; i < x.insertions().size(); i++) {
                 Consequence.Insert s = x.insertions().get(i);
@@ -1246,7 +1246,7 @@ final class DrlRendering {
          *  {@code Integer} or null, and the keys as {@code ElementKey.van}. */
         private void payout(Consequence.Payout x, StringBuilder b) {
             b.append("    for (Object feit : ").append(route(Route.PAYOUT)).append("(").append(str(x.form()))
-                    .append(", ").append(x.onderwerp()).append(", ").append(enumlabel(x.method())).append(", ")
+                    .append(", ").append(x.subject()).append(", ").append(enumlabel(x.method())).append(", ")
                     .append(variable(x.pot())).append(", ").append(variable(x.list())).append(", ").append(x.gewogen())
                     .append(", ").append(x.capped()).append(", ").append(x.descending()).append(", ")
                     .append(x.decimals() == null ? "null" : "Integer.valueOf(" + x.decimals() + ")").append(", ")
@@ -1260,18 +1260,18 @@ final class DrlRendering {
          *  evaluation fault inserted with the member's place, and an answer there a broken contract. */
         private void filterFault(Consequence.FilterFault x, StringBuilder b) {
             int place = reserveer();
-            String naam = naam("fout", place);
+            String name = name("fout", place);
             Context c = context(x.slots(), -1, null, x.filter());
             String t = bool(x.filter(), c);
-            fill(place, x.filter().source(), "RuntimeException " + naam + "(" + c.declaration() + ")",
+            fill(place, x.filter().source(), "RuntimeException " + name + "(" + c.declaration() + ")",
                     tryCatch("        boolean uitkomst = " + t + ";\n        return null;\n",
                             "        return " + route(Route.CAUGHT) + "(e);\n"));
-            b.append("    RuntimeException f = ").append(naam).append("(").append(c.arguments()).append(");\n");
+            b.append("    RuntimeException f = ").append(name).append("(").append(c.arguments()).append(");\n");
             b.append("    if (f == null) {\n        ").append(route(Route.CONTRACT_BREACH)).append("(")
                     .append(str("het filter van " + x.fold() + " faalde in de toets en niet in het gevolg, over"
                             + " dezelfde gebonden waarden")).append(");\n    }\n");
             insert(b, "    ", x.insertion(), "new " + typeName(FilterFault.class) + "(" + str(x.fold()) + ", "
-                    + x.onderwerp() + ", " + variable(x.member()) + ", f, "
+                    + x.subject() + ", " + variable(x.member()) + ", f, "
                     + foldPlace(x.place(), x.fold(), x.member(), null) + ")");
         }
 
@@ -1283,7 +1283,7 @@ final class DrlRendering {
          */
         private String foldPlace(Consequence.FoldPlace p, String fold, int member, Context c) {
             int place = reserveer();
-            String naam = naam("plaats", place);
+            String name = name("plaats", place);
             List<String> parameters = new ArrayList<>(), fields = new ArrayList<>(), counts = new ArrayList<>(),
                     places = new ArrayList<>();
             parameters.add(variable(member));
@@ -1297,16 +1297,16 @@ final class DrlRendering {
             if (c != null)
                 for (String v : parameters)
                     if (!c.has(v))
-                        throw new IllegalStateException("de plaats van een lid in " + plan.naam() + " leest " + v
+                        throw new IllegalStateException("de plaats van een lid in " + plan.name() + " leest " + v
                                 + ", dat de functie van haar gevolg niet krijgt");
             List<String> declaration = new ArrayList<>();
             for (String v : parameters) declaration.add("Object " + v);
-            fill(place, null, "java.util.List " + naam + "(" + String.join(", ", declaration) + ")",
+            fill(place, null, "java.util.List " + name + "(" + String.join(", ", declaration) + ")",
                     "    return " + route(Route.FOLD_PLACE) + "(" + enumlabel(p.reason()) + ", " + str(fold) + ", "
                             + variable(member) + ", " + p.selection() + ", java.util.Arrays.asList("
                             + String.join(", ", fields) + "), java.util.Arrays.asList(" + String.join(", ", counts)
                             + "), java.util.Arrays.asList(" + String.join(", ", places) + "));\n");
-            return naam + "(" + String.join(", ", parameters) + ")";
+            return name + "(" + String.join(", ", parameters) + ")";
         }
 
         // ---------------- the day kinds of a term ----------------

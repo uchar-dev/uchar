@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 
 import org.junit.jupiter.api.Test;
@@ -111,7 +111,7 @@ class SubtypeRoleFillerWitnessTest {
      *  {@code Wrakvondst} and a {@code Scheepswrak}, and nothing that is no {@code Vondst}. */
     @Test void the_field_takes_each_subtype_of_the_filler_for_the_same_role() throws Exception {
         RegelSpraakModel model = IrLoader.load(golden());
-        Objecttype message = model.objectTypeByName("Melding");
+        ObjectType message = model.objectTypeByName("Melding");
         for (String t : List.of("Vondst", "Wrakvondst", "Scheepswrak"))
             assertTrue(FactModelGenerator.hasReferenceField(model, message, "vondst", model.objectTypeByName(t)), t);
         assertFalse(FactModelGenerator.hasReferenceField(model, message, "vondst", model.objectTypeByName("Rapport")));
@@ -132,7 +132,7 @@ class SubtypeRoleFillerWitnessTest {
         attributeReference.put("attribute", "dekhoogte").put("subjectType", "Vlot");
         ((ObjectNode) attributeReference.get("path").get(0)).put("factType", "vlotligging");
         RegelSpraakModel model = IrLoader.load(ir);
-        Objecttype schuit = model.objectTypeByName("Schuit");
+        ObjectType schuit = model.objectTypeByName("Schuit");
         assertTrue(FactModelGenerator.hasReferenceField(model, schuit, "ligger", model.objectTypeByName("Ponton")));
         assertFalse(FactModelGenerator.hasReferenceField(model, schuit, "ligger", model.objectTypeByName("Vlot")));
         // both branches name the missing field in the sentence of the analysis; until card
@@ -351,8 +351,8 @@ class SubtypeRoleFillerWitnessTest {
         return (ObjectNode) JSON.readTree(Files.readString(WRAKMELDING.resolve("ir.json")));
     }
 
-    private static JsonNode caseOf(String naam) throws Exception {
-        return JSON.readTree(Files.readString(WRAKMELDING.resolve(naam)));
+    private static JsonNode caseOf(String name) throws Exception {
+        return JSON.readTree(Files.readString(WRAKMELDING.resolve(name)));
     }
 
     private Path write(JsonNode ir) throws Exception {

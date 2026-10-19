@@ -87,10 +87,10 @@ class DoubleReadingTest {
         RegelSpraakModel m = Resolver.resolve(value("de premie van de jutter van de Vondst"));
         assertEquals(List.of(), m.errors());
         assertEquals(List.of(JUTTER_SENTENCE), warnings(m));
-        Expr.Binary sum = (Expr.Binary) m.resolvedRegels.get(0).value();
+        Expr.Binary sum = (Expr.Binary) m.resolvedRules.get(0).value();
         Expr.AttributeReference attributeRead = (Expr.AttributeReference) sum.left();
         assertEquals("premie van de jutter", attributeRead.attribute(), "the declaration is what is read");
-        assertEquals("Vondst", attributeRead.objectType().naam);
+        assertEquals("Vondst", attributeRead.objectType().name);
     }
 
     @Test void two_roles_far() {

@@ -215,9 +215,9 @@ class BeansFieldWitnessTest {
         return IrPath.version(ir, "uniquenesses", "eenmalig kaveletiket");
     }
 
-    private static ObjectNode factType(String naam, String role1, String ot1, boolean many1,
+    private static ObjectNode factType(String name, String role1, String ot1, boolean many1,
                                        String role2, String ot2, boolean many2) {
-        ObjectNode ft = JSON.createObjectNode().put("node", "FactType").put("name", naam).put("reciprocal", false);
+        ObjectNode ft = JSON.createObjectNode().put("node", "FactType").put("name", name).put("reciprocal", false);
         ArrayNode roles = ft.putArray("roles");
         // a role without a plural leaves the field out: the wire writes an optional field whole or not at all
         ObjectNode r1 = roles.addObject().put("node", "Role").put("name", role1).put("objectType", ot1);
@@ -247,8 +247,8 @@ class BeansFieldWitnessTest {
         }
     }
 
-    private static Path temporary(String naam, ObjectNode ir) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, ObjectNode ir) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         return tmp;

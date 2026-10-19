@@ -18,10 +18,10 @@ final class TermTree {
             case Term.Const c -> "Const " + value(c.value())
                     + (c.type() == null || c.type().unitOf() == null ? "" : " " + c.type().unitOf().rendering());
             case Term.SlotValue l -> "Lees " + l.slot();
-            case Term.Input i -> "Invoer " + i.field().javaClass().getSimpleName() + "." + i.field().naam() + " " + i.form()
+            case Term.Input i -> "Invoer " + i.field().javaClass().getSimpleName() + "." + i.field().name() + " " + i.form()
                     + " (" + tree(i.object()) + ")";
-            case Term.Binder b -> "Binder " + b.slot() + " " + b.naam();
-            case Term.Let l -> "Let " + l.slot() + " " + l.naam() + (l.eager() ? " gretig" : "") + " [" + tree(l.value())
+            case Term.Binder b -> "Binder " + b.slot() + " " + b.name();
+            case Term.Let l -> "Let " + l.slot() + " " + l.name() + (l.eager() ? " gretig" : "") + " [" + tree(l.value())
                     + "] in [" + tree(l.body()) + "]";
             case Term.Choice k -> "Keuze(" + tree(k.condition()) + ", " + tree(k.then()) + ", " + tree(k.otherwise()) + ")";
             case Term.Call a -> a.function() + list(a.arguments());
@@ -36,7 +36,7 @@ final class TermTree {
             case Term.ListedFold g -> "GelijsteVouw " + g.function() + list(g.operands());
             case Term.FoldRead v -> "Vouwlezing " + v.deposits() + " " + v.depositFlag() + " " + v.filterFault() + " "
                     + v.memberFault() + " (" + tree(v.outcome()) + ")";
-            case Term.DayKind d -> "Dagsoort " + d.naam();
+            case Term.DayKind d -> "Dagsoort " + d.name();
             case Term.Compound s -> "Samengesteld " + s.quantifier() + " " + s.threshold() + list(s.members());
             case Term.QuantifierRead k -> "Kwantorlezing " + k.function() + " " + k.quantifier() + " " + k.threshold()
                     + " sonde " + k.depositFlag() + " (" + tree(k.count()) + ", " + tree(k.contributions()) + ")";
@@ -48,15 +48,15 @@ final class TermTree {
      *  {@code site}, the i-th child of the node at p at p.i), its kind, its source fragment where it carries one, and
      *  of a constant the class of its value and, where it has one, its whole IR type, as the type's record prints
      *  it. */
-    static void fields(String naam, Term t, String site, List<String> out) {
-        StringBuilder regel = new StringBuilder(naam + " " + site + " " + t.getClass().getSimpleName());
+    static void fields(String name, Term t, String site, List<String> out) {
+        StringBuilder rule = new StringBuilder(name + " " + site + " " + t.getClass().getSimpleName());
         if (t instanceof Term.Const c)
-            regel.append(" ").append(c.value() == null ? "null" : c.value().getClass().getSimpleName())
+            rule.append(" ").append(c.value() == null ? "null" : c.value().getClass().getSimpleName())
                     .append(c.type() == null ? "" : " type " + c.type());
-        if (t.source() != null) regel.append(" bron '").append(t.source()).append("'");
-        out.add(regel.toString());
+        if (t.source() != null) rule.append(" bron '").append(t.source()).append("'");
+        out.add(rule.toString());
         List<Term> children = children(t);
-        for (int i = 0; i < children.size(); i++) fields(naam, children.get(i), site + "." + i, out);
+        for (int i = 0; i < children.size(); i++) fields(name, children.get(i), site + "." + i, out);
     }
 
     /** The children of {@code t}, in the order the node lists them. */

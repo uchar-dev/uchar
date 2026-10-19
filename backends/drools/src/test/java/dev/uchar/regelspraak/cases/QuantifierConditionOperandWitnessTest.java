@@ -104,7 +104,7 @@ class QuantifierConditionOperandWitnessTest {
         // sits in that band too and is declared after the rule. ref and clingo: gemelde dag 36, sluitdag 37.
         String geborgen = quantifierFold("atLeast", 1, "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"geborgen\","
                 + "\"negated\":false,\"source\":{\"snippet\":\"geborgen is\"}}");
-        String gemeldeDay = regel("gemelde dag", "gemelde dag", plus(own("laatste bergdag"), number("5")), geborgen);
+        String gemeldeDay = rule("gemelde dag", "gemelde dag", plus(own("laatste bergdag"), number("5")), geborgen);
         String ir = document(BERGINGMODEL_GEBORGEN, rules(
                 sluitdag(plus(own("gemelde dag"), number("1")), geborgen), gemeldeDay, BERGDAG, LAST_BERGDAG), "");
         String v1 = "{\"label\":\"V1\",\"objectType\":\"Vondst\",\"attributes\":{" + number("vinddag", "30")
@@ -121,7 +121,7 @@ class QuantifierConditionOperandWitnessTest {
         // before the threshold is written the comparison with an empty operand is onwaar. ref and clingo: 25, 21.
         String ir = document(BERGINGMODEL, rules(
                 sluitdag(number("21"), comparison("greater", bergdagMaximum(), own("gemelde dag"))),
-                BERGDAG, regel("gemelde dag", "gemelde dag", plus(own("openingsdag"), number("5")), null)), "");
+                BERGDAG, rule("gemelde dag", "gemelde dag", plus(own("openingsdag"), number("5")), null)), "");
         assertNull(play(ir, caseDocument(List.of(berging("B", number("openingsdag", "20")), vondst("V", "B", "30")),
                         value("B", "gemelde dag", "25") + ", " + value("B", "sluitdag", "21"))),
                 "de eigen drempel van een aggregatievergelijking");
@@ -180,7 +180,7 @@ class QuantifierConditionOperandWitnessTest {
             + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
     /** "De laatste bergdag van een Berging moet berekend worden als de maximale waarde van de bergdag van alle vondsten
      *  van de Berging." */
-    private static final String LAST_BERGDAG = regel("laatste bergdag", "laatste bergdag", bergdagMaximum(), null);
+    private static final String LAST_BERGDAG = rule("laatste bergdag", "laatste bergdag", bergdagMaximum(), null);
 
     private static String model(String vondstCharacteristic) {
         return "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Berging\",\"animate\":false,\"plural\":\"Bergingen\","
@@ -191,18 +191,18 @@ class QuantifierConditionOperandWitnessTest {
                 + "\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
     }
 
-    private static String field(String naam) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + WHOLE + "}";
+    private static String field(String name) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + WHOLE + "}";
     }
 
-    private static String attribute(String naam, String type) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + naam + "\",\"subjectType\":\"" + type
-                + "\",\"source\":{\"snippet\":\"zijn " + naam + "\"}}";
+    private static String attribute(String name, String type) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + name + "\",\"subjectType\":\"" + type
+                + "\",\"source\":{\"snippet\":\"zijn " + name + "\"}}";
     }
 
-    private static String own(String naam) { return attribute(naam, "Berging"); }
+    private static String own(String name) { return attribute(name, "Berging"); }
 
-    private static String element(String naam) { return attribute(naam, "Vondst"); }
+    private static String element(String name) { return attribute(name, "Vondst"); }
 
     private static String number(String n) {
         return "{\"node\":\"Literal\",\"value\":{\"number\":\"" + n + "\"},\"type\":" + WHOLE + ",\"source\":{\"snippet\":\"" + n + "\"}}";
@@ -248,14 +248,14 @@ class QuantifierConditionOperandWitnessTest {
     }
 
     /** One rule on the Berging with one version; {@code condition} null for none. */
-    private static String regel(String naam, String target, String value, String condition) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+    private static String rule(String name, String target, String value, String condition) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
                 + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"Berging\","
                 + "\"source\":{\"snippet\":\"De " + target + " van een Berging\"}},\"value\":" + value
                 + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
     }
 
-    private static String sluitdag(String value, String condition) { return regel("sluitdag", "sluitdag", value, condition); }
+    private static String sluitdag(String value, String condition) { return rule("sluitdag", "sluitdag", value, condition); }
 
     private static String rules(String... rules) { return String.join(",", rules); }
 

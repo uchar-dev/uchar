@@ -45,7 +45,7 @@ class DateFoldConditionWitnessTest {
     @Test void the_last_bergdag_left_and_right() throws Exception {
         // "Een Jutter heeft de late melding indien de laatste van de bergdag van alle vondsten van de Jutter later is
         // dan zijn meldtermijn", and "indien zijn meldtermijn eerder is dan de laatste van …". ref and clingo: J1 only.
-        String caseDocument = caseDocument(kenmerken("late melding", true, false, false, false, false));
+        String caseDocument = caseDocument(characteristics("late melding", true, false, false, false, false));
         assertNull(play(document(characteristicRule("late melding", compare("later", fold("last"), MELDTERMIJN))), caseDocument), "links");
         assertNull(play(document(characteristicRule("late melding", compare("earlier", MELDTERMIJN, fold("last")))), caseDocument), "rechts");
     }
@@ -54,7 +54,7 @@ class DateFoldConditionWitnessTest {
         // "(de laatste van …) plus 14 dg later is dan zijn meldtermijn", the same with "plus de meldduur", and "zijn
         // meldtermijn eerder is dan (de eerste van …) plus 14 dg". ref and clingo: J1 and J4, the last two J1 and J4
         // as well (J3 counts from 01-04-2026 to 15-04-2026, before its meldtermijn).
-        String caseDocument = caseDocument(kenmerken("late melding", true, false, false, true, false));
+        String caseDocument = caseDocument(characteristics("late melding", true, false, false, true, false));
         assertNull(play(document(characteristicRule("late melding", compare("later", plusDays(fold("last"), 14), MELDTERMIJN))), caseDocument),
                 "plus 14 dg");
         assertNull(play(document(characteristicRule("late melding", compare("later", plusMeldduur(fold("last")), MELDTERMIJN))), caseDocument),
@@ -66,7 +66,7 @@ class DateFoldConditionWitnessTest {
     @Test void against_a_date_parameter() throws Exception {
         // "… de laatste van … later is dan de peildatum", a date parameter (03-04-2026): J1 and J5.
         assertNull(play(document(characteristicRule("late melding", compare("later", fold("last"), AS_OF_DATE))),
-                caseDocument(kenmerken("late melding", true, false, false, false, true))));
+                caseDocument(characteristics("late melding", true, false, false, false, true))));
     }
 
     @Test void a_member_that_a_later_rule_derives() throws Exception {
@@ -80,29 +80,29 @@ class DateFoldConditionWitnessTest {
                 + ",\"initialisation\":false,\"presentation\":\"equation\"}]}";
         String later = compare("later", fold("last", "meldingsdag"), MELDTERMIJN);
         assertNull(play(rules(List.of(characteristicRule("late melding", later), meldingsdag)),
-                caseDocument(kenmerken("late melding", true, false, false, false, false))), "later is dan");
+                caseDocument(characteristics("late melding", true, false, false, false, false))), "later is dan");
         String empty = predicate("empty", fold("last", "meldingsdag"));
         assertNull(play(rules(List.of(characteristicRule("late melding", empty), meldingsdag)),
-                caseDocument(kenmerken("late melding", false, true, false, false, false))), "leeg is");
+                caseDocument(characteristics("late melding", false, true, false, false, false))), "leeg is");
         String vinddag = predicate("filled", own("vinddag", "Jutter"));
         String group = group("meldplicht", "Jutter", "characteristic", "meldplicht",
                 "{\"node\":\"Default\",\"decision\":false,\"justification\":" + compound("all", 0, vinddag, empty) + "}",
                 "{\"node\":\"Default\",\"decision\":true,\"justification\":" + vinddag + "}");
         assertNull(play(rules(List.of(meldingsdag), group),
-                caseDocument(kenmerken("meldplicht", true, false, true, false, true))), "in een rechtvaardiging");
+                caseDocument(characteristics("meldplicht", true, false, true, false, true))), "in een rechtvaardiging");
     }
 
     @Test void equal_not_equal_filled_and_empty() throws Exception {
         // "… gelijk is aan zijn meldtermijn": J4 alone (01-04-2026 both). "… ongelijk is aan …": one leeg operand makes
         // it hold (ch. 1.2), so all but J4. "de laatste van … gevuld is" all but J2, "… leeg is" J2 alone.
         assertNull(play(document(characteristicRule("late melding", compare("equal", fold("last"), MELDTERMIJN))),
-                caseDocument(kenmerken("late melding", false, false, false, true, false))), "gelijk");
+                caseDocument(characteristics("late melding", false, false, false, true, false))), "gelijk");
         assertNull(play(document(characteristicRule("late melding", compare("notEqual", fold("last"), MELDTERMIJN))),
-                caseDocument(kenmerken("late melding", true, true, true, false, true))), "ongelijk");
+                caseDocument(characteristics("late melding", true, true, true, false, true))), "ongelijk");
         assertNull(play(document(characteristicRule("late melding", predicate("filled", fold("last")))),
-                caseDocument(kenmerken("late melding", true, false, true, true, true))), "gevuld");
+                caseDocument(characteristics("late melding", true, false, true, true, true))), "gevuld");
         assertNull(play(document(characteristicRule("late melding", predicate("empty", fold("last")))),
-                caseDocument(kenmerken("late melding", false, true, false, false, false))), "leeg");
+                caseDocument(characteristics("late melding", false, true, false, false, false))), "leeg");
     }
 
     @Test void the_minimum_and_the_maximum_over_dates() throws Exception {
@@ -110,9 +110,9 @@ class DateFoldConditionWitnessTest {
         // last), and "de minimale waarde van … eerder is dan zijn meldtermijn" (J1 and J3), which only a hand-written
         // document spells: the frontend refuses a minimum or a maximum over dates, WF-038 admits it.
         assertNull(play(document(characteristicRule("late melding", compare("later", fold("maximum"), MELDTERMIJN))),
-                caseDocument(kenmerken("late melding", true, false, false, false, false))), "maximum");
+                caseDocument(characteristics("late melding", true, false, false, false, false))), "maximum");
         assertNull(play(document(characteristicRule("late melding", compare("earlier", fold("minimum"), MELDTERMIJN))),
-                caseDocument(kenmerken("late melding", true, false, true, false, false))), "minimum");
+                caseDocument(characteristics("late melding", true, false, true, false, false))), "minimum");
     }
 
     @Test void under_every_quantifier() throws Exception {
@@ -121,21 +121,21 @@ class DateFoldConditionWitnessTest {
         // "… geen van de volgende voorwaarden: de laatste van … is later dan …" (all but J1).
         String late = compare("later", fold("last"), MELDTERMIJN);
         assertNull(play(document(characteristicRule("late melding", compound("all", 0, predicate("filled", own("vinddag",
-                "Jutter")), late))), caseDocument(kenmerken("late melding", true, false, false, false, false))), "alle");
+                "Jutter")), late))), caseDocument(characteristics("late melding", true, false, false, false, false))), "alle");
         assertNull(play(document(characteristicRule("late melding", compound("atLeast", 1, predicate("empty", own("vinddag",
-                "Jutter")), late))), caseDocument(kenmerken("late melding", true, false, false, true, false))), "ten minste één");
+                "Jutter")), late))), caseDocument(characteristics("late melding", true, false, false, true, false))), "ten minste één");
         assertNull(play(document(characteristicRule("late melding", compound("none", 0, late))),
-                caseDocument(kenmerken("late melding", false, true, true, true, true))), "geen van");
+                caseDocument(characteristics("late melding", false, true, true, true, true))), "geen van");
     }
 
     @Test void in_a_rule_that_writes_an_attribute() throws Exception {
         // "De uitkomst van een Jutter moet gesteld worden op zijn vinddag indien (de laatste van …) plus 14 dg later is
         // dan zijn meldtermijn": J1 10-03-2026; J4 holds but has no vinddag.
-        String regel = "{\"node\":\"Rule\",\"name\":\"uitkomst\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+        String rule = "{\"node\":\"Rule\",\"name\":\"uitkomst\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
                 + "\"target\":" + own("uitkomst", "Jutter") + ",\"value\":" + own("vinddag", "Jutter") + ",\"condition\":"
                 + compare("later", plusDays(fold("last"), 14), MELDTERMIJN) + ",\"initialisation\":false,"
                 + "\"presentation\":\"equation\"}]}";
-        assertNull(play(document(regel), caseDocument(outcomes("2026-03-10", null, null, null, null))));
+        assertNull(play(document(rule), caseDocument(outcomes("2026-03-10", null, null, null, null))));
     }
 
     @Test void two_roles_far() throws Exception {
@@ -154,7 +154,7 @@ class DateFoldConditionWitnessTest {
         // late berging: Een Jutter heeft geen meldplicht indien de laatste van … later is dan zijn meldtermijn", the
         // exception carrying the condition of the base; the same with "(de laatste van …) plus 14 dg", and under "ten
         // minste één van …: zijn vinddag is leeg; …". ref and clingo: J2, J3 and J5 each time (J4 has no vinddag).
-        String caseDocument = caseDocument(kenmerken("meldplicht", false, true, true, false, true));
+        String caseDocument = caseDocument(characteristics("meldplicht", false, true, true, false, true));
         assertNull(play(document(null, meldplicht(compare("later", fold("last"), MELDTERMIJN))), caseDocument), "zonder rekensom");
         assertNull(play(document(null, meldplicht(compare("later", plusDays(fold("last"), 14), MELDTERMIJN))), caseDocument), "plus 14 dg");
         assertNull(play(document(null, meldplicht(compound("atLeast", 1, predicate("empty", own("vinddag", "Jutter")),
@@ -262,8 +262,8 @@ class DateFoldConditionWitnessTest {
     }
 
     /** A group on {@code type}; {@code category} is "attribute" or "characteristic". */
-    private static String group(String naam, String type, String category, String target, String... defaults) {
-        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type + "\",\"" + category + "\":\""
+    private static String group(String name, String type, String category, String target, String... defaults) {
+        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + name + "\",\"subject\":\"" + type + "\",\"" + category + "\":\""
                 + target + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
@@ -276,21 +276,21 @@ class DateFoldConditionWitnessTest {
                 "{\"node\":\"Default\",\"decision\":true,\"justification\":" + vinddag + "}");
     }
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
-    private static String characteristic(String naam) {
-        return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"possessive\"}";
+    private static String characteristic(String name) {
+        return "{\"node\":\"Characteristic\",\"name\":\"" + name + "\",\"kind\":\"possessive\"}";
     }
 
-    private static String role(String naam, String type, String plural) {
-        return "{\"node\":\"Role\",\"name\":\"" + naam + "\",\"objectType\":\"" + type + "\""
+    private static String role(String name, String type, String plural) {
+        return "{\"node\":\"Role\",\"name\":\"" + name + "\",\"objectType\":\"" + type + "\""
                 + (plural == null ? ",\"many\":false}" : ",\"plural\":\"" + plural + "\",\"many\":true}");
     }
 
-    private static String document(String regel, String... groups) {
-        return rules(regel == null ? List.of() : List.of(regel), groups);
+    private static String document(String rule, String... groups) {
+        return rules(rule == null ? List.of() : List.of(rule), groups);
     }
 
     /** Kustwacht, Jutter and Vondst, KustwachtBewaaktJutter and JutterHeeftVondst, the parameters meldduur (dagen) and
@@ -327,8 +327,8 @@ class DateFoldConditionWitnessTest {
                 + roles + "},\"characteristics\":[]}";
     }
 
-    private static String day(String naam, String iso) {
-        return iso == null ? null : "\"" + naam + "\":{\"date\":\"" + iso + "\"}";
+    private static String day(String name, String iso) {
+        return iso == null ? null : "\"" + name + "\":{\"date\":\"" + iso + "\"}";
     }
 
     private static String attrs(String... parts) {
@@ -360,7 +360,7 @@ class DateFoldConditionWitnessTest {
             vondst("V5", "J4", "lading", "2026-04-01"), vondst("V6", "J5", "anker", "2026-04-05"));
 
     /** The characteristic of J1 to J5 in order. */
-    private static List<String> kenmerken(String characteristic, boolean... on) {
+    private static List<String> characteristics(String characteristic, boolean... on) {
         List<String> out = new ArrayList<>();
         for (int i = 0; i < on.length; i++)
             out.add("{\"kind\":\"characteristic" + (on[i] ? "Present" : "Absent") + "\",\"label\":\"J" + (i + 1)

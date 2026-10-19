@@ -41,16 +41,16 @@ class GeneratedDesignationsTest {
 
     /** The designation of each element in {@code vocabulary}, "-" where it carries none. */
     private static List<String> designations(RegelSpraakModel m, String vocabulary, List<Designatable> elements) {
-        return elements.stream().map(e -> m.benaming(vocabulary, e).orElse("-")).toList();
+        return elements.stream().map(e -> m.designation(vocabulary, e).orElse("-")).toList();
     }
 
     /** The designations the IR writes as the last field of the node {@code node} named {@code naam}, each
      *  "vocabulary: designation", in written order; empty where the node carries none. */
-    private static List<String> onTheWire(String ir, String node, String naam) {
+    private static List<String> onTheWire(String ir, String node, String name) {
         String[] r = ir.split("\n", -1);
         for (int i = 1; i + 1 < r.length; i++) {
             if (!r[i].trim().equals("\"node\": \"" + node + "\",")
-                    || !r[i + 1].trim().equals("\"name\": \"" + naam + "\",")) continue;
+                    || !r[i + 1].trim().equals("\"name\": \"" + name + "\",")) continue;
             String indent = r[i].substring(0, r[i].indexOf('"'));
             String closingLine = indent.substring(2) + "}";
             List<String> result = new ArrayList<>();
@@ -65,7 +65,7 @@ class GeneratedDesignationsTest {
             }
             return result;
         }
-        throw new AssertionError("geen knoop " + node + " '" + naam + "' in\n" + ir);
+        throw new AssertionError("geen knoop " + node + " '" + name + "' in\n" + ir);
     }
 
     private static final String MESSAGE = """
@@ -99,10 +99,10 @@ class GeneratedDesignationsTest {
         // on the wire, as the last field of each generated declaration, in the declaration order of the vocabularies
         String ir = IrEmitter.emit(m);
         for (int i = 0; i < FAMILY.size(); i++) {
-            String naam = FAMILY.get(i).naam();
-            String words = naam.substring(0, naam.length() - "meldingsdatum".length());
+            String name = FAMILY.get(i).name();
+            String words = name.substring(0, name.length() - "meldingsdatum".length());
             assertEquals(List.of("cgm: " + words + "Datum melding vondst", "handboek: " + words + "dag van de melding"),
-                    onTheWire(ir, NODES.get(i), naam), naam);
+                    onTheWire(ir, NODES.get(i), name), name);
         }
         assertEquals(List.of("cgm: Datum melding vondst", "handboek: dag van de melding"),
                 onTheWire(ir, "Attribute", "meldingsdatum"));
@@ -117,12 +117,12 @@ class GeneratedDesignationsTest {
                 designations(m, "cgm", FAMILY));
         assertEquals(List.of("-", "-", "-", "-", "-", "-"), designations(m, "handboek", FAMILY));
         // the effective name there is the canonical name
-        assertEquals(FAMILY.stream().map(Designatable::naam).toList(),
+        assertEquals(FAMILY.stream().map(Designatable::name).toList(),
                 FAMILY.stream().map(e -> m.effectiveName("handboek", e)).toList());
         String ir = IrEmitter.emit(m);
         for (int i = 0; i < FAMILY.size(); i++) {
-            String naam = FAMILY.get(i).naam();
-            assertEquals(1, onTheWire(ir, NODES.get(i), naam).size(), naam);
+            String name = FAMILY.get(i).name();
+            assertEquals(1, onTheWire(ir, NODES.get(i), name).size(), name);
         }
         // a source without any designation: the elements carry none, and the wire writes none for them
         RegelSpraakModel plain = clean(MESSAGE.formatted(""));
@@ -133,11 +133,11 @@ class GeneratedDesignationsTest {
     /** The ERROR {@code fragment} stands on the first line of {@code source} that carries {@code merker}. */
     private static void error(String source, String merker, String fragment) {
         RegelSpraakModel m = Resolver.resolve(source);
-        String[] regels = source.split("\n", -1);
-        int regel = 0;
-        for (int i = 0; i < regels.length; i++) if (regels[i].contains(merker)) { regel = i + 1; break; }
-        assertTrue(regel > 0, "merker '" + merker + "' niet in de bron");
-        final int r = regel;
+        String[] rules = source.split("\n", -1);
+        int rule = 0;
+        for (int i = 0; i < rules.length; i++) if (rules[i].contains(merker)) { rule = i + 1; break; }
+        assertTrue(rule > 0, "merker '" + merker + "' niet in de bron");
+        final int r = rule;
         List<Diagnostic> faults = m.errors();
         assertTrue(faults.stream().anyMatch(d -> d.message().contains(fragment) && d.line() == r),
                 () -> "verwacht op regel " + r + ": " + fragment + "\nkreeg: " + faults);
@@ -222,8 +222,8 @@ class GeneratedDesignationsTest {
         error(source, "de meldingsdatum", "Het attribuut 'meldingsdatum' van 'Vondst' draagt geen benaming in het "
                 + "standaardvocabulaire 'cgm', dat elke declaratie noemt (WF-119)");
         for (Designatable e : FAMILY)
-            error(source, "de meldingsdatum", (e.category() == Designatable.Kind.VORM ? "De regel '" + e.naam() + "'"
-                    : "Het " + (e.category() == Designatable.Kind.KENMERK ? "kenmerk" : "attribuut") + " '" + e.naam()
+            error(source, "de meldingsdatum", (e.category() == Designatable.Kind.VORM ? "De regel '" + e.name() + "'"
+                    : "Het " + (e.category() == Designatable.Kind.KENMERK ? "kenmerk" : "attribuut") + " '" + e.name()
                     + "' van 'Vondst'") + " draagt geen benaming in het standaardvocabulaire 'cgm', dat elke "
                     + "declaratie noemt (WF-119); de frontend stelt de benaming van deze declaratie samen uit die van "
                     + "het attribuut 'meldingsdatum' van 'Vondst', en dat draagt er geen");
@@ -238,7 +238,7 @@ class GeneratedDesignationsTest {
                 m.diagnostics::toString);
         // a designation that differs in case only is the vocabulary's spelling, and is composed
         RegelSpraakModel head = clean(MESSAGE.formatted("(handboek: Meldingsdatum)"));
-        assertEquals("opgegeven Meldingsdatum", head.benaming("handboek", FAMILY.get(0)).orElseThrow());
+        assertEquals("opgegeven Meldingsdatum", head.designation("handboek", FAMILY.get(0)).orElseThrow());
     }
 
     @Test void the_group_of_a_subtype_and_the_member_of_a_fold_get_a_designation_per_part() {
@@ -271,9 +271,9 @@ class GeneratedDesignationsTest {
             """);
         assertTrue(group.generatedFrom(Designatable.form("meldtermijn voor Strandjutter")).isPresent());
         assertEquals("termijn van melding voor strandloper",
-                group.benaming("handboek", Designatable.form("meldtermijn voor Strandjutter")).orElse("-"));
+                group.designation("handboek", Designatable.form("meldtermijn voor Strandjutter")).orElse("-"));
         // the group of the tree carries its base rule's name, and so its designation
-        assertEquals("termijn van melding", group.benaming("handboek", Designatable.form("meldtermijn")).orElseThrow());
+        assertEquals("termijn van melding", group.designation("handboek", Designatable.form("meldtermijn")).orElseThrow());
 
         // the member of a fold with steps after the set: the member and each role are parts of its name
         RegelSpraakModel fold = clean("""
@@ -304,7 +304,7 @@ class GeneratedDesignationsTest {
             """);
         Designatable member = Designatable.attribute("Jutter", "gewicht via vondst");
         assertTrue(fold.generatedFrom(member).isPresent(), () -> fold.generated.toString());
-        assertEquals("massa via vangst", fold.benaming("handboek", member).orElse("-"));
-        assertEquals("massa via vangst", fold.benaming("handboek", Designatable.form("gewicht via vondst")).orElse("-"));
+        assertEquals("massa via vangst", fold.designation("handboek", member).orElse("-"));
+        assertEquals("massa via vangst", fold.designation("handboek", Designatable.form("gewicht via vondst")).orElse("-"));
     }
 }

@@ -33,31 +33,31 @@ final class TmsTimelineDocuments {
     }
 
     /** An attribute of {@code datatype} on a timeline of {@code granularity}. */
-    static String timeAttribute(String naam, String datatype, String granularity) {
-        return timeAttribute(naam, datatype, granularity, null);
+    static String timeAttribute(String name, String datatype, String granularity) {
+        return timeAttribute(name, datatype, granularity, null);
     }
 
     /** As {@link #timeAttribute(String, String, String)}, on the grid of the fixed start point {@code fixed}. */
-    static String timeAttribute(String naam, String datatype, String granularity, String fixed) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + ",\"timeline\":"
+    static String timeAttribute(String name, String datatype, String granularity, String fixed) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + ",\"timeline\":"
                 + facet(granularity, fixed) + "}";
     }
 
     /** A characteristic that holds one truth value. */
-    static String characteristic(String naam) {
-        return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"adjectival\"}";
+    static String characteristic(String name) {
+        return "{\"node\":\"Characteristic\",\"name\":\"" + name + "\",\"kind\":\"adjectival\"}";
     }
 
     /** A characteristic on a timeline of {@code granularity}: its value is its true periods. */
-    static String timeCharacteristic(String naam, String granularity) {
-        return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"adjectival\",\"timeline\":"
+    static String timeCharacteristic(String name, String granularity) {
+        return "{\"node\":\"Characteristic\",\"name\":\"" + name + "\",\"kind\":\"adjectival\",\"timeline\":"
                 + facet(granularity, null) + "}";
     }
 
     /** An object type with its attributes and characteristics as written ({@link #timeAttribute}, {@link #characteristic}). */
-    static String objectType(String naam, List<String> attributes, List<String> kenmerken) {
-        return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":true,\"plural\":\"" + naam + "s\","
-                + "\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + String.join(",", kenmerken)
+    static String objectType(String name, List<String> attributes, List<String> characteristics) {
+        return "{\"node\":\"ObjectType\",\"name\":\"" + name + "\",\"animate\":true,\"plural\":\"" + name + "s\","
+                + "\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + String.join(",", characteristics)
                 + "]}";
     }
 
@@ -116,11 +116,11 @@ final class TmsTimelineDocuments {
 
     /** An instance of the case: attributes as case values in the wire's shape, characteristics that hold one truth
      *  value, the true periods of characteristics on a timeline, and to-many roles by role name. */
-    static String instance(String label, String type, Map<String, String> waarden, List<String> kenmerken,
+    static String instance(String label, String type, Map<String, String> values, List<String> characteristics,
                             Map<String, List<String>> periods, Map<String, List<String>> roles) {
         List<String> a = new ArrayList<>(), k = new ArrayList<>(), p = new ArrayList<>(), r = new ArrayList<>();
-        waarden.forEach((naam, value) -> a.add("\"" + naam + "\":" + value));
-        for (String characteristic : kenmerken) k.add("\"" + characteristic + "\"");
+        values.forEach((name, value) -> a.add("\"" + name + "\":" + value));
+        for (String characteristic : characteristics) k.add("\"" + characteristic + "\"");
         periods.forEach((characteristic, list) -> p.add("\"" + characteristic + "\":[" + String.join(",", list) + "]"));
         roles.forEach((role, targets) -> {
             List<String> d = new ArrayList<>();

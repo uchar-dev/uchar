@@ -17,9 +17,9 @@ public final class Namen {
      *  first word reads "sTANDAARD…". An empty result is "x". A camel result CAN equal a Java
      *  keyword ("final") — reconciling that is the fact-model generator's contract (the explicit fact-model contract), which must move
      *  BOTH back-ends at once; a one-sided suffix here would diverge from the runtime's pascal-based reads. */
-    public static String ident(String naam, boolean upperFirst) {
+    public static String ident(String name, boolean upperFirst) {
         StringBuilder b = new StringBuilder();
-        for (String d : naam.trim().split("[^\\p{L}\\p{N}]+")) {
+        for (String d : name.trim().split("[^\\p{L}\\p{N}]+")) {
             if (d.isEmpty()) continue;
             if (isShout(d)) d = d.charAt(0) + d.substring(1).toLowerCase();
             boolean head = upperFirst || b.length() > 0;
@@ -44,10 +44,10 @@ public final class Namen {
     /** The getter of the member named {@code naam}, as the fact-model generator writes it: {@code get} and the stem of
      *  its property ({@link #lidnamen}); a scalar characteristic has the {@code is} form instead, which a reader of a
      *  name tries second. */
-    public static String getter(String naam) { return lidnamen(property(naam)).getter(); }
+    public static String getter(String name) { return lidnamen(property(name)).getter(); }
 
     /** The setter of the member named {@code naam}, as the fact-model generator writes it ({@link #lidnamen}). */
-    public static String setter(String naam) { return lidnamen(property(naam)).setter(); }
+    public static String setter(String name) { return lidnamen(property(name)).setter(); }
 
     /** The bean property of a member named {@code naam}: the camel identifier of the name, which is the field the
      *  fact-model generator writes for the member and the property a DRL constraint spells. Its getter and setter are
@@ -55,7 +55,7 @@ public final class Namen {
      *  {@code Alpha.FieldTest} and {@code Join}), so that no rendering derives a property from a declared name with
      *  spaces. On a fact of that branch, whose components are single lowercase words, it is the component's name
      *  itself. */
-    public static String property(String naam) { return ident(naam, false); }
+    public static String property(String name) { return ident(name, false); }
 
     /** The Java names of a bean member besides its field, the property: the {@code get} and the {@code is} form of its
      *  getter, of which the generator writes the {@code is} form for a scalar characteristic and the {@code get} form
@@ -95,8 +95,8 @@ public final class Namen {
      *  escape into it) and a newline ends the rule header — all four are substituted (disjoint characters,
      *  none introduces another, so order is immaterial). The SAME escaping guards the idempotency-constraint
      *  {@code regel == "…"} splice, so the two occurrences always match each other. */
-    public static String escapeRuleName(String naam) {
-        return naam.replace("\\", "/").replace("\"", "'").replace("\r", " ").replace("\n", " ");
+    public static String escapeRuleName(String name) {
+        return name.replace("\\", "/").replace("\"", "'").replace("\r", " ").replace("\n", " ");
     }
 
     /** User text (a {@code bron()} phrase) spliced into a {@code /* TODO … *&#47;} block comment or an
@@ -144,10 +144,10 @@ public final class Namen {
      *  {@code toLowerCase(Locale.ROOT)} + {@code \s+} folds both pairs together, and a key site that reads
      *  "temporal" where ref reads "scalar" then joins a timeline against a {@code BigDecimal} bean member —
      *  a bare backend ERROR on a document all three other executors play. */
-    public static String norm(String naam) {
-        if (naam == null) return "";
+    public static String norm(String name) {
+        if (name == null) return "";
         StringBuilder out = new StringBuilder();
-        for (String word : naam.split("[ \t]+")) {
+        for (String word : name.split("[ \t]+")) {
             if (word.isEmpty()) continue;                       // a leading separator run yields ""
             if (out.length() > 0) out.append(' ');
             for (int i = 0; i < word.length(); i++) {
@@ -162,9 +162,9 @@ public final class Namen {
      *  declared-name-keyed map, compared with {@link #norm}. THE one temporality test of both back-ends' key
      *  sites — deriving it locally is how the DRL text and the executable model came to disagree with ref
      *  about a mis-capitalised uniqueness key (backlog: drools-sleutelconventies). */
-    public static boolean containsName(java.util.Map<String, ?> perName, String naam) {
-        if (perName == null || naam == null) return false;
-        return perName.containsKey(declaredName(perName.keySet(), naam));
+    public static boolean containsName(java.util.Map<String, ?> perName, String name) {
+        if (perName == null || name == null) return false;
+        return perName.containsKey(declaredName(perName.keySet(), name));
     }
 
     /** {@link #containsName}'s reading twin: the value {@code perName} holds for the declaration that IS
@@ -173,9 +173,9 @@ public final class Namen {
      *  that decides "temporal" by norm and then reads the granularity or the period count by exact spelling
      *  would split one member into a timeline without a grain, or a multi-period timeline read as a single
      *  one. Both questions therefore go through this one contract (card drools-temporele-naamnorm). */
-    public static <V> V byName(java.util.Map<String, V> perName, String naam) {
-        if (perName == null || naam == null) return null;
-        return perName.get(declaredName(perName.keySet(), naam));
+    public static <V> V byName(java.util.Map<String, V> perName, String name) {
+        if (perName == null || name == null) return null;
+        return perName.get(declaredName(perName.keySet(), name));
     }
 
     /** The DECLARED spelling of a WRITTEN name: the member of {@code declared} that IS this name under
@@ -185,11 +185,11 @@ public final class Namen {
      *  another capitalisation ("vondstNummer" for a declared "vondstnummer") resolves for ref, clingo and
      *  the verifier but pascal-cases into a getter the generated fact class does not have. Unchanged when
      *  absent, so an undeclared name still reaches the runtime's own loud "geen getter voor …". */
-    public static String declaredName(java.util.Collection<String> declared, String naam) {
-        if (declared == null || naam == null) return naam;
-        if (declared.contains(naam)) return naam;            // the common case: written as declared
-        String n = norm(naam);
+    public static String declaredName(java.util.Collection<String> declared, String name) {
+        if (declared == null || name == null) return name;
+        if (declared.contains(name)) return name;            // the common case: written as declared
+        String n = norm(name);
         for (String k : declared) if (norm(k).equals(n)) return k;
-        return naam;
+        return name;
     }
 }

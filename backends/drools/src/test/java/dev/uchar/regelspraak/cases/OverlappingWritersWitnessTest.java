@@ -122,7 +122,7 @@ class OverlappingWritersWitnessTest {
         // 04-03-2026 before the fix, because a leeg value derives no atom there.
         String ir = document(objectType("Vondst", "Vondsten", null, "", DATES),
                 messageOn("melding op vinddag", "Vondst", "vinddatum"),
-                regel("melding op aanspoeldag", "Vondst", "meldingsdatum", read("Vondst", "aanspoeldatum"),
+                rule("melding op aanspoeldag", "Vondst", "meldingsdatum", read("Vondst", "aanspoeldatum"),
                         test("filled", "Vondst", "vinddatum"), "equation"));
         String caseDocument = caseDocument(List.of(vondst("V", "Vondst", "2026-03-04", null, null)),
                 dateExpected("V", "meldingsdatum", "2026-03-04"));
@@ -137,9 +137,9 @@ class OverlappingWritersWitnessTest {
         // 20,00 and waarde 50,00, so 20.00 and 45.00.
         String ir = document(objectType("Vondst", "Vondsten", null, "", attribute("waarde", TWO_DECIMALS),
                         attribute("schatting", TWO_DECIMALS), attribute("vindersloon", TWO_DECIMALS)),
-                regel("vindersloon naar schatting", "Vondst", "vindersloon", read("Vondst", "schatting"),
+                rule("vindersloon naar schatting", "Vondst", "vindersloon", read("Vondst", "schatting"),
                         test("filled", "Vondst", "schatting"), "equation"),
-                regel("vindersloon naar waarde", "Vondst", "vindersloon", VALUE_MINUS_FIVE,
+                rule("vindersloon naar waarde", "Vondst", "vindersloon", VALUE_MINUS_FIVE,
                         test("filled", "Vondst", "waarde"), "calculation"));
         String caseDocument = caseDocument(List.of(instance("V", "Vondst", "\"schatting\":{\"number\":\"20.00\"},\"waarde\":{\"number\":\"50.00\"}")),
                 "{\"kind\":\"attributeValue\",\"label\":\"V\",\"attribute\":\"vindersloon\",\"value\":{\"number\":\"20.00\"}}");
@@ -171,7 +171,7 @@ class OverlappingWritersWitnessTest {
         // "indien zijn aanspoeldatum gevuld is" beside "indien zijn aanspoeldatum leeg is": one writer per instance.
         String ir = document(objectType("Vondst", "Vondsten", null, "", DATES),
                 messageOn("melding op aanspoeldag", "Vondst", "aanspoeldatum"),
-                regel("melding op vinddag", "Vondst", "meldingsdatum", read("Vondst", "vinddatum"),
+                rule("melding op vinddag", "Vondst", "meldingsdatum", read("Vondst", "vinddatum"),
                         test("empty", "Vondst", "aanspoeldatum"), "equation"));
         String caseDocument = caseDocument(List.of(vondst("V1", "Vondst", "2026-03-04", "2026-03-01", null),
                         vondst("V2", "Vondst", "2026-03-04", null, null), vondst("V3", "Vondst", null, "2026-03-01", null),
@@ -229,17 +229,17 @@ class OverlappingWritersWitnessTest {
     private static final String TWO_DECIMALS = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
     private static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
     private static final String DATES = String.join(",", attribute("vinddatum", DATE), attribute("aanspoeldatum", DATE),
             attribute("bergdatum", DATE), attribute("meldingsdatum", DATE));
 
-    private static String objectType(String naam, String plural, String supertype, String kenmerken, String... attributes) {
-        return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\"" + (supertype == null ? "" : ",\"supertype\":\"" + supertype + "\"")
+    private static String objectType(String name, String plural, String supertype, String characteristics, String... attributes) {
+        return "{\"node\":\"ObjectType\",\"name\":\"" + name + "\"" + (supertype == null ? "" : ",\"supertype\":\"" + supertype + "\"")
                 + ",\"animate\":false,\"plural\":\"" + plural + "\",\"attributes\":[" + String.join(",", attributes)
-                + "],\"characteristics\":[" + kenmerken + "]}";
+                + "],\"characteristics\":[" + characteristics + "]}";
     }
 
     private static String read(String type, String attribute) {
@@ -258,8 +258,8 @@ class OverlappingWritersWitnessTest {
             + ",\"right\":{\"node\":\"Literal\",\"value\":{\"number\":\"5.00\"},\"type\":" + WHOLE + ",\"source\":{\"snippet\":"
             + "\"5,00\"}},\"type\":" + TWO_DECIMALS + ",\"source\":{\"snippet\":\"zijn waarde min 5,00\"}}";
 
-    private static String regel(String naam, String type, String target, String value, String condition, String presentation) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
+    private static String rule(String name, String type, String target, String value, String condition, String presentation) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type + "\",\"source\":"
                 + "{\"snippet\":\"De " + target + " van een " + type + "\"}},\"value\":" + value
                 + (condition == null ? "" : ",\"condition\":" + condition)
@@ -267,12 +267,12 @@ class OverlappingWritersWitnessTest {
     }
 
     /** "De meldingsdatum van een &lt;type&gt; moet gesteld worden op zijn &lt;bron&gt; indien zijn &lt;bron&gt; gevuld is." */
-    private static String messageOn(String naam, String type, String source) {
-        return regel(naam, type, "meldingsdatum", read(type, source), test("filled", type, source), "equation");
+    private static String messageOn(String name, String type, String source) {
+        return rule(name, type, "meldingsdatum", read(type, source), test("filled", type, source), "equation");
     }
 
-    private static String characteristicRule(String naam, String type, String characteristic, String condition) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
+    private static String characteristicRule(String name, String type, String characteristic, String condition) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"" + characteristic + "\",\"subjectType\":\"" + type + "\",\"source\":"
                 + "{\"snippet\":\"Een " + type + " is " + characteristic + "\"}},\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
                 + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}},\"condition\":" + condition

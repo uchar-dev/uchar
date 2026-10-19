@@ -75,9 +75,9 @@ class ValueTermWitnessTest {
         assertEquals(List.of(
                 "sleeplengte van een sleepbaan 0 Restate bron '2,5 km plus de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0 Call bron '2,5 km plus de aanloop van de Sleepbaan'",
-                "sleeplengte van een sleepbaan 0.0.0 Const BigDecimal type Numeriek[geheel=false, decimalen=1, "
-                        + "teken=ONBEPAALD, eenheid=Unit[afkorting=km, stelsel=Afstand, canoniek=m, "
-                        + "factorNaarCanoniek=1000, denominator=null]] bron '2,5 km'",
+                "sleeplengte van een sleepbaan 0.0.0 Const BigDecimal type Numeric[wholeNumber=false, decimals=1, "
+                        + "sign=ONBEPAALD, unit=Unit[abbreviation=km, system=Afstand, canonical=m, "
+                        + "factorToCanonical=1000, denominator=null]] bron '2,5 km'",
                 "sleeplengte van een sleepbaan 0.0.1 Restate bron 'de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0.1.0 SlotValue bron 'de aanloop van de Sleepbaan'"), fields(plans));
     }
@@ -100,14 +100,14 @@ class ValueTermWitnessTest {
                 "aanslag van een jutter 0.1.0 Call bron 'het kindertal van de Jutter maal 250,00'",
                 "aanslag van een jutter 0.1.0.0 SlotValue bron 'het kindertal van de Jutter'",
                 "aanslag van een jutter 0.1.0.1 Const BigDecimal type "
-                        + "Numeriek[geheel=false, decimalen=2, teken=ONBEPAALD, eenheid=null] bron '250,00'",
+                        + "Numeric[wholeNumber=false, decimals=2, sign=ONBEPAALD, unit=null] bron '250,00'",
                 "aanslag van een jutter 0.1.1 Let bron 'belasting is ink maal 0,2100 rekenkundig afgerond op 2 "
                         + "decimalen'",
                 "aanslag van een jutter 0.1.1.0 Call bron 'ink maal 0,2100 rekenkundig afgerond op 2 decimalen'",
                 "aanslag van een jutter 0.1.1.0.0 Call bron 'ink maal 0,2100'",
                 "aanslag van een jutter 0.1.1.0.0.0 Binder bron 'ink'",
                 "aanslag van een jutter 0.1.1.0.0.1 Const BigDecimal type "
-                        + "Numeriek[geheel=false, decimalen=4, teken=ONBEPAALD, eenheid=null] bron '0,2100'",
+                        + "Numeric[wholeNumber=false, decimals=4, sign=ONBEPAALD, unit=null] bron '0,2100'",
                 "aanslag van een jutter 0.1.1.0.1 Const Integer",
                 "aanslag van een jutter 0.1.1.0.2 Const RoundingMode",
                 "aanslag van een jutter 0.1.1.1 Choice bron 'als aftrek groter dan belasting dan 0,00 anders belasting "
@@ -117,17 +117,17 @@ class ValueTermWitnessTest {
                 "aanslag van een jutter 0.1.1.1.0.1 Binder bron 'belasting'",
                 "aanslag van een jutter 0.1.1.1.0.2 Const String",
                 "aanslag van een jutter 0.1.1.1.1 Const BigDecimal type "
-                        + "Numeriek[geheel=false, decimalen=2, teken=ONBEPAALD, eenheid=null] bron '0,00'",
+                        + "Numeric[wholeNumber=false, decimals=2, sign=ONBEPAALD, unit=null] bron '0,00'",
                 "aanslag van een jutter 0.1.1.1.2 Call bron 'belasting min aftrek'",
                 "aanslag van een jutter 0.1.1.1.2.0 Binder bron 'belasting'",
                 "aanslag van een jutter 0.1.1.1.2.1 Binder bron 'aftrek'",
                 "factor van een jutter 0 Call bron '1,0000 plus het kindertal van de Jutter gedeeld door 2,0000'",
                 "factor van een jutter 0.0 Const BigDecimal type "
-                        + "Numeriek[geheel=false, decimalen=4, teken=ONBEPAALD, eenheid=null] bron '1,0000'",
+                        + "Numeric[wholeNumber=false, decimals=4, sign=ONBEPAALD, unit=null] bron '1,0000'",
                 "factor van een jutter 0.1 Division bron 'het kindertal van de Jutter gedeeld door 2,0000'",
                 "factor van een jutter 0.1.0 SlotValue bron 'het kindertal van de Jutter'",
                 "factor van een jutter 0.1.1 Const BigDecimal type "
-                        + "Numeriek[geheel=false, decimalen=4, teken=ONBEPAALD, eenheid=null] bron '2,0000'",
+                        + "Numeric[wholeNumber=false, decimals=4, sign=ONBEPAALD, unit=null] bron '2,0000'",
                 "gewogen inkomen van een jutter 0 Call bron 'ink2 maal de factor van de Jutter rekenkundig "
                         + "afgerond op 2 decimalen'",
                 "gewogen inkomen van een jutter 0.0 Let bron 'ink2 is het inkomen van de Jutter'",
@@ -160,7 +160,7 @@ class ValueTermWitnessTest {
     }
 
     /** The values the consequence {@code g} writes: of a value, of each initialisation of a creation, of a decision. */
-    private static List<Term> waarden(Consequence g) {
+    private static List<Term> values(Consequence g) {
         return switch (g) {
             case Consequence.Value w -> List.of(w.value());
             case Consequence.Creation c -> c.initialisations().stream().map(Consequence.Initialisation::value).toList();
@@ -171,14 +171,14 @@ class ValueTermWitnessTest {
 
     private static List<String> trees(List<RulePlan> plans) {
         List<String> out = new ArrayList<>();
-        for (RulePlan p : plans) for (Term w : waarden(p.consequence())) out.add(p.form() + ": " + TermTree.tree(w));
+        for (RulePlan p : plans) for (Term w : values(p.consequence())) out.add(p.form() + ": " + TermTree.tree(w));
         return out;
     }
 
     /** Per value, every node of its tree in pre-order, with what the tree text leaves out ({@link TermTree#fields}). */
     private static List<String> fields(List<RulePlan> plans) {
         List<String> out = new ArrayList<>();
-        for (RulePlan p : plans) for (Term w : waarden(p.consequence())) TermTree.fields(p.form(), w, "0", out);
+        for (RulePlan p : plans) for (Term w : values(p.consequence())) TermTree.fields(p.form(), w, "0", out);
         return out;
     }
 }

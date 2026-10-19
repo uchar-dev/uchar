@@ -484,8 +484,8 @@ public final class ComputeHelpers {
 
     /** Whether the value facts in {@code waarden}, a list, hold two different values, leeg among them
      *  ({@link #equalValue}). */
-    public static boolean differ(Object waarden) {
-        List<?> l = (List<?>) waarden;
+    public static boolean differ(Object values) {
+        List<?> l = (List<?>) values;
         for (Object x : l)
             if (!equalValue(((Value) l.get(0)).value(), ((Value) x).value())) return true;
         return false;
@@ -522,22 +522,22 @@ public final class ComputeHelpers {
      * {@code input} of the attribute {@code naam}, which takes the asOfDate-bucket scalar, the session's date being the
      * horizon: {@code rsTijdTotaal} of the one period of the grid {@code granularity} that holds the evaluation date
      * ({@link BucketScalar}), and leeg where the attribute has no input. A full timeline faults, in the reference
-     * interpreter's words and naming {@code onderwerp}, and so does a session without an evaluation date, where the
+     * interpreter's words and naming {@code subject}, and so does a session without an evaluation date, where the
      * total has no bucket to take: the reference interpreter tests the full timeline first, then the date
      * ({@code rekendatum}), then the value.
      */
-    public static Object ownTotal(Object input, Object onderwerp, Object evaluationDate, String naam,
+    public static Object ownTotal(Object input, Object subject, Object evaluationDate, String name,
                                      String granularity) {
         if (input instanceof BucketScalar e) return RegelSpraakRuntime.rsTijdTotaal(e.timeline(), granularity);
         // a timeline a form writes is refused while the model is built, so a full timeline here is the case's
         if (input != null)
-            throw new InputFormFault("the temporal total of \"" + naam + "\" over a case-supplied full timeline"
+            throw new InputFormFault("the temporal total of \"" + name + "\" over a case-supplied full timeline"
                     + " is not exercised by any corpus case; the asOfDate-bucket convention carries the total, and ",
-                    onderwerp, " supplies a full timeline");
+                    subject, " supplies a full timeline");
         // the case runner places a bucket scalar only where the case carries a date, so a session without one reaches
         // this with no input at all
         if (evaluationDate == null)
-            throw new ComputeFault("the temporal total of \"" + naam + "\" needs the evaluation date: the case"
+            throw new ComputeFault("the temporal total of \"" + name + "\" needs the evaluation date: the case"
                     + " carries the asOfDate bucket's value");
         return RegelSpraakRuntime.rsTijdTotaal(null, granularity);
     }
@@ -587,22 +587,22 @@ public final class ComputeHelpers {
         for (Object d : (List<?>) deposits) DepositFlag.report(depositFlag, ((FilterDeposit) d).codes());
     }
 
-    /** The evaluation fault of the fixed sentence {@code sentence} ({@link ComputeFault}), named in the rule {@code regel}: the
+    /** The evaluation fault of the fixed sentence {@code sentence} ({@link ComputeFault}), named in the rule {@code rule}: the
      *  fault that a consequence inserts where a form faults by a sentence of its own ({@code plan.Consequence.Fault}). */
-    public static ComputeFault computeFault(String sentence, String regel) {
-        return new ComputeFault(sentence).inRule(regel);
+    public static ComputeFault computeFault(String sentence, String rule) {
+        return new ComputeFault(sentence).inRule(rule);
     }
 
-    /** The §9.5 inconsistency of the form {@code form} on {@code onderwerp} with {@code codes}, the EF codes of the kinds
+    /** The §9.5 inconsistency of the form {@code form} on {@code subject} with {@code codes}, the EF codes of the kinds
      *  it deposits (RUNTIME-SEMANTICS ch. 5.6, 5.7b): an instance of the class the fact model generates for it
      *  ({@link TmsTranspiler#INCONSISTENCY}), found through the context class loader as the runtime finds it
      *  ({@code RegelSpraakRuntime.newInconsistentie}). */
-    public static Object inconsistency(String form, Object onderwerp, List<?> codes) {
+    public static Object inconsistency(String form, Object subject, List<?> codes) {
         try {
             ClassLoader tccl = Thread.currentThread().getContextClassLoader();
             Class<?> c = tccl != null ? Class.forName(TmsTranspiler.INCONSISTENCY, true, tccl)
                     : Class.forName(TmsTranspiler.INCONSISTENCY);
-            return c.getConstructor(String.class, Object.class, List.class).newInstance(form, onderwerp,
+            return c.getConstructor(String.class, Object.class, List.class).newInstance(form, subject,
                     List.copyOf(codes));
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("kan geen " + TmsTranspiler.INCONSISTENCY + "(String, Object, List) construeren", e);
@@ -616,12 +616,12 @@ public final class ComputeHelpers {
     }
 
     /** The fault of the form of an input ({@link InputFormFault}), the sentence {@code before}, the object {@code object}
-     *  and {@code after}, named in the rule {@code regel}: the fault a consequence inserts where the case gives an input
-     *  in a form the rule cannot read ({@code plan.Consequence.InputFormFault}). A null {@code regel} names no rule yet: the
+     *  and {@code after}, named in the rule {@code rule}: the fault a consequence inserts where the case gives an input
+     *  in a form the rule cannot read ({@code plan.Consequence.InputFormFault}). A null {@code rule} names no rule yet: the
      *  fault of a member of a fold ({@code plan.Consequence.MemberFault}), which the form that reads the fold names where it
      *  meets it. */
-    public static InputFormFault inputFormFault(String before, Object object, String after, String regel) {
-        return new InputFormFault(before, object, after).inRule(regel);
+    public static InputFormFault inputFormFault(String before, Object object, String after, String rule) {
+        return new InputFormFault(before, object, after).inRule(rule);
     }
 
     /** The keys of {@code element} in source {@code source} of the uniqueness {@code uniqueness}, linked to the parent
@@ -630,11 +630,11 @@ public final class ComputeHelpers {
      *  it ever carries, in ascending order and none where it carries none (ever-uniqueness, RUNTIME-SEMANTICS ch. 5.9,
      *  {@code rsOoitWaarden}). {@code timeline} is -1 where no component is on a timeline. */
     public static List<UniquenessKey> uniquenessKeys(String uniqueness, int source, Object element, Object scope,
-                                                             List<?> waarden, int timeline) {
-        if (timeline < 0) return List.of(new UniquenessKey(uniqueness, source, element, scope, new ArrayList<>(waarden)));
+                                                             List<?> values, int timeline) {
+        if (timeline < 0) return List.of(new UniquenessKey(uniqueness, source, element, scope, new ArrayList<>(values)));
         List<UniquenessKey> out = new ArrayList<>();
-        for (BigDecimal value : new TreeSet<>(RegelSpraakRuntime.rsOoitWaarden(waarden.get(timeline)))) {
-            List<Object> key = new ArrayList<>(waarden);
+        for (BigDecimal value : new TreeSet<>(RegelSpraakRuntime.rsOoitWaarden(values.get(timeline)))) {
+            List<Object> key = new ArrayList<>(values);
             key.set(timeline, value);
             out.add(new UniquenessKey(uniqueness, source, element, scope, key));
         }
@@ -663,18 +663,18 @@ public final class ComputeHelpers {
         return out;
     }
 
-    /** The contribution of the member {@code member} to the fold {@code fold} on {@code onderwerp} by its value
+    /** The contribution of the member {@code member} to the fold {@code fold} on {@code subject} by its value
      *  {@code value} ({@link Contribution}, RUNTIME-SEMANTICS ch. 3.4), or null where it contributes nothing: a leeg value is
      *  skipped (ch. 1.2). Where {@code total} is not null the value is the member's timeline and contributes its total
      *  over time per that unit (ch. 3.6, the per-element fold), and nothing where the case gives the timeline as the
      *  asOfDate-bucket scalar ({@link BucketScalar}), since the member's {@link MemberFault} stands instead. Where
      *  {@code filled}, the contribution counts the member and carries no value; otherwise it carries the value, an exact
      *  rational collapsed to a decimal. */
-    public static Contribution contribution(String fold, Object onderwerp, Object member, Object value, String total,
+    public static Contribution contribution(String fold, Object subject, Object member, Object value, String total,
                                     boolean filled) {
         if (total != null && value instanceof BucketScalar) return null;
         Object v = total == null ? value : RegelSpraakRuntime.rsTijdTotaal((List<?>) value, total);
-        return v == null ? null : new Contribution(fold, onderwerp, member, filled ? null : collapse(v));
+        return v == null ? null : new Contribution(fold, subject, member, filled ? null : collapse(v));
     }
 
     /**
@@ -730,10 +730,10 @@ public final class ComputeHelpers {
         return e;
     }
 
-    /** The evaluation fault {@code fault} named after the rule {@code regel} it ran in, as the {@link Fault} of a form
+    /** The evaluation fault {@code fault} named after the rule {@code rule} it ran in, as the {@link Fault} of a form
      *  carries it. */
-    public static RuntimeException designate(Object fault, String regel) {
-        return ComputeFault.designate((RuntimeException) fault, regel);
+    public static RuntimeException designate(Object fault, String rule) {
+        return ComputeFault.designate((RuntimeException) fault, rule);
     }
 
     /** The evaluation fault of the sentence {@code sentence} ({@link ComputeFault}), thrown wherever the evaluation reaches it:
@@ -821,11 +821,11 @@ public final class ComputeHelpers {
         return object.getClass().getName().equals(javaClass);
     }
 
-    private static boolean namedOrInherits(Class<?> c, String naam) {
+    private static boolean namedOrInherits(Class<?> c, String name) {
         if (c == null) return false;
-        if (c.getName().equals(naam)) return true;
-        for (Class<?> i : c.getInterfaces()) if (namedOrInherits(i, naam)) return true;
-        return namedOrInherits(c.getSuperclass(), naam);
+        if (c.getName().equals(name)) return true;
+        for (Class<?> i : c.getInterfaces()) if (namedOrInherits(i, name)) return true;
+        return namedOrInherits(c.getSuperclass(), name);
     }
 
     /** A fresh cell for the binder of one evaluation of a {@code Let} (RUNTIME-SEMANTICS ch. 10.6, clause 1): empty
@@ -883,18 +883,18 @@ public final class ComputeHelpers {
         throw new IllegalStateException(sentence);
     }
 
-    /** The fault of two or more writers of the attribute {@code attribute} of {@code onderwerp} that stand with
+    /** The fault of two or more writers of the attribute {@code attribute} of {@code subject} that stand with
      *  different values, over the value facts {@code waarden} ({@code Consequence.WritersConflict}, RUNTIME-SEMANTICS
      *  ch. 5.7): the writers in the order of the document's rules {@code documentOrder}, a writer the document has
      *  no rule of after them by name, and the object's own type named through the pairs of {@code typeClasses}, the
      *  simple names of the bean classes, and {@code types}, the types as declared; a {@link Fault} under the first
      *  writer. */
-    public static Fault writersConflict(Object onderwerp, Object waarden, String attribute, List<?> documentOrder,
+    public static Fault writersConflict(Object subject, Object values, String attribute, List<?> documentOrder,
                                           List<?> typeClasses, List<?> types) {
         List<Value> list = new ArrayList<>();
-        for (Object w : (List<?>) waarden) list.add((Value) w);
-        WritersConflict c = WritersConflict.van(onderwerp, attribute, list, documentOrder, typeClasses, types);
-        return new Fault(onderwerp, c.writers().get(0).writer(), c);
+        for (Object w : (List<?>) values) list.add((Value) w);
+        WritersConflict c = WritersConflict.van(subject, attribute, list, documentOrder, typeClasses, types);
+        return new Fault(subject, c.writers().get(0).writer(), c);
     }
 
     // A list of values in order, as a DRL text builds the list argument of a route: MVEL builds no array, and a route is
@@ -935,8 +935,8 @@ public final class ComputeHelpers {
         return listOf(a, b, c, d, e, f);
     }
 
-    private static List<Object> listOf(Object... waarden) {
-        return Collections.unmodifiableList(Arrays.asList(waarden));
+    private static List<Object> listOf(Object... values) {
+        return Collections.unmodifiableList(Arrays.asList(values));
     }
 
     // ---------------- the constraints of a fold's range (plan.BetaTest) ----------------
@@ -1001,35 +1001,35 @@ public final class ComputeHelpers {
      *  {@link CreationBudget}. A subject that a higher stratum made cannot occur: a creation reads its subject's
      *  population strictly (ch. 6.1), so it sits at or above every creation that makes its subjects; such a subject, or
      *  an object with two marks, is a fault of this transpiler and throws as one. */
-    public static int creationDepth(String naam, int stratum, String type, List<?> origin, int budget) {
+    public static int creationDepth(String name, int stratum, String type, List<?> origin, int budget) {
         if (origin.size() > 1)
-            throw new IllegalStateException("exec-model: objectcreatie \"" + naam + "\" ontmoet een onderwerp met "
+            throw new IllegalStateException("exec-model: objectcreatie \"" + name + "\" ontmoet een onderwerp met "
                     + origin.size() + " merktekens van een creatie, waar een object één keer gemaakt wordt: " + origin);
         int depth = 1;
         if (!origin.isEmpty()) {
             CreationStamp g = (CreationStamp) origin.get(0);
             if (g.stratum() > stratum)
-                throw new IllegalStateException("exec-model: objectcreatie \"" + naam + "\" van stratum " + stratum
+                throw new IllegalStateException("exec-model: objectcreatie \"" + name + "\" van stratum " + stratum
                         + " ontmoet een onderwerp dat een creatie van stratum " + g.stratum() + " maakte, terwijl een"
                         + " creatie de populatie van haar onderwerp strikt leest en dus in het stratum van elke maker van"
                         + " haar onderwerpen staat of erboven (RUNTIME-SEMANTICS ch. 6.1, 6.3)");
             if (g.stratum() == stratum) depth = g.depth() + 1;
         }
         if (depth > budget)
-            throw new CreationBudget(naam, stratum, depth, type, depth - 1);
+            throw new CreationBudget(name, stratum, depth, type, depth - 1);
         return depth;
     }
 
     /** A new bean of the class named {@code javaClass}, by its public constructor without arguments, every member unset:
      *  the construction of an object creation ({@code plan.Consequence.Construction}) in a DRL text, which names a bean class
      *  and cannot load one, since the text does not see the beans. The class is loaded by the class loader of
-     *  {@code onderwerp}, the bean of the creation's subject: within a session every bean is of the build's bean loader
+     *  {@code subject}, the bean of the creation's subject: within a session every bean is of the build's bean loader
      *  ({@code DroolsBackend.insert}). A class that does not load, or that has no public constructor without arguments,
      *  fails loudly with its name. */
-    public static Object newObject(Object onderwerp, String javaClass) {
+    public static Object newObject(Object subject, String javaClass) {
         Class<?> k;
         try {
-            k = Class.forName(javaClass, true, onderwerp.getClass().getClassLoader());
+            k = Class.forName(javaClass, true, subject.getClass().getClassLoader());
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("een objectcreatie maakt een " + javaClass + ", maar de beanloader van haar"
                     + " onderwerp laadt die klasse niet", e);

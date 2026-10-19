@@ -8,7 +8,7 @@ import java.util.Objects;
 /**
  * A member of a fold's range for which the fold's filter faults, inserted logically by the filter fault rule of the
  * fold: {@code element} is a member of the range of the fold {@code fold}, reached from the fold's subject
- * {@code onderwerp}, and the filter raises an evaluation fault for it ({@code fault}, unnamed): a division by a numeric
+ * {@code subject}, and the filter raises an evaluation fault for it ({@code fault}, unnamed): a division by a numeric
  * zero as {@link Rational#delen} threw it, or a {@link ComputeFault}. It is no fault by itself. The reference interpreter
  * evaluates a filter only where the evaluation of a form reaches the fold: where the form's condition holds, or within
  * its condition up to the member after which a composite's verdict stands (RUNTIME-SEMANTICS ch. 5.10), and only there
@@ -31,15 +31,15 @@ import java.util.Objects;
 public final class FilterFault implements Comparable<FilterFault> {
 
     private final String fold;
-    private final Object onderwerp;
+    private final Object subject;
     private final Object element;
     private final RuntimeException fault;
     private final List<Integer> place;
     private final String sentence;
 
-    public FilterFault(String fold, Object onderwerp, Object element, RuntimeException fault, List<Integer> place) {
+    public FilterFault(String fold, Object subject, Object element, RuntimeException fault, List<Integer> place) {
         this.fold = Objects.requireNonNull(fold, "vouw");
-        this.onderwerp = Objects.requireNonNull(onderwerp, "onderwerp");
+        this.subject = Objects.requireNonNull(subject, "subject");
         this.element = Objects.requireNonNull(element, "element");
         this.fault = Objects.requireNonNull(fault, "fout");
         this.place = List.copyOf(place);
@@ -50,7 +50,7 @@ public final class FilterFault implements Comparable<FilterFault> {
 
     public String fold() { return fold; }
 
-    public Object onderwerp() { return onderwerp; }
+    public Object subject() { return subject; }
 
     public Object element() { return element; }
 
@@ -72,17 +72,17 @@ public final class FilterFault implements Comparable<FilterFault> {
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof FilterFault f && f.onderwerp == onderwerp && f.element == element && f.fold.equals(fold)
+        return o instanceof FilterFault f && f.subject == subject && f.element == element && f.fold.equals(fold)
                 && f.fault.getClass() == fault.getClass() && f.sentence.equals(sentence) && f.place.equals(place);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(fold, System.identityHashCode(onderwerp), System.identityHashCode(element),
+        return Objects.hash(fold, System.identityHashCode(subject), System.identityHashCode(element),
                 fault.getClass().getName(), sentence, place);
     }
 
     @Override public String toString() {
-        return "Filterfout(" + FactNames.object(onderwerp) + ", " + FactNames.object(element) + ", " + place + ", "
+        return "Filterfout(" + FactNames.object(subject) + ", " + FactNames.object(element) + ", " + place + ", "
                 + sentence + ")";
     }
 }

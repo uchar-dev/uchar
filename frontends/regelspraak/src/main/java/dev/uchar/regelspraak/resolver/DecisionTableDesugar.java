@@ -43,8 +43,8 @@ public final class DecisionTableDesugar {
      * @param headers the header cells INCLUDING the numbering column at index 0
      * @param rows    the data rows, each a cell list aligned to {@code headers} (cell[0] = the row numbering)
      */
-    public static List<String> desugar(String naam, String valid, List<String> headers, List<List<String>> rows) {
-        return desugar(naam, valid, headers, rows, w -> {});
+    public static List<String> desugar(String name, String valid, List<String> headers, List<List<String>> rows) {
+        return desugar(name, valid, headers, rows, w -> {});
     }
 
     /**
@@ -54,13 +54,13 @@ public final class DecisionTableDesugar {
      * and more than one §5.7 disjunction cell in a single EN-row (the nested OR-lists cannot coexist in the bullet
      * grammar — see {@link #conditionClause}).
      */
-    public static List<String> desugar(String naam, String valid, List<String> headers, List<List<String>> rows,
+    public static List<String> desugar(String name, String valid, List<String> headers, List<List<String>> rows,
                                         java.util.function.Consumer<String> warn) {
-        return desugarCoded(naam, valid, headers, rows, w -> warn.accept(w.text()));
+        return desugarCoded(name, valid, headers, rows, w -> warn.accept(w.text()));
     }
 
     /** As {@link #desugar(String, String, List, List, java.util.function.Consumer)}, the warnings with their templates. */
-    public static List<String> desugarCoded(String naam, String valid, List<String> headers, List<List<String>> rows,
+    public static List<String> desugarCoded(String name, String valid, List<String> headers, List<List<String>> rows,
                                         java.util.function.Consumer<Typing.Coded> warn) {
         List<Integer> conclusionKol = new ArrayList<>(), conditionKol = new ArrayList<>();
         for (int c = 1; c < headers.size(); c++) {
@@ -72,7 +72,7 @@ public final class DecisionTableDesugar {
             String nr = row.isEmpty() ? "" : row.get(0).trim();
             for (int ci = 0; ci < conclusionKol.size(); ci++) {
                 int cc = conclusionKol.get(ci);
-                String resultClause = resultPart(naam, headers.get(cc).trim(), cellAt(row, cc).trim(), nr, warn);
+                String resultClause = resultPart(name, headers.get(cc).trim(), cellAt(row, cc).trim(), nr, warn);
                 if (resultClause == null) continue;   // a forbidden / un-renderable conclusie — resultaatdeel already warned
 
                 // each non-n.v.t. conditie cell -> a Condition (a predicate kop + its 0..n alternative values).
@@ -90,19 +90,19 @@ public final class DecisionTableDesugar {
                         // uses "en" (§12: a CONJUNCTION of !=, must differ from ALL), which flattens into
                         // the row's AND as separate conditions. Split respects double quotes (a value may contain , / of).
                         boolean notEqual = head.toLowerCase().contains("ongelijk");
-                        List<String> waarden = splitSequence(cell, notEqual);
-                        if (notEqual && waarden.size() > 1)
-                            for (String w : waarden) conditions.add(new Condition(head, List.of(w)));
+                        List<String> values = splitSequence(cell, notEqual);
+                        if (notEqual && values.size() > 1)
+                            for (String w : values) conditions.add(new Condition(head, List.of(w)));
                         else
-                            conditions.add(new Condition(head, waarden));
+                            conditions.add(new Condition(head, values));
                     }
                 }
 
-                String clause = conditionClause(naam, conditions, nr, warn);
+                String clause = conditionClause(name, conditions, nr, warn);
                 if (clause == null) continue;   // un-renderable (>1 disjunction in one EN-row) — warned + skipped
                 // name: "<naam> <rij>" (+ a conclusie-column suffix only when a row yields more than one regel).
-                String regelNaam = naam + (nr.isEmpty() ? "" : " " + nr) + (conclusionKol.size() > 1 ? " (" + (ci + 1) + ")" : "");
-                result.add("Regel " + regelNaam + "\n  geldig " + valid + "\n    " + resultClause + clause + ".\n");
+                String ruleName = name + (nr.isEmpty() ? "" : " " + nr) + (conclusionKol.size() > 1 ? " (" + (ci + 1) + ")" : "");
+                result.add("Regel " + ruleName + "\n  geldig " + valid + "\n    " + resultClause + clause + ".\n");
             }
         }
         return result;
@@ -110,8 +110,8 @@ public final class DecisionTableDesugar {
 
     /** A single conditie cell: the predicate kop ("zijn klasse gelijk is aan", the header minus "indien") and
      *  its value(s). A §5.7 concatenatie cell ("A, B of C") under an equality predicate yields &gt;1 value. */
-    private record Condition(String head, List<String> waarden) {
-        boolean disjunction() { return waarden.size() > 1; }
+    private record Condition(String head, List<String> values) {
+        boolean disjunction() { return values.size() > 1; }
     }
 
     /** Build the "&nbsp;indien …" clause for a row's conditions (empty if none). One condition → inline (or a §13.4.14
@@ -148,7 +148,7 @@ public final class DecisionTableDesugar {
 
     /** One elementary condition: a kenmerk check (no value — the kop IS the condition) or a comparison "kop value". */
     private static String elementary(Condition v) {
-        return v.waarden().isEmpty() ? v.head() : v.head() + " " + v.waarden().get(0);
+        return v.values().isEmpty() ? v.head() : v.head() + " " + v.values().get(0);
     }
 
     /** Negate a kenmerk-check kop (an "onwaar" conditie cell): a §3.4 bezittelijk check "hij een recht … heeft" →
@@ -172,7 +172,7 @@ public final class DecisionTableDesugar {
      *  voldaan", §13.4.14.1) vs nested inside an AND ("er voldoet aan tenminste één …", §13.4.14.2). */
     private static String disjunctionList(Condition v, String bullet, String opener) {
         StringBuilder b = new StringBuilder(opener).append(':');
-        for (String w : v.waarden()) b.append('\n').append(bullet).append(v.head()).append(' ').append(w);
+        for (String w : v.values()) b.append('\n').append(bullet).append(v.head()).append(' ').append(w);
         return b.toString();
     }
 
@@ -220,24 +220,24 @@ public final class DecisionTableDesugar {
         // Only a BALANCED quote char (even count) opens a value span — a stray apostrophe stays a literal char and
         // does NOT suppress the §5.7 separators for the rest of the cell.
         boolean dq = even(cell, '"'), sq = even(cell, '\'');
-        List<String> waarden = new ArrayList<>();
+        List<String> values = new ArrayList<>();
         StringBuilder cur = new StringBuilder();
         char quote = 0;   // 0 = outside any quote; '"' (tekstwaarde) or '\'' (enumeratiewaarde) = the opening char
         for (int i = 0; i < cell.length(); ) {
             char c = cell.charAt(i);
             if (quote == 0 && ((c == '"' && dq) || (c == '\'' && sq))) { quote = c; cur.append(c); i++; continue; }
             if (quote == c) { quote = 0; cur.append(c); i++; continue; }
-            if (quote == 0 && c == ',') { pushValue(waarden, cur); i++; continue; }
+            if (quote == 0 && c == ',') { pushValue(values, cur); i++; continue; }
             if (quote == 0 && c == ' ' && connectorOp(cell, i, connector)) {
-                pushValue(waarden, cur);
+                pushValue(values, cur);
                 i += 2 + connector.length();   // skip " <connector> " (leading space + word + trailing space)
                 continue;
             }
             cur.append(c); i++;
         }
-        pushValue(waarden, cur);
-        if (waarden.isEmpty()) waarden.add(cell.trim());
-        return waarden;
+        pushValue(values, cur);
+        if (values.isEmpty()) values.add(cell.trim());
+        return values;
     }
     /** True when {@code q} occurs an even number of times in {@code s} (balanced spans, safe to track as quotes). */
     private static boolean even(String s, char q) {
@@ -269,9 +269,9 @@ public final class DecisionTableDesugar {
         return cell.regionMatches(w, connector, 0, connector.length())
                 && end < cell.length() && cell.charAt(end) == ' ';
     }
-    private static void pushValue(List<String> waarden, StringBuilder cur) {
+    private static void pushValue(List<String> values, StringBuilder cur) {
         String t = cur.toString().trim();
-        if (!t.isEmpty()) waarden.add(t);
+        if (!t.isEmpty()) values.add(t);
         cur.setLength(0);
     }
 

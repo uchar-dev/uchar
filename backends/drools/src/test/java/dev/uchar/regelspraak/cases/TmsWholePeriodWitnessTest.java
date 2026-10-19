@@ -160,8 +160,8 @@ class TmsWholePeriodWitnessTest {
     }
 
     /** "{@code doel} … moet gesteld worden op {@code lexeme} indien {@code condition}". */
-    static String premie(String naam, String type, String target, String lexeme, String condition) {
-        return computingRule(naam, "GELIJKSTELLING", type, target, number(lexeme), condition);
+    static String premie(String name, String type, String target, String lexeme, String condition) {
+        return computingRule(name, "GELIJKSTELLING", type, target, number(lexeme), condition);
     }
 
     /** The case of {@code instances} with the evaluation date 2024-06-15 and in a session without one. */
@@ -283,8 +283,8 @@ class TmsWholePeriodWitnessTest {
             TmsDocuments.fire(b, order, List.of(j2), session -> session.addEventListener(
                     new DefaultRuleRuntimeEventListener() {
                         @Override public void objectInserted(ObjectInsertedEvent e) {
-                            if (e.getObject() instanceof Value w && w.onderwerp() == j2
-                                    && w.attribute().naam().equals("trouwpremie")) ten[0]++;
+                            if (e.getObject() instanceof Value w && w.subject() == j2
+                                    && w.attribute().name().equals("trouwpremie")) ten[0]++;
                         }
                     }), session -> { });
             assertNull(TmsDocuments.read(j2, "trouwpremie"), () -> "trouwpremie van J2 in volgorde " + names);
@@ -400,11 +400,11 @@ class TmsWholePeriodWitnessTest {
 
     /** "Een Vloot is {@code doel} indien de vaardagen van {@code description} van de boten van de Vloot niet gedurende het gehele
      *  jaar groter is dan 20". */
-    static String count(String naam, String target, String quantifier, int threshold, String description) {
+    static String count(String name, String target, String quantifier, int threshold, String description) {
         String source = "de vaardagen van " + description + " van de boten van de Vloot niet gedurende het gehele jaar groter is"
                 + " dan 20";
         String test = wholeComparison("greater", ownRead("vaardagen", "Boot"), number("20"), whole(true, true), source);
-        return characteristicRule(naam, "Vloot", target, "{\"node\":\"QuantifierFold\",\"quantifier\":\"" + quantifier + "\","
+        return characteristicRule(name, "Vloot", target, "{\"node\":\"QuantifierFold\",\"quantifier\":\"" + quantifier + "\","
                 + "\"threshold\":" + threshold + ",\"elementType\":\"Boot\",\"test\":" + test + ","
                 + TmsDocuments.sourceRole("indeling", "boot") + ",\"source\":{\"snippet\":\"" + source + "\"}}");
     }
@@ -557,9 +557,9 @@ class TmsWholePeriodWitnessTest {
                         refusal(MODEL_R, trouw(twoTimelines))));
     }
 
-    /** The refusal of the document of {@code model} with the one rule {@code regel}, as the build raises it. */
-    static String refusal(String model, String regel) throws Exception {
-        Path ir = TmsTimelineDocuments.document(model, List.of(regel), List.of());
+    /** The refusal of the document of {@code model} with the one rule {@code rule}, as the build raises it. */
+    static String refusal(String model, String rule) throws Exception {
+        Path ir = TmsTimelineDocuments.document(model, List.of(rule), List.of());
         return org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL)).getMessage();
     }

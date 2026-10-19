@@ -330,7 +330,7 @@ class TmsRepeatedFireWitnessTest {
                 session.update(session.getFactHandle(v1), v1);
                 assertEquals(moreThanOneUpdate(AFTER_FIRE, relation("vinder", v1)), assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.fire(b, session)).getMessage(), "the second fire: a changed relation");
-                assertEquals(TmsConsumerWitnessTest.outsideFire(TmsConsumerWitnessTest.naam(v1)
+                assertEquals(TmsConsumerWitnessTest.outsideFire(TmsConsumerWitnessTest.name(v1)
                         + " werd gewijzigd met update", FRESH_OUTSIDE_FIRE),
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session)).getMessage(),
                         "the reading after the refused fire still sees the update");
@@ -344,8 +344,8 @@ class TmsRepeatedFireWitnessTest {
                 DroolsBackend.insert(b, withoutUpdate, new Input().beans(beans.values()));
                 assertNull(DroolsBackend.fire(b, withoutUpdate).noFixpoint(), "first fire");
                 setRole(v1, "vinder", j2);
-                assertEquals("vuur: het veld 'vinder' van " + TmsConsumerWitnessTest.naam(v1) + " wijst naar een Jutter ("
-                        + TmsConsumerWitnessTest.naam(j2) + ") die niet als bean in de invoer staat: de tak leidt alleen af"
+                assertEquals("vuur: het veld 'vinder' van " + TmsConsumerWitnessTest.name(v1) + " wijst naar een Jutter ("
+                        + TmsConsumerWitnessTest.name(j2) + ") die niet als bean in de invoer staat: de tak leidt alleen af"
                         + " voor de objecten in de sessie, dus geef elk object waarnaar een bean wijst ook zelf als bean op",
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.fire(b, withoutUpdate)).getMessage(),
                         "the second fire: the reference check");
@@ -378,7 +378,7 @@ class TmsRepeatedFireWitnessTest {
                 session.insert(j2);
                 setRole(v1, "vinder", j2);
                 session.update(session.getFactHandle(v1), v1);
-                String inserted = TmsConsumerWitnessTest.naam(j2) + " werd ingevoegd";
+                String inserted = TmsConsumerWitnessTest.name(j2) + " werd ingevoegd";
                 assertEquals(afterFire + inserted + newOrAway, assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.fire(b, session)).getMessage(), "a bean inserted between two fires");
                 assertEquals(TmsConsumerWitnessTest.outsideFire(inserted, NEW_OR_AWAY), assertThrows(
@@ -395,7 +395,7 @@ class TmsRepeatedFireWitnessTest {
                 DroolsBackend.insert(b, away, new Input().beans(second.values()));
                 assertNull(DroolsBackend.fire(b, away).noFixpoint(), "first fire");
                 away.delete(away.getFactHandle(v2));
-                assertEquals(afterFire + TmsConsumerWitnessTest.naam(v2) + " werd verwijderd" + newOrAway,
+                assertEquals(afterFire + TmsConsumerWitnessTest.name(v2) + " werd verwijderd" + newOrAway,
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.fire(b, away)).getMessage(),
                         "a bean deleted between two fires");
             } finally {
@@ -409,7 +409,7 @@ class TmsRepeatedFireWitnessTest {
                 DroolsBackend.insert(b, vooraf, new Input().beans(third.values()));
                 vooraf.insert(j3);
                 assertEquals("sinds DroolsBackend.voegIn kwam er buiten voegIn om invoer bij of ging er invoer weg ("
-                        + TmsConsumerWitnessTest.naam(j3) + " werd ingevoegd" + newOrAway,
+                        + TmsConsumerWitnessTest.name(j3) + " werd ingevoegd" + newOrAway,
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.fire(b, vooraf)).getMessage(),
                         "a bean inserted after voegIn, before the first fire");
             } finally {
@@ -440,7 +440,7 @@ class TmsRepeatedFireWitnessTest {
 
     /** The clause of a relation that an update changed: field {@code field} of {@code beanObject}. */
     static String relation(String field, Object beanObject) {
-        return "het veld '" + field + "' van " + TmsConsumerWitnessTest.naam(beanObject) + ", een relatie, werd gewijzigd met"
+        return "het veld '" + field + "' van " + TmsConsumerWitnessTest.name(beanObject) + ", een relatie, werd gewijzigd met"
                 + " update";
     }
 
@@ -491,7 +491,7 @@ class TmsRepeatedFireWitnessTest {
                 org.kie.api.runtime.rule.FactHandle h = uitkering(session, beans.get("V1"));
                 Object value = session.getObject(h);
                 session.delete(h);
-                String description = TmsConsumerWitnessTest.naam(value) + " werd verwijderd";
+                String description = TmsConsumerWitnessTest.name(value) + " werd verwijderd";
                 assertEquals(moreThanOneUpdate(AFTER_FIRE, description), assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.fire(b, session)).getMessage(), "the second fire");
                 assertEquals(TmsConsumerWitnessTest.outsideFire(description, FRESH_OUTSIDE_FIRE), assertThrows(
@@ -513,7 +513,7 @@ class TmsRepeatedFireWitnessTest {
                 assertNull(DroolsBackend.fire(b, session).noFixpoint(), "first fire");
                 String foreign = "geen invoer";
                 session.insert(foreign);
-                assertEquals(moreThanOneUpdate(AFTER_FIRE, TmsConsumerWitnessTest.naam(foreign) + " werd ingevoegd"),
+                assertEquals(moreThanOneUpdate(AFTER_FIRE, TmsConsumerWitnessTest.name(foreign) + " werd ingevoegd"),
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.fire(b, session)).getMessage(),
                         "a fact inserted between two fires");
             } finally {
@@ -527,7 +527,7 @@ class TmsRepeatedFireWitnessTest {
                 assertNull(DroolsBackend.fire(b, other).noFixpoint(), "first fire");
                 org.kie.api.runtime.rule.FactHandle h = uitkering(other, second.get("V1"));
                 other.update(h, other.getObject(h));
-                assertEquals(moreThanOneUpdate(AFTER_FIRE, TmsConsumerWitnessTest.naam(other.getObject(h))
+                assertEquals(moreThanOneUpdate(AFTER_FIRE, TmsConsumerWitnessTest.name(other.getObject(h))
                         + " werd gewijzigd met update"), assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.fire(b, other)).getMessage(), "a fact of the branch updated between two fires");
             } finally {
@@ -547,12 +547,12 @@ class TmsRepeatedFireWitnessTest {
                 Object v1 = beans.get("V1");
                 set(v1, "gewicht", "3");
                 session.update(session.getFactHandle(v1), v1);
-                String regel = TmsConsumerWitnessTest.bareFire(session);
-                assertNotNull(regel, "the plain fire fires a rule: the network has not seen V1's new gewicht");
-                assertEquals(moreThanOneUpdate(AFTER_FIRE, "de regel \"" + regel + "\" vuurde"), assertThrows(
+                String rule = TmsConsumerWitnessTest.bareFire(session);
+                assertNotNull(rule, "the plain fire fires a rule: the network has not seen V1's new gewicht");
+                assertEquals(moreThanOneUpdate(AFTER_FIRE, "de regel \"" + rule + "\" vuurde"), assertThrows(
                         IllegalStateException.class, () -> DroolsBackend.fire(b, session)).getMessage(), "the fire after it");
-                assertEquals(TmsConsumerWitnessTest.outsideFire(TmsConsumerWitnessTest.naam(v1) + " werd gewijzigd met"
-                        + " update en de regel \"" + regel + "\" vuurde", FRESH_OUTSIDE_FIRE),
+                assertEquals(TmsConsumerWitnessTest.outsideFire(TmsConsumerWitnessTest.name(v1) + " werd gewijzigd met"
+                        + " update en de regel \"" + rule + "\" vuurde", FRESH_OUTSIDE_FIRE),
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session)).getMessage(),
                         "the reading");
             } finally {
@@ -584,7 +584,7 @@ class TmsRepeatedFireWitnessTest {
                 session.update(session.getFactHandle(v2), v2);
                 assertEquals(moreThanOneUpdate(AFTER_FIRE, relation("aanmelder", v2)), assertThrows(
                         IllegalStateException.class, () -> DroolsBackend.fire(b, session)).getMessage(), "the second fire");
-                assertEquals(TmsConsumerWitnessTest.outsideFire(TmsConsumerWitnessTest.naam(v2) + " werd gewijzigd met"
+                assertEquals(TmsConsumerWitnessTest.outsideFire(TmsConsumerWitnessTest.name(v2) + " werd gewijzigd met"
                         + " update", FRESH_OUTSIDE_FIRE), assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.fixpointOf(b, session)).getMessage(), "the reading");
             } finally {
@@ -633,9 +633,9 @@ class TmsRepeatedFireWitnessTest {
     /** The clause of a relation that changed without an update: field {@code field} of {@code bean}, which held
      *  {@code before} at {@code insert} and holds {@code after}. */
     static String withoutUpdate(String field, Object bean, Object before, Object after) {
-        return "het veld '" + field + "' van " + TmsConsumerWitnessTest.naam(bean) + ", een relatie, veranderde zonder"
-                + " update: het hield bij DroolsBackend.voegIn " + TmsConsumerWitnessTest.naam(before) + " en houdt nu "
-                + TmsConsumerWitnessTest.naam(after);
+        return "het veld '" + field + "' van " + TmsConsumerWitnessTest.name(bean) + ", een relatie, veranderde zonder"
+                + " update: het hield bij DroolsBackend.voegIn " + TmsConsumerWitnessTest.name(before) + " en houdt nu "
+                + TmsConsumerWitnessTest.name(after);
     }
 
     /** J1 and J2 in the input, V1 (10) and V2 (4) found by J1; after the first fire V1's vinder becomes J2 without an
@@ -716,7 +716,7 @@ class TmsRepeatedFireWitnessTest {
         CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL).withSession(TmsDocuments.JSON.readTree(
                 Files.readString(ir.resolveSibling("case1-berekend.json"))), (build, session, labels) -> {
             assertNull(DroolsBackend.fire(build, session).noFixpoint(), "first fire");
-            session.getAgenda().getAgendaGroup(dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.OBJECTCREATIE)
+            session.getAgenda().getAgendaGroup(dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.OBJECT_CREATION)
                     .setFocus();
             String expectedSentence = TmsConsumerWitnessTest.outsideFire("een agendagroep kreeg de focus met"
                     + " AgendaGroup.setFocus", TmsConsumerWitnessTest.FRESH_AT_CREATION);
@@ -797,8 +797,8 @@ class TmsRepeatedFireWitnessTest {
     /** The handle of the {@code Value} that gives {@code vondst} its uitkering. */
     private static org.kie.api.runtime.rule.FactHandle uitkering(KieSession session, Object vondst) {
         List<org.kie.api.runtime.rule.FactHandle> out = new ArrayList<>(session.getFactHandles(o ->
-                o instanceof dev.uchar.regelspraak.transpiler.tms.Value w && w.onderwerp() == vondst
-                        && w.attribute().naam().equals("uitkering")));
+                o instanceof dev.uchar.regelspraak.transpiler.tms.Value w && w.subject() == vondst
+                        && w.attribute().name().equals("uitkering")));
         assertEquals(1, out.size(), "the Waarde of V1's uitkering");
         return out.get(0);
     }
@@ -807,7 +807,7 @@ class TmsRepeatedFireWitnessTest {
     private static List<String> aanvoergeld(Fixpoint f, Map<String, Object> labels) {
         List<String> out = new ArrayList<>();
         labels.forEach((label, beanObject) -> {
-            for (Fixpoint.DerivedValue w : f.waarden())
+            for (Fixpoint.DerivedValue w : f.values())
                 if (w.object() == beanObject && w.attribute().equals("aanvoergeld"))
                     out.add(label + " " + ((BigDecimal) w.value()).stripTrailingZeros().toPlainString());
         });
@@ -819,7 +819,7 @@ class TmsRepeatedFireWitnessTest {
 
     /** The heffing {@code f} derives for {@code jutter}, as a plain number, or null. */
     private static String heffing(Fixpoint f, Object jutter) {
-        for (Fixpoint.DerivedValue w : f.waarden())
+        for (Fixpoint.DerivedValue w : f.values())
             if (w.object() == jutter && w.attribute().equals("heffing"))
                 return ((BigDecimal) w.value()).stripTrailingZeros().toPlainString();
         return null;
@@ -854,15 +854,15 @@ class TmsRepeatedFireWitnessTest {
         Map<Object, String> label = new IdentityHashMap<>();
         beans.forEach((l, beanObject) -> label.put(beanObject, l));
         List<String> out = new ArrayList<>();
-        for (Fixpoint.DerivedValue w : f.waarden())
+        for (Fixpoint.DerivedValue w : f.values())
             out.add(label.get(w.object()) + "." + w.attribute() + " = "
                     + (w.value() instanceof BigDecimal d ? d.stripTrailingZeros().toPlainString() : w.value()));
-        for (Fixpoint.DerivedCharacteristic k : f.kenmerken()) out.add(label.get(k.object()) + " is " + k.characteristic());
+        for (Fixpoint.DerivedCharacteristic k : f.characteristics()) out.add(label.get(k.object()) + " is " + k.characteristic());
         for (Fixpoint.MadeObject o : f.objects())
-            out.add("gemaakt: " + o.creation() + " voor " + label.get(o.onderwerp()));
+            out.add("gemaakt: " + o.creation() + " voor " + label.get(o.subject()));
         for (Fixpoint.MadeLink k : f.links())
             out.add("koppeling: " + k.factType() + " " + label.get(k.first()) + " " + label.get(k.second()));
-        for (Fault fault : f.faults()) out.add(label.get(fault.onderwerp()) + ": " + fault.message());
+        for (Fault fault : f.faults()) out.add(label.get(fault.subject()) + ": " + fault.message());
         for (Object i : f.inconsistencies()) out.add("inconsistent: " + i);
         out.sort(null);
         return out;

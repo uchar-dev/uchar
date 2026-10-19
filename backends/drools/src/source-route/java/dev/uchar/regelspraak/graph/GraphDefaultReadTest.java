@@ -53,13 +53,13 @@ class GraphDefaultReadTest {
         List<Form> groupForms = forms.subList(forms.size() - groups.size(), forms.size());
         for (int i = 0; i < groups.size(); i++) {
             Form v = groupForms.get(i);
-            assertEquals(FormKind.DEFAULTSGROEP, v.category(), where);
+            assertEquals(FormKind.DEFAULTS_GROUP, v.category(), where);
             Set<ElementKey> combined = new LinkedHashSet<>();
             for (DefaultRead d : ProducerConsumer.readings(model, groups.get(i), navigation)) {
                 combined.addAll(d.justification());
                 combined.addAll(d.consequence());
             }
-            assertEquals(List.copyOf(v.reads()), List.copyOf(combined), where + ", groep " + v.naam());
+            assertEquals(List.copyOf(v.reads()), List.copyOf(combined), where + ", groep " + v.name());
         }
     }
 
@@ -160,21 +160,21 @@ class GraphDefaultReadTest {
         """;
 
     /** The reads of the group named {@code naam}, on both routes, one line per default: "pad R[…] C[…]". */
-    private static void readings(String source, String naam, List<String> expected) {
+    private static void readings(String source, String name, List<String> expected) {
         TwoRoutes.Twin t = TwoRoutes.read(source);
         RegelSpraakModel m = t.sourceModel();
         IrLoader.Loaded w = t.wire();
-        assertEquals(expected, rules(m, group(m.prioritizedDefaults, naam), ProducerConsumer.sourceNavigation(m)), "bron");
-        assertEquals(expected, rules(w.model(), group(w.prioritizedDefaults(), naam), ProducerConsumer.wireNavigation(w)),
+        assertEquals(expected, rules(m, group(m.prioritizedDefaults, name), ProducerConsumer.sourceNavigation(m)), "bron");
+        assertEquals(expected, rules(w.model(), group(w.prioritizedDefaults(), name), ProducerConsumer.wireNavigation(w)),
                 "wire");
         union(m, m.prioritizedDefaults, ProducerConsumer.sourceNavigation(m), "bron");
         union(w.model(), w.prioritizedDefaults(), ProducerConsumer.wireNavigation(w), "wire");
     }
 
-    private static PrioritizedDefaults group(List<PrioritizedDefaults> groups, String naam) {
-        return groups.stream().filter(p -> naam.equals(p.naam())).findFirst()
-                .orElseThrow(() -> new AssertionError("geen groep '" + naam + "' in "
-                        + groups.stream().map(PrioritizedDefaults::naam).toList()));
+    private static PrioritizedDefaults group(List<PrioritizedDefaults> groups, String name) {
+        return groups.stream().filter(p -> name.equals(p.name())).findFirst()
+                .orElseThrow(() -> new AssertionError("geen groep '" + name + "' in "
+                        + groups.stream().map(PrioritizedDefaults::name).toList()));
     }
 
     private static List<String> rules(RegelSpraakModel model, PrioritizedDefaults group, Navigation navigation) {
@@ -183,7 +183,7 @@ class GraphDefaultReadTest {
     }
 
     private static String names(Set<ElementKey> s) {
-        return s.stream().map(e -> e.objectType() + "." + e.naam() + (e.characteristic() ? " (k)" : ""))
+        return s.stream().map(e -> e.objectType() + "." + e.name() + (e.characteristic() ? " (k)" : ""))
                 .collect(Collectors.joining(", ", "[", "]"));
     }
 

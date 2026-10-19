@@ -81,7 +81,7 @@ class ChainConditionWitnessTest {
         List<String> situation = List.of(haven("H", "2026-01-01", null), jutter("J", "2026-03-01", "H"),
                 jutter("J2", "2026-03-01", null), vondst("V1", "2026-09-15", "J"), vondst("V2", "2026-09-15", "J2"),
                 vondst("V3", "2026-09-15", null));
-        String emptyTest = regel("uitkomst", "Vondst", "uitkomst", dateLiteral("2026-01-01"),
+        String emptyTest = rule("uitkomst", "Vondst", "uitkomst", dateLiteral("2026-01-01"),
                 predicate("empty", viaHaven("afgeleide openingsdag")));
         assertNull(play(document(DERIVED_OPENINGSDAG, emptyTest), caseDocument(situation,
                 empty("V1") + ", " + date("V2", "2026-01-01") + ", " + date("V3", "2026-01-01"))), "de leeg-toets");
@@ -105,7 +105,7 @@ class ChainConditionWitnessTest {
         // Haven alone does not see J's haven being set. ref and clingo: V 01-01-2026, X leeg. Measured 2026-10-01:
         // red on the transpiler of the fix of the voorwaarde (attribuut uitkomst: verwacht 2026-01-01, werkelijk leeg),
         // as on the claim.
-        String ir = document(List.of(regel("uitkomst", "Vondst", "uitkomst", viaHaven("openingsdag"), null), DERIVED_OPENINGSDAG),
+        String ir = document(List.of(rule("uitkomst", "Vondst", "uitkomst", viaHaven("openingsdag"), null), DERIVED_OPENINGSDAG),
                 WERVING);
         assertNull(play(ir, caseDocument(WERVING_SITUATION, date("V", "2026-01-01") + ", " + empty("X"))), "de haven komt uit de werving");
     }
@@ -116,7 +116,7 @@ class ChainConditionWitnessTest {
         // "… indien zijn vinddag later is dan de afgeleide sluitingsdag van de kustwacht van de haven van de jutter van
         // de Vondst plus 3 mnd", the derivation of the sluitingsdag after the reader. ref and clingo: V 15-09-2026
         // (later than 01-09-2026), W leeg (15-05-2026), U leeg (its haven has no kustwacht).
-        String derived = regel("afgeleide sluitingsdag", "Kustwacht", "afgeleide sluitingsdag",
+        String derived = rule("afgeleide sluitingsdag", "Kustwacht", "afgeleide sluitingsdag",
                 own("sluitingsdag", "Kustwacht"), null);
         String ir = document(outcomeIf(comparison("later", own("vinddag"), months("plus",
                 viaKustwacht("afgeleide sluitingsdag"), "3", "de afgeleide sluitingsdag … plus 3 mnd"))), derived);
@@ -150,7 +150,7 @@ class ChainConditionWitnessTest {
         String division = "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":" + own("waarde") + ",\"right\":" + own("deler")
                 + ",\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"},"
                 + "\"source\":{\"snippet\":\"zijn waarde gedeeld door zijn deler\"}}";
-        String ir = document(regel("uitkomstwaarde", "Vondst", "uitkomstwaarde", division,
+        String ir = document(rule("uitkomstwaarde", "Vondst", "uitkomstwaarde", division,
                 predicate("filled", viaHaven("afgeleide openingsdag"))), DERIVED_OPENINGSDAG);
         assertNull(play(ir, caseDocument(List.of(haven("H", "2026-01-01", null), jutter("J", "2026-03-01", "H"),
                         instance("V", "Vondst", "\"waarde\":{\"number\":\"10\"}", "\"jutter\":[\"J\"]")),
@@ -171,17 +171,17 @@ class ChainConditionWitnessTest {
     private static final String MND = "{\"node\":\"Unit\",\"abbreviation\":\"mnd\",\"system\":\"Tijd\",\"canonical\":\"mnd\","
             + "\"factorToCanonical\":{\"num\":1,\"den\":1}}";
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
-    private static String objectType(String naam, String plural, boolean animate, String... attributes) {
-        return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
+    private static String objectType(String name, String plural, boolean animate, String... attributes) {
+        return "{\"node\":\"ObjectType\",\"name\":\"" + name + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
                 + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[]}";
     }
 
-    private static String factType(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
-        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
+    private static String factType(String name, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + oneRole + "\",\"objectType\":\"" + oneType + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + manyRole + "\",\"objectType\":\"" + manyType + "\",\"plural\":\"" + manyPlural
                 + "\",\"many\":true}]}";
@@ -266,8 +266,8 @@ class ChainConditionWitnessTest {
     }
 
     /** One rule with one version; {@code condition} null for none. */
-    private static String regel(String naam, String type, String target, String value, String condition) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+    private static String rule(String name, String type, String target, String value, String condition) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
                 + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type + "\","
                 + "\"source\":{\"snippet\":\"De " + target + "\"}},\"value\":" + value
                 + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false,\"presentation\":\"equation\"}]}";
@@ -275,7 +275,7 @@ class ChainConditionWitnessTest {
 
     /** "De uitkomst van een Vondst moet gesteld worden op zijn vinddag indien &lt;voorwaarde&gt;." */
     private static String outcomeIf(String condition) {
-        return regel("uitkomst", "Vondst", "uitkomst", own("vinddag"), condition);
+        return rule("uitkomst", "Vondst", "uitkomst", own("vinddag"), condition);
     }
 
     /** "Een havenjutter van een Haven is een geworven jutter van de kustwacht van de Haven." */
@@ -291,7 +291,7 @@ class ChainConditionWitnessTest {
             instance("J2", "Jutter", "", "\"werver\":[\"K2\"]"), vondst("V", "2026-09-15", "J"), vondst("X", "2026-09-15", "J2"));
 
     /** "De afgeleide openingsdag van een Haven moet gesteld worden op zijn openingsdag." */
-    private static final String DERIVED_OPENINGSDAG = regel("afgeleide openingsdag", "Haven", "afgeleide openingsdag",
+    private static final String DERIVED_OPENINGSDAG = rule("afgeleide openingsdag", "Haven", "afgeleide openingsdag",
             own("openingsdag", "Haven"), null);
 
     private static String document(String... rules) { return document(List.of(rules), ""); }

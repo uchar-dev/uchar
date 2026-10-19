@@ -169,8 +169,8 @@ class CountRangeTest {
     @Test
     void the_ambiguous_count_guesses_no_relation() {
         RegelSpraakModel m = Resolver.resolve(AMBIGUOUS_MODEL + TYPE_PLURAL_RULE);
-        assertTrue(m.resolvedRegels.get(0).value() instanceof Expr.FunctionCall f
-                        && f.elementObjectType() != null && f.elementObjectType().naam.equals("Munt"),
+        assertTrue(m.resolvedRules.get(0).value() instanceof Expr.FunctionCall f
+                        && f.elementObjectType() != null && f.elementObjectType().name.equals("Munt"),
                 () -> "het elementtype blijft gebonden; de meerduidigheid zit in de RELATIE");
         assertEquals(List.of("vouw 'het aantal Munten van de Jutter' zonder bereik (2 relaties verbinden Jutter met "
                         + "Munt, en 'Munten' noemt geen rol die er precies één aanwijst): " + WITHOUT_RANGE),
@@ -227,9 +227,9 @@ class CountRangeTest {
     @Test
     void an_unconnected_type_pair_yields_the_same_refusal() {
         RegelSpraakModel m = Resolver.resolve(UNCONNECTED_MODEL + TYPE_PLURAL_RULE);
-        assertTrue(m.resolvedRegels.get(0).value() instanceof Expr.FunctionCall f
+        assertTrue(m.resolvedRules.get(0).value() instanceof Expr.FunctionCall f
                         && f.kind() == Expr.FunctionKind.AANTAL
-                        && f.elementObjectType() != null && f.elementObjectType().naam.equals("Munt"),
+                        && f.elementObjectType() != null && f.elementObjectType().name.equals("Munt"),
                 () -> "het elementtype bindt ook zonder verbindend feittype, en de telling is opgelost");
         assertEquals(List.of("vouw 'het aantal Munten van de Jutter' zonder bereik (geen relatie verbindt Jutter met "
                 + "Munt): " + WITHOUT_RANGE), faults(m));

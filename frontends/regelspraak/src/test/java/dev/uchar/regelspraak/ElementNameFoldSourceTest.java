@@ -74,11 +74,11 @@ class ElementNameFoldSourceTest {
     }
 
     /** The fold of the rule's value: its element type, and the steps of its written range (empty for one step). */
-    private static void foldsOver(RegelSpraakModel m, String regel, String element, List<String> steps) {
-        ResolvedRule r = m.resolvedRegels.stream().filter(x -> x.naam().equals(regel)).findFirst().orElseThrow();
+    private static void foldsOver(RegelSpraakModel m, String rule, String element, List<String> steps) {
+        ResolvedRule r = m.resolvedRules.stream().filter(x -> x.name().equals(rule)).findFirst().orElseThrow();
         Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, r.value());
         Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, f.arguments().get(0));
-        assertEquals(element, a.objectType().naam, "het elementtype");
+        assertEquals(element, a.objectType().name, "het elementtype");
         assertEquals(steps, a.rangePath().stream().map(b -> b.factType() + "." + b.role()).toList());
     }
 

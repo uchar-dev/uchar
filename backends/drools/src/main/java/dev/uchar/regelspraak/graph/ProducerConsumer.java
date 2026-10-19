@@ -48,9 +48,9 @@ public final class ProducerConsumer {
      *  <p><b>The objecttype is the member's DECLARING type</b> (IR-SPEC ch. 2.2), not the type the form that
      *  touched it happens to range over — see {@link #elementOf}. A member is declared once and inherited, so
      *  a write on the supertype and a read on the subtype touch ONE element and must key alike. */
-    public record ElementKey(String objectType, String naam, boolean characteristic) {
-        public static ElementKey van(String objectType, String naam, boolean characteristic) {
-            return new ElementKey(Namen.norm(objectType), Namen.norm(naam), characteristic);
+    public record ElementKey(String objectType, String name, boolean characteristic) {
+        public static ElementKey van(String objectType, String name, boolean characteristic) {
+            return new ElementKey(Namen.norm(objectType), Namen.norm(name), characteristic);
         }
     }
 
@@ -77,17 +77,17 @@ public final class ProducerConsumer {
      * different types of one chain, and the model's own {@code declarantOf} answers for both kinds at once. A
      * member nothing on the chain declares keeps its holder, which is the reading from before this rule existed.
      */
-    public static ElementKey elementOf(RegelSpraakModel.Objecttype houder, String naam, boolean characteristic) {
-        if (houder == null) return ElementKey.van("", naam, characteristic);
-        return ElementKey.van(declarant(houder, naam, characteristic).naam, naam, characteristic);
+    public static ElementKey elementOf(RegelSpraakModel.ObjectType houder, String name, boolean characteristic) {
+        if (houder == null) return ElementKey.van("", name, characteristic);
+        return ElementKey.van(declarant(houder, name, characteristic).name, name, characteristic);
     }
 
-    private static RegelSpraakModel.Objecttype declarant(RegelSpraakModel.Objecttype houder, String naam,
+    private static RegelSpraakModel.ObjectType declarant(RegelSpraakModel.ObjectType houder, String name,
                                                          boolean characteristic) {
-        if (naam == null) return houder;
-        for (RegelSpraakModel.Objecttype t : houder.chain())
-            if (characteristic ? t.kenmerken.stream().anyMatch(k -> sameName(k, naam))
-                        : t.attributen.keySet().stream().anyMatch(a -> sameName(a, naam)))
+        if (name == null) return houder;
+        for (RegelSpraakModel.ObjectType t : houder.chain())
+            if (characteristic ? t.characteristics.stream().anyMatch(k -> sameName(k, name))
+                        : t.attributes.keySet().stream().anyMatch(a -> sameName(a, name)))
                 return t;
         return houder;
     }
@@ -102,18 +102,18 @@ public final class ProducerConsumer {
                                                                   List<PrioritizedDefaults> defaults) {
         Map<ElementKey, Set<String>> out = new LinkedHashMap<>();
         for (Form v : read(model, defaults, null))
-            for (ElementKey el : v.writes()) out.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(v.naam());
+            for (ElementKey el : v.writes()) out.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(v.name());
         return out;
     }
 
     /** The kind of a form of the rule layer (IR-SPEC ch. 2, Rules), one per list the forms sit in: a rule (an
      *  assignment, initialisation or characteristic attribution), an object creation, an allocation, a
      *  consistency, a uniqueness (single-source or a union), a fact creation, a defaults group. */
-    public enum FormKind { REGEL, OBJECTCREATIE, VERDELING, CONSISTENTIE, UNICITEIT, FEITCREATIE, DEFAULTSGROEP }
+    public enum FormKind { REGEL, OBJECT_CREATION, ALLOCATION, CONSISTENCY, UNIQUENESS, FACT_CREATION, DEFAULTS_GROUP }
 
     /** One form as this analysis reads it: its kind, its base name ({@link #baseName}; a defaults group without a
      *  name is named by its pointer in the document), the elements it WRITES and the elements it READS. */
-    public record Form(FormKind category, String naam, Set<ElementKey> writes, Set<ElementKey> reads) {}
+    public record Form(FormKind category, String name, Set<ElementKey> writes, Set<ElementKey> reads) {}
 
     /**
      * Every form of the rule layer with the attributes and characteristics it writes and reads, per IR-SPEC ch. 5.1
@@ -146,12 +146,12 @@ public final class ProducerConsumer {
     private static List<Form> read(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigation navigation) {
         java.util.Objects.requireNonNull(defaults, "defaults");
         List<Form> out = new ArrayList<>();
-        for (ResolvedRule r : model.resolvedRegels) {
+        for (ResolvedRule r : model.resolvedRules) {
             Set<ElementKey> writes = new LinkedHashSet<>();
             if (r.target() instanceof Expr.AttributeReference ref)
                 writes.add(elementOf(ref.objectType(), ref.attribute(),
                         r.category() == ResolvedRule.Kind.KENMERKTOEKENNING));
-            out.add(new Form(FormKind.REGEL, baseName(r.naam()), writes,
+            out.add(new Form(FormKind.REGEL, baseName(r.name()), writes,
                     navigation == null ? Set.of() : consumed(r, navigation)));
         }
         for (ResolvedObjectCreation o : model.objectCreations) {
@@ -161,7 +161,7 @@ public final class ProducerConsumer {
             Reader l = new Reader(navigation, new LinkedHashSet<>());
             l.condition(o.condition(), o.subject());
             for (ResolvedObjectCreation.MemberInit t : o.initialisations()) l.expr(t.value(), o.subject());
-            out.add(new Form(FormKind.OBJECTCREATIE, baseName(o.naam()), writes, l.out()));
+            out.add(new Form(FormKind.OBJECT_CREATION, baseName(o.name()), writes, l.out()));
         }
         for (ResolvedAllocation v : model.allocations) {
             Set<ElementKey> writes = new LinkedHashSet<>();
@@ -172,42 +172,42 @@ public final class ProducerConsumer {
             for (String a : new String[] { v.ratioAttribute(), v.maximumAttribute(), v.orderingAttribute() })
                 l.member(v.targetType(), a, false);
             l.condition(v.condition(), v.sourceType());
-            out.add(new Form(FormKind.VERDELING, baseName(v.naam()), writes, l.out()));
+            out.add(new Form(FormKind.ALLOCATION, baseName(v.name()), writes, l.out()));
         }
-        for (ResolvedConsistency c : model.consistenties) {
+        for (ResolvedConsistency c : model.consistencies) {
             Reader l = new Reader(navigation, new LinkedHashSet<>());
-            l.condition(c.assertie(), c.subject());
-            out.add(new Form(FormKind.CONSISTENTIE, baseName(c.naam()), Set.of(), l.out()));
+            l.condition(c.assertion(), c.subject());
+            out.add(new Form(FormKind.CONSISTENCY, baseName(c.name()), Set.of(), l.out()));
         }
         for (ResolvedUniqueness u : model.uniquenesses) {
             Reader l = new Reader(navigation, new LinkedHashSet<>());
             for (String key : u.keys()) l.member(u.subject(), key, false);
-            out.add(new Form(FormKind.UNICITEIT, baseName(u.naam()), Set.of(), l.out()));
+            out.add(new Form(FormKind.UNIQUENESS, baseName(u.name()), Set.of(), l.out()));
         }
         for (ResolvedUniquenessUnion u : model.uniquenessUnions) {
             Reader l = new Reader(navigation, new LinkedHashSet<>());
             for (ResolvedUniquenessUnion.Source b : u.sources())
                 if (b.type() != null) for (String key : b.keys()) l.member(b.type(), key, false);
-            out.add(new Form(FormKind.UNICITEIT, baseName(u.naam()), Set.of(), l.out()));
+            out.add(new Form(FormKind.UNIQUENESS, baseName(u.name()), Set.of(), l.out()));
         }
         for (ResolvedFactCreation f : model.factCreations) {
             Reader l = new Reader(navigation, new LinkedHashSet<>());
             l.condition(f.condition(), f.anchor());
-            out.add(new Form(FormKind.FEITCREATIE, baseName(f.naam()), Set.of(), l.out()));
+            out.add(new Form(FormKind.FACT_CREATION, baseName(f.name()), Set.of(), l.out()));
         }
         for (int i = 0; i < defaults.size(); i++) {
             PrioritizedDefaults p = defaults.get(i);
-            RegelSpraakModel.Objecttype onderwerp = model.objectTypeByName(p.onderwerp());
+            RegelSpraakModel.ObjectType subjectType = model.objectTypeByName(p.subject());
             Set<ElementKey> writes = new LinkedHashSet<>();
-            if (p.target() != null) writes.add(elementOf(onderwerp, p.target(), p.isCharacteristic()));
+            if (p.target() != null) writes.add(elementOf(subjectType, p.target(), p.isCharacteristic()));
             // the group reads what its defaults read, so the per-default reading and this one cannot drift apart
             Set<ElementKey> reads = new LinkedHashSet<>();
             for (DefaultRead d : readDefaults(model, p, navigation)) {
                 reads.addAll(d.justification());
                 reads.addAll(d.consequence());
             }
-            out.add(new Form(FormKind.DEFAULTSGROEP,
-                    p.naam() != null ? baseName(p.naam()) : "/rules/prioritizedDefaults/" + i, writes, reads));
+            out.add(new Form(FormKind.DEFAULTS_GROUP,
+                    p.name() != null ? baseName(p.name()) : "/rules/prioritizedDefaults/" + i, writes, reads));
         }
         return out;
     }
@@ -233,19 +233,19 @@ public final class ProducerConsumer {
 
     /** The reading behind {@link #readings}; without {@code navigation} every set is empty, as in {@link #read}. */
     private static List<DefaultRead> readDefaults(RegelSpraakModel model, PrioritizedDefaults group, Navigation navigation) {
-        RegelSpraakModel.Objecttype onderwerp = model.objectTypeByName(group.onderwerp());
+        RegelSpraakModel.ObjectType subjectType = model.objectTypeByName(group.subject());
         List<DefaultRead> out = new ArrayList<>();
         for (int i = 0; i < group.defaults().size(); i++)
-            readings(group.defaults().get(i), List.of(i), onderwerp, navigation, out);
+            readings(group.defaults().get(i), List.of(i), subjectType, navigation, out);
         return out;
     }
 
-    private static void readings(Default d, List<Integer> path, RegelSpraakModel.Objecttype onderwerp,
+    private static void readings(Default d, List<Integer> path, RegelSpraakModel.ObjectType subjectType,
                                  Navigation navigation, List<DefaultRead> out) {
         Reader justification = new Reader(navigation, new LinkedHashSet<>());
-        justification.condition(d.condition(), onderwerp);
+        justification.condition(d.condition(), subjectType);
         Reader consequence = new Reader(navigation, new LinkedHashSet<>());
-        consequence.expr(d.consequence(), onderwerp);
+        consequence.expr(d.consequence(), subjectType);
         out.add(new DefaultRead(path, d, java.util.Collections.unmodifiableSet(justification.out()),
                 java.util.Collections.unmodifiableSet(consequence.out())));
         if (d.exceptions() == null) return;
@@ -256,7 +256,7 @@ public final class ProducerConsumer {
                 List<Integer> sub = new ArrayList<>(path);
                 sub.add(g);
                 sub.add(j);
-                readings(members.get(j), List.copyOf(sub), onderwerp, navigation, out);
+                readings(members.get(j), List.copyOf(sub), subjectType, navigation, out);
             }
         }
     }
@@ -271,8 +271,8 @@ public final class ProducerConsumer {
      */
     @FunctionalInterface
     public interface Navigation {
-        /** The type {@code check}'s hop reaches from {@code onderwerp}, or null when the check does not navigate. */
-        RegelSpraakModel.Objecttype reaches(Condition.CharacteristicCheck check, RegelSpraakModel.Objecttype onderwerp);
+        /** The type {@code check}'s hop reaches from {@code subjectType}, or null when the check does not navigate. */
+        RegelSpraakModel.ObjectType reaches(Condition.CharacteristicCheck check, RegelSpraakModel.ObjectType subjectType);
     }
 
     /** The answer of a resolver's model: the record names the role its hop walks, and the reached type is the
@@ -280,13 +280,13 @@ public final class ProducerConsumer {
      *  binding it writes for the hop. A navigated check whose role reaches no unique type fails loudly, as the
      *  emitter refuses to write it. */
     public static Navigation sourceNavigation(RegelSpraakModel model) {
-        return (k, onderwerp) -> {
+        return (k, subjectType) -> {
             if (k.navigation() == null) return null;
-            RegelSpraakModel.Objecttype reaches = model.roleTargetTypeToSubject(onderwerp, k.navigation());
+            RegelSpraakModel.ObjectType reaches = model.roleTargetTypeToSubject(subjectType, k.navigation());
             if (reaches == null)
                 throw new IllegalStateException("the characteristic check '" + k.characteristic() + "' navigates by the role '"
                         + k.navigation() + "', which reaches no unique object type from "
-                        + (onderwerp == null ? "an unknown subject" : "'" + onderwerp.naam + "'"));
+                        + (subjectType == null ? "an unknown subject" : "'" + subjectType.name + "'"));
             return reaches;
         };
     }
@@ -298,15 +298,15 @@ public final class ProducerConsumer {
     public static Navigation wireNavigation(IrLoader.Loaded loaded) {
         RegelSpraakModel model = loaded.model();
         Map<Object, List<RegelSpraakModel.RoleBindingRef>> hops = loaded.navigationBindings();
-        return (k, onderwerp) -> {
+        return (k, subjectType) -> {
             List<RegelSpraakModel.RoleBindingRef> path = hops.get(k);
             if (path == null || path.isEmpty()) return null;
             RegelSpraakModel.RoleBindingRef hop = path.get(path.size() - 1);
-            for (RegelSpraakModel.FactType ft : model.feittypen.values())
-                if (sameName(ft.naam, hop.factType()))
-                    for (RegelSpraakModel.Role role : ft.rollen)
-                        if (role.naam() != null && sameName(role.naam(), hop.role())) {
-                            RegelSpraakModel.Objecttype reaches = model.objectTypeByName(role.objecttypeNaam());
+            for (RegelSpraakModel.FactType ft : model.factTypes.values())
+                if (sameName(ft.name, hop.factType()))
+                    for (RegelSpraakModel.Role role : ft.roles)
+                        if (role.name() != null && sameName(role.name(), hop.role())) {
+                            RegelSpraakModel.ObjectType reaches = model.objectTypeByName(role.objectTypeName());
                             if (reaches != null) return reaches;
                         }
             throw new IllegalStateException("the characteristic check '" + k.characteristic() + "' navigates by the role '"
@@ -327,7 +327,7 @@ public final class ProducerConsumer {
     public static Set<ElementKey> consumed(ResolvedRule r, Navigation navigation) {
         Set<ElementKey> out = new LinkedHashSet<>();
         Reader reader = new Reader(java.util.Objects.requireNonNull(navigation, "navigatie"), out);
-        RegelSpraakModel.Objecttype subject = r.target() instanceof Expr.AttributeReference ref ? ref.objectType() : null;
+        RegelSpraakModel.ObjectType subject = r.target() instanceof Expr.AttributeReference ref ? ref.objectType() : null;
         reader.condition(r.condition(), subject);
         reader.expr(r.value(), subject);
         return out;
@@ -341,12 +341,12 @@ public final class ProducerConsumer {
 
         /** A member a form names outright rather than through an expression: an allocation's source amount or
          *  recipient attribute, a key of a uniqueness. */
-        void member(RegelSpraakModel.Objecttype houder, String naam, boolean characteristic) {
-            if (navigation == null || naam == null) return;
-            out.add(elementOf(houder, naam, characteristic));
+        void member(RegelSpraakModel.ObjectType houder, String name, boolean characteristic) {
+            if (navigation == null || name == null) return;
+            out.add(elementOf(houder, name, characteristic));
         }
 
-        void condition(Condition c, RegelSpraakModel.Objecttype subject) {
+        void condition(Condition c, RegelSpraakModel.ObjectType subject) {
             if (c == null || navigation == null) return;
             switch (c) {
                 case Condition.Comparison v -> { expr(v.left(), subject); expr(v.right(), subject); }
@@ -355,8 +355,8 @@ public final class ProducerConsumer {
                 // A navigated check lives on the object its hop reaches; any other check lives on its host, or on
                 // the subject when it names none.
                 case Condition.CharacteristicCheck k -> {
-                    RegelSpraakModel.Objecttype reaches = navigation.reaches(k, subject);
-                    RegelSpraakModel.Objecttype carrier =
+                    RegelSpraakModel.ObjectType reaches = navigation.reaches(k, subject);
+                    RegelSpraakModel.ObjectType carrier =
                             reaches != null ? reaches : k.owner() != null ? k.owner() : subject;
                     out.add(elementOf(carrier, k.characteristic(), true));
                 }
@@ -376,7 +376,7 @@ public final class ProducerConsumer {
             }
         }
 
-        void expr(Expr e, RegelSpraakModel.Objecttype subject) {
+        void expr(Expr e, RegelSpraakModel.ObjectType subject) {
             if (e == null || navigation == null) return;
             switch (e) {
                 case Expr.AttributeReference ref -> out.add(elementOf(ref.objectType(), ref.attribute(), false));
@@ -430,9 +430,9 @@ public final class ProducerConsumer {
     /** Strip a §9.10 "&lt;groep&gt;: " prefix and a §13.4.2.3 " #k" version suffix (and a beslistabel " (n)"
      *  multi-conclusie suffix) off an emitted rule name — the base name the index, a rule scope, and the
      *  transpiler dekking all agree on. */
-    public static String baseName(String naam) {
-        if (naam == null) return "";
-        String n = naam;
+    public static String baseName(String name) {
+        if (name == null) return "";
+        String n = name;
         int hash = n.indexOf(" #");
         if (hash > 0) n = n.substring(0, hash);
         int colon = n.indexOf(": ");

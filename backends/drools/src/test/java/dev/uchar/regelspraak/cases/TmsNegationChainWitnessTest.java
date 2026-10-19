@@ -66,7 +66,7 @@ class TmsNegationChainWitnessTest {
     private static final String BEVOEGD = characteristicRule("bevoegd indien niet onvergund", "bevoegd", check("onvergund", true));
 
     /** erkend as case input: three rules. */
-    private static final List<String> INVOER = List.of(VERGUND, UNPERMITTED, BEVOEGD);
+    private static final List<String> INPUT = List.of(VERGUND, UNPERMITTED, BEVOEGD);
     /** erkend derived from aangemeld: four rules. */
     private static final List<String> DERIVED = List.of(ERKEND, VERGUND, UNPERMITTED, BEVOEGD);
 
@@ -74,7 +74,7 @@ class TmsNegationChainWitnessTest {
 
     @Test void every_order_of_the_rules_with_erkend_as_input() throws Exception {
         int orders = 0;
-        for (List<String> order : TmsDocuments.permutations(INVOER)) {
+        for (List<String> order : TmsDocuments.permutations(INPUT)) {
             List<String> names = names(order);
             assertNull(play(order, "erkend"), () -> "volgorde " + names);
             orders++;
@@ -97,7 +97,7 @@ class TmsNegationChainWitnessTest {
     /** Three rules of the document, and the three standing rules of each derived characteristic a condition reads
      *  (vergund, onvergund); erkend is input and read off the bean. */
     @Test void sample_of_orders_of_the_generated_rules_with_erkend_as_input() throws Exception {
-        sample(document(INVOER), "erkend", 9);
+        sample(document(INPUT), "erkend", 9);
     }
 
     /** Four rules and the standing rules of erkend, vergund and onvergund. */

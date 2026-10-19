@@ -53,8 +53,8 @@ final class Report {
 
     /** A JSON text as the reader below gives it: objects as ordered maps, arrays as lists. The name table's test
      *  reads the repository's name table with it rather than with a second reader. */
-    static Object json(String tekst) {
-        return new Reader(tekst).document();
+    static Object json(String text) {
+        return new Reader(text).document();
     }
 
     private static void collect(Object x, List<String> result) {
@@ -87,7 +87,7 @@ final class Report {
             char c = s.charAt(i);
             if (c == '{') return object();
             if (c == '[') return list();
-            if (c == '"') return tekst();
+            if (c == '"') return text();
             if (s.startsWith("true", i)) { i += 4; return Boolean.TRUE; }
             if (s.startsWith("false", i)) { i += 5; return Boolean.FALSE; }
             if (s.startsWith("null", i)) { i += 4; return null; }
@@ -104,7 +104,7 @@ final class Report {
             if (s.charAt(i) == '}') { i++; return m; }
             while (true) {
                 spaces();
-                String k = tekst();
+                String k = text();
                 spaces();
                 if (s.charAt(i++) != ':') throw error("':' verwacht");
                 m.put(k, value());
@@ -129,7 +129,7 @@ final class Report {
             }
         }
 
-        private String tekst() {
+        private String text() {
             if (s.charAt(i++) != '"') throw error("'\"' verwacht");
             StringBuilder sb = new StringBuilder();
             while (true) {

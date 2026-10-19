@@ -89,7 +89,7 @@ class TmsEvaluationDateWitnessTest {
             List.of("aangemeld", "erkend", "premiewaardig"))), List.of());
 
     /** "Een Jutter is premiewaardig indien hij erkend is", geldig van 2026-01-01 tot en met 2026-12-31. */
-    static final String PREMIEWAARDIG = IrPath.regel("premiewaardig in 2026", "KENMERKTOEKENNING",
+    static final String PREMIEWAARDIG = IrPath.rule("premiewaardig in 2026", "KENMERKTOEKENNING",
             "{\"node\":\"AttributeReference\",\"attribute\":\"premiewaardig\",\"subjectType\":\"Jutter\",\"source\":"
                     + "{\"snippet\":\"Een Jutter is premiewaardig\"}}",
             IrPath.literal("waar", "{\"node\":\"Boolean\"}", "waar"), check("erkend", false), VALID_IN_2026);
@@ -136,7 +136,7 @@ class TmsEvaluationDateWitnessTest {
             List.of(attribute("premie", WHOLE)), List.of("aangemeld", "erkend"))), List.of());
 
     /** "De premie van een Jutter moet geïnitialiseerd worden op 50 indien hij erkend is", geldig vanaf 2026. */
-    static final String STARTPREMIE = IrPath.regel("startpremie vanaf 2026", "INITIALISATIE",
+    static final String STARTPREMIE = IrPath.rule("startpremie vanaf 2026", "INITIALISATIE",
             "{\"node\":\"AttributeReference\",\"attribute\":\"premie\",\"subjectType\":\"Jutter\",\"source\":"
                     + "{\"snippet\":\"De premie van een Jutter\"}}", literal("50", WHOLE), check("erkend", false),
             FROM_2026);
@@ -505,11 +505,11 @@ class TmsEvaluationDateWitnessTest {
 
     /** "… indien hij aan geen van de volgende voorwaarden voldoet: het is de periode van 2026-01-01 tot 2027-01-01". */
     @Test void a_time_window_under_none_is_refused() throws Exception {
-        String regel = computingRule("bonus buiten 2026", "BEREKENING", "Jutter", "bonus", literal("100", WHOLE),
+        String rule = computingRule("bonus buiten 2026", "BEREKENING", "Jutter", "bonus", literal("100", WHOLE),
                 compound("none", 0, List.of(window(literal("2026-01-01", DATE), literal("2027-01-01", DATE),
                         false))));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocuments.document(GUARD_MODEL, List.of(regel)), DroolsBackend.Branch.EXEC_MODEL));
+                TmsDocuments.document(GUARD_MODEL, List.of(rule)), DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("transpiler SKIP: regel: bonus buiten 2026 — periodevenster in een GEEN-samenstelling (WF-112):"
                 + " de kwantor telt of ontkent het vensterverdict, terwijl het venster de regel poort (RUNTIME-SEMANTICS"
                 + " ch. 3.10), en voor die lezing is niets gespecificeerd: none 0", e.getMessage());

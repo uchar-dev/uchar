@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The {@code // Bron:} statute annotations of the rules the defaults extension (dialect §4) lifts. A lifted rule
- * leaves {@code resolvedRegels}, and with it the {@code statuteAnnotations} list that carried its annotation; the
+ * leaves {@code resolvedRules}, and with it the {@code statuteAnnotations} list that carried its annotation; the
  * lowering set {@code bron: null} on the defaults group and on every default. Measured on the pre-card frontend
  * (3a140fe4), the M6 document of {@code spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md} — an annotated base and
  * its annotated {@code Uitzondering op} — emitted an IR in which neither annotation text occurred anywhere, with

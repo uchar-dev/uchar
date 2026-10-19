@@ -191,8 +191,8 @@ class DefaultsJustificationWitnessTest {
         String model = model(List.of(jutter, VONDST, MESSAGE), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
         String notIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet ijverig is\"}}";
-        List<String> rules = List.of(regel("bonuspremie", "Jutter", "bonuspremie", number(20), notIjverig, "calculation"),
-                regel("premie uit bonus", "Jutter", "premie", own("bonuspremie", "Jutter"), null, "equation"));
+        List<String> rules = List.of(rule("bonuspremie", "Jutter", "bonuspremie", number(20), notIjverig, "calculation"),
+                rule("premie uit bonus", "Jutter", "premie", own("bonuspremie", "Jutter"), null, "equation"));
         String ir = document(model, rules, List.of(reportedGroup(greater(viaVondstJutter("premie"), number(15)))));
         List<String> inst = List.of(instance("J1", "Jutter", "", "", ""), instance("J2", "Jutter", "", "", "\"ijverig\""),
                 vondst("V1", "J1", "", false), vondst("V2", "J2", "", false),
@@ -215,8 +215,8 @@ class DefaultsJustificationWitnessTest {
         String model = model(List.of(jutter, VONDST, MESSAGE), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
         String notIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet ijverig is\"}}";
-        List<String> rules = List.of(regel("bonuspremie", "Jutter", "bonuspremie", number(20), notIjverig, "calculation"),
-                regel("premie uit bonus", "Jutter", "premie", own("bonuspremie", "Jutter"), null, "equation"));
+        List<String> rules = List.of(rule("bonuspremie", "Jutter", "bonuspremie", number(20), notIjverig, "calculation"),
+                rule("premie uit bonus", "Jutter", "premie", own("bonuspremie", "Jutter"), null, "equation"));
         String group = characteristicGroup("dringendheid", "Melding", "dringend",
                 decision(greater(viaVondstJutter("premie"), number(15)), false), decision(ALTIJD, true));
         List<String> inst = List.of(instance("J1", "Jutter", "", "", ""), instance("J2", "Jutter", "", "", "\"ijverig\""),
@@ -241,7 +241,7 @@ class DefaultsJustificationWitnessTest {
         String model = model(List.of(JUTTER, VONDST, message), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
         String notDringend = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"dringend\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"de Melding niet dringend is\"}}";
-        String rest = regel("rust", "Melding", "rustig", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
+        String rest = rule("rust", "Melding", "rustig", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
                 + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}", notDringend, null);
         String group = characteristicGroup("dringendheid", "Melding", "dringend",
                 decision(greater(viaVondstJutter("premie"), number(5)), false), decision(ALTIJD, true));
@@ -267,9 +267,9 @@ class DefaultsJustificationWitnessTest {
                 List.of(attribute("meldpremie"), attribute("ruwe meldpremie")), List.of("dringend", "rustig"));
         String notDringend = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"dringend\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"de Melding niet dringend is\"}}";
-        String rest = regel("rust", "Melding", "rustig", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
+        String rest = rule("rust", "Melding", "rustig", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
                 + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}", notDringend, null);
-        String meldpremie = regel("meldpremie", "Melding", "meldpremie", own("ruwe meldpremie", "Melding"), null, "equation");
+        String meldpremie = rule("meldpremie", "Melding", "meldpremie", own("ruwe meldpremie", "Melding"), null, "equation");
         String ownGroup = characteristicGroup("dringendheid", "Melding", "dringend",
                 decision(greater(own("meldpremie", "Melding"), number(5)), false), decision(ALTIJD, true));
         String expected = String.join(",", characteristic("M1", "dringend", false), characteristic("M1", "rustig", true),
@@ -282,8 +282,8 @@ class DefaultsJustificationWitnessTest {
                 List.of("ijverig"));
         String notIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet ijverig is\"}}";
-        List<String> rules = List.of(regel("bonuspremie", "Jutter", "bonuspremie", number(20), notIjverig, "calculation"),
-                regel("premie uit bonus", "Jutter", "premie", own("bonuspremie", "Jutter"), null, "equation"), rest);
+        List<String> rules = List.of(rule("bonuspremie", "Jutter", "bonuspremie", number(20), notIjverig, "calculation"),
+                rule("premie uit bonus", "Jutter", "premie", own("bonuspremie", "Jutter"), null, "equation"), rest);
         String farSideGroup = characteristicGroup("dringendheid", "Melding", "dringend",
                 decision(greater(viaVondstJutter("premie"), number(15)), false), decision(ALTIJD, true));
         List<String> inst = List.of(instance("J1", "Jutter", "", "", ""), instance("J2", "Jutter", "", "", "\"ijverig\""),
@@ -384,14 +384,14 @@ class DefaultsJustificationWitnessTest {
     private static final String REPORT_MODEL = model(List.of(JUTTER, VONDST, MESSAGE), List.of(JUTTER_VONDST, VONDST_MESSAGE), "");
 
     /** "Een Vondst is zwaar indien het gewicht van de Vondst groter is dan 5." */
-    private static final String ZWAARTE = regel("zwaarte", "Vondst", "zwaar", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
+    private static final String ZWAARTE = rule("zwaarte", "Vondst", "zwaar", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
             + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}", greater(own("gewicht", "Vondst"), number(5)), null);
     /** "Het gewicht van een Vondst moet berekend worden als het ruwgewicht van de Vondst min 1." */
-    private static final String WEIGHT = regel("gewicht", "Vondst", "gewicht", "{\"node\":\"Binary\",\"op\":\"minus\",\"left\":"
+    private static final String WEIGHT = rule("gewicht", "Vondst", "gewicht", "{\"node\":\"Binary\",\"op\":\"minus\",\"left\":"
             + own("ruwgewicht", "Vondst") + ",\"right\":" + number(1) + ",\"type\":" + WHOLE
             + ",\"source\":{\"snippet\":\"het ruwgewicht van de Vondst min 1\"}}", null, "calculation");
     /** "De premie van een Jutter moet gesteld worden op de ruwe premie van de Jutter." */
-    private static final String PREMIE_OUT_RAW_PREMIE = regel("premie", "Jutter", "premie", own("ruwe premie", "Jutter"), null,
+    private static final String PREMIE_OUT_RAW_PREMIE = rule("premie", "Jutter", "premie", own("ruwe premie", "Jutter"), null,
             "equation");
 
     /** label, jutter, gewicht, zwaar in the input rows. */
@@ -399,26 +399,26 @@ class DefaultsJustificationWitnessTest {
             {"V1", "J1", "6", "zwaar"}, {"V2", "J1", "4", ""}, {"V3", "J1", "9", "zwaar"}, {"V4", "J2", "2", ""},
             {"V5", "J4", "7", "zwaar"}, {"V6", "J4", "8", "zwaar"}, {"V7", "J5", "3", ""}, {"V8", "J5", "12", ""}};
 
-    private static String attribute(String naam) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + WHOLE + "}";
+    private static String attribute(String name) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + WHOLE + "}";
     }
 
-    private static String objectType(String naam, String plural, boolean animate, List<String> attributes, List<String> kenmerken) {
+    private static String objectType(String name, String plural, boolean animate, List<String> attributes, List<String> characteristics) {
         List<String> k = new ArrayList<>();
-        for (String n : kenmerken) k.add("{\"node\":\"Characteristic\",\"name\":\"" + n + "\",\"kind\":\"adjectival\"}");
-        return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
+        for (String n : characteristics) k.add("{\"node\":\"Characteristic\",\"name\":\"" + n + "\",\"kind\":\"adjectival\"}");
+        return "{\"node\":\"ObjectType\",\"name\":\"" + name + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
                 + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + String.join(",", k) + "]}";
     }
 
-    private static String factType(String naam, String role1, String type1, String role2, String plural2, String type2) {
-        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
+    private static String factType(String name, String role1, String type1, String role2, String plural2, String type2) {
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + role1 + "\",\"objectType\":\"" + type1 + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + role2 + "\",\"objectType\":\"" + type2 + "\",\"plural\":\"" + plural2
                 + "\",\"many\":true}]}";
     }
 
-    private static String parameter(String naam) {
-        return "{\"node\":\"Parameter\",\"name\":\"" + naam + "\",\"datatype\":" + WHOLE + "}";
+    private static String parameter(String name) {
+        return "{\"node\":\"Parameter\",\"name\":\"" + name + "\",\"datatype\":" + WHOLE + "}";
     }
 
     private static String model(List<String> types, List<String> factTypes, String parameters) {
@@ -436,8 +436,8 @@ class DefaultsJustificationWitnessTest {
                 + "\",\"source\":{\"snippet\":\"de " + attribute + " van de " + type + "\"}}";
     }
 
-    private static String parameterRef(String naam) {
-        return "{\"node\":\"ParameterReference\",\"parameter\":\"" + naam + "\",\"source\":{\"snippet\":\"de " + naam + "\"}}";
+    private static String parameterRef(String name) {
+        return "{\"node\":\"ParameterReference\",\"parameter\":\"" + name + "\",\"source\":{\"snippet\":\"de " + name + "\"}}";
     }
 
     /** A navigated read of {@code attribute} on {@code type} over the hops, each "FactType/role". */
@@ -493,8 +493,8 @@ class DefaultsJustificationWitnessTest {
 
     /** An ordinary rule with one version; {@code condition} null for none, {@code presentation} null on a
      *  characteristic assignment ("calculation" for "berekend worden als", "equation" for "gesteld worden op"). */
-    private static String regel(String naam, String type, String target, String value, String condition, String presentation) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+    private static String rule(String name, String type, String target, String value, String condition, String presentation) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
                 + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type + "\","
                 + "\"source\":{\"snippet\":\"de " + target + "\"}},\"value\":" + value
                 + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false"
@@ -509,18 +509,18 @@ class DefaultsJustificationWitnessTest {
         return "{\"node\":\"Default\",\"decision\":" + decision + ",\"justification\":" + justification + "}";
     }
 
-    private static String group(String naam, String type, String attribute, String... defaults) {
-        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type + "\",\"attribute\":\""
+    private static String group(String name, String type, String attribute, String... defaults) {
+        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + name + "\",\"subject\":\"" + type + "\",\"attribute\":\""
                 + attribute + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
-    private static String groupUnordered(String naam, String... defaults) {
-        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"Jutter\",\"attribute\":\"premie\","
+    private static String groupUnordered(String name, String... defaults) {
+        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + name + "\",\"subject\":\"Jutter\",\"attribute\":\"premie\","
                 + "\"unordered\":true,\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
-    private static String characteristicGroup(String naam, String type, String characteristic, String... defaults) {
-        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type + "\",\"characteristic\":\""
+    private static String characteristicGroup(String name, String type, String characteristic, String... defaults) {
+        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + name + "\",\"subject\":\"" + type + "\",\"characteristic\":\""
                 + characteristic + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
@@ -543,9 +543,9 @@ class DefaultsJustificationWitnessTest {
 
     // ---------------- cases ----------------
 
-    private static String instance(String label, String type, String attributes, String roles, String kenmerken) {
+    private static String instance(String label, String type, String attributes, String roles, String characteristics) {
         return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{" + attributes + "},\"roles\":{"
-                + roles + "},\"characteristics\":[" + kenmerken + "]}";
+                + roles + "},\"characteristics\":[" + characteristics + "]}";
     }
 
     private static String vondst(String label, String jutter, String attributes, boolean zwaar) {

@@ -66,12 +66,12 @@ class DrlTextCorpusWitnessTest {
                 cases = s.filter(f -> f.getFileName().toString().matches("case.*\\.json")).sorted().toList();
             }
             if (cases.isEmpty()) { withoutCases++; continue; }
-            String naam = GOLDEN.relativize(g).toString();
+            String name = GOLDEN.relativize(g).toString();
             CaseRunner.Result r;
             try {
                 r = CaseRunner.viaDrlText(g.resolve("ir.json"), cases);
             } catch (RuntimeException e) {
-                fault.add(naam + ": " + e);
+                fault.add(name + ": " + e);
                 continue;
             }
             switch (r.status()) {
@@ -82,10 +82,10 @@ class DrlTextCorpusWitnessTest {
                     if (!r.reason().startsWith("drl: ")) {
                         CaseRunner.Result exec = CaseRunner.viaExecModel(g.resolve("ir.json"), cases);
                         if (!exec.status().equals("EXCLUDE") || !exec.reason().equals(r.reason()))
-                            differences.add(naam + ": drl " + r.reason() + " | exec-model " + exec);
+                            differences.add(name + ": drl " + r.reason() + " | exec-model " + exec);
                     }
                 }
-                default -> fault.add(naam + ": " + r);
+                default -> fault.add(name + ": " + r);
             }
         }
         assertEquals(List.of(), fault, "goldens die de tak draagt maar verkeerd uitrekent, of waarvan de tekst niet"

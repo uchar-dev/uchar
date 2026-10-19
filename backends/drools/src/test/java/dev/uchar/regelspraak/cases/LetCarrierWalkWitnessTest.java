@@ -285,16 +285,16 @@ class LetCarrierWalkWitnessTest {
                 + "\"factorToCanonical\":{\"num\":%d,\"den\":1}}").formatted(abbreviation, factor);
     }
 
-    private static String attr(String objectType, String naam, String type) {
+    private static String attr(String objectType, String name, String type) {
         return "{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"%s\",\"source\":{\"snippet\":\"het %s van de %s\"}}"
-                .formatted(naam, objectType, naam, objectType);
+                .formatted(name, objectType, name, objectType);
     }
 
     /** A read across a role — the shape whose reactivity {@code navRefs} is responsible for. */
-    private static String navAttr(String objectType, String naam, String type, String factType, String role) {
+    private static String navAttr(String objectType, String name, String type, String factType, String role) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"%s\","
                 + "\"source\":{\"snippet\":\"het %s van zijn %s\"},\"path\":[{\"node\":\"RoleBinding\",\"factType\":\"%s\","
-                + "\"role\":\"%s\"}]}").formatted(naam, objectType, naam, role, factType, role);
+                + "\"role\":\"%s\"}]}").formatted(name, objectType, name, role, factType, role);
     }
 
     private static String lit(String valueJson, String type) {
@@ -317,8 +317,8 @@ class LetCarrierWalkWitnessTest {
     }
 
     /** NB the wire field is {@code name}, not {@code naam}. */
-    private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(naam, naam);
+    private static String bref(String name, String type) {
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(name, name);
     }
 
     private static String ite(String condition, String then, String otherwise, String type) {
@@ -347,17 +347,17 @@ class LetCarrierWalkWitnessTest {
     private static final String WAAR =
             "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":" + BOOLEAN + ",\"source\":{\"snippet\":\"waar\"}}";
 
-    private static String regel(String naam, String target, String valueJson) {
-        return regel(naam, "BEREKENING", target, valueJson, "null");
+    private static String rule(String name, String target, String valueJson) {
+        return rule(name, "BEREKENING", target, valueJson, "null");
     }
-    private static String regel(String naam, String category, String target, String valueJson, String conditionJson) {
-        return IrPath.regel(naam, category, target, valueJson, conditionJson);
+    private static String rule(String name, String category, String target, String valueJson, String conditionJson) {
+        return IrPath.rule(name, category, target, valueJson, conditionJson);
     }
 
-    private static String objectType(String naam, String plural, String attributes, String characteristics) {
+    private static String objectType(String name, String plural, String attributes, String characteristics) {
         return ("{\"node\":\"ObjectType\",\"name\":\"%s\",\"animate\":true,\"plural\":\"%s\","
                 + "\"attributes\":[%s],\"characteristics\":[%s]}")
-                .formatted(naam, plural, attributes, characteristics);
+                .formatted(name, plural, attributes, characteristics);
     }
 
     /** The {@code attributes} list of an object type, from alternating name / datatype arguments. */
@@ -409,7 +409,7 @@ class LetCarrierWalkWitnessTest {
                         lit("1.00", num(2)), lit("2.00", num(2)), num(2)), num(2));
         return doc(objectType("Baan", "Baans", attributeJson("aanloop", meter, "uit", num(2)), ""),
                 "", system,
-                new String[]{regel("uit van een baan", attr("Baan", "uit", num(2)), valueJson)},
+                new String[]{rule("uit van een baan", attr("Baan", "uit", num(2)), valueJson)},
                 "");
     }
 
@@ -436,12 +436,12 @@ class LetCarrierWalkWitnessTest {
                 factType, "",
                 new String[]{
                         // never true on this input — its only job is to BE a producer of `vermist`
-                        regel("vermissing van een jutter", "KENMERKTOEKENNING", VERMIST_TARGET, WAAR,
+                        rule("vermissing van een jutter", "KENMERKTOEKENNING", VERMIST_TARGET, WAAR,
                                 compare("greater", attr("Jutter", "strandtegoed", pos(2)), lit("999999.00", num(2)))),
-                        regel("afgeleid van een jutter", "BEREKENING", attr("Jutter", "afgeleid", num(4)),
+                        rule("afgeleid van een jutter", "BEREKENING", attr("Jutter", "afgeleid", num(4)),
                                 binary("times", attr("Jutter", "strandtegoed", pos(2)), lit("3.00", num(2)), num(4)),
                                 NOT_VERMIST),
-                        regel("uit van een jutter", attr("Jutter", "uit", num(6)), out)},
+                        rule("uit van een jutter", attr("Jutter", "uit", num(6)), out)},
                 "");
     }
 
@@ -457,9 +457,9 @@ class LetCarrierWalkWitnessTest {
                         VERMIST_CHARACTERISTIC),
                 "", "",
                 new String[]{
-                        regel("vermissing van een jutter", "KENMERKTOEKENNING", VERMIST_TARGET, WAAR,
+                        rule("vermissing van een jutter", "KENMERKTOEKENNING", VERMIST_TARGET, WAAR,
                                 compare("greater", attr("Jutter", "basis", pos(2)), lit("999999.00", num(2)))),
-                        regel("grondslag van een jutter", "BEREKENING", attr("Jutter", "grondslag", num(2)),
+                        rule("grondslag van een jutter", "BEREKENING", attr("Jutter", "grondslag", num(2)),
                                 binary("times", attr("Jutter", "basis", pos(2)), lit("2.00", num(2)), num(2)),
                                 NOT_VERMIST)},
                 groups);
@@ -472,7 +472,7 @@ class LetCarrierWalkWitnessTest {
         String valueJson = behindLet ? let("t", division, bref("t", num(4)), num(4)) : division;
         return doc(objectType("Jutter", "Jutters",
                         attributeJson("inkomen", pos(2), "deler", pos(2), "uit", num(4)), ""),
-                "", "", new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), valueJson)}, "");
+                "", "", new String[]{rule("uit van een jutter", attr("Jutter", "uit", num(4)), valueJson)}, "");
     }
 
     /** §6.6: "de wortel van het saldo", bare or behind a Let. */
@@ -481,7 +481,7 @@ class LetCarrierWalkWitnessTest {
         String valueJson = behindLet ? let("t", w, bref("t", num(4)), num(4)) : w;
         return doc(objectType("Jutter", "Jutters",
                         attributeJson("saldo", num(2), "uit", num(4)), ""),
-                "", "", new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), valueJson)}, "");
+                "", "", new String[]{rule("uit van een jutter", attr("Jutter", "uit", num(4)), valueJson)}, "");
     }
 
     /** ch. 10.2: a §6.5 division in the branch the condition does NOT take — the IfThenElse bare as the rule
@@ -495,7 +495,7 @@ class LetCarrierWalkWitnessTest {
         String valueJson = inLetBody ? let("a", attr("Jutter", "a", pos(2)), choice, num(4)) : choice;
         return doc(objectType("Jutter", "Jutters",
                         attributeJson("a", pos(2), "inkomen", pos(2), "deler", pos(2), "uit", num(4)), ""),
-                "", "", new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), valueJson)}, "");
+                "", "", new String[]{rule("uit van een jutter", attr("Jutter", "uit", num(4)), valueJson)}, "");
     }
 
     /** ch. 10.6: the same §6.5 division, bare or as the BODY of a Let whose leeg value is never read (so the
@@ -508,7 +508,7 @@ class LetCarrierWalkWitnessTest {
                 : division;
         return doc(objectType("Jutter", "Jutters",
                         attributeJson("inkomen", pos(2), "deler", pos(2), "tweede", pos(2), "uit", num(4)), ""),
-                "", "", new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), valueJson)}, "");
+                "", "", new String[]{rule("uit van een jutter", attr("Jutter", "uit", num(4)), valueJson)}, "");
     }
 
     /** ch. 10.6 clause 2: the same division, but the body reads the leeg binder FIRST — the barrier is raised at
@@ -520,7 +520,7 @@ class LetCarrierWalkWitnessTest {
                 binary("plus", bref("d", pos(2)), division, num(4)), num(4));
         return doc(objectType("Jutter", "Jutters",
                         attributeJson("inkomen", pos(2), "deler", pos(2), "tweede", pos(2), "uit", num(4)), ""),
-                "", "", new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), valueJson)}, "");
+                "", "", new String[]{rule("uit van een jutter", attr("Jutter", "uit", num(4)), valueJson)}, "");
     }
 
     /** A non-terminating division as the LEFT operand of a rule's voorwaarde, bare or behind a Let. */
@@ -531,7 +531,7 @@ class LetCarrierWalkWitnessTest {
                 binary("plus", attr("Jutter", "b", pos(2)), lit("0.00", num(2)), num(6)));
         return doc(objectType("Jutter", "Jutters",
                         attributeJson("a", pos(2), "b", pos(2), "uit", num(2)), ""),
-                "", "", new String[]{regel("uit van een jutter", "BEREKENING", attr("Jutter", "uit", num(2)),
+                "", "", new String[]{rule("uit van een jutter", "BEREKENING", attr("Jutter", "uit", num(2)),
                         lit("1.00", num(2)), condition)}, "");
     }
 }

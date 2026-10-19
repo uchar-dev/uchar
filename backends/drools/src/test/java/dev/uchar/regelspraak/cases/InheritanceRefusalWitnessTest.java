@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 import org.junit.jupiter.api.Test;
 
@@ -98,9 +98,9 @@ class InheritanceRefusalWitnessTest {
         // witness (ref's is WV-7.10-f, and no corpus golden carries the swap).
         ObjectNode ir = goldenIr(WRAKBASIS);
         ((ObjectNode) IrPath.rulesList(ir, "rules").get(0)).put("name", "uitkering van een strandrecht (kaal)");
-        ObjectNode regel = IrPath.version(ir, "rules", 0, 0);
-        ((ObjectNode) regel.get("target")).put("subjectType", "Strandrecht");
-        ((ObjectNode) regel.get("value").get("left")).put("subjectType", "Strandrecht");
+        ObjectNode rule = IrPath.version(ir, "rules", 0, 0);
+        ((ObjectNode) rule.get("target")).put("subjectType", "Strandrecht");
+        ((ObjectNode) rule.get("value").get("left")).put("subjectType", "Strandrecht");
         ObjectNode pd = (ObjectNode) IrPath.rulesList(ir, "prioritizedDefaults").get(0);
         pd.put("name", "uitkering van een wrakrecht").put("subject", "Wrakrecht");
         ((ObjectNode) pd.get("defaults").get(1).get("consequence")).put("subjectType", "Wrakrecht");
@@ -224,11 +224,11 @@ class InheritanceRefusalWitnessTest {
         ObjectNode ir = goldenIr(CHAIN);
         IrPath.timeline(IrPath.attribute(IrPath.objectType(ir, "Strandrecht"), "grondslag"), "year");
         RegelSpraakModel m = IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-temporeel", ir)))).model();
-        Objecttype wrak = m.objectTypeByName("Wrakrecht");
-        assertEquals(RegelSpraakModel.Granulariteit.JAAR, wrak.granularityOf("grondslag"));
+        ObjectType wrak = m.objectTypeByName("Wrakrecht");
+        assertEquals(RegelSpraakModel.Granularity.JAAR, wrak.granularityOf("grondslag"));
         assertTrue(wrak.granularityMembers().containsKey("grondslag"),
                 "the chain-closed facet map is what the routed read sites ask");
-        assertTrue(wrak.attribuutGranulariteit.isEmpty(),
+        assertTrue(wrak.attributeGranularity.isEmpty(),
                 "the OWN map stays own — the bean generator subtracts inherited members and needs it");
     }
 
@@ -242,7 +242,7 @@ class InheritanceRefusalWitnessTest {
         IrPath.attribute(IrPath.objectType(ir, "Strandrecht"), "grondslag")
                 .set("dimensions", JSON.createArrayNode().add("seizoen"));
         RegelSpraakModel m = IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-dimensie", ir)))).model();
-        Objecttype wrak = m.objectTypeByName("Wrakrecht");
+        ObjectType wrak = m.objectTypeByName("Wrakrecht");
         assertEquals(List.of("seizoen"), wrak.dimensionsOf("grondslag"));
         assertTrue(wrak.dimensionedMembers().containsKey("grondslag"));
     }
@@ -345,7 +345,7 @@ class InheritanceRefusalWitnessTest {
             IrPath.objectType(ir, "Wrakrecht").put("supertype", spelling);
             Path irPath = model("supertype-spelling", ir);
             RegelSpraakModel m = IrLoader.load(JSON.readTree(Files.readString(irPath)));
-            assertSame(m.objecttypen.get("Strandrecht"), m.objecttypen.get("Wrakrecht").supertype, spelling);
+            assertSame(m.objectTypes.get("Strandrecht"), m.objectTypes.get("Wrakrecht").supertype, spelling);
             assertNull(CaseRunner.playCase(irPath, caseOf(CHAIN, "case1-basis.json")), spelling);
         }
     }
@@ -363,8 +363,8 @@ class InheritanceRefusalWitnessTest {
 
     // ---------------- helpers ----------------
 
-    private static ObjectNode goldenIr(String naam) throws Exception {
-        return (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve("ir.json")));
+    private static ObjectNode goldenIr(String name) throws Exception {
+        return (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(name).resolve("ir.json")));
     }
 
     /** Declare tijdlijn `boekjaar` and hang a new SUPERTYPE attribute `asOfValue` on it, with the
@@ -414,8 +414,8 @@ class InheritanceRefusalWitnessTest {
         return JSON.readTree(caseJson);
     }
 
-    private static Path model(String naam, ObjectNode ir) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path model(String name, ObjectNode ir) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         return tmp;

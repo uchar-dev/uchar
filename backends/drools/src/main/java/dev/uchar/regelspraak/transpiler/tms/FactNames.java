@@ -11,6 +11,6 @@ final class FactNames {
     }
 
     static String member(ElementKey e) {
-        return e.objectType() + "." + e.naam();
+        return e.objectType() + "." + e.name();
     }
 }

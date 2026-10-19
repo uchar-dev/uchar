@@ -22,14 +22,14 @@ import java.util.Objects;
 public final class MemberFault implements Comparable<MemberFault> {
 
     private final String fold;
-    private final Object onderwerp;
+    private final Object subject;
     private final Object element;
     private final RuntimeException fault;
     private final List<Integer> place;
 
-    public MemberFault(String fold, Object onderwerp, Object element, RuntimeException fault, List<Integer> place) {
+    public MemberFault(String fold, Object subject, Object element, RuntimeException fault, List<Integer> place) {
         this.fold = Objects.requireNonNull(fold, "vouw");
-        this.onderwerp = Objects.requireNonNull(onderwerp, "onderwerp");
+        this.subject = Objects.requireNonNull(subject, "subject");
         this.element = Objects.requireNonNull(element, "element");
         this.fault = Objects.requireNonNull(fault, "fout");
         this.place = List.copyOf(place);
@@ -38,7 +38,7 @@ public final class MemberFault implements Comparable<MemberFault> {
 
     public String fold() { return fold; }
 
-    public Object onderwerp() { return onderwerp; }
+    public Object subject() { return subject; }
 
     public Object element() { return element; }
 
@@ -60,18 +60,18 @@ public final class MemberFault implements Comparable<MemberFault> {
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof MemberFault f && f.onderwerp == onderwerp && f.element == element && f.fold.equals(fold)
+        return o instanceof MemberFault f && f.subject == subject && f.element == element && f.fold.equals(fold)
                 && f.fault.getClass() == fault.getClass() && f.fault.getMessage().equals(fault.getMessage())
                 && f.place.equals(place);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(fold, System.identityHashCode(onderwerp), System.identityHashCode(element),
+        return Objects.hash(fold, System.identityHashCode(subject), System.identityHashCode(element),
                 fault.getClass().getName(), fault.getMessage(), place);
     }
 
     @Override public String toString() {
-        return "Lidfout(" + FactNames.object(onderwerp) + ", " + FactNames.object(element) + ", " + place + ", "
+        return "Lidfout(" + FactNames.object(subject) + ", " + FactNames.object(element) + ", " + place + ", "
                 + fault.getMessage() + ")";
     }
 }

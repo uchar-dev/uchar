@@ -216,7 +216,7 @@ class SourceReferenceRefusalWitnessTest {
         ObjectNode ir = golden(PENNINGDREMPEL);
         set(ir, CONDITION, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"de onbekende vondstwaarde\"}}");
         Condition.Unresolved o = assertInstanceOf(Condition.Unresolved.class,
-                IrLoader.load(ir).resolvedRegels.get(0).condition());
+                IrLoader.load(ir).resolvedRules.get(0).condition());
         assertEquals("de onbekende vondstwaarde", o.source().snippet());
     }
 
@@ -225,29 +225,29 @@ class SourceReferenceRefusalWitnessTest {
     @Test void the_snippet_is_the_anchor_of_the_record_and_a_line_elsewhere_falls_away() throws Exception {
         ObjectNode ir = golden(PREMIEVENSTER);
         String snippet = ir.at(VALUE + "/source/snippet").asText();
-        Expr.Literal l = (Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).value();
+        Expr.Literal l = (Expr.Literal) IrLoader.load(ir).resolvedRules.get(0).value();
         assertEquals(snippet, l.source().snippet());
         assertNull(l.source().file(), "the wire carries no file");
         assertEquals(0, l.source().line());
         // a line on a node that keeps none is admitted by the record and dropped
         ((ObjectNode) ir.at(VALUE + "/source")).put("line", 7);
-        l = (Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).value();
+        l = (Expr.Literal) IrLoader.load(ir).resolvedRules.get(0).value();
         assertEquals(snippet, l.source().snippet());
         assertEquals(0, l.source().line());
         // a node without a record holds the empty anchor, as a null bron did before the record landed
         ((ObjectNode) ir.at(VALUE)).remove("source");
-        l = (Expr.Literal) IrLoader.load(ir).resolvedRegels.get(0).value();
+        l = (Expr.Literal) IrLoader.load(ir).resolvedRules.get(0).value();
         assertEquals("", l.source().snippet());
     }
 
     @Test void the_rule_goes_to_the_consistency_and_the_rule_group() throws Exception {
-        List<ResolvedConsistency> check = IrLoader.load(golden(KEURSPELLING)).consistenties;
+        List<ResolvedConsistency> check = IrLoader.load(golden(KEURSPELLING)).consistencies;
         assertEquals(List.of(30, 34), check.stream().map(ResolvedConsistency::line).toList());
 
         ObjectNode ir = golden(WACHTERSKETEN);
         RegelSpraakModel m = IrLoader.load(ir);
-        assertEquals(1, m.consistenties.get(0).line());
-        assertEquals(ir.at(CONSISTENCY + "/source/snippet").asText(), m.consistenties.get(0).source().snippet());
+        assertEquals(1, m.consistencies.get(0).line());
+        assertEquals(ir.at(CONSISTENCY + "/source/snippet").asText(), m.consistencies.get(0).source().snippet());
         ResolvedRuleGroup g = m.ruleGroups.get(0);
         assertEquals(0, g.line(), "a rule group without a record has no line");
         assertEquals("", g.source().snippet());
@@ -255,14 +255,14 @@ class SourceReferenceRefusalWitnessTest {
         ((ObjectNode) ir.at(CONSISTENCY + "/source")).remove("line");
         ((ObjectNode) ir.at(GROUP)).set("source", IrPath.sourceReference("berging").put("line", 5));
         m = IrLoader.load(ir);
-        assertEquals(0, m.consistenties.get(0).line(), "a record without a line: the records' 0");
+        assertEquals(0, m.consistencies.get(0).line(), "a record without a line: the records' 0");
         assertEquals(5, m.ruleGroups.get(0).line());
         assertEquals("berging", m.ruleGroups.get(0).source().snippet());
 
         ((ObjectNode) ir.at(CONSISTENCY)).remove("source");
         m = IrLoader.load(ir);
-        assertEquals(0, m.consistenties.get(0).line());
-        assertEquals("", m.consistenties.get(0).source().snippet());
+        assertEquals(0, m.consistencies.get(0).line());
+        assertEquals("", m.consistencies.get(0).source().snippet());
     }
 
     @Test void the_defaults_layer_keeps_the_source_text_as_a_string() throws Exception {
@@ -272,8 +272,8 @@ class SourceReferenceRefusalWitnessTest {
         assertEquals(wire.at("/source/snippet").asText(), g.source());
         assertEquals(wire.at("/defaults/0/source/snippet").asText(), g.defaults().get(0).source());
         for (PrioritizedDefaults withoutSource : IrLoader.loadAll(golden(WACHTGELD)).prioritizedDefaults()) {
-            assertNull(withoutSource.source(), withoutSource.naam());
-            for (Default d : withoutSource.defaults()) assertNull(d.source(), withoutSource.naam());
+            assertNull(withoutSource.source(), withoutSource.name());
+            for (Default d : withoutSource.defaults()) assertNull(d.source(), withoutSource.name());
         }
     }
 

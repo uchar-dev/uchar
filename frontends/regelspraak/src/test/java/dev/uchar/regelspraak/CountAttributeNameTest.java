@@ -32,13 +32,13 @@ class CountAttributeNameTest {
             de score Numeriek (niet-negatief geheel getal);
         """;
 
-    private static String regel(String expressie) {
+    private static String rule(String expression) {
         return """
 
             Regel score
                 geldig altijd
                     De score van een Jutter moet berekend worden als %s.
-            """.formatted(expressie);
+            """.formatted(expression);
     }
 
     private static List<Diagnostic> faults(RegelSpraakModel m) {
@@ -51,13 +51,13 @@ class CountAttributeNameTest {
             "het aantal gewogen posten van een Jutter",
             "(het aantal gewogen posten van de Jutter)"
     })
-    void the_collision_with_a_declared_attribute_is_named(String expressie) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel(expressie));
+    void the_collision_with_a_declared_attribute_is_named(String expression) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule(expression));
         List<Diagnostic> ds = faults(m);
-        assertEquals(1, ds.size(), () -> "verwacht één fout voor '" + expressie + "', kreeg: " + m.diagnostics);
+        assertEquals(1, ds.size(), () -> "verwacht één fout voor '" + expression + "', kreeg: " + m.diagnostics);
         String sentence = ds.get(0).message();
         // the collision in the Dutch context, the count without an element type in the verifier's WF-037 sentence
-        String written = expressie.replace("(", "").replace(")", "");
+        String written = expression.replace("(", "").replace(")", "");
         assertTrue(sentence.startsWith("telling zonder bron '" + written + "', waar 'aantal gewogen posten' een "
                 + "gedeclareerd attribuut van Jutter is: "), sentence);
         assertTrue(sentence.contains("the count is an INSTANCE fold and MUST carry an element type"), sentence);
@@ -65,15 +65,15 @@ class CountAttributeNameTest {
 
     @Test void the_recommended_articleless_spelling_reads_the_attribute() {
         // the advice must be true: the article-less form resolves clean to the declared attribute
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel("aantal gewogen posten van de Jutter"));
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule("aantal gewogen posten van de Jutter"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, m.resolvedRegels.get(0).value());
+        Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, m.resolvedRules.get(0).value());
         assertEquals("aantal gewogen posten", a.attribute());
     }
 
     @Test void without_a_count_attribute_the_general_sentence_stays() {
         // "gewogen vangst" is declared, "aantal gewogen vangst" is not: no collision to name
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal gewogen vangst van de Jutter"));
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule("het aantal gewogen vangst van de Jutter"));
         List<Diagnostic> ds = faults(m);
         assertEquals(1, ds.size(), () -> "kreeg: " + m.diagnostics);
         assertTrue(ds.get(0).message().startsWith("telling zonder bron 'het aantal gewogen vangst van de Jutter': "),

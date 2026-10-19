@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * §6.1 (Phase 4) the prioritized defaults — the engine-neutral wire form of a prioritised default calculus,
  * per {@code spec/RUNTIME-SEMANTICS.md} ch. 7. One writer aimed at one target (a characteristic XOR an
- * attribute of {@link #onderwerp}); {@link #defaults} are in DESCENDING priority and the highest default that
+ * attribute of {@link #subject}); {@link #defaults} are in DESCENDING priority and the highest default that
  * decides wins (attribute defaults fall through on a leeg consequence; the initialisation default, lowest, is
  * justified iff the target is empty in the input). Multiple defaults groups on ONE target are admissible only
  * as a declared-{@link #unordered} group (ch. 7.2), whose differing simultaneous decisions route to the §9.5
@@ -29,7 +29,7 @@ import java.util.List;
  * @param bron       the statute/source annotation, or null
  * @param geldigheid the §13.4.2.5 validity window ({@link Validity#ALTIJD} = always), or null
  */
-public record PrioritizedDefaults(String naam, String onderwerp, String characteristic, String attribute,
+public record PrioritizedDefaults(String name, String subject, String characteristic, String attribute,
                                   boolean unordered, List<Default> defaults, String source,
                                   Validity validity) {
 

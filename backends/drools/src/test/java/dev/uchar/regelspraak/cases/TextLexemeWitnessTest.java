@@ -260,20 +260,20 @@ class TextLexemeWitnessTest {
         return p;
     }
 
-    private static Path temporary(String naam, String inhoud) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, String inhoud) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, inhoud);
         return tmp;
     }
 
     /** The one version of the golden's {@code i}-th rule. */
-    private static ObjectNode regel(ObjectNode ir, int i) { return IrPath.version(ir, "rules", i, 0); }
+    private static ObjectNode rule(ObjectNode ir, int i) { return IrPath.version(ir, "rules", i, 0); }
 
     /** The golden's OWN `het keurmerk van de Vondst` reference, so every fixture asks about the same member and the
      *  only thing that varies between them is the literal's lexeme. */
     private static ObjectNode keurmerkRef(ObjectNode ir) {
-        return ((ObjectNode) regel(ir, 0).get("condition").get("left")).deepCopy();
+        return ((ObjectNode) rule(ir, 0).get("condition").get("left")).deepCopy();
     }
 
     private static ObjectNode textLiteral(String value) {
@@ -299,18 +299,18 @@ class TextLexemeWitnessTest {
      *  {@code consequence} — the two-rule chain (compare, then write) stays exactly the golden's. */
     private static ObjectNode base(String op, String literal, String consequence) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(KEURMERK)));
-        regel(ir, 0).set("condition", keurmerkComparison(ir, op, literal));
-        ((ObjectNode) regel(ir, 1).get("value")).putObject("value").put("text", consequence);
-        ((ObjectNode) regel(ir, 1).get("value")).set("source", IrPath.sourceReference(consequence));
+        rule(ir, 0).set("condition", keurmerkComparison(ir, op, literal));
+        ((ObjectNode) rule(ir, 1).get("value")).putObject("value").put("text", consequence);
+        ((ObjectNode) rule(ir, 1).get("value")).set("source", IrPath.sourceReference(consequence));
         return ir;
     }
 
-    private static Path model(String naam, String op, String literal, String consequence) throws Exception {
-        return temporary(naam, base(op, literal, consequence).toString());
+    private static Path model(String name, String op, String literal, String consequence) throws Exception {
+        return temporary(name, base(op, literal, consequence).toString());
     }
 
     /** The same model with the condition widened to a ch. 12 OR-row: TEN_MINSTE 1 of N "is gelijk aan X" cells. */
-    private static Path orRow(String naam, String... literals) throws Exception {
+    private static Path orRow(String name, String... literals) throws Exception {
         ObjectNode ir = base("equal", literals[0], CONSEQUENCE);
         ObjectNode sam = JSON.createObjectNode();
         sam.put("node", "Compound");
@@ -319,13 +319,13 @@ class TextLexemeWitnessTest {
         ArrayNode parts = sam.putArray("parts");
         for (String l : literals) parts.add(keurmerkComparison(ir, "equal", l));
         sam.set("source", IrPath.sourceReference("aan ten minste een van de volgende voorwaarden wordt voldaan"));
-        regel(ir, 0).set("condition", sam);
-        return temporary(naam, ir.toString());
+        rule(ir, 0).set("condition", sam);
+        return temporary(name, ir.toString());
     }
 
     /** One Vondst whose keurmerk is {@code input}, with the two expectations the rule chain produces: the kenmerk
      *  the comparison assigns, and the afslag the second rule then writes (leeg when the chain does not fire). */
-    private static Path caseOf(String naam, String input, boolean gekeurd, String afslag) throws Exception {
+    private static Path caseOf(String name, String input, boolean gekeurd, String afslag) throws Exception {
         ObjectNode c = JSON.createObjectNode();
         c.put("format", "uchar-case-v0");
         c.putNull("asOfDate");
@@ -348,6 +348,6 @@ class TextLexemeWitnessTest {
             e.putObject("value").put("text", afslag);
         }
         expected.addObject().put("kind", "consistent");
-        return temporary(naam, c.toString());
+        return temporary(name, c.toString());
     }
 }

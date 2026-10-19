@@ -55,7 +55,7 @@ import java.util.Objects;
  * repetitions, but this backend reads neither for its §4 restatements: it reads {@code isNumber}/
  * {@code isDate} as ROUTING predicates (a soort lie is a different document, crossed by WF-091; on a binder
  * read by WF-078 until L2, when the reference annotations left the wire)
- * and it never reads {@code Datatype.decimalen} at all — only {@code Rounding.decimalen}, a node field.
+ * and it never reads {@code Datatype.decimals} at all — only {@code Rounding.decimals}, a node field.
  * Grafting the derived unit onto the node's own annotation therefore changes exactly what is read and
  * nothing else.
  */
@@ -90,13 +90,13 @@ public final class EffectiveUnit {
      *  pass through unchanged, so a verifier-clean document lowers byte-for-byte as before. */
     public Datatype van(Expr e) {
         Datatype t = typeOf(e);
-        if (!(t instanceof Datatype.Numeriek) && !(t instanceof Datatype.Percentage)) return t;
+        if (!(t instanceof Datatype.Numeric) && !(t instanceof Datatype.Percentage)) return t;
         Unit derived = unit(e, LEEG, 0);
         if (Objects.equals(derived, t.unitOf())) return t;
-        if (t instanceof Datatype.Numeriek n)
-            return new Datatype.Numeriek(n.geheel(), n.decimalen(), n.teken(), derived);
+        if (t instanceof Datatype.Numeric n)
+            return new Datatype.Numeric(n.wholeNumber(), n.decimals(), n.sign(), derived);
         Datatype.Percentage p = (Datatype.Percentage) t;
-        return new Datatype.Percentage(p.geheel(), p.decimalen(), derived);
+        return new Datatype.Percentage(p.wholeNumber(), p.decimals(), derived);
     }
 
     /** The derived unit itself (null = unitless), for a caller that compares units rather than datatypes. */
@@ -128,7 +128,7 @@ public final class EffectiveUnit {
                 Datatype t = readTypes.get(b);
                 yield t != null ? t : UNKNOWN;
             }
-            case Expr.Rounding a -> rounded(typeOf(a.base()), a.decimalen());
+            case Expr.Rounding a -> rounded(typeOf(a.base()), a.decimals());
             case Expr.Clamp b -> typeOf(b.base());
             default -> typeWithoutBinder(e);
         };
@@ -144,7 +144,7 @@ public final class EffectiveUnit {
             case Expr.ParameterRef p -> p.parameter() == null ? null : p.parameter().datatype();
             case Expr.BinderRef ignored -> null;
             case Expr.VariableRef ignored -> null;
-            case Expr.Rounding a -> rounded(typeWithoutBinder(a.base()), a.decimalen());
+            case Expr.Rounding a -> rounded(typeWithoutBinder(a.base()), a.decimals());
             case Expr.Clamp b -> typeWithoutBinder(b.base());
             case Expr.InstanceSetUnion ignored -> null;   // it denotes instances and carries no datatype
             default -> e.type();
@@ -156,7 +156,7 @@ public final class EffectiveUnit {
 
     /** {@code Expr.Rounding.type()}, over the base's datatype as {@link #typeOf} reads it. */
     private static Datatype rounded(Datatype b, int decimals) {
-        if (b instanceof Datatype.Numeriek n) return new Datatype.Numeriek(decimals == 0, decimals, n.teken(), n.eenheid());
+        if (b instanceof Datatype.Numeric n) return new Datatype.Numeric(decimals == 0, decimals, n.sign(), n.unit());
         if (b instanceof Datatype.Percentage p) return new Datatype.Percentage(decimals == 0, decimals);
         return b;
     }
@@ -173,7 +173,7 @@ public final class EffectiveUnit {
     private void noteerType(Expr e, Map<String, Datatype> environment, int depth) {
         if (e == null || depth > MAX_DEPTH) return;
         if (e instanceof Expr.BinderRef lz) {
-            String k = key(lz.naam());
+            String k = key(lz.name());
             if (environment.containsKey(k)) readTypes.put(e, environment.get(k));
             return;
         }
@@ -197,8 +197,8 @@ public final class EffectiveUnit {
     /** A bound value's datatype in scope {@code environment}: a binder read there takes its binding's. */
     private Datatype typeIn(Expr e, Map<String, Datatype> environment) {
         return switch (e) {
-            case Expr.BinderRef b -> environment.containsKey(key(b.naam())) ? environment.get(key(b.naam())) : UNKNOWN;
-            case Expr.Rounding a -> rounded(typeIn(a.base(), environment), a.decimalen());
+            case Expr.BinderRef b -> environment.containsKey(key(b.name())) ? environment.get(key(b.name())) : UNKNOWN;
+            case Expr.Rounding a -> rounded(typeIn(a.base(), environment), a.decimals());
             case Expr.Clamp b -> typeIn(b.base(), environment);
             default -> typeWithoutBinder(e);
         };
@@ -415,7 +415,7 @@ public final class EffectiveUnit {
             // BOUND (to a unit, or to a unitless value) and UNBOUND are different facts, so both tables are asked
             // with containsKey: a binder bound to a unitless value HAS a source and the annotation may not speak
             // over it; only a read no Let anywhere binds falls back. Both maps hold nulls for exactly this.
-            if (environment.containsKey(key(lz.naam()))) return environment.get(key(lz.naam()));
+            if (environment.containsKey(key(lz.name()))) return environment.get(key(lz.name()));
             if (readUnits == null) buildReads();
             return readUnits.containsKey(e) ? readUnits.get(e) : annotation;
         }
@@ -451,7 +451,7 @@ public final class EffectiveUnit {
     private void noteer(Expr e, Map<String, Unit> environment, int depth) {
         if (e == null || depth > MAX_DEPTH) return;
         if (e instanceof Expr.BinderRef lz) {
-            String k = key(lz.naam());
+            String k = key(lz.name());
             if (environment.containsKey(k)) readUnits.put(e, environment.get(k));
             return;
         }
@@ -579,7 +579,7 @@ public final class EffectiveUnit {
         return roots;
     }
 
-    private static String key(String naam) {
-        return naam == null ? "" : naam.toLowerCase(Locale.ROOT);
+    private static String key(String name) {
+        return name == null ? "" : name.toLowerCase(Locale.ROOT);
     }
 }

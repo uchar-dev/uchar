@@ -85,7 +85,7 @@ class TmsInputOnComputedTargetWitnessTest {
      *  initialisation's condition does not hold, so bergloon leeg and uitkering 5. Every order of the three rules. The
      *  reference interpreter answers the same on this document (measured 2026-10-09, in the report of that step). */
     @Test void outside_the_standing_domain_writes_the_computing_rule_empty() throws Exception {
-        String initialisatie = computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon", number("0"),
+        String initialisation = computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon", number("0"),
                 predicate("filled", ownRead("taxatie", "Vondst")));
         JsonNode caseDocument = TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("taxatie", "30", "bergloon", "7"), List.of(), Map.of()),
@@ -93,7 +93,7 @@ class TmsInputOnComputedTargetWitnessTest {
                 List.of(value("V1", "bergloon", "30"), value("V1", "uitkering", "35"), value("V2", "bergloon", null),
                         value("V2", "uitkering", "5")));
         int orders = 0;
-        for (List<String> order : TmsDocuments.permutations(List.of(RULES.get(0), RULES.get(1), initialisatie))) {
+        for (List<String> order : TmsDocuments.permutations(List.of(RULES.get(0), RULES.get(1), initialisation))) {
             List<String> names = names(order);
             assertNull(CaseRunner.playCase(TmsDocuments.document(MODEL, order), caseDocument,
                     DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + names);
@@ -129,7 +129,7 @@ class TmsInputOnComputedTargetWitnessTest {
             session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                     if (e.getMatch().getRule().getName().equals("uitkering")
-                            && e.getMatch().getObjects().stream().anyMatch(o -> o instanceof State s && s.onderwerp() == v1
+                            && e.getMatch().getObjects().stream().anyMatch(o -> o instanceof State s && s.subject() == v1
                                     && new BigDecimal("7").equals(s.value())))
                         outOfTheInput[0] = true;
                 }

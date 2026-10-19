@@ -645,12 +645,12 @@ class ObjectCreationWitnessTest {
     /** The overzee model with the §13.4.6.4 kenmerk toekenning's VALUE replaced — the arms no case input can
      *  reach (a literal true/false, a non-boolean). In memory: no corpus file is read for its expectations,
      *  moved, or touched. */
-    private static Path characteristicValue(String valueJson, String naam) throws Exception {
+    private static Path characteristicValue(String valueJson, String name) throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(OVERZEE)));
         for (JsonNode t : IrPath.version(ir, "objectCreations", 0, 0).get("initialisations"))
             if (t.get("characteristic").asBoolean())
                 ((com.fasterxml.jackson.databind.node.ObjectNode) t).set("value", JSON.readTree(valueJson));
-        return write(ir, naam);
+        return write(ir, name);
     }
 
     /** The rekenkamer model with the SUBJECT-side role (`opdrachtgever`) made MEERVOUDIG — one Rekenkamer
@@ -817,10 +817,10 @@ class ObjectCreationWitnessTest {
         return write(ir, "dossier-aantal");
     }
 
-    private static com.fasterxml.jackson.databind.node.ArrayNode without(JsonNode list, String naam) {
+    private static com.fasterxml.jackson.databind.node.ArrayNode without(JsonNode list, String name) {
         var kept = JSON.createArrayNode();
-        for (JsonNode n : list) if (!naam.equals(n.path("name").asText())) kept.add(n);
-        if (kept.size() != list.size() - 1) throw new AssertionError("'" + naam + "' is not in the list");
+        for (JsonNode n : list) if (!name.equals(n.path("name").asText())) kept.add(n);
+        if (kept.size() != list.size() - 1) throw new AssertionError("'" + name + "' is not in the list");
         return kept;
     }
 
@@ -874,8 +874,8 @@ class ObjectCreationWitnessTest {
                 """);
     }
 
-    private static Path write(JsonNode ir, String naam) throws Exception {
-        Path p = Files.createTempDirectory("uchar-oc-" + naam).resolve("ir.json");
+    private static Path write(JsonNode ir, String name) throws Exception {
+        Path p = Files.createTempDirectory("uchar-oc-" + name).resolve("ir.json");
         Files.writeString(p, JSON.writerWithDefaultPrettyPrinter().writeValueAsString(ir));
         p.toFile().deleteOnExit();
         return p;

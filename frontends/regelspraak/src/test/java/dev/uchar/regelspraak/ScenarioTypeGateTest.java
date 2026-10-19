@@ -29,9 +29,9 @@ class ScenarioTypeGateTest {
         """;
 
     /** A scenario on {@link #BARE} with a peildatum, so the gates stay quiet unless a test wakes them. */
-    private static String scenario(String verwachting) {
+    private static String scenario(String expectation) {
         return BARE + "Scenario s\nmet peildatum 01-06-2025\ngebaseerd op de situatie kaal\n"
-                + "Met als verwacht resultaat:\n" + verwachting;
+                + "Met als verwacht resultaat:\n" + expectation;
     }
 
     private static void error(String scenarioText, String merker, String fragment) {
@@ -242,7 +242,7 @@ class ScenarioTypeGateTest {
                 + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         assertEquals(List.of(new TimeWindow(LocalDate.of(2024, 1, 3), LocalDate.of(2024, 2, 20))),
-                b.scenarios().get(0).situation().instantie("J").kenmerken().get(0).periods());
+                b.scenarios().get(0).situation().instance("J").characteristics().get(0).periods());
     }
 
     @Test void fixed_value_and_periods_in_a_block() {
@@ -485,10 +485,10 @@ class ScenarioTypeGateTest {
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         Situation sit = b.scenarios().get(0).situation();
         assertEquals(List.of("J", "K"), sit.instances().stream().map(Instance::label).toList());
-        Instance j = sit.instantie("J");
-        assertEquals(List.of("vondstgewicht", "naam"), j.attributen().stream().map(AttributeValue::attribute).toList(),
+        Instance j = sit.instance("J");
+        assertEquals(List.of("vondstgewicht", "naam"), j.attributes().stream().map(AttributeValue::attribute).toList(),
                 "een latere toewijzing vervangt de eerdere op haar plaats");
-        assertEquals("20.00", j.attributen().get(0).value().number());
+        assertEquals("20.00", j.attributes().get(0).value().number());
         assertEquals(1, sit.parameters().size());
         assertEquals("4", sit.parameters().get(0).value().number(), "de latere parameterwaarde wint");
     }
@@ -510,12 +510,12 @@ class ScenarioTypeGateTest {
                 + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         Situation sit = b.scenarios().get(0).situation();
-        assertEquals("1500", sit.instantie("J").attributen().get(0).value().number(), "1,5 t is exact 1500 kg");
-        assertEquals("1/6", sit.instantie("V").attributen().get(0).value().number(),
+        assertEquals("1500", sit.instance("J").attributes().get(0).value().number(), "1,5 t is exact 1500 kg");
+        assertEquals("1/6", sit.instance("V").attributes().get(0).value().number(),
                 "1 voet is 1/6 vadem: een niet-eindigende omrekening blijft een breuk");
-        assertEquals("2.50", sit.instantie("V").attributen().get(1).value().number(), "zonder omrekening blijft de schaal");
-        assertEquals("3/4", sit.instantie("W").attributen().get(0).value().number());
-        assertEquals("250", sit.instantie("W").attributen().get(1).value().number());
+        assertEquals("2.50", sit.instance("V").attributes().get(1).value().number(), "zonder omrekening blijft de schaal");
+        assertEquals("3/4", sit.instance("W").attributes().get(0).value().number());
+        assertEquals("250", sit.instance("W").attributes().get(1).value().number());
     }
 
     @Test void the_conversion_computes_with_the_declared_rational() {
@@ -539,9 +539,9 @@ class ScenarioTypeGateTest {
                 - de gegevens zijn consistent
                 """);
         assertTrue(b.isOk(), () -> b.model().errors().toString());
-        Instance v = b.scenarios().get(0).situation().instantie("V");
-        assertEquals("2/3", v.attributen().get(0).value().number());
-        assertEquals("3", v.attributen().get(1).value().number());
+        Instance v = b.scenarios().get(0).situation().instance("V");
+        assertEquals("2/3", v.attributes().get(0).value().number());
+        assertEquals("3", v.attributes().get(1).value().number());
     }
 
     @Test void a_written_number_is_the_lexeme_of_the_emitter() {
@@ -555,7 +555,7 @@ class ScenarioTypeGateTest {
         Situation sit = b.scenarios().get(0).situation();
         for (String[] pair : new String[][]{{"V", "0", "6/8"}, {"V", "1", "2400,00"}, {"W", "0", "2_0/5"}})
             assertEquals(dev.uchar.regelspraak.emit.IrEmitter.numberLexeme(pair[2]),
-                    sit.instantie(pair[0]).attributen().get(Integer.parseInt(pair[1])).value().number(), pair[2]);
+                    sit.instance(pair[0]).attributes().get(Integer.parseInt(pair[1])).value().number(), pair[2]);
     }
 
     @Test void the_role_key_follows_the_written_form() {
@@ -572,13 +572,13 @@ class ScenarioTypeGateTest {
                 + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         Situation sit = b.scenarios().get(0).situation();
-        RoleValue many = sit.instantie("J").rollen().get(0);
+        RoleValue many = sit.instance("J").roles().get(0);
         assertEquals("vondsten", many.key(), "het meervoud blijft de sleutel");
-        assertTrue(many.meervoudig());
+        assertTrue(many.many());
         assertEquals(List.of("V", "W"), many.targetLabels());
-        RoleValue one = sit.instantie("W").rollen().get(0);
+        RoleValue one = sit.instance("W").roles().get(0);
         assertEquals("aanmelder", one.key());
-        assertFalse(one.meervoudig());
+        assertFalse(one.many());
     }
 
     @Test void timelines_and_the_empty_timeline() {
@@ -601,17 +601,17 @@ class ScenarioTypeGateTest {
             """);
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         ResolvedScenario s = b.scenarios().get(0);
-        AttributeValue borg = s.situation().instantie("J").attributen().get(0);
+        AttributeValue borg = s.situation().instance("J").attributes().get(0);
         assertNull(borg.value());
         assertEquals(List.of(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 3, 1)),
-                borg.tijdlijn().stream().map(Segment::van).toList());
-        CharacteristicValue plicht = s.situation().instantie("J").kenmerken().get(0);
+                borg.timeline().stream().map(Segment::van).toList());
+        CharacteristicValue plicht = s.situation().instance("J").characteristics().get(0);
         assertEquals("borgplichtig", plicht.characteristic());
         assertEquals(1, plicht.periods().size());
-        assertNull(s.situation().instantie("J").kenmerken().get(1).periods(), "een vast kenmerk draagt geen perioden");
+        assertNull(s.situation().instance("J").characteristics().get(1).periods(), "een vast kenmerk draagt geen perioden");
         // the two segment bullets of one timeline are one expectation, at the place of the first
         assertEquals(List.of(ExpectationKind.ATTRIBUTE_TIMELINE, ExpectationKind.CHARACTERISTIC_PRESENT,
                 ExpectationKind.CONSISTENT), s.expectations().stream().map(Expectation::category).toList());
-        assertEquals(2, s.expectations().get(0).tijdlijn().size());
+        assertEquals(2, s.expectations().get(0).timeline().size());
     }
 }

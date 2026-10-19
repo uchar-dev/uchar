@@ -44,14 +44,14 @@ public final class DayKinds {
 
     /** Compile (idempotently, cycle-safe) the §9.8 definitie of {@code naam}; null when no such definitie
      *  exists or its condition is not a pure date predicate (the caller then markers/skips). */
-    public Predicate<LocalDate> datePredicate(String naam) {
-        String key = naam.toLowerCase();
+    public Predicate<LocalDate> datePredicate(String name) {
+        String key = name.toLowerCase();
         Predicate<LocalDate> have = predicates.get(key);
         if (have != null) return have;
         if (busy.contains(key))   // cyclic reference: defer to the eventual map entry
             return d -> { var p = predicates.get(key); return p != null && p.test(d); };
         ResolvedDayKindDefinition def = null;
-        for (var d : model.resolvedDayKindDefinitions) if (d.naam().equalsIgnoreCase(naam)) { def = d; break; }
+        for (var d : model.resolvedDayKindDefinitions) if (d.name().equalsIgnoreCase(name)) { def = d; break; }
         if (def == null) return null;
         busy.add(key);
         Predicate<LocalDate> body = bool(def.condition());
@@ -81,7 +81,7 @@ public final class DayKinds {
             // refuse is exactly the asymmetry the day-kind card set out to end. Uncompiled, so the form leaves
             // through this compiler's ordinary refusal channel and the transpiler names it.
             Expr od = p.operand();
-            if (!(od == null || (od instanceof Expr.Constant oc && "de dag".equalsIgnoreCase(oc.naam()))))
+            if (!(od == null || (od instanceof Expr.Constant oc && "de dag".equalsIgnoreCase(oc.name()))))
                 return null;
             Function<LocalDate, Object> o = value(p.operand());
             Predicate<LocalDate> inner = datePredicate(p.dayKind());
@@ -108,7 +108,7 @@ public final class DayKinds {
     /** A §9.8 operand over "de dag" as a {@code Function<LocalDate,Object>} (the day itself, a date-component
      *  of it via rsDatumDeel, "de eerste paasdag van", or a fact-free literal); null when not a pure date operand. */
     private Function<LocalDate, Object> value(Expr e) {
-        if (e instanceof Expr.Constant c && "de dag".equalsIgnoreCase(c.naam())) return d -> d;
+        if (e instanceof Expr.Constant c && "de dag".equalsIgnoreCase(c.name())) return d -> d;
         if (e instanceof Expr.FunctionCall f && f.arguments().size() == 1) {
             java.time.temporal.ChronoField cf = switch (f.kind()) {
                 case JAAR_UIT         -> java.time.temporal.ChronoField.YEAR;

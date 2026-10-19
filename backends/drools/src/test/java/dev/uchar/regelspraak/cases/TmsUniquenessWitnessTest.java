@@ -87,8 +87,8 @@ class TmsUniquenessWitnessTest {
 
     /** A Uniqueness of one always-valid version over {@code sources} ({@link #source}), scoped where {@code scope} is not
      *  null. */
-    static String uniqueness(String naam, List<String> sources, String scope, String text) {
-        return "{\"node\":\"Uniqueness\",\"name\":\"" + naam + "\",\"versions\":[{\"sources\":[" + String.join(",", sources)
+    static String uniqueness(String name, List<String> sources, String scope, String text) {
+        return "{\"node\":\"Uniqueness\",\"name\":\"" + name + "\",\"versions\":[{\"sources\":[" + String.join(",", sources)
                 + "]" + (scope == null ? "" : ",\"scope\":" + scope) + ",\"validity\":{\"node\":\"Validity\"},"
                 + "\"source\":{\"snippet\":\"" + text + "\"}}]}";
     }

@@ -6,7 +6,7 @@ import dev.uchar.regelspraak.ir.ResolvedScenario;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 import dev.uchar.regelspraak.model.RegelSpraakModel.FactType;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Role;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 import dev.uchar.regelspraak.resolver.Resolver;
@@ -42,21 +42,21 @@ class DeclarationHeadNameTest {
         return m;
     }
 
-    /** Exactly one diagnostic of {@code severity} carries {@code sentence}, and it stands on {@code regel}. */
-    private static void onlyMessage(RegelSpraakModel m, Severity severity, int regel, String sentence) {
+    /** Exactly one diagnostic of {@code severity} carries {@code sentence}, and it stands on {@code rule}. */
+    private static void onlyMessage(RegelSpraakModel m, Severity severity, int rule, String sentence) {
         List<Diagnostic> matching = m.diagnostics.stream()
                 .filter(d -> d.severity() == severity && d.message().equals(sentence)).toList();
         assertEquals(1, matching.size(), () -> "verwacht één " + severity + " '" + sentence + "', kreeg: " + m.diagnostics);
-        assertEquals(regel, matching.get(0).line(), () -> "de melding staat op de verkeerde regel: " + matching.get(0));
+        assertEquals(rule, matching.get(0).line(), () -> "de melding staat op de verkeerde regel: " + matching.get(0));
     }
 
     private static String ir(RegelSpraakModel m) {
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
 
-    private static int count(String tekst, String part) {
+    private static int count(String text, String part) {
         int n = 0;
-        for (int i = tekst.indexOf(part); i >= 0; i = tekst.indexOf(part, i + 1)) n++;
+        for (int i = text.indexOf(part); i >= 0; i = text.indexOf(part, i + 1)) n++;
         return n;
     }
 
@@ -69,14 +69,14 @@ class DeclarationHeadNameTest {
             Objecttype de Vondst bij eb
                 de waarde Numeriek (geheel getal);
             """);
-        assertEquals(List.of("Recht op premie", "Vondst bij eb"), new ArrayList<>(m.objecttypen.keySet()));
-        assertEquals("Rechten op premie", m.objecttypen.get("Recht op premie").plural);
-        assertEquals(List.of("premie"), new ArrayList<>(m.objecttypen.get("Recht op premie").attributen.keySet()));
+        assertEquals(List.of("Recht op premie", "Vondst bij eb"), new ArrayList<>(m.objectTypes.keySet()));
+        assertEquals("Rechten op premie", m.objectTypes.get("Recht op premie").plural);
+        assertEquals(List.of("premie"), new ArrayList<>(m.objectTypes.get("Recht op premie").attributes.keySet()));
         // until this work the head read 'Vondst' and one attribute 'bij eb de waarde', without a diagnostic
-        assertEquals(List.of("waarde"), new ArrayList<>(m.objecttypen.get("Vondst bij eb").attributen.keySet()));
-        for (String voorzetsel : List.of("op", "bij", "in", "voor", "over", "tot", "tot en met", "per", "met")) {
-            RegelSpraakModel n = clean("Objecttype de Premie " + voorzetsel + " eb\n    de waarde Numeriek (geheel getal);\n");
-            assertEquals(List.of("Premie " + voorzetsel + " eb"), new ArrayList<>(n.objecttypen.keySet()), voorzetsel);
+        assertEquals(List.of("waarde"), new ArrayList<>(m.objectTypes.get("Vondst bij eb").attributes.keySet()));
+        for (String preposition : List.of("op", "bij", "in", "voor", "over", "tot", "tot en met", "per", "met")) {
+            RegelSpraakModel n = clean("Objecttype de Premie " + preposition + " eb\n    de waarde Numeriek (geheel getal);\n");
+            assertEquals(List.of("Premie " + preposition + " eb"), new ArrayList<>(n.objectTypes.keySet()), preposition);
         }
     }
 
@@ -99,7 +99,7 @@ class DeclarationHeadNameTest {
                 geldig altijd
                     De premie van een Vondst-van eb moet berekend worden als de waarde van de Vondst-van eb plus 1.
             """);
-        assertEquals(List.of("Vondst-van eb"), new ArrayList<>(k.objecttypen.keySet()));
+        assertEquals(List.of("Vondst-van eb"), new ArrayList<>(k.objectTypes.keySet()));
         String ir = ir(k);
         assertEquals(0, count(ir, "\"node\":\"Unresolved\""), ir);
         assertEquals(2, count(ir, "\"subjectType\":\"Vondst-vaneb\""), ir);
@@ -134,11 +134,11 @@ class DeclarationHeadNameTest {
                     Het premiebedrag van een Jutter moet berekend worden als de som van de premie van alle rechten op premie van de Jutter of 0 als die er niet zijn.
             """;
         RegelSpraakModel m = clean(source);
-        Objecttype recht = m.objecttypen.get("Recht op premie");
-        assertTrue(recht.kenmerken.contains("toegekend"), "de extensiekop bereikt het objecttype niet");
-        assertSame(recht, m.objecttypen.get("Recht op premie bij eb").supertype);
-        FactType ft = m.feittypen.get("jutter heeft premierecht");
-        assertEquals("Recht op premie", ft.rollen.get(1).objecttypeNaam());
+        ObjectType recht = m.objectTypes.get("Recht op premie");
+        assertTrue(recht.characteristics.contains("toegekend"), "de extensiekop bereikt het objecttype niet");
+        assertSame(recht, m.objectTypes.get("Recht op premie bij eb").supertype);
+        FactType ft = m.factTypes.get("jutter heeft premierecht");
+        assertEquals("Recht op premie", ft.roles.get(1).objectTypeName());
         String ir = ir(m);
         assertEquals(0, count(ir, "\"node\":\"Unresolved\""), ir);
         // the target and the two readings of the first rule, the target of the second, the argument of the sum
@@ -162,8 +162,8 @@ class DeclarationHeadNameTest {
             """);
         assertTrue(b.isOk(), () -> b.model().errors().toString());
         ResolvedScenario s = b.scenarios().get(0);
-        assertEquals("Recht op premie", s.situation().instances().get(1).objectType().naam);
-        assertEquals("rechten op premie", s.situation().instances().get(0).rollen().get(0).key());
+        assertEquals("Recht op premie", s.situation().instances().get(1).objectType().name);
+        assertEquals("rechten op premie", s.situation().instances().get(0).roles().get(0).key());
         String cas = CaseEmitter.emit(s).replaceAll("\\s+", "");
         assertTrue(cas.contains("{\"label\":\"R1\",\"objectType\":\"Rechtoppremie\""), cas);
     }
@@ -185,11 +185,11 @@ class DeclarationHeadNameTest {
                 geldig altijd
                     Het aantal rechten van een Jutter moet berekend worden als het aantal rechten op premie van de Jutter.
             """);
-        assertEquals("Rechten op premie", m.objecttypen.get("Recht op premie").plural);
-        assertEquals("premies per dag", m.objecttypen.get("Jutter").attributePlural.get("premie per dag"));
-        Role role = m.feittypen.get("jutter heeft premierecht").rollen.get(1);
+        assertEquals("Rechten op premie", m.objectTypes.get("Recht op premie").plural);
+        assertEquals("premies per dag", m.objectTypes.get("Jutter").attributePlural.get("premie per dag"));
+        Role role = m.factTypes.get("jutter heeft premierecht").roles.get(1);
         assertEquals("rechten op premie", role.plural());
-        assertTrue(role.meervoudig(), "de kardinaliteitsregel noemt de rol in haar meervoud");
+        assertTrue(role.many(), "de kardinaliteitsregel noemt de rol in haar meervoud");
         String ir = ir(m);
         assertEquals(0, count(ir, "\"node\":\"Unresolved\""), ir);
         assertTrue(ir.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"jutterheeftpremierecht\","
@@ -218,9 +218,9 @@ class DeclarationHeadNameTest {
             Eén berger heeft meerdere geborgen vondsten
             """);
         assertEquals(List.of("jutter heeft vondst", "vondst is gemeld bij jutter", "jutters hebben vondsten die zijn geborgen"),
-                new ArrayList<>(m.feittypen.keySet()));
+                new ArrayList<>(m.factTypes.keySet()));
         assertEquals(List.of("vinder", "vondst"),
-                m.feittypen.get("jutter heeft vondst").rollen.stream().map(Role::naam).toList());
+                m.factTypes.get("jutter heeft vondst").roles.stream().map(Role::name).toList());
     }
 
     /** 'de' and 'het' open the role line, so a fact-type name still ends there, and the line check refuses the role
@@ -296,7 +296,7 @@ class DeclarationHeadNameTest {
             Objecttype de Vondst (mv: Vondsten)
                 de premie kenmerk-strand Numeriek (geheel getal);
             """);
-        assertEquals(List.of("premie kenmerk-strand"), new ArrayList<>(k.objecttypen.get("Vondst").attributen.keySet()));
+        assertEquals(List.of("premie kenmerk-strand"), new ArrayList<>(k.objectTypes.get("Vondst").attributes.keySet()));
     }
 
     @Test void a_role_on_the_line_of_the_previous_role_is_an_error() {
@@ -327,8 +327,8 @@ class DeclarationHeadNameTest {
                 kleur Tekst;
             """);
         assertEquals(List.of("datum van aankomst bij het vertrekpunt", "naam"),
-                new ArrayList<>(m.objecttypen.get("Vondst").attributen.keySet()));
-        assertEquals(List.of("kleur"), new ArrayList<>(m.objecttypen.get("Boei").attributen.keySet()));
+                new ArrayList<>(m.objectTypes.get("Vondst").attributes.keySet()));
+        assertEquals(List.of("kleur"), new ArrayList<>(m.objectTypes.get("Boei").attributes.keySet()));
     }
 
     // ---------------- a role's filler ----------------
@@ -438,7 +438,7 @@ class DeclarationHeadNameTest {
                 geldig altijd
                     De premie van een Recht op premie moet berekend worden als de waarde van het Recht op premie plus 1.
             """);
-        assertEquals(List.of("Recht Op Premie"), new ArrayList<>(m.objecttypen.keySet()));
+        assertEquals(List.of("Recht Op Premie"), new ArrayList<>(m.objectTypes.keySet()));
         assertEquals(0, count(ir(m), "\"node\":\"Unresolved\""));
     }
 
@@ -447,12 +447,12 @@ class DeclarationHeadNameTest {
      *  case files. */
     @Test void the_golden_reads_without_diagnostic() throws Exception {
         RegelSpraakModel m = clean(Files.readString(GOLDEN.resolve("source.rgs")));
-        assertEquals(List.of("Jutter", "Recht op premie"), new ArrayList<>(m.objecttypen.keySet()));
-        assertEquals("Rechten op premie", m.objecttypen.get("Recht op premie").plural);
-        assertEquals(List.of("jutter heeft premierecht"), new ArrayList<>(m.feittypen.keySet()));
-        Role role = m.feittypen.get("jutter heeft premierecht").rollen.get(1);
+        assertEquals(List.of("Jutter", "Recht op premie"), new ArrayList<>(m.objectTypes.keySet()));
+        assertEquals("Rechten op premie", m.objectTypes.get("Recht op premie").plural);
+        assertEquals(List.of("jutter heeft premierecht"), new ArrayList<>(m.factTypes.keySet()));
+        Role role = m.factTypes.get("jutter heeft premierecht").roles.get(1);
         assertEquals(new Role("recht op premie", "Recht op premie", "rechten op premie", true), role);
-        assertEquals(5, m.resolvedRegels.size());
+        assertEquals(5, m.resolvedRules.size());
         assertEquals(0, count(ir(m), "\"node\":\"Unresolved\""));
         assertTrue(Files.readString(GOLDEN.resolve("scenario.rgs")).contains("een Recht op premie R1\n"));
     }

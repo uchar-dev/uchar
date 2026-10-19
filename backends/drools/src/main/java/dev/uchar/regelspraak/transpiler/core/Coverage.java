@@ -17,25 +17,25 @@ import dev.uchar.regelspraak.refusal.Reason;
  * construct regressed) and the silent marker (a semantically inert rule with no diagnostic). Every
  * non-LOWERED verdict therefore also surfaces as a deduplicated WARNING via {@link #report}.
  */
-public record Coverage(String category, String naam, Verdict verdict, String reason, String spec, DroolsCode code,
+public record Coverage(String category, String name, Verdict verdict, String reason, String spec, DroolsCode code,
                        Msg reasonText) {
 
     public enum Verdict { LOWERED, MARKER, SKIP }
 
-    public static Coverage lowered(String category, String naam) {
-        return new Coverage(category, naam, Verdict.LOWERED, "", "", null, null);
+    public static Coverage lowered(String category, String name) {
+        return new Coverage(category, name, Verdict.LOWERED, "", "", null, null);
     }
 
-    public static Coverage marker(String category, String naam, String reason) {
-        return new Coverage(category, naam, Verdict.MARKER, reason, specOut(reason), null, null);
+    public static Coverage marker(String category, String name, String reason) {
+        return new Coverage(category, name, Verdict.MARKER, reason, specOut(reason), null, null);
     }
 
-    public static Coverage skip(Reason reason, String category, String naam) {
-        return new Coverage(category, naam, Verdict.SKIP, reason.text(), specOut(reason.text()), reason.code(), reason.msg());
+    public static Coverage skip(Reason reason, String category, String name) {
+        return new Coverage(category, name, Verdict.SKIP, reason.text(), specOut(reason.text()), reason.code(), reason.msg());
     }
 
     /** The construct's identity across back-ends — soort plus its RegelSpraak name. */
-    public String key() { return category + ": " + naam; }
+    public String key() { return category + ": " + name; }
 
     public boolean lowered() { return verdict == Verdict.LOWERED; }
 
@@ -45,7 +45,7 @@ public record Coverage(String category, String naam, Verdict verdict, String rea
         if (lowered()) return;
         Object why = reasonText != null ? reasonText : reason;
         var w = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                "RGS-346", RegelSpraakModel.Diagnostic.params("category", category, "name", naam, "verdict", verdict,
+                "RGS-346", RegelSpraakModel.Diagnostic.params("category", category, "name", name, "verdict", verdict,
                         "reason", why, "reasonClause", Msg.frontendIf(!reason.isEmpty(), "RGS-346.reason", "reason", why)),
                 0);
         if (!model.diagnostics.contains(w)) model.diagnostics.add(w);

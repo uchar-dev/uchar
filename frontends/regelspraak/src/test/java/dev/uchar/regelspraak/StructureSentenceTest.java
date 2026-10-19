@@ -391,35 +391,35 @@ class StructureSentenceTest {
             + "vóór het attribuut 'romplengte' één naam werd: 'maximum van de romplengte' is neither an attribute nor a "
             + "characteristic of 'Schuit'";
 
-    private static String regel(String sentence) {
+    private static String rule(String sentence) {
         return HAVENS + "Regel p\n    geldig altijd\n        " + sentence + "\n";
     }
 
     @Test void a_read_whose_name_took_in_a_word_before_the_preposition() {
         // before: a read of an attribute 'maximum van de romplengte' went to disk with no diagnostic, and the
         // verifier refused the document in the sentence after the colon
-        assertEquals(List.of(SWALLOWED), faults(regel("De ligprijs van een Schuit moet berekend worden als het "
+        assertEquals(List.of(SWALLOWED), faults(rule("De ligprijs van een Schuit moet berekend worden als het "
                 + "maximum van de romplengte van de Schuit.")));
-        assertEquals(List.of(SWALLOWED), faults(regel("De ligprijs van een Schuit moet berekend worden als 3\n"
+        assertEquals(List.of(SWALLOWED), faults(rule("De ligprijs van een Schuit moet berekend worden als 3\n"
                 + "        indien het maximum van de romplengte van de Schuit groter is dan 2.")));
-        assertEquals(List.of(SWALLOWED), faults(regel("Een Schuit is gekeurd\n"
+        assertEquals(List.of(SWALLOWED), faults(rule("Een Schuit is gekeurd\n"
                 + "        indien het maximum van de romplengte van de Schuit groter is dan 2.")));
         assertEquals(List.of("lezing 'Het maximum van de romplengte van een Schuit', waarin 'maximum van' vóór het "
                         + "attribuut 'romplengte' één naam werd: 'maximum van de romplengte' is neither an attribute nor "
                         + "a characteristic of 'Schuit'"),
-                faults(regel("Het maximum van de romplengte van een Schuit moet groter zijn dan 2.")));
+                faults(rule("Het maximum van de romplengte van een Schuit moet groter zijn dan 2.")));
     }
 
     @Test void a_swallowed_name_over_a_plural_or_a_navigation() {
         assertEquals(List.of("lezing 'het maximum van de romplengten van de Schuit', waarin 'maximum van' vóór het "
                         + "attribuut 'romplengte' één naam werd: 'maximum van de romplengten' is neither an attribute "
                         + "nor a characteristic of 'Schuit'"),
-                faults(regel("De ligprijs van een Schuit moet berekend worden als het maximum van de romplengten van "
+                faults(rule("De ligprijs van een Schuit moet berekend worden als het maximum van de romplengten van "
                         + "de Schuit.")));
         assertEquals(List.of("lezing 'het maximum van het kadegeld van zijn thuishaven', waarin 'maximum van' vóór het "
                         + "attribuut 'kadegeld' één naam werd: 'maximum van het kadegeld' is neither an attribute nor a "
                         + "characteristic of 'Haven'"),
-                faults(regel("De ligprijs van een Schuit moet berekend worden als het maximum van het kadegeld van "
+                faults(rule("De ligprijs van een Schuit moet berekend worden als het maximum van het kadegeld van "
                         + "zijn thuishaven.")));
     }
 
@@ -472,9 +472,9 @@ class StructureSentenceTest {
     }
 
     @Test void a_declared_name_with_of_and_the_maximal_value_stay_clean() {
-        assertEquals(List.of(), faults(regel("Een Schuit is gekeurd\n"
+        assertEquals(List.of(), faults(rule("Een Schuit is gekeurd\n"
                 + "        indien de datum van keuring van de Schuit later is dan 01-01-2026.")));
-        assertEquals(List.of(), faults(regel("De ligprijs van een Schuit moet berekend worden als de maximale waarde "
+        assertEquals(List.of(), faults(rule("De ligprijs van een Schuit moet berekend worden als de maximale waarde "
                 + "van de romplengte van de Schuit en 3.")));
     }
 
@@ -484,13 +484,13 @@ class StructureSentenceTest {
         // before: IrEmitter's exception ("de constante 'hij' ('hij') heeft geen spelling in uchar-ir-v1")
         String sentence = "'hij' als waarde ('hij'): context value 'hij' is not one of the two admissible names "
                 + "evaluationDate, evaluationYear: the context-value name is a closed set, spelled byte for byte";
-        assertEquals(List.of(sentence), faults(regel("De ligprijs van een Schuit moet berekend worden als hij.")));
-        assertEquals(List.of(sentence, sentence), faults(regel("Een Schuit is gekeurd\n        indien hij gelijk is aan hij.")));
+        assertEquals(List.of(sentence), faults(rule("De ligprijs van een Schuit moet berekend worden als hij.")));
+        assertEquals(List.of(sentence, sentence), faults(rule("Een Schuit is gekeurd\n        indien hij gelijk is aan hij.")));
     }
 
     // ---- the loader: a unit's conversion factor
 
-    private static String stelsel(String factor) {
+    private static String system(String factor) {
         return "Eenheidsysteem Gewicht\n    het kilogram (mv: kilogrammen) kg\n    de veer (mv: veren) vr = " + factor
                 + " kg\n\nObjecttype de Schuit (mv: Schuiten)\n    het gewicht Numeriek (getal) met eenheid kg;\n";
     }
@@ -500,11 +500,11 @@ class StructureSentenceTest {
         // past 2^62 - 1 went to disk for every loader to refuse
         String sentence = "eenheid 'vr' van eenheidstelsel 'Gewicht': a conversion factor is an exact rational {num, den} whose "
                 + "two integers are at least 1 and at most 4611686018427387903 (2^62 - 1), got ";
-        assertEquals(List.of(sentence + "{\"num\":0,\"den\":1}"), faults(stelsel("0")));
-        assertEquals(List.of(sentence + "{\"num\":-2,\"den\":1}"), faults(stelsel("-2")));
-        assertEquals(List.of(sentence + "{\"num\":4611686018427387904,\"den\":1}"), faults(stelsel("4611686018427387904")));
-        assertEquals(List.of(), faults(stelsel("4611686018427387903")));
-        assertEquals(List.of(), faults(stelsel("1/3")));
+        assertEquals(List.of(sentence + "{\"num\":0,\"den\":1}"), faults(system("0")));
+        assertEquals(List.of(sentence + "{\"num\":-2,\"den\":1}"), faults(system("-2")));
+        assertEquals(List.of(sentence + "{\"num\":4611686018427387904,\"den\":1}"), faults(system("4611686018427387904")));
+        assertEquals(List.of(), faults(system("4611686018427387903")));
+        assertEquals(List.of(), faults(system("1/3")));
     }
 
     // ---- §3.4: the unit clause of a domain-typed attribute
@@ -526,8 +526,8 @@ class StructureSentenceTest {
         RegelSpraakModel m = Resolver.resolve(UNITS + "Objecttype de Schuit (mv: Schuiten)\n    de prijs Bedrag met "
                 + "eenheid €;\n");
         assertEquals(List.of(), m.diagnostics);
-        assertEquals("EUR", ((dev.uchar.regelspraak.model.Datatype.Numeriek) m.objecttypen.get("Schuit").attribute("prijs"))
-                .eenheid().afkorting());
+        assertEquals("EUR", ((dev.uchar.regelspraak.model.Datatype.Numeric) m.objectTypes.get("Schuit").attribute("prijs"))
+                .unit().abbreviation());
         assertEquals(List.of("attribuut 'aandeel' met eenheid '€': een percentage draagt de eenheid % ('Percentage (…) "
                         + "met eenheid %/<eenheid>' voor een verhouding)"),
                 faults(UNITS + "Objecttype de Schuit (mv: Schuiten)\n    het aandeel Percentage (geheel getal) met "
@@ -581,8 +581,8 @@ class StructureSentenceTest {
 
         """;
 
-    private static String startPointDetermination(String tijdlijn, String extra, String sentence) {
-        return tijdlijn + START_POINT.replace("    het meldtijdstip", extra + "    het meldtijdstip") + """
+    private static String startPointDetermination(String timeline, String extra, String sentence) {
+        return timeline + START_POINT.replace("    het meldtijdstip", extra + "    het meldtijdstip") + """
             Regel startpunt penningjaar
                 geldig altijd
                     %s.
@@ -865,12 +865,12 @@ class StructureSentenceTest {
 
     // ---- WF-037: the shape of a count
 
-    private static List<String> count(String expressie) {
+    private static List<String> count(String expression) {
         return faults(TELMODEL + """
             Regel aantal gewogen posten
                 geldig altijd
                     Het aantal gewogen posten van een Jutter moet berekend worden als %s.
-            """.formatted(expressie));
+            """.formatted(expression));
     }
 
     private static final String ENUMERATED = ": a count folds INSTANCES and has no LISTED form, and this node carries 2 "

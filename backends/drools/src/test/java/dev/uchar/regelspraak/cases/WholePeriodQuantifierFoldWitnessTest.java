@@ -393,20 +393,20 @@ class WholePeriodQuantifierFoldWitnessTest {
      * eenheidsdragende. Zonder deze rij zou {@code --drl} op deze vier een eenmalige handmeting blijven.
      */
     @Test void both_branches_play_the_four_corpusgoldens() throws Exception {
-        for (String naam : GOLDENS) {
-            Path ir = CORPUS.resolve(naam).resolve("ir.json");
-            List<Path> cases = casesOf(CORPUS.resolve(naam));
-            assertFalse(cases.isEmpty(), naam + " hoort casebestanden te dragen");
+        for (String name : GOLDENS) {
+            Path ir = CORPUS.resolve(name).resolve("ir.json");
+            List<Path> cases = casesOf(CORPUS.resolve(name));
+            assertFalse(cases.isEmpty(), name + " hoort casebestanden te dragen");
 
             CaseRunner.Result exec = CaseRunner.viaExecModel(ir, cases);
-            assertEquals("PLAYED", exec.status(), naam + " hoort door de exec-model-tak gespeeld te worden: "
+            assertEquals("PLAYED", exec.status(), name + " hoort door de exec-model-tak gespeeld te worden: "
                     + exec.reason());
-            assertEquals(cases.size(), exec.casesPlayed(), naam + ": elke cel hoort gespeeld te zijn");
+            assertEquals(cases.size(), exec.casesPlayed(), name + ": elke cel hoort gespeeld te zijn");
 
             CaseRunner.Result drl = CaseRunner.viaDrlText(ir, cases);
-            assertEquals("PLAYED", drl.status(), naam + " hoort door de DRL-tekst-tak even goed gespeeld te "
+            assertEquals("PLAYED", drl.status(), name + " hoort door de DRL-tekst-tak even goed gespeeld te "
                     + "worden: " + drl.reason());
-            assertEquals(cases.size(), drl.casesPlayed(), naam + ": elke cel hoort gespeeld te zijn");
+            assertEquals(cases.size(), drl.casesPlayed(), name + ": elke cel hoort gespeeld te zijn");
         }
     }
 
@@ -417,8 +417,8 @@ class WholePeriodQuantifierFoldWitnessTest {
      */
     @Test void a_mutant_per_golden_is_rejected_by_both_branches() throws Exception {
         for (String[] row : MUTANTS) {
-            String naam = row[0], caseName = row[1], characteristic = row[2];
-            Path source = CORPUS.resolve(naam).resolve(caseName);
+            String name = row[0], caseName = row[1], characteristic = row[2];
+            Path source = CORPUS.resolve(name).resolve(caseName);
             ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(source));
             boolean touched = false;
             for (JsonNode e : doc.withArray("expected"))
@@ -427,16 +427,16 @@ class WholePeriodQuantifierFoldWitnessTest {
                     ((ObjectNode) e).put("kind", "characteristicAbsent");
                     touched = true;
                 }
-            assertTrue(touched, naam + "/" + caseName + " hoort '" + characteristic + "' AANWEZIG te verwachten — "
+            assertTrue(touched, name + "/" + caseName + " hoort '" + characteristic + "' AANWEZIG te verwachten — "
                     + "anders muteert deze rij niets");
-            Path mutant = tmp.resolve(naam + "-mutant.json");
+            Path mutant = tmp.resolve(name + "-mutant.json");
             Files.writeString(mutant, doc.toPrettyString());
 
-            Path ir = CORPUS.resolve(naam).resolve("ir.json");
+            Path ir = CORPUS.resolve(name).resolve("ir.json");
             assertEquals("FAIL", CaseRunner.viaExecModel(ir, List.of(mutant)).status(),
-                    naam + ": de exec-model-tak hoort de omgeklapte verwachting te verwerpen");
+                    name + ": de exec-model-tak hoort de omgeklapte verwachting te verwerpen");
             assertEquals("FAIL", CaseRunner.viaDrlText(ir, List.of(mutant)).status(),
-                    naam + ": de DRL-tekst-tak hoort hem even goed te verwerpen");
+                    name + ": de DRL-tekst-tak hoort hem even goed te verwerpen");
         }
     }
 
@@ -622,8 +622,8 @@ class WholePeriodQuantifierFoldWitnessTest {
         vloot.set("characteristics", JSON.readTree("""
                 [ { "node": "Characteristic", "name": "zeewaardig", "kind": "adjectival" },
                   { "node": "Characteristic", "name": "vlaggend", "kind": "adjectival" } ]"""));
-        ObjectNode regel = IrPath.version(doc, "rules", 0, 0);
-        ObjectNode fold = (ObjectNode) regel.get("condition");
+        ObjectNode rule = IrPath.version(doc, "rules", 0, 0);
+        ObjectNode fold = (ObjectNode) rule.get("condition");
         if (!wholePeriod)   // de niet-temporele route: een kenmerkmatrix zonder heelperiodekwalificatie
             fold.set("test", JSON.readTree("""
                     { "node": "CharacteristicCheck", "characteristic": "zeegaand", "negated": false,
@@ -636,7 +636,7 @@ class WholePeriodQuantifierFoldWitnessTest {
                 { "node": "CharacteristicCheck", "characteristic": "vlaggend", "negated": false,
                   "source": { "snippet": "de Vloot vlaggend is" } }"""));
         compound.set("source", IrPath.sourceReference("ten minste één van de volgende voorwaarden"));
-        regel.set("condition", compound);
+        rule.set("condition", compound);
         return doc.toPrettyString();
     }
 
@@ -795,8 +795,8 @@ class WholePeriodQuantifierFoldWitnessTest {
 
     private int n;
 
-    private Path write(String naam, String inhoud) throws Exception {
-        Path p = tmp.resolve(naam);
+    private Path write(String name, String inhoud) throws Exception {
+        Path p = tmp.resolve(name);
         Files.writeString(p, inhoud);
         return p;
     }

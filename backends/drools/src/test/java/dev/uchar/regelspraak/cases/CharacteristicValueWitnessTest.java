@@ -66,8 +66,8 @@ class CharacteristicValueWitnessTest {
         }
     }
 
-    private Path write(String naam, String inhoud) throws Exception {
-        Path p = tmp.resolve(naam);
+    private Path write(String name, String inhoud) throws Exception {
+        Path p = tmp.resolve(name);
         Files.writeString(p, inhoud);
         return p;
     }

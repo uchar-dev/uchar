@@ -82,8 +82,8 @@ class NonTemporalFoldTest {
                 indien %s wachten van de Schouwploeg %s.
         """;
 
-    private static RegelSpraakModel resolve(String regels) {
-        return Resolver.resolve(MODEL + regels);
+    private static RegelSpraakModel resolve(String rules) {
+        return Resolver.resolve(MODEL + rules);
     }
 
     /** Sets the model's ERRORs aside ({@link Emission}): several rows read the node a REFUSED sentence built. */
@@ -223,7 +223,7 @@ class NonTemporalFoldTest {
      * "geen van de wachten van de Schouwploeg NIET gediplomeerd is" — the negation belongs to the
      * MATRIX and is evaluated per member, so it must land on the {@code CharacteristicCheck} and not on the fold.
      * It is worth its own row because the greedy onderwerp parse ABSORBS the "niet" into the anchor's
-     * kaleNaam ("Schouwploeg niet"), leaving the operator with the bare kenmerk; dropping it there
+     * bareName ("Schouwploeg niet"), leaving the operator with the bare kenmerk; dropping it there
      * would emit the positive membership — the same reading, inverted, with nothing saying so.
      */
     @Test void an_absorbed_not_lands_on_the_matrix() {
@@ -332,10 +332,10 @@ class NonTemporalFoldTest {
      *  downstream. The WARNING names the telwoord; the marker stays. */
     @Test void a_numeral_under_one_is_also_refused_on_the_characteristic_form() {
         RegelSpraakModel m = resolve(KENMERK.formatted("ten minste 0 van de", "gediplomeerd zijn"));
-        List<Diagnostic> telwoord = m.diagnostics.stream()
+        List<Diagnostic> numeral = m.diagnostics.stream()
                 .filter(d -> d.message().contains("telwoord van de kwantor")).toList();
-        assertEquals(1, telwoord.size(), () -> "het geweigerde telwoord hoort benoemd te worden: " + m.diagnostics);
-        assertEquals(Severity.WARNING, telwoord.get(0).severity());
+        assertEquals(1, numeral.size(), () -> "het geweigerde telwoord hoort benoemd te worden: " + m.diagnostics);
+        assertEquals(Severity.WARNING, numeral.get(0).severity());
         assertFalse(emitCompact(m).contains("QuantifierFold"),
                 "een drempel onder 1 hoort niet op de wire te belanden");
     }

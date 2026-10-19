@@ -367,8 +367,8 @@ class LetResultArmWitnessTest {
         }
     }
 
-    private static Path temporary(String naam, String inhoud) throws Exception {
-        Path p = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, String inhoud) throws Exception {
+        Path p = Files.createTempFile(name, ".json");
         p.toFile().deleteOnExit();
         Files.writeString(p, inhoud);
         return p;
@@ -477,10 +477,10 @@ class LetResultArmWitnessTest {
                 .formatted(whole, dec, sign);
     }
 
-    private static String attr(String naam, int dec, boolean whole, String sign) {
+    private static String attr(String name, int dec, boolean whole, String sign) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
-                .formatted(naam, naam);
+                .formatted(name, name);
     }
 
     private static String lit(String valueJson, int dec, boolean whole) {
@@ -502,9 +502,9 @@ class LetResultArmWitnessTest {
 
     /** ch. 4.10 a read of the nearest enclosing binder. NB the wire field is {@code name}, not {@code naam};
      *  WF-091 makes the read's sign that of the value it is bound to, so it rides along. */
-    private static String bref(String naam, String sign) {
+    private static String bref(String name, String sign) {
         return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"de %s\"}}"
-                .formatted(naam, naam);
+                .formatted(name, name);
     }
 
     /** ch. 4.10 the value-level conditional. WF-069 makes both arms agree with the node's {@code type}, sign
@@ -519,16 +519,16 @@ class LetResultArmWitnessTest {
                 .formatted(op, left, right, op.toLowerCase());
     }
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(name, datatype);
     }
 
     /** A rule of one always-valid computing version; {@code conditionJson} "null" writes no condition. */
-    private static String regel(String naam, String target, String valueJson, String conditionJson) {
+    private static String rule(String name, String target, String valueJson, String conditionJson) {
         return ("{\"node\":\"Rule\",\"name\":\"%s\",\"versions\":[{\"validity\":{\"node\":\"Validity\""
                 + "},\"target\":%s,\"value\":%s%s,\"initialisation\":false,"
                 + "\"presentation\":\"calculation\"}]}")
-                .formatted(naam, target, valueJson, conditionJson.equals("null") ? "" : ",\"condition\":" + conditionJson);
+                .formatted(name, target, valueJson, conditionJson.equals("null") ? "" : ",\"condition\":" + conditionJson);
     }
 
     // ---------------- the one document (verifier-clean, ref- and clingo-replayed before pinning) ----------
@@ -565,7 +565,7 @@ class LetResultArmWitnessTest {
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[]},\"diagnostics\":[]}")
                 .formatted(attribute("inkomen", num(2, false, NN)), attribute("dubbelgarde", num(2, false, UNSPECIFIED)),
-                        regel("dubbelgarde van een jutter", attr("dubbelgarde", 2, false, UNSPECIFIED), w, "null"));
+                        rule("dubbelgarde van een jutter", attr("dubbelgarde", 2, false, UNSPECIFIED), w, "null"));
     }
 
     private static String buildModel() {
@@ -672,7 +672,7 @@ class LetResultArmWitnessTest {
         StringBuilder rules = new StringBuilder();
         for (String[] r : rs) {
             if (rules.length() > 0) rules.append(',');
-            rules.append(regel(r[0], r[1], r[2], r[3]));
+            rules.append(rule(r[0], r[1], r[2], r[3]));
         }
         StringBuilder attributes = new StringBuilder(String.join(",",
                 attribute("inkomen", num(2, false, NN)), attribute("teller", num(2, false, NN)),
@@ -680,10 +680,10 @@ class LetResultArmWitnessTest {
                 attribute("heffingsdeler", num(0, true, NN)), attribute("beschermdeler", num(0, true, NN)),
                 attribute("takdeler", num(0, true, NN)), attribute("takopslaggrond", num(2, false, NN)),
                 attribute("nuldeler", num(0, true, NN)), attribute("gatdeler", num(0, true, NN))));
-        for (String naam : new String[]{"aandeel", "gestaffeld", "quotient", "garde", "metlet", "zonderlet",
+        for (String name : new String[]{"aandeel", "gestaffeld", "quotient", "garde", "metlet", "zonderlet",
                                         "dubbelop", "schaduw", "zusters", "premie", "heffing", "bescherm",
                                         "tak", "takdeling", "takopslag", "takketen", "sprong", "takgat"})
-            attributes.append(',').append(attribute(naam, num(2, false, UNSPECIFIED)));
+            attributes.append(',').append(attribute(name, num(2, false, UNSPECIFIED)));
 
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{"
                 + "\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","

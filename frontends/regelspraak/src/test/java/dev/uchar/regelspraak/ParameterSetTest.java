@@ -26,8 +26,8 @@ class ParameterSetTest {
                               until == null ? null : LocalDate.parse(until));
     }
 
-    private static ParameterSet set(String naam, String param, ValueInterval... intervals) {
-        return new ParameterSet(naam, Map.of(param, List.of(intervals)));
+    private static ParameterSet set(String name, String param, ValueInterval... intervals) {
+        return new ParameterSet(name, Map.of(param, List.of(intervals)));
     }
 
     // ---- overlap ----

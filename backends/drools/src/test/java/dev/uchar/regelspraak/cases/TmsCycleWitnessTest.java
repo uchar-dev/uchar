@@ -95,10 +95,10 @@ class TmsCycleWitnessTest {
     // ---------------- the graph: an initialisation is no cycle of length one ----------------
 
     @Test void an_initialisation_is_no_self_loop_and_a_computation_on_its_own_target_indeed() throws Exception {
-        String init = IrPath.regel("standaardbergloon", "INITIALISATIE", bergloon(), number("25"), "null");
-        String initByWeight = IrPath.regel("bergloon naar gewicht", "INITIALISATIE", bergloon(),
+        String init = IrPath.rule("standaardbergloon", "INITIALISATIE", bergloon(), number("25"), "null");
+        String initByWeight = IrPath.rule("bergloon naar gewicht", "INITIALISATIE", bergloon(),
                 plus(own("gewicht"), number("5")), "null");
-        String increment = IrPath.regel("bergloon ophogen", "BEREKENING", bergloon(), plus(own("bergloon"), number("1")), "null");
+        String increment = IrPath.rule("bergloon ophogen", "BEREKENING", bergloon(), plus(own("bergloon"), number("1")), "null");
         assertNull(cycle(List.of(init)));
         assertNull(cycle(List.of(initByWeight)));
         assertEquals("exec-model: kring in de afhankelijkheden over het lid Vondst.bergloon via de regel \"bergloon ophogen\""

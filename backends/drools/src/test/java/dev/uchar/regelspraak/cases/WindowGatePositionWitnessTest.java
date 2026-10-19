@@ -36,7 +36,7 @@ class WindowGatePositionWitnessTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
-    private static final Path VERDELING = Path.of("..", "..", "corpus", "golden", "jutterswet-voorwaardedeling");
+    private static final Path ALLOCATION = Path.of("..", "..", "corpus", "golden", "jutterswet-voorwaardedeling");
     private static final Path CREATION = Path.of("..", "..", "corpus", "golden", "synth2-budgetgrens-onder");
 
     @TempDir Path tmp;
@@ -89,7 +89,7 @@ class WindowGatePositionWitnessTest {
 
     /** The distribution golden with its gate replaced; a {@code {score}} placeholder is the golden's own gate. */
     private Path allocation(String gate) throws Exception {
-        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(VERDELING.resolve("ir.json")));
+        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(ALLOCATION.resolve("ir.json")));
         ObjectNode v = IrPath.version(doc, "allocations", 0, 0);
         v.set("condition", JSON.readTree(gate.replace("{score}", v.get("condition").toString())));
         return write(doc);
@@ -111,14 +111,14 @@ class WindowGatePositionWitnessTest {
 
     /** The distribution golden's case at {@code asOf}, with J1..J4's bergdeel expected (null: empty). */
     private static JsonNode allocationCase(String asOf, String j1, String j2, String j3, String j4) throws Exception {
-        ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(VERDELING.resolve("case.json")));
+        ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(ALLOCATION.resolve("case.json")));
         if (asOf == null) c.putNull("asOfDate"); else c.put("asOfDate", asOf);
         var expected = c.putArray("expected");
-        String[] labels = { "J1", "J2", "J3", "J4" }, waarden = { j1, j2, j3, j4 };
+        String[] labels = { "J1", "J2", "J3", "J4" }, values = { j1, j2, j3, j4 };
         for (int i = 0; i < 4; i++) {
             ObjectNode e = expected.addObject().put("label", labels[i]).put("attribute", "bergdeel");
-            if (waarden[i] == null) e.put("kind", "attributeEmpty");
-            else e.put("kind", "attributeValue").set("value", JSON.createObjectNode().put("number", waarden[i]));
+            if (values[i] == null) e.put("kind", "attributeEmpty");
+            else e.put("kind", "attributeValue").set("value", JSON.createObjectNode().put("number", values[i]));
         }
         expected.addObject().put("kind", "consistent");
         return c;

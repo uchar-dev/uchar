@@ -95,18 +95,18 @@ class MarkerReasonPinTest {
             for (Path p : paths.filter(x -> x.toString().endsWith(".java")).sorted().toList()) {
                 String raw = Files.readString(p, StandardCharsets.UTF_8);
                 String clean = withoutTextAndComment(raw);
-                String[] regels = raw.split("\n", -1);
-                int[] start = lineStarts(regels);
+                String[] rules = raw.split("\n", -1);
+                int[] start = lineStarts(rules);
                 Matcher m = BUILD.matcher(clean);
                 while (m.find()) {
-                    int regel = lineOf(start, m.start());
-                    if (regels[regel].contains("private Expr unresolvedMarker")) continue;   // the helper itself
+                    int rule = lineOf(start, m.start());
+                    if (rules[rule].contains("private Expr unresolvedMarker")) continue;   // the helper itself
                     buildSites++;
                     String last = lastArgument(clean, m.end() - 1);
                     if (last.isEmpty() || "\"\"".equals(last))
-                        emptinessErrors.add(p.getFileName() + ":" + (regel + 1) + " draagt een lege reden");
+                        emptinessErrors.add(p.getFileName() + ":" + (rule + 1) + " draagt een lege reden");
                     if (!"null".equals(last)) continue;
-                    found.merge(p.getFileName() + "#" + enclosingMember(regels, regel), 1, Integer::sum);
+                    found.merge(p.getFileName() + "#" + enclosingMember(rules, rule), 1, Integer::sum);
                 }
             }
         }
@@ -177,18 +177,18 @@ class MarkerReasonPinTest {
         return s.substring(lastComma == bracket ? bracket + 1 : lastComma + 1, i).trim();
     }
 
-    /** The name of the class member that encloses {@code regel} — the nearest declaration above it. */
-    private static String enclosingMember(String[] regels, int regel) {
-        for (int k = regel; k >= 0; k--) {
-            Matcher m = MEMBER.matcher(regels[k]);
+    /** The name of the class member that encloses {@code rule} — the nearest declaration above it. */
+    private static String enclosingMember(String[] rules, int rule) {
+        for (int k = rule; k >= 0; k--) {
+            Matcher m = MEMBER.matcher(rules[k]);
             if (m.find()) return m.group(1);
         }
         return "<buiten een lid>";
     }
 
-    private static int[] lineStarts(String[] regels) {
-        int[] start = new int[regels.length];
-        for (int i = 1, off = regels[0].length() + 1; i < regels.length; off += regels[i].length() + 1, i++)
+    private static int[] lineStarts(String[] rules) {
+        int[] start = new int[rules.length];
+        for (int i = 1, off = rules[0].length() + 1; i < rules.length; off += rules[i].length() + 1, i++)
             start[i] = off;
         return start;
     }

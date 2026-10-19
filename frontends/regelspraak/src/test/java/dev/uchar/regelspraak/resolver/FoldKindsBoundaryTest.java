@@ -119,8 +119,8 @@ class FoldKindsBoundaryTest {
         assertTrue(m.find(), "aggregation_kinds staat niet meer in " + CHECKS);
         List<String> valueFolds = new ArrayList<>();
         for (String category : m.group(1).split(";")) {
-            String naam = category.strip();
-            if (!naam.isEmpty() && !naam.equals("Count")) valueFolds.add(kind(naam));
+            String kindName = category.strip();
+            if (!kindName.isEmpty() && !kindName.equals("Count")) valueFolds.add(kind(kindName));
         }
         assertEquals(valueFolds.stream().sorted().toList(),
                 RuleChecker.FOLD_KINDS.stream().map(Expr.FunctionKind::name).sorted().toList(),

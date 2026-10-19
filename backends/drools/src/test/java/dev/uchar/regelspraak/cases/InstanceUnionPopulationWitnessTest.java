@@ -58,17 +58,17 @@ class InstanceUnionPopulationWitnessTest {
     private static final String WHOLE =
             "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
 
-    private static String objectType(String naam, String mv) {
+    private static String objectType(String name, String mv) {
         return ("{\"node\":\"ObjectType\",\"name\":\"%s\",\"animate\":false,\"plural\":\"%s\","
-                + "\"attributes\":[],\"characteristics\":[]}").formatted(naam, mv);
+                + "\"attributes\":[],\"characteristics\":[]}").formatted(name, mv);
     }
 
-    private static String factType(String naam, String oneRole, String manyRole, String manyType, String manyMv) {
+    private static String factType(String name, String oneRole, String manyRole, String manyType, String manyMv) {
         return ("{\"node\":\"FactType\",\"name\":\"%s\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"%s\",\"objectType\":\"Jutter\","
                 + "\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"%s\",\"objectType\":\"%s\",\"plural\":\"%s\","
-                + "\"many\":true}]}").formatted(naam, oneRole, manyRole, manyType, manyMv);
+                + "\"many\":true}]}").formatted(name, oneRole, manyRole, manyType, manyMv);
     }
 
     private static String branch(String elementType, String factType, String role) {

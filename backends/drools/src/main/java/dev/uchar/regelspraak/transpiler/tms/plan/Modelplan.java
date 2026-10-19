@@ -26,5 +26,5 @@ public record Modelplan(List<Global> globals, List<RulePlan> rules) {
      * @param naam   the name the case runner sets it under, and the one a consequence that binds it names
      * @param klasse the Java class of its value
      */
-    public record Global(String naam, Class<?> javaClass) {}
+    public record Global(String name, Class<?> javaClass) {}
 }

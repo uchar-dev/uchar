@@ -181,7 +181,7 @@ class SourcePathChainWitnessTest {
 
     /** One fold rule: {@code <attribute>} of a Tolhuis is {@code <kind>} of {@code <arg>} of all
      *  {@code <element>} the path reaches. */
-    private static String regel(String naam, String attribute, String kind, String element, String arg,
+    private static String rule(String name, String attribute, String kind, String element, String arg,
             String emptyFallback, String path) {
         return """
                 { "node": "Rule", "name": "%s", "versions": [ {
@@ -194,31 +194,31 @@ class SourcePathChainWitnessTest {
                     "elementType": "%s",%s
                     "sourcePath": [ %s ], "type": %s, "source": { "snippet": "de vouw over het pad" } },
                   "initialisation": false, "presentation": "calculation" } ] }"""
-                .formatted(naam, attribute, attribute, kind, arg, element, arg, element, element,
+                .formatted(name, attribute, attribute, kind, arg, element, arg, element, element,
                         emptyFallback.equals("null") ? "" : " \"emptyFallback\": " + emptyFallback + ",", path, NUM2);
     }
 
-    private static String objectType(String naam, String plural, String supertype, String attributes) {
+    private static String objectType(String name, String plural, String supertype, String attributes) {
         return """
                 { "node": "ObjectType", "name": "%s", %s"animate": false, "plural": "%s",
                   "attributes": [ %s ],
                   "characteristics": [] }"""
-                .formatted(naam, supertype == null ? "" : "\"supertype\": \"" + supertype + "\", ",
+                .formatted(name, supertype == null ? "" : "\"supertype\": \"" + supertype + "\", ",
                         plural, attributes);
     }
 
     /** One entry of an object type's attribute list. */
-    private static String attribute(String naam, String datatype) {
-        return "{ \"node\": \"Attribute\", \"name\": \"" + naam + "\", \"datatype\": " + datatype + " }";
+    private static String attribute(String name, String datatype) {
+        return "{ \"node\": \"Attribute\", \"name\": \"" + name + "\", \"datatype\": " + datatype + " }";
     }
 
-    private static String role(String naam, String otn, String plural, boolean many) {
-        return "{ \"node\": \"Role\", \"name\": \"" + naam + "\", \"objectType\": \"" + otn
+    private static String role(String name, String otn, String plural, boolean many) {
+        return "{ \"node\": \"Role\", \"name\": \"" + name + "\", \"objectType\": \"" + otn
                 + "\", \"plural\": \"" + plural + "\", \"many\": " + many + " }";
     }
 
-    private static String factType(String naam, String a, String b) {
-        return "{ \"node\": \"FactType\", \"name\": \"" + naam + "\", \"reciprocal\": false,"
+    private static String factType(String name, String a, String b) {
+        return "{ \"node\": \"FactType\", \"name\": \"" + name + "\", \"reciprocal\": false,"
                 + " \"roles\": [ " + a + ", " + b + " ] }";
     }
 
@@ -262,16 +262,16 @@ class SourcePathChainWitnessTest {
                     factType("lading", role("ladende praam", "Praam", "ladende pramen", false),
                             role("geladen vat", "Vat", "geladen vaten", true)),
                     String.join(", ",
-                            regel("laagste vracht", "laagste vracht", "minimum", "Praam", "vracht", "null", PATH_VRACHT),
-                            regel("totale vracht", "totale vracht", "sum", "Praam", "vracht",
+                            rule("laagste vracht", "laagste vracht", "minimum", "Praam", "vracht", "null", PATH_VRACHT),
+                            rule("totale vracht", "totale vracht", "sum", "Praam", "vracht",
                                     "{ \"node\": \"Literal\", \"value\": { \"number\": \"0\" }, \"type\": { \"node\": \"Number\","
                                     + " \"whole\": true, \"decimals\": 0, \"sign\": \"unspecified\" }, \"source\": {\"snippet\": \"0\"} }", PATH_VRACHT),
-                            regel("steenlast", "steenlast", "sum", "Ankersteen", "steengewicht",
+                            rule("steenlast", "steenlast", "sum", "Ankersteen", "steengewicht",
                                     "{ \"node\": \"Literal\", \"value\": { \"number\": \"0\" }, \"type\": { \"node\": \"Number\","
                                     + " \"whole\": true, \"decimals\": 0, \"sign\": \"unspecified\" }, \"source\": {\"snippet\": \"0\"} }", PATH_STEEN),
-                            regel("laagste zegelvracht", "laagste zegelvracht", "minimum", "Zegelpraam", "vracht",
+                            rule("laagste zegelvracht", "laagste zegelvracht", "minimum", "Zegelpraam", "vracht",
                                     "null", PATH_VRACHT),
-                            regel("laagste vatinhoud", "laagste vatinhoud", "minimum", "Vat", "inhoud", "null", PATH_VAT)));
+                            rule("laagste vatinhoud", "laagste vatinhoud", "minimum", "Vat", "inhoud", "null", PATH_VAT)));
 
     private static final String CHAIN = """
             { "format": "uchar-case-v0", "asOfDate": null,

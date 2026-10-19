@@ -97,10 +97,10 @@ class TmsComputeFormWitnessTest {
     static final String PERCENT_OF = computingRule("aandeel van een vondst", "BEREKENING", "Vondst", "aandeel",
             binary("percentageOf", literal("20", numberType(true, 0, PERCENT)), VALUE, THREE), "null");
 
-    static JsonNode valueCase(String target, List<String> waarden) throws Exception {
+    static JsonNode valueCase(String target, List<String> values) throws Exception {
         List<String> expectations = new ArrayList<>();
         String[] labels = {"V1", "V2", "V3", "V4"};
-        for (int i = 0; i < labels.length; i++) expectations.add(value(labels[i], target, waarden.get(i)));
+        for (int i = 0; i < labels.length; i++) expectations.add(value(labels[i], target, values.get(i)));
         expectations.add(consistent());
         return TmsDocuments.caseOn(null, List.of(
                 instanceWith("V1", "Vondst", Map.of("basis", numberValue("12.34"), "waarde", numberValue("100")), List.of()),

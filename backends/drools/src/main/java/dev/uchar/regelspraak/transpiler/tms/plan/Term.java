@@ -62,7 +62,7 @@ public sealed interface Term {
      * first read evaluates the {@code Let}'s value and every further one reads that result; a leeg value ends that
      * {@code Let} with leeg.
      */
-    record Binder(int slot, String naam, String source) implements Term {}
+    record Binder(int slot, String name, String source) implements Term {}
 
     /**
      * {@code body} with the binder {@code naam} bound to {@code value} as a need (RUNTIME-SEMANTICS ch. 10.6): the
@@ -72,7 +72,7 @@ public sealed interface Term {
      * the same faults and the same deposits; a rendering that cannot evaluate by need may then evaluate it first. The
      * rendering into closures evaluates by need always.
      */
-    record Let(int slot, String naam, Term value, Term body, boolean eager, String source) implements Term {}
+    record Let(int slot, String name, Term value, Term body, boolean eager, String source) implements Term {}
 
     /** The condition {@code condition}, then exactly the branch it chooses: {@code dan} where it holds, {@code anders}
      *  where not (RUNTIME-SEMANTICS ch. 10.2). The other branch evaluates nothing. */
@@ -196,5 +196,5 @@ public sealed interface Term {
 
     /** The predicate of the day kind {@code naam} over a calendar day: a constant of the document, which reads nothing
      *  of working memory (IR-SPEC ch. 3.7, WF-031). */
-    record DayKind(String naam, Predicate<LocalDate> datePredicate, String source) implements Term {}
+    record DayKind(String name, Predicate<LocalDate> datePredicate, String source) implements Term {}
 }

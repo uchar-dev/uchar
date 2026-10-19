@@ -71,8 +71,8 @@ public final class FireTrace {
         }
         Files.createDirectories(outputDirectory);
         List<String> played = new ArrayList<>();
-        for (String regel : Files.readAllLines(Path.of(args[1]))) {
-            String[] columns = regel.split("\t", 2);
+        for (String rule : Files.readAllLines(Path.of(args[1]))) {
+            String[] columns = rule.split("\t", 2);
             if (columns.length == 2 && columns[1].startsWith("PLAYED")) played.add(columns[0]);
         }
         long begin = System.nanoTime();

@@ -47,7 +47,7 @@ class CounterpartWitnessTest {
         // case1: W1's only jutter is a plain Jutter. Without the narrowing "hij een strandjutter heeft" reads as
         // "hij een wachtjutter heeft", and W1 becomes strandbemand.
         ObjectNode ir = read();
-        for (int r : new int[] { 2, 3 }) regel(ir, r).remove("counterpartType");
+        for (int r : new int[] { 2, 3 }) rule(ir, r).remove("counterpartType");
         BothBranches.red(temporary(ir), JSON.readTree(Files.readString(cases().get(0))),
                 "kenmerk strandbemand: verwacht afwezig, werkelijk aanwezig", "the check without its narrowing");
     }
@@ -57,7 +57,7 @@ class CounterpartWitnessTest {
         // verifier passes "Toegewezen  wachtpost" for the declared "toegewezen wachtpost"; until L2's advisory
         // round this backend compared case alone and called the document malformed.
         ObjectNode ir = read();
-        for (int r : new int[] { 0, 1, 2, 3 }) regel(ir, r).put("role", "Toegewezen  wachtpost");
+        for (int r : new int[] { 0, 1, 2, 3 }) rule(ir, r).put("role", "Toegewezen  wachtpost");
         for (Path casePath : cases()) BothBranches.green(temporary(ir), JSON.readTree(Files.readString(casePath)),
                 "the role named with another case and a doubled blank, " + casePath.getFileName());
     }
@@ -71,11 +71,11 @@ class CounterpartWitnessTest {
         // types (measured; a limit of the case input, not of the check). The analysis lowers all four rules, and the
         // text of the DRL-text branch tests the narrowed class exactly where the document narrows.
         DroolsBackend.Build b = DroolsBackend.build(oneToOne(), DroolsBackend.Branch.DRL_TEXT);
-        for (String regel : RULES) assertTrue(coverageOf(b.coverage(), regel).lowered(), "de analyse lowert " + regel);
+        for (String rule : RULES) assertTrue(coverageOf(b.coverage(), rule).lowered(), "de analyse lowert " + rule);
         assertTrue(b.drl().contains("Strandjutter"), "de vernauwde check toetst de klasse:\n" + b.drl());
 
         ObjectNode without = oneToOne();
-        for (int r : new int[] { 2, 3 }) regel(without, r).remove("counterpartType");
+        for (int r : new int[] { 2, 3 }) rule(without, r).remove("counterpartType");
         String drlWithout = DroolsBackend.build(without, DroolsBackend.Branch.DRL_TEXT).drl();
         assertFalse(drlWithout.contains("Strandjutter"), "zonder vernauwing is er geen typetoets:\n" + drlWithout);
     }
@@ -98,7 +98,7 @@ class CounterpartWitnessTest {
         return ir;
     }
 
-    private static ObjectNode regel(ObjectNode ir, int i) {
+    private static ObjectNode rule(ObjectNode ir, int i) {
         return (ObjectNode) IrPath.version(ir, "rules", i, 0).get("condition");
     }
 

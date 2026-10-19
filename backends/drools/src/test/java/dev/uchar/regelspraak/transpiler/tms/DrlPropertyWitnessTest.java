@@ -81,19 +81,19 @@ class DrlPropertyWitnessTest {
         Trial p = trial(MEMBERS);
         List<String> faults = new ArrayList<>();
         int read = 0, refused = 0;
-        for (String naam : MEMBERS) {
-            Namen.Lidnamen n = Namen.lidnamen(Namen.property(naam));
+        for (String name : MEMBERS) {
+            Namen.Lidnamen n = Namen.lidnamen(Namen.property(name));
             if (n.drlProperty() != null) {
                 read++;
                 for (Map.Entry<String, String> u : places(p, n.drlProperty(), n, null).entrySet())
-                    if (!u.getValue().equals("leest")) faults.add(naam + " | " + n.drlProperty() + " | " + u.getKey()
+                    if (!u.getValue().equals("leest")) faults.add(name + " | " + n.drlProperty() + " | " + u.getKey()
                             + " | " + u.getValue());
             } else {
                 refused++;
                 // the property the stem gives, which the helper withholds: some place does not read it as the member
                 String stam = n.getter().substring(3), own = Character.toLowerCase(stam.charAt(0)) + stam.substring(1);
                 if (places(p, own, n, null).values().stream().allMatch("leest"::equals))
-                    faults.add(naam + " | " + own + " | wordt overal gelezen, en de hulp geeft geen naam");
+                    faults.add(name + " | " + own + " | wordt overal gelezen, en de hulp geeft geen naam");
             }
         }
         assertEquals(List.of(), faults, "leden die een DRL-tekst niet leest zoals de hulp zegt");
@@ -105,10 +105,10 @@ class DrlPropertyWitnessTest {
         List<String> names = List.of("drempel", "aantal", "日 X");
         Trial p = trial(names);
         List<String> faults = new ArrayList<>();
-        for (String naam : names) {
-            Namen.Lidnamen n = Namen.lidnamen(Namen.property(naam));
+        for (String name : names) {
+            Namen.Lidnamen n = Namen.lidnamen(Namen.property(name));
             for (Map.Entry<String, String> u : places(p, n.drlProperty(), n, n.drlProperty()).entrySet())
-                if (!u.getValue().equals("leest")) faults.add(naam + " | " + u.getKey() + " | " + u.getValue());
+                if (!u.getValue().equals("leest")) faults.add(name + " | " + u.getKey() + " | " + u.getValue());
         }
         assertEquals(List.of(), faults, "leden die een global van dezelfde naam verdringt");
     }
@@ -118,16 +118,16 @@ class DrlPropertyWitnessTest {
     @Test void the_rendering_spells_the_member_or_refuses_it() throws Exception {
         String source = Files.readString(Path.of("src", "test", "resources", "property", "turkish-member", "ir.json"));
         List<String> outcome = new ArrayList<>();
-        for (String naam : List.of("ışık", "日 X", "in", "drools", "nil")) {
+        for (String name : List.of("ışık", "日 X", "in", "drools", "nil")) {
             Path ir = Files.createTempFile("drl-eigenschap", ".json");
             try {
-                Files.writeString(ir, source.replace("İş", naam));
+                Files.writeString(ir, source.replace("İş", name));
                 DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
                 String text = DrlRendering.text(b.execModelTranspiler().modelplan());
                 List<String> faults = DrlRenderingWitnessTest.compile(text, b.beanLoader());
-                outcome.add(naam + " | " + (faults.isEmpty() ? "compileert" : "compileert niet: " + faults.get(0)));
+                outcome.add(name + " | " + (faults.isEmpty() ? "compileert" : "compileert niet: " + faults.get(0)));
             } catch (DrlRendering.Refusal w) {
-                outcome.add(naam + " | " + w.getMessage());
+                outcome.add(name + " | " + w.getMessage());
             } finally {
                 Files.delete(ir);
             }
@@ -146,18 +146,18 @@ class DrlPropertyWitnessTest {
         Trial p = kenmerkproef(PropertyWitnessTest.CHARACTERISTICS);
         List<String> faults = new ArrayList<>();
         int read = 0, refused = 0;
-        for (String naam : PropertyWitnessTest.CHARACTERISTICS) {
-            Namen.Lidnamen n = Namen.lidnamen(Namen.property(naam));
+        for (String name : PropertyWitnessTest.CHARACTERISTICS) {
+            Namen.Lidnamen n = Namen.lidnamen(Namen.property(name));
             if (n.drlProperty() != null) {
                 read++;
                 for (Map.Entry<String, String> u : places(p, n.drlProperty(), n, null, KENMERK).entrySet())
-                    if (!u.getValue().equals("leest")) faults.add(naam + " | " + n.drlProperty() + " | " + u.getKey()
+                    if (!u.getValue().equals("leest")) faults.add(name + " | " + n.drlProperty() + " | " + u.getKey()
                             + " | " + u.getValue());
             } else {
                 refused++;
                 String stam = n.getter().substring(3), own = Character.toLowerCase(stam.charAt(0)) + stam.substring(1);
                 if (places(p, own, n, null, KENMERK).values().stream().allMatch("leest"::equals))
-                    faults.add(naam + " | " + own + " | wordt overal gelezen, en de hulp geeft geen naam");
+                    faults.add(name + " | " + own + " | wordt overal gelezen, en de hulp geeft geen naam");
             }
         }
         assertEquals(List.of(), faults, "kenmerken die een DRL-tekst niet leest zoals de hulp zegt");
@@ -169,18 +169,18 @@ class DrlPropertyWitnessTest {
     @Test void the_rendering_spells_a_characteristic_or_refuses_it() throws Exception {
         String source = Files.readString(Path.of("src", "test", "resources", "property", "turkish-characteristic", "ir.json"));
         List<String> outcome = new ArrayList<>();
-        for (String naam : List.of("ışık", "日 X", "not", "in", "drools")) {
+        for (String name : List.of("ışık", "日 X", "not", "in", "drools")) {
             Path ir = Files.createTempFile("drl-kenmerk", ".json");
             try {
-                Files.writeString(ir, source.replace("ışık", naam));
+                Files.writeString(ir, source.replace("ışık", name));
                 DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
                 String text = DrlRendering.text(b.execModelTranspiler().modelplan());
-                String drl = Namen.lidnamen(Namen.property(naam)).drlProperty();
+                String drl = Namen.lidnamen(Namen.property(name)).drlProperty();
                 List<String> faults = DrlRenderingWitnessTest.compile(text, b.beanLoader());
-                outcome.add(naam + " | " + (faults.isEmpty() ? "compileert" : "compileert niet: " + faults.get(0))
+                outcome.add(name + " | " + (faults.isEmpty() ? "compileert" : "compileert niet: " + faults.get(0))
                         + (text.contains("(" + drl + ")") ? ", gespeld als " + drl : ", niet gespeld als " + drl));
             } catch (DrlRendering.Refusal w) {
-                outcome.add(naam + " | " + w.getMessage());
+                outcome.add(name + " | " + w.getMessage());
             } finally {
                 Files.delete(ir);
             }
@@ -202,9 +202,9 @@ class DrlPropertyWitnessTest {
     }
 
     /** The bean {@code Kenmerkproef} of the generator, with a characteristic per name, compiled. */
-    private static Trial kenmerkproef(List<String> kenmerken) throws Exception {
+    private static Trial kenmerkproef(List<String> characteristics) throws Exception {
         Map<String, String> sources = FactModelGenerator.generate(IrLoader.load(new ObjectMapper().readTree(
-                PropertyWitnessTest.trialDocument(List.of(), kenmerken))));
+                PropertyWitnessTest.trialDocument(List.of(), characteristics))));
         ClassLoader beans = BeanCompiler.compile(sources);
         return new Trial(beans.loadClass(FactModelGenerator.PACKAGE + ".Kenmerkproef"), beans);
     }

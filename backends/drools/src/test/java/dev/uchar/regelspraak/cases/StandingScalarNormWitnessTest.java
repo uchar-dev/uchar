@@ -199,7 +199,7 @@ class StandingScalarNormWitnessTest {
     }
 
     /** A one-Vondst case for {@code jutterswet-waardestelling}: the given attributes, kenmerken, expectation. */
-    private static String vondst(String attributes, String kenmerken, String expectedNode) {
+    private static String vondst(String attributes, String characteristics, String expectedNode) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -208,11 +208,11 @@ class StandingScalarNormWitnessTest {
                         "roles": {}, "characteristics": [ %s ] } ],
                     "parameters": {} },
                   "expected": [ %s, { "kind": "consistent" } ] }
-                """.formatted(attributes, kenmerken, expectedNode);
+                """.formatted(attributes, characteristics, expectedNode);
     }
 
     /** A one-Jutter case for {@code jutterswet-waardering-v0vorm}: attributes, kenmerken, expectation. */
-    private static String jutter(String attributes, String kenmerken, String expectedNode) {
+    private static String jutter(String attributes, String characteristics, String expectedNode) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -221,7 +221,7 @@ class StandingScalarNormWitnessTest {
                         "roles": {}, "characteristics": [ %s ] } ],
                     "parameters": {} },
                   "expected": [ %s, { "kind": "consistent" } ] }
-                """.formatted(attributes, kenmerken, expectedNode);
+                """.formatted(attributes, characteristics, expectedNode);
     }
 
     private static String value(String number) {

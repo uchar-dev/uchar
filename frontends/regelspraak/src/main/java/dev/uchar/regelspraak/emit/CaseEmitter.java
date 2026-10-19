@@ -29,14 +29,14 @@ public final class CaseEmitter {
 
     /** The file name of the {@code n}-th scenario (1-based, in document order): {@code case<n>-<slug>.json}. */
     public static String fileName(int n, ResolvedScenario s) {
-        return "case" + n + "-" + slug(s.naam()) + ".json";
+        return "case" + n + "-" + slug(s.name()) + ".json";
     }
 
     /** The scenario name as a file-name part: diacritics taken off, lowercased, every run of characters other than
      *  a-z and 0-9 one '-', none at either end. Empty when the name has no letter or digit, which the resolver
      *  refuses. */
-    public static String slug(String naam) {
-        String withoutSigns = java.text.Normalizer.normalize(naam, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+    public static String slug(String name) {
+        String withoutSigns = java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         return withoutSigns.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-+|-+$", "");
     }
 
@@ -49,21 +49,21 @@ public final class CaseEmitter {
         if (scope == null) return m;
         Set<String> names = new HashSet<>();
         for (String v : scope.forms()) names.add(norm(v));
-        Predicate<String> carries = naam -> names.contains(norm(baseName(naam)));
+        Predicate<String> carries = name -> names.contains(norm(baseName(name)));
         RegelSpraakModel k = m.copy();
-        k.resolvedRegels.removeIf(r -> !carries.test(r.naam()));
-        k.objectCreations.removeIf(x -> !carries.test(x.naam()));
-        k.allocations.removeIf(x -> !carries.test(x.naam()));
-        k.consistenties.removeIf(x -> !carries.test(x.naam()));
-        k.uniquenesses.removeIf(x -> !carries.test(x.naam()));
-        k.uniquenessUnions.removeIf(x -> !carries.test(x.naam()));
-        k.factCreations.removeIf(x -> !carries.test(x.naam()));
-        k.prioritizedDefaults.removeIf(x -> !carries.test(x.naam()));
+        k.resolvedRules.removeIf(r -> !carries.test(r.name()));
+        k.objectCreations.removeIf(x -> !carries.test(x.name()));
+        k.allocations.removeIf(x -> !carries.test(x.name()));
+        k.consistencies.removeIf(x -> !carries.test(x.name()));
+        k.uniquenesses.removeIf(x -> !carries.test(x.name()));
+        k.uniquenessUnions.removeIf(x -> !carries.test(x.name()));
+        k.factCreations.removeIf(x -> !carries.test(x.name()));
+        k.prioritizedDefaults.removeIf(x -> !carries.test(x.name()));
         k.diagnostics.removeIf(d -> scope.omitted().stream().anyMatch(b -> b.contains(d.line())));
         k.ruleGroups.clear();
         for (ResolvedRuleGroup g : m.ruleGroups) {
             List<String> members = g.members().stream().filter(carries).toList();
-            if (!members.isEmpty()) k.ruleGroups.add(new ResolvedRuleGroup(g.naam(), g.recursive(), members, g.source(), g.line()));
+            if (!members.isEmpty()) k.ruleGroups.add(new ResolvedRuleGroup(g.name(), g.recursive(), members, g.source(), g.line()));
         }
         return k;
     }
@@ -77,45 +77,45 @@ public final class CaseEmitter {
         if (s.asOfDate() == null) w.valueNull(); else w.value(s.asOfDate().toString());
         w.key("input").beginObject();
         w.key("instances").beginArray();
-        for (Instance i : s.situation().instances()) instantie(w, i);
+        for (Instance i : s.situation().instances()) instance(w, i);
         w.endArray();
         w.key("parameters").beginObject();
         for (ParameterValue p : s.situation().parameters()) {
             w.key(p.parameter());
-            if (p.tijdlijn() != null) timelineValue(w, p.tijdlijn()); else value(w, p.value());
+            if (p.timeline() != null) timelineValue(w, p.timeline()); else value(w, p.value());
         }
         w.endObject();
         w.endObject();
         w.key("expected").beginArray();
-        for (Expectation v : s.expectations()) verwachting(w, v);
+        for (Expectation v : s.expectations()) expectation(w, v);
         w.endArray();
         w.endObject();
         w.sb.append('\n');
         return w.sb.toString();
     }
 
-    private static void instantie(IrEmitter.Json w, Instance i) {
+    private static void instance(IrEmitter.Json w, Instance i) {
         w.beginObject();
         w.key("label").value(i.label());
-        w.key("objectType").value(i.objectType().naam);
+        w.key("objectType").value(i.objectType().name);
         w.key("attributes").beginObject();
-        for (AttributeValue a : i.attributen()) {
+        for (AttributeValue a : i.attributes()) {
             w.key(a.attribute());
-            if (a.tijdlijn() != null) timelineValue(w, a.tijdlijn()); else value(w, a.value());
+            if (a.timeline() != null) timelineValue(w, a.timeline()); else value(w, a.value());
         }
         w.endObject();
         w.key("roles").beginObject();
-        for (RoleValue r : i.rollen()) {
+        for (RoleValue r : i.roles()) {
             w.key(r.key()).beginArray();
             for (String l : r.targetLabels()) w.value(l);
             w.endArray();
         }
         w.endObject();
         w.key("characteristics").beginArray();
-        for (CharacteristicValue k : i.kenmerken()) if (k.periods() == null) w.value(k.characteristic());
+        for (CharacteristicValue k : i.characteristics()) if (k.periods() == null) w.value(k.characteristic());
         w.endArray();
         List<CharacteristicValue> temporal = new ArrayList<>();
-        for (CharacteristicValue k : i.kenmerken()) if (k.periods() != null) temporal.add(k);
+        for (CharacteristicValue k : i.characteristics()) if (k.periods() != null) temporal.add(k);
         if (!temporal.isEmpty()) {
             w.key("characteristicTimelines").beginObject();
             for (CharacteristicValue k : temporal) {
@@ -133,7 +133,7 @@ public final class CaseEmitter {
         w.endObject();
     }
 
-    private static void verwachting(IrEmitter.Json w, Expectation v) {
+    private static void expectation(IrEmitter.Json w, Expectation v) {
         w.beginObject();
         switch (v.category()) {
             case ATTRIBUTE_VALUE -> {
@@ -153,7 +153,7 @@ public final class CaseEmitter {
                 w.key("label").value(v.label());
                 w.key("attribute").value(v.attribute());
                 w.key("timeline");
-                segments(w, v.tijdlijn());
+                segments(w, v.timeline());
             }
             case CHARACTERISTIC_PRESENT -> {
                 w.key("kind").value("characteristicPresent");
@@ -168,23 +168,23 @@ public final class CaseEmitter {
             case CONSISTENT -> w.key("kind").value("consistent");
             case INCONSISTENT -> {
                 w.key("kind").value("inconsistent");
-                if (v.regel() != null) w.key("rule").value(v.regel());
+                if (v.rule() != null) w.key("rule").value(v.rule());
                 if (v.label() != null) w.key("label").value(v.label());
             }
         }
         w.endObject();
     }
 
-    private static void timelineValue(IrEmitter.Json w, List<Segment> tijdlijn) {
+    private static void timelineValue(IrEmitter.Json w, List<Segment> timeline) {
         w.beginObject();
         w.key("timeline");
-        segments(w, tijdlijn);
+        segments(w, timeline);
         w.endObject();
     }
 
-    private static void segments(IrEmitter.Json w, List<Segment> tijdlijn) {
+    private static void segments(IrEmitter.Json w, List<Segment> timeline) {
         w.beginArray();
-        for (Segment s : tijdlijn) {
+        for (Segment s : timeline) {
             w.beginObject();
             w.key("from").value(s.van().toString());
             w.key("to").value(s.until().toString());
@@ -204,7 +204,7 @@ public final class CaseEmitter {
         else if (v.dateTime() != null)
             w.key("dateTime").value(v.dateTime().format(java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS")));
         else if (v.bool() != null) w.key("boolean").value(v.bool().booleanValue());
-        else if (v.tekst() != null) w.key("text").value(v.tekst());
+        else if (v.text() != null) w.key("text").value(v.text());
         else if (v.enumValue() != null) w.key("enumeration").value(v.enumValue());
         else throw new IllegalStateException("CaseEmitter: een waarde zonder variant");
         w.endObject();
@@ -212,9 +212,9 @@ public final class CaseEmitter {
 
     /** A resolved form name without its §13.4.2.3 version suffix ({@code "<naam> #k"}): the name a scope names a
      *  form by. The scenario resolver reads it here too. */
-    public static String baseName(String naam) {
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(.*\\S) #[0-9]+").matcher(naam);
-        return m.matches() ? m.group(1) : naam;
+    public static String baseName(String name) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(.*\\S) #[0-9]+").matcher(name);
+        return m.matches() ? m.group(1) : name;
     }
 
     /** A name as the scenario layer compares names: trimmed, its whitespace one space, lowercased. */

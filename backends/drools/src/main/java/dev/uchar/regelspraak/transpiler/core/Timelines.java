@@ -54,7 +54,7 @@ public final class Timelines {
      *  target or its base lies on the grid of a fixed start point, or null. The base is constant across a bucket
      *  because its grid nests in the target's, and a start point off the calendar breaks that nesting; {@code ref}
      *  and the ASP backend refuse the form, so both branches do as well, in their sentence. */
-    public static String proRataFixedGrid(RegelSpraakModel.Objecttype subject, String target, Expr value) {
+    public static String proRataFixedGrid(RegelSpraakModel.ObjectType subject, String target, Expr value) {
         if (!(value instanceof Expr.FunctionCall f) || f.kind() != Expr.FunctionKind.TIJDSEVENREDIG_DEEL) return null;
         boolean fixed = subject != null && subject.fixedStartPointOf(target) != null;
         for (Expr base : f.arguments()) {

@@ -189,8 +189,8 @@ class DayKindLookupOrderWitnessTest {
         return "(no date helper in the emitted text at all)";
     }
 
-    private static Path temporary(String naam, ObjectNode ir) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, ObjectNode ir) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         return tmp;

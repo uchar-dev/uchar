@@ -163,7 +163,7 @@ class TmsWritersWitnessTest {
             TmsDocuments.fire(b, order, List.of(v1, v2, v3, v4, v5), s -> s.addEventListener(
                     new DefaultRuleRuntimeEventListener() {
                         @Override public void objectInserted(ObjectInsertedEvent e) {
-                            if (e.getObject() instanceof Fault f && f.onderwerp() == v5
+                            if (e.getObject() instanceof Fault f && f.subject() == v5
                                     && f.fault().getClass().getSimpleName().equals("WritersConflict"))
                                 conflictOpV5.add(f);
                         }

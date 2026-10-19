@@ -13,13 +13,13 @@ import java.util.Objects;
  * {@code inconsistent} standing goes and every conclusion that read it with it. Compared by value: the producer's name
  * as the channel test spells it, and the flag.
  */
-public record ChannelState(String regel, boolean inconsistent) {
+public record ChannelState(String rule, boolean inconsistent) {
 
     public ChannelState {
-        Objects.requireNonNull(regel, "regel");
+        Objects.requireNonNull(rule, "rule");
     }
 
     @Override public String toString() {
-        return "KanaalStand(" + regel + ", " + (inconsistent ? "inconsistent" : "consistent") + ")";
+        return "KanaalStand(" + rule + ", " + (inconsistent ? "inconsistent" : "consistent") + ")";
     }
 }

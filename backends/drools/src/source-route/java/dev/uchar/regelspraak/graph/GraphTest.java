@@ -95,7 +95,7 @@ class GraphTest {
                 "zwaar bij gewicht -> zwaar -> toeslag van een zware vondst",
                 "toeslag van een zware vondst -> toeslag -> bergloon van een vondst"),
                 Set.copyOf(g.dependencies().stream()
-                        .map(a -> a.producer() + " -> " + a.element().naam() + " -> " + a.consumer()).toList()),
+                        .map(a -> a.producer() + " -> " + a.element().name() + " -> " + a.consumer()).toList()),
                 route));
     }
 

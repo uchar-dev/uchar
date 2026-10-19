@@ -115,8 +115,8 @@ class RoleFieldReaderWitnessTest {
     // The §8.2 whole-period fold over a NAVIGATED SET (geheelPeriodeAlle) got no gate and no witness, and the reason
     // was measured rather than assumed: every arm of it entered on a `set` reading, and WF-096 (2026-09-09) admitted
     // a set reading ONLY as the source of a single-argument instance fold. Built anyway and pushed through
-    // (2026-09-11, before M1; the verifier path read /rules/resolvedRegels/0/versions/0/condition/links since):
-    //     verifier: WF-096 FAIL /resolvedRegels/0/voorwaarde/links: set reading at an ordinary read position
+    // (2026-09-11, before M1; the verifier path read /rules/resolvedRules/0/versions/0/condition/links since):
+    //     verifier: WF-096 FAIL /resolvedRules/0/voorwaarde/links: set reading at an ordinary read position
     //     ref     : EVALUATION FAULT: whole-period comparison is ch. 3 scope
     // The document a gate would protect was not well-formed, so the gate could carry no witness. Since L2 the arm
     // is gone with the set flag: a read over a to-many step is WF-053's, and neither branch lowers one.
@@ -289,15 +289,15 @@ class RoleFieldReaderWitnessTest {
         IrPath.rules(ir).set("rules", keep);
     }
 
-    private static Path temporary(String naam, String inhoud) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, String inhoud) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, inhoud);
         return tmp;
     }
 
-    private static Path model(String naam, ObjectNode ir) throws Exception {
-        return temporary(naam, ir.toString());
+    private static Path model(String name, ObjectNode ir) throws Exception {
+        return temporary(name, ir.toString());
     }
 
     private static Path caseOf(String caseJson) throws Exception {
@@ -325,19 +325,19 @@ class RoleFieldReaderWitnessTest {
             }
         ObjectNode form = IrPath.rules(ir).putArray("rules").addObject();
         form.put("node", "Rule").put("name", "wachtgeld van een werf");
-        ObjectNode regel = form.putArray("versions").addObject();
-        regel.putObject("validity").put("node", "Validity");
-        ObjectNode target = regel.putObject("target");
+        ObjectNode rule = form.putArray("versions").addObject();
+        rule.putObject("validity").put("node", "Validity");
+        ObjectNode target = rule.putObject("target");
         target.put("node", "AttributeReference").put("attribute", "wachtgeld").put("subjectType", "Werf")
             .set("source", IrPath.sourceReference("Het wachtgeld van een Werf"));
-        ObjectNode value = regel.putObject("value");
+        ObjectNode value = rule.putObject("value");
         value.put("node", "Literal").putObject("value").put("number", "8");
         value.set("type", number());
         value.set("source", IrPath.sourceReference("8"));
         // "de Werf heeft een schuit": the subject Werf fills `werf` in ligplaats
-        regel.putObject("condition").put("node", "RoleMembership").put("factType", "ligplaats")
+        rule.putObject("condition").put("node", "RoleMembership").put("factType", "ligplaats")
              .put("role", "werf").put("negated", false).set("source", IrPath.sourceReference("de Werf een schuit heeft"));
-        regel.put("initialisation", false).put("presentation", "equation");
+        rule.put("initialisation", false).put("presentation", "equation");
         return model("verre-rolcheck-zonder-veld", ir);
     }
 
@@ -351,19 +351,19 @@ class RoleFieldReaderWitnessTest {
         IrPath.timeline(bedrijvig, "month");
         IrPath.addAttribute(IrPath.objectType(ir, "Schuit"), "werf", number());
         keepRules(ir, Set.of("toeslag van een schuit"));
-        ObjectNode regel = IrPath.version(ir, "rules", 0, 0);
-        regel.put("initialisation", false).put("presentation", "equation");
+        ObjectNode rule = IrPath.version(ir, "rules", 0, 0);
+        rule.put("initialisation", false).put("presentation", "equation");
         ObjectNode own = JSON.createObjectNode();
         own.put("node", "AttributeReference").put("attribute", "lengte").put("subjectType", "Schuit")
              .set("source", IrPath.sourceReference("de lengte van de Schuit"));
-        regel.set("value", own);
+        rule.set("value", own);
         ObjectNode check = JSON.createObjectNode();
         check.put("node", "CharacteristicCheck").put("characteristic", "bedrijvig")
              .put("negated", false);
         check.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", "year").put("negated", false);
         check.set("source", IrPath.sourceReference("de werf van de Schuit gedurende het gehele jaar bedrijvig is"));
         check.putObject("navigation").put("node", "RoleBinding").put("factType", "ligplaats").put("role", "werf");
-        regel.set("condition", check);
+        rule.set("condition", check);
         return model("kenmerktijdreeks-naamdeling", ir);
     }
 
@@ -398,9 +398,9 @@ class RoleFieldReaderWitnessTest {
                 role.put("many", false);
             }
         }
-        ObjectNode regel = IrPath.version(ir, "rules", 0, 0);
+        ObjectNode rule = IrPath.version(ir, "rules", 0, 0);
         // the target's datatype is bewaarlast's declaration above; only the fold carries an annotation of its own
-        ObjectNode fold = (ObjectNode) regel.get("value");
+        ObjectNode fold = (ObjectNode) rule.get("value");
         fold.put("kind", "sum").set("source", IrPath.sourceReference("de som van het bewaartarief van alle vondsten van de Jutter"));
         fold.set("type", elemType.deepCopy());
         return model("temporele-setsommatie-zonder-veld", ir);

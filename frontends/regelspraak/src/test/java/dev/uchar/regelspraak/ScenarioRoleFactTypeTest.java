@@ -84,28 +84,28 @@ class ScenarioRoleFactTypeTest {
     }
 
     private static RoleValue role(Situation sit, String label, String key) {
-        Instance i = sit.instantie(label);
+        Instance i = sit.instance(label);
         assertNotNull(i, label);
-        return i.rollen().stream().filter(r -> r.key().equals(key)).findFirst()
-                .orElseGet(() -> fail("instantie " + label + " heeft geen rol '" + key + "': " + i.rollen()));
+        return i.roles().stream().filter(r -> r.key().equals(key)).findFirst()
+                .orElseGet(() -> fail("instantie " + label + " heeft geen rol '" + key + "': " + i.roles()));
     }
 
     @Test void the_role_name_vergunning_belongs_per_instance_to_another_fact_type() {
         Situation sit = situation();
-        assertEquals("vergunninghouderschap", role(sit, "J", "vergunningen").factType().naam);
-        assertEquals("vergunde vondst", role(sit, "V", "vergunning").factType().naam);
-        assertEquals("vergunde strook", role(sit, "S", "vergunning").factType().naam);
+        assertEquals("vergunninghouderschap", role(sit, "J", "vergunningen").factType().name);
+        assertEquals("vergunde vondst", role(sit, "V", "vergunning").factType().name);
+        assertEquals("vergunde strook", role(sit, "S", "vergunning").factType().name);
     }
 
     @Test void the_other_side_carries_the_same_fact_type() {
         Situation sit = situation();
-        assertEquals("vergunninghouderschap", role(sit, "G", "houder").factType().naam);
-        assertEquals("vergunde vondst", role(sit, "G", "vondsten").factType().naam);
-        assertEquals("vergunde strook", role(sit, "G", "strook").factType().naam);
+        assertEquals("vergunninghouderschap", role(sit, "G", "houder").factType().name);
+        assertEquals("vergunde vondst", role(sit, "G", "vondsten").factType().name);
+        assertEquals("vergunde strook", role(sit, "G", "strook").factType().name);
     }
 
     @Test void a_reciprocal_fact_type() {
-        assertEquals("strandmaatschap", role(situation(), "J", "strandmaat").factType().naam);
+        assertEquals("strandmaatschap", role(situation(), "J", "strandmaat").factType().name);
     }
 
     @Test void the_fact_type_is_that_of_the_model() {
@@ -115,7 +115,7 @@ class ScenarioRoleFactTypeTest {
         for (String[] pair : List.of(new String[]{"J", "vergunningen"}, new String[]{"V", "vergunning"},
                 new String[]{"S", "vergunning"}, new String[]{"G", "houder"}, new String[]{"J", "strandmaat"})) {
             RoleValue r = role(sit, pair[0], pair[1]);
-            assertSame(b.model().feittypen.get(r.factType().naam), r.factType(), pair[0] + " " + pair[1]);
+            assertSame(b.model().factTypes.get(r.factType().name), r.factType(), pair[0] + " " + pair[1]);
         }
     }
 }

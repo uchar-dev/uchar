@@ -4,7 +4,7 @@ import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
@@ -48,13 +48,13 @@ class ExtensionRedeclarationTest {
             + "objecttype al draagt, herhaalt zij alleen letterlijk, en '(mag opgegeven worden)' komt er hooguit één "
             + "keer bij (WF-002, dialect §7)";
 
-    /** Exactly one diagnostic, an ERROR with {@code sentence} whole, on {@code regel}. */
-    private static void onlyError(RegelSpraakModel m, int regel, String sentence) {
+    /** Exactly one diagnostic, an ERROR with {@code sentence} whole, on {@code rule}. */
+    private static void onlyError(RegelSpraakModel m, int rule, String sentence) {
         assertEquals(1, m.diagnostics.size(), () -> "verwachtte precies één diagnose, kreeg: " + m.diagnostics);
         Diagnostic d = m.diagnostics.get(0);
         assertEquals(Severity.ERROR, d.severity(), () -> "verwachtte een ERROR: " + d);
         assertEquals(sentence, d.message());
-        assertEquals(regel, d.line(), () -> "de melding staat op de verkeerde regel: " + d);
+        assertEquals(rule, d.line(), () -> "de melding staat op de verkeerde regel: " + d);
     }
 
     private static RegelSpraakModel clean(String source) {
@@ -71,7 +71,7 @@ class ExtensionRedeclarationTest {
                 + "al draagt (bronregel 3), en 'de waarde Tekst' is niet letterlijk 'de waarde Numeriek (geheel getal)'"
                 + TAIL);
         // the declaration the type carried stays, so what the rest of the document reads is the fundament's
-        assertInstanceOf(Datatype.Numeriek.class, m.objecttypen.get("Vondst").attributen.get("waarde"));
+        assertInstanceOf(Datatype.Numeric.class, m.objectTypes.get("Vondst").attributes.get("waarde"));
     }
 
     @ParameterizedTest
@@ -93,7 +93,7 @@ class ExtensionRedeclarationTest {
         onlyError(m, 7, "objecttype 'Vondst': de extensie declareert het kenmerk 'waardevol' (bronregel 7), dat Vondst "
                 + "al draagt (bronregel 4), en 'het waardevol kenmerk (bezittelijk)' is niet letterlijk 'is waardevol "
                 + "kenmerk (bijvoeglijk)'" + TAIL);
-        assertEquals(Objecttype.CharacteristicKind.BIJVOEGLIJK, m.objecttypen.get("Vondst").characteristicKind("waardevol"));
+        assertEquals(ObjectType.CharacteristicKind.BIJVOEGLIJK, m.objectTypes.get("Vondst").characteristicKind("waardevol"));
     }
 
     @Test void an_extension_for_the_head_is_also_refused() {
@@ -106,7 +106,7 @@ class ExtensionRedeclarationTest {
         onlyError(m, 2, "objecttype 'Vondst': de extensie declareert het attribuut 'waarde' (bronregel 2), dat Vondst "
                 + "al draagt (bronregel 6), en 'de waarde Tekst' is niet letterlijk 'de waarde Numeriek (geheel getal)'"
                 + TAIL);
-        assertInstanceOf(Datatype.Numeriek.class, m.objecttypen.get("Vondst").attributen.get("waarde"));
+        assertInstanceOf(Datatype.Numeric.class, m.objectTypes.get("Vondst").attributes.get("waarde"));
     }
 
     @Test void two_extensions_with_a_difference_refuse_the_second() {
@@ -151,7 +151,7 @@ class ExtensionRedeclarationTest {
     @Test void an_attribute_with_the_name_of_a_role_stays_admitted() {
         // Roles and members are separate namespaces (IR-SPEC ch. 2), in a head as in an extension.
         RegelSpraakModel m = clean(VINDER + "    de vinder Tekst;\n");
-        assertInstanceOf(Datatype.Tekst.class, m.objecttypen.get("Vondst").attributen.get("vinder"));
+        assertInstanceOf(Datatype.Text.class, m.objectTypes.get("Vondst").attributes.get("vinder"));
     }
 
     // -------------------------------------------------------------------- a repeat that changes nothing: admitted
@@ -192,7 +192,7 @@ class ExtensionRedeclarationTest {
             """;
         RegelSpraakModel m = clean(ext + MESSAGE);
         assertEquals(List.of("vinddag", "meldingsdatum", "opgegeven meldingsdatum", "berekende meldingsdatum"),
-                List.copyOf(m.objecttypen.get("Vondst").attributen.keySet()));
+                List.copyOf(m.objectTypes.get("Vondst").attributes.keySet()));
         String viaExtension = IrEmitter.emit(m);
         assertEquals(1, viaExtension.split("\"line\": 6", -1).length - 1, viaExtension);
         assertEquals(IrEmitter.emit(clean(head + MESSAGE)), viaExtension.replace("\"line\": 6", "\"line\": 3"));
@@ -210,7 +210,7 @@ class ExtensionRedeclarationTest {
                 de meldingsdatum (handboek: datum van melding) Datum in dagen (mag opgegeven worden);
             """ + MESSAGE;
         RegelSpraakModel m = clean(source);
-        assertTrue(m.objecttypen.get("Vondst").attributen.containsKey("opgegeven meldingsdatum"));
+        assertTrue(m.objectTypes.get("Vondst").attributes.containsKey("opgegeven meldingsdatum"));
         // one designation in the side table; the consistency's source quotes the marked declaration as written
         String ir = IrEmitter.emit(m);
         assertEquals(1, ir.split("\"designation\": \"datum van melding\"", -1).length - 1, () -> "de benaming "

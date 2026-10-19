@@ -112,8 +112,8 @@ class ZeroDivisorConsumerWitnessTest {
 
     private static final String TWO_DECIMALS = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
 
-    private static String attribute(String naam) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + TWO_DECIMALS + "}";
+    private static String attribute(String name) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + TWO_DECIMALS + "}";
     }
 
     private static String own(String attribute) {
@@ -130,11 +130,11 @@ class ZeroDivisorConsumerWitnessTest {
         String division = "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":" + own("gewogen gewicht") + ",\"right\":"
                 + own("geschatte gewicht") + ",\"type\":" + TWO_DECIMALS + ",\"source\":{\"snippet\":\"zijn gewogen gewicht"
                 + " gedeeld door zijn geschatte gewicht\"}}";
-        String regel = "{\"node\":\"Rule\",\"name\":\"verhouding\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
+        String rule = "{\"node\":\"Rule\",\"name\":\"verhouding\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"verhouding\",\"subjectType\":\"Vondst\",\"source\":"
                 + "{\"snippet\":\"De verhouding van een Vondst\"}},\"value\":" + division + ",\"initialisation\":false,"
                 + "\"presentation\":\"calculation\"}]}";
-        String ir = "{\"format\":\"uchar-ir-v1\",\"model\":" + model + ",\"rules\":{\"rules\":[" + regel + "],"
+        String ir = "{\"format\":\"uchar-ir-v1\",\"model\":" + model + ",\"rules\":{\"rules\":[" + rule + "],"
                 + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],\"uniquenesses\":[],"
                 + "\"factCreations\":[],\"startPointDeterminations\":[],\"ruleGroups\":[],\"prioritizedDefaults\":[]},"
                 + "\"diagnostics\":[]}";

@@ -144,10 +144,10 @@ class LetNeedWitnessTest {
     private static String num(int dec) { return num(dec, false, "unspecified"); }
     private static final String WHOLE_POS = num(0, true, "nonNegative");
 
-    private static String attr(String naam, String type) {
+    private static String attr(String name, String type) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
-                .formatted(naam, naam);
+                .formatted(name, name);
     }
 
     private static String lit(String valueJson, String type) {
@@ -166,8 +166,8 @@ class LetNeedWitnessTest {
     }
 
     /** NB the wire field is {@code name}, not {@code naam}. */
-    private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(naam, naam);
+    private static String bref(String name, String type) {
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(name, name);
     }
 
     private static String ite(String condition, String then, String otherwise, String type) {
@@ -180,8 +180,8 @@ class LetNeedWitnessTest {
                 .formatted(op, left, right, op.toLowerCase(java.util.Locale.ROOT));
     }
 
-    private static String regel(String naam, String target, String valueJson) {
-        return IrPath.regel(naam, "BEREKENING", target, valueJson, "null");
+    private static String rule(String name, String target, String valueJson) {
+        return IrPath.rule(name, "BEREKENING", target, valueJson, "null");
     }
 
     /** A one-objecttype document over {@code Jutter}. */
@@ -214,7 +214,7 @@ class LetNeedWitnessTest {
         String division = binary("dividedBy", lit("100.00", num(2)), lit("0.00", num(2)), num(2));
         String body = read ? bref("q", num(2)) : lit("42.00", num(2));
         return model(attributes("uitkomst", num(2)),
-                new String[]{regel("uitkomst van een jutter", attr("uitkomst", num(2)),
+                new String[]{rule("uitkomst van een jutter", attr("uitkomst", num(2)),
                         let("q", division, body, num(2)))});
     }
 
@@ -229,7 +229,7 @@ class LetNeedWitnessTest {
                         num(2)),
                 num(2));
         return model(attributes("kindertal", WHOLE_POS, "leegwaarde", num(2), "uitkomst", num(2)),
-                new String[]{regel("uitkomst van een jutter", attr("uitkomst", num(2)),
+                new String[]{rule("uitkomst van een jutter", attr("uitkomst", num(2)),
                         let("k", attr("kindertal", WHOLE_POS), inside, num(2)))});
     }
 
@@ -238,9 +238,9 @@ class LetNeedWitnessTest {
         String division = binary("dividedBy", attr("grondslag", num(2)), attr("deler", num(2)), num(2));
         return model(attributes("grondslag", num(2), "deler", num(2), "tweemaal", num(2), "eenmaal", num(2)),
                 new String[]{
-                        regel("tweemaal van een jutter", attr("tweemaal", num(2)),
+                        rule("tweemaal van een jutter", attr("tweemaal", num(2)),
                                 let("q", division, binary("plus", bref("q", num(2)), bref("q", num(2)), num(2)), num(2))),
-                        regel("eenmaal van een jutter", attr("eenmaal", num(2)),
+                        rule("eenmaal van een jutter", attr("eenmaal", num(2)),
                                 let("q", division, bref("q", num(2)), num(2)))});
     }
 }

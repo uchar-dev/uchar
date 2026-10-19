@@ -25,33 +25,33 @@ public final class InputFormFault extends RuntimeException {
     private final transient Object object;
     private final String objectName;
     private final String after;
-    private final String regel;
+    private final String rule;
 
     /** The fault whose sentence is {@code before}, the object {@code object}, then {@code after}. */
     InputFormFault(String before, Object object, String after) {
         this(before, object, "\"" + FactNames.object(object) + "\"", after, null);
     }
 
-    private InputFormFault(String before, Object object, String objectName, String after, String regel) {
-        super(regel == null ? before + objectName + after
-                : Msg.drools("FRAME.fault-in-rule", "rule", regel, "sentence", before + objectName + after).text());
+    private InputFormFault(String before, Object object, String objectName, String after, String rule) {
+        super(rule == null ? before + objectName + after
+                : Msg.drools("FRAME.fault-in-rule", "rule", rule, "sentence", before + objectName + after).text());
         this.before = before;
         this.object = object;
         this.objectName = objectName;
         this.after = after;
-        this.regel = regel;
+        this.rule = rule;
     }
 
-    /** The same fault named after the rule {@code regel} it ran in, as {@link ComputeFault#inRule} names one. */
-    public InputFormFault inRule(String regel) {
-        return new InputFormFault(before, object, objectName, after, regel);
+    /** The same fault named after the rule {@code rule} it ran in, as {@link ComputeFault#inRule} names one. */
+    public InputFormFault inRule(String rule) {
+        return new InputFormFault(before, object, objectName, after, rule);
     }
 
     /** The same fault with the object named by {@code label}, which gives the case label of an input object and null
      *  for one a creation made, which keeps its name by type and identity. */
     public InputFormFault named(Function<Object, String> label) {
         String l = label.apply(object);
-        return l == null ? this : new InputFormFault(before, object, "\"" + l + "\"", after, regel);
+        return l == null ? this : new InputFormFault(before, object, "\"" + l + "\"", after, rule);
     }
 
     /** The sentence of the fault, without the rule. */
@@ -60,8 +60,8 @@ public final class InputFormFault extends RuntimeException {
     }
 
     /** The rule a named fault ran in; null where nothing named it yet. */
-    public String regel() {
-        return regel;
+    public String rule() {
+        return rule;
     }
 
     /** The object whose input the form could not read. */

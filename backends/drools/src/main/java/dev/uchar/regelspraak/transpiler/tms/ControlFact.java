@@ -15,9 +15,9 @@ package dev.uchar.regelspraak.transpiler.tms;
 public sealed interface ControlFact permits Decides, Outcome {
 
     /** The object the stack decides for. */
-    Object onderwerp();
+    Object subject();
 
     /** The name of the effective stack, one defaults group on one concrete type and one target
-     *  ({@code TmsTranspiler.DefaultsGroup#naam}). */
+     *  ({@code TmsTranspiler.DefaultsGroup#name}). */
     String stack();
 }

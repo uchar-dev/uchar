@@ -28,7 +28,7 @@ class GeneratedFromTest {
     }
 
     private static String element(Designatable b) {
-        return b.category() + " " + (b.owner() == null ? "" : b.owner() + ".") + b.naam();
+        return b.category() + " " + (b.owner() == null ? "" : b.owner() + ".") + b.name();
     }
 
     /** The table as lines "<element> <- <source element> (<key>)", in the order of the map. */
@@ -47,7 +47,7 @@ class GeneratedFromTest {
         for (Designatable b : m.generated.keySet()) {
             assertTrue(all.contains(b), () -> element(b) + " staat in de tabel en is geen element van het model");
             Designatable upperCased = new Designatable(b.category(), b.owner() == null ? null : b.owner().toUpperCase(),
-                    b.naam().toUpperCase());
+                    b.name().toUpperCase());
             assertEquals(m.generated.get(b), m.generatedFrom(upperCased).orElseThrow());
         }
     }

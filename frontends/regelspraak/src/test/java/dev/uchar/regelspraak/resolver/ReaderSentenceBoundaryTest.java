@@ -89,7 +89,7 @@ class ReaderSentenceBoundaryTest {
                 + " — deze getuige LEEST beide bronnen en mag niet overslaan als hij ze niet vindt");
     }
 
-    private record Fragment(String file, int regel, String tekst) {}
+    private record Fragment(String file, int rule, String text) {}
 
     @Test void every_english_sentence_of_the_frontend_is_in_the_verifier() throws IOException {
         List<String> pieces = verifierPieces(root());
@@ -97,10 +97,10 @@ class ReaderSentenceBoundaryTest {
         Set<String> seen = new LinkedHashSet<>();
         int read = 0;
         for (Fragment f : frontendFragments(root())) {
-            if (WITHOUT_READER.containsKey(f.tekst())) { seen.add(f.tekst()); continue; }
+            if (WITHOUT_READER.containsKey(f.text())) { seen.add(f.text()); continue; }
             read++;
-            if (pieces.stream().noneMatch(s -> s.contains(f.tekst())))
-                faults.add(f.file() + ":" + f.regel() + " '" + f.tekst() + "'");
+            if (pieces.stream().noneMatch(s -> s.contains(f.text())))
+                faults.add(f.file() + ":" + f.rule() + " '" + f.text() + "'");
         }
         assertTrue(faults.isEmpty(), () -> "Engelse frontendzinnen die niet (meer) in " + VERIFIER + " staan — de "
                 + "verifier formuleerde ze anders, of de frontend schrijft een eigen Engelse zin:\n  "
@@ -211,22 +211,22 @@ class ReaderSentenceBoundaryTest {
             String source = Files.readString(p, UTF_8);
             for (int[] position : javaLiteralPositions(source)) {
                 String literal = javaLiteral(source, position[0], position[1]);
-                int regel = 1 + (int) source.substring(0, position[0]).chars().filter(ch -> ch == '\n').count();
+                int rule = 1 + (int) source.substring(0, position[0]).chars().filter(ch -> ch == '\n').count();
                 for (String part : SPECIFIER.split(literal, -1)) {
                     String kern = kern(part);
-                    if (kern != null) result.add(new Fragment(p.getFileName().toString(), regel, kern));
+                    if (kern != null) result.add(new Fragment(p.getFileName().toString(), rule, kern));
                 }
             }
         }
         // since the card message-catalogues the sentences stand in the catalogue, not in the literals above
         Path catalogue = w.resolve(CATALOGUE);
         assertTrue(Files.isRegularFile(catalogue), () -> catalogue + " ontbreekt");
-        int regel = 0;
+        int rule = 0;
         for (String line : Files.readAllLines(catalogue, UTF_8)) {
-            regel++;
+            rule++;
             for (String part : PLACE.split(line.substring(line.indexOf('\t') + 1).replace("{{", "{").replace("}}", "}"), -1)) {
                 String kern = kern(part);
-                if (kern != null) result.add(new Fragment(catalogue.getFileName().toString(), regel, kern));
+                if (kern != null) result.add(new Fragment(catalogue.getFileName().toString(), rule, kern));
             }
         }
         return result;
@@ -278,9 +278,9 @@ class ReaderSentenceBoundaryTest {
         return english(r) ? r : null;
     }
 
-    private static boolean english(String tekst) {
+    private static boolean english(String text) {
         List<String> words = new ArrayList<>();
-        Matcher m = WORD.matcher(tekst);
+        Matcher m = WORD.matcher(text);
         while (m.find()) words.add(m.group().toLowerCase(Locale.ROOT));
         return words.size() >= 2 && words.stream().noneMatch(NEDERLANDS::contains)
                 && words.stream().anyMatch(ENGLISH::contains);

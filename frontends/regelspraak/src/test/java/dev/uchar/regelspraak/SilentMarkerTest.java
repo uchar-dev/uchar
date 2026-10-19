@@ -51,8 +51,8 @@ class SilentMarkerTest {
         Eén ploeg omvat meerdere wachten
         """;
 
-    private static RegelSpraakModel resolve(String regels) {
-        return Resolver.resolve(MODEL + regels);
+    private static RegelSpraakModel resolve(String rules) {
+        return Resolver.resolve(MODEL + rules);
     }
 
     private static String emitCompact(RegelSpraakModel m) {

@@ -69,7 +69,7 @@ class TmsIndexWitnessTest {
 
     /** One constraint of a pattern: the document, the rule, the class of the pattern's fact, its kind, whether it
      *  reads another variable than the pattern's own (a join), and the index it carries, null where none. */
-    record PatternConstraint(String document, String regel, Class<?> javaClass, String category, boolean join, Index<?, ?> index) {}
+    record PatternConstraint(String document, String rule, Class<?> javaClass, String category, boolean join, Index<?, ?> index) {}
 
     @BeforeAll
     static void read() throws Exception {
@@ -137,7 +137,7 @@ class TmsIndexWitnessTest {
             seen.add(b.category());
             boolean index = b.index() instanceof BetaIndexN<?, ?> && b.index().getConstraintType() == Index.ConstraintType.EQUAL;
             if (!index && !UNINDEXED.containsKey(b.category()))
-                without.add(b.category() + " (" + b.javaClass().getSimpleName() + ") in " + b.document() + ", regel '" + b.regel()
+                without.add(b.category() + " (" + b.javaClass().getSimpleName() + ") in " + b.document() + ", regel '" + b.rule()
                         + "'");
         }
         assertEquals(List.of(), without, "joins zonder gelijkheidsindex en zonder reden");
@@ -156,8 +156,8 @@ class TmsIndexWitnessTest {
         List<String> own = new ArrayList<>();
         int beans = 0;
         for (DroolsBackend.Build b : BUILD.values())
-            for (RegelSpraakModel.Objecttype ot : b.model().objecttypen.values()) {
-                Class<?> k = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.naam, true), true,
+            for (RegelSpraakModel.ObjectType ot : b.model().objectTypes.values()) {
+                Class<?> k = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true), true,
                         b.beanLoader());
                 beans++;
                 if (k.getMethod("equals", Object.class).getDeclaringClass() != Object.class)
@@ -179,7 +179,7 @@ class TmsIndexWitnessTest {
             if (!b.join() || !(b.index() instanceof BetaIndexN<?, ?>)
                     || b.index().getConstraintType() != Index.ConstraintType.EQUAL)
                 without.add(b.category() + " (" + b.javaClass().getSimpleName() + ") in " + b.document() + ", regel '"
-                        + b.regel() + "': " + (b.join() ? "" : "geen join, ") + "index " + b.index());
+                        + b.rule() + "': " + (b.join() ? "" : "geen join, ") + "index " + b.index());
         }
         Set<String> missing = new TreeSet<>(kinds);
         missing.removeAll(seen.keySet());
@@ -195,26 +195,26 @@ class TmsIndexWitnessTest {
         return out;
     }
 
-    private static void loop(String document, String regel, Condition c, List<PatternConstraint> out) {
+    private static void loop(String document, String rule, Condition c, List<PatternConstraint> out) {
         if (c instanceof PatternImpl<?> p) {
-            patternConstraint(document, regel, p.getPatternVariable().getType(), p.getConstraint(), out);
+            patternConstraint(document, rule, p.getPatternVariable().getType(), p.getConstraint(), out);
         } else if (c instanceof AccumulatePatternImpl<?> a) {
-            loop(document, regel, a.getCondition(), out);
+            loop(document, rule, a.getCondition(), out);
             return;
         }
-        for (Condition sub : c.getSubConditions()) loop(document, regel, sub, out);
+        for (Condition sub : c.getSubConditions()) loop(document, rule, sub, out);
     }
 
-    private static void patternConstraint(String document, String regel, Class<?> javaClass, Constraint c, List<PatternConstraint> out) {
+    private static void patternConstraint(String document, String rule, Class<?> javaClass, Constraint c, List<PatternConstraint> out) {
         if (c == null) return;
         if (c instanceof SingleConstraint s) {
             String id = s.getExprId();
             if (id == null) return;
             int streep = id.lastIndexOf('_');
-            out.add(new PatternConstraint(document, regel, javaClass, streep < 0 ? id : id.substring(0, streep),
+            out.add(new PatternConstraint(document, rule, javaClass, streep < 0 ? id : id.substring(0, streep),
                     s.getVariables().length > 1, s.getIndex()));
             return;
         }
-        for (Constraint k : c.getChildren()) patternConstraint(document, regel, javaClass, k, out);
+        for (Constraint k : c.getChildren()) patternConstraint(document, rule, javaClass, k, out);
     }
 }

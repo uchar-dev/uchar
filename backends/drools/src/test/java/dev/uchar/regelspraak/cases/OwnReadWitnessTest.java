@@ -76,13 +76,13 @@ class OwnReadWitnessTest {
         IrPath.addAttribute(IrPath.objectType(ir, "Munt"), "muntwaarde", weight.deepCopy());
         ObjectNode form = IrPath.rules(ir).putArray("rules").addObject();
         form.put("node", "Rule").put("name", "muntwaarde");
-        ObjectNode regel = form.putArray("versions").addObject();
-        regel.putObject("validity").put("node", "Validity");
-        regel.putObject("target").put("node", "AttributeReference").put("attribute", "muntwaarde").put("subjectType", "Munt")
+        ObjectNode rule = form.putArray("versions").addObject();
+        rule.putObject("validity").put("node", "Validity");
+        rule.putObject("target").put("node", "AttributeReference").put("attribute", "muntwaarde").put("subjectType", "Munt")
              .set("source", IrPath.sourceReference("De muntwaarde van een Munt"));
-        regel.putObject("value").put("node", "AttributeReference").put("attribute", "gewicht").put("subjectType", objectType)
+        rule.putObject("value").put("node", "AttributeReference").put("attribute", "gewicht").put("subjectType", objectType)
              .set("source", IrPath.sourceReference("het gewicht"));
-        regel.put("initialisation", false).put("presentation", "calculation");
+        rule.put("initialisation", false).put("presentation", "calculation");
         return ir;
     }
 

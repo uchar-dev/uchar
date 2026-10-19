@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.ir;
 
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 import java.util.List;
 
@@ -16,8 +16,8 @@ import java.util.List;
  * when the total count, summed over every source, of instances whose key equals the subject's exceeds
  * one.
  */
-public record ResolvedUniquenessUnion(String naam, List<Source> sources,
+public record ResolvedUniquenessUnion(String name, List<Source> sources,
                                     dev.uchar.regelspraak.ir.Source source, Validity validity) {
     /** One side of the union: an object type and the key attribute(s) whose values join the shared space. */
-    public record Source(Objecttype type, List<String> keys) {}
+    public record Source(ObjectType type, List<String> keys) {}
 }

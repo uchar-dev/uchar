@@ -100,7 +100,7 @@ class TmsDisplacedExceptionWitnessTest {
     private static final String THIRTY = defaultEntry(check("geregistreerd", false), number("30"));
 
     /** A default that faults where it is evaluated, and the sentence the reference interpreter faults with there. */
-    private record Fault(String naam, String defaultEntry, String sentence) {}
+    private record Fault(String name, String defaultEntry, String sentence) {}
 
     private static final List<Fault> FAULTS = List.of(
             new Fault("het rekenjaar in de rechtvaardiging", defaultEntry(comparison("greater",
@@ -117,7 +117,7 @@ class TmsDisplacedExceptionWitnessTest {
                     literal("2026-01-01", DATE)), number("20")), "duration count " + TOO_LARGE + " is out of range"));
 
     /** Where the faulting default sits: the defaults of the group, highest first, around it. */
-    private record Place(String naam, Function<String, List<String>> defaults) {}
+    private record Place(String name, Function<String, List<String>> defaults) {}
 
     private static final List<Place> PLACES = List.of(
             new Place("een uitzonderingsgroep van de lagere default",
@@ -173,7 +173,7 @@ class TmsDisplacedExceptionWitnessTest {
                     Path ir = TmsDocuments.document(MODEL, order, List.of(), List.of(group(p, f)));
                     for (DroolsBackend.Branch branch : List.of(DroolsBackend.Branch.EXEC_MODEL,
                             DroolsBackend.Branch.DRL_TEXT)) {
-                        String description = branch + ", " + p.naam() + ", " + f.naam() + ", " + TmsDocuments.ruleNames(order);
+                        String description = branch + ", " + p.name() + ", " + f.name() + ", " + TmsDocuments.ruleNames(order);
                         outcomes.add(description + ", V1: " + TmsFaultWitnessTest.play(ir, displaced(), branch));
                         expected.add(description + ", V1: gespeeld");
                         outcomes.add(description + ", V2: " + TmsFaultWitnessTest.play(ir, reaches(), branch));
@@ -195,7 +195,7 @@ class TmsDisplacedExceptionWitnessTest {
     @Test void sample_of_orders_of_the_generated_rules() throws Exception {
         for (Place p : PLACES)
             for (Fault f : FAULTS.subList(0, 2)) {
-                String description = p.naam() + ", " + f.naam();
+                String description = p.name() + ", " + f.name();
                 DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(MODEL, RULES, List.of(),
                         List.of(group(p, f))), DroolsBackend.Branch.EXEC_MODEL);
                 int intermediateState = 0;

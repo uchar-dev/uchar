@@ -73,11 +73,11 @@ class DateStepDivisionWitnessTest {
         }
     }
 
-    /** {@code source} with the duration operand X of the rule {@code regel} replaced by "X gedeeld door 3", typed as the
+    /** {@code source} with the duration operand X of the rule {@code rule} replaced by "X gedeeld door 3", typed as the
      *  quotient of X's unit, written to a temporary file. */
-    private static Path divided(Path source, String regel) throws Exception {
+    private static Path divided(Path source, String rule) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(source));
-        ObjectNode value = (ObjectNode) IrPath.version(ir, "rules", regel).get("value");
+        ObjectNode value = (ObjectNode) IrPath.version(ir, "rules", rule).get("value");
         JsonNode duration = value.get("right");
         JsonNode unit = IrPath.attribute(IrPath.objectType(ir, duration.get("subjectType").asText()),
                 duration.get("attribute").asText()).get("datatype").get("unit");

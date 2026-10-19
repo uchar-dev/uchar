@@ -161,23 +161,23 @@ class TmsTimelineFoldWitnessTest {
             for (Object v : List.of(v1, v2, v3)) keep(v, j1);
             Map<Object, String> labels = new IdentityHashMap<>(Map.of(j1, "J1", j2, "J2", v1, "V1", v2, "V2", v3, "V3"));
             int[] intermediate = {0};
-            Map<String, Integer> waarden = new TreeMap<>();
+            Map<String, Integer> values = new TreeMap<>();
             List<String> states = new ArrayList<>();
             TmsDocuments.fire(b, order, List.of(j1, j2, v1, v2, v3), session -> session.addEventListener(
                     new DefaultRuleRuntimeEventListener() {
                         @Override public void objectInserted(ObjectInsertedEvent e) {
-                            if (e.getObject() instanceof Value w && w.onderwerp() == j1
-                                    && w.attribute().naam().equals("last")
+                            if (e.getObject() instanceof Value w && w.subject() == j1
+                                    && w.attribute().name().equals("last")
                                     && ((BigDecimal) w.value()).compareTo(new BigDecimal("10")) == 0) intermediate[0]++;
                         }
                     }), session -> {
                 for (Object f : session.getObjects(o -> o instanceof Value))
-                    waarden.merge(labels.get(((Value) f).onderwerp()) + "." + ((Value) f).attribute().naam(), 1,
+                    values.merge(labels.get(((Value) f).subject()) + "." + ((Value) f).attribute().name(), 1,
                             Integer::sum);
                 for (Object f : session.getObjects(o -> o instanceof State))
-                    states.add(labels.get(((State) f).onderwerp()) + "." + ((State) f).attribute().naam());
+                    states.add(labels.get(((State) f).subject()) + "." + ((State) f).attribute().name());
             });
-            assertEquals(Map.of("J1.last", 1, "J1.som", 1, "J2.last", 1, "V1.tarief", 1), waarden,
+            assertEquals(Map.of("J1.last", 1, "J1.som", 1, "J2.last", 1, "V1.tarief", 1), values,
                     () -> "waarden in volgorde " + names);
             states.sort(null);
             // the jaartarief no form writes stands as well: every attribute on a timeline a rule reads has a standing,

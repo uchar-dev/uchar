@@ -57,9 +57,9 @@ class LeftSidePlanWitnessTest {
         DroolsBackend.Build build = DroolsBackend.build(GOLDEN, DroolsBackend.Branch.EXEC_MODEL);
         Map<String, Map<String, Integer>> expected = new TreeMap<>();
         expected.put("toekenning van een recht op premie", count(
-                "plan", 1, "lezing INVOER", 1, "onderwerp", 1, "binding op het onderwerp", 1, "toets", 1));
+                "plan", 1, "lezing INPUT", 1, "onderwerp", 1, "binding op het onderwerp", 1, "toets", 1));
         expected.put("premie van een recht op premie", count(
-                "plan", 1, "lezing CHARACTERISTIC_STATE", 1, "lezing INVOER", 1, "lezing PARAMETER", 1,
+                "plan", 1, "lezing CHARACTERISTIC_STATE", 1, "lezing INPUT", 1, "lezing PARAMETER", 1,
                 "onderwerp", 1, "binding op het onderwerp", 1, "patroon ParameterState", 1, "patroon CharacteristicState", 1,
                 "alfa", 2, "join", 1, "binding", 2, "toets", 1));
         expected.put("premiebedrag van een jutter", count(

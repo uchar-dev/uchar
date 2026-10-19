@@ -27,7 +27,7 @@ public record Exists(List<FactPattern> patterns, List<String> inside, List<Strin
     public static List<String> verklaard(List<FactPattern> patterns) {
         List<String> out = new ArrayList<>();
         for (FactPattern p : patterns) {
-            out.add(p.naam());
+            out.add(p.name());
             for (Binding b : p.bindings()) out.add(b.target());
         }
         return out;
@@ -42,7 +42,7 @@ public record Exists(List<FactPattern> patterns, List<String> inside, List<Strin
             for (Join j : p.joins()) targets.add(j.target());
             for (BetaTest t : p.betaTests()) targets.add(t.target());
             for (String d : targets) if (!seen.contains(d)) read.add(d);
-            seen.add(p.naam());
+            seen.add(p.name());
             for (Binding b : p.bindings()) seen.add(b.target());
         }
         return List.copyOf(read);

@@ -2,7 +2,7 @@ package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
@@ -35,32 +35,32 @@ class ModelTest {
         Eén reis betreft de verplaatsing van meerdere passagiers
         """;
 
-    @Test void parse_zonder_fouten() {
+    @Test void parse_without_errors() {
         RegelSpraakModel m = Resolver.resolve(SRC);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
     }
 
-    @Test void objecttype_attributen_zijn_getypeerd() {
+    @Test void object_type_attributes_are_typed() {
         RegelSpraakModel m = Resolver.resolve(SRC);
-        Objecttype np = m.objecttypen.get("Natuurlijk persoon");
+        ObjectType np = m.objectTypes.get("Natuurlijk persoon");
         assertNotNull(np, "Natuurlijk persoon ontbreekt");
-        assertTrue(np.bezield, "(bezield) niet herkend");
+        assertTrue(np.animate, "(bezield) niet herkend");
 
-        Datatype leeftijd = np.attributen.get("leeftijd");
-        assertInstanceOf(Datatype.Numeriek.class, leeftijd);
-        assertEquals("jr", ((Datatype.Numeriek) leeftijd).eenheid().afkorting());
-        assertEquals("Tijd", ((Datatype.Numeriek) leeftijd).eenheid().stelsel());
+        Datatype leeftijd = np.attributes.get("leeftijd");
+        assertInstanceOf(Datatype.Numeric.class, leeftijd);
+        assertEquals("jr", ((Datatype.Numeric) leeftijd).unit().abbreviation());
+        assertEquals("Tijd", ((Datatype.Numeric) leeftijd).unit().system());
 
-        assertInstanceOf(Datatype.DatumInDagen.class, np.attributen.get("geboortedatum"));
-        assertInstanceOf(Datatype.Tekst.class, np.attributen.get("burgerservicenummer"));
-        assertTrue(np.kenmerken.contains("minderjarig"));
+        assertInstanceOf(Datatype.DateInDays.class, np.attributes.get("geboortedatum"));
+        assertInstanceOf(Datatype.Text.class, np.attributes.get("burgerservicenummer"));
+        assertTrue(np.characteristics.contains("minderjarig"));
     }
 
-    @Test void temporele_attributen_dragen_hun_granulariteit() {
+    @Test void temporal_attributes_carry_their_granularity() {
         // §13.3.6: an attribute/kenmerk with a tijdlijn ("voor elk jaar") records its Granulariteit; an
         // ordinary attribute carries none. Both the single-period (elke dag/jaar) and multi-period (elke
         // 5 maanden) inline forms reduce to a unit. The period count has since been captured as well —
-        // attribuutTijdlijnAantal, which meer_periodieke_tijdlijn_legt_zijn_periodeaantal_vast below
+        // attributeTimelineCount, which multi_period_timeline_fixes_its_period_count below
         // asserts; only the inline fixed startpunt ("startend op …") is still dropped.
         String src = """
             Domein Bedrag is van het type Numeriek (geheel getal)
@@ -73,15 +73,15 @@ class ModelTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "" + m.errors());
-        Objecttype v = m.objecttypen.get("Vlucht");
-        assertEquals(RegelSpraakModel.Granulariteit.DAG,   v.attribuutGranulariteit.get("dagwaarde"));
-        assertEquals(RegelSpraakModel.Granulariteit.JAAR,  v.attribuutGranulariteit.get("jaarwaarde"));
-        assertEquals(RegelSpraakModel.Granulariteit.MAAND, v.attribuutGranulariteit.get("blokwaarde"));
-        assertNull(v.attribuutGranulariteit.get("gewoon"), "een gewoon attribuut draagt geen granulariteit");
-        assertEquals(RegelSpraakModel.Granulariteit.DAG,   v.kenmerkGranulariteit.get("duurzaam"));
+        ObjectType v = m.objectTypes.get("Vlucht");
+        assertEquals(RegelSpraakModel.Granularity.DAG,   v.attributeGranularity.get("dagwaarde"));
+        assertEquals(RegelSpraakModel.Granularity.JAAR,  v.attributeGranularity.get("jaarwaarde"));
+        assertEquals(RegelSpraakModel.Granularity.MAAND, v.attributeGranularity.get("blokwaarde"));
+        assertNull(v.attributeGranularity.get("gewoon"), "een gewoon attribuut draagt geen granulariteit");
+        assertEquals(RegelSpraakModel.Granularity.DAG,   v.characteristicGranularity.get("duurzaam"));
     }
 
-    @Test void benoemde_tijdlijn_referentie_neemt_de_granulariteit_van_haar_definitie_over() {
+    @Test void named_timeline_reference_takes_the_granularity_of_its_definition() {
         // §13.3.6.9: "voor elke <tijdlijn>" adopts the granularity of the named Tijdlijn definition, even
         // though the reference drops the leading lidwoord ("elke periode …" vs "Tijdlijn de periode …") and
         // the name wraps across lines. The definition is registered in pass 1 so declaration order is free.
@@ -93,14 +93,14 @@ class ModelTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "" + m.errors());
-        assertEquals(1, m.tijdlijnen.size());
-        assertEquals(RegelSpraakModel.Granulariteit.KWARTAAL, m.tijdlijnen.get(0).granulariteit());
-        Objecttype p = m.objecttypen.get("Persoon");
-        assertEquals(RegelSpraakModel.Granulariteit.KWARTAAL, p.attribuutGranulariteit.get("belasting"),
-                () -> "de benoemde-tijdlijn referentie nam de granulariteit niet over: " + p.attribuutGranulariteit);
+        assertEquals(1, m.timelines.size());
+        assertEquals(RegelSpraakModel.Granularity.KWARTAAL, m.timelines.get(0).granularity());
+        ObjectType p = m.objectTypes.get("Persoon");
+        assertEquals(RegelSpraakModel.Granularity.KWARTAAL, p.attributeGranularity.get("belasting"),
+                () -> "de benoemde-tijdlijn referentie nam de granulariteit niet over: " + p.attributeGranularity);
     }
 
-    @Test void dubbel_gedefinieerde_tijdlijn_geeft_een_waarschuwing() {
+    @Test void doubly_defined_timeline_gives_a_warning() {
         // §13.3.6.10: two timelines sharing a name but declaring different granularity -> a "voor elke <naam>"
         // reference silently takes the first (findFirst). Warn at registration so the ambiguity is visible; a
         // single timeline stays clean.
@@ -116,7 +116,7 @@ class ModelTest {
                 () -> "verwachtte een dubbel-tijdlijn waarschuwing, kreeg: " + m.diagnostics);
     }
 
-    @Test void identieke_tijdlijn_herdefinitie_waarschuwt_niet() {
+    @Test void identical_timeline_redefinition_does_not_warn() {
         // The duplicate-name warning fires only on a periodicity MISMATCH (granularity or count); a
         // byte-identical redeclaration is harmless (findFirst takes an identical one) and stays silent.
         String src = """
@@ -130,7 +130,7 @@ class ModelTest {
                 () -> "een identieke herdefinitie mag niet waarschuwen: " + m.diagnostics);
     }
 
-    @Test void meer_periodieke_tijdlijn_legt_zijn_periodeaantal_vast() {
+    @Test void multi_period_timeline_fixes_its_period_count() {
         // §13.3.6.7: "voor elke 5 maanden" records granularity MAAND AND count 5; a single-period "voor elke
         // maand" records no count (1 implicit, the map stays sparse).
         String src = """
@@ -141,38 +141,38 @@ class ModelTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "" + m.errors());
-        Objecttype v = m.objecttypen.get("Vlucht");
-        assertEquals(RegelSpraakModel.Granulariteit.MAAND, v.attribuutGranulariteit.get("blokwaarde"));
-        assertEquals(Integer.valueOf(5), v.attribuutTijdlijnAantal.get("blokwaarde"));
-        assertNull(v.attribuutTijdlijnAantal.get("maandwaarde"), "een enkel-periodieke tijdlijn legt geen aantal vast");
+        ObjectType v = m.objectTypes.get("Vlucht");
+        assertEquals(RegelSpraakModel.Granularity.MAAND, v.attributeGranularity.get("blokwaarde"));
+        assertEquals(Integer.valueOf(5), v.attributeTimelineCount.get("blokwaarde"));
+        assertNull(v.attributeTimelineCount.get("maandwaarde"), "een enkel-periodieke tijdlijn legt geen aantal vast");
     }
 
-    @Test void domein_typed_attribuut_lost_op() {
+    @Test void domain_typed_attribute_resolves() {
         RegelSpraakModel m = Resolver.resolve(SRC);
         // "belasting op basis van afstand" is typed by domain Bedrag = Numeriek(2 decimalen)
-        Datatype d = m.objecttypen.get("Natuurlijk persoon").attributen.get("belasting op basis van afstand");
-        assertInstanceOf(Datatype.Numeriek.class, d);
-        assertEquals(2, ((Datatype.Numeriek) d).decimalen());
+        Datatype d = m.objectTypes.get("Natuurlijk persoon").attributes.get("belasting op basis van afstand");
+        assertInstanceOf(Datatype.Numeric.class, d);
+        assertEquals(2, ((Datatype.Numeric) d).decimals());
     }
 
-    @Test void domeinen_zijn_getypeerd() {
+    @Test void domains_are_typed() {
         RegelSpraakModel m = Resolver.resolve(SRC);
-        assertInstanceOf(Datatype.Numeriek.class, m.domeinen.get("Bedrag"));
-        Datatype lh = m.domeinen.get("Luchthavens");
-        assertInstanceOf(Datatype.Enumeratie.class, lh);
-        assertEquals(4, ((Datatype.Enumeratie) lh).waarden().size());
-        assertTrue(((Datatype.Enumeratie) lh).waarden().contains("Amsterdam Schiphol"));
+        assertInstanceOf(Datatype.Numeric.class, m.domains.get("Bedrag"));
+        Datatype lh = m.domains.get("Luchthavens");
+        assertInstanceOf(Datatype.Enumeration.class, lh);
+        assertEquals(4, ((Datatype.Enumeration) lh).values().size());
+        assertTrue(((Datatype.Enumeration) lh).values().contains("Amsterdam Schiphol"));
     }
 
-    @Test void parameter_is_getypeerd() {
+    @Test void parameter_is_typed() {
         RegelSpraakModel m = Resolver.resolve(SRC);
         var p = m.parameters.get("volwassenleeftijd");
         assertNotNull(p);
-        assertInstanceOf(Datatype.Numeriek.class, p.datatype());
-        assertEquals("jr", ((Datatype.Numeriek) p.datatype()).eenheid().afkorting());
+        assertInstanceOf(Datatype.Numeric.class, p.datatype());
+        assertEquals("jr", ((Datatype.Numeric) p.datatype()).unit().abbreviation());
     }
 
-    @Test void parameter_numeriek_zonder_getalspecificatie_lost_op_zonder_te_crashen() {
+    @Test void numeric_parameter_without_number_specification_resolves_without_crashing() {
         // §4.4's worked example writes "Numeriek met eenheid jaren" — omitting the getalspecificatie
         // that §13.3.3 makes mandatory. The grammar tolerates this; the resolver must degrade to the
         // least-restrictive numeriek reading (== a bare "getal": unbounded decimals, no sign) rather
@@ -183,11 +183,11 @@ class ModelTest {
 
         var p = m.parameters.get("volwassenleeftijd");
         assertNotNull(p, "parameter ontbreekt");
-        Datatype.Numeriek dt = assertInstanceOf(Datatype.Numeriek.class, p.datatype());
-        assertEquals("jaar", dt.eenheid().afkorting(), "eenheid blijft behouden");
-        assertFalse(dt.geheel(), "geen 'geheel getal' geschreven → niet geheel");
-        assertEquals(0, dt.decimalen(), "geen decimalenspecificatie → onbeperkt (sentinel 0)");
-        assertEquals(Datatype.Teken.ONBEPAALD, dt.teken(), "geen teken geschreven → onbepaald");
+        Datatype.Numeric dt = assertInstanceOf(Datatype.Numeric.class, p.datatype());
+        assertEquals("jaar", dt.unit().abbreviation(), "eenheid blijft behouden");
+        assertFalse(dt.wholeNumber(), "geen 'geheel getal' geschreven → niet geheel");
+        assertEquals(0, dt.decimals(), "geen decimalenspecificatie → onbeperkt (sentinel 0)");
+        assertEquals(Datatype.Sign.ONBEPAALD, dt.sign(), "geen teken geschreven → onbepaald");
 
         assertTrue(m.diagnostics.stream().anyMatch(d ->
                         d.severity() == RegelSpraakModel.Severity.WARNING
@@ -195,7 +195,7 @@ class ModelTest {
                 () -> "verwachtte een WARNING over de ontbrekende getalspecificatie; kreeg " + m.diagnostics);
     }
 
-    @Test void bare_numeriek_lost_op_voor_attribuut_en_domein_carriers() {
+    @Test void bare_numeric_resolves_for_attribute_and_domain_carriers() {
         // getalInfo(null) is reachable from all three datatype carriers, not only a parameter. Lock the
         // no-NPE + form-(c) degrade for an attribuut and a domein too (the parameter form is covered above).
         String src = """
@@ -206,13 +206,13 @@ class ModelTest {
         RegelSpraakModel m = Resolver.resolve(src);                 // must not throw
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
 
-        Datatype.Numeriek dom = assertInstanceOf(Datatype.Numeriek.class, m.domeinen.get("Vrij"));
-        assertFalse(dom.geheel());
-        assertEquals(0, dom.decimalen());
-        Datatype.Numeriek attr = assertInstanceOf(Datatype.Numeriek.class,
-                m.objecttypen.get("Rekening").attributen.get("saldo"));
-        assertFalse(attr.geheel());
-        assertNull(attr.eenheid(), "geen eenheid geschreven");
+        Datatype.Numeric dom = assertInstanceOf(Datatype.Numeric.class, m.domains.get("Vrij"));
+        assertFalse(dom.wholeNumber());
+        assertEquals(0, dom.decimals());
+        Datatype.Numeric attr = assertInstanceOf(Datatype.Numeric.class,
+                m.objectTypes.get("Rekening").attributes.get("saldo"));
+        assertFalse(attr.wholeNumber());
+        assertNull(attr.unit(), "geen eenheid geschreven");
         // both carriers raise the mandatory-getalspecificatie WARNING (one per declaration)
         assertEquals(2, m.diagnostics.stream().filter(d ->
                 d.severity() == RegelSpraakModel.Severity.WARNING
@@ -220,7 +220,7 @@ class ModelTest {
                 () -> "verwachtte twee getalspecificatie-WARNINGs; kreeg " + m.diagnostics);
     }
 
-    @Test void dimensie_wordt_gemodelleerd() {
+    @Test void dimension_is_modelled() {
         String src = """
             Dimensie de jaardimensie, bestaande uit de jaardimensies (na het attribuut met voorzetsel van):
                 1. vorig jaar
@@ -228,32 +228,32 @@ class ModelTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
-        var d = m.dimensies.get("jaardimensie");
+        var d = m.dimensions.get("jaardimensie");
         assertNotNull(d);
-        assertEquals("jaardimensies", d.naamMeervoud());
-        assertEquals(java.util.List.of("vorig jaar", "huidig jaar"), d.waarden());
+        assertEquals("jaardimensies", d.pluralName());
+        assertEquals(java.util.List.of("vorig jaar", "huidig jaar"), d.values());
     }
 
-    @Test void feittype_rollen_opgelost() {
+    @Test void fact_type_roles_resolved() {
         RegelSpraakModel m = Resolver.resolve(SRC);
-        var ft = m.feittypen.get("Vlucht van natuurlijke personen");
+        var ft = m.factTypes.get("Vlucht van natuurlijke personen");
         assertNotNull(ft);
-        assertEquals(2, ft.rollen.size());
-        assertEquals("reis", ft.rollen.get(0).naam());
-        assertEquals("Vlucht", ft.rollen.get(0).objecttypeNaam());
-        assertEquals("Natuurlijk persoon", ft.rollen.get(1).objecttypeNaam());
+        assertEquals(2, ft.roles.size());
+        assertEquals("reis", ft.roles.get(0).name());
+        assertEquals("Vlucht", ft.roles.get(0).objectTypeName());
+        assertEquals("Natuurlijk persoon", ft.roles.get(1).objectTypeName());
     }
 
-    @Test void feittype_cardinaliteit_markeert_de_meervoudige_rol() {
+    @Test void fact_type_cardinality_marks_the_many_role() {
         // §13.3.9.1: "Eén reis betreft de verplaatsing van meerdere passagiers" makes the
         // passagier role the to-many side and the reis role single.
         RegelSpraakModel m = Resolver.resolve(SRC);
-        var ft = m.feittypen.get("Vlucht van natuurlijke personen");
-        assertFalse(ft.rollen.get(0).meervoudig(), "reis is enkelvoudig (Eén reis ...)");
-        assertTrue(ft.rollen.get(1).meervoudig(), "passagier is meervoudig (... meerdere passagiers)");
+        var ft = m.factTypes.get("Vlucht van natuurlijke personen");
+        assertFalse(ft.roles.get(0).many(), "reis is enkelvoudig (Eén reis ...)");
+        assertTrue(ft.roles.get(1).many(), "passagier is meervoudig (... meerdere passagiers)");
     }
 
-    @Test void many_to_many_cardinaliteit_met_kleine_letter_opener_markeert_beide_rollen() {
+    @Test void many_to_many_cardinality_with_lowercase_opener_marks_both_roles() {
         // §13.3.9.1/.2: the cardinaliteit terminal is the lowercase "meerdere" (syntaxdiagrammen), and a
         // many-to-many line opens with it. It MUST be lowercase: a sentence-initial capital "Meerdere" is
         // irreducibly ambiguous with an objecttypenaam — the preceding role's greedy objectTypeNaam would
@@ -270,15 +270,15 @@ class ModelTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "de kleine-letter many-to-many opener moet parseren: " + m.errors());
-        var ft = m.feittypen.get("begeleiding");
-        assertNotNull(ft, () -> "feittype niet opgelost: " + m.feittypen.keySet());
-        assertTrue(ft.rollen.get(0).meervoudig(), "student is meervoudig (meerdere studenten ...)");
-        assertTrue(ft.rollen.get(1).meervoudig(), "docent is meervoudig (... meerdere docenten)");
+        var ft = m.factTypes.get("begeleiding");
+        assertNotNull(ft, () -> "feittype niet opgelost: " + m.factTypes.keySet());
+        assertTrue(ft.roles.get(0).many(), "student is meervoudig (meerdere studenten ...)");
+        assertTrue(ft.roles.get(1).many(), "docent is meervoudig (... meerdere docenten)");
     }
 
-    @Test void feittype_naam_met_lidwoord_waarschuwt_voor_de_aangetaste_rol() {
+    @Test void fact_type_name_with_article_warns_about_the_affected_role() {
         // §13.3.9.3: feitTypeNaam excludes de/het, so a feittype name containing one ("bonus van de vlucht")
-        // truncates there and the leftover "de vlucht" is absorbed into the first role's greedy rolNaam,
+        // truncates there and the leftover "de vlucht" is absorbed into the first role's greedy roleName,
         // corrupting it to "vlucht de bonusvlucht" with NO error node. Flag the tell-tale internal article.
         String src = """
             Objecttype de Vlucht
@@ -296,7 +296,7 @@ class ModelTest {
                 () -> "een feittypenaam met een lidwoord moet de aangetaste rol melden: " + m.diagnostics);
     }
 
-    @Test void feittype_naam_zonder_lidwoord_waarschuwt_niet() {
+    @Test void fact_type_name_without_article_does_not_warn() {
         // The TOKA-style multi-word role names ("te verdelen contingent treinmiles", "passagier met recht
         // op treinmiles") carry no internal article, so they must not trip the heuristic.
         String src = """
@@ -312,7 +312,7 @@ class ModelTest {
                 () -> "een schone feittypenaam mag geen lidwoord-waarschuwing geven: " + m.diagnostics);
     }
 
-    @Test void rolnaam_met_lidwoord_na_voorzetsel_waarschuwt_niet() {
+    @Test void role_name_with_article_after_preposition_does_not_warn() {
         // §13.3.9.4: a rolnaam may legitimately contain an article AFTER a preposition ("eigenaar van de
         // woning", "behandelaar van het dossier"). Only an article after a BARE noun signals the corruption,
         // so these spec-legal names must NOT warn — the discriminator the heuristic refinement keys on.
@@ -327,13 +327,13 @@ class ModelTest {
             Eén eigenaar van de woning bezit meerdere woningen
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        assertEquals("eigenaar van de woning", m.feittypen.get("eigendom").rollen.get(0).naam(),
+        assertEquals("eigenaar van de woning", m.factTypes.get("eigendom").roles.get(0).name(),
                 () -> "de rol met een legitiem 'van de' moet intact parseren");
         assertFalse(m.diagnostics.stream().anyMatch(d -> d.message().contains("lidwoord")),
                 () -> "een 'van de'-rolnaam mag geen lidwoord-waarschuwing geven: " + m.diagnostics);
     }
 
-    @Test void cardinaliteit_onregelmatig_meervoud_wordt_via_eliminatie_gemarkeerd() {
+    @Test void cardinality_irregular_plural_is_marked_via_elimination() {
         // "vakken" is the doubling-plural of role "vak" — undeclared, so neither the best-effort nor
         // MeervoudMatcher synthesises it (§footnote 2). But a non-wederkerig feittype has exactly two
         // roles, so once "studenten" names the student role, the unmatched "vakken" segment is the
@@ -350,12 +350,12 @@ class ModelTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "moet parseren: " + m.errors());
-        var ft = m.feittypen.get("inschrijving");
-        assertTrue(ft.rollen.get(0).meervoudig(), "student is meervoudig (regulier meervoud)");
-        assertTrue(ft.rollen.get(1).meervoudig(), "vak is meervoudig (onregelmatig 'vakken' via eliminatie)");
+        var ft = m.factTypes.get("inschrijving");
+        assertTrue(ft.roles.get(0).many(), "student is meervoudig (regulier meervoud)");
+        assertTrue(ft.roles.get(1).many(), "vak is meervoudig (onregelmatig 'vakken' via eliminatie)");
     }
 
-    @Test void cardinaliteit_eliminatie_respecteert_de_andere_kardinaliteit() {
+    @Test void cardinality_elimination_respects_the_other_cardinality() {
         // "pupillen" (doubling) is unmatched; "voogd" names the één-side role by name; so pupil is the
         // remaining role and takes ITS OWN quantifier (meerdere), not voogd's. Elimination assigns the
         // role, the segment's own telwoord assigns the cardinality.
@@ -369,12 +369,12 @@ class ModelTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "moet parseren: " + m.errors());
-        var ft = m.feittypen.get("voogdij");
-        assertFalse(ft.rollen.get(0).meervoudig(), "voogd is enkelvoudig (Eén voogd ...)");
-        assertTrue(ft.rollen.get(1).meervoudig(), "pupil is meervoudig (... meerdere pupillen, via eliminatie)");
+        var ft = m.factTypes.get("voogdij");
+        assertFalse(ft.roles.get(0).many(), "voogd is enkelvoudig (Eén voogd ...)");
+        assertTrue(ft.roles.get(1).many(), "pupil is meervoudig (... meerdere pupillen, via eliminatie)");
     }
 
-    @Test void cardinaliteit_markeert_een_meerwoordige_rolnaam() {
+    @Test void cardinality_marks_a_multi_word_role_name() {
         // The rolnaam is the LEADING phrase of a cardinaliteit segment, so a multi-word role
         // name binds whole — word-by-word matching missed it and left the role wrongly single.
         String src = """
@@ -386,12 +386,12 @@ class ModelTest {
             Eén contingent betreft meerdere passagiers met recht op treinmiles
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        var ft = m.feittypen.get("Contingent en passagiers");
-        assertFalse(ft.rollen.get(0).meervoudig(), "contingent is enkelvoudig");
-        assertTrue(ft.rollen.get(1).meervoudig(), "de meerwoordige rol is meervoudig");
+        var ft = m.factTypes.get("Contingent en passagiers");
+        assertFalse(ft.roles.get(0).many(), "contingent is enkelvoudig");
+        assertTrue(ft.roles.get(1).many(), "de meerwoordige rol is meervoudig");
     }
 
-    @Test void cardinaliteit_markeert_geen_rol_die_alleen_in_de_relatiebeschrijving_staat() {
+    @Test void cardinality_marks_no_role_that_only_stands_in_the_relation_description() {
         // The relatiebeschrijving prose may name the OTHER role ("… boeken de reis voor …").
         // Only the segment HEAD takes the quantifier, so the reis role stays single (no
         // over-marking) — else a valid to-one navigation would wrongly become a marker.
@@ -404,12 +404,12 @@ class ModelTest {
             meerdere passagiers boeken de reis voor Eén reis
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        var ft = m.feittypen.get("Boeking");
-        assertTrue(ft.rollen.get(0).meervoudig(), "passagier is meervoudig (meerdere passagiers ...)");
-        assertFalse(ft.rollen.get(1).meervoudig(), "reis mag niet meervoudig zijn enkel omdat de relatiebeschrijving 'reis' noemt");
+        var ft = m.factTypes.get("Boeking");
+        assertTrue(ft.roles.get(0).many(), "passagier is meervoudig (meerdere passagiers ...)");
+        assertFalse(ft.roles.get(1).many(), "reis mag niet meervoudig zijn enkel omdat de relatiebeschrijving 'reis' noemt");
     }
 
-    @Test void extensie_van_objecttype_merget_leden_in_het_bestaande_type() {
+    @Test void extension_of_object_type_merges_members_into_the_existing_type() {
         // §13.3.1.2 extensievanobjecttype: the extension's attributes/kenmerken land on the ALREADY-declared
         // objecttype (one merged type, not a second type) — the toka-04 shape, until now only parse-covered.
         String src = """
@@ -421,16 +421,16 @@ class ModelTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        assertEquals(1, m.objecttypen.size(), "de extensie mag geen tweede objecttype opleveren");
-        Objecttype np = m.objecttypen.get("Natuurlijk persoon");
-        assertInstanceOf(Datatype.Numeriek.class, np.attributen.get("leeftijd"), "het oorspronkelijke attribuut blijft");
-        assertInstanceOf(Datatype.Tekst.class, np.attributen.get("burgerservicenummer"), "het extensie-attribuut is gemerged");
-        assertTrue(np.kenmerken.contains("student"), "het extensie-kenmerk is gemerged");
+        assertEquals(1, m.objectTypes.size(), "de extensie mag geen tweede objecttype opleveren");
+        ObjectType np = m.objectTypes.get("Natuurlijk persoon");
+        assertInstanceOf(Datatype.Numeric.class, np.attributes.get("leeftijd"), "het oorspronkelijke attribuut blijft");
+        assertInstanceOf(Datatype.Text.class, np.attributes.get("burgerservicenummer"), "het extensie-attribuut is gemerged");
+        assertTrue(np.characteristics.contains("student"), "het extensie-kenmerk is gemerged");
     }
 
-    @Test void omrekenspecificatie_legt_de_factor_naar_canoniek_vast() {
+    @Test void conversion_specification_fixes_the_factor_to_canonical() {
         // §13.3.5 eenheidsysteem + omrekenspecificatie: "de kilometer km = 1000 m" must resolve to an Eenheid
-        // whose factorNaarCanoniek VALUE is 1000 with canonical unit m — until now only convertibility (not the
+        // whose factorToCanonical VALUE is 1000 with canonical unit m — until now only convertibility (not the
         // factor value itself) was asserted.
         String src = """
             Eenheidsysteem Afstand
@@ -439,17 +439,17 @@ class ModelTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        var km = m.resolveEenheid("km");
+        var km = m.resolveUnit("km");
         assertNotNull(km, "km ontbreekt");
-        assertEquals("m", km.canoniek(), "canonieke eenheid");
-        assertEquals(0, new java.math.BigDecimal(1000).compareTo(km.factorNaarCanoniek()),
-                () -> "factorNaarCanoniek: " + km.factorNaarCanoniek());
-        var meter = m.resolveEenheid("m");
-        assertEquals(0, java.math.BigDecimal.ONE.compareTo(meter.factorNaarCanoniek()),
-                () -> "de basiseenheid heeft factor 1: " + meter.factorNaarCanoniek());
+        assertEquals("m", km.canonical(), "canonieke eenheid");
+        assertEquals(0, new java.math.BigDecimal(1000).compareTo(km.factorToCanonical()),
+                () -> "factorNaarCanoniek: " + km.factorToCanonical());
+        var meter = m.resolveUnit("m");
+        assertEquals(0, java.math.BigDecimal.ONE.compareTo(meter.factorToCanonical()),
+                () -> "de basiseenheid heeft factor 1: " + meter.factorToCanonical());
     }
 
-    @Test void koptekst_regel_parseert_zonder_fouten() {
+    @Test void header_line_parses_without_errors() {
         // §13.3.1.1/.5: a koptekst is a '--- heading' line BETWEEN an objecttype's members
         // (((<koptekst> | <kenmerk> | <attribuut>) \n)+). A mis-lex (the '---' read as a bullet DASH or
         // minus) would surface as a syntax error here; the surrounding members must resolve normally.
@@ -465,9 +465,9 @@ class ModelTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "een koptekst tussen leden mag geen fouten geven: " + m.errors());
-        Objecttype np = m.objecttypen.get("Natuurlijk persoon");
-        assertInstanceOf(Datatype.Numeriek.class, np.attributen.get("leeftijd"), "attribuut na een koptekst resolvet");
-        assertTrue(np.kenmerken.contains("student"), "kenmerk na een koptekst resolvet");
-        assertEquals(1, m.resolvedRegels.size(), "de regel is gewoon geresolved");
+        ObjectType np = m.objectTypes.get("Natuurlijk persoon");
+        assertInstanceOf(Datatype.Numeric.class, np.attributes.get("leeftijd"), "attribuut na een koptekst resolvet");
+        assertTrue(np.characteristics.contains("student"), "kenmerk na een koptekst resolvet");
+        assertEquals(1, m.resolvedRules.size(), "de regel is gewoon geresolved");
     }
 }

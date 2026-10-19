@@ -7,7 +7,7 @@ import java.util.List;
  * (justification, consequence) pair aimed at the group's target. On characteristic defaults a justified
  * default decides {@link #decision} (true = attribute, false = do-not-attribute); on attribute defaults a
  * justified default decides {@link #consequence} when it evaluates gevuld, and FALLS THROUGH on a leeg. The
- * {@link #initialisatie} default (lowest only) has a null {@link #condition}: it is justified iff the target
+ * {@link #initialisation} default (lowest only) has a null {@link #condition}: it is justified iff the target
  * is empty in the input facts (ch. 7.3). A default carrying {@link #exceptions} is a nested exception group
  * (ch. 7.9): a group-default (no own besluit/consequentie — its exception groups are its decision) or a form-a
  * default (own content too — the exception groups decide first, its own decision the fall-back when
@@ -24,7 +24,7 @@ import java.util.List;
  *                      can name the deciding block
  */
 public record Default(Boolean decision, Condition condition, Expr consequence,
-                      boolean initialisatie, Exceptions exceptions, String source) {
+                      boolean initialisation, Exceptions exceptions, String source) {
 
     /** A default's nested exception groups: one or more {@link ExceptionGroup} members that reconcile as a
      *  declared-{@link #unordered} group at this default's level (WF-075). */

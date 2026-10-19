@@ -125,8 +125,8 @@ class SisterRoleInputWitnessTest {
     }
 
     /** The golden's own case file, read off disk — no expectation is authored here. */
-    private static String caseFile(String naam) throws Exception {
-        Path p = CORPUS.resolve(KETENBAND).resolve(naam + ".json");
+    private static String caseFile(String name) throws Exception {
+        Path p = CORPUS.resolve(KETENBAND).resolve(name + ".json");
         assertTrue(Files.exists(p), "golden case present: " + p.toAbsolutePath());
         return Files.readString(p);
     }

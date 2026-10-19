@@ -83,10 +83,10 @@ class TmsCycleVerifierWitnessTest {
     }
 
     /** Every {@code ir.json} under {@code squareRoot} whose directory name matches {@code naam}, sorted. */
-    private static List<Path> documents(Path squareRoot, String naam) throws Exception {
+    private static List<Path> documents(Path squareRoot, String name) throws Exception {
         try (Stream<Path> s = Files.walk(squareRoot)) {
             return s.filter(p -> p.getFileName().toString().equals("ir.json"))
-                    .filter(p -> p.getParent().getFileName().toString().matches(naam)).sorted().toList();
+                    .filter(p -> p.getParent().getFileName().toString().matches(name)).sorted().toList();
         }
     }
 }

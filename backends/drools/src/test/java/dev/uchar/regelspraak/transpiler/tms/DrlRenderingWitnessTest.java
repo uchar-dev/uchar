@@ -70,21 +70,21 @@ class DrlRenderingWitnessTest {
                 continue;
             }
             goldens++;
-            String naam = GOLDEN.relativize(g).toString();
+            String name = GOLDEN.relativize(g).toString();
             String text;
             try {
                 text = DrlRendering.text(b.execModelTranspiler().modelplan());
             } catch (DrlRendering.Refusal w) {
-                refused.computeIfAbsent(w.category(), k -> new ArrayList<>()).add(naam);
+                refused.computeIfAbsent(w.category(), k -> new ArrayList<>()).add(name);
                 continue;
             }
-            if (dump != null) Files.writeString(Path.of(dump).resolve(naam.replace('/', '_') + ".drl"), text);
-            for (String v : FORBIDDEN) if (text.contains(v)) forbidden.add(naam + ": " + v);
+            if (dump != null) Files.writeString(Path.of(dump).resolve(name.replace('/', '_') + ".drl"), text);
+            for (String v : FORBIDDEN) if (text.contains(v)) forbidden.add(name + ": " + v);
             long start = System.nanoTime();
             List<String> f = compile(text, b.beanLoader());
             nanos += System.nanoTime() - start;
             if (f.isEmpty()) compiled++;
-            else faults.add(naam + ": " + f.size() + " fouten, de eerste " + f.get(0));
+            else faults.add(name + ": " + f.size() + " fouten, de eerste " + f.get(0));
         }
         StringBuilder overview = new StringBuilder("drlvorm: " + goldens + " goldens, " + compiled
                 + " gecompileerd in " + nanos / 1_000_000 + " ms; geweigerd per soort:");

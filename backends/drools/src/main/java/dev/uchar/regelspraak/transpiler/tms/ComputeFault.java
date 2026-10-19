@@ -46,7 +46,7 @@ public final class ComputeFault extends RuntimeException {
     public static final String UNRESOLVED_CONDITION = Msg.drools("EF-019.condition").text();
 
     private final String sentence;
-    private final String regel;
+    private final String rule;
 
     ComputeFault(String sentence) {
         this(sentence, null, null);
@@ -56,16 +56,16 @@ public final class ComputeFault extends RuntimeException {
         this(sentence, null, cause);
     }
 
-    private ComputeFault(String sentence, String regel, Throwable cause) {
-        super(regel == null ? sentence : Msg.drools("FRAME.fault-in-rule", "rule", regel, "sentence", sentence).text(), cause);
+    private ComputeFault(String sentence, String rule, Throwable cause) {
+        super(rule == null ? sentence : Msg.drools("FRAME.fault-in-rule", "rule", rule, "sentence", sentence).text(), cause);
         this.sentence = sentence;
-        this.regel = regel;
+        this.rule = rule;
     }
 
-    /** The same fault named after the rule {@code regel} it ran in, with this one as its cause, as
+    /** The same fault named after the rule {@code rule} it ran in, with this one as its cause, as
      *  {@link Rational.DelingDoorNul#inDeRegel} names a division. */
-    public ComputeFault inRule(String regel) {
-        return new ComputeFault(sentence, regel, this);
+    public ComputeFault inRule(String rule) {
+        return new ComputeFault(sentence, rule, this);
     }
 
     /** The sentence of the fault, without the rule. */
@@ -74,8 +74,8 @@ public final class ComputeFault extends RuntimeException {
     }
 
     /** The rule a named fault ran in; null where nothing named it yet. */
-    public String regel() {
-        return regel;
+    public String rule() {
+        return rule;
     }
 
     /** The fault kind of this fault (RUNTIME-SEMANTICS ch. 5.7b), read off its sentence: the sentences are this
@@ -121,11 +121,11 @@ public final class ComputeFault extends RuntimeException {
         return t instanceof Breuk.DelingDoorNul || t instanceof ComputeFault || t instanceof InputFormFault;
     }
 
-    /** The evaluation fault {@code fault} named after the rule {@code regel} it ran in. */
-    static RuntimeException designate(RuntimeException fault, String regel) {
-        if (fault instanceof Breuk.DelingDoorNul zero) return zero.inDeRegel(regel, zero);
-        if (fault instanceof ComputeFault r) return r.inRule(regel);
-        if (fault instanceof InputFormFault i) return i.inRule(regel);
+    /** The evaluation fault {@code fault} named after the rule {@code rule} it ran in. */
+    static RuntimeException designate(RuntimeException fault, String rule) {
+        if (fault instanceof Breuk.DelingDoorNul zero) return zero.inDeRegel(rule, zero);
+        if (fault instanceof ComputeFault r) return r.inRule(rule);
+        if (fault instanceof InputFormFault i) return i.inRule(rule);
         throw new IllegalArgumentException("geen evaluatiefout: " + fault, fault);
     }
 }

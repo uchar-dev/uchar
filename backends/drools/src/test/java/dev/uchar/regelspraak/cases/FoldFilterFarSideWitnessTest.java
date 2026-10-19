@@ -44,7 +44,7 @@ class FoldFilterFarSideWitnessTest {
         // Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de
         // Vondst", beside "De sluitdag van een Jutter moet gesteld worden op zijn startdag", in either order. ref and
         // clingo: sluitdag 01-03-2026, eerste late vinddag 10-03-2026.
-        String first = regel("eerste late vinddag", "Jutter", "eerste late vinddag",
+        String first = rule("eerste late vinddag", "Jutter", "eerste late vinddag",
                 fold("first", own("vinddag", "Vondst"), LATER_THAN_SLUITDAG, DATE), null);
         String caseDocument = caseDocument(THREE_VONDSTEN, day("J", "sluitdag", "2026-03-01") + "," + day("J", "eerste late vinddag", "2026-03-10"));
         assertNull(play(document(List.of(SLUITDAG, first)), caseDocument), "de schrijver voor de vouw");
@@ -53,7 +53,7 @@ class FoldFilterFarSideWitnessTest {
 
     @Test void the_last_late_vinddag() throws Exception {
         // "de laatste van de vinddag van alle vondsten van de Jutter die …". ref and clingo: 20-03-2026.
-        String last = regel("laatste late vinddag", "Jutter", "laatste late vinddag",
+        String last = rule("laatste late vinddag", "Jutter", "laatste late vinddag",
                 fold("last", own("vinddag", "Vondst"), LATER_THAN_SLUITDAG, DATE), null);
         assertNull(play(document(List.of(SLUITDAG, last)),
                 caseDocument(THREE_VONDSTEN, day("J", "laatste late vinddag", "2026-03-20"))), "de laatste");
@@ -68,9 +68,9 @@ class FoldFilterFarSideWitnessTest {
     @Test void the_sum_and_the_maximum() throws Exception {
         // "de som van het gewicht van alle vondsten …" and "de maximale waarde van het gewicht van alle vondsten …".
         // ref and clingo: 18 and 11.
-        String sum = regel("late gewicht", "Jutter", "late gewicht",
+        String sum = rule("late gewicht", "Jutter", "late gewicht",
                 fold("sum", own("gewicht", "Vondst"), LATER_THAN_SLUITDAG, WHOLE), null);
-        String max = regel("zwaarste late gewicht", "Jutter", "zwaarste late gewicht",
+        String max = rule("zwaarste late gewicht", "Jutter", "zwaarste late gewicht",
                 fold("maximum", own("gewicht", "Vondst"), LATER_THAN_SLUITDAG, WHOLE), null);
         assertNull(play(document(List.of(SLUITDAG, sum, max)),
                 caseDocument(THREE_VONDSTEN, number("J", "late gewicht", 18) + "," + number("J", "zwaarste late gewicht", 11))),
@@ -82,7 +82,7 @@ class FoldFilterFarSideWitnessTest {
         // element before the sluitdag is written. Declared after it, it updated them after the write, and the form
         // played before the fix as well. ref and clingo: 10-03-2026 in both orders.
         String dated = characteristicRule("gedateerd", "Vondst", predicate("filled", own("vinddag", "Vondst")));
-        String first = regel("eerste late vinddag", "Jutter", "eerste late vinddag",
+        String first = rule("eerste late vinddag", "Jutter", "eerste late vinddag",
                 fold("first", own("vinddag", "Vondst"), LATER_THAN_SLUITDAG, DATE), null);
         String caseDocument = caseDocument(THREE_VONDSTEN, day("J", "eerste late vinddag", "2026-03-10"));
         assertNull(play(document(List.of(dated, SLUITDAG, first)), caseDocument), "de bijwerking voor de schrijver");
@@ -91,7 +91,7 @@ class FoldFilterFarSideWitnessTest {
 
     @Test void its_own_condition_on_the_subject() throws Exception {
         // The same fold "indien zijn sluitdag gevuld is": the rule fires only after the writer. ref and clingo: 10-03-2026.
-        String first = regel("eerste late vinddag", "Jutter", "eerste late vinddag",
+        String first = rule("eerste late vinddag", "Jutter", "eerste late vinddag",
                 fold("first", own("vinddag", "Vondst"), LATER_THAN_SLUITDAG, DATE),
                 predicate("filled", own("sluitdag", "Jutter")));
         assertNull(play(document(List.of(SLUITDAG, first)),
@@ -141,7 +141,7 @@ class FoldFilterFarSideWitnessTest {
         // "… die aan de volgende voorwaarde voldoen: zijn vinddag min 7 dg is later dan de sluitdag van de jutter van de
         // Vondst". Refused by name before the fix. ref and clingo: 10-03-2026.
         String filter = the(comparison("later", dateMinus(own("vinddag", "Vondst"), 7), jutterSluitdag()));
-        String first = regel("eerste late vinddag", "Jutter", "eerste late vinddag",
+        String first = rule("eerste late vinddag", "Jutter", "eerste late vinddag",
                 fold("first", own("vinddag", "Vondst"), filter, DATE), null);
         assertNull(play(document(List.of(first, SLUITDAG)),
                 caseDocument(THREE_VONDSTEN, day("J", "eerste late vinddag", "2026-03-10"))), "de datumrekensom");
@@ -154,7 +154,7 @@ class FoldFilterFarSideWitnessTest {
         String filter = the(comparison("later", own("vinddag", "Vondst"), navigated("sluitdag", "Ploeg",
                 "de sluitdag van de thuisploeg van de jutter van de Vondst", roleBinding("JutterHeeftVondst", "jutter"),
                 roleBinding("PloegHeeftJutter", "thuisploeg"))));
-        String first = regel("eerste late vinddag", "Jutter", "eerste late vinddag",
+        String first = rule("eerste late vinddag", "Jutter", "eerste late vinddag",
                 fold("first", own("vinddag", "Vondst"), filter, DATE), null);
         String expected = day("P", "sluitdag", "2026-03-01") + "," + day("J", "eerste late vinddag", "2026-03-10");
         assertNull(play(document(List.of(first, PLOEG_CLOSING_DAY)), caseDocument(ploegVondsten("thuisploeg"), expected)),
@@ -168,7 +168,7 @@ class FoldFilterFarSideWitnessTest {
     @Test void the_far_member_out_of_a_defaults_group() throws Exception {
         // The sluitdag by a group: "Regel sluitdag" and "Afwijking van sluitdag: opgave gaat voor" (the opgegeven sluitdag
         // where it is filled). ref and clingo: J (opgave 12-03-2026) 20-03-2026, K 10-03-2026.
-        String first = regel("eerste late vinddag", "Jutter", "eerste late vinddag",
+        String first = rule("eerste late vinddag", "Jutter", "eerste late vinddag",
                 fold("first", own("vinddag", "Vondst"), LATER_THAN_SLUITDAG, DATE), null);
         String caseDocument = caseDocument(List.of(jutter("J", "\"startdag\":{\"date\":\"2026-03-01\"},\"opgegeven sluitdag\":{\"date\":\"2026-03-12\"}"),
                         jutter("K", "\"startdag\":{\"date\":\"2026-03-01\"}"), vondst("V1", "2026-02-15", 5, "J"),
@@ -195,7 +195,7 @@ class FoldFilterFarSideWitnessTest {
                         instance("V3", "Vondst", "", "\"jutter\":[\"J\"]")),
                 number("B1", "bergingsaandeel", 20) + "," + number("B3", "bergingsaandeel", 10) + ","
                         + number("J", "aantal late vondsten", 1));
-        assertNull(play(document(List.of(itemCount(filter)), List.of(), List.of(VERDELING), List.of(), List.of()), caseDocument),
+        assertNull(play(document(List.of(itemCount(filter)), List.of(), List.of(ALLOCATION), List.of(), List.of()), caseDocument),
                 "het aandeel uit een verdeling");
     }
 
@@ -218,7 +218,7 @@ class FoldFilterFarSideWitnessTest {
         // "De laatklasse van een Jutter moet berekend worden als 1 indien het aantal vondsten van de Jutter die aan de
         // volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst groter is dan 0".
         // ref and clingo: 1.
-        String laatklasse = regel("laatklasse", "Jutter", "laatklasse", numberLiteral(1),
+        String laatklasse = rule("laatklasse", "Jutter", "laatklasse", numberLiteral(1),
                 comparison("greater", count(LATER_THAN_SLUITDAG), numberLiteral(0)));
         assertNull(play(document(List.of(laatklasse, SLUITDAG)), caseDocument(THREE_VONDSTEN, number("J", "laatklasse", 1))),
                 "de telling in de voorwaarde");
@@ -227,7 +227,7 @@ class FoldFilterFarSideWitnessTest {
     @Test void the_quantifier_in_a_condition() throws Exception {
         // "… indien de vinddag van ten minste één van de vondsten van de Jutter die aan de volgende voorwaarde voldoen:
         // zijn vinddag is later dan de sluitdag van de jutter van de Vondst gevuld is". ref and clingo: 1.
-        String laatklasse = regel("laatklasse", "Jutter", "laatklasse", numberLiteral(1),
+        String laatklasse = rule("laatklasse", "Jutter", "laatklasse", numberLiteral(1),
                 quantifierFold("atLeast", 1, LATER_THAN_SLUITDAG, predicate("filled", own("vinddag", "Vondst"))));
         assertNull(play(document(List.of(laatklasse, SLUITDAG)), caseDocument(THREE_VONDSTEN, number("J", "laatklasse", 1))),
                 "de kwantor in de voorwaarde");
@@ -236,7 +236,7 @@ class FoldFilterFarSideWitnessTest {
     @Test void an_empty_test_in_a_condition_fold() throws Exception {
         // "… 1 indien het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: de sluitdag van de jutter
         // van de Vondst is leeg groter is dan 0": true only on the transient leeg. ref and clingo: leeg.
-        String laatklasse = regel("laatklasse", "Jutter", "laatklasse", numberLiteral(1),
+        String laatklasse = rule("laatklasse", "Jutter", "laatklasse", numberLiteral(1),
                 comparison("greater", count(the(predicate("empty", jutterSluitdag()))), numberLiteral(0)));
         assertNull(play(document(List.of(laatklasse, SLUITDAG)), caseDocument(THREE_VONDSTEN, empty("J", "laatklasse"))),
                 "de leeg-toets in de voorwaardevouw");
@@ -248,8 +248,8 @@ class FoldFilterFarSideWitnessTest {
         // clingo: 1 under ten minste één, leeg under geen.
         String matrix = comparison("later", own("vinddag", "Vondst"), navigated("afgeleide openingsdag", "Haven",
                 "de afgeleide openingsdag van zijn haven", roleBinding("HavenVanVondst", "haven")));
-        String atLeast = regel("laatklasse", "Jutter", "laatklasse", numberLiteral(1), quantifierFold("atLeast", 1, null, matrix));
-        String none = regel("laatklasse", "Jutter", "laatklasse", numberLiteral(1), quantifierFold("none", 0, null, matrix));
+        String atLeast = rule("laatklasse", "Jutter", "laatklasse", numberLiteral(1), quantifierFold("atLeast", 1, null, matrix));
+        String none = rule("laatklasse", "Jutter", "laatklasse", numberLiteral(1), quantifierFold("none", 0, null, matrix));
         assertNull(play(document(List.of(atLeast, DERIVED_OPENINGSDAG)), caseDocument(HAVENS, number("J", "laatklasse", 1))),
                 "de matrix onder ten minste één");
         assertNull(play(document(List.of(none, DERIVED_OPENINGSDAG)), caseDocument(HAVENS, empty("J", "laatklasse"))),
@@ -259,7 +259,7 @@ class FoldFilterFarSideWitnessTest {
     @Test void the_filter_of_a_quantifier_via_another_role() throws Exception {
         // "… indien de vinddag van ten minste één van de vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn
         // vinddag is later dan de afgeleide openingsdag van de haven van de Vondst gevuld is". ref and clingo: 1.
-        String laatklasse = regel("laatklasse", "Jutter", "laatklasse", numberLiteral(1), quantifierFold("atLeast", 1,
+        String laatklasse = rule("laatklasse", "Jutter", "laatklasse", numberLiteral(1), quantifierFold("atLeast", 1,
                 the(comparison("later", own("vinddag", "Vondst"), havenOpeningsdag())),
                 predicate("filled", own("vinddag", "Vondst"))));
         assertNull(play(document(List.of(laatklasse, DERIVED_OPENINGSDAG)), caseDocument(HAVENS, number("J", "laatklasse", 1))),
@@ -272,17 +272,17 @@ class FoldFilterFarSideWitnessTest {
         // The sluitdag in the case input; a literal bound "later dan 01-03-2026"; a characteristic on the element ("Een
         // Vondst is laat indien zijn vinddag later is dan de sluitdag van de jutter van de Vondst", the filter "hij is
         // laat"). ref and clingo: 10-03-2026 in all three.
-        String first = regel("eerste late vinddag", "Jutter", "eerste late vinddag",
+        String first = rule("eerste late vinddag", "Jutter", "eerste late vinddag",
                 fold("first", own("vinddag", "Vondst"), LATER_THAN_SLUITDAG, DATE), null);
         assertNull(play(document(List.of(first)), caseDocument(List.of(jutter("J", "\"sluitdag\":{\"date\":\"2026-03-01\"}"),
                 vondst("V1", "2026-02-15", 5, "J"), vondst("V2", "2026-03-10", 7, "J"), vondst("V3", "2026-03-20", 11, "J")),
                 day("J", "eerste late vinddag", "2026-03-10"))), "de sluitdag in de invoer");
-        String literal = regel("eerste late vinddag", "Jutter", "eerste late vinddag", fold("first", own("vinddag", "Vondst"),
+        String literal = rule("eerste late vinddag", "Jutter", "eerste late vinddag", fold("first", own("vinddag", "Vondst"),
                 the(comparison("later", own("vinddag", "Vondst"), dateLiteral("2026-03-01"))), DATE), null);
         assertNull(play(document(List.of(SLUITDAG, literal)), caseDocument(THREE_VONDSTEN, day("J", "eerste late vinddag", "2026-03-10"))),
                 "een letterlijke grens");
         String late = characteristicRule("laat", "Vondst", comparison("later", own("vinddag", "Vondst"), jutterSluitdag()));
-        String bridge = regel("eerste late vinddag", "Jutter", "eerste late vinddag",
+        String bridge = rule("eerste late vinddag", "Jutter", "eerste late vinddag",
                 fold("first", own("vinddag", "Vondst"), the(characteristicCheck("laat", false, null)), DATE), null);
         assertNull(play(document(List.of(SLUITDAG, late, bridge)), caseDocument(THREE_VONDSTEN, day("J", "eerste late vinddag", "2026-03-10"))),
                 "een kenmerk op het element");
@@ -301,7 +301,7 @@ class FoldFilterFarSideWitnessTest {
                 + "],\"source\":{\"snippet\":\"vondsten die gedateerd zijn en vondsten wier jutter actief is\"}}],\"type\":" + COUNT_NUMBER
                 + ",\"source\":{\"snippet\":\"het aantal vondsten die gedateerd zijn en vondsten wier jutter actief is\"}}";
         String actief = characteristicRule("actief", "Jutter", predicate("filled", own("sluitdag", "Jutter")));
-        String ir = document(List.of(regel("aantal late vondsten", "Jutter", "aantal late vondsten", union, null), actief, SLUITDAG));
+        String ir = document(List.of(rule("aantal late vondsten", "Jutter", "aantal late vondsten", union, null), actief, SLUITDAG));
         assertNull(playTms(ir, caseDocument(THREE_VONDSTEN, number("J", "aantal late vondsten", 3))), "ref agrees: 3");
     }
 
@@ -310,9 +310,9 @@ class FoldFilterFarSideWitnessTest {
         // later write on the far object is not seen (before: verwacht 2, werkelijk 0; verwacht 1, werkelijk leeg), and
         // refused them by name ("via een rol van het element") until card drl-teksttak-op-truth-maintenance; since then
         // the text renders the analysis, which binds the far object's standing, and plays all three forms.
-        String laatklasse = regel("laatklasse", "Jutter", "laatklasse", numberLiteral(1),
+        String laatklasse = rule("laatklasse", "Jutter", "laatklasse", numberLiteral(1),
                 comparison("greater", count(LATER_THAN_SLUITDAG), numberLiteral(0)));
-        String matrix = regel("laatklasse", "Jutter", "laatklasse", numberLiteral(1), quantifierFold("atLeast", 1, null,
+        String matrix = rule("laatklasse", "Jutter", "laatklasse", numberLiteral(1), quantifierFold("atLeast", 1, null,
                 comparison("later", own("vinddag", "Vondst"), navigated("afgeleide openingsdag", "Haven",
                         "de afgeleide openingsdag van zijn haven", roleBinding("HavenVanVondst", "haven")))));
         List<String[]> forms = List.of(
@@ -334,8 +334,8 @@ class FoldFilterFarSideWitnessTest {
     private static final String DAG = "{\"node\":\"Unit\",\"abbreviation\":\"dg\",\"system\":\"Tijd\",\"canonical\":\"dg\","
             + "\"factorToCanonical\":{\"num\":1,\"den\":1}}";
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
     private static String attributes(String datatype, String... names) {
@@ -344,20 +344,20 @@ class FoldFilterFarSideWitnessTest {
         return String.join(",", a);
     }
 
-    private static String objectType(String naam, String plural, boolean animate, String kenmerken, String attributes) {
-        return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
-                + "\",\"attributes\":[" + attributes + "],\"characteristics\":[" + kenmerken + "]}";
+    private static String objectType(String name, String plural, boolean animate, String characteristics, String attributes) {
+        return "{\"node\":\"ObjectType\",\"name\":\"" + name + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
+                + "\",\"attributes\":[" + attributes + "],\"characteristics\":[" + characteristics + "]}";
     }
 
-    private static String kenmerken(String... names) {
+    private static String characteristics(String... names) {
         List<String> k = new ArrayList<>();
         for (String n : names) k.add("{\"node\":\"Characteristic\",\"name\":\"" + n + "\",\"kind\":\"adjectival\"}");
         return String.join(",", k);
     }
 
     /** A fact type between one {@code oneType} and one ({@code manyPlural} null) or many {@code manyType}. */
-    private static String factType(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
-        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
+    private static String factType(String name, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + oneRole + "\",\"objectType\":\"" + oneType + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + manyRole + "\",\"objectType\":\"" + manyType + "\""
                 + (manyPlural == null ? ",\"many\":false}" : ",\"plural\":\"" + manyPlural + "\",\"many\":true}") + "]}";
@@ -367,10 +367,10 @@ class FoldFilterFarSideWitnessTest {
      *  wervende ploeg; a Vondst one haven, one melding and one vondstberger; a Berging many bergers. */
     private static final String MODEL = "{\"objectTypes\":["
             + objectType("Ploeg", "Ploegen", false, "", attributes(DATE, "startdag", "sluitdag")) + ","
-            + objectType("Jutter", "Jutters", true, kenmerken("actief"),
+            + objectType("Jutter", "Jutters", true, characteristics("actief"),
                     attributes(DATE, "startdag", "opgegeven sluitdag", "sluitdag", "eerste late vinddag", "laatste late vinddag")
                     + "," + attributes(WHOLE, "aantal late vondsten", "late gewicht", "zwaarste late gewicht", "laatklasse")) + ","
-            + objectType("Vondst", "Vondsten", false, kenmerken("gedateerd", "laat"),
+            + objectType("Vondst", "Vondsten", false, characteristics("gedateerd", "laat"),
                     attribute("vinddag", DATE) + "," + attribute("gewicht", WHOLE)) + ","
             + objectType("Haven", "Havens", false, "", attributes(DATE, "openingsdag", "afgeleide openingsdag")) + ","
             + objectType("Melding", "Meldingen", false, "", attribute("meldingsdag", DATE)) + ","
@@ -477,7 +477,7 @@ class FoldFilterFarSideWitnessTest {
 
     /** "Het aantal late vondsten van een Jutter moet berekend worden als het aantal vondsten van de Jutter die &lt;filter&gt;." */
     private static String itemCount(String filter) {
-        return regel("aantal late vondsten", "Jutter", "aantal late vondsten", count(filter), null);
+        return rule("aantal late vondsten", "Jutter", "aantal late vondsten", count(filter), null);
     }
 
     /** A quantifier fold over the vondsten of the Jutter; {@code filter} null for none, {@code threshold} 0 under geen. */
@@ -495,8 +495,8 @@ class FoldFilterFarSideWitnessTest {
     }
 
     /** One rule with one version; {@code condition} null for none. */
-    private static String regel(String naam, String type, String target, String value, String condition) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+    private static String rule(String name, String type, String target, String value, String condition) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
                 + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type + "\","
                 + "\"source\":{\"snippet\":\"De " + target + "\"}},\"value\":" + value
                 + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false,\"presentation\":\"equation\"}]}";
@@ -512,13 +512,13 @@ class FoldFilterFarSideWitnessTest {
     }
 
     /** "De sluitdag van een Jutter moet gesteld worden op zijn startdag." */
-    private static final String SLUITDAG = regel("sluitdag", "Jutter", "sluitdag", own("startdag", "Jutter"), null);
+    private static final String SLUITDAG = rule("sluitdag", "Jutter", "sluitdag", own("startdag", "Jutter"), null);
 
     /** "De sluitdag van een Ploeg moet gesteld worden op zijn startdag." */
-    private static final String PLOEG_CLOSING_DAY = regel("sluitdag van de ploeg", "Ploeg", "sluitdag", own("startdag", "Ploeg"), null);
+    private static final String PLOEG_CLOSING_DAY = rule("sluitdag van de ploeg", "Ploeg", "sluitdag", own("startdag", "Ploeg"), null);
 
     /** "De afgeleide openingsdag van een Haven moet gesteld worden op zijn openingsdag." */
-    private static final String DERIVED_OPENINGSDAG = regel("afgeleide openingsdag", "Haven", "afgeleide openingsdag",
+    private static final String DERIVED_OPENINGSDAG = rule("afgeleide openingsdag", "Haven", "afgeleide openingsdag",
             own("openingsdag", "Haven"), null);
 
     /** "Regel sluitdag" with "Afwijking van sluitdag: opgave gaat voor": the opgegeven sluitdag where it is filled. */
@@ -530,7 +530,7 @@ class FoldFilterFarSideWitnessTest {
 
     /** "De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, in gelijke
      *  delen, afgerond op 0 decimalen naar beneden; als onverdeelde rest blijft de onverdeelde rest van de berging over." */
-    private static final String VERDELING = "{\"node\":\"Allocation\",\"name\":\"verdeel de opbrengst van een berging\",\"versions\":["
+    private static final String ALLOCATION = "{\"node\":\"Allocation\",\"name\":\"verdeel de opbrengst van een berging\",\"versions\":["
             + "{\"sourceType\":\"Berging\",\"sourceAttribute\":\"opbrengst\",\"targetType\":\"Berger\",\"targetAttribute\":"
             + "\"bergingsaandeel\",\"method\":\"equalShares\",\"roundingDecimals\":0,\"remainderAttribute\":\"onverdeelde rest\","
             + "\"descending\":false,\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding("bergingsdeelname", "berger") + "}]}";

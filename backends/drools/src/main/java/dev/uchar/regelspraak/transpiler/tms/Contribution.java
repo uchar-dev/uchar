@@ -5,7 +5,7 @@ import java.util.Objects;
 
 /**
  * One member's contribution to one aggregation of the exec-model branch, inserted logically: {@code element} is
- * a member of the range of the fold {@code fold}, reached from the fold's subject {@code onderwerp} and passing the
+ * a member of the range of the fold {@code fold}, reached from the fold's subject {@code subject} and passing the
  * fold's filter, and {@code value} the value it contributes, or null for a count, where the member itself is what
  * counts. A rule per range of a fold inserts it, with the member's value and every read of the filter bound in its
  * left-hand side; the fold is an accumulate over these facts in the left-hand side of the rule that reads it. A member
@@ -16,22 +16,22 @@ import java.util.Objects;
  * selected by two selections of an instance-set union (ch. 3.4d), therefore merges into one fact with a justification
  * per route, and contributes once.
  */
-public record Contribution(String fold, Object onderwerp, Object element, Object value) {
+public record Contribution(String fold, Object subject, Object element, Object value) {
 
     public Contribution {
         Objects.requireNonNull(fold, "vouw");
-        Objects.requireNonNull(onderwerp, "onderwerp");
+        Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(element, "element");
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof Contribution b && b.onderwerp == onderwerp && b.element == element && b.fold.equals(fold)
+        return o instanceof Contribution b && b.subject == subject && b.element == element && b.fold.equals(fold)
                 && equal(b.value, value);
     }
 
     @Override public int hashCode() {
         Object w = value instanceof BigDecimal d ? d.stripTrailingZeros() : value;
-        return Objects.hash(fold, System.identityHashCode(onderwerp), System.identityHashCode(element), w);
+        return Objects.hash(fold, System.identityHashCode(subject), System.identityHashCode(element), w);
     }
 
     private static boolean equal(Object a, Object b) {
@@ -40,7 +40,7 @@ public record Contribution(String fold, Object onderwerp, Object element, Object
     }
 
     @Override public String toString() {
-        return "Bijdrage(" + fold + ", " + FactNames.object(onderwerp) + ", " + FactNames.object(element)
+        return "Bijdrage(" + fold + ", " + FactNames.object(subject) + ", " + FactNames.object(element)
                 + (value == null ? "" : ", " + value) + ")";
     }
 }

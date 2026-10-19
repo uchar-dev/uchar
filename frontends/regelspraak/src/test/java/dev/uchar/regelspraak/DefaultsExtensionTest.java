@@ -182,11 +182,11 @@ class DefaultsExtensionTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        // one defaults group, the base rule lifted OUT of resolvedRegels (WF-050 single-writer)
+        // one defaults group, the base rule lifted OUT of resolvedRules (WF-050 single-writer)
         assertEquals(1, m.prioritizedDefaults.size(), "verwachtte precies één defaults-groep");
-        assertEquals(0, m.resolvedRegels.size(), "basis + uitzondering horen uit resolvedRegels te zijn gelicht");
+        assertEquals(0, m.resolvedRules.size(), "basis + uitzondering horen uit resolvedRegels te zijn gelicht");
         var l = m.prioritizedDefaults.get(0);
-        assertEquals("Jutter", l.onderwerp());
+        assertEquals("Jutter", l.subject());
         assertEquals("bergingsbevoegd", l.characteristic());
         assertNull(l.attribute());
         assertFalse(l.unordered());
@@ -219,7 +219,7 @@ class DefaultsExtensionTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertEquals(2, m.prioritizedDefaults.size(), "verwachtte twee zuster-defaults-groepen");
-        assertEquals(0, m.resolvedRegels.size(), "alle groepsleden horen uit resolvedRegels te zijn gelicht");
+        assertEquals(0, m.resolvedRules.size(), "alle groepsleden horen uit resolvedRegels te zijn gelicht");
         for (var l : m.prioritizedDefaults) {
             assertEquals("wachtgeld", l.attribute(), "elke zuster-defaults-groep schrijft het gedeelde attribuut");
             assertNull(l.characteristic());

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 
@@ -70,7 +70,7 @@ class RepeatedTypePairWitnessTest {
 
     @Test void the_by_pair_derivation_stays_ambiguous_and_does_not_guess() throws Exception {
         RegelSpraakModel m = model(ir(DUBBELVERBINDING));
-        Objecttype haven = m.objectTypeByName("Haven"), schuit = m.objectTypeByName("Schuit");
+        ObjectType haven = m.objectTypeByName("Haven"), schuit = m.objectTypeByName("Schuit");
         // The authority every bindingless consumer shares stays exactly as it was. Teaching it to pick a
         // winner would turn an honest ambiguity into a silent wrong join across the whole back-end —
         // RUNTIME-SEMANTICS ch. 5.5 forbids it and ref refuses the same derivation (connecting_pair).
@@ -85,7 +85,7 @@ class RepeatedTypePairWitnessTest {
 
     @Test void the_bean_model_carries_a_field_per_to_one_role() throws Exception {
         RegelSpraakModel m = model(ir(DUBBELVERBINDING));
-        Objecttype haven = m.objectTypeByName("Haven"), schuit = m.objectTypeByName("Schuit");
+        ObjectType haven = m.objectTypeByName("Haven"), schuit = m.objectTypeByName("Schuit");
         // FOUR Haven references on Schuit — one per to-one Haven role — each typed, each named after its role.
         for (String role : List.of("thuishaven", "winterhaven", "keurhaven", "vlaghaven"))
             assertTrue(FactModelGenerator.hasReferenceField(m, schuit, role, haven), role);
@@ -442,9 +442,9 @@ class RepeatedTypePairWitnessTest {
         IrPath.rules(ir).set("rules", out);
     }
 
-    private static void keepCreations(ObjectNode ir, String naam) {
+    private static void keepCreations(ObjectNode ir, String name) {
         ArrayNode out = JSON.createArrayNode();
-        out.add(IrPath.form(ir, "factCreations", naam));
+        out.add(IrPath.form(ir, "factCreations", name));
         IrPath.rules(ir).set("factCreations", out);
     }
 
@@ -561,8 +561,8 @@ class RepeatedTypePairWitnessTest {
                 """.formatted("onveilig".equals(characteristic) ? "" : "\"veilig\"", wintertal, lieRow);
     }
 
-    private static Path temporary(String naam, ObjectNode ir) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, ObjectNode ir) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         return tmp;

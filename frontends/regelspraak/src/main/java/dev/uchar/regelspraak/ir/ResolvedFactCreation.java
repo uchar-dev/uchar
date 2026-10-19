@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.ir;
 
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 /**
  * A resolved §13.4.7 feitcreatie: "Een &lt;roleB&gt; van een &lt;anker&gt; is een &lt;roleC&gt; van
@@ -34,7 +34,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
  * @param targetRole       the created fact type's role filled by {@code target}, symbolic
  * @param path       the RolBinding of the FINAL hop onto {@code target} (the existing relation), symbolic
  */
-public record ResolvedFactCreation(String naam, Objecttype anchor, Objecttype target,
+public record ResolvedFactCreation(String name, ObjectType anchor, ObjectType target,
                                   String setField, String joinField,
                                   java.util.List<PathStep> pathSteps,
                                   Condition condition, Validity validity,
@@ -43,9 +43,9 @@ public record ResolvedFactCreation(String naam, Objecttype anchor, Objecttype ta
 
     /** The v0 bean-field-only form, without the symbolic creation fields (they stay absent unless the
      *  whole symbolic form — created relation, both ends, join, and every tussenstap — is derivable). */
-    public ResolvedFactCreation(String naam, Objecttype anchor, Objecttype target, String setField, String joinField,
+    public ResolvedFactCreation(String name, ObjectType anchor, ObjectType target, String setField, String joinField,
                                java.util.List<PathStep> pathSteps, Condition condition, Validity validity) {
-        this(naam, anchor, target, setField, joinField, pathSteps, condition, validity, null, null, null, null);
+        this(name, anchor, target, setField, joinField, pathSteps, condition, validity, null, null, null, null);
     }
 
     /** One intermediate object on the §9.4 multi-hop navigation path from {@code anchor} to {@code target}.
@@ -54,9 +54,9 @@ public record ResolvedFactCreation(String naam, Objecttype anchor, Objecttype ta
      *  objectcreatie set it on), joined {@code type( this == $prev.field )} — {@code viaParentField} selects
      *  which. {@code $prev} is the anker for the first step, the prior step otherwise. {@code roleBinding}
      *  is this hop's symbolic RolBinding (null unless the whole feitcreatie symbolic form is derivable). */
-    public record PathStep(Objecttype type, String field, boolean viaParentField,
+    public record PathStep(ObjectType type, String field, boolean viaParentField,
                              RegelSpraakModel.RoleBindingRef roleBinding) {
-        public PathStep(Objecttype type, String field, boolean viaParentField) {
+        public PathStep(ObjectType type, String field, boolean viaParentField) {
             this(type, field, viaParentField, null);
         }
     }

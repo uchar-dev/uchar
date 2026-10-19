@@ -31,8 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class TmsSubtypeWitnessTest {
 
     @Test void writer_on_the_supertype_reader_on_the_subtype() throws Exception {
-        List<String> rules = List.of(regel("vergund indien erkend", "Jutter", "vergund", check("erkend", false)),
-                regel("strandbevoegd indien niet vergund", "Strandjutter", "strandbevoegd", check("vergund", true)));
+        List<String> rules = List.of(rule("vergund indien erkend", "Jutter", "vergund", check("erkend", false)),
+                rule("strandbevoegd indien niet vergund", "Strandjutter", "strandbevoegd", check("vergund", true)));
         JsonNode caseDocument = TmsDocuments.caseDocument(
                 List.of(instance("S1", "Strandjutter", "erkend"), instance("S2", "Strandjutter", null),
                         instance("J1", "Jutter", "erkend")),
@@ -43,8 +43,8 @@ class TmsSubtypeWitnessTest {
     }
 
     @Test void writer_on_the_subtype_reader_on_the_supertype() throws Exception {
-        List<String> rules = List.of(regel("vergund indien erkend", "Strandjutter", "vergund", check("erkend", false)),
-                regel("onvergund indien niet vergund", "Jutter", "onvergund", check("vergund", true)));
+        List<String> rules = List.of(rule("vergund indien erkend", "Strandjutter", "vergund", check("erkend", false)),
+                rule("onvergund indien niet vergund", "Jutter", "onvergund", check("vergund", true)));
         JsonNode caseDocument = TmsDocuments.caseDocument(
                 List.of(instance("J1", "Jutter", "erkend"), instance("S1", "Strandjutter", "erkend"),
                         instance("S2", "Strandjutter", null)),
@@ -71,14 +71,14 @@ class TmsSubtypeWitnessTest {
             + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
             + "\"dayKinds\":[]}";
 
-    private static String characteristic(String naam) {
-        return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"adjectival\"}";
+    private static String characteristic(String name) {
+        return "{\"node\":\"Characteristic\",\"name\":\"" + name + "\",\"kind\":\"adjectival\"}";
     }
 
-    private static String regel(String naam, String type, String targetName, String condition) {
+    private static String rule(String name, String type, String targetName, String condition) {
         String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + targetName + "\",\"subjectType\":\"" + type + "\","
                 + "\"source\":{\"snippet\":\"Een " + type + " is " + targetName + "\"}}";
-        return IrPath.regel(naam, "KENMERKTOEKENNING", target, IrPath.literal("waar", "{\"node\":\"Boolean\"}", "waar"),
+        return IrPath.rule(name, "KENMERKTOEKENNING", target, IrPath.literal("waar", "{\"node\":\"Boolean\"}", "waar"),
                 condition);
     }
 

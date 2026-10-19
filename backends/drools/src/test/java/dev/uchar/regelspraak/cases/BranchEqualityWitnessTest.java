@@ -213,15 +213,15 @@ class BranchEqualityWitnessTest {
                 .put("decimals", 0).put("sign", "unspecified");
     }
 
-    private static Path temporary(String naam, String inhoud) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, String inhoud) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, inhoud);
         return tmp;
     }
 
-    private static Path model(String naam, ObjectNode ir) throws Exception {
-        return temporary(naam, ir.toString());
+    private static Path model(String name, ObjectNode ir) throws Exception {
+        return temporary(name, ir.toString());
     }
 
     private static Path caseOf(String caseJson) throws Exception {

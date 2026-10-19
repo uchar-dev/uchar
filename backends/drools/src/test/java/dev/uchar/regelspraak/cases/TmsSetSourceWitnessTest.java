@@ -60,8 +60,8 @@ class TmsSetSourceWitnessTest {
               "value": { "text": "aa" } } ] }
         """;
 
-    private static ObjectNode golden(String naam) throws Exception {
-        return (ObjectNode) TmsDocuments.JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve("ir.json")));
+    private static ObjectNode golden(String name) throws Exception {
+        return (ObjectNode) TmsDocuments.JSON.readTree(Files.readString(CORPUS.resolve(name).resolve("ir.json")));
     }
 
     /** The bereik golden with the fold kind of both rules replaced by {@code kind}. */
@@ -92,8 +92,8 @@ class TmsSetSourceWitnessTest {
     /** The two refusals of a document whose both rules fold {@code kind} over members of type {@code type}. */
     private static List<String> refusals(String kind, String type, boolean summing) {
         List<String> out = new ArrayList<>();
-        for (String regel : List.of("vroegste vondstdag van een jutter", "jongste vondstdag van een jutter"))
-            out.add("transpiler SKIP: regel: " + regel + " — vouw " + kind + " over de setbron 'vondstdatum' van"
+        for (String rule : List.of("vroegste vondstdag van een jutter", "jongste vondstdag van een jutter"))
+            out.add("transpiler SKIP: regel: " + rule + " — vouw " + kind + " over de setbron 'vondstdatum' van"
                     + " Vondst: die leden zijn van type " + type + (summing
                     ? " en niet getalachtig; optellen is rekenkunde over getallen (WF-091), en de referentie-interpreter"
                       + " faalt op de optelling zelf: geen enkele uitvoerder draagt deze vorm"

@@ -26,12 +26,12 @@ import java.util.Objects;
  * @param inconsistenties the §9.5 deposits, the beans of the generated class {@code Inconsistency}, each with its rule
  *                        and its subject
  */
-public record Fixpoint(List<DerivedValue> waarden, List<DerivedCharacteristic> kenmerken, List<MadeObject> objects,
+public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> characteristics, List<MadeObject> objects,
                       List<MadeLink> links, List<Fault> faults, List<Object> inconsistencies) {
 
     public Fixpoint {
-        waarden = List.copyOf(waarden);
-        kenmerken = List.copyOf(kenmerken);
+        values = List.copyOf(values);
+        characteristics = List.copyOf(characteristics);
         objects = List.copyOf(objects);
         links = List.copyOf(links);
         faults = List.copyOf(faults);
@@ -59,13 +59,13 @@ public record Fixpoint(List<DerivedValue> waarden, List<DerivedCharacteristic> k
         }
     }
 
-    /** {@code object}, which the object creation named {@code creation} made for {@code onderwerp}. Its attribute
-     *  initialisations are on its bean already; what it derives besides is in {@link #waarden} and {@link #kenmerken}. */
-    public record MadeObject(Object object, String creation, Object onderwerp) {
+    /** {@code object}, which the object creation named {@code creation} made for {@code subject}. Its attribute
+     *  initialisations are on its bean already; what it derives besides is in {@link #values} and {@link #characteristics}. */
+    public record MadeObject(Object object, String creation, Object subject) {
         public MadeObject {
             Objects.requireNonNull(object, "object");
             Objects.requireNonNull(creation, "creatie");
-            Objects.requireNonNull(onderwerp, "onderwerp");
+            Objects.requireNonNull(subject, "subject");
         }
     }
 

@@ -126,9 +126,9 @@ class CreationPlanWitnessTest {
         assertEquals(List.of(
                 "regel penning voor een gerechtigde jutter | vorm penning voor een gerechtigde jutter |"
                         + " groep uchar-objectcreatie",
-                "  lezingen [0 INVOER $penninggerechtigd (eigen ElementKey[objectType=jutter,"
-                        + " naam=penninggerechtigd, characteristic=true]), 1 INVOER $vondstwaarde (eigen"
-                        + " ElementKey[objectType=jutter, naam=vondstwaarde, characteristic=false]), 2 CREATION_PHASE"
+                "  lezingen [0 INPUT $penninggerechtigd (eigen ElementKey[objectType=jutter,"
+                        + " name=penninggerechtigd, characteristic=true]), 1 INPUT $vondstwaarde (eigen"
+                        + " ElementKey[objectType=jutter, name=vondstwaarde, characteristic=false]), 2 CREATION_PHASE"
                         + " $fase (creatiefase), 3 ORIGIN $herkomsten_creatie_42 (herkomst)]",
                 "  onderwerp Jutter $onderwerp alfa [] join [] beta [] bind [$penninggerechtigd = []"
                         + " Jutter.penninggerechtigd WAAR, $vondstwaarde = [] Jutter.vondstwaarde VALUE]",
@@ -137,8 +137,8 @@ class CreationPlanWitnessTest {
                 "  accumulatie CreationStamp $herkomst_creatie_41 alfa [] join [herkomst_43: object ="
                         + " $onderwerp] beta [] na [] bind [] functies [LIST null -> $herkomsten_creatie_42]",
                 "  niet binnen [$gemaakt_creatie_44] buiten [$onderwerp] [CreationStamp $gemaakt_creatie_44"
-                        + " alfa [gemaakt_46: [[] regel VALUE GELIJK penning voor een gerechtigde jutter]] join"
-                        + " [gemaakt-onderwerp_47: onderwerp = $onderwerp] beta [] na [] bind []]",
+                        + " alfa [gemaakt_46: [[] rule VALUE GELIJK penning voor een gerechtigde jutter]] join"
+                        + " [gemaakt-onderwerp_47: subject = $onderwerp] beta [] na [] bind []]",
                 "  niet binnen [$nieuw_creatie_45] buiten [$onderwerp, $fase] [CreationStamp $nieuw_creatie_45"
                         + " alfa [] join [nieuw-object_48: object = $onderwerp] beta [nieuw-in-deze-fase_49:"
                         + " IN_PHASE $fase] na [] bind []]",
@@ -148,26 +148,26 @@ class CreationPlanWitnessTest {
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
                 "  niet binnen [$eigen_fout] buiten [$onderwerp] [Fault $eigen_fout alfa [eigen-fout_51:"
-                        + " [[] regel VALUE GELIJK penning voor een gerechtigde jutter]] join"
-                        + " [eigen-fout-onderwerp_52: onderwerp = $onderwerp] beta [] na [] bind []]",
-                "  gevolg Creatie [onderwerp=$onderwerp, creation=penning voor een gerechtigde jutter,"
+                        + " [[] rule VALUE GELIJK penning voor een gerechtigde jutter]] join"
+                        + " [eigen-fout-onderwerp_52: subject = $onderwerp] beta [] na [] bind []]",
+                "  gevolg Creatie [subject=$onderwerp, creation=penning voor een gerechtigde jutter,"
                         + " diepte=CreationDepth[origin=3, stratum=0, type=Jutter, budget=100],"
-                        + " fault=FaultName[form=penning voor een gerechtigde jutter, regel=penning voor een"
+                        + " fault=FaultName[form=penning voor een gerechtigde jutter, rule=penning voor een"
                         + " gerechtigde jutter], foutinvoeging=STATED, phase=2, slots=[1, 2, 3], grootte=4]",
                 "    constructie Penning zettingen [0 Penning.bedrag]",
-                "    initialisatie 0 ElementKey[objectType=penning, naam=bedrag, characteristic=false]:"
+                "    initialisatie 0 ElementKey[objectType=penning, name=bedrag, characteristic=false]:"
                         + " Lees 1",
                 "      value 0 SlotValue bron 'de vondstwaarde van de Jutter'",
-                "    initialisatie 1 ElementKey[objectType=penning, naam=uitgereikt, characteristic=true]:"
+                "    initialisatie 1 ElementKey[objectType=penning, name=uitgereikt, characteristic=true]:"
                         + " Const true",
                 "      value 0 Const Boolean type BooleanType[] bron 'waar'",
                 "    invoegingen [New[insertion=STATED], Mark[insertion=STATED],"
                         + " Link[relation=penningbezit, newIsFirst=false, insertion=STATED],"
-                        + " Characteristic[initialisatie=1, insertion=STATED]]",
+                        + " Characteristic[initialisation=1, insertion=STATED]]",
                 "regel dossier voor een gerechtigde jutter | vorm dossier voor een gerechtigde jutter |"
                         + " groep uchar-objectcreatie",
-                "  lezingen [0 INVOER $penninggerechtigd (eigen ElementKey[objectType=jutter,"
-                        + " naam=penninggerechtigd, characteristic=true]), 1 CREATION_PHASE $fase (creatiefase), 2 ORIGIN"
+                "  lezingen [0 INPUT $penninggerechtigd (eigen ElementKey[objectType=jutter,"
+                        + " name=penninggerechtigd, characteristic=true]), 1 CREATION_PHASE $fase (creatiefase), 2 ORIGIN"
                         + " $herkomsten_creatie_55 (herkomst)]",
                 "  onderwerp Jutter $onderwerp alfa [geen-gekoppelde-instantie_66: [[] dossier VALUE LEEG]] join"
                         + " [] beta [] bind [$penninggerechtigd = [] Jutter.penninggerechtigd WAAR]",
@@ -176,8 +176,8 @@ class CreationPlanWitnessTest {
                 "  accumulatie CreationStamp $herkomst_creatie_54 alfa [] join [herkomst_56: object ="
                         + " $onderwerp] beta [] na [] bind [] functies [LIST null -> $herkomsten_creatie_55]",
                 "  niet binnen [$gemaakt_creatie_57] buiten [$onderwerp] [CreationStamp $gemaakt_creatie_57"
-                        + " alfa [gemaakt_59: [[] regel VALUE GELIJK dossier voor een gerechtigde jutter]] join"
-                        + " [gemaakt-onderwerp_60: onderwerp = $onderwerp] beta [] na [] bind []]",
+                        + " alfa [gemaakt_59: [[] rule VALUE GELIJK dossier voor een gerechtigde jutter]] join"
+                        + " [gemaakt-onderwerp_60: subject = $onderwerp] beta [] na [] bind []]",
                 "  niet binnen [$nieuw_creatie_58] buiten [$onderwerp, $fase] [CreationStamp $nieuw_creatie_58"
                         + " alfa [] join [nieuw-object_61: object = $onderwerp] beta [nieuw-in-deze-fase_62:"
                         + " IN_PHASE $fase] na [] bind []]",
@@ -187,11 +187,11 @@ class CreationPlanWitnessTest {
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
                 "  niet binnen [$eigen_fout] buiten [$onderwerp] [Fault $eigen_fout alfa [eigen-fout_64:"
-                        + " [[] regel VALUE GELIJK dossier voor een gerechtigde jutter]] join"
-                        + " [eigen-fout-onderwerp_65: onderwerp = $onderwerp] beta [] na [] bind []]",
-                "  gevolg Creatie [onderwerp=$onderwerp, creation=dossier voor een gerechtigde jutter,"
+                        + " [[] rule VALUE GELIJK dossier voor een gerechtigde jutter]] join"
+                        + " [eigen-fout-onderwerp_65: subject = $onderwerp] beta [] na [] bind []]",
+                "  gevolg Creatie [subject=$onderwerp, creation=dossier voor een gerechtigde jutter,"
                         + " diepte=CreationDepth[origin=2, stratum=0, type=Jutter, budget=100],"
-                        + " fault=FaultName[form=dossier voor een gerechtigde jutter, regel=dossier voor een"
+                        + " fault=FaultName[form=dossier voor een gerechtigde jutter, rule=dossier voor een"
                         + " gerechtigde jutter], foutinvoeging=STATED, phase=1, slots=[1, 2], grootte=3]",
                 "    constructie Dossier zettingen []",
                 "    invoegingen [New[insertion=STATED], Mark[insertion=STATED],"
@@ -204,7 +204,7 @@ class CreationPlanWitnessTest {
                 "regel stel het penningbesluit vast | vorm stel het penningbesluit vast | groep"
                         + " uchar-objectcreatie",
                 "  lezingen [0 CHARACTERISTIC_STATE $penninggerechtigd (eigen ElementKey[objectType=jutter,"
-                        + " naam=penninggerechtigd, characteristic=true]), 1 PARAMETER $penningbedrag (parameter"
+                        + " name=penninggerechtigd, characteristic=true]), 1 PARAMETER $penningbedrag (parameter"
                         + " penningbedrag), 2 CREATION_PHASE $fase (creatiefase), 3 ORIGIN $herkomsten_creatie_21"
                         + " (herkomst)]",
                 "  onderwerp Jutter $onderwerp alfa [geen-gekoppelde-instantie_32: [[] toegekend besluit"
@@ -215,14 +215,14 @@ class CreationPlanWitnessTest {
                 "  patroon CreationPhase $creatiefase alfa [creatiestratum_19: [[] stratum VALUE AT_LEAST"
                         + " 0]] join [] beta [] na [] bind [$fase = [] CreationPhase.number VALUE]",
                 "  patroon CharacteristicState $stand_0 alfa [stand_16: [[] characteristic VALUE GELIJK"
-                        + " ElementKey[objectType=jutter, naam=penninggerechtigd, characteristic=true]]] join"
-                        + " [stand-onderwerp_17: onderwerp = $onderwerp] beta [] na [] bind [$penninggerechtigd ="
+                        + " ElementKey[objectType=jutter, name=penninggerechtigd, characteristic=true]]] join"
+                        + " [stand-onderwerp_17: subject = $onderwerp] beta [] na [] bind [$penninggerechtigd ="
                         + " [] CharacteristicState.holds VALUE]",
                 "  accumulatie CreationStamp $herkomst_creatie_20 alfa [] join [herkomst_22: object ="
                         + " $onderwerp] beta [] na [] bind [] functies [LIST null -> $herkomsten_creatie_21]",
                 "  niet binnen [$gemaakt_creatie_23] buiten [$onderwerp] [CreationStamp $gemaakt_creatie_23"
-                        + " alfa [gemaakt_25: [[] regel VALUE GELIJK stel het penningbesluit vast]] join"
-                        + " [gemaakt-onderwerp_26: onderwerp = $onderwerp] beta [] na [] bind []]",
+                        + " alfa [gemaakt_25: [[] rule VALUE GELIJK stel het penningbesluit vast]] join"
+                        + " [gemaakt-onderwerp_26: subject = $onderwerp] beta [] na [] bind []]",
                 "  niet binnen [$nieuw_creatie_24] buiten [$onderwerp, $fase] [CreationStamp $nieuw_creatie_24"
                         + " alfa [] join [nieuw-object_27: object = $onderwerp] beta [nieuw-in-deze-fase_28:"
                         + " IN_PHASE $fase] na [] bind []]",
@@ -232,14 +232,14 @@ class CreationPlanWitnessTest {
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
                 "  niet binnen [$eigen_fout] buiten [$onderwerp] [Fault $eigen_fout alfa [eigen-fout_30:"
-                        + " [[] regel VALUE GELIJK stel het penningbesluit vast]] join [eigen-fout-onderwerp_31:"
-                        + " onderwerp = $onderwerp] beta [] na [] bind []]",
-                "  gevolg Creatie [onderwerp=$onderwerp, creation=stel het penningbesluit vast,"
+                        + " [[] rule VALUE GELIJK stel het penningbesluit vast]] join [eigen-fout-onderwerp_31:"
+                        + " subject = $onderwerp] beta [] na [] bind []]",
+                "  gevolg Creatie [subject=$onderwerp, creation=stel het penningbesluit vast,"
                         + " diepte=CreationDepth[origin=3, stratum=0, type=Jutter, budget=100],"
-                        + " fault=FaultName[form=stel het penningbesluit vast, regel=stel het penningbesluit vast],"
+                        + " fault=FaultName[form=stel het penningbesluit vast, rule=stel het penningbesluit vast],"
                         + " foutinvoeging=STATED, phase=2, slots=[1, 2, 3], grootte=4]",
                 "    constructie Penningbesluit zettingen [0 Penningbesluit.besluitbedrag]",
-                "    initialisatie 0 ElementKey[objectType=penningbesluit, naam=besluitbedrag,"
+                "    initialisatie 0 ElementKey[objectType=penningbesluit, name=besluitbedrag,"
                         + " characteristic=false]: Lees 1",
                 "      value 0 SlotValue bron 'het penningbedrag'",
                 "    invoegingen [New[insertion=STATED], Mark[insertion=STATED],"
@@ -282,7 +282,7 @@ class CreationPlanWitnessTest {
                         + " vakbeseining]] join [tweede-vulling-nabij_27: second = $een.RelationLink.second] beta"
                         + " [tweede-vulling-ander_28: OTHER_FILLING $een first {String, type null, bron null}]"
                         + " na [] bind []",
-                "  gevolg SecondFilling[onderwerp=$nabij, relation=vakbeseining, sentence=de naar-één-rol"
+                "  gevolg SecondFilling[subject=$nabij, relation=vakbeseining, sentence=de naar-één-rol"
                         + " \"seinvak\" van een Sein heeft twee verschillende vullingen; een tweede vulling is een"
                         + " fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5), insertion=LOGICAL]"),
                 plans(golden("jutterswet-bakensein"), CreationPlanWitnessTest::ofThisStep));
@@ -303,8 +303,8 @@ class CreationPlanWitnessTest {
                         + " $stap_keten_15 [post] {List<String>, type null, bron null} [] {List<>, type null, bron"
                         + " null}] na [doel-gastheer_19: [[] null VALUE IS_A Baken]] bind []",
                 "  patroon CharacteristicState $doelstand_doel_20 alfa [doelstand_21: [[] characteristic VALUE GELIJK"
-                        + " ElementKey[objectType=baken, naam=gehesen, characteristic=true]]] join"
-                        + " [doelstand-doel_22: onderwerp = $stap_keten_17] beta [] na [doelstand-waar_23: [[]"
+                        + " ElementKey[objectType=baken, name=gehesen, characteristic=true]]] join"
+                        + " [doelstand-doel_22: subject = $stap_keten_17] beta [] na [doelstand-waar_23: [[]"
                         + " holds VALUE GELIJK true]] bind []",
                 "  niet binnen [$bestaand_feitcreatie_24] buiten [$onderwerp, $stap_keten_17] [RelationLink"
                         + " $bestaand_feitcreatie_24 alfa [bestaand_25: [[] relation VALUE GELIJK vakbeseining]]"
@@ -326,7 +326,7 @@ class CreationPlanWitnessTest {
                 "regel padstand Vondst.jutter.haven naar Haven.afgeleide openingsdag: link aanwezig |"
                         + " vorm null | groep null",
                 "  lezingen [0 REACHED_STATE $v (stand Vondst:jutter.haven"
-                        + " ElementKey[objectType=haven, naam=afgeleide openingsdag, characteristic=false])]",
+                        + " ElementKey[objectType=haven, name=afgeleide openingsdag, characteristic=false])]",
                 "  onderwerp Vondst $onderwerp alfa [] join [] beta [] bind []",
                 "  patroon Jutter $stap_keten_24 alfa [] join [] beta [veld-nabij_25: MEETING"
                         + " $onderwerp [] {List<>, type null, bron null} [jutter] {List<String>, type null, bron"
@@ -337,11 +337,11 @@ class CreationPlanWitnessTest {
                 "  patroon Haven $stap_keten_26 alfa [] join [koppeling-ver_31: null ="
                         + " $overzijde_keten_28] beta [] na [] bind []",
                 "  patroon State $stand alfa [stand_32: [[] attribute VALUE GELIJK"
-                        + " ElementKey[objectType=haven, naam=afgeleide openingsdag, characteristic=false]]] join"
-                        + " [stand-bereikt_33: onderwerp = $stap_keten_26] beta [] na [] bind [$v = []"
+                        + " ElementKey[objectType=haven, name=afgeleide openingsdag, characteristic=false]]] join"
+                        + " [stand-bereikt_33: subject = $stap_keten_26] beta [] na [] bind [$v = []"
                         + " State.value VALUE]",
-                "  gevolg InsertPathState[onderwerp=$onderwerp, path=Vondst:jutter.haven,"
-                        + " member=ElementKey[objectType=haven, naam=afgeleide openingsdag, characteristic=false],"
+                "  gevolg InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
+                        + " member=ElementKey[objectType=haven, name=afgeleide openingsdag, characteristic=false],"
                         + " source=REACHED, value=0, insertion=LOGICAL]",
                 "regel padstand Vondst.jutter.haven naar Haven.afgeleide openingsdag: link afwezig |"
                         + " vorm null | groep null",
@@ -355,13 +355,13 @@ class CreationPlanWitnessTest {
                         + " [koppeling-nabij_40: second = $stap_keten_34] beta [] na [] bind [$overzijde_keten_38"
                         + " = [] RelationLink.first VALUE], Haven $stap_keten_36 alfa [] join [koppeling-ver_41:"
                         + " null = $overzijde_keten_38] beta [] na [] bind []]",
-                "  gevolg InsertPathState[onderwerp=$onderwerp, path=Vondst:jutter.haven,"
-                        + " member=ElementKey[objectType=haven, naam=afgeleide openingsdag, characteristic=false],"
+                "  gevolg InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
+                        + " member=ElementKey[objectType=haven, name=afgeleide openingsdag, characteristic=false],"
                         + " source=MISSING_LINK, value=-1, insertion=LOGICAL]",
                 "regel padstand Vondst.jutter.haven naar Haven.openingsdag: link aanwezig | vorm null |"
                         + " groep null",
                 "  lezingen [0 REACHED_INPUT $v (invoer Vondst:jutter.haven"
-                        + " ElementKey[objectType=haven, naam=openingsdag, characteristic=false])]",
+                        + " ElementKey[objectType=haven, name=openingsdag, characteristic=false])]",
                 "  onderwerp Vondst $onderwerp alfa [] join [] beta [] bind []",
                 "  patroon Jutter $stap_keten_42 alfa [] join [] beta [veld-nabij_43: MEETING"
                         + " $onderwerp [] {List<>, type null, bron null} [jutter] {List<String>, type null, bron"
@@ -371,8 +371,8 @@ class CreationPlanWitnessTest {
                         + " bind [$overzijde_keten_46 = [] RelationLink.first VALUE]",
                 "  patroon Haven $stap_keten_44 alfa [] join [koppeling-ver_49: null ="
                         + " $overzijde_keten_46] beta [] na [] bind [$v = [] Haven.openingsdag VALUE]",
-                "  gevolg InsertPathState[onderwerp=$onderwerp, path=Vondst:jutter.haven,"
-                        + " member=ElementKey[objectType=haven, naam=openingsdag, characteristic=false], source=REACHED,"
+                "  gevolg InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
+                        + " member=ElementKey[objectType=haven, name=openingsdag, characteristic=false], source=REACHED,"
                         + " value=0, insertion=LOGICAL]",
                 "regel padstand Vondst.jutter.haven naar Haven.openingsdag: link afwezig | vorm null |"
                         + " groep null",
@@ -386,8 +386,8 @@ class CreationPlanWitnessTest {
                         + " [koppeling-nabij_56: second = $stap_keten_50] beta [] na [] bind [$overzijde_keten_54"
                         + " = [] RelationLink.first VALUE], Haven $stap_keten_52 alfa [] join [koppeling-ver_57:"
                         + " null = $overzijde_keten_54] beta [] na [] bind []]",
-                "  gevolg InsertPathState[onderwerp=$onderwerp, path=Vondst:jutter.haven,"
-                        + " member=ElementKey[objectType=haven, naam=openingsdag, characteristic=false],"
+                "  gevolg InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
+                        + " member=ElementKey[objectType=haven, name=openingsdag, characteristic=false],"
                         + " source=MISSING_LINK, value=-1, insertion=LOGICAL]"),
                 plans(golden("jutterswet-havenketen"), p -> p.consequence() instanceof Consequence.InsertPathState
                         && p.leftSide().stream().anyMatch(CreationPlanWitnessTest::readsLinks)));
@@ -453,13 +453,13 @@ class CreationPlanWitnessTest {
         assertEquals(List.of("ok",
                         "een creatie voegt eerst het nieuwe object in: [Mark[insertion=STATED],"
                                 + " New[insertion=STATED], Link[relation=uitgifte, newIsFirst=true,"
-                                + " insertion=STATED], Characteristic[initialisatie=1, insertion=STATED]]",
+                                + " insertion=STATED], Characteristic[initialisation=1, insertion=STATED]]",
                         "een kenmerkinitialisatie wordt ingevoegd, niet gezet: " + uitgereikt,
                         "een attribuutinitialisatie wordt gezet, niet ingevoegd: " + amount,
                         "de initialisatie van " + uitgereikt + " komt 0 keer in de constructie of de invoegingen,"
                                 + " niet één keer",
                         "een creatie voegt het nieuwe object, zijn merk en zijn koppeling elk één keer in:"
-                                + " [New[insertion=STATED], Mark[insertion=STATED], Characteristic[initialisatie=1,"
+                                + " [New[insertion=STATED], Mark[insertion=STATED], Characteristic[initialisation=1,"
                                 + " insertion=STATED]]"),
                 List.of(creation(inits, build, List.of(fresh, mark, link, characteristic)),
                         creation(inits, build, List.of(mark, fresh, link, characteristic)),
@@ -539,7 +539,7 @@ class CreationPlanWitnessTest {
                         sentence + "New[insertion=LOGICAL] is niet gesteld",
                         sentence + "Mark[insertion=LOGICAL] is niet gesteld",
                         sentence + "Link[relation=uitgifte, newIsFirst=true, insertion=LOGICAL] is niet gesteld",
-                        sentence + "Characteristic[initialisatie=1, insertion=LOGICAL] is niet gesteld",
+                        sentence + "Characteristic[initialisation=1, insertion=LOGICAL] is niet gesteld",
                         "een creatie stelt haar fout bij het maken, want die houdt haar regel tegen: de foutinvoeging"
                                 + " LOGICAL is niet gesteld"),
                 List.of(creation(inits, build, List.of(fresh, mark, link, characteristic)),
@@ -617,13 +617,13 @@ class CreationPlanWitnessTest {
                         made.put(o, o.getClass().getSimpleName() + (made.size() + 1));
                         out.add("bean " + made.get(o) + " " + fields(o, label, made, build.beanLoader()));
                     } else if (o instanceof CreationStamp g)
-                        out.add("Gemaakt " + g.regel() + ": " + naam(g.onderwerp(), label, made) + " -> "
-                                + naam(g.object(), label, made) + ", fase " + g.phase() + ", diepte " + g.depth());
+                        out.add("Gemaakt " + g.rule() + ": " + name(g.subject(), label, made) + " -> "
+                                + name(g.object(), label, made) + ", fase " + g.phase() + ", diepte " + g.depth());
                     else if (o instanceof RelationLink k && k.phase() > 0)
-                        out.add("Koppeling " + k.relation() + ": " + naam(k.first(), label, made) + ", "
-                                + naam(k.second(), label, made) + ", fase " + k.phase());
-                    else if (o instanceof HasCharacteristic h && made.containsKey(h.onderwerp()))
-                        out.add("HeeftKenmerk " + naam(h.onderwerp(), label, made) + " " + h.characteristic().naam());
+                        out.add("Koppeling " + k.relation() + ": " + name(k.first(), label, made) + ", "
+                                + name(k.second(), label, made) + ", fase " + k.phase());
+                    else if (o instanceof HasCharacteristic h && made.containsKey(h.subject()))
+                        out.add("HeeftKenmerk " + name(h.subject(), label, made) + " " + h.characteristic().name());
                 }
 
                 @Override public void objectUpdated(ObjectUpdatedEvent e) {
@@ -641,7 +641,7 @@ class CreationPlanWitnessTest {
         return (List<String>) withSession.invoke(runner, caseDocument, reader);
     }
 
-    private static String naam(Object o, Map<Object, String> label, Map<Object, String> made) {
+    private static String name(Object o, Map<Object, String> label, Map<Object, String> made) {
         return label.containsKey(o) ? label.get(o) : made.getOrDefault(o, "?");
     }
 
@@ -658,7 +658,7 @@ class CreationPlanWitnessTest {
                 } catch (ReflectiveOperationException e) {
                     throw new IllegalStateException(e);
                 }
-                out.put(m.getName(), w != null && w.getClass().getClassLoader() == beans ? naam(w, label, made) : w);
+                out.put(m.getName(), w != null && w.getClass().getClassLoader() == beans ? name(w, label, made) : w);
             }
         return out.toString();
     }
@@ -719,8 +719,8 @@ class CreationPlanWitnessTest {
         return d;
     }
 
-    static JsonNode golden(String naam) throws Exception {
-        return JSON.readTree(GOLDEN.resolve(naam).resolve("ir.json").toFile());
+    static JsonNode golden(String name) throws Exception {
+        return JSON.readTree(GOLDEN.resolve(name).resolve("ir.json").toFile());
     }
 
     // ---------------- the plans as text ----------------
@@ -732,10 +732,10 @@ class CreationPlanWitnessTest {
         for (RulePlan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
                 .modelplan().rules()) {
             if (!choice.test(p)) continue;
-            out.add("regel " + p.naam() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
+            out.add("regel " + p.name() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
             for (Read l : p.readings().slots())
-                slots.add(l.slot() + " " + l.category() + " " + l.naam() + " (" + l.key() + ")");
+                slots.add(l.slot() + " " + l.category() + " " + l.name() + " (" + l.key() + ")");
             out.add("  lezingen " + slots);
             for (LhsItem item : p.leftSide()) {
                 out.add("  " + item(item));
@@ -748,7 +748,7 @@ class CreationPlanWitnessTest {
 
     private static String item(LhsItem item) {
         return switch (item) {
-            case Subject o -> "onderwerp " + o.beanClass().getSimpleName() + " " + o.naam() + " alfa "
+            case Subject o -> "onderwerp " + o.beanClass().getSimpleName() + " " + o.name() + " alfa "
                     + alpha(o.alpha()) + " join " + joins(o.joins()) + " beta " + beta(o.betaTests()) + " bind "
                     + bindings(o.bindings());
             case FactPattern p -> "patroon " + pattern(p);
@@ -764,7 +764,7 @@ class CreationPlanWitnessTest {
     }
 
     private static String pattern(FactPattern p) {
-        return p.factClass().getSimpleName() + " " + p.naam() + " alfa " + alpha(p.alpha()) + " join "
+        return p.factClass().getSimpleName() + " " + p.name() + " alfa " + alpha(p.alpha()) + " join "
                 + joins(p.joins()) + " beta " + beta(p.betaTests()) + " na " + alpha(p.afterAlpha()) + " bind "
                 + bindings(p.bindings());
     }
@@ -818,7 +818,7 @@ class CreationPlanWitnessTest {
     }
 
     private static String field(Binding.Field v) {
-        return v.javaClass().getSimpleName() + "." + v.naam();
+        return v.javaClass().getSimpleName() + "." + v.name();
     }
 
     /** The consequence {@code g} with every field; of a creation its depth, its construction, each initialisation with
@@ -826,11 +826,11 @@ class CreationPlanWitnessTest {
     private static void consequence(Consequence g, List<String> out) {
         switch (g) {
             case Consequence.Creation c -> {
-                out.add("  gevolg Creatie [onderwerp=" + c.onderwerp() + ", creation=" + c.creation() + ", diepte="
+                out.add("  gevolg Creatie [subject=" + c.subject() + ", creation=" + c.creation() + ", diepte="
                         + c.depth() + ", fault=" + c.fault() + ", foutinvoeging=" + c.faultInsertion() + ", phase="
                         + c.phase() + ", slots=" + c.slots() + ", grootte=" + c.size() + "]");
                 out.add("    constructie " + c.construction().javaClass().getSimpleName() + " zettingen "
-                        + c.construction().settings().stream().map(z -> z.initialisatie() + " " + field(z.field()))
+                        + c.construction().settings().stream().map(z -> z.initialisation() + " " + field(z.field()))
                         .toList());
                 for (int i = 0; i < c.initialisations().size(); i++) {
                     Consequence.Initialisation init = c.initialisations().get(i);

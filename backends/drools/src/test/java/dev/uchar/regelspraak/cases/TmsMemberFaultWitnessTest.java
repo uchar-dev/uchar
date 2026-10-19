@@ -131,12 +131,12 @@ class TmsMemberFaultWitnessTest {
             List<String> out = new ArrayList<>();
             for (Object f : session.getObjects()) {
                 if (f instanceof Fault x)
-                    out.add("Fout " + label.get(x.onderwerp()) + " \"" + x.regel() + "\": " + x.message());
+                    out.add("Fout " + label.get(x.subject()) + " \"" + x.rule() + "\": " + x.message());
                 else if (f instanceof FilterFault x)
-                    out.add("Filterfout " + label.get(x.onderwerp()) + " " + label.get(x.element()) + ": "
+                    out.add("Filterfout " + label.get(x.subject()) + " " + label.get(x.element()) + ": "
                             + x.fault().getClass().getSimpleName());
                 else if (f instanceof MemberFault x)
-                    out.add("Lidfout " + label.get(x.onderwerp()) + " " + label.get(x.element()) + ": "
+                    out.add("Lidfout " + label.get(x.subject()) + " " + label.get(x.element()) + ": "
                             + x.fault().getClass().getSimpleName());
             }
             out.sort(null);

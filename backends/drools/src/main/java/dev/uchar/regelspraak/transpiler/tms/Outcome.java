@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * The control fact of a defaults group in its general form, with exception groups or with more than one group at the
  * root (RUNTIME-SEMANTICS ch. 7.2 and 7.9): the default at {@code position} in chain {@code chain} of the stack
- * {@code stack} settled for {@code onderwerp}, deciding {@code value} or conflicting under {@code key}.
+ * {@code stack} settled for {@code subject}, deciding {@code value} or conflicting under {@code key}.
  *
  * <p>A chain is the list of defaults of a root group or of one exception group; the lowering numbers them per stack,
  * the root groups first, and the exception groups of one default consecutively, so that "a member before this one" is
@@ -24,14 +24,14 @@ import java.util.Objects;
  * decide 10.0 and 10.00 merge into one fact, as the reconciliation reads them as one decision; a characteristic's
  * decision is {@code value} as a Boolean.
  */
-public record Outcome(Object onderwerp, String stack, int chain, int position, Kind category, Object value,
+public record Outcome(Object subject, String stack, int chain, int position, Kind category, Object value,
                        String key) implements ControlFact {
 
     /** How a default settled. */
     public enum Kind { DECIDED, CONFLICT }
 
     public Outcome {
-        Objects.requireNonNull(onderwerp, "onderwerp");
+        Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(stack, "stapel");
         Objects.requireNonNull(category, "soort");
         if (category == Kind.DECIDED ? value == null || key != null : value != null || key == null)
@@ -48,18 +48,18 @@ public record Outcome(Object onderwerp, String stack, int chain, int position, K
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof Outcome u && u.onderwerp == onderwerp && u.stack.equals(stack) && u.chain == chain
+        return o instanceof Outcome u && u.subject == subject && u.stack.equals(stack) && u.chain == chain
                 && u.position == position && u.category == category && equal(u.value, value)
                 && Objects.equals(u.key, key);
     }
 
     @Override public int hashCode() {
         Object w = value instanceof BigDecimal b ? b.stripTrailingZeros() : value;
-        return Objects.hash(System.identityHashCode(onderwerp), stack, chain, position, category, w, key);
+        return Objects.hash(System.identityHashCode(subject), stack, chain, position, category, w, key);
     }
 
     @Override public String toString() {
-        return "Uitkomst(" + FactNames.object(onderwerp) + ", " + stack + ", keten " + chain + ", positie " + position
+        return "Uitkomst(" + FactNames.object(subject) + ", " + stack + ", keten " + chain + ", positie " + position
                 + ", " + (category == Kind.DECIDED ? "beslist " + value : "conflict " + key) + ")";
     }
 }

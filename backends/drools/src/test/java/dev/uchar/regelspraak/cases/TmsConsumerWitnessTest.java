@@ -111,13 +111,13 @@ class TmsConsumerWitnessTest {
             assertEquals(1, f.objects().size(), () -> "one made object: " + f.objects());
             Fixpoint.MadeObject r = f.objects().get(0);
             assertEquals("richt de rekenkamer op", r.creation());
-            assertSame(j1, r.onderwerp());
+            assertSame(j1, r.subject());
             assertEquals("Rekenkamer", r.object().getClass().getSimpleName());
             assertEquals(List.of(new Fixpoint.MadeLink("taxatieopdracht", "opdrachtgever", j1, "rekenkamer",
                     r.object())), f.links());
-            assertTrue(f.waarden().stream().anyMatch(w -> w.object() == j1 && w.attribute().equals("heffing")
+            assertTrue(f.values().stream().anyMatch(w -> w.object() == j1 && w.attribute().equals("heffing")
                     && w.value() instanceof BigDecimal d && d.compareTo(new BigDecimal("70")) == 0),
-                    () -> "J1 heffing 70: " + f.waarden());
+                    () -> "J1 heffing 70: " + f.values());
             assertNull(RegelSpraakRuntime.get(j1, "rekenkamer"), "before the write-back J1's bean holds the input alone");
             assertNull(RegelSpraakRuntime.get(j1, "heffing"), "before the write-back J1's bean holds the input alone");
             DroolsBackend.setDerivedValues(build, session);
@@ -245,9 +245,9 @@ class TmsConsumerWitnessTest {
             assertEquals("70", heffing(DroolsBackend.fixpointOf(build, session), j1), "J1 heffing at the fixpoint");
             RegelSpraakRuntime.set(j1, "grondslag", new BigDecimal("150"));
             session.update(session.getFactHandle(j1), j1);
-            String regel = bareFire(session);
-            String sentence = outsideFire(naam(j1) + " werd gewijzigd met update"
-                    + (regel == null ? "" : " en de regel \"" + regel + "\" vuurde"), FRESH_AT_CREATION);
+            String rule = bareFire(session);
+            String sentence = outsideFire(name(j1) + " werd gewijzigd met update"
+                    + (rule == null ? "" : " en de regel \"" + rule + "\" vuurde"), FRESH_AT_CREATION);
             assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(build, session))
                     .getMessage(), "the reading");
             assertEquals(sentence, assertThrows(IllegalStateException.class,
@@ -269,7 +269,7 @@ class TmsConsumerWitnessTest {
                 Object v1 = beans.get("V1");
                 TmsRepeatedFireWitnessTest.set(v1, "gewicht", "3");
                 session.update(session.getFactHandle(v1), v1);
-                String changed = naam(v1) + " werd gewijzigd met update";
+                String changed = name(v1) + " werd gewijzigd met update";
                 assertEquals(outsideFire(changed, FIRE_FIRST), assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.fixpointOf(b, session)).getMessage(), "the reading after the update");
                 assertEquals(outsideFire(changed, FIRE_FIRST), assertThrows(IllegalStateException.class,
@@ -301,7 +301,7 @@ class TmsConsumerWitnessTest {
                 Object v1 = beans.get("V1");
                 TmsRepeatedFireWitnessTest.set(v1, "gewicht", "3");
                 session.update(session.getFactHandle(v1), v1);
-                assertEquals(outsideFire(naam(v1) + " werd gewijzigd met update", FRESH_AFTER_WRITE_BACK),
+                assertEquals(outsideFire(name(v1) + " werd gewijzigd met update", FRESH_AFTER_WRITE_BACK),
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session)).getMessage(),
                         "the reading after an update of a written-back session");
             } finally {
@@ -396,13 +396,13 @@ class TmsConsumerWitnessTest {
     }
 
     /** An object as the sentences of the entry name it: its type and its identity. */
-    static String naam(Object o) {
+    static String name(Object o) {
         return o.getClass().getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(o));
     }
 
     /** The heffing {@code f} derives for {@code jutter}, as a plain number, or null. */
     private static String heffing(Fixpoint f, Object jutter) {
-        for (Fixpoint.DerivedValue w : f.waarden())
+        for (Fixpoint.DerivedValue w : f.values())
             if (w.object() == jutter && w.attribute().equals("heffing"))
                 return ((BigDecimal) w.value()).stripTrailingZeros().toPlainString();
         return null;

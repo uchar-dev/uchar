@@ -7,6 +7,6 @@ lees kenmerk "V1" "wrak (x) = y"
 lees waarde "V1"."tarief = vak (oud).nieuw" = BigDecimal(1)
 feiten 4
 feit Fired(noFixpoint=leeg)
-feit HasCharacteristic(onderwerp="V1", characteristic="vondst"."wrak (x) = y" (kenmerk))
-feit Value(onderwerp="V1", attribute="vondst"."tarief = vak (oud).nieuw", value=BigDecimal(1), writer=String("tarief"))
+feit HasCharacteristic(subject="V1", characteristic="vondst"."wrak (x) = y" (kenmerk))
+feit Value(subject="V1", attribute="vondst"."tarief = vak (oud).nieuw", value=BigDecimal(1), writer=String("tarief"))
 feit bean "V1" Vondst(tariefVakOudNieuw=leeg, wrakXY=Boolean(false))

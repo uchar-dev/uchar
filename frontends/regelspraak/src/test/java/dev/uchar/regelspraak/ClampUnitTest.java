@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ClampUnitTest {
 
-    private static String source(String eenheid, String limit, String extraMember) {
+    private static String source(String unit, String limit, String extraMember) {
         return """
             Eenheidsysteem Munt
                 de euro (mv: euros) EUR €
@@ -33,7 +33,7 @@ class ClampUnitTest {
             Regel bergloon van een jutter
                 geldig altijd
                     Het bergloon van een Jutter moet berekend worden als zijn vondstwaarde min zijn bergingskosten, %2$s.
-            """.formatted(eenheid, limit, extraMember);
+            """.formatted(unit, limit, extraMember);
     }
 
     private static List<String> meldingen(String src) {

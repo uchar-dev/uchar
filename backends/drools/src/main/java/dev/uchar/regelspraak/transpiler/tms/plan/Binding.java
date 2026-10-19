@@ -27,11 +27,11 @@ public record Binding(String target, List<Field> path, Field field, ReadForm for
      *  the branch names its component, and {@code property}, the property a rendering reads or writes: the name of
      *  the bean property, whose getter and setter are the member's ({@link Namen#property}), and on a fact of the
      *  branch the component itself. */
-    public record Field(Class<?> javaClass, String naam, String property) {
+    public record Field(Class<?> javaClass, String name, String property) {
 
         /** The property {@code naam} of the objects of {@code javaClass}, with the bean property it has. */
-        public Field(Class<?> javaClass, String naam) {
-            this(javaClass, naam, Namen.property(naam));
+        public Field(Class<?> javaClass, String name) {
+            this(javaClass, name, Namen.property(name));
         }
     }
 

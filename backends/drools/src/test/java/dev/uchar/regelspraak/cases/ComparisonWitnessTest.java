@@ -127,7 +127,7 @@ class ComparisonWitnessTest {
 
     /** The diagnose of the report without the name of the case file and ": " before it. */
     private static String diagnostic(ScenarioResult r) {
-        return r.diagnostic().isEmpty() ? "" : r.diagnostic().substring(r.naam().length() + 2);
+        return r.diagnostic().isEmpty() ? "" : r.diagnostic().substring(r.name().length() + 2);
     }
 
     @Test void the_entry_gives_on_both_branches_what_the_report_gives() throws Exception {

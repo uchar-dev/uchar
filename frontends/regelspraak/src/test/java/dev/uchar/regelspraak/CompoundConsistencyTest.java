@@ -32,7 +32,7 @@ class CompoundConsistencyTest {
             het jaartal Numeriek (geheel getal);
         """;
 
-    private static String regel(String kwantificatie) {
+    private static String rule(String quantification) {
         return """
 
             Regel keuring
@@ -41,7 +41,7 @@ class CompoundConsistencyTest {
                     - zijn gewicht is groter dan 0
                     - zijn lengte is groter dan 10
                     - zijn jaartal is kleiner dan 1900.
-            """.formatted(kwantificatie);
+            """.formatted(quantification);
     }
 
     @ParameterizedTest
@@ -52,20 +52,20 @@ class CompoundConsistencyTest {
             "'precies één van de', PRECIES, 1",
             "'geen van de', GEEN, 0"
     })
-    void the_compound_consistency_goes_to_the_wire(String kwantificatie, Condition.Quantifier quantifier, int threshold) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel(kwantificatie));
+    void the_compound_consistency_goes_to_the_wire(String quantification, Condition.Quantifier quantifier, int threshold) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule(quantification));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertEquals(1, m.consistenties.size());
-        ResolvedConsistency c = m.consistenties.get(0);
-        assertEquals("Vondst", c.subject().naam);
-        Condition.Compound s = assertInstanceOf(Condition.Compound.class, c.assertie());
+        assertEquals(1, m.consistencies.size());
+        ResolvedConsistency c = m.consistencies.get(0);
+        assertEquals("Vondst", c.subject().name);
+        Condition.Compound s = assertInstanceOf(Condition.Compound.class, c.assertion());
         assertEquals(quantifier, s.quantifier());
         assertEquals(threshold, s.threshold());
         assertEquals(3, s.components().size());
         for (Condition part : s.components()) {
             Condition.Comparison v = assertInstanceOf(Condition.Comparison.class, part);
             Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, v.left());
-            assertEquals("Vondst", a.objectType().naam, "\"zijn …\" reads the onderwerp");
+            assertEquals("Vondst", a.objectType().name, "\"zijn …\" reads the onderwerp");
         }
     }
 
@@ -79,7 +79,7 @@ class CompoundConsistencyTest {
                     - de lengte van de Vondst is groter dan 10.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Condition.Compound s = assertInstanceOf(Condition.Compound.class, m.consistenties.get(0).assertie());
+        Condition.Compound s = assertInstanceOf(Condition.Compound.class, m.consistencies.get(0).assertion());
         assertEquals(Condition.Quantifier.TEN_MINSTE, s.quantifier());
         assertEquals(2, s.threshold());
     }
@@ -96,7 +96,7 @@ class CompoundConsistencyTest {
                     - zijn gewicht is groter dan 0
                     - hij is oud.
             """);
-        assertTrue(m.consistenties.isEmpty());
+        assertTrue(m.consistencies.isEmpty());
         assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().startsWith(
                 "consistentieregel wordt nog niet (volledig) naar IR/DRL omgezet")), () -> "" + m.diagnostics);
     }

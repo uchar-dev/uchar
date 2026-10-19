@@ -57,8 +57,8 @@ class RoundTripWitnessTest {
         IrLoader.Loaded loaded = IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
         RegelSpraakModel model = loaded.model();
         // the loader reconstructed a non-empty model with resolved rules — the emitter's inverse.
-        assertFalse(model.objecttypen.isEmpty(), golden + ": loaded objecttypen");
-        assertFalse(model.resolvedRegels.isEmpty(), golden + ": loaded resolvedRegels");
+        assertFalse(model.objectTypes.isEmpty(), golden + ": loaded objecttypen");
+        assertFalse(model.resolvedRules.isEmpty(), golden + ": loaded resolvedRegels");
 
         // the loaded model is a valid transpiler input: beans generate, the contract holds, and
         // the truth-maintenance back-end wholly lowers it (no marker/skip) — loader(emit(model)) round-trips.

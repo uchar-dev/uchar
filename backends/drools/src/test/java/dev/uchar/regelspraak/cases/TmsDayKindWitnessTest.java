@@ -112,13 +112,13 @@ class TmsDayKindWitnessTest {
     static final String THE_DAY = "{\"node\":\"BoundDay\",\"type\":" + DATE + ",\"source\":{\"snippet\":\"de dag\"}}";
 
     /** A day kind of the model, with the plural that spells its unit. */
-    static String dayKind(String naam, String plural) {
-        return "{\"node\":\"DayKind\",\"name\":\"" + naam + "\",\"plural\":\"" + plural + "\"}";
+    static String dayKind(String name, String plural) {
+        return "{\"node\":\"DayKind\",\"name\":\"" + name + "\",\"plural\":\"" + plural + "\"}";
     }
 
     /** "Een dag is een {@code naam} indien {@code condition}", always valid. */
-    static String definition(String naam, String condition) {
-        return "{\"node\":\"DayKindDefinition\",\"dayKind\":\"" + naam + "\",\"condition\":" + condition
+    static String definition(String name, String condition) {
+        return "{\"node\":\"DayKindDefinition\",\"dayKind\":\"" + name + "\",\"condition\":" + condition
                 + ",\"validity\":{\"node\":\"Validity\"}}";
     }
 
@@ -182,7 +182,7 @@ class TmsDayKindWitnessTest {
     static JsonNode caseDocument(List<String> instances, Map<String, String> parameters, List<String> expectations)
             throws Exception {
         List<String> p = new ArrayList<>();
-        parameters.forEach((naam, value) -> p.add("\"" + naam + "\":" + value));
+        parameters.forEach((name, value) -> p.add("\"" + name + "\":" + value));
         return TmsDocuments.JSON.readTree("{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":["
                 + String.join(",", instances) + "],\"parameters\":{" + String.join(",", p) + "}},\"expected\":["
                 + String.join(",", expectations) + "]}");
@@ -415,8 +415,8 @@ class TmsDayKindWitnessTest {
             List.of(dayKind("schouwdag", "schouwdagen"), dayKind("hoogschouwdag", "hoogschouwdagen"),
                     dayKind("havendag", "havendagen")));
 
-    static String schouwerStep(String naam, String target, String duration) {
-        return computingRule(naam, "BEREKENING", "Schouwer", target, dateStep("plus", ownRead("vinddatum", "Schouwer"),
+    static String schouwerStep(String name, String target, String duration) {
+        return computingRule(name, "BEREKENING", "Schouwer", target, dateStep("plus", ownRead("vinddatum", "Schouwer"),
                 ownRead(duration, "Schouwer"), DATE, "zijn vinddatum plus zijn " + duration), "null");
     }
 

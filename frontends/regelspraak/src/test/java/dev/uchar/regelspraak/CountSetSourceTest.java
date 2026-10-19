@@ -92,8 +92,8 @@ class CountSetSourceTest {
             + "aggregation reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES, so its "
             + "source is a count source naming the relation's role, never a value read per contributor";
 
-    private static List<Diagnostic> setReads(String regels) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regels);
+    private static List<Diagnostic> setReads(String rules) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + rules);
         return m.diagnostics.stream().filter(d -> d.message().startsWith("setlezing buiten een vouwbron")).toList();
     }
 
@@ -130,7 +130,7 @@ class CountSetSourceTest {
         // were: the same set source under a SOM is the legitimate fold source the fence exempts.
         RegelSpraakModel m = Resolver.resolve(MODEL + SOM);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek op de waardevouw: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRules.get(0).value();
         assertEquals(Expr.FunctionKind.SOM, f.kind());
         assertTrue(((Expr.AttributeReference) f.arguments().get(0)).set(), "de SOM-bron is geen setlezing meer");
     }
@@ -141,7 +141,7 @@ class CountSetSourceTest {
         // across the four zones.
         RegelSpraakModel m = Resolver.resolve(MODEL + WRAT);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek op de wrat: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRules.get(0).value();
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
         assertFalse(((Expr.AttributeReference) f.arguments().get(0)).set(), "de wrat draagt een setlezing");
     }

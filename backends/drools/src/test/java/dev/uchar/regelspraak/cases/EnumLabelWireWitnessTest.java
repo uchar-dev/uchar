@@ -69,20 +69,20 @@ class EnumLabelWireWitnessTest {
     // ---------------- 1. both goldens, both branches, every case ----------------
 
     @Test void both_branches_play_the_two_enumgoldens() throws Exception {
-        for (String naam : List.of(KEURSTAAT, VONDSTKLASSE)) {
-            Path ir = CORPUS.resolve(naam).resolve("ir.json");
-            List<Path> cases = casesOf(CORPUS.resolve(naam));
-            assertFalse(cases.isEmpty(), naam + " hoort casebestanden te dragen");
+        for (String name : List.of(KEURSTAAT, VONDSTKLASSE)) {
+            Path ir = CORPUS.resolve(name).resolve("ir.json");
+            List<Path> cases = casesOf(CORPUS.resolve(name));
+            assertFalse(cases.isEmpty(), name + " hoort casebestanden te dragen");
 
             CaseRunner.Result exec = CaseRunner.viaExecModel(ir, cases);
-            assertEquals("PLAYED", exec.status(), naam + " hoort door de exec-model-tak gespeeld te worden: "
+            assertEquals("PLAYED", exec.status(), name + " hoort door de exec-model-tak gespeeld te worden: "
                     + exec.reason());
-            assertEquals(cases.size(), exec.casesPlayed(), naam + ": elke casus hoort gespeeld te zijn");
+            assertEquals(cases.size(), exec.casesPlayed(), name + ": elke casus hoort gespeeld te zijn");
 
             CaseRunner.Result drl = CaseRunner.viaDrlText(ir, cases);
-            assertEquals("PLAYED", drl.status(), naam + " hoort door de DRL-tekst-tak even goed gespeeld te "
+            assertEquals("PLAYED", drl.status(), name + " hoort door de DRL-tekst-tak even goed gespeeld te "
                     + "worden: " + drl.reason());
-            assertEquals(cases.size(), drl.casesPlayed(), naam + ": elke casus hoort gespeeld te zijn");
+            assertEquals(cases.size(), drl.casesPlayed(), name + ": elke casus hoort gespeeld te zijn");
         }
     }
 
@@ -174,15 +174,15 @@ class EnumLabelWireWitnessTest {
         }
     }
 
-    private JsonNode caseOf(String naam, String caseName) throws Exception {
-        return JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve(caseName)));
+    private JsonNode caseOf(String name, String caseName) throws Exception {
+        return JSON.readTree(Files.readString(CORPUS.resolve(name).resolve(caseName)));
     }
 
     /** De casus met ÉÉN enumverwachting vervangen — de populatie blijft onaangeroerd, zodat een verschil
      *  alleen van de geschreven of teruggelezen waarde kan komen. */
-    private JsonNode withEnumExpectation(String naam, String caseName, String attribute, String value)
+    private JsonNode withEnumExpectation(String name, String caseName, String attribute, String value)
             throws Exception {
-        ObjectNode c = (ObjectNode) caseOf(naam, caseName);
+        ObjectNode c = (ObjectNode) caseOf(name, caseName);
         boolean touched = false;
         for (JsonNode e : c.withArray("expected"))
             if ("attributeValue".equals(e.path("kind").asText())
@@ -191,7 +191,7 @@ class EnumLabelWireWitnessTest {
                 ((ObjectNode) e.get("value")).put("enumeration", value);
                 touched = true;
             }
-        assertTrue(touched, naam + "/" + caseName + " hoort een enumverwachting op '" + attribute
+        assertTrue(touched, name + "/" + caseName + " hoort een enumverwachting op '" + attribute
                 + "' te dragen — anders muteert deze rij niets");
         return c;
     }

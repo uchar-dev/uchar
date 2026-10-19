@@ -82,7 +82,7 @@ class FoldFilterLaterDerivationWitnessTest {
         // One role away: "Het zwaarste gewicht van een Berging ... van alle vondsten van de Berging die aan de volgende
         // voorwaarde voldoen: zijn afgeleide dag is leeg indien zijn openingsdag gevuld is", the writer after it. The
         // own condition makes the subject pattern react to the rule's own write. ref and clingo: 10.
-        String ir = document(rules(regel("zwaarste", "Berging", "zwaarste gewicht",
+        String ir = document(rules(rule("zwaarste", "Berging", "zwaarste gewicht",
                 maximum(subselection(predicate("empty", own("afgeleide dag"))), ROLE),
                 predicate("filled", attribute("openingsdag", "Berging")), "calculation"), DERIVED), "");
         String b = "{\"label\":\"B\",\"objectType\":\"Berging\",\"attributes\":{\"openingsdag\":{\"date\":\"2026-01-01\"}},"
@@ -243,7 +243,7 @@ class FoldFilterLaterDerivationWitnessTest {
             + "\"role\":\"berging\"},{\"node\":\"RoleBinding\",\"factType\":\"BergingBetreftVondst\",\"role\":\"vondst\"}]";
 
     /** "De afgeleide dag van een Vondst moet gesteld worden op de vinddag van de Vondst indien zijn vinddag gevuld is." */
-    private static final String DERIVED = regel("afgeleid", "Vondst", "afgeleide dag", own("vinddag"),
+    private static final String DERIVED = rule("afgeleid", "Vondst", "afgeleide dag", own("vinddag"),
             predicate("filled", own("vinddag")), "equation");
 
     /** "De afgeleide dag van een Vondst moet geïnitialiseerd worden op zijn vinddag." */
@@ -253,7 +253,7 @@ class FoldFilterLaterDerivationWitnessTest {
             + own("vinddag") + ",\"initialisation\":true}]}";
 
     /** "De afgeleide dag van een Vondst moet gesteld worden op zijn opgegeven dag indien zijn opgegeven dag gevuld is." */
-    private static final String INPUT = regel("opgave", "Vondst", "afgeleide dag", own("opgegeven dag"),
+    private static final String INPUT = rule("opgave", "Vondst", "afgeleide dag", own("opgegeven dag"),
             predicate("filled", own("opgegeven dag")), "equation");
 
     /** "Een Vondst is gedateerd indien zijn vinddag gevuld is." */
@@ -271,17 +271,17 @@ class FoldFilterLaterDerivationWitnessTest {
             + "\"Default\",\"justification\":" + predicate("filled", own("vinddag")) + ",\"consequence\":" + own("vinddag")
             + "}],\"validity\":{\"node\":\"Validity\"}}]";
 
-    private static String field(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String field(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
-    private static String attribute(String naam, String type) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + naam + "\",\"subjectType\":\"" + type
-                + "\",\"source\":{\"snippet\":\"zijn " + naam + "\"}}";
+    private static String attribute(String name, String type) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + name + "\",\"subjectType\":\"" + type
+                + "\",\"source\":{\"snippet\":\"zijn " + name + "\"}}";
     }
 
     /** A read of the Vondst's own attribute: in a subselection or a matrix the element is the subject. */
-    private static String own(String naam) { return attribute(naam, "Vondst"); }
+    private static String own(String name) { return attribute(name, "Vondst"); }
 
     private static String number(String n) {
         return "{\"node\":\"Literal\",\"value\":{\"number\":\"" + n + "\"},\"type\":" + WHOLE + ",\"source\":{\"snippet\":\""
@@ -308,9 +308,9 @@ class FoldFilterLaterDerivationWitnessTest {
                 + ",\"source\":{\"snippet\":\"" + op + "\"}}";
     }
 
-    private static String characteristic(String naam, boolean negated) {
-        return "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"" + naam + "\",\"negated\":" + negated
-                + ",\"source\":{\"snippet\":\"hij is " + (negated ? "niet " : "") + naam + "\"}}";
+    private static String characteristic(String name, boolean negated) {
+        return "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"" + name + "\",\"negated\":" + negated
+                + ",\"source\":{\"snippet\":\"hij is " + (negated ? "niet " : "") + name + "\"}}";
     }
 
     /** "die aan de volgende voorwaarde voldoen: {@code part}". */
@@ -334,8 +334,8 @@ class FoldFilterLaterDerivationWitnessTest {
     }
 
     /** One rule with one version; {@code condition} null for none. */
-    private static String regel(String naam, String type, String target, String value, String condition, String presentation) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+    private static String rule(String name, String type, String target, String value, String condition, String presentation) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
                 + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type
                 + "\",\"source\":{\"snippet\":\"De " + target + " van een " + type + "\"}},\"value\":" + value
                 + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false,\"presentation\":\""
@@ -343,12 +343,12 @@ class FoldFilterLaterDerivationWitnessTest {
     }
 
     private static String zwaarste(String type, String value) {
-        return regel("zwaarste", type, "zwaarste gewicht", value, null, "calculation");
+        return rule("zwaarste", type, "zwaarste gewicht", value, null, "calculation");
     }
 
     /** "De lichtklasse van een Berging moet berekend worden als 1 indien {@code condition}." */
     private static String lichtClass(String condition) {
-        return regel("lichtklasse", "Berging", "lichtklasse", number("1"), condition, "calculation");
+        return rule("lichtklasse", "Berging", "lichtklasse", number("1"), condition, "calculation");
     }
 
     private static String rules(String... rules) { return String.join(",", rules); }

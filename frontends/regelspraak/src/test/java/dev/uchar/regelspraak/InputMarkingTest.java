@@ -11,7 +11,7 @@ import dev.uchar.regelspraak.ir.ResolvedRule;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
@@ -91,16 +91,16 @@ class InputMarkingTest {
         return d;
     }
 
-    private static ResolvedRule regel(RegelSpraakModel m, String naam) {
-        return m.resolvedRegels.stream().filter(r -> r.naam().equals(naam)).findFirst()
-                .orElseThrow(() -> new AssertionError("geen regel '" + naam + "' in " + m.resolvedRegels.stream()
-                        .map(ResolvedRule::naam).toList()));
+    private static ResolvedRule rule(RegelSpraakModel m, String name) {
+        return m.resolvedRules.stream().filter(r -> r.name().equals(name)).findFirst()
+                .orElseThrow(() -> new AssertionError("geen regel '" + name + "' in " + m.resolvedRules.stream()
+                        .map(ResolvedRule::name).toList()));
     }
 
-    private static PrioritizedDefaults group(RegelSpraakModel m, String naam) {
-        return m.prioritizedDefaults.stream().filter(g -> g.naam().equals(naam)).findFirst()
-                .orElseThrow(() -> new AssertionError("geen defaults-groep '" + naam + "' in " + m.prioritizedDefaults
-                        .stream().map(PrioritizedDefaults::naam).toList()));
+    private static PrioritizedDefaults group(RegelSpraakModel m, String name) {
+        return m.prioritizedDefaults.stream().filter(g -> g.name().equals(name)).findFirst()
+                .orElseThrow(() -> new AssertionError("geen defaults-groep '" + name + "' in " + m.prioritizedDefaults
+                        .stream().map(PrioritizedDefaults::name).toList()));
     }
 
     private static String targetOf(ResolvedRule r) {
@@ -116,16 +116,16 @@ class InputMarkingTest {
     @Test void the_marking_builds_the_five_pieces() {
         RegelSpraakModel m = Resolver.resolve(VONDST + WAARDERING);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Objecttype v = m.objecttypen.get("Vondst");
+        ObjectType v = m.objectTypes.get("Vondst");
 
         // 1 and 2: the two attributes, right after X, with X's datatype
         assertEquals(List.of("taxatie", "waarde", "opgegeven waarde", "berekende waarde"),
-                List.copyOf(v.attributen.keySet()));
-        assertEquals(v.attributen.get("waarde"), v.attributen.get("opgegeven waarde"));
-        assertEquals(v.attributen.get("waarde"), v.attributen.get("berekende waarde"));
+                List.copyOf(v.attributes.keySet()));
+        assertEquals(v.attributes.get("waarde"), v.attributes.get("opgegeven waarde"));
+        assertEquals(v.attributes.get("waarde"), v.attributes.get("berekende waarde"));
 
         // 2: the computing writer keeps its name and shape and targets berekende X
-        ResolvedRule w = regel(m, "waardering");
+        ResolvedRule w = rule(m, "waardering");
         assertEquals("berekende waarde", targetOf(w));
         assertEquals(ResolvedRule.Kind.BEREKENING, w.category());
         assertEquals("taxatie", read(((Expr.Binary) w.value()).left()));
@@ -133,7 +133,7 @@ class InputMarkingTest {
         // 3: one group on X, from the top: the opgave, then the computation
         assertEquals(1, m.prioritizedDefaults.size(), "één defaults-groep");
         PrioritizedDefaults g = group(m, "opgave boven berekening waarde");
-        assertEquals("Vondst", g.onderwerp());
+        assertEquals("Vondst", g.subject());
         assertEquals("waarde", g.attribute());
         assertNull(g.characteristic());
         assertFalse(g.unordered());
@@ -149,15 +149,15 @@ class InputMarkingTest {
             assertEquals(Condition.Quantifier.ALLE, always.quantifier());
             assertTrue(always.components().isEmpty());
             assertEquals("altijd", always.source().snippet());
-            assertFalse(d.initialisatie());
+            assertFalse(d.initialisation());
             assertNull(d.decision());
             assertNull(d.exceptions());
         }
 
         // 4: the possessive characteristic and the rule that attributes it
-        assertEquals(List.of("afwijkende opgave waarde"), v.kenmerken);
-        assertEquals(Objecttype.CharacteristicKind.BEZITTELIJK, v.characteristicKinds.get("afwijkende opgave waarde"));
-        ResolvedRule a = regel(m, "afwijking opgave waarde");
+        assertEquals(List.of("afwijkende opgave waarde"), v.characteristics);
+        assertEquals(ObjectType.CharacteristicKind.BEZITTELIJK, v.characteristicKinds.get("afwijkende opgave waarde"));
+        ResolvedRule a = rule(m, "afwijking opgave waarde");
         assertEquals(ResolvedRule.Kind.KENMERKTOEKENNING, a.category());
         assertEquals("afwijkende opgave waarde", targetOf(a));
         assertEquals(Validity.ALTIJD, a.validity());
@@ -176,11 +176,11 @@ class InputMarkingTest {
         assertEquals("berekende waarde", read(p2.right()));
 
         // 5: the consistency, its assertion the negated characteristic, at the marked declaration
-        assertEquals(1, m.consistenties.size());
-        ResolvedConsistency c = m.consistenties.get(0);
-        assertEquals("controle opgave waarde", c.naam());
-        assertEquals("Vondst", c.subject().naam);
-        Condition.CharacteristicCheck k = assertInstanceOf(Condition.CharacteristicCheck.class, c.assertie());
+        assertEquals(1, m.consistencies.size());
+        ResolvedConsistency c = m.consistencies.get(0);
+        assertEquals("controle opgave waarde", c.name());
+        assertEquals("Vondst", c.subject().name);
+        Condition.CharacteristicCheck k = assertInstanceOf(Condition.CharacteristicCheck.class, c.assertion());
         assertEquals("afwijkende opgave waarde", k.characteristic());
         assertTrue(k.negation());
         assertEquals(3, c.line());
@@ -188,7 +188,7 @@ class InputMarkingTest {
 
         // the order of the rule list: the authored rule where it stood, the generated one behind it
         assertEquals(List.of("waardering", "afwijking opgave waarde"),
-                m.resolvedRegels.stream().map(ResolvedRule::naam).toList());
+                m.resolvedRules.stream().map(ResolvedRule::name).toList());
     }
 
     @Test void the_wire_carries_the_lowering_in_the_spelling_of_the_written_out_pattern() {
@@ -215,7 +215,7 @@ class InputMarkingTest {
              "validity": {"node": "Validity"},
              "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}}""");
         assertTrue(c.contains(group), () -> "de groep staat niet zo op de wire:\n" + ir);
-        String regel = compact("""
+        String rule = compact("""
             {"node": "Rule", "name": "afwijking opgave waarde", "versions": [
               {"validity": {"node": "Validity"},
                "target": {"node": "AttributeReference", "attribute": "afwijkende opgave waarde", "subjectType": "Vondst",
@@ -240,7 +240,7 @@ class InputMarkingTest {
                  "source": {"snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven waarde is gevuld - zijn berekende waarde is gevuld - zijn opgegeven waarde is ongelijk aan zijn berekende waarde."}},
                "initialisation": false}],
              "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}}""");
-        assertTrue(c.contains(regel), () -> "de afwijkingsregel staat niet zo op de wire:\n" + ir);
+        assertTrue(c.contains(rule), () -> "de afwijkingsregel staat niet zo op de wire:\n" + ir);
         String consistency = compact("""
             {"node": "Consistency", "name": "controle opgave waarde", "versions": [
               {"subject": "Vondst",
@@ -273,14 +273,14 @@ class InputMarkingTest {
         assertEquals("waarde", g.attribute());
         assertEquals(3, g.defaults().size());
         Default init = g.defaults().get(2);
-        assertTrue(init.initialisatie(), "de initialisatie is de laagste default");
+        assertTrue(init.initialisation(), "de initialisatie is de laagste default");
         assertNull(init.condition(), "een initialisatiedefault draagt geen geschreven rechtvaardiging");
         assertEquals("25,00", ((Expr.Literal) init.consequence()).valueText());
         assertEquals("standaardwaarde", init.source(), "de statuutannotatie van de initialisatieregel");
-        assertFalse(g.defaults().get(0).initialisatie());
-        assertFalse(g.defaults().get(1).initialisatie());
+        assertFalse(g.defaults().get(0).initialisation());
+        assertFalse(g.defaults().get(1).initialisation());
         assertEquals(List.of("waardering", "afwijking opgave waarde"),
-                m.resolvedRegels.stream().map(ResolvedRule::naam).toList(),
+                m.resolvedRules.stream().map(ResolvedRule::name).toList(),
                 "de initialisatieregel is opgenomen in de groep en staat niet meer als regel");
         String c = compact(IrEmitter.emit(m));
         assertTrue(c.contains(compact("""
@@ -294,17 +294,17 @@ class InputMarkingTest {
     @Test void on_a_date_the_marking_builds_the_same_five_pieces() {
         RegelSpraakModel m = Resolver.resolve(VONDST_DATE);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Objecttype v = m.objecttypen.get("Vondst");
+        ObjectType v = m.objectTypes.get("Vondst");
 
         // 1 and 2: the two attributes right after X, each with X's datatype
         assertEquals(List.of("vinddag", "meldingsdatum", "opgegeven meldingsdatum", "berekende meldingsdatum"),
-                List.copyOf(v.attributen.keySet()));
-        assertEquals(new Datatype.DatumInDagen(), v.attributen.get("meldingsdatum"));
-        assertEquals(new Datatype.DatumInDagen(), v.attributen.get("opgegeven meldingsdatum"));
-        assertEquals(new Datatype.DatumInDagen(), v.attributen.get("berekende meldingsdatum"));
+                List.copyOf(v.attributes.keySet()));
+        assertEquals(new Datatype.DateInDays(), v.attributes.get("meldingsdatum"));
+        assertEquals(new Datatype.DateInDays(), v.attributes.get("opgegeven meldingsdatum"));
+        assertEquals(new Datatype.DateInDays(), v.attributes.get("berekende meldingsdatum"));
 
         // 2: the computation from another date keeps its name and targets berekende X
-        ResolvedRule w = regel(m, "melding na de vinddag");
+        ResolvedRule w = rule(m, "melding na de vinddag");
         assertEquals("berekende meldingsdatum", targetOf(w));
         assertEquals("vinddag", read(((Expr.Binary) w.value()).left()));
 
@@ -315,25 +315,25 @@ class InputMarkingTest {
         assertEquals(List.of("opgegeven meldingsdatum", "berekende meldingsdatum"),
                 g.defaults().subList(0, 2).stream().map(d -> read(d.consequence())).toList(), "van hoog naar laag");
         Default init = g.defaults().get(2);
-        assertTrue(init.initialisatie(), "de initialisatie is de laagste default");
+        assertTrue(init.initialisation(), "de initialisatie is de laagste default");
         assertNull(init.condition(), "een initialisatiedefault draagt geen geschreven rechtvaardiging");
         Expr.Literal date = assertInstanceOf(Expr.Literal.class, init.consequence());
         assertEquals("2026-03-01", date.valueText(), "de datum zoals de wire haar schrijft; de bron houdt 01-03-2026");
-        assertEquals(new Datatype.DatumInDagen(), date.type());
+        assertEquals(new Datatype.DateInDays(), date.type());
         assertEquals("seizoensopening", init.source(), "de statuutannotatie van de initialisatieregel");
 
         // 4 and 5: the characteristic compares the two dates, the consistency asserts it absent
-        assertEquals(List.of("afwijkende opgave meldingsdatum"), v.kenmerken);
+        assertEquals(List.of("afwijkende opgave meldingsdatum"), v.characteristics);
         Condition.Compound all = assertInstanceOf(Condition.Compound.class,
-                regel(m, "afwijking opgave meldingsdatum").condition());
+                rule(m, "afwijking opgave meldingsdatum").condition());
         Condition.Comparison notEqual = assertInstanceOf(Condition.Comparison.class, all.components().get(2));
         assertEquals(Condition.Operator.ONGELIJK, notEqual.op());
         assertEquals("opgegeven meldingsdatum", read(notEqual.left()));
         assertEquals("berekende meldingsdatum", read(notEqual.right()));
         assertEquals(List.of("controle opgave meldingsdatum"),
-                m.consistenties.stream().map(ResolvedConsistency::naam).toList());
+                m.consistencies.stream().map(ResolvedConsistency::name).toList());
         assertEquals(List.of("melding na de vinddag", "afwijking opgave meldingsdatum"),
-                m.resolvedRegels.stream().map(ResolvedRule::naam).toList(),
+                m.resolvedRules.stream().map(ResolvedRule::name).toList(),
                 "de initialisatieregel is opgenomen in de groep en staat niet meer als regel");
     }
 
@@ -368,7 +368,7 @@ class InputMarkingTest {
                     De heffing van een Vondst moet berekend worden als de waarde van de Vondst maal 2.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        ResolvedRule h = regel(m, "heffing");
+        ResolvedRule h = rule(m, "heffing");
         assertEquals("heffing", targetOf(h));
         assertEquals("waarde", read(((Expr.Binary) h.value()).left()), "de lezer leest het doel zelf");
     }
@@ -388,10 +388,10 @@ class InputMarkingTest {
                     De korting van een Vondst moet berekend worden als de taxatie van de Vondst min zijn berekende waarde.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Condition.CharacteristicCheck k = assertInstanceOf(Condition.CharacteristicCheck.class, regel(m, "controle").condition());
+        Condition.CharacteristicCheck k = assertInstanceOf(Condition.CharacteristicCheck.class, rule(m, "controle").condition());
         assertEquals("afwijkende opgave waarde", k.characteristic());
         assertFalse(k.negation());
-        assertEquals("berekende waarde", read(((Expr.Binary) regel(m, "korting").value()).right()));
+        assertEquals("berekende waarde", read(((Expr.Binary) rule(m, "korting").value()).right()));
     }
 
     @Test void an_exception_tree_moves_whole_to_the_calculation() {
@@ -405,12 +405,12 @@ class InputMarkingTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(List.of("waardering", "opgave boven berekening waarde"),
-                m.prioritizedDefaults.stream().map(PrioritizedDefaults::naam).toList());
+                m.prioritizedDefaults.stream().map(PrioritizedDefaults::name).toList());
         PrioritizedDefaults tree = group(m, "waardering");
         assertEquals("berekende waarde", tree.attribute(), "de boom schrijft de berekening");
         assertEquals(2, tree.defaults().size(), "naam en vorm blijven");
         assertEquals("waarde", group(m, "opgave boven berekening waarde").attribute());
-        assertEquals(List.of("afwijking opgave waarde"), m.resolvedRegels.stream().map(ResolvedRule::naam).toList());
+        assertEquals(List.of("afwijking opgave waarde"), m.resolvedRules.stream().map(ResolvedRule::name).toList());
     }
 
     @Test void an_unordered_block_moves_as_set() {
@@ -455,8 +455,8 @@ class InputMarkingTest {
             | 2 | 20 | 10 |
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertEquals(List.of("berekende bonus", "berekende bonus"), m.resolvedRegels.stream()
-                .filter(r -> r.naam().startsWith("Bonustabel")).map(InputMarkingTest::targetOf).toList());
+        assertEquals(List.of("berekende bonus", "berekende bonus"), m.resolvedRules.stream()
+                .filter(r -> r.name().startsWith("Bonustabel")).map(InputMarkingTest::targetOf).toList());
         assertEquals("bonus", group(m, "opgave boven berekening bonus").attribute());
     }
 
@@ -495,7 +495,7 @@ class InputMarkingTest {
                 indien zijn aanspoeldatum gevuld is.
         """;
 
-    private static Objecttype targetType(ResolvedRule r) {
+    private static ObjectType targetType(ResolvedRule r) {
         return ((Expr.AttributeReference) r.target()).objectType();
     }
 
@@ -504,24 +504,24 @@ class InputMarkingTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         // the members stand on the declaring type; the subtype inherits them
         assertEquals(List.of("vinddatum", "meldingsdatum", "opgegeven meldingsdatum", "berekende meldingsdatum"),
-                List.copyOf(m.objecttypen.get("Vondst").attributen.keySet()));
-        assertEquals(List.of("aanspoeldatum"), List.copyOf(m.objecttypen.get("Strandvondst").attributen.keySet()));
+                List.copyOf(m.objectTypes.get("Vondst").attributes.keySet()));
+        assertEquals(List.of("aanspoeldatum"), List.copyOf(m.objectTypes.get("Strandvondst").attributes.keySet()));
         // the writer keeps its type: 'berekende meldingsdatum' of a Strandvondst is what its own rule computes
-        ResolvedRule r = regel(m, "melding op aanspoeldag");
+        ResolvedRule r = rule(m, "melding op aanspoeldag");
         assertEquals("berekende meldingsdatum", targetOf(r));
-        assertEquals("Strandvondst", targetType(r).naam);
+        assertEquals("Strandvondst", targetType(r).name);
         // one group, on the declaring type: each subtype inherits it whole, so the opgave tops every type's stack
         assertEquals(List.of("opgave boven berekening meldingsdatum"),
-                m.prioritizedDefaults.stream().map(PrioritizedDefaults::naam).toList());
+                m.prioritizedDefaults.stream().map(PrioritizedDefaults::name).toList());
         PrioritizedDefaults g = group(m, "opgave boven berekening meldingsdatum");
-        assertEquals("Vondst", g.onderwerp());
+        assertEquals("Vondst", g.subject());
         assertEquals("meldingsdatum", g.attribute());
         assertEquals(List.of("opgegeven meldingsdatum", "berekende meldingsdatum"),
                 g.defaults().stream().map(d -> read(d.consequence())).toList());
-        assertEquals("Vondst", targetType(regel(m, "afwijking opgave meldingsdatum")).naam);
-        assertEquals("Vondst", m.consistenties.get(0).subject().naam);
+        assertEquals("Vondst", targetType(rule(m, "afwijking opgave meldingsdatum")).name);
+        assertEquals("Vondst", m.consistencies.get(0).subject().name);
         assertEquals(List.of("melding op aanspoeldag", "afwijking opgave meldingsdatum"),
-                m.resolvedRegels.stream().map(ResolvedRule::naam).toList());
+                m.resolvedRules.stream().map(ResolvedRule::name).toList());
         String ir = IrEmitter.emit(m);
         Report.assertAccountedFor(ir);
         assertTrue(compact(ir).contains(compact("""
@@ -534,12 +534,12 @@ class InputMarkingTest {
         RegelSpraakModel m = Resolver.resolve(STRANDVONDST + VINDDAG + AANSPOELDAG);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         for (String[] w : new String[][] {{"melding op vinddag", "Vondst"}, {"melding op aanspoeldag", "Strandvondst"}}) {
-            ResolvedRule r = regel(m, w[0]);
+            ResolvedRule r = rule(m, w[0]);
             assertEquals("berekende meldingsdatum", targetOf(r), w[0]);
-            assertEquals(w[1], targetType(r).naam, w[0]);
+            assertEquals(w[1], targetType(r).name, w[0]);
         }
         assertEquals(1, m.prioritizedDefaults.size(), "één defaults-groep");
-        assertEquals("Vondst", group(m, "opgave boven berekening meldingsdatum").onderwerp());
+        assertEquals("Vondst", group(m, "opgave boven berekening meldingsdatum").subject());
     }
 
     @Test void a_deviation_tree_on_the_subtype_moves_whole_to_the_calculation() {
@@ -552,13 +552,13 @@ class InputMarkingTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(List.of("melding op aanspoeldag", "opgave boven berekening meldingsdatum"),
-                m.prioritizedDefaults.stream().map(PrioritizedDefaults::naam).toList());
+                m.prioritizedDefaults.stream().map(PrioritizedDefaults::name).toList());
         PrioritizedDefaults tree = group(m, "melding op aanspoeldag");
-        assertEquals("Strandvondst", tree.onderwerp(), "de boom blijft op het subtype");
+        assertEquals("Strandvondst", tree.subject(), "de boom blijft op het subtype");
         assertEquals("berekende meldingsdatum", tree.attribute(), "de boom schrijft de berekening");
         assertEquals(2, tree.defaults().size(), "naam en vorm blijven");
-        assertEquals("berekende meldingsdatum", targetOf(regel(m, "melding op vinddag")));
-        assertEquals("Vondst", group(m, "opgave boven berekening meldingsdatum").onderwerp());
+        assertEquals("berekende meldingsdatum", targetOf(rule(m, "melding op vinddag")));
+        assertEquals("Vondst", group(m, "opgave boven berekening meldingsdatum").subject());
     }
 
     @Test void a_writer_on_a_grandchild_moves_on_its_own_type() {
@@ -570,10 +570,10 @@ class InputMarkingTest {
                     indien zijn keurdatum gevuld is.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        ResolvedRule r = regel(m, "melding op keurdag");
+        ResolvedRule r = rule(m, "melding op keurdag");
         assertEquals("berekende meldingsdatum", targetOf(r));
-        assertEquals("Barnsteenvondst", targetType(r).naam);
-        assertEquals("Vondst", group(m, "opgave boven berekening meldingsdatum").onderwerp());
+        assertEquals("Barnsteenvondst", targetType(r).name);
+        assertEquals("Vondst", group(m, "opgave boven berekening meldingsdatum").subject());
     }
 
     @Test void the_initialisation_of_the_declaring_type_is_the_lowest_default_also_for_the_subtype() {
@@ -586,9 +586,9 @@ class InputMarkingTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         PrioritizedDefaults g = group(m, "opgave boven berekening meldingsdatum");
         assertEquals(3, g.defaults().size());
-        assertTrue(g.defaults().get(2).initialisatie(), "de initialisatie is de laagste default");
+        assertTrue(g.defaults().get(2).initialisation(), "de initialisatie is de laagste default");
         assertEquals(List.of("melding op aanspoeldag", "afwijking opgave meldingsdatum"),
-                m.resolvedRegels.stream().map(ResolvedRule::naam).toList(), "de initialisatie verlaat de regellijst");
+                m.resolvedRules.stream().map(ResolvedRule::name).toList(), "de initialisatie verlaat de regellijst");
     }
 
     @Test void an_initialisation_on_a_subtype_stays_with_its_condition_on_the_target() {
@@ -601,10 +601,10 @@ class InputMarkingTest {
                     indien hij beschadigd is.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        ResolvedRule init = regel(m, "melding bij schade zonder aanspoeldag");
+        ResolvedRule init = rule(m, "melding bij schade zonder aanspoeldag");
         assertEquals(ResolvedRule.Kind.INITIALISATIE, init.category());
         assertEquals("meldingsdatum", targetOf(init));
-        assertEquals("Strandvondst", targetType(init).naam);
+        assertEquals("Strandvondst", targetType(init).name);
         assertNotNull(init.condition(), "de voorwaarde blijft");
         assertEquals(2, group(m, "opgave boven berekening meldingsdatum").defaults().size(),
                 "de groep op Vondst draagt geen initialisatie");
@@ -619,9 +619,9 @@ class InputMarkingTest {
             """;
         RegelSpraakModel m = Resolver.resolve(without);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertEquals("waarde", targetOf(regel(m, "waardering")));
+        assertEquals("waarde", targetOf(rule(m, "waardering")));
         assertTrue(m.prioritizedDefaults.isEmpty());
-        assertTrue(m.consistenties.isEmpty());
+        assertTrue(m.consistencies.isEmpty());
         String ir = IrEmitter.emit(m);
         assertFalse(ir.contains("opgegeven") || ir.contains("berekende"), ir);
     }
@@ -639,9 +639,9 @@ class InputMarkingTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(List.of("opgegeven stand", "mag worden stand", "toelichting"),
-                List.copyOf(m.objecttypen.get("Vondst").attributen.keySet()));
+                List.copyOf(m.objectTypes.get("Vondst").attributes.keySet()));
         assertTrue(m.prioritizedDefaults.isEmpty());
-        assertEquals("(mag opgegeven worden)", ((Expr.Literal) regel(m, "toelichting").value()).valueText());
+        assertEquals("(mag opgegeven worden)", ((Expr.Literal) rule(m, "toelichting").value()).valueText());
     }
 
     // -------------------------------------------------------------------- refusals, each an ERROR at the declaration
@@ -958,12 +958,12 @@ class InputMarkingTest {
                 + "berekent of vaststelt — 'waarde' is al invoer, en de markering genereert niets (dialect §7)",
                 d.message());
         assertEquals(3, d.line());
-        Objecttype v = m.objecttypen.get("Vondst");
-        assertEquals(List.of("taxatie", "waarde"), List.copyOf(v.attributen.keySet()));
-        assertTrue(v.kenmerken.isEmpty());
+        ObjectType v = m.objectTypes.get("Vondst");
+        assertEquals(List.of("taxatie", "waarde"), List.copyOf(v.attributes.keySet()));
+        assertTrue(v.characteristics.isEmpty());
         assertTrue(m.prioritizedDefaults.isEmpty());
-        assertTrue(m.consistenties.isEmpty());
-        assertEquals("waarde", targetOf(regel(m, "standaardwaarde")), "de initialisatie blijft een gewone regel");
+        assertTrue(m.consistencies.isEmpty());
+        assertEquals("waarde", targetOf(rule(m, "standaardwaarde")), "de initialisatie blijft een gewone regel");
         Report.assertAccountedFor(IrEmitter.emit(m));
     }
 

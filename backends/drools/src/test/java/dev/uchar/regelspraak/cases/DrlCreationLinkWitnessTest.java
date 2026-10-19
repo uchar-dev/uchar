@@ -214,8 +214,8 @@ class DrlCreationLinkWitnessTest {
         return write(ir, "kenmerk-getal");
     }
 
-    private static Path write(JsonNode ir, String naam) throws Exception {
-        Path p = Files.createTempDirectory("uchar-drlkoppeling-" + naam).resolve("ir.json");
+    private static Path write(JsonNode ir, String name) throws Exception {
+        Path p = Files.createTempDirectory("uchar-drlkoppeling-" + name).resolve("ir.json");
         Files.writeString(p, JSON.writerWithDefaultPrettyPrinter().writeValueAsString(ir));
         p.toFile().deleteOnExit();
         return p;

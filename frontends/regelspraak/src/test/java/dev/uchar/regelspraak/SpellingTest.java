@@ -42,16 +42,16 @@ class SpellingTest {
     }
 
     /** The families of the section {@code waarden}, in its order. */
-    private static List<Map<?, ?>> waarden() throws IOException {
+    private static List<Map<?, ?>> values() throws IOException {
         Map<?, ?> table = (Map<?, ?>) Report.json(Files.readString(nameTable(), StandardCharsets.UTF_8));
         List<Map<?, ?>> result = new ArrayList<>();
         for (Object f : (List<?>) table.get("waarden")) result.add((Map<?, ?>) f);
         return result;
     }
 
-    private static Family<?> family(String naam) {
-        return Spelling.FAMILIES.stream().filter(f -> f.naam().equals(naam)).findFirst()
-                .orElseGet(() -> fail("de Java-tabel kent de familie " + naam + " niet"));
+    private static Family<?> family(String name) {
+        return Spelling.FAMILIES.stream().filter(f -> f.name().equals(name)).findFirst()
+                .orElseGet(() -> fail("de Java-tabel kent de familie " + name + " niet"));
     }
 
     /** The v0 spelling of an in-memory value: an enum constant's name, a name or flag itself. A date precision
@@ -88,49 +88,49 @@ class SpellingTest {
     }
 
     @Test void the_table_carries_exactly_the_families_of_the_name_table_in_its_order() throws IOException {
-        List<String> nameTable = waarden().stream().map(f -> (String) f.get("familie")).toList();
-        List<String> java = Spelling.FAMILIES.stream().map(Family::naam).toList();
+        List<String> nameTable = values().stream().map(f -> (String) f.get("familie")).toList();
+        List<String> java = Spelling.FAMILIES.stream().map(Family::name).toList();
         assertEquals(16, nameTable.size(), "de sectie waarden telde 16 families bij de L5-landing");
         assertEquals(nameTable, java);
     }
 
     @Test void every_family_spells_exactly_the_rows_of_the_name_table() throws IOException {
-        for (Map<?, ?> nt : waarden()) {
-            String naam = (String) nt.get("familie");
-            Family<?> f = family(naam);
-            assertEquals(nt.get("plaatsen"), f.places(), () -> naam + ": de plaatsen");
-            assertEquals(paren(nt.get("rijen")), javaParen(f, f.rows()), () -> naam + ": de rijen [v0, L5]");
+        for (Map<?, ?> nt : values()) {
+            String name = (String) nt.get("familie");
+            Family<?> f = family(name);
+            assertEquals(nt.get("plaatsen"), f.places(), () -> name + ": de plaatsen");
+            assertEquals(paren(nt.get("rijen")), javaParen(f, f.rows()), () -> name + ": de rijen [v0, L5]");
             assertEquals(paren(nt.get("geweigerd")), javaParen(f, f.refused()),
-                    () -> naam + ": de bij naam geweigerde waarden [v0, L5]");
-            assertEquals(Set.copyOf(list(nt.get("geweigerd_op"))), f.refusedOn(), () -> naam + ": geweigerd_op");
-            assertEquals(Set.copyOf(list(nt.get("null_blijft"))), f.nullStays(), () -> naam + ": null_blijft");
-            assertEquals(Boolean.TRUE.equals(nt.get("vrij")), f.free(), () -> naam + ": vrij");
+                    () -> name + ": de bij naam geweigerde waarden [v0, L5]");
+            assertEquals(Set.copyOf(list(nt.get("geweigerd_op"))), f.refusedOn(), () -> name + ": geweigerd_op");
+            assertEquals(Set.copyOf(list(nt.get("null_blijft"))), f.nullStays(), () -> name + ": null_blijft");
+            assertEquals(Boolean.TRUE.equals(nt.get("vrij")), f.free(), () -> name + ": vrij");
         }
     }
 
     @Test void every_family_is_a_bijection_in_lowercamel_and_accounts_for_every_constant() {
         for (Family<?> f : Spelling.FAMILIES) {
-            Set<Object> waarden = new HashSet<>();
+            Set<Object> values = new HashSet<>();
             Set<String> spellings = new HashSet<>();
             for (Map<?, String> part : List.of(f.rows(), f.refused()))
                 for (var entry : part.entrySet()) {
-                    assertTrue(waarden.add(entry.getKey()), () -> f.naam() + ": de waarde " + entry.getKey() + " twee keer");
-                    assertTrue(spellings.add(entry.getValue()), () -> f.naam() + ": de spelling " + entry.getValue() + " twee keer");
+                    assertTrue(values.add(entry.getKey()), () -> f.name() + ": de waarde " + entry.getKey() + " twee keer");
+                    assertTrue(spellings.add(entry.getValue()), () -> f.name() + ": de spelling " + entry.getValue() + " twee keer");
                     assertTrue(entry.getValue().matches("[a-z][A-Za-z0-9]*"),
-                            () -> f.naam() + ": '" + entry.getValue() + "' is geen lowerCamel (IR-SPEC, Conventions)");
+                            () -> f.name() + ": '" + entry.getValue() + "' is geen lowerCamel (IR-SPEC, Conventions)");
                 }
             for (var entry : f.unwritten().entrySet()) {
-                assertTrue(waarden.add(entry.getKey()), () -> f.naam() + ": " + entry.getKey() + " is gespeld én ongeschreven");
-                assertFalse(entry.getValue().isBlank(), () -> f.naam() + ": " + entry.getKey() + " staat ongeschreven zonder reden");
+                assertTrue(values.add(entry.getKey()), () -> f.name() + ": " + entry.getKey() + " is gespeld én ongeschreven");
+                assertFalse(entry.getValue().isBlank(), () -> f.name() + ": " + entry.getKey() + " staat ongeschreven zonder reden");
             }
-            Object first = waarden.iterator().next();
+            Object first = values.iterator().next();
             if (first instanceof Enum<?> e) {
                 Set<Object> constants = new HashSet<>(List.of(e.getDeclaringClass().getEnumConstants()));
-                assertEquals(constants, waarden,
-                        () -> f.naam() + ": elke constante van " + e.getDeclaringClass().getSimpleName()
+                assertEquals(constants, values,
+                        () -> f.name() + ": elke constante van " + e.getDeclaringClass().getSimpleName()
                                 + " is gespeld, bij naam geweigerd of met reden ongeschreven");
             }
-            if (first instanceof Boolean) assertEquals(Set.of(true, false), waarden, () -> f.naam() + ": beide vlaggen");
+            if (first instanceof Boolean) assertEquals(Set.of(true, false), values, () -> f.name() + ": beide vlaggen");
         }
         // one enum, two nodes: every function kind is spelled by exactly one of Aggregation and BuiltinCall
         Set<Object> fold = new HashSet<>(Spelling.AGGREGATION_KIND.rows().keySet());
@@ -169,9 +169,9 @@ class SpellingTest {
                 assertEquals(f.nullStays().contains(place), f.allowsNull(place));
             }
             for (Object o : f.unwritten().keySet())
-                assertThrows(IllegalArgumentException.class, () -> f.spelling(o), () -> f.naam() + " spelt " + o);
+                assertThrows(IllegalArgumentException.class, () -> f.spelling(o), () -> f.name() + " spelt " + o);
             assertThrows(IllegalArgumentException.class, () -> f.value("Nergens.veld", "x"),
-                    () -> f.naam() + " leest op een plaats die niet de hare is");
+                    () -> f.name() + " leest op een plaats die niet de hare is");
         }
     }
 }

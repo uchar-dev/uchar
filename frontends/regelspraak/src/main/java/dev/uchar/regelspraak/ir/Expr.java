@@ -2,8 +2,8 @@ package dev.uchar.regelspraak.ir;
 
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Granularity;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Parameter;
 
 import java.util.List;
@@ -79,7 +79,7 @@ public sealed interface Expr {
     /** §5.3: whether {@code e} is the Rekendatum or Rekenjaar execution-date constant — the trigger for the
      *  §4.2 rekendatum global when used as a VALUE operand (§13.4.17.34). */
     static boolean isContextValue(Expr e) {
-        return e instanceof Constant c && ("Rekendatum".equals(c.naam()) || "Rekenjaar".equals(c.naam()));
+        return e instanceof Constant c && ("Rekendatum".equals(c.name()) || "Rekenjaar".equals(c.name()));
     }
 
     /** §13.2 literal: a number, text, boolean, date, or enumeration value. */
@@ -89,11 +89,11 @@ public sealed interface Expr {
      *  «expressie» parts, each coerced to Tekst and concatenated at runtime. A PLAIN "…" (no «…») stays an
      *  {@link Literal}; this node is built ONLY when at least one «expressie» part is present. */
     record TextComposition(List<Part> parts, Source source) implements Expr {
-        @Override public Datatype type() { return new Datatype.Tekst(); }
+        @Override public Datatype type() { return new Datatype.Text(); }
         /** One piece of a tekstenwaardereeks: a literal chunk or an embedded expression. */
         public sealed interface Part {}
         /** A literal karakterreeks chunk (already unquoted, no guillemets). */
-        public record LiteralChunk(String tekst) implements Part {}
+        public record LiteralChunk(String text) implements Part {}
         /** A «expressie» part — its value is coerced to Tekst at evaluation. */
         public record EmbeddedExpression(Expr expr) implements Part {}
     }
@@ -141,23 +141,23 @@ public sealed interface Expr {
      *  of {@code map.get(label)}), so no label arithmetic survives into the back-end. */
     record DimensionSelection(String dimension, List<String> labels, Source source) {}
 
-    /** {@code dimensieSelectie} (§13.4.17.51-.54), when non-null, restricts a SOM/MIN/MAX over a
+    /** {@code dimensionSelection} (§13.4.17.51-.54), when non-null, restricts a SOM/MIN/MAX over a
      *  gedimensioneerd attribuut to the selected dimension labels — the only aggregation that
      *  ranges over a dimension's value space rather than over object instances. Null for an
      *  ordinary instance aggregation. */
-    record FunctionCall(FunctionKind kind, List<Expr> arguments, Objecttype elementObjectType,
-                   Expr emptyFallback, Condition filter, DimensionSelection dimensieSelectie,
-                   Datatype type, Source source, Granulariteit granulariteit) implements Expr {
-        /** {@code granulariteit} is the §13.4.17.57 aantal-dagen-in operator's stated bucket unit ("in <de maand|
+    record FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,
+                   Expr emptyFallback, Condition filter, DimensionSelection dimensionSelection,
+                   Datatype type, Source source, Granularity granularity) implements Expr {
+        /** {@code granularity} is the §13.4.17.57 aantal-dagen-in operator's stated bucket unit ("in <de maand|
          *  het jaar>"); null for every other functie. The transpiler requires it to MATCH the doel's tijdlijn
          *  (§4.21/§7.2), markering a mismatch rather than silently bucketing by the wrong unit. */
-        public FunctionCall(FunctionKind kind, List<Expr> arguments, Objecttype elementObjectType,
-                       Expr emptyFallback, Condition filter, DimensionSelection dimensieSelectie,
+        public FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,
+                       Expr emptyFallback, Condition filter, DimensionSelection dimensionSelection,
                        Datatype type, Source source) {
-            this(kind, arguments, elementObjectType, emptyFallback, filter, dimensieSelectie, type, source, null);
+            this(kind, arguments, elementObjectType, emptyFallback, filter, dimensionSelection, type, source, null);
         }
         /** Most call sites build an instance aggregation with no dimensieselectie and no granulariteit. */
-        public FunctionCall(FunctionKind kind, List<Expr> arguments, Objecttype elementObjectType,
+        public FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,
                        Expr emptyFallback, Condition filter, Datatype type, Source source) {
             this(kind, arguments, elementObjectType, emptyFallback, filter, null, type, source, null);
         }
@@ -188,7 +188,7 @@ public sealed interface Expr {
          *  toolchain leaves it unlowered because its own lowering ORs the operands' filter terms and
          *  has no term to OR for one without a filter. There is deliberately no path spelling: a
          *  selection carries a one-step relation, and a count's range is one step (WF-102 (c)). */
-        public record Branch(Objecttype elementType, RegelSpraakModel.RoleBindingRef sourceRole,
+        public record Branch(ObjectType elementType, RegelSpraakModel.RoleBindingRef sourceRole,
                           Condition filter, Source source) {}
     }
 
@@ -196,11 +196,11 @@ public sealed interface Expr {
      *  (§6.1.2: it is exactly the explicit afronding that lets a higher-precision result be assigned
      *  to a lower-precision attribute), keeping the base's unit and sign. */
     enum RoundingMode { NAAR_BENEDEN, NAAR_BOVEN, REKENKUNDIG, RICHTING_NUL, WEG_VAN_NUL }
-    record Rounding(Expr base, RoundingMode mode, int decimalen, Source source) implements Expr {
+    record Rounding(Expr base, RoundingMode mode, int decimals, Source source) implements Expr {
         @Override public Datatype type() {
             Datatype b = base.type();
-            if (b instanceof Datatype.Numeriek n) return new Datatype.Numeriek(decimalen == 0, decimalen, n.teken(), n.eenheid());
-            if (b instanceof Datatype.Percentage p) return new Datatype.Percentage(decimalen == 0, decimalen);
+            if (b instanceof Datatype.Numeric n) return new Datatype.Numeric(decimals == 0, decimals, n.sign(), n.unit());
+            if (b instanceof Datatype.Percentage p) return new Datatype.Percentage(decimals == 0, decimals);
             return b;
         }
     }
@@ -223,7 +223,7 @@ public sealed interface Expr {
      * or role — and distinguishes a wederkerig self-relation ("zijn partner", where the
      * navigated type equals the subject's) from a plain own-attribute read (§13.3.9.2).
      */
-    record AttributeReference(String attribute, Objecttype objectType, String subjectSource,
+    record AttributeReference(String attribute, ObjectType objectType, String subjectSource,
                         String navigationRole, Datatype type, Source source, boolean set,
                         java.util.List<String> navigationPath,
                         java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> rangePath,
@@ -260,7 +260,7 @@ public sealed interface Expr {
          *  input for lowering a §8.2 quantified condition to {@link Condition.QuantifierFold}, which records
          *  them on the wire — the reference node itself never carries them out, so no schema field
          *  corresponds to these components. */
-        public AttributeReference(String attribute, Objecttype objectType, String subjectSource,
+        public AttributeReference(String attribute, ObjectType objectType, String subjectSource,
                             String navigationRole, Datatype type, Source source, boolean set,
                             java.util.List<String> navigationPath,
                             java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> rangePath) {
@@ -268,7 +268,7 @@ public sealed interface Expr {
         }
         /** {@code threshold} defaults to 0: it is read only under a COUNTING {@code quantifier}, and every
          *  reference built outside the onderwerp path carries none. */
-        public AttributeReference(String attribute, Objecttype objectType, String subjectSource,
+        public AttributeReference(String attribute, ObjectType objectType, String subjectSource,
                             String navigationRole, Datatype type, Source source, boolean set,
                             java.util.List<String> navigationPath,
                             java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> rangePath,
@@ -276,17 +276,17 @@ public sealed interface Expr {
             this(attribute, objectType, subjectSource, navigationRole, type, source, set, navigationPath, rangePath,
                     quantifier, 0);
         }
-        public AttributeReference(String attribute, Objecttype objectType, String subjectSource,
+        public AttributeReference(String attribute, ObjectType objectType, String subjectSource,
                             String navigationRole, Datatype type, Source source, boolean set,
                             java.util.List<String> navigationPath) {
             this(attribute, objectType, subjectSource, navigationRole, type, source, set, navigationPath,
                     java.util.List.of());
         }
-        public AttributeReference(String attribute, Objecttype objectType, String subjectSource,
+        public AttributeReference(String attribute, ObjectType objectType, String subjectSource,
                             String navigationRole, Datatype type, Source source, boolean set) {
             this(attribute, objectType, subjectSource, navigationRole, type, source, set, java.util.List.of());
         }
-        public AttributeReference(String attribute, Objecttype objectType, String subjectSource,
+        public AttributeReference(String attribute, ObjectType objectType, String subjectSource,
                             String navigationRole, Datatype type, Source source) {
             this(attribute, objectType, subjectSource, navigationRole, type, source, false, java.util.List.of());
         }
@@ -310,7 +310,7 @@ public sealed interface Expr {
      *  resolver could NOT bind to a definition — a forward or cyclic reference. A BOUND variable read in
      *  a rule's result part is an {@link BinderRef} under its {@link Let}; one read in the voorwaarde is
      *  substituted at its use site (see {@link Let}). This node is therefore a residual marker only. */
-    record VariableRef(String naam, Datatype type, Source source) implements Expr {}
+    record VariableRef(String name, Datatype type, Source source) implements Expr {}
 
     /**
      * IR-SPEC ch. 4.10 / RUNTIME-SEMANTICS ch. 10.6: the value-level binding. {@code binder} is visible
@@ -329,7 +329,7 @@ public sealed interface Expr {
 
     /** WF-064: a read of the nearest enclosing {@link Let} binder (or match-arm binder) of this name.
      *  A bound binder is never leeg — the read either yields a gevuld value or ends its owning Let. */
-    record BinderRef(String naam, Datatype type, Source source) implements Expr {}
+    record BinderRef(String name, Datatype type, Source source) implements Expr {}
 
     /**
      * IR-SPEC ch. 4.10 / RUNTIME-SEMANTICS ch. 10.2: the value-level conditional. The guard is evaluated
@@ -348,7 +348,7 @@ public sealed interface Expr {
     record IfThenElse(Condition condition, Expr then, Expr otherwise, Datatype type, Source source) implements Expr {}
 
     /** A built-in reckoning constant or referent: Rekendatum, Rekenjaar, hij, de dag. */
-    record Constant(String naam, Datatype type, Source source) implements Expr {}
+    record Constant(String name, Datatype type, Source source) implements Expr {}
 
     /** A reference or sub-expression the resolver could not bind to the model.
      *

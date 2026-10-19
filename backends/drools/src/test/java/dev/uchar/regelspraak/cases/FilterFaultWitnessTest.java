@@ -171,22 +171,22 @@ class FilterFaultWitnessTest {
         assertEquals("gespeeld", TmsFaultWitnessTest.play(ir, caseDocument, DRL), "drl-tekst");
     }
 
-    /** Both branches fault on {@code caseDocument}, where rule {@code regel} reaches its fold and the filter or the
+    /** Both branches fault on {@code caseDocument}, where rule {@code rule} reaches its fold and the filter or the
      *  matrix takes the root of {@code radicand}, which is no square, for a member: with the fault named after the
      *  rule, a fault of the fixpoint. Until the card zero-division-channel the fault was a division by zero. */
-    private static void fails(Path ir, JsonNode caseDocument, String regel, String radicand) throws Exception {
+    private static void fails(Path ir, JsonNode caseDocument, String rule, String radicand) throws Exception {
         for (DroolsBackend.Branch branch : List.of(EXEC, DRL))
-            assertEquals("ComputeFault: " + TmsDocuments.irrational(regel, radicand),
+            assertEquals("ComputeFault: " + TmsDocuments.irrational(rule, radicand),
                     TmsFaultWitnessTest.play(ir, caseDocument, branch), branch.toString());
     }
 
-    /** Both branches play {@code instances}, where rule {@code regel} reaches its fold on {@code label} and the filter
+    /** Both branches play {@code instances}, where rule {@code rule} reaches its fold on {@code label} and the filter
      *  divides by a numeric zero for a member: {@code outcome}, and the §9.5 deposit of kind EF-005 under that rule on
      *  that subject. Until the card zero-division-channel such a row faulted ({@link #fails}). */
-    private static void deposits(Path ir, List<String> instances, List<String> outcome, String regel, String label)
+    private static void deposits(Path ir, List<String> instances, List<String> outcome, String rule, String label)
             throws Exception {
         List<String> expectations = new ArrayList<>(outcome);
-        expectations.add(TmsDocuments.inconsistent(regel, label, "EF-005"));
+        expectations.add(TmsDocuments.inconsistent(rule, label, "EF-005"));
         played(ir, TmsDocuments.caseDocument(instances, expectations));
     }
 
@@ -309,8 +309,8 @@ class FilterFaultWitnessTest {
     }
 
     /** "{@code kenmerk} indien hij aan alle volgende voorwaarden voldoet: hij is actief; {@code quantifierFold}". */
-    static String quantifierRule(String naam, String characteristic, String quantifierFold) {
-        return characteristicRule(naam, "Jutter", characteristic, compound("all", 0, List.of(check("actief", false),
+    static String quantifierRule(String name, String characteristic, String quantifierFold) {
+        return characteristicRule(name, "Jutter", characteristic, compound("all", 0, List.of(check("actief", false),
                 quantifierFold)));
     }
 
@@ -525,11 +525,11 @@ class FilterFaultWitnessTest {
         }
     }
 
-    /** The expectations of the case of {@code label} where the verdict of the rule {@code regel} is {@code verdict}:
+    /** The expectations of the case of {@code label} where the verdict of the rule {@code rule} is {@code verdict}:
      *  druk where it holds, and the deposit of EF-005 where a member deposited, else consistent. */
-    static List<String> expectations(String verdict, String regel, String label) {
+    static List<String> expectations(String verdict, String rule, String label) {
         return List.of(expected(label, "druk", verdict.startsWith("W")), verdict.endsWith("D")
-                ? TmsDocuments.inconsistent(regel, label, "EF-005") : consistent());
+                ? TmsDocuments.inconsistent(rule, label, "EF-005") : consistent());
     }
 
     /** Every order of the four members, on the four cases, on both branches: a member is evaluated only where every
@@ -595,7 +595,7 @@ class FilterFaultWitnessTest {
     /** An instance as {@link TmsDocuments#instanceWithRoles} writes it, with the dates of {@code dates} added. */
     private static String withDates(String instance, Map<String, String> dates) {
         List<String> d = new ArrayList<>();
-        dates.forEach((naam, iso) -> d.add("\"" + naam + "\":{\"date\":\"" + iso + "\"}"));
+        dates.forEach((name, iso) -> d.add("\"" + name + "\":{\"date\":\"" + iso + "\"}"));
         return instance.contains("\"attributes\":{}")
                 ? instance.replace("\"attributes\":{}", "\"attributes\":{" + String.join(",", d) + "}")
                 : instance.replace("\"attributes\":{", "\"attributes\":{" + String.join(",", d) + ",");
@@ -698,10 +698,10 @@ class FilterFaultWitnessTest {
         }
     }
 
-    /** J1 with the characteristics {@code kenmerken}, the peildatum 2020-01-01 and V1, 10 by 2, found on 2026-01-05,
+    /** J1 with the characteristics {@code characteristics}, the peildatum 2020-01-01 and V1, 10 by 2, found on 2026-01-05,
      *  and where {@code withV2} also V2, 9 by 0, found on 2026-01-06. */
-    private static List<String> asOfJutter(List<String> kenmerken, boolean withV2) {
-        List<String> out = new ArrayList<>(List.of(withDates(instanceWithRoles("J1", "Jutter", Map.of(), kenmerken,
+    private static List<String> asOfJutter(List<String> characteristics, boolean withV2) {
+        List<String> out = new ArrayList<>(List.of(withDates(instanceWithRoles("J1", "Jutter", Map.of(), characteristics,
                 Map.of("vondsten", withV2 ? List.of("V1", "V2") : List.of("V1"))), Map.of("peildatum", "2020-01-01")),
                 withDates(vondst("V1", "10", "2"), Map.of("vinddatum", "2026-01-05"))));
         if (withV2) out.add(withDates(vondst("V2", "9", "0"), Map.of("vinddatum", "2026-01-06")));
@@ -746,8 +746,8 @@ class FilterFaultWitnessTest {
         for (Map.Entry<String, Object[]> v : playing.entrySet()) {
             Object[] w = v.getValue();
             Path ir = document(List.of(characteristicRule("drukte", "Jutter", "druk", (String) w[0])), List.of());
-            @SuppressWarnings("unchecked") List<String> kenmerken = (List<String>) w[1], withV2 = (List<String>) w[3];
-            JsonNode answer = TmsDocuments.caseDocument(asOfJutter(kenmerken, false), List.of(expected("J1", "druk",
+            @SuppressWarnings("unchecked") List<String> characteristics = (List<String>) w[1], withV2 = (List<String>) w[3];
+            JsonNode answer = TmsDocuments.caseDocument(asOfJutter(characteristics, false), List.of(expected("J1", "druk",
                     (Boolean) w[2]), consistent()));
             JsonNode deposit = TmsDocuments.caseDocument(asOfJutter(withV2, true), List.of(expected("J1", "druk",
                     (Boolean) w[4]), TmsDocuments.inconsistent("drukte", "J1", "EF-005")));
@@ -788,15 +788,15 @@ class FilterFaultWitnessTest {
      *  zero-division-channel). */
     @Test void a_fold_in_the_value_under_a_fold_in_the_condition() throws Exception {
         String condition = compound("all", 0, List.of(comparison("greater", zwaarFold(), number("0"))));
-        Path regel = document(List.of(computingRule("zwaarte", "BEREKENING", "Jutter", "zwaarte", fold(), condition)),
+        Path rule = document(List.of(computingRule("zwaarte", "BEREKENING", "Jutter", "zwaarte", fold(), condition)),
                 List.of());
         Path creation = document(List.of(MELDTELLING), List.of(creation(fold(), condition)));
         String v6 = vondst("V6", "60", "2");
-        played(regel, TmsDocuments.caseDocument(j1(false), List.of(value("J1", "zwaarte", null), consistent())));
+        played(rule, TmsDocuments.caseDocument(j1(false), List.of(value("J1", "zwaarte", null), consistent())));
         List<String> j2 = List.of(jutter("J2", false, List.of("V6", "V4")), v6, vondst("V4", "3", "3"));
-        played(regel, TmsDocuments.caseDocument(j2, List.of(value("J2", "zwaarte", "1"), consistent())));
+        played(rule, TmsDocuments.caseDocument(j2, List.of(value("J2", "zwaarte", "1"), consistent())));
         List<String> j4 = List.of(jutter("J4", false, List.of("V6", "V2")), v6, vondst("V2", "9", "0"));
-        deposits(regel, j4, List.of(value("J4", "zwaarte", "1")), "zwaarte", "J4");
+        deposits(rule, j4, List.of(value("J4", "zwaarte", "1")), "zwaarte", "J4");
         // the creation, whose initialisation divides, the analysis refuses by name on both branches; until card
         // drl-teksttak-op-truth-maintenance the DRL-text branch played it on J1 and J2 and faulted on J4
         initialisationRefused(creation);
@@ -976,12 +976,12 @@ class FilterFaultWitnessTest {
     /** "Het vondsttal van een Jutter moet berekend worden als het aantal vondsten van de Jutter die aan de volgende
      *  voorwaarde voldoen: {@code filter}, indien hij actief is", in a document of {@link #MODEL_FALLIBLE}. */
     static Path vondsttal(String filter) throws Exception {
-        String regel = computingRule("vondsttal", "BEREKENING", "Jutter", "vondsttal", aggregation("count",
+        String rule = computingRule("vondsttal", "BEREKENING", "Jutter", "vondsttal", aggregation("count",
                 "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":\"Jutter\",\"source\":"
                         + "{\"snippet\":\"vondsten van de Jutter\"}}", "Vondst", sourceRole("aanmelding", "vondst"), filter,
                 "null", COUNTING, "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen"),
                 check("actief", false));
-        String ir = "{\"format\":\"uchar-ir-v1\",\"model\":" + MODEL_FALLIBLE + ",\"rules\":{\"rules\":[" + regel
+        String ir = "{\"format\":\"uchar-ir-v1\",\"model\":" + MODEL_FALLIBLE + ",\"rules\":{\"rules\":[" + rule
                 + "],\"dayKindDefinitions\":[" + NOOITDAG + "],\"objectCreations\":[],\"allocations\":[],"
                 + "\"consistencies\":[],\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[],\"prioritizedDefaults\":[]},\"diagnostics\":[]}";

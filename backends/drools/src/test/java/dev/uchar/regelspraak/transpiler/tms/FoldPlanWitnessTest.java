@@ -108,17 +108,17 @@ class FoldPlanWitnessTest {
                 "  patroon Post $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Sein $onderwerp alfa [] join [bereik_1: post = $vouwonderwerp] beta [] bind"
                         + " []",
-                "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=seinaantal van een post: vouw 0,"
+                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=seinaantal van een post: vouw 0,"
                         + " member=0, slots=[0], size=1, insertion=LOGICAL]",
                 "    inbreng Telling",
                 "regel seingewicht van een post: bijdrage aan vouw 1 | vorm seingewicht van een post |"
                         + " groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INVOER $gewicht (eigen"
-                        + " ElementKey[objectType=sein, naam=gewicht, characteristic=false])]",
+                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $gewicht (eigen"
+                        + " ElementKey[objectType=sein, name=gewicht, characteristic=false])]",
                 "  patroon Post $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Sein $onderwerp alfa [] join [bereik_6: post = $vouwonderwerp] beta [] bind [$gewicht"
                         + " = [] Sein.gewicht VALUE]",
-                "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=seingewicht van een post: vouw 1,"
+                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=seingewicht van een post: vouw 1,"
                         + " member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
                 "    inbreng Lidwaarde [value=1, total=null, gevuld=false]",
                 "regel vakseinaantal van een kustvak: bijdrage aan vouw 2 | vorm vakseinaantal van een"
@@ -130,7 +130,7 @@ class FoldPlanWitnessTest {
                         + " $koppeling_bereik_13 alfa [bereik-koppeling_14: [[] relation VALUE GELIJK"
                         + " vakbeseining]] join [bereik-lid_15: second = $onderwerp, bereik-drager_16: first ="
                         + " $vouwonderwerp] beta [] bind []]",
-                "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=vakseinaantal van een kustvak: vouw"
+                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=vakseinaantal van een kustvak: vouw"
                         + " 2, member=0, slots=[0], size=1, insertion=LOGICAL]",
                 "    inbreng Telling"),
                 plans(golden("jutterswet-postwacht")));
@@ -140,30 +140,30 @@ class FoldPlanWitnessTest {
         assertEquals(List.of(
                 "regel keurlast van een jutter: bijdrage aan vouw 0 | vorm keurlast van een jutter |"
                         + " groep null",
-                "  lezingen [0 INVOER $gekeurd (eigen ElementKey[objectType=vondst, naam=gekeurd,"
+                "  lezingen [0 INPUT $gekeurd (eigen ElementKey[objectType=vondst, name=gekeurd,"
                         + " characteristic=true]), 1 SUBJECT $onderwerp (onderwerp zelf), 2 TIJDLIJN $tijdlijn_2"
-                        + " (tijdlijn ElementKey[objectType=vondst, naam=keurtarief, characteristic=false])]",
+                        + " (tijdlijn ElementKey[objectType=vondst, name=keurtarief, characteristic=false])]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_0: keurende jutter = $vouwonderwerp] beta []"
                         + " bind [$gekeurd = [] Vondst.gekeurd WAAR]",
                 "  patroon State $stand_2 alfa [stand_1: [[] attribute VALUE GELIJK"
-                        + " ElementKey[objectType=vondst, naam=keurtarief, characteristic=false]]] join"
-                        + " [stand-onderwerp_2: onderwerp = $onderwerp] beta [] bind [$tijdlijn_2 = []"
+                        + " ElementKey[objectType=vondst, name=keurtarief, characteristic=false]]] join"
+                        + " [stand-onderwerp_2: subject = $onderwerp] beta [] bind [$tijdlijn_2 = []"
                         + " State.value VALUE]",
                 "  toets voorwaarde_3 CONDITION sonde -1 slots [0] grootte 3: KENMERK(Lees 0, Const"
                         + " true)",
                 "    toets 0 Call bron 'gekeurd zijn'",
                 "    toets 0.0 SlotValue",
                 "    toets 0.1 Const Boolean",
-                "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=keurlast van een jutter: vouw 0,"
+                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=keurlast van een jutter: vouw 0,"
                         + " member=1, slots=[1, 2], size=3, insertion=LOGICAL]",
                 "    inbreng Lidwaarde [value=2, total=MAAND, gevuld=false]",
                 "regel keurlast van een jutter: lidfout in vouw 0 | vorm keurlast van een jutter | groep"
                         + " null",
                 "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_7 (lijstplaatsen 0), 1 LIST_PLACE"
-                        + " $plaats_plaats_8 (lijstplaats 0), 2 INVOER $gekeurd (eigen"
-                        + " ElementKey[objectType=vondst, naam=gekeurd, characteristic=true]), 3 TIJDLIJN $tijdlijn_3"
-                        + " (tijdlijn ElementKey[objectType=vondst, naam=keurtarief, characteristic=false]), 4"
+                        + " $plaats_plaats_8 (lijstplaats 0), 2 INPUT $gekeurd (eigen"
+                        + " ElementKey[objectType=vondst, name=gekeurd, characteristic=true]), 3 TIJDLIJN $tijdlijn_3"
+                        + " (tijdlijn ElementKey[objectType=vondst, name=keurtarief, characteristic=false]), 4"
                         + " SUBJECT $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_4: keurende jutter = $vouwonderwerp] beta []"
@@ -174,8 +174,8 @@ class FoldPlanWitnessTest {
                         + " VALUE] functies [COUNT null -> $lijstplaatsen_plaats_7, MINIMUM"
                         + " $lijstplaatswaarde_plaats_6 -> $plaats_plaats_8]",
                 "  patroon State $stand_3 alfa [stand_11: [[] attribute VALUE GELIJK"
-                        + " ElementKey[objectType=vondst, naam=keurtarief, characteristic=false]]] join"
-                        + " [stand-onderwerp_12: onderwerp = $onderwerp] beta [] bind [$tijdlijn_3 = []"
+                        + " ElementKey[objectType=vondst, name=keurtarief, characteristic=false]]] join"
+                        + " [stand-onderwerp_12: subject = $onderwerp] beta [] bind [$tijdlijn_3 = []"
                         + " State.value VALUE]",
                 "  toets voorwaarde_13 VORM sonde -1 slots [2, 3] grootte 5: Samengesteld ALLE"
                         + " 0(KENMERK(Lees 2, Const true), BUCKET_SCALAR(Lees 3, Const true))",
@@ -186,7 +186,7 @@ class FoldPlanWitnessTest {
                 "    toets 0.1 Call",
                 "    toets 0.1.0 SlotValue",
                 "    toets 0.1.1 Const Boolean",
-                "  gevolg Lidfout [onderwerp=$vouwonderwerp, vouw=keurlast van een jutter: vouw 0,"
+                "  gevolg Lidfout [subject=$vouwonderwerp, vouw=keurlast van een jutter: vouw 0,"
                         + " member=4, plaats=selectie 0 [keurendeJutter 0 1] MEMBER_FAULT, before=the per-element temporal"
                         + " total of \"keurtarief\" over , after=: the case supplies an asOfDate-bucket scalar, which"
                         + " carries no period of its own; a set fold needs each member's own timeline (ch."
@@ -201,13 +201,13 @@ class FoldPlanWitnessTest {
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_0: aanmelder = $vouwonderwerp] beta"
                         + " [] bind []",
-                "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=vondstental: vouw 0, member=0,"
+                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=vondstental: vouw 0, member=0,"
                         + " slots=[0], size=1, insertion=LOGICAL]",
                 "    inbreng Telling",
                 "regel zware vondsten: bijdrage aan vouw 1 | vorm zware vondsten | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
-                        + " characteristic=false]), 1 INVOER $deelnemers (eigen ElementKey[objectType=vondst,"
-                        + " naam=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                        + " characteristic=false]), 1 INPUT $deelnemers (eigen ElementKey[objectType=vondst,"
+                        + " name=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_5: aanmelder = $vouwonderwerp] beta [] bind"
@@ -220,17 +220,17 @@ class FoldPlanWitnessTest {
                 "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
                 "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=zware vondsten: vouw 1, member=3,"
+                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=zware vondsten: vouw 1, member=3,"
                         + " slots=[3], size=4, insertion=LOGICAL]",
                 "    inbreng Telling",
                 "regel zware vondsten: filterfout in vouw 1 | vorm zware vondsten | groep null",
                 "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_10 (lijstplaatsen 0), 1 LIST_PLACE"
-                        + " $plaats_plaats_11 (lijstplaats 0), 2 INVOER $gewicht (eigen"
-                        + " ElementKey[objectType=vondst, naam=gewicht, characteristic=false]), 3 INVOER $deelnemers"
-                        + " (eigen ElementKey[objectType=vondst, naam=deelnemers, characteristic=false]), 4 DEPOSIT_FLAG null"
+                        + " $plaats_plaats_11 (lijstplaats 0), 2 INPUT $gewicht (eigen"
+                        + " ElementKey[objectType=vondst, name=gewicht, characteristic=false]), 3 INPUT $deelnemers"
+                        + " (eigen ElementKey[objectType=vondst, name=deelnemers, characteristic=false]), 4 DEPOSIT_FLAG null"
                         + " (null), 5 SUBJECT $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_7: aanmelder = $vouwonderwerp] beta [] bind"
@@ -248,10 +248,10 @@ class FoldPlanWitnessTest {
                 "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
                 "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=zware vondsten: vouw 1, member=5, plaats=selectie"
+                "  gevolg Filterfout [subject=$vouwonderwerp, vouw=zware vondsten: vouw 1, member=5, plaats=selectie"
                         + " 0 [aanmelder 0 1] FILTER_FAULT, slots=[0, 1, 2, 3, 5], size=6, insertion=LOGICAL]"
                         + " filter Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3), Const"
                         + " 2, Const >))",
@@ -261,13 +261,13 @@ class FoldPlanWitnessTest {
                 "    filter 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "    filter 0.0.0.0 SlotValue bron 'zijn gewicht'",
                 "    filter 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    filter 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    filter 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    filter 0.0.2 Const String",
                 "regel zware vondsten: filterdeponering in vouw 1 | vorm zware vondsten | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
-                        + " characteristic=false]), 1 INVOER $deelnemers (eigen ElementKey[objectType=vondst,"
-                        + " naam=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                        + " characteristic=false]), 1 INPUT $deelnemers (eigen ElementKey[objectType=vondst,"
+                        + " name=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_15: aanmelder = $vouwonderwerp] beta [] bind"
@@ -280,15 +280,15 @@ class FoldPlanWitnessTest {
                 "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
                 "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Filterdeponering [onderwerp=$vouwonderwerp, vouw=zware vondsten: vouw 1,"
+                "  gevolg Filterdeponering [subject=$vouwonderwerp, vouw=zware vondsten: vouw 1,"
                         + " member=3, insertion=LOGICAL]",
                 "regel drukte: bijdrage aan vouw 2 | vorm drukte | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
-                        + " characteristic=false]), 1 INVOER $deelnemers (eigen ElementKey[objectType=vondst,"
-                        + " naam=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                        + " characteristic=false]), 1 INPUT $deelnemers (eigen ElementKey[objectType=vondst,"
+                        + " name=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_31: aanmelder = $vouwonderwerp] beta [] bind"
@@ -301,17 +301,17 @@ class FoldPlanWitnessTest {
                 "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
                 "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=drukte: vouw 2, member=3, slots=[3],"
+                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=drukte: vouw 2, member=3, slots=[3],"
                         + " size=4, insertion=LOGICAL]",
                 "    inbreng Telling",
                 "regel drukte: filterfout in vouw 2 | vorm drukte | groep null",
                 "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_36 (lijstplaatsen 0), 1 LIST_PLACE"
-                        + " $plaats_plaats_37 (lijstplaats 0), 2 INVOER $gewicht (eigen"
-                        + " ElementKey[objectType=vondst, naam=gewicht, characteristic=false]), 3 INVOER $deelnemers"
-                        + " (eigen ElementKey[objectType=vondst, naam=deelnemers, characteristic=false]), 4 DEPOSIT_FLAG null"
+                        + " $plaats_plaats_37 (lijstplaats 0), 2 INPUT $gewicht (eigen"
+                        + " ElementKey[objectType=vondst, name=gewicht, characteristic=false]), 3 INPUT $deelnemers"
+                        + " (eigen ElementKey[objectType=vondst, name=deelnemers, characteristic=false]), 4 DEPOSIT_FLAG null"
                         + " (null), 5 SUBJECT $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_33: aanmelder = $vouwonderwerp] beta [] bind"
@@ -329,10 +329,10 @@ class FoldPlanWitnessTest {
                 "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
                 "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=drukte: vouw 2, member=5, plaats=selectie 0"
+                "  gevolg Filterfout [subject=$vouwonderwerp, vouw=drukte: vouw 2, member=5, plaats=selectie 0"
                         + " [aanmelder 0 1] FILTER_FAULT, slots=[0, 1, 2, 3, 5], size=6, insertion=LOGICAL] filter"
                         + " Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3), Const 2,"
                         + " Const >))",
@@ -342,13 +342,13 @@ class FoldPlanWitnessTest {
                 "    filter 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "    filter 0.0.0.0 SlotValue bron 'zijn gewicht'",
                 "    filter 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    filter 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    filter 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    filter 0.0.2 Const String",
                 "regel drukte: filterdeponering in vouw 2 | vorm drukte | groep null",
-                "  lezingen [0 INVOER $gewicht (eigen ElementKey[objectType=vondst, naam=gewicht,"
-                        + " characteristic=false]), 1 INVOER $deelnemers (eigen ElementKey[objectType=vondst,"
-                        + " naam=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                        + " characteristic=false]), 1 INPUT $deelnemers (eigen ElementKey[objectType=vondst,"
+                        + " name=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_41: aanmelder = $vouwonderwerp] beta [] bind"
@@ -361,10 +361,10 @@ class FoldPlanWitnessTest {
                 "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
                 "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Filterdeponering [onderwerp=$vouwonderwerp, vouw=drukte: vouw 2, member=3,"
+                "  gevolg Filterdeponering [subject=$vouwonderwerp, vouw=drukte: vouw 2, member=3,"
                         + " insertion=LOGICAL]"),
                 plans(golden("jutterswet-filterwacht")));
     }
@@ -373,13 +373,13 @@ class FoldPlanWitnessTest {
         assertEquals(List.of(
                 "regel laagste vondstgewicht van een jutter: bijdrage aan vouw 0 | vorm laagste"
                         + " vondstgewicht van een jutter | groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INVOER $gewicht (eigen"
-                        + " ElementKey[objectType=vondst, naam=gewicht, characteristic=false])]",
+                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $gewicht (eigen"
+                        + " ElementKey[objectType=vondst, name=gewicht, characteristic=false])]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [] beta [pad_0: MEETING $vouwonderwerp"
                         + " [bergendeBoot, schipper] {List<String>, type null, bron null} [] {List<>, type null,"
                         + " bron null}] bind [$gewicht = [] Vondst.gewicht VALUE]",
-                "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=laagste vondstgewicht van een jutter:"
+                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=laagste vondstgewicht van een jutter:"
                         + " vouw 0, member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
                 "    inbreng Lidwaarde [value=1, total=null, gevuld=false]"),
                 plans(golden("jutterswet-vondstketen")));
@@ -389,8 +389,8 @@ class FoldPlanWitnessTest {
         assertEquals(List.of(
                 "regel aantal gevulde bergplaatsen: bijdrage aan vouw 0 | vorm aantal gevulde"
                         + " bergplaatsen | groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INVOER $vangstgewicht (eigen"
-                        + " ElementKey[objectType=bergplaats, naam=vangstgewicht, characteristic=false])]",
+                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $vangstgewicht (eigen"
+                        + " ElementKey[objectType=bergplaats, name=vangstgewicht, characteristic=false])]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Bergplaats $onderwerp alfa [] join [] beta [] bind [$vangstgewicht = []"
                         + " Bergplaats.vangstgewicht VALUE]",
@@ -399,14 +399,14 @@ class FoldPlanWitnessTest {
                         + " {List<String>, type null, bron null} [] {List<>, type null, bron null}, pad_2:"
                         + " MEETING $onderwerp [losplaats] {List<String>, type null, bron null} [] {List<>,"
                         + " type null, bron null}] bind []]",
-                "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=aantal gevulde bergplaatsen: vouw 0,"
+                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=aantal gevulde bergplaatsen: vouw 0,"
                         + " member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
                 "    inbreng Lidwaarde [value=1, total=null, gevuld=true]",
                 "regel havengeldtotaal van een Jutter: bijdrage aan vouw 1 | vorm havengeldtotaal van"
                         + " een Jutter | groep null",
-                "  lezingen [0 INVOER $havengeld (eigen ElementKey[objectType=haven, naam=havengeld,"
-                        + " characteristic=false]), 1 INVOER $ligplaatsen (eigen ElementKey[objectType=haven,"
-                        + " naam=ligplaatsen, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INPUT $havengeld (eigen ElementKey[objectType=haven, name=havengeld,"
+                        + " characteristic=false]), 1 INPUT $ligplaatsen (eigen ElementKey[objectType=haven,"
+                        + " name=ligplaatsen, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
@@ -427,18 +427,18 @@ class FoldPlanWitnessTest {
                 "    toets 0.0.0 Division bron 'zijn havengeld gedeeld door zijn ligplaatsen'",
                 "    toets 0.0.0.0 SlotValue bron 'zijn havengeld'",
                 "    toets 0.0.0.1 SlotValue bron 'zijn ligplaatsen'",
-                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=havengeldtotaal van een Jutter: vouw"
+                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=havengeldtotaal van een Jutter: vouw"
                         + " 1, member=3, slots=[0, 3], size=4, insertion=LOGICAL]",
                 "    inbreng Lidwaarde [value=0, total=null, gevuld=false]",
                 "regel havengeldtotaal van een Jutter: filterfout in vouw 1 | vorm havengeldtotaal van"
                         + " een Jutter | groep null",
                 "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_20 (lijstplaatsen 0), 1 LIST_PLACE"
-                        + " $plaats_plaats_21 (lijstplaats 0), 2 INVOER $havengeld (eigen"
-                        + " ElementKey[objectType=haven, naam=havengeld, characteristic=false]), 3 INVOER $ligplaatsen"
-                        + " (eigen ElementKey[objectType=haven, naam=ligplaatsen, characteristic=false]), 4 DEPOSIT_FLAG null"
+                        + " $plaats_plaats_21 (lijstplaats 0), 2 INPUT $havengeld (eigen"
+                        + " ElementKey[objectType=haven, name=havengeld, characteristic=false]), 3 INPUT $ligplaatsen"
+                        + " (eigen ElementKey[objectType=haven, name=ligplaatsen, characteristic=false]), 4 DEPOSIT_FLAG null"
                         + " (null), 5 SUBJECT $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
@@ -464,10 +464,10 @@ class FoldPlanWitnessTest {
                 "    toets 0.0.0 Division bron 'zijn havengeld gedeeld door zijn ligplaatsen'",
                 "    toets 0.0.0.0 SlotValue bron 'zijn havengeld'",
                 "    toets 0.0.0.1 SlotValue bron 'zijn ligplaatsen'",
-                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Filterfout [onderwerp=$vouwonderwerp, vouw=havengeldtotaal van een Jutter: vouw 1, member=5,"
+                "  gevolg Filterfout [subject=$vouwonderwerp, vouw=havengeldtotaal van een Jutter: vouw 1, member=5,"
                         + " plaats=selectie 0 [schipper 0 1] FILTER_FAULT, slots=[0, 1, 2, 3, 5], size=6,"
                         + " insertion=LOGICAL] filter Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1"
                         + " (Lees 2, Lees 3), Const 2, Const >))",
@@ -478,14 +478,14 @@ class FoldPlanWitnessTest {
                 "    filter 0.0.0 Division bron 'zijn havengeld gedeeld door zijn ligplaatsen'",
                 "    filter 0.0.0.0 SlotValue bron 'zijn havengeld'",
                 "    filter 0.0.0.1 SlotValue bron 'zijn ligplaatsen'",
-                "    filter 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    filter 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    filter 0.0.2 Const String",
                 "regel havengeldtotaal van een Jutter: filterdeponering in vouw 1 | vorm havengeldtotaal"
                         + " van een Jutter | groep null",
-                "  lezingen [0 INVOER $havengeld (eigen ElementKey[objectType=haven, naam=havengeld,"
-                        + " characteristic=false]), 1 INVOER $ligplaatsen (eigen ElementKey[objectType=haven,"
-                        + " naam=ligplaatsen, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
+                "  lezingen [0 INPUT $havengeld (eigen ElementKey[objectType=haven, name=havengeld,"
+                        + " characteristic=false]), 1 INPUT $ligplaatsen (eigen ElementKey[objectType=haven,"
+                        + " name=ligplaatsen, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
@@ -506,10 +506,10 @@ class FoldPlanWitnessTest {
                 "    toets 0.0.0 Division bron 'zijn havengeld gedeeld door zijn ligplaatsen'",
                 "    toets 0.0.0.0 SlotValue bron 'zijn havengeld'",
                 "    toets 0.0.0.1 SlotValue bron 'zijn ligplaatsen'",
-                "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Filterdeponering [onderwerp=$vouwonderwerp, vouw=havengeldtotaal van een"
+                "  gevolg Filterdeponering [subject=$vouwonderwerp, vouw=havengeldtotaal van een"
                         + " Jutter: vouw 1, member=3, insertion=LOGICAL]"),
                 plans(havenketen()));
     }
@@ -517,9 +517,9 @@ class FoldPlanWitnessTest {
     @Test void a_quantifier_contribution_with_member_test_and_deposit_flag() throws Exception {
         assertEquals(List.of(
                 "regel rustigheid: bijdrage aan vouw 0 | vorm rustigheid | groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INVOER $opgave (eigen"
-                        + " ElementKey[objectType=wacht, naam=opgave, characteristic=false]), 2 STATE $deelnemers"
-                        + " (eigen ElementKey[objectType=wacht, naam=deelnemers, characteristic=false]), 3 DEPOSIT_FLAG null"
+                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $opgave (eigen"
+                        + " ElementKey[objectType=wacht, name=opgave, characteristic=false]), 2 STATE $deelnemers"
+                        + " (eigen ElementKey[objectType=wacht, name=deelnemers, characteristic=false]), 3 DEPOSIT_FLAG null"
                         + " (null), 4 LIST_PLACES $lijstplaatsen_plaats_5 (lijstplaatsen 4), 5 LIST_PLACE"
                         + " $plaats_plaats_6 (lijstplaats 4)]",
                 "  patroon Ploeg $vouwonderwerp alfa [] join [] beta [] bind []",
@@ -531,10 +531,10 @@ class FoldPlanWitnessTest {
                         + " functies [COUNT null -> $lijstplaatsen_plaats_5, MINIMUM $lijstplaatswaarde_plaats_4"
                         + " -> $plaats_plaats_6]",
                 "  patroon State $stand_2 alfa [stand_0: [[] attribute VALUE GELIJK"
-                        + " ElementKey[objectType=wacht, naam=deelnemers, characteristic=false]]] join"
-                        + " [stand-onderwerp_1: onderwerp = $onderwerp] beta [] bind [$deelnemers = [] State.value"
+                        + " ElementKey[objectType=wacht, name=deelnemers, characteristic=false]]] join"
+                        + " [stand-onderwerp_1: subject = $onderwerp] beta [] bind [$deelnemers = [] State.value"
                         + " VALUE]",
-                "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=rustigheid: vouw 0, member=0, slots=[0,"
+                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=rustigheid: vouw 0, member=0, slots=[0,"
                         + " 1, 2, 4, 5], size=6, insertion=LOGICAL]",
                 "    inbreng Lidtoets [sonde=3, plaats=selectie 0 [ploeg 4 5] QUANTIFIER] matrix"
                         + " RS_AGG_COMPARE(Deel DIVIDED sonde 3 (Lees 1, Lees 2), Const 2, Const >)",
@@ -542,8 +542,8 @@ class FoldPlanWitnessTest {
                 "      matrix 0.0 Division bron 'dividedBy'",
                 "      matrix 0.0.0 SlotValue bron 'zijn opgave'",
                 "      matrix 0.0.1 SlotValue bron 'zijn deelnemers'",
-                "      matrix 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0,"
-                        + " teken=ONBEPAALD, eenheid=null] bron '2'",
+                "      matrix 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] bron '2'",
                 "      matrix 0.2 Const String"),
                 plans(matrixThatDivides()));
     }
@@ -699,7 +699,7 @@ class FoldPlanWitnessTest {
             List<String> out = new ArrayList<>();
             for (FilterFault x : faults) {
                 RuntimeException named = ComputeFault.designate(x.fault(), x.fold());
-                out.add("Filterfout " + label.get(x.onderwerp()) + " " + label.get(x.element()) + " " + x.place()
+                out.add("Filterfout " + label.get(x.subject()) + " " + label.get(x.element()) + " " + x.place()
                         + ": " + named.getClass().getSimpleName() + ": " + named.getMessage());
             }
             return out;
@@ -725,7 +725,7 @@ class FoldPlanWitnessTest {
                 new FactPattern(Value.class, "$erna", List.of(), List.of(new Join("erna", null, "$v")), List.of())),
                 new Consequence.InsertChannelState("bestaan", true, Consequence.Insertion.LOGICAL));
         IllegalStateException unbound = assertThrows(IllegalStateException.class,
-                () -> PatternDslRendering.regel(afterwards, naam -> null));
+                () -> PatternDslRendering.rule(afterwards, name -> null));
         assertEquals("de variabele $v is nog niet gebonden", unbound.getMessage());
     }
 
@@ -740,12 +740,12 @@ class FoldPlanWitnessTest {
         Consequence channel = new Consequence.InsertChannelState("bestaan", true, Consequence.Insertion.LOGICAL);
         RulePlan two = new RulePlan("twee kwantificaties", null, null, new ReadTable(List.of()),
                 List.of(exists, not), channel);
-        assertEquals("twee kwantificaties", PatternDslRendering.regel(two, naam -> null).getName());
+        assertEquals("twee kwantificaties", PatternDslRendering.rule(two, name -> null).getName());
         RulePlan afterwards = new RulePlan("na twee kwantificaties", null, null, new ReadTable(List.of()), List.of(exists,
                 not, new FactPattern(Value.class, "$erna", List.of(), List.of(new Join("erna", null, "$v")), List.of())),
                 channel);
         IllegalStateException unbound = assertThrows(IllegalStateException.class,
-                () -> PatternDslRendering.regel(afterwards, naam -> null));
+                () -> PatternDslRendering.rule(afterwards, name -> null));
         assertEquals("de variabele $v is nog niet gebonden", unbound.getMessage());
     }
 
@@ -811,14 +811,14 @@ class FoldPlanWitnessTest {
         return JSON.readTree(ir.toFile());
     }
 
-    private static String field(Class<?> javaClass, String naam) throws ReflectiveOperationException {
-        Field f = javaClass.getDeclaredField(naam);
+    private static String field(Class<?> javaClass, String name) throws ReflectiveOperationException {
+        Field f = javaClass.getDeclaredField(name);
         f.setAccessible(true);
         return (String) f.get(null);
     }
 
-    static JsonNode golden(String naam) throws Exception {
-        return JSON.readTree(GOLDEN.resolve(naam).resolve("ir.json").toFile());
+    static JsonNode golden(String name) throws Exception {
+        return JSON.readTree(GOLDEN.resolve(name).resolve("ir.json").toFile());
     }
 
     /** Every plan of {@code document} of a rule of a fold, in the order of the model, as text; after a line that
@@ -830,10 +830,10 @@ class FoldPlanWitnessTest {
             if (!(p.consequence() instanceof Consequence.Contribution || p.consequence() instanceof Consequence.FilterDeposit
                     || p.consequence() instanceof Consequence.FilterFault || p.consequence() instanceof Consequence.MemberFault))
                 continue;
-            out.add("regel " + p.naam() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
+            out.add("regel " + p.name() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
             for (Read l : p.readings().slots())
-                slots.add(l.slot() + " " + l.category() + " " + l.naam() + " (" + l.key() + ")");
+                slots.add(l.slot() + " " + l.category() + " " + l.name() + " (" + l.key() + ")");
             out.add("  lezingen " + slots);
             for (LhsItem item : p.leftSide()) {
                 out.add("  " + item(item));
@@ -846,7 +846,7 @@ class FoldPlanWitnessTest {
 
     private static String item(LhsItem item) {
         return switch (item) {
-            case Subject o -> "onderwerp " + o.beanClass().getSimpleName() + " " + o.naam() + " alfa "
+            case Subject o -> "onderwerp " + o.beanClass().getSimpleName() + " " + o.name() + " alfa "
                     + alpha(o.alpha()) + " join " + joins(o.joins()) + " beta " + beta(o.betaTests()) + " bind "
                     + bindings(o.bindings());
             case FactPattern p -> "patroon " + pattern(p);
@@ -863,7 +863,7 @@ class FoldPlanWitnessTest {
     }
 
     private static String pattern(FactPattern p) {
-        return p.factClass().getSimpleName() + " " + p.naam() + " alfa " + alpha(p.alpha()) + " join "
+        return p.factClass().getSimpleName() + " " + p.name() + " alfa " + alpha(p.alpha()) + " join "
                 + joins(p.joins()) + " beta " + beta(p.betaTests()) + " bind " + bindings(p.bindings());
     }
 
@@ -911,7 +911,7 @@ class FoldPlanWitnessTest {
     }
 
     private static String field(Binding.Field v) {
-        return v.javaClass().getSimpleName() + "." + v.naam();
+        return v.javaClass().getSimpleName() + "." + v.name();
     }
 
     /** The consequence {@code g} with every field, what a member contributes and its place spelled out, and each term
@@ -919,7 +919,7 @@ class FoldPlanWitnessTest {
     private static void consequence(Consequence g, List<String> out) {
         switch (g) {
             case Consequence.Contribution b -> {
-                out.add("  gevolg Bijdrage [onderwerp=" + b.onderwerp() + ", vouw=" + b.fold() + ", member=" + b.member()
+                out.add("  gevolg Bijdrage [subject=" + b.subject() + ", vouw=" + b.fold() + ", member=" + b.member()
                         + ", slots=" + b.slots() + ", size=" + b.size() + ", insertion=" + b.insertion() + "]");
                 switch (b.input()) {
                     case Consequence.Input.Count t -> out.add("    inbreng Telling");
@@ -936,15 +936,15 @@ class FoldPlanWitnessTest {
                     }
                 }
             }
-            case Consequence.FilterDeposit f -> out.add("  gevolg Filterdeponering [onderwerp=" + f.onderwerp() + ", vouw="
+            case Consequence.FilterDeposit f -> out.add("  gevolg Filterdeponering [subject=" + f.subject() + ", vouw="
                     + f.fold() + ", member=" + f.member() + ", insertion=" + f.insertion() + "]");
             case Consequence.FilterFault f -> {
-                out.add("  gevolg Filterfout [onderwerp=" + f.onderwerp() + ", vouw=" + f.fold() + ", member=" + f.member()
+                out.add("  gevolg Filterfout [subject=" + f.subject() + ", vouw=" + f.fold() + ", member=" + f.member()
                         + ", plaats=" + place(f.place()) + ", slots=" + f.slots() + ", size=" + f.size()
                         + ", insertion=" + f.insertion() + "] filter " + TermTree.tree(f.filter()));
                 TermTree.fields("    filter", f.filter(), "0", out);
             }
-            case Consequence.MemberFault f -> out.add("  gevolg Lidfout [onderwerp=" + f.onderwerp() + ", vouw=" + f.fold()
+            case Consequence.MemberFault f -> out.add("  gevolg Lidfout [subject=" + f.subject() + ", vouw=" + f.fold()
                     + ", member=" + f.member() + ", plaats=" + place(f.place()) + ", before=" + f.before() + ", after=" + f.after()
                     + ", insertion=" + f.insertion() + "]");
             default -> throw new IllegalStateException("geen gevolg van een vouw: " + g);

@@ -115,10 +115,10 @@ class TmsStartPointWitnessTest {
     }
 
     /** One form over the grid of 'boekjaar': its rules beside the anchor rule, and the one refusal of its manifest. */
-    record Row(String naam, List<String> rules, String sentence) {}
+    record Row(String name, List<String> rules, String sentence) {}
 
-    private static String refused(String regel, String description) {
-        return "transpiler SKIP: regel: " + regel + " — " + description + " over het attribuut 'vergoeding' van Jutter op een"
+    private static String refused(String rule, String description) {
+        return "transpiler SKIP: regel: " + rule + " — " + description + " over het attribuut 'vergoeding' van Jutter op een"
                 + " tijdlijn met een variabel startpunt: deze tak draagt deze vorm nog niet; geen golden"
                 + " met cases leest of schrijft er een, en de caselezer legt geen tijdlijn op zo'n raster";
     }
@@ -180,9 +180,9 @@ class TmsStartPointWitnessTest {
     @Test void every_form_that_reads_or_writes_the_grid_is_refused_by_name() throws Exception {
         List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (Row r : rows()) {
-            outcomes.add(r.naam() + ": " + String.join(" | ",
+            outcomes.add(r.name() + ": " + String.join(" | ",
                     TmsTimelineRefusalWitnessTest.refusals(temporary(document(model(true), r.rules())))));
-            expected.add(r.naam() + ": " + r.sentence());
+            expected.add(r.name() + ": " + r.sentence());
         }
         assertEquals(expected, outcomes);
         for (String u : outcomes) assertEquals(-1, u.indexOf(OLD_REFUSAL), u);
@@ -195,7 +195,7 @@ class TmsStartPointWitnessTest {
         TmsTimelineWitnessTest.write(out.resolve("zonder-lid"), document(model(false), List.of()), caseDocument());
         TmsTimelineWitnessTest.write(out.resolve("ongelezen-lid"), document(model(true), List.of()), caseDocument());
         for (Row r : rows())
-            TmsTimelineWitnessTest.write(out.resolve(r.naam().replace(", ", "-").replace(' ', '-')),
+            TmsTimelineWitnessTest.write(out.resolve(r.name().replace(", ", "-").replace(' ', '-')),
                     document(model(true), r.rules()), caseDocument());
     }
 }

@@ -95,10 +95,10 @@ class SeparationWitnessTest {
             files = s.filter(p -> p.getFileName().toString().endsWith(".java")).sorted().toList();
         }
         for (Path p : files) {
-            String naam = TMS.relativize(p).toString().replace(File.separatorChar, '/');
+            String name = TMS.relativize(p).toString().replace(File.separatorChar, '/');
             List<String> hits = hits(Files.readString(p));
-            if (RENDERINGS.contains(naam)) inRenderings.put(naam, hits.size());
-            else if (!hits.isEmpty()) outside.put(naam, hits);
+            if (RENDERINGS.contains(name)) inRenderings.put(name, hits.size());
+            else if (!hits.isEmpty()) outside.put(name, hits);
         }
         assertEquals(Map.of("TmsTranspiler.java", List.of("import org.drools.model.Model;")), outside,
                 "org.drools.model buiten de weergaven");
@@ -141,7 +141,7 @@ class SeparationWitnessTest {
         for (Class<?> c : classes)
             for (Field f : c.getDeclaredFields())
                 if (!Modifier.isStatic(f.getModifiers()) && !f.isSynthetic() && functional(f.getGenericType()))
-                    functional.add(naam(c) + "." + f.getName() + ": " + f.getGenericType().getTypeName());
+                    functional.add(name(c) + "." + f.getName() + ": " + f.getGenericType().getTypeName());
         assertEquals(List.of(DAGSOORT + ": java.util.function.Predicate<java.time.LocalDate>"), functional);
         assertTrue(classes.size() >= EXPECTED_MIN_PLAN_CLASSES, () -> classes.size() + " planklassen, onder de vloer "
                 + EXPECTED_MIN_PLAN_CLASSES);
@@ -197,7 +197,7 @@ class SeparationWitnessTest {
             if (c.isRecord()) {
                 if (o instanceof RulePlan) plans++;
                 for (RecordComponent rc : c.getRecordComponents())
-                    loop(rc.getAccessor().invoke(o), naam(c) + "." + rc.getName());
+                    loop(rc.getAccessor().invoke(o), name(c) + "." + rc.getName());
             } else if (o instanceof Collection<?> k) {
                 for (Object x : k) loop(x, place);
             } else if (o instanceof Map<?, ?> k) {
@@ -294,7 +294,7 @@ class SeparationWitnessTest {
     }
 
     /** The name of a class of the plan relative to its package, nested classes after a dot. */
-    private static String naam(Class<?> c) {
+    private static String name(Class<?> c) {
         String n = c.getName();
         return (n.startsWith(PLAN_PACKAGE) ? n.substring(PLAN_PACKAGE.length()) : n).replace('$', '.');
     }

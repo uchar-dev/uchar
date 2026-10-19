@@ -3,7 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 import java.util.Objects;
 
 /**
- * The stated mark of one object creation: the creation named {@code regel} made {@code object} for {@code onderwerp} in
+ * The stated mark of one object creation: the creation named {@code rule} made {@code object} for {@code subject} in
  * creation phase {@code phase} ({@link CreationPhase}). A creation rule fires only where its mark for the subject is
  * absent, so it makes one object per subject, also when its condition holds again later (RUNTIME-SEMANTICS ch. 5.5), and
  * it does not take as its subject an object some creation made in the phase it fires in. The mark is stated, as the
@@ -18,11 +18,11 @@ import java.util.Objects;
  * <p>Compared by the creation's name, the two objects by identity and the phase: one creation makes one mark, and its
  * stratum and depth follow from the creation and the subject.
  */
-public record CreationStamp(String regel, Object onderwerp, Object object, int phase, int stratum, int depth) {
+public record CreationStamp(String rule, Object subject, Object object, int phase, int stratum, int depth) {
 
     public CreationStamp {
-        Objects.requireNonNull(regel, "regel");
-        Objects.requireNonNull(onderwerp, "onderwerp");
+        Objects.requireNonNull(rule, "rule");
+        Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(object, "object");
         if (phase < 1) throw new IllegalArgumentException("fase " + phase + " < 1");
         if (stratum < 0) throw new IllegalArgumentException("stratum " + stratum + " < 0");
@@ -30,16 +30,16 @@ public record CreationStamp(String regel, Object onderwerp, Object object, int p
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof CreationStamp g && g.onderwerp == onderwerp && g.object == object && g.phase == phase
-                && g.regel.equals(regel);
+        return o instanceof CreationStamp g && g.subject == subject && g.object == object && g.phase == phase
+                && g.rule.equals(rule);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(regel, System.identityHashCode(onderwerp), System.identityHashCode(object), phase);
+        return Objects.hash(rule, System.identityHashCode(subject), System.identityHashCode(object), phase);
     }
 
     @Override public String toString() {
-        return "Gemaakt(" + regel + ", " + FactNames.object(onderwerp) + ", " + FactNames.object(object) + ", fase "
+        return "Gemaakt(" + rule + ", " + FactNames.object(subject) + ", " + FactNames.object(object) + ", fase "
                 + phase + ", stratum " + stratum + ", diepte " + depth + ")";
     }
 }

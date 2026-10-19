@@ -18,25 +18,25 @@ import java.util.Objects;
  * <p>Keyed and compared as {@link HasCharacteristic} is: the attribute on its declaring type, the subject by identity, and
  * the value and the writer by their own equality.
  */
-public record Value(Object onderwerp, ElementKey attribute, Object value, String writer) {
+public record Value(Object subject, ElementKey attribute, Object value, String writer) {
 
     public Value {
-        Objects.requireNonNull(onderwerp, "onderwerp");
+        Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(attribute, "attribuut");
         Objects.requireNonNull(writer, "schrijver");
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof Value w && w.onderwerp == onderwerp && w.attribute.equals(attribute)
+        return o instanceof Value w && w.subject == subject && w.attribute.equals(attribute)
                 && Objects.equals(w.value, value) && w.writer.equals(writer);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(System.identityHashCode(onderwerp), attribute, value, writer);
+        return Objects.hash(System.identityHashCode(subject), attribute, value, writer);
     }
 
     @Override public String toString() {
-        return "Waarde(" + FactNames.object(onderwerp) + ", " + FactNames.member(attribute) + ", "
+        return "Waarde(" + FactNames.object(subject) + ", " + FactNames.member(attribute) + ", "
                 + (value == null ? "leeg" : value) + ", " + writer + ")";
     }
 }

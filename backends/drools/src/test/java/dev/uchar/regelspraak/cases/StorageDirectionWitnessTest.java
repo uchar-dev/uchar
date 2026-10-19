@@ -460,19 +460,19 @@ class StorageDirectionWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATION_PREMIE)));
         IrPath.addAttribute(IrPath.objectType(ir, "Schuit"), "werf", number());
         keepRule(ir, "toeslag van een schuit");
-        ObjectNode regel = IrPath.version(ir, "rules", 0, 0);
+        ObjectNode rule = IrPath.version(ir, "rules", 0, 0);
         ObjectNode nav = JSON.createObjectNode();
         nav.put("node", "AttributeReference").put("attribute", "tarief").put("subjectType", "Werf");
         nav.set("source", IrPath.sourceReference("het tarief van de werf van de Schuit"));
         nav.putArray("path").addObject()
            .put("node", "RoleBinding").put("factType", "ligplaats").put("role", "werf");
-        ((ObjectNode) regel.get("condition")).set("left", nav);
-        ((ObjectNode) regel.get("condition")).set("source", IrPath.sourceReference("het tarief van de werf van de Schuit groter is dan 5"));
+        ((ObjectNode) rule.get("condition")).set("left", nav);
+        ((ObjectNode) rule.get("condition")).set("source", IrPath.sourceReference("het tarief van de werf van de Schuit groter is dan 5"));
         ObjectNode own = JSON.createObjectNode();
         own.put("node", "AttributeReference").put("attribute", "lengte").put("subjectType", "Schuit");
         own.set("source", IrPath.sourceReference("de lengte van de Schuit"));
-        regel.set("value", own);
-        regel.put("initialisation", false).put("presentation", "equation");
+        rule.set("value", own);
+        rule.put("initialisation", false).put("presentation", "equation");
         return temporary("schuit-naamdeling-vergelijking", ir);
     }
 
@@ -484,24 +484,24 @@ class StorageDirectionWitnessTest {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATION_PREMIE)));
         IrPath.addAttribute(IrPath.objectType(ir, "Schuit"), "werf", number());
         keepRule(ir, "toeslag van een schuit");
-        ObjectNode regel = IrPath.version(ir, "rules", 0, 0);
+        ObjectNode rule = IrPath.version(ir, "rules", 0, 0);
         ObjectNode check = JSON.createObjectNode();
         check.put("node", "RoleMembership").put("factType", "ligplaats").put("role", "schuit")
              .put("negated", false).set("source", IrPath.sourceReference("de Schuit een schuit is"));
-        regel.set("condition", check);
+        rule.set("condition", check);
         ObjectNode own = JSON.createObjectNode();
         own.put("node", "AttributeReference").put("attribute", "lengte").put("subjectType", "Schuit");
         own.set("source", IrPath.sourceReference("de lengte van de Schuit"));
-        regel.set("value", own);
-        regel.put("initialisation", false).put("presentation", "equation");
+        rule.set("value", own);
+        rule.put("initialisation", false).put("presentation", "equation");
         return temporary("schuit-naamdeling-rolcheck", ir);
     }
 
     /** Reduce a model to ONE named rule in its resolved list — so each arm below is witnessed on its own refusal
      *  and not on a sibling rule that refuses first. */
-    private static void keepRule(ObjectNode ir, String naam) {
+    private static void keepRule(ObjectNode ir, String name) {
         com.fasterxml.jackson.databind.node.ArrayNode keep = JSON.createArrayNode();
-        keep.add(IrPath.form(ir, "rules", naam));
+        keep.add(IrPath.form(ir, "rules", name));
         IrPath.rules(ir).set("rules", keep);
     }
 
@@ -563,8 +563,8 @@ class StorageDirectionWitnessTest {
                 """;
     }
 
-    private static Path temporary(String naam, ObjectNode ir) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, ObjectNode ir) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         return tmp;

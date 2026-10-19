@@ -39,7 +39,7 @@ class FoldCompanionWitnessTest {
     @Test void a_division_by_an_empty_sum_reports_the_error() throws Exception {
         // J2 and J3 fold no gewicht: the sum is leeg, 100 over leeg is leeg and deposits. ref and clingo: 9,09, leeg,
         // leeg and 11,11, inconsistent.
-        String ir = document(regel(rounded(binary("dividedBy", number(100), SUM, UNBOUNDED)), null));
+        String ir = document(rule(rounded(binary("dividedBy", number(100), SUM, UNBOUNDED)), null));
         String caseDocument = caseDocument(situation(), heffing("9.09", null, null, "11.11"), INCONSISTENT);
         assertNull(play(ir, caseDocument), "exectak");
         assertNull(playDrl(ir, caseDocument), "DRL-teksttak");
@@ -47,7 +47,7 @@ class FoldCompanionWitnessTest {
 
     @Test void a_division_by_an_empty_minimum_reports_the_error() throws Exception {
         // The minimum of the gewicht as the divisor. ref and clingo: 25,00, leeg, leeg and 11,11, inconsistent.
-        String ir = document(regel(rounded(binary("dividedBy", number(100), MINIMUM, UNBOUNDED)), null));
+        String ir = document(rule(rounded(binary("dividedBy", number(100), MINIMUM, UNBOUNDED)), null));
         String caseDocument = caseDocument(situation(), heffing("25.00", null, null, "11.11"), INCONSISTENT);
         assertNull(play(ir, caseDocument), "exectak");
         assertNull(playDrl(ir, caseDocument), "DRL-teksttak");
@@ -57,7 +57,7 @@ class FoldCompanionWitnessTest {
         // "((de som …) gedeeld door zijn deler)": the fold is the dividend. J1 (sum 11) has no deler and deposits; J2
         // and J3 divide a leeg sum, which is 0 and deposits nothing. ref and clingo: leeg, 0,00, 0,00 and 4,50,
         // inconsistent.
-        String ir = document(regel(rounded(binary("dividedBy", SUM, own("deler"), UNBOUNDED)), null));
+        String ir = document(rule(rounded(binary("dividedBy", SUM, own("deler"), UNBOUNDED)), null));
         String caseDocument = caseDocument(situation(), heffing(null, "0.00", "0.00", "4.50"), INCONSISTENT);
         assertNull(play(ir, caseDocument), "exectak");
         assertNull(playDrl(ir, caseDocument), "DRL-teksttak");
@@ -67,7 +67,7 @@ class FoldCompanionWitnessTest {
         // "(100 gedeeld door ((de som …) verminderd met 1))": leeg verminderd met 1 stays leeg (ch. 1.2), so the divisor
         // is leeg where the sum is. ref and clingo: 10,00, leeg, leeg and 12,50, inconsistent.
         String divisor = binary("reducedBy", SUM, number(1), WHOLE);
-        String ir = document(regel(rounded(binary("dividedBy", number(100), divisor, UNBOUNDED)), null));
+        String ir = document(rule(rounded(binary("dividedBy", number(100), divisor, UNBOUNDED)), null));
         String caseDocument = caseDocument(situation(), heffing("10.00", null, null, "12.50"), INCONSISTENT);
         assertNull(play(ir, caseDocument), "exectak");
         assertNull(playDrl(ir, caseDocument), "DRL-teksttak");
@@ -80,7 +80,7 @@ class FoldCompanionWitnessTest {
         String squareRoot = "{\"node\":\"BuiltinCall\",\"kind\":\"squareRoot\",\"arguments\":[" + binary("minus", SUM, number(10), WHOLE)
                 + "],\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"nonNegative\"},\"source\":{\"snippet\":"
                 + "\"de wortel van ((de som …) min 10)\"}}";
-        String ir = document(regel(rounded(squareRoot), null));
+        String ir = document(rule(rounded(squareRoot), null));
         String caseDocument = caseDocument(situation(), heffing("1.00", null, null, null), INCONSISTENT);
         assertNull(play(ir, caseDocument), "exectak");
         assertNull(playDrl(ir, caseDocument), "DRL-teksttak");
@@ -93,7 +93,7 @@ class FoldCompanionWitnessTest {
         // consistent.
         String condition = "{\"node\":\"Predicate\",\"kind\":\"filled\",\"operand\":" + own("drempel")
                 + ",\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"zijn drempel gevuld is\"}}";
-        String ir = document(regel(rounded(binary("dividedBy", number(100), SUM, UNBOUNDED)), condition));
+        String ir = document(rule(rounded(binary("dividedBy", number(100), SUM, UNBOUNDED)), condition));
         List<String> with = new ArrayList<>();
         for (String i : situation()) with.add(withThreshold(i, "J1", "J2", "J4"));
         String caseDocument = caseDocument(with, heffing("9.09", null, null, "11.11"), INCONSISTENT);
@@ -119,7 +119,7 @@ class FoldCompanionWitnessTest {
         String let = "{\"node\":\"Let\",\"type\":" + TWO_DECIMALS + ",\"binder\":\"vangst\",\"value\":" + SUM + ",\"body\":"
                 + rounded(binary("dividedBy", "{\"node\":\"BinderRef\",\"name\":\"vangst\",\"source\":{\"snippet\":\"de vangst\"}}",
                         own("deler"), UNBOUNDED)) + ",\"source\":{\"snippet\":\"de vangst is de som …\"}}";
-        String ir = document(regel(let, null));
+        String ir = document(rule(let, null));
         String caseDocument = caseDocument(situation(), heffing(null, null, null, "4.50"), INCONSISTENT);
         Path tmp = Files.createTempFile("vouw-begeleider", ".json");
         tmp.toFile().deleteOnExit();
@@ -131,7 +131,7 @@ class FoldCompanionWitnessTest {
 
     @Test void a_filled_sum_reports_nothing() throws Exception {
         // The first row over J1 and J4 alone: every sum is filled. ref and clingo: 9,09 and 11,11, consistent.
-        String ir = document(regel(rounded(binary("dividedBy", number(100), SUM, UNBOUNDED)), null));
+        String ir = document(rule(rounded(binary("dividedBy", number(100), SUM, UNBOUNDED)), null));
         List<String> only = new ArrayList<>();
         for (String i : situation()) if (!i.contains("\"J2\"") && !i.contains("\"J3\"")) only.add(i);
         String caseDocument = caseDocument(only, expected("J1", "9.09") + "," + expected("J4", "11.11"), CONSISTENT);
@@ -144,7 +144,7 @@ class FoldCompanionWitnessTest {
         // the card zero-division-channel (2026-10-19) is a §9.5 deposit of kind EF-005 beside a leeg heffing
         // (RUNTIME-SEMANTICS ch. 1.4, point 4), on both Drools branches as in ref and clingo. Until then it was a fault
         // in all of them.
-        String ir = document(regel(rounded(binary("dividedBy", number(100), COUNTING, UNBOUNDED)), null));
+        String ir = document(rule(rounded(binary("dividedBy", number(100), COUNTING, UNBOUNDED)), null));
         String caseDocument = caseDocument(situation(), heffing("33.33", null, "100.00", "100.00"),
                 TmsDocuments.inconsistent("heffing", "J2", "EF-005"));
         assertNull(play(ir, caseDocument), "exectak");
@@ -160,8 +160,8 @@ class FoldCompanionWitnessTest {
     private static final String TWO_DECIMALS = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
     private static final String DATE = "{\"node\":\"Date\",\"precision\":\"day\"}";
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
     /** Jutter and Vondst; one jutter has many vondsten. */
@@ -217,15 +217,15 @@ class FoldCompanionWitnessTest {
     }
 
     /** "De heffing van een Jutter moet berekend worden als &lt;waarde&gt; [indien &lt;voorwaarde&gt;]." */
-    private static String regel(String value, String condition) {
+    private static String rule(String value, String condition) {
         return "{\"node\":\"Rule\",\"name\":\"heffing\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"heffing\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":"
                 + "\"De heffing van een Jutter\"}},\"value\":" + value + (condition == null ? "" : ",\"condition\":" + condition)
                 + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
     }
 
-    private static String document(String regel) {
-        return "{\"format\":\"uchar-ir-v1\",\"model\":" + MODEL + ",\"rules\":{\"rules\":[" + regel + "],"
+    private static String document(String rule) {
+        return "{\"format\":\"uchar-ir-v1\",\"model\":" + MODEL + ",\"rules\":{\"rules\":[" + rule + "],"
                 + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],\"uniquenesses\":[],"
                 + "\"factCreations\":[],\"startPointDeterminations\":[],\"ruleGroups\":[]},\"diagnostics\":[]}";
     }
@@ -274,9 +274,9 @@ class FoldCompanionWitnessTest {
     }
 
     /** The heffing of J1 to J4, a null value leeg. */
-    private static String heffing(String... waarden) {
+    private static String heffing(String... values) {
         List<String> out = new ArrayList<>();
-        for (int i = 0; i < waarden.length; i++) out.add(expected("J" + (i + 1), waarden[i]));
+        for (int i = 0; i < values.length; i++) out.add(expected("J" + (i + 1), values[i]));
         return String.join(",", out);
     }
 

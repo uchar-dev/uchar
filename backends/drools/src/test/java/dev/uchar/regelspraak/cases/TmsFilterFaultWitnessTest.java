@@ -168,13 +168,13 @@ class TmsFilterFaultWitnessTest {
                 expectations);
     }
 
-    private static String fault(String regel) {
-        return fault(regel, "3");
+    private static String fault(String rule) {
+        return fault(rule, "3");
     }
 
-    /** The fault of rule {@code regel} where the filter takes the root of {@code radicand}. */
-    private static String fault(String regel, String radicand) {
-        return "ComputeFault: " + TmsDocuments.irrational(regel, radicand);
+    /** The fault of rule {@code rule} where the filter takes the root of {@code radicand}. */
+    private static String fault(String rule, String radicand) {
+        return "ComputeFault: " + TmsDocuments.irrational(rule, radicand);
     }
 
     // ---------------- a fold under a condition that does not hold ----------------
@@ -459,8 +459,8 @@ class TmsFilterFaultWitnessTest {
         int inserted;
 
         @Override public void objectInserted(ObjectInsertedEvent e) {
-            String naam = e.getObject().getClass().getSimpleName();
-            if (naam.equals("Fault") || naam.equals("FilterFault")) inserted++;
+            String name = e.getObject().getClass().getSimpleName();
+            if (name.equals("Fault") || name.equals("FilterFault")) inserted++;
         }
 
         @Override public void objectUpdated(ObjectUpdatedEvent e) {}

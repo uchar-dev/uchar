@@ -356,8 +356,8 @@ class TmsInputFormWitnessTest {
     static final Map<String, List<String>> KEPT_Q1 = Map.of("bewaard", List.of(period("2024-01-01", "2024-04-01")));
 
     /** A Vondst with the keurscore {@code score} and the {@code waarden} beside it, bewaard on {@code periods}. */
-    static String vondst(String label, String score, Map<String, String> waarden, Map<String, List<String>> periods) {
-        Map<String, String> all = new LinkedHashMap<>(waarden);
+    static String vondst(String label, String score, Map<String, String> values, Map<String, List<String>> periods) {
+        Map<String, String> all = new LinkedHashMap<>(values);
         all.put("keurscore", numberValue(score));
         return instance(label, "Vondst", all, List.of(), periods, Map.of());
     }
@@ -407,10 +407,10 @@ class TmsInputFormWitnessTest {
     /** A Vondst with the code {@code code}, bewaard on {@code [van, tot)} where {@code van} is not null, and the nummer
      *  {@code nummer} as a bucket scalar where it is not null. */
     static String vondstF(String label, String code, String van, String to, String vondstNumber) {
-        Map<String, String> waarden = new LinkedHashMap<>();
-        waarden.put("code", numberValue(code));
-        if (vondstNumber != null) waarden.put("nummer", numberValue(vondstNumber));
-        return instance(label, "Vondst", waarden, List.of(),
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("code", numberValue(code));
+        if (vondstNumber != null) values.put("nummer", numberValue(vondstNumber));
+        return instance(label, "Vondst", values, List.of(),
                 van == null ? Map.of() : Map.of("bewaard", List.of(period(van, to))), Map.of());
     }
 

@@ -466,7 +466,7 @@ class LoaderRefusalWitnessTest {
     // ---------------- what a refusal says ----------------
 
     @Test void an_unknown_value_names_a_field_and_a_value_and_no_java_class() throws Exception {
-        // Before: "No enum constant dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit.year",
+        // Before: "No enum constant dev.uchar.regelspraak.model.RegelSpraakModel.Granularity.year",
         // the JDK's sentence, naming a Java class and no position in the document. Since L5 the value is read
         // through the translation table and refused in the shared loader's sentence, which names the field and the
         // value, the v0 spelling included.

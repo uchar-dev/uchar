@@ -55,10 +55,10 @@ class FilledCountDialectTest {
         Eén aanmelder heeft meerdere vondsten
         """;
 
-    private static RegelSpraakModel resolve(String regels) { return Resolver.resolve(MODEL + regels); }
+    private static RegelSpraakModel resolve(String rules) { return Resolver.resolve(MODEL + rules); }
 
     private static Expr.FunctionCall fold(RegelSpraakModel m) {
-        return (Expr.FunctionCall) m.resolvedRegels.get(0).value();
+        return (Expr.FunctionCall) m.resolvedRules.get(0).value();
     }
 
     // ---------------- the producer route ----------------
@@ -77,11 +77,11 @@ class FilledCountDialectTest {
         Expr.AttributeReference source = (Expr.AttributeReference) f.arguments().get(0);
         assertTrue(source.set(), "de bron is geen setlezing");
         assertEquals("gewicht", source.attribute());
-        assertEquals("Vondst", f.elementObjectType().naam);
+        assertEquals("Vondst", f.elementObjectType().name);
         // no facet is even writable: the grammar gives the phrase one operand and no slot
         assertNull(f.emptyFallback(), "een telling draagt nooit een leegwaarde (WF-037, 'sum only')");
-        assertNull(f.dimensieSelectie(), "dimensieselectie is ill-formed op deze soort (besluit G7)");
-        assertNull(f.granulariteit());
+        assertNull(f.dimensionSelection(), "dimensieselectie is ill-formed op deze soort (besluit G7)");
+        assertNull(f.granularity());
     }
 
     @Test void the_count_does_not_inherit_the_unit_of_its_source() {
@@ -93,13 +93,13 @@ class FilledCountDialectTest {
                 geldig altijd
                     Het aantal gewogen vondsten van een Jutter moet berekend worden als het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter.
             """);
-        Datatype.Numeriek t = (Datatype.Numeriek) fold(m).type();
-        assertTrue(t.geheel(), "een kardinaliteit is een geheel getal");
-        assertEquals(0, t.decimalen());
-        assertEquals(Datatype.Teken.NIET_NEGATIEF, t.teken());
-        assertNull(t.eenheid(), "de telling gaf de kg van haar bron door");
-        assertEquals("kg", ((Datatype.Numeriek) ((Expr.AttributeReference) fold(m).arguments().get(0)).type())
-                .eenheid().afkorting(), "de BRON hoort de eenheid wel te dragen");
+        Datatype.Numeric t = (Datatype.Numeric) fold(m).type();
+        assertTrue(t.wholeNumber(), "een kardinaliteit is een geheel getal");
+        assertEquals(0, t.decimals());
+        assertEquals(Datatype.Sign.NIET_NEGATIEF, t.sign());
+        assertNull(t.unit(), "de telling gaf de kg van haar bron door");
+        assertEquals("kg", ((Datatype.Numeric) ((Expr.AttributeReference) fold(m).arguments().get(0)).type())
+                .unit().abbreviation(), "de BRON hoort de eenheid wel te dragen");
     }
 
     @Test void the_set_read_under_the_count_is_no_set_read_error() {
@@ -142,7 +142,7 @@ class FilledCountDialectTest {
                     Het aantal gewogen vondsten van een Jutter moet berekend worden als het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter plus 1.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Expr.Binary b = (Expr.Binary) m.resolvedRegels.get(0).value();
+        Expr.Binary b = (Expr.Binary) m.resolvedRules.get(0).value();
         assertEquals(Expr.BinOp.PLUS, b.op());
         assertEquals(Expr.FunctionKind.AANTAL_GEVULDE, ((Expr.FunctionCall) b.left()).kind());
     }
@@ -203,7 +203,7 @@ class FilledCountDialectTest {
         assertEquals(List.of(Severity.WARNING), m.diagnostics.stream().map(Diagnostic::severity).toList());
         assertTrue(m.diagnostics.get(0).message().contains("gedeclareerd attribuut van Vondst"),
                 () -> m.diagnostics.toString());
-        assertInstanceOf(Expr.Unresolved.class, m.resolvedRegels.get(0).value());
+        assertInstanceOf(Expr.Unresolved.class, m.resolvedRules.get(0).value());
     }
 
     @Test void the_multi_step_range_becomes_a_source_path_and_does_not_silently_fall_away() {

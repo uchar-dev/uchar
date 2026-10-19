@@ -14,4 +14,4 @@ package dev.uchar.regelspraak.ir;
  * @param voorwaarde the resolved condition over "de dag" that makes a date this dagsoort
  * @param geldigheid the §13.4.2.5 version validity window (typically {@link Validity#ALTIJD})
  */
-public record ResolvedDayKindDefinition(String naam, Condition condition, Validity validity) {}
+public record ResolvedDayKindDefinition(String name, Condition condition, Validity validity) {}

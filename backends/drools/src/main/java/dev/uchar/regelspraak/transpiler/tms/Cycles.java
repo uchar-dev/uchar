@@ -20,7 +20,7 @@ import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.message.Messages;
 import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 
@@ -80,7 +80,7 @@ public final class Cycles {
      *  reads. A form with irrevocable writes, a characteristic attribution, a consistency, a uniqueness or a creation,
      *  reads every value that is not a characteristic strictly (the verifier's {@code strict_unless_char},
      *  RUNTIME-SEMANTICS ch. 6.1): a transient it acted on would persist. */
-    private record Form(ProducerConsumer.FormKind category, String naam, Object source, boolean recursiveCreation,
+    private record Form(ProducerConsumer.FormKind category, String name, Object source, boolean recursiveCreation,
                         boolean irrevocable, Set<String> writes, List<Read> reads) {}
 
     /** An edge from the form that writes {@code node} to the form that reads it; {@code strict} where ch. 5.2 makes
@@ -88,7 +88,7 @@ public final class Cycles {
     private record Edge(int producer, int consumer, String node, boolean negative, boolean strict) {}
 
     private static final Comparator<Form> FORM_ORDER =
-            Comparator.comparing((Form v) -> v.category().ordinal()).thenComparing(Form::naam);
+            Comparator.comparing((Form v) -> v.category().ordinal()).thenComparing(Form::name);
 
     /** The refusal of the cycles of {@code loaded}'s forms that WF-045 or WF-046 forbids, or null when there is none.
      *  A cycle names its nodes and the forms whose reads and writes close it, both sorted, so every order of the same
@@ -282,14 +282,14 @@ public final class Cycles {
     private static Msg form(Form v) {
         String category = switch (v.category()) {
             case REGEL -> "rule";
-            case OBJECTCREATIE -> "object-creation";
-            case VERDELING -> "allocation";
-            case CONSISTENTIE -> "consistency";
-            case UNICITEIT -> "uniqueness";
-            case FEITCREATIE -> "fact-creation";
-            case DEFAULTSGROEP -> "defaults-group";
+            case OBJECT_CREATION -> "object-creation";
+            case ALLOCATION -> "allocation";
+            case CONSISTENCY -> "consistency";
+            case UNIQUENESS -> "uniqueness";
+            case FACT_CREATION -> "fact-creation";
+            case DEFAULTS_GROUP -> "defaults-group";
         };
-        return Msg.drools("PART.cycle.form." + category, "name", v.naam());
+        return Msg.drools("PART.cycle.form." + category, "name", v.name());
     }
 
     private static Msg.Enumeration enumeration(List<?> parts) {
@@ -297,12 +297,12 @@ public final class Cycles {
     }
 
     /** The verifier's {@code strip_version}: a trailing " #&lt;digits&gt;" comes off, with the space before it. */
-    private static String withoutVersion(String naam) {
-        int i = naam.lastIndexOf('#');
-        if (i >= 2 && naam.charAt(i - 1) == ' ' && i + 1 < naam.length()
-                && naam.substring(i + 1).chars().allMatch(c -> c >= '0' && c <= '9'))
-            return naam.substring(0, i - 1);
-        return naam;
+    private static String withoutVersion(String name) {
+        int i = name.lastIndexOf('#');
+        if (i >= 2 && name.charAt(i - 1) == ' ' && i + 1 < name.length()
+                && name.substring(i + 1).chars().allMatch(c -> c >= '0' && c <= '9'))
+            return name.substring(0, i - 1);
+        return name;
     }
 
     /** The graph of one document: its forms, built as the verifier's {@code dep_forms} builds them, and the names its
@@ -347,24 +347,24 @@ public final class Cycles {
 
         // ---------------- nodes ----------------
 
-        private String member(Objecttype ot, String naam, boolean characteristic) {
-            String key = (characteristic ? "char:" : "attr:") + Namen.norm(ot.naam) + ":" + Namen.norm(naam);
-            String declared = characteristic ? ot.characteristicName(naam) : ot.attributeName(naam);
-            names.putIfAbsent(key, ot.naam + "." + (declared != null ? declared : naam));
-            order.putIfAbsent(key, "0 " + Namen.norm(ot.naam) + " " + Namen.norm(naam) + " " + (characteristic ? 1 : 0));
+        private String member(ObjectType ot, String name, boolean characteristic) {
+            String key = (characteristic ? "char:" : "attr:") + Namen.norm(ot.name) + ":" + Namen.norm(name);
+            String declared = characteristic ? ot.characteristicName(name) : ot.attributeName(name);
+            names.putIfAbsent(key, ot.name + "." + (declared != null ? declared : name));
+            order.putIfAbsent(key, "0 " + Namen.norm(ot.name) + " " + Namen.norm(name) + " " + (characteristic ? 1 : 0));
             return key;
         }
 
-        private String channel(String regel) {
-            String key = "chan:" + Namen.norm(withoutVersion(regel));
-            names.putIfAbsent(key, Msg.drools("PART.cycle.channel", "rule", ProducerConsumer.baseName(regel)));
+        private String channel(String rule) {
+            String key = "chan:" + Namen.norm(withoutVersion(rule));
+            names.putIfAbsent(key, Msg.drools("PART.cycle.channel", "rule", ProducerConsumer.baseName(rule)));
             order.putIfAbsent(key, "1 " + key);
             return key;
         }
 
-        private String population(Objecttype ot) {
-            String key = "pop:" + Namen.norm(ot.naam);
-            names.putIfAbsent(key, Msg.drools("PART.cycle.population", "type", ot.naam));
+        private String population(ObjectType ot) {
+            String key = "pop:" + Namen.norm(ot.name);
+            names.putIfAbsent(key, Msg.drools("PART.cycle.population", "type", ot.name));
             order.putIfAbsent(key, "2 " + key);
             return key;
         }
@@ -377,30 +377,30 @@ public final class Cycles {
         }
 
         /** Whether {@code ot} carries member {@code naam}, declared on it or inherited. */
-        private static boolean carries(Objecttype ot, String naam, boolean characteristic) {
-            for (Objecttype t : ot.chain())
-                if (characteristic ? t.kenmerken.stream().anyMatch(k -> Namen.norm(k).equals(Namen.norm(naam)))
-                            : t.attributen.keySet().stream().anyMatch(a -> Namen.norm(a).equals(Namen.norm(naam))))
+        private static boolean carries(ObjectType ot, String name, boolean characteristic) {
+            for (ObjectType t : ot.chain())
+                if (characteristic ? t.characteristics.stream().anyMatch(k -> Namen.norm(k).equals(Namen.norm(name)))
+                            : t.attributes.keySet().stream().anyMatch(a -> Namen.norm(a).equals(Namen.norm(name))))
                     return true;
             return false;
         }
 
         /** A member write by a form that iterates {@code ot}: on {@code ot} and every type comparable with it that
          *  carries the member (the verifier's {@code member_writes ~over:`Extension}). */
-        private Set<String> extensionWrite(Objecttype ot, String naam, boolean characteristic) {
+        private Set<String> extensionWrite(ObjectType ot, String name, boolean characteristic) {
             Set<String> out = new LinkedHashSet<>();
-            out.add(member(ot, naam, characteristic));
-            for (Objecttype s : model.objecttypen.values())
-                if ((s.isA(ot) || ot.isA(s)) && carries(s, naam, characteristic)) out.add(member(s, naam, characteristic));
+            out.add(member(ot, name, characteristic));
+            for (ObjectType s : model.objectTypes.values())
+                if ((s.isA(ot) || ot.isA(s)) && carries(s, name, characteristic)) out.add(member(s, name, characteristic));
             return out;
         }
 
         /** A member write by an object creation of {@code ot}: on {@code ot} and its ancestors that carry the member
          *  (the verifier's {@code member_writes ~over:`Minted}), since creation mints exactly {@code ot}. */
-        private Set<String> mintWrite(Objecttype ot, String naam, boolean characteristic) {
+        private Set<String> mintWrite(ObjectType ot, String name, boolean characteristic) {
             Set<String> out = new LinkedHashSet<>();
-            out.add(member(ot, naam, characteristic));
-            for (Objecttype t : ot.chain()) if (carries(t, naam, characteristic)) out.add(member(t, naam, characteristic));
+            out.add(member(ot, name, characteristic));
+            for (ObjectType t : ot.chain()) if (carries(t, name, characteristic)) out.add(member(t, name, characteristic));
             return out;
         }
 
@@ -411,16 +411,16 @@ public final class Cycles {
             for (ResolvedRuleGroup g : model.ruleGroups)
                 if (g.recursive()) for (String member : g.members()) if (member != null) recursive.add(Namen.norm(withoutVersion(member)));
             List<Form> out = new ArrayList<>();
-            for (ResolvedRule r : model.resolvedRegels) {
+            for (ResolvedRule r : model.resolvedRules) {
                 if (!(r.target() instanceof Expr.AttributeReference d) || d.objectType() == null || d.attribute() == null) continue;
                 boolean characteristic = r.category() == ResolvedRule.Kind.KENMERKTOEKENNING;
                 Set<String> writes = extensionWrite(d.objectType(), d.attribute(), characteristic);
-                if (r.naam() != null) writes.add(channel(r.naam()));
+                if (r.name() != null) writes.add(channel(r.name()));
                 List<Read> reads = new ArrayList<>();
                 condition(r.condition(), d.objectType(), false, reads);
                 expr(r.value(), d.objectType(), reads);
                 if (!characteristic && !stapels.absorbedOn(d.objectType(), d.attribute()).isEmpty()) reads = negative(reads);
-                out.add(new Form(ProducerConsumer.FormKind.REGEL, ProducerConsumer.baseName(r.naam()), r, false,
+                out.add(new Form(ProducerConsumer.FormKind.REGEL, ProducerConsumer.baseName(r.name()), r, false,
                         characteristic, writes, reads));
             }
             for (ResolvedAllocation v : model.allocations) {
@@ -439,14 +439,14 @@ public final class Cycles {
                     for (String a : new String[] {v.ratioAttribute(), v.maximumAttribute(), v.orderingAttribute()})
                         if (a != null) reads.add(new Read(member(v.targetType(), a, false), false));
                 condition(v.condition(), v.sourceType(), false, reads);
-                out.add(new Form(ProducerConsumer.FormKind.VERDELING, ProducerConsumer.baseName(v.naam()), v, false,
+                out.add(new Form(ProducerConsumer.FormKind.ALLOCATION, ProducerConsumer.baseName(v.name()), v, false,
                         false, writes, reads));
             }
-            for (ResolvedConsistency c : model.consistenties) {
+            for (ResolvedConsistency c : model.consistencies) {
                 List<Read> reads = new ArrayList<>();
-                condition(c.assertie(), c.subject(), false, reads);
-                out.add(new Form(ProducerConsumer.FormKind.CONSISTENTIE, ProducerConsumer.baseName(c.naam()), c,
-                        false, true, c.naam() == null ? Set.of() : Set.of(channel(c.naam())), reads));
+                condition(c.assertion(), c.subject(), false, reads);
+                out.add(new Form(ProducerConsumer.FormKind.CONSISTENCY, ProducerConsumer.baseName(c.name()), c,
+                        false, true, c.name() == null ? Set.of() : Set.of(channel(c.name())), reads));
             }
             for (ResolvedUniqueness u : model.uniquenesses) {
                 List<Read> reads = new ArrayList<>();
@@ -454,22 +454,22 @@ public final class Cycles {
                     reads.add(new Read(relation(u.scopeBinding().factType()), false));
                 if (u.subject() != null)
                     for (String k : u.keys()) if (k != null) reads.add(new Read(member(u.subject(), k, false), false));
-                out.add(new Form(ProducerConsumer.FormKind.UNICITEIT, ProducerConsumer.baseName(u.naam()), u,
-                        false, true, u.naam() == null ? Set.of() : Set.of(channel(u.naam())), reads));
+                out.add(new Form(ProducerConsumer.FormKind.UNIQUENESS, ProducerConsumer.baseName(u.name()), u,
+                        false, true, u.name() == null ? Set.of() : Set.of(channel(u.name())), reads));
             }
             for (ResolvedUniquenessUnion u : model.uniquenessUnions) {
                 List<Read> reads = new ArrayList<>();
                 for (ResolvedUniquenessUnion.Source b : u.sources())
                     if (b.type() != null)
                         for (String k : b.keys()) if (k != null) reads.add(new Read(member(b.type(), k, false), false));
-                out.add(new Form(ProducerConsumer.FormKind.UNICITEIT, ProducerConsumer.baseName(u.naam()), u,
-                        false, true, u.naam() == null ? Set.of() : Set.of(channel(u.naam())), reads));
+                out.add(new Form(ProducerConsumer.FormKind.UNIQUENESS, ProducerConsumer.baseName(u.name()), u,
+                        false, true, u.name() == null ? Set.of() : Set.of(channel(u.name())), reads));
             }
             for (ResolvedObjectCreation o : model.objectCreations) {
                 Set<String> writes = new LinkedHashSet<>();
                 if (o.createdType() != null) {
                     writes.add(population(o.createdType()));
-                    for (Objecttype t : o.createdType().chain()) writes.add(population(t));
+                    for (ObjectType t : o.createdType().chain()) writes.add(population(t));
                 }
                 String backLinkRelation = backLink(o);
                 if (backLinkRelation != null) writes.add(relation(backLinkRelation));
@@ -480,9 +480,9 @@ public final class Cycles {
                 if (o.subject() != null) reads.add(new Read(population(o.subject()), false));
                 condition(o.condition(), o.subject(), false, reads);
                 for (ResolvedObjectCreation.MemberInit t : o.initialisations()) expr(t.value(), o.subject(), reads);
-                String naam = o.naam() == null ? "" : o.naam();
-                out.add(new Form(ProducerConsumer.FormKind.OBJECTCREATIE, ProducerConsumer.baseName(o.naam()), o,
-                        recursive.contains(Namen.norm(withoutVersion(naam))), true, writes, reads));
+                String name = o.name() == null ? "" : o.name();
+                out.add(new Form(ProducerConsumer.FormKind.OBJECT_CREATION, ProducerConsumer.baseName(o.name()), o,
+                        recursive.contains(Namen.norm(withoutVersion(name))), true, writes, reads));
             }
             for (ResolvedFactCreation f : model.factCreations) {
                 Set<String> writes = new LinkedHashSet<>();
@@ -494,20 +494,20 @@ public final class Cycles {
                 if (f.path() != null && f.path().factType() != null)
                     reads.add(new Read(relation(f.path().factType()), false));
                 condition(f.condition(), f.anchor(), false, reads);
-                String naam = f.naam() == null ? "" : f.naam();
-                out.add(new Form(ProducerConsumer.FormKind.FEITCREATIE, ProducerConsumer.baseName(f.naam()), f,
-                        recursive.contains(Namen.norm(withoutVersion(naam))), true, writes, reads));
+                String name = f.name() == null ? "" : f.name();
+                out.add(new Form(ProducerConsumer.FormKind.FACT_CREATION, ProducerConsumer.baseName(f.name()), f,
+                        recursive.contains(Namen.norm(withoutVersion(name))), true, writes, reads));
             }
             for (int i = 0; i < defaults.size(); i++) {
                 PrioritizedDefaults p = defaults.get(i);
-                Objecttype onderwerp = model.objectTypeByName(p.onderwerp());
+                ObjectType subjectType = model.objectTypeByName(p.subject());
                 Set<String> writes = new LinkedHashSet<>();
-                if (onderwerp != null && p.target() != null)
-                    writes.addAll(extensionWrite(onderwerp, p.target(), p.isCharacteristic()));
+                if (subjectType != null && p.target() != null)
+                    writes.addAll(extensionWrite(subjectType, p.target(), p.isCharacteristic()));
                 List<Read> reads = new ArrayList<>();
-                for (Default d : p.defaults()) defaultReads(d, onderwerp, reads);
-                out.add(new Form(ProducerConsumer.FormKind.DEFAULTSGROEP,
-                        p.naam() != null ? ProducerConsumer.baseName(p.naam()) : "/rules/prioritizedDefaults/" + i, p,
+                for (Default d : p.defaults()) defaultReads(d, subjectType, reads);
+                out.add(new Form(ProducerConsumer.FormKind.DEFAULTS_GROUP,
+                        p.name() != null ? ProducerConsumer.baseName(p.name()) : "/rules/prioritizedDefaults/" + i, p,
                         false, false, writes, negative(reads)));
             }
             return out;
@@ -519,32 +519,32 @@ public final class Cycles {
         private String backLink(ResolvedObjectCreation o) {
             RoleBindingRef rb = roleBindings.get(o);
             if (rb != null) return rb.factType();
-            Objecttype s = o.subject(), n = o.createdType();
+            ObjectType s = o.subject(), n = o.createdType();
             if (s == null || n == null) return null;
             List<RegelSpraakModel.FactType> candidates = new ArrayList<>();
-            for (RegelSpraakModel.FactType ft : model.feittypen.values()) {
-                List<RegelSpraakModel.Role> r = ft.rollen;
+            for (RegelSpraakModel.FactType ft : model.factTypes.values()) {
+                List<RegelSpraakModel.Role> r = ft.roles;
                 if (r.size() == 2) {
-                    boolean ab = s.naam.equalsIgnoreCase(r.get(0).objecttypeNaam())
-                            && n.naam.equalsIgnoreCase(r.get(1).objecttypeNaam());
-                    boolean ba = s.naam.equalsIgnoreCase(r.get(1).objecttypeNaam())
-                            && n.naam.equalsIgnoreCase(r.get(0).objecttypeNaam());
+                    boolean ab = s.name.equalsIgnoreCase(r.get(0).objectTypeName())
+                            && n.name.equalsIgnoreCase(r.get(1).objectTypeName());
+                    boolean ba = s.name.equalsIgnoreCase(r.get(1).objectTypeName())
+                            && n.name.equalsIgnoreCase(r.get(0).objectTypeName());
                     if (ab || ba) candidates.add(ft);
-                } else if (r.size() == 1 && ft.reciprocal && s == n && s.naam.equalsIgnoreCase(r.get(0).objecttypeNaam())) {
+                } else if (r.size() == 1 && ft.reciprocal && s == n && s.name.equalsIgnoreCase(r.get(0).objectTypeName())) {
                     candidates.add(ft);
                 }
             }
             if (candidates.size() != 1) return null;
             RegelSpraakModel.FactType ft = candidates.get(0);
-            return s == n && !ft.reciprocal ? null : ft.naam;
+            return s == n && !ft.reciprocal ? null : ft.name;
         }
 
-        private void defaultReads(Default d, Objecttype onderwerp, List<Read> out) {
-            condition(d.condition(), onderwerp, false, out);
-            expr(d.consequence(), onderwerp, out);
+        private void defaultReads(Default d, ObjectType subjectType, List<Read> out) {
+            condition(d.condition(), subjectType, false, out);
+            expr(d.consequence(), subjectType, out);
             if (d.exceptions() == null) return;
             for (ExceptionGroup g : d.exceptions().members())
-                for (Default member : g.defaults()) defaultReads(member, onderwerp, out);
+                for (Default member : g.defaults()) defaultReads(member, subjectType, out);
         }
 
         private static List<Read> negative(List<Read> l) {
@@ -557,7 +557,7 @@ public final class Cycles {
 
         /** The verifier's {@code dep_expr}: every expression node, so a node the IR records gain later fails to compile
          *  here until it is decided what it reads. */
-        private void expr(Expr e, Objecttype subject, List<Read> out) {
+        private void expr(Expr e, ObjectType subject, List<Read> out) {
             if (e == null) return;
             switch (e) {
                 case Expr.AttributeReference a -> {
@@ -568,7 +568,7 @@ public final class Cycles {
                 }
                 case Expr.Binary b -> { expr(b.left(), subject, out); expr(b.right(), subject, out); }
                 case Expr.FunctionCall f -> {
-                    Objecttype el = f.elementObjectType();
+                    ObjectType el = f.elementObjectType();
                     if (el != null) out.add(new Read(population(el), false));
                     List<RoleBindingRef> path = sourcePaths.get(f);
                     if (path != null)
@@ -622,7 +622,7 @@ public final class Cycles {
         /** The verifier's {@code dep_cond}: {@code neg} is the negation-like context a characteristic read under it
          *  takes; a leeg or gevuld test makes every read under it negative, in either polarity; a quantifier fold reads
          *  its range negatively under all, none, atMost and exactly and its matrix under none, atMost and exactly. */
-        private void condition(Condition c, Objecttype subject, boolean neg, List<Read> out) {
+        private void condition(Condition c, ObjectType subject, boolean neg, List<Read> out) {
             if (c == null) return;
             switch (c) {
                 case Condition.Comparison v -> { expr(v.left(), subject, out); expr(v.right(), subject, out); }
@@ -642,11 +642,11 @@ public final class Cycles {
                     if (path != null && !path.isEmpty()) {
                         for (RoleBindingRef hop : path)
                             if (hop.factType() != null) out.add(new Read(relation(hop.factType()), false));
-                        Objecttype reaches = filler(path.get(path.size() - 1));
+                        ObjectType reaches = filler(path.get(path.size() - 1));
                         if (reaches != null) out.add(new Read(member(reaches, k.characteristic(), true), negative));
                         return;
                     }
-                    Objecttype carrier = k.owner() != null ? k.owner() : subject;
+                    ObjectType carrier = k.owner() != null ? k.owner() : subject;
                     if (carrier != null) out.add(new Read(member(carrier, k.characteristic(), true), negative));
                 }
                 case Condition.RoleMembership r -> {
@@ -676,26 +676,26 @@ public final class Cycles {
                     part(kv.test(), kv.elementObjectType(), matrixNeg, out);
                 }
                 case Condition.RuleStatusCheck rv -> {
-                    if (rv.regel() != null) out.add(new Read(channel(rv.regel()), true));
+                    if (rv.rule() != null) out.add(new Read(channel(rv.rule()), true));
                 }
                 case Condition.Unresolved ignored -> { }
             }
         }
 
         /** A part of a quantifier fold: negative throughout where {@code negative}, its own kinds otherwise. */
-        private void part(Condition c, Objecttype subject, boolean negative, List<Read> out) {
+        private void part(Condition c, ObjectType subject, boolean negative, List<Read> out) {
             List<Read> under = new ArrayList<>();
             condition(c, subject, negative, under);
             out.addAll(negative ? negative(under) : under);
         }
 
         /** The declared filler of the role a hop binds: the type it reaches. */
-        private Objecttype filler(RoleBindingRef hop) {
-            for (RegelSpraakModel.FactType ft : model.feittypen.values())
-                if (Namen.norm(ft.naam).equals(Namen.norm(hop.factType())))
-                    for (RegelSpraakModel.Role r : ft.rollen)
-                        if (r.naam() != null && Namen.norm(r.naam()).equals(Namen.norm(hop.role())))
-                            return model.objectTypeByName(r.objecttypeNaam());
+        private ObjectType filler(RoleBindingRef hop) {
+            for (RegelSpraakModel.FactType ft : model.factTypes.values())
+                if (Namen.norm(ft.name).equals(Namen.norm(hop.factType())))
+                    for (RegelSpraakModel.Role r : ft.roles)
+                        if (r.name() != null && Namen.norm(r.name()).equals(Namen.norm(hop.role())))
+                            return model.objectTypeByName(r.objectTypeName());
             return null;
         }
     }

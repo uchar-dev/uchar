@@ -251,7 +251,7 @@ class SessionDumpWitnessTest {
                 "feit LocalDateTime(2026-10-14T09:15:30)",
                 "feit LocalTime(\"09:15\")",
                 "feit Long(8)",
-                "feit SampleRecord(naam=String(\"r\"), number=BigDecimal(1.50), list=[Boolean(false)])",
+                "feit SampleRecord(name=String(\"r\"), number=BigDecimal(1.50), list=[Boolean(false)])",
                 "feit SampleType.FIRST_KIND",
                 "feit String(\"a\\\"b\\\\c\\rd\\ne\")",
                 "feit [BigDecimal(2), BigDecimal(2.0), BigDecimal(2.00), leeg, String(\"b\")]",
@@ -286,7 +286,7 @@ class SessionDumpWitnessTest {
     private enum SampleType { FIRST_KIND }
 
     /** A record of the test, which the dump writes with its components. */
-    private record SampleRecord(String naam, BigDecimal number, List<Object> list) {}
+    private record SampleRecord(String name, BigDecimal number, List<Object> list) {}
 
     /** A class of the test without a text of its own, which the dump refuses: its text would be its identity. */
     private static final class Textless {}
@@ -394,11 +394,11 @@ class SessionDumpWitnessTest {
     }
 
     /** The document of a consistency named {@code naam} that every Vondst be verdacht. */
-    private static Path inconsistency(String naam) throws Exception {
+    private static Path inconsistency(String name) throws Exception {
         String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(), List.of("verdacht"))),
                 List.of());
         return TmsDocuments.document(model, List.of(),
-                List.of(TmsDocuments.consistency(naam, "Vondst", TmsDocuments.check("verdacht", false))));
+                List.of(TmsDocuments.consistency(name, "Vondst", TmsDocuments.check("verdacht", false))));
     }
 
     /** The sections {@code lees} and {@code feit} of the dump of a Vondst V1 that is not verdacht. */

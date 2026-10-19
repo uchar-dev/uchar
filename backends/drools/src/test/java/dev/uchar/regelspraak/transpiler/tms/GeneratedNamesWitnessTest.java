@@ -32,7 +32,7 @@ class GeneratedNamesWitnessTest {
     }
 
     private static String element(Designatable b) {
-        return b.category() + " " + (b.owner() == null ? "" : b.owner() + ".") + b.naam();
+        return b.category() + " " + (b.owner() == null ? "" : b.owner() + ".") + b.name();
     }
 
     private static List<String> table(DroolsBackend.Build b) {
@@ -48,7 +48,7 @@ class GeneratedNamesWitnessTest {
     private static void manifestIsCovered(DroolsBackend.Build b) {
         TmsTranspiler t = b.execModelTranspiler();
         List<Designatable> all = b.model().designatable();
-        List<String> names = t.coverage().stream().map(Coverage::naam).toList();
+        List<String> names = t.coverage().stream().map(Coverage::name).toList();
         for (String n : names)
             assertTrue(all.contains(Designatable.form(n)) || t.generated().containsKey(n),
                     () -> "de dekking noemt '" + n + "', geen vorm van het model en niet gegenereerd");

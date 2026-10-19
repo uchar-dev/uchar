@@ -23,7 +23,7 @@ import java.util.List;
  * @param diagnose      why it is not a PASS: the replay's verdict line for FAIL (for a case that could not be played,
  *                      the case's name and the replay's ERROR line), the reason for MARKER; empty for PASS
  */
-public record ScenarioResult(String naam, Status status, List<ExpectationResult> expectations,
+public record ScenarioResult(String name, Status status, List<ExpectationResult> expectations,
                                 Trace trace, List<CoverageRule> coverage, String diagnostic) {
 
     public enum Status { PASS, FAIL, MARKER }
@@ -41,10 +41,10 @@ public record ScenarioResult(String naam, Status status, List<ExpectationResult>
     /** The firings of one form of the document: its name (no version suffix), the labels of the input instances its
      *  matches bound, and how often its rules fired. A rule the lowering keeps for every form alike belongs to no form
      *  and has no row. */
-    public record Firing(String regel, List<String> labels, int count) {}
+    public record Firing(String rule, List<String> labels, int count) {}
 
     /** One lowered construct's coverage in this case. */
-    public record CoverageRule(String regel, CoverageKind category) {}
+    public record CoverageRule(String rule, CoverageKind category) {}
     /** Whether a lowered construct fired. A construct the transpiler does not lower has no entry: the replay
      *  refuses the document before a case plays, and the case's status says MARKER. */
     public enum CoverageKind { FIRED, NOT_FIRED }

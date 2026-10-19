@@ -166,7 +166,7 @@ class CountUnionTest {
     void the_cardinality_plural_with_own_role_name_binds_via_the_type_pair() {
         RegelSpraakModel m = Resolver.resolve(CARDINALITY_MODEL);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).value());
+        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
         assertEquals(1, f.arguments().size(), "de unie is ÉÉN argument");
         Expr.InstanceSetUnion u = assertInstanceOf(Expr.InstanceSetUnion.class, f.arguments().get(0));
         assertEquals(2, u.branches().size());
@@ -175,7 +175,7 @@ class CountUnionTest {
             assertNotNull(t.sourceRole(), "elke selectie noemt haar relatie op de wire");
             assertEquals("vondstmelding", t.sourceRole().factType());
             assertEquals("vondst", t.sourceRole().role(), "de wire noemt de GEDECLAREERDE enkelvoudsrol");
-            assertEquals("Vondst", t.elementType().naam);
+            assertEquals("Vondst", t.elementType().name);
         }
         assertEquals("gemerkt", assertInstanceOf(dev.uchar.regelspraak.ir.Condition.CharacteristicCheck.class,
                 u.branches().get(0).filter()).characteristic());
@@ -205,14 +205,14 @@ class CountUnionTest {
         assertTrue(ds.get(0).message().contains("WF-110 (e)"), () -> ds.get(0).message());
     }
 
-    private static RegelSpraakModel clean(String regels) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regels);
+    private static RegelSpraakModel clean(String rules) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + rules);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         return m;
     }
 
     private static Expr.InstanceSetUnion unionOf(RegelSpraakModel m) {
-        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRegels.get(0).value());
+        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
         assertEquals(1, f.arguments().size(), "de unie is ÉÉN argument, niet een operandenlijst");
         assertNull(f.elementObjectType(), "de telling boven een unie noemt geen eigen bron (WF-110 (c))");
@@ -220,16 +220,16 @@ class CountUnionTest {
         return assertInstanceOf(Expr.InstanceSetUnion.class, f.arguments().get(0));
     }
 
-    private static List<Diagnostic> faults(String regels) {
-        return Resolver.resolve(MODEL + regels).errors();
+    private static List<Diagnostic> faults(String rules) {
+        return Resolver.resolve(MODEL + rules).errors();
     }
 
     @Test
     void the_concatenation_over_two_relations_becomes_a_union() {
         Expr.InstanceSetUnion u = unionOf(clean(TWO_RELATIONS));
         assertEquals(2, u.branches().size());
-        assertEquals("Vondst", u.branches().get(0).elementType().naam);
-        assertEquals("Vondst", u.branches().get(1).elementType().naam);
+        assertEquals("Vondst", u.branches().get(0).elementType().name);
+        assertEquals("Vondst", u.branches().get(1).elementType().name);
         // the two selections walk DIFFERENT relations: this is the shape the OR-filter form cannot
         // express, and the reason the union node exists rather than a composite filter
         assertEquals("vondstaanmelding", u.branches().get(0).sourceRole().factType());
@@ -331,7 +331,7 @@ class CountUnionTest {
 
     @Test
     void the_ordinary_count_stays_clean() {
-        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, clean(ORDINARY_COUNT).resolvedRegels.get(0).value());
+        Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, clean(ORDINARY_COUNT).resolvedRules.get(0).value());
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
         assertEquals(1, f.arguments().size());
         assertNotNull(f.elementObjectType(), "de eenargumentstelling verloor haar elementtype");
@@ -354,7 +354,7 @@ class CountUnionTest {
     void the_union_count_is_also_in_a_condition() {
         RegelSpraakModel m = clean(IN_CONDITION);
         var v = assertInstanceOf(dev.uchar.regelspraak.ir.Condition.Comparison.class,
-                m.resolvedRegels.get(0).condition());
+                m.resolvedRules.get(0).condition());
         Expr.FunctionCall count = assertInstanceOf(Expr.FunctionCall.class, v.left());
         assertEquals(Expr.FunctionKind.AANTAL, count.kind());
         assertEquals(2, assertInstanceOf(Expr.InstanceSetUnion.class, count.arguments().get(0)).branches().size());

@@ -66,9 +66,9 @@ class ScenarioReportWitnessTest {
         }
     }
 
-    private static ScenarioResult van(List<ScenarioResult> report, String naam) {
-        return report.stream().filter(r -> r.naam().equals(naam)).findFirst()
-                .orElseThrow(() -> new AssertionError("geen rapport voor " + naam + ": " + report));
+    private static ScenarioResult van(List<ScenarioResult> report, String name) {
+        return report.stream().filter(r -> r.name().equals(name)).findFirst()
+                .orElseThrow(() -> new AssertionError("geen rapport voor " + name + ": " + report));
     }
 
     @Test void a_golden_that_plays_reports_verdicts_firings_and_coverage() throws Exception {
@@ -85,7 +85,7 @@ class ScenarioReportWitnessTest {
         assertEquals("", refused.diagnostic());
         // a row names the case's objects its rules matched: M, by the default; the agreement of the group over the root
         // matches facts of the branch alone and adds none
-        List<String> trace = refused.trace().firings().stream().map(v -> v.regel() + " " + v.labels() + " "
+        List<String> trace = refused.trace().firings().stream().map(v -> v.rule() + " " + v.labels() + " "
                 + v.count()).sorted().toList();
         assertEquals(List.of("defaults K:Jutter.uitgesloten [M] 2"), trace,
                 "de defaultsgroep vuurt haar default en haar overeenstemming op M; de stand van het kenmerk heeft geen rij");
@@ -102,7 +102,7 @@ class ScenarioReportWitnessTest {
         assertEquals(Status.PASS, r.status(), r::toString);
         // the labels sorted: a row is pinned by what its rules bound, not by the order of the agenda
         List<String> trace = r.trace().firings().stream()
-                .map(v -> v.regel() + " " + v.labels().stream().sorted().toList() + " " + v.count()).sorted().toList();
+                .map(v -> v.rule() + " " + v.labels().stream().sorted().toList() + " " + v.count()).sorted().toList();
         assertEquals(List.of(
                 "defaults A:Controle.controlepremie [C1, C2, C3, C4] 6",
                 "defaults A:Jutter.premie [J1, J2, J3, J4, J5, V1, V2, V3, V4, V5, V6, V7, V8, V9] 20",
@@ -112,7 +112,7 @@ class ScenarioReportWitnessTest {
                 "zwaarte [V1, V3, V7] 3"), trace, "één rij per vorm, en geen rij voor een regel zonder vorm");
         assertEquals(70, r.trace().total(), "het rapport telt elke vuring van een regel van een vorm");
         for (ScenarioResult.CoverageRule d : r.coverage())
-            assertEquals(CoverageKind.FIRED, d.category(), () -> d.regel() + " vuurde: " + trace);
+            assertEquals(CoverageKind.FIRED, d.category(), () -> d.rule() + " vuurde: " + trace);
         assertEquals(6, r.coverage().size(), () -> r.coverage().toString());
     }
 
@@ -127,7 +127,7 @@ class ScenarioReportWitnessTest {
         Path ir = Files.writeString(d.resolve("ir.json"), renamed);
         ScenarioResult r = CaseRunner.report(ir, List.of(borgdeel.resolve("case1.json"))).get(0);
         assertEquals(Status.PASS, r.status(), r::toString);
-        List<String> trace = r.trace().firings().stream().map(v -> v.regel() + " " + v.labels() + " " + v.count())
+        List<String> trace = r.trace().firings().stream().map(v -> v.rule() + " " + v.labels() + " " + v.count())
                 .sorted().toList();
         assertEquals(List.of("premie: basis [J1] 1", "toeslag: basis [J1] 1"), trace,
                 "twee vormen, twee rijen, elk met de hele naam");
@@ -140,7 +140,7 @@ class ScenarioReportWitnessTest {
         ScenarioResult r = CaseRunner.report(jutheffing.resolve("ir.json"),
                 List.of(jutheffing.resolve("case1-tarief-2025.json"))).get(0);
         assertEquals(Status.PASS, r.status(), r::toString);
-        List<String> trace = r.trace().firings().stream().map(v -> v.regel() + " " + v.labels() + " " + v.count())
+        List<String> trace = r.trace().firings().stream().map(v -> v.rule() + " " + v.labels() + " " + v.count())
                 .sorted().toList();
         assertEquals(List.of("jutheffing naar jaartarief [A1] 1", "registratiegetal bij aangifte [A1] 1"), trace,
                 "de versies van één regel delen een rij");
@@ -149,9 +149,9 @@ class ScenarioReportWitnessTest {
                 "de tweede versie geldt niet in 2025 en vuurt dus niet");
     }
 
-    private static CoverageKind coverage(ScenarioResult r, String regel) {
-        return r.coverage().stream().filter(d -> d.regel().equals(regel)).findFirst()
-                .orElseThrow(() -> new AssertionError("geen dekking voor " + regel + ": " + r.coverage())).category();
+    private static CoverageKind coverage(ScenarioResult r, String rule) {
+        return r.coverage().stream().filter(d -> d.rule().equals(rule)).findFirst()
+                .orElseThrow(() -> new AssertionError("geen dekking voor " + rule + ": " + r.coverage())).category();
     }
 
     @Test void a_missed_expectation_carries_expected_and_actual() throws Exception {
@@ -198,7 +198,7 @@ class ScenarioReportWitnessTest {
             ScenarioResult r = CaseRunner.report(ir, List.of(pair[1])).get(0);
             if (r.status() != Status.PASS) faults.add(r.status() + " " + r.diagnostic());
             for (ExpectationResult v : r.expectations())
-                if (!v.expected().equals(v.actual())) faults.add(r.naam() + ": " + v);
+                if (!v.expected().equals(v.actual())) faults.add(r.name() + ": " + v);
         }
         assertEquals(List.of(), faults, "het rapport van de cases met een lid in een andere hoofdletter");
     }

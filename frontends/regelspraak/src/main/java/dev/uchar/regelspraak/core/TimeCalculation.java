@@ -5,7 +5,7 @@ import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Unit;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 /**
  * THE time-unit mapping both back-ends share (single shared implementation): a declared tijdseenheid → the
@@ -26,7 +26,7 @@ public final class TimeCalculation {
 
     /** As {@link #chronoUnit(Datatype)}, keyed directly on an {@link Unit} ({@code null}-safe). */
     public static String chronoUnit(Unit e) {
-        return e == null ? null : spellingChronoUnit(e.afkorting());
+        return e == null ? null : spellingChronoUnit(e.abbreviation());
     }
 
     /** Whether {@code spelling} stands in the NORMATIVE calendar table (uchar's RUNTIME-SEMANTICS ch. 3.8,
@@ -80,15 +80,15 @@ public final class TimeCalculation {
      *  kind nor a table entry is still an honest marker/skip there. */
     public static String dayKindForUnit(RegelSpraakModel model, Unit e) {
         if (e == null || chronoUnit(e) != null) return null;
-        return model.dayKindForUnit(e.afkorting());
+        return model.dayKindForUnit(e.abbreviation());
     }
 
     /** §8.4.3: whether a periodevergelijking bound can be lowered — a §13.2.19 Datum-in-dagen LITERAL or the
      *  subject's OWN scalar (non-temporal, non-dimensioned) Datum-in-dagen attribute. Everything else — a
      *  parameter/navigated/computed bound, a Datum-en-tijd (the §4.2 Rekendatum is day-granular) — stays an
      *  honest marker/skip, SHARED by both back-ends so they fire/skip the same shapes. */
-    public static boolean periodBoundLowerable(Expr limit, Objecttype subject) {
-        if (!(limit.type() instanceof Datatype.DatumInDagen)) return false;
+    public static boolean periodBoundLowerable(Expr limit, ObjectType subject) {
+        if (!(limit.type() instanceof Datatype.DateInDays)) return false;
         if (limit instanceof Expr.Literal) return true;
         return limit instanceof Expr.AttributeReference a && a.navigationRole() == null && !a.set()
                 && a.objectType() != null && a.objectType() == subject

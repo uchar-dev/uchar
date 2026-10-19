@@ -66,7 +66,7 @@ class RationalAtRestWitnessTest {
         String dump = BranchDumps.equal(ir, caseDocument, "een derde");
         // the decimal of 1/3 at DECIMAL64, sixteen significant digits, with its scale: the BigDecimal of the collapse,
         // the recorded limit of this backend, not the exact value the norm asks for (ch. 2.4)
-        assertEquals(List.of("feit Value(onderwerp=\"D1\", attribute=\"deling\".\"quotient\","
+        assertEquals(List.of("feit Value(subject=\"D1\", attribute=\"deling\".\"quotient\","
                         + " value=BigDecimal(0.3333333333333333), writer=String(\"quotient van een deling\"))"),
                 rules(dump, "feit ", "0.3333", "Breuk"), () -> "de waarde in de feiten:\n" + dump);
         assertEquals(List.of("lees waarde \"D1\".\"quotient\" = BigDecimal(0.3333333333333333)"),

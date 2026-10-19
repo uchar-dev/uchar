@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.ir;
 
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public sealed interface Condition {
         GELIJK, ONGELIJK,
         EERDER, EERDER_OF_GELIJK, LATER, LATER_OF_GELIJK
     }
-    record Comparison(Operator op, Expr left, Expr right, WholePeriod periode, Source source) implements Condition {
+    record Comparison(Operator op, Expr left, Expr right, WholePeriod period, Source source) implements Condition {
         public Comparison(Operator op, Expr left, Expr right, Source source) { this(op, left, right, null, source); }
     }
 
@@ -52,11 +52,11 @@ public sealed interface Condition {
      *  {@code digits} is the §8.1.4 digit-count N of the NUMERIEK_MET_EXACT predicate ("numeriek met exact N
      *  cijfers" — the §13.4.15.84 &lt;geheelgetal&gt;); 0 for every other soort. */
     enum PredicateKind { LEEG, GEVULD, ELFPROEF, NUMERIEK_MET_EXACT, DAGSOORT }
-    record Predicate(PredicateKind category, Expr operand, String dayKind, boolean negation, int digits, WholePeriod periode, Source source) implements Condition {
-        public Predicate(PredicateKind category, Expr operand, String dayKind, WholePeriod periode, Source source) { this(category, operand, dayKind, false, 0, periode, source); }
-        public Predicate(PredicateKind category, Expr operand, boolean negation, WholePeriod periode, Source source) { this(category, operand, null, negation, 0, periode, source); }
-        public Predicate(PredicateKind category, Expr operand, boolean negation, int digits, WholePeriod periode, Source source) { this(category, operand, null, negation, digits, periode, source); }
-        public Predicate(PredicateKind category, Expr operand, WholePeriod periode, Source source) { this(category, operand, null, false, 0, periode, source); }
+    record Predicate(PredicateKind category, Expr operand, String dayKind, boolean negation, int digits, WholePeriod period, Source source) implements Condition {
+        public Predicate(PredicateKind category, Expr operand, String dayKind, WholePeriod period, Source source) { this(category, operand, dayKind, false, 0, period, source); }
+        public Predicate(PredicateKind category, Expr operand, boolean negation, WholePeriod period, Source source) { this(category, operand, null, negation, 0, period, source); }
+        public Predicate(PredicateKind category, Expr operand, boolean negation, int digits, WholePeriod period, Source source) { this(category, operand, null, negation, digits, period, source); }
+        public Predicate(PredicateKind category, Expr operand, WholePeriod period, Source source) { this(category, operand, null, false, 0, period, source); }
         public Predicate(PredicateKind category, Expr operand, Source source) { this(category, operand, null, false, 0, null, source); }
     }
 
@@ -69,8 +69,8 @@ public sealed interface Condition {
      *  constraint must attach to — a §13.4.7 feitcreatie hosts a doel-kenmerk on the {@code $doel} pattern,
      *  so the transpiler emits it only on that type and markers it elsewhere (never on the anker, even when
      *  the anker declares a same-named kenmerk). null leaves it unconstrained (the single-subject rule). */
-    record CharacteristicCheck(String characteristic, String navigation, boolean negation, Objecttype owner, WholePeriod periode, Source source) implements Condition {
-        public CharacteristicCheck(String characteristic, String navigation, boolean negation, Objecttype owner, Source source) { this(characteristic, navigation, negation, owner, null, source); }
+    record CharacteristicCheck(String characteristic, String navigation, boolean negation, ObjectType owner, WholePeriod period, Source source) implements Condition {
+        public CharacteristicCheck(String characteristic, String navigation, boolean negation, ObjectType owner, Source source) { this(characteristic, navigation, negation, owner, null, source); }
         public CharacteristicCheck(String characteristic, String navigation, boolean negation, Source source) { this(characteristic, navigation, negation, null, null, source); }
         public CharacteristicCheck(String characteristic, Source source) { this(characteristic, null, false, null, null, source); }
     }
@@ -82,9 +82,9 @@ public sealed interface Condition {
      *  transpiler looks up the reference field. {@code negation} marks the §8.1.7/§8.1.8.3 "is geen &lt;rol&gt;"
      *  negation — the subject does NOT fill the role — which lowers to the inverse null-test ({@code groep == null}).
      *  When the reference lives on the other side (the §8.1.7 "heeft" form) it is a {@link FarRoleMembership}. */
-    record RoleMembership(String role, Objecttype otherToFiller, Source source, boolean negation) implements Condition {
+    record RoleMembership(String role, ObjectType otherToFiller, Source source, boolean negation) implements Condition {
         /** Positive rolcheck — the subject fills the role. */
-        RoleMembership(String role, Objecttype otherToFiller, Source source) { this(role, otherToFiller, source, false); }
+        RoleMembership(String role, ObjectType otherToFiller, Source source) { this(role, otherToFiller, source, false); }
     }
 
     /** §8.1.7 FAR-side rolcheck ("de groep heeft een deelnemer"): the subject sits on the "één" side, so the
@@ -93,7 +93,7 @@ public sealed interface Condition {
      *  when-clause {@code exists <filler>( <backref> == $subject )}), NOT an in-pattern constraint — which is why
      *  it can only be peeled when it is a rule's TOP-LEVEL condition; nested in an AND/OR or a comparison it
      *  stays a marker. {@code negation} is the "heeft geen" form ({@code not <filler>(...)}). */
-    record FarRoleMembership(Objecttype filler, String backref, boolean negation, Source source) implements Condition {}
+    record FarRoleMembership(ObjectType filler, String backref, boolean negation, Source source) implements Condition {}
 
     /** §8.4.3 / §13.4.15.68-.69 periodevergelijking as a CONDITION: the rule applies during the period
      *  bounded by the datum-expressies — "vanaf X" / "van X tot [en met] Y" / "tot [en met] X". Standalone it is
@@ -121,7 +121,7 @@ public sealed interface Condition {
      *  opt-in emission — no fact-base bloat from markers no rule reads). Null-safe. */
     static void collectFiredReferences(Condition c, java.util.Set<String> result) {
         if (c == null) return;
-        if (c instanceof RuleStatusCheck rv && !rv.inconsistent() && rv.regel() != null) result.add(rv.regel());
+        if (c instanceof RuleStatusCheck rv && !rv.inconsistent() && rv.rule() != null) result.add(rv.rule());
         if (c instanceof Compound s) s.components().forEach(d -> collectFiredReferences(d, result));
         if (c instanceof QuantifierFold k) {
             collectFiredReferences(k.filter(), result);
@@ -187,12 +187,12 @@ public sealed interface Condition {
      *  evaluated PER CONTRIBUTOR with the element as subject, exactly as {@link Expr.FunctionCall#filter} is.
      *  {@code sourceRole} / {@code sourcePath} are the range, spelled exactly as the fold's and mutually
      *  exclusive (IR-SPEC ch. 4.5, WF-108; RUNTIME-SEMANTICS ch. 3.9a). */
-    record QuantifierFold(Quantifier quantifier, int threshold, Objecttype elementObjectType, Condition filter,
+    record QuantifierFold(Quantifier quantifier, int threshold, ObjectType elementObjectType, Condition filter,
                        Condition test,
                        dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef sourceRole,
                        List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> sourcePath,
                        Source source) implements Condition {
-        public QuantifierFold(Quantifier quantifier, int threshold, Objecttype elementObjectType, Condition filter,
+        public QuantifierFold(Quantifier quantifier, int threshold, ObjectType elementObjectType, Condition filter,
                            Condition test,
                            dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef sourceRole, Source source) {
             this(quantifier, threshold, elementObjectType, filter, test, sourceRole, List.of(), source);
@@ -200,14 +200,14 @@ public sealed interface Condition {
     }
 
     /** §8.1.9 / §13.4.15.66 regelpredicaat: "regelversie &lt;regel&gt; [(&lt;geldigheid&gt;)] is gevuurd |
-     *  is inconsistent" — a control on the EXECUTION of the named rule, not on a subject. {@code regel} is
+     *  is inconsistent" — a control on the EXECUTION of the named rule, not on a subject. {@code rule} is
      *  the referenced rule's name (the parenthesised versie-aanduiding is parsed but kept only in
      *  {@code source}: the §9.5 Inconsistentie channel is already geldigheids-window-gated at insert time).
      *  {@code inconsistent} distinguishes "is inconsistent" (reads the §9.5 Inconsistentie flag facts of a
      *  consistentie/uniciteit/verdeling rule — an exists-join) from "is gevuurd" (whether the named rule's
      *  voorwaardendeel was satisfied — no observable runtime record, so both back-ends decline it
      *  symmetrically; see grammar/DIVERGENCES.md). */
-    record RuleStatusCheck(String regel, boolean inconsistent, Source source) implements Condition {}
+    record RuleStatusCheck(String rule, boolean inconsistent, Source source) implements Condition {}
 
     /** A condition form the resolver cannot structure — a marker with a reason, never a type.
      *  Membership and period tests have left this node for {@link CharacteristicCheck},

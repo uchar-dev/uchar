@@ -87,7 +87,7 @@ class TmsExceptionWitnessTest {
                     List.of(defaultEntry(check("grondB2", false), number("25")))))));
 
     /** Per object its input characteristics, its heffing (null for leeg) and its conflict key (null for none). */
-    private record Case(List<String> kenmerken, String heffing, String conflict) {}
+    private record Case(List<String> characteristics, String heffing, String conflict) {}
 
     private static final Map<String, Case> CASES = new LinkedHashMap<>();
     static {
@@ -108,7 +108,7 @@ class TmsExceptionWitnessTest {
     private static JsonNode caseDocument() throws Exception {
         List<String> instances = new ArrayList<>(), expectations = new ArrayList<>();
         CASES.forEach((label, g) -> {
-            instances.add(instance(label, "Jutter", Map.of(), g.kenmerken(), Map.of()));
+            instances.add(instance(label, "Jutter", Map.of(), g.characteristics(), Map.of()));
             expectations.add(value(label, "heffing", g.heffing()));
             if (g.conflict() != null) expectations.add(inconsistent(g.conflict(), label));
         });
@@ -156,7 +156,7 @@ class TmsExceptionWitnessTest {
         Map<Object, String> labels = new IdentityHashMap<>();
         List<Object> beans = new ArrayList<>();
         for (Map.Entry<String, Case> e : CASES.entrySet()) {
-            Object beanObject = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), e.getValue().kenmerken());
+            Object beanObject = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), e.getValue().characteristics());
             labels.put(beanObject, e.getKey());
             beans.add(beanObject);
         }

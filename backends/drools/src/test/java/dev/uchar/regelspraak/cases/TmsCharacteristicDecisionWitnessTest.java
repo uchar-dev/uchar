@@ -56,7 +56,7 @@ class TmsCharacteristicDecisionWitnessTest {
             decision(check("nx", false), true)));
 
     /** Per object its input characteristics and whether it ends {@code vrijgesteld}. */
-    private static final Map<String, List<String>> INVOER = new LinkedHashMap<>();
+    private static final Map<String, List<String>> INPUT = new LinkedHashMap<>();
     private static final Map<String, Boolean> EXEMPT = new LinkedHashMap<>();
     static {
         addCase("J1", List.of("nx"), true);
@@ -67,14 +67,14 @@ class TmsCharacteristicDecisionWitnessTest {
         addCase("J6", List.of("nx", "vrijgesteld"), true);
     }
 
-    private static void addCase(String label, List<String> kenmerken, boolean exempt) {
-        INVOER.put(label, kenmerken);
+    private static void addCase(String label, List<String> characteristics, boolean exempt) {
+        INPUT.put(label, characteristics);
         EXEMPT.put(label, exempt);
     }
 
     private static JsonNode caseDocument() throws Exception {
         List<String> instances = new ArrayList<>(), expectations = new ArrayList<>();
-        INVOER.forEach((label, k) -> {
+        INPUT.forEach((label, k) -> {
             instances.add(TmsDocuments.jutter(label, k));
             expectations.add(expected(label, "vrijgesteld", EXEMPT.get(label)));
         });
@@ -108,14 +108,14 @@ class TmsCharacteristicDecisionWitnessTest {
         assertTrue(inTheText[0] > 0, "geen volgorde van de tekst liet het besluit onwaar de toekenning verdringen");
     }
 
-    /** Fires the Jutters of {@code INVOER} through {@code kieBase}, the rules of {@code b} in the order {@code names}:
+    /** Fires the Jutters of {@code INPUT} through {@code kieBase}, the rules of {@code b} in the order {@code names}:
      *  every Jutter ends vrijgesteld as it should; counts in {@code displaced} the firings of the attribution on J2. */
     private static void fireSample(DroolsBackend.Build b, KieBase kieBase, List<String> names, int[] displaced)
             throws Exception {
         {
             Map<Object, String> labels = new IdentityHashMap<>();
             List<Object> beans = new ArrayList<>();
-            for (Map.Entry<String, List<String>> e : INVOER.entrySet()) {
+            for (Map.Entry<String, List<String>> e : INPUT.entrySet()) {
                 Object beanObject = TmsDocuments.jutterBean(b.beanLoader(), e.getValue());
                 labels.put(beanObject, e.getKey());
                 beans.add(beanObject);

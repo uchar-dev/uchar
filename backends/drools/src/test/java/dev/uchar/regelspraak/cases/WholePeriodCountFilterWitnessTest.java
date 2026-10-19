@@ -83,9 +83,9 @@ class WholePeriodCountFilterWitnessTest {
         for (String f : functions)
             assertTrue(Pattern.compile("rule \"[^\"]*: bijdrage aan vouw \\d+\"\\n(?:(?!end\\n)[^\\n]*\\n)*?    eval\\( " + f
                     + "\\(").matcher(text).find(), () -> f + " is de toets van een bijdrageregel:\n" + text);
-        for (String regel : text.split("\n"))
-            assertFalse(regel.contains("accumulate(") && regel.contains("geheelPeriode"),
-                    () -> "het filter staat in een accumulate: " + regel);
+        for (String rule : text.split("\n"))
+            assertFalse(rule.contains("accumulate(") && rule.contains("geheelPeriode"),
+                    () -> "het filter staat in een accumulate: " + rule);
     }
 
     /** The two rules of the computation rule in the other order of the document, its only other order (card

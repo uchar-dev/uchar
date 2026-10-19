@@ -316,8 +316,8 @@ class TmsConsistencyWitnessTest {
 
     private static int rows(String model, String op, String left, String right, boolean text, List<Row> rows)
             throws Exception {
-        String naam = "controle " + op;
-        Path ir = TmsDocuments.document(model, List.of(), List.of(consistency(naam, "Vondst",
+        String name = "controle " + op;
+        Path ir = TmsDocuments.document(model, List.of(), List.of(consistency(name, "Vondst",
                 comparison(op, ownRead(left, "Vondst"), ownRead(right, "Vondst")))));
         for (Row row : rows) {
             List<String> attributes = new ArrayList<>();
@@ -325,9 +325,9 @@ class TmsConsistencyWitnessTest {
             if (row.right() != null) attributes.add(input(right, row.right(), text));
             JsonNode caseDocument = TmsDocuments.caseDocument(List.of("{\"label\":\"V1\",\"objectType\":\"Vondst\",\"attributes\":{"
                     + String.join(",", attributes) + "},\"roles\":{},\"characteristics\":[]}"),
-                    List.of(row.geschonden() ? inconsistent(naam, "V1") : consistent()));
+                    List.of(row.geschonden() ? inconsistent(name, "V1") : consistent()));
             for (DroolsBackend.Branch branch : BRANCHES)
-                assertNull(CaseRunner.playCase(ir, caseDocument, branch), () -> branch + ": " + naam + " over " + row);
+                assertNull(CaseRunner.playCase(ir, caseDocument, branch), () -> branch + ": " + name + " over " + row);
         }
         return rows.size();
     }

@@ -111,18 +111,18 @@ class PropertyWitnessTest {
             loop(b.execModelTranspiler().modelplan(), null, found, new IdentityHashMap<>());
             for (Object[] v : found) {
                 Class<?> javaClass = (Class<?>) v[0];
-                String naam = (String) v[1], property = (String) v[2];
+                String name = (String) v[1], property = (String) v[2];
                 String place = GOLDEN.relativize(ir.getParent()) + " | " + (javaClass == null ? "?" : javaClass.getName())
-                        + " | " + naam + " -> " + property;
+                        + " | " + name + " -> " + property;
                 fields++;
                 if (!identifier(property)) noIdentifier.add(place);
                 if (javaClass != null && javaClass.getPackageName().equals(BRANCH)) {
-                    if (!property.equals(naam)) fact.add(place);
+                    if (!property.equals(name)) fact.add(place);
                 } else if (javaClass != null && !hasGetter(javaClass, Namen.lidnamen(property))
-                        || !Namen.lidnamen(property).getter().equals("get" + RegelSpraakRuntime.pascal(naam))) {
+                        || !Namen.lidnamen(property).getter().equals("get" + RegelSpraakRuntime.pascal(name))) {
                     bean.add(place);
                 }
-                if (!property.equals(naam)) differentlyNamed++;
+                if (!property.equals(name)) differentlyNamed++;
             }
         }
         assertEquals(List.of(), noIdentifier, "eigenschappen die geen identifier zijn");
@@ -160,41 +160,41 @@ class PropertyWitnessTest {
         Class<?> trial = BeanCompiler.compile(sources).loadClass(FactModelGenerator.PACKAGE + ".Proef");
         List<String> faults = new ArrayList<>();
         int n = 0;
-        for (String naam : AWKWARD) {
-            String e = Namen.property(naam), getter = getters.get(e), setter = setters.get(e);
+        for (String name : AWKWARD) {
+            String e = Namen.property(name), getter = getters.get(e), setter = setters.get(e);
             Object bean = trial.getConstructor().newInstance();
             java.math.BigDecimal written = new java.math.BigDecimal(++n + ".01"),
                     setValue = new java.math.BigDecimal(n + ".02");
             Map<String, Object> names = new java.util.LinkedHashMap<>();
             names.put("lidnamen.getter", Namen.lidnamen(e).getter());
             names.put("lidnamen.setter", Namen.lidnamen(e).setter());
-            names.put("Namen.getter", Namen.getter(naam));
-            names.put("Namen.setter", Namen.setter(naam));
+            names.put("Namen.getter", Namen.getter(name));
+            names.put("Namen.setter", Namen.setter(name));
             for (Map.Entry<String, Object> m : names.entrySet()) {
                 String expected = m.getKey().endsWith("getter") ? getter : setter;
                 if (!m.getValue().equals(expected))
-                    faults.add(naam + " | " + m.getKey() + " " + m.getValue() + ", de generator " + expected);
+                    faults.add(name + " | " + m.getKey() + " " + m.getValue() + ", de generator " + expected);
             }
             // the writers, read back through the generator's own getter: the setter, and the routes of a creation,
             // which make a bean of the generator's class by its name and set the member on it
-            meet(faults, naam, "Accessors.eigenschapSetter", written, () -> {
+            meet(faults, name, "Accessors.eigenschapSetter", written, () -> {
                 Accessors.eigenschapSetter(trial, e).accept(bean, written);
                 return trial.getMethod(getter).invoke(bean);
             });
-            meet(faults, naam, "Rekenhulpen.zet", written, () -> {
+            meet(faults, name, "Rekenhulpen.zet", written, () -> {
                 Object fresh = ComputeHelpers.newObject(bean, trial.getName());
                 ComputeHelpers.set(fresh, e, written);
                 return trial.getMethod(getter).invoke(fresh);
             });
             // the readers, of a value set through the generator's own setter
             trial.getMethod(setter, java.math.BigDecimal.class).invoke(bean, setValue);
-            meet(faults, naam, "Accessors.eigenschapGetter", setValue, () -> Accessors.eigenschapGetter(trial, e).apply(bean));
-            meet(faults, naam, "Accessors.leesEigenschap", setValue, () -> Accessors.leesEigenschap(bean, e));
-            meet(faults, naam, "PatternDslWeergave.invoerlezer", setValue, () -> PatternDslRendering.inputReader(
-                    new Binding.Field(trial, naam), Binding.ReadForm.VALUE, null).apply(bean));
-            meet(faults, naam, "Rekenhulpen.lees", setValue, () -> ComputeHelpers.readProperty(bean, e));
-            meet(faults, naam, "Rekenhulpen.langs", setValue, () -> ComputeHelpers.along(bean, List.of(e)));
-            meet(faults, naam, "Rekenhulpen.ontmoeting", true,
+            meet(faults, name, "Accessors.eigenschapGetter", setValue, () -> Accessors.eigenschapGetter(trial, e).apply(bean));
+            meet(faults, name, "Accessors.leesEigenschap", setValue, () -> Accessors.leesEigenschap(bean, e));
+            meet(faults, name, "PatternDslWeergave.invoerlezer", setValue, () -> PatternDslRendering.inputReader(
+                    new Binding.Field(trial, name), Binding.ReadForm.VALUE, null).apply(bean));
+            meet(faults, name, "Rekenhulpen.lees", setValue, () -> ComputeHelpers.readProperty(bean, e));
+            meet(faults, name, "Rekenhulpen.langs", setValue, () -> ComputeHelpers.along(bean, List.of(e)));
+            meet(faults, name, "Rekenhulpen.ontmoeting", true,
                     () -> ComputeHelpers.meeting(bean, bean, List.of(e), List.of(e)));
         }
         assertEquals(List.of(), faults, () -> "lezers en schrijvers die niet de namen van de beangenerator gebruiken:\n"
@@ -222,37 +222,37 @@ class PropertyWitnessTest {
         while (z.find()) setters.put(z.group(2), z.group(1));
         Class<?> javaClass = BeanCompiler.compile(sources).loadClass(FactModelGenerator.PACKAGE + ".Kenmerkproef");
         List<String> faults = new ArrayList<>();
-        for (String naam : CHARACTERISTICS) {
-            String e = Namen.property(naam), getter = getters.get(e), setter = setters.get(e);
+        for (String name : CHARACTERISTICS) {
+            String e = Namen.property(name), getter = getters.get(e), setter = setters.get(e);
             if (getter == null || setter == null) {
-                faults.add(naam + " | de generator schreef geen is-getter en setter voor " + e);
+                faults.add(name + " | de generator schreef geen is-getter en setter voor " + e);
                 continue;
             }
             Map<String, String> names = new java.util.LinkedHashMap<>();
             names.put("lidnamen.isGetter", Namen.lidnamen(e).isGetter());
             names.put("lidnamen.setter", Namen.lidnamen(e).setter());
             // the replay reads a member through Namen.getter, and else through the is form of its stem
-            names.put("is-vorm van Namen.getter", "is" + Namen.getter(naam).substring(3));
-            names.put("Namen.setter", Namen.setter(naam));
+            names.put("is-vorm van Namen.getter", "is" + Namen.getter(name).substring(3));
+            names.put("Namen.setter", Namen.setter(name));
             for (Map.Entry<String, String> m : names.entrySet()) {
                 String expected = m.getKey().endsWith("setter") ? setter : getter;
                 if (!m.getValue().equals(expected))
-                    faults.add(naam + " | " + m.getKey() + " " + m.getValue() + ", de generator " + expected);
+                    faults.add(name + " | " + m.getKey() + " " + m.getValue() + ", de generator " + expected);
             }
             for (boolean w : new boolean[] { true, false }) {
                 Object bean = javaClass.getConstructor().newInstance();
-                meet(faults, naam, "Accessors.eigenschapSetter " + w, w, () -> {
+                meet(faults, name, "Accessors.eigenschapSetter " + w, w, () -> {
                     Accessors.eigenschapSetter(javaClass, e).accept(bean, w);
                     return javaClass.getMethod(getter).invoke(bean);
                 });
                 javaClass.getMethod(setter, boolean.class).invoke(bean, w);
-                meet(faults, naam, "Accessors.eigenschapGetter " + w, w,
+                meet(faults, name, "Accessors.eigenschapGetter " + w, w,
                         () -> Accessors.eigenschapGetter(javaClass, e).apply(bean));
-                meet(faults, naam, "Accessors.leesEigenschap " + w, w, () -> Accessors.leesEigenschap(bean, e));
-                meet(faults, naam, "PatternDslWeergave.invoerlezer " + w, w, () -> PatternDslRendering.inputReader(
-                        new Binding.Field(javaClass, naam), Binding.ReadForm.WAAR, null).apply(bean));
-                meet(faults, naam, "Rekenhulpen.lees " + w, w, () -> ComputeHelpers.readProperty(bean, e));
-                meet(faults, naam, "Rekenhulpen.langs " + w, w, () -> ComputeHelpers.along(bean, List.of(e)));
+                meet(faults, name, "Accessors.leesEigenschap " + w, w, () -> Accessors.leesEigenschap(bean, e));
+                meet(faults, name, "PatternDslWeergave.invoerlezer " + w, w, () -> PatternDslRendering.inputReader(
+                        new Binding.Field(javaClass, name), Binding.ReadForm.WAAR, null).apply(bean));
+                meet(faults, name, "Rekenhulpen.lees " + w, w, () -> ComputeHelpers.readProperty(bean, e));
+                meet(faults, name, "Rekenhulpen.langs " + w, w, () -> ComputeHelpers.along(bean, List.of(e)));
             }
         }
         assertEquals(List.of(), faults, () -> "lezers en schrijvers van een kenmerk die niet de namen van de"
@@ -275,10 +275,10 @@ class PropertyWitnessTest {
     }
 
     /** The case of {@link #the_replay_sets_and_reads_each_characteristic}: one {@code Kenmerkproef} with every characteristic of
-     *  {@code kenmerken} as input where {@code present}, and expected present, or else none and each expected absent. */
-    static String characteristicCase(List<String> kenmerken, boolean present) {
+     *  {@code characteristics} as input where {@code present}, and expected present, or else none and each expected absent. */
+    static String characteristicCase(List<String> characteristics, boolean present) {
         StringBuilder input = new StringBuilder(), expected = new StringBuilder();
-        for (String k : kenmerken) {
+        for (String k : characteristics) {
             if (present) input.append(input.isEmpty() ? "" : ", ").append(Namen.drlString(k));
             expected.append("{\"kind\": \"").append(present ? "characteristicPresent" : "characteristicAbsent")
                     .append("\", \"label\": \"K1\", \"characteristic\": ").append(Namen.drlString(k)).append("}, ");
@@ -310,14 +310,14 @@ class PropertyWitnessTest {
     /** The build of a document with such a member fails loudly on the bean source, and the compiler's report quotes
      *  the field ("private java.math.BigDecimal 3M;"). Measured on {@code c00897a3} (fix round 2a, point 3). */
     @Test void a_member_without_a_java_name_fails_loudly_at_the_bean_source() throws Exception {
-        for (String naam : NO_JAVA_NAME) {
+        for (String name : NO_JAVA_NAME) {
             Path ir = Files.createTempFile("geen-javanaam", ".json");
             try {
-                Files.writeString(ir, trialDocument(List.of(naam)));
+                Files.writeString(ir, trialDocument(List.of(name)));
                 IllegalStateException f = assertThrows(IllegalStateException.class,
-                        () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL), naam);
+                        () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL), name);
                 assertTrue(f.getMessage().startsWith("gegenereerde fact-beans compileren niet:\n"), f::getMessage);
-                assertTrue(f.getMessage().contains("private java.math.BigDecimal " + Namen.property(naam) + ";"),
+                assertTrue(f.getMessage().contains("private java.math.BigDecimal " + Namen.property(name) + ";"),
                         f::getMessage);
             } finally {
                 Files.delete(ir);
@@ -327,14 +327,14 @@ class PropertyWitnessTest {
 
     /** One reader or writer {@code label} of the member {@code naam}: what it gives, or the fault it throws, where that is
      *  not {@code expected}. */
-    private static void meet(List<String> faults, String naam, String label, Object expected,
+    private static void meet(List<String> faults, String name, String label, Object expected,
                              java.util.concurrent.Callable<Object> readCall) {
         try {
             Object read = readCall.call();
-            if (!expected.equals(read)) faults.add(naam + " | " + label + " gaf " + read + ", verwacht " + expected);
+            if (!expected.equals(read)) faults.add(name + " | " + label + " gaf " + read + ", verwacht " + expected);
         } catch (Exception f) {
             Throwable cause = f instanceof java.lang.reflect.InvocationTargetException i ? i.getCause() : f;
-            faults.add(naam + " | " + label + " faalt: " + cause);
+            faults.add(name + " | " + label + " faalt: " + cause);
         }
     }
 
@@ -343,16 +343,16 @@ class PropertyWitnessTest {
         return trialDocument(names, List.of());
     }
 
-    /** As {@link #trialDocument(List)}, with, where {@code kenmerken} is not empty, an object type {@code Kenmerkproef}
+    /** As {@link #trialDocument(List)}, with, where {@code characteristics} is not empty, an object type {@code Kenmerkproef}
      *  that has a characteristic for each of them. */
-    static String trialDocument(List<String> names, List<String> kenmerken) {
+    static String trialDocument(List<String> names, List<String> characteristics) {
         StringBuilder attributes = new StringBuilder();
         for (String n : names)
             attributes.append(attributes.isEmpty() ? "" : ", ").append("{\"node\": \"Attribute\", \"name\": ")
                     .append(Namen.drlString(n)).append(", \"datatype\": {\"node\": \"Number\", \"whole\": false,"
                             + " \"decimals\": 2, \"sign\": \"nonNegative\"}}");
         StringBuilder characteristicType = new StringBuilder();
-        for (String k : kenmerken)
+        for (String k : characteristics)
             characteristicType.append(characteristicType.isEmpty() ? ", {\"node\": \"ObjectType\", \"name\": \"Kenmerkproef\","
                     + " \"animate\": false, \"plural\": \"Kenmerkproeven\", \"attributes\": [], \"characteristics\": ["
                     : ", ").append("{\"node\": \"Characteristic\", \"name\": ").append(Namen.drlString(k))
@@ -459,7 +459,7 @@ class PropertyWitnessTest {
         if (seen.put(o, Boolean.TRUE) != null) return;
         Class<?> inside = pattern;
         switch (o) {
-            case Binding.Field v -> out.add(new Object[]{v.javaClass(), v.naam(), v.property()});
+            case Binding.Field v -> out.add(new Object[]{v.javaClass(), v.name(), v.property()});
             case Alpha.FieldTest t when t.field() != null -> out.add(new Object[]{t.declarant() != null ? t.declarant()
                     : pattern, t.field(), t.property()});
             case Join j when j.field() != null -> out.add(new Object[]{pattern, j.field(), j.property()});

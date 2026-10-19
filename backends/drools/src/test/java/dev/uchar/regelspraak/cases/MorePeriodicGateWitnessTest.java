@@ -171,7 +171,7 @@ class MorePeriodicGateWitnessTest {
         // same document.
         Path keurploeg = ir(KEURPLOEG);
         java.util.function.Consumer<RegelSpraakModel> without = m -> assertEquals(1,
-                m.objecttypen.get("Keurmeester").attribuutTijdlijnAantal.remove("keurvergoeding"),
+                m.objectTypes.get("Keurmeester").attributeTimelineCount.remove("keurvergoeding"),
                 "de geladen teltabel draagt de 1 van de wire voor keurvergoeding");
         java.util.function.Consumer<RegelSpraakModel> with = m -> { };
         String drl = drlText(keurploeg, without);
@@ -279,8 +279,8 @@ class MorePeriodicGateWitnessTest {
         return temporary(golden + "-" + memberName + "-" + count, d);
     }
 
-    private static Path temporary(String naam, JsonNode d) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, JsonNode d) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, d.toString());
         return tmp;

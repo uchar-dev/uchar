@@ -76,7 +76,7 @@ class CaseInputWitnessTest {
             assertSame(beans.get("W1"), field(beans.get("W2"), "voorligger"), c);
             assertSame(beans.get("W1"), field(beans.get("W3"), "voorligger"), c);
             assertNull(field(beans.get("W1"), "voorligger"), c + ": no link toward W1 is invented");
-            for (String label : beans.keySet()) assertEquals("Wachter", input.types().get(label).naam, c);
+            for (String label : beans.keySet()) assertEquals("Wachter", input.types().get(label).name, c);
         }
     }
 
@@ -199,9 +199,9 @@ class CaseInputWitnessTest {
         }
         List<ScenarioResult.Firing> firings = new ArrayList<>();
         for (ScenarioResult.Firing v : entry.trace().firings())
-            firings.add(new ScenarioResult.Firing(v.regel(), v.labels().stream().map(backLabel::get).toList(),
+            firings.add(new ScenarioResult.Firing(v.rule(), v.labels().stream().map(backLabel::get).toList(),
                     v.count()));
-        assertEquals(new ScenarioResult(report.naam(), report.status(), expectations,
+        assertEquals(new ScenarioResult(report.name(), report.status(), expectations,
                 new ScenarioResult.Trace(firings), entry.coverage(), entry.diagnostic()), report);
         // and a collision names the ids
         CaseInput.RoleError f = roleError(() -> CaseInput.van(build(KAVELGRENS), chain("Duinkavel", "kavelbreedte",
@@ -348,8 +348,8 @@ class CaseInputWitnessTest {
         return DroolsBackend.build(ir(golden), DroolsBackend.Branch.EXEC_MODEL);
     }
 
-    private static JsonNode caseFile(String golden, String naam) throws Exception {
-        return JSON.readTree(Files.readString(CORPUS.resolve(golden).resolve(naam + ".json")));
+    private static JsonNode caseFile(String golden, String name) throws Exception {
+        return JSON.readTree(Files.readString(CORPUS.resolve(golden).resolve(name + ".json")));
     }
 
     /** A reference field of a bean, read by its property name. */
@@ -427,7 +427,7 @@ class CaseInputWitnessTest {
     }
 
     private static Object value(Fixpoint fixpoint, Object object, String attribute) {
-        return fixpoint.waarden().stream().filter(w -> w.object() == object && w.attribute().equals(attribute))
+        return fixpoint.values().stream().filter(w -> w.object() == object && w.attribute().equals(attribute))
                 .map(Fixpoint.DerivedValue::value).findFirst().orElse(null);
     }
 
@@ -439,7 +439,7 @@ class CaseInputWitnessTest {
         Thread.currentThread().setContextClassLoader(b.beanLoader());
         KieSession session = b.kieBase().newKieSession();
         try {
-            globals.forEach((naam, w) -> setGlobal(session, naam, w));
+            globals.forEach((name, w) -> setGlobal(session, name, w));
             DroolsBackend.insert(b, session, input.inputData());
             DroolsBackend.Firing v = DroolsBackend.fire(b, session);
             assertNull(v.noFixpoint());
@@ -463,9 +463,9 @@ class CaseInputWitnessTest {
         return out;
     }
 
-    private static void setGlobal(KieSession session, String naam, Object value) {
+    private static void setGlobal(KieSession session, String name, Object value) {
         try {
-            session.setGlobal(naam, value);
+            session.setGlobal(name, value);
         } catch (RuntimeException notDeclared) {
             // a global the KieBase does not declare is one no rule reads
         }
@@ -501,28 +501,28 @@ class CaseInputWitnessTest {
         for (Path p : paths) {
             JsonNode c = JSON.readTree(Files.readString(p));
             if (c.has("expectedFault")) continue;
-            String naam = p.getFileName().toString();
+            String name = p.getFileName().toString();
             if (b == null) {
-                out.add(marker(naam, refusal));
+                out.add(marker(name, refusal));
                 continue;
             }
             try {
-                out.add(play(b, naam, c));
+                out.add(play(b, name, c));
             } catch (CaseRunner.Excluded e) {
-                out.add(marker(naam, e.getMessage()));
+                out.add(marker(name, e.getMessage()));
             }
         }
         return out;
     }
 
-    private static ScenarioResult marker(String naam, String reason) {
-        return new ScenarioResult(naam, ScenarioResult.Status.MARKER, List.of(),
+    private static ScenarioResult marker(String name, String reason) {
+        return new ScenarioResult(name, ScenarioResult.Status.MARKER, List.of(),
                 new ScenarioResult.Trace(List.of()), List.of(), reason);
     }
 
     /** Case {@code c} as a consumer plays it: read through {@link CaseInput}, its parameters and asOfDate as globals,
      *  put in, fired with a waarnemer, written back and compared. */
-    private static ScenarioResult play(DroolsBackend.Build b, String naam, JsonNode c) {
+    private static ScenarioResult play(DroolsBackend.Build b, String name, JsonNode c) {
         CaseInput input = CaseInput.van(b, c);
         Map<Object, String> label = new IdentityHashMap<>();
         input.beans().forEach((l, bean) -> label.put(bean, l));
@@ -540,12 +540,12 @@ class CaseInputWitnessTest {
             ScenarioResult.Trace trace = new ScenarioResult.Trace(observer.firings());
             List<ScenarioResult.CoverageRule> coverage = DroolsBackend.coverage(b, observer.forms());
             if (firing.noFixpoint() != null)
-                return new ScenarioResult(naam, ScenarioResult.Status.FAIL, List.of(), trace, coverage,
-                        naam + ": " + firing.noFixpoint());
+                return new ScenarioResult(name, ScenarioResult.Status.FAIL, List.of(), trace, coverage,
+                        name + ": " + firing.noFixpoint());
             DroolsBackend.setDerivedValues(b, session, label::get);
             DroolsBackend.Comparison v = DroolsBackend.compare(b, session, label::get, c.get("expected"));
-            return new ScenarioResult(naam, v.pass() ? ScenarioResult.Status.PASS : ScenarioResult.Status.FAIL,
-                    v.expectations(), trace, coverage, v.pass() ? "" : naam + ": " + v.diagnostic());
+            return new ScenarioResult(name, v.pass() ? ScenarioResult.Status.PASS : ScenarioResult.Status.FAIL,
+                    v.expectations(), trace, coverage, v.pass() ? "" : name + ": " + v.diagnostic());
         } finally {
             session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
@@ -554,18 +554,18 @@ class CaseInputWitnessTest {
 
     /** A parameter value as a consumer gives it: the forms the corpus carries, and the replay's refusal of a timeline
      *  and of a rational number. */
-    private static Object parameterValue(String naam, JsonNode w) {
+    private static Object parameterValue(String name, JsonNode w) {
         if (w.has("timeline"))
-            throw new CaseRunner.Excluded(DroolsCode.GRANULAR_PARAMETER_TIMELINE, "granular (timeline) parameter '" + naam + "' is not carried by the v0 backend");
+            throw new CaseRunner.Excluded(DroolsCode.GRANULAR_PARAMETER_TIMELINE, "granular (timeline) parameter '" + name + "' is not carried by the v0 backend");
         if (w.has("number")) {
             if (w.get("number").asText().contains("/"))
-                throw new CaseRunner.Excluded(DroolsCode.RATIONAL_VALUE, "rational value on '" + naam + "' is not carried by the v0 backend");
+                throw new CaseRunner.Excluded(DroolsCode.RATIONAL_VALUE, "rational value on '" + name + "' is not carried by the v0 backend");
             return new BigDecimal(w.get("number").asText());
         }
         if (w.has("date")) return LocalDate.parse(w.get("date").asText());
         if (w.has("boolean")) return w.get("boolean").asBoolean();
         if (w.has("text")) return w.get("text").asText();
         if (w.has("enumeration")) return w.get("enumeration").asText();
-        return fail("a parameter form this witness does not set: " + naam + " " + w);
+        return fail("a parameter form this witness does not set: " + name + " " + w);
     }
 }

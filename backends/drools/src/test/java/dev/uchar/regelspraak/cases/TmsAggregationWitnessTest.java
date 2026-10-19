@@ -175,26 +175,26 @@ class TmsAggregationWitnessTest {
             for (Object v : List.of(v1, v2, v3)) setRole(v, "aanmelder", j1);
             Map<String, List<Object>> seen = new java.util.HashMap<>();
             List<Long> counts = new ArrayList<>(), exemptions = new ArrayList<>();
-            int[] waarden = {0, 0};
+            int[] values = {0, 0};
             TmsDocuments.fire(b, order, List.of(j1, j2, v1, v2, v3), session ->
                     session.addEventListener(new DefaultAgendaEventListener() {
                         @Override public void afterMatchFired(AfterMatchFiredEvent e) {
-                            String regel = e.getMatch().getRule().getName();
-                            if ((regel.equals("bergsom") || regel.equals("erkendaantal"))
+                            String rule = e.getMatch().getRule().getName();
+                            if ((rule.equals("bergsom") || rule.equals("erkendaantal"))
                                     && e.getMatch().getObjects().contains(j1))
-                                seen.computeIfAbsent(regel, r -> new ArrayList<>()).add(boundNumber(e));
-                            if (regel.equals("erkendaantal") && e.getMatch().getObjects().contains(j1))
+                                seen.computeIfAbsent(rule, r -> new ArrayList<>()).add(boundNumber(e));
+                            if (rule.equals("erkendaantal") && e.getMatch().getObjects().contains(j1))
                                 counts.add(smallestNumber(e));
-                            if (regel.equals("vrijaantal") && e.getMatch().getObjects().contains(j1))
+                            if (rule.equals("vrijaantal") && e.getMatch().getObjects().contains(j1))
                                 exemptions.add(smallestNumber(e));
                         }
                     }), session -> {
-                        waarden[0] = session.getObjects(o -> o instanceof Value w && w.onderwerp() == j1
-                                && w.attribute().naam().equals("bergsom")).size();
-                        waarden[1] = session.getObjects(o -> o instanceof Value w && w.onderwerp() == j1
-                                && w.attribute().naam().equals("erkendaantal")).size();
+                        values[0] = session.getObjects(o -> o instanceof Value w && w.subject() == j1
+                                && w.attribute().name().equals("bergsom")).size();
+                        values[1] = session.getObjects(o -> o instanceof Value w && w.subject() == j1
+                                && w.attribute().name().equals("erkendaantal")).size();
                     });
-            assertEquals(List.of(1, 1), List.of(waarden[0], waarden[1]), () -> "Waarde-feiten van J1 in volgorde " + names);
+            assertEquals(List.of(1, 1), List.of(values[0], values[1]), () -> "Waarde-feiten van J1 in volgorde " + names);
             assertNumber("50", TmsDocuments.read(j1, "bergsom"), "bergsom van J1 in volgorde " + names);
             assertNumber("2", TmsDocuments.read(j1, "erkendaantal"), "erkendaantal van J1 in volgorde " + names);
             assertNumber("1", TmsDocuments.read(j1, "vrijaantal"), "vrijaantal van J1 in volgorde " + names);

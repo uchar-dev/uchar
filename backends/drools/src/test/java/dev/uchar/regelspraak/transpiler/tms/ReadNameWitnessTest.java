@@ -99,14 +99,14 @@ class ReadNameWitnessTest {
             for (RulePlan p : b.execModelTranspiler().modelplan().rules()) {
                 plans++;
                 for (Read l : p.readings().slots()) {
-                    if (l.naam() == null) continue;
+                    if (l.name() == null) continue;
                     slots++;
-                    if (NUMBERED.matcher(l.naam()).matches()) numbered.add(golden + " | " + p.naam() + " | " + l);
-                    if (!identifier(l.naam())) noIdentifier.add(golden + " | " + p.naam() + " | " + l);
+                    if (NUMBERED.matcher(l.name()).matches()) numbered.add(golden + " | " + p.name() + " | " + l);
+                    if (!identifier(l.name())) noIdentifier.add(golden + " | " + p.name() + " | " + l);
                 }
                 Set<String> seen = new HashSet<>();
                 for (String v : variables(p))
-                    if (!seen.add(v)) duplicate.add(golden + " | " + p.naam() + " | " + v);
+                    if (!seen.add(v)) duplicate.add(golden + " | " + p.name() + " | " + v);
             }
         }
         assertEquals(List.of(), numbered, "genummerde lezingen");
@@ -125,12 +125,12 @@ class ReadNameWitnessTest {
                 slots("anchor/jutterswet-rekenkamer", "heffing van een jutter"));
         assertEquals(List.of("ROLE_FIELD $toegewezenWachtpostGezet"),
                 slots("jutterswet-wachtindeling", "wachtdoend bij wachtpost"));
-        assertEquals(List.of("INVOER $rang", "SCOPE $berging"),
+        assertEquals(List.of("INPUT $rang", "SCOPE $berging"),
                 slots("jutterswet-hoofdberging", "rang per berging: sleutel van Hoofdberger 1"));
-        assertEquals(List.of("INVOER $aantalAangemeldeVondsten", "PARAMETER $vondstdrempel"),
+        assertEquals(List.of("INPUT $aantalAangemeldeVondsten", "PARAMETER $vondstdrempel"),
                 slots("jutterswet-penningdrempel", "Kenmerktoekenning jutter penninggerechtigd"));
         // "waarde" is a member of Berging; $waarde is a fixed name of the analysis, so the read takes a number
-        assertEquals(List.of("INVOER $waarde2", "INVOER $vermenigvuldiger"),
+        assertEquals(List.of("INPUT $waarde2", "INPUT $vermenigvuldiger"),
                 slots("jutterswet-bergloon", "product van een berging"));
     }
 
@@ -154,8 +154,8 @@ class ReadNameWitnessTest {
         Map<String, String> received = new LinkedHashMap<>();
         for (String read : expected.keySet()) received.put(read, TmsTranspiler.readName(read, Set.of()));
         assertEquals(expected, received);
-        for (String naam : received.values())
-            assertTrue(identifier(naam) && !naam.contains("_"), () -> naam + " is geen variabele zonder underscore");
+        for (String name : received.values())
+            assertTrue(identifier(name) && !name.contains("_"), () -> name + " is geen variabele zonder underscore");
         // a name of which nothing stays takes a number where $x is taken, as every read name does
         assertEquals("$x2", TmsTranspiler.readName("²³", Set.of("$x")));
         assertEquals("$x3", TmsTranspiler.readName("", Set.of("$x", "$x2")));
@@ -164,47 +164,47 @@ class ReadNameWitnessTest {
     @Test void the_plan_refuses_a_second_declaration_in_its_scope() {
         ReadTable empty = new ReadTable(List.of());
         Consequence channel = new Consequence.InsertChannelState("proef", true, Consequence.Insertion.LOGICAL);
-        Subject onderwerp = new Subject(Object.class, "$o", List.of(), List.of(),
+        Subject subject = new Subject(Object.class, "$o", List.of(), List.of(),
                 List.of(Binding.van("$v", Value.class, "value")));
         assertEquals("de regel twee patronen declareert de variabele $o twee keer", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("twee patronen", null, null, empty,
-                        List.of(onderwerp, new FactPattern(Value.class, "$o", List.of(), List.of(), List.of())), channel))
+                        List.of(subject, new FactPattern(Value.class, "$o", List.of(), List.of(), List.of())), channel))
                 .getMessage());
         assertEquals("de regel binding als patroon declareert de variabele $v twee keer", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("binding als patroon", null, null, empty,
-                        List.of(onderwerp, new FactPattern(Value.class, "$v", List.of(), List.of(), List.of())), channel))
+                        List.of(subject, new FactPattern(Value.class, "$v", List.of(), List.of(), List.of())), channel))
                 .getMessage());
         assertEquals("de regel twee resultaten declareert de variabele $v twee keer", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("twee resultaten", null, null, empty,
-                        List.of(onderwerp, new Accumulation(new FactPattern(Value.class, "$w", List.of(), List.of(),
+                        List.of(subject, new Accumulation(new FactPattern(Value.class, "$w", List.of(), List.of(),
                                 List.of()), List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, "$v")))),
                         channel)).getMessage());
         assertEquals("de regel binnen en buiten declareert de variabele $v twee keer", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("binnen en buiten", null, null, empty,
-                        List.of(onderwerp, new Not(new FactPattern(Value.class, "$v", List.of(), List.of(), List.of()))),
+                        List.of(subject, new Not(new FactPattern(Value.class, "$v", List.of(), List.of(), List.of()))),
                         channel)).getMessage());
-        ReadTable twoSlots = new ReadTable(List.of(new Read(0, ReadKind.INVOER, "a", "$v"),
-                new Read(1, ReadKind.INVOER, "b", "$v")));
+        ReadTable twoSlots = new ReadTable(List.of(new Read(0, ReadKind.INPUT, "a", "$v"),
+                new Read(1, ReadKind.INPUT, "b", "$v")));
         assertEquals("de regel twee slots geeft twee slots de variabele $v", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("twee slots", null, null, twoSlots,
-                        List.of(onderwerp), channel)).getMessage());
+                        List.of(subject), channel)).getMessage());
         // what a quantification declares lives only inside it: a second quantification and an item after both may
         // declare that name again
         Not first = new Not(new FactPattern(Value.class, "$w", List.of(), List.of(), List.of()));
         Exists second = new Exists(List.of(new FactPattern(Value.class, "$w", List.of(), List.of(), List.of())),
                 List.of("$w"), List.of());
-        assertEquals(4, new RulePlan("lokaal", null, null, empty, List.of(onderwerp, first, second,
+        assertEquals(4, new RulePlan("lokaal", null, null, empty, List.of(subject, first, second,
                 new FactPattern(Value.class, "$w", List.of(), List.of(), List.of())), channel).leftSide().size());
     }
 
-    /** The kind and the variable of every slot of the rule {@code regel} in the golden {@code golden}. */
-    private static List<String> slots(String golden, String regel) throws Exception {
+    /** The kind and the variable of every slot of the rule {@code rule} in the golden {@code golden}. */
+    private static List<String> slots(String golden, String rule) throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(GOLDEN.resolve(golden).resolve("ir.json"),
                 DroolsBackend.Branch.EXEC_MODEL);
         List<String> out = new ArrayList<>();
         for (RulePlan p : b.execModelTranspiler().modelplan().rules())
-            if (p.naam().equals(regel))
-                for (Read l : p.readings().slots()) out.add(l.category() + " " + l.naam());
+            if (p.name().equals(rule))
+                for (Read l : p.readings().slots()) out.add(l.category() + " " + l.name());
         return out;
     }
 
@@ -216,7 +216,7 @@ class ReadNameWitnessTest {
         for (LhsItem item : p.leftSide()) {
             switch (item) {
                 case Subject o -> {
-                    out.add(o.naam());
+                    out.add(o.name());
                     for (Binding b : o.bindings()) out.add(b.target());
                 }
                 case FactPattern pt -> pattern(pt, out);
@@ -233,15 +233,15 @@ class ReadNameWitnessTest {
     }
 
     private static void pattern(FactPattern pt, List<String> out) {
-        out.add(pt.naam());
+        out.add(pt.name());
         for (Binding b : pt.bindings()) out.add(b.target());
     }
 
     /** Whether {@code naam} is {@code $} and a Java identifier, which DRL text can spell as a variable. */
-    private static boolean identifier(String naam) {
-        if (naam.length() < 2 || naam.charAt(0) != '$') return false;
-        for (int i = 1; i < naam.length(); i++)
-            if (!Character.isJavaIdentifierPart(naam.charAt(i))) return false;
+    private static boolean identifier(String name) {
+        if (name.length() < 2 || name.charAt(0) != '$') return false;
+        for (int i = 1; i < name.length(); i++)
+            if (!Character.isJavaIdentifierPart(name.charAt(i))) return false;
         return true;
     }
 

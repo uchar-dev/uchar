@@ -218,9 +218,9 @@ class DrlCreationBranchWitnessTest {
         return write(ir, "penning-vorm");
     }
 
-    private static com.fasterxml.jackson.databind.node.ArrayNode without(JsonNode list, String naam) {
+    private static com.fasterxml.jackson.databind.node.ArrayNode without(JsonNode list, String name) {
         var kept = JSON.createArrayNode();
-        for (JsonNode n : list) if (!naam.equals(n.path("name").asText())) kept.add(n);
+        for (JsonNode n : list) if (!name.equals(n.path("name").asText())) kept.add(n);
         return kept;
     }
 
@@ -255,8 +255,8 @@ class DrlCreationBranchWitnessTest {
                 """);
     }
 
-    private static Path write(JsonNode ir, String naam) throws Exception {
-        Path p = Files.createTempDirectory("uchar-drlcreatie-" + naam).resolve("ir.json");
+    private static Path write(JsonNode ir, String name) throws Exception {
+        Path p = Files.createTempDirectory("uchar-drlcreatie-" + name).resolve("ir.json");
         Files.writeString(p, JSON.writerWithDefaultPrettyPrinter().writeValueAsString(ir));
         p.toFile().deleteOnExit();
         return p;

@@ -77,20 +77,20 @@ class BranchDumpsCorpusWitnessTest {
             for (Path casePath : casePaths(g))
                 if (!TmsDocuments.JSON.readTree(casePath.toFile()).has("expectedFault")) casePaths.add(casePath);
             if (casePaths.isEmpty()) continue;
-            String naam = CORPUS.resolve("golden").relativize(g).toString();
+            String name = CORPUS.resolve("golden").relativize(g).toString();
             Path ir = g.resolve("ir.json");
             if (!CaseRunner.viaExecModel(ir, casePaths).status().equals("PLAYED")) continue;
             CaseRunner exec = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL), drl;
             try {
                 drl = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.DRL_TEXT);
             } catch (RuntimeException e) {
-                differences.add(naam + ": de DRL-teksttak bouwt het document niet: " + e);
+                differences.add(name + ": de DRL-teksttak bouwt het document niet: " + e);
                 continue;
             }
             compared++;
             for (Path casePath : casePaths) {
                 JsonNode c = TmsDocuments.JSON.readTree(casePath.toFile());
-                String which = naam + "/" + casePath.getFileName();
+                String which = name + "/" + casePath.getFileName();
                 String a = BranchDumps.dump(exec, c), b = BranchDumps.dump(drl, c);
                 if (a.lines().noneMatch(r -> r.equals("fixpunt ja"))) withoutFixpoint.add(which);
                 String difference = firstDifference(comparable(a), comparable(b));

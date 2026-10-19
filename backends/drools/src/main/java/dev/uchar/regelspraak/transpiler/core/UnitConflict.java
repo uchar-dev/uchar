@@ -75,8 +75,8 @@ public final class UnitConflict extends RuntimeException {
     private final String site;
 
     private UnitConflict(Unit van, Unit destination, String site) {
-        super("onverenigbare eenheden bij " + site + ": '" + van.rendering() + "' (canoniek " + van.canoniek()
-                + ") herschaalt niet naar '" + destination.rendering() + "' (canoniek " + destination.canoniek()
+        super("onverenigbare eenheden bij " + site + ": '" + van.rendering() + "' (canoniek " + van.canonical()
+                + ") herschaalt niet naar '" + destination.rendering() + "' (canoniek " + destination.canonical()
                 + ") — er bestaat geen omrekenfactor");
         this.van = van;
         this.destination = destination;

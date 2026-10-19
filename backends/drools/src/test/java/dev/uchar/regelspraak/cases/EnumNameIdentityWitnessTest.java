@@ -93,9 +93,9 @@ class EnumNameIdentityWitnessTest {
         kavel.putArray("characteristics");
         IrPath.modelList(ir, "objectTypes").add(kavel);
 
-        ArrayNode kenmerken = vondst.putArray("characteristics");
+        ArrayNode characteristics = vondst.putArray("characteristics");
         for (String k : List.of("kavelgaaf", "kavelongaaf", "normconform"))
-            kenmerken.addObject().put("node", "Characteristic").put("name", k).put("kind", "adjectival");
+            characteristics.addObject().put("node", "Characteristic").put("name", k).put("kind", "adjectival");
         IrPath.modelList(ir, "factTypes").add(JSON.readTree("""
                 {"node": "FactType", "name": "kavelindeling", "reciprocal": false, "roles": [
                   {"node": "Role", "name": "kavel", "objectType": "Kavel", "many": false},
@@ -198,8 +198,8 @@ class EnumNameIdentityWitnessTest {
         return (ObjectNode) JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
     }
 
-    private Path write(ObjectNode ir, String naam) throws Exception {
-        Path p = tmp.resolve(naam);
+    private Path write(ObjectNode ir, String name) throws Exception {
+        Path p = tmp.resolve(name);
         Files.writeString(p, ir.toPrettyString());
         return p;
     }
@@ -251,7 +251,7 @@ class EnumNameIdentityWitnessTest {
     }
 
     /** A KENMERKTOEKENNING "Een Vondst is {@code kenmerk} indien {@code links op rechts}". */
-    private static ObjectNode characteristicRule(String naam, String characteristic, String op,
+    private static ObjectNode characteristicRule(String name, String characteristic, String op,
                                            JsonNode left, JsonNode right) throws Exception {
         ObjectNode r = (ObjectNode) JSON.readTree("""
                 {"node": "Rule", "name": "", "versions": [ {
@@ -260,7 +260,7 @@ class EnumNameIdentityWitnessTest {
                  "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": { "snippet": "waar" }},
                  "initialisation": false } ] }
                 """);
-        r.put("name", naam);
+        r.put("name", name);
         ObjectNode version = (ObjectNode) r.get("versions").get(0);
         ((ObjectNode) version.get("target")).put("attribute", characteristic)
                 .set("source", IrPath.sourceReference("Een Vondst is " + characteristic));

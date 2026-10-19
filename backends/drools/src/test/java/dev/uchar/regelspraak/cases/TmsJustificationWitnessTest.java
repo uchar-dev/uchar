@@ -70,7 +70,7 @@ class TmsJustificationWitnessTest {
             characteristicRule("geblokkeerd indien geschorst", "geblokkeerd", check("geschorst", false)));
 
     /** J1 to J4: their input, and per object whether it ends vergund and how many rules justify it then. */
-    private static final List<List<String>> INVOER = List.of(List.of("erkend", "geschorst"), List.of("geschorst"),
+    private static final List<List<String>> INPUT = List.of(List.of("erkend", "geschorst"), List.of("geschorst"),
             List.of(), List.of("erkend"));
     private static final boolean[] VERGUND = {true, false, true, true};
     private static final int[] JUSTIFICATIONS = {1, 0, 1, 2};
@@ -126,7 +126,7 @@ class TmsJustificationWitnessTest {
         KieSession session = kb.newKieSession();
         try {
             List<Object> jutters = new ArrayList<>();
-            for (List<String> input : INVOER) jutters.add(TmsDocuments.jutterBean(b.beanLoader(), input));
+            for (List<String> input : INPUT) jutters.add(TmsDocuments.jutterBean(b.beanLoader(), input));
             boolean[] viaNot = {false};
             session.addEventListener(new DefaultAgendaEventListener() {
                 @Override public void afterMatchFired(AfterMatchFiredEvent e) {
@@ -140,7 +140,7 @@ class TmsJustificationWitnessTest {
             for (int i = 0; i < jutters.size(); i++) {
                 Object j = jutters.get(i);
                 List<Object> facts = new ArrayList<>(session.getObjects(o -> o instanceof HasCharacteristic h
-                        && h.onderwerp() == j && h.characteristic().naam().equals("vergund")));
+                        && h.subject() == j && h.characteristic().name().equals("vergund")));
                 String label = "J" + (i + 1) + " in " + where;
                 assertEquals(VERGUND[i] ? 1 : 0, facts.size(), () -> label + ": " + facts);
                 if (VERGUND[i]) assertEquals(JUSTIFICATIONS[i], justifications(session, facts.get(0)), label);
@@ -163,8 +163,8 @@ class TmsJustificationWitnessTest {
 
     private static JsonNode caseDocument() throws Exception {
         List<String> jutters = new ArrayList<>(), expected = new ArrayList<>();
-        for (int i = 0; i < INVOER.size(); i++) {
-            jutters.add(TmsDocuments.jutter("J" + (i + 1), INVOER.get(i)));
+        for (int i = 0; i < INPUT.size(); i++) {
+            jutters.add(TmsDocuments.jutter("J" + (i + 1), INPUT.get(i)));
             expected.add(expected("J" + (i + 1), "vergund", VERGUND[i]));
         }
         return TmsDocuments.caseDocument(jutters, expected);

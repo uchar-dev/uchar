@@ -28,7 +28,7 @@ public final class WritersConflict extends IllegalStateException {
     /** One writer and the value it writes, null for leeg. */
     public record WriteAct(String writer, Object value) {}
 
-    private final transient Object onderwerp;
+    private final transient Object subject;
     private final String attribute;
     private final String type;
     private final List<WriteAct> writers;
@@ -37,24 +37,24 @@ public final class WritersConflict extends IllegalStateException {
 
     /** {@code writers} in the order of the document; {@code type} is the object's own type, {@code attribute} the
      *  attribute as declared. The object is named by type and identity until {@link #named} gives it a label. */
-    WritersConflict(Object onderwerp, String attribute, String type, List<WriteAct> writers) {
-        this(onderwerp, attribute, type, writers,
-                Msg.drools("EF-016.object-identity", "type", type, "identity", FactNames.object(onderwerp)), null);
+    WritersConflict(Object subject, String attribute, String type, List<WriteAct> writers) {
+        this(subject, attribute, type, writers,
+                Msg.drools("EF-016.object-identity", "type", type, "identity", FactNames.object(subject)), null);
     }
 
-    /** The conflict of the value facts {@code waarden} on attribute {@code attribute} of {@code onderwerp}: the
+    /** The conflict of the value facts {@code waarden} on attribute {@code attribute} of {@code subject}: the
      *  writers as {@link #inDocumentOrder} ranks them over the document's rules {@code documentOrder}, and the
      *  object's own type named by the type in {@code types} whose bean class's simple name stands at the same place in
      *  {@code typeClasses}, or by that simple name where none does. */
-    static WritersConflict van(Object onderwerp, String attribute, List<Value> waarden, List<?> documentOrder,
+    static WritersConflict van(Object subject, String attribute, List<Value> values, List<?> documentOrder,
                                   List<?> typeClasses, List<?> types) {
-        List<Value> ordered = new ArrayList<>(waarden);
+        List<Value> ordered = new ArrayList<>(values);
         ordered.sort(inDocumentOrder(documentOrder));
         List<WriteAct> acts = new ArrayList<>();
         for (Value w : ordered) acts.add(new WriteAct(w.writer(), w.value()));
-        String javaClass = onderwerp.getClass().getSimpleName();
+        String javaClass = subject.getClass().getSimpleName();
         int t = typeClasses.indexOf(javaClass);
-        return new WritersConflict(onderwerp, attribute, t < 0 ? javaClass : (String) types.get(t), acts);
+        return new WritersConflict(subject, attribute, t < 0 ? javaClass : (String) types.get(t), acts);
     }
 
     /** The value facts of one target by their writers: the rules in the order of the document's rules
@@ -79,12 +79,12 @@ public final class WritersConflict extends IllegalStateException {
         return i < 0 ? Integer.MAX_VALUE : i;
     }
 
-    private WritersConflict(Object onderwerp, String attribute, String type, List<WriteAct> writers,
+    private WritersConflict(Object subject, String attribute, String type, List<WriteAct> writers,
                                Msg object, String label) {
         super(sentence(writers, attribute, object).text());
         this.msg = sentence(writers, attribute, object);
         if (writers.size() < 2) throw new IllegalArgumentException("een conflict heeft twee schrijvers: " + writers);
-        this.onderwerp = onderwerp;
+        this.subject = subject;
         this.attribute = attribute;
         this.type = type;
         this.writers = List.copyOf(writers);
@@ -94,8 +94,8 @@ public final class WritersConflict extends IllegalStateException {
     /** The same conflict with the object named by {@code label}, which gives the case label of an input object and null
      *  for one a creation made. */
     public WritersConflict named(Function<Object, String> label) {
-        String l = label.apply(onderwerp);
-        return new WritersConflict(onderwerp, attribute, type, writers,
+        String l = label.apply(subject);
+        return new WritersConflict(subject, attribute, type, writers,
                 l == null ? Msg.drools("EF-016.object-created", "type", type)
                         : Msg.drools("EF-016.object-labelled", "label", l, "type", type), l);
     }
@@ -119,8 +119,8 @@ public final class WritersConflict extends IllegalStateException {
     }
 
     /** The object whose attribute the writers disagree on. */
-    public Object onderwerp() {
-        return onderwerp;
+    public Object subject() {
+        return subject;
     }
 
     /** The writers with their values, in the order of the document. */

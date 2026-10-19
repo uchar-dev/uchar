@@ -127,9 +127,9 @@ class AllocationErrorRecipientWitnessTest {
         throw new IllegalStateException("fixture has no instance " + label);
     }
 
-    private static JsonNode inconsistent(String regel, String label) {
+    private static JsonNode inconsistent(String rule, String label) {
         ObjectNode e = JSON.createObjectNode();
-        e.put("kind", "inconsistent").put("rule", regel).put("label", label);
+        e.put("kind", "inconsistent").put("rule", rule).put("label", label);
         return e;
     }
 

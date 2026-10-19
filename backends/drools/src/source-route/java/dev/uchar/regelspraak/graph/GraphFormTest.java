@@ -24,7 +24,7 @@ class GraphFormTest {
     /** "form name (kind)" of both ends of every dependency, as "producent -> lid -> consument". */
     private static List<String> dependencies(RuleGraph g) {
         return g.dependencies().stream().map(a -> a.producer() + " (" + a.producerForm() + ") -> "
-                + a.element().naam() + " -> " + a.consumer() + " (" + a.consumerForm() + ")").toList();
+                + a.element().name() + " -> " + a.consumer() + " (" + a.consumerForm() + ")").toList();
     }
 
     @Test void a_defaults_group_writes_its_target_and_reads_its_justifications() {
@@ -50,7 +50,7 @@ class GraphFormTest {
         TwoRoutes.read(source).graphs().forEach((route, g) -> {
             assertEquals(RuleGraph.NodeKind.CHARACTERISTIC, node(g, "uitgesloten · jutter").kind(),
                     route + ": de defaultsgroep schrijft het kenmerk, dus het is geen invoer");
-            assertEquals(List.of("uitsluiting van het penningrecht (DEFAULTSGROEP) -> uitgesloten -> "
+            assertEquals(List.of("uitsluiting van het penningrecht (DEFAULTS_GROUP) -> uitgesloten -> "
                     + "penninggerechtigd tenzij uitgesloten (REGEL)"), dependencies(g), route);
             // the justification of every default is a read of the group, the exception's included
             assertTrue(edges(g).containsAll(List.of("vergunning geweigerd · jutter -> uitsluiting van het penningrecht",
@@ -79,7 +79,7 @@ class GraphFormTest {
         TwoRoutes.read(source).graphs().forEach((route, g) -> {
             assertEquals(RuleGraph.NodeKind.ATTRIBUTE, node(g, "grondslag · strandrecht").kind(),
                     route + ": de creatie kent de grondslag toe, dus die is geen invoer");
-            assertEquals(List.of("boek een strandrecht bij elk wrakrecht (OBJECTCREATIE) -> grondslag -> "
+            assertEquals(List.of("boek een strandrecht bij elk wrakrecht (OBJECT_CREATION) -> grondslag -> "
                     + "uitkering van een strandrecht (REGEL)"), dependencies(g), route);
             // the assigned value is read against the creation's subject
             assertTrue(edges(g).contains("bergingsvergoeding · wrakrecht -> boek een strandrecht bij elk wrakrecht"),
@@ -117,8 +117,8 @@ class GraphFormTest {
             assertEquals(RuleGraph.NodeKind.ATTRIBUTE, node(g, "bergingsaandeel · berger").kind(), route);
             assertFalse(node(g, "opbrengst · berging").endOutput(), route + ": de verdeling leest de opbrengst");
             assertEquals(List.of(
-                    "opbrengst van een berging (REGEL) -> opbrengst -> verdeel de opbrengst van een berging (VERDELING)",
-                    "verdeel de opbrengst van een berging (VERDELING) -> bergingsaandeel -> loon van een berger (REGEL)"),
+                    "opbrengst van een berging (REGEL) -> opbrengst -> verdeel de opbrengst van een berging (ALLOCATION)",
+                    "verdeel de opbrengst van een berging (ALLOCATION) -> bergingsaandeel -> loon van een berger (REGEL)"),
                     dependencies(g), route);
         });
     }
@@ -141,8 +141,8 @@ class GraphFormTest {
         TwoRoutes.read(source).graphs().forEach((route, g) -> {
             assertFalse(node(g, "registernummer · vondst").endOutput(), route + ": twee controles lezen het");
             assertEquals(List.of(
-                    "registernummer van een vondst (REGEL) -> registernummer -> registernummer onder de grens (CONSISTENTIE)",
-                    "registernummer van een vondst (REGEL) -> registernummer -> eenmalig registernummer (UNICITEIT)"),
+                    "registernummer van een vondst (REGEL) -> registernummer -> registernummer onder de grens (CONSISTENCY)",
+                    "registernummer van een vondst (REGEL) -> registernummer -> eenmalig registernummer (UNIQUENESS)"),
                     dependencies(g), route);
         });
     }
@@ -184,9 +184,9 @@ class GraphFormTest {
             """;
         TwoRoutes.read(source).graphs().forEach((route, g) -> {
             assertFalse(node(g, "gehesen · sein").endOutput(), route + ": de feitcreatie leest het kenmerk");
-            assertEquals(List.of("hijsing naar hoogte (REGEL) -> gehesen -> vakbeseining door het kustvak (FEITCREATIE)"),
+            assertEquals(List.of("hijsing naar hoogte (REGEL) -> gehesen -> vakbeseining door het kustvak (FACT_CREATION)"),
                     dependencies(g), route);
-            assertEquals(FormKind.FEITCREATIE, g.dependencies().get(0).consumerForm(), route);
+            assertEquals(FormKind.FACT_CREATION, g.dependencies().get(0).consumerForm(), route);
         });
     }
 }

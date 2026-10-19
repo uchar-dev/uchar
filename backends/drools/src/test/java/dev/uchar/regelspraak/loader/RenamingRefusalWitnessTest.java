@@ -314,8 +314,8 @@ class RenamingRefusalWitnessTest {
         set(doc, V, "{\"node\":\"Regelversie\",\"regel\":\"penningdrempel\",\"inconsistent\":true,"
                 + "\"source\":{\"snippet\":\"regelversie penningdrempel is inconsistent\"}}");
         Condition.RuleStatusCheck rv = assertInstanceOf(Condition.RuleStatusCheck.class,
-                IrLoader.load(doc).resolvedRegels.get(0).condition());
-        assertEquals("penningdrempel", rv.regel());
+                IrLoader.load(doc).resolvedRules.get(0).condition());
+        assertEquals("penningdrempel", rv.rule());
         assertTrue(rv.inconsistent());
         assertEquals("regelversie penningdrempel is inconsistent", rv.source().snippet());
         node(doc, V).put("rule", "penningdrempel");
@@ -350,20 +350,20 @@ class RenamingRefusalWitnessTest {
                 + "\"source\":{\"snippet\":\"hij niet gedurende de gehele maand penninggerechtigd is\"},"
                 + "\"navigation\":{\"node\":\"RoleBinding\",\"factType\":\"f\",\"role\":\"r\"}}");
         IrLoader.Loaded l = IrLoader.loadAll(doc);
-        Condition.CharacteristicCheck k = assertInstanceOf(Condition.CharacteristicCheck.class, l.model().resolvedRegels.get(0).condition());
+        Condition.CharacteristicCheck k = assertInstanceOf(Condition.CharacteristicCheck.class, l.model().resolvedRules.get(0).condition());
         assertEquals("penninggerechtigd", k.characteristic());
         assertTrue(k.negation());
-        assertEquals("Jutter", k.owner().naam);
-        assertFalse(k.periode().year(), "month is the record's jaar false");
-        assertTrue(k.periode().negated());
+        assertEquals("Jutter", k.owner().name);
+        assertFalse(k.period().year(), "month is the record's jaar false");
+        assertTrue(k.period().negated());
         assertEquals(List.of(new RoleBindingRef("f", "r")), l.navigationBindings().get(k));
         // absent host and qualifier: the subject, no qualifier — the v0 null of the record
         ObjectNode bare = golden(PENNINGDREMPEL);
         set(bare, V, "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"penninggerechtigd\",\"negated\":false,"
                 + "\"source\":{\"snippet\":\"hij penninggerechtigd is\"}}");
-        Condition.CharacteristicCheck k2 = (Condition.CharacteristicCheck) IrLoader.load(bare).resolvedRegels.get(0).condition();
+        Condition.CharacteristicCheck k2 = (Condition.CharacteristicCheck) IrLoader.load(bare).resolvedRules.get(0).condition();
         assertNull(k2.owner());
-        assertNull(k2.periode());
+        assertNull(k2.period());
     }
 
     /** The expression nodes of the renaming, each with every field written: the values land in the record's
@@ -379,9 +379,9 @@ class RenamingRefusalWitnessTest {
                 + "\"left\":" + one + ",\"right\":" + two + ",\"type\":" + number + ",\"source\":{\"snippet\":\"1 maal 2\"}},"
                 + "\"minimum\":" + one + ",\"type\":" + number + ",\"source\":{\"snippet\":\"minimaal 1\"}},"
                 + "\"mode\":\"towardZero\",\"decimals\":1,\"type\":" + number + ",\"source\":{\"snippet\":\"afgerond\"}}");
-        Expr.Rounding a = assertInstanceOf(Expr.Rounding.class, IrLoader.load(doc).resolvedRegels.get(0).value());
+        Expr.Rounding a = assertInstanceOf(Expr.Rounding.class, IrLoader.load(doc).resolvedRules.get(0).value());
         assertEquals(Expr.RoundingMode.RICHTING_NUL, a.mode());
-        assertEquals(1, a.decimalen());
+        assertEquals(1, a.decimals());
         Expr.Clamp b = assertInstanceOf(Expr.Clamp.class, a.base());
         assertNotNull(b.minimum());
         assertNull(b.maximum(), "an absent bound is no bound on that side");
@@ -394,8 +394,8 @@ class RenamingRefusalWitnessTest {
         set(doc, W, "{\"node\":\"TextComposition\",\"parts\":[{\"node\":\"LiteralChunk\",\"text\":\"vondst \"},"
                 + "{\"node\":\"EmbeddedExpression\",\"expr\":" + one + "}],\"type\":{\"node\":\"Text\"},"
                 + "\"source\":{\"snippet\":\"vondst 1\"}}");
-        Expr.TextComposition t = assertInstanceOf(Expr.TextComposition.class, IrLoader.load(doc).resolvedRegels.get(0).value());
-        assertEquals("vondst ", ((Expr.TextComposition.LiteralChunk) t.parts().get(0)).tekst());
+        Expr.TextComposition t = assertInstanceOf(Expr.TextComposition.class, IrLoader.load(doc).resolvedRules.get(0).value());
+        assertEquals("vondst ", ((Expr.TextComposition.LiteralChunk) t.parts().get(0)).text());
         assertInstanceOf(Expr.Literal.class, ((Expr.TextComposition.EmbeddedExpression) t.parts().get(1)).expr());
 
         // the name is read, and names the node the loader refuses (WF-034)
@@ -422,14 +422,14 @@ class RenamingRefusalWitnessTest {
                 + "{\"node\":\"TimeWindow\",\"to\":" + one + ",\"toInclusive\":true,\"source\":{\"snippet\":\"c\"}}],"
                 + "\"source\":{\"snippet\":\"ten minste een\"}}");
         Condition.Compound s = assertInstanceOf(Condition.Compound.class,
-                IrLoader.load(doc).resolvedRegels.get(0).condition());
+                IrLoader.load(doc).resolvedRules.get(0).condition());
         assertEquals(Condition.Quantifier.TEN_MINSTE, s.quantifier());
         assertEquals(1, s.threshold());
         Condition.Comparison v = assertInstanceOf(Condition.Comparison.class, s.components().get(0));
         assertEquals(Condition.Operator.KLEINER_OF_GELIJK, v.op());
         assertNotNull(v.left());
         assertNotNull(v.right());
-        assertTrue(v.periode().year());
+        assertTrue(v.period().year());
         Condition.Predicate p = assertInstanceOf(Condition.Predicate.class, s.components().get(1));
         assertEquals(Condition.PredicateKind.DAGSOORT, p.category());
         assertEquals("feestdag", p.dayKind());
@@ -454,20 +454,20 @@ class RenamingRefusalWitnessTest {
             for (int i = 0; i < rules.get("dayKindDefinitions").size(); i++, dayKinds++) {
                 JsonNode w = rules.get("dayKindDefinitions").get(i);
                 ResolvedDayKindDefinition d = m.resolvedDayKindDefinitions.get(i);
-                assertEquals(w.get("dayKind").asText(null), d.naam(), path.toString());
+                assertEquals(w.get("dayKind").asText(null), d.name(), path.toString());
                 assertEquals(w.get("condition").isNull(), d.condition() == null, path.toString());
             }
             for (int i = 0; i < rules.get("startPointDeterminations").size(); i++, startPoints++) {
                 JsonNode w = rules.get("startPointDeterminations").get(i);
                 ResolvedStartPointDetermination sp = m.resolvedStartPointDeterminations.get(i);
-                assertEquals(w.get("timeline").asText(null), sp.tijdlijn(), path.toString());
+                assertEquals(w.get("timeline").asText(null), sp.timeline(), path.toString());
                 assertEquals(w.get("objectType").asText(null), sp.objectType(), path.toString());
                 assertEquals(w.get("member").asText(null), sp.member(), path.toString());
             }
             for (int i = 0; i < rules.get("ruleGroups").size(); i++, groups++) {
                 JsonNode w = rules.get("ruleGroups").get(i);
                 ResolvedRuleGroup g = m.ruleGroups.get(i);
-                assertEquals(w.get("name").asText(null), g.naam(), path.toString());
+                assertEquals(w.get("name").asText(null), g.name(), path.toString());
                 assertEquals(w.get("recursive").asBoolean(), g.recursive(), path.toString());
                 assertEquals(w.get("members").size(), g.members().size(), path.toString());
             }
@@ -487,8 +487,8 @@ class RenamingRefusalWitnessTest {
             for (int i = 0; pds != null && i < pds.size(); i++) {
                 JsonNode w = pds.get(i);
                 PrioritizedDefaults pd = l.prioritizedDefaults().get(i);
-                assertEquals(w.get("name").asText(null), pd.naam(), path.toString());
-                assertEquals(w.get("subject").asText(), pd.onderwerp(), path.toString());
+                assertEquals(w.get("name").asText(null), pd.name(), path.toString());
+                assertEquals(w.get("subject").asText(), pd.subject(), path.toString());
                 assertEquals(w.has("characteristic") ? w.get("characteristic").asText() : null, pd.characteristic(),
                         path.toString());
                 assertEquals(w.has("attribute") ? w.get("attribute").asText() : null, pd.attribute(), path.toString());
@@ -513,7 +513,7 @@ class RenamingRefusalWitnessTest {
             assertEquals(w.has("decision") ? w.get("decision").asBoolean() : null, d.decision(), where);
             assertEquals(w.has("justification"), d.condition() != null, where);
             assertEquals(w.has("consequence"), d.consequence() != null, where);
-            assertEquals(w.path("initialisation").asBoolean(false), d.initialisatie(), where);
+            assertEquals(w.path("initialisation").asBoolean(false), d.initialisation(), where);
             assertEquals(w.has("exceptions"), d.exceptions() != null, where);
             if (w.has("exceptions")) {
                 assertEquals(w.get("exceptions").get("unordered").asBoolean(), d.exceptions().unordered(), where);

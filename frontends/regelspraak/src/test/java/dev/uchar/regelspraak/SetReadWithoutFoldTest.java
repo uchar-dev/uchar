@@ -76,17 +76,17 @@ class SetReadWithoutFoldTest {
             "setlezing buiten een vouwbron 'het gewicht van alle vondsten van de Jutter': hop 0 reaches the to-many "
             + "role 'vondst' in a scalar slot — a to-many step needs an aggregation, never a silent first pick";
 
-    private static List<Diagnostic> setReadDiagnostics(String regels) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regels);
+    private static List<Diagnostic> setReadDiagnostics(String rules) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + rules);
         return m.diagnostics.stream().filter(d -> d.message().startsWith("setlezing buiten een vouwbron")).toList();
     }
 
-    private static List<String> meldingen(String regels) {
-        return setReadDiagnostics(regels).stream().map(Diagnostic::message).toList();
+    private static List<String> meldingen(String rules) {
+        return setReadDiagnostics(rules).stream().map(Diagnostic::message).toList();
     }
 
-    private static void noSingleDiagnostic(String regels) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regels);
+    private static void noSingleDiagnostic(String rules) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + rules);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }
 
@@ -170,7 +170,7 @@ class SetReadWithoutFoldTest {
     }
 
     @Test void the_condition_of_an_object_creation_folds_along() {
-        // An objectcreatie never becomes a ResolvedRule (measured: resolvedRegels 0, objectCreations 1),
+        // An objectcreatie never becomes a ResolvedRule (measured: resolvedRules 0, objectCreations 1),
         // so its voorwaarde is the witness that the condition treatment sits where EVERY resultaatdeel
         // kind's voorwaarde passes through — not on the rule carrier alone. The same holds for a
         // verdeling, a feitcreatie, a dagsoortdefinitie and a startpuntbepaling. Until 2026-09-19 it

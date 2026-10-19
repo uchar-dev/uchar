@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.resolver;
 
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -12,15 +12,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *  declared base — including the cases deliberately left unmatched (errs-safe markers). */
 class CharacteristicMatcherTest {
 
-    private static Objecttype with(String... kenmerken) {
-        Objecttype ot = new Objecttype("Ploeg");
-        for (String k : kenmerken) ot.kenmerken.add(k);
+    private static ObjectType with(String... characteristics) {
+        ObjectType ot = new ObjectType("Ploeg");
+        for (String k : characteristics) ot.characteristics.add(k);
         return ot;
     }
 
     /** A subtype of {@code parent} with its own kenmerken — the chain SUBTYPING §3.2 resolves along. */
-    private static Objecttype under(Objecttype parent, String... kenmerken) {
-        Objecttype ot = with(kenmerken);
+    private static ObjectType under(ObjectType parent, String... characteristics) {
+        ObjectType ot = with(characteristics);
         ot.supertype = parent;
         return ot;
     }
@@ -99,7 +99,7 @@ class CharacteristicMatcherTest {
         // SUBTYPING §3.2: resolution walks the chain UPWARD, so a kenmerk the ANCESTOR declares binds in
         // every predicaat form on a subtype — base form and §5.6 inflection alike. Reading only the own
         // list left an inherited kenmerk binding in NO predicaat form at all, across all eight call sites.
-        Objecttype sub = under(with("betwist"), "geborgen");
+        ObjectType sub = under(with("betwist"), "geborgen");
         assertEquals("betwist", CharacteristicMatcher.find(sub, "betwist"));
         assertEquals("betwist", CharacteristicMatcher.find(sub, "betwiste"));
         assertEquals("geborgen", CharacteristicMatcher.find(sub, "geborgene"));   // its own still binds too
@@ -110,7 +110,7 @@ class CharacteristicMatcherTest {
         // The ambiguity guard is CHAIN-WIDE: "grote" inflects from the ancestor's "groot" and the
         // subtype's "grot" alike, so it binds NEITHER. Guarding per type would take the nearest and make
         // the answer depend on where the author declared — the order-dependence the guard exists against.
-        Objecttype sub = under(with("groot"), "grot");
+        ObjectType sub = under(with("groot"), "grot");
         assertNull(CharacteristicMatcher.find(sub, "grote"));
         assertEquals("groot", CharacteristicMatcher.find(sub, "groot"));   // the base form binds wherever it sits
     }

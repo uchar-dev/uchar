@@ -5,7 +5,7 @@ import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.model.Datatype;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 import java.util.function.Predicate;
 
@@ -58,7 +58,7 @@ public final class WindowPosition {
                             "quantifier", kv.quantifier(),
                             "elementType", kv.elementObjectType() == null
                                     ? DroolsCode.QUANTIFIER_FOLD_WINDOW_POSITION.part("unresolved-element-type")
-                                    : kv.elementObjectType().naam,
+                                    : kv.elementObjectType().name,
                             "reason", DroolsCode.QUANTIFIER_FOLD_WINDOW_POSITION.part(inTest ? "counts" : "chooses"));
                 }
             }
@@ -84,7 +84,7 @@ public final class WindowPosition {
     /** Whether a window in {@code c} — as a condition, through composites and folds, not into operands — has a
      *  bound neither WF-111 shape describes for {@code subject}: the shape both branches lower, shared through
      *  {@link #boundLowerable}. */
-    public static boolean uncarriableBound(Condition c, Objecttype subject, Predicate<Expr.AttributeReference> navigated) {
+    public static boolean uncarriableBound(Condition c, ObjectType subject, Predicate<Expr.AttributeReference> navigated) {
         if (c instanceof Condition.TimeWindow per)
             return (per.from() != null && !boundLowerable(per.from(), subject, navigated))
                     || (per.until() != null && !boundLowerable(per.until(), subject, navigated));
@@ -97,8 +97,8 @@ public final class WindowPosition {
      *  scalar {@code Datum in dagen} attribute — a read without bindings (IR-SPEC ch. 4.1a) of the subject's type,
      *  with no timeline and no dimension. The read's type is its declaration's (IR-SPEC ch. 2.10). A bound date
      *  computed, navigated or held in a parameter is neither. */
-    public static boolean boundLowerable(Expr bound, Objecttype subject, Predicate<Expr.AttributeReference> navigated) {
-        if (!(EffectiveUnit.typeWithoutBinder(bound) instanceof Datatype.DatumInDagen)) return false;
+    public static boolean boundLowerable(Expr bound, ObjectType subject, Predicate<Expr.AttributeReference> navigated) {
+        if (!(EffectiveUnit.typeWithoutBinder(bound) instanceof Datatype.DateInDays)) return false;
         if (bound instanceof Expr.Literal) return true;
         return bound instanceof Expr.AttributeReference a && !navigated.test(a)
                 && a.objectType() != null && a.objectType() == subject

@@ -168,8 +168,8 @@ class TmsAllocationWitnessTest {
     // ---------------- the wire of an allocation ----------------
 
     /** An Allocation of the given versions ({@link #version}). */
-    static String allocation(String naam, List<String> versions) {
-        return "{\"node\":\"Allocation\",\"name\":\"" + naam + "\",\"versions\":[" + String.join(",", versions) + "]}";
+    static String allocation(String name, List<String> versions) {
+        return "{\"node\":\"Allocation\",\"name\":\"" + name + "\",\"versions\":[" + String.join(",", versions) + "]}";
     }
 
     /** One version of an allocation of the opbrengst of a Berging over its bergers (the role berger of the
@@ -209,9 +209,9 @@ class TmsAllocationWitnessTest {
 
     /** An instance with whole-number attributes (a lexeme "leeg" writes none) and the bergers of a Berging. */
     static String instance(String label, String type, Map<String, String> numbers, List<String> bergers) {
-        Map<String, String> waarden = new LinkedHashMap<>(numbers);
+        Map<String, String> values = new LinkedHashMap<>(numbers);
         List<String> a = new ArrayList<>(), b = new ArrayList<>();
-        waarden.forEach((naam, lexeme) -> a.add("\"" + naam + "\":{\"number\":\"" + lexeme + "\"}"));
+        values.forEach((name, lexeme) -> a.add("\"" + name + "\":{\"number\":\"" + lexeme + "\"}"));
         for (String berger : bergers) b.add("\"" + berger + "\"");
         return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{" + String.join(",", a)
                 + "},\"roles\":{" + (bergers.isEmpty() ? "" : "\"bergers\":[" + String.join(",", b) + "]")
@@ -305,23 +305,23 @@ class TmsAllocationWitnessTest {
                 join(j1, b1);
                 join(j2, b1);
                 List<Object> proportional = new ArrayList<>(), byRank = new ArrayList<>();
-                int[] waarden = new int[2];
+                int[] values = new int[2];
                 TmsDocuments.fire(b, TmsDocuments.kieBaseOf(b, names), names, List.of(b1, j1, j2),
                         session -> session.addEventListener(new DefaultRuleRuntimeEventListener() {
                             @Override public void objectInserted(ObjectInsertedEvent e) {
                                 if (!(e.getObject() instanceof Value w)) return;
-                                if (w.onderwerp() == j1 && w.attribute().naam().equals("bergingsaandeel"))
+                                if (w.subject() == j1 && w.attribute().name().equals("bergingsaandeel"))
                                     proportional.add(w.value());
-                                if (w.onderwerp() == j2 && w.attribute().naam().equals("rangaandeel"))
+                                if (w.subject() == j2 && w.attribute().name().equals("rangaandeel"))
                                     byRank.add(w.value());
                             }
                         }), session -> {
-                            waarden[0] = session.getObjects(o -> o instanceof Value w && w.onderwerp() == j1
-                                    && w.attribute().naam().equals("bergingsaandeel")).size();
-                            waarden[1] = session.getObjects(o -> o instanceof Value w && w.onderwerp() == j2
-                                    && w.attribute().naam().equals("rangaandeel")).size();
+                            values[0] = session.getObjects(o -> o instanceof Value w && w.subject() == j1
+                                    && w.attribute().name().equals("bergingsaandeel")).size();
+                            values[1] = session.getObjects(o -> o instanceof Value w && w.subject() == j2
+                                    && w.attribute().name().equals("rangaandeel")).size();
                         });
-                assertEquals(List.of(1, 1), List.of(waarden[0], waarden[1]), () -> "Waarde-feiten in volgorde " + where);
+                assertEquals(List.of(1, 1), List.of(values[0], values[1]), () -> "Waarde-feiten in volgorde " + where);
                 Map<String, Object> end = new LinkedHashMap<>();
                 end.put("J1 bergingsaandeel", TmsDocuments.read(j1, "bergingsaandeel"));
                 end.put("J2 bergingsaandeel", TmsDocuments.read(j2, "bergingsaandeel"));
@@ -460,7 +460,7 @@ class TmsAllocationWitnessTest {
                         session -> session.addEventListener(new DefaultRuleRuntimeEventListener() {
                             @Override public void objectInserted(ObjectInsertedEvent e) {
                                 if (e.getObject().getClass().getSimpleName().equals("Inconsistentie")
-                                        && onderwerp(e.getObject()) == j3) opJ3[0]++;
+                                        && subject(e.getObject()) == j3) opJ3[0]++;
                             }
                         }), session -> channel.addAll(TmsDocuments.inconsistencies(session, labels)));
                 assertEquals(List.of("verdeel de opbrengst naar rato @ J1", "verdeel de opbrengst naar rato @ J2",
@@ -671,7 +671,7 @@ class TmsAllocationWitnessTest {
                         @Override public void beforeMatchFired(BeforeMatchFiredEvent e) {
                             emptyPot[0] = e.getMatch().getRule().getName().equals("verdeel de opbrengst gelijk")
                                     && e.getMatch().getObjects().stream().anyMatch(o -> o instanceof State s
-                                            && s.onderwerp() == b1 && s.attribute().naam().equals("opbrengst")
+                                            && s.subject() == b1 && s.attribute().name().equals("opbrengst")
                                             && s.value() == null);
                             if (emptyPot[0]) firings[0]++;
                         }
@@ -817,10 +817,10 @@ class TmsAllocationWitnessTest {
                     if (!goed) faults.add(v.get("label").asText() + "." + v.get("attribute").asText() + " " + w);
                 }
                 case "inconsistent" -> {
-                    String regel = v.get("rule").asText(), label = v.get("label").asText();
+                    String rule = v.get("rule").asText(), label = v.get("label").asText();
                     if (channel.stream().noneMatch(k -> k.endsWith(" @ " + label)
-                            && CaseRunner.sameRule(regel, k.substring(0, k.length() - (" @ " + label).length()))))
-                        faults.add("geen deponering " + regel + " @ " + label + " in " + channel);
+                            && CaseRunner.sameRule(rule, k.substring(0, k.length() - (" @ " + label).length()))))
+                        faults.add("geen deponering " + rule + " @ " + label + " in " + channel);
                 }
                 case "consistent" -> {
                     if (!channel.isEmpty()) faults.add("deponeringen " + channel);
@@ -849,7 +849,7 @@ class TmsAllocationWitnessTest {
         return out;
     }
 
-    private static Object onderwerp(Object inconsistency) {
+    private static Object subject(Object inconsistency) {
         try {
             return inconsistency.getClass().getMethod("getSubject").invoke(inconsistency);
         } catch (ReflectiveOperationException e) {
@@ -866,9 +866,9 @@ class TmsAllocationWitnessTest {
     }
 
     /** {@code waarden} printed with every number in its plain form, so that 600 and 600.00 print alike. */
-    private static String numbers(Map<String, Object> waarden) {
+    private static String numbers(Map<String, Object> values) {
         Map<String, Object> out = new LinkedHashMap<>();
-        waarden.forEach((k, v) -> out.put(k, v instanceof BigDecimal d ? d.stripTrailingZeros().toPlainString() : v));
+        values.forEach((k, v) -> out.put(k, v instanceof BigDecimal d ? d.stripTrailingZeros().toPlainString() : v));
         return out.toString();
     }
 

@@ -26,15 +26,15 @@ public final class UniquenessKey {
     private final int source;
     private final Object element;
     private final Object scope;
-    private final List<Object> waarden;
+    private final List<Object> values;
 
-    public UniquenessKey(String uniqueness, int source, Object element, Object scope, List<Object> waarden) {
+    public UniquenessKey(String uniqueness, int source, Object element, Object scope, List<Object> values) {
         this.uniqueness = Objects.requireNonNull(uniqueness, "uniciteit");
         this.source = source;
         this.element = Objects.requireNonNull(element, "element");
         this.scope = scope;
-        this.waarden = new ArrayList<>(waarden);
-        for (Object w : this.waarden)
+        this.values = new ArrayList<>(values);
+        for (Object w : this.values)
             if (w == null) throw new IllegalArgumentException("een lege sleutelcomponent neemt niet deel (ch. 5.9)");
     }
 
@@ -46,9 +46,9 @@ public final class UniquenessKey {
      *  one under the value equality of RUNTIME-SEMANTICS ch. 1.2d. Every key collides with itself, so a key is in a
      *  duplicate where more than one key collides with it. */
     public boolean collidesWith(UniquenessKey o) {
-        if (!o.uniqueness.equals(uniqueness) || o.scope != scope || o.waarden.size() != waarden.size()) return false;
-        for (int i = 0; i < waarden.size(); i++)
-            if (!RegelSpraakRuntime.gelijkWaarde(waarden.get(i), o.waarden.get(i))) return false;
+        if (!o.uniqueness.equals(uniqueness) || o.scope != scope || o.values.size() != values.size()) return false;
+        for (int i = 0; i < values.size(); i++)
+            if (!RegelSpraakRuntime.gelijkWaarde(values.get(i), o.values.get(i))) return false;
         return true;
     }
 
@@ -57,13 +57,13 @@ public final class UniquenessKey {
     }
 
     @Override public int hashCode() {
-        List<Object> h = new ArrayList<>(waarden.size());
-        for (Object w : waarden) h.add(w instanceof BigDecimal d ? d.stripTrailingZeros() : w);
+        List<Object> h = new ArrayList<>(values.size());
+        for (Object w : values) h.add(w instanceof BigDecimal d ? d.stripTrailingZeros() : w);
         return Objects.hash(uniqueness, source, System.identityHashCode(element), System.identityHashCode(scope), h);
     }
 
     @Override public String toString() {
         return "Uniciteitssleutel(" + uniqueness + " " + source + ", " + FactNames.object(element)
-                + (scope == null ? "" : ", " + FactNames.object(scope)) + ", " + waarden + ")";
+                + (scope == null ? "" : ", " + FactNames.object(scope)) + ", " + values + ")";
     }
 }

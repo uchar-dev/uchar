@@ -337,7 +337,7 @@ class NestedFoldSourceTest {
                 "bemanning", "gevoerde boot", "berging", "geborgen vondst", "inpakking", "ingepakte kist");
     }
 
-    /** The nested set step is not always the FIRST step of the written chain: the greedy kaleNaam decides
+    /** The nested set step is not always the FIRST step of the written chain: the greedy bareName decides
      *  where the chain splits, so the walk must run the whole van-chain. It binds 'gevoerde boten' from the
      *  Jutter and stops at 'bergende boot', the Boot's own role in berging and none reached from it. */
     @Test
@@ -427,7 +427,7 @@ class NestedFoldSourceTest {
         """;
 
     /** A rule on the Jutter that folds the gewicht over {@code source}. */
-    private static String regel(String source) {
+    private static String rule(String source) {
         return "\n\nRegel laagste vondstgewicht\n    geldig altijd\n        Het laagste vondstgewicht van een Jutter "
                 + "moet berekend worden als de minimale waarde van het gewicht van " + source + ".\n";
     }
@@ -443,9 +443,9 @@ class NestedFoldSourceTest {
      *  one-step range over the same spelling binds by the type pair, which a path step does not have (WF-102). */
     @Test
     void a_step_in_an_undeclared_plural_is_named_with_the_exit() {
-        onlyMessage(NO_PLURAL_MODEL + regel("alle geborgen vondsten van alle sloepen van de Jutter"),
+        onlyMessage(NO_PLURAL_MODEL + rule("alle geborgen vondsten van alle sloepen van de Jutter"),
                 DERIVED_PLURAL_MESSAGE);
-        String json = ir(NO_PLURAL_MODEL + regel("alle geborgen vondsten van alle sloepen van de Jutter"));
+        String json = ir(NO_PLURAL_MODEL + rule("alle geborgen vondsten van alle sloepen van de Jutter"));
         assertFalse(json.contains("\"sourcePath\""), "een onoplosbare keten mag geen half pad op de wire zetten");
         assertTrue(json.contains("\"node\": \"Unresolved\""), "de vouw moet een zichtbare markering worden");
     }
@@ -455,7 +455,7 @@ class NestedFoldSourceTest {
     @Test
     void the_message_names_the_step_where_the_walk_stops() {
         onlyMessage(NO_PLURAL_MODEL.replace("de sloep Boot", "de sloep (mv: sloepen) Boot")
-                        + regel("alle geborgen vondsten van alle sloepen van de Jutter"),
+                        + rule("alle geborgen vondsten van alle sloepen van de Jutter"),
                 CHAIN_HEAD + "in 'alle geborgen vondsten van alle sloepen van de Jutter' bindt de stap 'geborgen "
                         + "vondsten' vanaf Boot geen rol: 'geborgen vondsten' is geen gedeclareerde naam of "
                         + "gedeclareerd meervoud, alleen het afgeleide meervoud (+s/+en) van de rol 'geborgen vondst' "
@@ -467,7 +467,7 @@ class NestedFoldSourceTest {
     /** The way out works: with both plurals declared the same sentence is a two-step path. */
     @Test
     void with_both_plural_declared_same_sentence_becomes_a_source_path() {
-        String source = SLOEPMODEL + regel("alle geborgen vondsten van alle sloepen van de Jutter");
+        String source = SLOEPMODEL + rule("alle geborgen vondsten van alle sloepen van de Jutter");
         assertEquals(List.of(), foldSourceDiagnostics(source));
         assertSourcePath(ir(source), "bemanning", "sloep", "berging", "geborgen vondst");
     }
@@ -476,7 +476,7 @@ class NestedFoldSourceTest {
      *  that the set is anchored on the role 'sloep', which denotes another instance; the walk says what stopped it. */
     @Test
     void a_to_one_chain_with_an_undeclared_plural_names_the_step() {
-        onlyMessage(NO_PLURAL_MODEL + regel("alle geborgen vondsten van de sloep van de Jutter"),
+        onlyMessage(NO_PLURAL_MODEL + rule("alle geborgen vondsten van de sloep van de Jutter"),
                 CHAIN_HEAD + "in 'alle geborgen vondsten van de sloep van de Jutter' bindt de stap 'geborgen vondsten' "
                         + "vanaf Boot geen rol: 'geborgen vondsten' is geen gedeclareerde naam of gedeclareerd "
                         + "meervoud, alleen het afgeleide meervoud (+s/+en) van de rol 'geborgen vondst' van het "
@@ -494,7 +494,7 @@ class NestedFoldSourceTest {
                     de verhuurder Jutter
                     de sloep (mv: sloepen) Boot
                 Eén verhuurder heeft meerdere sloepen
-                """ + regel("alle geborgen vondsten van alle sloepen van de Jutter"),
+                """ + rule("alle geborgen vondsten van alle sloepen van de Jutter"),
                 CHAIN_HEAD + "in 'alle geborgen vondsten van alle sloepen van de Jutter' bindt de stap 'sloepen' vanaf "
                         + "Jutter geen rol: 'sloepen' noemt er meer dan één (de rollen 'sloep' van het feittype "
                         + "'bemanning' en 'sloep' van het feittype 'verhuur')" + CHAIN_TAIL + " — 'de minimale "
@@ -504,7 +504,7 @@ class NestedFoldSourceTest {
     /** A step that names no role reachable from where it starts. */
     @Test
     void a_step_that_names_no_role_is_named() {
-        onlyMessage(SLOEPMODEL + regel("alle geborgen vondsten van alle kotters van de Jutter"),
+        onlyMessage(SLOEPMODEL + rule("alle geborgen vondsten van alle kotters van de Jutter"),
                 CHAIN_HEAD + "in 'alle geborgen vondsten van alle kotters van de Jutter' bindt de stap 'kotters' vanaf "
                         + "Jutter geen rol: geen rol die vanaf Jutter te bereiken is, heet 'kotters' of declareert dat "
                         + "als meervoud" + CHAIN_TAIL + " — 'de minimale waarde van het gewicht van alle geborgen "
@@ -519,7 +519,7 @@ class NestedFoldSourceTest {
                 Wederkerig feittype strandmaatschap
                     de strandmaat (mv: strandmaten) Jutter
                 Eén strandmaat heeft één strandmaat
-                """ + regel("alle geborgen vondsten van alle sloepen van alle strandmaten van de Jutter"),
+                """ + rule("alle geborgen vondsten van alle sloepen van alle strandmaten van de Jutter"),
                 CHAIN_HEAD + "in 'alle geborgen vondsten van alle sloepen van alle strandmaten van de Jutter' bindt de "
                         + "stap 'strandmaten' vanaf Jutter geen rol: 'strandmaten' noemt de rol 'strandmaat' van het "
                         + "wederkerige feittype 'strandmaatschap', en over een wederkerig feittype schrijft deze "
@@ -531,7 +531,7 @@ class NestedFoldSourceTest {
     @Test
     void a_step_to_an_undeclared_type_is_named() {
         onlyMessage(SLOEPMODEL.replace("de sloep (mv: sloepen) Boot", "de sloep (mv: sloepen) Schuit")
-                        + regel("alle geborgen vondsten van alle sloepen van de Jutter"),
+                        + rule("alle geborgen vondsten van alle sloepen van de Jutter"),
                 CHAIN_HEAD + "in 'alle geborgen vondsten van alle sloepen van de Jutter' bindt de stap 'sloepen' vanaf "
                         + "Jutter geen rol: de rol 'sloep' van het feittype 'bemanning' wordt gevuld door 'Schuit', en "
                         + "dat is geen gedeclareerd objecttype" + CHAIN_TAIL + " — 'de minimale waarde van het "
@@ -541,7 +541,7 @@ class NestedFoldSourceTest {
     /** A chain whose anchor is not the rule subject. */
     @Test
     void a_chain_with_another_anchor_is_named() {
-        onlyMessage(SLOEPMODEL + regel("alle geborgen vondsten van alle sloepen van de Boot"),
+        onlyMessage(SLOEPMODEL + rule("alle geborgen vondsten van alle sloepen van de Boot"),
                 CHAIN_HEAD + "'alle geborgen vondsten van alle sloepen van de Boot' begint bij 'Boot' en niet bij het "
                         + "regelonderwerp Jutter" + CHAIN_TAIL + " — 'de minimale waarde van het gewicht van alle "
                         + "geborgen vondsten van alle sloepen van de Boot'");
@@ -550,7 +550,7 @@ class NestedFoldSourceTest {
     /** A nested chain without an anchor: two segments, so the walk has nothing to start from. */
     @Test
     void a_nested_chain_without_an_anchor_is_named() {
-        onlyMessage(SLOEPMODEL + regel("alle geborgen vondsten van alle sloepen"),
+        onlyMessage(SLOEPMODEL + rule("alle geborgen vondsten van alle sloepen"),
                 CHAIN_HEAD + "'alle geborgen vondsten van alle sloepen' begint niet bij het regelonderwerp Jutter"
                         + CHAIN_TAIL + " — 'de minimale waarde van het gewicht van alle geborgen vondsten van alle "
                         + "sloepen'");
@@ -561,7 +561,7 @@ class NestedFoldSourceTest {
      *  starts elsewhere. */
     @Test
     void an_unknown_element_name_is_named_as_a_step() {
-        onlyMessage(MODEL_B + regel("alle kisten van alle gevoerde boten van de aanmelder"),
+        onlyMessage(MODEL_B + rule("alle kisten van alle gevoerde boten van de aanmelder"),
                 CHAIN_HEAD + "in 'alle kisten van alle gevoerde boten van de aanmelder' bindt de stap 'kisten' vanaf "
                         + "Boot geen rol: geen rol die vanaf Boot te bereiken is, heet 'kisten' of declareert dat als "
                         + "meervoud" + CHAIN_TAIL + " — 'de minimale waarde van het gewicht van alle kisten van "
@@ -576,7 +576,7 @@ class NestedFoldSourceTest {
         onlyMessage(LANDINGMODEL.replace("    de geborgen vondst (mv: geborgen vondsten) Vondst\n"
                         + "Eén bergende boot heeft meerdere geborgen vondsten",
                         "    de wrak (mv: wrakken) Vondst\nEén bergende boot heeft meerdere wrakken")
-                        + regel("alle wrakken van alle sloepen van de Jutter"),
+                        + rule("alle wrakken van alle sloepen van de Jutter"),
                 CHAIN_HEAD + "'alle wrakken van alle sloepen van de Jutter' komt via haar stappen uit bij "
                         + "Vondst, maar de geschreven elementnaam is gelezen als Wrak" + CHAIN_TAIL + " — 'de "
                         + "minimale waarde van het gewicht van alle wrakken van alle sloepen van de Jutter'");
@@ -588,7 +588,7 @@ class NestedFoldSourceTest {
      *  names that step, and the fold is the marker. */
     @Test
     void an_unknown_to_one_step_not_more_falls_silent_away() {
-        String source = MODEL_B + regel("alle aangemelde vondsten van de kotter van de Jutter");
+        String source = MODEL_B + rule("alle aangemelde vondsten van de kotter van de Jutter");
         onlyMessage(source,
                 CHAIN_HEAD + "in 'alle aangemelde vondsten van de kotter van de Jutter' bindt de stap 'kotter' vanaf "
                         + "Jutter geen rol: geen rol die vanaf Jutter te bereiken is, heet 'kotter' of declareert dat "

@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class UnitSentenceTest {
 
-    private static List<String> meldingen(String eenheid, String sentence) {
+    private static List<String> meldingen(String unit, String sentence) {
         RegelSpraakModel m = Resolver.resolve("""
             Eenheidsysteem Munt
                 de euro (mv: euros) EUR €
@@ -40,7 +40,7 @@ class UnitSentenceTest {
             Regel r
                 geldig altijd
                     %s
-            """.formatted(eenheid, sentence));
+            """.formatted(unit, sentence));
         return m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList();
     }
 

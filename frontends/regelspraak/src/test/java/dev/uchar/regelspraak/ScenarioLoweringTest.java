@@ -483,14 +483,14 @@ class ScenarioLoweringTest {
         for (java.lang.reflect.Field f : sets())
             assertFalse(empty(f.get(m)), () -> "het rijke document vult '" + f.getName() + "' niet");
         List<String> names = new ArrayList<>();
-        m.resolvedRegels.forEach(r -> names.add(r.naam()));
-        m.objectCreations.forEach(x -> names.add(x.naam()));
-        m.allocations.forEach(x -> names.add(x.naam()));
-        m.consistenties.forEach(x -> names.add(x.naam()));
-        m.uniquenesses.forEach(x -> names.add(x.naam()));
-        m.uniquenessUnions.forEach(x -> names.add(x.naam()));
-        m.factCreations.forEach(x -> names.add(x.naam()));
-        m.prioritizedDefaults.forEach(x -> names.add(x.naam()));
+        m.resolvedRules.forEach(r -> names.add(r.name()));
+        m.objectCreations.forEach(x -> names.add(x.name()));
+        m.allocations.forEach(x -> names.add(x.name()));
+        m.consistencies.forEach(x -> names.add(x.name()));
+        m.uniquenesses.forEach(x -> names.add(x.name()));
+        m.uniquenessUnions.forEach(x -> names.add(x.name()));
+        m.factCreations.forEach(x -> names.add(x.name()));
+        m.prioritizedDefaults.forEach(x -> names.add(x.name()));
         ResolvedScenario.Scope everything = new ResolvedScenario.Scope(names);
         assertEquals(IrEmitter.emit(m), IrEmitter.emit(CaseEmitter.withScope(m, everything)));
     }
@@ -565,7 +565,7 @@ class ScenarioLoweringTest {
 
     // ---------------- the CLI ----------------
 
-    private record Output(int code, String tekst) {}
+    private record Output(int code, String text) {}
 
     private static Output cli(Path ir, Path map, Path... sources) throws IOException {
         List<String> rest = new ArrayList<>();
@@ -591,7 +591,7 @@ class ScenarioLoweringTest {
         Path source = Files.writeString(d.resolve("source.rgs"), MODEL);
         Path scen = Files.writeString(d.resolve("scenario.rgs"), SCENARIO);
         Output u = cli(d.resolve("ir.json"), d.resolve("cases"), source, scen);
-        assertEquals(0, u.code(), u.tekst());
+        assertEquals(0, u.code(), u.text());
         assertEquals(List.of("case1-een-wrak.json"), files(d.resolve("cases")));
         assertEquals(CASE_FILE, Files.readString(d.resolve("cases/case1-een-wrak.json")));
         assertEquals(IrEmitter.emit(Resolver.resolve(MODEL)), Files.readString(d.resolve("ir.json")));
@@ -605,9 +605,9 @@ class ScenarioLoweringTest {
         Output u = cli(d.resolve("ir.json"), d.resolve("cases"), source, scen);
         assertEquals(1, u.code());
         // one line number, the one in the file: before, the line in the chain of files came first ("(line 64)")
-        assertTrue(u.tekst().contains("  ERROR (" + scen + ":2): scenario: de peildatum '15-03-2024 12:00:00.000' "
-                + "draagt een tijd"), u.tekst());
-        assertFalse(u.tekst().contains("(line "), u.tekst());
+        assertTrue(u.text().contains("  ERROR (" + scen + ":2): scenario: de peildatum '15-03-2024 12:00:00.000' "
+                + "draagt een tijd"), u.text());
+        assertFalse(u.text().contains("(line "), u.text());
         assertFalse(Files.exists(d.resolve("ir.json")), "een weigering schrijft geen IR-document");
         assertEquals(List.of(), files(d.resolve("cases")), "een weigering schrijft geen casebestand");
     }
@@ -620,9 +620,9 @@ class ScenarioLoweringTest {
         Files.createDirectories(d.resolve("cases"));
         Files.writeString(d.resolve("cases/case9-oud.json"), "{}\n");
         Output u = cli(d.resolve("ir.json"), d.resolve("cases"), source, scen);
-        assertEquals(1, u.code(), u.tekst());
-        assertTrue(u.tekst().contains("draagt al casebestanden die dit document niet schrijft (case9-oud.json)"),
-                u.tekst());
+        assertEquals(1, u.code(), u.text());
+        assertTrue(u.text().contains("draagt al casebestanden die dit document niet schrijft (case9-oud.json)"),
+                u.text());
         assertEquals(List.of("case9-oud.json"), files(d.resolve("cases")), "de weigering schrijft geen casebestand");
         assertFalse(Files.exists(d.resolve("ir.json")), "de weigering schrijft geen IR-document");
         // a case file the run writes itself is overwritten
@@ -637,7 +637,7 @@ class ScenarioLoweringTest {
         Path source = Files.writeString(d.resolve("source.rgs"), MODEL);
         Output u = cli(d.resolve("ir.json"), d.resolve("cases"), source);
         assertEquals(1, u.code());
-        assertTrue(u.tekst().contains("het document draagt geen scenario, dus er valt geen casebestand te schrijven"),
-                u.tekst());
+        assertTrue(u.text().contains("het document draagt geen scenario, dus er valt geen casebestand te schrijven"),
+                u.text());
     }
 }

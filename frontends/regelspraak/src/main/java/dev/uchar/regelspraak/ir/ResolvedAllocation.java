@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.ir;
 
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 /**
  * A resolved §13.4.10 verdeling: a source amount ({@code sourceAttribute} of
@@ -49,8 +49,8 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
  *                           between them; null where the resolver bound none, and the emitter then derives it from
  *                           the type pair
  */
-public record ResolvedAllocation(String naam, Objecttype sourceType, String sourceAttribute,
-                                Objecttype targetType, String targetAttribute,
+public record ResolvedAllocation(String name, ObjectType sourceType, String sourceAttribute,
+                                ObjectType targetType, String targetAttribute,
                                 Method method, String ratioAttribute, String maximumAttribute,
                                 Integer roundingDecimals, String remainderAttribute,
                                 String orderingAttribute, boolean descending,
@@ -60,11 +60,11 @@ public record ResolvedAllocation(String naam, Objecttype sourceType, String sour
 
     /** Without a bound join: the reader that carries the wire's binding beside the record (the Drools backend's
      *  loader) builds it this way. */
-    public ResolvedAllocation(String naam, Objecttype sourceType, String sourceAttribute, Objecttype targetType,
+    public ResolvedAllocation(String name, ObjectType sourceType, String sourceAttribute, ObjectType targetType,
                              String targetAttribute, Method method, String ratioAttribute, String maximumAttribute,
                              Integer roundingDecimals, String remainderAttribute, String orderingAttribute,
                              boolean descending, Condition condition, Validity validity) {
-        this(naam, sourceType, sourceAttribute, targetType, targetAttribute, method, ratioAttribute, maximumAttribute,
+        this(name, sourceType, sourceAttribute, targetType, targetAttribute, method, ratioAttribute, maximumAttribute,
                 roundingDecimals, remainderAttribute, orderingAttribute, descending, condition, validity, null);
     }
 }

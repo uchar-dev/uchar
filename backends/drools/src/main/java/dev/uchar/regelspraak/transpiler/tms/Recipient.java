@@ -21,7 +21,7 @@ public record Recipient(String allocation, Object source, Object recipient, Obje
                         Object maximum) {
 
     public Recipient {
-        Objects.requireNonNull(allocation, "verdeling");
+        Objects.requireNonNull(allocation, "allocation");
         Objects.requireNonNull(source, "bron");
         Objects.requireNonNull(recipient, "ontvanger");
     }

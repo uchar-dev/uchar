@@ -241,8 +241,8 @@ class SourceRoleFoldWitnessTest {
             throws Exception {
         ObjectNode ir = read();
         IrPath.rules(ir).putArray("factCreations");
-        String regel = ruleFor(targetAttribute);
-        keepRules(ir, regel);
+        String rule = ruleFor(targetAttribute);
+        keepRules(ir, rule);
         IrPath.version(ir, "rules", 0, 0).set("value", fold(kind, plural, factType, role));
         return temporary("bronrol-" + kind.toLowerCase(), ir);
     }
@@ -336,10 +336,10 @@ class SourceRoleFoldWitnessTest {
      *  except where the model has been reduced to a single feittype and the others no longer exist. */
     private static String caseDocument(String attribute, String h1, String h2, String h3, String... roleNames) {
         StringBuilder expected = new StringBuilder();
-        String[] labels = { "H1", "H2", "H3" }, waarden = { h1, h2, h3 };
+        String[] labels = { "H1", "H2", "H3" }, values = { h1, h2, h3 };
         for (int i = 0; i < 3; i++) {
             if (i > 0) expected.append(",\n");
-            expected.append(cell(labels[i], attribute, waarden[i]));
+            expected.append(cell(labels[i], attribute, values[i]));
         }
         return world(expected.toString(), roleNames);
     }
@@ -388,8 +388,8 @@ class SourceRoleFoldWitnessTest {
              + "  \"expected\": [\n" + expected + " ] }";
     }
 
-    private static Path temporary(String naam, ObjectNode ir) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, ObjectNode ir) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         return tmp;

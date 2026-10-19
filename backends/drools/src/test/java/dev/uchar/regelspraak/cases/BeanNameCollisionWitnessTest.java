@@ -171,8 +171,8 @@ class BeanNameCollisionWitnessTest {
         // 'laat-gemeld' goes first; the golden's 'laat gemeld', which its rule writes, has no field left, and a
         // case that asked after the other read the first one's truth
         ObjectNode ir = ir(REKENJAAR);
-        ArrayNode kenmerken = (ArrayNode) IrPath.objectType(ir, "Vondst").get("characteristics");
-        kenmerken.insert(0, JSON.readTree("{\"node\":\"Characteristic\",\"name\":\"laat-gemeld\",\"kind\":\"adjectival\"}"));
+        ArrayNode characteristics = (ArrayNode) IrPath.objectType(ir, "Vondst").get("characteristics");
+        characteristics.insert(0, JSON.readTree("{\"node\":\"Characteristic\",\"name\":\"laat-gemeld\",\"kind\":\"adjectival\"}"));
         refused(write(ir), JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": "2024-12-31",
                   "input": { "instances": [
@@ -191,7 +191,7 @@ class BeanNameCollisionWitnessTest {
         ObjectNode ir = ir(PREMIERECHT);
         objectType(ir, "Strandjutter", "Jutter").set("attributes", list("{\"node\":\"Attribute\","
                 + "\"name\":\"aantal-toegekende rechten\",\"datatype\":" + WHOLE + "}"));
-        IrPath.rulesList(ir, "rules").add(JSON.readTree(IrPath.regel("beginstand van een strandjutter", "INITIALISATIE",
+        IrPath.rulesList(ir, "rules").add(JSON.readTree(IrPath.rule("beginstand van een strandjutter", "INITIALISATIE",
                 "{\"node\":\"AttributeReference\",\"attribute\":\"aantal-toegekende rechten\",\"subjectType\":\"Strandjutter\","
                         + "\"source\":{\"snippet\":\"Het aantal-toegekende rechten van een Strandjutter\"}}",
                 IrPath.literal("7", WHOLE, "7"), "null")));
@@ -323,9 +323,9 @@ class BeanNameCollisionWitnessTest {
         return write(ir);
     }
 
-    /** One Jutter holding one Recht op premie of vondstgewicht 5, the characteristic input {@code kenmerken} on the
+    /** One Jutter holding one Recht op premie of vondstgewicht 5, the characteristic input {@code characteristics} on the
      *  recht, and one expectation. */
-    private static JsonNode caseWithCharacteristic(String kenmerken, String expectation) throws Exception {
+    private static JsonNode caseWithCharacteristic(String characteristics, String expectation) throws Exception {
         return JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -335,13 +335,13 @@ class BeanNameCollisionWitnessTest {
                         "roles": {}, %s } ],
                     "parameters": { "premietarief": { "number": "4" } } },
                   "expected": [ %s ] }
-                """.formatted(kenmerken, expectation));
+                """.formatted(characteristics, expectation));
     }
 
     /** A new object type appended to the document, with no members; {@code supertype} may be null. */
-    private static ObjectNode objectType(ObjectNode ir, String naam, String supertype) {
+    private static ObjectNode objectType(ObjectNode ir, String name, String supertype) {
         ObjectNode ot = IrPath.modelList(ir, "objectTypes").addObject();
-        ot.put("node", "ObjectType").put("name", naam).put("animate", false);
+        ot.put("node", "ObjectType").put("name", name).put("animate", false);
         if (supertype != null) ot.put("supertype", supertype);
         ot.putArray("attributes");
         ot.putArray("characteristics");

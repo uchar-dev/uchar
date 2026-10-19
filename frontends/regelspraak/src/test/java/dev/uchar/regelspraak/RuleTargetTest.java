@@ -52,7 +52,7 @@ class RuleTargetTest {
         Eén aanmelder heeft meerdere vondsten
         """;
 
-    private static String regel(String result) {
+    private static String rule(String result) {
         return MODEL + """
 
             Regel doel
@@ -77,7 +77,7 @@ class RuleTargetTest {
             "De premie van zijn vakhouder moet gesteld worden op 10.                   | het doel navigeert via 'zijn vakhouder'"
     })
     void a_target_outside_the_subject_is_refused(String result, String fragment) {
-        RegelSpraakModel m = Resolver.resolve(regel(result));
+        RegelSpraakModel m = Resolver.resolve(rule(result));
         Diagnostic d = onlyError(m);
         assertTrue(d.message().contains(fragment) && d.message().contains("WF-022"), d.message());
         assertFalse(m.isOk(), "een ERROR houdt het document van de schijf");
@@ -90,7 +90,7 @@ class RuleTargetTest {
             "Een Strandvak is gemarkeerd."
     })
     void a_own_target_stays_clean(String result) {
-        RegelSpraakModel m = Resolver.resolve(regel(result));
+        RegelSpraakModel m = Resolver.resolve(rule(result));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }
 
@@ -173,7 +173,7 @@ class RuleTargetTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        assertNull(m.resolvedRegels.get(0).condition(), "het venster hoort in het filter, niet op de regel");
+        assertNull(m.resolvedRules.get(0).condition(), "het venster hoort in het filter, niet op de regel");
     }
 
     @Test void a_window_behind_a_single_subselection_stays_a_rule_window() {

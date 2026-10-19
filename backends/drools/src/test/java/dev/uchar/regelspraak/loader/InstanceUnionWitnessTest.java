@@ -46,8 +46,8 @@ class InstanceUnionWitnessTest {
         assertEquals("aangemelde vondst", u.branches().get(0).sourceRole().role());
         assertEquals("vondstberging", u.branches().get(1).sourceRole().factType());
         assertEquals("geborgen vondst", u.branches().get(1).sourceRole().role());
-        assertEquals("Vondst", u.branches().get(0).elementType().naam);
-        assertEquals("Vondst", u.branches().get(1).elementType().naam);
+        assertEquals("Vondst", u.branches().get(0).elementType().name);
+        assertEquals("Vondst", u.branches().get(1).elementType().name);
         assertNotNull(u.source(), "bron");
     }
 
@@ -105,8 +105,8 @@ class InstanceUnionWitnessTest {
 
     private static Expr.FunctionCall countOf(String ir) throws Exception {
         var model = IrLoader.loadAll(JSON.readTree(ir)).model();
-        assertEquals(1, model.resolvedRegels.size(), "één regel in dit document");
-        return assertInstanceOf(Expr.FunctionCall.class, model.resolvedRegels.get(0).value());
+        assertEquals(1, model.resolvedRules.size(), "één regel in dit document");
+        return assertInstanceOf(Expr.FunctionCall.class, model.resolvedRules.get(0).value());
     }
 
     private static String branch(String elementType, String factType, String role, String filter) {
@@ -159,7 +159,7 @@ class InstanceUnionWitnessTest {
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[]},\"diagnostics\":[]}")
                 .formatted(jutter, vondst, ftVondstaanmelding, ftVondstberging,
-                        dev.uchar.regelspraak.cases.IrPath.regel("aantal strandvondsten", "BEREKENING", target,
+                        dev.uchar.regelspraak.cases.IrPath.rule("aantal strandvondsten", "BEREKENING", target,
                                 value, "null"));
     }
 }

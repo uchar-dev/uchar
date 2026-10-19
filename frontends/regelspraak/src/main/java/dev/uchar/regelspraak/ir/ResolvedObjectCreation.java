@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.ir;
 
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
 
 import java.util.List;
@@ -21,14 +21,14 @@ import java.util.List;
  *                      {@code connectingRole}), or null: the sentence names the type, or its role name binds no
  *                      unique role, and the back-link is then derived from the type pair
  */
-public record ResolvedObjectCreation(String naam, Objecttype createdType, Objecttype subject,
+public record ResolvedObjectCreation(String name, ObjectType createdType, ObjectType subject,
                                     List<MemberInit> initialisations, Condition condition, Validity validity,
                                     RoleBindingRef connectingRole) {
     /** Without a named role: the reader that carries the wire's binding beside the record (the Drools backend's
      *  loader) builds it this way. */
-    public ResolvedObjectCreation(String naam, Objecttype createdType, Objecttype subject, List<MemberInit> initialisations,
+    public ResolvedObjectCreation(String name, ObjectType createdType, ObjectType subject, List<MemberInit> initialisations,
                                  Condition condition, Validity validity) {
-        this(naam, createdType, subject, initialisations, condition, validity, null);
+        this(name, createdType, subject, initialisations, condition, validity, null);
     }
 
     /** One §13.4.6.2 waardetoekenning on the new object. {@code characteristic} distinguishes the DISTINCT

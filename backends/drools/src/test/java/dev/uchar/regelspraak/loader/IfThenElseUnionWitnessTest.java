@@ -81,7 +81,7 @@ class IfThenElseUnionWitnessTest {
                 "de generieke wandeling vindt de vorm onder een Let");
         assertTrue(reads(value, "laag"), "de dan-tak onder de Let");
         assertTrue(reads(value, "hoog"), "de anders-tak onder de Let");
-        assertTrue(Expr.contains(value, x -> x instanceof Expr.BinderRef b && "g".equals(b.naam())),
+        assertTrue(Expr.contains(value, x -> x instanceof Expr.BinderRef b && "g".equals(b.name())),
                 "de binderlezing in de guard onder de Let");
     }
 
@@ -94,8 +94,8 @@ class IfThenElseUnionWitnessTest {
 
     private static Expr ruleValue(String ir) throws Exception {
         RegelSpraakModel model = IrLoader.loadAll(JSON.readTree(ir)).model();
-        assertEquals(1, model.resolvedRegels.size(), "één regel in dit document");
-        return model.resolvedRegels.get(0).value();
+        assertEquals(1, model.resolvedRules.size(), "één regel in dit document");
+        return model.resolvedRules.get(0).value();
     }
 
     // ---------------- the wire shapes ----------------
@@ -164,7 +164,7 @@ class IfThenElseUnionWitnessTest {
                 .formatted(num(2), num(2), num(2), num(2));
         String objectType = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
                 + "\"attributes\":[%s],\"characteristics\":[]}").formatted(attributes);
-        String rule = IrPath.regel("uit van een jutter", "BEREKENING", attr("uit", num(2)), value, "null");
+        String rule = IrPath.rule("uit van een jutter", "BEREKENING", attr("uit", num(2)), value, "null");
         return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],"
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]},"

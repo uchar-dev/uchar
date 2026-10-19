@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.schema;
 
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.schema.FactModelGenerator.Member;
@@ -25,12 +25,12 @@ public final class ContractValidator {
     /** Every bean↔model violation, each a message with its register code; empty when the contract holds. */
     public static List<Reason> validate(RegelSpraakModel model, ClassLoader cl) {
         List<Reason> out = new ArrayList<>();
-        for (Objecttype ot : model.objecttypen.values()) {
-            String javaClass = FactModelGenerator.PACKAGE + "." + Namen.ident(ot.naam, true);
+        for (ObjectType ot : model.objectTypes.values()) {
+            String javaClass = FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true);
             Class<?> c;
             try { c = Class.forName(javaClass, false, cl); }
             catch (ClassNotFoundException e) {
-                out.add(DroolsCode.FACT_CLASS_MISSING.reason("objectType", ot.naam, "javaClass", javaClass));
+                out.add(DroolsCode.FACT_CLASS_MISSING.reason("objectType", ot.name, "javaClass", javaClass));
                 continue;
             }
             for (Member l : FactModelGenerator.members(model, ot)) {
@@ -42,17 +42,17 @@ public final class ContractValidator {
                 // a scalar kenmerk may also be exposed as get<X>() (mvel resolves the property either way)
                 if (getter == null && l.isForm()) getter = find(c, n.getter(), 0);
                 if (getter == null)
-                    out.add(DroolsCode.GETTER_MISSING.reason("objectType", ot.naam, "property", p, "getter", getterName, "javaClass", javaClass));
+                    out.add(DroolsCode.GETTER_MISSING.reason("objectType", ot.name, "property", p, "getter", getterName, "javaClass", javaClass));
                 else if (!typeOk(l.javaType(), getter.getReturnType()))
-                    out.add(DroolsCode.GETTER_TYPE_MISMATCH.reason("objectType", ot.naam, "property", p, "getter", getter.getName(), "returnType", getter.getReturnType().getName(), "javaType", l.javaType()));
+                    out.add(DroolsCode.GETTER_TYPE_MISMATCH.reason("objectType", ot.name, "property", p, "getter", getter.getName(), "returnType", getter.getReturnType().getName(), "javaType", l.javaType()));
                 Method setter = find(c, n.setter(), 1);
                 if (setter == null)
-                    out.add(DroolsCode.SETTER_MISSING.reason("objectType", ot.naam, "property", p, "setter", n.setter(), "javaType", l.javaType(), "javaClass", javaClass));
+                    out.add(DroolsCode.SETTER_MISSING.reason("objectType", ot.name, "property", p, "setter", n.setter(), "javaType", l.javaType(), "javaClass", javaClass));
                 else if (!typeOk(l.javaType(), setter.getParameterTypes()[0]))
-                    out.add(DroolsCode.SETTER_TYPE_MISMATCH.reason("objectType", ot.naam, "property", p, "setter", n.setter(), "parameterType", setter.getParameterTypes()[0].getName(), "javaType", l.javaType()));
+                    out.add(DroolsCode.SETTER_TYPE_MISMATCH.reason("objectType", ot.name, "property", p, "setter", n.setter(), "parameterType", setter.getParameterTypes()[0].getName(), "javaType", l.javaType()));
             }
         }
-        if (!model.objecttypen.isEmpty()) {
+        if (!model.objectTypes.isEmpty()) {
             // the carriers: Segment iff any temporal member exists, Inconsistency iff any §13.4.8/§6.5/§6.6 fout
             // can be raised (consistenties, uniciteiten, or any division/wortel — checked coarsely: consistenties
             // and uniciteiten only; the fout companions of a division/wortel insert one too, but requiring the
@@ -60,10 +60,10 @@ public final class ContractValidator {
             // The OWN maps, deliberately: this is a disjunction over EVERY objecttype in the model, so a
             // declaring ancestor is visited on its own turn and chain-closing the read would only make
             // each inherited timeline count once per descendant — the same answer, later.
-            boolean temporal = model.objecttypen.values().stream().anyMatch(ot ->
-                    !ot.attribuutGranulariteit.isEmpty() || !ot.kenmerkGranulariteit.isEmpty());
+            boolean temporal = model.objectTypes.values().stream().anyMatch(ot ->
+                    !ot.attributeGranularity.isEmpty() || !ot.characteristicGranularity.isEmpty());
             if (temporal) requireSegment(cl, out);
-            if (!model.consistenties.isEmpty() || !model.uniquenesses.isEmpty() || !model.uniquenessUnions.isEmpty())
+            if (!model.consistencies.isEmpty() || !model.uniquenesses.isEmpty() || !model.uniquenessUnions.isEmpty())
                 requireInconsistency(cl, out);
         }
         return out;
@@ -93,9 +93,9 @@ public final class ContractValidator {
         }
     }
 
-    private static Method find(Class<?> c, String naam, int arity) {
+    private static Method find(Class<?> c, String name, int arity) {
         for (Method m : c.getMethods())
-            if (m.getName().equals(naam) && m.getParameterCount() == arity) return m;
+            if (m.getName().equals(name) && m.getParameterCount() == arity) return m;
         return null;
     }
 

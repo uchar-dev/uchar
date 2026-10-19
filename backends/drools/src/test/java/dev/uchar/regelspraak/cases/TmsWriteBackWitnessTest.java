@@ -246,7 +246,7 @@ class TmsWriteBackWitnessTest {
             assertNumber("40", sessionValue(session, v.get(0), "heffing"), "V1 heffing in the session" + where);
             assertNumber("15", sessionValue(session, v.get(0), "vindloon"), "V1 vindloon in the session" + where);
             assertNumber("20", sessionValue(session, v.get(0), "uitkering"), "V1 uitkering in the session" + where);
-            assertTrue(session.getObjects(o -> o instanceof HasCharacteristic h && h.onderwerp() == v.get(1)).size() == 1,
+            assertTrue(session.getObjects(o -> o instanceof HasCharacteristic h && h.subject() == v.get(1)).size() == 1,
                     "V2 vrijgesteld in the session" + where);
             assertNull(read(v.get(0), "uitkering"), "V1 uitkering before the write-back" + where);
             assertNull(read(v.get(0), "vindloon"), "V1 vindloon before the write-back" + where);
@@ -358,8 +358,8 @@ class TmsWriteBackWitnessTest {
 
     /** The value of the one {@link Value} the session holds on {@code attribute} of {@code beanObject}, or null. */
     private static Object sessionValue(KieSession session, Object beanObject, String attribute) {
-        List<Object> w = new ArrayList<>(session.getObjects(o -> o instanceof Value x && x.onderwerp() == beanObject
-                && x.attribute().naam().equals(attribute)));
+        List<Object> w = new ArrayList<>(session.getObjects(o -> o instanceof Value x && x.subject() == beanObject
+                && x.attribute().name().equals(attribute)));
         assertTrue(w.size() <= 1, () -> "meer dan één Waarde op " + attribute + ": " + w);
         return w.isEmpty() ? null : ((Value) w.get(0)).value();
     }

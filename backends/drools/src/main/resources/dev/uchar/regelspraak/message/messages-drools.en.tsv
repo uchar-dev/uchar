@@ -390,7 +390,7 @@ PART.desc.whole-period-predicate	a Predicate with wholePeriod ('{snippet}')
 PART.desc.start-point	the start point determination of timeline '{timeline}'
 PART.form-named.regel	rule '{name}'
 PART.form-named.objectcreatie	object creation '{name}'
-PART.form-named.verdeling	allocation '{name}'
+PART.form-named.allocation	allocation '{name}'
 PART.form-named.consistentie	consistency '{name}'
 PART.form-named.uniciteit	uniqueness '{name}'
 PART.form-named.feitcreatie	fact creation '{name}'

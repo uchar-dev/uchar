@@ -48,7 +48,7 @@ public final class GraphProjection {
             TreeSet<String> rules = new TreeSet<>();
             for (RuleGraph.Dependency a : g.dependencies())
                 rules.add(String.join("\t", "rand", list(a.producerForm()), Namen.norm(a.producer()),
-                        a.element().characteristic() ? "char" : "attr", a.element().naam(),
+                        a.element().characteristic() ? "char" : "attr", a.element().name(),
                         list(a.consumerForm()), Namen.norm(a.consumer())));
             rules.forEach(System.out::println);
         }
@@ -59,12 +59,12 @@ public final class GraphProjection {
     private static String list(ProducerConsumer.FormKind category) {
         return switch (category) {
             case REGEL -> "rules";
-            case OBJECTCREATIE -> "objectCreations";
-            case VERDELING -> "allocations";
-            case CONSISTENTIE -> "consistencies";
-            case UNICITEIT -> "uniquenesses";
-            case FEITCREATIE -> "factCreations";
-            case DEFAULTSGROEP -> "prioritizedDefaults";
+            case OBJECT_CREATION -> "objectCreations";
+            case ALLOCATION -> "allocations";
+            case CONSISTENCY -> "consistencies";
+            case UNIQUENESS -> "uniquenesses";
+            case FACT_CREATION -> "factCreations";
+            case DEFAULTS_GROUP -> "prioritizedDefaults";
         };
     }
 }

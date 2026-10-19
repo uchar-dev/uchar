@@ -42,7 +42,7 @@ class OriginWitnessTest {
     }
 
     private static String element(Designatable b) {
-        return b.category() + " " + (b.owner() == null ? "" : b.owner() + ".") + b.naam();
+        return b.category() + " " + (b.owner() == null ? "" : b.owner() + ".") + b.name();
     }
 
     /** The table as lines "<element> <- <source element> (<key>)", in the order of the map. */

@@ -67,7 +67,7 @@ class DepositFlagSlotWitnessTest {
                     Set<Integer> s = sondes(t.test());
                     if (s.isEmpty()) continue;
                     if (t.role() == TestItem.Role.DEPOSIT && s.equals(Set.of(t.depositFlag()))) filled++;
-                    else unfilled.add(golden + " | " + p.naam() + " | toets " + t.role() + " " + s);
+                    else unfilled.add(golden + " | " + p.name() + " | toets " + t.role() + " " + s);
                 }
                 Set<Integer> s = sondes(p.consequence());
                 if (s.isEmpty()) continue;
@@ -80,7 +80,7 @@ class DepositFlagSlotWitnessTest {
                     default -> null;
                 };
                 if (fills != null && s.equals(Set.of(fills))) filled++;
-                else unfilled.add(golden + " | " + p.naam() + " | gevolg " + p.consequence().getClass().getSimpleName()
+                else unfilled.add(golden + " | " + p.name() + " | gevolg " + p.consequence().getClass().getSimpleName()
                         + " " + s);
             }
         }

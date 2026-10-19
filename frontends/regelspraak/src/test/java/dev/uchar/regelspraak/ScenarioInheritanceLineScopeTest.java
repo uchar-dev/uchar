@@ -98,14 +98,14 @@ class ScenarioInheritanceLineScopeTest {
         ScenarioBundle b = ScenarioResolver.resolve(SOURCE + "Scenario s\n" + scope + SCENARIO);
         assertTrue(b.model().errors().isEmpty(), () -> b.model().errors().toString());
         ResolvedScenario s = b.scenarios().get(0);
-        return CaseEmitter.withScope(b.model(), s.scope()).prioritizedDefaults.stream().map(PrioritizedDefaults::naam)
+        return CaseEmitter.withScope(b.model(), s.scope()).prioritizedDefaults.stream().map(PrioritizedDefaults::name)
                 .toList();
     }
 
     @Test void the_groups_of_the_document() {
         assertEquals(List.of("meldtermijn", "meldtermijn voor Strandjutter", "meldtermijn voor Wadjutter",
                 "meldtermijn van een kustjutter", "meldtermijn van een kustjutter voor Duinjutter"),
-                Resolver.resolve(SOURCE).prioritizedDefaults.stream().map(PrioritizedDefaults::naam).toList());
+                Resolver.resolve(SOURCE).prioritizedDefaults.stream().map(PrioritizedDefaults::name).toList());
     }
 
     @Test void a_scope_with_the_base_carries_the_groups_of_its_subtypes() {

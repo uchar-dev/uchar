@@ -124,23 +124,23 @@ class CreationOrderWitnessTest {
     private static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
     private static final String COUNT_NUMBER = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
 
-    private static String attribute(String naam) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + WHOLE + "}";
+    private static String attribute(String name) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + WHOLE + "}";
     }
 
-    private static String characteristic(String naam) {
-        return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"nominal\"}";
+    private static String characteristic(String name) {
+        return "{\"node\":\"Characteristic\",\"name\":\"" + name + "\",\"kind\":\"nominal\"}";
     }
 
-    private static String objectType(String naam, String plural, boolean animate, List<String> kenmerken, String... members) {
+    private static String objectType(String name, String plural, boolean animate, List<String> characteristics, String... members) {
         List<String> a = new ArrayList<>();
         for (String l : members) a.add(attribute(l));
-        return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
-                + "\",\"attributes\":[" + String.join(",", a) + "],\"characteristics\":[" + String.join(",", kenmerken) + "]}";
+        return "{\"node\":\"ObjectType\",\"name\":\"" + name + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
+                + "\",\"attributes\":[" + String.join(",", a) + "],\"characteristics\":[" + String.join(",", characteristics) + "]}";
     }
 
-    private static String factType(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
-        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
+    private static String factType(String name, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + oneRole + "\",\"objectType\":\"" + oneType + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + manyRole + "\",\"objectType\":\"" + manyType + "\""
                 + (manyPlural == null ? ",\"many\":false}" : ",\"plural\":\"" + manyPlural + "\",\"many\":true}") + "]}";
@@ -249,14 +249,14 @@ class CreationOrderWitnessTest {
     }
 
     /** The telling of J1 to J4, a null value leeg. */
-    private static String count(String... waarden) {
+    private static String count(String... values) {
         List<String> out = new ArrayList<>();
-        for (int i = 0; i < waarden.length; i++) {
+        for (int i = 0; i < values.length; i++) {
             String label = "J" + (i + 1);
-            out.add(waarden[i] == null
+            out.add(values[i] == null
                     ? "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"telling\"}"
                     : "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"telling\",\"value\":{\"number\":\""
-                            + waarden[i] + "\"}}");
+                            + values[i] + "\"}}");
         }
         return String.join(",", out);
     }

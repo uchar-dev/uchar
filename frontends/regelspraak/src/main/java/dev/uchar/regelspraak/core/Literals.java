@@ -74,7 +74,7 @@ public final class Literals {
      *  {@link #parseDate} cannot read. Without it a refused date lexeme was filed under the generic
      *  "outside scope" reason on one branch and "voorwaarde" on the other, while the cause is a document defect. */
     public static boolean unreadableDateLexeme(Expr e) {
-        return e instanceof Expr.Literal l && l.type() instanceof dev.uchar.regelspraak.model.Datatype.DatumInDagen
+        return e instanceof Expr.Literal l && l.type() instanceof dev.uchar.regelspraak.model.Datatype.DateInDays
                 && parseDate(l.valueText()) == null;
     }
 
@@ -125,7 +125,7 @@ public final class Literals {
      *  ({@code Namen.drlString}). Escaping is not interpretation — it leaves the value itself untouched. */
     public static String textOrEnumLabel(Expr.Literal lit) {
         if (lit.type().isText()) return lit.valueText();
-        if (lit.type() instanceof dev.uchar.regelspraak.model.Datatype.Enumeratie) return lit.valueText();
+        if (lit.type() instanceof dev.uchar.regelspraak.model.Datatype.Enumeration) return lit.valueText();
         return enumLabel(lit.valueText());
     }
 

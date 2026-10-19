@@ -52,7 +52,7 @@ class ZeroDivisorConditionWitnessTest {
 
     @Test void the_condition_of_an_ordinary_rule() throws Exception {
         // "De verhouding van een Vondst moet gesteld worden op 1,00 indien …"
-        Path ir = document(regel("verhouding", "Vondst", "verhouding", "De verhouding van een Vondst",
+        Path ir = document(rule("verhouding", "Vondst", "verhouding", "De verhouding van een Vondst",
                 "{\"node\":\"Literal\",\"value\":{\"number\":\"1.00\"},\"type\":" + TWO_DECIMALS + ",\"source\":{\"snippet\":"
                         + "\"1,00\"}}", DIVISION_GREATER_THAN_ONE, ",\"presentation\":\"equation\""));
         assertNull(play(ir, false, zeroAndOrdinary("{\"kind\":\"attributeEmpty\",\"label\":\"V3\",\"attribute\":"
@@ -87,7 +87,7 @@ class ZeroDivisorConditionWitnessTest {
                 + "\"elementType\":\"Vondst\",\"filter\":" + filter + ",\"sourceRole\":" + ROLE_VONDST + ",\"type\":{\"node\":"
                 + "\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"},\"source\":{\"snippet\":\"het aantal "
                 + "vondsten van de Jutter die aan de volgende voorwaarde voldoen\"}}";
-        Path ir = document(regel("zware vondsten", "Jutter", "aantal zware vondsten", "Het aantal zware vondsten van een "
+        Path ir = document(rule("zware vondsten", "Jutter", "aantal zware vondsten", "Het aantal zware vondsten van een "
                 + "Jutter", count, null, ",\"presentation\":\"calculation\""));
         // V1 counts (400 by 320), V3 does not and deposits under the rule that reads the fold, on J1
         assertNull(play(ir, false, zeroAndOrdinary("{\"kind\":\"attributeValue\",\"label\":\"J1\",\"attribute\":"
@@ -105,7 +105,7 @@ class ZeroDivisorConditionWitnessTest {
         String quantifier = "{\"node\":\"QuantifierFold\",\"quantifier\":\"atLeast\",\"threshold\":1,\"elementType\":\"Vondst\","
                 + "\"test\":" + matrix + ",\"source\":{\"snippet\":\"ten minste één van de vondsten van de Jutter\"},"
                 + "\"sourceRole\":" + ROLE_VONDST + "}";
-        Path ir = document(regel("ijverig", "Jutter", "ijverig", "Een Jutter is ijverig", WAAR, quantifier, ""));
+        Path ir = document(rule("ijverig", "Jutter", "ijverig", "Een Jutter is ijverig", WAAR, quantifier, ""));
         assertNull(play(ir, false, caseDocument(jutter("0.00") + "," + vondst("V1", "320.00", "400.00", true),
                 "{\"kind\":\"characteristicAbsent\",\"label\":\"J1\",\"characteristic\":\"ijverig\"},"
                         + TmsDocuments.inconsistent("ijverig", "J1", "EF-005"))));
@@ -159,12 +159,12 @@ class ZeroDivisorConditionWitnessTest {
     private static final String TWO_DECIMALS = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
     private static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
 
-    private static String attribute(String naam, String type) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + type + "}";
+    private static String attribute(String name, String type) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + type + "}";
     }
 
-    private static String characteristic(String naam) {
-        return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"adjectival\"}";
+    private static String characteristic(String name) {
+        return "{\"node\":\"Characteristic\",\"name\":\"" + name + "\",\"kind\":\"adjectival\"}";
     }
 
     private static final String ROLE_VONDST = "{\"node\":\"RoleBinding\",\"factType\":\"JutterHeeftVondst\",\"role\":\"vondst\"}";
@@ -213,12 +213,12 @@ class ZeroDivisorConditionWitnessTest {
 
     /** "Een Vondst is zwaar indien &lt;voorwaarde&gt;". */
     private static String zwaar(String condition) {
-        return regel("zwaar", "Vondst", "zwaar", "Een Vondst is zwaar", WAAR, condition, "");
+        return rule("zwaar", "Vondst", "zwaar", "Een Vondst is zwaar", WAAR, condition, "");
     }
 
-    private static String regel(String naam, String type, String target, String targetSource, String value, String condition,
+    private static String rule(String name, String type, String target, String targetSource, String value, String condition,
                                 String tail) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type + "\",\"source\":"
                 + "{\"snippet\":\"" + targetSource + "\"}},\"value\":" + value
                 + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false" + tail + "}]}";

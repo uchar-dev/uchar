@@ -64,15 +64,15 @@ import java.util.function.Predicate;
  * {@link Consequence} says. It decides nothing: which globals there are, what is read, how, in which order, and what a
  * firing inserts is the plan's ({@code TmsTranspiler}, {@link Modelplan}, {@link RulePlan}).
  *
- * <p>It renders a whole plan at once ({@link #regel}). The variables of the value array's slots are the variables the
+ * <p>It renders a whole plan at once ({@link #rule}). The variables of the value array's slots are the variables the
  * bindings of the plan bind, by name; a value variable is bound once.
  */
 final class PatternDslRendering {
 
-    /** The slots of the rule's value array ({@link #regel}). */
+    /** The slots of the rule's value array ({@link #rule}). */
     private final ReadTable table;
     /** The value variables of the rule, by name, the subject's among them. */
-    private final Map<String, Variable<Object>> waarden = new HashMap<>();
+    private final Map<String, Variable<Object>> values = new HashMap<>();
     /** The value variables a binding or an accumulate function binds already and that are still in scope. */
     private final Set<String> bound = new HashSet<>();
 
@@ -83,21 +83,21 @@ final class PatternDslRendering {
 
     /**
      * The executable model of {@code plan}: its globals declared, each once, and its rules, in the order of the plan
-     * ({@link #regel}). This is the one place the model is made.
+     * ({@link #rule}). This is the one place the model is made.
      */
     static Model model(Modelplan plan) {
         ModelImpl m = new ModelImpl(TmsTranspiler.PKG);
         Map<String, Global<?>> globals = new HashMap<>();
         for (Modelplan.Global g : plan.globals()) {
-            Global<?> global = DSL.globalOf(g.javaClass(), TmsTranspiler.PKG, g.naam());
-            if (globals.putIfAbsent(g.naam(), global) != null)
-                throw new IllegalStateException("de global " + g.naam() + " wordt twee keer gedeclareerd");
+            Global<?> global = DSL.globalOf(g.javaClass(), TmsTranspiler.PKG, g.name());
+            if (globals.putIfAbsent(g.name(), global) != null)
+                throw new IllegalStateException("de global " + g.name() + " wordt twee keer gedeclareerd");
             m.addGlobal(global);
         }
         for (RulePlan r : plan.rules())
-            m.addRule(regel(r, naam -> {
-                Global<?> g = globals.get(naam);
-                if (g == null) throw new IllegalStateException("geen global " + naam + " in het model");
+            m.addRule(rule(r, name -> {
+                Global<?> g = globals.get(name);
+                if (g == null) throw new IllegalStateException("geen global " + name + " in het model");
                 return g;
             }));
         return m;
@@ -109,12 +109,12 @@ final class PatternDslRendering {
      * model declares each global once, so the rule takes that declaration.
      */
     @SuppressWarnings("rawtypes")
-    static Rule regel(RulePlan plan, Function<String, Global<?>> globals) {
+    static Rule rule(RulePlan plan, Function<String, Global<?>> globals) {
         PatternDslRendering w = new PatternDslRendering(plan.readings());
         List<RuleItemBuilder<?>> items = new ArrayList<>();
         for (LhsItem item : plan.leftSide()) items.add(w.rendering(item));
         items.add(w.consequence(plan.consequence(), globals));
-        org.drools.model.impl.RuleBuilder b = PatternDSL.rule(TmsTranspiler.PKG, plan.naam());
+        org.drools.model.impl.RuleBuilder b = PatternDSL.rule(TmsTranspiler.PKG, plan.name());
         if (plan.agendaGroup() != null) b = b.attribute(Rule.Attribute.AGENDA_GROUP, plan.agendaGroup());
         return b.build(items.toArray(new RuleItemBuilder[0]));
     }
@@ -122,12 +122,12 @@ final class PatternDslRendering {
     /** The rendering of {@code item} of a whole plan. */
     private RuleItemBuilder<?> rendering(LhsItem item) {
         return switch (item) {
-            case Subject o -> onderwerp(o);
+            case Subject o -> subject(o);
             case FactPattern p -> {
                 // a consequence may name the object a pattern binds, as the fault of a session without a date does
                 Rendered w = pattern(p);
-                if (waarden.putIfAbsent(p.naam(), w.variable()) != null)
-                    throw new IllegalStateException("de variabele " + p.naam() + " wordt twee keer gebonden");
+                if (values.putIfAbsent(p.name(), w.variable()) != null)
+                    throw new IllegalStateException("de variabele " + p.name() + " wordt twee keer gebonden");
                 yield w.def();
             }
             case Not n -> not(n);
@@ -140,10 +140,10 @@ final class PatternDslRendering {
     /** The subject pattern of a whole plan: its variable, its constraints, its joins, its constraints between the bean
      *  and another pattern's object, then its bindings. */
     @SuppressWarnings("unchecked")
-    private PatternDSL.PatternDef<Object> onderwerp(Subject o) {
-        Variable<Object> v = (Variable<Object>) DSL.declarationOf(o.beanClass(), o.naam());
-        if (waarden.putIfAbsent(o.naam(), v) != null)
-            throw new IllegalStateException("de variabele " + o.naam() + " wordt twee keer gebonden");
+    private PatternDSL.PatternDef<Object> subject(Subject o) {
+        Variable<Object> v = (Variable<Object>) DSL.declarationOf(o.beanClass(), o.name());
+        if (values.putIfAbsent(o.name(), v) != null)
+            throw new IllegalStateException("de variabele " + o.name() + " wordt twee keer gebonden");
         PatternDSL.PatternDef<Object> def = PatternDSL.pattern(v);
         for (Alpha a : o.alpha()) def = def.expr(a.id(), predicate(o.beanClass(), a));
         for (Join j : o.joins()) def = join(def, o.beanClass(), j);
@@ -154,8 +154,8 @@ final class PatternDslRendering {
 
     /** The variable of slot {@code slot} of the value array, null for a binder or a probe. */
     private Variable<?> variable(int slot) {
-        String naam = table.slots().get(slot).naam();
-        return naam == null ? null : known(naam);
+        String name = table.slots().get(slot).name();
+        return name == null ? null : known(name);
     }
 
     // ---------------- the consequence ----------------
@@ -165,60 +165,60 @@ final class PatternDslRendering {
     private RuleItemBuilder<?> consequence(Consequence g, Function<String, Global<?>> globals) {
         return switch (g) {
             case Consequence.Value x -> value(x);
-            case Consequence.Characteristic x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
+            case Consequence.Characteristic x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new HasCharacteristic(a[0], x.characteristic())));
             case Consequence.TestFault x -> testFault(x);
-            case Consequence.Fault x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
+            case Consequence.Fault x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new Fault(a[0], x.fault().form(),
-                            ComputeHelpers.computeFault(x.sentence(), x.fault().regel()))));
-            case Consequence.Inconsistency x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
+                            ComputeHelpers.computeFault(x.sentence(), x.fault().rule()))));
+            case Consequence.Inconsistency x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), a[0], x.codes())));
             case Consequence.ConditionDeposit x -> {
                 Predicate<Object[]> condition = ClosureRendering.test(x.condition());
                 String what = "de voorwaarde van \"" + x.form() + "\"";
-                yield consequenceItem(x.onderwerp(), x.slots(), x.size(), (drools, onderwerp, w) ->
-                        insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), onderwerp,
+                yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, subject, w) ->
+                        insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), subject,
                                 depositCodesAgain(condition, x.depositFlag(), w, what))));
             }
             case Consequence.WritersConflict x ->
-                    new VariadicConsequence(new Variable[]{known(x.onderwerp()), variable(x.waarden())}, (drools, a) ->
+                    new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.values())}, (drools, a) ->
                             insert(drools, x.insertion(), ComputeHelpers.writersConflict(a[0], a[1], x.attribute(),
                                     x.documentOrder(), x.typeClasses(), x.types())));
             case Consequence.InsertParameterState x -> new VariadicConsequence(new Variable[]{globals.apply(x.global())}, (drools, a) ->
                     insert(drools, x.insertion(), new ParameterState(x.parameter(), a[0])));
             case Consequence.EvaluationDateState x -> new VariadicConsequence(new Variable[]{globals.apply(x.global())}, (drools, a) ->
                     insert(drools, x.insertion(), new EvaluationDate((LocalDate) a[0])));
-            case Consequence.InsertCharacteristicState x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
+            case Consequence.InsertCharacteristicState x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new CharacteristicState(a[0], x.characteristic(), x.holds())));
-            case Consequence.State x -> new VariadicConsequence(new Variable[]{known(x.onderwerp()), variable(x.value())},
+            case Consequence.State x -> new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.value())},
                     (drools, a) -> insert(drools, x.insertion(), new State(a[0], x.attribute(),
                             x.bucketScalar() ? ComputeHelpers.bucketScalarOf(a[1]) : a[1])));
             case Consequence.InsertPathState x -> x.source() == Consequence.StateSource.MISSING_LINK
-                    ? new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
+                    ? new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                             insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), null)))
-                    : new VariadicConsequence(new Variable[]{known(x.onderwerp()), variable(x.value())}, (drools, a) ->
+                    : new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.value())}, (drools, a) ->
                             insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), a[1])));
             case Consequence.UniquenessKey x -> uniquenessKey(x);
-            case Consequence.UniquenessViolation x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
+            case Consequence.UniquenessViolation x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new UniquenessViolation(x.uniqueness(), a[0])));
-            case Consequence.InputFormFault x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
+            case Consequence.InputFormFault x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new Fault(a[0], x.fault().form(),
-                            ComputeHelpers.inputFormFault(x.before(), a[0], x.after(), x.fault().regel()))));
+                            ComputeHelpers.inputFormFault(x.before(), a[0], x.after(), x.fault().rule()))));
             case Consequence.InsertChannelState x -> new VariadicConsequence(new Variable[0], (drools, a) ->
                     insert(drools, x.insertion(), new ChannelState(x.producer(), x.inconsistent())));
-            case Consequence.Recipient x -> consequenceItem(x.onderwerp(), slotsOf(x.recipient(), x.weight(), x.key(),
+            case Consequence.Recipient x -> consequenceItem(x.subject(), slotsOf(x.recipient(), x.weight(), x.key(),
                     x.maximum()), (drools, source, w) -> insert(drools, x.insertion(), new Recipient(x.allocation(), source,
                     w[x.recipient()], read(w, x.weight()), read(w, x.key()), read(w, x.maximum()))));
             case Consequence.Contribution x -> contribution(x);
             case Consequence.FilterDeposit x -> {
                 Predicate<Object[]> filter = ClosureRendering.test(x.filter());
                 String what = "het filter van " + x.fold();
-                yield consequenceItem(x.onderwerp(), x.slots(), x.size(), (drools, carrier, w) ->
+                yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, carrier, w) ->
                         insert(drools, x.insertion(), new FilterDeposit(x.fold(), carrier, w[x.member()],
                                 depositCodesAgain(filter, x.depositFlag(), w, what))));
             }
             case Consequence.FilterFault x -> filterFault(x);
-            case Consequence.MemberFault x -> consequenceItem(x.onderwerp(), slotsOf(placeSlots(x.member(), x.place())),
+            case Consequence.MemberFault x -> consequenceItem(x.subject(), slotsOf(placeSlots(x.member(), x.place())),
                     (drools, carrier, w) -> {
                         List<Integer> place = foldPlace(x.place(), x.fold(), w[x.member()], w);
                         insert(drools, x.insertion(), new MemberFault(x.fold(), carrier, w[x.member()],
@@ -231,15 +231,15 @@ final class PatternDslRendering {
                     : new VariadicConsequence(new Variable[]{known(x.first()), known(x.second()), variable(x.phase())},
                             (drools, a) -> insert(drools, x.insertion(),
                                     new RelationLink(x.relation(), a[0], a[1], (Integer) a[2])));
-            case Consequence.SecondFilling x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
+            case Consequence.SecondFilling x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new Fault(a[0], x.relation(), new IllegalStateException(x.sentence()))));
             case Consequence.Decision x -> decisionOf(x);
             case Consequence.Conflict x -> {
                 ValueFunction key = ClosureRendering.valueFunction(x.key());
-                yield consequenceItem(x.onderwerp(), x.slots(), x.size(), (drools, onderwerp, w) ->
-                        insert(drools, x.insertion(), stackFact(x.fact(), onderwerp, key.van(w))));
+                yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, subject, w) ->
+                        insert(drools, x.insertion(), stackFact(x.fact(), subject, key.van(w))));
             }
-            case Consequence.Payout x -> consequenceItem(x.onderwerp(), slotsOf(x.pot(), x.list()), (drools, source, w) -> {
+            case Consequence.Payout x -> consequenceItem(x.subject(), slotsOf(x.pot(), x.list()), (drools, source, w) -> {
                 for (Object fact : ComputeHelpers.payout(x.form(), source, x.method(), w[x.pot()], w[x.list()],
                         x.gewogen(), x.capped(), x.descending(), x.decimals(), x.aandeel(), x.rest(), x.writer()))
                     insert(drools, x.insertion(), fact);
@@ -253,11 +253,11 @@ final class PatternDslRendering {
         List<ValueFunction> components = new ArrayList<>();
         for (Term t : g.components())
             components.add(ClosureRendering.valueFunction(t));
-        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, element, w) -> {
-            List<Object> waarden = new ArrayList<>(components.size());
-            for (ValueFunction c : components) waarden.add(c.van(w));
+        return consequenceItem(g.subject(), g.slots(), g.size(), (drools, element, w) -> {
+            List<Object> values = new ArrayList<>(components.size());
+            for (ValueFunction c : components) values.add(c.van(w));
             Object parent = g.scope() < 0 ? null : w[g.scope()];
-            for (UniquenessKey k : ComputeHelpers.uniquenessKeys(g.uniqueness(), g.source(), element, parent, waarden,
+            for (UniquenessKey k : ComputeHelpers.uniquenessKeys(g.uniqueness(), g.source(), element, parent, values,
                     g.timeline()))
                 insert(drools, g.insertion(), k);
         });
@@ -267,21 +267,21 @@ final class PatternDslRendering {
      *  of a quantifier fold says of it, its place first and the probe in its slot where the plan says so. */
     private RuleItemBuilder<?> contribution(Consequence.Contribution g) {
         return switch (g.input()) {
-            case Consequence.Input.Count t -> consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) ->
+            case Consequence.Input.Count t -> consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) ->
                     insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()], null)));
-            case Consequence.Input.MemberValue l -> consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) -> {
+            case Consequence.Input.MemberValue l -> consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) -> {
                 Contribution b = ComputeHelpers.contribution(g.fold(), carrier, w[g.member()], w[l.value()], l.total(), l.filled());
                 if (b != null) insert(drools, g.insertion(), b);
             });
             case Consequence.Input.Verdict o -> {
                 Predicate<Object[]> matrix = ClosureRendering.test(o.matrix());
-                yield consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) ->
+                yield consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) ->
                         insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()],
                                 ComputeHelpers.verdict(matrix.test(w)))));
             }
             case Consequence.Input.MemberTest t -> {
                 Predicate<Object[]> matrix = ClosureRendering.test(t.matrix());
-                yield consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) -> {
+                yield consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) -> {
                     List<Integer> place = foldPlace(t.place(), g.fold(), w[g.member()], w);
                     Object s = t.depositFlag() < 0 ? null : ComputeHelpers.depositFlag();
                     if (s != null) w[t.depositFlag()] = s;
@@ -323,7 +323,7 @@ final class PatternDslRendering {
      *  place. */
     private RuleItemBuilder<?> filterFault(Consequence.FilterFault g) {
         Predicate<Object[]> filter = ClosureRendering.test(g.filter());
-        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, carrier, w) -> {
+        return consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) -> {
             RuntimeException fault = ClosureRendering.fault(filter, w);
             if (fault == null)
                 throw new IllegalStateException("het filter van " + g.fold() + " faalde in de toets en niet in het gevolg,"
@@ -367,10 +367,10 @@ final class PatternDslRendering {
         return slot < 0 ? null : w[slot];
     }
 
-    /** A consequence over the object {@code onderwerp} binds and the values at {@code slots}, in a value array that
+    /** A consequence over the object {@code subject} binds and the values at {@code slots}, in a value array that
      *  reaches the last of them. */
-    private RuleItemBuilder<?> consequenceItem(String onderwerp, List<Integer> slots, ConsequenceFunction f) {
-        return consequenceItem(onderwerp, slots, slots.isEmpty() ? 0 : slots.get(slots.size() - 1) + 1, f);
+    private RuleItemBuilder<?> consequenceItem(String subject, List<Integer> slots, ConsequenceFunction f) {
+        return consequenceItem(subject, slots, slots.isEmpty() ? 0 : slots.get(slots.size() - 1) + 1, f);
     }
 
     /** The value of {@link Consequence.Value}: computed from the bound values, with its fault, its deposit and its leeg
@@ -378,7 +378,7 @@ final class PatternDslRendering {
     private RuleItemBuilder<?> value(Consequence.Value g) {
         ValueFunction value = ClosureRendering.valueFunction(g.value());
         Consequence.Deposit deposit = g.deposit();
-        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
+        return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {
             // the probe hears every §6.5 and §6.6 place the evaluation reaches, and only those (Sonde)
             Object s = deposit == null ? null : ComputeHelpers.depositFlag();
             if (s != null) w[deposit.depositFlag()] = s;
@@ -389,14 +389,14 @@ final class PatternDslRendering {
             } catch (RuntimeException e) {
                 if (!ComputeHelpers.isEvaluationFault(e)) throw e;
                 insert(drools, g.insertion(),
-                        new Fault(onderwerp, g.fault().form(), ComputeHelpers.designate(e, g.fault().regel())));
+                        new Fault(subject, g.fault().form(), ComputeHelpers.designate(e, g.fault().rule())));
                 return;
             }
             if (ComputeHelpers.reported(s))
-                insert(drools, g.insertion(), ComputeHelpers.inconsistency(deposit.form(), onderwerp,
+                insert(drools, g.insertion(), ComputeHelpers.inconsistency(deposit.form(), subject,
                         ComputeHelpers.depositCodes(s)));
             if (!ComputeHelpers.isEmpty(v) || g.writesEmpty())
-                insert(drools, g.insertion(), new Value(onderwerp, g.target(), v, g.writer()));
+                insert(drools, g.insertion(), new Value(subject, g.target(), v, g.writer()));
         });
     }
 
@@ -407,30 +407,30 @@ final class PatternDslRendering {
      * working memory; then the insertions, in order.
      */
     private RuleItemBuilder<?> creation(Consequence.Creation g) {
-        List<ValueFunction> waarden = new ArrayList<>();
-        for (Consequence.Initialisation i : g.initialisations()) waarden.add(ClosureRendering.valueFunction(i.value()));
+        List<ValueFunction> values = new ArrayList<>();
+        for (Consequence.Initialisation i : g.initialisations()) values.add(ClosureRendering.valueFunction(i.value()));
         Consequence.Construction construction = g.construction();
         List<BiConsumer<Object, Object>> setters = new ArrayList<>();
         for (Consequence.Construction.Setting z : construction.settings())
             setters.add(Accessors.eigenschapSetter(z.field().javaClass(), z.field().property()));
         Consequence.CreationDepth d = g.depth();
-        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
+        return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {
             int depth = ComputeHelpers.creationDepth(g.creation(), d.stratum(), d.type(), (List<?>) w[d.origin()],
                     d.budget());
-            Object[] v = new Object[waarden.size()];
+            Object[] v = new Object[values.size()];
             for (int i = 0; i < v.length; i++) {
                 try {
-                    v[i] = ComputeHelpers.collapse(waarden.get(i).van(w));
+                    v[i] = ComputeHelpers.collapse(values.get(i).van(w));
                 } catch (RuntimeException e) {
                     if (!ComputeHelpers.isEvaluationFault(e)) throw e;
                     insert(drools, g.faultInsertion(),
-                            new Fault(onderwerp, g.fault().form(), ComputeHelpers.designate(e, g.fault().regel())));
+                            new Fault(subject, g.fault().form(), ComputeHelpers.designate(e, g.fault().rule())));
                     return;
                 }
             }
             Object fresh = newObject(construction.javaClass());
             for (int j = 0; j < setters.size(); j++) {
-                Object value = v[construction.settings().get(j).initialisatie()];
+                Object value = v[construction.settings().get(j).initialisation()];
                 if (value != null) setters.get(j).accept(fresh, value);
             }
             int phase = (Integer) w[g.phase()];
@@ -438,14 +438,14 @@ final class PatternDslRendering {
                 switch (i) {
                     case Consequence.Insert.New n -> insert(drools, n.insertion(), fresh);
                     case Consequence.Insert.Mark m -> insert(drools, m.insertion(),
-                            new CreationStamp(g.creation(), onderwerp, fresh, phase, d.stratum(), depth));
+                            new CreationStamp(g.creation(), subject, fresh, phase, d.stratum(), depth));
                     case Consequence.Insert.Link l -> insert(drools, l.insertion(), l.newIsFirst()
-                            ? new RelationLink(l.relation(), fresh, onderwerp, phase)
-                            : new RelationLink(l.relation(), onderwerp, fresh, phase));
+                            ? new RelationLink(l.relation(), fresh, subject, phase)
+                            : new RelationLink(l.relation(), subject, fresh, phase));
                     case Consequence.Insert.Characteristic k -> {
-                        if (Boolean.TRUE.equals(v[k.initialisatie()]))
+                        if (Boolean.TRUE.equals(v[k.initialisation()]))
                             insert(drools, k.insertion(),
-                                    new HasCharacteristic(fresh, g.initialisations().get(k.initialisatie()).member()));
+                                    new HasCharacteristic(fresh, g.initialisations().get(k.initialisation()).member()));
                     }
                 }
         });
@@ -455,7 +455,7 @@ final class PatternDslRendering {
      *  one; nothing where the value is null; else the facts of the decision, in order. */
     private RuleItemBuilder<?> decisionOf(Consequence.Decision g) {
         ValueFunction value = ClosureRendering.valueFunction(g.value());
-        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
+        return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {
             Object v;
             try {
                 v = value.van(w);
@@ -463,26 +463,26 @@ final class PatternDslRendering {
             } catch (RuntimeException e) {
                 if (g.fault() == null || !ComputeHelpers.isEvaluationFault(e)) throw e;
                 insert(drools, g.insertion(),
-                        new Fault(onderwerp, g.fault().form(), ComputeHelpers.designate(e, g.fault().regel())));
+                        new Fault(subject, g.fault().form(), ComputeHelpers.designate(e, g.fault().rule())));
                 return;
             }
             if (v == null) return;
-            for (Consequence.StackFact f : g.facts()) insert(drools, g.insertion(), stackFact(f, onderwerp, v));
+            for (Consequence.StackFact f : g.facts()) insert(drools, g.insertion(), stackFact(f, subject, v));
         });
     }
 
-    /** The fact {@code f} of a defaults stack on {@code onderwerp}, with {@code v}: the decision, or the key of a
+    /** The fact {@code f} of a defaults stack on {@code subject}, with {@code v}: the decision, or the key of a
      *  conflict. */
-    private static Object stackFact(Consequence.StackFact f, Object onderwerp, Object v) {
+    private static Object stackFact(Consequence.StackFact f, Object subject, Object v) {
         return switch (f) {
-            case Consequence.StackFact.Value x -> new Value(onderwerp, x.target(), v, x.writer());
-            case Consequence.StackFact.Characteristic x -> new HasCharacteristic(onderwerp, x.characteristic());
-            case Consequence.StackFact.Decides x -> new Decides(onderwerp, x.stack(), x.index());
+            case Consequence.StackFact.Value x -> new Value(subject, x.target(), v, x.writer());
+            case Consequence.StackFact.Characteristic x -> new HasCharacteristic(subject, x.characteristic());
+            case Consequence.StackFact.Decides x -> new Decides(subject, x.stack(), x.index());
             case Consequence.StackFact.Outcome x -> x.category() == Outcome.Kind.DECIDED
-                    ? new Outcome(onderwerp, x.stack(), x.chain(), x.position(), Outcome.Kind.DECIDED, v, null)
-                    : new Outcome(onderwerp, x.stack(), x.chain(), x.position(), Outcome.Kind.CONFLICT, null,
+                    ? new Outcome(subject, x.stack(), x.chain(), x.position(), Outcome.Kind.DECIDED, v, null)
+                    : new Outcome(subject, x.stack(), x.chain(), x.position(), Outcome.Kind.CONFLICT, null,
                             (String) v);
-            case Consequence.StackFact.Inconsistency x -> ComputeHelpers.inconsistency((String) v, onderwerp,
+            case Consequence.StackFact.Inconsistency x -> ComputeHelpers.inconsistency((String) v, subject,
                     Consequence.StackFact.Inconsistency.CODES);
         };
     }
@@ -499,28 +499,28 @@ final class PatternDslRendering {
     /** The fault of {@link Consequence.TestFault}: the condition evaluated again over the same bound values. */
     private RuleItemBuilder<?> testFault(Consequence.TestFault g) {
         Predicate<Object[]> test = ClosureRendering.test(g.test());
-        return consequenceItem(g.onderwerp(), g.slots(), g.size(), (drools, onderwerp, w) -> {
+        return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {
             RuntimeException f = ClosureRendering.fault(test, w);
             if (f == null)
                 throw new IllegalStateException("de voorwaarde van \"" + g.fault().form() + "\" faalde in de toets en niet"
                         + " in het gevolg, over dezelfde gebonden waarden");
-            insert(drools, g.insertion(), new Fault(onderwerp, g.fault().form(), ComputeHelpers.designate(f, g.fault().regel())));
+            insert(drools, g.insertion(), new Fault(subject, g.fault().form(), ComputeHelpers.designate(f, g.fault().rule())));
         });
     }
 
     /** The body of a consequence: the Drools handle, the object, and the bound values at their slots. */
     @FunctionalInterface
     private interface ConsequenceFunction {
-        void run(org.drools.model.Drools drools, Object onderwerp, Object[] waarden);
+        void run(org.drools.model.Drools drools, Object subject, Object[] values);
     }
 
-    /** A consequence over the object {@code onderwerp} binds and the values at {@code slots}, in a value array of
+    /** A consequence over the object {@code subject} binds and the values at {@code slots}, in a value array of
      *  {@code size} slots. */
     @SuppressWarnings("rawtypes")
-    private RuleItemBuilder<?> consequenceItem(String onderwerp, List<Integer> slots, int size, ConsequenceFunction f) {
+    private RuleItemBuilder<?> consequenceItem(String subject, List<Integer> slots, int size, ConsequenceFunction f) {
         int[] pos = slots.stream().mapToInt(Integer::intValue).toArray();
         Variable[] v = new Variable[pos.length + 1];
-        v[0] = known(onderwerp);
+        v[0] = known(subject);
         for (int j = 0; j < pos.length; j++) v[j + 1] = variable(pos[j]);
         return new VariadicConsequence(v, (drools, args) -> {
             Object[] w = new Object[size];
@@ -553,7 +553,7 @@ final class PatternDslRendering {
 
     @SuppressWarnings("unchecked")
     private Rendered pattern(FactPattern p) {
-        Variable<Object> v = (Variable<Object>) DSL.declarationOf(p.factClass(), p.naam());
+        Variable<Object> v = (Variable<Object>) DSL.declarationOf(p.factClass(), p.name());
         PatternDSL.PatternDef<Object> def = PatternDSL.pattern(v);
         for (Alpha a : p.alpha()) def = def.expr(a.id(), predicate(p.factClass(), a));
         for (Join j : p.joins()) def = join(def, p.factClass(), j);
@@ -594,19 +594,19 @@ final class PatternDslRendering {
      *  bindings bind, is known to the patterns after them inside it and to nothing after it. */
     private PatternDSL.PatternDef<?>[] quantified(List<FactPattern> patterns, List<String> inside,
                                                        List<String> outside) {
-        for (String naam : outside) known(naam);
+        for (String name : outside) known(name);
         PatternDSL.PatternDef<?>[] defs = new PatternDSL.PatternDef<?>[patterns.size()];
         for (int i = 0; i < defs.length; i++) {
             FactPattern p = patterns.get(i);
             Rendered w = pattern(p);
             defs[i] = w.def();
-            if (waarden.putIfAbsent(p.naam(), w.variable()) != null)
-                throw new IllegalStateException("de variabele " + p.naam() + " wordt twee keer gebonden");
+            if (values.putIfAbsent(p.name(), w.variable()) != null)
+                throw new IllegalStateException("de variabele " + p.name() + " wordt twee keer gebonden");
         }
         // a value bound inside lives only inside: a later quantification may bind its name again, as its plan allows
-        for (String naam : inside) {
-            waarden.remove(naam);
-            bound.remove(naam);
+        for (String name : inside) {
+            values.remove(name);
+            bound.remove(name);
         }
         return defs;
     }
@@ -625,7 +625,7 @@ final class PatternDslRendering {
     /** Drools' own accumulate function of each fold of the plan: the sum over a statically typed {@code BigDecimal},
      *  since the plain sum over an {@code Object}-bound value gives a {@code Double}. */
     private static Class<?> function(Accumulation.Kind category) {
-        String naam = switch (category) {
+        String name = switch (category) {
             case COUNT -> "CountAccumulateFunction";
             case SUM -> "BigDecimalSumAccumulateFunction";
             case MINIMUM -> "MinAccumulateFunction";
@@ -633,9 +633,9 @@ final class PatternDslRendering {
             case LIST -> "CollectListAccumulateFunction";
         };
         try {
-            return Class.forName("org.drools.core.base.accumulators." + naam);
+            return Class.forName("org.drools.core.base.accumulators." + name);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("de Drools-accumulatiefunctie " + naam + " ontbreekt op het classpath", e);
+            throw new IllegalStateException("de Drools-accumulatiefunctie " + name + " ontbreekt op het classpath", e);
         }
     }
 
@@ -691,18 +691,18 @@ final class PatternDslRendering {
 
     /** The value variable {@code naam}, which an item rendered before binds: a slot, a join and an accumulate name only
      *  what the plan bound already. */
-    private Variable<Object> known(String naam) {
-        Variable<Object> v = waarden.get(naam);
-        if (v == null) throw new IllegalStateException("de variabele " + naam + " is nog niet gebonden");
+    private Variable<Object> known(String name) {
+        Variable<Object> v = values.get(name);
+        if (v == null) throw new IllegalStateException("de variabele " + name + " is nog niet gebonden");
         return v;
     }
 
     /** The value variable {@code naam} for the binding that binds it, made here: each is bound once. */
-    private Variable<Object> bind(String naam) {
-        if (!bound.add(naam) || waarden.containsKey(naam))
-            throw new IllegalStateException("de variabele " + naam + " wordt twee keer gebonden");
-        Variable<Object> v = DSL.declarationOf(Object.class, naam);
-        waarden.put(naam, v);
+    private Variable<Object> bind(String name) {
+        if (!bound.add(name) || values.containsKey(name))
+            throw new IllegalStateException("de variabele " + name + " wordt twee keer gebonden");
+        Variable<Object> v = DSL.declarationOf(Object.class, name);
+        values.put(name, v);
         return v;
     }
 
@@ -713,60 +713,60 @@ final class PatternDslRendering {
     private static final Map<Class<?>, Map<String, Function1<Object, Object>>> FIELDS = new HashMap<>();
 
     static {
-        field(Value.class, "onderwerp", Value::onderwerp);
+        field(Value.class, "subject", Value::subject);
         field(Value.class, "attribute", Value::attribute);
         field(Value.class, "writer", Value::writer);
         field(Value.class, "value", Value::value);
-        field(State.class, "onderwerp", State::onderwerp);
+        field(State.class, "subject", State::subject);
         field(State.class, "attribute", State::attribute);
         field(State.class, "value", State::value);
-        field(CharacteristicState.class, "onderwerp", CharacteristicState::onderwerp);
+        field(CharacteristicState.class, "subject", CharacteristicState::subject);
         field(CharacteristicState.class, "characteristic", CharacteristicState::characteristic);
         field(CharacteristicState.class, "holds", CharacteristicState::holds);
-        field(HasCharacteristic.class, "onderwerp", HasCharacteristic::onderwerp);
+        field(HasCharacteristic.class, "subject", HasCharacteristic::subject);
         field(HasCharacteristic.class, "characteristic", HasCharacteristic::characteristic);
-        field(BucketInput.class, "onderwerp", BucketInput::onderwerp);
+        field(BucketInput.class, "subject", BucketInput::subject);
         field(BucketInput.class, "attribute", BucketInput::attribute);
-        field(PathState.class, "onderwerp", PathState::onderwerp);
+        field(PathState.class, "subject", PathState::subject);
         field(PathState.class, "path", PathState::path);
         field(PathState.class, "member", PathState::member);
         field(PathState.class, "value", PathState::value);
         field(ParameterState.class, "parameter", ParameterState::parameter);
         field(ParameterState.class, "value", ParameterState::value);
         field(EvaluationDate.class, "date", EvaluationDate::date);
-        field(ChannelState.class, "regel", ChannelState::regel);
+        field(ChannelState.class, "rule", ChannelState::rule);
         field(ChannelState.class, "inconsistent", ChannelState::inconsistent);
         field(CreationPhase.class, "number", CreationPhase::number);
         field(CreationPhase.class, "stratum", CreationPhase::stratum);
         field(Contribution.class, "fold", Contribution::fold);
-        field(Contribution.class, "onderwerp", Contribution::onderwerp);
+        field(Contribution.class, "subject", Contribution::subject);
         field(Contribution.class, "value", Contribution::value);
         field(FilterFault.class, "fold", FilterFault::fold);
-        field(FilterFault.class, "onderwerp", FilterFault::onderwerp);
+        field(FilterFault.class, "subject", FilterFault::subject);
         field(FilterDeposit.class, "fold", FilterDeposit::fold);
-        field(FilterDeposit.class, "onderwerp", FilterDeposit::onderwerp);
+        field(FilterDeposit.class, "subject", FilterDeposit::subject);
         field(MemberFault.class, "fold", MemberFault::fold);
-        field(MemberFault.class, "onderwerp", MemberFault::onderwerp);
+        field(MemberFault.class, "subject", MemberFault::subject);
         field(UniquenessKey.class, "uniqueness", UniquenessKey::uniqueness);
         field(UniquenessKey.class, "element", UniquenessKey::element);
         field(UniquenessViolation.class, "uniqueness", UniquenessViolation::uniqueness);
         field(UniquenessViolation.class, "element", UniquenessViolation::element);
         field(Recipient.class, "allocation", Recipient::allocation);
         field(Recipient.class, "source", Recipient::source);
-        field(CreationStamp.class, "regel", CreationStamp::regel);
-        field(CreationStamp.class, "onderwerp", CreationStamp::onderwerp);
+        field(CreationStamp.class, "rule", CreationStamp::rule);
+        field(CreationStamp.class, "subject", CreationStamp::subject);
         field(CreationStamp.class, "object", CreationStamp::object);
-        field(Fault.class, "regel", Fault::regel);
-        field(Fault.class, "onderwerp", Fault::onderwerp);
+        field(Fault.class, "rule", Fault::rule);
+        field(Fault.class, "subject", Fault::subject);
         field(RelationLink.class, "relation", RelationLink::relation);
         field(RelationLink.class, "first", RelationLink::first);
         field(RelationLink.class, "second", RelationLink::second);
         field(ListPlace.class, "field", ListPlace::field);
         field(ListPlace.class, "place", ListPlace::place);
-        field(Decides.class, "onderwerp", Decides::onderwerp);
+        field(Decides.class, "subject", Decides::subject);
         field(Decides.class, "stack", Decides::stack);
         field(Decides.class, "index", Decides::index);
-        field(Outcome.class, "onderwerp", Outcome::onderwerp);
+        field(Outcome.class, "subject", Outcome::subject);
         field(Outcome.class, "stack", Outcome::stack);
         field(Outcome.class, "chain", Outcome::chain);
         field(Outcome.class, "position", Outcome::position);
@@ -776,19 +776,19 @@ final class PatternDslRendering {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> void field(Class<T> javaClass, String naam, Function1<T, Object> reader) {
-        FIELDS.computeIfAbsent(javaClass, k -> new HashMap<>()).put(naam, (Function1<Object, Object>) (Function1<?, ?>) reader);
+    private static <T> void field(Class<T> javaClass, String name, Function1<T, Object> reader) {
+        FIELDS.computeIfAbsent(javaClass, k -> new HashMap<>()).put(name, (Function1<Object, Object>) (Function1<?, ?>) reader);
     }
 
     /** The read of field {@code naam} of an object of {@code javaClass}: a component of a fact of the branch, or a bean
      *  property, read through the getter the bean generator wrote for it. */
-    private static Function1<Object, Object> field(Class<?> javaClass, String naam) {
+    private static Function1<Object, Object> field(Class<?> javaClass, String name) {
         if (javaClass.getPackageName().equals(PatternDslRendering.class.getPackageName())) {
-            Function1<Object, Object> f = FIELDS.getOrDefault(javaClass, Map.of()).get(naam);
-            if (f == null) throw new IllegalStateException("geen lezer voor het veld " + naam + " van " + javaClass.getSimpleName());
+            Function1<Object, Object> f = FIELDS.getOrDefault(javaClass, Map.of()).get(name);
+            if (f == null) throw new IllegalStateException("geen lezer voor het veld " + name + " van " + javaClass.getSimpleName());
             return f;
         }
-        Function<Object, Object> getter = Accessors.eigenschapGetter(javaClass, naam);
+        Function<Object, Object> getter = Accessors.eigenschapGetter(javaClass, name);
         return getter::apply;
     }
 

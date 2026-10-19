@@ -114,8 +114,8 @@ class CountEnumeratedTest {
                 De zwaarste post van een Jutter moet berekend worden als de maximale waarde van de gewogen vangst van de Jutter en de gewogen bijvangst van de Jutter.
         """;
 
-    private static List<Diagnostic> wf037(String regels) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regels);
+    private static List<Diagnostic> wf037(String rules) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + rules);
         return m.diagnostics.stream().filter(d -> d.message().contains("has no LISTED form")).toList();
     }
 
@@ -174,7 +174,7 @@ class CountEnumeratedTest {
         // in the four corpus zones and every rgs golden that counts writes this shape.
         RegelSpraakModel m = Resolver.resolve(MODEL + ORDINARY_COUNT);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek op de gewone telling: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRules.get(0).value();
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
         assertEquals(1, f.arguments().size());
         assertNotNull(f.elementObjectType(), "de gewone telling bindt geen elementtype meer");
@@ -186,7 +186,7 @@ class CountEnumeratedTest {
         // same two operands, a different kind.
         RegelSpraakModel m = Resolver.resolve(MODEL + ENUMERATED_VALUE_FOLD);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek op de waardevouw: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRules.get(0).value();
         assertEquals(Expr.FunctionKind.MAXIMUM, f.kind());
         assertEquals(2, f.arguments().size(), "de opgesomde waardevouw verloor haar operandenlijst");
     }

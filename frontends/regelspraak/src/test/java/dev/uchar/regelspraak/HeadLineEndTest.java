@@ -31,15 +31,15 @@ class HeadLineEndTest {
         return m;
     }
 
-    private static String extension(String member, String regel) {
-        return VONDST + "Extensie van objecttype de Vondst\n    " + member + "\n\n" + regel;
+    private static String extension(String member, String rule) {
+        return VONDST + "Extensie van objecttype de Vondst\n    " + member + "\n\n" + rule;
     }
 
     private static final String ABOVE_THE_MAAT = "Regel kenmerk\n    geldig altijd\n        Een Vondst heeft boven de maat\n"
             + "        indien zijn gewicht groter is dan 10.\n";
 
     private static void onlyVondst(RegelSpraakModel m) {
-        assertEquals(List.of("Vondst"), List.copyOf(m.objecttypen.keySet()));
+        assertEquals(List.of("Vondst"), List.copyOf(m.objectTypes.keySet()));
     }
 
     // ---- the four forms of the reproduction
@@ -49,7 +49,7 @@ class HeadLineEndTest {
         // direct na 'boven'; een lid begint op een eigen regel — …", and a second object type 'Vondst boven'
         RegelSpraakModel m = clean(extension("boven de maat kenmerk (bezittelijk);", ABOVE_THE_MAAT));
         onlyVondst(m);
-        assertTrue(m.objecttypen.get("Vondst").kenmerken.contains("boven de maat"));
+        assertTrue(m.objectTypes.get("Vondst").characteristics.contains("boven de maat"));
     }
 
     @Test void e1_f8_a_characteristic_of_two_words_after_an_extension_head() {
@@ -58,7 +58,7 @@ class HeadLineEndTest {
         RegelSpraakModel m = clean(extension("zwaar gewogen kenmerk (bezittelijk);", "Regel kenmerk\n    geldig altijd\n"
                 + "        Een Vondst heeft zwaar gewogen\n        indien zijn gewicht groter is dan 10.\n"));
         onlyVondst(m);
-        assertTrue(m.objecttypen.get("Vondst").kenmerken.contains("zwaar gewogen"));
+        assertTrue(m.objectTypes.get("Vondst").characteristics.contains("zwaar gewogen"));
     }
 
     @Test void e1_f10_an_attribute_without_article_after_an_extension_head() {
@@ -67,7 +67,7 @@ class HeadLineEndTest {
         RegelSpraakModel m = clean(extension("laatste vinddag Datum in dagen;", "Regel laatste vinddag\n    geldig altijd\n"
                 + "        De laatste vinddag van een Vondst moet gesteld worden op 01-03-2026.\n"));
         onlyVondst(m);
-        assertNotNull(m.objecttypen.get("Vondst").attribute("laatste vinddag"));
+        assertNotNull(m.objectTypes.get("Vondst").attribute("laatste vinddag"));
     }
 
     @Test void o2_f6_a_characteristic_after_an_object_type_head_without_plural() {
@@ -76,7 +76,7 @@ class HeadLineEndTest {
                 + "\n\nRegel kenmerk\n    geldig altijd\n        Een Vondst is boven de maat\n"
                 + "        indien zijn gewicht groter is dan 10.\n");
         onlyVondst(m);
-        assertTrue(m.objecttypen.get("Vondst").kenmerken.contains("boven de maat"));
+        assertTrue(m.objectTypes.get("Vondst").characteristics.contains("boven de maat"));
     }
 
     // ---- what stays as it was
@@ -84,22 +84,22 @@ class HeadLineEndTest {
     @Test void e1_f4_f9_f11_and_a_head_with_plural_stay() {
         assertTrue(clean(extension("is boven de maat kenmerk (bijvoeglijk);", "Regel kenmerk\n    geldig altijd\n"
                 + "        Een Vondst is boven de maat\n        indien zijn gewicht groter is dan 10.\n"))
-                .objecttypen.get("Vondst").kenmerken.contains("boven de maat"));
+                .objectTypes.get("Vondst").characteristics.contains("boven de maat"));
         assertTrue(clean(extension("de boven de maat kenmerk (bezittelijk);", "Regel kenmerk\n    geldig altijd\n"
                 + "        Een Vondst heeft de boven de maat\n        indien zijn gewicht groter is dan 10.\n"))
-                .objecttypen.get("Vondst").kenmerken.contains("boven de maat"));
+                .objectTypes.get("Vondst").characteristics.contains("boven de maat"));
         assertNotNull(clean(extension("de laatste vinddag Datum in dagen;", "Regel laatste vinddag\n    geldig altijd\n"
                 + "        De laatste vinddag van een Vondst moet gesteld worden op 01-03-2026.\n"))
-                .objecttypen.get("Vondst").attribute("laatste vinddag"));
+                .objectTypes.get("Vondst").attribute("laatste vinddag"));
         assertTrue(clean("Objecttype de Vondst (mv: Vondsten)\n    boven de maat kenmerk;\n    het gewicht Numeriek "
                 + "(geheel getal);\n\nRegel kenmerk\n    geldig altijd\n        Een Vondst is boven de maat\n"
-                + "        indien zijn gewicht groter is dan 10.\n").objecttypen.get("Vondst").kenmerken.contains("boven de maat"));
+                + "        indien zijn gewicht groter is dan 10.\n").objectTypes.get("Vondst").characteristics.contains("boven de maat"));
     }
 
     @Test void a_word_on_the_line_of_the_head_stays_with_the_name() {
         // the behaviour of the names in declaration heads: prepositions on the head's own line are name words
         RegelSpraakModel m = clean("Objecttype de Vondst bij eb\n    de waarde Numeriek (geheel getal);\n");
-        assertEquals(List.of("Vondst bij eb"), List.copyOf(m.objecttypen.keySet()));
+        assertEquals(List.of("Vondst bij eb"), List.copyOf(m.objectTypes.keySet()));
     }
 
     @Test void a_member_on_the_line_of_the_head_stays_refused() {

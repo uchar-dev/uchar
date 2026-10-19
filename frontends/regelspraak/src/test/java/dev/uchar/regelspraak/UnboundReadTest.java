@@ -330,9 +330,9 @@ class UnboundReadTest {
         RegelSpraakModel m = Resolver.resolve(source);
         // no refusal; the WARNING that names both readings (maintainer decision 2026-10-01) is DoubleReadingTest's
         assertEquals(List.of(), m.errors());
-        Expr.AttributeReference a = (Expr.AttributeReference) ((Expr.Binary) m.resolvedRegels.get(0).value()).left();
+        Expr.AttributeReference a = (Expr.AttributeReference) ((Expr.Binary) m.resolvedRules.get(0).value()).left();
         assertEquals("premie van de jutter", a.attribute());
-        assertEquals("Vondst", a.objectType().naam);
+        assertEquals("Vondst", a.objectType().name);
         assertNull(a.navigationRole());
     }
 

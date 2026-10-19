@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.transpiler.core;
 
 import dev.uchar.regelspraak.ir.Condition;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 /**
  * The GASTHEER test of a characteristic check (WF-109, {@code spec/IR-SPEC.md} ch. 4.6 (q2);
@@ -25,8 +25,8 @@ public final class Host {
 
     /** Whether {@code subject}'s pattern hosts {@code k} — true when the host is absent (the check is
      *  unconstrained and rides whatever pattern carries the condition) or when {@code subject ⊑ host}. */
-    public static boolean hostOp(Condition.CharacteristicCheck k, Objecttype subject) {
-        Objecttype host = k.owner();
+    public static boolean hostOp(Condition.CharacteristicCheck k, ObjectType subject) {
+        ObjectType host = k.owner();
         if (host == null) return true;
         return subject != null && subject.chain().contains(host);
     }
@@ -56,22 +56,22 @@ public final class Host {
      *  navigating check. Measured 2026-09-23: a composite whose checks were all hosted on the doel's supertype was
      *  refused by the verifier, {@code ref}, clingo and the exec-model branch, and PLAYED by the DRL-text branch,
      *  which inlines a composite on the doel pattern. */
-    public static boolean targetHostOutsideRange(Condition guard, Objecttype target,
+    public static boolean targetHostOutsideRange(Condition guard, ObjectType target,
             java.util.function.Predicate<Condition.CharacteristicCheck> navigated) {
         if (guard instanceof Condition.CharacteristicCheck k && !navigated.test(k)) return false;
         return namesTargetHost(guard, target);
     }
 
-    private static boolean namesTargetHost(Condition c, Objecttype target) {
+    private static boolean namesTargetHost(Condition c, ObjectType target) {
         if (c instanceof Condition.CharacteristicCheck k) return k.owner() != null && hostOp(k, target);
         if (c instanceof Condition.Compound s) return s.components().stream().anyMatch(d -> namesTargetHost(d, target));
         return false;
     }
 
     private static boolean carriesWholePeriod(Condition c) {
-        if (c instanceof Condition.Comparison v) return v.periode() != null;
-        if (c instanceof Condition.Predicate p) return p.periode() != null;
-        if (c instanceof Condition.CharacteristicCheck k) return k.periode() != null;
+        if (c instanceof Condition.Comparison v) return v.period() != null;
+        if (c instanceof Condition.Predicate p) return p.period() != null;
+        if (c instanceof Condition.CharacteristicCheck k) return k.period() != null;
         if (c instanceof Condition.Compound s) return s.components().stream().anyMatch(Host::carriesWholePeriod);
         if (c instanceof Condition.QuantifierFold kv) return carriesWholePeriod(kv.filter()) || carriesWholePeriod(kv.test());
         return false;

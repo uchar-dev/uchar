@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.ir;
 
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 import java.util.List;
 
@@ -28,14 +28,14 @@ import java.util.List;
  * the scope relation is uniquely derivable) is the symbolic form of {@code scopeField}: the fact type
  * and the (declared) scope-parent role — the reference field's relation, made explicit on the wire.
  */
-public record ResolvedUniqueness(String naam, Objecttype subject, List<String> keys, String scopeField,
+public record ResolvedUniqueness(String name, ObjectType subject, List<String> keys, String scopeField,
                                 Source source, Validity validity,
                                 RegelSpraakModel.RoleBindingRef scopeBinding) {
 
     /** The v0 form without the symbolic scope binding (a global uniqueness, or a scope whose
      *  relation is not uniquely derivable — the extension field then stays absent). */
-    public ResolvedUniqueness(String naam, Objecttype subject, List<String> keys, String scopeField,
+    public ResolvedUniqueness(String name, ObjectType subject, List<String> keys, String scopeField,
                              Source source, Validity validity) {
-        this(naam, subject, keys, scopeField, source, validity, null);
+        this(name, subject, keys, scopeField, source, validity, null);
     }
 }

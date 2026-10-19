@@ -15,25 +15,25 @@ import java.util.Objects;
  *
  * <p>{@code path} names the subject type and the reference fields the path walks; the subject is compared by identity.
  */
-public record PathState(Object onderwerp, String path, ElementKey member, Object value) {
+public record PathState(Object subject, String path, ElementKey member, Object value) {
 
     public PathState {
-        Objects.requireNonNull(onderwerp, "onderwerp");
+        Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(path, "pad");
         Objects.requireNonNull(member, "lid");
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof PathState p && p.onderwerp == onderwerp && p.path.equals(path) && p.member.equals(member)
+        return o instanceof PathState p && p.subject == subject && p.path.equals(path) && p.member.equals(member)
                 && Objects.equals(p.value, value);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(System.identityHashCode(onderwerp), path, member, value);
+        return Objects.hash(System.identityHashCode(subject), path, member, value);
     }
 
     @Override public String toString() {
-        return "PadStand(" + FactNames.object(onderwerp) + ", " + path + ", " + FactNames.member(member) + ", "
+        return "PadStand(" + FactNames.object(subject) + ", " + path + ", " + FactNames.member(member) + ", "
                 + (value == null ? "afwezig of leeg" : value) + ")";
     }
 }

@@ -141,7 +141,7 @@ class TmsConditionFaultWitnessTest {
     private static final String DEELNEMERS = TmsDocuments.root(ownRead("opbrengst", "Vondst"), "de wortel van zijn opbrengst");
 
     /** One document per kind of form with a condition: its name, its rules and its consistencies. */
-    record Form(String naam, List<String> rules, List<String> consistencies) {}
+    record Form(String name, List<String> rules, List<String> consistencies) {}
 
     static final List<Form> FORMS = List.of(
             new Form("zwaarte", List.of(ERKENNING, characteristicRule("zwaarte", "Vondst", "zwaar",
@@ -160,8 +160,8 @@ class TmsConditionFaultWitnessTest {
                 List.of(consistent()));
     }
 
-    private static String message(String regel) {
-        return "ComputeFault: " + TmsDocuments.irrational(regel, "2");
+    private static String message(String rule) {
+        return "ComputeFault: " + TmsDocuments.irrational(rule, "2");
     }
 
     @Test void a_persistent_fault_in_a_condition_gives_in_every_order_the_message_of_the_exec_model_branch()
@@ -170,10 +170,10 @@ class TmsConditionFaultWitnessTest {
         for (Form v : FORMS) {
             for (List<String> order : TmsDocuments.permutations(v.rules())) {
                 List<String> names = TmsDocuments.ruleNames(order);
-                outcomes.add(v.naam() + " " + names + " " + TmsFaultWitnessTest.play(
+                outcomes.add(v.name() + " " + names + " " + TmsFaultWitnessTest.play(
                         TmsDocuments.document(MODEL, order, v.consistencies()), persistentCase(),
                         DroolsBackend.Branch.EXEC_MODEL));
-                expected.add(v.naam() + " " + names + " " + message(v.naam()));
+                expected.add(v.name() + " " + names + " " + message(v.name()));
             }
         }
         assertEquals(expected, outcomes);
@@ -193,7 +193,7 @@ class TmsConditionFaultWitnessTest {
                 Object v1 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("opbrengst", "2"), List.of("gemeld"));
                 outcomes.add(names + " " + TmsFaultWitnessTest.fire(b, order, List.of(v1),
                         new DefaultAgendaEventListener() {}, new TmsFaultWitnessTest.FaultFacts()));
-                expected.add(names + " " + message(v.naam()));
+                expected.add(names + " " + message(v.name()));
             }
         }
         assertEquals(expected, outcomes);

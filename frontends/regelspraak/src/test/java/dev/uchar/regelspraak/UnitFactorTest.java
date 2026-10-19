@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *   <li>SIX refusals, one per shape a mismatch can take, each carrying BOTH unit names in its
  *       message — a fault a reader can act on rather than a bare stack trace;</li>
- *   <li>the wire-shape guard ({@code canoniek} filled, {@code factorNaarCanoniek} absent — a shape
+ *   <li>the wire-shape guard ({@code canoniek} filled, {@code factorToCanonical} absent — a shape
  *       the schema admits and the outer convertibility gate lets through) plus the absent target;</li>
  *   <li>what the card deliberately leaves alone: the three surviving factors, and the predicate
  *       {@code requiredConversion}, which stays FALSE on every mismatch. Eight transpiler sites ask

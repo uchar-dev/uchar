@@ -113,7 +113,7 @@ class PreRoundedFactorWitnessTest {
                 + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[]},\"diagnostics\":[]}").formatted(objectType, system, units,
-                regel(sum, addition), regel(rounded, rounding));
+                rule(sum, addition), rule(rounded, rounding));
         Path tmp = Files.createTempFile("voorafgeronde-factor", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, doc);
@@ -136,8 +136,8 @@ class PreRoundedFactorWitnessTest {
                 .formatted(whole, decimals, unit);
     }
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(name, datatype);
     }
 
     private static String ownRead(String attribute) {
@@ -145,8 +145,8 @@ class PreRoundedFactorWitnessTest {
                 .formatted(attribute, attribute);
     }
 
-    private static String regel(String target, String value) {
-        return IrPath.regel(target, "BEREKENING", ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
+    private static String rule(String target, String value) {
+        return IrPath.rule(target, "BEREKENING", ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"De %s van een Jutter\"}}").formatted(target, target), value, "null");
     }
 

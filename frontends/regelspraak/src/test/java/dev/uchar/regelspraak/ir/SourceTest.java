@@ -33,9 +33,9 @@ class SourceTest {
     @Test void resolvedFormCarriesFileLineColumn() {
         RegelSpraakModel m = Resolver.resolve(SRC, "Jutterswet.rgs");
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        assertEquals(1, m.resolvedRegels.size());
+        assertEquals(1, m.resolvedRules.size());
 
-        ResolvedRule rr = m.resolvedRegels.get(0);
+        ResolvedRule rr = m.resolvedRules.get(0);
         Source source = rr.target().source();
         assertNotNull(source, "doel draagt geen Bron");
         assertEquals("Jutterswet.rgs", source.file(), "de bestandsnaam moet doorgegeven zijn");
@@ -50,7 +50,7 @@ class SourceTest {
         RegelSpraakModel m = Resolver.resolve(SRC, "Jutterswet.rgs");
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
 
-        ResolvedRule rr = m.resolvedRegels.get(0);
+        ResolvedRule rr = m.resolvedRules.get(0);
         assertTrue(rr.statuteAnnotations().contains("art. 3 Jutterswet"),
                 () -> "verwachtte de // Bron:-annotatie boven de regel, kreeg: " + rr.statuteAnnotations());
     }
@@ -66,6 +66,6 @@ class SourceTest {
                     De uitkomst van een Som moet gesteld worden op het bedrag van een Som.
             """;
         RegelSpraakModel m = Resolver.resolve(src, "Jutterswet.rgs");
-        assertTrue(m.resolvedRegels.get(0).statuteAnnotations().isEmpty(), "geen annotatie -> lege lijst");
+        assertTrue(m.resolvedRules.get(0).statuteAnnotations().isEmpty(), "geen annotatie -> lege lijst");
     }
 }

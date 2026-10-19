@@ -43,17 +43,17 @@ class VocabularyWitnessTest {
         assertEquals(List.of(new RegelSpraakModel.Vocabulary("handboek", false, "nl"),
                 new RegelSpraakModel.Vocabulary("cgm", true, "nl")), m.vocabularies);
         Designatable amount = Designatable.attribute("Jutter", "vondstbedrag");
-        assertEquals(Optional.of("totale premie"), m.benaming("handboek", amount));
-        assertEquals(Optional.of("VONDST_BEDRAG"), m.benaming("CGM", amount));   // a vocabulary by name, ci
-        assertEquals(Optional.of("amber"), m.benaming("handboek", Designatable.enumerationValue("Vondstsoort", "barnsteen")));
-        assertEquals(Optional.of("R_PREMIE_VONDST"), m.benaming("cgm", Designatable.form("premie van een vondst")));
-        assertEquals(Optional.of("PREMIEBEREKENING"), m.benaming("cgm", Designatable.ruleGroup("premieberekening")));
-        assertEquals(Optional.of("GEMELDE_VONDST"), m.benaming("cgm", Designatable.role("vondstaanmelding", "vondst")));
-        assertEquals(Optional.empty(), m.benaming("wet", amount));
+        assertEquals(Optional.of("totale premie"), m.designation("handboek", amount));
+        assertEquals(Optional.of("VONDST_BEDRAG"), m.designation("CGM", amount));   // a vocabulary by name, ci
+        assertEquals(Optional.of("amber"), m.designation("handboek", Designatable.enumerationValue("Vondstsoort", "barnsteen")));
+        assertEquals(Optional.of("R_PREMIE_VONDST"), m.designation("cgm", Designatable.form("premie van een vondst")));
+        assertEquals(Optional.of("PREMIEBEREKENING"), m.designation("cgm", Designatable.ruleGroup("premieberekening")));
+        assertEquals(Optional.of("GEMELDE_VONDST"), m.designation("cgm", Designatable.role("vondstaanmelding", "vondst")));
+        assertEquals(Optional.empty(), m.designation("wet", amount));
         // every designatable declaration of the golden, each named in the default vocabulary (WF-119)
         List<Designatable> all = m.designatable();
         assertEquals(23, all.size());
-        for (Designatable b : all) assertTrue(m.benaming("cgm", b).isPresent(), () -> "geen cgm-benaming op " + b);
+        for (Designatable b : all) assertTrue(m.designation("cgm", b).isPresent(), () -> "geen cgm-benaming op " + b);
     }
 
     @Test void the_effective_name_goes_back_to_its_declaration() throws Exception {

@@ -12,16 +12,16 @@ import java.util.Objects;
  * fixpoint ({@code DroolsBackend.setDerivedValues}), so a fault, like a value, is a property of the fixpoint
  * (ch. 5.2).
  *
- * <p>{@code regel} is the name of the form that raised the fault, and {@code fault} the fault named as the exec-model
+ * <p>{@code rule} is the name of the form that raised the fault, and {@code fault} the fault named as the exec-model
  * branch names it out of its fire: the rule and the operands. Compared as the other facts of the branch are: the subject
  * by identity, the form, the kind of fault and its sentence by value, so that two activations that raise the same fault
  * on one object merge into one fact with a justification each.
  */
-public record Fault(Object onderwerp, String regel, RuntimeException fault) {
+public record Fault(Object subject, String rule, RuntimeException fault) {
 
     public Fault {
-        Objects.requireNonNull(onderwerp, "onderwerp");
-        Objects.requireNonNull(regel, "regel");
+        Objects.requireNonNull(subject, "subject");
+        Objects.requireNonNull(rule, "rule");
         Objects.requireNonNull(fault, "fout");
         Objects.requireNonNull(fault.getMessage(), "de zin van de fout");
     }
@@ -32,15 +32,15 @@ public record Fault(Object onderwerp, String regel, RuntimeException fault) {
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof Fault f && f.onderwerp == onderwerp && f.regel.equals(regel)
+        return o instanceof Fault f && f.subject == subject && f.rule.equals(rule)
                 && f.fault.getClass() == fault.getClass() && f.message().equals(message());
     }
 
     @Override public int hashCode() {
-        return Objects.hash(System.identityHashCode(onderwerp), regel, fault.getClass().getName(), message());
+        return Objects.hash(System.identityHashCode(subject), rule, fault.getClass().getName(), message());
     }
 
     @Override public String toString() {
-        return "Fout(" + FactNames.object(onderwerp) + ", " + regel + ", " + message() + ")";
+        return "Fout(" + FactNames.object(subject) + ", " + rule + ", " + message() + ")";
     }
 }

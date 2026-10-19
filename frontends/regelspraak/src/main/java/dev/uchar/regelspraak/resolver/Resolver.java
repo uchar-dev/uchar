@@ -96,7 +96,7 @@ public final class Resolver {
             m.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-092", params("reason", reason, "expression", sourceText),
                     sourceText == null ? 0 : sourceText.line()));
         };
-        for (var r : m.resolvedRegels) {
+        for (var r : m.resolvedRules) {
             Expr.collectUnresolved(r.target(), report);
             Expr.collectUnresolved(r.value(), report);
             Condition.collectUnresolved(r.condition(), report);
@@ -107,7 +107,7 @@ public final class Resolver {
             Condition.collectUnresolved(oc.condition(), report);
         }
         for (var v : m.allocations)  Condition.collectUnresolved(v.condition(), report);
-        for (var c : m.consistenties) Condition.collectUnresolved(c.assertie(), report);
+        for (var c : m.consistencies) Condition.collectUnresolved(c.assertion(), report);
         for (var fc : m.factCreations) Condition.collectUnresolved(fc.condition(), report);
         java.util.Set<Condition> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         for (var pd : m.prioritizedDefaults) reportDefaults(pd.defaults(), report, seen);
@@ -212,7 +212,7 @@ public final class Resolver {
         java.nio.file.Files.writeString(out, dev.uchar.regelspraak.emit.IrEmitter.emit(m),
                 java.nio.charset.StandardCharsets.UTF_8);
         System.out.printf("ir: objecttypen=%d feittypen=%d resolvedRegels=%d geschreven naar %s%n",
-                m.objecttypen.size(), m.feittypen.size(), m.resolvedRegels.size(), out);
+                m.objectTypes.size(), m.factTypes.size(), m.resolvedRules.size(), out);
         return 0;
     }
 
@@ -228,12 +228,12 @@ public final class Resolver {
         StringBuilder sourceText = new StringBuilder();
         java.util.List<String> files = rest.subList(1, rest.size());
         java.util.List<Integer> firstLines = new java.util.ArrayList<>();
-        int regel = 1;
+        int lineNumber = 1;
         for (String f : files) {
-            String tekst = java.nio.file.Files.readString(java.nio.file.Path.of(f));
-            firstLines.add(regel);
-            sourceText.append(tekst).append('\n');
-            regel += (int) (tekst + '\n').chars().filter(c -> c == '\n').count();
+            String text = java.nio.file.Files.readString(java.nio.file.Path.of(f));
+            firstLines.add(lineNumber);
+            sourceText.append(text).append('\n');
+            lineNumber += (int) (text + '\n').chars().filter(c -> c == '\n').count();
         }
         ScenarioResolver.ScenarioBundle b = ScenarioResolver.resolve(sourceText.toString());
         RegelSpraakModel m = b.model();
@@ -286,7 +286,7 @@ public final class Resolver {
             java.nio.file.Files.writeString(map.resolve(e.getKey()), e.getValue(), java.nio.charset.StandardCharsets.UTF_8);
         java.nio.file.Files.writeString(out, ir, java.nio.charset.StandardCharsets.UTF_8);
         System.out.printf("cases: %d casebestand(en) naar %s (%s); ir: resolvedRegels=%d geschreven naar %s%n",
-                cases.size(), map, String.join(", ", cases.keySet()), irModel.resolvedRegels.size(), out);
+                cases.size(), map, String.join(", ", cases.keySet()), irModel.resolvedRules.size(), out);
         return 0;
     }
 

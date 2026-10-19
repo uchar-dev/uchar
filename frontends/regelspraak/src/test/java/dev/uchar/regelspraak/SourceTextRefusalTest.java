@@ -37,8 +37,8 @@ class SourceTextRefusalTest {
     private static RegelSpraakModel withValue(java.util.function.Function<Expr, Expr> replace) {
         RegelSpraakModel m = Resolver.resolve(SOURCE);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        ResolvedRule r = m.resolvedRegels.get(0);
-        m.resolvedRegels.set(0, new ResolvedRule(r.naam(), r.category(), r.target(), replace.apply(r.value()),
+        ResolvedRule r = m.resolvedRules.get(0);
+        m.resolvedRules.set(0, new ResolvedRule(r.name(), r.category(), r.target(), replace.apply(r.value()),
                 r.condition(), r.validity()));
         return m;
     }

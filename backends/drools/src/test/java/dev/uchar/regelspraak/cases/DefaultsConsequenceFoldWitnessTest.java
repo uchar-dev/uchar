@@ -90,7 +90,7 @@ class DefaultsConsequenceFoldWitnessTest {
         // op de laatste van de bergdag van alle vondsten van de Berging": the marker lifts the initialisation into its
         // group as the lowest default, so the fold is the consequence of the generated group itself. ref and clingo:
         // the values of R3.
-        String computed = regel("sluitdag", "Berging", "berekende sluitdag", own("gemelde sluitdag", "Berging"),
+        String computed = rule("sluitdag", "Berging", "berekende sluitdag", own("gemelde sluitdag", "Berging"),
                 filled(own("gemelde sluitdag", "Berging")), "equation");
         String ir = document(true, List.of(computed, DEVIATING_INPUT), inputGroup(LAST_BERGDAG));
         assertNull(play(ir, caseDocument(situation(true), closingDays("2026-03-09", "2026-03-12", null, "2026-03-20", null,
@@ -229,7 +229,7 @@ class DefaultsConsequenceFoldWitnessTest {
         String init = "{\"node\":\"Rule\",\"name\":\"registratie\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
                 + "\"target\":" + target("uiterste bergdag", "Vondst") + ",\"value\":" + own("bergdag", "Vondst")
                 + ",\"initialisation\":true}]}";
-        String input = regel("opgave", "Vondst", "uiterste bergdag", own("meldingsdag", "Vondst"),
+        String input = rule("opgave", "Vondst", "uiterste bergdag", own("meldingsdag", "Vondst"),
                 filled(own("meldingsdag", "Vondst")), "equation");
         String ir = document(false, List.of(init, input), closingDayGroup("sluitdag",
                 filtered("last", "bergdag", later, "de laatste van de bergdag van alle vondsten van de Berging die …")));
@@ -301,13 +301,13 @@ class DefaultsConsequenceFoldWitnessTest {
     private static final String ALTIJD = "{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,\"parts\":[],"
             + "\"source\":{\"snippet\":\"altijd\"}}";
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
-    private static String objectType(String naam, String plural, List<String> attributes, List<String> kenmerken) {
-        return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":false,\"plural\":\"" + plural
-                + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + String.join(",", kenmerken) + "]}";
+    private static String objectType(String name, String plural, List<String> attributes, List<String> characteristics) {
+        return "{\"node\":\"ObjectType\",\"name\":\"" + name + "\",\"animate\":false,\"plural\":\"" + plural
+                + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + String.join(",", characteristics) + "]}";
     }
 
     /** The Berging; with the opgave marker on its sluitdag, the members the frontend generates for it (§7). */
@@ -327,8 +327,8 @@ class DefaultsConsequenceFoldWitnessTest {
     private static final String STRANDVOOGD = objectType("Strandvoogd", "Strandvoogden", List.of(attribute("sluitingsdatum", DATE)),
             List.of());
 
-    private static String factType(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
-        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
+    private static String factType(String name, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + oneRole + "\",\"objectType\":\"" + oneType + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + manyRole + "\",\"objectType\":\"" + manyType + "\",\"plural\":\"" + manyPlural
                 + "\",\"many\":true}]}";
@@ -387,8 +387,8 @@ class DefaultsConsequenceFoldWitnessTest {
         return "{\"node\":\"Default\",\"justification\":" + justification + ",\"consequence\":" + consequence + "}";
     }
 
-    private static String group(String naam, String type, String attribute, String... defaults) {
-        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type + "\",\"attribute\":\""
+    private static String group(String name, String type, String attribute, String... defaults) {
+        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + name + "\",\"subject\":\"" + type + "\",\"attribute\":\""
                 + attribute + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
@@ -398,8 +398,8 @@ class DefaultsConsequenceFoldWitnessTest {
     }
 
     /** The sluitdag of a Berging: the gemelde sluitdag where filled, above {@code base}. */
-    private static String closingDayGroup(String naam, String base) {
-        return group(naam, "Berging", "sluitdag", reportedPrecedes("sluitdag"), defaultEntry(ALTIJD, base));
+    private static String closingDayGroup(String name, String base) {
+        return group(name, "Berging", "sluitdag", reportedPrecedes("sluitdag"), defaultEntry(ALTIJD, base));
     }
 
     /** The uiterste bergdag of a Vondst: its meldingsdag plus 2 dagen where {@code justification} holds, else its
@@ -414,12 +414,12 @@ class DefaultsConsequenceFoldWitnessTest {
 
     /** The group the opgave marker generates on the sluitdag (§7): the opgave, the computation, and where the author
      *  wrote an initialisation, that initialisation as the lowest default. */
-    private static String inputGroup(String initialisatie) {
+    private static String inputGroup(String initialisation) {
         String opgegeven = "{\"node\":\"Default\",\"justification\":" + ALTIJD + ",\"consequence\":"
                 + own("opgegeven sluitdag", "Berging") + ",\"source\":{\"snippet\":\"opgegeven sluitdag\"}}";
         String computed = "{\"node\":\"Default\",\"justification\":" + ALTIJD + ",\"consequence\":"
                 + own("berekende sluitdag", "Berging") + ",\"source\":{\"snippet\":\"berekende sluitdag\"}}";
-        String init = initialisatie == null ? "" : ",{\"node\":\"Default\",\"consequence\":" + initialisatie
+        String init = initialisation == null ? "" : ",{\"node\":\"Default\",\"consequence\":" + initialisation
                 + ",\"initialisation\":true}";
         return "{\"node\":\"PrioritizedDefaults\",\"name\":\"opgave boven berekening sluitdag\",\"subject\":\"Berging\","
                 + "\"attribute\":\"sluitdag\",\"defaults\":[" + opgegeven + "," + computed + init + "],\"validity\":{\"node\":\"Validity\"}}";
@@ -445,8 +445,8 @@ class DefaultsConsequenceFoldWitnessTest {
             + "{\"node\":\"Validity\"},\"source\":{\"snippet\":\"de sluitdag Datum in dagen (mag opgegeven worden)\"}}]}";
 
     /** An ordinary rule with one version; {@code condition} null for none. */
-    private static String regel(String naam, String type, String target, String value, String condition, String presentation) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
+    private static String rule(String name, String type, String target, String value, String condition, String presentation) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + target(target, type) + ",\"value\":" + value + (condition == null ? "" : ",\"condition\":" + condition)
                 + ",\"initialisation\":false,\"presentation\":\"" + presentation + "\"}]}";
     }

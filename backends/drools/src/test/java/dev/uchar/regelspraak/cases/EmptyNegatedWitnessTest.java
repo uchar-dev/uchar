@@ -232,14 +232,14 @@ class EmptyNegatedWitnessTest {
     private static JsonNode mirrored(JsonNode c) {
         ObjectNode out = c.deepCopy();
         ArrayNode rows = (ArrayNode) out.get("expected");
-        JsonNode waarden = JSON.createObjectNode()
+        JsonNode values = JSON.createObjectNode()
                 .set("meldpremie", JSON.createObjectNode().put("number", "40"));
-        ((ObjectNode) waarden).set("werfpremie", JSON.createObjectNode().put("number", "25"));
+        ((ObjectNode) values).set("werfpremie", JSON.createObjectNode().put("number", "25"));
         for (JsonNode row : rows) {
             ObjectNode r = (ObjectNode) row;
             switch (r.get("kind").asText()) {
                 case "attributeValue" -> { r.put("kind", "attributeEmpty"); r.remove("value"); }
-                case "attributeEmpty" -> { r.put("kind", "attributeValue"); r.set("value", waarden.get(r.get("attribute").asText())); }
+                case "attributeEmpty" -> { r.put("kind", "attributeValue"); r.set("value", values.get(r.get("attribute").asText())); }
                 case "characteristicPresent" -> r.put("kind", "characteristicAbsent");
                 case "characteristicAbsent" -> r.put("kind", "characteristicPresent");
                 case "consistent" -> { }

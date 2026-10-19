@@ -87,7 +87,7 @@ class NotInExceptionTest {
         RegelSpraakModel m = Resolver.resolve(family(base, exception));
         assertTrue(m.diagnostics.isEmpty(), () -> form + ": onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(1, m.prioritizedDefaults.size(), "één defaults-groep over basis en uitzondering");
-        assertEquals(0, m.resolvedRegels.size(), "basis en uitzondering horen uit resolvedRegels gelift te zijn");
+        assertEquals(0, m.resolvedRules.size(), "basis en uitzondering horen uit resolvedRegels gelift te zijn");
         PrioritizedDefaults g = m.prioritizedDefaults.get(0);
         assertEquals(characteristic, g.characteristic(), "de ontkenning schrijft het doel van de basis, niet 'niet …'/'geen …'");
         assertEquals(List.of(Boolean.FALSE, Boolean.TRUE), besluiten(g),
@@ -383,8 +383,8 @@ class NotInExceptionTest {
                     indien hij geschorst is.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertEquals(1, m.resolvedRegels.size());
-        Expr.AttributeReference target = (Expr.AttributeReference) m.resolvedRegels.get(0).target();
+        assertEquals(1, m.resolvedRules.size());
+        Expr.AttributeReference target = (Expr.AttributeReference) m.resolvedRules.get(0).target();
         assertEquals("niet erkend", target.attribute());
     }
 
@@ -574,7 +574,7 @@ class NotInExceptionTest {
         RegelSpraakModel m = Resolver.resolve(CHAIN + JUTTER_TRUE_GROUP + STRANDJUTTER_FALSE_GROUP);
         assertTrue(m.diagnostics.isEmpty(), () -> "geen waarschuwing in een erflijn met een groep: " + m.diagnostics);
         assertEquals(List.of("Jutter", "Strandjutter"),
-                m.prioritizedDefaults.stream().map(PrioritizedDefaults::onderwerp).toList());
+                m.prioritizedDefaults.stream().map(PrioritizedDefaults::subject).toList());
         assertEquals(List.of(Boolean.TRUE, Boolean.TRUE), besluiten(m.prioritizedDefaults.get(0)));
         assertEquals(List.of(Boolean.FALSE, Boolean.FALSE), besluiten(m.prioritizedDefaults.get(1)));
     }
@@ -613,7 +613,7 @@ class NotInExceptionTest {
             RegelSpraakModel m = Resolver.resolve(src);
             assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
             assertEquals(1, m.prioritizedDefaults.size());
-            assertEquals(1, m.resolvedRegels.size(), "de gewone kenmerkregel blijft een regel");
+            assertEquals(1, m.resolvedRules.size(), "de gewone kenmerkregel blijft een regel");
         }
     }
 

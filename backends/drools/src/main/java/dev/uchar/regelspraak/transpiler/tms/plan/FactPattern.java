@@ -12,7 +12,7 @@ import java.util.List;
  * reached adds its guard after the constraints that reach it, as a fact creation does on the target of its path
  * ({@code TmsTranspiler.targetGuard}).
  */
-public record FactPattern(Class<?> factClass, String naam, List<Alpha> alpha, List<Join> joins, List<BetaTest> betaTests,
+public record FactPattern(Class<?> factClass, String name, List<Alpha> alpha, List<Join> joins, List<BetaTest> betaTests,
                       List<Alpha> afterAlpha, List<Binding> bindings) implements LhsItem {
 
     public FactPattern {
@@ -24,13 +24,13 @@ public record FactPattern(Class<?> factClass, String naam, List<Alpha> alpha, Li
     }
 
     /** A pattern without constraints on its object after its joins and its other constraints. */
-    public FactPattern(Class<?> factClass, String naam, List<Alpha> alpha, List<Join> joins, List<BetaTest> betaTests,
+    public FactPattern(Class<?> factClass, String name, List<Alpha> alpha, List<Join> joins, List<BetaTest> betaTests,
                    List<Binding> bindings) {
-        this(factClass, naam, alpha, joins, betaTests, List.of(), bindings);
+        this(factClass, name, alpha, joins, betaTests, List.of(), bindings);
     }
 
     /** A pattern without constraints between its object and another pattern's but identity joins. */
-    public FactPattern(Class<?> factClass, String naam, List<Alpha> alpha, List<Join> joins, List<Binding> bindings) {
-        this(factClass, naam, alpha, joins, List.of(), List.of(), bindings);
+    public FactPattern(Class<?> factClass, String name, List<Alpha> alpha, List<Join> joins, List<Binding> bindings) {
+        this(factClass, name, alpha, joins, List.of(), List.of(), bindings);
     }
 }

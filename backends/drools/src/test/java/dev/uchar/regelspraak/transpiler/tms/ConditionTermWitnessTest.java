@@ -105,8 +105,8 @@ class ConditionTermWitnessTest {
                 "drukte WITHOUT_FAULT 0.1.0.0 Call bron 'het aantal vondsten van de Jutter die aan de volgende "
                         + "voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
                 "drukte WITHOUT_FAULT 0.1.0.0.0 SlotValue",
-                "drukte WITHOUT_FAULT 0.1.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD, "
-                        + "eenheid=null] bron '0'",
+                "drukte WITHOUT_FAULT 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD, "
+                        + "unit=null] bron '0'",
                 "drukte WITHOUT_FAULT 0.1.2 Const String",
                 "drukte FAULT: zoals de vorige toets",
                 "drukte DEPOSIT sonde 4: zoals de vorige toets",
@@ -117,8 +117,8 @@ class ConditionTermWitnessTest {
                 "zware vondsten WITHOUT_FAULT 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "zware vondsten WITHOUT_FAULT 0.0.0.0 SlotValue bron 'zijn gewicht'",
                 "zware vondsten WITHOUT_FAULT 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "zware vondsten WITHOUT_FAULT 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, "
-                        + "teken=ONBEPAALD, eenheid=null] bron '2'",
+                "zware vondsten WITHOUT_FAULT 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, "
+                        + "sign=ONBEPAALD, unit=null] bron '2'",
                 "zware vondsten WITHOUT_FAULT 0.0.2 Const String",
                 "zware vondsten FAULT: zoals de vorige toets",
                 "zware vondsten DEPOSIT sonde 2: zoals de vorige toets",
@@ -128,8 +128,8 @@ class ConditionTermWitnessTest {
                 "drukte WITHOUT_FAULT 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
                 "drukte WITHOUT_FAULT 0.0.0.0 SlotValue bron 'zijn gewicht'",
                 "drukte WITHOUT_FAULT 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "drukte WITHOUT_FAULT 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD, "
-                        + "eenheid=null] bron '2'",
+                "drukte WITHOUT_FAULT 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD, "
+                        + "unit=null] bron '2'",
                 "drukte WITHOUT_FAULT 0.0.2 Const String",
                 "drukte FAULT: zoals de vorige toets",
                 "drukte DEPOSIT sonde 2: zoals de vorige toets"), fields(plans));
@@ -178,8 +178,8 @@ class ConditionTermWitnessTest {
                 "maandpremie van een jutter WITHOUT_FAULT 0.0.1 Const String",
                 "maandpremie van een jutter WITHOUT_FAULT 0.0.2 SlotValue",
                 "maandpremie van een jutter WITHOUT_FAULT 0.0.3 Const String",
-                "maandpremie van een jutter WITHOUT_FAULT 0.1 Const BigDecimal type Numeriek[geheel=true, "
-                        + "decimalen=0, teken=ONBEPAALD, eenheid=null] bron '0'",
+                "maandpremie van een jutter WITHOUT_FAULT 0.1 Const BigDecimal type Numeric[wholeNumber=true, "
+                        + "decimals=0, sign=ONBEPAALD, unit=null] bron '0'",
                 "maandpremie van een jutter WITHOUT_FAULT 0.2 Const String",
                 "maandpremie van een jutter WITHOUT_FAULT 0.3 Const Integer",
                 "maandpremie van een jutter WITHOUT_FAULT 0.4 Const Boolean",
@@ -206,7 +206,7 @@ class ConditionTermWitnessTest {
         for (RulePlan p : plans) {
             List<TestItem> tests = tests(p);
             if (tests.isEmpty()) out.add(p.form() + ": geen toets");
-            for (TestItem t : tests) out.add(naam(p, t) + ": " + TermTree.tree(t.test()));
+            for (TestItem t : tests) out.add(name(p, t) + ": " + TermTree.tree(t.test()));
         }
         return out;
     }
@@ -222,15 +222,15 @@ class ConditionTermWitnessTest {
                 List<String> rules = new ArrayList<>();
                 TermTree.fields("", t.test(), "0", rules);
                 if (p.form().equals(previousForm) && rules.equals(previous))
-                    out.add(naam(p, t) + ": zoals de vorige toets");
-                else for (String r : rules) out.add(naam(p, t) + r);
+                    out.add(name(p, t) + ": zoals de vorige toets");
+                else for (String r : rules) out.add(name(p, t) + r);
                 previousForm = p.form();
                 previous = rules;
             }
         return out;
     }
 
-    private static String naam(RulePlan p, TestItem t) {
+    private static String name(RulePlan p, TestItem t) {
         return p.form() + " " + t.role() + (t.depositFlag() < 0 ? "" : " sonde " + t.depositFlag());
     }
 }

@@ -163,8 +163,8 @@ class WholePeriodTargetAttemptWitnessTest {
         return (ObjectNode) JSON.readTree(Files.readString(BASE));
     }
 
-    private static ObjectNode objectType(ObjectNode ir, String naam) {
-        return IrPath.objectType(ir, naam);
+    private static ObjectNode objectType(ObjectNode ir, String name) {
+        return IrPath.objectType(ir, name);
     }
 
     private static void guard(ObjectNode ir, JsonNode g) {

@@ -148,7 +148,7 @@ class ReaderUnderWriterWitnessTest {
         // then "De afgeleide controledag van een Vondst moet gesteld worden op zijn controledag indien de afgeleide
         // vergunningsdag van de jutter van de Vondst leeg is", then the rule that derives the afgeleide vergunningsdag.
         // ref and clingo: V 15-09-2026 (its jutter has a vergunningsdag, so no afgeleide controledag), X leeg.
-        String controledag = regel("afgeleide controledag", "Vondst", "afgeleide controledag", own("controledag"),
+        String controledag = rule("afgeleide controledag", "Vondst", "afgeleide controledag", own("controledag"),
                 predicate("empty", viaJutter("afgeleide vergunningsdag")));
         String ir = document(List.of(outcomeIf(predicate("empty", own("afgeleide controledag"))), controledag,
                 DERIVED_VERGUNNINGSDAG));
@@ -183,7 +183,7 @@ class ReaderUnderWriterWitnessTest {
         String division = "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":" + own("waarde") + ",\"right\":" + own("deler")
                 + ",\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"},"
                 + "\"source\":{\"snippet\":\"zijn waarde gedeeld door zijn deler\"}}";
-        String ir = document(List.of(regel("uitkomstwaarde", "Vondst", "uitkomstwaarde", division,
+        String ir = document(List.of(rule("uitkomstwaarde", "Vondst", "uitkomstwaarde", division,
                 predicate("empty", own("afgeleide registratiedag"))), DERIVED_REGISTRATIEDAG));
         String caseDocument = caseDocument(List.of(vondst("V", "2026-09-15", null,
                         "\"registratiedag\":{\"date\":\"2026-06-01\"},\"waarde\":{\"number\":\"10\"}"),
@@ -198,11 +198,11 @@ class ReaderUnderWriterWitnessTest {
         // "Een Jutter heeft een afrekening met afrekendag gelijk aan zijn uitkomst", "De afrekendag van een Jutter moet
         // gesteld worden op de afrekendag van de afrekening van de Jutter", then the rule that derives the afgeleide
         // vergunningsdag. ref and clingo: J leeg, J2 31-12-2026.
-        String outcome = regel("uitkomst", "Jutter", "uitkomst", dateLiteral("2026-12-31"),
+        String outcome = rule("uitkomst", "Jutter", "uitkomst", dateLiteral("2026-12-31"),
                 predicate("empty", own("afgeleide vergunningsdag", "Jutter")));
         String afrekening = objectCreation("maak een afrekening", "Afrekening", "afrekendag", own("uitkomst", "Jutter"), null,
                 roleBinding("JutterHeeftAfrekening", "afrekening"));
-        String readBack = regel("afrekendag", "Jutter", "afrekendag", navigated("afrekendag", "Afrekening",
+        String readBack = rule("afrekendag", "Jutter", "afrekendag", navigated("afrekendag", "Afrekening",
                 "de afrekendag van de afrekening van de Jutter", roleBinding("JutterHeeftAfrekening", "afrekening")), null);
         String ir = document(List.of(outcome, readBack, DERIVED_VERGUNNINGSDAG), List.of(afrekening), List.of(), List.of());
         String caseDocument = caseDocument(List.of(jutter("J", "2026-03-01", null, ""), jutter("J2", null, null, "")),
@@ -246,7 +246,7 @@ class ReaderUnderWriterWitnessTest {
         // vergunningsdag gevuld is". ref and clingo: J leeg, J2 31-12-2026.
         String afrekening = objectCreation("maak een afrekening", "Afrekening", "afrekendag", own("vergunningsdag", "Jutter"),
                 predicate("filled", own("vergunningsdag", "Jutter")), roleBinding("JutterHeeftAfrekening", "afrekening"));
-        String outcome = regel("uitkomst", "Jutter", "uitkomst", dateLiteral("2026-12-31"), predicate("empty",
+        String outcome = rule("uitkomst", "Jutter", "uitkomst", dateLiteral("2026-12-31"), predicate("empty",
                 navigated("afrekendag", "Afrekening", "de afrekendag van de afrekening van de Jutter",
                         roleBinding("JutterHeeftAfrekening", "afrekening"))));
         String ir = document(List.of(outcome), List.of(afrekening), List.of(), List.of());
@@ -322,9 +322,9 @@ class ReaderUnderWriterWitnessTest {
         // afgeleide controledag … op zijn controledag indien zijn afgeleide registratiedag leeg is": a negative edge on a
         // cycle, which WF-046 refuses; ref refuses the document too. The exec-model branch refuses the cycle
         // itself before it builds the KieBase, as WF-045 does (Kringen), and names its members and rules.
-        String registratie = regel("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", own("registratiedag"),
+        String registratie = rule("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", own("registratiedag"),
                 predicate("empty", own("afgeleide controledag")));
-        String check = regel("afgeleide controledag", "Vondst", "afgeleide controledag", own("controledag"),
+        String check = rule("afgeleide controledag", "Vondst", "afgeleide controledag", own("controledag"),
                 predicate("empty", own("afgeleide registratiedag")));
         String caseDocument = caseDocument(List.of(vondst("V", "2026-09-15", null, "\"registratiedag\":{\"date\":\"2026-06-01\"}")),
                 day("V", "afgeleide registratiedag", "2026-06-01"));
@@ -340,7 +340,7 @@ class ReaderUnderWriterWitnessTest {
         // "De afgeleide registratiedag van een Vondst moet gesteld worden op zijn vinddag indien zijn afgeleide
         // registratiedag leeg is": the rule reads its own target negatively, a cycle WF-046 refuses. The
         // exec-model branch refuses the cycle by name, as the row above.
-        String selfReadingRule = regel("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", own("vinddag"),
+        String selfReadingRule = rule("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", own("vinddag"),
                 predicate("empty", own("afgeleide registratiedag")));
         String caseDocument = caseDocument(List.of(vondst("V", "2026-09-15", null, "")), day("V", "afgeleide registratiedag", "2026-09-15"));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> playTms(document(List.of(selfReadingRule)), caseDocument));
@@ -359,8 +359,8 @@ class ReaderUnderWriterWitnessTest {
             + "{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":"
             + "{\"num\":1,\"den\":1}}}";
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
     private static String dates(String... names) {
@@ -369,18 +369,18 @@ class ReaderUnderWriterWitnessTest {
         return String.join(",", a);
     }
 
-    private static String objectType(String naam, String plural, boolean animate, String kenmerken, String attributes) {
-        return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
-                + "\",\"attributes\":[" + attributes + "],\"characteristics\":[" + kenmerken + "]}";
+    private static String objectType(String name, String plural, boolean animate, String characteristics, String attributes) {
+        return "{\"node\":\"ObjectType\",\"name\":\"" + name + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
+                + "\",\"attributes\":[" + attributes + "],\"characteristics\":[" + characteristics + "]}";
     }
 
-    private static String characteristic(String naam) {
-        return "{\"node\":\"Characteristic\",\"name\":\"" + naam + "\",\"kind\":\"adjectival\"}";
+    private static String characteristic(String name) {
+        return "{\"node\":\"Characteristic\",\"name\":\"" + name + "\",\"kind\":\"adjectival\"}";
     }
 
     /** A fact type between one {@code oneType} and one ({@code manyPlural} null) or many {@code manyType}. */
-    private static String factType(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
-        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
+    private static String factType(String name, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + oneRole + "\",\"objectType\":\"" + oneType + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + manyRole + "\",\"objectType\":\"" + manyType + "\""
                 + (manyPlural == null ? ",\"many\":false}" : ",\"plural\":\"" + manyPlural + "\",\"many\":true}") + "]}";
@@ -470,8 +470,8 @@ class ReaderUnderWriterWitnessTest {
     }
 
     /** One rule with one version; {@code condition} null for none. */
-    private static String regel(String naam, String type, String target, String value, String condition) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+    private static String rule(String name, String type, String target, String value, String condition) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
                 + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"" + type + "\","
                 + "\"source\":{\"snippet\":\"De " + target + "\"}},\"value\":" + value
                 + (condition == null ? "" : ",\"condition\":" + condition) + ",\"initialisation\":false,\"presentation\":\"equation\"}]}";
@@ -492,31 +492,31 @@ class ReaderUnderWriterWitnessTest {
 
     /** "De uitkomst van een Vondst moet gesteld worden op zijn vinddag indien &lt;voorwaarde&gt;." */
     private static String outcomeIf(String condition) {
-        return regel("uitkomst", "Vondst", "uitkomst", own("vinddag"), condition);
+        return rule("uitkomst", "Vondst", "uitkomst", own("vinddag"), condition);
     }
 
     /** "Een Jutter heeft een &lt;type&gt; met &lt;lid&gt; gelijk aan &lt;waarde&gt; [indien &lt;voorwaarde&gt;]." */
-    private static String objectCreation(String naam, String type, String member, String value, String condition, String relationLink) {
-        return "{\"node\":\"ObjectCreation\",\"name\":\"" + naam + "\",\"versions\":[{\"createdType\":\"" + type + "\",\"subject\":"
+    private static String objectCreation(String name, String type, String member, String value, String condition, String relationLink) {
+        return "{\"node\":\"ObjectCreation\",\"name\":\"" + name + "\",\"versions\":[{\"createdType\":\"" + type + "\",\"subject\":"
                 + "\"Jutter\",\"initialisations\":[{\"node\":\"MemberInit\",\"member\":\"" + member + "\",\"value\":" + value
                 + ",\"characteristic\":false}]" + (condition == null ? "" : ",\"condition\":" + condition)
                 + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + relationLink + "}]}";
     }
 
     /** "De afgeleide registratiedag van een Vondst moet gesteld worden op zijn registratiedag." */
-    private static final String DERIVED_REGISTRATIEDAG = regel("afgeleide registratiedag", "Vondst",
+    private static final String DERIVED_REGISTRATIEDAG = rule("afgeleide registratiedag", "Vondst",
             "afgeleide registratiedag", own("registratiedag"), null);
 
     /** "De afgeleide controledag van een Vondst moet gesteld worden op zijn controledag." */
-    private static final String DERIVED_CHECK_DAY = regel("afgeleide controledag", "Vondst", "afgeleide controledag",
+    private static final String DERIVED_CHECK_DAY = rule("afgeleide controledag", "Vondst", "afgeleide controledag",
             own("controledag"), null);
 
     /** "De afgeleide vergunningsdag van een Jutter moet gesteld worden op zijn vergunningsdag." */
-    private static final String DERIVED_VERGUNNINGSDAG = regel("afgeleide vergunningsdag", "Jutter",
+    private static final String DERIVED_VERGUNNINGSDAG = rule("afgeleide vergunningsdag", "Jutter",
             "afgeleide vergunningsdag", own("vergunningsdag", "Jutter"), null);
 
     /** "De afgeleide openingsdag van een Haven moet gesteld worden op zijn openingsdag." */
-    private static final String DERIVED_OPENINGSDAG = regel("afgeleide openingsdag", "Haven", "afgeleide openingsdag",
+    private static final String DERIVED_OPENINGSDAG = rule("afgeleide openingsdag", "Haven", "afgeleide openingsdag",
             own("openingsdag", "Haven"), null);
 
     /** The afgeleide vergunningsdag by a group: the opgegeven vergunningsdag where it is filled, else the vergunningsdag. */
@@ -536,8 +536,8 @@ class ReaderUnderWriterWitnessTest {
             + "}],\"validity\":{\"node\":\"Validity\"}}";
 
     /** "&lt;assertie&gt;" of a {@code type} as a consistency rule. */
-    private static String consistency(String naam, String type, String assertion) {
-        return "{\"node\":\"Consistency\",\"name\":\"" + naam + "\",\"versions\":[{\"subject\":\"" + type + "\",\"assertion\":"
+    private static String consistency(String name, String type, String assertion) {
+        return "{\"node\":\"Consistency\",\"name\":\"" + name + "\",\"versions\":[{\"subject\":\"" + type + "\",\"assertion\":"
                 + assertion + ",\"validity\":{\"node\":\"Validity\"}}]}";
     }
 

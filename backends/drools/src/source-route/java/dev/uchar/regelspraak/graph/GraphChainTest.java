@@ -75,8 +75,8 @@ class GraphChainTest {
                                       Navigation nav) {
         assertTrue(ProducerConsumer.producerIndex(m, defaults).containsKey(ERVAREN),
                 () -> route + ": producentsleutel " + ProducerConsumer.producerIndex(m, defaults).keySet());
-        ResolvedRule consumer = m.resolvedRegels.stream()
-                .filter(r -> ProducerConsumer.baseName(r.naam()).equals("premie van een ervaren jutter"))
+        ResolvedRule consumer = m.resolvedRules.stream()
+                .filter(r -> ProducerConsumer.baseName(r.name()).equals("premie van een ervaren jutter"))
                 .findFirst().orElseThrow();
         assertTrue(ProducerConsumer.consumed(consumer, nav).contains(ERVAREN),
                 route + ": de consument op het subtype draagt dezelfde sleutel");
@@ -93,7 +93,7 @@ class GraphChainTest {
                 de gekeurd Numeriek (geheel getal);
             """);
         for (RegelSpraakModel m : List.of(t.sourceModel(), t.wire().model())) {
-            RegelSpraakModel.Objecttype klipjutter = m.objectTypeByName("Klipjutter");
+            RegelSpraakModel.ObjectType klipjutter = m.objectTypeByName("Klipjutter");
             assertEquals(ElementKey.van("Jutter", "gekeurd", true),
                     ProducerConsumer.elementOf(klipjutter, "gekeurd", true), "het kenmerk is op Jutter gedeclareerd");
             assertEquals(ElementKey.van("Klipjutter", "gekeurd", false),

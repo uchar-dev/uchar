@@ -105,7 +105,7 @@ class TmsInputWitnessTest {
             try {
                 IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> DroolsBackend.insert(b,
                         session, new Input().beans(List.of(j1, v1, v2)).list(j1, "aanmelder", List.of(v1))));
-                assertEquals("voegIn: de lijst van " + naam(j1) + " onder de rol 'aanmelder' mist " + naam(v2) + ", dat"
+                assertEquals("voegIn: de lijst van " + name(j1) + " onder de rol 'aanmelder' mist " + name(v2) + ", dat"
                         + " met zijn veld 'aanmelder' naar de houder wijst: een lid buiten de gegeven volgorde heeft geen"
                         + " plaats", e.getMessage());
                 assertEquals(0, session.getFactCount(), "nothing was inserted");
@@ -124,7 +124,7 @@ class TmsInputWitnessTest {
             Object v3 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of(), List.of());
             TmsRepeatedFireWitnessTest.setRole(v3, "aanmelder", j2);
             List<Object> beans = List.of(j1, v1, v2);
-            String list = "voegIn: de lijst van " + naam(j1) + " onder de rol 'aanmelder'";
+            String list = "voegIn: de lijst van " + name(j1) + " onder de rol 'aanmelder'";
             List<String> sentences = new ArrayList<>();
             sentences.add(refusal(b, new Input().beans(beans).list(j1, "aanmelder", List.of(v1, v2, v3))));
             sentences.add(refusal(b, new Input().beans(List.of(j1, v1, v2, j2, v3))
@@ -144,21 +144,21 @@ class TmsInputWitnessTest {
             Object foreign = TmsDocuments.beanObject(other.beanLoader(), "Vondst", Map.of(), List.of());
             sentences.add(refusal(b, new Input().beans(List.of(j1, foreign))));
             assertEquals(List.of(
-                    list + " noemt " + naam(v3) + ", dat geen bean van de invoer is",
-                    list + " noemt " + naam(v3) + ", maar diens veld 'aanmelder' wijst naar " + naam(j2),
-                    list + " noemt " + naam(v1) + " twee keer",
-                    "voegIn: de lijst van " + naam(j1) + " onder de rol 'vondst' noemt " + naam(v1) + ", maar een Vondst"
+                    list + " noemt " + name(v3) + ", dat geen bean van de invoer is",
+                    list + " noemt " + name(v3) + ", maar diens veld 'aanmelder' wijst naar " + name(j2),
+                    list + " noemt " + name(v1) + " twee keer",
+                    "voegIn: de lijst van " + name(j1) + " onder de rol 'vondst' noemt " + name(v1) + ", maar een Vondst"
                             + " heeft geen referentieveld 'vondst'; de rol is die van de houder, de naam van het veld"
                             + " waarmee een lid naar de houder wijst",
                     list + " is twee keer gegeven",
-                    list + " is leeg gegeven, maar " + naam(v1) + " wijst met zijn veld 'aanmelder' naar de houder",
-                    "voegIn: emmerscalair 'gewicht' op " + naam(v3) + ", een bean die niet in de invoer staat",
-                    "voegIn: emmerscalair 'gewicht' op " + naam(v1) + ", maar dat attribuut van Vondst ligt niet op een"
+                    list + " is leeg gegeven, maar " + name(v1) + " wijst met zijn veld 'aanmelder' naar de houder",
+                    "voegIn: emmerscalair 'gewicht' op " + name(v3) + ", een bean die niet in de invoer staat",
+                    "voegIn: emmerscalair 'gewicht' op " + name(v1) + ", maar dat attribuut van Vondst ligt niet op een"
                             + " tijdlijn; alleen de invoer van een tijdlijn kent de emmerconventie (RUNTIME-SEMANTICS ch."
                             + " 8.4)",
-                    "voegIn: emmerscalair 'lengte' op " + naam(v1) + ", maar Vondst heeft geen attribuut van die naam",
-                    "voegIn: de bean " + naam(v1) + " staat twee keer in de invoer",
-                    "voegIn: " + naam(foreign) + " is geen bean van dit model: een bean is een instantie van een klasse die"
+                    "voegIn: emmerscalair 'lengte' op " + name(v1) + ", maar Vondst heeft geen attribuut van die naam",
+                    "voegIn: de bean " + name(v1) + " staat twee keer in de invoer",
+                    "voegIn: " + name(foreign) + " is geen bean van dit model: een bean is een instantie van een klasse die"
                             + " Build.beanLoader() laadt"), sentences);
             KieSession session = b.kieBase().newKieSession();
             try {
@@ -188,8 +188,8 @@ class TmsInputWitnessTest {
             try {
                 IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
                         () -> DroolsBackend.insert(b, session, new Input().bean(j1)));
-                assertEquals("voegIn: het veld 'rekenkamer' van " + naam(j1) + " wijst naar een Rekenkamer ("
-                        + naam(r1) + ") die niet als bean in de invoer staat: de tak leidt alleen af voor de objecten"
+                assertEquals("voegIn: het veld 'rekenkamer' van " + name(j1) + " wijst naar een Rekenkamer ("
+                        + name(r1) + ") die niet als bean in de invoer staat: de tak leidt alleen af voor de objecten"
                         + " in de sessie, dus geef elk object waarnaar een bean wijst ook zelf als bean op",
                         e.getMessage());
                 assertEquals(0, session.getFactCount(), "nothing was inserted");
@@ -197,9 +197,9 @@ class TmsInputWitnessTest {
                 session.dispose();
             }
             Fixpoint both = read(b, new Input().beans(List.of(j1, r1)));
-            assertTrue(both.waarden().stream().anyMatch(w -> w.object() == j1 && w.attribute().equals("heffing")
+            assertTrue(both.values().stream().anyMatch(w -> w.object() == j1 && w.attribute().equals("heffing")
                     && w.value() instanceof BigDecimal d && d.compareTo(new BigDecimal("6")) == 0),
-                    () -> "with R1 given, J1 heffing 6 as the case pins: " + both.waarden());
+                    () -> "with R1 given, J1 heffing 6 as the case pins: " + both.values());
         });
     }
 
@@ -212,9 +212,9 @@ class TmsInputWitnessTest {
                     TmsTimelineDocuments.beanSegment(b.beanLoader(), "2024-06-01", "2024-07-01", "7")));
             Fixpoint bucket = read(b, new Input().bean(j3).bucketScalar(j3, "bedrag"));
             assertEquals(List.of(), bucket.faults(), "no fault over the bucket scalar");
-            assertTrue(bucket.waarden().stream().anyMatch(w -> w.object() == j3 && w.attribute().equals("topsom")
+            assertTrue(bucket.values().stream().anyMatch(w -> w.object() == j3 && w.attribute().equals("topsom")
                     && w.value() instanceof BigDecimal d && d.compareTo(new BigDecimal("7")) == 0),
-                    () -> "J3 topsom 7: " + bucket.waarden());
+                    () -> "J3 topsom 7: " + bucket.values());
             Fixpoint complete = read(b, new Input().bean(j3));
             assertEquals(1, complete.faults().size(), () -> "one fault over a full timeline: " + complete.faults());
             assertTrue(complete.faults().get(0).message().startsWith("fout in de regel \"topsom\": the temporal total of"
@@ -277,7 +277,7 @@ class TmsInputWitnessTest {
         }
     }
 
-    private static String naam(Object o) {
+    private static String name(Object o) {
         return o.getClass().getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(o));
     }
 }

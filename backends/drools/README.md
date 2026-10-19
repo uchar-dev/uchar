@@ -659,7 +659,7 @@ object it makes, as the reference interpreter reads them: they go on the new bea
 no rule sees the object without them and no bean in the session changes; a writer of the member displaces them as it
 displaces case input, a leeg written outside the standing domain erases them, and an initialisation finds the member
 filled. So the creation rules sit in two agenda groups of their own,
-`TmsTranspiler.FEITCREATIE` and `TmsTranspiler.OBJECTCREATIE`, and the driver `DroolsBackend.fire` fires the session
+`TmsTranspiler.FACT_CREATION` and `TmsTranspiler.OBJECT_CREATION`, and the driver `DroolsBackend.fire` fires the session
 in generations, outside the rules: the rule layer to rest, which leaves the creation rules pending; then, per
 evaluation stratum in ascending order (below), one phase per generation. A phase inserts a new `CreationPhase` with its
 number and its stratum, puts both groups on the focus stack, the fact creations on top, and fires; that fires the fact

@@ -7,7 +7,7 @@ lees koppeling "F x" "r"="V1" "s"=«"maak"»("V1")#1
 lees object «"maak"»("V1")#1 door "maak" voor "V1"
 feiten 6
 feit CreationPhase(number=Integer(2), stratum=Integer(0))
-feit CreationStamp(regel=String("maak"), onderwerp="V1", object=«"maak"»("V1")#1, phase=Integer(1), stratum=Integer(0), depth=Integer(1))
+feit CreationStamp(rule=String("maak"), subject="V1", object=«"maak"»("V1")#1, phase=Integer(1), stratum=Integer(0), depth=Integer(1))
 feit Fired(noFixpoint=leeg)
 feit RelationLink(relation=String("f x"), first="V1", second=«"maak"»("V1")#1, phase=Integer(1))
 feit bean "V1" Vondst(s=leeg)

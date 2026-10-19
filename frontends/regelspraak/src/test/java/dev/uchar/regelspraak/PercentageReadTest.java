@@ -54,7 +54,7 @@ class PercentageReadTest {
     }
 
     private static Expr value(RegelSpraakModel m) {
-        ResolvedRule r = m.resolvedRegels.stream().filter(x -> x.naam().equals("havengeld")).findFirst().orElseThrow();
+        ResolvedRule r = m.resolvedRules.stream().filter(x -> x.name().equals("havengeld")).findFirst().orElseThrow();
         return r.value();
     }
 
@@ -64,7 +64,7 @@ class PercentageReadTest {
         Expr base = assertInstanceOf(Expr.Rounding.class, w).base();
         Expr.Binary b = assertInstanceOf(Expr.Binary.class, base);
         assertEquals(Expr.BinOp.PERCENTAGE_VAN, b.op());
-        assertEquals("percentage havengeld", assertInstanceOf(Expr.ParameterRef.class, b.left()).parameter().naam());
+        assertEquals("percentage havengeld", assertInstanceOf(Expr.ParameterRef.class, b.left()).parameter().name());
         return b;
     }
 
@@ -72,7 +72,7 @@ class PercentageReadTest {
     private static void taxatiebedragViaTaxatie(Expr y) {
         Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, y);
         assertEquals("taxatiebedrag", a.attribute());
-        assertEquals("Taxatie", a.objectType().naam);
+        assertEquals("Taxatie", a.objectType().name);
         assertEquals(List.of("taxatie"), a.navigationPath());
     }
 
@@ -105,7 +105,7 @@ class PercentageReadTest {
         Expr.Let let = assertInstanceOf(Expr.Let.class, w);
         assertEquals("getaxeerde bedrag", let.binder());
         taxatiebedragViaTaxatie(let.value());
-        assertEquals("getaxeerde bedrag", assertInstanceOf(Expr.BinderRef.class, percentageOf(w).right()).naam());
+        assertEquals("getaxeerde bedrag", assertInstanceOf(Expr.BinderRef.class, percentageOf(w).right()).name());
     }
 
     @Test void h_the_percent_sign_after_the_parameter() {
@@ -120,7 +120,7 @@ class PercentageReadTest {
         Expr y = percentageOf(value(clean(havengeld("het percentage havengeld % van zijn getaxeerde waarde")))).right();
         Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, y);
         assertEquals("getaxeerde waarde", a.attribute());
-        assertEquals("Vondst", a.objectType().naam);
+        assertEquals("Vondst", a.objectType().name);
     }
 
     // ---- the forms that already resolved, unchanged
@@ -136,7 +136,7 @@ class PercentageReadTest {
         Expr.AttributeReference a = assertInstanceOf(Expr.AttributeReference.class, percentageOf(value(clean(
                 havengeld("het percentage havengeld van de getaxeerde waarde van de Vondst")))).right());
         assertEquals("getaxeerde waarde", a.attribute());
-        assertEquals("Vondst", a.objectType().naam);
+        assertEquals("Vondst", a.objectType().name);
     }
 
     @Test void i_a_literal_percentage_of_a_navigated_base_stays() {

@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * The uchar-dialect {@code is een} extension (SUBTYPING §9.2): the head form
  * {@code Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)} declares the single direct
- * supertype the kernel carries as {@code Objecttype.supertype} (IR-SPEC ch. 2.2).
+ * supertype the kernel carries as {@code ObjectType.supertype} (IR-SPEC ch. 2.2).
  *
  * <p>These tests pin BOTH sides. The refusal fixtures are the frontend's share of the four-rule
  * family — WF-103 (the parent is a declared object type), WF-104 (acyclic, self-reference
@@ -195,17 +195,17 @@ class SubtypeDialectTest {
     @Test void the_head_form_binds_the_supertype() {
         RegelSpraakModel m = Resolver.resolve(CHAIN);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        var wrak = m.objecttypen.get("Wrakrecht");
+        var wrak = m.objectTypes.get("Wrakrecht");
         assertNotNull(wrak);
-        assertSame(m.objecttypen.get("Strandrecht"), wrak.supertype);
+        assertSame(m.objectTypes.get("Strandrecht"), wrak.supertype);
         // the annotations after the clause still land: (mv: …) is read, not swallowed by the parent name
         assertEquals("Wrakrechten", wrak.plural);
-        assertFalse(wrak.bezield);
+        assertFalse(wrak.animate);
         // the member maps stay OWN; the chain is what closes them
-        assertEquals(1, wrak.attributen.size(), "een subtype declareert alleen zijn eigen leden");
+        assertEquals(1, wrak.attributes.size(), "een subtype declareert alleen zijn eigen leden");
         assertNotNull(wrak.attribute("grondslag"), "een geërfd attribuut lost op via de keten");
         assertTrue(wrak.hasMember("betwist"), "een geërfd kenmerk lost op via de keten");
-        assertTrue(wrak.isA(m.objecttypen.get("Strandrecht")));
+        assertTrue(wrak.isA(m.objectTypes.get("Strandrecht")));
     }
 
     @Test void the_head_form_also_carries_animate_after_the_plural_group() {
@@ -220,10 +220,10 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        var voogd = m.objecttypen.get("Strandvoogd");
-        assertEquals("Kustbewoner", voogd.supertype.naam);
+        var voogd = m.objectTypes.get("Strandvoogd");
+        assertEquals("Kustbewoner", voogd.supertype.name);
         assertEquals("Strandvoogden", voogd.plural);
-        assertTrue(voogd.bezield, "(bezield) achter de mv-groep hoort nog steeds te binden");
+        assertTrue(voogd.animate, "(bezield) achter de mv-groep hoort nog steeds te binden");
     }
 
     @Test void a_forward_reference_is_no_error() {
@@ -237,7 +237,7 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "een voorwaartse verwijzing hoort geen fout te zijn: " + m.errors());
-        assertEquals("Strandrecht", m.objecttypen.get("Wrakrecht").supertype.naam);
+        assertEquals("Strandrecht", m.objectTypes.get("Wrakrecht").supertype.name);
     }
 
     @Test void a_target_on_two_levels_is_no_refusal() {
@@ -255,7 +255,7 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(),
                 () -> "een doel dat op twee niveaus regels draagt is geen fout: " + m.errors());
-        assertEquals(2, m.resolvedRegels.size());
+        assertEquals(2, m.resolvedRules.size());
     }
 
     // -------------------------------------------------------------------- de wire
@@ -413,7 +413,7 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         // the by-PAIR search is now ambiguous — both fact types relate the chain-closed pair
-        assertNull(m.connectingRoleBinding(m.objecttypen.get("Kustgemeente"), m.objecttypen.get("Wrakrecht")),
+        assertNull(m.connectingRoleBinding(m.objectTypes.get("Kustgemeente"), m.objectTypes.get("Wrakrecht")),
                 "het typepaar hoort door het subtype dubbel verbonden te zijn");
         String c = emitCompact(m);
         assertTrue(c.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"wrakberging\","
@@ -545,7 +545,7 @@ class SubtypeDialectTest {
         // ancestor's timeline attribute answered "not temporal". The §7.1 gedurende clip then does not
         // silently disappear — it DEGRADES to an `Unresolved` filter plus a WARNING, and WF-055 refuses
         // that on the wire. The cost is a correct document made unusable, which is why the repair is
-        // owed. Both the operand (attribuutGranulariteit) and the condition (kenmerkGranulariteit) are
+        // owed. Both the operand (attributeGranularity) and the condition (characteristicGranularity) are
         // inherited here, so the two halves are pinned at once.
         String src = """
             Objecttype de Jutter (mv: Jutters) (bezield)
@@ -731,10 +731,10 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        assertTrue(m.resolvedRegels.get(0).value() instanceof Expr.FunctionCall f && f.dimensieSelectie() != null
+        assertTrue(m.resolvedRules.get(0).value() instanceof Expr.FunctionCall f && f.dimensionSelection() != null
                         && f.arguments().get(0) instanceof Expr.AttributeReference a
                         && a.attribute().equals("betaalde belasting"),
-                () -> "de vouw hoort de GEDECLAREERDE spelling te dragen: " + m.resolvedRegels.get(0).value());
+                () -> "de vouw hoort de GEDECLAREERDE spelling te dragen: " + m.resolvedRules.get(0).value());
         String c = emitCompact(m);
         assertTrue(c.contains("\"kind\":\"sum\",\"arguments\":[{\"node\":\"AttributeReference\","
                         + "\"attribute\":\"betaaldebelasting\",\"subjectType\":\"Ondernemer\","),
@@ -770,7 +770,7 @@ class SubtypeDialectTest {
         RegelSpraakModel one = Resolver.resolve(oneTimeline);
         assertEquals(1, one.uniquenesses.size(),
                 () -> "één geërfde tijdlijncomponent is toegestaan en hoort te resolven: " + one.diagnostics);
-        assertEquals("Klipwachter", one.uniquenesses.get(0).subject().naam);
+        assertEquals("Klipwachter", one.uniquenesses.get(0).subject().name);
 
         String twoTimelines = oneTimeline.replace(
                 "het wachtnummer Numeriek (geheel getal);",

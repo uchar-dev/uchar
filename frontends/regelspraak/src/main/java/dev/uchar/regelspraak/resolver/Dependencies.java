@@ -30,7 +30,7 @@ final class Dependencies {
     /** A form of the graph: its pointer, its name (a version of a form with several is "&lt;naam&gt; #i"), whether it
      *  is a creation in a recursive rule group, what it writes and what it reads; {@code category} is the list it comes
      *  from. */
-    record Form(String at, String naam, String category, boolean recursiveCreation, List<String> writes, List<NodeRead> uses) {}
+    record Form(String at, String name, String category, boolean recursiveCreation, List<String> writes, List<NodeRead> uses) {}
 
     /** One read: the node and its edge kind (positive, strict, negative; ch. 5.2). */
     record NodeRead(String graphNode, String category) {}
@@ -56,7 +56,7 @@ final class Dependencies {
         TreeSet<String> result = new TreeSet<>(Dependencies::compareBytes);
         for (Edge r : edges(forms)) {
             Form p = forms.get(r.producer()), c = forms.get(r.consumer());
-            result.add(String.join("\t", r.category(), m1Root(p.at()), p.naam(), r.graphNode(), m1Root(c.at()), c.naam()));
+            result.add(String.join("\t", r.category(), m1Root(p.at()), p.name(), r.graphNode(), m1Root(c.at()), c.name()));
         }
         return new ArrayList<>(result);
     }
@@ -73,7 +73,7 @@ final class Dependencies {
     }
 
     /** {@code naam} without the " #i" of a version of a form with several ({@code strip_version}). */
-    static String withoutVersion(String naam) { return Graph.withoutVersion(naam); }
+    static String withoutVersion(String name) { return Graph.withoutVersion(name); }
 
     private static List<Cycle> wf045(List<Form> forms, Graph g) {
         int n = forms.size();
@@ -97,8 +97,8 @@ final class Dependencies {
             }
             List<String> names = new ArrayList<>();
             List<Form> members = new ArrayList<>();
-            for (int j : cycle) { names.add(forms.get(j).naam()); members.add(forms.get(j)); }
-            names.add(forms.get(i).naam());
+            for (int j : cycle) { names.add(forms.get(j).name()); members.add(forms.get(j)); }
+            names.add(forms.get(i).name());
             result.add(new Cycle("WF-045", m1Root(forms.get(i).at()),
                     "dependency cycle through no recursive creation: " + String.join(" -> ", names), members));
             return;
@@ -137,15 +137,15 @@ final class Dependencies {
             for (NodeRead l : forms.get(ci).uses())
                 for (int pi : writers.getOrDefault(l.graphNode(), List.of())) followers.get(pi).add(0, ci);
         List<Cycle> result = new ArrayList<>();
-        List<Map<String, Object>> groups = g.list(g.regels, "prioritizedDefaults");
+        List<Map<String, Object>> groups = g.list(g.rules, "prioritizedDefaults");
         for (int i = 0; i < groups.size(); i++) {
             String at = "/prioritizedDefaults/" + i;
             for (int fi = 0; fi < n; fi++) {
                 if (!forms.get(fi).at().equals(at)) continue;
                 if (reached(followers, fi, fi, new boolean[n])) {
-                    String naam = Graph.tekst(groups.get(i), "name");
+                    String name = Graph.text(groups.get(i), "name");
                     result.add(new Cycle("WF-051", m1Root(at), "a dependency cycle passes through defaults group '"
-                            + (naam == null ? at : naam) + "' — its displacement reads are negative edges; no strata exist",
+                            + (name == null ? at : name) + "' — its displacement reads are negative edges; no strata exist",
                             List.of(forms.get(fi))));
                 }
                 break;
@@ -210,15 +210,15 @@ final class Dependencies {
 
     /** The verifier's reading of the document: the declarations it consults and the forms with their reads and writes. */
     private static final class Graph {
-        final Map<String, Object> model, regels;
-        final List<Map<String, Object>> objecttypen, feittypen;
+        final Map<String, Object> model, rules;
+        final List<Map<String, Object>> objectTypes, factTypes;
 
         Graph(Object document) {
             Map<String, Object> doc = obj(document);
             this.model = obj(doc.get("model"));
-            this.regels = obj(doc.get("rules"));
-            this.objecttypen = list(model, "objectTypes");
-            this.feittypen = list(model, "factTypes");
+            this.rules = obj(doc.get("rules"));
+            this.objectTypes = list(model, "objectTypes");
+            this.factTypes = list(model, "factTypes");
         }
 
         // ------------------------------------------------------------ names and types
@@ -238,30 +238,30 @@ final class Dependencies {
             return result.toString();
         }
 
-        static String withoutVersion(String naam) {
-            int i = naam.lastIndexOf('#');
-            if (i >= 2 && naam.charAt(i - 1) == ' ' && i + 1 < naam.length()) {
-                for (int k = i + 1; k < naam.length(); k++) if (naam.charAt(k) < '0' || naam.charAt(k) > '9') return naam;
-                return naam.substring(0, i - 1);
+        static String withoutVersion(String name) {
+            int i = name.lastIndexOf('#');
+            if (i >= 2 && name.charAt(i - 1) == ' ' && i + 1 < name.length()) {
+                for (int k = i + 1; k < name.length(); k++) if (name.charAt(k) < '0' || name.charAt(k) > '9') return name;
+                return name.substring(0, i - 1);
             }
-            return naam;
+            return name;
         }
 
         static String attrNode(String ot, String a) { return "attr:" + norm(ot) + ":" + norm(a); }
         static String charNode(String ot, String k) { return "char:" + norm(ot) + ":" + norm(k); }
-        static String chanNode(String regel) { return "chan:" + norm(withoutVersion(regel)); }
+        static String chanNode(String rule) { return "chan:" + norm(withoutVersion(rule)); }
         static String popNode(String ot) { return "pop:" + norm(ot); }
         static String relNode(String ft) { return "rel:" + norm(ft); }
 
-        Map<String, Object> objectType(String naam) {
-            if (naam == null) return null;
-            for (Map<String, Object> o : objecttypen) if (norm(tekst(o, "name")).equals(norm(naam))) return o;
+        Map<String, Object> objectType(String name) {
+            if (name == null) return null;
+            for (Map<String, Object> o : objectTypes) if (norm(text(o, "name")).equals(norm(name))) return o;
             return null;
         }
 
-        Map<String, Object> factType(String naam) {
-            if (naam == null) return null;
-            for (Map<String, Object> f : feittypen) if (norm(tekst(f, "name")).equals(norm(naam))) return f;
+        Map<String, Object> factType(String name) {
+            if (name == null) return null;
+            for (Map<String, Object> f : factTypes) if (norm(text(f, "name")).equals(norm(name))) return f;
             return null;
         }
 
@@ -269,11 +269,11 @@ final class Dependencies {
         List<Map<String, Object>> chain(Map<String, Object> ot) {
             List<Map<String, Object>> result = new ArrayList<>();
             List<String> seen = new ArrayList<>();
-            seen.add(norm(tekst(ot, "name")));
+            seen.add(norm(text(ot, "name")));
             Map<String, Object> here = ot;
             while (true) {
                 result.add(here);
-                String s = tekst(here, "supertype");
+                String s = text(here, "supertype");
                 if (s == null || seen.contains(norm(s))) break;
                 Map<String, Object> p = objectType(s);
                 if (p == null) break;
@@ -287,17 +287,17 @@ final class Dependencies {
             if (norm(sub).equals(norm(sup))) return true;
             Map<String, Object> ot = objectType(sub);
             if (ot == null) return false;
-            for (Map<String, Object> t : chain(ot)) if (norm(tekst(t, "name")).equals(norm(sup))) return true;
+            for (Map<String, Object> t : chain(ot)) if (norm(text(t, "name")).equals(norm(sup))) return true;
             return false;
         }
 
         /** Whether {@code naam}, with its supertypes, declares the attribute or the characteristic {@code member}. */
-        boolean carries(String naam, String member, boolean characteristic) {
-            Map<String, Object> ot = objectType(naam);
+        boolean carries(String name, String member, boolean characteristic) {
+            Map<String, Object> ot = objectType(name);
             if (ot == null) return false;
             for (Map<String, Object> t : chain(ot))
                 for (Map<String, Object> m : list(t, characteristic ? "characteristics" : "attributes"))
-                    if (norm(tekst(m, "name")).equals(norm(member))) return true;
+                    if (norm(text(m, "name")).equals(norm(member))) return true;
             return false;
         }
 
@@ -307,10 +307,10 @@ final class Dependencies {
             List<String> reached = new ArrayList<>();
             if (minted) {
                 Map<String, Object> o = objectType(ot);
-                if (o != null) for (Map<String, Object> t : chain(o)) reached.add(tekst(t, "name"));
+                if (o != null) for (Map<String, Object> t : chain(o)) reached.add(text(t, "name"));
             } else {
-                for (Map<String, Object> o : objecttypen) {
-                    String n = tekst(o, "name");
+                for (Map<String, Object> o : objectTypes) {
+                    String n = text(o, "name");
                     if (isSub(n, ot) || isSub(ot, n)) reached.add(n);
                 }
             }
@@ -326,46 +326,46 @@ final class Dependencies {
             if (ot == null) return List.of(popNode(t));
             TreeSet<String> result = new TreeSet<>();
             result.add(popNode(t));
-            for (Map<String, Object> a : chain(ot)) result.add(popNode(tekst(a, "name")));
+            for (Map<String, Object> a : chain(ot)) result.add(popNode(text(a, "name")));
             return new ArrayList<>(result);
         }
 
         /** The role a binding binds: the declared role of that name in the fact type, null where it does not resolve. */
         Map<String, Object> boundRole(Map<String, Object> binding) {
-            Map<String, Object> ft = factType(tekst(binding, "factType"));
+            Map<String, Object> ft = factType(text(binding, "factType"));
             if (ft == null) return null;
-            List<Map<String, Object>> rollen = list(ft, "roles");
-            String role = tekst(binding, "role");
-            if (rollen.size() == 2) {
-                boolean a = norm(tekst(rollen.get(0), "name")).equals(norm(role));
-                boolean b = norm(tekst(rollen.get(1), "name")).equals(norm(role));
-                if (a && !b) return rollen.get(0);
-                if (b && !a) return rollen.get(1);
+            List<Map<String, Object>> roles = list(ft, "roles");
+            String role = text(binding, "role");
+            if (roles.size() == 2) {
+                boolean a = norm(text(roles.get(0), "name")).equals(norm(role));
+                boolean b = norm(text(roles.get(1), "name")).equals(norm(role));
+                if (a && !b) return roles.get(0);
+                if (b && !a) return roles.get(1);
                 return null;
             }
-            if (rollen.size() == 1 && Boolean.TRUE.equals(ft.get("reciprocal"))
-                    && norm(tekst(rollen.get(0), "name")).equals(norm(role)))
-                return rollen.get(0);
+            if (roles.size() == 1 && Boolean.TRUE.equals(ft.get("reciprocal"))
+                    && norm(text(roles.get(0), "name")).equals(norm(role)))
+                return roles.get(0);
             return null;
         }
 
         /** {@code connecting_candidates}: the fact types relating {@code van} and {@code to}, in declaration order. */
         List<String> connectingFactTypes(String van, String to) {
             List<String> result = new ArrayList<>();
-            for (Map<String, Object> ft : feittypen) {
-                List<Map<String, Object>> rollen = list(ft, "roles");
-                if (rollen.size() == 2) {
-                    Map<String, Object> a = rollen.get(0), b = rollen.get(1);
-                    if ((fills(van, a) && fills(to, b)) || (fills(van, b) && fills(to, a))) result.add(tekst(ft, "name"));
-                } else if (rollen.size() == 1 && Boolean.TRUE.equals(ft.get("reciprocal"))) {
-                    if (fills(van, rollen.get(0)) && norm(van).equals(norm(to))) result.add(tekst(ft, "name"));
+            for (Map<String, Object> ft : factTypes) {
+                List<Map<String, Object>> roles = list(ft, "roles");
+                if (roles.size() == 2) {
+                    Map<String, Object> a = roles.get(0), b = roles.get(1);
+                    if ((fills(van, a) && fills(to, b)) || (fills(van, b) && fills(to, a))) result.add(text(ft, "name"));
+                } else if (roles.size() == 1 && Boolean.TRUE.equals(ft.get("reciprocal"))) {
+                    if (fills(van, roles.get(0)) && norm(van).equals(norm(to))) result.add(text(ft, "name"));
                 }
             }
             return result;
         }
 
         private boolean fills(String inst, Map<String, Object> role) {
-            String fillerType = tekst(role, "objectType");
+            String fillerType = text(role, "objectType");
             return isSub(inst, fillerType == null ? "" : fillerType);
         }
 
@@ -375,35 +375,35 @@ final class Dependencies {
         List<NodeRead> readExpr(String subject, List<NodeRead> acc, Object e) {
             if (e == null) return acc;
             Map<String, Object> n = obj(e);
-            String node = tekst(n, "node");
+            String node = text(n, "node");
             switch (node) {
                 case "AttributeReference" -> {
-                    String a = tekst(n, "attribute"), ot = tekst(n, "subjectType");
+                    String a = text(n, "attribute"), ot = text(n, "subjectType");
                     if (a == null || ot == null) return acc;
                     List<NodeRead> result = new ArrayList<>();
-                    for (Map<String, Object> hop : listOrEmpty(n, "path")) result.add(new NodeRead(relNode(tekst(hop, "factType")), POS));
+                    for (Map<String, Object> hop : listOrEmpty(n, "path")) result.add(new NodeRead(relNode(text(hop, "factType")), POS));
                     result.add(new NodeRead(attrNode(ot, a), POS));
                     result.addAll(acc);
                     return result;
                 }
                 case "TextComposition" -> {
                     for (Map<String, Object> part : list(n, "parts"))
-                        if ("EmbeddedExpression".equals(tekst(part, "node"))) acc = readExpr(subject, acc, part.get("expr"));
+                        if ("EmbeddedExpression".equals(text(part, "node"))) acc = readExpr(subject, acc, part.get("expr"));
                     return acc;
                 }
                 case "Binary" -> { return readExpr(subject, readExpr(subject, acc, n.get("left")), n.get("right")); }
                 case "Aggregation", "BuiltinCall" -> {
-                    String el = tekst(n, "elementType");
+                    String el = text(n, "elementType");
                     if (el != null) acc = before(new NodeRead(popNode(el), POS), acc);
-                    for (Map<String, Object> rb : listOrEmpty(n, "sourcePath")) acc = before(new NodeRead(relNode(tekst(rb, "factType")), POS), acc);
-                    if (n.get("sourceRole") != null) acc = before(new NodeRead(relNode(tekst(obj(n.get("sourceRole")), "factType")), POS), acc);
+                    for (Map<String, Object> rb : listOrEmpty(n, "sourcePath")) acc = before(new NodeRead(relNode(text(rb, "factType")), POS), acc);
+                    if (n.get("sourceRole") != null) acc = before(new NodeRead(relNode(text(obj(n.get("sourceRole")), "factType")), POS), acc);
                     List<Object> arguments = raw(n, "arguments");
                     boolean countSource = false;
-                    if ("Aggregation".equals(node) && "count".equals(tekst(n, "kind")) && el != null && arguments.size() == 1
+                    if ("Aggregation".equals(node) && "count".equals(text(n, "kind")) && el != null && arguments.size() == 1
                             && (n.get("sourceRole") != null || n.get("sourcePath") != null)) {
                         Map<String, Object> arg = obj(arguments.get(0));
-                        String a = tekst(arg, "attribute");
-                        if ("AttributeReference".equals(tekst(arg, "node")) && a != null && objectType(el) != null)
+                        String a = text(arg, "attribute");
+                        if ("AttributeReference".equals(text(arg, "node")) && a != null && objectType(el) != null)
                             countSource = !(carries(el, a, false) || carries(el, a, true));
                     }
                     if (!countSource) for (Object arg : arguments) acc = readExpr(subject, acc, arg);
@@ -414,9 +414,9 @@ final class Dependencies {
                 }
                 case "InstanceSetUnion" -> {
                     for (Map<String, Object> branch : list(n, "branches")) {
-                        String el = tekst(branch, "elementType");
+                        String el = text(branch, "elementType");
                         if (el != null) acc = before(new NodeRead(popNode(el), POS), acc);
-                        acc = before(new NodeRead(relNode(tekst(obj(branch.get("sourceRole")), "factType")), POS), acc);
+                        acc = before(new NodeRead(relNode(text(obj(branch.get("sourceRole")), "factType")), POS), acc);
                         if (branch.get("filter") != null) acc = readCond(el, false, acc, branch.get("filter"));
                     }
                     return acc;
@@ -469,10 +469,10 @@ final class Dependencies {
         List<NodeRead> readCond(String subject, boolean neg, List<NodeRead> acc, Object c) {
             if (c == null) return acc;
             Map<String, Object> n = obj(c);
-            switch (tekst(n, "node")) {
+            switch (text(n, "node")) {
                 case "Comparison" -> { return readExpr(subject, readExpr(subject, acc, n.get("left")), n.get("right")); }
                 case "Predicate" -> {
-                    String category = tekst(n, "kind");
+                    String category = text(n, "kind");
                     if ("empty".equals(category) || "filled".equals(category)) {
                         List<NodeRead> result = new ArrayList<>();
                         for (NodeRead l : readExpr(subject, List.of(), n.get("operand"))) result.add(new NodeRead(l.graphNode(), NEG));
@@ -482,53 +482,53 @@ final class Dependencies {
                     return readExpr(subject, acc, n.get("operand"));
                 }
                 case "CharacteristicCheck" -> {
-                    String k = tekst(n, "characteristic");
+                    String k = text(n, "characteristic");
                     if (k == null) return acc;
                     String category = neg || Boolean.TRUE.equals(n.get("negated")) ? NEG : POS;
                     if (n.get("navigation") != null) {
                         Map<String, Object> rb = obj(n.get("navigation"));
                         Map<String, Object> role = boundRole(rb);
                         if (role == null) return acc;
-                        String reached = tekst(role, "objectType");
+                        String reached = text(role, "objectType");
                         List<NodeRead> result = new ArrayList<>();
-                        result.add(new NodeRead(relNode(tekst(rb, "factType")), POS));
+                        result.add(new NodeRead(relNode(text(rb, "factType")), POS));
                         result.add(new NodeRead(charNode(reached == null ? "" : reached, k), category));
                         result.addAll(acc);
                         return result;
                     }
-                    String host = tekst(n, "host") != null ? tekst(n, "host") : subject;
+                    String host = text(n, "host") != null ? text(n, "host") : subject;
                     return host == null ? acc : before(new NodeRead(charNode(host, k), category), acc);
                 }
                 case "TimeWindow" -> { return readExpr(subject, readExpr(subject, acc, n.get("from")), n.get("to")); }
                 case "Compound" -> {
-                    String q = tekst(n, "quantifier");
+                    String q = text(n, "quantifier");
                     boolean neg2 = "none".equals(q) || "atMost".equals(q) || "exactly".equals(q) || neg;
                     for (Object part : raw(n, "parts")) acc = readCond(subject, neg2, acc, part);
                     return acc;
                 }
                 case "QuantifierFold" -> {
-                    String q = tekst(n, "quantifier");
+                    String q = text(n, "quantifier");
                     boolean rangeNeg = neg || !"atLeast".equals(q);
                     boolean matrixNeg = neg || !("atLeast".equals(q) || "all".equals(q));
-                    String el = tekst(n, "elementType");
+                    String el = text(n, "elementType");
                     List<NodeRead> result = new ArrayList<>();
                     if (n.get("sourceRole") != null)
-                        result.add(new NodeRead(relNode(tekst(obj(n.get("sourceRole")), "factType")), rangeNeg ? NEG : POS));
+                        result.add(new NodeRead(relNode(text(obj(n.get("sourceRole")), "factType")), rangeNeg ? NEG : POS));
                     for (Map<String, Object> rb : listOrEmpty(n, "sourcePath"))
-                        result.add(new NodeRead(relNode(tekst(rb, "factType")), rangeNeg ? NEG : POS));
+                        result.add(new NodeRead(relNode(text(rb, "factType")), rangeNeg ? NEG : POS));
                     result.addAll(part(el, rangeNeg, n.get("filter")));
                     result.addAll(part(el, matrixNeg, n.get("test")));
                     result.addAll(acc);
                     return result;
                 }
                 case "Regelversie" -> {
-                    String r = tekst(n, "regel");
+                    String r = text(n, "regel");
                     return r == null ? acc : before(new NodeRead(chanNode(r), NEG), acc);
                 }
                 case "RoleMembership" -> {
                     // the link set of the named relation; negated, the check holds on absence
                     String category = neg || Boolean.TRUE.equals(n.get("negated")) ? NEG : POS;
-                    return before(new NodeRead(relNode(tekst(n, "factType")), category), acc);
+                    return before(new NodeRead(relNode(text(n, "factType")), category), acc);
                 }
                 default -> { return acc; }   // Unresolved
             }
@@ -573,17 +573,17 @@ final class Dependencies {
 
         /** A named form's versions: per version its in-memory name ("&lt;naam&gt; #i" where there are several), its
          *  pointer and its node. */
-        private record Version(String naam, String at, Map<String, Object> irNode) {}
+        private record Version(String name, String at, Map<String, Object> irNode) {}
 
         private List<Version> versions(String list) {
             List<Version> result = new ArrayList<>();
-            List<Map<String, Object>> forms = list(regels, list);
+            List<Map<String, Object>> forms = list(rules, list);
             for (int f = 0; f < forms.size(); f++) {
                 Map<String, Object> form = forms.get(f);
-                String naam = tekst(form, "name");
+                String name = text(form, "name");
                 List<Map<String, Object>> vs = list(form, "versions");
                 for (int v = 0; v < vs.size(); v++)
-                    result.add(new Version(naam == null ? null : vs.size() >= 2 ? naam + " #" + (v + 1) : naam,
+                    result.add(new Version(name == null ? null : vs.size() >= 2 ? name + " #" + (v + 1) : name,
                             "/rules/" + list + "/" + f + "/versions/" + v, vs.get(v)));
             }
             return result;
@@ -591,7 +591,7 @@ final class Dependencies {
 
         private List<String> recursiveMembers() {
             List<String> result = new ArrayList<>();
-            for (Map<String, Object> g : list(regels, "ruleGroups"))
+            for (Map<String, Object> g : list(rules, "ruleGroups"))
                 if (Boolean.TRUE.equals(g.get("recursive")))
                     for (Object member : raw(g, "members")) if (member instanceof String s) result.add(norm(withoutVersion(s)));
             return result;
@@ -607,71 +607,71 @@ final class Dependencies {
             // the rule versions
             for (Version v : versions("rules")) {
                 Map<String, Object> target = obj(v.irNode().get("target"));
-                String a = tekst(target, "attribute"), ot = tekst(target, "subjectType");
+                String a = text(target, "attribute"), ot = text(target, "subjectType");
                 if (a == null || ot == null) continue;
                 boolean characteristic = !Boolean.TRUE.equals(v.irNode().get("initialisation")) && v.irNode().get("presentation") == null;
                 List<String> writes = memberWrites(ot, a, characteristic, false);
                 List<NodeRead> uses = readExpr(ot, condition(ot, v.irNode().get("condition")), v.irNode().get("value"));
                 if (characteristic) uses = strict(uses);
                 else if (!absorbingTypes(ot, a).isEmpty()) uses = negative(uses);
-                result.add(new Form(v.at(), v.naam() == null ? v.at() : v.naam(), "rules", false, writes, uses));
+                result.add(new Form(v.at(), v.name() == null ? v.at() : v.name(), "rules", false, writes, uses));
             }
             // the allocations
             for (Version v : versions("allocations")) {
                 Map<String, Object> k = v.irNode();
-                String bt = value(tekst(k, "sourceType")), dt = value(tekst(k, "targetType"));
+                String bt = value(text(k, "sourceType")), dt = value(text(k, "targetType"));
                 List<String> writes = new ArrayList<>();
-                if (tekst(k, "targetAttribute") != null) writes.addAll(memberWrites(dt, tekst(k, "targetAttribute"), false, false));
-                if (tekst(k, "remainderAttribute") != null) writes.addAll(memberWrites(bt, tekst(k, "remainderAttribute"), false, false));
+                if (text(k, "targetAttribute") != null) writes.addAll(memberWrites(dt, text(k, "targetAttribute"), false, false));
+                if (text(k, "remainderAttribute") != null) writes.addAll(memberWrites(bt, text(k, "remainderAttribute"), false, false));
                 List<NodeRead> uses = new ArrayList<>();
                 uses.add(new NodeRead(popNode(dt), POS));
-                uses.add(new NodeRead(relNode(tekst(obj(k.get("connectingRole")), "factType")), POS));
-                if (tekst(k, "sourceAttribute") != null) uses.add(new NodeRead(attrNode(bt, tekst(k, "sourceAttribute")), POS));
+                uses.add(new NodeRead(relNode(text(obj(k.get("connectingRole")), "factType")), POS));
+                if (text(k, "sourceAttribute") != null) uses.add(new NodeRead(attrNode(bt, text(k, "sourceAttribute")), POS));
                 for (String field : List.of("ratioAttribute", "maximumAttribute", "orderingAttribute"))
-                    if (tekst(k, field) != null) uses.add(new NodeRead(attrNode(dt, tekst(k, field)), POS));
-                uses.addAll(condition(tekst(k, "sourceType"), k.get("condition")));
-                result.add(new Form(v.at(), v.naam() == null ? v.at() : v.naam(), "allocations", false, writes, uses));
+                    if (text(k, field) != null) uses.add(new NodeRead(attrNode(dt, text(k, field)), POS));
+                uses.addAll(condition(text(k, "sourceType"), k.get("condition")));
+                result.add(new Form(v.at(), v.name() == null ? v.at() : v.name(), "allocations", false, writes, uses));
             }
             // the consistencies
             for (Version v : versions("consistencies")) {
-                String naam = v.naam() == null ? v.at() : v.naam();
-                result.add(new Form(v.at(), naam, "consistencies", false, List.of(chanNode(naam)),
-                        strict(condition(tekst(v.irNode(), "subject"), v.irNode().get("assertion")))));
+                String name = v.name() == null ? v.at() : v.name();
+                result.add(new Form(v.at(), name, "consistencies", false, List.of(chanNode(name)),
+                        strict(condition(text(v.irNode(), "subject"), v.irNode().get("assertion")))));
             }
             // the uniquenesses of one source, then those of several
             List<Version> unique = versions("uniquenesses");
             for (Version v : unique) {
                 List<Map<String, Object>> sources = list(v.irNode(), "sources");
                 if (sources.size() != 1) continue;
-                String naam = v.naam() == null ? v.at() : v.naam();
-                String subj = value(tekst(sources.get(0), "objectType"));
+                String name = v.name() == null ? v.at() : v.name();
+                String subj = value(text(sources.get(0), "objectType"));
                 List<NodeRead> uses = new ArrayList<>();
                 if (v.irNode().get("scope") != null)
-                    uses.add(new NodeRead(relNode(tekst(obj(v.irNode().get("scope")), "factType")), STRICT));
+                    uses.add(new NodeRead(relNode(text(obj(v.irNode().get("scope")), "factType")), STRICT));
                 for (Object key : raw(sources.get(0), "keys"))
                     uses.add(new NodeRead(attrNode(subj, key instanceof String s ? s : ""), STRICT));
-                result.add(new Form(v.at(), naam, "uniquenesses", false, List.of(chanNode(naam)), uses));
+                result.add(new Form(v.at(), name, "uniquenesses", false, List.of(chanNode(name)), uses));
             }
             for (Version v : unique) {
                 List<Map<String, Object>> sources = list(v.irNode(), "sources");
                 if (sources.size() == 1) continue;
-                String naam = v.naam() == null ? v.at() : v.naam();
+                String name = v.name() == null ? v.at() : v.name();
                 List<NodeRead> uses = new ArrayList<>();
                 for (Map<String, Object> b : sources) {
-                    String t = tekst(b, "objectType");
+                    String t = text(b, "objectType");
                     if (t == null) continue;
                     for (Object key : raw(b, "keys")) uses.add(new NodeRead(attrNode(t, key instanceof String s ? s : ""), STRICT));
                 }
-                result.add(new Form(v.at(), naam, "uniquenesses", false, List.of(chanNode(naam)), uses));
+                result.add(new Form(v.at(), name, "uniquenesses", false, List.of(chanNode(name)), uses));
             }
             // the object creations
             for (Version v : versions("objectCreations")) {
                 Map<String, Object> k = v.irNode();
-                String naam = v.naam() == null ? v.at() : v.naam();
-                String nt = value(tekst(k, "createdType")), subject = tekst(k, "subject");
+                String name = v.name() == null ? v.at() : v.name();
+                String nt = value(text(k, "createdType")), subject = text(k, "subject");
                 List<String> writes = new ArrayList<>(populationWrites(nt));
                 if (k.get("connectingRole") != null) {
-                    writes.add(relNode(tekst(obj(k.get("connectingRole")), "factType")));
+                    writes.add(relNode(text(obj(k.get("connectingRole")), "factType")));
                 } else if (subject != null) {
                     List<String> candidates = connectingFactTypes(subject, nt);
                     if (candidates.size() == 1) {
@@ -681,54 +681,54 @@ final class Dependencies {
                     }
                 }
                 for (Map<String, Object> t : list(k, "initialisations"))
-                    if (tekst(t, "member") != null)
-                        writes.addAll(memberWrites(nt, tekst(t, "member"), Boolean.TRUE.equals(t.get("characteristic")), true));
+                    if (text(t, "member") != null)
+                        writes.addAll(memberWrites(nt, text(t, "member"), Boolean.TRUE.equals(t.get("characteristic")), true));
                 List<NodeRead> uses = new ArrayList<>();
                 if (subject != null) uses.add(new NodeRead(popNode(subject), POS));
-                List<NodeRead> waarden = condition(subject, k.get("condition"));
-                for (Map<String, Object> t : list(k, "initialisations")) waarden = readExpr(subject, waarden, t.get("value"));
-                uses.addAll(waarden);
-                result.add(new Form(v.at(), naam, "objectCreations", recursive.contains(norm(withoutVersion(naam))), writes,
+                List<NodeRead> values = condition(subject, k.get("condition"));
+                for (Map<String, Object> t : list(k, "initialisations")) values = readExpr(subject, values, t.get("value"));
+                uses.addAll(values);
+                result.add(new Form(v.at(), name, "objectCreations", recursive.contains(norm(withoutVersion(name))), writes,
                         strict(uses)));
             }
             // the fact creations
             for (Version v : versions("factCreations")) {
                 Map<String, Object> k = v.irNode();
-                String naam = v.naam() == null ? v.at() : v.naam();
+                String name = v.name() == null ? v.at() : v.name();
                 List<Map<String, Object>> path = list(k, "path");
                 List<NodeRead> uses = new ArrayList<>();
-                for (Map<String, Object> hop : path) uses.add(new NodeRead(relNode(tekst(hop, "factType")), POS));
-                uses.addAll(condition(tekst(k, "anchor"), k.get("condition")));
+                for (Map<String, Object> hop : path) uses.add(new NodeRead(relNode(text(hop, "factType")), POS));
+                uses.addAll(condition(text(k, "anchor"), k.get("condition")));
                 // the created relation and no population: a fact creation links instances that exist
-                List<String> writes = List.of(relNode(tekst(k, "factType")));
-                result.add(new Form(v.at(), naam, "factCreations", recursive.contains(norm(withoutVersion(naam))), writes,
+                List<String> writes = List.of(relNode(text(k, "factType")));
+                result.add(new Form(v.at(), name, "factCreations", recursive.contains(norm(withoutVersion(name))), writes,
                         strict(uses)));
             }
             // the defaults groups
-            List<Map<String, Object>> groups = list(regels, "prioritizedDefaults");
+            List<Map<String, Object>> groups = list(rules, "prioritizedDefaults");
             for (int i = 0; i < groups.size(); i++) {
                 Map<String, Object> l = groups.get(i);
                 String at = "/prioritizedDefaults/" + i;
-                String naam = tekst(l, "name") == null ? at : tekst(l, "name");
-                String onderwerp = tekst(l, "subject");
+                String name = text(l, "name") == null ? at : text(l, "name");
+                String subjectType = text(l, "subject");
                 List<NodeRead> uses = new ArrayList<>();
-                for (Map<String, Object> d : list(l, "defaults")) uses.addAll(defaultReads(onderwerp, d));
+                for (Map<String, Object> d : list(l, "defaults")) uses.addAll(defaultReads(subjectType, d));
                 List<String> writes = new ArrayList<>();
-                if (tekst(l, "characteristic") != null)
-                    writes.addAll(memberWrites(onderwerp, tekst(l, "characteristic"), true, false));
-                if (tekst(l, "attribute") != null)
-                    writes.addAll(memberWrites(onderwerp, tekst(l, "attribute"), false, false));
-                result.add(new Form(at, naam, "prioritizedDefaults", false, writes, negative(uses)));
+                if (text(l, "characteristic") != null)
+                    writes.addAll(memberWrites(subjectType, text(l, "characteristic"), true, false));
+                if (text(l, "attribute") != null)
+                    writes.addAll(memberWrites(subjectType, text(l, "attribute"), false, false));
+                result.add(new Form(at, name, "prioritizedDefaults", false, writes, negative(uses)));
             }
             return result;
         }
 
-        private List<NodeRead> defaultReads(String onderwerp, Map<String, Object> d) {
-            List<NodeRead> result = new ArrayList<>(condition(onderwerp, d.get("justification")));
-            if (d.get("consequence") != null) result.addAll(readExpr(onderwerp, List.of(), d.get("consequence")));
+        private List<NodeRead> defaultReads(String subjectType, Map<String, Object> d) {
+            List<NodeRead> result = new ArrayList<>(condition(subjectType, d.get("justification")));
+            if (d.get("consequence") != null) result.addAll(readExpr(subjectType, List.of(), d.get("consequence")));
             if (d.get("exceptions") != null)
                 for (Map<String, Object> eg : list(obj(d.get("exceptions")), "members"))
-                    for (Map<String, Object> sub : list(eg, "defaults")) result.addAll(defaultReads(onderwerp, sub));
+                    for (Map<String, Object> sub : list(eg, "defaults")) result.addAll(defaultReads(subjectType, sub));
             return result;
         }
 
@@ -736,28 +736,28 @@ final class Dependencies {
          *  attribute, unless {@code ot} declares one itself. */
         private List<String> absorbingTypes(String ot, String attr) {
             String key = "A:" + norm(attr);
-            for (Map<String, Object> l : list(regels, "prioritizedDefaults"))
-                if (norm(tekst(l, "subject")).equals(norm(ot)) && targetKey(l).equals(key)) return List.of();
+            for (Map<String, Object> l : list(rules, "prioritizedDefaults"))
+                if (norm(text(l, "subject")).equals(norm(ot)) && targetKey(l).equals(key)) return List.of();
             List<String> result = new ArrayList<>();
-            for (Map<String, Object> o : objecttypen) {
-                String t = tekst(o, "name");
+            for (Map<String, Object> o : objectTypes) {
+                String t = text(o, "name");
                 if (isSub(t, ot) && groupKeys(t).contains(key)) result.add(t);
             }
             return result;
         }
 
         private static String targetKey(Map<String, Object> l) {
-            String k = tekst(l, "characteristic"), a = tekst(l, "attribute");
+            String k = text(l, "characteristic"), a = text(l, "attribute");
             return (k != null ? "K:" : "A:") + (k != null ? norm(k) : a != null ? norm(a) : "?");
         }
 
         private TreeSet<String> groupKeys(String t) {
             TreeSet<String> result = new TreeSet<>();
-            for (Map<String, Object> o : objecttypen) {
-                String s = tekst(o, "name");
+            for (Map<String, Object> o : objectTypes) {
+                String s = text(o, "name");
                 if (!isSub(t, s)) continue;
-                for (Map<String, Object> l : list(regels, "prioritizedDefaults"))
-                    if (norm(tekst(l, "subject")).equals(norm(s))) result.add(targetKey(l));
+                for (Map<String, Object> l : list(rules, "prioritizedDefaults"))
+                    if (norm(text(l, "subject")).equals(norm(s))) result.add(targetKey(l));
             }
             return result;
         }
@@ -769,7 +769,7 @@ final class Dependencies {
             return x instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of();
         }
 
-        static String tekst(Map<String, Object> m, String field) {
+        static String text(Map<String, Object> m, String field) {
             return m.get(field) instanceof String s ? s : null;
         }
 
@@ -797,8 +797,8 @@ final class Dependencies {
 
         private Json(String s) { this.s = s; }
 
-        static Object parse(String tekst) {
-            Json j = new Json(tekst);
+        static Object parse(String text) {
+            Json j = new Json(text);
             Object v = j.value();
             j.whitespace();
             if (j.i != j.s.length()) throw new IllegalArgumentException("JSON: tekst na het document op " + j.i);

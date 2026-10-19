@@ -47,13 +47,13 @@ class CountWithoutSourceTest {
         Eén aanmelder heeft meerdere vondsten
         """;
 
-    private static String regel(String expressie) {
+    private static String rule(String expression) {
         return """
 
             Regel aantal gewogen posten
                 geldig altijd
                     Het aantal gewogen posten van een Jutter moet berekend worden als %s.
-            """.formatted(expressie);
+            """.formatted(expression);
     }
 
     private static List<Diagnostic> sourceless(RegelSpraakModel m) {
@@ -72,10 +72,10 @@ class CountWithoutSourceTest {
             "het aantal Vondsten",                              // an object type's plural, bare
             "het aantal de Jutter"                              // unresolved, already WARNING before
     })
-    void a_count_without_element_type_is_refused(String expressie) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel(expressie));
+    void a_count_without_element_type_is_refused(String expression) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule(expression));
         List<Diagnostic> ds = sourceless(m);
-        assertEquals(1, ds.size(), () -> "verwacht één bronloze-tellingmelding voor '" + expressie + "', kreeg: "
+        assertEquals(1, ds.size(), () -> "verwacht één bronloze-tellingmelding voor '" + expression + "', kreeg: "
                 + m.diagnostics);
         assertEquals(Severity.ERROR, ds.get(0).severity());
         assertTrue(ds.get(0).message().contains("the count is an INSTANCE fold and MUST carry an element type"),
@@ -85,9 +85,9 @@ class CountWithoutSourceTest {
     }
 
     @Test void the_ordinary_count_stays_clean() {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal vondsten van de Jutter"));
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule("het aantal vondsten van de Jutter"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRules.get(0).value();
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
         assertNotNull(f.elementObjectType());
     }
@@ -95,8 +95,8 @@ class CountWithoutSourceTest {
     @Test void a_parameter_that_is_named_count_stays_a_parameter() {
         // the one route by which "het aantal …" legitimately binds no element: the whole phrase is a
         // declared parameter, read back with its article. It returns before the fence.
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal werkdagen"));
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule("het aantal werkdagen"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertInstanceOf(Expr.ParameterRef.class, m.resolvedRegels.get(0).value());
+        assertInstanceOf(Expr.ParameterRef.class, m.resolvedRules.get(0).value());
     }
 }

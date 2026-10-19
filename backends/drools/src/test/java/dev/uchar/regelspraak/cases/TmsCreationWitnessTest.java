@@ -159,9 +159,9 @@ class TmsCreationWitnessTest {
             defaultEntry(check("gemeld", false), number("3"))));
 
     static Path documentA(String condition) throws Exception {
-        String naam = condition.equals("null") ? "meld de vangst" : "meld een lage vangst";
+        String name = condition.equals("null") ? "meld de vangst" : "meld een lage vangst";
         return document(MODEL_A, RULES_A, List.of(VANGST),
-                List.of(objectCreation(naam, "Jutter", "Melding", List.of(init("waarde", ownRead("vangst", "Jutter"))),
+                List.of(objectCreation(name, "Jutter", "Melding", List.of(init("waarde", ownRead("vangst", "Jutter"))),
                         condition, "jutmelding", "melding")), List.of(), List.of());
     }
 
@@ -334,7 +334,7 @@ class TmsCreationWitnessTest {
                             @Override public void objectInserted(ObjectInsertedEvent e) {
                                 if (e.getObject() instanceof Value w && w.value() instanceof BigDecimal x
                                         && x.compareTo(BigDecimal.ONE) == 0)
-                                    valuesOrder.add(w.attribute().naam().toLowerCase(java.util.Locale.ROOT));
+                                    valuesOrder.add(w.attribute().name().toLowerCase(java.util.Locale.ROOT));
                             }
                         }), session -> made.addAll(made(session))), () -> "de vuring" + where);
                 assertNumber("0", TmsDocuments.read(j1, "waarschuwingaantal"), "waarschuwingaantal" + where);
@@ -418,27 +418,27 @@ class TmsCreationWitnessTest {
         }
     }
 
-    /** Follows the standings of {@code onderwerp} and the {@link CreationPhase} facts through working memory, and records
+    /** Follows the standings of {@code subjectType} and the {@link CreationPhase} facts through working memory, and records
      *  whether the aantal standing stood above the kopie standing, both gevuld, while a {@code CreationPhase} did: the
      *  state on which "waarschuw" of document H holds. */
     private static final class IntermediateState extends DefaultRuleRuntimeEventListener {
-        private final Object onderwerp;
+        private final Object subjectType;
         final Map<String, Object> states = new java.util.TreeMap<>();
         private int phases;
         boolean seen;
 
-        IntermediateState(Object onderwerp) { this.onderwerp = onderwerp; }
+        IntermediateState(Object subjectType) { this.subjectType = subjectType; }
 
         @Override public void objectInserted(ObjectInsertedEvent e) {
             if (e.getObject() instanceof CreationPhase) phases++;
-            else if (e.getObject() instanceof State s && s.onderwerp() == onderwerp) states.put(naam(s), s.value());
+            else if (e.getObject() instanceof State s && s.subject() == subjectType) states.put(name(s), s.value());
             look();
         }
 
         @Override public void objectDeleted(ObjectDeletedEvent e) {
             if (e.getOldObject() instanceof CreationPhase) phases--;
-            else if (e.getOldObject() instanceof State s && s.onderwerp() == onderwerp
-                    && java.util.Objects.equals(states.get(naam(s)), s.value())) states.remove(naam(s));
+            else if (e.getOldObject() instanceof State s && s.subject() == subjectType
+                    && java.util.Objects.equals(states.get(name(s)), s.value())) states.remove(name(s));
             look();
         }
 
@@ -447,8 +447,8 @@ class TmsCreationWitnessTest {
                     && a.compareTo(k) > 0) seen = true;
         }
 
-        private static String naam(State s) {
-            return s.attribute().naam().toLowerCase(java.util.Locale.ROOT);
+        private static String name(State s) {
+            return s.attribute().name().toLowerCase(java.util.Locale.ROOT);
         }
     }
 
@@ -501,15 +501,15 @@ class TmsCreationWitnessTest {
                 // one phase per generation: W1 makes W2 in phase 1, W2 makes W3 in phase 2, W3 makes W4 in phase 3,
                 // and W4, of rang 4, makes nothing
                 assertEquals(3, made.size(), () -> "objecten" + where);
-                Object onderwerp = w1;
+                Object subjectType = w1;
                 for (int i = 0; i < 3; i++) {
                     Object[] g = made.get(i);
                     int phase = i + 1;
-                    assertTrue(g[0] == onderwerp, () -> "keten" + where);
+                    assertTrue(g[0] == subjectType, () -> "keten" + where);
                     assertEquals(phase, g[2], () -> "fase" + where);
                     assertNumber(String.valueOf(i + 2), TmsDocuments.read(g[1], "rang"), "rang" + where);
                     assertNumber("0", TmsDocuments.read(g[1], "beginstand"), "beginstand" + where);
-                    onderwerp = g[1];
+                    subjectType = g[1];
                 }
             }
         }
@@ -659,13 +659,13 @@ class TmsCreationWitnessTest {
                         session -> made.addAll(made(session))), () -> "de vuring" + where);
                 // one object in each phase, the subject of each the object of the one before
                 assertEquals(100, made.size(), () -> "objecten" + where);
-                Object onderwerp = w1;
+                Object subjectType = w1;
                 for (int i = 0; i < made.size(); i++) {
                     Object[] g = made.get(i);
                     int phase = i + 1;
-                    assertTrue(g[0] == onderwerp, () -> "keten" + where);
+                    assertTrue(g[0] == subjectType, () -> "keten" + where);
                     assertEquals(phase, g[2], () -> "fase" + where);
-                    onderwerp = g[1];
+                    subjectType = g[1];
                 }
             }
         }
@@ -773,9 +773,9 @@ class TmsCreationWitnessTest {
 
     /** "Een {@code subject} heeft een {@code role} met …": an object creation of one always-valid version, its
      *  {@code connectingRole} the role {@code role} of {@code factType}, the role the created object plays. */
-    static String objectCreation(String naam, String subject, String fresh, List<String> inits, String condition,
+    static String objectCreation(String name, String subject, String fresh, List<String> inits, String condition,
                                 String factType, String role) {
-        return "{\"node\":\"ObjectCreation\",\"name\":\"" + naam + "\",\"versions\":[{\"createdType\":\"" + fresh
+        return "{\"node\":\"ObjectCreation\",\"name\":\"" + name + "\",\"versions\":[{\"createdType\":\"" + fresh
                 + "\",\"subject\":\"" + subject + "\",\"initialisations\":[" + String.join(",", inits) + "]"
                 + (condition.equals("null") ? "" : ",\"condition\":" + condition)
                 + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding(factType, role) + "}]}";
@@ -788,20 +788,20 @@ class TmsCreationWitnessTest {
 
     /** "Een {@code targetRole} van een {@code anchor} is een … van …": a fact creation of one always-valid version over
      *  {@code path}, each step a RoleBinding. */
-    static String factCreation(String naam, String factType, String anchorRole, String targetRole, String anchor, List<String> path,
+    static String factCreation(String name, String factType, String anchorRole, String targetRole, String anchor, List<String> path,
                               String condition) {
-        return "{\"node\":\"FactCreation\",\"name\":\"" + naam + "\",\"versions\":[{\"factType\":\"" + factType
+        return "{\"node\":\"FactCreation\",\"name\":\"" + name + "\",\"versions\":[{\"factType\":\"" + factType
                 + "\",\"anchorRole\":\"" + anchorRole + "\",\"targetRole\":\"" + targetRole + "\",\"anchor\":\"" + anchor
                 + "\",\"path\":[" + String.join(",", path) + "]"
                 + (condition.equals("null") ? "" : ",\"condition\":" + condition) + ",\"validity\":{\"node\":\"Validity\"}}]}";
     }
 
     /** A recursive rule group of {@code members}. */
-    static String ruleGroup(String naam, List<String> members) {
+    static String ruleGroup(String name, List<String> members) {
         List<String> l = new ArrayList<>();
         for (String member : members) l.add("\"" + member + "\"");
-        return "{\"node\":\"RuleGroup\",\"name\":\"" + naam + "\",\"recursive\":true,\"members\":[" + String.join(",", l)
-                + "],\"source\":{\"snippet\":\"" + naam + "\"}}";
+        return "{\"node\":\"RuleGroup\",\"name\":\"" + name + "\",\"recursive\":true,\"members\":[" + String.join(",", l)
+                + "],\"source\":{\"snippet\":\"" + name + "\"}}";
     }
 
     // ---------------- firing through the driver ----------------
@@ -866,7 +866,7 @@ class TmsCreationWitnessTest {
     static List<Object[]> made(KieSession session) {
         List<Object[]> out = new ArrayList<>();
         for (Object f : session.getObjects(o -> o.getClass().getSimpleName().equals("CreationStamp")))
-            out.add(new Object[]{field(f, "onderwerp"), field(f, "object"), field(f, "phase")});
+            out.add(new Object[]{field(f, "subject"), field(f, "object"), field(f, "phase")});
         out.sort(java.util.Comparator.comparingInt(g -> (Integer) g[2]));
         return out;
     }
@@ -879,9 +879,9 @@ class TmsCreationWitnessTest {
         return out;
     }
 
-    private static Object field(Object fact, String naam) {
+    private static Object field(Object fact, String name) {
         try {
-            return fact.getClass().getMethod(naam).invoke(fact);
+            return fact.getClass().getMethod(name).invoke(fact);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
         }
@@ -893,7 +893,7 @@ class TmsCreationWitnessTest {
         BigDecimal v = new BigDecimal(lexeme);
         return new DefaultRuleRuntimeEventListener() {
             @Override public void objectInserted(ObjectInsertedEvent e) {
-                if (e.getObject() instanceof Value w && w.attribute().naam().equalsIgnoreCase(attribute)
+                if (e.getObject() instanceof Value w && w.attribute().name().equalsIgnoreCase(attribute)
                         && w.value() instanceof BigDecimal x && x.compareTo(v) == 0) counter[0]++;
             }
         };

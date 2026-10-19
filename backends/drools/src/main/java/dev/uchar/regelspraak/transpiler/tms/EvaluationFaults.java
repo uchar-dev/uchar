@@ -39,10 +39,10 @@ public final class EvaluationFaults extends RuntimeException {
     private static String head(List<Fault> faults) {
         List<String> rules = new ArrayList<>();
         for (int i = 0; i < faults.size(); ) {
-            String regel = faults.get(i).regel();
+            String rule = faults.get(i).rule();
             int n = 0;
-            for (; i < faults.size() && faults.get(i).regel().equals(regel); i++) n++;
-            rules.add("\"" + regel + "\"" + (n > 1 ? " (" + n + "×)" : ""));
+            for (; i < faults.size() && faults.get(i).rule().equals(rule); i++) n++;
+            rules.add("\"" + rule + "\"" + (n > 1 ? " (" + n + "×)" : ""));
         }
         return "aan het fixpunt staan " + faults.size() + " evaluatiefouten, in de regel" + (rules.size() > 1 ? "s " : " ")
                 + String.join(", ", rules);

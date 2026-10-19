@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.core;
 
 import dev.uchar.regelspraak.ir.Spelling;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Granularity;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -55,7 +55,7 @@ public final class FixedStartPoint {
     }
 
     /** The months between two walls of a single-unit month, quarter or year grid; 0 for a day or week grid. */
-    public static int stepMonths(Granulariteit g) {
+    public static int stepMonths(Granularity g) {
         return switch (g) {
             case MAAND -> 1;
             case KWARTAAL -> 3;
@@ -67,7 +67,7 @@ public final class FixedStartPoint {
     /** The canonical day-month of a single-unit month, quarter or year grid with a wall on day {@code day} of month
      *  {@code month}: the earliest month of the year in that month's cycle that has the day itself. Null when no
      *  month of the cycle has it. */
-    public static String canoniek(Granulariteit g, int month, int day) {
+    public static String canonical(Granularity g, int month, int day) {
         int step = stepMonths(g);
         if (step == 0 || month < 1 || month > 12 || day < 1) return null;
         for (int m = (month - 1) % step + 1; m <= 12; m += step)
@@ -77,13 +77,13 @@ public final class FixedStartPoint {
 
     /** WF-115 (b): the refusal of fixed start point {@code s} on a grid of {@code g} and {@code count}, in the
      *  verifier's sentence, or null when it fits. A count below 1 is WF-005's, and this answers null there. */
-    public static String refusal(Granulariteit g, int count, String s) {
+    public static String refusal(Granularity g, int count, String s) {
         if (count < 1) return null;
         String reason;
         Lexeme l = parse(s);
-        if (g == Granulariteit.DAG && count == 1)
+        if (g == Granularity.DAG && count == 1)
             reason = "a day grid has a wall at every day boundary and takes no start point";
-        else if (g == Granulariteit.WEEK || count >= 2)
+        else if (g == Granularity.WEEK || count >= 2)
             reason = l != null && l.isDate() ? null
                     : "a week grid and a grid of several units start on a date, written yyyy-mm-dd, the ISO form of "
                     + "a day of the calendar";
@@ -91,7 +91,7 @@ public final class FixedStartPoint {
             reason = "a month, quarter or year grid of one unit starts on a day-month, written --mm-dd, a day of "
                     + "month mm in a leap year";
         else {
-            String c = canoniek(g, l.month(), l.day());
+            String c = canonical(g, l.month(), l.day());
             reason = "--01-01".equals(c) ? "it lays the calendar's own grid, which is written without a fixedStart"
                     : c.equals(s) ? null
                     : "its canonical spelling is " + c + ", with the earliest month of the year that has a wall on "
@@ -102,18 +102,18 @@ public final class FixedStartPoint {
     }
 
     /** WF-115 (a), in the verifier's sentence. */
-    public static String refusalVariable(String tijdlijn, String s) {
-        return "timeline '" + tijdlijn + "' has a variable start and a fixedStart '" + s + "': its periods run from "
+    public static String refusalVariable(String timeline, String s) {
+        return "timeline '" + timeline + "' has a variable start and a fixedStart '" + s + "': its periods run from "
                 + "the anchor its start-point determination binds per object, and a timeline has one start";
     }
 
     /** WF-115 (c), in the verifier's sentence: the facet's fixed start point against the named timeline's. */
-    public static String refusalAdoption(String facet, String tijdlijn, String ofTimeline) {
-        return "named-timeline adoption is partial: fixed start point " + tekst(facet) + " on the facet, "
-                + tekst(ofTimeline) + " on timeline '" + tijdlijn + "'";
+    public static String refusalAdoption(String facet, String timeline, String ofTimeline) {
+        return "named-timeline adoption is partial: fixed start point " + text(facet) + " on the facet, "
+                + text(ofTimeline) + " on timeline '" + timeline + "'";
     }
 
-    private static String tekst(String s) {
+    private static String text(String s) {
         return s == null ? "none" : "'" + s + "'";
     }
 
@@ -122,7 +122,7 @@ public final class FixedStartPoint {
      *  several units without a date start, a week grid of one unit without one, and a fixed start point that is no
      *  lexeme of WF-115 for its grid (RUNTIME-SEMANTICS ch. 3.2). The calendar's month, quarter and year grids are
      *  the grids {@code --01-01} lays; a day grid of one unit has a wall at every day. */
-    public static Boolean opWand(Granulariteit g, int count, String fixed, LocalDate d) {
+    public static Boolean opWand(Granularity g, int count, String fixed, LocalDate d) {
         if (g == null || count < 1 || d == null) return null;
         if (count >= 2) {
             Lexeme l = parse(fixed);
@@ -138,11 +138,11 @@ public final class FixedStartPoint {
                 }
             };
         }
-        if (g == Granulariteit.DAG) return fixed == null ? Boolean.TRUE : null;
-        String start = fixed != null ? fixed : g == Granulariteit.WEEK ? null : "--01-01";
+        if (g == Granularity.DAG) return fixed == null ? Boolean.TRUE : null;
+        String start = fixed != null ? fixed : g == Granularity.WEEK ? null : "--01-01";
         if (start == null || refusal(g, 1, start) != null && fixed != null) return null;
         try {
-            return periode(g, start, d)[0].equals(d);
+            return period(g, start, d)[0].equals(d);
         } catch (IllegalArgumentException noGrid) {
             return null;
         }
@@ -158,11 +158,11 @@ public final class FixedStartPoint {
      *  contains day {@code d} (RUNTIME-SEMANTICS ch. 3.2). Every wall is computed from the anchor, never from the
      *  previous wall, so a month-end anchor clamps the same way in every period. A multi-period grid has a grid and
      *  no operation, so it is refused by the caller before this is asked. */
-    public static LocalDate[] periode(Granulariteit g, String s, LocalDate d) {
+    public static LocalDate[] period(Granularity g, String s, LocalDate d) {
         Lexeme l = parse(s);
         if (l == null) throw new IllegalArgumentException("fixed start point '" + s + "' is no lexeme of WF-115");
         LocalDate anchor = anchor(l);
-        if (g == Granulariteit.WEEK) {
+        if (g == Granularity.WEEK) {
             long k = Math.floorDiv(ChronoUnit.DAYS.between(anchor, d), 7);
             return new LocalDate[]{ anchor.plusDays(7 * k), anchor.plusDays(7 * (k + 1)) };
         }

@@ -30,9 +30,9 @@ class DecisionTableDesugarTest {
                 List.of("1", "1", "\"Noord\", \"Oost\", \"West\", \"Zuid\" of \"Midden\""),
                 List.of("2", "2", "\"Veen\", \"Zand\", \"Klei\" of \"Polder\""),
                 List.of("3", "3", "\"Kust\", \"Wad\" of \"Duin\""));
-        List<String> regels = DecisionTableDesugar.desugar("Regiofactor", "altijd", headers, rows);
+        List<String> rules = DecisionTableDesugar.desugar("Regiofactor", "altijd", headers, rows);
 
-        assertEquals(3, regels.size());
+        assertEquals(3, rules.size());
         assertEquals("Regel Regiofactor 1\n  geldig altijd\n    "
                 + "de regiofactor van een Klant moet gesteld worden op 1 "
                 + "indien er aan tenminste één van de volgende voorwaarden wordt voldaan:\n"
@@ -41,14 +41,14 @@ class DecisionTableDesugarTest {
                 + "      • zijn regio gelijk is aan \"West\"\n"
                 + "      • zijn regio gelijk is aan \"Zuid\"\n"
                 + "      • zijn regio gelijk is aan \"Midden\".\n",
-                regels.get(0));
+                rules.get(0));
         assertEquals("Regel Regiofactor 3\n  geldig altijd\n    "
                 + "de regiofactor van een Klant moet gesteld worden op 3 "
                 + "indien er aan tenminste één van de volgende voorwaarden wordt voldaan:\n"
                 + "      • zijn regio gelijk is aan \"Kust\"\n"
                 + "      • zijn regio gelijk is aan \"Wad\"\n"
                 + "      • zijn regio gelijk is aan \"Duin\".\n",
-                regels.get(2));
+                rules.get(2));
     }
 
     @Test void multi_condition_column_folds_to_all_next_conditions_and_omits_nvt() {
@@ -59,20 +59,20 @@ class DecisionTableDesugarTest {
         List<List<String>> rows = List.of(
                 List.of("1", "het lage tarief", "n.v.t.", "de eerste drempel"),
                 List.of("2", "het hoge tarief", "de eerste drempel", "de tweede drempel"));
-        List<String> regels = DecisionTableDesugar.desugar("Duurheffing", "altijd", headers, rows);
+        List<String> rules = DecisionTableDesugar.desugar("Duurheffing", "altijd", headers, rows);
 
         // row 1: the "n.v.t." condition is OMITTED -> a single (the second) condition.
         assertEquals("Regel Duurheffing 1\n  geldig altijd\n    "
                 + "de duurheffing van een klant moet gesteld worden op het lage tarief "
                 + "indien de duur in dagen van zijn verblijf kleiner of gelijk is aan de eerste drempel.\n",
-                regels.get(0));
+                rules.get(0));
         // row 2: both conditions -> AND via "alle volgende voorwaarden", "indien" stripped per bullet.
         assertEquals("Regel Duurheffing 2\n  geldig altijd\n    "
                 + "de duurheffing van een klant moet gesteld worden op het hoge tarief "
                 + "indien hij aan alle volgende voorwaarden voldoet:\n"
                 + "      • de duur in dagen van zijn verblijf groter is dan de eerste drempel\n"
                 + "      • de duur in dagen van zijn verblijf kleiner of gelijk is aan de tweede drempel.\n",
-                regels.get(1));
+                rules.get(1));
     }
 
     @Test void conclusion_column_after_condition_column_is_classified_by_header_not_position() {
@@ -81,10 +81,10 @@ class DecisionTableDesugarTest {
                 "indien zijn leeftijd kleiner is dan",
                 "de korting van een Klant moet gesteld worden op");
         List<List<String>> rows = List.of(List.of("1", "18", "10"));
-        List<String> regels = DecisionTableDesugar.desugar("Korting", "altijd", headers, rows);
+        List<String> rules = DecisionTableDesugar.desugar("Korting", "altijd", headers, rows);
         assertEquals("Regel Korting 1\n  geldig altijd\n    "
                 + "de korting van een Klant moet gesteld worden op 10 indien zijn leeftijd kleiner is dan 18.\n",
-                regels.get(0));
+                rules.get(0));
     }
 
     @Test void characteristic_condition_true_is_the_check_itself_not_an_appended_value() {
@@ -95,12 +95,12 @@ class DecisionTableDesugarTest {
                 "indien hij een recht op duurzaamheidskorting heeft",
                 "indien zijn duur kleiner of gelijk is aan");
         List<List<String>> rows = List.of(List.of("1", "10", "waar", "60"));
-        List<String> regels = DecisionTableDesugar.desugar("Belasting", "altijd", headers, rows);
+        List<String> rules = DecisionTableDesugar.desugar("Belasting", "altijd", headers, rows);
         assertEquals("Regel Belasting 1\n  geldig altijd\n    "
                 + "de belasting van een Klant moet gesteld worden op 10 indien hij aan alle volgende voorwaarden voldoet:\n"
                 + "      • hij een recht op duurzaamheidskorting heeft\n"
                 + "      • zijn duur kleiner of gelijk is aan 60.\n",
-                regels.get(0));
+                rules.get(0));
     }
 
     @Test void characteristic_condition_false_negates_the_possessive_check() {
@@ -108,11 +108,11 @@ class DecisionTableDesugarTest {
                 "de belasting van een Klant moet gesteld worden op",
                 "indien hij een recht op duurzaamheidskorting heeft");
         List<List<String>> rows = List.of(List.of("1", "10", "onwaar"));
-        List<String> regels = DecisionTableDesugar.desugar("Belasting", "altijd", headers, rows);
+        List<String> rules = DecisionTableDesugar.desugar("Belasting", "altijd", headers, rows);
         assertEquals("Regel Belasting 1\n  geldig altijd\n    "
                 + "de belasting van een Klant moet gesteld worden op 10 "
                 + "indien hij geen recht op duurzaamheidskorting heeft.\n",
-                regels.get(0));
+                rules.get(0));
     }
 
     @Test void multi_value_cell_under_equality_becomes_an_or_list_nested_last_inside_an_and() {
@@ -123,14 +123,14 @@ class DecisionTableDesugarTest {
                 "indien zijn leeftijd groter is dan",
                 "indien zijn klasse gelijk is aan");
         List<List<String>> rows = List.of(List.of("1", "5", "18", "\"eerste\" of \"tweede\""));
-        List<String> regels = DecisionTableDesugar.desugar("Korting", "altijd", headers, rows);
+        List<String> rules = DecisionTableDesugar.desugar("Korting", "altijd", headers, rows);
         assertEquals("Regel Korting 1\n  geldig altijd\n    "
                 + "de korting van een Klant moet gesteld worden op 5 indien hij aan alle volgende voorwaarden voldoet:\n"
                 + "      • zijn leeftijd groter is dan 18\n"
                 + "      • er voldoet aan tenminste één van de volgende voorwaarden:\n"
                 + "        •• zijn klasse gelijk is aan \"eerste\"\n"
                 + "        •• zijn klasse gelijk is aan \"tweede\".\n",
-                regels.get(0));
+                rules.get(0));
     }
 
     @Test void multi_value_cell_split_is_quote_aware() {
@@ -139,9 +139,9 @@ class DecisionTableDesugarTest {
                 "de regiofactor van een Klant moet gesteld worden op",
                 "indien zijn regio gelijk is aan");
         List<List<String>> rows = List.of(List.of("1", "1", "\"Kust, Noord\", \"A of B\" of \"Wad|land\""));
-        List<String> regels = DecisionTableDesugar.desugar("W", "altijd", headers, rows);
-        assertEquals(1, regels.size());
-        String r = regels.get(0);
+        List<String> rules = DecisionTableDesugar.desugar("W", "altijd", headers, rows);
+        assertEquals(1, rules.size());
+        String r = rules.get(0);
         assertTrue(r.contains("• zijn regio gelijk is aan \"Kust, Noord\""), r);
         assertTrue(r.contains("• zijn regio gelijk is aan \"A of B\""), r);
         assertTrue(r.contains("• zijn regio gelijk is aan \"Wad|land\""), r);
@@ -153,13 +153,13 @@ class DecisionTableDesugarTest {
                 "de regiofactor van een Klant moet gesteld worden op",
                 "indien zijn regio ongelijk is aan");
         List<List<String>> rows = List.of(List.of("1", "1", "\"Noord\", \"Oost\" en \"West\""));
-        List<String> regels = DecisionTableDesugar.desugar("W", "altijd", headers, rows);
+        List<String> rules = DecisionTableDesugar.desugar("W", "altijd", headers, rows);
         assertEquals("Regel W 1\n  geldig altijd\n    "
                 + "de regiofactor van een Klant moet gesteld worden op 1 indien hij aan alle volgende voorwaarden voldoet:\n"
                 + "      • zijn regio ongelijk is aan \"Noord\"\n"
                 + "      • zijn regio ongelijk is aan \"Oost\"\n"
                 + "      • zijn regio ongelijk is aan \"West\".\n",
-                regels.get(0));
+                rules.get(0));
     }
 
     @Test void more_than_one_disjunction_in_one_and_row_is_skipped_with_a_warning() {
@@ -170,8 +170,8 @@ class DecisionTableDesugarTest {
         List<List<String>> rows = List.of(List.of("1", "1",
                 "\"Noord\" of \"Oost\"", "\"Fries\" of \"Nedersaksisch\""));
         List<String> warns = new ArrayList<>();
-        List<String> regels = DecisionTableDesugar.desugar("W", "altijd", headers, rows, warns::add);
-        assertTrue(regels.isEmpty(), () -> "verwacht geen regel (niet stil renderen): " + regels);
+        List<String> rules = DecisionTableDesugar.desugar("W", "altijd", headers, rows, warns::add);
+        assertTrue(rules.isEmpty(), () -> "verwacht geen regel (niet stil renderen): " + rules);
         assertEquals(1, warns.size(), () -> "" + warns);
         assertTrue(warns.get(0).contains("meer dan één concatenatie-cel"), warns.get(0));
     }
@@ -180,8 +180,8 @@ class DecisionTableDesugarTest {
         List<String> headers = List.of("", "een klant is minderjarig", "indien zijn leeftijd kleiner is dan");
         List<List<String>> rows = List.of(List.of("1", "waar", "18 jr"), List.of("2", "onwaar", "65 jr"));
         List<String> warns = new ArrayList<>();
-        List<String> regels = DecisionTableDesugar.desugar("M", "altijd", headers, rows, warns::add);
-        assertEquals(1, regels.size(), () -> "alleen rij 1 (waar) levert een regel: " + regels);
+        List<String> rules = DecisionTableDesugar.desugar("M", "altijd", headers, rows, warns::add);
+        assertEquals(1, rules.size(), () -> "alleen rij 1 (waar) levert een regel: " + rules);
         assertEquals(1, warns.size());
         assertTrue(warns.get(0).contains("onwaar"), warns.get(0));
     }
@@ -234,16 +234,16 @@ class DecisionTableDesugarTest {
                 "de korting van een Klant moet gesteld worden op",
                 "indien zijn leeftijd kleiner is dan");
         List<List<String>> rows = List.of(List.of("1", "10", "18"), List.of("2", "0", "65"));
-        List<String> regels = DecisionTableDesugar.desugar("Korting", "altijd", headers, rows);
+        List<String> rules = DecisionTableDesugar.desugar("Korting", "altijd", headers, rows);
 
         String src = "Objecttype de Klant (mv: Klanten) (bezield)\n"
                 + "    de leeftijd Numeriek (geheel getal);\n"
                 + "    de korting Numeriek (geheel getal);\n"
-                + String.join("", regels);
+                + String.join("", rules);
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "resolver-fout: " + m.errors());
-        assertEquals(2, m.resolvedRegels.size());
-        for (ResolvedRule r : m.resolvedRegels) {
+        assertEquals(2, m.resolvedRules.size());
+        for (ResolvedRule r : m.resolvedRules) {
             assertEquals(ResolvedRule.Kind.GELIJKSTELLING, r.category());
             assertTrue(r.target() instanceof Expr.AttributeReference a && a.attribute().equals("korting"),
                     () -> "doel niet de korting: " + r.target());

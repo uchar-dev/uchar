@@ -76,7 +76,7 @@ class PlanOrderWitnessTest {
             }
             String golden = GOLDEN.relativize(ir.getParent()).toString();
             for (RulePlan p : b.execModelTranspiler().modelplan().rules())
-                loop(p, golden + " | " + p.naam(), salted, collectionCount, new IdentityHashMap<>());
+                loop(p, golden + " | " + p.name(), salted, collectionCount, new IdentityHashMap<>());
         }
         assertEquals(List.of(), salted, "verzamelingen met een volgorde per run");
         int n = collectionCount[0];
@@ -100,7 +100,7 @@ class PlanOrderWitnessTest {
                     continue;
                 }
                 List<String> types = new ArrayList<>();
-                for (String type : b.model().objecttypen.keySet()) types.add(Namen.ident(type, true));
+                for (String type : b.model().objectTypes.keySet()) types.add(Namen.ident(type, true));
                 for (List<String> names : classesOutsideStack(b)) {
                     sets++;
                     List<Integer> places = new ArrayList<>();

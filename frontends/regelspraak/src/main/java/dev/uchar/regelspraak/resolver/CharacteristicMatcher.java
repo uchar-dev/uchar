@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.resolver;
 
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,13 +45,13 @@ final class CharacteristicMatcher {
      *  the §3.5 soort check that follows each call reads the same declarant. The ambiguity guard ranges
      *  over the chain for the same reason it ranges over one type's declarations — an inflection that
      *  fits a kenmerk here and another one hop up binds NEITHER, never the nearer one. */
-    static String find(Objecttype ot, String written) {
+    static String find(ObjectType ot, String written) {
         if (ot == null || written == null) return null;
         String base = ot.characteristicName(written);            // base form — always preferred
         if (base != null) return base;
         String only = null;                                  // the single kenmerk this form inflects from
-        for (Objecttype t : ot.chain())
-            for (String k : t.kenmerken)
+        for (ObjectType t : ot.chain())
+            for (String k : t.characteristics)
                 for (String form : inflectedForms(k))
                     if (form.equalsIgnoreCase(written)) {
                         if (only != null && !only.equalsIgnoreCase(k)) return null;  // ambiguous → marker

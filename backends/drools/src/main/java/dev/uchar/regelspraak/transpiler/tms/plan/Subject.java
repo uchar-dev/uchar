@@ -6,7 +6,7 @@ import java.util.List;
  *  constraints on the bean alone ({@code alpha}), its identity joins to objects a pattern before it binds
  *  ({@code joins}), its other constraints between the bean and such an object ({@code betaTests}), and the values the
  *  rule binds off it, in that order. */
-public record Subject(Class<?> beanClass, String naam, List<Alpha> alpha, List<Join> joins,
+public record Subject(Class<?> beanClass, String name, List<Alpha> alpha, List<Join> joins,
                         List<BetaTest> betaTests, List<Binding> bindings) implements LhsItem {
     public Subject {
         alpha = List.copyOf(alpha);
@@ -16,7 +16,7 @@ public record Subject(Class<?> beanClass, String naam, List<Alpha> alpha, List<J
     }
 
     /** A subject pattern without constraints between the bean and another pattern's object but identity joins. */
-    public Subject(Class<?> beanClass, String naam, List<Alpha> alpha, List<Join> joins, List<Binding> bindings) {
-        this(beanClass, naam, alpha, joins, List.of(), bindings);
+    public Subject(Class<?> beanClass, String name, List<Alpha> alpha, List<Join> joins, List<Binding> bindings) {
+        this(beanClass, name, alpha, joins, List.of(), bindings);
     }
 }

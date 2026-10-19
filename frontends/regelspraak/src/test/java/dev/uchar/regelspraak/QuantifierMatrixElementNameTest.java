@@ -55,7 +55,7 @@ class QuantifierMatrixElementNameTest {
     }
 
     private static Condition.QuantifierFold fold(RegelSpraakModel m) {
-        ResolvedRule r = m.resolvedRegels.stream().filter(x -> x.naam().equals("laatklasse")).findFirst().orElseThrow();
+        ResolvedRule r = m.resolvedRules.stream().filter(x -> x.name().equals("laatklasse")).findFirst().orElseThrow();
         return assertInstanceOf(Condition.QuantifierFold.class, r.condition());
     }
 
@@ -67,7 +67,7 @@ class QuantifierMatrixElementNameTest {
         Condition.Comparison v = assertInstanceOf(Condition.Comparison.class, k.test());
         Expr.AttributeReference r = assertInstanceOf(Expr.AttributeReference.class, v.right());
         assertEquals("sluitdag", r.attribute());
-        assertEquals("Jutter", r.objectType().naam);
+        assertEquals("Jutter", r.objectType().name);
         assertEquals(List.of("jutter"), r.navigationPath());
     }
 

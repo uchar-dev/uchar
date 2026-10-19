@@ -105,15 +105,15 @@ class BrokenDurationTest {
 
     /** The refusal: {@code example} is ch. 3.8's example in the duration's unit, or the literal truncated;
      *  {@code suffix} the smaller unit to step the rest in, or why the date has none. */
-    private static String sentence(String op, String written, String duration, String cause, String eenheid,
+    private static String sentence(String op, String written, String duration, String cause, String unit,
                               String example, String truncate, String suffix) {
         return "datum " + op + " duur '" + written + "': de duur '" + duration + "' " + cause
-                + ", en de uitvoerders kappen een gebroken telling in " + eenheid + " naar nul af vóór de kalenderstap "
+                + ", en de uitvoerders kappen een gebroken telling in " + unit + " naar nul af vóór de kalenderstap "
                 + "(RUNTIME-SEMANTICS ch. 3.8: " + example + "); schrijf de afkapping uit als '" + truncate + "'" + suffix;
     }
 
-    private static String nineteenth(String eenheid) {
-        return "1,9 " + eenheid + " telt als 1 " + eenheid + " en -1,9 " + eenheid + " als -1 " + eenheid;
+    private static String nineteenth(String unit) {
+        return "1,9 " + unit + " telt als 1 " + unit + " en -1,9 " + unit + " als -1 " + unit;
     }
 
     private static String takeAlong(String truncate, String op, String smaller) {
@@ -121,10 +121,10 @@ class BrokenDurationTest {
     }
 
     /** The refusal of a duration that is no literal, with the next smaller unit or the closing sentence. */
-    private static String read(String op, String left, String duration, String cause, String eenheid, String smaller) {
+    private static String read(String op, String left, String duration, String cause, String unit, String smaller) {
         String truncate = left + " " + op + " (" + duration + " richting nul afgerond op 0 decimalen)";
         String suffix = smaller.startsWith("; ") ? smaller : takeAlong(truncate, op, smaller);
-        return sentence(op, left + " " + op + " " + duration, duration, cause, eenheid, nineteenth(eenheid), truncate, suffix);
+        return sentence(op, left + " " + op + " " + duration, duration, cause, unit, nineteenth(unit), truncate, suffix);
     }
 
     private static final String NO_DAGDEEL = "; een datum in dagen kent geen eenheid kleiner dan een dag";

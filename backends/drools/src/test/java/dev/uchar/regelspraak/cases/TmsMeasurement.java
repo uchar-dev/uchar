@@ -97,7 +97,7 @@ public final class TmsMeasurement {
         int k = 0;
         for (Golden g : gemeten) {
             g.meet();
-            System.err.println("tmsmeting: " + ++k + "/" + gemeten.size() + " " + g.naam);
+            System.err.println("tmsmeting: " + ++k + "/" + gemeten.size() + " " + g.name);
         }
         StringBuilder out = new StringBuilder();
         head(out);
@@ -142,7 +142,7 @@ public final class TmsMeasurement {
     /** One golden: its document, its cases without the red-path ones, the replay's verdict, and what the branch
      *  measured where it plays it. */
     private static final class Golden {
-        final String naam;
+        final String name;
         final Path ir;
         final List<Path> paths;
         final List<JsonNode> cases = new ArrayList<>();
@@ -150,8 +150,8 @@ public final class TmsMeasurement {
         CaseRunner.Result verdict;
         Branch branch;
 
-        Golden(String naam, Path map, List<Path> paths) throws Exception {
-            this.naam = naam;
+        Golden(String name, Path map, List<Path> paths) throws Exception {
+            this.name = name;
             this.ir = map.resolve("ir.json");
             this.paths = paths;
             for (Path p : paths) {
@@ -214,7 +214,7 @@ public final class TmsMeasurement {
                 return new FireMeasurement(firing.firings(), firing.cap(), fired - begin, writtenBack - writeBackStart, n0, state);
             });
         } catch (RuntimeException e) {
-            throw new IllegalStateException(g.naam + ", " + g.caseNames.get(c) + " op " + branch + ": " + e, e);
+            throw new IllegalStateException(g.name + ", " + g.caseNames.get(c) + " op " + branch + ": " + e, e);
         }
     }
 
@@ -280,7 +280,7 @@ public final class TmsMeasurement {
                 return new Phases(highest, highestFirings, highestN);
             });
         } catch (RuntimeException e) {
-            throw new IllegalStateException(g.naam + ", " + g.caseNames.get(c) + " op " + branch + " (fasen): " + e, e);
+            throw new IllegalStateException(g.name + ", " + g.caseNames.get(c) + " op " + branch + " (fasen): " + e, e);
         }
     }
 
@@ -326,7 +326,7 @@ public final class TmsMeasurement {
             t.buildMs = median(times) / 1e6;
             t.rules = rules(build.kieBase());
             t.groups = build.execModelTranspiler().defaultsGroups();
-            for (TmsTranspiler.DefaultsGroup g : t.groups) t.controlFacts.put(g.naam(), new long[2]);
+            for (TmsTranspiler.DefaultsGroup g : t.groups) t.controlFacts.put(g.name(), new long[2]);
             t.runner = CaseRunner.forMeasurement(ir, b);
             return t;
         }
@@ -353,7 +353,7 @@ public final class TmsMeasurement {
             int cap = ms.get(0).cap();
             for (FireMeasurement m : ms)
                 if (m.n0() != n || m.cap() != cap)
-                    throw new IllegalStateException(g.naam + ", " + caseFileName + ": N0 of het plafond verschilt tussen de"
+                    throw new IllegalStateException(g.name + ", " + caseFileName + ": N0 of het plafond verschilt tussen de"
                             + " herhalingen: " + ms.stream().map(x -> x.n0() + "/" + x.cap()).toList());
             n0 += n;
             if (n > 0) {
@@ -381,7 +381,7 @@ public final class TmsMeasurement {
             for (Object f : sessionFacts) {
                 if (!(f instanceof ControlFact s)) continue;
                 if (!thisCase.containsKey(s.stack()))
-                    throw new IllegalStateException(g.naam + ": stuurfeit " + f + " van een stapel die de transpiler niet"
+                    throw new IllegalStateException(g.name + ": stuurfeit " + f + " van een stapel die de transpiler niet"
                             + " noemt " + thisCase.keySet());
                 thisCase.merge(s.stack(), 1L, Long::sum);
             }
@@ -406,7 +406,7 @@ public final class TmsMeasurement {
         out.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n");
         for (Golden g : gemeten) {
             Branch t = g.branch;
-            out.append("| ").append(g.naam).append(" | ").append(g.cases.size()).append(" | ").append(t.firings())
+            out.append("| ").append(g.name).append(" | ").append(g.cases.size()).append(" | ").append(t.firings())
                     .append(" | ").append(ms(t.fireMs)).append(" | ").append(ms(t.writeBackMs)).append(" | ")
                     .append(ms(t.buildMs)).append(" | ").append(t.rules).append(" | ").append(t.n0).append(" | ")
                     .append(t.ratio < 0 ? "–" : ratio(t.ratio)).append(" | ")
@@ -436,7 +436,7 @@ public final class TmsMeasurement {
         out.append("| golden | case | vuringen | R | N0 | v/(R×N0) | plafond van `vuur` |\n|---|---|---:|---:|---:|---:|---:|\n");
         for (Golden g : perRatio.subList(0, Math.min(10, perRatio.size()))) {
             Branch t = g.branch;
-            out.append("| ").append(g.naam).append(" | ").append(t.ratioCase).append(" | ")
+            out.append("| ").append(g.name).append(" | ").append(t.ratioCase).append(" | ")
                     .append(t.ratioFirings).append(" | ").append(t.rules).append(" | ").append(t.ratioN0)
                     .append(" | ").append(ratio(t.ratio)).append(" | ").append(t.ratioCap)
                     .append(" |\n");
@@ -460,7 +460,7 @@ public final class TmsMeasurement {
         out.append("| golden | case | vuringen | R | N | v/(R×N) | v/(R×N0) van de golden |\n|---|---|---:|---:|---:|---:|---:|\n");
         for (Golden g : perPhase.subList(0, Math.min(10, perPhase.size()))) {
             Branch t = g.branch;
-            out.append("| ").append(g.naam).append(" | ").append(t.phasesCase).append(" | ").append(t.phasesFirings)
+            out.append("| ").append(g.name).append(" | ").append(t.phasesCase).append(" | ").append(t.phasesFirings)
                     .append(" | ").append(t.rules).append(" | ").append(t.phasesN).append(" | ").append(ratio(t.phases))
                     .append(" | ").append(t.ratio < 0 ? "–" : ratio(t.ratio)).append(" |\n");
         }
@@ -475,14 +475,14 @@ public final class TmsMeasurement {
             if (tightest == null || g.branch.capShare > tightest.branch.capShare) tightest = g;
         if (tightest != null)
             out.append("Het grootste vuringen/plafond van één case, onder het plafond van `vuur`: ")
-                    .append(ratio(tightest.branch.capShare)).append(" (").append(tightest.naam)
+                    .append(ratio(tightest.branch.capShare)).append(" (").append(tightest.name)
                     .append(", ").append(tightest.branch.capCase).append(").\n\n");
     }
 
-    private static void row(StringBuilder out, String naam, List<Golden> goldens, ToDoubleFunction<Branch> value,
+    private static void row(StringBuilder out, String name, List<Golden> goldens, ToDoubleFunction<Branch> value,
                             String form) {
         double[] n = goldens.stream().mapToDouble(g -> value.applyAsDouble(g.branch)).toArray();
-        out.append("| ").append(naam).append(" | ").append(String.format(Locale.ROOT, form, Arrays.stream(n).sum()))
+        out.append("| ").append(name).append(" | ").append(String.format(Locale.ROOT, form, Arrays.stream(n).sum()))
                 .append(" | ").append(String.format(Locale.ROOT, form, median(n))).append(" |\n");
     }
 
@@ -495,8 +495,8 @@ public final class TmsMeasurement {
             Branch t = g.branch;
             if (t.groups.isEmpty()) without++;
             for (TmsTranspiler.DefaultsGroup d : t.groups) {
-                long[] n = t.controlFacts.get(d.naam());
-                out.append("| ").append(g.naam).append(" | ").append(d.naam()).append(" | ")
+                long[] n = t.controlFacts.get(d.name());
+                out.append("| ").append(g.name).append(" | ").append(d.name()).append(" | ")
                         .append(d.general() ? "algemeen" : "eenvoudig").append(" | ").append(d.rules()).append(" | ")
                         .append(d.controlFacts().isEmpty() ? "geen" : String.join(", ", d.controlFacts())).append(" | ")
                         .append(n[0]).append(" | ").append(n[1]).append(" |\n");
@@ -516,12 +516,12 @@ public final class TmsMeasurement {
             CaseRunner.Result r = g.verdict;
             switch (r.status()) {
                 case "PLAYED" -> {
-                    played.put(g.naam, r.casesPlayed());
+                    played.put(g.name, r.casesPlayed());
                     playedCases += r.casesPlayed();
                 }
                 case "EXCLUDE" -> refused.computeIfAbsent(family(r.reason()), f -> new TreeMap<>())
-                        .computeIfAbsent(form(r.reason()), v -> new ArrayList<>()).add(g.naam);
-                default -> failed.add(g.naam + ": " + r.caseFailures());
+                        .computeIfAbsent(form(r.reason()), v -> new ArrayList<>()).add(g.name);
+                default -> failed.add(g.name + ": " + r.caseFailures());
             }
         }
         int uitgesloten = refused.values().stream().flatMap(m -> m.values().stream()).mapToInt(List::size).sum();

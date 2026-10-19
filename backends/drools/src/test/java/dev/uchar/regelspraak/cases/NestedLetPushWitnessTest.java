@@ -219,10 +219,10 @@ class NestedLetPushWitnessTest {
     private static String num() { return num(2, "unspecified"); }
     private static String pos() { return num(2, "nonNegative"); }
 
-    private static String attr(String naam) {
+    private static String attr(String name) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"zijn %s\"}}")
-                .formatted(naam, naam);
+                .formatted(name, name);
     }
 
     private static String lit(String valueJson) {
@@ -240,8 +240,8 @@ class NestedLetPushWitnessTest {
     }
 
     /** NB the wire field is {@code name}, not {@code naam}. */
-    private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(naam, naam);
+    private static String bref(String name, String type) {
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(name, name);
     }
 
     private static String ite(String condition, String then, String otherwise) {

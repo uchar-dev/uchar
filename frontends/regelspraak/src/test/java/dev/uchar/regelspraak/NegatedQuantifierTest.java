@@ -121,7 +121,7 @@ class NegatedQuantifierTest {
      */
     @Test void every_quantifier_each_kind_every_negation_each_verb() {
         record Quantifier(String sentence, String wire, boolean plural) {}
-        record CharacteristicCheck(String naam, boolean possessive) {}
+        record CharacteristicCheck(String name, boolean possessive) {}
         for (Quantifier q : List.of(new Quantifier("alle vondsten van de Jutter", "all", true),
                                  new Quantifier("geen van de vondsten van de Jutter", "none", false),
                                  new Quantifier("ten minste één van de vondsten van de Jutter", "atLeast", false)))
@@ -129,10 +129,10 @@ class NegatedQuantifierTest {
                 for (String negation : List.of("", "niet ", "geen "))
                     for (boolean have : List.of(true, false)) {
                         String verb = have ? (q.plural() ? "hebben" : "heeft") : (q.plural() ? "zijn" : "is");
-                        String sentence = q.sentence() + " " + negation + k.naam() + " " + verb;
+                        String sentence = q.sentence() + " " + negation + k.name() + " " + verb;
                         RegelSpraakModel m = Resolver.resolve(MODEL.formatted(sentence));
                         boolean isNegated = !negation.isEmpty();
-                        assertEquals(q.wire() + ": " + k.naam() + (isNegated ? " ontkend" : " bevestigd"), fold(m), sentence);
+                        assertEquals(q.wire() + ": " + k.name() + (isNegated ? " ontkend" : " bevestigd"), fold(m), sentence);
                         int expected = isNegated && have != k.possessive() ? 1 : 0;
                         assertEquals(expected, table16(m).size(), () -> sentence + " — " + m.diagnostics);
                         assertEquals(expected, m.diagnostics.size(), () -> sentence + " — " + m.diagnostics);

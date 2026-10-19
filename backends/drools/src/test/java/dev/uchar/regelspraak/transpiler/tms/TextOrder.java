@@ -29,7 +29,7 @@ public final class TextOrder {
     /** The names of the rules of the analysis of {@code b}, in the order of its plan. */
     public static List<String> rules(DroolsBackend.Build b) {
         List<String> out = new ArrayList<>();
-        for (RulePlan r : b.execModelTranspiler().modelplan().rules()) out.add(r.naam());
+        for (RulePlan r : b.execModelTranspiler().modelplan().rules()) out.add(r.name());
         return out;
     }
 
@@ -39,11 +39,11 @@ public final class TextOrder {
     public static KieBase kieBase(DroolsBackend.Build b, List<String> order) {
         Modelplan plan = b.execModelTranspiler().modelplan();
         Map<String, RulePlan> perName = new LinkedHashMap<>();
-        for (RulePlan r : plan.rules()) perName.put(r.naam(), r);
+        for (RulePlan r : plan.rules()) perName.put(r.name(), r);
         List<RulePlan> rules = new ArrayList<>();
-        for (String naam : order) {
-            RulePlan r = perName.remove(naam);
-            if (r == null) throw new IllegalArgumentException("geen regel " + naam + " (of twee keer) in " + order);
+        for (String name : order) {
+            RulePlan r = perName.remove(name);
+            if (r == null) throw new IllegalArgumentException("geen regel " + name + " (of twee keer) in " + order);
             rules.add(r);
         }
         if (!perName.isEmpty()) throw new IllegalArgumentException("de volgorde mist " + perName.keySet());

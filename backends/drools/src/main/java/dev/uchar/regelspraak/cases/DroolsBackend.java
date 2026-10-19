@@ -12,7 +12,7 @@ import dev.uchar.regelspraak.graph.ProducerConsumer;
 import dev.uchar.regelspraak.ir.ResolvedStartPointDetermination;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.schema.ContractValidator;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
@@ -177,16 +177,16 @@ public final class DroolsBackend {
         //     kenmerk > reference), so a declared member sharing the reciprocal role's name displaces the
         //     self-pair reference field; the mirror pass would then read a Boolean or set an impossible type,
         //     an unclassified ERROR at best. Refuse the shape loudly instead (lens finding, 2026-08-30).
-        for (Objecttype ot : model.objecttypen.values()) {
+        for (ObjectType ot : model.objectTypes.values()) {
             if (!FactModelGenerator.namesReciprocal(model, ot)) continue;
             String selfRole = FactModelGenerator.selfPairRole(model, ot);
             //   the UNDERIVABLE half of the same shape — an ambiguous pair (two wederkerig feittypen on one
             //   objecttype) or a to-many reciprocal role: the transpilers navigate by the written role name
             //   toward a getter no bean carries, an unclassified fire-time ERROR (lens 2, 2026-08-30).
             if (selfRole == null)
-                throw new Excluded(DroolsCode.SELF_RELATION_NO_FIELD.reason("objectType", ot.naam));
+                throw new Excluded(DroolsCode.SELF_RELATION_NO_FIELD.reason("objectType", ot.name));
             if (!FactModelGenerator.hasReferenceField(model, ot, selfRole, ot))
-                throw new Excluded(DroolsCode.SELF_PAIR_ROLE_SHARED.reason("role", selfRole, "objectType", ot.naam));
+                throw new Excluded(DroolsCode.SELF_PAIR_ROLE_SHARED.reason("role", selfRole, "objectType", ot.name));
         }
 
         Map<String, String> sources = FactModelGenerator.generate(model);
@@ -225,19 +225,19 @@ public final class DroolsBackend {
         Map<ProducerConsumer.ElementKey, Msg> use = new java.util.HashMap<>();
         for (ProducerConsumer.Form v : ProducerConsumer.forms(model, loaded.prioritizedDefaults(),
                 ProducerConsumer.wireNavigation(loaded))) {
-            Msg formName = Msg.drools("PART.form-named." + v.category().name().toLowerCase(java.util.Locale.ROOT), "name", v.naam());
+            Msg formName = Msg.drools("PART.form-named." + v.category().name().toLowerCase(java.util.Locale.ROOT), "name", v.name());
             for (ProducerConsumer.ElementKey e : v.writes()) use.putIfAbsent(e, formName);
             for (ProducerConsumer.ElementKey e : v.reads()) use.putIfAbsent(e, formName);
         }
         for (ResolvedStartPointDetermination sp : model.resolvedStartPointDeterminations)
             use.putIfAbsent(ProducerConsumer.elementOf(model.objectTypeByName(sp.objectType()), sp.member(), false),
-                    Msg.drools("PART.desc.start-point", "timeline", sp.tijdlijn()));
+                    Msg.drools("PART.desc.start-point", "timeline", sp.timeline()));
         for (FactModelGenerator.Displacement v : displacements) {
             FactModelGenerator.Origin h = v.displaced();
             // a role without a field of its own is refused where it is used, by the gate that asks the field's name
             // and type (FactModelGenerator.hasReferenceField); rolbotsing above took the one shape that gate passes
             if (h.category() == FactModelGenerator.Origin.Kind.ROL) continue;
-            Msg formName = use.get(ProducerConsumer.ElementKey.van(h.source(), h.naam(),
+            Msg formName = use.get(ProducerConsumer.ElementKey.van(h.source(), h.name(),
                     h.category() == FactModelGenerator.Origin.Kind.KENMERK));
             if (formName != null) throw new Excluded(DroolsCode.BEAN_NAME_COLLISION_USE.reason("reason", FactModelGenerator.displacementReason(v).msg(), "form", formName));
         }
@@ -364,12 +364,12 @@ public final class DroolsBackend {
                     + " feiten: de plaatsen van een lijst worden over de beans van één invoer geteld, en een bean die"
                     + " zonder voegIn in de sessie kwam, heeft er geen; geef alle beans in één Invoer aan een verse"
                     + " sessie, en verander tussen twee fires hun waarden met update");
-        Map<Object, Objecttype> types = new IdentityHashMap<>();
+        Map<Object, ObjectType> types = new IdentityHashMap<>();
         // a case of ten thousand objects has a handful of bean classes
-        Map<Class<?>, Objecttype> perClass = new HashMap<>();
+        Map<Class<?>, ObjectType> perClass = new HashMap<>();
         for (Object beanObject : beans)
             if (types.put(beanObject, perClass.computeIfAbsent(beanObject.getClass(), k -> objectType(build, beanObject))) != null)
-                throw new IllegalArgumentException("voegIn: de bean " + naam(beanObject) + " staat twee keer in de invoer");
+                throw new IllegalArgumentException("voegIn: de bean " + name(beanObject) + " staat twee keer in de invoer");
         String outsideSentence = targetOutsideInput("voegIn", build, beans, types, perClass);
         if (outsideSentence != null) throw new IllegalArgumentException(outsideSentence);
         List<Object> facts = new ArrayList<>(beans);
@@ -384,16 +384,16 @@ public final class DroolsBackend {
      *  The branch derives only for the objects in the session, so every value of such an object, and every value read
      *  through the field, would stay empty without a word; and the link the field gives still counts, so a creation it
      *  blocks makes no object in its place. */
-    private static String targetOutsideInput(String refusingCall, Build build, List<Object> beans, Map<Object, Objecttype> types,
-                                             Map<Class<?>, Objecttype> perClass) {
-        Map<Objecttype, List<String>> fields = new HashMap<>();
+    private static String targetOutsideInput(String refusingCall, Build build, List<Object> beans, Map<Object, ObjectType> types,
+                                             Map<Class<?>, ObjectType> perClass) {
+        Map<ObjectType, List<String>> fields = new HashMap<>();
         for (Object beanObject : beans)
             for (String field : fields.computeIfAbsent(types.get(beanObject), t -> referenceFields(build.model(), t))) {
                 Object target = Accessors.leesEigenschap(beanObject, field);
                 if (target != null && !types.containsKey(target))
-                    return refusingCall + ": het veld '" + field + "' van " + naam(beanObject) + " wijst naar een "
-                            + perClass.computeIfAbsent(target.getClass(), k -> objectType(build, target)).naam + " ("
-                            + naam(target) + ") die niet als bean in de invoer staat: de tak leidt alleen af voor de"
+                    return refusingCall + ": het veld '" + field + "' van " + name(beanObject) + " wijst naar een "
+                            + perClass.computeIfAbsent(target.getClass(), k -> objectType(build, target)).name + " ("
+                            + name(target) + ") die niet als bean in de invoer staat: de tak leidt alleen af voor de"
                             + " objecten in de sessie, dus geef elk object waarnaar een bean wijst ook zelf als bean op";
             }
         return null;
@@ -403,10 +403,10 @@ public final class DroolsBackend {
      *  between two fires an update can set a reference field to an object outside the session. It asks the session per
      *  bean class, since Drools keeps the facts of a class apart and hands out only those for a
      *  {@link ClassObjectFilter}, where a filter of another kind walks every fact the session holds. */
-    private static String targetOutsideSession(Build build, KieSession session, Map<Class<?>, Objecttype> classes) {
+    private static String targetOutsideSession(Build build, KieSession session, Map<Class<?>, ObjectType> classes) {
         List<Object> beans = new ArrayList<>();
-        Map<Object, Objecttype> types = new IdentityHashMap<>();
-        for (Map.Entry<Class<?>, Objecttype> k : classes.entrySet())
+        Map<Object, ObjectType> types = new IdentityHashMap<>();
+        for (Map.Entry<Class<?>, ObjectType> k : classes.entrySet())
             for (Object o : session.getObjects(new ClassObjectFilter(k.getKey())))
                 // the filter of a supertype hands out the beans of its subtypes too, which their own class counts
                 if (o.getClass() == k.getKey() && types.put(o, k.getValue()) == null) beans.add(o);
@@ -414,23 +414,23 @@ public final class DroolsBackend {
     }
 
     /** The bean class of every object type of the model of {@code build}, with that object type. */
-    private static Map<Class<?>, Objecttype> beansClasses(Build build) {
-        Map<Class<?>, Objecttype> out = new HashMap<>();
-        for (Objecttype ot : build.model().objecttypen.values())
+    private static Map<Class<?>, ObjectType> beansClasses(Build build) {
+        Map<Class<?>, ObjectType> out = new HashMap<>();
+        for (ObjectType ot : build.model().objectTypes.values())
             try {
-                out.put(Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.naam, true), false,
+                out.put(Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true), false,
                         build.beanLoader()), ot);
             } catch (ClassNotFoundException e) {
-                throw new IllegalStateException("geen beanklasse voor objecttype " + ot.naam, e);
+                throw new IllegalStateException("geen beanklasse voor objecttype " + ot.name, e);
             }
         return out;
     }
 
     /** The relations of every bean class of {@code classes}: its reference fields, each with its getter, which the
      *  watch of the entry reads to tell an update of an attribute or a characteristic from one of a relation. */
-    private static Map<Class<?>, Watch.RelationFields> relationFields(Build build, Map<Class<?>, Objecttype> classes) {
+    private static Map<Class<?>, Watch.RelationFields> relationFields(Build build, Map<Class<?>, ObjectType> classes) {
         Map<Class<?>, Watch.RelationFields> out = new HashMap<>();
-        for (Map.Entry<Class<?>, Objecttype> k : classes.entrySet()) {
+        for (Map.Entry<Class<?>, ObjectType> k : classes.entrySet()) {
             List<String> fields = referenceFields(build.model(), k.getValue());
             List<Function<Object, Object>> readers = new ArrayList<>();
             for (String field : fields) readers.add(Accessors.eigenschapGetter(k.getKey(), field));
@@ -440,7 +440,7 @@ public final class DroolsBackend {
     }
 
     /** The beans {@code session} holds, of the classes of {@code classes}, asked per class. */
-    private static List<Object> beansInSession(KieSession session, Map<Class<?>, Objecttype> classes) {
+    private static List<Object> beansInSession(KieSession session, Map<Class<?>, ObjectType> classes) {
         List<Object> out = new ArrayList<>();
         for (Class<?> k : classes.keySet())
             for (Object o : session.getObjects(new ClassObjectFilter(k)))
@@ -450,33 +450,33 @@ public final class DroolsBackend {
     }
 
     /** The object type whose bean {@code beanObject} is, a bean of the build's bean model. */
-    private static Objecttype objectType(Build build, Object beanObject) {
-        for (Objecttype ot : build.model().objecttypen.values()) {
-            if (!Namen.ident(ot.naam, true).equals(beanObject.getClass().getSimpleName())) continue;
+    private static ObjectType objectType(Build build, Object beanObject) {
+        for (ObjectType ot : build.model().objectTypes.values()) {
+            if (!Namen.ident(ot.name, true).equals(beanObject.getClass().getSimpleName())) continue;
             try {
-                if (Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.naam, true), false,
+                if (Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true), false,
                         build.beanLoader()) == beanObject.getClass()) return ot;
             } catch (ClassNotFoundException e) {
-                throw new IllegalStateException("geen beanklasse voor objecttype " + ot.naam, e);
+                throw new IllegalStateException("geen beanklasse voor objecttype " + ot.name, e);
             }
         }
-        throw new IllegalArgumentException("voegIn: " + naam(beanObject) + " is geen bean van dit model: een bean is een"
+        throw new IllegalArgumentException("voegIn: " + name(beanObject) + " is geen bean van dit model: een bean is een"
                 + " instantie van een klasse die Build.beanLoader() laadt");
     }
 
     /** The {@code BucketInput} of bucket scalar {@code e}, keyed as {@code ProducerConsumer.elementOf} keys the
      *  attribute, on the type that declares it. */
-    private static BucketInput bucketInput(Map<Object, Objecttype> types, Input.Bucket e) {
-        Objecttype ot = types.get(e.bean());
+    private static BucketInput bucketInput(Map<Object, ObjectType> types, Input.Bucket e) {
+        ObjectType ot = types.get(e.bean());
         if (ot == null)
-            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribute() + "' op " + naam(e.bean())
+            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
                     + ", een bean die niet in de invoer staat");
         if (ot.attribute(e.attribute()) == null)
-            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribute() + "' op " + naam(e.bean())
-                    + ", maar " + ot.naam + " heeft geen attribuut van die naam");
+            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
+                    + ", maar " + ot.name + " heeft geen attribuut van die naam");
         if (!Namen.containsName(ot.granularityMembers(), e.attribute()))
-            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribute() + "' op " + naam(e.bean())
-                    + ", maar dat attribuut van " + ot.naam + " ligt niet op een tijdlijn; alleen de invoer van een"
+            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
+                    + ", maar dat attribuut van " + ot.name + " ligt niet op een tijdlijn; alleen de invoer van een"
                     + " tijdlijn kent de emmerconventie (RUNTIME-SEMANTICS ch. 8.4)");
         return new BucketInput(e.bean(), ProducerConsumer.elementOf(ot, e.attribute(), false));
     }
@@ -495,12 +495,12 @@ public final class DroolsBackend {
      * members, the order kept, it must name every bean of the input whose field of that relation holds the holder.
      */
     private static List<ListPlace> listPlaces(Build build, Set<String> read, List<Object> beans,
-                                                   Map<Object, Objecttype> types, List<Input.ToManyList> opgegeven) {
+                                                   Map<Object, ObjectType> types, List<Input.ToManyList> opgegeven) {
         RegelSpraakModel model = build.model();
         Set<String> fields = new HashSet<>(read);
         for (Input.ToManyList l : opgegeven) fields.add(Namen.ident(l.role(), false));
-        Map<Objecttype, List<String>> referenceFields = new HashMap<>();
-        Map<Objecttype, Map<String, FactModelGenerator.Origin>> relations = new HashMap<>();
+        Map<ObjectType, List<String>> referenceFields = new HashMap<>();
+        Map<ObjectType, Map<String, FactModelGenerator.Origin>> relations = new HashMap<>();
         Function<Object, Function<String, FactModelGenerator.Origin>> relation = beanObject -> field ->
                 relations.computeIfAbsent(types.get(beanObject), t -> new HashMap<>())
                         .computeIfAbsent(field, v -> FactModelGenerator.origin(model, types.get(beanObject), v));
@@ -519,34 +519,34 @@ public final class DroolsBackend {
         Set<ListKey> given = new HashSet<>();
         for (Input.ToManyList l : opgegeven) {
             String field = Namen.ident(l.role(), false);
-            String description = "voegIn: de lijst van " + naam(l.houder()) + " onder de rol '" + l.role() + "'";
+            String description = "voegIn: de lijst van " + name(l.houder()) + " onder de rol '" + l.role() + "'";
             Map<ListKey, List<Object>> parts = new LinkedHashMap<>();
             Set<Object> named = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
             for (Object member : l.members()) {
-                Objecttype ot = types.get(member);
-                if (ot == null) throw new IllegalArgumentException(description + " noemt " + naam(member) + ", dat geen bean van de invoer is");
+                ObjectType ot = types.get(member);
+                if (ot == null) throw new IllegalArgumentException(description + " noemt " + name(member) + ", dat geen bean van de invoer is");
                 if (!referenceFields.computeIfAbsent(ot, t -> referenceFields(model, t)).contains(field))
-                    throw new IllegalArgumentException(description + " noemt " + naam(member) + ", maar een " + ot.naam
+                    throw new IllegalArgumentException(description + " noemt " + name(member) + ", maar een " + ot.name
                             + " heeft geen referentieveld '" + field + "'; de rol is die van de houder, de naam van het"
                             + " veld waarmee een lid naar de houder wijst");
                 Object houder = Accessors.leesEigenschap(member, field);
                 if (houder != l.houder())
-                    throw new IllegalArgumentException(description + " noemt " + naam(member) + ", maar diens veld '" + field
-                            + "' wijst " + (houder == null ? "nergens heen" : "naar " + naam(houder)));
-                if (!named.add(member)) throw new IllegalArgumentException(description + " noemt " + naam(member) + " twee keer");
+                    throw new IllegalArgumentException(description + " noemt " + name(member) + ", maar diens veld '" + field
+                            + "' wijst " + (houder == null ? "nergens heen" : "naar " + name(houder)));
+                if (!named.add(member)) throw new IllegalArgumentException(description + " noemt " + name(member) + " twee keer");
                 parts.computeIfAbsent(new ListKey(field, houder, relation.apply(member).apply(field)),
                         k -> new ArrayList<>()).add(member);
             }
             if (parts.isEmpty())
                 for (Map.Entry<ListKey, List<Object>> e : actual.entrySet())
                     if (e.getKey().field().equals(field) && e.getKey().houder() == l.houder())
-                        throw new IllegalArgumentException(description + " is leeg gegeven, maar " + naam(e.getValue().get(0))
+                        throw new IllegalArgumentException(description + " is leeg gegeven, maar " + name(e.getValue().get(0))
                                 + " wijst met zijn veld '" + field + "' naar de houder");
             for (Map.Entry<ListKey, List<Object>> part : parts.entrySet()) {
                 if (!given.add(part.getKey())) throw new IllegalArgumentException(description + " is twee keer gegeven");
                 for (Object member : actual.getOrDefault(part.getKey(), List.of()))
                     if (!named.contains(member))
-                        throw new IllegalArgumentException(description + " mist " + naam(member) + ", dat met zijn veld '" + field
+                        throw new IllegalArgumentException(description + " mist " + name(member) + ", dat met zijn veld '" + field
                                 + "' naar de houder wijst: een lid buiten de gegeven volgorde heeft geen plaats");
                 if (read.contains(field)) lists.put(part.getKey(), part.getValue());
             }
@@ -560,18 +560,18 @@ public final class DroolsBackend {
 
     /** The reference fields of a bean of {@code ot}, its inherited ones among them: the members the bean model derives
      *  whose type is the bean class of an object type (§13.3.9, {@link FactModelGenerator#members}). */
-    private static List<String> referenceFields(RegelSpraakModel model, Objecttype ot) {
+    private static List<String> referenceFields(RegelSpraakModel model, ObjectType ot) {
         Set<String> classes = new HashSet<>();
-        for (Objecttype t : model.objecttypen.values()) classes.add(Namen.ident(t.naam, true));
+        for (ObjectType t : model.objectTypes.values()) classes.add(Namen.ident(t.name, true));
         List<String> out = new ArrayList<>();
-        for (Objecttype t : ot.chain())
+        for (ObjectType t : ot.chain())
             for (FactModelGenerator.Member member : FactModelGenerator.members(model, t))
                 if (classes.contains(member.javaType())) out.add(member.property());
         return out;
     }
 
     /** An object in a sentence of {@link #insert}: its type and its identity, as the facts of the branch print it. */
-    private static String naam(Object o) {
+    private static String name(Object o) {
         return o.getClass().getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(o));
     }
 
@@ -838,9 +838,9 @@ public final class DroolsBackend {
                     String form = tms.formOf(e.getMatch().getRule().getName());
                     if (form == null) return;
                     forms.add(form);
-                    String regel = RegelSpraakModel.formName(form);
-                    count.merge(regel, 1, Integer::sum);
-                    List<String> ls = labels.computeIfAbsent(regel, k -> new ArrayList<>());
+                    String rule = RegelSpraakModel.formName(form);
+                    count.merge(rule, 1, Integer::sum);
+                    List<String> ls = labels.computeIfAbsent(rule, k -> new ArrayList<>());
                     for (Object o : e.getMatch().getObjects()) {
                         String l = label.apply(o);
                         if (l != null && !ls.contains(l)) ls.add(l);
@@ -864,14 +864,14 @@ public final class DroolsBackend {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(firedForms, "gevuurdeVormen");
         Set<String> posten = new HashSet<>();
-        for (Coverage d : build.coverage()) posten.add(d.naam());
+        for (Coverage d : build.coverage()) posten.add(d.name());
         for (String form : firedForms)
             if (!posten.contains(form))
                 throw new IllegalArgumentException("de vorm '" + form + "' is geen post van het manifest van deze build,"
                         + " dus geen sessie van deze build vuurt haar; komen de gevuurde vormen van een andere build?");
         List<ScenarioResult.CoverageRule> out = new ArrayList<>();
         for (Coverage d : build.coverage())
-            out.add(new ScenarioResult.CoverageRule(d.naam(), firedForms.contains(d.naam())
+            out.add(new ScenarioResult.CoverageRule(d.name(), firedForms.contains(d.name())
                     ? ScenarioResult.CoverageKind.FIRED : ScenarioResult.CoverageKind.NOT_FIRED));
         return List.copyOf(out);
     }
@@ -935,15 +935,15 @@ public final class DroolsBackend {
         List<Fault> faults = fixpointOf(build, session, label).faults();
         if (!faults.isEmpty())
             throw new IllegalStateException("vergelijk: aan het fixpunt van deze sessie staan " + faults.size()
-                    + " evaluatiefout(en), de eerste van '" + faults.get(0).regel() + "': " + faults.get(0).message()
+                    + " evaluatiefout(en), de eerste van '" + faults.get(0).rule() + "': " + faults.get(0).message()
                     + "; de regels geven op deze invoer geen antwoord, en zetAfgeleideWaarden werpt de fouten en zet niets"
                     + " terug, dus er is niets om met de verwachtingen te vergelijken");
         if (session.getObjects(new ClassObjectFilter(WrittenBack.class)).isEmpty())
             throw new IllegalStateException("vergelijk: deze sessie is niet teruggezet; de beans dragen het fixpunt pas na"
                     + " DroolsBackend.zetAfgeleideWaarden, en tot dan alleen de invoer, dus zet eerst terug");
         Map<String, Object> perLabel = new HashMap<>();
-        Map<String, Objecttype> types = new HashMap<>();
-        for (Map.Entry<Class<?>, Objecttype> k : beansClasses(build).entrySet())
+        Map<String, ObjectType> types = new HashMap<>();
+        for (Map.Entry<Class<?>, ObjectType> k : beansClasses(build).entrySet())
             for (Object beanObject : session.getObjects(new ClassObjectFilter(k.getKey()))) {
                 // the filter of a supertype hands out the beans of its subtypes too, which their own class counts
                 if (beanObject.getClass() != k.getKey()) continue;
@@ -952,7 +952,7 @@ public final class DroolsBackend {
                 Object earlierBean = perLabel.putIfAbsent(l, beanObject);
                 if (earlierBean != null)
                     throw new IllegalArgumentException("vergelijk: de labelfunctie geeft het label '" + l + "' aan "
-                            + naam(earlierBean) + " en aan " + naam(beanObject) + ", dus een verwachting op '" + l + "' wijst geen"
+                            + name(earlierBean) + " en aan " + name(beanObject) + ", dus een verwachting op '" + l + "' wijst geen"
                             + " bean aan");
                 types.put(l, k.getValue());
             }
@@ -976,7 +976,7 @@ public final class DroolsBackend {
      * object could keep itself standing through its own output after the state that made it passed, and its
      * initialisations would follow later changes, where ch. 5.5 evaluates them when the object is made. So this fires
      * in generations, here and not in the rules, so that the two renderings of the analysis share it. The creation
-     * rules sit in agenda groups of their own ({@code TmsTranspiler.FEITCREATIE}, {@code TmsTranspiler.OBJECTCREATIE}),
+     * rules sit in agenda groups of their own ({@code TmsTranspiler.FACT_CREATION}, {@code TmsTranspiler.OBJECT_CREATION}),
      * so a fire without their focus takes the rule layer to rest and leaves them pending. A generation is one phase: it
      * opens a new {@code CreationPhase}, puts both groups on the focus stack, the fact creations on top, and fires. That
      * fires the fact creations that hold at the fixpoint, then the object creations, and once both groups are empty it
@@ -1121,7 +1121,7 @@ public final class DroolsBackend {
             throw new IllegalStateException(global + ": de tak leest een global één keer, in een regel die haar bij de"
                     + " eerste fire als feit stelt, dus een volgende fire zou met de oude waarde rekenen; zet de globals"
                     + " vóór de eerste vuur, en open voor een andere waarde een verse sessie");
-        Map<Class<?>, Objecttype> classes = beansClasses(build);
+        Map<Class<?>, ObjectType> classes = beansClasses(build);
         String outsideSentence = targetOutsideSession(build, session, classes);
         if (outsideSentence != null) throw new IllegalStateException(outsideSentence);
         String relation = installedWatch == null ? null : installedWatch.changedRelation();
@@ -1167,7 +1167,7 @@ public final class DroolsBackend {
         // Drools makes a group on demand only in a KieBase that declares a group beside MAIN, which every creation
         // rule does; null means the KieBase lacks the creation rules the transpiler reports
         org.kie.api.runtime.rule.Agenda agenda = session.getAgenda();
-        for (String group : List.of(TmsTranspiler.FEITCREATIE, TmsTranspiler.OBJECTCREATIE))
+        for (String group : List.of(TmsTranspiler.FACT_CREATION, TmsTranspiler.OBJECT_CREATION))
             if (agenda.getAgendaGroup(group) == null)
                 throw new IllegalStateException("de KieBase kent de agendagroep " + group + " niet, terwijl het model"
                         + " creatieregels heeft: " + creations);
@@ -1189,8 +1189,8 @@ public final class DroolsBackend {
                     phase = session.insert(new CreationPhase(++number, stratum));
                     cap.recompute(session);
                     // the focus is a stack: the group given the focus last fires first
-                    agenda.getAgendaGroup(TmsTranspiler.OBJECTCREATIE).setFocus();
-                    agenda.getAgendaGroup(TmsTranspiler.FEITCREATIE).setFocus();
+                    agenda.getAgendaGroup(TmsTranspiler.OBJECT_CREATION).setFocus();
+                    agenda.getAgendaGroup(TmsTranspiler.FACT_CREATION).setFocus();
                     try {
                         fired += session.fireAllRules(cap.value - fired);
                     } catch (ConsequenceException e) {

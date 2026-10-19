@@ -174,12 +174,12 @@ class ReferenceLayerRefusalWitnessTest {
         ObjectNode ir = golden(BAKENMEESTER);
         ObjectNode rule = IrPath.version(ir, "rules", 0, 0);
         rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"iets onleesbaars\"}}"));
-        Expr w = IrLoader.loadAll(ir).model().resolvedRegels.get(0).value();
+        Expr w = IrLoader.loadAll(ir).model().resolvedRules.get(0).value();
         assertTrue(w instanceof Expr.Unresolved, String.valueOf(w));
         assertNull(w.type(), "een marker zonder type draagt geen type — nooit een gok");
 
         rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"type\":" + NUMERIEK + ",\"source\":{\"snippet\":\"x\"}}"));
-        assertNotNull(IrLoader.loadAll(ir).model().resolvedRegels.get(0).value().type(), "een echt datatype blijft");
+        assertNotNull(IrLoader.loadAll(ir).model().resolvedRules.get(0).value().type(), "een echt datatype blijft");
 
         rule.set("value", JSON.readTree("{\"node\":\"Unresolved\",\"type\":null,\"source\":{\"snippet\":\"x\"}}"));
         IrLoader.DocumentError e = refuses(ir, "/rules/rules/0/versions/0/value/type");

@@ -85,10 +85,10 @@ class ScenarioMutationTest {
         assertFalse(b.isOk());
         String complete = MODEL + mutated;
         int second = complete.indexOf("Situatie basis:", complete.indexOf("Situatie basis:") + 1);
-        int regel = 1 + (int) complete.substring(0, second).chars().filter(c -> c == '\n').count();
-        assertTrue(b.model().errors().stream().anyMatch(d -> d.line() == regel
+        int rule = 1 + (int) complete.substring(0, second).chars().filter(c -> c == '\n').count();
+        assertTrue(b.model().errors().stream().anyMatch(d -> d.line() == rule
                         && d.message().contains("de situatie 'basis' is meer dan eens gedeclareerd")),
-                () -> "verwacht de dubbele declaratie op regel " + regel + ": " + b.model().errors());
+                () -> "verwacht de dubbele declaratie op regel " + rule + ": " + b.model().errors());
     }
 
     @Test void cycle_via_based_on() {

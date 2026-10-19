@@ -33,7 +33,7 @@ class ZeroDivisorWitnessTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @Test void a_zero_divisor_in_the_value_of_a_rule() throws Exception {
-        Path ir = document(regel(division("dividedBy")), "");
+        Path ir = document(rule(division("dividedBy")), "");
         assertNull(play(ir, false, ZERO_AND_ORDINARY), "de nuldeler in de waarde");
     }
 
@@ -51,19 +51,19 @@ class ZeroDivisorWitnessTest {
     }
 
     @Test void a_zero_divisor_in_the_absolute_division() throws Exception {
-        Path ir = document(regel(division("dividedByAbs")), "");
+        Path ir = document(rule(division("dividedByAbs")), "");
         assertNull(play(ir, false, ZERO_AND_ORDINARY), "de nuldeler in de absolute deling");
     }
 
     @Test void the_drl_text_branch_deposits_the_same() throws Exception {
-        Path ir = document(regel(division("dividedBy")), "");
+        Path ir = document(rule(division("dividedBy")), "");
         assertNull(play(ir, true, ZERO_AND_ORDINARY), "de nuldeler op de DRL-teksttak");
     }
 
     /** The scenario report passes the case that pins the deposit; until the card zero-division-channel it carried the
      *  sentence of the fault. */
     @Test void the_scenario_report_passes_the_deposit() throws Exception {
-        Path ir = document(regel(division("dividedBy")), "");
+        Path ir = document(rule(division("dividedBy")), "");
         Path c = Files.writeString(Files.createTempDirectory("nuldeler").resolve("case1-nul.json"), ZERO_AND_ORDINARY);
         List<ScenarioResult> report = CaseRunner.report(ir, List.of(c));
         assertEquals(ScenarioResult.Status.PASS, report.get(0).status(), report::toString);
@@ -72,7 +72,7 @@ class ZeroDivisorWitnessTest {
     /** The red route runs the division to a model: no fault (gate 8 pinned the sentence of this backend's fault on three
      *  red cases until the card zero-division-channel moved them to the golden corpus). */
     @Test void the_red_route_runs_the_division_to_a_model() throws Exception {
-        Path ir = document(regel(division("dividedBy")), "");
+        Path ir = document(rule(division("dividedBy")), "");
         Path c = Files.writeString(Files.createTempFile("nuldeler", ".json"), ZERO_AND_ORDINARY);
         CaseRunner.RedResult r = CaseRunner.runRed(ir, c);
         assertEquals("NOFAULT", r.status(), r::detail);
@@ -80,7 +80,7 @@ class ZeroDivisorWitnessTest {
 
     @Test void an_empty_numerator_above_a_zero_divisor_stays_zero() throws Exception {
         // ch. 1.2: the dividend is tested first and coalesces, so leeg ÷ 0 = 0; ref and clingo: V1 0,75, V3 0,00
-        Path ir = document(regel(division("dividedBy")), "");
+        Path ir = document(rule(division("dividedBy")), "");
         String caseDocument = caseDocument(vondst("V1", "320.00", "240.00") + "," + vondst("V3", "0.00", null),
                 ratio("V1", "0.75") + "," + ratio("V3", "0.00"));
         assertNull(play(ir, false, caseDocument), "de lege teller");
@@ -95,8 +95,8 @@ class ZeroDivisorWitnessTest {
             + attribute("verhouding") + "],\"characteristics\":[]}],\"factTypes\":[],\"parameters\":[],\"domains\":[],"
             + "\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static String attribute(String naam) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + TWO_DECIMALS + "}";
+    private static String attribute(String name) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + TWO_DECIMALS + "}";
     }
 
     private static String own(String attribute) {
@@ -134,7 +134,7 @@ class ZeroDivisorWitnessTest {
     }
 
     /** The rule "verhouding" with {@code value} as its value, without a condition. */
-    private static String regel(String value) {
+    private static String rule(String value) {
         return "{\"node\":\"Rule\",\"name\":\"verhouding\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"verhouding\",\"subjectType\":\"Vondst\",\"source\":"
                 + "{\"snippet\":\"De verhouding van een Vondst\"}},\"value\":" + value + ",\"initialisation\":false,"

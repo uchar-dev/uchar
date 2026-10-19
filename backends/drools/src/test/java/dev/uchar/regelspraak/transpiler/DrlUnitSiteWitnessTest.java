@@ -92,12 +92,12 @@ class DrlUnitSiteWitnessTest {
                 continue;                            // the loader does not carry the lying form, as before the analysis
             } catch (dev.uchar.regelspraak.cases.CaseRunner.Excluded refusal) {
                 // a lie that makes the analysis refuse what it carried honestly is a place that reads the repetition
-                deviating.add(naam(ir) + " — the lying document is refused: " + refusal.getMessage());
+                deviating.add(name(ir) + " — the lying document is refused: " + refusal.getMessage());
                 continue;
             }
             twists += n;
-            touched.add(naam(ir));
-            if (!a.equals(b)) deviating.add(naam(ir) + " — " + firstDifference(a, b));
+            touched.add(name(ir));
+            if (!a.equals(b)) deviating.add(name(ir) + " — " + firstDifference(a, b));
         }
         // never silently green: a corpus without a single twistable unit annotation would make every
         // assertion below vacuous, so the empty probe is itself the failure.
@@ -209,8 +209,8 @@ class DrlUnitSiteWitnessTest {
                 parameters.put(p.path("name").asText("").toLowerCase(java.util.Locale.ROOT), p.get("datatype"));
         }
 
-        JsonNode attribute(String type, String naam) {
-            String a = naam.toLowerCase(java.util.Locale.ROOT);
+        JsonNode attribute(String type, String name) {
+            String a = name.toLowerCase(java.util.Locale.ROOT);
             for (String t = type.toLowerCase(java.util.Locale.ROOT); t != null; t = supertype.get(t)) {
                 JsonNode dt = attributes.get(t + "|" + a);
                 if (dt != null) return dt;
@@ -227,7 +227,7 @@ class DrlUnitSiteWitnessTest {
         }
     }
 
-    private static String naam(Path ir) {
+    private static String name(Path ir) {
         return CORPUS.relativize(ir.getParent()).toString();
     }
 

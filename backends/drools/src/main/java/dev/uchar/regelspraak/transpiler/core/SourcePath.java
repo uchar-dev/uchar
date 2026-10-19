@@ -4,7 +4,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.model.RegelSpraakModel.FactType;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Role;
 import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
@@ -63,7 +63,7 @@ public final class SourcePath {
      *                       the start of the trailing backward run.
      *  @param weigering     null when the plan carries, else the one-sentence per-form reason.
      */
-    public record Plan(List<Step> steps, List<Objecttype> nodeTypes, int forward, int backwardFrom,
+    public record Plan(List<Step> steps, List<ObjectType> nodeTypes, int forward, int backwardFrom,
                        Reason refusal) {
 
         /** Whether the two functional walks MEET — the path is a forward run followed by a backward run, so one
@@ -105,49 +105,49 @@ public final class SourcePath {
      * feittype/role, a step that does not join what its predecessor reaches, a landing beside the element type, or
      * a hop the bean model derives no field for.
      */
-    public static Plan parse(RegelSpraakModel model, Objecttype subject, List<RoleBindingRef> path, Objecttype element) {
+    public static Plan parse(RegelSpraakModel model, ObjectType subject, List<RoleBindingRef> path, ObjectType element) {
         if (model == null || subject == null || element == null)
             return refuse(DroolsCode.SOURCE_PATH_WITHOUT_SUBJECT.reason());
         if (path == null || path.size() < 2)
             return refuse(DroolsCode.SOURCE_PATH_ONE_STEP.reason("steps", path == null ? 0 : path.size()));
         List<Step> steps = new ArrayList<>();
-        List<Objecttype> nodes = new ArrayList<>();
+        List<ObjectType> nodes = new ArrayList<>();
         nodes.add(subject);
         for (int i = 0; i < path.size(); i++) {
             RoleBindingRef rb = path.get(i);
-            Objecttype van = nodes.get(i);
+            ObjectType van = nodes.get(i);
             boolean last = i == path.size() - 1;
             FactType ft = factTypeByName(model, rb == null ? null : rb.factType());
             if (ft == null)
                 return refuse(DroolsCode.SOURCE_PATH_UNKNOWN_FACT.reason("step", i, "factType", rb == null ? null : rb.factType()));
             Role bound = roleByName(ft, rb.role());
             if (bound == null)
-                return refuse(DroolsCode.SOURCE_PATH_UNDECLARED_ROLE.reason("step", i, "role", rb.role(), "factType", ft.naam));
+                return refuse(DroolsCode.SOURCE_PATH_UNDECLARED_ROLE.reason("step", i, "role", rb.role(), "factType", ft.name));
             Role opposite = oppositeRole(ft, bound);
             if (opposite == null)
-                return refuse(DroolsCode.SOURCE_PATH_NO_OPPOSITE.reason("step", i, "role", bound.naam(), "factType", ft.naam));
+                return refuse(DroolsCode.SOURCE_PATH_NO_OPPOSITE.reason("step", i, "role", bound.name(), "factType", ft.name));
             // (d) the walk is CONNECTED: the opposite role must be filled by what the previous step reaches.
             if (!fills(van, opposite))
-                return refuse(DroolsCode.SOURCE_PATH_DISCONNECTED_STEP.reason("step", i, "role", opposite.naam(), "fillerType", opposite.objecttypeNaam(), "startType", van.naam,
+                return refuse(DroolsCode.SOURCE_PATH_DISCONNECTED_STEP.reason("step", i, "role", opposite.name(), "fillerType", opposite.objectTypeName(), "startType", van.name,
                         "startReason", DroolsCode.SOURCE_PATH_DISCONNECTED_STEP.part(i == 0 ? "fold-subject" : "previous-step")));
-            Objecttype filler = model.objectTypeByName(bound.objecttypeNaam());
+            ObjectType filler = model.objectTypeByName(bound.objectTypeName());
             if (filler == null)
-                return refuse(DroolsCode.SOURCE_PATH_UNKNOWN_OBJECT.reason("step", i, "role", bound.naam(), "objectType", bound.objecttypeNaam()));
+                return refuse(DroolsCode.SOURCE_PATH_UNKNOWN_OBJECT.reason("step", i, "role", bound.name(), "objectType", bound.objectTypeName()));
             // (d) the LANDING, two-sided exactly as WF-102 has it: elementType may be a strict SUBTYPE of
             // what the last step's role fills (ch. 2.2's exclusion direction), and the pattern class is then the
             // narrower one — which is what makes the element the population and the relation merely the reach.
             if (last && !compatible(element, filler))
-                return refuse(DroolsCode.SOURCE_PATH_OFF_ELEMENT.reason("step", i, "role", bound.naam(), "objectType", filler.naam, "elementType", element.naam));
-            Objecttype destination = last ? element : filler;
+                return refuse(DroolsCode.SOURCE_PATH_OFF_ELEMENT.reason("step", i, "role", bound.name(), "objectType", filler.name, "elementType", element.name));
+            ObjectType destination = last ? element : filler;
             // §13.3.9 the storage direction. A to-many bound role keeps its link at the FAR end, named after the
             // opposite role; a to-one bound role keeps it here, named after itself. The question is asked of the
             // ONE shared member derivation (FactModelGenerator), so a path hop can never assume a field the beans
             // do not carry — the failure that used to build a KieBase and die at first fire.
-            boolean toMany = bound.meervoudig();
-            Objecttype carrier = toMany ? destination : van, target = toMany ? van : destination;
-            String roleField = toMany ? opposite.naam() : bound.naam();
+            boolean toMany = bound.many();
+            ObjectType carrier = toMany ? destination : van, target = toMany ? van : destination;
+            String roleField = toMany ? opposite.name() : bound.name();
             if (!FactModelGenerator.hasReferenceField(model, carrier, roleField, target))
-                return refuse(DroolsCode.SOURCE_PATH_NO_JOIN.reason("step", i, "fromType", van.naam, "toType", destination.naam, "reason", FactModelGenerator.noJoinFieldReason(model, van, bound.naam(), destination).msg()));
+                return refuse(DroolsCode.SOURCE_PATH_NO_JOIN.reason("step", i, "fromType", van.name, "toType", destination.name, "reason", FactModelGenerator.noJoinFieldReason(model, van, bound.name(), destination).msg()));
             steps.add(new Step(toMany, Namen.ident(roleField, false)));
             nodes.add(destination);
         }
@@ -158,44 +158,44 @@ public final class SourcePath {
         return new Plan(List.copyOf(steps), List.copyOf(nodes), forward, backwardStart, null);
     }
 
-    private static FactType factTypeByName(RegelSpraakModel model, String naam) {
-        if (naam == null) return null;
-        for (FactType ft : model.feittypen.values())
-            if (ft.naam.equalsIgnoreCase(naam)) return ft;
+    private static FactType factTypeByName(RegelSpraakModel model, String name) {
+        if (name == null) return null;
+        for (FactType ft : model.factTypes.values())
+            if (ft.name.equalsIgnoreCase(name)) return ft;
         return null;
     }
 
     /** The DECLARED role name, never a plural and never a best-effort one — the wire binds what the author
      *  declared (the same narrowing {@code elementRoleBinding} makes on the emitting side). */
-    private static Role roleByName(FactType ft, String naam) {
-        if (naam == null) return null;
-        for (Role r : ft.rollen)
-            if (r.naam() != null && r.naam().equalsIgnoreCase(naam)) return r;
+    private static Role roleByName(FactType ft, String name) {
+        if (name == null) return null;
+        for (Role r : ft.roles)
+            if (r.name() != null && r.name().equalsIgnoreCase(name)) return r;
         return null;
     }
 
     /** The other end of {@code bound}. A §13.3.9.2 wederkerig feittype carries ONE role that is its own
      *  opposite, so the step's two ends are the same role. */
     private static Role oppositeRole(FactType ft, Role bound) {
-        if (ft.reciprocal && ft.rollen.size() == 1) return bound;
+        if (ft.reciprocal && ft.roles.size() == 1) return bound;
         Role out = null;
-        for (Role r : ft.rollen) if (r != bound) { if (out != null) return null; out = r; }
+        for (Role r : ft.roles) if (r != bound) { if (out != null) return null; out = r; }
         return out;
     }
 
     /** Does {@code ot} FILL {@code role}? One-sided (⊑ the declared filler): a role holds every instance at or
      *  below its declared type and none above it — the verifier's {@code fills} on this very arm. */
-    private static boolean fills(Objecttype ot, Role role) {
-        for (Objecttype t : ot.chain())
-            if (t.naam.equalsIgnoreCase(String.valueOf(role.objecttypeNaam()))) return true;
+    private static boolean fills(ObjectType ot, Role role) {
+        for (ObjectType t : ot.chain())
+            if (t.name.equalsIgnoreCase(String.valueOf(role.objectTypeName()))) return true;
         return false;
     }
 
     /** ⊑-compatible in EITHER direction — WF-102's landing test, deliberately as wide as WF-047's, so the two
      *  spellings of one fold cannot disagree about a subtype. */
-    private static boolean compatible(Objecttype a, Objecttype b) {
-        for (Objecttype t : a.chain()) if (t == b || t.naam.equalsIgnoreCase(b.naam)) return true;
-        for (Objecttype t : b.chain()) if (t == a || t.naam.equalsIgnoreCase(a.naam)) return true;
+    private static boolean compatible(ObjectType a, ObjectType b) {
+        for (ObjectType t : a.chain()) if (t == b || t.name.equalsIgnoreCase(b.name)) return true;
+        for (ObjectType t : b.chain()) if (t == a || t.name.equalsIgnoreCase(a.name)) return true;
         return false;
     }
 }

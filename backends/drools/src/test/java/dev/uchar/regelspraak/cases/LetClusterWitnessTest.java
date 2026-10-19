@@ -193,10 +193,10 @@ class LetClusterWitnessTest {
     }
     private static String num(int dec) { return num(dec, false, "unspecified"); }
 
-    private static String attr(String naam, int dec, boolean whole, String sign) {
+    private static String attr(String name, int dec, boolean whole, String sign) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
-                .formatted(naam, naam);
+                .formatted(name, name);
     }
 
     private static String lit(String valueJson, int dec, boolean whole) {
@@ -216,8 +216,8 @@ class LetClusterWitnessTest {
     }
 
     /** ch. 4.10 a read of the nearest enclosing binder. NB the wire field is {@code name}, not {@code naam}. */
-    private static String bref(String naam, int dec) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(naam, naam);
+    private static String bref(String name, int dec) {
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(name, name);
     }
 
     private static String ite(String condition, String then, String otherwise, int dec) {
@@ -230,17 +230,17 @@ class LetClusterWitnessTest {
                 .formatted(op, left, right, op.toLowerCase());
     }
 
-    private static String regel(String naam, String target, String valueJson) {
-        return regel(naam, "BEREKENING", target, valueJson, "null");
+    private static String rule(String name, String target, String valueJson) {
+        return rule(name, "BEREKENING", target, valueJson, "null");
     }
-    private static String regel(String naam, String category, String target, String valueJson, String conditionJson) {
-        return IrPath.regel(naam, category, target, valueJson, conditionJson);
+    private static String rule(String name, String category, String target, String valueJson, String conditionJson) {
+        return IrPath.rule(name, category, target, valueJson, conditionJson);
     }
 
     /** A one-objecttype document: the declared attributes and kenmerken, the rules, and an optional defaults
-     *  section. {@code attributes}/{@code kenmerken} are the bodies of the Jutter's two member lists (the
+     *  section. {@code attributes}/{@code characteristics} are the bodies of the Jutter's two member lists (the
      *  kenmerken body is empty for a kenmerk-free model). */
-    private static String model(String attributes, String kenmerken, String[] rules, String prioritizedDefaults) {
+    private static String model(String attributes, String characteristics, String[] rules, String prioritizedDefaults) {
         return ("{\"format\":\"uchar-ir-v1\","
                 + "\"model\":{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,"
                 + "\"plural\":\"Jutters\",\"attributes\":[%s],\"characteristics\":[%s]}],"
@@ -250,12 +250,12 @@ class LetClusterWitnessTest {
                 + "\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[]%s},\"diagnostics\":[]}")
-                .formatted(attributes, kenmerken, String.join(",", rules), prioritizedDefaults);
+                .formatted(attributes, characteristics, String.join(",", rules), prioritizedDefaults);
     }
 
     /** One entry of the Jutter's attribute list. */
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(name, datatype);
     }
 
     // ---------------- the three models (each verifier-clean and ref-replayed before pinning) ----------------
@@ -275,10 +275,10 @@ class LetClusterWitnessTest {
         return model(String.join(",", attribute("inkomen", num(2, false, "nonNegative")),
                         attribute("kindertal", num(0, true, "nonNegative")), attribute("basis", num(2)),
                         attribute("dubbelop", num(2)), attribute("geschaduwd", num(2)), attribute("tak", num(2))), "",
-                new String[]{regel("basis van een jutter", attr("basis", 2, false, "unspecified"), base),
-                        regel("dubbelop van een jutter", attr("dubbelop", 2, false, "unspecified"), redundant),
-                        regel("geschaduwd van een jutter", attr("geschaduwd", 2, false, "unspecified"), shadowed),
-                        regel("tak van een jutter", attr("tak", 2, false, "unspecified"), branch)},
+                new String[]{rule("basis van een jutter", attr("basis", 2, false, "unspecified"), base),
+                        rule("dubbelop van een jutter", attr("dubbelop", 2, false, "unspecified"), redundant),
+                        rule("geschaduwd van een jutter", attr("geschaduwd", 2, false, "unspecified"), shadowed),
+                        rule("tak van een jutter", attr("tak", 2, false, "unspecified"), branch)},
                 "");
     }
 
@@ -288,9 +288,9 @@ class LetClusterWitnessTest {
         return model(String.join(",", attribute("inkomen", num(2, false, "nonNegative")),
                         attribute("metlet", num(4)), attribute("zonderlet", num(4))), "",
                 new String[]{
-                        regel("met let van een jutter", attr("metlet", 4, false, "unspecified"),
+                        rule("met let van een jutter", attr("metlet", 4, false, "unspecified"),
                                 let("ink", inkomen, binary("times", bref("ink", 2), lit("0.21", 2), 4), 4)),
-                        regel("zonder let van een jutter", attr("zonderlet", 4, false, "unspecified"),
+                        rule("zonder let van een jutter", attr("zonderlet", 4, false, "unspecified"),
                                 binary("times", inkomen, lit("0.21", 2), 4))},
                 "");
     }
@@ -331,11 +331,11 @@ class LetClusterWitnessTest {
                 new String[]{
                         // never true for the case input — its only job is to BE a producer of `vermist`, which
                         // is what sinks the factor rule's stratum below this consumer's.
-                        regel("vermissing van een jutter", "KENMERKTOEKENNING", vermistTarget, trueLiteral,
+                        rule("vermissing van een jutter", "KENMERKTOEKENNING", vermistTarget, trueLiteral,
                                 compare("greater", inkomen, lit("999999.00", 2))),
-                        regel("factor van een jutter", "BEREKENING", attr("factor", 4, false, "unspecified"),
+                        rule("factor van een jutter", "BEREKENING", attr("factor", 4, false, "unspecified"),
                                 lit("3.0000", 4), notVermist),
-                        regel("gewogen van een jutter", attr("gewogen", 6, false, "unspecified"), gewogen)},
+                        rule("gewogen van een jutter", attr("gewogen", 6, false, "unspecified"), gewogen)},
                 "");
     }
 }

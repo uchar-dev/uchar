@@ -37,8 +37,8 @@ class FixedStartPointTest {
             Objecttype de Vlucht (mv: Vluchten)
             """;
 
-    private static String attribute(String tijdlijn) {
-        return HEAD + "    de waarde Bedrag " + tijdlijn + ";\n";
+    private static String attribute(String timeline) {
+        return HEAD + "    de waarde Bedrag " + timeline + ";\n";
     }
 
     /** The emitted document without whitespace, as the other emission witnesses read it. */
@@ -143,12 +143,12 @@ class FixedStartPointTest {
      *  the first, and a null start point threw — gate 10 caught it on jutterswet-penningjaar. */
     @Test void named_timeline_on_the_calendar_grid_gives_the_facet_no_start_point() {
         // a named definition writes its start point or "met variabel startpunt"; the calendar's is day 1
-        for (String[] definitie : List.of(new String[]{"een jaar startend op dag 1 van maand 1", "year"},
+        for (String[] definition : List.of(new String[]{"een jaar startend op dag 1 van maand 1", "year"},
                 new String[]{"een maand startend op dag 1 van de maand", "month"},
                 new String[]{"een kwartaal startend op dag 1 van maand 1, 4, 7 en 10", "quarter"})) {
-            String ir = wire("Tijdlijn het boekjaar heeft tijdvakken van " + definitie[0] + ";\n" + HEAD
+            String ir = wire("Tijdlijn het boekjaar heeft tijdvakken van " + definition[0] + ";\n" + HEAD
                     + "    de waarde Bedrag voor elke boekjaar;\n");
-            assertTrue(ir.contains("\"timeline\":{\"node\":\"TimelineFacet\",\"granularity\":\"" + definitie[1]
+            assertTrue(ir.contains("\"timeline\":{\"node\":\"TimelineFacet\",\"granularity\":\"" + definition[1]
                     + "\",\"count\":1,\"timelineName\":\"boekjaar\"}"), ir);
             assertFalse(ir.contains("fixedStart"), ir);
         }

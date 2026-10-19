@@ -94,7 +94,7 @@ class ObjectCreationFoldWitnessTest {
                 {"telling", "de som verminderd met 1", "10", null, null, "8"},
                 {"weeggrens", "het maximum plus 1", "8", "1", "1", "10"},
         };
-        String[] waarden = {
+        String[] values = {
                 percent(10, COUNTING), percent(10, MINIMUM), percent(10, MAXIMUM),
                 binary("minus", MINIMUM, numberLiteral(1), WHOLE, "(de minimale waarde …) min 1"),
                 binary("reducedBy", SUM, numberLiteral(1), WHOLE, "(de som …) verminderd met 1"),
@@ -102,7 +102,7 @@ class ObjectCreationFoldWitnessTest {
         };
         for (int i = 0; i < rows.length; i++) {
             String[] r = rows[i];
-            String ir = document(false, creation(null, memberInit(r[0], waarden[i])), readBack(r[0]));
+            String ir = document(false, creation(null, memberInit(r[0], values[i])), readBack(r[0]));
             assertNull(play(ir, caseDocument(situation(), perJutter(r[0], number(r[2]), number(r[3]), number(r[4]), number(r[5])))),
                     r[1]);
         }
@@ -359,22 +359,22 @@ class ObjectCreationFoldWitnessTest {
         return "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":" + unit + "}";
     }
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
-    private static String objectType(String naam, String plural, boolean animate, String kenmerken, String... attributes) {
-        return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
-                + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + kenmerken + "]}";
+    private static String objectType(String name, String plural, boolean animate, String characteristics, String... attributes) {
+        return "{\"node\":\"ObjectType\",\"name\":\"" + name + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
+                + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + characteristics + "]}";
     }
 
-    private static String role(String naam, String type, String plural) {
-        return "{\"node\":\"Role\",\"name\":\"" + naam + "\",\"objectType\":\"" + type + "\""
+    private static String role(String name, String type, String plural) {
+        return "{\"node\":\"Role\",\"name\":\"" + name + "\",\"objectType\":\"" + type + "\""
                 + (plural == null ? ",\"many\":false}" : ",\"plural\":\"" + plural + "\",\"many\":true}");
     }
 
-    private static String factType(String naam, String oneRole, String manyRole) {
-        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":[" + oneRole + "," + manyRole + "]}";
+    private static String factType(String name, String oneRole, String manyRole) {
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":[" + oneRole + "," + manyRole + "]}";
     }
 
     /** Jutter, Afrekening, Vondst and Strandvoogd; one jutter has many vondsten, one strandvoogd many beheerde
@@ -483,22 +483,22 @@ class ObjectCreationFoldWitnessTest {
                 + "\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding("JutterHeeftAfrekening", "afrekening") + "}]}";
     }
 
-    private static String regel(String naam, String target, String value) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
+    private static String rule(String name, String target, String value) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"" + target + "\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":"
                 + "\"De " + target + " van een Jutter\"}},\"value\":" + value + ",\"initialisation\":false,\"presentation\":\"calculation\"}]}";
     }
 
     /** "De &lt;lid&gt; van een Jutter moet berekend worden als de &lt;lid&gt; van de afrekening van de Jutter." */
     private static String readBack(String member) {
-        return regel("lees " + member + " terug", member, "{\"node\":\"AttributeReference\",\"attribute\":\"" + member + "\",\"subjectType\":"
+        return rule("lees " + member + " terug", member, "{\"node\":\"AttributeReference\",\"attribute\":\"" + member + "\",\"subjectType\":"
                 + "\"Afrekening\",\"source\":{\"snippet\":\"de " + member + " van de afrekening van de Jutter\"},\"path\":["
                 + roleBinding("JutterHeeftAfrekening", "afrekening") + "]}");
     }
 
     /** "… als de som van de &lt;lid&gt; van alle afrekeningen van de Jutter." */
     private static String readBackSum(String member, String type) {
-        return regel("lees " + member + " terug", member, "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[{\"node\":"
+        return rule("lees " + member + " terug", member, "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[{\"node\":"
                 + "\"AttributeReference\",\"attribute\":\"" + member + "\",\"subjectType\":\"Afrekening\",\"source\":{\"snippet\":"
                 + "\"de " + member + " van alle afrekeningen van de Jutter\"}}],\"elementType\":\"Afrekening\",\"sourceRole\":"
                 + roleBinding("JutterHeeftAfrekening", "afrekening") + ",\"type\":" + type + ",\"source\":{\"snippet\":"
@@ -541,13 +541,13 @@ class ObjectCreationFoldWitnessTest {
     private static final String CONSISTENT = "{\"kind\":\"consistent\"}";
 
     /** The expectation on {@code member} of J1 to J4, a null value leeg. */
-    private static String perJutter(String member, String... waarden) {
+    private static String perJutter(String member, String... values) {
         List<String> out = new ArrayList<>();
-        for (int i = 0; i < waarden.length; i++) {
+        for (int i = 0; i < values.length; i++) {
             String label = "J" + (i + 1);
-            out.add(waarden[i] == null
+            out.add(values[i] == null
                     ? "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + member + "\"}"
-                    : "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + member + "\",\"value\":" + waarden[i] + "}");
+                    : "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + member + "\",\"value\":" + values[i] + "}");
         }
         return String.join(",", out);
     }

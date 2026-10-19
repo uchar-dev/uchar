@@ -71,7 +71,7 @@ class NavigationWitnessTest {
 
     @Test void the_navigated_characteristic_check_follows_the_wire_binding() throws Exception {
         ObjectNode ir = read();
-        ObjectNode k = regel(ir).putObject("condition");
+        ObjectNode k = rule(ir).putObject("condition");
         k.put("node", "CharacteristicCheck").put("characteristic", "veilig").put("negated", false)
          .set("source", IrPath.sourceReference("zijn vlaghaven veilig is"));
         k.set("navigation", binding("vlagvoering", "vlaghaven"));
@@ -109,7 +109,7 @@ class NavigationWitnessTest {
         IrPath.addAttribute(IrPath.objectType(ir, "Schuit"), "kadegeld",
                 IrPath.attribute(IrPath.objectType(ir, "Haven"), "kadegeld").get("datatype"));
         ObjectNode left = value(ir).deepCopy();
-        ObjectNode v = regel(ir).putObject("condition");
+        ObjectNode v = rule(ir).putObject("condition");
         v.put("node", "Comparison").put("op", "greater");
         v.set("left", left);
         ObjectNode thirty = v.putObject("right").put("node", "Literal");
@@ -130,7 +130,7 @@ class NavigationWitnessTest {
         haven.put("supertype", "Ligplaats");
         RegelSpraakModel m = IrLoader.loadAll(ir).model();
         List<RegelSpraakModel.RoleBindingRef> step = List.of(new RegelSpraakModel.RoleBindingRef("vlagvoering", "vlaghaven"));
-        RegelSpraakModel.Objecttype schuit = m.objectTypeByName("Schuit");
+        RegelSpraakModel.ObjectType schuit = m.objectTypeByName("Schuit");
         assertNotNull(FactModelGenerator.navigationWalk(m, schuit, step, m.objectTypeByName("Haven")));
         assertNotNull(FactModelGenerator.navigationWalk(m, schuit, step, m.objectTypeByName("Ligplaats")),
                 "a Haven is a Ligplaats, so every object the walk reaches may be addressed as one");
@@ -167,13 +167,13 @@ class NavigationWitnessTest {
     }
 
     /** The one version of the rule 'vlagprijs van een schuit'. */
-    private static ObjectNode regel(ObjectNode ir) {
+    private static ObjectNode rule(ObjectNode ir) {
         JsonNode r = IrPath.rulesList(ir, "rules").get(VLAGPRIJS);
         assertTrue(r.get("name").asText().equals("vlagprijs van een schuit"), r.get("name").asText());
         return IrPath.version(ir, "rules", VLAGPRIJS, 0);
     }
 
-    private static ObjectNode value(ObjectNode ir) { return (ObjectNode) regel(ir).get("value"); }
+    private static ObjectNode value(ObjectNode ir) { return (ObjectNode) rule(ir).get("value"); }
 
     private static JsonNode goldenCase(int n) throws Exception {
         try (var s = Files.list(GOLDEN)) {
@@ -183,9 +183,9 @@ class NavigationWitnessTest {
     }
 
     /** A member-less object type shaped like {@code model}, with the given supertype. */
-    private static ObjectNode emptyType(JsonNode model, String naam, String supertype) {
+    private static ObjectNode emptyType(JsonNode model, String name, String supertype) {
         ObjectNode t = model.deepCopy();
-        t.put("name", naam).put("plural", naam + "s");
+        t.put("name", name).put("plural", name + "s");
         if (supertype == null) t.remove("supertype"); else t.put("supertype", supertype);
         t.putArray("attributes");
         t.putArray("characteristics");
@@ -200,8 +200,8 @@ class NavigationWitnessTest {
         return JSON.createArrayNode().add(binding(factType, role));
     }
 
-    private static Path temporary(String naam, ObjectNode ir) throws Exception {
-        Path tmp = Files.createTempFile(naam, ".json");
+    private static Path temporary(String name, ObjectNode ir) throws Exception {
+        Path tmp = Files.createTempFile(name, ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
         return tmp;

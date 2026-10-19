@@ -18,22 +18,22 @@ import java.util.Objects;
  * derive the same characteristic for the same object insert one fact with a justification each, and it stays while
  * either holds.
  */
-public record HasCharacteristic(Object onderwerp, ElementKey characteristic) {
+public record HasCharacteristic(Object subject, ElementKey characteristic) {
 
     public HasCharacteristic {
-        Objects.requireNonNull(onderwerp, "onderwerp");
+        Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(characteristic, "kenmerk");
     }
 
     @Override public boolean equals(Object o) {
-        return o instanceof HasCharacteristic h && h.onderwerp == onderwerp && h.characteristic.equals(characteristic);
+        return o instanceof HasCharacteristic h && h.subject == subject && h.characteristic.equals(characteristic);
     }
 
     @Override public int hashCode() {
-        return 31 * System.identityHashCode(onderwerp) + characteristic.hashCode();
+        return 31 * System.identityHashCode(subject) + characteristic.hashCode();
     }
 
     @Override public String toString() {
-        return "HeeftKenmerk(" + FactNames.object(onderwerp) + ", " + FactNames.member(characteristic) + ")";
+        return "HeeftKenmerk(" + FactNames.object(subject) + ", " + FactNames.member(characteristic) + ")";
     }
 }

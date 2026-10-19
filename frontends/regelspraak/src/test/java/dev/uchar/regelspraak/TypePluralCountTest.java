@@ -44,13 +44,13 @@ class TypePluralCountTest {
         Eén aanmelder heeft meerdere vondsten
         """;
 
-    private static String regel(String expressie) {
+    private static String rule(String expression) {
         return """
 
             Regel aantal gewogen posten
                 geldig altijd
                     Het aantal gewogen posten van een Jutter moet berekend worden als %s.
-            """.formatted(expressie);
+            """.formatted(expression);
     }
 
     private static List<Diagnostic> overType(RegelSpraakModel m) {
@@ -67,15 +67,15 @@ class TypePluralCountTest {
             "het aantal vondsten",          // the plural in lower case — the role word, with no anchor
             "(het aantal Vondsten)"
     })
-    void a_count_over_an_object_type_is_refused_with_the_norm(String expressie) {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel(expressie));
+    void a_count_over_an_object_type_is_refused_with_the_norm(String expression) {
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule(expression));
         List<Diagnostic> ds = overType(m);
-        assertEquals(1, ds.size(), () -> "verwacht één typetellingsmelding voor '" + expressie + "', kreeg: " + m.diagnostics);
+        assertEquals(1, ds.size(), () -> "verwacht één typetellingsmelding voor '" + expression + "', kreeg: " + m.diagnostics);
         Diagnostic d = ds.get(0);
         assertEquals(Severity.ERROR, d.severity(), "ERROR: irModus schrijft het document dan niet");
         // the type the operand named, in the Dutch context; the count without an element type, in the verifier's
         // WF-037 sentence
-        assertEquals("telling zonder bron '" + expressie.replace("(", "").replace(")", "") + "', over het objecttype "
+        assertEquals("telling zonder bron '" + expression.replace("(", "").replace(")", "") + "', over het objecttype "
                 + "Vondst: the count is an INSTANCE fold and MUST carry an element type: without one its argument is no "
                 + "fold source at all — and with no argument there is none — so the count has no contributors to "
                 + "count, only its operand, whatever that operand holds (ch. 4.3)", d.message());
@@ -84,7 +84,7 @@ class TypePluralCountTest {
 
     @Test void without_a_role_from_the_subject_the_exit_stays_general() {
         // Jutter counting Jutters: no feittype reaches Jutter from Jutter, so the sentence names no role.
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal Jutters"));
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule("het aantal Jutters"));
         List<Diagnostic> ds = overType(m);
         assertEquals(1, ds.size(), () -> "kreeg: " + m.diagnostics);
         assertTrue(ds.get(0).message().contains(", over het objecttype Jutter: "), ds.get(0).message());
@@ -108,17 +108,17 @@ class TypePluralCountTest {
     }
 
     @Test void the_role_count_stays_clean() {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal vondsten van de Jutter"));
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule("het aantal vondsten van de Jutter"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRegels.get(0).value();
+        Expr.FunctionCall f = (Expr.FunctionCall) m.resolvedRules.get(0).value();
         assertEquals(Expr.FunctionKind.AANTAL, f.kind());
-        assertEquals("Vondst", f.elementObjectType().naam);
+        assertEquals("Vondst", f.elementObjectType().name);
     }
 
     @Test void a_parameter_with_the_name_of_a_type_keeps_the_general_sentence() {
         // Only an operand that resolved to NOTHING declared is read as a type. Here "vondsten" is a declared
         // parameter, so the generic sentence — a parameter is no source — is the right one.
-        String src = "Parameter de vondsten : Numeriek (niet-negatief geheel getal)\n\n" + MODEL + regel("het aantal vondsten");
+        String src = "Parameter de vondsten : Numeriek (niet-negatief geheel getal)\n\n" + MODEL + rule("het aantal vondsten");
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(overType(m).isEmpty(), () -> "de typezin hoort hier niet: " + m.diagnostics);
         assertTrue(m.errors().stream().anyMatch(d -> d.message()
@@ -127,7 +127,7 @@ class TypePluralCountTest {
     }
 
     @Test void an_operand_that_names_no_type_keeps_the_general_sentence() {
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal gewogen vangst van de Jutter"));
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule("het aantal gewogen vangst van de Jutter"));
         assertTrue(overType(m).isEmpty(), () -> "de typezin hoort hier niet: " + m.diagnostics);
         assertTrue(m.errors().stream().anyMatch(d -> d.message()
                         .startsWith("telling zonder bron 'het aantal gewogen vangst van de Jutter': ")),

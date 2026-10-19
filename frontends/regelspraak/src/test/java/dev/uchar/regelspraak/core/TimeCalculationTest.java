@@ -5,8 +5,8 @@ import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Unit;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Granularity;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -16,8 +16,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /** The shared tijdseenheid → ChronoUnit mapping and §8.2 toets codes (single shared implementation). */
 class TimeCalculationTest {
 
-    private static Datatype with(String afkorting) {
-        return new Datatype.Numeriek(true, 0, null, new Unit(afkorting, "Tijd"));
+    private static Datatype with(String abbreviation) {
+        return new Datatype.Numeric(true, 0, null, new Unit(abbreviation, "Tijd"));
     }
 
     @Test void chronoUnit_normalises_the_time_units() {
@@ -33,7 +33,7 @@ class TimeCalculationTest {
         assertEquals("KWARTAAL", TimeCalculation.chronoUnit(with("kwartaal")));
         assertEquals("KWARTAAL", TimeCalculation.chronoUnit(with("kw"))); // §3.7 the declared kwartaal afkorting
         assertNull(TimeCalculation.chronoUnit(with("werkdagen")), "een dagsoort/onbekende eenheid -> null (marker)");
-        assertNull(TimeCalculation.chronoUnit(new Datatype.Numeriek(true, 0, null, null)), "geen eenheid -> null");
+        assertNull(TimeCalculation.chronoUnit(new Datatype.Numeric(true, 0, null, null)), "geen eenheid -> null");
     }
 
     @Test void isCalendarSpelling_knows_exactly_the_thirty_spellings_of_the_table() {
@@ -79,7 +79,7 @@ class TimeCalculationTest {
         // ref gives.
         Unit without = new Unit(null, "Tijd");
         assertNull(TimeCalculation.chronoUnit(without));
-        assertNull(TimeCalculation.chronoUnit(new Datatype.Numeriek(true, 0, null, without)));
+        assertNull(TimeCalculation.chronoUnit(new Datatype.Numeric(true, 0, null, without)));
         RegelSpraakModel model = new RegelSpraakModel();
         model.dayKindPerUnit.put("werkdagen", "werkdag");
         assertNull(TimeCalculation.dayKindForUnit(model, without));
@@ -105,13 +105,13 @@ class TimeCalculationTest {
         // dimensioned attribute is not a lowerable §8.4.3 bound — and those facets sit at the
         // DECLARANT. Reading them on the subject's own maps calls an inherited timeline scalar and
         // admits a bound the runtime cannot compute.
-        Objecttype parent = new Objecttype("Jutter");
-        parent.attributen.put("peildatum", new Datatype.DatumInDagen());
-        parent.attributen.put("knipdatum", new Datatype.DatumInDagen());
-        parent.attribuutGranulariteit.put("knipdatum", Granulariteit.MAAND);
-        parent.attributen.put("seizoensdatum", new Datatype.DatumInDagen());
+        ObjectType parent = new ObjectType("Jutter");
+        parent.attributes.put("peildatum", new Datatype.DateInDays());
+        parent.attributes.put("knipdatum", new Datatype.DateInDays());
+        parent.attributeGranularity.put("knipdatum", Granularity.MAAND);
+        parent.attributes.put("seizoensdatum", new Datatype.DateInDays());
         parent.attributeDimensions.put("seizoensdatum", List.of("seizoen"));
-        Objecttype sub = new Objecttype("Klipjutter");
+        ObjectType sub = new ObjectType("Klipjutter");
         sub.supertype = parent;
 
         assertTrue(TimeCalculation.periodBoundLowerable(limit("peildatum", sub), sub),
@@ -127,7 +127,7 @@ class TimeCalculationTest {
         assertFalse(TimeCalculation.periodBoundLowerable(limit("seizoensdatum", parent), parent));
     }
 
-    private static Expr limit(String attribute, Objecttype subject) {
-        return new Expr.AttributeReference(attribute, subject, "zijn", null, new Datatype.DatumInDagen(), null);
+    private static Expr limit(String attribute, ObjectType subject) {
+        return new Expr.AttributeReference(attribute, subject, "zijn", null, new Datatype.DateInDays(), null);
     }
 }

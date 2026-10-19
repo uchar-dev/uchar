@@ -65,7 +65,7 @@ class NavigationChoiceTest {
     private static final String WITHOUT_PATH = "an attribute reference without a path is the subject's own read, so its "
             + "subjectType is the subject type 'Schuit' — 'Haven' names another type, which only a navigation reaches";
 
-    private static String regel(String value) {
+    private static String rule(String value) {
         return """
 
             Regel ligprijs van een schuit
@@ -91,22 +91,22 @@ class NavigationChoiceTest {
     // ---------------- two relations between Schuit and Haven ----------------
 
     @Test void two_relations_the_written_role_name_binds() {
-        String c = emitCompact(TYPES + THUISLIGGING + WINTERBERGING + regel("het kadegeld van zijn winterhaven"));
+        String c = emitCompact(TYPES + THUISLIGGING + WINTERBERGING + rule("het kadegeld van zijn winterhaven"));
         assertTrue(c.contains(path("winterberging", "winterhaven")), () -> "de rolnaam wijst één relatie aan:\n" + c);
-        String d = emitCompact(TYPES + THUISLIGGING + WINTERBERGING + regel("het kadegeld van de thuishaven van de Schuit"));
+        String d = emitCompact(TYPES + THUISLIGGING + WINTERBERGING + rule("het kadegeld van de thuishaven van de Schuit"));
         assertTrue(d.contains(path("thuisligging", "thuishaven")), () -> "ook als lezing met lidwoord:\n" + d);
     }
 
     @Test void two_relations_the_type_name_is_refused() {
         assertEquals(List.of("genavigeerde lezing 'het kadegeld van de Haven' zonder binding (2 relaties verbinden Schuit "
                         + "met Haven, en 'de Haven' noemt geen rol die er precies één aanwijst): " + WITHOUT_PATH),
-                faults(TYPES + THUISLIGGING + WINTERBERGING + regel("het kadegeld van de Haven")));
+                faults(TYPES + THUISLIGGING + WINTERBERGING + rule("het kadegeld van de Haven")));
     }
 
     @Test void two_relations_a_role_name_that_is_the_type_name_binds() {
         // "de haven" names the type and the role of havenligging; the pair decides nothing, the role does
         for (String written : List.of("het kadegeld van de haven", "het kadegeld van de Haven")) {
-            String c = emitCompact(TYPES + HAVENLIGGING + WINTERBERGING + regel(written));
+            String c = emitCompact(TYPES + HAVENLIGGING + WINTERBERGING + rule(written));
             assertTrue(c.contains(path("havenligging", "haven")), () -> "'" + written + "' bindt de rol:\n" + c);
         }
     }
@@ -115,7 +115,7 @@ class NavigationChoiceTest {
 
     @Test void a_relation_role_name_and_type_name_both_bind() {
         for (String written : List.of("het kadegeld van zijn thuishaven", "het kadegeld van de Haven")) {
-            String c = emitCompact(TYPES + THUISLIGGING + regel(written));
+            String c = emitCompact(TYPES + THUISLIGGING + rule(written));
             assertTrue(c.contains(path("thuisligging", "thuishaven")), () -> "'" + written + "' bindt:\n" + c);
         }
     }
@@ -123,7 +123,7 @@ class NavigationChoiceTest {
     @Test void no_relation_is_refused() {
         assertEquals(List.of("genavigeerde lezing 'het kadegeld van de Haven' zonder binding (geen relatie verbindt "
                         + "Schuit met Haven): " + WITHOUT_PATH),
-                faults(TYPES + regel("het kadegeld van de Haven")));
+                faults(TYPES + rule("het kadegeld van de Haven")));
     }
 
     @Test void a_written_role_that_points_to_two_relations_is_refused_in_the_words_of_the_frontend() {
@@ -143,7 +143,7 @@ class NavigationChoiceTest {
                         de sleper Schuit
                         de geborgene Schuit
                     Eén sleper bergt één geborgene
-                    """ + regel("de romplengte van zijn sleper")));
+                    """ + rule("de romplengte van zijn sleper")));
     }
 
     // ---------------- a binding that reaches a to-many role ----------------
@@ -252,7 +252,7 @@ class NavigationChoiceTest {
                         + "without a range is not the fold subject 'Schuit': without a range the fold is the subject's own "
                         + "read, so its elementType must name the subject type"});
         for (String[] fold : folds)
-            assertEquals(List.of(fold[1]), faults(TYPES + THUISLIGGING + regel(fold[0])), fold[0]);
+            assertEquals(List.of(fold[1]), faults(TYPES + THUISLIGGING + rule(fold[0])), fold[0]);
     }
 
     // ---------------- a quantifier fold's range ----------------
@@ -284,7 +284,7 @@ class NavigationChoiceTest {
      *  the Haven's side: two bindings where the wire takes one. Before: the emitter's exception ("de rolcheck … bindt 2
      *  rollen 'thuishaven'"). With one such fact type the check binds. */
     @Test void a_role_check_that_points_to_two_relations_is_refused() {
-        String regel = """
+        String rule = """
 
             Regel veilige haven
                 geldig altijd
@@ -300,8 +300,8 @@ class NavigationChoiceTest {
             """;
         assertEquals(List.of("rolcheck 'hij een ligger heeft' zonder binding (2 feittypen kennen de rol 'thuishaven' "
                         + "van Haven tegenover Schuit): missing field 'factType'"),
-                faults(TYPES + THUISLIGGING + second + regel));
-        String c = emitCompact(TYPES + THUISLIGGING + regel);
+                faults(TYPES + THUISLIGGING + second + rule));
+        String c = emitCompact(TYPES + THUISLIGGING + rule);
         assertTrue(c.contains("{\"node\":\"RoleMembership\",\"factType\":\"thuisligging\",\"role\":\"thuishaven\""),
                 () -> "met één relatie bindt de rolcheck:\n" + c);
     }
@@ -452,7 +452,7 @@ class NavigationChoiceTest {
             assertEquals(List.of(levelError(form[0])), faults(source), () -> "positie:\n" + form[1]);
         }
         // an exception to a rule is lifted into the defaults, and its condition is walked there
-        assertEquals(List.of(levelError("Schuit")), faults(TYPES + regel("5") + """
+        assertEquals(List.of(levelError("Schuit")), faults(TYPES + rule("5") + """
 
             Uitzondering op ligprijs van een schuit: dure ligprijs
                 geldig altijd

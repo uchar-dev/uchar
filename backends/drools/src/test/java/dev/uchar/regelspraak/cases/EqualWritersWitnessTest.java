@@ -77,12 +77,12 @@ class EqualWritersWitnessTest {
                         assertNull(DroolsBackend.fire(b, session).noFixpoint(), where);
                         for (Object j : jutters) {
                             TreeSet<String> written = new TreeSet<>();
-                            for (Object f : session.getObjects(o -> o instanceof Value w && w.onderwerp() == j))
+                            for (Object f : session.getObjects(o -> o instanceof Value w && w.subject() == j))
                                 written.add(((Value) f).writer() + "="
                                         + ((BigDecimal) ((Value) f).value()).toPlainString());
                             if (!written.equals(both)) faults.add(where + ": de schrijvers " + written);
                         }
-                        for (Fixpoint.DerivedValue w : DroolsBackend.fixpointOf(b, session).waarden())
+                        for (Fixpoint.DerivedValue w : DroolsBackend.fixpointOf(b, session).values())
                             read.add(((BigDecimal) w.value()).toPlainString());
                         DroolsBackend.setDerivedValues(b, session);
                     } finally {
@@ -158,18 +158,18 @@ class EqualWritersWitnessTest {
                         assertNull(DroolsBackend.fire(b, session).noFixpoint(), where);
                         for (Object j : jutters) {
                             TreeSet<String> decides = new TreeSet<>();
-                            for (Object f : session.getObjects(o -> o instanceof Outcome u && u.onderwerp() == j
+                            for (Object f : session.getObjects(o -> o instanceof Outcome u && u.subject() == j
                                     && u.category() == Outcome.Kind.DECIDED))
                                 decides.add(((Outcome) f).chain() + "="
                                         + ((BigDecimal) ((Outcome) f).value()).toPlainString());
                             if (!decides.equals(besluiten)) faults.add(where + ": de besluiten " + decides);
                             TreeSet<String> written = new TreeSet<>();
-                            for (Object f : session.getObjects(o -> o instanceof Value w && w.onderwerp() == j))
+                            for (Object f : session.getObjects(o -> o instanceof Value w && w.subject() == j))
                                 written.add(((Value) f).writer() + "="
                                         + ((BigDecimal) ((Value) f).value()).toPlainString());
                             if (!written.equals(stack)) faults.add(where + ": de schrijvers " + written);
                         }
-                        for (Fixpoint.DerivedValue w : DroolsBackend.fixpointOf(b, session).waarden())
+                        for (Fixpoint.DerivedValue w : DroolsBackend.fixpointOf(b, session).values())
                             read.add(((BigDecimal) w.value()).toPlainString());
                         DroolsBackend.setDerivedValues(b, session);
                     } finally {

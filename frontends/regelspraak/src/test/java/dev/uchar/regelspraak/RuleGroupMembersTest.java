@@ -44,7 +44,7 @@ class RuleGroupMembersTest {
                 "de leden zijn regelnamen, in geschreven volgorde; de tabel staat voor haar rijen");
         // every member names a rule the model carries, which is what WF-033 asks of the wire
         for (String member : m.ruleGroups.get(0).members())
-            assertTrue(m.resolvedRegels.stream().anyMatch(r -> r.naam().equals(member)), () -> "lid '" + member + "' is geen regel");
+            assertTrue(m.resolvedRules.stream().anyMatch(r -> r.name().equals(member)), () -> "lid '" + member + "' is geen regel");
     }
 
     /** WF-033: an object creation in a recursive group mints new instances each generation, so it carries a guard,

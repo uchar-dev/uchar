@@ -38,8 +38,8 @@ class FixedStartPointWitnessTest {
 
     @Test void the_golden_reads_one_to_one_and_gives_the_anchor() throws Exception {
         RegelSpraakModel m = IrLoader.load(read("golden/jutterswet-vast-startpunt"));
-        assertEquals("--10-01", m.tijdlijnen.get(0).fixedStartPoint());
-        RegelSpraakModel.Objecttype jutter = m.objecttypen.get("Jutter");
+        assertEquals("--10-01", m.timelines.get(0).fixedStartPoint());
+        RegelSpraakModel.ObjectType jutter = m.objectTypes.get("Jutter");
         assertEquals("--10-01", jutter.attributeFixedStartPoint.get("stormwachtdagen"));
         assertEquals("--01-31", jutter.attributeFixedStartPoint.get("maandwachtdagen"));
         assertEquals("2024-09-30", jutter.characteristicFixedStartPoint.get("wachtplichtig"));
@@ -85,8 +85,8 @@ class FixedStartPointWitnessTest {
     @Test void pro_rata_over_a_fixed_start_point_is_fenced() throws Exception {
         for (String[] fixedStarts : new String[][]{{null, null}, {"--01-15", null}, {null, "--10-01"}}) {
             RegelSpraakModel m = IrLoader.load(proRata(fixedStarts[0], fixedStarts[1]));
-            var rule = m.resolvedRegels.get(0);
-            String reason = Timelines.proRataFixedGrid(m.objecttypen.get("Jutter"), "borgdeel", rule.value());
+            var rule = m.resolvedRules.get(0);
+            String reason = Timelines.proRataFixedGrid(m.objectTypes.get("Jutter"), "borgdeel", rule.value());
             if (fixedStarts[0] == null && fixedStarts[1] == null) assertNull(reason, "het kalenderraster is niet omheind");
             else assertEquals("pro-rata onto or from a grid that does not lie on the calendar is fenced"
                     + " (RUNTIME-SEMANTICS ch. 3.2)", reason, "omheind bij doel " + fixedStarts[0] + " en basis " + fixedStarts[1]);

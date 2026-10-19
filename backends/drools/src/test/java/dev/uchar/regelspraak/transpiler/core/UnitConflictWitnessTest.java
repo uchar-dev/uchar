@@ -11,7 +11,7 @@ import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Unit;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
-import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
@@ -110,7 +110,7 @@ class UnitConflictWitnessTest {
         // invented and the value stands in the unit it was computed in. Faulting here would make that recorded
         // sentence false. The unit must come from the DERIVATION — that is where the provenance mark is set.
         Unit opaque = derivedProduct();
-        assertNull(opaque.canoniek(), "een opaak product draagt per constructie geen canoniek");
+        assertNull(opaque.canonical(), "een opaak product draagt per constructie geen canoniek");
         UnitConflict.requireRescalable(opaque, EUR, "witness");
         UnitConflict.requireRescalable(EUR, opaque, "witness");
     }
@@ -121,7 +121,7 @@ class UnitConflictWitnessTest {
         // been derived. ref faults on such a document; so must this. Value-equal to the derived one, and still
         // treated differently, which is the whole point: provenance is not a property of the value.
         Unit derived = derivedProduct();
-        Unit namesake = new Unit(derived.afkorting(), derived.stelsel(), null, null, null);
+        Unit namesake = new Unit(derived.abbreviation(), derived.system(), null, null, null);
         assertEquals(derived, namesake, "de twee zijn waarde-gelijk — alleen hun herkomst verschilt");
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(namesake, EUR, "witness"));
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(EUR, namesake, "witness"));
@@ -170,15 +170,15 @@ class UnitConflictWitnessTest {
         // Without this the fold would answer €/mnd for a result that is €, and every restatement downstream
         // would be handed a pair with no factor — which is exactly what the two corpus goldens did.
         Unit rate = Unit.compound(EUR, JR);
-        Objecttype withTimeline = new Objecttype("Vondst");
-        withTimeline.attributen.put("tarief", num(rate));
-        withTimeline.attribuutGranulariteit.put("tarief", RegelSpraakModel.Granulariteit.MAAND);
+        ObjectType withTimeline = new ObjectType("Vondst");
+        withTimeline.attributes.put("tarief", num(rate));
+        withTimeline.attributeGranularity.put("tarief", RegelSpraakModel.Granularity.MAAND);
         assertEquals(EUR, bare().unitOf(totalOver(withTimeline)), "de noemer is door de vouwing verbruikt");
 
         // and NOT when the operand carries no timeline: a plain set TOTAAL of rates is still a rate. The same
         // corpus golden carries both readings side by side, which is why the rule keys on the declaration.
-        Objecttype withoutTimeline = new Objecttype("Vondst");
-        withoutTimeline.attributen.put("tarief", num(rate));
+        ObjectType withoutTimeline = new ObjectType("Vondst");
+        withoutTimeline.attributes.put("tarief", num(rate));
         assertEquals(rate, bare().unitOf(totalOver(withoutTimeline)), "zonder tijdlijn blijft het een tarief");
     }
 
@@ -189,9 +189,9 @@ class UnitConflictWitnessTest {
         // the rate for an already-folded value: measured 576 for 48 into a €/jr doel (the mnd->jr factor applied
         // twice over), where ref faults. Same declaration, same shape, only the operator differs.
         Unit rate = Unit.compound(EUR, JR);
-        Objecttype ot = new Objecttype("Vondst");
-        ot.attributen.put("tarief", num(rate));
-        ot.attribuutGranulariteit.put("tarief", RegelSpraakModel.Granulariteit.MAAND);
+        ObjectType ot = new ObjectType("Vondst");
+        ot.attributes.put("tarief", num(rate));
+        ot.attributeGranularity.put("tarief", RegelSpraakModel.Granularity.MAAND);
         Expr.AttributeReference ref = new Expr.AttributeReference("tarief", ot, "alle vondsten", null, num(rate), source());
         Expr.FunctionCall sum = new Expr.FunctionCall(Expr.FunctionKind.SOM, List.of(ref), ot, null, null, num(rate), source());
         assertEquals(EUR, bare().unitOf(sum), "de noemer is door de vouwing verbruikt");
@@ -202,9 +202,9 @@ class UnitConflictWitnessTest {
         // the corpus: every fold whose operand is timeline-declared is a TOTAAL, so this is the boundary of a
         // rule that was scoped by measurement rather than by guess.
         Unit rate = Unit.compound(EUR, JR);
-        Objecttype ot = new Objecttype("Vondst");
-        ot.attributen.put("tarief", num(rate));
-        ot.attribuutGranulariteit.put("tarief", RegelSpraakModel.Granulariteit.MAAND);
+        ObjectType ot = new ObjectType("Vondst");
+        ot.attributes.put("tarief", num(rate));
+        ot.attributeGranularity.put("tarief", RegelSpraakModel.Granularity.MAAND);
         Expr.AttributeReference ref = new Expr.AttributeReference("tarief", ot, "alle vondsten", null, num(rate), source());
         Expr.FunctionCall f = new Expr.FunctionCall(Expr.FunctionKind.MINIMUM, List.of(ref), ot, null, null, num(rate), source());
         assertEquals(rate, bare().unitOf(f));
@@ -213,7 +213,7 @@ class UnitConflictWitnessTest {
     // ---------------- authored-model helpers ----------------
 
     private static Datatype num(Unit e) {
-        return new Datatype.Numeriek(false, 2, Datatype.Teken.ONBEPAALD, e);
+        return new Datatype.Numeric(false, 2, Datatype.Sign.ONBEPAALD, e);
     }
 
     private static Source source() { return Source.synthetic("witness"); }
@@ -221,8 +221,8 @@ class UnitConflictWitnessTest {
     private static EffectiveUnit bare() { return new EffectiveUnit(List.of()); }
 
     /** "het totaal van het tarief van alle vondsten" over {@code ot} — the §7.1 fold shape. */
-    private static Expr.FunctionCall totalOver(Objecttype ot) {
-        Datatype t = ot.attributen.get("tarief");
+    private static Expr.FunctionCall totalOver(ObjectType ot) {
+        Datatype t = ot.attributes.get("tarief");
         Expr.AttributeReference ref = new Expr.AttributeReference("tarief", ot, "alle vondsten", null, t, source());
         return new Expr.FunctionCall(Expr.FunctionKind.TOTAAL, List.of(ref), ot, null, null, t, source());
     }
@@ -234,9 +234,9 @@ class UnitConflictWitnessTest {
 
     /** As above, with the second factor chosen — so two DISTINCT derived products can be put side by side. */
     private static Unit derivedProduct(Unit second) {
-        Objecttype ot = new Objecttype("Vracht");
-        ot.attributen.put("prijs", num(EUR));
-        ot.attributen.put("factor", num(second));
+        ObjectType ot = new ObjectType("Vracht");
+        ot.attributes.put("prijs", num(EUR));
+        ot.attributes.put("factor", num(second));
         Expr.AttributeReference prijs = new Expr.AttributeReference("prijs", ot, "een vracht", null, num(EUR), source());
         Expr.AttributeReference other = new Expr.AttributeReference("factor", ot, "een vracht", null, num(second), source());
         Unit out = bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL, prijs, other, num(EUR), source()));
@@ -273,12 +273,12 @@ class UnitConflictWitnessTest {
                 if (lowersTms(honest)) {
                     tmsSeen++;
                     if (!(catchTms(lying) instanceof UnitConflict))
-                        silent.add(t.getKey() + " | " + naam(ir) + " (tms): " + describe(catchTms(lying)));
+                        silent.add(t.getKey() + " | " + name(ir) + " (tms): " + describe(catchTms(lying)));
                 }
                 if (lowersDrl(honest)) {
                     drlSeen++;
                     if (!(catchDrl(lying) instanceof UnitConflict))
-                        silent.add(t.getKey() + " | " + naam(ir) + " (DRL-tekst): " + describe(catchDrl(lying)));
+                        silent.add(t.getKey() + " | " + name(ir) + " (DRL-tekst): " + describe(catchDrl(lying)));
                 }
             }
             // never silently green: a twist no golden carries would make its whole row vacuous, so an unprobed
@@ -311,10 +311,10 @@ class UnitConflictWitnessTest {
             if (lying == null || !lowersDrl(honest)) continue;
             seen++;
             Throwable t = catchDrl(lying);
-            if (t != null) { moved.add(naam(ir) + " faalde: " + describe(t)); continue; }
-            if (!drl(honest).equals(drl(lying))) moved.add(naam(ir) + ": de DRL-tekst bewoog");
+            if (t != null) { moved.add(name(ir) + " faalde: " + describe(t)); continue; }
+            if (!drl(honest).equals(drl(lying))) moved.add(name(ir) + ": de DRL-tekst bewoog");
             if (lowersTms(honest) && catchTms(lying) != null)
-                moved.add(naam(ir) + " (tms) faalde: " + describe(catchTms(lying)));
+                moved.add(name(ir) + " (tms) faalde: " + describe(catchTms(lying)));
         }
         assertTrue(seen > 0, "geen enkele golden bood een verdraaibare annotatie op deze positie");
         assertEquals(List.of(), moved, "de annotatie is niet de bron: een leugen daar mag niets bewegen");
@@ -332,9 +332,9 @@ class UnitConflictWitnessTest {
             ref.putObject("type").put("node", "Number").put("whole", false).put("decimals", 2)
                     .put("sign", "unspecified").set("unit", JSON.readTree(FOREIGN));
             IrLoader.DocumentError f = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(copy),
-                    naam(ir));
+                    name(ir));
             assertTrue(f.site().endsWith("/value/right/type") && f.getMessage().contains("unknown field"),
-                    naam(ir) + ": " + f.getMessage());
+                    name(ir) + ": " + f.getMessage());
         }
         assertTrue(seen > 0, "geen enkele golden droeg een optelling van twee gedeclareerde lezingen");
     }
@@ -363,9 +363,9 @@ class UnitConflictWitnessTest {
     /** A copy whose additive rule's DOEL declaration gains a denominator — the same shape at the WRITE boundary. */
     private static JsonNode withRateOnTarget(JsonNode ir) throws Exception {
         JsonNode copy = ir.deepCopy();
-        JsonNode regel = additiveRule(copy);
-        if (regel == null) return null;
-        return withDenominator(copy, declarationFrom(copy, regel.get("target")));
+        JsonNode rule = additiveRule(copy);
+        if (rule == null) return null;
+        return withDenominator(copy, declarationFrom(copy, rule.get("target")));
     }
 
     /** A copy in which the declaration of a parameter READ IN A COMPARISON against a unit-bearing attribute
@@ -373,9 +373,9 @@ class UnitConflictWitnessTest {
      *  the one the comparison actually reads; twisting an unrelated declaration probes nothing. */
     private static JsonNode withRateOnParameter(JsonNode ir) throws Exception {
         JsonNode copy = ir.deepCopy();
-        String naam = comparedParameter(copy);
-        if (naam == null) return null;
-        JsonNode p = findMember(copy.path("model").path("parameters"), "name", naam);
+        String name = comparedParameter(copy);
+        if (name == null) return null;
+        JsonNode p = findMember(copy.path("model").path("parameters"), "name", name);
         return p == null ? null : withDenominator(copy, (ObjectNode) p.get("datatype"));
     }
 
@@ -395,11 +395,11 @@ class UnitConflictWitnessTest {
         if (!x.isObject()) return;
         if ("Comparison".equals(x.path("node").asText())) {
             JsonNode l = x.get("left"), r = x.get("right");
-            String naam = parameterWithUnit(squareRoot, l) != null && declarationFrom(squareRoot, r) != null
+            String name = parameterWithUnit(squareRoot, l) != null && declarationFrom(squareRoot, r) != null
                     ? parameterWithUnit(squareRoot, l)
                     : (parameterWithUnit(squareRoot, r) != null && declarationFrom(squareRoot, l) != null
                        ? parameterWithUnit(squareRoot, r) : null);
-            if (naam != null) { out.add(naam); return; }
+            if (name != null) { out.add(name); return; }
         }
         for (var it = x.fields(); it.hasNext(); ) findComparison(squareRoot, it.next().getValue(), out);
     }
@@ -407,12 +407,12 @@ class UnitConflictWitnessTest {
     /** The parameter name behind a unit-bearing, denominator-free {@code ParameterReference}; else null. */
     private static String parameterWithUnit(JsonNode ir, JsonNode ref) {
         if (ref == null || !"ParameterReference".equals(ref.path("node").asText())) return null;
-        String naam = ref.path("parameter").asText(null);
-        if (naam == null) return null;
-        JsonNode p = findMember(ir.path("model").path("parameters"), "name", naam);
+        String name = ref.path("parameter").asText(null);
+        if (name == null) return null;
+        JsonNode p = findMember(ir.path("model").path("parameters"), "name", name);
         if (p == null) return null;
         JsonNode e = p.path("datatype").path("unit");
-        return e.isObject() && !e.has("denominator") ? naam : null;
+        return e.isObject() && !e.has("denominator") ? name : null;
     }
 
     /** Give {@code houder}'s unit a "mnd" denominator; null when there is no plain unit to give one to. */
@@ -426,8 +426,8 @@ class UnitConflictWitnessTest {
     /** A copy whose additive composite's ANNOTATED unit is foreign — the declarations untouched. */
     private static JsonNode withTwistedAnnotation(JsonNode ir) throws Exception {
         JsonNode copy = ir.deepCopy();
-        JsonNode regel = additiveRule(copy);
-        if (regel == null || !(regel.get("value").get("type") instanceof ObjectNode type)) return null;
+        JsonNode rule = additiveRule(copy);
+        if (rule == null || !(rule.get("value").get("type") instanceof ObjectNode type)) return null;
         type.set("unit", JSON.readTree(FOREIGN));
         return copy;
     }
@@ -438,8 +438,8 @@ class UnitConflictWitnessTest {
      * document carries none. Deterministic: rules are visited in document order and the first hit wins.
      */
     private static ObjectNode additiveRightRef(JsonNode ir) {
-        JsonNode regel = additiveRule(ir);
-        return regel == null ? null : (ObjectNode) regel.get("value").get("right");
+        JsonNode rule = additiveRule(ir);
+        return rule == null ? null : (ObjectNode) rule.get("value").get("right");
     }
 
     /** The FIRST rule version whose value is an additive join of two attribute reads that BOTH resolve to a
@@ -474,8 +474,8 @@ class UnitConflictWitnessTest {
     /** The entry of a declaration list whose {@code nameField} is {@code naam}, or null. A miss is an answer here,
      *  not a fault: it means "this golden does not carry the shape" (an inherited attribute, say), the same null
      *  the v0 map lookup gave. */
-    private static JsonNode findMember(JsonNode list, String nameField, String naam) {
-        for (JsonNode n : list) if (naam.equals(n.path(nameField).asText(null))) return n;
+    private static JsonNode findMember(JsonNode list, String nameField, String name) {
+        for (JsonNode n : list) if (name.equals(n.path(nameField).asText(null))) return n;
         return null;
     }
 
@@ -522,7 +522,7 @@ class UnitConflictWitnessTest {
         }
     }
 
-    private static String naam(Path ir) {
+    private static String name(Path ir) {
         return CORPUS.relativize(ir.getParent()).toString();
     }
 

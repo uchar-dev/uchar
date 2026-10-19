@@ -86,10 +86,10 @@ class ReachabilityWitnessTest {
                     empty.add(p == boolean.class ? "false" : p.isPrimitive() ? "0" : "null");
                 }
             }
-            String naam = h.getKey().replace(' ', '_').replace('.', '_');
+            String name = h.getKey().replace(' ', '_').replace('.', '_');
             String call = javaClass.getCanonicalName() + "." + method;
             boolean emptiness = m != null && m.getReturnType() == void.class;
-            drl.append("function ").append(emptiness ? "void " : "java.lang.Object ").append(naam).append("() { ")
+            drl.append("function ").append(emptiness ? "void " : "java.lang.Object ").append(name).append("() { ")
                     .append(emptiness ? "" : "return ").append(call).append("(").append(String.join(", ", java))
                     .append("); }\n");
             if (h.getKey().startsWith("route")) {

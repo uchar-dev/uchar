@@ -203,7 +203,7 @@ class IrWireDateWitnessTest {
         // null is the open bound and must reach the clamp as null, not as a lexeme to parse: the second rule
         // version of this golden has an open lower bound and is the corpus witness for it.
         RegelSpraakModel m = load(WINDOW);
-        Validity open = m.resolvedRegels.get(1).validity();
+        Validity open = m.resolvedRules.get(1).validity();
         assertEquals(null, open.from(), "an absent lower bound stays absent");
         assertEquals(LocalDate.of(2025, 12, 31), open.until(), "and the bound beside it is still read");
     }
@@ -287,7 +287,7 @@ class IrWireDateWitnessTest {
 
     /** The window of the first rule version of {@link #WINDOW} — the one the twists land on. */
     private static Validity window(RegelSpraakModel m) {
-        return m.resolvedRegels.get(0).validity();
+        return m.resolvedRules.get(0).validity();
     }
 
     /** {@link #WINDOW} with one bound of its first rule version replaced, loaded. */

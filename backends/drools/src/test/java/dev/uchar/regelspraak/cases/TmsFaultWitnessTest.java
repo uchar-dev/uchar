@@ -339,9 +339,9 @@ class TmsFaultWitnessTest {
         List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(TWO)) {
             List<String> names = TmsDocuments.ruleNames(order);
-            String regel = cli(two(order).toString(), casePath.toString());
-            List<String> mis = defects(regel, TWO_HEAD, List.of("aandeel", "verhouding"));
-            outcomes.add(names + (mis.isEmpty() ? " in orde" : " " + mis + ": " + regel));
+            String rule = cli(two(order).toString(), casePath.toString());
+            List<String> mis = defects(rule, TWO_HEAD, List.of("aandeel", "verhouding"));
+            outcomes.add(names + (mis.isEmpty() ? " in orde" : " " + mis + ": " + rule));
             expected.add(names + " in orde");
         }
         assertEquals(expected, outcomes);
@@ -383,24 +383,24 @@ class TmsFaultWitnessTest {
         List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(LONG)) {
             List<String> names = TmsDocuments.ruleNames(order).stream().map(n -> shortQuote.getOrDefault(n, n)).toList();
-            String regel = cli(TmsDocuments.document(MODEL, order).toString(), casePath.toString());
-            List<String> mis = defects(regel, head, List.of(LONG_RATIO, LONG_AANDEEL));
-            outcomes.add(names + (mis.isEmpty() ? " in orde" : " " + mis + ": " + regel));
+            String rule = cli(TmsDocuments.document(MODEL, order).toString(), casePath.toString());
+            List<String> mis = defects(rule, head, List.of(LONG_RATIO, LONG_AANDEEL));
+            outcomes.add(names + (mis.isEmpty() ? " in orde" : " " + mis + ": " + rule));
             expected.add(names + " in orde");
         }
         assertEquals(expected, outcomes);
         assertEquals(6, outcomes.size());
     }
 
-    /** What is wrong with the CLI's {@code regel} (exit code, a space, the last line it printed) on a document whose
+    /** What is wrong with the CLI's {@code rule} (exit code, a space, the last line it printed) on a document whose
      *  faults stand under {@code head}: empty where the exit code is 3, the line opens with the ERROR head and
      *  {@code head}, names every rule of {@code rules}, and the bound shortened the sentences after the head. */
-    private static List<String> defects(String regel, String head, List<String> rules) {
+    private static List<String> defects(String rule, String head, List<String> rules) {
         List<String> mis = new ArrayList<>();
-        for (String naam : rules)
-            if (!regel.contains("\"" + naam + "\"")) mis.add("noemt \"" + naam + "\" niet");
-        if (!regel.startsWith("3 ERROR EvaluationFaults: " + head + ": ")) mis.add("opent niet met exit 3 en de kop");
-        if (!regel.endsWith("…")) mis.add("de grens kortte de zinnen niet in");
+        for (String name : rules)
+            if (!rule.contains("\"" + name + "\"")) mis.add("noemt \"" + name + "\" niet");
+        if (!rule.startsWith("3 ERROR EvaluationFaults: " + head + ": ")) mis.add("opent niet met exit 3 en de kop");
+        if (!rule.endsWith("…")) mis.add("de grens kortte de zinnen niet in");
         return mis;
     }
 

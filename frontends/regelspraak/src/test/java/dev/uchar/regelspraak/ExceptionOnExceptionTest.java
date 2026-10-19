@@ -52,21 +52,21 @@ class ExceptionOnExceptionTest {
         """;
 
     /** One block: the head, its name, and a body whose condition is left out when {@code condition} is null. */
-    private static String block(String head, String naam, String sentence, String condition) {
-        return "\n" + head + naam + "\n    geldig altijd\n        " + sentence
+    private static String block(String head, String name, String sentence, String condition) {
+        return "\n" + head + name + "\n    geldig altijd\n        " + sentence
                 + (condition == null ? "." : "\n        indien " + condition + ".") + "\n";
     }
 
-    private static String regel(String naam, String sentence, String condition) {
-        return block("Regel ", naam, sentence, condition);
+    private static String rule(String name, String sentence, String condition) {
+        return block("Regel ", name, sentence, condition);
     }
 
-    private static String op(String carrier, String naam, String sentence, String condition) {
-        return block("Uitzondering op " + carrier + ": ", naam, sentence, condition);
+    private static String op(String carrier, String name, String sentence, String condition) {
+        return block("Uitzondering op " + carrier + ": ", name, sentence, condition);
     }
 
-    private static String deviation(String base, String naam, String sentence, String condition) {
-        return block("Afwijking van " + base + ": ", naam, sentence, condition);
+    private static String deviation(String base, String name, String sentence, String condition) {
+        return block("Afwijking van " + base + ": ", name, sentence, condition);
     }
 
     private static String unorderedOn(String carrier, String... members) {
@@ -75,18 +75,18 @@ class ExceptionOnExceptionTest {
 
     private static final String UIT = "Een Jutter is uitgesloten";
     private static final String NOT_EXCLUDED = "Een Jutter is niet uitgesloten";
-    private static final String BASE = regel("uitsluiting", UIT, "hij geweigerd is");
+    private static final String BASE = rule("uitsluiting", UIT, "hij geweigerd is");
 
     private static Diagnostic onlyError(RegelSpraakModel m) {
         assertEquals(1, m.errors().size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
         return m.errors().get(0);
     }
 
-    /** The one defaults group of a clean document, with every rule of the tree lifted out of resolvedRegels. */
+    /** The one defaults group of a clean document, with every rule of the tree lifted out of resolvedRules. */
     private static PrioritizedDefaults onlyGroup(RegelSpraakModel m) {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(1, m.prioritizedDefaults.size(), "één defaults-groep");
-        assertEquals(0, m.resolvedRegels.size(), "elke regel van de boom hoort gelift te zijn");
+        assertEquals(0, m.resolvedRules.size(), "elke regel van de boom hoort gelift te zijn");
         return m.prioritizedDefaults.get(0);
     }
 
@@ -128,7 +128,7 @@ class ExceptionOnExceptionTest {
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL + BASE
                 + op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij herroepen is")
                 + op("herroeping", "verval van de herroeping", UIT, "hij vervallen is")));
-        assertEquals("uitsluiting", g.naam(), "de groep heet naar de basisregel");
+        assertEquals("uitsluiting", g.name(), "de groep heet naar de basisregel");
         assertEquals(2, g.defaults().size(), "het eerste niveau is een ketenpositie boven de basis");
         Default herroeping = g.defaults().get(0), base = g.defaults().get(1);
         assertEquals(Boolean.FALSE, herroeping.decision());
@@ -200,7 +200,7 @@ class ExceptionOnExceptionTest {
 
     @Test void to_the_root_the_exception_conjoins_the_base_justification() {
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL
-                + regel("bevoegd bij quotum", "Een Jutter is bergingsbevoegd",
+                + rule("bevoegd bij quotum", "Een Jutter is bergingsbevoegd",
                         "zijn aantal geborgen wrakken groter of gelijk is aan 20")
                 + op("bevoegd bij quotum", "bevoegd bij noodweer", "Een Jutter is bergingsbevoegd",
                         "hij aan alle volgende voorwaarden voldoet:\n        - hij is noodweer verklaard\n"
@@ -215,7 +215,7 @@ class ExceptionOnExceptionTest {
     @Test void an_unconditional_base_adds_no_conjunct() {
         // Conjoining with the empty 'all' changes nothing: the exception keeps the condition it was written with.
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL
-                + regel("uitsluiting altijd", UIT, null)
+                + rule("uitsluiting altijd", UIT, null)
                 + op("uitsluiting altijd", "herroeping", NOT_EXCLUDED, "hij herroepen is")));
         assertInstanceOf(Condition.CharacteristicCheck.class, g.defaults().get(0).condition());
         Condition base = g.defaults().get(1).condition();
@@ -234,7 +234,7 @@ class ExceptionOnExceptionTest {
 
     @Test void another_quantifier_stays_a_conjunct() {
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL
-                + regel("uitsluiting", UIT, "hij aan ten minste één van de volgende voorwaarden voldoet:\n"
+                + rule("uitsluiting", UIT, "hij aan ten minste één van de volgende voorwaarden voldoet:\n"
                         + "        - hij is geweigerd\n        - hij is geschorst")
                 + op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij herroepen is")));
         Default exception = g.defaults().get(0);
@@ -280,7 +280,7 @@ class ExceptionOnExceptionTest {
 
     // -------------------------------------------------------------------- Afwijking van
 
-    private static final String QUOTUM = regel("bevoegd bij quotum", "Een Jutter is bergingsbevoegd",
+    private static final String QUOTUM = rule("bevoegd bij quotum", "Een Jutter is bergingsbevoegd",
             "zijn aantal geborgen wrakken groter of gelijk is aan 20");
     private static final String NOODWEER = "hij aan alle volgende voorwaarden voldoet:\n        - hij is noodweer verklaard\n"
             + "        - zijn aantal geborgen wrakken is groter of gelijk aan 8";
@@ -332,8 +332,8 @@ class ExceptionOnExceptionTest {
     @Test void unordered_on_a_base_becomes_a_group_default_directly_above_the_base() {
         RegelSpraakModel m = Resolver.resolve(MODEL + BASE
                 + unorderedOn("uitsluiting",
-                        regel("herroeping", NOT_EXCLUDED, "hij herroepen is"),
-                        regel("herstel", NOT_EXCLUDED, "hij hersteld is")));
+                        rule("herroeping", NOT_EXCLUDED, "hij herroepen is"),
+                        rule("herstel", NOT_EXCLUDED, "hij hersteld is")));
         PrioritizedDefaults g = onlyGroup(m);
         assertFalse(g.unordered(), "de groep zelf is geordend: het blok hangt onder één basis");
         assertEquals(2, g.defaults().size(), "een groepsdefault boven de basis");
@@ -355,8 +355,8 @@ class ExceptionOnExceptionTest {
     @Test void unordered_on_a_base_with_different_decisions() {
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL + BASE
                 + unorderedOn("uitsluiting",
-                        regel("herroeping", NOT_EXCLUDED, "hij herroepen is"),
-                        regel("betwisting", UIT, "hij betwist is"))));
+                        rule("herroeping", NOT_EXCLUDED, "hij herroepen is"),
+                        rule("betwisting", UIT, "hij betwist is"))));
         List<Default> members = unordered(g.defaults().get(0));
         assertEquals(List.of(false, true), members.stream().map(Default::decision).toList(), "verschillende besluiten");
         assertEquals(List.of("hij geweigerd is", "hij herroepen is"), conjuncts(members.get(0)));
@@ -367,8 +367,8 @@ class ExceptionOnExceptionTest {
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL + BASE
                 + op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij herroepen is")
                 + unorderedOn("herroeping",
-                        regel("verval", UIT, "hij vervallen is"),
-                        regel("betwisting", NOT_EXCLUDED, "hij betwist is"))));
+                        rule("verval", UIT, "hij vervallen is"),
+                        rule("betwisting", NOT_EXCLUDED, "hij betwist is"))));
         assertEquals(2, g.defaults().size(), "het blok nest in 'herroeping', niet in de keten");
         Default herroeping = g.defaults().get(0);
         assertEquals(Boolean.FALSE, herroeping.decision(), "de drager houdt haar eigen besluit als terugval (form-a)");
@@ -381,8 +381,8 @@ class ExceptionOnExceptionTest {
     @Test void an_exception_on_a_member_nest_in_that_member() {
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL + BASE
                 + unorderedOn("uitsluiting",
-                        regel("herroeping", NOT_EXCLUDED, "hij herroepen is"),
-                        regel("herstel", NOT_EXCLUDED, "hij hersteld is"))
+                        rule("herroeping", NOT_EXCLUDED, "hij herroepen is"),
+                        rule("herstel", NOT_EXCLUDED, "hij hersteld is"))
                 + op("herroeping", "verval", UIT, "hij vervallen is")));
         Default herroeping = unordered(g.defaults().get(0)).get(0);
         assertEquals(List.of("hij geweigerd is", "hij herroepen is", "hij vervallen is"),
@@ -402,7 +402,7 @@ class ExceptionOnExceptionTest {
 
     @Test void an_unknown_carrier_of_an_unordered_block_refuses() {
         Diagnostic d = onlyError(Resolver.resolve(MODEL + BASE
-                + unorderedOn("onbekend", regel("herroeping", NOT_EXCLUDED, "hij herroepen is"))));
+                + unorderedOn("onbekend", rule("herroeping", NOT_EXCLUDED, "hij herroepen is"))));
         assertTrue(d.message().startsWith("Uitzonderingen ongeordend op 'onbekend': geen basisregel met die naam "
                 + "gevonden, en ook geen uitzondering of afwijking"), d.message());
     }
@@ -452,8 +452,8 @@ class ExceptionOnExceptionTest {
         Diagnostic d = onlyError(Resolver.resolve(MODEL + BASE
                 + op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij herroepen is")
                 + unorderedOn("uitsluiting",
-                        regel("verval", UIT, "hij vervallen is"),
-                        regel("betwisting", NOT_EXCLUDED, "hij betwist is"))));
+                        rule("verval", UIT, "hij vervallen is"),
+                        rule("betwisting", NOT_EXCLUDED, "hij betwist is"))));
         assertTrue(d.message().startsWith("Uitzonderingen ongeordend op 'uitsluiting': de drager 'uitsluiting' heeft ook "
                 + "geordende uitzonderingen ('herroeping')"), d.message());
         assertTrue(d.message().contains("in één blok 'Uitzonderingen ongeordend op uitsluiting:'"), d.message());
@@ -461,8 +461,8 @@ class ExceptionOnExceptionTest {
 
     @Test void two_unordered_blocks_on_a_carrier_refuse() {
         Diagnostic d = onlyError(Resolver.resolve(MODEL + BASE
-                + unorderedOn("uitsluiting", regel("herroeping", NOT_EXCLUDED, "hij herroepen is"))
-                + unorderedOn("uitsluiting", regel("betwisting", NOT_EXCLUDED, "hij betwist is"))));
+                + unorderedOn("uitsluiting", rule("herroeping", NOT_EXCLUDED, "hij herroepen is"))
+                + unorderedOn("uitsluiting", rule("betwisting", NOT_EXCLUDED, "hij betwist is"))));
         assertTrue(d.message().startsWith("Uitzonderingen ongeordend op 'uitsluiting': de drager 'uitsluiting' heeft ook "
                 + "een ander 'Uitzonderingen ongeordend op'-blok"), d.message());
     }
@@ -559,8 +559,8 @@ class ExceptionOnExceptionTest {
         // judged any more — two members on another target used to give two ERRORs on the same header line.
         Diagnostic d = onlyError(Resolver.resolve(MODEL + BASE
                 + unorderedOn("uitsluiting",
-                        regel("bevoegd bij herroeping", "Een Jutter is bergingsbevoegd", "hij herroepen is"),
-                        regel("bevoegd bij schorsing", "Een Jutter is bergingsbevoegd", "hij geschorst is"))));
+                        rule("bevoegd bij herroeping", "Een Jutter is bergingsbevoegd", "hij herroepen is"),
+                        rule("bevoegd bij schorsing", "Een Jutter is bergingsbevoegd", "hij geschorst is"))));
         assertTrue(d.message().startsWith("Uitzonderingen ongeordend op 'uitsluiting': groepslid 'bevoegd bij "
                 + "herroeping' schrijft een ander doel"), d.message());
         Diagnostic e = onlyError(Resolver.resolve(STRANDRECHT + """
@@ -616,8 +616,8 @@ class ExceptionOnExceptionTest {
     @Test void a_member_of_an_unordered_block_without_carrier_is_no_carrier() {
         Diagnostic d = onlyError(Resolver.resolve(MODEL
                 + "\nUitzonderingen ongeordend:"
-                + regel("uitsluiting bij weigering", UIT, "hij geweigerd is")
-                + regel("uitsluiting bij schorsing", UIT, "hij geschorst is")
+                + rule("uitsluiting bij weigering", UIT, "hij geweigerd is")
+                + rule("uitsluiting bij schorsing", UIT, "hij geschorst is")
                 + op("uitsluiting bij weigering", "herroeping", NOT_EXCLUDED, "hij herroepen is")));
         assertTrue(d.message().startsWith("Uitzondering op 'uitsluiting bij weigering': 'uitsluiting bij weigering' is een "
                 + "lid van een 'Uitzonderingen ongeordend:'-blok zonder drager"), d.message());
@@ -627,10 +627,10 @@ class ExceptionOnExceptionTest {
         // The way out names what the block hangs on: its carrier where that is itself a block, the base rule where
         // the carrier is one.
         String group = "\nRegelgroep andere regels"
-                + regel("iets anders", "Een Jutter is bergingsbevoegd", "hij betwist is");
+                + rule("iets anders", "Een Jutter is bergingsbevoegd", "hij betwist is");
         String herroeping = op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij herroepen is");
         for (String block : List.of(op("herroeping", "verval", UIT, "hij vervallen is"),
-                unorderedOn("herroeping", regel("verval", UIT, "hij vervallen is")))) {
+                unorderedOn("herroeping", rule("verval", UIT, "hij vervallen is")))) {
             Diagnostic d = onlyError(Resolver.resolve(MODEL + BASE + herroeping + group + block));
             assertTrue(d.message().contains("het staat direct na het laatste lid van regelgroep 'andere regels'"),
                     d.message());
@@ -646,7 +646,7 @@ class ExceptionOnExceptionTest {
     @Test void a_marker_in_the_base_justification_is_reported_once() {
         // The exception repeats the base's condition, the very same node: one marker, one WARNING, and WF-113 (b)
         // holds with the marker twice on the wire.
-        RegelSpraakModel m = Resolver.resolve(MODEL + regel("uitsluiting", UIT, "de Jutter een zeewaardige ploeg is")
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule("uitsluiting", UIT, "de Jutter een zeewaardige ploeg is")
                 + op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij herroepen is"));
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.diagnostics);
         assertEquals(1, m.diagnostics.stream().filter(d -> d.message().startsWith("onopgelost: ")).count(),
@@ -658,7 +658,7 @@ class ExceptionOnExceptionTest {
 
     @Test void a_window_under_no_in_the_base_justification_refuses_once() {
         Diagnostic d = onlyError(Resolver.resolve(MODEL
-                + regel("uitsluiting", UIT, "hij aan geen van de volgende voorwaarden voldoet:\n"
+                + rule("uitsluiting", UIT, "hij aan geen van de volgende voorwaarden voldoet:\n"
                         + "        - het is de periode vanaf dd. 01-01-2024\n        - hij is geschorst")
                 + op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij herroepen is")));
         assertTrue(d.message().contains("a time window under none or a counting quantifier"), d.message());
@@ -682,9 +682,9 @@ class ExceptionOnExceptionTest {
         // the carrier's name, as every hand-written anchor that nests gives these nodes a source.
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL + BASE
                 + unorderedOn("uitsluiting",
-                        regel("herroeping", NOT_EXCLUDED, "hij herroepen is"),
-                        regel("betwisting", NOT_EXCLUDED, "hij betwist is"))
-                + unorderedOn("herroeping", regel("verval", UIT, "hij vervallen is"))
+                        rule("herroeping", NOT_EXCLUDED, "hij herroepen is"),
+                        rule("betwisting", NOT_EXCLUDED, "hij betwist is"))
+                + unorderedOn("herroeping", rule("verval", UIT, "hij vervallen is"))
                 + op("betwisting", "bevestiging", UIT, "hij hersteld is")
                 + op("betwisting", "tweede bevestiging", UIT, "hij geschorst is")));
         Default groupDefault = g.defaults().get(0);
@@ -696,7 +696,7 @@ class ExceptionOnExceptionTest {
         assertEquals("Uitzondering op betwisting", members.get(1).exceptions().members().get(0).source(),
                 "de geordende groep van twee blokken draagt de kop die zij delen");
         assertTrue(compact(Resolver.resolve(MODEL + BASE
-                + unorderedOn("uitsluiting", regel("herroeping", NOT_EXCLUDED, "hij herroepen is"))))
+                + unorderedOn("uitsluiting", rule("herroeping", NOT_EXCLUDED, "hij herroepen is"))))
                 .contains("\"source\":{\"snippet\":\"Uitzonderingenongeordendopuitsluiting\"}"),
                 "de bron staat op de wire");
     }
@@ -705,7 +705,7 @@ class ExceptionOnExceptionTest {
         String src = MODEL + QUOTUM
                 + deviation("bevoegd bij quotum", "bevoegd bij noodweer", "Een Jutter is bergingsbevoegd", NOODWEER)
                 + unorderedOn("bevoegd bij noodweer",
-                        regel("niet bij schorsing", "Een Jutter is niet bergingsbevoegd", "hij geschorst is"));
+                        rule("niet bij schorsing", "Een Jutter is niet bergingsbevoegd", "hij geschorst is"));
         RegelSpraak parser = new RegelSpraak(new CommonTokenStream(new RegelSpraakLexer(CharStreams.fromString(src))));
         List<String> faults = new ArrayList<>();
         parser.removeErrorListeners();

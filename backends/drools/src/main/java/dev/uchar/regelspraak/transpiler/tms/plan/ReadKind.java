@@ -16,7 +16,7 @@ public enum ReadKind {
     /** The input of a member of the subject, bound off its bean: of a member that no form writes ({@code eigen}), and
      *  the input that a member's standing carries where no derivation stands
      *  ({@code TmsTranspiler.inputStateRule}). */
-    INVOER,
+    INPUT,
     /** A derived attribute of the subject, through its {@code State} ({@code eigen}). */
     STATE,
     /** A derived characteristic of the subject, through its {@code CharacteristicState} ({@code eigen}). */

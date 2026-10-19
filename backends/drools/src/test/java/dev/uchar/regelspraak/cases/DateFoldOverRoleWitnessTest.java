@@ -42,8 +42,8 @@ class DateFoldOverRoleWitnessTest {
         // van de vinddag van alle vondsten van de Jutter", and "de laatste van". J1's first member is neither the
         // earliest nor the latest date and its last filled member is the earliest, so a positional reading fails
         // both; J2 has no vondsten, J3 one without vinddag, J4 one. ref and clingo: J1 05-03-2026 and 20-03-2026.
-        String ir = document(regel("eerste vinddag", "Jutter", "eerste vinddag", fold("first", "vinddag", null)),
-                regel("laatste vinddag", "Jutter", "laatste vinddag", fold("last", "vinddag", null)));
+        String ir = document(rule("eerste vinddag", "Jutter", "eerste vinddag", fold("first", "vinddag", null)),
+                rule("laatste vinddag", "Jutter", "laatste vinddag", fold("last", "vinddag", null)));
         assertNull(play(ir, caseDocument(situation(true, false, null),
                         perJutter("eerste vinddag", date("2026-03-05"), null, null, date("2025-12-31")),
                         perJutter("laatste vinddag", date("2026-03-20"), null, null, date("2025-12-31")))),
@@ -57,7 +57,7 @@ class DateFoldOverRoleWitnessTest {
         assertNull(play(equal, caseDocument(situation(true, false, null),
                         perJutter("eerste vinddag", date("2026-03-05"), null, null, date("2025-12-31")))),
                 "gesteld");
-        String init = document(initialisatie("eerste vinddag", "Jutter", "eerste vinddag", fold("first", "vinddag", null)));
+        String init = document(initialisation("eerste vinddag", "Jutter", "eerste vinddag", fold("first", "vinddag", null)));
         assertNull(play(init, caseDocument(situation(true, false, "2020-01-01"),
                         perJutter("eerste vinddag", date("2026-03-05"), null, null, date("2020-01-01")))),
                 "geïnitialiseerd");
@@ -67,12 +67,12 @@ class DateFoldOverRoleWitnessTest {
         // "… van alle vondsten van de Jutter die zwaar zijn", zwaar derived by a rule declared after the fold (a Vondst
         // is zwaar when its gewicht is above 5: V2, V3 and V6), and "… die later zijn dan 10-03-2026", a test on the
         // folded date itself. ref and clingo: J1 20-03-2026 and 12-03-2026; J4 31-12-2025 and leeg.
-        String zwaar = document(regel("eerste vinddag", "Jutter", "eerste vinddag", fold("first", "vinddag", CHARACTERISTIC_CHECK_ZWAAR)),
+        String zwaar = document(rule("eerste vinddag", "Jutter", "eerste vinddag", fold("first", "vinddag", CHARACTERISTIC_CHECK_ZWAAR)),
                 characteristicRule("zwaar", "Vondst", comparison("greater", own("gewicht", "Vondst"), numberLiteral("5"))));
         assertNull(play(zwaar, caseDocument(situation(false, false, null),
                         perJutter("eerste vinddag", date("2026-03-20"), null, null, date("2025-12-31")))),
                 "een later afgeleid kenmerk als voorwaarde");
-        String later = document(regel("eerste vinddag", "Jutter", "eerste vinddag",
+        String later = document(rule("eerste vinddag", "Jutter", "eerste vinddag",
                 fold("first", "vinddag", comparison("later", own("vinddag", "Vondst"), dateLiteral("2026-03-10")))));
         assertNull(play(later, caseDocument(situation(true, false, null),
                         perJutter("eerste vinddag", date("2026-03-12"), null, null, null))),
@@ -83,8 +83,8 @@ class DateFoldOverRoleWitnessTest {
         // "De laatste bergdag van een Jutter moet berekend worden als de laatste van de bergdag van alle vondsten van
         // de Jutter", declared before "De bergdag van een Vondst moet berekend worden als de vinddag van de Vondst plus
         // 1 dag". ref and clingo: J1 21-03-2026, J4 01-01-2026.
-        String ir = document(regel("laatste bergdag", "Jutter", "laatste bergdag", fold("last", "bergdag", null)),
-                regel("bergdag", "Vondst", "bergdag", binary("plus", own("vinddag", "Vondst"), duration("1"), DATE)));
+        String ir = document(rule("laatste bergdag", "Jutter", "laatste bergdag", fold("last", "bergdag", null)),
+                rule("bergdag", "Vondst", "bergdag", binary("plus", own("vinddag", "Vondst"), duration("1"), DATE)));
         assertNull(play(ir, caseDocument(situation(true, false, null),
                         perJutter("laatste bergdag", date("2026-03-21"), null, null, date("2026-01-01")))),
                 "een vouw over een later afgeleide datum");
@@ -93,12 +93,12 @@ class DateFoldOverRoleWitnessTest {
     @Test void the_date_fold_plus_and_minus_a_duration() throws Exception {
         // "(de eerste van de vinddag van alle vondsten van de Jutter) plus 30 dagen" and "(de laatste van …) min 7
         // dagen"; an empty date propagates, so J2 and J3 stay leeg. ref and clingo: J1 04-04-2026 and 13-03-2026.
-        String plus = document(regel("meldgrens", "Jutter", "meldgrens",
+        String plus = document(rule("meldgrens", "Jutter", "meldgrens",
                 binary("plus", fold("first", "vinddag", null), duration("30"), DATE)));
         assertNull(play(plus, caseDocument(situation(true, false, null),
                         perJutter("meldgrens", date("2026-04-04"), null, null, date("2026-01-30")))),
                 "de eerste plus 30 dagen");
-        String min = document(regel("meldgrens", "Jutter", "meldgrens",
+        String min = document(rule("meldgrens", "Jutter", "meldgrens",
                 binary("minus", fold("last", "vinddag", null), duration("7"), DATE)));
         assertNull(play(min, caseDocument(situation(true, false, null),
                         perJutter("meldgrens", date("2026-03-13"), null, null, date("2025-12-24")))),
@@ -109,7 +109,7 @@ class DateFoldOverRoleWitnessTest {
         // "De meldgrens van een Jutter moet berekend worden als zijn startdag plus de maximale waarde van de zoekduur
         // van alle vondsten van de Jutter", the zoekduur in dagen; an empty duration coalesces to 0, an empty date
         // propagates. ref and clingo: J1 21-03-2026, J2 01-03-2026, J3 leeg, J4 06-01-2026.
-        String ir = document(regel("meldgrens", "Jutter", "meldgrens",
+        String ir = document(rule("meldgrens", "Jutter", "meldgrens",
                 binary("plus", own("startdag", "Jutter"), fold("maximum", "zoekduur", null), DATE)));
         assertNull(play(ir, caseDocument(situation(true, false, null),
                         perJutter("meldgrens", date("2026-03-21"), date("2026-03-01"), null, date("2026-01-06")))),
@@ -119,7 +119,7 @@ class DateFoldOverRoleWitnessTest {
     @Test void the_duration_between_the_first_and_the_last() throws Exception {
         // "de tijdsduur van de eerste van … tot de laatste van … in hele dagen"; an empty operand propagates. ref and
         // clingo: J1 15, J4 0.
-        String ir = document(regel("spanne", "Jutter", "spanne", "{\"node\":\"BuiltinCall\",\"kind\":\"duration\",\"arguments\":["
+        String ir = document(rule("spanne", "Jutter", "spanne", "{\"node\":\"BuiltinCall\",\"kind\":\"duration\",\"arguments\":["
                 + fold("first", "vinddag", null) + "," + fold("last", "vinddag", null) + "],\"type\":" + DAGEN + "}"));
         assertNull(play(ir, caseDocument(situation(true, false, null),
                         perJutter("spanne", number("15"), null, null, number("0")))),
@@ -129,8 +129,8 @@ class DateFoldOverRoleWitnessTest {
     @Test void two_roles_deep() throws Exception {
         // "de eerste van de vinddag van alle vondsten van alle beheerde jutters van de Strandvoogd": S1 beheert J1 and
         // J3, S2 beheert J2, S3 beheert J4, S4 niemand. ref and clingo: S1 05-03-2026 and 20-03-2026, S3 31-12-2025.
-        String ir = document(regel("eerste vinddag", "Strandvoogd", "eerste vinddag", pathFold("first", "vinddag")),
-                regel("laatste vinddag", "Strandvoogd", "laatste vinddag", pathFold("last", "vinddag")));
+        String ir = document(rule("eerste vinddag", "Strandvoogd", "eerste vinddag", pathFold("first", "vinddag")),
+                rule("laatste vinddag", "Strandvoogd", "laatste vinddag", pathFold("last", "vinddag")));
         List<String> expected = new ArrayList<>();
         expected.addAll(perVoogd("eerste vinddag", date("2026-03-05"), null, date("2025-12-31"), null));
         expected.addAll(perVoogd("laatste vinddag", date("2026-03-20"), null, date("2025-12-31"), null));
@@ -141,7 +141,7 @@ class DateFoldOverRoleWitnessTest {
         // "Het eerste vindtijdstip van een Jutter moet berekend worden als de eerste van het vindtijdstip van alle
         // vondsten van de Jutter". ref: J1 05-03-2026 23:59:59.999, J4 31-12-2025 00:00:00.001 (clingo does not fold a
         // date-and-time over a set).
-        String ir = document(regel("eerste vindtijdstip", "Jutter", "eerste vindtijdstip", fold("first", "vindtijdstip", null)));
+        String ir = document(rule("eerste vindtijdstip", "Jutter", "eerste vindtijdstip", fold("first", "vindtijdstip", null)));
         assertNull(play(ir, caseDocument(situation(true, true, null),
                         perJutter("eerste vindtijdstip", tijdstip("2026-03-05T23:59:59.999"), null, null,
                                 tijdstip("2025-12-31T00:00:00.001")))),
@@ -151,21 +151,21 @@ class DateFoldOverRoleWitnessTest {
     @Test void a_number_fold_as_operand() throws Exception {
         // ch. 1.2: plus coalesces an empty operand, so the minimum or maximum of an empty source plus 1 is 1; a
         // percentage of an empty sum is 0. ref and clingo answer each value below.
-        String min = document(regel("telling", "Jutter", "telling", binary("plus", fold("minimum", "gewicht", null), numberLiteral("1"), WHOLE)));
+        String min = document(rule("telling", "Jutter", "telling", binary("plus", fold("minimum", "gewicht", null), numberLiteral("1"), WHOLE)));
         assertNull(play(min, caseDocument(situation(true, false, null), perJutter("telling", number("3"), number("1"), number("1"), number("10")))),
                 "het minimum plus 1");
-        String max = document(regel("telling", "Jutter", "telling", binary("plus", fold("maximum", "gewicht", null), numberLiteral("1"), WHOLE)));
+        String max = document(rule("telling", "Jutter", "telling", binary("plus", fold("maximum", "gewicht", null), numberLiteral("1"), WHOLE)));
         assertNull(play(max, caseDocument(situation(true, false, null), perJutter("telling", number("8"), number("1"), number("1"), number("10")))),
                 "het maximum plus 1");
-        String pct = document(regel("uitkomst", "Jutter", "uitkomst", binary("percentageOf", numberLiteral("10"),
+        String pct = document(rule("uitkomst", "Jutter", "uitkomst", binary("percentageOf", numberLiteral("10"),
                 fold("sum", "gewicht", null), "{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"}")));
         assertNull(play(pct, caseDocument(situation(true, false, null), perJutter("uitkomst", number("1.90"), number("0.00"), number("0.00"), number("0.90")))),
                 "een percentage van een som");
-        String clamped = document(regel("telling", "Jutter", "telling", "{\"node\":\"Clamp\",\"base\":"
+        String clamped = document(rule("telling", "Jutter", "telling", "{\"node\":\"Clamp\",\"base\":"
                 + binary("minus", count(), numberLiteral("2"), WHOLE) + ",\"minimum\":" + numberLiteral("0") + ",\"type\":" + WHOLE + "}"));
         assertNull(play(clamped, caseDocument(situation(true, false, null), perJutter("telling", number("2"), number("0"), number("0"), number("0")))),
                 "een begrenzing om een telling");
-        String nav = document(regel("telling", "Jutter", "telling", binary("plus", count(),
+        String nav = document(rule("telling", "Jutter", "telling", binary("plus", count(),
                 "{\"node\":\"AttributeReference\",\"attribute\":\"bonus\",\"subjectType\":\"Strandvoogd\",\"path\":[{\"node\":\"RoleBinding\","
                         + "\"factType\":\"StrandvoogdBeheertJutter\",\"role\":\"strandvoogd\"}]}", WHOLE)));
         assertNull(play(nav, caseDocument(situation(true, false, null), perJutter("telling", number("104"), number("0"), number("101"), number("1")))),
@@ -174,13 +174,13 @@ class DateFoldOverRoleWitnessTest {
 
     @Test void the_number_folds_that_already_played_play_equally() throws Exception {
         // A flank, green before and after: the count plus 1 (the card's k1b), the sum plus 1, the sum reduced by 1.
-        String count = document(regel("telling", "Jutter", "telling", binary("plus", count(), numberLiteral("1"), WHOLE)));
+        String count = document(rule("telling", "Jutter", "telling", binary("plus", count(), numberLiteral("1"), WHOLE)));
         assertNull(play(count, caseDocument(situation(true, false, null), perJutter("telling", number("5"), number("1"), number("2"), number("2")))),
                 "het aantal plus 1");
-        String sum = document(regel("telling", "Jutter", "telling", binary("plus", fold("sum", "gewicht", null), numberLiteral("1"), WHOLE)));
+        String sum = document(rule("telling", "Jutter", "telling", binary("plus", fold("sum", "gewicht", null), numberLiteral("1"), WHOLE)));
         assertNull(play(sum, caseDocument(situation(true, false, null), perJutter("telling", number("20"), number("1"), number("1"), number("10")))),
                 "de som plus 1");
-        String vm = document(regel("telling", "Jutter", "telling", binary("reducedBy", fold("sum", "gewicht", null), numberLiteral("1"), WHOLE)));
+        String vm = document(rule("telling", "Jutter", "telling", binary("reducedBy", fold("sum", "gewicht", null), numberLiteral("1"), WHOLE)));
         assertNull(play(vm, caseDocument(situation(true, false, null), perJutter("telling", number("18"), null, null, number("8")))),
                 "de som verminderd met 1");
     }
@@ -206,13 +206,13 @@ class DateFoldOverRoleWitnessTest {
         // the RegelSpraak frontend types out and a hand-written document carries (WF-038 admits a date under an
         // ordering fold): the same folds as eerste and laatste (RUNTIME-SEMANTICS ch. 1.2e), bare and as the operand of
         // a date plus a duration. ref and clingo: the values of the eerste/laatste rows.
-        String bare = document(regel("eerste vinddag", "Jutter", "eerste vinddag", fold("minimum", "vinddag", null)),
-                regel("laatste vinddag", "Jutter", "laatste vinddag", fold("maximum", "vinddag", null)));
+        String bare = document(rule("eerste vinddag", "Jutter", "eerste vinddag", fold("minimum", "vinddag", null)),
+                rule("laatste vinddag", "Jutter", "laatste vinddag", fold("maximum", "vinddag", null)));
         assertNull(play(bare, caseDocument(situation(true, false, null),
                         perJutter("eerste vinddag", date("2026-03-05"), null, null, date("2025-12-31")),
                         perJutter("laatste vinddag", date("2026-03-20"), null, null, date("2025-12-31")))),
                 "minimum en maximum als hele waarde");
-        String plus = document(regel("meldgrens", "Jutter", "meldgrens",
+        String plus = document(rule("meldgrens", "Jutter", "meldgrens",
                 binary("plus", fold("minimum", "vinddag", null), duration("30"), DATE)));
         assertNull(play(plus, caseDocument(situation(true, false, null),
                         perJutter("meldgrens", date("2026-04-04"), null, null, date("2026-01-30")))),
@@ -223,7 +223,7 @@ class DateFoldOverRoleWitnessTest {
         // "De telling van een Jutter moet berekend worden als de vangst plus 1. Daarbij geldt: de vangst is het aantal
         // vondsten van de Jutter": a Let (IR-SPEC ch. 4.10) whose bound value is the fold. ref and clingo: J1 5, J2 1,
         // J3 2, J4 2.
-        String ir = document(regel("telling", "Jutter", "telling", let("vangst", count(),
+        String ir = document(rule("telling", "Jutter", "telling", let("vangst", count(),
                 binary("plus", binder("vangst"), numberLiteral("1"), WHOLE), WHOLE)));
         assertNull(play(ir, caseDocument(situation(true, false, null), perJutter("telling", number("5"), number("1"), number("2"), number("2")))),
                 "een vouw als gebonden waarde van een Let");
@@ -256,24 +256,24 @@ class DateFoldOverRoleWitnessTest {
             + factType("StrandvoogdBeheertJutter", "strandvoogd", "Strandvoogd", "beheerde jutter", "beheerde jutters", "Jutter")
             + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
-    private static String objectType(String naam, String plural, boolean animate, List<String> attributes, String characteristic) {
-        return "{\"node\":\"ObjectType\",\"name\":\"" + naam + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
+    private static String objectType(String name, String plural, boolean animate, List<String> attributes, String characteristic) {
+        return "{\"node\":\"ObjectType\",\"name\":\"" + name + "\",\"animate\":" + animate + ",\"plural\":\"" + plural
                 + "\",\"attributes\":[" + String.join(",", attributes) + "],\"characteristics\":[" + characteristic + "]}";
     }
 
-    private static String attr(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
+    private static String attr(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";
     }
 
-    private static String factType(String naam, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
-        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":["
+    private static String factType(String name, String oneRole, String oneType, String manyRole, String manyPlural, String manyType) {
+        return "{\"node\":\"FactType\",\"name\":\"" + name + "\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"" + oneRole + "\",\"objectType\":\"" + oneType + "\",\"many\":false},"
                 + "{\"node\":\"Role\",\"name\":\"" + manyRole + "\",\"objectType\":\"" + manyType + "\",\"plural\":\"" + manyPlural
                 + "\",\"many\":true}]}";
     }
 
-    private static String own(String naam, String type) {
-        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + naam + "\",\"subjectType\":\"" + type + "\"}";
+    private static String own(String name, String type) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + name + "\",\"subjectType\":\"" + type + "\"}";
     }
 
     private static String numberLiteral(String n) {
@@ -297,8 +297,8 @@ class DateFoldOverRoleWitnessTest {
                 + ",\"body\":" + body + "}";
     }
 
-    private static String binder(String naam) {
-        return "{\"node\":\"BinderRef\",\"name\":\"" + naam + "\"}";
+    private static String binder(String name) {
+        return "{\"node\":\"BinderRef\",\"name\":\"" + name + "\"}";
     }
 
     private static String comparison(String op, String left, String right) {
@@ -337,17 +337,17 @@ class DateFoldOverRoleWitnessTest {
     }
 
     /** A computing rule ("moet berekend worden als"). */
-    private static String regel(String naam, String type, String target, String value) {
-        return version(naam, type, target, value, null, "calculation");
+    private static String rule(String name, String type, String target, String value) {
+        return version(name, type, target, value, null, "calculation");
     }
 
     /** A computing rule written "moet gesteld worden op". */
-    private static String set(String naam, String type, String target, String value) {
-        return version(naam, type, target, value, null, "equation");
+    private static String set(String name, String type, String target, String value) {
+        return version(name, type, target, value, null, "equation");
     }
 
-    private static String initialisatie(String naam, String type, String target, String value) {
-        return version(naam, type, target, value, null, null);
+    private static String initialisation(String name, String type, String target, String value) {
+        return version(name, type, target, value, null, null);
     }
 
     private static String characteristicRule(String characteristic, String type, String condition) {
@@ -357,8 +357,8 @@ class DateFoldOverRoleWitnessTest {
 
     /** One rule with one version: {@code presentation} a computing rule's tag, null for an initialisation, empty for a
      *  characteristic attribution. */
-    private static String version(String naam, String type, String target, String value, String condition, String presentation) {
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
+    private static String version(String name, String type, String target, String value, String condition, String presentation) {
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + own(target, type) + ",\"value\":" + value + (condition == null ? "" : ",\"condition\":" + condition)
                 + ",\"initialisation\":" + (presentation == null)
                 + (presentation == null || presentation.isEmpty() ? "" : ",\"presentation\":\"" + presentation + "\"") + "}]}";
@@ -418,21 +418,21 @@ class DateFoldOverRoleWitnessTest {
     private static String number(String n) { return "{\"number\":\"" + n + "\"}"; }
 
     /** One expectation per Jutter J1–J4 on {@code attribute}; a null value expects leeg. */
-    private static List<String> perJutter(String attribute, String... waarden) {
-        return per(List.of("J1", "J2", "J3", "J4"), attribute, waarden);
+    private static List<String> perJutter(String attribute, String... values) {
+        return per(List.of("J1", "J2", "J3", "J4"), attribute, values);
     }
 
-    private static List<String> perVoogd(String attribute, String... waarden) {
-        return per(List.of("S1", "S2", "S3", "S4"), attribute, waarden);
+    private static List<String> perVoogd(String attribute, String... values) {
+        return per(List.of("S1", "S2", "S3", "S4"), attribute, values);
     }
 
-    private static List<String> per(List<String> labels, String attribute, String... waarden) {
+    private static List<String> per(List<String> labels, String attribute, String... values) {
         List<String> out = new ArrayList<>();
         for (int i = 0; i < labels.size(); i++)
-            out.add(waarden[i] == null
+            out.add(values[i] == null
                     ? "{\"kind\":\"attributeEmpty\",\"label\":\"" + labels.get(i) + "\",\"attribute\":\"" + attribute + "\"}"
                     : "{\"kind\":\"attributeValue\",\"label\":\"" + labels.get(i) + "\",\"attribute\":\"" + attribute
-                      + "\",\"value\":" + waarden[i] + "}");
+                      + "\",\"value\":" + values[i] + "}");
         return out;
     }
 

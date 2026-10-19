@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.model.Datatype;
-import dev.uchar.regelspraak.model.Datatype.Teken;
+import dev.uchar.regelspraak.model.Datatype.Sign;
 import dev.uchar.regelspraak.model.Unit;
 import dev.uchar.regelspraak.resolver.Typing;
 import dev.uchar.regelspraak.resolver.Typing.BinOp;
@@ -13,11 +13,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** The typeringen matrix (typeringen §4 operators, §5 comparisons, §6 toekenning). */
 class TypingTest {
-    static Datatype num()                    { return new Datatype.Numeriek(true, 0, Teken.ONBEPAALD, null); }
-    static Datatype num(String abbr, String stelsel) { return new Datatype.Numeriek(false, 0, Teken.ONBEPAALD, new Unit(abbr, stelsel)); }
-    static Datatype tekst()                  { return new Datatype.Tekst(); }
+    static Datatype num()                    { return new Datatype.Numeric(true, 0, Sign.ONBEPAALD, null); }
+    static Datatype num(String abbr, String system) { return new Datatype.Numeric(false, 0, Sign.ONBEPAALD, new Unit(abbr, system)); }
+    static Datatype text()                  { return new Datatype.Text(); }
     static Datatype bool()                   { return new Datatype.BooleanType(); }
-    static Datatype date()                  { return new Datatype.DatumInDagen(); }
+    static Datatype date()                  { return new Datatype.DateInDays(); }
 
     // §4.1 plus
     @Test void plus_two_numbers_ok() {
@@ -25,7 +25,7 @@ class TypingTest {
         assertTrue(r.ok()); assertTrue(r.type().isNumber());
     }
     @Test void plus_number_and_text_error() {
-        assertFalse(Typing.compute(BinOp.PLUS, num(), tekst()).ok());
+        assertFalse(Typing.compute(BinOp.PLUS, num(), text()).ok());
     }
     @Test void plus_date_and_time_unit_gives_date() {    // §4.1 Tabel 2 scenario 2
         var r = Typing.compute(BinOp.PLUS, date(), num("dg", "Tijd"));
@@ -73,23 +73,23 @@ class TypingTest {
     @Test void plus_whole_and_whole_stays_whole() {
         var r = Typing.compute(BinOp.PLUS, num(), num());
         assertTrue(r.ok());
-        assertTrue(r.type() instanceof Datatype.Numeriek n && n.geheel(),
+        assertTrue(r.type() instanceof Datatype.Numeric n && n.wholeNumber(),
                 () -> "geheel + geheel moet geheel blijven, kreeg " + r.type());
-        assertTrue(Typing.predicaat(UnairePred.ELFPROEF, r.type()).ok(),
+        assertTrue(Typing.predicate(UnairePred.ELFPROEF, r.type()).ok(),
                 "de elfproef moet een gehele som toelaten (Tabel 55)");
-        Datatype twoDec = new Datatype.Numeriek(false, 2, Teken.ONBEPAALD, null);
-        Datatype unbounded = new Datatype.Numeriek(false, 0, Teken.ONBEPAALD, null);  // form (c) "getal"
-        assertFalse(Typing.compute(BinOp.MIN, num(), twoDec).type() instanceof Datatype.Numeriek n2 && n2.geheel());
-        assertFalse(Typing.compute(BinOp.PLUS, num(), unbounded).type() instanceof Datatype.Numeriek n3 && n3.geheel());
+        Datatype twoDec = new Datatype.Numeric(false, 2, Sign.ONBEPAALD, null);
+        Datatype unbounded = new Datatype.Numeric(false, 0, Sign.ONBEPAALD, null);  // form (c) "getal"
+        assertFalse(Typing.compute(BinOp.MIN, num(), twoDec).type() instanceof Datatype.Numeric n2 && n2.wholeNumber());
+        assertFalse(Typing.compute(BinOp.PLUS, num(), unbounded).type() instanceof Datatype.Numeric n3 && n3.wholeNumber());
     }
     @Test void power_with_unit_error() {                    // §4.7: no units allowed
         assertFalse(Typing.compute(BinOp.TOT_DE_MACHT, num("km", "afstand"), num()).ok());
     }
     // jr and mnd are convertible because the resolver reduces both to the SAME canonical (mnd) via the
     // declared "jr = 12 mnd"; sharing only a stelsel is not enough (p44), so the fixtures carry that link.
-    static Datatype num(String abbr, String stelsel, String canoniek, long factor) {
-        return new Datatype.Numeriek(false, 0, Teken.ONBEPAALD,
-                new Unit(abbr, stelsel, canoniek, java.math.BigDecimal.valueOf(factor)));
+    static Datatype num(String abbr, String system, String canonical, long factor) {
+        return new Datatype.Numeric(false, 0, Sign.ONBEPAALD,
+                new Unit(abbr, system, canonical, java.math.BigDecimal.valueOf(factor)));
     }
     @Test void plus_convertible_units_ok() {
         assertTrue(Typing.compute(BinOp.PLUS, num("jr", "Tijd", "mnd", 12), num("mnd", "Tijd", "mnd", 1)).ok());
@@ -109,18 +109,18 @@ class TypingTest {
 
     // §4.4/4.5 maal/gedeeld vereisen numeriek
     @Test void times_numbers_ok()       { assertTrue(Typing.compute(BinOp.MAAL, num(), num()).ok()); }
-    @Test void divided_by_text_error(){ assertFalse(Typing.compute(BinOp.GEDEELD_DOOR, num(), tekst()).ok()); }
+    @Test void divided_by_text_error(){ assertFalse(Typing.compute(BinOp.GEDEELD_DOOR, num(), text()).ok()); }
 
     // §5.1/5.5 ordening: alleen getalachtig
     @Test void less_numbers_ok()  { assertTrue(Typing.compare(CmpOp.KLEINER, num(), num()).ok()); }
-    @Test void greater_text_error()    { assertFalse(Typing.compare(CmpOp.GROTER, tekst(), tekst()).ok()); }
+    @Test void greater_text_error()    { assertFalse(Typing.compare(CmpOp.GROTER, text(), text()).ok()); }
     @Test void less_result_is_boolean() {
         assertTrue(Typing.compare(CmpOp.KLEINER, num(), num()).type().isBoolean());
     }
 
     // §5.3/5.6 gelijk/ongelijk: zelfde datatype
-    @Test void equal_same_type_ok()  { assertTrue(Typing.compare(CmpOp.GELIJK, tekst(), tekst()).ok()); }
-    @Test void equal_different_type_error() { assertFalse(Typing.compare(CmpOp.GELIJK, tekst(), num()).ok()); }
+    @Test void equal_same_type_ok()  { assertTrue(Typing.compare(CmpOp.GELIJK, text(), text()).ok()); }
+    @Test void equal_different_type_error() { assertFalse(Typing.compare(CmpOp.GELIJK, text(), num()).ok()); }
     @Test void equal_number_vs_percentage_error() {        // §5.3 Tabel 36: distinct rows
         assertFalse(Typing.compare(CmpOp.GELIJK, num(), new Datatype.Percentage(true, 0)).ok());
     }
@@ -130,18 +130,18 @@ class TypingTest {
     @Test void later_numbers_error(){ assertFalse(Typing.compare(CmpOp.LATER, num(), num()).ok()); }
 
     // §5.11-5.16 predicaten
-    @Test void empty_on_each_type_ok()      { assertTrue(Typing.predicaat(UnairePred.LEEG, num()).ok()); }
-    @Test void eleven_test_text_ok()        { assertTrue(Typing.predicaat(UnairePred.ELFPROEF, tekst()).ok()); }
-    @Test void eleven_test_numeric_whole_ok() { assertTrue(Typing.predicaat(UnairePred.ELFPROEF, num()).ok()); } // §5.13 Tabel 55 sc.1
-    @Test void eleven_test_boolean_error()    { assertFalse(Typing.predicaat(UnairePred.ELFPROEF, bool()).ok()); }
-    @Test void exact_digits_text_ok()  { assertTrue(Typing.predicaat(UnairePred.NUMERIEK_MET_EXACT, tekst()).ok()); }
-    @Test void exact_digits_number_error(){ assertFalse(Typing.predicaat(UnairePred.NUMERIEK_MET_EXACT, num()).ok()); }
-    @Test void day_kind_date_ok()        { assertTrue(Typing.predicaat(UnairePred.DAGSOORT, date()).ok()); }
-    @Test void day_kind_text_error()      { assertFalse(Typing.predicaat(UnairePred.DAGSOORT, tekst()).ok()); }
+    @Test void empty_on_each_type_ok()      { assertTrue(Typing.predicate(UnairePred.LEEG, num()).ok()); }
+    @Test void eleven_test_text_ok()        { assertTrue(Typing.predicate(UnairePred.ELFPROEF, text()).ok()); }
+    @Test void eleven_test_numeric_whole_ok() { assertTrue(Typing.predicate(UnairePred.ELFPROEF, num()).ok()); } // §5.13 Tabel 55 sc.1
+    @Test void eleven_test_boolean_error()    { assertFalse(Typing.predicate(UnairePred.ELFPROEF, bool()).ok()); }
+    @Test void exact_digits_text_ok()  { assertTrue(Typing.predicate(UnairePred.NUMERIEK_MET_EXACT, text()).ok()); }
+    @Test void exact_digits_number_error(){ assertFalse(Typing.predicate(UnairePred.NUMERIEK_MET_EXACT, num()).ok()); }
+    @Test void day_kind_date_ok()        { assertTrue(Typing.predicate(UnairePred.DAGSOORT, date()).ok()); }
+    @Test void day_kind_text_error()      { assertFalse(Typing.predicate(UnairePred.DAGSOORT, text()).ok()); }
 
     // §6.1 toekenning
     @Test void assignment_match_ok()      { assertNull(Typing.assignment(num(), num())); }
-    @Test void assignment_mismatch_error() { assertNotNull(Typing.assignment(num(), tekst())); }
+    @Test void assignment_mismatch_error() { assertNotNull(Typing.assignment(num(), text())); }
     @Test void assignment_unit_mismatch_error() {
         assertNotNull(Typing.assignment(num("jr", "Tijd"), num("km", "afstand")));
     }
@@ -152,7 +152,7 @@ class TypingTest {
             Unit.compound(Datatype.Percentage.PERCENT, new Unit("jr", "Tijd"))); }
 
     @Test void percentage_always_carries_the_percent_unit() {
-        assertEquals("%", pct().unitOf().afkorting());
+        assertEquals("%", pct().unitOf().abbreviation());
         assertEquals("%/jr", pctPerYear().unitOf().rendering());
     }
     @Test void percentage_less_than_percentage_stays_ok() {
@@ -173,13 +173,13 @@ class TypingTest {
     // §4.4/4.5 composite-unit synthesis (both operands carry a unit)
     static final Unit EUR = new Unit("EUR", "Geld");
     static final Unit JR  = new Unit("jr", "Tijd");
-    static Datatype numUnit(Unit e) { return new Datatype.Numeriek(false, 0, Teken.ONBEPAALD, e); }
+    static Datatype numUnit(Unit e) { return new Datatype.Numeric(false, 0, Sign.ONBEPAALD, e); }
 
     @Test void times_rate_time_its_denominator_unit_cancels_to_the_numerator() {
         // €/jr maal jr = € (the denominator cancels) — was Onbekend
         var res = Typing.compute(BinOp.MAAL, numUnit(Unit.compound(EUR, JR)), numUnit(JR));
         assertTrue(res.ok());
-        assertEquals("EUR", res.type().unitOf().afkorting());
+        assertEquals("EUR", res.type().unitOf().abbreviation());
         assertNull(res.type().unitOf().denominator(), "de noemer moet weggevallen zijn");
     }
     @Test void unit_divided_by_unit_gives_a_rate() {
@@ -199,9 +199,9 @@ class TypingTest {
         Unit m = new Unit("m", "Lengte");
         var res = Typing.compute(BinOp.MAAL, numUnit(EUR), numUnit(m));
         assertTrue(res.ok());
-        assertEquals("EUR·m", res.type().unitOf().afkorting(), "het productunit (factoren gesorteerd)");
+        assertEquals("EUR·m", res.type().unitOf().abbreviation(), "het productunit (factoren gesorteerd)");
         var reversed = Typing.compute(BinOp.MAAL, numUnit(m), numUnit(EUR));   // commutatief: m maal € == € maal m
-        assertEquals("EUR·m", reversed.type().unitOf().afkorting());
+        assertEquals("EUR·m", reversed.type().unitOf().abbreviation());
     }
     @Test void product_unit_is_commutative_and_associative_for_three_factors() {
         // §4.4 Tabel 11: unit multiplication is commutative AND associative, so (€·m)·km and €·(m·km) must denote
@@ -211,8 +211,8 @@ class TypingTest {
         var abc = Typing.compute(BinOp.MAAL, ab, numUnit(km)).type();            // (€·m) maal km
         var bc  = Typing.compute(BinOp.MAAL, numUnit(m), numUnit(km)).type();    // m maal km = m·km
         var abc2 = Typing.compute(BinOp.MAAL, numUnit(EUR), bc).type();          // € maal (m·km)
-        assertEquals(abc.unitOf().afkorting(), abc2.unitOf().afkorting(), "associatief: één canoniek productunit");
-        assertEquals("EUR·km·m", abc.unitOf().afkorting(), "gesorteerde factor-multiset");
+        assertEquals(abc.unitOf().abbreviation(), abc2.unitOf().abbreviation(), "associatief: één canoniek productunit");
+        assertEquals("EUR·km·m", abc.unitOf().abbreviation(), "gesorteerde factor-multiset");
         assertNull(Typing.assignment(abc, abc2), "dezelfde 3-weg producteenheid toekennen is geen fout");
     }
 
@@ -228,10 +228,10 @@ class TypingTest {
         // De dimensieloze "1" absorbeert onder vermenigvuldiging (1 × E = E), UNCONDITIONEEL — literal én attribuut
         // (de oude literal/attribuut-split is met besluit 16Y vervallen: was een unitloos ATTRIBUUT × eenheid -> Onbekend).
         var right = Typing.compute(BinOp.MAAL, num(), num("mnd", "Tijd"));
-        assertTrue(right.ok() && right.type().unitOf() != null && "mnd".equals(right.type().unitOf().afkorting()),
+        assertTrue(right.ok() && right.type().unitOf() != null && "mnd".equals(right.type().unitOf().abbreviation()),
                 () -> "een unitloze operand × eenheid neemt de eenheid (mnd) over, kreeg: " + right.type());
         var left = Typing.compute(BinOp.MAAL, num("mnd", "Tijd"), num());   // andersom: E × (none) -> E (rij 3)
-        assertTrue(left.ok() && left.type().unitOf() != null && "mnd".equals(left.type().unitOf().afkorting()),
+        assertTrue(left.ok() && left.type().unitOf() != null && "mnd".equals(left.type().unitOf().abbreviation()),
                 () -> "een eenheid × unitloze operand neemt de eenheid (mnd) over, kreeg: " + left.type());
         // §4.5 GEDEELD: een unitloze teller / eenheid is een omgekeerde eenheid (1/mnd) die het Eenheid-model niet kan
         // spellen -> besluit 17b: een LUIDE fout (bewuste divergentie van de dimensioneel onsound Tabel-14-rij-4-cel).

@@ -39,10 +39,10 @@ class DuplicateFormNameTest {
     /** The line of the {@code n}-th declaration head (1-based) in {@code source}: a line that opens with "Regel " or
      *  "Beslistabel ", after indentation. */
     private static int head(String source, int n) {
-        String[] regels = source.split("\n", -1);
+        String[] rules = source.split("\n", -1);
         int seen = 0;
-        for (int i = 0; i < regels.length; i++) {
-            String r = regels[i].stripLeading();
+        for (int i = 0; i < rules.length; i++) {
+            String r = rules[i].stripLeading();
             if ((r.startsWith("Regel ") || r.startsWith("Beslistabel ")) && ++seen == n) return i + 1;
         }
         throw new AssertionError("geen kop " + n + " in de bron");
@@ -53,8 +53,8 @@ class DuplicateFormNameTest {
     }
 
     /** One ERROR on the line of the second head, naming the line of the first. */
-    private static void refused(String regels, int first, int second, String sentence) {
-        String source = MODEL + regels;
+    private static void refused(String rules, int first, int second, String sentence) {
+        String source = MODEL + rules;
         RegelSpraakModel m = Resolver.resolve(source);
         List<Diagnostic> ds = nameErrors(m);
         assertEquals(1, ds.size(), () -> "verwacht één naamweigering, kreeg: " + m.diagnostics);

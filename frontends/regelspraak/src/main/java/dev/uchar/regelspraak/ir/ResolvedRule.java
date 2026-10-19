@@ -26,14 +26,14 @@ import java.util.List;
  *                       (the text after {@code Bron:}, in source order), so uitleg can cite the
  *                       wetsartikel. On the wire they are the rule form's statuteAnnotations (WF-082).
  */
-public record ResolvedRule(String naam, Kind category, Expr target, Expr value,
+public record ResolvedRule(String name, Kind category, Expr target, Expr value,
                             Condition condition, Validity validity, List<String> statuteAnnotations) {
     public enum Kind { GELIJKSTELLING, BEREKENING, INITIALISATIE, KENMERKTOEKENNING }
 
     /** Without statuutannotaties (an empty list) — for the construction sites that carry no
      *  {@code // Bron:} context (or none was written above the rule). */
-    public ResolvedRule(String naam, Kind category, Expr target, Expr value,
+    public ResolvedRule(String name, Kind category, Expr target, Expr value,
                          Condition condition, Validity validity) {
-        this(naam, category, target, value, condition, validity, List.of());
+        this(name, category, target, value, condition, validity, List.of());
     }
 }

@@ -126,7 +126,7 @@ class TmsTimelineRefusalWitnessTest {
 
     /** One refused form: the map name of its document, the document and its case, and every refusal of the document's
      *  manifest in its order, each in the words of the build's exclusion; the build is excluded on the first. */
-    record Row(String naam, String ir, JsonNode caseDocument, List<String> sentences) {}
+    record Row(String name, String ir, JsonNode caseDocument, List<String> sentences) {}
 
     static final String BORGPLICHTIG = check("borgplichtig", false);
 
@@ -143,8 +143,8 @@ class TmsTimelineRefusalWitnessTest {
     static final String RATE_2024 = timeline(List.of(segment("2024-01-01", "2025-01-01", "366")));
 
     /** The sentence of a comparison clip with {@code op} ("gelijk aan", "ongelijk aan") spelled {@code snippet}. */
-    static String clipSentence(String regel, String op, String snippet) {
-        return "transpiler SKIP: regel: " + regel + " — een totaal over de eigen tijdlijn ('het totaal van zijn"
+    static String clipSentence(String rule, String op, String snippet) {
+        return "transpiler SKIP: regel: " + rule + " — een totaal over de eigen tijdlijn ('het totaal van zijn"
                 + " vergoeding') met '" + op + "' in de knip ('" + snippet + "'): deze tak draagt deze"
                 + " vorm nog niet; de rekenhulp rsTijdConditie leest een lege kant, een gat in de vergeleken tijdlijn of"
                 + " een lege grens, als geen periode, waar RUNTIME-SEMANTICS ch. 3.6 en de referentie-interpreter de"
@@ -154,8 +154,8 @@ class TmsTimelineRefusalWitnessTest {
 
     /** "Het jaardeel van een Jutter moet berekend worden als het tijdsevenredig deel per jaar van zijn jaartarief
      *  gedurende de tijd dat hij {@code kenmerk} is", as rule {@code naam} of kind {@code category}. */
-    static String jaardeel(String naam, String category, String characteristic, String condition) {
-        return computingRule(naam, category, "Jutter", "jaardeel", timeProportional("jaartarief", "Jutter",
+    static String jaardeel(String name, String category, String characteristic, String condition) {
+        return computingRule(name, category, "Jutter", "jaardeel", timeProportional("jaartarief", "Jutter",
                 check(characteristic, false), "year"), condition);
     }
 
@@ -351,8 +351,8 @@ class TmsTimelineRefusalWitnessTest {
         return out;
     }
 
-    static String secondWriter(String regel, String other) {
-        return "transpiler SKIP: regel: " + regel + " — een tijdsafhankelijk doel met een tweede schrijver"
+    static String secondWriter(String rule, String other) {
+        return "transpiler SKIP: regel: " + rule + " — een tijdsafhankelijk doel met een tweede schrijver"
                 + " ('jaardeel' van Jutter wordt ook geschreven door \"" + other + "\"): deze tak draagt"
                 + " deze vorm nog niet; een doel met meer schrijvers blijft omheind (RUNTIME-SEMANTICS ch. 7.8), en geen"
                 + " golden met cases heeft er een";
@@ -460,9 +460,9 @@ class TmsTimelineRefusalWitnessTest {
                 built = e.getMessage();
             }
             List<String> all = refusals(ir);
-            outcomes.add(r.naam() + ": " + built + (all.size() > 1 ? " | "
+            outcomes.add(r.name() + ": " + built + (all.size() > 1 ? " | "
                     + String.join(" | ", all.subList(1, all.size())) : ""));
-            expected.add(r.naam() + ": " + String.join(" | ", r.sentences()));
+            expected.add(r.name() + ": " + String.join(" | ", r.sentences()));
         }
         assertEquals(expected, outcomes);
     }
@@ -490,6 +490,6 @@ class TmsTimelineRefusalWitnessTest {
      *  {@code case.json}, for the verifier, ref, clingo and the DRL-text branch. */
     public static void main(String[] args) throws Exception {
         Path out = Path.of(args[0]);
-        for (Row r : rows()) TmsTimelineWitnessTest.write(out.resolve(r.naam()), r.ir(), r.caseDocument());
+        for (Row r : rows()) TmsTimelineWitnessTest.write(out.resolve(r.name()), r.ir(), r.caseDocument());
     }
 }

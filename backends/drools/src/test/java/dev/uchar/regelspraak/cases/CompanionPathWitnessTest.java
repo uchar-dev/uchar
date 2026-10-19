@@ -502,19 +502,19 @@ class CompanionPathWitnessTest {
     private static String pos(int dec) { return num(dec, false, "nonNegative"); }
     private static final String WHOLE_POS = num(0, true, "nonNegative");
 
-    private static String attr(String naam, String type) {
+    private static String attr(String name, String type) {
         return ("{\"node\":\"AttributeReference\",\"attribute\":\"%s\",\"subjectType\":\"Jutter\","
                 + "\"source\":{\"snippet\":\"het %s van de Jutter\"}}")
-                .formatted(naam, naam);
+                .formatted(name, name);
     }
-    private static String attr(String naam) { return attr(naam, pos(2)); }
+    private static String attr(String name) { return attr(name, pos(2)); }
 
     private static String lit(String valueJson, String type) {
         return IrPath.literal(valueJson, type, valueJson);
     }
 
-    private static String param(String naam, String type) {
-        return "{\"node\":\"ParameterReference\",\"parameter\":\"%s\",\"source\":{\"snippet\":\"de %s\"}}".formatted(naam, naam);
+    private static String param(String name, String type) {
+        return "{\"node\":\"ParameterReference\",\"parameter\":\"%s\",\"source\":{\"snippet\":\"de %s\"}}".formatted(name, name);
     }
 
     private static String binary(String op, String left, String right, String type) {
@@ -533,8 +533,8 @@ class CompanionPathWitnessTest {
     }
 
     /** NB the wire field is {@code name}, not {@code naam}. */
-    private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(naam, naam);
+    private static String bref(String name, String type) {
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(name, name);
     }
 
     private static String ite(String condition, String then, String otherwise, String type) {
@@ -559,12 +559,12 @@ class CompanionPathWitnessTest {
     private static final String ALTIJD =
             "{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,\"parts\":[],\"source\":{\"snippet\":\"altijd\"}}";
 
-    private static String regel(String naam, String target, String valueJson) {
-        return regel(naam, "BEREKENING", target, valueJson, "null");
+    private static String rule(String name, String target, String valueJson) {
+        return rule(name, "BEREKENING", target, valueJson, "null");
     }
 
-    private static String regel(String naam, String category, String target, String valueJson, String conditionJson) {
-        return IrPath.regel(naam, category, target, valueJson, conditionJson);
+    private static String rule(String name, String category, String target, String valueJson, String conditionJson) {
+        return IrPath.rule(name, category, target, valueJson, conditionJson);
     }
 
     /** The one Jutter every model here uses, carrying every attribute any flank reads. */
@@ -573,8 +573,8 @@ class CompanionPathWitnessTest {
             attribute("saldo", num(2)), attribute("nul", pos(2)), attribute("kindertal", WHOLE_POS),
             attribute("uit", num(4)), attribute("toeslag", num(4)));
 
-    private static String attribute(String naam, String datatype) {
-        return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
+    private static String attribute(String name, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(name, datatype);
     }
 
     /** A one-objecttype document over {@code Jutter}; {@code parameters} and {@code prioritizedDefaults} are
@@ -602,7 +602,7 @@ class CompanionPathWitnessTest {
     /** "uit van een jutter" over the given value. */
     private static String ofModel(String valueJson) { return ofModel(valueJson, ""); }
     private static String ofModel(String valueJson, String parameters) {
-        return model(new String[]{regel("uit van een jutter", attr("uit", num(4)), valueJson)}, parameters, "");
+        return model(new String[]{rule("uit van een jutter", attr("uit", num(4)), valueJson)}, parameters, "");
     }
 
     // ---------------- the models (each ref-replayed before its values were pinned) ----------------
@@ -741,10 +741,10 @@ class CompanionPathWitnessTest {
                 ? ite(compare("greater", bref("d", pos(2)), lit("1", WHOLE_POS)), DIVISION, SEVEN, num(4))
                 : binary("plus", bref("d", pos(2)), DIVISION, num(4));
         return modelK(new String[]{
-                        regel("vermissing van een jutter", "KENMERKTOEKENNING", vermistTarget, trueLiteral,
+                        rule("vermissing van een jutter", "KENMERKTOEKENNING", vermistTarget, trueLiteral,
                                 compare("greater", attr("inkomen"), lit("999999.00", pos(2)))),
-                        regel("deler van een jutter", "BEREKENING", attr("deler"), lit("2.00", pos(2)), notVermist),
-                        regel("uit van een jutter", attr("uit", num(4)), let("d", attr("deler"), body, num(4)))});
+                        rule("deler van een jutter", "BEREKENING", attr("deler"), lit("2.00", pos(2)), notVermist),
+                        rule("uit van een jutter", attr("uit", num(4)), let("d", attr("deler"), body, num(4)))});
     }
 
     /** (j) "Let n = inkomen in n gedeeld door tweede" — the binder is the DIVIDEND. */

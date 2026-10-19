@@ -93,9 +93,9 @@ final class ClosureRendering {
             case Term.TextComposition s -> {
                 List<ValueFunction> parts = s.parts().stream().map(ClosureRendering::valueFunction).toList();
                 yield w -> {
-                    List<Object> waarden = new ArrayList<>(parts.size());
-                    for (ValueFunction part : parts) waarden.add(part.van(w));
-                    return ComputeHelpers.textComposition(waarden);
+                    List<Object> values = new ArrayList<>(parts.size());
+                    for (ValueFunction part : parts) values.add(part.van(w));
+                    return ComputeHelpers.textComposition(values);
                 };
             }
             case Term.ListedFold g -> listedFold(g);

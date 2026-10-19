@@ -26,26 +26,26 @@ public final class IrPath {
 
     public static ArrayNode rulesList(JsonNode ir, String list) { return list(rules(ir), list); }
 
-    public static ObjectNode objectType(JsonNode ir, String naam) { return memberWith(modelList(ir, "objectTypes"), "name", naam); }
+    public static ObjectNode objectType(JsonNode ir, String name) { return memberWith(modelList(ir, "objectTypes"), "name", name); }
 
-    public static ObjectNode domain(JsonNode ir, String naam) { return memberWith(modelList(ir, "domains"), "name", naam); }
+    public static ObjectNode domain(JsonNode ir, String name) { return memberWith(modelList(ir, "domains"), "name", name); }
 
     /** A declaration of {@code parameters}, {@code factTypes}, {@code unitSystems} or {@code dimensions}, each named
      *  by {@code name} (a parameter and a unit system since L3, a fact type and a dimension since L5). */
-    public static ObjectNode declaration(JsonNode ir, String list, String naam) {
-        return memberWith(modelList(ir, list), "name", naam);
+    public static ObjectNode declaration(JsonNode ir, String list, String name) {
+        return memberWith(modelList(ir, list), "name", name);
     }
 
-    public static ObjectNode attribute(JsonNode objectType, String naam) { return memberWith(list(objectType, "attributes"), "name", naam); }
+    public static ObjectNode attribute(JsonNode objectType, String name) { return memberWith(list(objectType, "attributes"), "name", name); }
 
-    public static ObjectNode characteristic(JsonNode objectType, String naam) {
-        return memberWith(list(objectType, "characteristics"), "name", naam);
+    public static ObjectNode characteristic(JsonNode objectType, String name) {
+        return memberWith(list(objectType, "characteristics"), "name", name);
     }
 
     /** Appends an attribute node, the M1 form of a new entry in the v0 {@code attributen} map. */
-    public static ObjectNode addAttribute(JsonNode objectType, String naam, JsonNode datatype) {
+    public static ObjectNode addAttribute(JsonNode objectType, String name, JsonNode datatype) {
         ObjectNode a = list(objectType, "attributes").addObject();
-        a.put("node", "Attribute").put("name", naam).set("datatype", datatype);
+        a.put("node", "Attribute").put("name", name).set("datatype", datatype);
         return a;
     }
 
@@ -71,12 +71,12 @@ public final class IrPath {
 
     /** The named form called {@code naam} in the rules list {@code list}, failing LOUDLY when there is none: a twist
      *  that silently hit nothing would leave its witness testing the untwisted document. */
-    public static ObjectNode form(JsonNode ir, String list, String naam) { return memberWith(rulesList(ir, list), "name", naam); }
+    public static ObjectNode form(JsonNode ir, String list, String name) { return memberWith(rulesList(ir, list), "name", name); }
 
     /** The first version of the named form called {@code naam} in the rules list {@code list}. */
-    public static ObjectNode version(JsonNode ir, String list, String naam) {
-        JsonNode v = form(ir, list, naam).path("versions").path(0);
-        if (!v.isObject()) throw new AssertionError("form '" + naam + "' in '" + list + "' has no version");
+    public static ObjectNode version(JsonNode ir, String list, String name) {
+        JsonNode v = form(ir, list, name).path("versions").path(0);
+        if (!v.isObject()) throw new AssertionError("form '" + name + "' in '" + list + "' has no version");
         return (ObjectNode) v;
     }
 
@@ -114,13 +114,13 @@ public final class IrPath {
     /** A Rule of one always-valid version in the wire's shape (IR-SPEC ch. 3.1): {@code category} names the kind the way
      *  the frontend's records name it and becomes the version's initialisation and presentation, the latter in its wire
      *  spelling through the translation table, and a {@code condition} of "null" writes no condition. */
-    public static String regel(String naam, String category, String target, String value, String condition) {
-        return regel(naam, category, target, value, condition,
+    public static String rule(String name, String category, String target, String value, String condition) {
+        return rule(name, category, target, value, condition,
                 "{\"node\":\"Validity\"}");
     }
 
-    /** As {@link #regel(String, String, String, String, String)}, with the version's {@code validity}. */
-    public static String regel(String naam, String category, String target, String value, String condition,
+    /** As {@link #rule(String, String, String, String, String)}, with the version's {@code validity}. */
+    public static String rule(String name, String category, String target, String value, String condition,
                                String validity) {
         String kindFields = switch (category) {
             case "GELIJKSTELLING", "BEREKENING" -> "\"initialisation\":false,\"presentation\":\""
@@ -129,26 +129,26 @@ public final class IrPath {
             case "KENMERKTOEKENNING" -> "\"initialisation\":false";
             default -> throw new AssertionError("no rule kind: " + category);
         };
-        return "{\"node\":\"Rule\",\"name\":\"" + naam + "\",\"versions\":[{\"validity\":" + validity
+        return "{\"node\":\"Rule\",\"name\":\"" + name + "\",\"versions\":[{\"validity\":" + validity
                 + ",\"target\":" + target + ",\"value\":" + value
                 + (condition.equals("null") ? "" : ",\"condition\":" + condition) + "," + kindFields + "}]}";
     }
 
-    public static ObjectNode memberWith(ArrayNode list, String nameField, String naam) {
+    public static ObjectNode memberWith(ArrayNode list, String nameField, String name) {
         for (JsonNode n : list)
-            if (naam.equals(n.path(nameField).asText(null))) return (ObjectNode) n;
-        throw new AssertionError("no entry with " + nameField + " '" + naam + "' in " + list);
+            if (name.equals(n.path(nameField).asText(null))) return (ObjectNode) n;
+        throw new AssertionError("no entry with " + nameField + " '" + name + "' in " + list);
     }
 
-    private static ObjectNode field(JsonNode n, String naam) {
-        JsonNode v = n.get(naam);
-        if (v == null || !v.isObject()) throw new AssertionError("no object '" + naam + "' in the document");
+    private static ObjectNode field(JsonNode n, String name) {
+        JsonNode v = n.get(name);
+        if (v == null || !v.isObject()) throw new AssertionError("no object '" + name + "' in the document");
         return (ObjectNode) v;
     }
 
-    private static ArrayNode list(JsonNode n, String naam) {
-        JsonNode v = n.get(naam);
-        if (v == null || !v.isArray()) throw new AssertionError("no list '" + naam + "' here");
+    private static ArrayNode list(JsonNode n, String name) {
+        JsonNode v = n.get(name);
+        if (v == null || !v.isArray()) throw new AssertionError("no list '" + name + "' here");
         return (ArrayNode) v;
     }
 }
