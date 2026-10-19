@@ -571,13 +571,13 @@ class ScenarioLoweringTest {
         List<String> rest = new ArrayList<>();
         rest.add(ir.toString());
         for (Path p : sources) rest.add(p.toString());
-        PrintStream oud = System.out;
+        PrintStream old = System.out;
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         System.setOut(new PrintStream(buf, true, java.nio.charset.StandardCharsets.UTF_8));
         try {
             return new Output(Resolver.casesMode(rest, map), buf.toString(java.nio.charset.StandardCharsets.UTF_8));
         } finally {
-            System.setOut(oud);
+            System.setOut(old);
         }
     }
 

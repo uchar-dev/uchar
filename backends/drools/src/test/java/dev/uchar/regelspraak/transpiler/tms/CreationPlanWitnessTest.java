@@ -124,165 +124,165 @@ class CreationPlanWitnessTest {
     @Test void object_creations_with_initialisations_a_true_characteristic_and_the_watch_of_a_one_to_one_relation()
             throws Exception {
         assertEquals(List.of(
-                "regel penning voor een gerechtigde jutter | vorm penning voor een gerechtigde jutter |"
-                        + " groep uchar-objectcreatie",
-                "  lezingen [0 INPUT $penninggerechtigd (eigen ElementKey[objectType=jutter,"
+                "rule penning voor een gerechtigde jutter | form penning voor een gerechtigde jutter |"
+                        + " group uchar-objectcreatie",
+                "  readings [0 INPUT $penninggerechtigd (eigen ElementKey[objectType=jutter,"
                         + " name=penninggerechtigd, characteristic=true]), 1 INPUT $vondstwaarde (eigen"
                         + " ElementKey[objectType=jutter, name=vondstwaarde, characteristic=false]), 2 CREATION_PHASE"
                         + " $fase (creatiefase), 3 ORIGIN $herkomsten_creatie_42 (herkomst)]",
-                "  onderwerp Jutter $onderwerp alfa [] join [] beta [] bind [$penninggerechtigd = []"
+                "  subject Jutter $onderwerp alpha [] join [] beta [] bind [$penninggerechtigd = []"
                         + " Jutter.penninggerechtigd WAAR, $vondstwaarde = [] Jutter.vondstwaarde VALUE]",
-                "  patroon CreationPhase $creatiefase alfa [creatiestratum_40: [[] stratum VALUE AT_LEAST"
+                "  pattern CreationPhase $creatiefase alpha [creatiestratum_40: [[] stratum VALUE AT_LEAST"
                         + " 0]] join [] beta [] na [] bind [$fase = [] CreationPhase.number VALUE]",
-                "  accumulatie CreationStamp $herkomst_creatie_41 alfa [] join [herkomst_43: object ="
-                        + " $onderwerp] beta [] na [] bind [] functies [LIST null -> $herkomsten_creatie_42]",
-                "  niet binnen [$gemaakt_creatie_44] buiten [$onderwerp] [CreationStamp $gemaakt_creatie_44"
-                        + " alfa [gemaakt_46: [[] rule VALUE GELIJK penning voor een gerechtigde jutter]] join"
+                "  accumulation CreationStamp $herkomst_creatie_41 alpha [] join [herkomst_43: object ="
+                        + " $onderwerp] beta [] na [] bind [] functions [LIST null -> $herkomsten_creatie_42]",
+                "  not inside [$gemaakt_creatie_44] outside [$onderwerp] [CreationStamp $gemaakt_creatie_44"
+                        + " alpha [gemaakt_46: [[] rule VALUE GELIJK penning voor een gerechtigde jutter]] join"
                         + " [gemaakt-onderwerp_47: subject = $onderwerp] beta [] na [] bind []]",
-                "  niet binnen [$nieuw_creatie_45] buiten [$onderwerp, $fase] [CreationStamp $nieuw_creatie_45"
-                        + " alfa [] join [nieuw-object_48: object = $onderwerp] beta [nieuw-in-deze-fase_49:"
+                "  not inside [$nieuw_creatie_45] outside [$onderwerp, $fase] [CreationStamp $nieuw_creatie_45"
+                        + " alpha [] join [nieuw-object_48: object = $onderwerp] beta [nieuw-in-deze-fase_49:"
                         + " IN_PHASE $fase] na [] bind []]",
-                "  toets voorwaarde_50 CONDITION sonde -1 slots [0] grootte 4: KENMERK(Lees 0, Const"
+                "  test voorwaarde_50 CONDITION probe -1 slots [0] size 4: KENMERK(Read 0, Const"
                         + " true)",
-                "    toets 0 Call bron 'de Jutter is penninggerechtigd'",
-                "    toets 0.0 SlotValue",
-                "    toets 0.1 Const Boolean",
-                "  niet binnen [$eigen_fout] buiten [$onderwerp] [Fault $eigen_fout alfa [eigen-fout_51:"
+                "    test 0 Call source 'de Jutter is penninggerechtigd'",
+                "    test 0.0 SlotValue",
+                "    test 0.1 Const Boolean",
+                "  not inside [$eigen_fout] outside [$onderwerp] [Fault $eigen_fout alpha [eigen-fout_51:"
                         + " [[] rule VALUE GELIJK penning voor een gerechtigde jutter]] join"
                         + " [eigen-fout-onderwerp_52: subject = $onderwerp] beta [] na [] bind []]",
-                "  gevolg Creatie [subject=$onderwerp, creation=penning voor een gerechtigde jutter,"
-                        + " diepte=CreationDepth[origin=3, stratum=0, type=Jutter, budget=100],"
+                "  consequence Creation [subject=$onderwerp, creation=penning voor een gerechtigde jutter,"
+                        + " depth=CreationDepth[origin=3, stratum=0, type=Jutter, budget=100],"
                         + " fault=FaultName[form=penning voor een gerechtigde jutter, rule=penning voor een"
-                        + " gerechtigde jutter], foutinvoeging=STATED, phase=2, slots=[1, 2, 3], grootte=4]",
-                "    constructie Penning zettingen [0 Penning.bedrag]",
-                "    initialisatie 0 ElementKey[objectType=penning, name=bedrag, characteristic=false]:"
-                        + " Lees 1",
-                "      value 0 SlotValue bron 'de vondstwaarde van de Jutter'",
-                "    initialisatie 1 ElementKey[objectType=penning, name=uitgereikt, characteristic=true]:"
+                        + " gerechtigde jutter], faultInsertion=STATED, phase=2, slots=[1, 2, 3], size=4]",
+                "    construction Penning settings [0 Penning.bedrag]",
+                "    initialisation 0 ElementKey[objectType=penning, name=bedrag, characteristic=false]:"
+                        + " Read 1",
+                "      value 0 SlotValue source 'de vondstwaarde van de Jutter'",
+                "    initialisation 1 ElementKey[objectType=penning, name=uitgereikt, characteristic=true]:"
                         + " Const true",
-                "      value 0 Const Boolean type BooleanType[] bron 'waar'",
-                "    invoegingen [New[insertion=STATED], Mark[insertion=STATED],"
+                "      value 0 Const Boolean type BooleanType[] source 'waar'",
+                "    insertions [New[insertion=STATED], Mark[insertion=STATED],"
                         + " Link[relation=penningbezit, newIsFirst=false, insertion=STATED],"
                         + " Characteristic[initialisation=1, insertion=STATED]]",
-                "regel dossier voor een gerechtigde jutter | vorm dossier voor een gerechtigde jutter |"
-                        + " groep uchar-objectcreatie",
-                "  lezingen [0 INPUT $penninggerechtigd (eigen ElementKey[objectType=jutter,"
+                "rule dossier voor een gerechtigde jutter | form dossier voor een gerechtigde jutter |"
+                        + " group uchar-objectcreatie",
+                "  readings [0 INPUT $penninggerechtigd (eigen ElementKey[objectType=jutter,"
                         + " name=penninggerechtigd, characteristic=true]), 1 CREATION_PHASE $fase (creatiefase), 2 ORIGIN"
                         + " $herkomsten_creatie_55 (herkomst)]",
-                "  onderwerp Jutter $onderwerp alfa [geen-gekoppelde-instantie_66: [[] dossier VALUE LEEG]] join"
+                "  subject Jutter $onderwerp alpha [geen-gekoppelde-instantie_66: [[] dossier VALUE LEEG]] join"
                         + " [] beta [] bind [$penninggerechtigd = [] Jutter.penninggerechtigd WAAR]",
-                "  patroon CreationPhase $creatiefase alfa [creatiestratum_53: [[] stratum VALUE AT_LEAST"
+                "  pattern CreationPhase $creatiefase alpha [creatiestratum_53: [[] stratum VALUE AT_LEAST"
                         + " 0]] join [] beta [] na [] bind [$fase = [] CreationPhase.number VALUE]",
-                "  accumulatie CreationStamp $herkomst_creatie_54 alfa [] join [herkomst_56: object ="
-                        + " $onderwerp] beta [] na [] bind [] functies [LIST null -> $herkomsten_creatie_55]",
-                "  niet binnen [$gemaakt_creatie_57] buiten [$onderwerp] [CreationStamp $gemaakt_creatie_57"
-                        + " alfa [gemaakt_59: [[] rule VALUE GELIJK dossier voor een gerechtigde jutter]] join"
+                "  accumulation CreationStamp $herkomst_creatie_54 alpha [] join [herkomst_56: object ="
+                        + " $onderwerp] beta [] na [] bind [] functions [LIST null -> $herkomsten_creatie_55]",
+                "  not inside [$gemaakt_creatie_57] outside [$onderwerp] [CreationStamp $gemaakt_creatie_57"
+                        + " alpha [gemaakt_59: [[] rule VALUE GELIJK dossier voor een gerechtigde jutter]] join"
                         + " [gemaakt-onderwerp_60: subject = $onderwerp] beta [] na [] bind []]",
-                "  niet binnen [$nieuw_creatie_58] buiten [$onderwerp, $fase] [CreationStamp $nieuw_creatie_58"
-                        + " alfa [] join [nieuw-object_61: object = $onderwerp] beta [nieuw-in-deze-fase_62:"
+                "  not inside [$nieuw_creatie_58] outside [$onderwerp, $fase] [CreationStamp $nieuw_creatie_58"
+                        + " alpha [] join [nieuw-object_61: object = $onderwerp] beta [nieuw-in-deze-fase_62:"
                         + " IN_PHASE $fase] na [] bind []]",
-                "  toets voorwaarde_63 CONDITION sonde -1 slots [0] grootte 3: KENMERK(Lees 0, Const"
+                "  test voorwaarde_63 CONDITION probe -1 slots [0] size 3: KENMERK(Read 0, Const"
                         + " true)",
-                "    toets 0 Call bron 'de Jutter is penninggerechtigd'",
-                "    toets 0.0 SlotValue",
-                "    toets 0.1 Const Boolean",
-                "  niet binnen [$eigen_fout] buiten [$onderwerp] [Fault $eigen_fout alfa [eigen-fout_64:"
+                "    test 0 Call source 'de Jutter is penninggerechtigd'",
+                "    test 0.0 SlotValue",
+                "    test 0.1 Const Boolean",
+                "  not inside [$eigen_fout] outside [$onderwerp] [Fault $eigen_fout alpha [eigen-fout_64:"
                         + " [[] rule VALUE GELIJK dossier voor een gerechtigde jutter]] join"
                         + " [eigen-fout-onderwerp_65: subject = $onderwerp] beta [] na [] bind []]",
-                "  gevolg Creatie [subject=$onderwerp, creation=dossier voor een gerechtigde jutter,"
-                        + " diepte=CreationDepth[origin=2, stratum=0, type=Jutter, budget=100],"
+                "  consequence Creation [subject=$onderwerp, creation=dossier voor een gerechtigde jutter,"
+                        + " depth=CreationDepth[origin=2, stratum=0, type=Jutter, budget=100],"
                         + " fault=FaultName[form=dossier voor een gerechtigde jutter, rule=dossier voor een"
-                        + " gerechtigde jutter], foutinvoeging=STATED, phase=1, slots=[1, 2], grootte=3]",
-                "    constructie Dossier zettingen []",
-                "    invoegingen [New[insertion=STATED], Mark[insertion=STATED],"
+                        + " gerechtigde jutter], faultInsertion=STATED, phase=1, slots=[1, 2], size=3]",
+                "    construction Dossier settings []",
+                "    insertions [New[insertion=STATED], Mark[insertion=STATED],"
                         + " Link[relation=dossiervoering, newIsFirst=false, insertion=STATED]]"),
                 plans(golden("anchor/jutterswet-penninguitgifte"), p -> p.consequence() instanceof Consequence.Creation));
     }
 
     @Test void an_object_creation_without_binding() throws Exception {
         assertEquals(List.of(
-                "regel stel het penningbesluit vast | vorm stel het penningbesluit vast | groep"
+                "rule stel het penningbesluit vast | form stel het penningbesluit vast | group"
                         + " uchar-objectcreatie",
-                "  lezingen [0 CHARACTERISTIC_STATE $penninggerechtigd (eigen ElementKey[objectType=jutter,"
+                "  readings [0 CHARACTERISTIC_STATE $penninggerechtigd (eigen ElementKey[objectType=jutter,"
                         + " name=penninggerechtigd, characteristic=true]), 1 PARAMETER $penningbedrag (parameter"
                         + " penningbedrag), 2 CREATION_PHASE $fase (creatiefase), 3 ORIGIN $herkomsten_creatie_21"
                         + " (herkomst)]",
-                "  onderwerp Jutter $onderwerp alfa [geen-gekoppelde-instantie_32: [[] toegekend besluit"
+                "  subject Jutter $onderwerp alpha [geen-gekoppelde-instantie_32: [[] toegekend besluit"
                         + " VALUE LEEG]] join [] beta [] bind []",
-                "  patroon ParameterState $parameter_1 alfa [parameter_18: [[] parameter VALUE GELIJK"
+                "  pattern ParameterState $parameter_1 alpha [parameter_18: [[] parameter VALUE GELIJK"
                         + " penningbedrag]] join [] beta [] na [] bind [$penningbedrag = [] ParameterState.value"
                         + " VALUE]",
-                "  patroon CreationPhase $creatiefase alfa [creatiestratum_19: [[] stratum VALUE AT_LEAST"
+                "  pattern CreationPhase $creatiefase alpha [creatiestratum_19: [[] stratum VALUE AT_LEAST"
                         + " 0]] join [] beta [] na [] bind [$fase = [] CreationPhase.number VALUE]",
-                "  patroon CharacteristicState $stand_0 alfa [stand_16: [[] characteristic VALUE GELIJK"
+                "  pattern CharacteristicState $stand_0 alpha [stand_16: [[] characteristic VALUE GELIJK"
                         + " ElementKey[objectType=jutter, name=penninggerechtigd, characteristic=true]]] join"
                         + " [stand-onderwerp_17: subject = $onderwerp] beta [] na [] bind [$penninggerechtigd ="
                         + " [] CharacteristicState.holds VALUE]",
-                "  accumulatie CreationStamp $herkomst_creatie_20 alfa [] join [herkomst_22: object ="
-                        + " $onderwerp] beta [] na [] bind [] functies [LIST null -> $herkomsten_creatie_21]",
-                "  niet binnen [$gemaakt_creatie_23] buiten [$onderwerp] [CreationStamp $gemaakt_creatie_23"
-                        + " alfa [gemaakt_25: [[] rule VALUE GELIJK stel het penningbesluit vast]] join"
+                "  accumulation CreationStamp $herkomst_creatie_20 alpha [] join [herkomst_22: object ="
+                        + " $onderwerp] beta [] na [] bind [] functions [LIST null -> $herkomsten_creatie_21]",
+                "  not inside [$gemaakt_creatie_23] outside [$onderwerp] [CreationStamp $gemaakt_creatie_23"
+                        + " alpha [gemaakt_25: [[] rule VALUE GELIJK stel het penningbesluit vast]] join"
                         + " [gemaakt-onderwerp_26: subject = $onderwerp] beta [] na [] bind []]",
-                "  niet binnen [$nieuw_creatie_24] buiten [$onderwerp, $fase] [CreationStamp $nieuw_creatie_24"
-                        + " alfa [] join [nieuw-object_27: object = $onderwerp] beta [nieuw-in-deze-fase_28:"
+                "  not inside [$nieuw_creatie_24] outside [$onderwerp, $fase] [CreationStamp $nieuw_creatie_24"
+                        + " alpha [] join [nieuw-object_27: object = $onderwerp] beta [nieuw-in-deze-fase_28:"
                         + " IN_PHASE $fase] na [] bind []]",
-                "  toets voorwaarde_29 CONDITION sonde -1 slots [0] grootte 4: KENMERK(Lees 0, Const"
+                "  test voorwaarde_29 CONDITION probe -1 slots [0] size 4: KENMERK(Read 0, Const"
                         + " true)",
-                "    toets 0 Call bron 'hij penninggerechtigd is'",
-                "    toets 0.0 SlotValue",
-                "    toets 0.1 Const Boolean",
-                "  niet binnen [$eigen_fout] buiten [$onderwerp] [Fault $eigen_fout alfa [eigen-fout_30:"
+                "    test 0 Call source 'hij penninggerechtigd is'",
+                "    test 0.0 SlotValue",
+                "    test 0.1 Const Boolean",
+                "  not inside [$eigen_fout] outside [$onderwerp] [Fault $eigen_fout alpha [eigen-fout_30:"
                         + " [[] rule VALUE GELIJK stel het penningbesluit vast]] join [eigen-fout-onderwerp_31:"
                         + " subject = $onderwerp] beta [] na [] bind []]",
-                "  gevolg Creatie [subject=$onderwerp, creation=stel het penningbesluit vast,"
-                        + " diepte=CreationDepth[origin=3, stratum=0, type=Jutter, budget=100],"
+                "  consequence Creation [subject=$onderwerp, creation=stel het penningbesluit vast,"
+                        + " depth=CreationDepth[origin=3, stratum=0, type=Jutter, budget=100],"
                         + " fault=FaultName[form=stel het penningbesluit vast, rule=stel het penningbesluit vast],"
-                        + " foutinvoeging=STATED, phase=2, slots=[1, 2, 3], grootte=4]",
-                "    constructie Penningbesluit zettingen [0 Penningbesluit.besluitbedrag]",
-                "    initialisatie 0 ElementKey[objectType=penningbesluit, name=besluitbedrag,"
-                        + " characteristic=false]: Lees 1",
-                "      value 0 SlotValue bron 'het penningbedrag'",
-                "    invoegingen [New[insertion=STATED], Mark[insertion=STATED],"
+                        + " faultInsertion=STATED, phase=2, slots=[1, 2, 3], size=4]",
+                "    construction Penningbesluit settings [0 Penningbesluit.besluitbedrag]",
+                "    initialisation 0 ElementKey[objectType=penningbesluit, name=besluitbedrag,"
+                        + " characteristic=false]: Read 1",
+                "      value 0 SlotValue source 'het penningbedrag'",
+                "    insertions [New[insertion=STATED], Mark[insertion=STATED],"
                         + " Link[relation=penningtoekenning, newIsFirst=false, insertion=STATED]]"),
                 plans(golden("jutterswet-penningbesluit"), p -> p.consequence() instanceof Consequence.Creation));
     }
 
     @Test void a_fact_creation_that_reads_the_characteristic_of_the_target_of_the_bean_with_the_link_rules() throws Exception {
         assertEquals(List.of(
-                "regel vakbeseining door het kustvak | vorm vakbeseining door het kustvak | groep"
+                "rule vakbeseining door het kustvak | form vakbeseining door het kustvak | group"
                         + " uchar-feitcreatie",
-                "  lezingen [0 CREATION_PHASE $fase (creatiefase)]",
-                "  onderwerp Kustvak $onderwerp alfa [] join [] beta [] bind []",
-                "  patroon CreationPhase $creatiefase alfa [creatiestratum_13: [[] stratum VALUE AT_LEAST"
+                "  readings [0 CREATION_PHASE $fase (creatiefase)]",
+                "  subject Kustvak $onderwerp alpha [] join [] beta [] bind []",
+                "  pattern CreationPhase $creatiefase alpha [creatiestratum_13: [[] stratum VALUE AT_LEAST"
                         + " 0]] join [] beta [] na [] bind [$fase = [] CreationPhase.number VALUE]",
-                "  patroon Post $stap_keten_14 alfa [] join [] beta [veld-ver_15: MEETING $onderwerp"
-                        + " [kustvak] {List<String>, type null, bron null} [] {List<>, type null, bron null}] na"
+                "  pattern Post $stap_keten_14 alpha [] join [] beta [veld-ver_15: MEETING $onderwerp"
+                        + " [kustvak] {List<String>, type null, source null} [] {List<>, type null, source null}] na"
                         + " [] bind []",
-                "  patroon Sein $stap_keten_16 alfa [] join [] beta [veld-ver_17: MEETING"
-                        + " $stap_keten_14 [post] {List<String>, type null, bron null} [] {List<>, type null, bron"
+                "  pattern Sein $stap_keten_16 alpha [] join [] beta [veld-ver_17: MEETING"
+                        + " $stap_keten_14 [post] {List<String>, type null, source null} [] {List<>, type null, source"
                         + " null}] na [doel-gastheer_18: [[] null VALUE IS_A Baken], doel-kenmerk_19: [[]"
                         + " gehesen WAAR GELIJK true via Baken]] bind []",
-                "  niet binnen [$bestaand_feitcreatie_20] buiten [$onderwerp, $stap_keten_16] [RelationLink"
-                        + " $bestaand_feitcreatie_20 alfa [bestaand_21: [[] relation VALUE GELIJK vakbeseining]]"
+                "  not inside [$bestaand_feitcreatie_20] outside [$onderwerp, $stap_keten_16] [RelationLink"
+                        + " $bestaand_feitcreatie_20 alpha [bestaand_21: [[] relation VALUE GELIJK vakbeseining]]"
                         + " join [bestaand-anker_22: first = $onderwerp, bestaand-doel_23: second ="
                         + " $stap_keten_16] beta [] na [] bind []]",
-                "  gevolg RelationLink[relation=vakbeseining, first=$onderwerp, second=$stap_keten_16,"
+                "  consequence RelationLink[relation=vakbeseining, first=$onderwerp, second=$stap_keten_16,"
                         + " phase=0, insertion=STATED]",
-                "regel koppeling vakbeseining uit de invoer: Sein.seinvak | vorm null | groep null",
-                "  lezingen []",
-                "  onderwerp Sein $houder alfa [koppeling-invoer_24: [[] seinvak VALUE GEVULD]] join []"
+                "rule koppeling vakbeseining uit de invoer: Sein.seinvak | form null | group null",
+                "  readings []",
+                "  subject Sein $houder alpha [koppeling-invoer_24: [[] seinvak VALUE GEVULD]] join []"
                         + " beta [] bind [$ander = [] Sein.seinvak VALUE]",
-                "  gevolg RelationLink[relation=vakbeseining, first=$ander, second=$houder, phase=-1,"
+                "  consequence RelationLink[relation=vakbeseining, first=$ander, second=$houder, phase=-1,"
                         + " insertion=LOGICAL]",
-                "regel koppeling vakbeseining: tweede vulling van seinvak | vorm null | groep null",
-                "  lezingen []",
-                "  patroon RelationLink $een alfa [vulling_25: [[] relation VALUE GELIJK vakbeseining]]"
+                "rule koppeling vakbeseining: tweede vulling van seinvak | form null | group null",
+                "  readings []",
+                "  pattern RelationLink $een alpha [vulling_25: [[] relation VALUE GELIJK vakbeseining]]"
                         + " join [] beta [] na [] bind [$nabij = [] RelationLink.second VALUE]",
-                "  patroon RelationLink $twee alfa [tweede-vulling_26: [[] relation VALUE GELIJK"
+                "  pattern RelationLink $twee alpha [tweede-vulling_26: [[] relation VALUE GELIJK"
                         + " vakbeseining]] join [tweede-vulling-nabij_27: second = $een.RelationLink.second] beta"
-                        + " [tweede-vulling-ander_28: OTHER_FILLING $een first {String, type null, bron null}]"
+                        + " [tweede-vulling-ander_28: OTHER_FILLING $een first {String, type null, source null}]"
                         + " na [] bind []",
-                "  gevolg SecondFilling[subject=$nabij, relation=vakbeseining, sentence=de naar-één-rol"
+                "  consequence SecondFilling[subject=$nabij, relation=vakbeseining, sentence=de naar-één-rol"
                         + " \"seinvak\" van een Sein heeft twee verschillende vullingen; een tweede vulling is een"
                         + " fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5), insertion=LOGICAL]"),
                 plans(golden("jutterswet-bakensein"), CreationPlanWitnessTest::ofThisStep));
@@ -290,103 +290,103 @@ class CreationPlanWitnessTest {
 
     @Test void a_fact_creation_that_reads_the_characteristic_of_the_target_out_of_its_state() throws Exception {
         assertEquals(List.of(
-                "regel vakbeseining door het kustvak | vorm vakbeseining door het kustvak | groep"
+                "rule vakbeseining door het kustvak | form vakbeseining door het kustvak | group"
                         + " uchar-feitcreatie",
-                "  lezingen [0 CREATION_PHASE $fase (creatiefase)]",
-                "  onderwerp Kustvak $onderwerp alfa [] join [] beta [] bind []",
-                "  patroon CreationPhase $creatiefase alfa [creatiestratum_14: [[] stratum VALUE AT_LEAST"
+                "  readings [0 CREATION_PHASE $fase (creatiefase)]",
+                "  subject Kustvak $onderwerp alpha [] join [] beta [] bind []",
+                "  pattern CreationPhase $creatiefase alpha [creatiestratum_14: [[] stratum VALUE AT_LEAST"
                         + " 0]] join [] beta [] na [] bind [$fase = [] CreationPhase.number VALUE]",
-                "  patroon Post $stap_keten_15 alfa [] join [] beta [veld-ver_16: MEETING $onderwerp"
-                        + " [kustvak] {List<String>, type null, bron null} [] {List<>, type null, bron null}] na"
+                "  pattern Post $stap_keten_15 alpha [] join [] beta [veld-ver_16: MEETING $onderwerp"
+                        + " [kustvak] {List<String>, type null, source null} [] {List<>, type null, source null}] na"
                         + " [] bind []",
-                "  patroon Sein $stap_keten_17 alfa [] join [] beta [veld-ver_18: MEETING"
-                        + " $stap_keten_15 [post] {List<String>, type null, bron null} [] {List<>, type null, bron"
+                "  pattern Sein $stap_keten_17 alpha [] join [] beta [veld-ver_18: MEETING"
+                        + " $stap_keten_15 [post] {List<String>, type null, source null} [] {List<>, type null, source"
                         + " null}] na [doel-gastheer_19: [[] null VALUE IS_A Baken]] bind []",
-                "  patroon CharacteristicState $doelstand_doel_20 alfa [doelstand_21: [[] characteristic VALUE GELIJK"
+                "  pattern CharacteristicState $doelstand_doel_20 alpha [doelstand_21: [[] characteristic VALUE GELIJK"
                         + " ElementKey[objectType=baken, name=gehesen, characteristic=true]]] join"
                         + " [doelstand-doel_22: subject = $stap_keten_17] beta [] na [doelstand-waar_23: [[]"
                         + " holds VALUE GELIJK true]] bind []",
-                "  niet binnen [$bestaand_feitcreatie_24] buiten [$onderwerp, $stap_keten_17] [RelationLink"
-                        + " $bestaand_feitcreatie_24 alfa [bestaand_25: [[] relation VALUE GELIJK vakbeseining]]"
+                "  not inside [$bestaand_feitcreatie_24] outside [$onderwerp, $stap_keten_17] [RelationLink"
+                        + " $bestaand_feitcreatie_24 alpha [bestaand_25: [[] relation VALUE GELIJK vakbeseining]]"
                         + " join [bestaand-anker_26: first = $onderwerp, bestaand-doel_27: second ="
                         + " $stap_keten_17] beta [] na [] bind []]",
-                "  gevolg RelationLink[relation=vakbeseining, first=$onderwerp, second=$stap_keten_17,"
+                "  consequence RelationLink[relation=vakbeseining, first=$onderwerp, second=$stap_keten_17,"
                         + " phase=0, insertion=STATED]",
-                "regel koppeling vakbeseining uit de invoer: Sein.seinvak | vorm null | groep null",
-                "  lezingen []",
-                "  onderwerp Sein $houder alfa [koppeling-invoer_28: [[] seinvak VALUE GEVULD]] join []"
+                "rule koppeling vakbeseining uit de invoer: Sein.seinvak | form null | group null",
+                "  readings []",
+                "  subject Sein $houder alpha [koppeling-invoer_28: [[] seinvak VALUE GEVULD]] join []"
                         + " beta [] bind [$ander = [] Sein.seinvak VALUE]",
-                "  gevolg RelationLink[relation=vakbeseining, first=$ander, second=$houder, phase=-1,"
+                "  consequence RelationLink[relation=vakbeseining, first=$ander, second=$houder, phase=-1,"
                         + " insertion=LOGICAL]"),
                 plans(gehesenByRule(), p -> p.consequence() instanceof Consequence.RelationLink));
     }
 
     @Test void the_path_states_over_a_chain_with_a_made_link() throws Exception {
         assertEquals(List.of(
-                "regel padstand Vondst.jutter.haven naar Haven.afgeleide openingsdag: link aanwezig |"
-                        + " vorm null | groep null",
-                "  lezingen [0 REACHED_STATE $v (stand Vondst:jutter.haven"
+                "rule padstand Vondst.jutter.haven naar Haven.afgeleide openingsdag: link aanwezig |"
+                        + " form null | group null",
+                "  readings [0 REACHED_STATE $v (stand Vondst:jutter.haven"
                         + " ElementKey[objectType=haven, name=afgeleide openingsdag, characteristic=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] join [] beta [] bind []",
-                "  patroon Jutter $stap_keten_24 alfa [] join [] beta [veld-nabij_25: MEETING"
-                        + " $onderwerp [] {List<>, type null, bron null} [jutter] {List<String>, type null, bron"
+                "  subject Vondst $onderwerp alpha [] join [] beta [] bind []",
+                "  pattern Jutter $stap_keten_24 alpha [] join [] beta [veld-nabij_25: MEETING"
+                        + " $onderwerp [] {List<>, type null, source null} [jutter] {List<String>, type null, source"
                         + " null}] na [] bind []",
-                "  patroon RelationLink $koppeling_keten_27 alfa [koppeling_29: [[] relation VALUE GELIJK"
+                "  pattern RelationLink $koppeling_keten_27 alpha [koppeling_29: [[] relation VALUE GELIJK"
                         + " havenheeftjutter]] join [koppeling-nabij_30: second = $stap_keten_24] beta [] na []"
                         + " bind [$overzijde_keten_28 = [] RelationLink.first VALUE]",
-                "  patroon Haven $stap_keten_26 alfa [] join [koppeling-ver_31: null ="
+                "  pattern Haven $stap_keten_26 alpha [] join [koppeling-ver_31: null ="
                         + " $overzijde_keten_28] beta [] na [] bind []",
-                "  patroon State $stand alfa [stand_32: [[] attribute VALUE GELIJK"
+                "  pattern State $stand alpha [stand_32: [[] attribute VALUE GELIJK"
                         + " ElementKey[objectType=haven, name=afgeleide openingsdag, characteristic=false]]] join"
                         + " [stand-bereikt_33: subject = $stap_keten_26] beta [] na [] bind [$v = []"
                         + " State.value VALUE]",
-                "  gevolg InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
+                "  consequence InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
                         + " member=ElementKey[objectType=haven, name=afgeleide openingsdag, characteristic=false],"
                         + " source=REACHED, value=0, insertion=LOGICAL]",
-                "regel padstand Vondst.jutter.haven naar Haven.afgeleide openingsdag: link afwezig |"
-                        + " vorm null | groep null",
-                "  lezingen []",
-                "  onderwerp Vondst $onderwerp alfa [] join [] beta [] bind []",
-                "  niet binnen [$stap_keten_34, $koppeling_keten_37, $overzijde_keten_38,"
-                        + " $stap_keten_36] buiten [$onderwerp] [Jutter $stap_keten_34 alfa [] join [] beta"
-                        + " [veld-nabij_35: MEETING $onderwerp [] {List<>, type null, bron null} [jutter]"
-                        + " {List<String>, type null, bron null}] na [] bind [], RelationLink $koppeling_keten_37"
-                        + " alfa [koppeling_39: [[] relation VALUE GELIJK havenheeftjutter]] join"
+                "rule padstand Vondst.jutter.haven naar Haven.afgeleide openingsdag: link afwezig |"
+                        + " form null | group null",
+                "  readings []",
+                "  subject Vondst $onderwerp alpha [] join [] beta [] bind []",
+                "  not inside [$stap_keten_34, $koppeling_keten_37, $overzijde_keten_38,"
+                        + " $stap_keten_36] outside [$onderwerp] [Jutter $stap_keten_34 alpha [] join [] beta"
+                        + " [veld-nabij_35: MEETING $onderwerp [] {List<>, type null, source null} [jutter]"
+                        + " {List<String>, type null, source null}] na [] bind [], RelationLink $koppeling_keten_37"
+                        + " alpha [koppeling_39: [[] relation VALUE GELIJK havenheeftjutter]] join"
                         + " [koppeling-nabij_40: second = $stap_keten_34] beta [] na [] bind [$overzijde_keten_38"
-                        + " = [] RelationLink.first VALUE], Haven $stap_keten_36 alfa [] join [koppeling-ver_41:"
+                        + " = [] RelationLink.first VALUE], Haven $stap_keten_36 alpha [] join [koppeling-ver_41:"
                         + " null = $overzijde_keten_38] beta [] na [] bind []]",
-                "  gevolg InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
+                "  consequence InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
                         + " member=ElementKey[objectType=haven, name=afgeleide openingsdag, characteristic=false],"
                         + " source=MISSING_LINK, value=-1, insertion=LOGICAL]",
-                "regel padstand Vondst.jutter.haven naar Haven.openingsdag: link aanwezig | vorm null |"
-                        + " groep null",
-                "  lezingen [0 REACHED_INPUT $v (invoer Vondst:jutter.haven"
+                "rule padstand Vondst.jutter.haven naar Haven.openingsdag: link aanwezig | form null |"
+                        + " group null",
+                "  readings [0 REACHED_INPUT $v (invoer Vondst:jutter.haven"
                         + " ElementKey[objectType=haven, name=openingsdag, characteristic=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] join [] beta [] bind []",
-                "  patroon Jutter $stap_keten_42 alfa [] join [] beta [veld-nabij_43: MEETING"
-                        + " $onderwerp [] {List<>, type null, bron null} [jutter] {List<String>, type null, bron"
+                "  subject Vondst $onderwerp alpha [] join [] beta [] bind []",
+                "  pattern Jutter $stap_keten_42 alpha [] join [] beta [veld-nabij_43: MEETING"
+                        + " $onderwerp [] {List<>, type null, source null} [jutter] {List<String>, type null, source"
                         + " null}] na [] bind []",
-                "  patroon RelationLink $koppeling_keten_45 alfa [koppeling_47: [[] relation VALUE GELIJK"
+                "  pattern RelationLink $koppeling_keten_45 alpha [koppeling_47: [[] relation VALUE GELIJK"
                         + " havenheeftjutter]] join [koppeling-nabij_48: second = $stap_keten_42] beta [] na []"
                         + " bind [$overzijde_keten_46 = [] RelationLink.first VALUE]",
-                "  patroon Haven $stap_keten_44 alfa [] join [koppeling-ver_49: null ="
+                "  pattern Haven $stap_keten_44 alpha [] join [koppeling-ver_49: null ="
                         + " $overzijde_keten_46] beta [] na [] bind [$v = [] Haven.openingsdag VALUE]",
-                "  gevolg InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
+                "  consequence InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
                         + " member=ElementKey[objectType=haven, name=openingsdag, characteristic=false], source=REACHED,"
                         + " value=0, insertion=LOGICAL]",
-                "regel padstand Vondst.jutter.haven naar Haven.openingsdag: link afwezig | vorm null |"
-                        + " groep null",
-                "  lezingen []",
-                "  onderwerp Vondst $onderwerp alfa [] join [] beta [] bind []",
-                "  niet binnen [$stap_keten_50, $koppeling_keten_53, $overzijde_keten_54,"
-                        + " $stap_keten_52] buiten [$onderwerp] [Jutter $stap_keten_50 alfa [] join [] beta"
-                        + " [veld-nabij_51: MEETING $onderwerp [] {List<>, type null, bron null} [jutter]"
-                        + " {List<String>, type null, bron null}] na [] bind [], RelationLink $koppeling_keten_53"
-                        + " alfa [koppeling_55: [[] relation VALUE GELIJK havenheeftjutter]] join"
+                "rule padstand Vondst.jutter.haven naar Haven.openingsdag: link afwezig | form null |"
+                        + " group null",
+                "  readings []",
+                "  subject Vondst $onderwerp alpha [] join [] beta [] bind []",
+                "  not inside [$stap_keten_50, $koppeling_keten_53, $overzijde_keten_54,"
+                        + " $stap_keten_52] outside [$onderwerp] [Jutter $stap_keten_50 alpha [] join [] beta"
+                        + " [veld-nabij_51: MEETING $onderwerp [] {List<>, type null, source null} [jutter]"
+                        + " {List<String>, type null, source null}] na [] bind [], RelationLink $koppeling_keten_53"
+                        + " alpha [koppeling_55: [[] relation VALUE GELIJK havenheeftjutter]] join"
                         + " [koppeling-nabij_56: second = $stap_keten_50] beta [] na [] bind [$overzijde_keten_54"
-                        + " = [] RelationLink.first VALUE], Haven $stap_keten_52 alfa [] join [koppeling-ver_57:"
+                        + " = [] RelationLink.first VALUE], Haven $stap_keten_52 alpha [] join [koppeling-ver_57:"
                         + " null = $overzijde_keten_54] beta [] na [] bind []]",
-                "  gevolg InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
+                "  consequence InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
                         + " member=ElementKey[objectType=haven, name=openingsdag, characteristic=false],"
                         + " source=MISSING_LINK, value=-1, insertion=LOGICAL]"),
                 plans(golden("jutterswet-havenketen"), p -> p.consequence() instanceof Consequence.InsertPathState
@@ -395,38 +395,38 @@ class CreationPlanWitnessTest {
 
     @Test void a_fact_creation_walks_no_link_of_its_own_phase() throws Exception {
         assertEquals(List.of(
-                "regel erf de directe opvolger | vorm erf de directe opvolger | groep uchar-feitcreatie",
-                "  lezingen [0 CREATION_PHASE $fase (creatiefase)]",
-                "  onderwerp Wachter $onderwerp alfa [] join [] beta [] bind []",
-                "  patroon CreationPhase $creatiefase alfa [creatiestratum_8: [[] stratum VALUE AT_LEAST"
+                "rule erf de directe opvolger | form erf de directe opvolger | group uchar-feitcreatie",
+                "  readings [0 CREATION_PHASE $fase (creatiefase)]",
+                "  subject Wachter $onderwerp alpha [] join [] beta [] bind []",
+                "  pattern CreationPhase $creatiefase alpha [creatiestratum_8: [[] stratum VALUE AT_LEAST"
                         + " 0]] join [] beta [] na [] bind [$fase = [] CreationPhase.number VALUE]",
-                "  patroon Wachter $stap_keten_9 alfa [] join [] beta [veld-nabij_10: MEETING"
-                        + " $onderwerp [] {List<>, type null, bron null} [opvolger] {List<String>, type null, bron"
+                "  pattern Wachter $stap_keten_9 alpha [] join [] beta [veld-nabij_10: MEETING"
+                        + " $onderwerp [] {List<>, type null, source null} [opvolger] {List<String>, type null, source"
                         + " null}] na [] bind []",
-                "  niet binnen [$bestaand_feitcreatie_11] buiten [$onderwerp, $stap_keten_9] [RelationLink"
-                        + " $bestaand_feitcreatie_11 alfa [bestaand_12: [[] relation VALUE GELIJK erflijn]] join"
+                "  not inside [$bestaand_feitcreatie_11] outside [$onderwerp, $stap_keten_9] [RelationLink"
+                        + " $bestaand_feitcreatie_11 alpha [bestaand_12: [[] relation VALUE GELIJK erflijn]] join"
                         + " [bestaand-anker_13: first = $onderwerp, bestaand-doel_14: second = $stap_keten_9]"
                         + " beta [] na [] bind []]",
-                "  gevolg RelationLink[relation=erflijn, first=$onderwerp, second=$stap_keten_9, phase=0,"
+                "  consequence RelationLink[relation=erflijn, first=$onderwerp, second=$stap_keten_9, phase=0,"
                         + " insertion=STATED]",
-                "regel erfestafette: erf de lijn door | vorm erf de lijn door | groep uchar-feitcreatie",
-                "  lezingen [0 CREATION_PHASE $fase (creatiefase)]",
-                "  onderwerp Wachter $onderwerp alfa [] join [] beta [] bind []",
-                "  patroon CreationPhase $creatiefase alfa [creatiestratum_15: [[] stratum VALUE AT_LEAST"
+                "rule erfestafette: erf de lijn door | form erf de lijn door | group uchar-feitcreatie",
+                "  readings [0 CREATION_PHASE $fase (creatiefase)]",
+                "  subject Wachter $onderwerp alpha [] join [] beta [] bind []",
+                "  pattern CreationPhase $creatiefase alpha [creatiestratum_15: [[] stratum VALUE AT_LEAST"
                         + " 1]] join [] beta [] na [] bind [$fase = [] CreationPhase.number VALUE]",
-                "  patroon RelationLink $koppeling_keten_17 alfa [koppeling_19: [[] relation VALUE GELIJK"
+                "  pattern RelationLink $koppeling_keten_17 alpha [koppeling_19: [[] relation VALUE GELIJK"
                         + " erflijn]] join [koppeling-nabij_20: first = $onderwerp] beta [koppeling-eerder_21:"
                         + " NOT_IN_PHASE $fase] na [] bind [$overzijde_keten_18 = [] RelationLink.second VALUE]",
-                "  patroon Wachter $stap_keten_16 alfa [] join [koppeling-ver_22: null ="
+                "  pattern Wachter $stap_keten_16 alpha [] join [koppeling-ver_22: null ="
                         + " $overzijde_keten_18] beta [] na [] bind []",
-                "  patroon Wachter $stap_keten_23 alfa [] join [] beta [veld-nabij_24: MEETING"
-                        + " $stap_keten_16 [] {List<>, type null, bron null} [opvolger] {List<String>, type null,"
-                        + " bron null}] na [] bind []",
-                "  niet binnen [$bestaand_feitcreatie_25] buiten [$onderwerp, $stap_keten_23] [RelationLink"
-                        + " $bestaand_feitcreatie_25 alfa [bestaand_26: [[] relation VALUE GELIJK erflijn]] join"
+                "  pattern Wachter $stap_keten_23 alpha [] join [] beta [veld-nabij_24: MEETING"
+                        + " $stap_keten_16 [] {List<>, type null, source null} [opvolger] {List<String>, type null,"
+                        + " source null}] na [] bind []",
+                "  not inside [$bestaand_feitcreatie_25] outside [$onderwerp, $stap_keten_23] [RelationLink"
+                        + " $bestaand_feitcreatie_25 alpha [bestaand_26: [[] relation VALUE GELIJK erflijn]] join"
                         + " [bestaand-anker_27: first = $onderwerp, bestaand-doel_28: second = $stap_keten_23]"
                         + " beta [] na [] bind []]",
-                "  gevolg RelationLink[relation=erflijn, first=$onderwerp, second=$stap_keten_23, phase=0,"
+                "  consequence RelationLink[relation=erflijn, first=$onderwerp, second=$stap_keten_23, phase=0,"
                         + " insertion=STATED]"),
                 plans(golden("anchor/jutterswet-erflijn"), p -> p.consequence() instanceof Consequence.RelationLink));
     }
@@ -581,12 +581,12 @@ class CreationPlanWitnessTest {
         Path map = GOLDEN.resolve("anchor/jutterswet-penninguitgifte");
         assertEquals(List.of(
                 "bean Penning1 {getBedrag=12, getHouder=null, isUitgereikt=false}",
-                "Gemaakt penning voor een gerechtigde jutter: J1 -> Penning1, fase 1, diepte 1",
-                "Koppeling penningbezit: J1, Penning1, fase 1",
-                "HeeftKenmerk Penning1 uitgereikt",
+                "Made penning voor een gerechtigde jutter: J1 -> Penning1, phase 1, depth 1",
+                "Link penningbezit: J1, Penning1, phase 1",
+                "HasCharacteristic Penning1 uitgereikt",
                 "bean Dossier2 {getDossierhouder=null}",
-                "Gemaakt dossier voor een gerechtigde jutter: J1 -> Dossier2, fase 1, diepte 1",
-                "Koppeling dossiervoering: J1, Dossier2, fase 1"),
+                "Made dossier voor een gerechtigde jutter: J1 -> Dossier2, phase 1, depth 1",
+                "Link dossiervoering: J1, Dossier2, phase 1"),
                 insertions(map.resolve("ir.json"), JSON.readTree(map.resolve("case1.json").toFile())));
     }
 
@@ -617,17 +617,17 @@ class CreationPlanWitnessTest {
                         made.put(o, o.getClass().getSimpleName() + (made.size() + 1));
                         out.add("bean " + made.get(o) + " " + fields(o, label, made, build.beanLoader()));
                     } else if (o instanceof CreationStamp g)
-                        out.add("Gemaakt " + g.rule() + ": " + name(g.subject(), label, made) + " -> "
-                                + name(g.object(), label, made) + ", fase " + g.phase() + ", diepte " + g.depth());
+                        out.add("Made " + g.rule() + ": " + name(g.subject(), label, made) + " -> "
+                                + name(g.object(), label, made) + ", phase " + g.phase() + ", depth " + g.depth());
                     else if (o instanceof RelationLink k && k.phase() > 0)
-                        out.add("Koppeling " + k.relation() + ": " + name(k.first(), label, made) + ", "
-                                + name(k.second(), label, made) + ", fase " + k.phase());
+                        out.add("Link " + k.relation() + ": " + name(k.first(), label, made) + ", "
+                                + name(k.second(), label, made) + ", phase " + k.phase());
                     else if (o instanceof HasCharacteristic h && made.containsKey(h.subject()))
-                        out.add("HeeftKenmerk " + name(h.subject(), label, made) + " " + h.characteristic().name());
+                        out.add("HasCharacteristic " + name(h.subject(), label, made) + " " + h.characteristic().name());
                 }
 
                 @Override public void objectUpdated(ObjectUpdatedEvent e) {
-                    out.add("bijgewerkt " + e.getObject());
+                    out.add("updated " + e.getObject());
                 }
 
                 @Override public void objectDeleted(ObjectDeletedEvent e) {}
@@ -732,14 +732,14 @@ class CreationPlanWitnessTest {
         for (RulePlan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
                 .modelplan().rules()) {
             if (!choice.test(p)) continue;
-            out.add("regel " + p.name() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
+            out.add("rule " + p.name() + " | form " + p.form() + " | group " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
             for (Read l : p.readings().slots())
                 slots.add(l.slot() + " " + l.kind() + " " + l.name() + " (" + l.key() + ")");
-            out.add("  lezingen " + slots);
+            out.add("  readings " + slots);
             for (LhsItem item : p.leftSide()) {
                 out.add("  " + item(item));
-                if (item instanceof TestItem t) TermTree.fields("    toets", t.test(), "0", out);
+                if (item instanceof TestItem t) TermTree.fields("    test", t.test(), "0", out);
             }
             consequence(p.consequence(), out);
         }
@@ -748,23 +748,23 @@ class CreationPlanWitnessTest {
 
     private static String item(LhsItem item) {
         return switch (item) {
-            case Subject o -> "onderwerp " + o.beanClass().getSimpleName() + " " + o.name() + " alfa "
+            case Subject o -> "subject " + o.beanClass().getSimpleName() + " " + o.name() + " alpha "
                     + alpha(o.alpha()) + " join " + joins(o.joins()) + " beta " + beta(o.betaTests()) + " bind "
                     + bindings(o.bindings());
-            case FactPattern p -> "patroon " + pattern(p);
-            case Not n -> "niet binnen " + n.inside() + " buiten " + n.outside() + " "
+            case FactPattern p -> "pattern " + pattern(p);
+            case Not n -> "not inside " + n.inside() + " outside " + n.outside() + " "
                     + n.patterns().stream().map(CreationPlanWitnessTest::pattern).toList();
-            case Exists b -> "bestaat binnen " + b.inside() + " buiten " + b.outside() + " "
+            case Exists b -> "exists inside " + b.inside() + " outside " + b.outside() + " "
                     + b.patterns().stream().map(CreationPlanWitnessTest::pattern).toList();
-            case Accumulation a -> "accumulatie " + pattern(a.source()) + " functies "
+            case Accumulation a -> "accumulation " + pattern(a.source()) + " functions "
                     + a.aggregations().stream().map(f -> f.kind() + " " + f.source() + " -> " + f.target()).toList();
-            case TestItem t -> "toets " + t.id() + " " + t.role() + " sonde " + t.depositFlag() + " slots " + t.slots()
-                    + " grootte " + t.size() + ": " + TermTree.tree(t.test());
+            case TestItem t -> "test " + t.id() + " " + t.role() + " probe " + t.depositFlag() + " slots " + t.slots()
+                    + " size " + t.size() + ": " + TermTree.tree(t.test());
         };
     }
 
     private static String pattern(FactPattern p) {
-        return p.factClass().getSimpleName() + " " + p.name() + " alfa " + alpha(p.alpha()) + " join "
+        return p.factClass().getSimpleName() + " " + p.name() + " alpha " + alpha(p.alpha()) + " join "
                 + joins(p.joins()) + " beta " + beta(p.betaTests()) + " na " + alpha(p.afterAlpha()) + " bind "
                 + bindings(p.bindings());
     }
@@ -779,7 +779,7 @@ class CreationPlanWitnessTest {
     /** A constant of the analysis with every field: its value, the class of its value (a list by the classes of its
      *  elements), its IR type and its source fragment, each null where the constant has none. */
     private static String constant(Term.Const c) {
-        return c.value() + " {" + javaClass(c.value()) + ", type " + c.type() + ", bron " + c.source() + "}";
+        return c.value() + " {" + javaClass(c.value()) + ", type " + c.type() + ", source " + c.source() + "}";
     }
 
     private static String javaClass(Object value) {
@@ -826,22 +826,22 @@ class CreationPlanWitnessTest {
     private static void consequence(Consequence g, List<String> out) {
         switch (g) {
             case Consequence.Creation c -> {
-                out.add("  gevolg Creatie [subject=" + c.subject() + ", creation=" + c.creation() + ", diepte="
-                        + c.depth() + ", fault=" + c.fault() + ", foutinvoeging=" + c.faultInsertion() + ", phase="
-                        + c.phase() + ", slots=" + c.slots() + ", grootte=" + c.size() + "]");
-                out.add("    constructie " + c.construction().javaClass().getSimpleName() + " zettingen "
+                out.add("  consequence Creation [subject=" + c.subject() + ", creation=" + c.creation() + ", depth="
+                        + c.depth() + ", fault=" + c.fault() + ", faultInsertion=" + c.faultInsertion() + ", phase="
+                        + c.phase() + ", slots=" + c.slots() + ", size=" + c.size() + "]");
+                out.add("    construction " + c.construction().javaClass().getSimpleName() + " settings "
                         + c.construction().settings().stream().map(z -> z.initialisation() + " " + field(z.field()))
                         .toList());
                 for (int i = 0; i < c.initialisations().size(); i++) {
                     Consequence.Initialisation init = c.initialisations().get(i);
-                    out.add("    initialisatie " + i + " " + init.member() + ": " + TermTree.tree(init.value()));
+                    out.add("    initialisation " + i + " " + init.member() + ": " + TermTree.tree(init.value()));
                     TermTree.fields("      value", init.value(), "0", out);
                 }
-                out.add("    invoegingen " + c.insertions());
+                out.add("    insertions " + c.insertions());
             }
-            case Consequence.RelationLink k -> out.add("  gevolg " + k);
-            case Consequence.SecondFilling t -> out.add("  gevolg " + t);
-            case Consequence.InsertPathState s -> out.add("  gevolg " + s);
+            case Consequence.RelationLink k -> out.add("  consequence " + k);
+            case Consequence.SecondFilling t -> out.add("  consequence " + t);
+            case Consequence.InsertPathState s -> out.add("  consequence " + s);
             default -> throw new IllegalStateException("geen gevolg van een creatie of een koppeling: " + g);
         }
     }

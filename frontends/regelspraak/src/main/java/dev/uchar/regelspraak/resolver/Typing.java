@@ -65,7 +65,7 @@ public final class Typing {
         GELIJK, ONGELIJK,                                        // §5.3,5.6 — any, both same
         EERDER, EERDER_OF_GELIJK, LATER, LATER_OF_GELIJK         // §5.7-5.10 — datum
     }
-    public enum UnairePred { LEEG, GEVULD, ELFPROEF, NUMERIEK_MET_EXACT, DAGSOORT }
+    public enum UnaryPred { LEEG, GEVULD, ELFPROEF, NUMERIEK_MET_EXACT, DAGSOORT }
 
     // -------- §4 arithmetic --------
     public static Result compute(BinOp op, Datatype l, Datatype r) {
@@ -325,7 +325,7 @@ public final class Typing {
     }
 
     /** §5.11-5.16 one-sided predicates. */
-    public static Result predicate(UnairePred p, Datatype operand) {
+    public static Result predicate(UnaryPred p, Datatype operand) {
         if (operand.isUnknown()) return Result.ok(new Datatype.BooleanType());
         return switch (p) {
             case LEEG, GEVULD -> Result.ok(new Datatype.BooleanType()); // §5.11/5.12 any datatype

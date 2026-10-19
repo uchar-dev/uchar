@@ -143,9 +143,9 @@ class ZeroDivisorConsumerWitnessTest {
         return Files.writeString(tmp, ir);
     }
 
-    private static String vondst(String label, String geschat, String gewogen) {
+    private static String vondst(String label, String geschat, String weighted) {
         return "{\"label\":\"" + label + "\",\"objectType\":\"Vondst\",\"attributes\":{\"geschatte gewicht\":{\"number\":\""
-                + geschat + "\"},\"gewogen gewicht\":{\"number\":\"" + gewogen + "\"}},\"roles\":{},\"characteristics\":[]}";
+                + geschat + "\"},\"gewogen gewicht\":{\"number\":\"" + weighted + "\"}},\"roles\":{},\"characteristics\":[]}";
     }
 
     /** V1 (240 by 320) beside V3, whose geschatte gewicht is 0,00 under a gewogen gewicht of 60,00. */

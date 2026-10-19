@@ -167,16 +167,16 @@ final class FormsPlan {
                 List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, "$ontvangers")));
         ReadTable payout = table(new Read(0, ReadKind.INPUT, "hoogte", "$pot"),
                 new Read(1, ReadKind.RECIPIENTS, "ontvangers proefverdeling", "$ontvangers"));
-        ElementKey aandeel = ElementKey.of("wachter", "uitkijkbonus", false);
+        ElementKey share = ElementKey.of("wachter", "uitkijkbonus", false);
         rules.add(new RulePlan("uitdeling naar rato", "proefverdeling", null, payout, List.of(pot, recipients),
                 new Consequence.Payout(O, "proefverdeling", ResolvedAllocation.Method.NAAR_RATO, 0, 1, true, true, false, 2,
-                        aandeel, ElementKey.of("post", "hoogte", false), "proefverdeling", Consequence.Insertion.LOGICAL)));
+                        share, ElementKey.of("post", "hoogte", false), "proefverdeling", Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("uitdeling op volgorde", "proefverdeling", null, payout, List.of(pot, recipients),
                 new Consequence.Payout(O, "proefverdeling", ResolvedAllocation.Method.OP_VOLGORDE, 0, 1, false, false, true,
-                        null, aandeel, null, "proefverdeling", Consequence.Insertion.LOGICAL)));
+                        null, share, null, "proefverdeling", Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("uitdeling in gelijke delen", "proefverdeling", null, payout, List.of(pot, recipients),
                 new Consequence.Payout(O, "proefverdeling", ResolvedAllocation.Method.GELIJKE_DELEN, 0, 1, false, false,
-                        false, 0, aandeel, null, "proefverdeling", Consequence.Insertion.LOGICAL)));
+                        false, 0, share, null, "proefverdeling", Consequence.Insertion.LOGICAL)));
         return new Modelplan(List.of(), rules);
     }
 

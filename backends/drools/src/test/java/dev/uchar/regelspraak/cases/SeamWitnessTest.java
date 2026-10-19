@@ -68,11 +68,11 @@ class SeamWitnessTest {
         }
         assertEquals(dumps.stream().sorted().toList(), written, "de dumps van de naad, één per sessie");
         for (String d : dumps) {
-            List<String> fixpoint = Files.readAllLines(map.resolve(d)).stream().filter(r -> r.startsWith("fixpunt "))
+            List<String> fixpoint = Files.readAllLines(map.resolve(d)).stream().filter(r -> r.startsWith("fixpoint "))
                     .toList();
             // the dump quotes a sentence with its quotes escaped, and the sentence of the budget quotes the creation
-            String expected = d.startsWith(SessionDump.hash(withoutIr)) ? "fixpunt nee \"" + TmsCreationStratumWitnessTest
-                    .budget("werf eeuwig", 0, "Wachter").replace("\"", "\\\"") + "\"" : "fixpunt ja";
+            String expected = d.startsWith(SessionDump.hash(withoutIr)) ? "fixpoint no \"" + TmsCreationStratumWitnessTest
+                    .budget("werf eeuwig", 0, "Wachter").replace("\"", "\\\"") + "\"" : "fixpoint yes";
             assertEquals(List.of(expected), fixpoint, () -> "de regel fixpunt van " + d);
         }
     }

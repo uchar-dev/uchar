@@ -56,8 +56,8 @@ public final class GraphProjection {
 
     /** The document list a form of this kind sits in ({@code /rules/<list>}), the class the verifier's pointer
      *  names. */
-    private static String list(ProducerConsumer.FormKind category) {
-        return switch (category) {
+    private static String list(ProducerConsumer.FormKind kind) {
+        return switch (kind) {
             case REGEL -> "rules";
             case OBJECT_CREATION -> "objectCreations";
             case ALLOCATION -> "allocations";

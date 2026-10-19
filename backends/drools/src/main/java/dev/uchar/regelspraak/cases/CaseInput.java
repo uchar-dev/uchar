@@ -463,8 +463,8 @@ public final class CaseInput {
      *  argument, applied to the forward leg (lens 2, 2026-08-30). The same filler twice stays idempotent. The field
      *  remembers the first link that wrote it, which a collision of the reverse leg names. */
     private void setToOne(Object carrier, String role, Object target, RoleLink link) {
-        Object huidig = CaseRunner.invokeGetter(carrier, Namen.getter(role));
-        if (huidig != null && huidig != target)
+        Object current = CaseRunner.invokeGetter(carrier, Namen.getter(role));
+        if (current != null && current != target)
             throw new RoleCollision("to-one rol '" + role + "' krijgt een tweede, ander doel — "
                     + "ref weigert die case bij het laden (WF-013)", link);
         CaseRunner.call(carrier, Namen.setter(role), fieldClass(carrier, role), target);

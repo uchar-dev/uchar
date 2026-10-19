@@ -154,10 +154,10 @@ class ZeroDivisorWitnessTest {
     // ---------------- cases ----------------
 
     /** A Vondst with an optional geschat and gewogen gewicht. */
-    private static String vondst(String label, String geschat, String gewogen) {
+    private static String vondst(String label, String geschat, String weighted) {
         String a = (geschat == null ? "" : "\"geschatte gewicht\":{\"number\":\"" + geschat + "\"}")
-                + (geschat != null && gewogen != null ? "," : "")
-                + (gewogen == null ? "" : "\"gewogen gewicht\":{\"number\":\"" + gewogen + "\"}");
+                + (geschat != null && weighted != null ? "," : "")
+                + (weighted == null ? "" : "\"gewogen gewicht\":{\"number\":\"" + weighted + "\"}");
         return "{\"label\":\"" + label + "\",\"objectType\":\"Vondst\",\"attributes\":{" + a + "},\"roles\":{},\"characteristics\":[]}";
     }
 

@@ -276,10 +276,10 @@ public final class RegelSpraakModel {
      * Returns null when nothing matches — the caller then makes no type claim.
      */
     public ObjectType resolveObjectType(String name) {
-        for (String kandidaat : nameCandidates(name)) {
-            ObjectType direct = objectTypeByName(kandidaat);
+        for (String candidate : nameCandidates(name)) {
+            ObjectType direct = objectTypeByName(candidate);
             if (direct != null) return direct;
-            ObjectType viaRole = objectTypeViaRole(kandidaat);
+            ObjectType viaRole = objectTypeViaRole(candidate);
             if (viaRole != null) return viaRole;
         }
         return null;
@@ -296,9 +296,9 @@ public final class RegelSpraakModel {
      */
     public RoleBindingRef namedRoleBinding(ObjectType subject, ObjectType createdType, String name) {
         if (subject == null || createdType == null) return null;
-        for (String kandidaat : nameCandidates(name))
-            if (objectTypeByName(kandidaat) != null || objectTypeViaRole(kandidaat) != null)
-                return connectingRoleViaNameBinding(subject, createdType, kandidaat);
+        for (String candidate : nameCandidates(name))
+            if (objectTypeByName(candidate) != null || objectTypeViaRole(candidate) != null)
+                return connectingRoleViaNameBinding(subject, createdType, candidate);
         return null;
     }
 
@@ -668,8 +668,8 @@ public final class RegelSpraakModel {
         RoleBindingRef pair = connectingRoleBinding(subject, elementType);
         if (pair != null) return pair;
         if (subjectSource == null) return null;
-        for (String kandidaat : nameCandidates(subjectSource)) {
-            RoleBindingRef b = elementRoleBinding(subject, kandidaat);
+        for (String candidate : nameCandidates(subjectSource)) {
+            RoleBindingRef b = elementRoleBinding(subject, candidate);
             if (b != null) return fillsExactly(b, elementType) ? b : null;
         }
         return null;
@@ -1462,21 +1462,21 @@ public final class RegelSpraakModel {
         java.util.Set<String> list = new java.util.LinkedHashSet<>();
         List<java.util.Set<String>> lists = new ArrayList<>();
         lists.add(forms);
-        java.util.function.Consumer<List<String>> neem = names -> {
+        java.util.function.Consumer<List<String>> collect = names -> {
             java.util.Set<String> l = new java.util.LinkedHashSet<>();
             for (String n : names) l.add(formName(n));
             lists.add(l);
         };
-        neem.accept(objectCreations.stream().map(dev.uchar.regelspraak.ir.ResolvedObjectCreation::name).toList());
-        neem.accept(allocations.stream()
+        collect.accept(objectCreations.stream().map(dev.uchar.regelspraak.ir.ResolvedObjectCreation::name).toList());
+        collect.accept(allocations.stream()
                 .filter(v -> v.method() != dev.uchar.regelspraak.ir.ResolvedAllocation.Method.COMPLEX)
                 .map(dev.uchar.regelspraak.ir.ResolvedAllocation::name).toList());
-        neem.accept(consistencies.stream().map(dev.uchar.regelspraak.ir.ResolvedConsistency::name).toList());
+        collect.accept(consistencies.stream().map(dev.uchar.regelspraak.ir.ResolvedConsistency::name).toList());
         List<String> unique = new ArrayList<>(uniquenesses.stream().map(dev.uchar.regelspraak.ir.ResolvedUniqueness::name).toList());
         unique.addAll(uniquenessUnions.stream().map(dev.uchar.regelspraak.ir.ResolvedUniquenessUnion::name).toList());
-        neem.accept(unique);
-        neem.accept(factCreations.stream().map(dev.uchar.regelspraak.ir.ResolvedFactCreation::name).toList());
-        neem.accept(prioritizedDefaults.stream().map(dev.uchar.regelspraak.ir.PrioritizedDefaults::name).toList());
+        collect.accept(unique);
+        collect.accept(factCreations.stream().map(dev.uchar.regelspraak.ir.ResolvedFactCreation::name).toList());
+        collect.accept(prioritizedDefaults.stream().map(dev.uchar.regelspraak.ir.PrioritizedDefaults::name).toList());
         for (java.util.Set<String> l : lists)
             for (String n : l) if (n != null) result.add(Designatable.form(n));
         for (var g : ruleGroups) if (g.name() != null) result.add(Designatable.ruleGroup(g.name()));

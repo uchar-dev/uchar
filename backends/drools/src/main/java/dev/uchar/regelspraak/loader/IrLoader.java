@@ -742,15 +742,15 @@ public final class IrLoader {
             throw new DocumentError(p + "/form", "the origin form '" + formName + "' is none of the forms of IR-SPEC ch. 2.13 ("
                     + enumerated(Spelling.ORIGIN_FORM.rows().values()) + ")");
         String kind = textAt(van, vp, "kind");
-        RegelSpraakModel.Designatable.Kind category = Spelling.originKindFromWire(kind);
-        if (category == null) {
+        RegelSpraakModel.Designatable.Kind originKind = Spelling.originKindFromWire(kind);
+        if (originKind == null) {
             List<String> kinds = new ArrayList<>(Spelling.ORIGIN_KIND.rows().values());
             kinds.add(Spelling.ORIGIN_DECISION_TABLE);
             throw new DocumentError(vp + "/kind", "the origin's source kind '" + kind
                     + "' is none of the kinds of IR-SPEC ch. 2.13 (" + enumerated(kinds) + ")");
         }
         m.generated.put(element, new RegelSpraakModel.GeneratedFrom(
-                new RegelSpraakModel.Designatable(category, optText(van, vp, "owner"), textAt(van, vp, "name")), hv));
+                new RegelSpraakModel.Designatable(originKind, optText(van, vp, "owner"), textAt(van, vp, "name")), hv));
     }
 
     /** The values, each quoted, joined as the shared loader joins them in WF-121 (a)'s sentence. */
@@ -1033,12 +1033,12 @@ public final class IrLoader {
         String dp = path + "/datatype";
         JsonNode dt = n.get("datatype");
         if (!dt.isObject()) throw new DocumentError(dp, "expected a datatype object, got " + shortQuote(dt));
-        String category = datatypeKind(dt, dp);
-        List<String> keyNames = DOMAIN_DATATYPE.get(category);
+        String domainKind = datatypeKind(dt, dp);
+        List<String> keyNames = DOMAIN_DATATYPE.get(domainKind);
         // the values' designations stand beside their list, at this declaration position only (IR-SPEC ch. 2.12)
         if (keyNames != null)
-            fields(dt, dp, category, keyNames, category.equals("Enumeration") ? List.of("valueDesignations") : List.of());
-        if (category.equals("Enumeration")) {
+            fields(dt, dp, domainKind, keyNames, domainKind.equals("Enumeration") ? List.of("valueDesignations") : List.of());
+        if (domainKind.equals("Enumeration")) {
             if (!dt.get("values").isArray())
                 throw new DocumentError(dp + "/values", "expected an array, got " + shortQuote(dt.get("values")));
             List<String> values = stringList(dt.get("values"));
@@ -1596,8 +1596,8 @@ public final class IrLoader {
      *  granularity (a builtin's field, unknown on this node). */
     private Expr aggregation(JsonNode n) {
         String p = pathOf(n);
-        String category = textAt(n, p, "kind");
-        Expr.FunctionKind fk = enumValue(Spelling.AGGREGATION_KIND, "Aggregation.kind", category, p + "/kind");
+        String aggregationKind = textAt(n, p, "kind");
+        Expr.FunctionKind fk = enumValue(Spelling.AGGREGATION_KIND, "Aggregation.kind", aggregationKind, p + "/kind");
         JsonNode raw = n.get("arguments");
         // WF-037, the fold-source arm: the one argument of a fold that names its population is judged by its shape. A
         // node this backend does not carry — that argument, a ListLiteral among them, or a node under it — refuses as
@@ -1651,7 +1651,7 @@ public final class IrLoader {
         // WF-037: a fold that names its population and hands no source, in every shape, a ListLiteral included. Asked
         // after the range, so a path beside it is refused first under WF-102 (c) and a missing range first as such, as
         // ref and the ASP backend refuse them first
-        String sourceless = sourceRefusal(category, elementType, raw);
+        String sourceless = sourceRefusal(aggregationKind, elementType, raw);
         if (sourceless != null) throw new DocumentError(p, sourceless);
         String union = unionSourceRefusal(fk, elementType, n);
         if (union != null) throw new DocumentError(p, union);
@@ -1695,18 +1695,18 @@ public final class IrLoader {
      *  without an argument beside its range, and crashed on a sum, a total, a minimum or a maximum over a literal
      *  (measured before the card aantal-bronarm-en-drools-lader); the exec-model branch refused the rest with a scope
      *  note. */
-    static String sourceRefusal(String category, String elementType, JsonNode arguments) {
+    static String sourceRefusal(String aggregationKind, String elementType, JsonNode arguments) {
         if (elementType == null || arguments == null || !arguments.isArray()) return null;
-        String head = "a " + category + " aggregation carries elementType \"" + elementType + "\"";
+        String head = "a " + aggregationKind + " aggregation carries elementType \"" + elementType + "\"";
         if (arguments.isEmpty())
             return head + " but no source operand: an instance fold ranges over a written source";
         if (arguments.size() != 1) return null;
-        boolean count = category.equals("count") || category.equals("filledCount");
+        boolean count = aggregationKind.equals("count") || aggregationKind.equals("filledCount");
         String operandKind = text(arguments.get(0), "node");
         if (operandKind == null || operandKind.isEmpty() || operandKind.equals("AttributeReference")) return null;
         if (operandKind.equals("ListLiteral"))
             return count ? head + " and a ListLiteral operand: a listed value is no source of instances" : null;
-        if (operandKind.equals("InstanceSetUnion") && category.equals("count")) return null;
+        if (operandKind.equals("InstanceSetUnion") && aggregationKind.equals("count")) return null;
         return head + " and " + ("AEIOU".indexOf(operandKind.charAt(0)) >= 0 ? "an " : "a ") + operandKind
                 + " operand: the source of an instance fold is an AttributeReference";
     }
@@ -2203,22 +2203,22 @@ public final class IrLoader {
      *  unnegated one because ref did not execute the fold. */
     private Condition.Predicate predicate(JsonNode n) {
         String p = pathOf(n);
-        Condition.PredicateKind category = enumValue(Spelling.PREDICATE_KIND, "Predicate.kind", textAt(n, p, "kind"),
+        Condition.PredicateKind predicateKind = enumValue(Spelling.PREDICATE_KIND, "Predicate.kind", textAt(n, p, "kind"),
                 p + "/kind");
         boolean negated = bool(n, "negated");
         Condition.WholePeriod qualifier = wholePeriod(nodeField(n, "wholePeriod"));
-        boolean emptyOrFilled = category == Condition.PredicateKind.LEEG || category == Condition.PredicateKind.GEVULD;
+        boolean emptyOrFilled = predicateKind == Condition.PredicateKind.LEEG || predicateKind == Condition.PredicateKind.GEVULD;
         // WF-043 admits a time-dependent PARAMETER as the operand of a whole-period test, and no executor folds one:
         // ref and the ASP backend refuse it in this sentence, the wire's own spelling of the name included
         JsonNode operand = nodeField(n, "operand");
         if (emptyOrFilled && qualifier != null && operand != null && "ParameterReference".equals(operand.path("node").asText()))
             throw new Refusal(DroolsCode.PERIOD_TEST_ON_PARAMETER.reason("parameter", operand.path("parameter").asText()), "Predicate.operand");
         if (emptyOrFilled && negated) {
-            category = category == Condition.PredicateKind.LEEG ? Condition.PredicateKind.GEVULD : Condition.PredicateKind.LEEG;
+            predicateKind = predicateKind == Condition.PredicateKind.LEEG ? Condition.PredicateKind.GEVULD : Condition.PredicateKind.LEEG;
             negated = false;
         }
         // the day kind is written on a predicate of kind dayKind alone: absent elsewhere, the record's null
-        return new Condition.Predicate(category, expr(operand), text(n, "dayKind"), negated,
+        return new Condition.Predicate(predicateKind, expr(operand), text(n, "dayKind"), negated,
                 intOf(n, "digits"),
                 qualifier, source(n));
     }
@@ -2351,20 +2351,20 @@ public final class IrLoader {
                 "RuleVersion.presentation", presentation, path + "/presentation");
         if (initialisation && presentation != null)
             throw new DocumentError(path + "/presentation", PRESENTATION_AT_INITIALISATION);
-        ResolvedRule.Kind category = initialisation ? ResolvedRule.Kind.INITIALISATIE
+        ResolvedRule.Kind ruleKind = initialisation ? ResolvedRule.Kind.INITIALISATIE
                 : tagged == null ? ResolvedRule.Kind.KENMERKTOEKENNING : tagged;
         JsonNode t = n.get("target");
         if (!t.isObject() || !"AttributeReference".equals(text(t, "node")))
             throw new DocumentError(path + "/target", TARGET_ATTRIBUTE_REFERENCE);
         Expr.AttributeReference target = (Expr.AttributeReference) expr(t);
-        checkMembersKind(target, text(t, "subjectType"), category, path + "/target");
-        ResolvedRule r = new ResolvedRule(version.name(), category, target, expr(jsonNode(n, path, "value")),
+        checkMembersKind(target, text(t, "subjectType"), ruleKind, path + "/target");
+        ResolvedRule r = new ResolvedRule(version.name(), ruleKind, target, expr(jsonNode(n, path, "value")),
                 condition(nodeField(n, "condition")), validity(n, path), annotations);
         // WF-022's value clause: a characteristic attribution writes the boolean constant true. Neither branch
         // reads the value — the exec-model one writes true whatever it says, the DRL-text one writes what it
         // says — so on a false (measured 2026-09-23 on the negative wf022-characteristic-false, verifier bypassed)
         // they gave opposite answers where the ASP backend refuses. Refused here, once for both branches.
-        if (category == ResolvedRule.Kind.KENMERKTOEKENNING
+        if (ruleKind == ResolvedRule.Kind.KENMERKTOEKENNING
                 && !(r.value() instanceof Expr.Literal l && "waar".equals(l.valueText())
                      && l.type() instanceof Datatype.BooleanType)) {
             String value = r.value() instanceof Expr.Literal l ? "'" + l.valueText() + "'"
@@ -2382,7 +2382,7 @@ public final class IrLoader {
     /** WF-022, the member-kind arm and the name that is both (IR-SPEC ch. 3.1): the verifier's sentences, which
      *  name the member and the type as the target writes them. A target whose type or member does not resolve is
      *  left to the rule that reports it. */
-    private void checkMembersKind(Expr.AttributeReference target, String typeName, ResolvedRule.Kind category, String site) {
+    private void checkMembersKind(Expr.AttributeReference target, String typeName, ResolvedRule.Kind ruleKind, String site) {
         ObjectType ot = target.objectType();
         String name = target.attribute();
         if (ot == null || name == null) return;
@@ -2392,9 +2392,9 @@ public final class IrLoader {
             for (String k : t.characteristics) characteristic |= Namen.norm(k).equals(Namen.norm(name));
         }
         if (attribute && characteristic) throw new DocumentError(site, targetTwofold(name, typeName));
-        if (category == ResolvedRule.Kind.KENMERKTOEKENNING && attribute)
+        if (ruleKind == ResolvedRule.Kind.KENMERKTOEKENNING && attribute)
             throw new DocumentError(site, characteristicTarget(name, typeName));
-        if (category != ResolvedRule.Kind.KENMERKTOEKENNING && characteristic)
+        if (ruleKind != ResolvedRule.Kind.KENMERKTOEKENNING && characteristic)
             throw new DocumentError(site, attributeTarget(name, typeName));
     }
 

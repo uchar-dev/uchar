@@ -174,10 +174,10 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         if (globals == null) return null;
         Map<String, Object> now = globals(session);
         for (String name : new TreeSet<>(union(globals.keySet(), now.keySet()))) {
-            Object oud = globals.get(name);
+            Object old = globals.get(name);
             Object fresh = now.get(name);
-            if (!Objects.equals(oud, fresh))
-                return "de global '" + name + "' veranderde van " + value(oud) + " in " + value(fresh)
+            if (!Objects.equals(old, fresh))
+                return "de global '" + name + "' veranderde van " + value(old) + " in " + value(fresh)
                         + " na de eerste DroolsBackend.fire van deze sessie";
         }
         return null;

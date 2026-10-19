@@ -213,8 +213,8 @@ class ReaderSentenceBoundaryTest {
                 String literal = javaLiteral(source, position[0], position[1]);
                 int rule = 1 + (int) source.substring(0, position[0]).chars().filter(ch -> ch == '\n').count();
                 for (String part : SPECIFIER.split(literal, -1)) {
-                    String kern = kern(part);
-                    if (kern != null) result.add(new Fragment(p.getFileName().toString(), rule, kern));
+                    String core = core(part);
+                    if (core != null) result.add(new Fragment(p.getFileName().toString(), rule, core));
                 }
             }
         }
@@ -225,8 +225,8 @@ class ReaderSentenceBoundaryTest {
         for (String line : Files.readAllLines(catalogue, UTF_8)) {
             rule++;
             for (String part : PLACE.split(line.substring(line.indexOf('\t') + 1).replace("{{", "{").replace("}}", "}"), -1)) {
-                String kern = kern(part);
-                if (kern != null) result.add(new Fragment(catalogue.getFileName().toString(), rule, kern));
+                String core = core(part);
+                if (core != null) result.add(new Fragment(catalogue.getFileName().toString(), rule, core));
             }
         }
         return result;
@@ -269,7 +269,7 @@ class ReaderSentenceBoundaryTest {
     }
 
     /** The English part of a literal piece, a producer prefix and a trailing joiner taken off; null where none is. */
-    static String kern(String part) {
+    static String core(String part) {
         String r = part.replaceFirst("^IrEmitter: ", "").replaceFirst("^WF-\\d+ \\([a-z]\\)( —)? ?", "");
         List<String> segments = new ArrayList<>(List.of(r.split(": ", -1)));
         while (segments.size() > 1 && (segments.get(0).startsWith("/") || !english(segments.get(0))))

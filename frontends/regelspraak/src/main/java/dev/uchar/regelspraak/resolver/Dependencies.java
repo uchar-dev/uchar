@@ -77,19 +77,19 @@ final class Dependencies {
 
     private static List<Cycle> wf045(List<Form> forms, Graph g) {
         int n = forms.size();
-        List<List<int[]>> followers = opvolgers(forms);
-        int[] kleur = new int[n];
+        List<List<int[]>> followers = followersOf(forms);
+        int[] color = new int[n];
         List<Cycle> result = new ArrayList<>();
-        for (int i = 0; i < n; i++) if (kleur[i] == 0) deep(forms, followers, kleur, new ArrayList<>(), i, result);
+        for (int i = 0; i < n; i++) if (color[i] == 0) deep(forms, followers, color, new ArrayList<>(), i, result);
         return result;
     }
 
     /** The verifier's walk: a node already on the path closes a cycle, which is reported from that node on. The path
      *  is kept most recent first, as the verifier's list is. */
-    private static void deep(List<Form> forms, List<List<int[]>> followers, int[] kleur, List<Integer> path, int i,
+    private static void deep(List<Form> forms, List<List<int[]>> followers, int[] color, List<Integer> path, int i,
                              List<Cycle> result) {
         if (forms.get(i).recursiveCreation()) return;
-        if (kleur[i] == 1) {
+        if (color[i] == 1) {
             List<Integer> cycle = new ArrayList<>();
             for (int j : path) {
                 cycle.add(0, j);
@@ -103,19 +103,19 @@ final class Dependencies {
                     "dependency cycle through no recursive creation: " + String.join(" -> ", names), members));
             return;
         }
-        if (kleur[i] == 2) return;
-        kleur[i] = 1;
+        if (color[i] == 2) return;
+        color[i] = 1;
         List<Integer> further = new ArrayList<>();
         further.add(i);
         further.addAll(path);
-        for (int[] j : followers.get(i)) deep(forms, followers, kleur, further, j[0], result);
-        kleur[i] = 2;
+        for (int[] j : followers.get(i)) deep(forms, followers, color, further, j[0], result);
+        color[i] = 2;
     }
 
     /** The successors of every form, as the verifier builds them: for each edge in reading order, the consumer with the
      *  edge's kind put in FRONT of the producer's list unless that pair is there already, so a list is walked from the
      *  last edge inserted. An entry is {consumer, kind index}. */
-    private static List<List<int[]>> opvolgers(List<Form> forms) {
+    private static List<List<int[]>> followersOf(List<Form> forms) {
         List<List<int[]>> followers = new ArrayList<>();
         for (int i = 0; i < forms.size(); i++) followers.add(new ArrayList<>());
         for (Edge r : edges(forms)) {

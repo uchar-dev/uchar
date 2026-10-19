@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * <p><b>Red by mutation</b>, measured at fix round 3a on {@code e22775af} in a copy whose rendering puts the fold's
  * subject in place of the member, in the deposit and in the fault of a member: the first test failed on "de dumps van
- * de twee takken, zaak 1", {@code feit Filterdeponering(vouw=String("drukte: vouw 1"), onderwerp=J1, element=V2)} on the
+ * de twee takken, zaak 1", {@code fact FilterDeposit(...)} on the
  * exec-model branch against {@code element=J1} on {@code DRL_TMS}; the second on "de dumps van de twee takken, de zaak
  * van deel E", the three faults on V2, V5 and V6 against {@code element=J1}, {@code J4} and {@code J4}, with the same
  * verdict on both branches, which only the dump tells apart. With the fault of a member rendered without its place, the
@@ -45,7 +45,7 @@ class DrlTextFoldPathWitnessTest {
         for (JsonNode caseDocument : List.of(TmsFilterDepositWitnessTest.case1(), TmsFilterDepositWitnessTest.case2(),
                 TmsFilterDepositWitnessTest.case3())) {
             n++;
-            if (BranchDumps.equal(ir, caseDocument, "zaak " + n).contains("feit FilterDeposit(")) withFact.add("zaak " + n);
+            if (BranchDumps.equal(ir, caseDocument, "zaak " + n).contains("fact FilterDeposit(")) withFact.add("zaak " + n);
         }
         assertEquals(List.of("zaak 1", "zaak 2"), withFact, "de zaken die een filterdeponering maken");
     }
@@ -66,7 +66,7 @@ class DrlTextFoldPathWitnessTest {
         instances.addAll(TmsInputFormWitnessTest.playingE());
         JsonNode caseDocument = TmsTimelineDocuments.caseDocument(TmsInputFormWitnessTest.DATE, instances, List.of(consistent()));
         String dump = BranchDumps.equal(ir, caseDocument, "de zaak van deel E");
-        assertEquals(3, Stream.of(dump.split("\n")).filter(r -> r.startsWith("feit MemberFault(")).count(),
+        assertEquals(3, Stream.of(dump.split("\n")).filter(r -> r.startsWith("fact MemberFault(")).count(),
                 () -> "drie lidfouten, op V2, V5 en V6:\n" + dump);
     }
 }

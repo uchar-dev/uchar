@@ -73,8 +73,8 @@ class FoldKindsBoundaryTest {
 
     private static Path verifierSource() {
         for (Path p = Path.of("").toAbsolutePath(); p != null; p = p.getParent()) {
-            Path kandidaat = p.resolve(CHECKS);
-            if (Files.isRegularFile(kandidaat)) return kandidaat;
+            Path candidate = p.resolve(CHECKS);
+            if (Files.isRegularFile(candidate)) return candidate;
         }
         return fail("kon " + CHECKS + " niet vinden vanaf " + Path.of("").toAbsolutePath()
                 + " — deze getuige LEEST de verifiergrens en mag niet overslaan als hij hem niet vindt");

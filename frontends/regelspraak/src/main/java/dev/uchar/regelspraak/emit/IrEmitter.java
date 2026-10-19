@@ -146,7 +146,7 @@ public final class IrEmitter {
     private RegelSpraakModel m;
     /** The subject object type of the form being emitted; fold-source role bindings
      *  resolve against it (null outside a subject-bearing form). */
-    private ObjectType huidigSubject;
+    private ObjectType currentSubject;
     /** The one AttributeReference currently being emitted as the single argument of an instance fold: its
      *  relation is the fold's range ({@code sourceRole} or {@code sourcePath}), so it never carries a
      *  {@code path} (IR-SPEC ch. 4.1a; the verifier rejects one in a fold slot, WF-053).
@@ -297,8 +297,8 @@ public final class IrEmitter {
 
     private void prioritizedDefaults(PrioritizedDefaults p) {
         // the path of a default's own-attribute/characteristic read resolves against the group subject
-        ObjectType previousSubject = huidigSubject;
-        huidigSubject = m == null ? null : m.objectTypes.get(p.subject());
+        ObjectType previousSubject = currentSubject;
+        currentSubject = m == null ? null : m.objectTypes.get(p.subject());
         w.beginObject();
         w.key("node").value("PrioritizedDefaults");
         w.key("name").value(p.name());
@@ -313,7 +313,7 @@ public final class IrEmitter {
         w.key("validity"); writeValidity(p.validity());
         originAndDesignations(RegelSpraakModel.Designatable.form(p.name()));
         w.endObject();
-        huidigSubject = previousSubject;
+        currentSubject = previousSubject;
     }
 
     // `default` is a Java keyword, so the emit method for a Default node is spelled dflt.
@@ -886,10 +886,10 @@ public final class IrEmitter {
                 // type would demand a range the fold does not have. Any other element type would be a fold this
                 // reading does not describe.
                 boolean dimensionFold = aggregation && f.dimensionSelection() != null;
-                if (dimensionFold && f.elementObjectType() != null && f.elementObjectType() != huidigSubject)
+                if (dimensionFold && f.elementObjectType() != null && f.elementObjectType() != currentSubject)
                     throw foldRefusal(f, "haar dimensieselectie loopt over een attribuut van "
                             + f.elementObjectType().name + ", en een dimensievouw leest het eigen attribuut van "
-                            + (huidigSubject == null ? "het onderwerp" : huidigSubject.name));
+                            + (currentSubject == null ? "het onderwerp" : currentSubject.name));
                 ObjectType element = dimensionFold ? null : f.elementObjectType();
                 w.key("node").value(aggregation ? "Aggregation" : "BuiltinCall");
                 w.key("kind").value(category(f));
@@ -912,10 +912,10 @@ public final class IrEmitter {
                 // spurious by-pair path. Restore the outer subject afterwards.
                 if (f.filter() != null) {
                     w.key("filter");
-                    ObjectType previousSubject = huidigSubject;
-                    if (element != null) huidigSubject = element;
+                    ObjectType previousSubject = currentSubject;
+                    if (element != null) currentSubject = element;
                     condition(f.filter());
-                    huidigSubject = previousSubject;
+                    currentSubject = previousSubject;
                 }
                 if (f.emptyFallback() != null) { w.key("emptyFallback"); expr(f.emptyFallback()); }
                 if (f.dimensionSelection() != null) { w.key("dimensionSelection"); dimensionSelection(f.dimensionSelection()); }
@@ -1045,10 +1045,10 @@ public final class IrEmitter {
                                 + "' zonder haar relatie; de wire eist die (WF-110)");
                     w.key("sourceRole"); roleBinding(t.sourceRole());
                     w.key("filter");
-                    ObjectType previousSubject = huidigSubject;
-                    if (t.elementType() != null) huidigSubject = t.elementType();
+                    ObjectType previousSubject = currentSubject;
+                    if (t.elementType() != null) currentSubject = t.elementType();
                     condition(t.filter());
-                    huidigSubject = previousSubject;
+                    currentSubject = previousSubject;
                     sourceReference(t.source().snippet());
                     w.endObject();
                 }
@@ -1128,7 +1128,7 @@ public final class IrEmitter {
                     if (nb == null)
                         throw new IllegalStateException("IrEmitter: de kenmerkcheck '" + k.source().snippet()
                                 + "' navigeert via '" + k.navigation() + "', en vanaf "
-                                + (huidigSubject == null ? "geen onderwerp" : "'" + huidigSubject.name + "'")
+                                + (currentSubject == null ? "geen onderwerp" : "'" + currentSubject.name + "'")
                                 + " bindt die stap geen unieke rol");
                     w.key("navigation"); roleBinding(nb);
                 }
@@ -1174,12 +1174,12 @@ public final class IrEmitter {
                 // FunctionCall.filter is: an element-own read there is an own read, not a navigation from the
                 // outer subject, so emit both with the element as subject and they take the own-attribute
                 // branch and carry no spurious by-pair path. Restore the outer subject after.
-                ObjectType previousSubject = huidigSubject;
-                if (k.elementObjectType() != null) huidigSubject = k.elementObjectType();
+                ObjectType previousSubject = currentSubject;
+                if (k.elementObjectType() != null) currentSubject = k.elementObjectType();
                 // an absent filter is no subselection
                 if (k.filter() != null) { w.key("filter"); condition(k.filter()); }
                 w.key("test"); condition(k.test());
-                huidigSubject = previousSubject;
+                currentSubject = previousSubject;
                 sourceReference(k.source().snippet());
                 // the range is ONE field with two spellings, mutually exclusive, and required: without it the
                 // fold would range over nothing the sentence named (WF-102, WF-108 (c))
@@ -1297,7 +1297,7 @@ public final class IrEmitter {
                                             java.util.function.Function<T, List<String>> annotations) {
         // the runs: an entry without the suffix is a run of its own, the suffixed entries of one form name are one
         // run, and a form name has one run — asked of all runs before any run is written, as m4.py asks it
-        List<List<T>> reeksen = new java.util.ArrayList<>();
+        List<List<T>> runs = new java.util.ArrayList<>();
         java.util.Set<String> seen = new java.util.HashSet<>();
         int k = 0;
         while (k < input.size()) {
@@ -1306,11 +1306,11 @@ public final class IrEmitter {
             while (base != null && j < input.size() && base.equals(base(nameOf.apply(input.get(j))))) j++;
             if (base != null && !seen.add(base))
                 throw versionRefusal(list, base, "haar versies staan niet aaneengesloten");
-            reeksen.add(input.subList(k, j));
+            runs.add(input.subList(k, j));
             k = j;
         }
         List<Form<T>> result = new java.util.ArrayList<>();
-        for (List<T> sequence : reeksen) {
+        for (List<T> sequence : runs) {
             String name = nameOf.apply(sequence.get(0));
             String base = base(name);
             if (base == null) {
@@ -1391,7 +1391,7 @@ public final class IrEmitter {
             throw new IllegalStateException("IrEmitter: het doel '" + d.attribute() + "' van regel '" + r.name()
                     + "' noemt op '" + d.objectType().name + "' zowel een attribuut als een kenmerk; welk lid een "
                     + "regel schrijft bepaalt haar soort, en deze naam bepaalt niets (WF-022)");
-        huidigSubject = d.objectType();
+        currentSubject = d.objectType();
         // the target fixes the subject, so a navigation written on it has no carrier
         if (d.navigationRole() != null || (d.navigationPath() != null && !d.navigationPath().isEmpty()))
             throw new IllegalStateException("IrEmitter: het doel van regel '" + r.name() + "' ('"
@@ -1405,7 +1405,7 @@ public final class IrEmitter {
         if (r.kind() == ResolvedRule.Kind.GELIJKSTELLING || r.kind() == ResolvedRule.Kind.BEREKENING)
             w.key("presentation").value(Spelling.PRESENTATION.spelling(r.kind()));
         w.endObject();
-        huidigSubject = null;
+        currentSubject = null;
     }
 
     /** Whether {@code naam} is an attribute of {@code ot}, own or inherited, under the name identity (WF-001). */
@@ -1447,7 +1447,7 @@ public final class IrEmitter {
     }
 
     private void objectCreationVersion(ResolvedObjectCreation oc) {
-        huidigSubject = oc.subject();   // member values and the guard navigate from the creation subject
+        currentSubject = oc.subject();   // member values and the guard navigate from the creation subject
         w.beginObject();
         w.key("createdType").value(nameOf(oc.createdType()));
         w.key("subject").value(nameOf(oc.subject()));
@@ -1465,7 +1465,7 @@ public final class IrEmitter {
         w.key("validity"); validity(oc.validity());
         if (oc.connectingRole() != null) { w.key("connectingRole"); roleBinding(oc.connectingRole()); }
         w.endObject();
-        huidigSubject = null;
+        currentSubject = null;
     }
 
     /** IR-SPEC ch. 3.2: an allocation and its versions. */
@@ -1493,7 +1493,7 @@ public final class IrEmitter {
         if (rb == null)
             throw new IllegalStateException("IrEmitter: de verdeling '" + v.name() + "' heeft geen unieke relatie "
                     + "tussen " + nameOf(v.sourceType()) + " en " + nameOf(v.targetType()));
-        huidigSubject = v.sourceType();
+        currentSubject = v.sourceType();
         w.beginObject();
         w.key("sourceType").value(nameOf(v.sourceType()));
         w.key("sourceAttribute").value(v.sourceAttribute());
@@ -1510,7 +1510,7 @@ public final class IrEmitter {
         w.key("validity"); validity(v.validity());
         w.key("connectingRole"); roleBinding(rb);
         w.endObject();
-        huidigSubject = null;
+        currentSubject = null;
     }
 
     /** IR-SPEC ch. 3.5: a consistency rule and its versions; the source record stands on the version, with the
@@ -1530,14 +1530,14 @@ public final class IrEmitter {
         if (c.assertion() == null)
             throw new IllegalStateException("IrEmitter: de consistentieregel '" + c.name() + "' heeft geen assertie; "
                     + "de wire eist er een");
-        huidigSubject = c.subject();
+        currentSubject = c.subject();
         w.beginObject();
         w.key("subject").value(nameOf(c.subject()));
         w.key("assertion"); condition(c.assertion());
         w.key("validity"); validity(c.validity());
         sourceReference(c.source().snippet(), c.line());
         w.endObject();
-        huidigSubject = null;
+        currentSubject = null;
     }
 
     /** IR-SPEC ch. 3.6: a uniqueness and its versions; a version is its list of sources, one for the single-type
@@ -1631,16 +1631,16 @@ public final class IrEmitter {
     private FoldRange foldRange(Expr.FunctionCall f) {
         if (!isFoldSource(f)) return null;
         Expr.AttributeReference arg = (Expr.AttributeReference) f.arguments().get(0);
-        FoldRefusal refusal = foldRefusalOf(m, huidigSubject, f);
+        FoldRefusal refusal = foldRefusalOf(m, currentSubject, f);
         if (refusal != null) throw foldRefusal(f, switch (refusal) {
             case WRITTEN_PATH -> "haar bron draagt een geschreven pad; de relatie van een vouwbron is het bereik";
             case WRITTEN_STEP -> "haar bron draagt de geschreven stap '" + arg.navigationRole()
                     + "', en alleen een telbron die het onderwerp zelf aanduidt mag er een dragen";
             case FOREIGN_ATTRIBUTE -> "haar bron leest '" + arg.attribute() + "' op " + nameOf(arg.objectType())
-                    + ", en zonder bereik leest een vouw het eigen attribuut van " + huidigSubject.name;
+                    + ", en zonder bereik leest een vouw het eigen attribuut van " + currentSubject.name;
             case OWN_ATTRIBUTE -> "haar bron is het eigen attribuut van het onderwerp en geen instantiebron";
             case NO_SUBJECT -> "er is geen onderwerp om haar bereik vanaf te bepalen";
-            case NO_RELATION -> "geen unieke relatie van " + huidigSubject.name + " naar "
+            case NO_RELATION -> "geen unieke relatie van " + currentSubject.name + " naar "
                     + f.elementObjectType().name + " draagt haar bereik";
         });
         // the total over the subject's own timeline has no range
@@ -1648,7 +1648,7 @@ public final class IrEmitter {
         List<RegelSpraakModel.RoleBindingRef> steps = arg.set() && arg.rangePath() != null ? arg.rangePath() : List.of();
         if (!steps.isEmpty())
             return new FoldRange(null, steps, countSourceName(f, arg, steps.get(steps.size() - 1)));
-        RegelSpraakModel.RoleBindingRef rb = rangeRole(m, huidigSubject, f, arg);
+        RegelSpraakModel.RoleBindingRef rb = rangeRole(m, currentSubject, f, arg);
         return new FoldRange(rb, List.of(), countSourceName(f, arg, rb));
     }
 
@@ -1744,7 +1744,7 @@ public final class IrEmitter {
      *  anchors the walk, or no hop set is uniquely derivable; {@link #ownRead} then decides whether
      *  the bindingless read is the subject's own or has no spelling. */
     private List<RegelSpraakModel.RoleBindingRef> navigationBindings(Expr.AttributeReference a) {
-        return navigationBindings(m, huidigSubject, a);
+        return navigationBindings(m, currentSubject, a);
     }
 
     /** As {@link #navigationBindings(Expr.AttributeReference)}, from {@code subject}: the resolver names the hops of a read
@@ -1785,9 +1785,9 @@ public final class IrEmitter {
      *  exactly as {@code RuleChecker.navigationCharacteristicCheck} finds it (the target type via the written role, then
      *  the by-name binding). Null when the check does not navigate or the hop is not uniquely derivable. */
     private RegelSpraakModel.RoleBindingRef navigationBinding(Condition.CharacteristicCheck k) {
-        if (m == null || huidigSubject == null || k.navigation() == null) return null;
-        ObjectType target = m.roleTargetTypeToSubject(huidigSubject, k.navigation());
-        return target == null ? null : m.connectingRoleViaNameBinding(huidigSubject, target, k.navigation());
+        if (m == null || currentSubject == null || k.navigation() == null) return null;
+        ObjectType target = m.roleTargetTypeToSubject(currentSubject, k.navigation());
+        return target == null ? null : m.connectingRoleViaNameBinding(currentSubject, target, k.navigation());
     }
 
     /**
@@ -1798,9 +1798,9 @@ public final class IrEmitter {
      * written role that reaches no far role from the subject and that the subject's type itself plays.
      */
     private void ownRead(Expr.AttributeReference a) {
-        if (!unboundRead(m, huidigSubject, a)) return;
+        if (!unboundRead(m, currentSubject, a)) return;
         throw new IllegalStateException("IrEmitter: de lezing '" + a.source().snippet() + "' van "
-                + nameOf(a.objectType()) + " vanaf " + (huidigSubject == null ? "geen onderwerp" : huidigSubject.name)
+                + nameOf(a.objectType()) + " vanaf " + (currentSubject == null ? "geen onderwerp" : currentSubject.name)
                 + " navigeert, en de resolver vond daarvoor geen unieke binding");
     }
 
@@ -1842,10 +1842,10 @@ public final class IrEmitter {
      *  the role by declared name or declared plural; a check the resolver bound in any other way has no
      *  binding to write, and is refused. */
     private Membership nearMembership(Condition.RoleMembership r) {
-        List<Membership> k = nearCandidates(m, huidigSubject, r);
+        List<Membership> k = nearCandidates(m, currentSubject, r);
         if (k.size() != 1)
             throw new IllegalStateException("IrEmitter: de rolcheck '" + r.source().snippet() + "' bindt " + k.size()
-                    + " rollen '" + r.role() + "' die " + (huidigSubject == null ? "het onderwerp" : huidigSubject.name)
+                    + " rollen '" + r.role() + "' die " + (currentSubject == null ? "het onderwerp" : currentSubject.name)
                     + " vult tegenover " + nameOf(r.otherToFiller()) + " (gedeclareerde naam of meervoud); de wire "
                     + "eist er precies één");
         return k.get(0);
@@ -1854,10 +1854,10 @@ public final class IrEmitter {
     /** The role check with the subject on the far side ("de wachtpost heeft een wachtjutter"): the fact type
      *  in which the subject plays the role {@code backref} names and {@code filler} fills the other. */
     private Membership farMembership(Condition.FarRoleMembership r) {
-        List<Membership> k = farCandidates(m, huidigSubject, r);
+        List<Membership> k = farCandidates(m, currentSubject, r);
         if (k.size() != 1)
             throw new IllegalStateException("IrEmitter: de rolcheck '" + r.source().snippet() + "' bindt " + k.size()
-                    + " rollen '" + r.backref() + "' die " + (huidigSubject == null ? "het onderwerp" : huidigSubject.name)
+                    + " rollen '" + r.backref() + "' die " + (currentSubject == null ? "het onderwerp" : currentSubject.name)
                     + " speelt tegenover " + nameOf(r.filler()) + "; de wire eist er precies één");
         return k.get(0);
     }
@@ -2009,7 +2009,7 @@ public final class IrEmitter {
                     + "vuller van de rol '" + fc.targetRole() + "' in '" + fc.factType() + "'"
                     + (targetRoles.size() == 1 ? ", en dat is '" + targetRoles.get(0).objectTypeName() + "'"
                             : ", en die rol is er " + targetRoles.size() + " keer"));
-        huidigSubject = fc.anchor();   // the §13.4.7 guard navigates from the anker
+        currentSubject = fc.anchor();   // the §13.4.7 guard navigates from the anker
         w.beginObject();
         w.key("factType").value(fc.factType());
         w.key("anchorRole").value(fc.anchorRole());
@@ -2022,7 +2022,7 @@ public final class IrEmitter {
         if (fc.condition() != null) { w.key("condition"); condition(fc.condition()); }
         w.key("validity"); validity(fc.validity());
         w.endObject();
-        huidigSubject = null;
+        currentSubject = null;
     }
 
     private void startPointDetermination(ResolvedStartPointDetermination s) {

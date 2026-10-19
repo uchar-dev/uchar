@@ -174,13 +174,13 @@ class FixedStartPointTest {
         Path rgs = dir.resolve("source.rgs");
         Path out = dir.resolve("ir.json");
         Files.writeString(rgs, source, StandardCharsets.UTF_8);
-        PrintStream oud = System.out;
+        PrintStream old = System.out;
         int rc;
         try {
             System.setOut(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
             rc = Resolver.irMode(new java.util.ArrayList<>(List.of(out.toString(), rgs.toString())));
         } finally {
-            System.setOut(oud);
+            System.setOut(old);
         }
         assertEquals(0, rc, "het kalenderstartpunt emitteert");
         return Files.readString(out, StandardCharsets.UTF_8)

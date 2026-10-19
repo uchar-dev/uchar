@@ -275,10 +275,10 @@ class EvaluationYearWitnessTest {
     private static Path twisted(String golden, String pointer) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(golden).resolve("ir.json")));
         JsonPointer p = JsonPointer.compile(pointer);
-        JsonNode oud = ir.at(p);
-        assertEquals("Literal", oud.path("node").asText(), "the twist hits a literal: " + golden + pointer);
+        JsonNode old = ir.at(p);
+        assertEquals("Literal", old.path("node").asText(), "the twist hits a literal: " + golden + pointer);
         ObjectNode fresh = (ObjectNode) JSON.readTree(REKENJAAR);
-        fresh.set("type", oud.get("type"));
+        fresh.set("type", old.get("type"));
         ((ObjectNode) ir.at(p.head())).set(p.last().getMatchingProperty(), fresh);
         return temporary("rekenjaar-twist", ir);
     }

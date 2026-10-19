@@ -102,92 +102,92 @@ class FoldPlanWitnessTest {
 
     @Test void a_count_and_a_sum_over_a_link() throws Exception {
         assertEquals(List.of(
-                "regel seinaantal van een post: bijdrage aan vouw 0 | vorm seinaantal van een post |"
-                        + " groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf)]",
-                "  patroon Post $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Sein $onderwerp alfa [] join [bereik_1: post = $vouwonderwerp] beta [] bind"
+                "rule seinaantal van een post: bijdrage aan vouw 0 | form seinaantal van een post |"
+                        + " group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf)]",
+                "  pattern Post $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Sein $onderwerp alpha [] join [bereik_1: post = $vouwonderwerp] beta [] bind"
                         + " []",
-                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=seinaantal van een post: vouw 0,"
+                "  consequence Contribution [subject=$vouwonderwerp, fold=seinaantal van een post: vouw 0,"
                         + " member=0, slots=[0], size=1, insertion=LOGICAL]",
-                "    inbreng Telling",
-                "regel seingewicht van een post: bijdrage aan vouw 1 | vorm seingewicht van een post |"
-                        + " groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $gewicht (eigen"
+                "    input Count",
+                "rule seingewicht van een post: bijdrage aan vouw 1 | form seingewicht van een post |"
+                        + " group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $gewicht (eigen"
                         + " ElementKey[objectType=sein, name=gewicht, characteristic=false])]",
-                "  patroon Post $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Sein $onderwerp alfa [] join [bereik_6: post = $vouwonderwerp] beta [] bind [$gewicht"
+                "  pattern Post $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Sein $onderwerp alpha [] join [bereik_6: post = $vouwonderwerp] beta [] bind [$gewicht"
                         + " = [] Sein.gewicht VALUE]",
-                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=seingewicht van een post: vouw 1,"
+                "  consequence Contribution [subject=$vouwonderwerp, fold=seingewicht van een post: vouw 1,"
                         + " member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
-                "    inbreng Lidwaarde [value=1, total=null, gevuld=false]",
-                "regel vakseinaantal van een kustvak: bijdrage aan vouw 2 | vorm vakseinaantal van een"
-                        + " kustvak | groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf)]",
-                "  patroon Kustvak $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Sein $onderwerp alfa [] join [] beta [] bind []",
-                "  bestaat binnen [$koppeling_bereik_13] buiten [$onderwerp, $vouwonderwerp] [RelationLink"
-                        + " $koppeling_bereik_13 alfa [bereik-koppeling_14: [[] relation VALUE GELIJK"
+                "    input MemberValue [value=1, total=null, filled=false]",
+                "rule vakseinaantal van een kustvak: bijdrage aan vouw 2 | form vakseinaantal van een"
+                        + " kustvak | group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf)]",
+                "  pattern Kustvak $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Sein $onderwerp alpha [] join [] beta [] bind []",
+                "  exists inside [$koppeling_bereik_13] outside [$onderwerp, $vouwonderwerp] [RelationLink"
+                        + " $koppeling_bereik_13 alpha [bereik-koppeling_14: [[] relation VALUE GELIJK"
                         + " vakbeseining]] join [bereik-lid_15: second = $onderwerp, bereik-drager_16: first ="
                         + " $vouwonderwerp] beta [] bind []]",
-                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=vakseinaantal van een kustvak: vouw"
+                "  consequence Contribution [subject=$vouwonderwerp, fold=vakseinaantal van een kustvak: vouw"
                         + " 2, member=0, slots=[0], size=1, insertion=LOGICAL]",
-                "    inbreng Telling"),
+                "    input Count"),
                 plans(golden("jutterswet-postwacht")));
     }
 
     @Test void a_timeline_total_with_its_member_fault() throws Exception {
         assertEquals(List.of(
-                "regel keurlast van een jutter: bijdrage aan vouw 0 | vorm keurlast van een jutter |"
-                        + " groep null",
-                "  lezingen [0 INPUT $gekeurd (eigen ElementKey[objectType=vondst, name=gekeurd,"
+                "rule keurlast van een jutter: bijdrage aan vouw 0 | form keurlast van een jutter |"
+                        + " group null",
+                "  readings [0 INPUT $gekeurd (eigen ElementKey[objectType=vondst, name=gekeurd,"
                         + " characteristic=true]), 1 SUBJECT $onderwerp (onderwerp zelf), 2 TIJDLIJN $tijdlijn_2"
                         + " (tijdlijn ElementKey[objectType=vondst, name=keurtarief, characteristic=false])]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_0: keurende jutter = $vouwonderwerp] beta []"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_0: keurende jutter = $vouwonderwerp] beta []"
                         + " bind [$gekeurd = [] Vondst.gekeurd WAAR]",
-                "  patroon State $stand_2 alfa [stand_1: [[] attribute VALUE GELIJK"
+                "  pattern State $stand_2 alpha [stand_1: [[] attribute VALUE GELIJK"
                         + " ElementKey[objectType=vondst, name=keurtarief, characteristic=false]]] join"
                         + " [stand-onderwerp_2: subject = $onderwerp] beta [] bind [$tijdlijn_2 = []"
                         + " State.value VALUE]",
-                "  toets voorwaarde_3 CONDITION sonde -1 slots [0] grootte 3: KENMERK(Lees 0, Const"
+                "  test voorwaarde_3 CONDITION probe -1 slots [0] size 3: KENMERK(Read 0, Const"
                         + " true)",
-                "    toets 0 Call bron 'gekeurd zijn'",
-                "    toets 0.0 SlotValue",
-                "    toets 0.1 Const Boolean",
-                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=keurlast van een jutter: vouw 0,"
+                "    test 0 Call source 'gekeurd zijn'",
+                "    test 0.0 SlotValue",
+                "    test 0.1 Const Boolean",
+                "  consequence Contribution [subject=$vouwonderwerp, fold=keurlast van een jutter: vouw 0,"
                         + " member=1, slots=[1, 2], size=3, insertion=LOGICAL]",
-                "    inbreng Lidwaarde [value=2, total=MAAND, gevuld=false]",
-                "regel keurlast van een jutter: lidfout in vouw 0 | vorm keurlast van een jutter | groep"
+                "    input MemberValue [value=2, total=MAAND, filled=false]",
+                "rule keurlast van een jutter: lidfout in vouw 0 | form keurlast van een jutter | group"
                         + " null",
-                "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_7 (lijstplaatsen 0), 1 LIST_PLACE"
+                "  readings [0 LIST_PLACES $lijstplaatsen_plaats_7 (lijstplaatsen 0), 1 LIST_PLACE"
                         + " $plaats_plaats_8 (lijstplaats 0), 2 INPUT $gekeurd (eigen"
                         + " ElementKey[objectType=vondst, name=gekeurd, characteristic=true]), 3 TIJDLIJN $tijdlijn_3"
                         + " (tijdlijn ElementKey[objectType=vondst, name=keurtarief, characteristic=false]), 4"
                         + " SUBJECT $onderwerp (onderwerp zelf)]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_4: keurende jutter = $vouwonderwerp] beta []"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_4: keurende jutter = $vouwonderwerp] beta []"
                         + " bind [$gekeurd = [] Vondst.gekeurd WAAR]",
-                "  accumulatie ListPlace $lijstplaats_plaats_5 alfa [plaats-veld_9: [[] field VALUE"
+                "  accumulation ListPlace $lijstplaats_plaats_5 alpha [plaats-veld_9: [[] field VALUE"
                         + " GELIJK keurendeJutter]] join [] beta [plaats-lid_10: PLACE_OF $onderwerp [] {List<>,"
-                        + " type null, bron null}] bind [$lijstplaatswaarde_plaats_6 = [] ListPlace.place"
-                        + " VALUE] functies [COUNT null -> $lijstplaatsen_plaats_7, MINIMUM"
+                        + " type null, source null}] bind [$lijstplaatswaarde_plaats_6 = [] ListPlace.place"
+                        + " VALUE] functions [COUNT null -> $lijstplaatsen_plaats_7, MINIMUM"
                         + " $lijstplaatswaarde_plaats_6 -> $plaats_plaats_8]",
-                "  patroon State $stand_3 alfa [stand_11: [[] attribute VALUE GELIJK"
+                "  pattern State $stand_3 alpha [stand_11: [[] attribute VALUE GELIJK"
                         + " ElementKey[objectType=vondst, name=keurtarief, characteristic=false]]] join"
                         + " [stand-onderwerp_12: subject = $onderwerp] beta [] bind [$tijdlijn_3 = []"
                         + " State.value VALUE]",
-                "  toets voorwaarde_13 VORM sonde -1 slots [2, 3] grootte 5: Samengesteld ALLE"
-                        + " 0(KENMERK(Lees 2, Const true), BUCKET_SCALAR(Lees 3, Const true))",
-                "    toets 0 Compound",
-                "    toets 0.0 Call bron 'gekeurd zijn'",
-                "    toets 0.0.0 SlotValue",
-                "    toets 0.0.1 Const Boolean",
-                "    toets 0.1 Call",
-                "    toets 0.1.0 SlotValue",
-                "    toets 0.1.1 Const Boolean",
-                "  gevolg Lidfout [subject=$vouwonderwerp, vouw=keurlast van een jutter: vouw 0,"
-                        + " member=4, plaats=selectie 0 [keurendeJutter 0 1] MEMBER_FAULT, before=the per-element temporal"
+                "  test voorwaarde_13 VORM probe -1 slots [2, 3] size 5: Compound ALLE"
+                        + " 0(KENMERK(Read 2, Const true), BUCKET_SCALAR(Read 3, Const true))",
+                "    test 0 Compound",
+                "    test 0.0 Call source 'gekeurd zijn'",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "    test 0.1 Call",
+                "    test 0.1.0 SlotValue",
+                "    test 0.1.1 Const Boolean",
+                "  consequence MemberFault [subject=$vouwonderwerp, fold=keurlast van een jutter: vouw 0,"
+                        + " member=4, place=selection 0 [keurendeJutter 0 1] MEMBER_FAULT, before=the per-element temporal"
                         + " total of \"keurtarief\" over , after=: the case supplies an asOfDate-bucket scalar, which"
                         + " carries no period of its own; a set fold needs each member's own timeline (ch."
                         + " 3.6/§7.1, ch. 8.4), insertion=LOGICAL]"),
@@ -196,354 +196,354 @@ class FoldPlanWitnessTest {
 
     @Test void a_filter_that_deposits_and_fails() throws Exception {
         assertEquals(List.of(
-                "regel vondstental: bijdrage aan vouw 0 | vorm vondstental | groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf)]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_0: aanmelder = $vouwonderwerp] beta"
+                "rule vondstental: bijdrage aan vouw 0 | form vondstental | group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf)]",
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_0: aanmelder = $vouwonderwerp] beta"
                         + " [] bind []",
-                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=vondstental: vouw 0, member=0,"
+                "  consequence Contribution [subject=$vouwonderwerp, fold=vondstental: vouw 0, member=0,"
                         + " slots=[0], size=1, insertion=LOGICAL]",
-                "    inbreng Telling",
-                "regel zware vondsten: bijdrage aan vouw 1 | vorm zware vondsten | groep null",
-                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                "    input Count",
+                "rule zware vondsten: bijdrage aan vouw 1 | form zware vondsten | group null",
+                "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false]), 1 INPUT $deelnemers (eigen ElementKey[objectType=vondst,"
                         + " name=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_5: aanmelder = $vouwonderwerp] beta [] bind"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_5: aanmelder = $vouwonderwerp] beta [] bind"
                         + " [$gewicht = [] Vondst.gewicht VALUE, $deelnemers = [] Vondst.deelnemers VALUE]",
-                "  toets voorwaarde_6 WITHOUT_FAULT sonde -1 slots [0, 1] grootte 4: Samengesteld DE"
-                        + " 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 0, Lees 1), Const 2, Const >))",
-                "    toets 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
+                "  test voorwaarde_6 WITHOUT_FAULT probe -1 slots [0, 1] size 4: Compound DE"
+                        + " 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 0, Read 1), Const 2, Const >))",
+                "    test 0 Compound source 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
                         + " door zijn deelnemers is groter dan 2'",
-                "    toets 0.0 Call bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
-                "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
-                "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
-                "    toets 0.0.2 Const String",
-                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=zware vondsten: vouw 1, member=3,"
+                "    test 0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
+                "    test 0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "    test 0.0.0.0 SlotValue source 'zijn gewicht'",
+                "    test 0.0.0.1 SlotValue source 'zijn deelnemers'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] source '2'",
+                "    test 0.0.2 Const String",
+                "  consequence Contribution [subject=$vouwonderwerp, fold=zware vondsten: vouw 1, member=3,"
                         + " slots=[3], size=4, insertion=LOGICAL]",
-                "    inbreng Telling",
-                "regel zware vondsten: filterfout in vouw 1 | vorm zware vondsten | groep null",
-                "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_10 (lijstplaatsen 0), 1 LIST_PLACE"
+                "    input Count",
+                "rule zware vondsten: filterfout in vouw 1 | form zware vondsten | group null",
+                "  readings [0 LIST_PLACES $lijstplaatsen_plaats_10 (lijstplaatsen 0), 1 LIST_PLACE"
                         + " $plaats_plaats_11 (lijstplaats 0), 2 INPUT $gewicht (eigen"
                         + " ElementKey[objectType=vondst, name=gewicht, characteristic=false]), 3 INPUT $deelnemers"
                         + " (eigen ElementKey[objectType=vondst, name=deelnemers, characteristic=false]), 4 DEPOSIT_FLAG null"
                         + " (null), 5 SUBJECT $onderwerp (onderwerp zelf)]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_7: aanmelder = $vouwonderwerp] beta [] bind"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_7: aanmelder = $vouwonderwerp] beta [] bind"
                         + " [$gewicht = [] Vondst.gewicht VALUE, $deelnemers = [] Vondst.deelnemers VALUE]",
-                "  accumulatie ListPlace $lijstplaats_plaats_8 alfa [plaats-veld_12: [[] field VALUE"
+                "  accumulation ListPlace $lijstplaats_plaats_8 alpha [plaats-veld_12: [[] field VALUE"
                         + " GELIJK aanmelder]] join [] beta [plaats-lid_13: PLACE_OF $onderwerp [] {List<>, type"
-                        + " null, bron null}] bind [$lijstplaatswaarde_plaats_9 = [] ListPlace.place VALUE]"
-                        + " functies [COUNT null -> $lijstplaatsen_plaats_10, MINIMUM $lijstplaatswaarde_plaats_9"
+                        + " null, source null}] bind [$lijstplaatswaarde_plaats_9 = [] ListPlace.place VALUE]"
+                        + " functions [COUNT null -> $lijstplaatsen_plaats_10, MINIMUM $lijstplaatswaarde_plaats_9"
                         + " -> $plaats_plaats_11]",
-                "  toets voorwaarde_14 FAULT sonde -1 slots [2, 3] grootte 6: Samengesteld DE"
-                        + " 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3), Const 2, Const >))",
-                "    toets 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
+                "  test voorwaarde_14 FAULT probe -1 slots [2, 3] size 6: Compound DE"
+                        + " 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 2, Read 3), Const 2, Const >))",
+                "    test 0 Compound source 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
                         + " door zijn deelnemers is groter dan 2'",
-                "    toets 0.0 Call bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
-                "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
-                "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
-                "    toets 0.0.2 Const String",
-                "  gevolg Filterfout [subject=$vouwonderwerp, vouw=zware vondsten: vouw 1, member=5, plaats=selectie"
+                "    test 0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
+                "    test 0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "    test 0.0.0.0 SlotValue source 'zijn gewicht'",
+                "    test 0.0.0.1 SlotValue source 'zijn deelnemers'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] source '2'",
+                "    test 0.0.2 Const String",
+                "  consequence FilterFault [subject=$vouwonderwerp, fold=zware vondsten: vouw 1, member=5, place=selection"
                         + " 0 [aanmelder 0 1] FILTER_FAULT, slots=[0, 1, 2, 3, 5], size=6, insertion=LOGICAL]"
-                        + " filter Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3), Const"
+                        + " filter Compound DE 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 2, Read 3), Const"
                         + " 2, Const >))",
-                "    filter 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht"
+                "    filter 0 Compound source 'aan de volgende voorwaarde voldoen: zijn gewicht"
                         + " gedeeld door zijn deelnemers is groter dan 2'",
-                "    filter 0.0 Call bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
-                "    filter 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "    filter 0.0.0.0 SlotValue bron 'zijn gewicht'",
-                "    filter 0.0.0.1 SlotValue bron 'zijn deelnemers'",
+                "    filter 0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
+                "    filter 0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "    filter 0.0.0.0 SlotValue source 'zijn gewicht'",
+                "    filter 0.0.0.1 SlotValue source 'zijn deelnemers'",
                 "    filter 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
+                        + " sign=ONBEPAALD, unit=null] source '2'",
                 "    filter 0.0.2 Const String",
-                "regel zware vondsten: filterdeponering in vouw 1 | vorm zware vondsten | groep null",
-                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                "rule zware vondsten: filterdeponering in vouw 1 | form zware vondsten | group null",
+                "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false]), 1 INPUT $deelnemers (eigen ElementKey[objectType=vondst,"
                         + " name=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_15: aanmelder = $vouwonderwerp] beta [] bind"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_15: aanmelder = $vouwonderwerp] beta [] bind"
                         + " [$gewicht = [] Vondst.gewicht VALUE, $deelnemers = [] Vondst.deelnemers VALUE]",
-                "  toets voorwaarde_16 DEPOSIT sonde 2 slots [0, 1] grootte 4: Samengesteld DE"
-                        + " 0(RS_AGG_COMPARE(Deel DIVIDED sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
-                "    toets 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
+                "  test voorwaarde_16 DEPOSIT probe 2 slots [0, 1] size 4: Compound DE"
+                        + " 0(RS_AGG_COMPARE(Division DIVIDED probe 2 (Read 0, Read 1), Const 2, Const >))",
+                "    test 0 Compound source 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
                         + " door zijn deelnemers is groter dan 2'",
-                "    toets 0.0 Call bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
-                "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
-                "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
-                "    toets 0.0.2 Const String",
-                "  gevolg Filterdeponering [subject=$vouwonderwerp, vouw=zware vondsten: vouw 1,"
+                "    test 0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
+                "    test 0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "    test 0.0.0.0 SlotValue source 'zijn gewicht'",
+                "    test 0.0.0.1 SlotValue source 'zijn deelnemers'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] source '2'",
+                "    test 0.0.2 Const String",
+                "  consequence FilterDeposit [subject=$vouwonderwerp, fold=zware vondsten: vouw 1,"
                         + " member=3, insertion=LOGICAL]",
-                "regel drukte: bijdrage aan vouw 2 | vorm drukte | groep null",
-                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                "rule drukte: bijdrage aan vouw 2 | form drukte | group null",
+                "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false]), 1 INPUT $deelnemers (eigen ElementKey[objectType=vondst,"
                         + " name=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_31: aanmelder = $vouwonderwerp] beta [] bind"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_31: aanmelder = $vouwonderwerp] beta [] bind"
                         + " [$gewicht = [] Vondst.gewicht VALUE, $deelnemers = [] Vondst.deelnemers VALUE]",
-                "  toets voorwaarde_32 WITHOUT_FAULT sonde -1 slots [0, 1] grootte 4: Samengesteld DE"
-                        + " 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 0, Lees 1), Const 2, Const >))",
-                "    toets 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
+                "  test voorwaarde_32 WITHOUT_FAULT probe -1 slots [0, 1] size 4: Compound DE"
+                        + " 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 0, Read 1), Const 2, Const >))",
+                "    test 0 Compound source 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
                         + " door zijn deelnemers is groter dan 2'",
-                "    toets 0.0 Call bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
-                "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
-                "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
-                "    toets 0.0.2 Const String",
-                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=drukte: vouw 2, member=3, slots=[3],"
+                "    test 0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
+                "    test 0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "    test 0.0.0.0 SlotValue source 'zijn gewicht'",
+                "    test 0.0.0.1 SlotValue source 'zijn deelnemers'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] source '2'",
+                "    test 0.0.2 Const String",
+                "  consequence Contribution [subject=$vouwonderwerp, fold=drukte: vouw 2, member=3, slots=[3],"
                         + " size=4, insertion=LOGICAL]",
-                "    inbreng Telling",
-                "regel drukte: filterfout in vouw 2 | vorm drukte | groep null",
-                "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_36 (lijstplaatsen 0), 1 LIST_PLACE"
+                "    input Count",
+                "rule drukte: filterfout in vouw 2 | form drukte | group null",
+                "  readings [0 LIST_PLACES $lijstplaatsen_plaats_36 (lijstplaatsen 0), 1 LIST_PLACE"
                         + " $plaats_plaats_37 (lijstplaats 0), 2 INPUT $gewicht (eigen"
                         + " ElementKey[objectType=vondst, name=gewicht, characteristic=false]), 3 INPUT $deelnemers"
                         + " (eigen ElementKey[objectType=vondst, name=deelnemers, characteristic=false]), 4 DEPOSIT_FLAG null"
                         + " (null), 5 SUBJECT $onderwerp (onderwerp zelf)]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_33: aanmelder = $vouwonderwerp] beta [] bind"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_33: aanmelder = $vouwonderwerp] beta [] bind"
                         + " [$gewicht = [] Vondst.gewicht VALUE, $deelnemers = [] Vondst.deelnemers VALUE]",
-                "  accumulatie ListPlace $lijstplaats_plaats_34 alfa [plaats-veld_38: [[] field VALUE"
+                "  accumulation ListPlace $lijstplaats_plaats_34 alpha [plaats-veld_38: [[] field VALUE"
                         + " GELIJK aanmelder]] join [] beta [plaats-lid_39: PLACE_OF $onderwerp [] {List<>, type"
-                        + " null, bron null}] bind [$lijstplaatswaarde_plaats_35 = [] ListPlace.place VALUE]"
-                        + " functies [COUNT null -> $lijstplaatsen_plaats_36, MINIMUM"
+                        + " null, source null}] bind [$lijstplaatswaarde_plaats_35 = [] ListPlace.place VALUE]"
+                        + " functions [COUNT null -> $lijstplaatsen_plaats_36, MINIMUM"
                         + " $lijstplaatswaarde_plaats_35 -> $plaats_plaats_37]",
-                "  toets voorwaarde_40 FAULT sonde -1 slots [2, 3] grootte 6: Samengesteld DE"
-                        + " 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3), Const 2, Const >))",
-                "    toets 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
+                "  test voorwaarde_40 FAULT probe -1 slots [2, 3] size 6: Compound DE"
+                        + " 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 2, Read 3), Const 2, Const >))",
+                "    test 0 Compound source 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
                         + " door zijn deelnemers is groter dan 2'",
-                "    toets 0.0 Call bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
-                "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
-                "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
-                "    toets 0.0.2 Const String",
-                "  gevolg Filterfout [subject=$vouwonderwerp, vouw=drukte: vouw 2, member=5, plaats=selectie 0"
+                "    test 0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
+                "    test 0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "    test 0.0.0.0 SlotValue source 'zijn gewicht'",
+                "    test 0.0.0.1 SlotValue source 'zijn deelnemers'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] source '2'",
+                "    test 0.0.2 Const String",
+                "  consequence FilterFault [subject=$vouwonderwerp, fold=drukte: vouw 2, member=5, place=selection 0"
                         + " [aanmelder 0 1] FILTER_FAULT, slots=[0, 1, 2, 3, 5], size=6, insertion=LOGICAL] filter"
-                        + " Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3), Const 2,"
+                        + " Compound DE 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 2, Read 3), Const 2,"
                         + " Const >))",
-                "    filter 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht"
+                "    filter 0 Compound source 'aan de volgende voorwaarde voldoen: zijn gewicht"
                         + " gedeeld door zijn deelnemers is groter dan 2'",
-                "    filter 0.0 Call bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
-                "    filter 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "    filter 0.0.0.0 SlotValue bron 'zijn gewicht'",
-                "    filter 0.0.0.1 SlotValue bron 'zijn deelnemers'",
+                "    filter 0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
+                "    filter 0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "    filter 0.0.0.0 SlotValue source 'zijn gewicht'",
+                "    filter 0.0.0.1 SlotValue source 'zijn deelnemers'",
                 "    filter 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
+                        + " sign=ONBEPAALD, unit=null] source '2'",
                 "    filter 0.0.2 Const String",
-                "regel drukte: filterdeponering in vouw 2 | vorm drukte | groep null",
-                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                "rule drukte: filterdeponering in vouw 2 | form drukte | group null",
+                "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false]), 1 INPUT $deelnemers (eigen ElementKey[objectType=vondst,"
                         + " name=deelnemers, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_41: aanmelder = $vouwonderwerp] beta [] bind"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_41: aanmelder = $vouwonderwerp] beta [] bind"
                         + " [$gewicht = [] Vondst.gewicht VALUE, $deelnemers = [] Vondst.deelnemers VALUE]",
-                "  toets voorwaarde_42 DEPOSIT sonde 2 slots [0, 1] grootte 4: Samengesteld DE"
-                        + " 0(RS_AGG_COMPARE(Deel DIVIDED sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
-                "    toets 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
+                "  test voorwaarde_42 DEPOSIT probe 2 slots [0, 1] size 4: Compound DE"
+                        + " 0(RS_AGG_COMPARE(Division DIVIDED probe 2 (Read 0, Read 1), Const 2, Const >))",
+                "    test 0 Compound source 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
                         + " door zijn deelnemers is groter dan 2'",
-                "    toets 0.0 Call bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
-                "    toets 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "    toets 0.0.0.0 SlotValue bron 'zijn gewicht'",
-                "    toets 0.0.0.1 SlotValue bron 'zijn deelnemers'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
-                "    toets 0.0.2 Const String",
-                "  gevolg Filterdeponering [subject=$vouwonderwerp, vouw=drukte: vouw 2, member=3,"
+                "    test 0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
+                "    test 0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "    test 0.0.0.0 SlotValue source 'zijn gewicht'",
+                "    test 0.0.0.1 SlotValue source 'zijn deelnemers'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] source '2'",
+                "    test 0.0.2 Const String",
+                "  consequence FilterDeposit [subject=$vouwonderwerp, fold=drukte: vouw 2, member=3,"
                         + " insertion=LOGICAL]"),
                 plans(golden("jutterswet-filterwacht")));
     }
 
     @Test void a_path_whose_walks_meet_each_other() throws Exception {
         assertEquals(List.of(
-                "regel laagste vondstgewicht van een jutter: bijdrage aan vouw 0 | vorm laagste"
-                        + " vondstgewicht van een jutter | groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $gewicht (eigen"
+                "rule laagste vondstgewicht van een jutter: bijdrage aan vouw 0 | form laagste"
+                        + " vondstgewicht van een jutter | group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $gewicht (eigen"
                         + " ElementKey[objectType=vondst, name=gewicht, characteristic=false])]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [] beta [pad_0: MEETING $vouwonderwerp"
-                        + " [bergendeBoot, schipper] {List<String>, type null, bron null} [] {List<>, type null,"
-                        + " bron null}] bind [$gewicht = [] Vondst.gewicht VALUE]",
-                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=laagste vondstgewicht van een jutter:"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [] beta [pad_0: MEETING $vouwonderwerp"
+                        + " [bergendeBoot, schipper] {List<String>, type null, source null} [] {List<>, type null,"
+                        + " source null}] bind [$gewicht = [] Vondst.gewicht VALUE]",
+                "  consequence Contribution [subject=$vouwonderwerp, fold=laagste vondstgewicht van een jutter:"
                         + " vouw 0, member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
-                "    inbreng Lidwaarde [value=1, total=null, gevuld=false]"),
+                "    input MemberValue [value=1, total=null, filled=false]"),
                 plans(golden("jutterswet-vondstketen")));
     }
 
     @Test void a_path_with_two_between_nodes_existing_and_per_route() throws Exception {
         assertEquals(List.of(
-                "regel aantal gevulde bergplaatsen: bijdrage aan vouw 0 | vorm aantal gevulde"
-                        + " bergplaatsen | groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $vangstgewicht (eigen"
+                "rule aantal gevulde bergplaatsen: bijdrage aan vouw 0 | form aantal gevulde"
+                        + " bergplaatsen | group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $vangstgewicht (eigen"
                         + " ElementKey[objectType=bergplaats, name=vangstgewicht, characteristic=false])]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Bergplaats $onderwerp alfa [] join [] beta [] bind [$vangstgewicht = []"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Bergplaats $onderwerp alpha [] join [] beta [] bind [$vangstgewicht = []"
                         + " Bergplaats.vangstgewicht VALUE]",
-                "  bestaat binnen [$tussen_pad_0] buiten [$vouwonderwerp, $onderwerp] [Boot"
-                        + " $tussen_pad_0 alfa [] join [] beta [pad_1: MEETING $vouwonderwerp [schipper]"
-                        + " {List<String>, type null, bron null} [] {List<>, type null, bron null}, pad_2:"
-                        + " MEETING $onderwerp [losplaats] {List<String>, type null, bron null} [] {List<>,"
-                        + " type null, bron null}] bind []]",
-                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=aantal gevulde bergplaatsen: vouw 0,"
+                "  exists inside [$tussen_pad_0] outside [$vouwonderwerp, $onderwerp] [Boot"
+                        + " $tussen_pad_0 alpha [] join [] beta [pad_1: MEETING $vouwonderwerp [schipper]"
+                        + " {List<String>, type null, source null} [] {List<>, type null, source null}, pad_2:"
+                        + " MEETING $onderwerp [losplaats] {List<String>, type null, source null} [] {List<>,"
+                        + " type null, source null}] bind []]",
+                "  consequence Contribution [subject=$vouwonderwerp, fold=aantal gevulde bergplaatsen: vouw 0,"
                         + " member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
-                "    inbreng Lidwaarde [value=1, total=null, gevuld=true]",
-                "regel havengeldtotaal van een Jutter: bijdrage aan vouw 1 | vorm havengeldtotaal van"
-                        + " een Jutter | groep null",
-                "  lezingen [0 INPUT $havengeld (eigen ElementKey[objectType=haven, name=havengeld,"
+                "    input MemberValue [value=1, total=null, filled=true]",
+                "rule havengeldtotaal van een Jutter: bijdrage aan vouw 1 | form havengeldtotaal van"
+                        + " een Jutter | group null",
+                "  readings [0 INPUT $havengeld (eigen ElementKey[objectType=haven, name=havengeld,"
                         + " characteristic=false]), 1 INPUT $ligplaatsen (eigen ElementKey[objectType=haven,"
                         + " name=ligplaatsen, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Haven $onderwerp alpha [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
                         + " $ligplaatsen = [] Haven.ligplaatsen VALUE]",
-                "  bestaat binnen [$tussen_pad_7, $tussen_pad_8] buiten [$vouwonderwerp, $onderwerp]"
-                        + " [Boot $tussen_pad_7 alfa [] join [] beta [pad_9: MEETING $vouwonderwerp [schipper]"
-                        + " {List<String>, type null, bron null} [] {List<>, type null, bron null}] bind [],"
-                        + " Bergplaats $tussen_pad_8 alfa [] join [] beta [pad_10: MEETING $tussen_pad_7 []"
-                        + " {List<>, type null, bron null} [losplaats] {List<String>, type null, bron null},"
-                        + " pad_11: MEETING $onderwerp [haven] {List<String>, type null, bron null} [] {List<>,"
-                        + " type null, bron null}] bind []]",
-                "  toets voorwaarde_12 WITHOUT_FAULT sonde -1 slots [0, 1] grootte 4: Samengesteld DE"
-                        + " 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 0, Lees 1), Const 2, Const >))",
-                "    toets 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn havengeld"
+                "  exists inside [$tussen_pad_7, $tussen_pad_8] outside [$vouwonderwerp, $onderwerp]"
+                        + " [Boot $tussen_pad_7 alpha [] join [] beta [pad_9: MEETING $vouwonderwerp [schipper]"
+                        + " {List<String>, type null, source null} [] {List<>, type null, source null}] bind [],"
+                        + " Bergplaats $tussen_pad_8 alpha [] join [] beta [pad_10: MEETING $tussen_pad_7 []"
+                        + " {List<>, type null, source null} [losplaats] {List<String>, type null, source null},"
+                        + " pad_11: MEETING $onderwerp [haven] {List<String>, type null, source null} [] {List<>,"
+                        + " type null, source null}] bind []]",
+                "  test voorwaarde_12 WITHOUT_FAULT probe -1 slots [0, 1] size 4: Compound DE"
+                        + " 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 0, Read 1), Const 2, Const >))",
+                "    test 0 Compound source 'aan de volgende voorwaarde voldoen: zijn havengeld"
                         + " gedeeld door zijn ligplaatsen is groter dan 2'",
-                "    toets 0.0 Call bron 'zijn havengeld gedeeld door zijn ligplaatsen is groter dan"
+                "    test 0.0 Call source 'zijn havengeld gedeeld door zijn ligplaatsen is groter dan"
                         + " 2'",
-                "    toets 0.0.0 Division bron 'zijn havengeld gedeeld door zijn ligplaatsen'",
-                "    toets 0.0.0.0 SlotValue bron 'zijn havengeld'",
-                "    toets 0.0.0.1 SlotValue bron 'zijn ligplaatsen'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
-                "    toets 0.0.2 Const String",
-                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=havengeldtotaal van een Jutter: vouw"
+                "    test 0.0.0 Division source 'zijn havengeld gedeeld door zijn ligplaatsen'",
+                "    test 0.0.0.0 SlotValue source 'zijn havengeld'",
+                "    test 0.0.0.1 SlotValue source 'zijn ligplaatsen'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] source '2'",
+                "    test 0.0.2 Const String",
+                "  consequence Contribution [subject=$vouwonderwerp, fold=havengeldtotaal van een Jutter: vouw"
                         + " 1, member=3, slots=[0, 3], size=4, insertion=LOGICAL]",
-                "    inbreng Lidwaarde [value=0, total=null, gevuld=false]",
-                "regel havengeldtotaal van een Jutter: filterfout in vouw 1 | vorm havengeldtotaal van"
-                        + " een Jutter | groep null",
-                "  lezingen [0 LIST_PLACES $lijstplaatsen_plaats_20 (lijstplaatsen 0), 1 LIST_PLACE"
+                "    input MemberValue [value=0, total=null, filled=false]",
+                "rule havengeldtotaal van een Jutter: filterfout in vouw 1 | form havengeldtotaal van"
+                        + " een Jutter | group null",
+                "  readings [0 LIST_PLACES $lijstplaatsen_plaats_20 (lijstplaatsen 0), 1 LIST_PLACE"
                         + " $plaats_plaats_21 (lijstplaats 0), 2 INPUT $havengeld (eigen"
                         + " ElementKey[objectType=haven, name=havengeld, characteristic=false]), 3 INPUT $ligplaatsen"
                         + " (eigen ElementKey[objectType=haven, name=ligplaatsen, characteristic=false]), 4 DEPOSIT_FLAG null"
                         + " (null), 5 SUBJECT $onderwerp (onderwerp zelf)]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Haven $onderwerp alpha [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
                         + " $ligplaatsen = [] Haven.ligplaatsen VALUE]",
-                "  patroon Boot $tussen_pad_13 alfa [] join [] beta [pad_15: MEETING $vouwonderwerp"
-                        + " [schipper] {List<String>, type null, bron null} [] {List<>, type null, bron null}]"
+                "  pattern Boot $tussen_pad_13 alpha [] join [] beta [pad_15: MEETING $vouwonderwerp"
+                        + " [schipper] {List<String>, type null, source null} [] {List<>, type null, source null}]"
                         + " bind []",
-                "  patroon Bergplaats $tussen_pad_14 alfa [] join [] beta [pad_16: MEETING"
-                        + " $tussen_pad_13 [] {List<>, type null, bron null} [losplaats] {List<String>, type null,"
-                        + " bron null}, pad_17: MEETING $onderwerp [haven] {List<String>, type null, bron null}"
-                        + " [] {List<>, type null, bron null}] bind []",
-                "  accumulatie ListPlace $lijstplaats_plaats_18 alfa [plaats-veld_22: [[] field VALUE"
+                "  pattern Bergplaats $tussen_pad_14 alpha [] join [] beta [pad_16: MEETING"
+                        + " $tussen_pad_13 [] {List<>, type null, source null} [losplaats] {List<String>, type null,"
+                        + " source null}, pad_17: MEETING $onderwerp [haven] {List<String>, type null, source null}"
+                        + " [] {List<>, type null, source null}] bind []",
+                "  accumulation ListPlace $lijstplaats_plaats_18 alpha [plaats-veld_22: [[] field VALUE"
                         + " GELIJK schipper]] join [] beta [plaats-lid_23: PLACE_OF $tussen_pad_13 [] {List<>,"
-                        + " type null, bron null}] bind [$lijstplaatswaarde_plaats_19 = [] ListPlace.place"
-                        + " VALUE] functies [COUNT null -> $lijstplaatsen_plaats_20, MINIMUM"
+                        + " type null, source null}] bind [$lijstplaatswaarde_plaats_19 = [] ListPlace.place"
+                        + " VALUE] functions [COUNT null -> $lijstplaatsen_plaats_20, MINIMUM"
                         + " $lijstplaatswaarde_plaats_19 -> $plaats_plaats_21]",
-                "  toets voorwaarde_24 FAULT sonde -1 slots [2, 3] grootte 6: Samengesteld DE"
-                        + " 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3), Const 2, Const >))",
-                "    toets 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn havengeld"
+                "  test voorwaarde_24 FAULT probe -1 slots [2, 3] size 6: Compound DE"
+                        + " 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 2, Read 3), Const 2, Const >))",
+                "    test 0 Compound source 'aan de volgende voorwaarde voldoen: zijn havengeld"
                         + " gedeeld door zijn ligplaatsen is groter dan 2'",
-                "    toets 0.0 Call bron 'zijn havengeld gedeeld door zijn ligplaatsen is groter dan"
+                "    test 0.0 Call source 'zijn havengeld gedeeld door zijn ligplaatsen is groter dan"
                         + " 2'",
-                "    toets 0.0.0 Division bron 'zijn havengeld gedeeld door zijn ligplaatsen'",
-                "    toets 0.0.0.0 SlotValue bron 'zijn havengeld'",
-                "    toets 0.0.0.1 SlotValue bron 'zijn ligplaatsen'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
-                "    toets 0.0.2 Const String",
-                "  gevolg Filterfout [subject=$vouwonderwerp, vouw=havengeldtotaal van een Jutter: vouw 1, member=5,"
-                        + " plaats=selectie 0 [schipper 0 1] FILTER_FAULT, slots=[0, 1, 2, 3, 5], size=6,"
-                        + " insertion=LOGICAL] filter Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1"
-                        + " (Lees 2, Lees 3), Const 2, Const >))",
-                "    filter 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn havengeld"
+                "    test 0.0.0 Division source 'zijn havengeld gedeeld door zijn ligplaatsen'",
+                "    test 0.0.0.0 SlotValue source 'zijn havengeld'",
+                "    test 0.0.0.1 SlotValue source 'zijn ligplaatsen'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] source '2'",
+                "    test 0.0.2 Const String",
+                "  consequence FilterFault [subject=$vouwonderwerp, fold=havengeldtotaal van een Jutter: vouw 1, member=5,"
+                        + " place=selection 0 [schipper 0 1] FILTER_FAULT, slots=[0, 1, 2, 3, 5], size=6,"
+                        + " insertion=LOGICAL] filter Compound DE 0(RS_AGG_COMPARE(Division DIVIDED probe -1"
+                        + " (Read 2, Read 3), Const 2, Const >))",
+                "    filter 0 Compound source 'aan de volgende voorwaarde voldoen: zijn havengeld"
                         + " gedeeld door zijn ligplaatsen is groter dan 2'",
-                "    filter 0.0 Call bron 'zijn havengeld gedeeld door zijn ligplaatsen is groter dan"
+                "    filter 0.0 Call source 'zijn havengeld gedeeld door zijn ligplaatsen is groter dan"
                         + " 2'",
-                "    filter 0.0.0 Division bron 'zijn havengeld gedeeld door zijn ligplaatsen'",
-                "    filter 0.0.0.0 SlotValue bron 'zijn havengeld'",
-                "    filter 0.0.0.1 SlotValue bron 'zijn ligplaatsen'",
+                "    filter 0.0.0 Division source 'zijn havengeld gedeeld door zijn ligplaatsen'",
+                "    filter 0.0.0.0 SlotValue source 'zijn havengeld'",
+                "    filter 0.0.0.1 SlotValue source 'zijn ligplaatsen'",
                 "    filter 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
+                        + " sign=ONBEPAALD, unit=null] source '2'",
                 "    filter 0.0.2 Const String",
-                "regel havengeldtotaal van een Jutter: filterdeponering in vouw 1 | vorm havengeldtotaal"
-                        + " van een Jutter | groep null",
-                "  lezingen [0 INPUT $havengeld (eigen ElementKey[objectType=haven, name=havengeld,"
+                "rule havengeldtotaal van een Jutter: filterdeponering in vouw 1 | form havengeldtotaal"
+                        + " van een Jutter | group null",
+                "  readings [0 INPUT $havengeld (eigen ElementKey[objectType=haven, name=havengeld,"
                         + " characteristic=false]), 1 INPUT $ligplaatsen (eigen ElementKey[objectType=haven,"
                         + " name=ligplaatsen, characteristic=false]), 2 DEPOSIT_FLAG null (null), 3 SUBJECT $onderwerp"
                         + " (onderwerp zelf)]",
-                "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Haven $onderwerp alpha [] join [] beta [] bind [$havengeld = [] Haven.havengeld VALUE,"
                         + " $ligplaatsen = [] Haven.ligplaatsen VALUE]",
-                "  bestaat binnen [$tussen_pad_25, $tussen_pad_26] buiten [$vouwonderwerp, $onderwerp]"
-                        + " [Boot $tussen_pad_25 alfa [] join [] beta [pad_27: MEETING $vouwonderwerp"
-                        + " [schipper] {List<String>, type null, bron null} [] {List<>, type null, bron null}]"
-                        + " bind [], Bergplaats $tussen_pad_26 alfa [] join [] beta [pad_28: MEETING"
-                        + " $tussen_pad_25 [] {List<>, type null, bron null} [losplaats] {List<String>, type null,"
-                        + " bron null}, pad_29: MEETING $onderwerp [haven] {List<String>, type null, bron null}"
-                        + " [] {List<>, type null, bron null}] bind []]",
-                "  toets voorwaarde_30 DEPOSIT sonde 2 slots [0, 1] grootte 4: Samengesteld DE"
-                        + " 0(RS_AGG_COMPARE(Deel DIVIDED sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
-                "    toets 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn havengeld"
+                "  exists inside [$tussen_pad_25, $tussen_pad_26] outside [$vouwonderwerp, $onderwerp]"
+                        + " [Boot $tussen_pad_25 alpha [] join [] beta [pad_27: MEETING $vouwonderwerp"
+                        + " [schipper] {List<String>, type null, source null} [] {List<>, type null, source null}]"
+                        + " bind [], Bergplaats $tussen_pad_26 alpha [] join [] beta [pad_28: MEETING"
+                        + " $tussen_pad_25 [] {List<>, type null, source null} [losplaats] {List<String>, type null,"
+                        + " source null}, pad_29: MEETING $onderwerp [haven] {List<String>, type null, source null}"
+                        + " [] {List<>, type null, source null}] bind []]",
+                "  test voorwaarde_30 DEPOSIT probe 2 slots [0, 1] size 4: Compound DE"
+                        + " 0(RS_AGG_COMPARE(Division DIVIDED probe 2 (Read 0, Read 1), Const 2, Const >))",
+                "    test 0 Compound source 'aan de volgende voorwaarde voldoen: zijn havengeld"
                         + " gedeeld door zijn ligplaatsen is groter dan 2'",
-                "    toets 0.0 Call bron 'zijn havengeld gedeeld door zijn ligplaatsen is groter dan"
+                "    test 0.0 Call source 'zijn havengeld gedeeld door zijn ligplaatsen is groter dan"
                         + " 2'",
-                "    toets 0.0.0 Division bron 'zijn havengeld gedeeld door zijn ligplaatsen'",
-                "    toets 0.0.0.0 SlotValue bron 'zijn havengeld'",
-                "    toets 0.0.0.1 SlotValue bron 'zijn ligplaatsen'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
-                "    toets 0.0.2 Const String",
-                "  gevolg Filterdeponering [subject=$vouwonderwerp, vouw=havengeldtotaal van een"
+                "    test 0.0.0 Division source 'zijn havengeld gedeeld door zijn ligplaatsen'",
+                "    test 0.0.0.0 SlotValue source 'zijn havengeld'",
+                "    test 0.0.0.1 SlotValue source 'zijn ligplaatsen'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
+                        + " sign=ONBEPAALD, unit=null] source '2'",
+                "    test 0.0.2 Const String",
+                "  consequence FilterDeposit [subject=$vouwonderwerp, fold=havengeldtotaal van een"
                         + " Jutter: vouw 1, member=3, insertion=LOGICAL]"),
                 plans(havenketen()));
     }
 
     @Test void a_quantifier_contribution_with_member_test_and_deposit_flag() throws Exception {
         assertEquals(List.of(
-                "regel rustigheid: bijdrage aan vouw 0 | vorm rustigheid | groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $opgave (eigen"
+                "rule rustigheid: bijdrage aan vouw 0 | form rustigheid | group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $opgave (eigen"
                         + " ElementKey[objectType=wacht, name=opgave, characteristic=false]), 2 STATE $deelnemers"
                         + " (eigen ElementKey[objectType=wacht, name=deelnemers, characteristic=false]), 3 DEPOSIT_FLAG null"
                         + " (null), 4 LIST_PLACES $lijstplaatsen_plaats_5 (lijstplaatsen 4), 5 LIST_PLACE"
                         + " $plaats_plaats_6 (lijstplaats 4)]",
-                "  patroon Ploeg $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Wacht $onderwerp alfa [] join [bereik_2: ploeg = $vouwonderwerp] beta [] bind [$opgave"
+                "  pattern Ploeg $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Wacht $onderwerp alpha [] join [bereik_2: ploeg = $vouwonderwerp] beta [] bind [$opgave"
                         + " = [] Wacht.opgave VALUE]",
-                "  accumulatie ListPlace $lijstplaats_plaats_3 alfa [plaats-veld_7: [[] field VALUE"
+                "  accumulation ListPlace $lijstplaats_plaats_3 alpha [plaats-veld_7: [[] field VALUE"
                         + " GELIJK ploeg]] join [] beta [plaats-lid_8: PLACE_OF $onderwerp [] {List<>, type"
-                        + " null, bron null}] bind [$lijstplaatswaarde_plaats_4 = [] ListPlace.place VALUE]"
-                        + " functies [COUNT null -> $lijstplaatsen_plaats_5, MINIMUM $lijstplaatswaarde_plaats_4"
+                        + " null, source null}] bind [$lijstplaatswaarde_plaats_4 = [] ListPlace.place VALUE]"
+                        + " functions [COUNT null -> $lijstplaatsen_plaats_5, MINIMUM $lijstplaatswaarde_plaats_4"
                         + " -> $plaats_plaats_6]",
-                "  patroon State $stand_2 alfa [stand_0: [[] attribute VALUE GELIJK"
+                "  pattern State $stand_2 alpha [stand_0: [[] attribute VALUE GELIJK"
                         + " ElementKey[objectType=wacht, name=deelnemers, characteristic=false]]] join"
                         + " [stand-onderwerp_1: subject = $onderwerp] beta [] bind [$deelnemers = [] State.value"
                         + " VALUE]",
-                "  gevolg Bijdrage [subject=$vouwonderwerp, vouw=rustigheid: vouw 0, member=0, slots=[0,"
+                "  consequence Contribution [subject=$vouwonderwerp, fold=rustigheid: vouw 0, member=0, slots=[0,"
                         + " 1, 2, 4, 5], size=6, insertion=LOGICAL]",
-                "    inbreng Lidtoets [sonde=3, plaats=selectie 0 [ploeg 4 5] QUANTIFIER] matrix"
-                        + " RS_AGG_COMPARE(Deel DIVIDED sonde 3 (Lees 1, Lees 2), Const 2, Const >)",
-                "      matrix 0 Call bron 'greater'",
-                "      matrix 0.0 Division bron 'dividedBy'",
-                "      matrix 0.0.0 SlotValue bron 'zijn opgave'",
-                "      matrix 0.0.1 SlotValue bron 'zijn deelnemers'",
+                "    input MemberTest [probe=3, place=selection 0 [ploeg 4 5] QUANTIFIER] matrix"
+                        + " RS_AGG_COMPARE(Division DIVIDED probe 3 (Read 1, Read 2), Const 2, Const >)",
+                "      matrix 0 Call source 'greater'",
+                "      matrix 0.0 Division source 'dividedBy'",
+                "      matrix 0.0.0 SlotValue source 'zijn opgave'",
+                "      matrix 0.0.1 SlotValue source 'zijn deelnemers'",
                 "      matrix 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0,"
-                        + " sign=ONBEPAALD, unit=null] bron '2'",
+                        + " sign=ONBEPAALD, unit=null] source '2'",
                 "      matrix 0.2 Const String"),
                 plans(matrixThatDivides()));
     }
@@ -664,9 +664,9 @@ class FoldPlanWitnessTest {
         String root = "ComputeFault: fout in de regel \"havengeldtotaal van een Jutter: vouw 1\": irrational square root"
                 + " of %s reached without an explicit rounding (§13.4.17.13 mandates one)";
         assertEquals(List.of(
-                "Filterfout J1 H1 [0, 0]: " + root.formatted("3"),
-                "Filterfout J1 H2 [0, 1]: " + root.formatted("2"),
-                "Filterfout J1 H1 [0, 2]: " + root.formatted("3")),
+                "FilterFault J1 H1 [0, 0]: " + root.formatted("3"),
+                "FilterFault J1 H2 [0, 1]: " + root.formatted("2"),
+                "FilterFault J1 H1 [0, 2]: " + root.formatted("3")),
                 filterFaults(ir, JSON.readTree(HAVENKETEN_FAULT)));
         CaseRunner.RedResult r = CaseRunner.runRed(ir, caseDocument);
         assertEquals("FAULT", r.status(), r::detail);
@@ -699,7 +699,7 @@ class FoldPlanWitnessTest {
             List<String> out = new ArrayList<>();
             for (FilterFault x : faults) {
                 RuntimeException named = ComputeFault.designate(x.fault(), x.fold());
-                out.add("Filterfout " + label.get(x.subject()) + " " + label.get(x.element()) + " " + x.place()
+                out.add("FilterFault " + label.get(x.subject()) + " " + label.get(x.element()) + " " + x.place()
                         + ": " + named.getClass().getSimpleName() + ": " + named.getMessage());
             }
             return out;
@@ -830,14 +830,14 @@ class FoldPlanWitnessTest {
             if (!(p.consequence() instanceof Consequence.Contribution || p.consequence() instanceof Consequence.FilterDeposit
                     || p.consequence() instanceof Consequence.FilterFault || p.consequence() instanceof Consequence.MemberFault))
                 continue;
-            out.add("regel " + p.name() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
+            out.add("rule " + p.name() + " | form " + p.form() + " | group " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
             for (Read l : p.readings().slots())
                 slots.add(l.slot() + " " + l.kind() + " " + l.name() + " (" + l.key() + ")");
-            out.add("  lezingen " + slots);
+            out.add("  readings " + slots);
             for (LhsItem item : p.leftSide()) {
                 out.add("  " + item(item));
-                if (item instanceof TestItem t) TermTree.fields("    toets", t.test(), "0", out);
+                if (item instanceof TestItem t) TermTree.fields("    test", t.test(), "0", out);
             }
             consequence(p.consequence(), out);
         }
@@ -846,24 +846,24 @@ class FoldPlanWitnessTest {
 
     private static String item(LhsItem item) {
         return switch (item) {
-            case Subject o -> "onderwerp " + o.beanClass().getSimpleName() + " " + o.name() + " alfa "
+            case Subject o -> "subject " + o.beanClass().getSimpleName() + " " + o.name() + " alpha "
                     + alpha(o.alpha()) + " join " + joins(o.joins()) + " beta " + beta(o.betaTests()) + " bind "
                     + bindings(o.bindings());
-            case FactPattern p -> "patroon " + pattern(p);
-            case Not n -> "niet " + (n.patterns().size() == 1 ? pattern(n.patterns().get(0)) : "binnen "
-                    + n.inside() + " buiten " + n.outside() + " "
+            case FactPattern p -> "pattern " + pattern(p);
+            case Not n -> "not " + (n.patterns().size() == 1 ? pattern(n.patterns().get(0)) : "inside "
+                    + n.inside() + " outside " + n.outside() + " "
                     + n.patterns().stream().map(FoldPlanWitnessTest::pattern).toList());
-            case Exists b -> "bestaat binnen " + b.inside() + " buiten " + b.outside() + " "
+            case Exists b -> "exists inside " + b.inside() + " outside " + b.outside() + " "
                     + b.patterns().stream().map(FoldPlanWitnessTest::pattern).toList();
-            case Accumulation a -> "accumulatie " + pattern(a.source()) + " functies "
+            case Accumulation a -> "accumulation " + pattern(a.source()) + " functions "
                     + a.aggregations().stream().map(f -> f.kind() + " " + f.source() + " -> " + f.target()).toList();
-            case TestItem t -> "toets " + t.id() + " " + t.role() + " sonde " + t.depositFlag() + " slots " + t.slots()
-                    + " grootte " + t.size() + ": " + TermTree.tree(t.test());
+            case TestItem t -> "test " + t.id() + " " + t.role() + " probe " + t.depositFlag() + " slots " + t.slots()
+                    + " size " + t.size() + ": " + TermTree.tree(t.test());
         };
     }
 
     private static String pattern(FactPattern p) {
-        return p.factClass().getSimpleName() + " " + p.name() + " alfa " + alpha(p.alpha()) + " join "
+        return p.factClass().getSimpleName() + " " + p.name() + " alpha " + alpha(p.alpha()) + " join "
                 + joins(p.joins()) + " beta " + beta(p.betaTests()) + " bind " + bindings(p.bindings());
     }
 
@@ -877,7 +877,7 @@ class FoldPlanWitnessTest {
     /** A constant of the analysis with every field: its value, the class of its value (a list by the classes of its
      *  elements), its IR type and its source fragment, each null where the constant has none (fix round 1c-B2). */
     private static String constant(Term.Const c) {
-        return c.value() + " {" + javaClass(c.value()) + ", type " + c.type() + ", bron " + c.source() + "}";
+        return c.value() + " {" + javaClass(c.value()) + ", type " + c.type() + ", source " + c.source() + "}";
     }
 
     private static String javaClass(Object value) {
@@ -919,40 +919,40 @@ class FoldPlanWitnessTest {
     private static void consequence(Consequence g, List<String> out) {
         switch (g) {
             case Consequence.Contribution b -> {
-                out.add("  gevolg Bijdrage [subject=" + b.subject() + ", vouw=" + b.fold() + ", member=" + b.member()
+                out.add("  consequence Contribution [subject=" + b.subject() + ", fold=" + b.fold() + ", member=" + b.member()
                         + ", slots=" + b.slots() + ", size=" + b.size() + ", insertion=" + b.insertion() + "]");
                 switch (b.input()) {
-                    case Consequence.Input.Count t -> out.add("    inbreng Telling");
-                    case Consequence.Input.MemberValue l -> out.add("    inbreng Lidwaarde [value=" + l.value() + ", total="
-                            + l.total() + ", gevuld=" + l.filled() + "]");
+                    case Consequence.Input.Count t -> out.add("    input Count");
+                    case Consequence.Input.MemberValue l -> out.add("    input MemberValue [value=" + l.value() + ", total="
+                            + l.total() + ", filled=" + l.filled() + "]");
                     case Consequence.Input.Verdict o -> {
-                        out.add("    inbreng Oordeel matrix " + TermTree.tree(o.matrix()));
+                        out.add("    input Verdict matrix " + TermTree.tree(o.matrix()));
                         TermTree.fields("      matrix", o.matrix(), "0", out);
                     }
                     case Consequence.Input.MemberTest l -> {
-                        out.add("    inbreng Lidtoets [sonde=" + l.depositFlag() + ", plaats=" + place(l.place()) + "] matrix "
+                        out.add("    input MemberTest [probe=" + l.depositFlag() + ", place=" + place(l.place()) + "] matrix "
                                 + TermTree.tree(l.matrix()));
                         TermTree.fields("      matrix", l.matrix(), "0", out);
                     }
                 }
             }
-            case Consequence.FilterDeposit f -> out.add("  gevolg Filterdeponering [subject=" + f.subject() + ", vouw="
+            case Consequence.FilterDeposit f -> out.add("  consequence FilterDeposit [subject=" + f.subject() + ", fold="
                     + f.fold() + ", member=" + f.member() + ", insertion=" + f.insertion() + "]");
             case Consequence.FilterFault f -> {
-                out.add("  gevolg Filterfout [subject=" + f.subject() + ", vouw=" + f.fold() + ", member=" + f.member()
-                        + ", plaats=" + place(f.place()) + ", slots=" + f.slots() + ", size=" + f.size()
+                out.add("  consequence FilterFault [subject=" + f.subject() + ", fold=" + f.fold() + ", member=" + f.member()
+                        + ", place=" + place(f.place()) + ", slots=" + f.slots() + ", size=" + f.size()
                         + ", insertion=" + f.insertion() + "] filter " + TermTree.tree(f.filter()));
                 TermTree.fields("    filter", f.filter(), "0", out);
             }
-            case Consequence.MemberFault f -> out.add("  gevolg Lidfout [subject=" + f.subject() + ", vouw=" + f.fold()
-                    + ", member=" + f.member() + ", plaats=" + place(f.place()) + ", before=" + f.before() + ", after=" + f.after()
+            case Consequence.MemberFault f -> out.add("  consequence MemberFault [subject=" + f.subject() + ", fold=" + f.fold()
+                    + ", member=" + f.member() + ", place=" + place(f.place()) + ", before=" + f.before() + ", after=" + f.after()
                     + ", insertion=" + f.insertion() + "]");
             default -> throw new IllegalStateException("geen gevolg van een vouw: " + g);
         }
     }
 
     private static String place(Consequence.FoldPlace p) {
-        return "selectie " + p.selection() + " " + p.steps().stream().map(s -> s.field() + " " + s.count() + " "
+        return "selection " + p.selection() + " " + p.steps().stream().map(s -> s.field() + " " + s.count() + " "
                 + s.place()).toList() + " " + p.reason();
     }
 }

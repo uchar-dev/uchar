@@ -1,14 +1,14 @@
-invoer bean "V1" Vondst(s=leeg)
-vuringen 1 plafond 10000 geenFixpunt null
-fixpunt ja
-spoor-telling {"maak"=1}
-spoor-volgorde ["maak"]
-lees koppeling "F x" "r"="V1" "s"=«"maak"»("V1")#1
-lees object «"maak"»("V1")#1 door "maak" voor "V1"
-feiten 6
-feit CreationPhase(number=Integer(2), stratum=Integer(0))
-feit CreationStamp(rule=String("maak"), subject="V1", object=«"maak"»("V1")#1, phase=Integer(1), stratum=Integer(0), depth=Integer(1))
-feit Fired(noFixpoint=leeg)
-feit RelationLink(relation=String("f x"), first="V1", second=«"maak"»("V1")#1, phase=Integer(1))
-feit bean "V1" Vondst(s=leeg)
-feit bean «"maak"»("V1")#1 Boei(r=leeg)
+input bean "V1" Vondst(s=empty)
+firings 1 cap 10000 noFixpoint null
+fixpoint yes
+trace-count {"maak"=1}
+trace-order ["maak"]
+read link "F x" "r"="V1" "s"=«"maak"»("V1")#1
+read object «"maak"»("V1")#1 by "maak" for "V1"
+facts 6
+fact CreationPhase(number=Integer(2), stratum=Integer(0))
+fact CreationStamp(rule=String("maak"), subject="V1", object=«"maak"»("V1")#1, phase=Integer(1), stratum=Integer(0), depth=Integer(1))
+fact Fired(noFixpoint=empty)
+fact RelationLink(relation=String("f x"), first="V1", second=«"maak"»("V1")#1, phase=Integer(1))
+fact bean "V1" Vondst(s=empty)
+fact bean «"maak"»("V1")#1 Boei(r=empty)

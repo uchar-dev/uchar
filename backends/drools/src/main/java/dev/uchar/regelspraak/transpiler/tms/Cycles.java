@@ -280,7 +280,7 @@ public final class Cycles {
     }
 
     private static Msg form(Form v) {
-        String category = switch (v.kind()) {
+        String formKind = switch (v.kind()) {
             case REGEL -> "rule";
             case OBJECT_CREATION -> "object-creation";
             case ALLOCATION -> "allocation";
@@ -289,7 +289,7 @@ public final class Cycles {
             case FACT_CREATION -> "fact-creation";
             case DEFAULTS_GROUP -> "defaults-group";
         };
-        return Msg.drools("PART.cycle.form." + category, "name", v.name());
+        return Msg.drools("PART.cycle.form." + formKind, "name", v.name());
     }
 
     private static Msg.Enumeration enumeration(List<?> parts) {
@@ -313,7 +313,7 @@ public final class Cycles {
         private final Map<Object, List<RoleBindingRef>> navigation;
         private final Map<Object, RoleBindingRef> roleBindings;
         private final Map<Object, List<RoleBindingRef>> sourcePaths;
-        private final Stacks stapels;
+        private final Stacks stacks;
         /** How a node is shown, by key: a member as "Type.naam", spelled as declared. */
         private final Map<String, Object> names = new HashMap<>();
         /** The order nodes are listed in: the members first, by type and name, then the other nodes. */
@@ -326,7 +326,7 @@ public final class Cycles {
             this.navigation = navigation;
             this.roleBindings = roleBindings;
             this.sourcePaths = sourcePaths;
-            this.stapels = new Stacks(model, defaults);
+            this.stacks = new Stacks(model, defaults);
         }
 
         Object node(String k) {
@@ -419,7 +419,7 @@ public final class Cycles {
                 List<Read> reads = new ArrayList<>();
                 condition(r.condition(), d.objectType(), false, reads);
                 expr(r.value(), d.objectType(), reads);
-                if (!characteristic && !stapels.absorbedOn(d.objectType(), d.attribute()).isEmpty()) reads = negative(reads);
+                if (!characteristic && !stacks.absorbedOn(d.objectType(), d.attribute()).isEmpty()) reads = negative(reads);
                 out.add(new Form(ProducerConsumer.FormKind.REGEL, ProducerConsumer.baseName(r.name()), r, false,
                         characteristic, writes, reads));
             }

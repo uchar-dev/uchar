@@ -166,30 +166,30 @@ final class RuleChecker {
         for (Input o : inputs) {
             GeneratedFrom generatedFrom = new GeneratedFrom(Designatable.attribute(o.type().name, o.attribute()),
                     OriginForm.OPGAVE_BOVEN_BEREKENING);
-            kandidaat(candidates, Designatable.attribute(o.type().name, o.supplied()), generatedFrom);
-            kandidaat(candidates, Designatable.attribute(o.type().name, o.computed()), generatedFrom);
-            kandidaat(candidates, Designatable.characteristic(o.type().name, o.deviating()), generatedFrom);
+            candidate(candidates, Designatable.attribute(o.type().name, o.supplied()), generatedFrom);
+            candidate(candidates, Designatable.attribute(o.type().name, o.computed()), generatedFrom);
+            candidate(candidates, Designatable.characteristic(o.type().name, o.deviating()), generatedFrom);
             if (lowered.contains(o))
                 for (String form : List.of(o.ruleName(), o.consistencyCheck(), o.group()))
-                    kandidaat(candidates, Designatable.form(form), generatedFrom);
+                    candidate(candidates, Designatable.form(form), generatedFrom);
         }
         for (String[] g : subtypeGroups) {
             Designatable group = Designatable.form(g[0]);
-            kandidaat(candidates, group, new GeneratedFrom(Designatable.form(g[1]), OriginForm.EXCEPTION_FOR_SUBTYPE));
+            candidate(candidates, group, new GeneratedFrom(Designatable.form(g[1]), OriginForm.EXCEPTION_FOR_SUBTYPE));
             parts.put(elementKey(group), List.of(new Designations.NamePart(g[1], Designatable.form(g[1])),
                     new Designations.NamePart(" voor ", null), new Designations.NamePart(g[2], Designatable.objectType(g[2]))));
         }
         for (var t : rowRules.entrySet()) {
             GeneratedFrom generatedFrom = new GeneratedFrom(Designatable.form(DefinitionResolver.src(t.getKey().beslistabelNaam())),
                     OriginForm.BESLISTABELRIJ);
-            for (String row : t.getValue()) kandidaat(candidates, Designatable.form(row), generatedFrom);
+            for (String row : t.getValue()) candidate(candidates, Designatable.form(row), generatedFrom);
         }
         for (ExpressionBuilder.HelperMember h : builder.helperMembers()) {
             Designatable member = Designatable.attribute(attributeDeclarant(h.target(), h.member()).name, h.member());
             GeneratedFrom generatedFrom = new GeneratedFrom(member, OriginForm.STEPS_AFTER_SET);
             Designatable attribute = Designatable.attribute(h.element().name, h.name()), ruleName = Designatable.form(h.name());
-            kandidaat(candidates, attribute, generatedFrom);
-            kandidaat(candidates, ruleName, generatedFrom);
+            candidate(candidates, attribute, generatedFrom);
+            candidate(candidates, ruleName, generatedFrom);
             List<Designations.NamePart> d = helperNameParts(h, member);
             if (d != null) {
                 parts.put(elementKey(attribute), d);
@@ -197,7 +197,7 @@ final class RuleChecker {
             }
         }
         for (String[] a : anchorRules.values())
-            kandidaat(candidates, Designatable.attribute(a[0], a[1]),
+            candidate(candidates, Designatable.attribute(a[0], a[1]),
                     new GeneratedFrom(Designatable.form(a[2]), OriginForm.START_POINT));
         List<Designatable> all = model.designatable();
         for (Designatable b : all) {
@@ -271,7 +271,7 @@ final class RuleChecker {
     /** Records {@code generatedFrom} as the origin of {@code element}. Two different origins for one element are two forms that
      *  generate one name, which a refusal (WF-020, a member name taken) reports in a model with an error; in a model
      *  without one they are a fault of the frontend. */
-    private void kandidaat(Map<String, GeneratedFrom> candidates, Designatable element, GeneratedFrom generatedFrom) {
+    private void candidate(Map<String, GeneratedFrom> candidates, Designatable element, GeneratedFrom generatedFrom) {
         GeneratedFrom earlier = candidates.putIfAbsent(elementKey(element), generatedFrom);
         if (earlier != null && !earlier.equals(generatedFrom) && model.isOk())
             throw new IllegalStateException("het element " + element + " is gegenereerd uit " + earlier + " en uit "
@@ -1678,7 +1678,7 @@ final class RuleChecker {
         Map<String, Object[]> forms = formSites(doc);
         Map<String, List<Node>> perRoot = new LinkedHashMap<>();
         for (Node k : nodes) if (!k.error) perRoot.computeIfAbsent(k.root, w -> new ArrayList<>()).add(k);
-        java.util.Set<ResolvedRule> gelift = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        java.util.Set<ResolvedRule> lifted = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         for (var e : perRoot.entrySet()) {
             String root = e.getKey();
             List<Node> tree = e.getValue();
@@ -1731,10 +1731,10 @@ final class RuleChecker {
                 subtypeGroups.add(new String[]{own.name(), root, s.getKey().name});
                 pdOrigin.put(own, new Origin(s.getValue().get(0).line, s.getValue().get(0).head));
             }
-            gelift.add(baseRule);
-            for (Node k : tree) gelift.add(k.resolvedRule);
+            lifted.add(baseRule);
+            for (Node k : tree) lifted.add(k.resolvedRule);
         }
-        model.resolvedRules.removeIf(gelift::contains);
+        model.resolvedRules.removeIf(lifted::contains);
     }
 
     /** Checks the children of one carrier ({@code carrier} null: the base rule), top-down: which kinds may stand
@@ -2471,9 +2471,9 @@ final class RuleChecker {
             Typing.Coded reason = inputDeclarationError(o, memberLines);
             if (reason != null) { error(o.line(), reason); continue; }
             Datatype dt = t.attributes.get(o.attribute());
-            java.util.LinkedHashMap<String, Datatype> oud = new java.util.LinkedHashMap<>(t.attributes);
+            java.util.LinkedHashMap<String, Datatype> old = new java.util.LinkedHashMap<>(t.attributes);
             t.attributes.clear();
-            for (var e : oud.entrySet()) {
+            for (var e : old.entrySet()) {
                 t.attributes.put(e.getKey(), e.getValue());
                 if (e.getKey().equals(o.attribute())) {
                     t.attributes.put(o.supplied(), dt);
@@ -4169,19 +4169,19 @@ final class RuleChecker {
      *  allocation is refused or markered on its own. */
     private RegelSpraakModel.RoleBindingRef allocationJoin(String name, Expr.AttributeReference source, Expr.AttributeReference targetName,
                                                           int line) {
-        ObjectType verdeler = source.objectType(), recipient = targetName.objectType();
-        if (verdeler == null || recipient == null) return null;
+        ObjectType distributor = source.objectType(), recipient = targetName.objectType();
+        if (distributor == null || recipient == null) return null;
         String written = targetName.subjectSource() == null ? "" : targetName.subjectSource().trim()
                 .replaceFirst("^(?i)(alle|de|het|een|elke)\\s+", "");
-        for (String kandidaat : RegelSpraakModel.nameCandidates(written)) {
-            RegelSpraakModel.RoleBindingRef rb = model.connectingRoleViaNameBinding(verdeler, recipient, kandidaat);
+        for (String candidate : RegelSpraakModel.nameCandidates(written)) {
+            RegelSpraakModel.RoleBindingRef rb = model.connectingRoleViaNameBinding(distributor, recipient, candidate);
             if (rb != null) return rb;
         }
-        RegelSpraakModel.RoleBindingRef rb = model.connectingRoleBinding(verdeler, recipient);
+        RegelSpraakModel.RoleBindingRef rb = model.connectingRoleBinding(distributor, recipient);
         if (rb != null) return rb;
         String head = RegelSpraakModel.nameCandidates(written).stream().findFirst().orElse(written);
         model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                "RGS-185", params("name", name, "reason", pairReason(verdeler, recipient, head)), line));
+                "RGS-185", params("name", name, "reason", pairReason(distributor, recipient, head)), line));
         return null;
     }
 
@@ -5769,12 +5769,12 @@ final class RuleChecker {
         return n == 1 ? found : null;
     }
 
-    /** {@code c} with the operand {@code oud} (matched by identity — it was just found there) replaced by
+    /** {@code c} with the operand {@code old} (matched by identity — it was just found there) replaced by
      *  {@code fresh}; every other field, the §8.2 qualifier included, unchanged. */
-    private static Condition withOperand(Condition c, Expr oud, Expr fresh) {
+    private static Condition withOperand(Condition c, Expr old, Expr fresh) {
         if (c instanceof Condition.Comparison v)
-            return new Condition.Comparison(v.op(), v.left() == oud ? fresh : v.left(),
-                    v.right() == oud ? fresh : v.right(), v.period(), v.source());
+            return new Condition.Comparison(v.op(), v.left() == old ? fresh : v.left(),
+                    v.right() == old ? fresh : v.right(), v.period(), v.source());
         if (c instanceof Condition.Predicate p)
             return new Condition.Predicate(p.kind(), fresh, p.dayKind(), p.negation(), p.digits(),
                     p.period(), p.source());
@@ -6253,9 +6253,9 @@ final class RuleChecker {
                     bareNumberLiteral(c.expressie()), bareNumberLiteral(op.expressie()), line,
                     enumLabelOf(c.expressie()), enumLabelOf(op.expressie()));
         else if (op.AAN_DE_ELFPROEF() != null)
-            reportPredicate(Typing.UnairePred.ELFPROEF, lhs, line);
+            reportPredicate(Typing.UnaryPred.ELFPROEF, lhs, line);
         else if (op.NUMERIEK_IS_MET_EXACT() != null || op.NUMERIEK_ZIJN_MET_EXACT() != null)
-            reportPredicate(Typing.UnairePred.NUMERIEK_MET_EXACT, lhs, line);
+            reportPredicate(Typing.UnaryPred.NUMERIEK_MET_EXACT, lhs, line);
     }
 
     // §8.3.1/§13.4.15: a TOPLEVEL voorwaarde (after 'indien'/'dat'/'gedurende de tijd dat') takes ONLY the
@@ -6286,9 +6286,9 @@ final class RuleChecker {
             reportCompare(cmpOf(op.vergelijkingsTekenGesplitst()), lhs, infer(op.expressie()), lhsLit, bareNumberLiteral(op.expressie()), line,
                     lhsEnum, enumLabelOf(op.expressie()));
         else if (op.AAN_DE_ELFPROEF() != null)
-            reportPredicate(Typing.UnairePred.ELFPROEF, lhs, line);
+            reportPredicate(Typing.UnaryPred.ELFPROEF, lhs, line);
         else if (op.NUMERIEK_IS_MET_EXACT() != null || op.NUMERIEK_ZIJN_MET_EXACT() != null)
-            reportPredicate(Typing.UnairePred.NUMERIEK_MET_EXACT, lhs, line);
+            reportPredicate(Typing.UnaryPred.NUMERIEK_MET_EXACT, lhs, line);
     }
 
     /** Type-check a verb-leading operator (vergelijking, elfproef, numeriek-met-exact). */
@@ -6298,9 +6298,9 @@ final class RuleChecker {
             reportCompare(cmpOf(op.vergelijkingsTeken()), lhs, infer(op.expressie()), lhsLit, bareNumberLiteral(op.expressie()), line,
                     lhsEnum, enumLabelOf(op.expressie()));
         else if (op.AAN_DE_ELFPROEF() != null)
-            reportPredicate(Typing.UnairePred.ELFPROEF, lhs, line);
+            reportPredicate(Typing.UnaryPred.ELFPROEF, lhs, line);
         else if (op.NUMERIEK_MET_EXACT() != null)
-            reportPredicate(Typing.UnairePred.NUMERIEK_MET_EXACT, lhs, line);
+            reportPredicate(Typing.UnaryPred.NUMERIEK_MET_EXACT, lhs, line);
     }
 
     private void reportCompare(Typing.CmpOp op, Datatype l, Datatype r, boolean lLit, boolean rLit, int line,
@@ -6334,7 +6334,7 @@ final class RuleChecker {
     private static Datatype withUnit(Datatype t, dev.uchar.regelspraak.model.Unit unit) {
         return t instanceof Datatype.Numeric n ? new Datatype.Numeric(n.wholeNumber(), n.decimals(), n.sign(), unit) : t;
     }
-    private void reportPredicate(Typing.UnairePred p, Datatype operand, int line) {
+    private void reportPredicate(Typing.UnaryPred p, Datatype operand, int line) {
         var res = Typing.predicate(p, operand);
         if (!res.ok()) model.diagnostics.add(res.failure().frame("condition").at(Severity.ERROR, line));
     }
@@ -6343,7 +6343,7 @@ final class RuleChecker {
      *  the Typing DAGSOORT ERROR (this is its only live call site on the condition path), and the conditie
      *  stays an Unresolved marker so neither back-end builds a dagsoort check over a non-date. */
     private Condition dayKindOperandError(Expr lhs, KaleNaamContext nameCtx, Source source) {
-        reportPredicate(Typing.UnairePred.DAGSOORT, lhs.type(), nameCtx.getStart().getLine());
+        reportPredicate(Typing.UnaryPred.DAGSOORT, lhs.type(), nameCtx.getStart().getLine());
         return new Condition.Unresolved(source, null);   // reportPredicate's ERROR is this marker's diagnosis
     }
 

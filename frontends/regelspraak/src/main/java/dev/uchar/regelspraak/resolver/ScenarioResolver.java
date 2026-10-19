@@ -333,7 +333,7 @@ public final class ScenarioResolver {
                     "RGS-226", params());
         if (scope instanceof ScopeEnkeleRegelContext s) {
             String name = src(s.enkeleRegelReferentie());
-            return gescoped(formsOf(name, s.getStart().getLine()));
+            return scoped(formsOf(name, s.getStart().getLine()));
         }
         if (scope instanceof ScopeMeerdereRegelsContext s) {
             List<String> names = new ArrayList<>();
@@ -343,7 +343,7 @@ public final class ScenarioResolver {
                 names.add(name);
                 forms.addAll(formsOf(name, ref.getStart().getLine()));
             }
-            return gescoped(List.copyOf(forms));
+            return scoped(List.copyOf(forms));
         }
         ScopeRegelgroepContext s = (ScopeRegelgroepContext) scope;
         String group = src(s.enkeleRegelReferentie());
@@ -351,16 +351,16 @@ public final class ScenarioResolver {
         if (g == null) {
             error(s.getStart().getLine(),
                     "RGS-227", params("group", group));
-            return gescoped(List.of());
+            return scoped(List.of());
         }
         LinkedHashSet<String> forms = new LinkedHashSet<>();
         for (String member : g.members()) forms.addAll(formsOf(member, s.getStart().getLine()));
-        return gescoped(List.copyOf(forms));
+        return scoped(List.copyOf(forms));
     }
 
     /** A scope over {@code named} and the defaults groups the stack of each concrete type needs beside them
      *  ({@link #withStack}), with the source lines of the blocks whose every form it leaves out. */
-    private Scope gescoped(List<String> named) {
+    private Scope scoped(List<String> named) {
         List<String> forms = withStack(named);
         Set<String> carried = new java.util.HashSet<>();
         for (String v : forms) carried.add(norm(v));

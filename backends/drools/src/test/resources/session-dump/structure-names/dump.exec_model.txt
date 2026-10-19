@@ -1,12 +1,12 @@
-invoer bean "V1" Vondst(tariefVakOudNieuw=leeg, wrakXY=Boolean(false))
-vuringen 2 plafond 10000 geenFixpunt null
-fixpunt ja
-spoor-telling {"tarief"=1, "wrak"=1}
-spoor-volgorde ["tarief", "wrak"]
-lees kenmerk "V1" "wrak (x) = y"
-lees waarde "V1"."tarief = vak (oud).nieuw" = BigDecimal(1)
-feiten 4
-feit Fired(noFixpoint=leeg)
-feit HasCharacteristic(subject="V1", characteristic="vondst"."wrak (x) = y" (kenmerk))
-feit Value(subject="V1", attribute="vondst"."tarief = vak (oud).nieuw", value=BigDecimal(1), writer=String("tarief"))
-feit bean "V1" Vondst(tariefVakOudNieuw=leeg, wrakXY=Boolean(false))
+input bean "V1" Vondst(tariefVakOudNieuw=empty, wrakXY=Boolean(false))
+firings 2 cap 10000 noFixpoint null
+fixpoint yes
+trace-count {"tarief"=1, "wrak"=1}
+trace-order ["tarief", "wrak"]
+read characteristic "V1" "wrak (x) = y"
+read value "V1"."tarief = vak (oud).nieuw" = BigDecimal(1)
+facts 4
+fact Fired(noFixpoint=empty)
+fact HasCharacteristic(subject="V1", characteristic="vondst"."wrak (x) = y" (characteristic))
+fact Value(subject="V1", attribute="vondst"."tarief = vak (oud).nieuw", value=BigDecimal(1), writer=String("tarief"))
+fact bean "V1" Vondst(tariefVakOudNieuw=empty, wrakXY=Boolean(false))

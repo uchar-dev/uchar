@@ -21,10 +21,10 @@ import java.util.stream.Stream;
  * fixpoint.
  * One file per golden, its cases in the order of their names. Gate 12 pins only the expectations of a case; this pins
  * every fact and every firing. A step of the card compares the dump of its code with the one before it with
- * {@code diff -r}: {@code lees}, {@code feiten} and {@code spoor-telling} must be equal, and a difference in
- * {@code spoor-volgorde} is explained. The seam in {@link CaseRunner} writes the same dump for every session the suite
+ * {@code diff -r}: {@code read}, {@code facts} and {@code trace-count} must be equal, and a difference in
+ * {@code trace-order} is explained. The seam in {@link CaseRunner} writes the same dump for every session the suite
  * fires through the replay, with the property {@value SessionDump#PROPERTY} set to a fresh directory:
- * {@code mvn -o -q -f backends/drools/pom.xml package -Duchar.vuurspoor=<directory>}.
+ * {@code mvn -o -q -f backends/drools/pom.xml package -Duchar.fireTrace=<directory>}.
  *
  * <p>A harness, not a witness and not a gate: its name ends without {@code Test}, so surefire does not run it, and no
  * gate does. Run it from the root of the repository, with the test classpath from the dependency plugin, which
@@ -43,8 +43,8 @@ import java.util.stream.Stream;
  *
  * <p>The branch is {@code EXEC_MODEL} without the fourth argument. With {@code DRL_TEXT} it dumps the sessions of the
  * analysis rendered as DRL text (card drl-teksttak-op-truth-maintenance), over the same goldens, so that a step compares
- * {@code lees} and {@code feiten} of each case with the dump of the exec-model branch; a golden that branch refuses gets
- * a file of one line, {@code WEIGERING} and the reason, and counts among the refused, not among the failed.
+ * {@code read} and {@code facts} of each case with the dump of the exec-model branch; a golden that branch refuses gets
+ * a file of one line, {@code REFUSAL} and the reason, and counts among the refused, not among the failed.
  */
 public final class FireTrace {
 
@@ -54,7 +54,7 @@ public final class FireTrace {
 
     public static void main(String[] args) throws IOException {
         if (args.length != 3 && args.length != 4)
-            throw new IllegalArgumentException("gebruik: Vuurspoor <corpus/golden> <tabel> <verse uitmap> [<tak>]");
+            throw new IllegalArgumentException("usage: FireTrace <corpus/golden> <table> <fresh output directory> [<branch>]");
         DroolsBackend.Branch branch = args.length == 4 ? DroolsBackend.Branch.valueOf(args[3])
                 : DroolsBackend.Branch.EXEC_MODEL;
         Path golden = Path.of(args[0]);
@@ -86,21 +86,21 @@ public final class FireTrace {
                 // every golden of the table plays
                 if (branch == DroolsBackend.Branch.EXEC_MODEL) {
                     faults++;
-                    out.append("FOUT ").append(e).append('\n');
+                    out.append("FAULT ").append(e).append('\n');
                 } else {
                     refused++;
                     out.setLength(0);
-                    out.append("WEIGERING ").append(e instanceof IrLoader.Refusal ? "loader: " : "")
+                    out.append("REFUSAL ").append(e instanceof IrLoader.Refusal ? "loader: " : "")
                             .append(e.getMessage().replace('\n', ' ')).append('\n');
                 }
             } catch (RuntimeException | IOException e) {
                 faults++;
-                out.append("FOUT ").append(e).append('\n');
+                out.append("FAULT ").append(e).append('\n');
             }
             Files.writeString(outputDirectory.resolve(g.replace('/', '_') + ".txt"), out.toString());
         }
-        System.out.println("vuurspoor: " + played.size() + " goldens, " + cases + " cases, " + faults + " fouten, "
-                + (branch == DroolsBackend.Branch.EXEC_MODEL ? "" : refused + " geweigerd op " + branch + ", ")
+        System.out.println("fire trace: " + played.size() + " goldens, " + cases + " cases, " + faults + " faults, "
+                + (branch == DroolsBackend.Branch.EXEC_MODEL ? "" : refused + " refused on " + branch + ", ")
                 + (System.nanoTime() - begin) / 1_000_000 + " ms");
         if (faults > 0) System.exit(1);
     }

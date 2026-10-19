@@ -324,28 +324,28 @@ from fractions import Fraction
 
 # the position classes and their restatement-factor exponents (see the script header). The exponent
 # is per NODE KIND; MEMBERSHIP is per position class, which for Binary/Aggregation is finer (below).
-KLASSE = {"Binary": 5, "Let": 6, "Aggregation": 7, "Rounding": 8, "Clamp": 9}
+EXPONENT = {"Binary": 5, "Let": 6, "Aggregation": 7, "Rounding": 8, "Clamp": 9}
 # ch. 2.10 clause 2 splits Binary by OPERATOR and an Aggregation by KIND, not by node: only these
 # branches DERIVE a result unit (an additive result carries the left unit / a unitless side adopts
 # the other; a times cancels or forms the opaque product; §4.6 Eenheid1 hands a value aggregation
 # its first operand's). Every OTHER op/kind of those two node kinds is ch. 2.10's FOURTH class — v0
 # derives nothing there, so it is neither twistable nor exempt, and the clamp reports it.
-AFGELEIDE_OP = {"plus", "minus", "reducedBy", "times"}
-AFGELEIDE_KIND = {"sum", "total", "minimum", "maximum", "first", "last"}
+DERIVED_OP = {"plus", "minus", "reducedBy", "times"}
+DERIVED_KIND = {"sum", "total", "minimum", "maximum", "first", "last"}
 # A BuiltinCall is a node kind the table carries with no derived branch at all: an absolute value,
 # a root and the date/time extractors are the fourth class, and the two duration kinds are exempt
 # (below). Since L4 it is the other half of what v0 wrote as one Functie node (delta B21).
-GEDRAGEN = set(KLASSE) | {"BuiltinCall"}
+CARRIED = set(EXPONENT) | {"BuiltinCall"}
 # The reason-carrying exception set of the step-6 clamp: node kinds OUTSIDE the twist table whose
 # annotation IS the source, so leaving them unprobed is a statement and not a gap.
-UITZONDERING = {"Literal": "the literal's type carries its own value's unit ({\"number\": \"3.5\"} in EUR), a copy of no declaration"}
+EXEMPT_NODES = {"Literal": "the literal's type carries its own value's unit ({\"number\": \"3.5\"} in EUR), a copy of no declaration"}
 # WF-038: a duration's own unit is the operator's parameter, not a derived result type
-GEEN_FUNCTIE = {"duration", "absoluteDuration"}
-DATUM = "Date"
-ACHTERVOEGSEL = "-verdraaid"
+EXEMPT_BUILTINS = {"duration", "absoluteDuration"}
+DATE = "Date"
+SUFFIX = "-twisted"
 
 
-def positieklasse(x):
+def position_class(x):
     """The key table and clamp agree on: (node, op) for a Binary, (node, kind) for an Aggregation
        or a BuiltinCall, the bare node kind otherwise. Printed as the clamp's witness, so a report
        names the BRANCH."""
@@ -357,18 +357,18 @@ def positieklasse(x):
     return node
 
 
-def afgeleid(x):
+def derived(x):
     """True iff this position's result unit is one ch. 2.10 clause 2 DERIVES — the only positions a
        twist may probe, because a twist asks whether a consumer follows a rule that exists."""
     node = x.get("node")
     if node == "Binary":
-        return x.get("op") in AFGELEIDE_OP
+        return x.get("op") in DERIVED_OP
     if node == "Aggregation":
-        return x.get("kind") in AFGELEIDE_KIND
-    return node in KLASSE
+        return x.get("kind") in DERIVED_KIND
+    return node in EXPONENT
 
 
-class RuweNum:
+class RawNum:
     """A JSON number with its original lexeme, so untouched numbers re-emit unchanged."""
     __slots__ = ("raw",)
 
@@ -376,38 +376,38 @@ class RuweNum:
         self.raw = s
 
 
-def rationaal(f):
+def rational(f):
     """The exact factor {num, den} as a Fraction; anything else is no factor to twist."""
-    if not (isinstance(f, dict) and isinstance(f.get("num"), RuweNum)
-            and isinstance(f.get("den"), RuweNum)):
+    if not (isinstance(f, dict) and isinstance(f.get("num"), RawNum)
+            and isinstance(f.get("den"), RawNum)):
         return None
     return Fraction(int(f["num"].raw), int(f["den"].raw))
 
 
-def zusje(e, exp):
+def sister(e, exp):
     """A convertible SISTER of unit e: same canonical, distinct abbreviation, factor x 10^exp —
        the rational written {num, den} in lowest terms, as the wire writes every factor."""
     if not isinstance(e, dict):
         return None
-    a, c, f = e.get("abbreviation"), e.get("canonical"), rationaal(e.get("factorToCanonical"))
-    if a is None or c is None or f is None or ACHTERVOEGSEL in a:
+    a, c, f = e.get("abbreviation"), e.get("canonical"), rational(e.get("factorToCanonical"))
+    if a is None or c is None or f is None or SUFFIX in a:
         return None
     z = f * (10 ** exp)
-    uit = dict(e)
-    uit["abbreviation"] = a + ACHTERVOEGSEL + str(exp)
-    uit["factorToCanonical"] = {"num": RuweNum(str(z.numerator)), "den": RuweNum(str(z.denominator))}
-    return uit
+    out = dict(e)
+    out["abbreviation"] = a + SUFFIX + str(exp)
+    out["factorToCanonical"] = {"num": RawNum(str(z.numerator)), "den": RawNum(str(z.denominator))}
+    return out
 
 
-def verdraai(dt, exp):
+def twist(dt, exp):
     if not isinstance(dt, dict) or dt.get("node") != "Number":
         return dt, None
-    u = zusje(dt.get("unit"), exp)
+    u = sister(dt.get("unit"), exp)
     if u is None:
         return dt, None
-    uit = dict(dt)
-    uit["unit"] = u
-    return uit, "%s %s->%s" % (dt.get("node"), dt["unit"].get("abbreviation"), u["abbreviation"])
+    out = dict(dt)
+    out["unit"] = u
+    return out, "%s %s->%s" % (dt.get("node"), dt["unit"].get("abbreviation"), u["abbreviation"])
 
 
 # A reference writes no type since L2 (B13): whether an operand is a DATE is read off the
@@ -416,7 +416,7 @@ def verdraai(dt, exp):
 DECL = {"attr": {}, "super": {}, "param": {}}
 
 
-def declaraties(doc):
+def declarations(doc):
     model = doc.get("model", {})
     for ot in model.get("objectTypes", []):
         n = ot.get("name")
@@ -427,7 +427,7 @@ def declaraties(doc):
         DECL["param"][(p.get("name") or "").lower()] = p.get("datatype")
 
 
-def gedeclareerd(e, scope):
+def declared(e, scope):
     node = e.get("node")
     if node == "AttributeReference":
         ot, a = (e.get("subjectType") or "").lower(), (e.get("attribute") or "").lower()
@@ -439,81 +439,81 @@ def gedeclareerd(e, scope):
     if node == "ParameterReference":
         return DECL["param"].get((e.get("parameter") or "").lower())
     if node == "DimensionCellRead":
-        return gedeclareerd(e.get("attribute") or {}, scope)
+        return declared(e.get("attribute") or {}, scope)
     if node == "BinderRef":
         return scope.get((e.get("name") or "").lower())
     return e.get("type")
 
 
-def datum_getypeerd(e, scope):
+def is_date_typed(e, scope):
     if not isinstance(e, dict):
         return False
-    t = gedeclareerd(e, scope)
-    return isinstance(t, dict) and t.get("node") == DATUM
+    t = declared(e, scope)
+    return isinstance(t, dict) and t.get("node") == DATE
 
 
-def eenheiddragend(dt):
+def unit_bearing(dt):
     return isinstance(dt, dict) and dt.get("node") == "Number" and dt.get("unit") is not None
 
 
-def loop(x, telling, sla_eigen_over=False, scope=None):
+def loop(x, tally, skip_own=False, scope=None):
     scope = {} if scope is None else scope
     if isinstance(x, list):
         for v in x:
-            loop(v, telling, scope=scope)
+            loop(v, tally, scope=scope)
         return
     if not isinstance(x, dict):
         return
     node = x.get("node")
     # WF-035: the duration operand of a date +/- duration carries the calendar unit ref routes on
-    duur = None
+    duration = None
     if node == "Binary" and x.get("op") in ("plus", "minus", "reducedBy"):
         l, r = x.get("left"), x.get("right")
-        if datum_getypeerd(l, scope) and not datum_getypeerd(r, scope):
-            duur = r
-        elif datum_getypeerd(r, scope) and not datum_getypeerd(l, scope):
-            duur = l
-    vrijgesteld = sla_eigen_over or node in UITZONDERING \
-        or (node == "BuiltinCall" and x.get("kind") in GEEN_FUNCTIE)
-    if node is not None and eenheiddragend(x.get("type")):
+        if is_date_typed(l, scope) and not is_date_typed(r, scope):
+            duration = r
+        elif is_date_typed(r, scope) and not is_date_typed(l, scope):
+            duration = l
+    exempt = skip_own or node in EXEMPT_NODES \
+        or (node == "BuiltinCall" and x.get("kind") in EXEMPT_BUILTINS)
+    if node is not None and unit_bearing(x.get("type")):
         # step 6, the clamp: account for EVERY unit-bearing annotation, so a position that is
         # neither twisted nor exempt cannot pass unnoticed. The two arrivals are reported apart:
         # a FOURTH-CLASS branch of a carried node kind (v0 derives no result unit there) and a
         # node kind the table does not carry at all (a v1 form reaching the corpus).
-        telling["eenheid"] += 1
-        if vrijgesteld:
-            telling["vrijgesteld"] += 1
-        elif not afgeleid(x):
-            telling["vierde" if node in GEDRAGEN else "ongedekt"].append(positieklasse(x))
-        elif zusje(x["type"].get("unit"), KLASSE[node]) is None:
+        tally["unit"] += 1
+        if exempt:
+            tally["exempt"] += 1
+        elif not derived(x):
+            tally["fourth" if node in CARRIED else "uncovered"].append(position_class(x))
+        elif sister(x["type"].get("unit"), EXPONENT[node]) is None:
             # in the table, but no convertible SISTER exists (a unit with no canonical/factor —
             # a unit system declares no conversion for it). A non-convertible lie would measure
             # refusal routing, not a declaration reading, so it is counted and not twisted.
-            telling["zonderzusje"] += 1
-    if afgeleid(x) and not vrijgesteld:
-        nieuw, hoe = verdraai(x.get("type"), KLASSE[node])
-        if hoe:
-            x["type"] = nieuw
-            telling["treffers"].append(hoe)
+            tally["withoutSister"] += 1
+    if derived(x) and not exempt:
+        twisted, how = twist(x.get("type"), EXPONENT[node])
+        if how:
+            x["type"] = twisted
+            tally["hits"].append(how)
     # the binders a node opens are in scope of its body, with the type their binding declares
-    binnen = scope
+    inner = scope
     if node == "Let":
-        binnen = dict(scope)
-        binnen[(x.get("binder") or "").lower()] = gedeclareerd(x.get("value") or {}, scope)
+        inner = dict(scope)
+        inner[(x.get("binder") or "").lower()] = declared(x.get("value") or {}, scope)
     elif node in ("Lambda", "FunctionDef"):
-        binnen = {(p.get("name") or "").lower(): p.get("datatype") for p in x.get("parameters", [])}
+        inner = {(p.get("name") or "").lower(): p.get("datatype") for p in x.get("parameters", [])}
     elif node == "FilterList":
         # the filter binder reads each element of the list, so its type is the list's element type
-        binnen = dict(scope)
-        lijst = gedeclareerd(x.get("list") or {}, scope)
-        binnen[(x.get("binder") or "").lower()] = \
-            lijst.get("element") if isinstance(lijst, dict) else None
+        inner = dict(scope)
+        list_type = declared(x.get("list") or {}, scope)
+        inner[(x.get("binder") or "").lower()] = \
+            list_type.get("element") if isinstance(list_type, dict) else None
     for k, v in list(x.items()):
         if k == "type":        # a DECLARATION never sits under an expression's own type
             continue
         if node == "Match" and k == "arms":
             # an arm binder carries its constructor's declared payload, off the scrutinee's type
-            st = gedeclareerd(x.get("scrutinee") or {}, scope)
+            st = declared(x.get("scrutinee") or {}, scope)
             ctors = {(c.get("name") or "").lower(): c.get("payload")
                      for c in (st.get("constructors", []) if isinstance(st, dict) else [])}
             for arm in v if isinstance(v, list) else []:
@@ -521,16 +521,16 @@ def loop(x, telling, sla_eigen_over=False, scope=None):
                 armscope = dict(scope)
                 if b:
                     armscope[b.lower()] = ctors.get((arm.get("constructor") or "").lower())
-                loop(arm, telling, scope=armscope)
+                loop(arm, tally, scope=armscope)
             continue
-        loop(v, telling, sla_eigen_over=(v is duur),
-             scope=binnen if (node == "Let" and k == "body")
+        loop(v, tally, skip_own=(v is duration),
+             scope=inner if (node == "Let" and k == "body")
              or (node == "FilterList" and k == "condition") or node in ("Lambda", "FunctionDef")
              else scope)
 
 
-def stukken(o):
-    if isinstance(o, RuweNum):
+def pieces(o):
+    if isinstance(o, RawNum):
         yield o.raw
     elif o is None:
         yield "null"
@@ -542,51 +542,51 @@ def stukken(o):
         yield json.dumps(o, ensure_ascii=False)
     elif isinstance(o, dict):
         yield "{"
-        eerste = True
+        first = True
         for k, v in o.items():
-            if not eerste:
+            if not first:
                 yield ","
-            eerste = False
+            first = False
             yield json.dumps(k, ensure_ascii=False)
             yield ":"
-            for c in stukken(v):
+            for c in pieces(v):
                 yield c
         yield "}"
     elif isinstance(o, list):
         yield "["
-        eerste = True
+        first = True
         for v in o:
-            if not eerste:
+            if not first:
                 yield ","
-            eerste = False
-            for c in stukken(v):
+            first = False
+            for c in pieces(v):
                 yield c
         yield "]"
     else:
         raise TypeError(repr(o))
 
 
-bron, doel, naam = sys.argv[1], sys.argv[2], sys.argv[3]
-with open(bron, encoding="utf-8") as fh:
-    doc = json.load(fh, parse_int=RuweNum, parse_float=RuweNum)
-declaraties(doc)
-telling = {"treffers": [], "ongedekt": [], "vierde": [], "eenheid": 0, "vrijgesteld": 0,
-           "zonderzusje": 0}
-loop(doc, telling)
-map_ = os.path.dirname(doel)
+source, target, name = sys.argv[1], sys.argv[2], sys.argv[3]
+with open(source, encoding="utf-8") as fh:
+    doc = json.load(fh, parse_int=RawNum, parse_float=RawNum)
+declarations(doc)
+tally = {"hits": [], "uncovered": [], "fourth": [], "unit": 0, "exempt": 0,
+           "withoutSister": 0}
+loop(doc, tally)
+map_ = os.path.dirname(target)
 if map_:
     os.makedirs(map_, exist_ok=True)
-with open(doel, "w", encoding="utf-8") as fh:
-    for c in stukken(doc):
+with open(target, "w", encoding="utf-8") as fh:
+    for c in pieces(doc):
         fh.write(c)
 # line 1: the four counters the shell sums; then one TAGGED line per uncovered occurrence (the
 # clamp), the tag separating ch. 2.10's fourth class from a node kind the table does not carry.
-print("%d %d %d %d" % (len(telling["treffers"]), telling["eenheid"],
-                       telling["vrijgesteld"], telling["zonderzusje"]))
-for klasse in telling["vierde"]:
-    print("vierde %s %s" % (naam, klasse))
-for klasse in telling["ongedekt"]:
-    print("onbekend %s %s" % (naam, klasse))
+print("%d %d %d %d" % (len(tally["hits"]), tally["unit"],
+                       tally["exempt"], tally["withoutSister"]))
+for position in tally["fourth"]:
+    print("fourth %s %s" % (name, position))
+for position in tally["uncovered"]:
+    print("unknown %s %s" % (name, position))
 PY
 
 cat > "$VOCABULARY_TWISTER" <<'PY'
@@ -596,57 +596,57 @@ import json, os, sys
 # copies differ from the golden in the side table and in nothing else.
 
 
-class RuweNum:
+class RawNum:
     __slots__ = ("raw",)
 
     def __init__(self, s):
         self.raw = s
 
 
-def schrijf(o, pad):
-    def stuk(o):
-        if isinstance(o, RuweNum):
+def write_json(o, path):
+    def piece(o):
+        if isinstance(o, RawNum):
             return o.raw
         if isinstance(o, dict):
-            return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + stuk(v) for k, v in o.items()) + "}"
+            return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + piece(v) for k, v in o.items()) + "}"
         if isinstance(o, list):
-            return "[" + ",".join(stuk(v) for v in o) + "]"
+            return "[" + ",".join(piece(v) for v in o) + "]"
         return json.dumps(o, ensure_ascii=False)
-    with open(pad, "w", encoding="utf-8") as fh:
-        fh.write(stuk(o))
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(piece(o))
 
 
-def lees(pad):
-    with open(pad, encoding="utf-8") as fh:
-        return json.load(fh, parse_int=RuweNum, parse_float=RuweNum)
+def read_json(path):
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh, parse_int=RawNum, parse_float=RawNum)
 
 
-def dragers(doc):
+def carriers(doc):
     """Every node that may carry designations, with its WF-118 scope and its canonical name."""
-    uit = []
+    out = []
     m, r = doc["model"], doc["rules"]
     for ot in m.get("objectTypes", []):
-        uit.append((("objectTypes",), ot.get("name"), ot))
+        out.append((("objectTypes",), ot.get("name"), ot))
         for a in ot.get("attributes", []):
-            uit.append((("attributes", ot.get("name")), a.get("name"), a))
+            out.append((("attributes", ot.get("name")), a.get("name"), a))
         for c in ot.get("characteristics", []):
-            uit.append((("characteristics", ot.get("name")), c.get("name"), c))
+            out.append((("characteristics", ot.get("name")), c.get("name"), c))
     for ft in m.get("factTypes", []):
-        uit.append((("factTypes",), ft.get("name"), ft))
-        for rol in ft.get("roles", []):
-            uit.append((("roles", ft.get("name")), rol.get("name"), rol))
+        out.append((("factTypes",), ft.get("name"), ft))
+        for role in ft.get("roles", []):
+            out.append((("roles", ft.get("name")), role.get("name"), role))
     for p in m.get("parameters", []):
-        uit.append((("parameters",), p.get("name"), p))
-    for lijst in ("rules", "objectCreations", "allocations", "consistencies", "uniquenesses",
+        out.append((("parameters",), p.get("name"), p))
+    for section in ("rules", "objectCreations", "allocations", "consistencies", "uniquenesses",
                   "factCreations", "prioritizedDefaults"):
-        for f in r.get(lijst, []):
-            uit.append((("forms",), f.get("name"), f))
+        for f in r.get(section, []):
+            out.append((("forms",), f.get("name"), f))
     for g in r.get("ruleGroups", []):
-        uit.append((("ruleGroups",), g.get("name"), g))
-    return uit
+        out.append((("ruleGroups",), g.get("name"), g))
+    return out
 
 
-def waardeTabellen(doc):
+def value_tables(doc):
     """The enumeration declarations that carry value designations, by domain."""
     for d in doc["model"].get("domains", []):
         dt = d.get("datatype") or {}
@@ -654,73 +654,73 @@ def waardeTabellen(doc):
             yield d.get("name"), dt
 
 
-bron, doel = sys.argv[1], sys.argv[2]
-if not (lees(bron).get("vocabularies") or []):
+source, target = sys.argv[1], sys.argv[2]
+if not (read_json(source).get("vocabularies") or []):
     print("0 0 0 0")
     sys.exit(0)
-os.makedirs(doel, exist_ok=True)
+os.makedirs(target, exist_ok=True)
 
 # STRIPPED
-kaal = lees(bron)
-del kaal["vocabularies"]
-gestript = 0
-for _, _, n in dragers(kaal):
-    gestript += len(n.pop("designations", []))
-for _, dt in waardeTabellen(kaal):
-    gestript += len(dt.pop("valueDesignations"))
-schrijf(kaal, os.path.join(doel, "stripped.json"))
+bare = read_json(source)
+del bare["vocabularies"]
+stripped = 0
+for _, _, n in carriers(bare):
+    stripped += len(n.pop("designations", []))
+for _, dt in value_tables(bare):
+    stripped += len(dt.pop("valueDesignations"))
+write_json(bare, os.path.join(target, "stripped.json"))
 
 # EXCHANGED: vocabulary i takes the name of vocabulary i+1, in the declarations and the designations
-wissel = lees(bron)
-namen = [v["name"] for v in wissel["vocabularies"]]
-nieuw = {n.lower(): namen[(i + 1) % len(namen)] for i, n in enumerate(namen)}
-verwisseld = 0
-for v in wissel["vocabularies"]:
-    v["name"] = nieuw[v["name"].lower()]
-for _, _, n in dragers(wissel):
+exchanged = read_json(source)
+names = [v["name"] for v in exchanged["vocabularies"]]
+renamed = {n.lower(): names[(i + 1) % len(names)] for i, n in enumerate(names)}
+swapped = 0
+for v in exchanged["vocabularies"]:
+    v["name"] = renamed[v["name"].lower()]
+for _, _, n in carriers(exchanged):
     for b in n.get("designations", []):
-        b["vocabulary"] = nieuw.get(b["vocabulary"].lower(), b["vocabulary"])
-        verwisseld += 1
-for _, dt in waardeTabellen(wissel):
+        b["vocabulary"] = renamed.get(b["vocabulary"].lower(), b["vocabulary"])
+        swapped += 1
+for _, dt in value_tables(exchanged):
     for b in dt["valueDesignations"]:
-        b["vocabulary"] = nieuw.get(b["vocabulary"].lower(), b["vocabulary"])
-        verwisseld += 1
-schrijf(wissel, os.path.join(doel, "swapped.json"))
+        b["vocabulary"] = renamed.get(b["vocabulary"].lower(), b["vocabulary"])
+        swapped += 1
+write_json(exchanged, os.path.join(target, "swapped.json"))
 
 # ROTATED: per vocabulary and scope, the designations one declaration on
-rot = lees(bron)
-standaard = {v["name"].lower() for v in rot["vocabularies"] if v.get("default")}
-geroteerd = 0
+rotated_doc = read_json(source)
+defaults = {v["name"].lower() for v in rotated_doc["vocabularies"] if v.get("default")}
+rotated = 0
 
 
-def roteer(voc, plekken):
+def rotate(voc, places):
     """plekken: (canonical name, designation record) of one scope and vocabulary, in document order.
        The first offset that gives no declaration its own canonical name outside the default wins."""
-    global geroteerd
-    if len(plekken) < 2:
+    global rotated
+    if len(places) < 2:
         return
-    teksten = [b["designation"] for _, b in plekken]
-    for k in range(1, len(plekken)):
-        verschoven = teksten[-k:] + teksten[:-k]
-        if voc in standaard or all(t != c for (c, _), t in zip(plekken, verschoven)):
-            for (_, b), t in zip(plekken, verschoven):
+    texts = [b["designation"] for _, b in places]
+    for k in range(1, len(places)):
+        shifted = texts[-k:] + texts[:-k]
+        if voc in defaults or all(t != c for (c, _), t in zip(places, shifted)):
+            for (_, b), t in zip(places, shifted):
                 if b["designation"] != t:
                     b["designation"] = t
-                    geroteerd += 1
+                    rotated += 1
             return
 
 
 scopes = {}
-for scope, canon, n in dragers(rot):
+for scope, canon, n in carriers(rotated_doc):
     for b in n.get("designations", []):
         scopes.setdefault((b["vocabulary"].lower(), scope), []).append((canon, b))
-for dom, dt in waardeTabellen(rot):
+for dom, dt in value_tables(rotated_doc):
     for b in dt["valueDesignations"]:
         scopes.setdefault((b["vocabulary"].lower(), ("values", dom)), []).append((b["value"], b))
-for (voc, _), plekken in scopes.items():
-    roteer(voc, plekken)
-schrijf(rot, os.path.join(doel, "rotated.json"))
-print("1 %d %d %d" % (gestript, verwisseld, geroteerd))
+for (voc, _), places in scopes.items():
+    rotate(voc, places)
+write_json(rotated_doc, os.path.join(target, "rotated.json"))
+print("1 %d %d %d" % (stripped, swapped, rotated))
 PY
 
 cat > "$HSTRIPPER" <<'PY'
@@ -731,27 +731,27 @@ import json, os, sys
 # lexemes, so the copy differs from the golden in the field and in nothing else.
 
 
-class RuweNum:
+class RawNum:
     __slots__ = ("raw",)
 
     def __init__(self, s):
         self.raw = s
 
 
-def schrijf(o, pad):
-    def stuk(o):
-        if isinstance(o, RuweNum):
+def write_json(o, path):
+    def piece(o):
+        if isinstance(o, RawNum):
             return o.raw
         if isinstance(o, dict):
-            return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + stuk(v) for k, v in o.items()) + "}"
+            return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + piece(v) for k, v in o.items()) + "}"
         if isinstance(o, list):
-            return "[" + ",".join(stuk(v) for v in o) + "]"
+            return "[" + ",".join(piece(v) for v in o) + "]"
         return json.dumps(o, ensure_ascii=False)
-    with open(pad, "w", encoding="utf-8") as fh:
-        fh.write(stuk(o))
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(piece(o))
 
 
-def dragers(doc):
+def carriers(doc):
     m, r = doc["model"], doc["rules"]
     for ot in m.get("objectTypes", []):
         yield ot
@@ -761,22 +761,22 @@ def dragers(doc):
         yield ft
         yield from ft.get("roles", [])
     yield from m.get("parameters", [])
-    for lijst in ("rules", "objectCreations", "allocations", "consistencies", "uniquenesses",
+    for section in ("rules", "objectCreations", "allocations", "consistencies", "uniquenesses",
                   "factCreations", "prioritizedDefaults", "ruleGroups"):
-        yield from r.get(lijst, [])
+        yield from r.get(section, [])
 
 
-bron, doel = sys.argv[1], sys.argv[2]
-with open(bron, encoding="utf-8") as fh:
-    doc = json.load(fh, parse_int=RuweNum, parse_float=RuweNum)
-gestript = 0
-for n in dragers(doc):
+source, target = sys.argv[1], sys.argv[2]
+with open(source, encoding="utf-8") as fh:
+    doc = json.load(fh, parse_int=RawNum, parse_float=RawNum)
+stripped = 0
+for n in carriers(doc):
     if n.pop("origin", None) is not None:
-        gestript += 1
-if gestript:
-    os.makedirs(os.path.dirname(doel), exist_ok=True)
-    schrijf(doc, doel)
-print(gestript)
+        stripped += 1
+if stripped:
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    write_json(doc, target)
+print(stripped)
 PY
 
 # Is <golden> x <executor> a pinned survivor? Read LINE by line, never word by word: a
@@ -828,7 +828,7 @@ EXPECTED_MIN_ORIGIN_STRIPPED=71      # 2026-10-15: measured 71 origins stripped 
 status=0
 n_goldens=0
 n_twists=0
-n_gecontroleerd=0
+n_checked=0
 n_survivors=0
 n_drl=0
 n_exec_played=0
@@ -860,7 +860,7 @@ while IFS= read -r ir; do
     # ref and clingo: exit 0 on the untouched ir.json is what gates 5 and 6 pin, so the twisted
     # run must exit 0 too. Any other outcome is the executor reading the repetition.
     while IFS= read -r case; do
-        n_gecontroleerd=$((n_gecontroleerd + 2))
+        n_checked=$((n_checked + 2))
         if ! report_line=$("$RUNNER_REF" "$tw" "$case" 2>&1); then
             if mention "$ident" ref; then
                 n_survivors=$((n_survivors + 1)); echo "$ident|ref" >> "$HITS"
@@ -885,7 +885,7 @@ while IFS= read -r ir; do
     # exactly as refusing/diverging under the twist, and this harness must not re-litigate that.
     set --
     while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
-    n_gecontroleerd=$((n_gecontroleerd + 1))
+    n_checked=$((n_checked + 1))
     base_expr=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
     twisted=$(java -jar "$JAR" "$tw" "$@" 2>/dev/null | tail -1)
     [ "${base_expr%% *}" = PLAYED ] && n_exec_played=$((n_exec_played + 1))
@@ -903,7 +903,7 @@ while IFS= read -r ir; do
     # --drl entry, compiled by the classic DRL build and replayed against the SAME pinned expectations. Its
     # untouched line must be the exec-model branch's untouched line (the two render one analysis; gate 12
     # holds this over the whole corpus), and its twisted line its own untouched one.
-    n_gecontroleerd=$((n_gecontroleerd + 1))
+    n_checked=$((n_checked + 1))
     drl_baseline=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
     d_twisted=$(java -jar "$JAR" --drl "$tw" "$@" 2>/dev/null | tail -1)
     if [ "$drl_baseline" != "$base_expr" ]; then
@@ -1094,8 +1094,8 @@ if [ "$n_drl" -ne "$n_exec_played" ]; then
     exit 1
 fi
 
-n_fourth=$(awk '$1 == "vierde" {n++} END {print n+0}' "$UNCOVERED")
-n_unknown=$(awk '$1 == "onbekend" {n++} END {print n+0}' "$UNCOVERED")
+n_fourth=$(awk '$1 == "fourth" {n++} END {print n+0}' "$UNCOVERED")
+n_unknown=$(awk '$1 == "unknown" {n++} END {print n+0}' "$UNCOVERED")
 n_uncovered=$((n_fourth + n_unknown))
 if [ "$n_fourth" -gt 0 ]; then
     echo 'FAIL: a unit-bearing annotation sits at a node kind whose result unit v0 does not derive —' >&2
@@ -1106,7 +1106,7 @@ if [ "$n_fourth" -gt 0 ]; then
     echo '      witness must buy is a derivation rule (or a fence) — never a wider licence to read the' >&2
     echo '      wire. ref/clingo and the Drools backend answer such a position DIFFERENTLY today (ch.' >&2
     echo '      2.10), so the divergence is now observable and must be settled:' >&2
-    awk '$1 == "vierde" {print "  " $2 " " $3}' "$UNCOVERED" | sort | uniq -c >&2
+    awk '$1 == "fourth" {print "  " $2 " " $3}' "$UNCOVERED" | sort | uniq -c >&2
     status=1
 fi
 if [ "$n_unknown" -gt 0 ]; then
@@ -1114,7 +1114,7 @@ if [ "$n_unknown" -gt 0 ]; then
     echo '      the exception set does not exempt — this harness probes nothing there, so no consumer is' >&2
     echo '      held to the declaration at that position. Give the kind a twist class (with its own' >&2
     echo '      factor exponent) or an exception with the reason its annotation IS the source:' >&2
-    awk '$1 == "onbekend" {print "  " $2 " " $3}' "$UNCOVERED" | sort | uniq -c >&2
+    awk '$1 == "unknown" {print "  " $2 " " $3}' "$UNCOVERED" | sort | uniq -c >&2
     status=1
 fi
 
@@ -1126,7 +1126,7 @@ if [ "$status" -eq 0 ]; then
     printf '       0 verdict divergences, 0 extra reads, 0 skipped reads, for the text branch and for clingo.\n'
     printf '       The former watchlist is retired; see the comment above.\n'
     printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens, floor %s; %s executor replays reproduce the untouched outcome, %s of them PLAYED by the DRL-text branch, equal to the exec-model branch; %s pinned survivors)\n' \
-        "$n_twists" "$n_goldens" "$EXPECTED_MIN_TWISTS" "$n_gecontroleerd" "$n_drl" "$n_survivors"
+        "$n_twists" "$n_goldens" "$EXPECTED_MIN_TWISTS" "$n_checked" "$n_drl" "$n_survivors"
     printf '  vocabulary leg: %s golden(s) with vocabularies, floor %s; %s designations stripped (floor %s), %s exchanged, %s rotated (floor %s); %s executor replays reproduce the untouched outcome\n' \
         "$n_vgoldens" "$EXPECTED_MIN_VOCABULARY_GOLDENS" "$n_v_stripped" "$EXPECTED_MIN_VOCABULARY_STRIPPED" \
         "$n_v_swapped" "$n_v_rotated" "$EXPECTED_MIN_VOCABULARY_ROTATED" "$n_vreplays"

@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>Red</b> on {@code d02ccea9}, before the fix of the text value: both dumps of the first test carried
  * {@code String("Post@?")}, and the two were equal. <b>Red</b> on {@code 55a24e61}, before the fix of the names: the
- * dumps of the two labels were equal, both naming the bean {@code Post@?}; the sections {@code lees} and {@code feit} of
+ * dumps of the two labels were equal, both naming the bean {@code Post@?}; the sections {@code read} and {@code fact} of
  * the two rules were equal, both {@code Inconsistentie(Post@?, V1)}; and the dump wrote the sentence with the identity,
  * replaced by the label, where this class wants it refused.
  *
@@ -69,15 +69,15 @@ class SessionDumpWitnessTest {
         assertTrue(beef.contains("bean \"Post@beef\" Vondst("), () -> "de dump citeert het label niet:\n" + beef);
     }
 
-    /** The §9.5 inconsistency of a consistency rule whose name looks like an identity: what {@code lees} gives and the
+    /** The §9.5 inconsistency of a consistency rule whose name looks like an identity: what {@code read} gives and the
      *  facts differ between the two names, each with its name quoted. */
     @Test void an_inconsistency_under_a_name_that_resembles_an_identity() throws Exception {
         String dead = readAndFacts(inconsistency("Post@dead")), beef = readAndFacts(inconsistency("Post@beef"));
         assertNotEquals(dead, beef, "twee regels die alleen in de hex na de @ verschillen, kregen dezelfde lees en feiten:\n"
                 + dead);
-        assertTrue(dead.contains("lees inconsistentie Inconsistentie(String(\"Post@dead\"), \"V1\")"),
+        assertTrue(dead.contains("read inconsistency Inconsistentie(String(\"Post@dead\"), \"V1\")"),
                 () -> "de dump citeert de naam van de regel niet:\n" + dead);
-        assertTrue(beef.contains("lees inconsistentie Inconsistentie(String(\"Post@beef\"), \"V1\")"),
+        assertTrue(beef.contains("read inconsistency Inconsistentie(String(\"Post@beef\"), \"V1\")"),
                 () -> "de dump citeert de naam van de regel niet:\n" + beef);
     }
 
@@ -103,19 +103,19 @@ class SessionDumpWitnessTest {
      *  characteristic keep one reading. */
     @Test void a_name_with_signs_of_the_line_structure_is_quoted() throws Exception {
         String d = dump(CaseRunner.forMeasurement(STRUCTURE_NAMES, DroolsBackend.Branch.EXEC_MODEL), structureCase());
-        assertTrue(d.contains("\nlees waarde \"V1\".\"tarief = vak (oud).nieuw\" = BigDecimal(1)\n"),
+        assertTrue(d.contains("\nread value \"V1\".\"tarief = vak (oud).nieuw\" = BigDecimal(1)\n"),
                 () -> "de dump citeert het attribuut niet:\n" + d);
-        assertTrue(d.contains("\nlees kenmerk \"V1\" \"wrak (x) = y\"\n"), () -> "de dump citeert het kenmerk niet:\n" + d);
+        assertTrue(d.contains("\nread characteristic \"V1\" \"wrak (x) = y\"\n"), () -> "de dump citeert het kenmerk niet:\n" + d);
     }
 
     /** Two keys of members that differ, whose type and name read as one text where they stand unquoted: "a.b" with "c"
-     *  and "a" with "b.c", and the attribute "b (kenmerk)" with the characteristic "b". Each pair gives two dumps that
+     *  and "a" with "b.c", and the attribute "b (characteristic)" with the characteristic "b". Each pair gives two dumps that
      *  differ, with the type and the name of the key quoted. */
     @Test void two_keys_that_coincide_as_text_differ_in_the_dump() throws Exception {
         assertKeys(ElementKey.of("A.B", "c", false), ElementKey.of("A", "B.c", false),
                 "\"a.b\".\"c\"", "\"a\".\"b.c\"");
-        assertKeys(ElementKey.of("A", "b (kenmerk)", false), ElementKey.of("A", "b", true),
-                "\"a\".\"b (kenmerk)\"", "\"a\".\"b\" (kenmerk)");
+        assertKeys(ElementKey.of("A", "b (characteristic)", false), ElementKey.of("A", "b", true),
+                "\"a\".\"b (characteristic)\"", "\"a\".\"b\" (characteristic)");
     }
 
     /** Two created links of fact types that differ, whose fact type and first role read as one text where they stand
@@ -124,17 +124,17 @@ class SessionDumpWitnessTest {
     @Test void two_links_that_coincide_as_text_differ_in_the_dump() throws Exception {
         String one = linkLine("F x", "r"), two = linkLine("F", "x r");
         assertNotEquals(one, two, "twee koppelingen van verschillende feittypen kregen dezelfde regel");
-        assertEquals("lees koppeling \"F x\" \"r\"=\"V1\" \"s\"=«\"maak\"»(\"V1\")#1", one);
-        assertEquals("lees koppeling \"F\" \"x r\"=\"V1\" \"s\"=«\"maak\"»(\"V1\")#1", two);
+        assertEquals("read link \"F x\" \"r\"=\"V1\" \"s\"=«\"maak\"»(\"V1\")#1", one);
+        assertEquals("read link \"F\" \"x r\"=\"V1\" \"s\"=«\"maak\"»(\"V1\")#1", two);
     }
 
     /**
-     * The outcome of the fire stands in a line of its own, in the section {@code fixpunt}, which the comparison of the
-     * harness holds strictly (round 5b, Fable advice 4 §2.4 point 1): {@code fixpunt ja} at a fixpoint,
-     * {@code fixpunt nee "<zin>"} at the cap or the creation budget, and {@code fixpunt gooit Klasse: "<zin>"} where
-     * the fire threw. The line {@code vuringen}, which the comparison only reports, keeps the count, the cap and the
+     * The outcome of the fire stands in a line of its own, in the section {@code fixpoint}, which the comparison of the
+     * harness holds strictly (round 5b, Fable advice 4 §2.4 point 1): {@code fixpoint yes} at a fixpoint,
+     * {@code fixpoint no "<sentence>"} at the cap or the creation budget, and {@code fixpoint throws Class: "<sentence>"} where
+     * the fire threw. The line {@code firings}, which the comparison only reports, keeps the count, the cap and the
      * sentence. Without the line, a session that reached its fixpoint on one branch and not on the other differed only
-     * through {@code lees}, which a session that derives nothing leaves empty either way. The fixpoint is a fire of a
+     * through {@code read}, which a session that derives nothing leaves empty either way. The fixpoint is a fire of a
      * case; the two other outcomes are written for the same session as {@code fire} would hand them over. <b>Red</b> on
      * {@code da00178e}, before the line: "expected: &lt;[[fixpunt ja], [fixpunt nee "geen fixpunt binnen \"100\"
      * vuringen"], [fixpunt gooit IllegalStateException: "de proef gooit"]]&gt; but was: &lt;[[], [], []]&gt;".
@@ -144,8 +144,8 @@ class SessionDumpWitnessTest {
                 List.of())), List.of());
         CaseRunner runner = CaseRunner.forMeasurement(TmsDocuments.document(model, List.of()),
                 DroolsBackend.Branch.EXEC_MODEL);
-        String ja = dump(runner, vondst("V1", "x"));
-        String nee = runner.withSession(vondst("V1", "x"), (build, session, labels) -> {
+        String atFixpoint = dump(runner, vondst("V1", "x"));
+        String atCap = runner.withSession(vondst("V1", "x"), (build, session, labels) -> {
             SessionDump d = SessionDump.op(session, labels);
             StringBuilder out = new StringBuilder();
             d.write(out, build, new DroolsBackend.Firing(7, 100, "geen fixpunt binnen \"100\" vuringen"), labels);
@@ -157,12 +157,12 @@ class SessionDumpWitnessTest {
             d.write(out, new IllegalStateException("de proef gooit"), labels);
             return out.toString();
         });
-        assertEquals(List.of(List.of("fixpunt ja"), List.of("fixpunt nee \"geen fixpunt binnen \\\"100\\\" vuringen\""),
-                        List.of("fixpunt gooit IllegalStateException: \"de proef gooit\"")),
-                List.of(section(ja, "fixpunt"), section(nee, "fixpunt"), section(thrown, "fixpunt")));
-        assertEquals(List.of(List.of("vuringen 7 plafond 100 geenFixpunt \"geen fixpunt binnen \\\"100\\\" vuringen\""),
-                        List.of("vuringen gooit IllegalStateException: \"de proef gooit\"")),
-                List.of(section(nee, "vuringen"), section(thrown, "vuringen")));
+        assertEquals(List.of(List.of("fixpoint yes"), List.of("fixpoint no \"geen fixpunt binnen \\\"100\\\" vuringen\""),
+                        List.of("fixpoint throws IllegalStateException: \"de proef gooit\"")),
+                List.of(section(atFixpoint, "fixpoint"), section(atCap, "fixpoint"), section(thrown, "fixpoint")));
+        assertEquals(List.of(List.of("firings 7 cap 100 noFixpoint \"geen fixpunt binnen \\\"100\\\" vuringen\""),
+                        List.of("firings throws IllegalStateException: \"de proef gooit\"")),
+                List.of(section(atCap, "firings"), section(thrown, "firings")));
     }
 
     /**
@@ -179,7 +179,7 @@ class SessionDumpWitnessTest {
      * <p><b>Red</b> with a mutant of {@code SessionDump} that writes a {@code BigDecimal} without its class (not
      * committed): "de dump in structure-names/dump.exec_model.txt ==&gt; expected: &lt;… lees waarde "V1"."tarief = vak
      * (oud).nieuw" = BigDecimal(1) …&gt; but was: &lt;… lees waarde "V1"."tarief = vak (oud).nieuw" = 1 …&gt;"; and on
-     * {@code da00178e}, before the section {@code fixpunt}, where the dump lacked the line "fixpunt ja".
+     * {@code da00178e}, before the section {@code fixpoint}, where the dump lacked the line "fixpoint yes".
      */
     @Test void the_whole_dump_of_two_documents_is_fixed() throws Exception {
         Map<String, Path> documents = new java.util.LinkedHashMap<>();
@@ -236,28 +236,28 @@ class SessionDumpWitnessTest {
                 + "{\"text\":\"x\"}},\"roles\":{},\"characteristics\":[]}"), Map.of("drempel", "3"),
                 List.of(TmsDocuments.consistent()));
         String expected = String.join("\n",
-                "invoer bean \"V1\" Vondst(merk=String(\"x\"), tarief=leeg)",
-                "invoer global \"drempel\" = BigDecimal(3)",
-                "vuringen gooit IllegalStateException: \"de proef vuurt niet\"",
-                "fixpunt gooit IllegalStateException: \"de proef vuurt niet\"",
-                "spoor-telling {}",
-                "spoor-volgorde []",
-                "feiten 15",
-                "feit \"vondst\".\"wrak\" (kenmerk)",
-                "feit Boolean(true)",
-                "feit IllegalArgumentException: \"een \\\"fout\\\"\"",
-                "feit Integer(7)",
-                "feit LocalDate(2026-10-14)",
-                "feit LocalDateTime(2026-10-14T09:15:30)",
-                "feit LocalTime(\"09:15\")",
-                "feit Long(8)",
-                "feit SampleRecord(name=String(\"r\"), number=BigDecimal(1.50), list=[Boolean(false)])",
-                "feit SampleType.FIRST_KIND",
-                "feit String(\"a\\\"b\\\\c\\rd\\ne\")",
-                "feit [BigDecimal(2), BigDecimal(2.0), BigDecimal(2.00), leeg, String(\"b\")]",
-                "feit bean \"V1\" Vondst(merk=String(\"x\"), tarief=leeg)",
-                "feit {String(\"a\"), String(\"z\")}",
-                "feit {String(\"a\")=Integer(2), String(\"b\")=Integer(1)}",
+                "input bean \"V1\" Vondst(merk=String(\"x\"), tarief=empty)",
+                "input global \"drempel\" = BigDecimal(3)",
+                "firings throws IllegalStateException: \"de proef vuurt niet\"",
+                "fixpoint throws IllegalStateException: \"de proef vuurt niet\"",
+                "trace-count {}",
+                "trace-order []",
+                "facts 15",
+                "fact \"vondst\".\"wrak\" (characteristic)",
+                "fact Boolean(true)",
+                "fact IllegalArgumentException: \"een \\\"fout\\\"\"",
+                "fact Integer(7)",
+                "fact LocalDate(2026-10-14)",
+                "fact LocalDateTime(2026-10-14T09:15:30)",
+                "fact LocalTime(\"09:15\")",
+                "fact Long(8)",
+                "fact SampleRecord(name=String(\"r\"), number=BigDecimal(1.50), list=[Boolean(false)])",
+                "fact SampleType.FIRST_KIND",
+                "fact String(\"a\\\"b\\\\c\\rd\\ne\")",
+                "fact [BigDecimal(2), BigDecimal(2.0), BigDecimal(2.00), empty, String(\"b\")]",
+                "fact bean \"V1\" Vondst(merk=String(\"x\"), tarief=empty)",
+                "fact {String(\"a\"), String(\"z\")}",
+                "fact {String(\"a\")=Integer(2), String(\"b\")=Integer(1)}",
                 "");
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             CaseRunner runner = CaseRunner.forMeasurement(ir, branch);
@@ -366,13 +366,13 @@ class SessionDumpWitnessTest {
                 });
     }
 
-    /** The line of {@code lees} for the link the creation "maak" lays between V1 and the Boei it makes for V1, in a
+    /** The line of {@code read} for the link the creation "maak" lays between V1 and the Boei it makes for V1, in a
      *  document whose fact type {@code factType} relates a Vondst in the role {@code role} to a Boei in the role "s". */
     private static String linkLine(String factType, String role) throws Exception {
         String d = dump(CaseRunner.forMeasurement(linkDocument(factType, role), DroolsBackend.Branch.EXEC_MODEL),
                 TmsDocuments.caseDocument(List.of(TmsDocuments.instance("V1", "Vondst", Map.of(), List.of(), Map.of())),
                         List.of(TmsDocuments.consistent())));
-        List<String> rules = Stream.of(d.split("\n")).filter(r -> r.startsWith("lees koppeling ")).toList();
+        List<String> rules = Stream.of(d.split("\n")).filter(r -> r.startsWith("read link ")).toList();
         assertEquals(1, rules.size(), () -> "één gemaakte koppeling in lees:\n" + d);
         return rules.get(0);
     }
@@ -401,12 +401,12 @@ class SessionDumpWitnessTest {
                 List.of(TmsDocuments.consistency(name, "Vondst", TmsDocuments.check("verdacht", false))));
     }
 
-    /** The sections {@code lees} and {@code feit} of the dump of a Vondst V1 that is not verdacht. */
+    /** The sections {@code read} and {@code fact} of the dump of a Vondst V1 that is not verdacht. */
     private static String readAndFacts(Path ir) throws Exception {
         JsonNode c = TmsDocuments.caseDocument(List.of("{\"label\":\"V1\",\"objectType\":\"Vondst\",\"attributes\":{},"
                 + "\"roles\":{},\"characteristics\":[]}"), List.of(TmsDocuments.consistent()));
         String d = dump(CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL), c);
-        return Stream.of(d.split("\n")).filter(r -> r.startsWith("lees ") || r.startsWith("feit "))
+        return Stream.of(d.split("\n")).filter(r -> r.startsWith("read ") || r.startsWith("fact "))
                 .collect(Collectors.joining("\n"));
     }
 

@@ -323,7 +323,7 @@ class LetClusterWitnessTest {
         String trueLiteral = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}";
         String notVermist = ("{\"node\":\"CharacteristicCheck\",\"characteristic\":\"vermist\",\"negated\":true,"
                 + "\"source\":{\"snippet\":\"hij niet vermist is\"}}");
-        String gewogen = let("x", inkomen,
+        String weighted = let("x", inkomen,
                 binary("times", bref("x", 2), attr("factor", 4, false, "unspecified"), 6), 6);
         return model(String.join(",", attribute("inkomen", num(2, false, "nonNegative")),
                         attribute("factor", num(4)), attribute("gewogen", num(6))),
@@ -335,7 +335,7 @@ class LetClusterWitnessTest {
                                 compare("greater", inkomen, lit("999999.00", 2))),
                         rule("factor van een jutter", "BEREKENING", attr("factor", 4, false, "unspecified"),
                                 lit("3.0000", 4), notVermist),
-                        rule("gewogen van een jutter", attr("gewogen", 6, false, "unspecified"), gewogen)},
+                        rule("gewogen van een jutter", attr("gewogen", 6, false, "unspecified"), weighted)},
                 "");
     }
 }

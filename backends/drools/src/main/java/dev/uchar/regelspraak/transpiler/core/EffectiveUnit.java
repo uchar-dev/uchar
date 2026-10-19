@@ -66,7 +66,7 @@ public final class EffectiveUnit {
      *  annotation stands, which is the pre-derivation behaviour. */
     private static final int MAX_DEPTH = 200;
 
-    private static final Map<String, Unit> LEEG = Map.of();
+    private static final Map<String, Unit> EMPTY = Map.of();
 
     /** ch. 4.10: every {@link Expr.Let} the document carries ({@code IrLoader.Loaded.lets}). Only
      *  {@link #buildReads} needs it: the derivation itself meets a Let as an ordinary node in the tree it is
@@ -91,7 +91,7 @@ public final class EffectiveUnit {
     public Datatype of(Expr e) {
         Datatype t = typeOf(e);
         if (!(t instanceof Datatype.Numeric) && !(t instanceof Datatype.Percentage)) return t;
-        Unit derived = unit(e, LEEG, 0);
+        Unit derived = unit(e, EMPTY, 0);
         if (Objects.equals(derived, t.unitOf())) return t;
         if (t instanceof Datatype.Numeric n)
             return new Datatype.Numeric(n.wholeNumber(), n.decimals(), n.sign(), derived);
@@ -167,10 +167,10 @@ public final class EffectiveUnit {
 
     private void buildReadTypes() {
         readTypes = new IdentityHashMap<>();
-        for (Expr l : lets) noteerType(l, Map.of(), 0);
+        for (Expr l : lets) noteType(l, Map.of(), 0);
     }
 
-    private void noteerType(Expr e, Map<String, Datatype> environment, int depth) {
+    private void noteType(Expr e, Map<String, Datatype> environment, int depth) {
         if (e == null || depth > MAX_DEPTH) return;
         if (e instanceof Expr.BinderRef lz) {
             String k = key(lz.name());
@@ -178,20 +178,20 @@ public final class EffectiveUnit {
             return;
         }
         if (e instanceof Expr.Let b) {
-            noteerType(b.value(), environment, depth + 1);
+            noteType(b.value(), environment, depth + 1);
             // WF-076: the value is typed in the ENCLOSING scope, where the binder is not yet visible
             Map<String, Datatype> inside = new HashMap<>(environment);
             inside.put(key(b.binder()), typeIn(b.value(), environment));
-            noteerType(b.body(), inside, depth + 1);
+            noteType(b.body(), inside, depth + 1);
             return;
         }
         if (e instanceof Expr.IfThenElse k) {
-            for (Expr x : conditionOperands(k.condition())) noteerType(x, environment, depth + 1);
-            noteerType(k.then(), environment, depth + 1);
-            noteerType(k.otherwise(), environment, depth + 1);
+            for (Expr x : conditionOperands(k.condition())) noteType(x, environment, depth + 1);
+            noteType(k.then(), environment, depth + 1);
+            noteType(k.otherwise(), environment, depth + 1);
             return;
         }
-        for (Expr kind : children(e)) noteerType(kind, environment, depth + 1);
+        for (Expr kind : children(e)) noteType(kind, environment, depth + 1);
     }
 
     /** A bound value's datatype in scope {@code environment}: a binder read there takes its binding's. */
@@ -445,10 +445,10 @@ public final class EffectiveUnit {
      */
     private void buildReads() {
         readUnits = new IdentityHashMap<>();
-        for (Expr l : lets) noteer(l, LEEG, 0);
+        for (Expr l : lets) noteUnit(l, EMPTY, 0);
     }
 
-    private void noteer(Expr e, Map<String, Unit> environment, int depth) {
+    private void noteUnit(Expr e, Map<String, Unit> environment, int depth) {
         if (e == null || depth > MAX_DEPTH) return;
         if (e instanceof Expr.BinderRef lz) {
             String k = key(lz.name());
@@ -456,22 +456,22 @@ public final class EffectiveUnit {
             return;
         }
         if (e instanceof Expr.Let b) {
-            noteer(b.value(), environment, depth + 1);
-            noteer(b.body(), withBinder(environment, b, depth), depth + 1);
+            noteUnit(b.value(), environment, depth + 1);
+            noteUnit(b.body(), withBinder(environment, b, depth), depth + 1);
             return;
         }
         if (e instanceof Expr.IfThenElse k) {
-            for (Expr x : conditionOperands(k.condition())) noteer(x, environment, depth + 1);
-            noteer(k.then(), environment, depth + 1);
-            noteer(k.otherwise(), environment, depth + 1);
+            for (Expr x : conditionOperands(k.condition())) noteUnit(x, environment, depth + 1);
+            noteUnit(k.then(), environment, depth + 1);
+            noteUnit(k.otherwise(), environment, depth + 1);
             return;
         }
-        for (Expr kind : children(e)) noteer(kind, environment, depth + 1);
+        for (Expr kind : children(e)) noteUnit(kind, environment, depth + 1);
     }
 
     /**
      * Every Expr-carrying component of an ordinary v0 node (the {@code Expr.contains} inventory minus its ch. 4.10
-     * arms — {@link #noteer} matches all three cluster nodes itself, because each needs a SCOPE this cannot
+     * arms — {@link #noteUnit} matches all three cluster nodes itself, because each needs a SCOPE this cannot
      * carry).
      *
      * <p><b>This accessor became LOAD-BEARING with the root repair at {@link #conditionOperands}.</b> While that
@@ -482,7 +482,7 @@ public final class EffectiveUnit {
      * exists to not read. So the {@code switch} below is EXHAUSTIVE over the sealed union, with no
      * {@code default}: the next node the union grows is a COMPILE ERROR here rather than a silent gap, exactly
      * as {@code Expr.contains} is written for the same reason. The six genuine leaves are spelled out; the three
-     * ch. 4.10 nodes are unreachable — {@link #noteer} intercepts each before it gets here — and they REFUSE
+     * ch. 4.10 nodes are unreachable — {@link #noteUnit} intercepts each before it gets here — and they REFUSE
      * rather than answering, because handing back their children from a place that carries no scope is the
      * defect, not the fix.
      */
@@ -538,11 +538,11 @@ public final class EffectiveUnit {
     }
 
     /**
-     * The ROOT of every Expr operand a condition carries — the nodes {@link #noteer} may start a walk at.
+     * The ROOT of every Expr operand a condition carries — the nodes {@link #noteUnit} may start a walk at.
      *
      * <p><b>Roots, never descendants.</b> The shared {@code Condition.containsOperand} scan is a FULL pre-order walk:
      * asked with a predicate that never short-circuits it yields each operand AND every node beneath it. Handing
-     * that flat list to {@link #noteer} makes it RE-ENTER each operand tree midway, carrying the enclosing scope
+     * that flat list to {@link #noteUnit} makes it RE-ENTER each operand tree midway, carrying the enclosing scope
      * into a place that scope does not govern. For a SHADOWING inner {@code Let} that is not redundant work but a
      * wrong answer: the correct recording is made first, through the Let, and the mid-tree re-entry then
      * overwrites it with the outer binder's unit (measured kg where WF-064 demands t, in both shapes
@@ -567,14 +567,14 @@ public final class EffectiveUnit {
         java.util.List<Expr> flat = new java.util.ArrayList<>();
         Condition.containsOperand(c, x -> { flat.add(x); return false; });
         java.util.List<Expr> roots = new java.util.ArrayList<>();
-        for (Expr kandidaat : flat) {
+        for (Expr candidate : flat) {
             boolean underAnother = false;
             for (Expr possibleParent : flat) {
                 // identity, not equality: two operands can be value-equal records and still be separate roots
-                if (possibleParent == kandidaat) continue;
-                if (Expr.contains(possibleParent, x -> x == kandidaat)) { underAnother = true; break; }
+                if (possibleParent == candidate) continue;
+                if (Expr.contains(possibleParent, x -> x == candidate)) { underAnother = true; break; }
             }
-            if (!underAnother) roots.add(kandidaat);
+            if (!underAnother) roots.add(candidate);
         }
         return roots;
     }

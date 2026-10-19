@@ -226,15 +226,15 @@ public sealed interface Consequence {
     /**
      * The distribution of an allocation over the recipients of the source {@code subject} binds (ch. 4.2 to 4.4),
      * computed by the route {@link Route#PAYOUT}, which calls {@code Allocation.bereken}: by {@code method}, of the
-     * pot in slot {@code pot} over the list of {@code Recipient} facts in slot {@code list}, {@code gewogen} where the
+     * pot in slot {@code pot} over the list of {@code Recipient} facts in slot {@code list}, {@code weighted} where the
      * allocation declares a ratio attribute, {@code capped} where it declares a cap, {@code descending} the ordered
-     * method's direction, {@code decimals} the floor's decimals (null: none). Each share is a value of {@code aandeel}
+     * method's direction, {@code decimals} the floor's decimals (null: none). Each share is a value of {@code share}
      * on its recipient and the rest a value of {@code rest} on the source (null: the allocation writes no rest), both
      * written by {@code writer}; each degradation is the §9.5 inconsistency of the form {@code form} on its
      * recipient.
      */
     record Payout(String subject, String form, ResolvedAllocation.Method method, int pot, int list,
-                     boolean gewogen, boolean capped, boolean descending, Integer decimals, ElementKey aandeel,
+                     boolean weighted, boolean capped, boolean descending, Integer decimals, ElementKey share,
                      ElementKey rest, String writer, Insertion insertion) implements Consequence {}
 
     /**

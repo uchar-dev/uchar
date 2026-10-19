@@ -6,7 +6,7 @@ import dev.uchar.regelspraak.model.Unit;
 import dev.uchar.regelspraak.resolver.Typing;
 import dev.uchar.regelspraak.resolver.Typing.BinOp;
 import dev.uchar.regelspraak.resolver.Typing.CmpOp;
-import dev.uchar.regelspraak.resolver.Typing.UnairePred;
+import dev.uchar.regelspraak.resolver.Typing.UnaryPred;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -75,7 +75,7 @@ class TypingTest {
         assertTrue(r.ok());
         assertTrue(r.type() instanceof Datatype.Numeric n && n.wholeNumber(),
                 () -> "geheel + geheel moet geheel blijven, kreeg " + r.type());
-        assertTrue(Typing.predicate(UnairePred.ELFPROEF, r.type()).ok(),
+        assertTrue(Typing.predicate(UnaryPred.ELFPROEF, r.type()).ok(),
                 "de elfproef moet een gehele som toelaten (Tabel 55)");
         Datatype twoDec = new Datatype.Numeric(false, 2, Sign.ONBEPAALD, null);
         Datatype unbounded = new Datatype.Numeric(false, 0, Sign.ONBEPAALD, null);  // form (c) "getal"
@@ -130,14 +130,14 @@ class TypingTest {
     @Test void later_numbers_error(){ assertFalse(Typing.compare(CmpOp.LATER, num(), num()).ok()); }
 
     // §5.11-5.16 predicaten
-    @Test void empty_on_each_type_ok()      { assertTrue(Typing.predicate(UnairePred.LEEG, num()).ok()); }
-    @Test void eleven_test_text_ok()        { assertTrue(Typing.predicate(UnairePred.ELFPROEF, text()).ok()); }
-    @Test void eleven_test_numeric_whole_ok() { assertTrue(Typing.predicate(UnairePred.ELFPROEF, num()).ok()); } // §5.13 Tabel 55 sc.1
-    @Test void eleven_test_boolean_error()    { assertFalse(Typing.predicate(UnairePred.ELFPROEF, bool()).ok()); }
-    @Test void exact_digits_text_ok()  { assertTrue(Typing.predicate(UnairePred.NUMERIEK_MET_EXACT, text()).ok()); }
-    @Test void exact_digits_number_error(){ assertFalse(Typing.predicate(UnairePred.NUMERIEK_MET_EXACT, num()).ok()); }
-    @Test void day_kind_date_ok()        { assertTrue(Typing.predicate(UnairePred.DAGSOORT, date()).ok()); }
-    @Test void day_kind_text_error()      { assertFalse(Typing.predicate(UnairePred.DAGSOORT, text()).ok()); }
+    @Test void empty_on_each_type_ok()      { assertTrue(Typing.predicate(UnaryPred.LEEG, num()).ok()); }
+    @Test void eleven_test_text_ok()        { assertTrue(Typing.predicate(UnaryPred.ELFPROEF, text()).ok()); }
+    @Test void eleven_test_numeric_whole_ok() { assertTrue(Typing.predicate(UnaryPred.ELFPROEF, num()).ok()); } // §5.13 Tabel 55 sc.1
+    @Test void eleven_test_boolean_error()    { assertFalse(Typing.predicate(UnaryPred.ELFPROEF, bool()).ok()); }
+    @Test void exact_digits_text_ok()  { assertTrue(Typing.predicate(UnaryPred.NUMERIEK_MET_EXACT, text()).ok()); }
+    @Test void exact_digits_number_error(){ assertFalse(Typing.predicate(UnaryPred.NUMERIEK_MET_EXACT, num()).ok()); }
+    @Test void day_kind_date_ok()        { assertTrue(Typing.predicate(UnaryPred.DAGSOORT, date()).ok()); }
+    @Test void day_kind_text_error()      { assertFalse(Typing.predicate(UnaryPred.DAGSOORT, text()).ok()); }
 
     // §6.1 toekenning
     @Test void assignment_match_ok()      { assertNull(Typing.assignment(num(), num())); }

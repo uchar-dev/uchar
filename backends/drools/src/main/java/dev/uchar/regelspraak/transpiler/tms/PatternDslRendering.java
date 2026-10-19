@@ -241,7 +241,7 @@ final class PatternDslRendering {
             }
             case Consequence.Payout x -> consequenceItem(x.subject(), slotsOf(x.pot(), x.list()), (drools, source, w) -> {
                 for (Object fact : ComputeHelpers.payout(x.form(), source, x.method(), w[x.pot()], w[x.list()],
-                        x.gewogen(), x.capped(), x.descending(), x.decimals(), x.aandeel(), x.rest(), x.writer()))
+                        x.weighted(), x.capped(), x.descending(), x.decimals(), x.share(), x.rest(), x.writer()))
                     insert(drools, x.insertion(), fact);
             });
         };
@@ -624,8 +624,8 @@ final class PatternDslRendering {
 
     /** Drools' own accumulate function of each fold of the plan: the sum over a statically typed {@code BigDecimal},
      *  since the plain sum over an {@code Object}-bound value gives a {@code Double}. */
-    private static Class<?> function(Accumulation.Kind category) {
-        String name = switch (category) {
+    private static Class<?> function(Accumulation.Kind kind) {
+        String name = switch (kind) {
             case COUNT -> "CountAccumulateFunction";
             case SUM -> "BigDecimalSumAccumulateFunction";
             case MINIMUM -> "MinAccumulateFunction";

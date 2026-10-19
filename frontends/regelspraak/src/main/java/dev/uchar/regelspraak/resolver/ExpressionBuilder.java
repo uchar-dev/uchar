@@ -41,7 +41,7 @@ final class ExpressionBuilder {
     private final RegelSpraakModel model;
     // The object type the current rule is about, so a possessive "zijn <attribuut>"
     // (and "hij") resolve against the rule subject. Set per rule by the checker.
-    private ObjectType huidigSubject;
+    private ObjectType currentSubject;
     // §11 the current rule's "Daarbij geldt:" variabelen, keyed by normalized name -> the resolved definition Expr,
     // INLINED at each read site (nameRef). Per-rule; cleared and re-set by setVariables each rule. This is the
     // form a VOORWAARDE read takes — see setVariables for why the two forms coexist.
@@ -66,8 +66,8 @@ final class ExpressionBuilder {
 
     ExpressionBuilder(RegelSpraakModel model) { this.model = model; }
 
-    void setSubject(ObjectType subject) { this.huidigSubject = subject; }
-    ObjectType subject() { return huidigSubject; }
+    void setSubject(ObjectType subject) { this.currentSubject = subject; }
+    ObjectType subject() { return currentSubject; }
 
     /** §5.6: the die/dat subselecties this builder CONSUMED — by identity, over the whole document.
      *  Consuming means the predicaat reached a resolution that accounts for it: a bound filter, or a
@@ -144,9 +144,9 @@ final class ExpressionBuilder {
         // Pass 2 re-resolves the same source text, so a diagnostic it repeats VERBATIM is pass 1's own — report it
         // once. A diagnostic pass 2 raises that pass 1 did not is a REAL difference (a BinderRef is opaque where
         // the inlined subtree was transparent) and is KEPT, never swallowed.
-        List<RegelSpraakModel.Diagnostic> inlineMeldingen = new ArrayList<>(model.diagnostics.subList(beforeInline, afterInline));
+        List<RegelSpraakModel.Diagnostic> inlineMessages = new ArrayList<>(model.diagnostics.subList(beforeInline, afterInline));
         for (int i = model.diagnostics.size() - 1; i >= afterInline; i--)
-            if (inlineMeldingen.contains(model.diagnostics.get(i))) model.diagnostics.remove(i);
+            if (inlineMessages.contains(model.diagnostics.get(i))) model.diagnostics.remove(i);
     }
 
     /**
@@ -1101,7 +1101,7 @@ final class ExpressionBuilder {
         if (kind == Expr.FunctionKind.AANTAL && elem != null && f instanceof AantalFuncContext cf
                 && cf.primaireExpressie().size() == 1 && arguments.get(0) instanceof Expr.AttributeReference sourceRead
                 && !sourceRead.set()
-                && dev.uchar.regelspraak.emit.IrEmitter.foldRefusalOf(model, huidigSubject, (Expr.FunctionCall) function) == null) {
+                && dev.uchar.regelspraak.emit.IrEmitter.foldRefusalOf(model, currentSubject, (Expr.FunctionCall) function) == null) {
             List<String> steps = countSourceSteps(cf.primaireExpressie(0));
             if (steps != null && steps.size() > 1) {
                 RegelSpraakModel.Diagnostic error = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
@@ -1172,8 +1172,8 @@ final class ExpressionBuilder {
         RangeWalk walk = walkRange(o);
         if (walk.refusal() != null || nestedSetStep(o) != null) {
             Object reason = walk.refusal() != null ? walk.refusal()
-                    : Msg.frontend(huidigSubject == null ? "RGS-073.not-at-subject" : "RGS-073.not-at-subject-named",
-                            "range", src(o), "subject", huidigSubject == null ? "" : huidigSubject.name);
+                    : Msg.frontend(currentSubject == null ? "RGS-073.not-at-subject" : "RGS-073.not-at-subject-named",
+                            "range", src(o), "subject", currentSubject == null ? "" : currentSubject.name);
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                     "RGS-073", params("reason", reason, "exit", walk.exit(), "expression", source(f),
                             "exitClause", Msg.frontendIf(walk.exit() != null, "RGS-073.exit", "exit", walk.exit())),
@@ -1182,15 +1182,15 @@ final class ExpressionBuilder {
         }
         // The emitter derives a sourceRole only for a navigation-free member fold over a resolved element type
         // (IrEmitter.foldRange); outside that shape there is no by-pair guess to contradict.
-        if (source.objectType() == null || huidigSubject == null) return null;
+        if (source.objectType() == null || currentSubject == null) return null;
         if (source.navigationRole() != null || !source.navigationPath().isEmpty()) return null;
         String written = primaryName(o);
         // (b): the anchor the written chain hands the element to — the first hop past the element head,
         // read with the same name candidates the element type's own binding was tried with.
         int sp = written == null ? -1 : written.toLowerCase().indexOf(" van ");
         if (sp > 0)
-            for (String kandidaat : RegelSpraakModel.nameCandidates(written.substring(sp + 5))) {
-                ObjectType anchor = model.objectTypeByName(kandidaat);
+            for (String candidate : RegelSpraakModel.nameCandidates(written.substring(sp + 5))) {
+                ObjectType anchor = model.objectTypeByName(candidate);
                 if (anchor == null) {
                     // WF-102's anchor rule (2026-09-11): a role anchor is admissible only where it denotes
                     // the SUBJECT, under ch. 4.1a's order. A far role — one reachable FROM the subject —
@@ -1199,14 +1199,14 @@ final class ExpressionBuilder {
                     // (zero far hits, and the subject type fills a role of that name) is the subject, and
                     // the chain simply starts there. A name that resolves to nothing at all keeps its
                     // pre-existing silence: there is nothing to say about it.
-                    if (model.roleHitsToSubject(huidigSubject, kandidaat) == 0) continue;
+                    if (model.roleHitsToSubject(currentSubject, candidate) == 0) continue;
                     model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                            "RGS-074", params("expression", src(o), "role", kandidaat, "subject", huidigSubject.name, "source", source(f)), f.getStart().getLine()));
+                            "RGS-074", params("expression", src(o), "role", candidate, "subject", currentSubject.name, "source", source(f)), f.getStart().getLine()));
                     return new Expr.Unresolved(type, source(f), null);
                 }
-                if (anchor == huidigSubject) break;       // the chain starts at the subject, as the wire needs
+                if (anchor == currentSubject) break;       // the chain starts at the subject, as the wire needs
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                        "RGS-075", params("expression", src(o), "anchor", anchor.name, "subject", huidigSubject.name, "source", source(f)), f.getStart().getLine()));
+                        "RGS-075", params("expression", src(o), "anchor", anchor.name, "subject", currentSubject.name, "source", source(f)), f.getStart().getLine()));
                 return new Expr.Unresolved(type, source(f), null);
             }
         // (c): the written element name, under every form the element type's own binding was tried with, so a
@@ -1219,10 +1219,10 @@ final class ExpressionBuilder {
         // "vondsten" at the end of "geborgen vondsten" names the role, not the type
         if (model.objectTypes.values().stream().anyMatch(ot -> ot.plural != null
                 && ot.plural.equalsIgnoreCase(names.get(0)))) return null;
-        RegelSpraakModel.RoleBindingRef pair = model.connectingRoleBinding(huidigSubject, source.objectType());
+        RegelSpraakModel.RoleBindingRef pair = model.connectingRoleBinding(currentSubject, source.objectType());
         if (pair == null || names.stream().anyMatch(n -> model.roleNamedAs(pair, n))) return null;
         model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                "RGS-076", params("writtenName", names.get(0), "subject", huidigSubject.name, "objectType", source.objectType().name, "factType", pair.factType(), "role", pair.role(), "source", source(f)),
+                "RGS-076", params("writtenName", names.get(0), "subject", currentSubject.name, "objectType", source.objectType().name, "factType", pair.factType(), "role", pair.role(), "source", source(f)),
                 f.getStart().getLine()));
         return new Expr.Unresolved(type, source(f), null);
     }
@@ -1292,28 +1292,28 @@ final class ExpressionBuilder {
         // declared attribute ("zijn/haar …") dimensioned by exactly that dimension; the fold operand is
         // rebuilt clean (declared spelling + element datatype) in the argument list.
         RegelSpraakModel.Dimension explicit = null;
-        if (dim.VANAF() != null && arguments.get(0) instanceof Expr.Unresolved on && huidigSubject != null
+        if (dim.VANAF() != null && arguments.get(0) instanceof Expr.Unresolved on && currentSubject != null
                 && on.source() != null && on.source().snippet().matches("(?is)(zijn|haar)\\s+.*")) {
             int snee = on.source().snippet().toLowerCase().lastIndexOf(" over de ");
             if (snee >= 0) {
                 String head = on.source().snippet().substring(0, snee).replaceFirst("^(?is)(zijn|haar)\\s+", "");
                 String mv = on.source().snippet().substring(snee + " over de ".length()).trim();
                 RegelSpraakModel.Dimension dd = model.dimensionByPlural(mv);
-                List<String> headDims = dd == null ? List.of() : huidigSubject.dimensionsOf(head);
+                List<String> headDims = dd == null ? List.of() : currentSubject.dimensionsOf(head);
                 if (dd != null && headDims.size() == 1 && headDims.get(0).equalsIgnoreCase(dd.name())) {
                     // the declared spelling may sit on an ancestor: headDims came from the chain-aware
                     // dimensionsOf, so the own map alone would fall back to the WRITTEN form and put a
                     // name on the wire that no declaration carries
-                    String own = huidigSubject.attributeName(head);
+                    String own = currentSubject.attributeName(head);
                     String declared = own != null ? own : head;
-                    arguments.set(0, new Expr.AttributeReference(declared, huidigSubject, "zijn", null,
-                            huidigSubject.attribute(declared), on.source(), false));
+                    arguments.set(0, new Expr.AttributeReference(declared, currentSubject, "zijn", null,
+                            currentSubject.attribute(declared), on.source(), false));
                     explicit = dd;
                 }
             }
         }
         if (!(arguments.get(0) instanceof Expr.AttributeReference a) || a.objectType() == null) return null;
-        if (a.objectType() != huidigSubject) return null;   // only the subject's OWN dimensioned attribuut folds; a navigated read is deferred
+        if (a.objectType() != currentSubject) return null;   // only the subject's OWN dimensioned attribuut folds; a navigated read is deferred
         List<String> attrDims = a.objectType().dimensionsOf(a.attribute());
         if (attrDims.size() != 1) return null;   // not gedimensioneerd, or multi-dimension (composite key) — deferred
 
@@ -1435,14 +1435,14 @@ final class ExpressionBuilder {
      *  value-timeline the model cannot carry, never lowers as a silently-constant proration. */
     private Condition duringCharacteristicCheckFilter(FunctieAanroepContext f, Expr.FunctionKind kind, List<Expr> arguments) {
         if ((kind != Expr.FunctionKind.TOTAAL && kind != Expr.FunctionKind.TIJDSEVENREDIG_DEEL)
-                || arguments.size() != 1 || huidigSubject == null) return null;
+                || arguments.size() != 1 || currentSubject == null) return null;
         Expr operand = arguments.get(0);
         // The operand the operator ranges over must be a single-period TIMELINE: the subject's own temporal attribute
         // (totaal + tijdsevenredig), OR — for §7.3.2 tijdsevenredig only — a TEMPORAL PARAMETER (the spec's STANDAARD
         // BELASTINGVERMINDERING base, "kan jaarlijks wijzigen"), whose runtime value is itself a timeline (§5.1.2).
         boolean okOperand = operand instanceof Expr.AttributeReference a && a.navigationRole() == null && !a.set()
-                && a.objectType() == huidigSubject && huidigSubject.granularityOf(a.attribute()) != null
-                && huidigSubject.timelineCountOf(a.attribute()) == null;
+                && a.objectType() == currentSubject && currentSubject.granularityOf(a.attribute()) != null
+                && currentSubject.timelineCountOf(a.attribute()) == null;
         if (!okOperand && kind == Expr.FunctionKind.TIJDSEVENREDIG_DEEL
                 && operand instanceof Expr.ParameterRef p && p.parameter().granularity() != null)
             okOperand = true;
@@ -1504,9 +1504,9 @@ final class ExpressionBuilder {
 
     /** A single-period temporal attribute of the rule subject (the operand a §7.1 gedurende comparison varies over). */
     private boolean isTemporalSubjectAttr(Expr e) {
-        return huidigSubject != null && e instanceof Expr.AttributeReference a && a.navigationRole() == null && !a.set()
-                && a.objectType() == huidigSubject && huidigSubject.granularityOf(a.attribute()) != null
-                && huidigSubject.timelineCountOf(a.attribute()) == null;
+        return currentSubject != null && e instanceof Expr.AttributeReference a && a.navigationRole() == null && !a.set()
+                && a.objectType() == currentSubject && currentSubject.granularityOf(a.attribute()) != null
+                && currentSubject.timelineCountOf(a.attribute()) == null;
     }
 
     /** §7.1 structure a "gedurende de tijd dat &lt;zijn rol&gt; (een/het) &lt;temporeel kenmerk&gt; heeft/is"
@@ -1550,10 +1550,10 @@ final class ExpressionBuilder {
         // form. A negated gedurende clips the value timeline to the kenmerk's FALSE periods (the complement).
         String written = src(kn);
         boolean negation = false;
-        String characteristic = CharacteristicMatcher.find(huidigSubject, written);
+        String characteristic = CharacteristicMatcher.find(currentSubject, written);
         if (characteristic == null && (written.regionMatches(true, 0, "geen ", 0, 5)
                 || written.regionMatches(true, 0, "niet ", 0, 5))) {
-            characteristic = CharacteristicMatcher.find(huidigSubject, written.substring(5).trim());
+            characteristic = CharacteristicMatcher.find(currentSubject, written.substring(5).trim());
             negation = characteristic != null;
         }
         if (characteristic == null) {
@@ -1562,10 +1562,10 @@ final class ExpressionBuilder {
             // a verbatim match misses it. Retry article-stripped — verbatim-first above keeps a kenmerk literally
             // named "het …" binding itself.
             String withoutArticle = written.replaceFirst("^(?i)(de|het|een)\\s+", "").trim();
-            if (!withoutArticle.equals(written)) characteristic = CharacteristicMatcher.find(huidigSubject, withoutArticle);
+            if (!withoutArticle.equals(written)) characteristic = CharacteristicMatcher.find(currentSubject, withoutArticle);
         }
-        if (characteristic == null || huidigSubject.characteristicGranularityOf(characteristic) == null
-                || huidigSubject.characteristicTimelineCountOf(characteristic) != null) return null;
+        if (characteristic == null || currentSubject.characteristicGranularityOf(characteristic) == null
+                || currentSubject.characteristicTimelineCountOf(characteristic) != null) return null;
         return new Condition.CharacteristicCheck(characteristic, null, negation, source);
     }
 
@@ -1861,7 +1861,7 @@ final class ExpressionBuilder {
             }
             String word = writtenElementWord(op);
             RegelSpraakModel.RoleBindingRef rb =
-                    huidigSubject == null || word == null ? null : model.elementRoleBinding(huidigSubject, word);
+                    currentSubject == null || word == null ? null : model.elementRoleBinding(currentSubject, word);
             // The written name did not bind. That is not yet a refusal: elementRoleBinding answers the
             // BY-NAME question and answers it narrowly on purpose — only a declared singular or a
             // declared (mv:) plural binds, never a guessed one — and the §13.3.9.1 cardinality sentence
@@ -1876,7 +1876,7 @@ final class ExpressionBuilder {
             // unmoved by this: it forbids the WIRE from omitting the relation, so that a consumer never
             // derives one; how the PRODUCER arrives at the relation it writes is the producer's own
             // business, and it writes the result out explicitly either way.
-            if (rb == null && huidigSubject != null) rb = model.connectingRoleBinding(huidigSubject, el);
+            if (rb == null && currentSubject != null) rb = model.connectingRoleBinding(currentSubject, el);
             if (rb == null) {
                 unionRefusal = Msg.frontend("PART.union-relation", "n", i + 1, "word", word);
                 return null;
@@ -1915,7 +1915,7 @@ final class ExpressionBuilder {
      *  reads, or no subject is bound. */
     private List<String> countSourceSteps(PrimaireExpressieContext pe) {
         AttribuutVanOnderwerpContext a = pe.attribuutVanOnderwerp();
-        if (huidigSubject == null || a == null || a.attribuutMetLidwoord() == null
+        if (currentSubject == null || a == null || a.attribuutMetLidwoord() == null
                 || a.attribuutMetLidwoord().kaleNaam() == null || a.onderwerp() == null) return null;
         List<String> parts = new ArrayList<>();
         nameParts(src(a.attribuutMetLidwoord().kaleNaam()), parts);
@@ -2055,9 +2055,9 @@ final class ExpressionBuilder {
     private void reportAggregation(Expr.FunctionKind kind, List<Expr> arguments, FunctieAanroepContext f) {
         List<Datatype> types = arguments.stream().map(Expr::type).toList();
         Typing.Coded error = switch (kind) {
-            case MINIMUM -> verifierzin("minimale waarde van", Typing.numberAggregation("minimale waarde van", types),
+            case MINIMUM -> verifierSentence("minimale waarde van", Typing.numberAggregation("minimale waarde van", types),
                     Typing.orderingFoldSentence(Spelling.AGGREGATION_KIND.spelling(kind), types));
-            case MAXIMUM -> verifierzin("maximale waarde van", Typing.numberAggregation("maximale waarde van", types),
+            case MAXIMUM -> verifierSentence("maximale waarde van", Typing.numberAggregation("maximale waarde van", types),
                     Typing.orderingFoldSentence(Spelling.AGGREGATION_KIND.spelling(kind), types));
             // §4.10 Tabel 21 (som van): operands "moeten wel allemaal numeriek zijn" — the strict Numeriek
             // reading, DECIDED consistent with MIN/MAX (Tabel 22/23, identical wording): the spec adds an
@@ -2065,7 +2065,7 @@ final class ExpressionBuilder {
             // explicitly excludes Percentage where it means to (§6.7 maal) — Tabel 21 does neither. The
             // "gespecialiseerd numeriek datatype" sentence (§3.3.5) does not override the tables (see
             // grammar/DIVERGENCES.md). A Percentage som-operand is now a type error, no longer silently summed.
-            case SOM -> verifierzin("som van", Typing.numberAggregation("som van", types),
+            case SOM -> verifierSentence("som van", Typing.numberAggregation("som van", types),
                     arithmeticFoldSentence(Spelling.AGGREGATION_KIND.spelling(kind), arguments));
             // §4.6 Tabel 16 (wortel van) / §4.9 Tabel 20 (absolute waarde van): the single operand must be Numeriek.
             // WORTEL always types Numeriek regardless of its radicand, so "de wortel van <tekst>" produced a Numeriek
@@ -2073,9 +2073,9 @@ final class ExpressionBuilder {
             // leaked a datum unless a downstream assignment happened to reject it. Both now reject a concrete
             // non-numeriek operand at the operator (Onbekend skipped, no claim), in the verifier's words where it
             // refuses the operand too (WF-038).
-            case WORTEL -> verifierzin("de wortel van", Typing.numberAggregation("de wortel van", types),
+            case WORTEL -> verifierSentence("de wortel van", Typing.numberAggregation("de wortel van", types),
                     numericBuiltinSentence(kind, types));
-            case ABSOLUTE_WAARDE -> verifierzin("de absolute waarde van",
+            case ABSOLUTE_WAARDE -> verifierSentence("de absolute waarde van",
                     Typing.numberAggregation("de absolute waarde van", types), numericBuiltinSentence(kind, types));
             // §4.19 Tabel 29 (eerste paasdag van): "één numerieke expressie zonder eenheid ... altijd een geheel getal
             // met 4 cijfers". EERSTE_PAASDAG always types Datum, so an illegal operand produced a Datum result with no
@@ -2086,12 +2086,12 @@ final class ExpressionBuilder {
             // via totalOperandError: a unit-BEARING operand must carry a tijdseenheid denominator; a UNITLESS
             // operand is admitted, because the spec's own §7.1 worked example totals a unitless Bedrag (the
             // temporality lives in the timeline, not the unit) — see grammar/DIVERGENCES.md.
-            case TOTAAL -> verifierzin("totaal van", totalOperandError(arguments),
+            case TOTAAL -> verifierSentence("totaal van", totalOperandError(arguments),
                     arithmeticFoldSentence(Spelling.AGGREGATION_KIND.spelling(kind), arguments));
-            case EERSTE  -> verifierzin("eerste van",
+            case EERSTE  -> verifierSentence("eerste van",
                     Typing.dateAggregation("eerste van", Spelling.AGGREGATION_KIND.spelling(kind), types),
                     Typing.orderingFoldSentence(Spelling.AGGREGATION_KIND.spelling(kind), types));
-            case LAATSTE -> verifierzin("laatste van",
+            case LAATSTE -> verifierSentence("laatste van",
                     Typing.dateAggregation("laatste van", Spelling.AGGREGATION_KIND.spelling(kind), types),
                     Typing.orderingFoldSentence(Spelling.AGGREGATION_KIND.spelling(kind), types));
             // §6.12 / §13.4.17.21-.24: a time-of-day component is defined only on a datum-TIJD — a plain
@@ -2199,8 +2199,8 @@ final class ExpressionBuilder {
         if (!(f instanceof AantalFuncContext cf) || arguments.size() != 1) return null;
         if (!(arguments.get(0) instanceof Expr.VariableRef || arguments.get(0) instanceof Expr.Unresolved)) return null;
         String operand = src(cf.primaireExpressie(0)).replaceAll("^\\((.*)\\)$", "$1").trim();
-        String kern = operand.replaceFirst("(?i)^(de|het|een|alle)\\s+", "");
-        ObjectType type = PluralMatcher.findObjectType(model.objectTypes.values(), kern);
+        String bare = operand.replaceFirst("(?i)^(de|het|een|alle)\\s+", "");
+        ObjectType type = PluralMatcher.findObjectType(model.objectTypes.values(), bare);
         return type == null ? null : Msg.frontend("PART.count-over-object-type", "type", type.name);
     }
 
@@ -2253,7 +2253,7 @@ final class ExpressionBuilder {
     /** The verifier's sentence in place of RegelSpraak's refusal {@code error} where the verifier refuses the same
      *  operands ({@code sentence} non-null), after the Dutch context {@code contextPrefix}; RegelSpraak's own words where it
      *  admits them. */
-    private static Typing.Coded verifierzin(String contextPrefix, Typing.Coded error, Typing.Coded sentence) {
+    private static Typing.Coded verifierSentence(String contextPrefix, Typing.Coded error, Typing.Coded sentence) {
         return error == null ? null : sentence != null ? sentence.frame("context", "contextPrefix", contextPrefix) : error;
     }
 
@@ -2420,9 +2420,9 @@ final class ExpressionBuilder {
         // it is written in the plural by construction — same fallback, same precedence as the set
         // onderwerp above (see typeViaPlural); the role reading below still wins where it applies.
         if (byName == null) byName = typeViaPlural(word);
-        if (huidigSubject == null) return byName;
-        ObjectType viaRole = model.roleTargetTypeToSubject(huidigSubject, word);
-        if (viaRole != null && (byName == null || model.connectingRoleViaName(huidigSubject, byName, word) == null))
+        if (currentSubject == null) return byName;
+        ObjectType viaRole = model.roleTargetTypeToSubject(currentSubject, word);
+        if (viaRole != null && (byName == null || model.connectingRoleViaName(currentSubject, byName, word) == null))
             return viaRole;
         return byName;
     }
@@ -2730,9 +2730,9 @@ final class ExpressionBuilder {
         // (`noun` is null for an indefinite subject or a set quantifier) and an
         // unambiguous, attribute-bearing role, so an honestly unresolvable reference stays
         // a marker rather than becoming a wrong join or a getter for an absent property.
-        if (noun != null && huidigSubject != null && ot != huidigSubject
-                && model.connectingRoleViaName(huidigSubject, ot, noun) == null) {
-            ObjectType viaRole = model.roleTargetTypeToSubject(huidigSubject, noun);
+        if (noun != null && currentSubject != null && ot != currentSubject
+                && model.connectingRoleViaName(currentSubject, ot, noun) == null) {
+            ObjectType viaRole = model.roleTargetTypeToSubject(currentSubject, noun);
             if (viaRole != null && viaRole.attribute(attr) != null) { ot = viaRole; navRole = noun; }
         }
         // §8.1.5 + Tabel 16 NEGATED navigated dagsoortcontrole ("de <datum> van zijn <rol> GEEN <dagsoort> is"): the
@@ -2741,10 +2741,10 @@ final class ExpressionBuilder {
         // a DATUM attribute, keeping the bron's trailing " geen" so RuleChecker.characteristicCheckPredicateBare case (b) builds the
         // NEGATED dagsoort predicaat. Scoped to a datum attr (the dagsoort operand), so a navigated kenmerk negation
         // (still out of scope) stays a marker.
-        if ((ot == null || ot.attribute(attr) == null) && noun != null && huidigSubject != null
+        if ((ot == null || ot.attribute(attr) == null) && noun != null && currentSubject != null
                 && noun.length() > 5 && noun.regionMatches(true, noun.length() - 5, " geen", 0, 5)) {
             String realRole = noun.substring(0, noun.length() - 5).stripTrailing();
-            ObjectType viaRole = model.roleTargetTypeToSubject(huidigSubject, realRole);
+            ObjectType viaRole = model.roleTargetTypeToSubject(currentSubject, realRole);
             Datatype rdt = viaRole != null ? viaRole.attribute(attr) : null;
             // §8.1.5/§5.15/Tabel 57: a dagsoort operand may be ANY datum/tijd (Datum-in-dagen OR Datum-en-tijd); both
             // back-ends take the date part for the day-granular §9.8 predicate. Scoped to a datum attr, so a navigated
@@ -2801,21 +2801,21 @@ final class ExpressionBuilder {
         // the downstream marker, never a wrong join). navigationRole stays non-null for a chain (the AttributeReference
         // invariant), so every own-attribute fast path routes it to the navigated branches.
         java.util.List<String> navigationPath = java.util.List.of();
-        if (dt == null && huidigSubject != null && noun != null && attr.contains(" van ")
+        if (dt == null && currentSubject != null && noun != null && attr.contains(" van ")
                 && !isSetSubject(subjectType)) {
             // The onderwerp anchor: the type the chain starts its delen-walk from. The 1326 fix-up above only
             // rebinds ot when the ROLE TYPE carries the (still-chained) attr — which fails for a chain by
             // construction — so recover the role reading here when ot is still unbound.
-            ObjectType anchor = ot != null ? ot : model.roleTargetTypeToSubject(huidigSubject, noun);
+            ObjectType anchor = ot != null ? ot : model.roleTargetTypeToSubject(currentSubject, noun);
             java.util.List<String> path = null;
             ObjectType cur = null;
             if (anchor != null) {
                 // First hop (subject -> anker), mirroring the transpiler's naviRol order: by written name,
                 // then the §5.5.3 own-type back-reference (no hop), then by pair; declined when to-many.
-                String role1 = navRole != null ? model.connectingRoleViaName(huidigSubject, anchor, navRole) : null;
-                boolean ownStart = role1 == null && anchor == huidigSubject;
-                if (role1 == null && !ownStart) role1 = model.connectingRole(huidigSubject, anchor);
-                if (ownStart || (role1 != null && !model.toManyRole(huidigSubject, anchor, role1))) {
+                String role1 = navRole != null ? model.connectingRoleViaName(currentSubject, anchor, navRole) : null;
+                boolean ownStart = role1 == null && anchor == currentSubject;
+                if (role1 == null && !ownStart) role1 = model.connectingRole(currentSubject, anchor);
+                if (ownStart || (role1 != null && !model.toManyRole(currentSubject, anchor, role1))) {
                     path = new java.util.ArrayList<>();
                     if (!ownStart) path.add(role1);
                     cur = anchor;
@@ -2889,7 +2889,7 @@ final class ExpressionBuilder {
     /** The walk behind {@link #rangePath}, with the reason where it declines. One walk for both, so that the path
      *  the emitter writes and the refusal {@link #checkFoldSource} words cannot disagree about one written chain. */
     private RangeWalk walkRange(OnderwerpContext subjectType) {
-        if (subjectType == null || huidigSubject == null || !isSetSubject(subjectType))
+        if (subjectType == null || currentSubject == null || !isSetSubject(subjectType))
             return RangeWalk.GEEN;
         // The written segments, outside-in. Two shapes produce them, and both are walked: a nested
         // set onderwerp is its own parse node, while an inner TO-ONE step is swallowed by the greedy
@@ -2906,9 +2906,9 @@ final class ExpressionBuilder {
         String anchor = segments.get(segments.size() - 1);
         if (!anchorsSubject(anchor))
             return RangeWalk.refused(Msg.frontend("PART.range-not-at-subject", "source", src(subjectType), "anchor", anchor,
-                    "subject", huidigSubject.name), null);
+                    "subject", currentSubject.name), null);
         java.util.List<RegelSpraakModel.RoleBindingRef> path = new java.util.ArrayList<>();
-        ObjectType holder = huidigSubject;
+        ObjectType holder = currentSubject;
         for (int i = segments.size() - 2; i >= 0; i--) {
             RegelSpraakModel.RangeHop hop = model.rangeHop(holder, segments.get(i));
             if (hop == null) return stepRefusal(subjectType, holder, segments.get(i));
@@ -2978,10 +2978,10 @@ final class ExpressionBuilder {
     /** Whether the written anchor segment denotes the RULE SUBJECT — literally by object-type name, or
      *  (ch. 4.1a's order: only at zero far hits) by a role the subject itself fills. */
     private boolean anchorsSubject(String anchor) {
-        for (String kandidaat : RegelSpraakModel.nameCandidates(anchor))
-            if (model.objectTypeByName(kandidaat) == huidigSubject) return true;
-        return model.roleHitsToSubject(huidigSubject, anchor) == 0
-                && model.fillsSelfRole(huidigSubject, anchor);
+        for (String candidate : RegelSpraakModel.nameCandidates(anchor))
+            if (model.objectTypeByName(candidate) == currentSubject) return true;
+        return model.roleHitsToSubject(currentSubject, anchor) == 0
+                && model.fillsSelfRole(currentSubject, anchor);
     }
 
     /** The {@link Parameter} named {@code naam} (lidwoord-stripped) when it is Percentage-typed — the §13.4.17.12
@@ -3027,9 +3027,9 @@ final class ExpressionBuilder {
         String bare = k != null && k.onderwerpVerwijzing() != null && k.onderwerpVerwijzing().kaleNaam() != null
                 ? src(k.onderwerpVerwijzing().kaleNaam())
                 : (o.kaleNaam() != null && !isSetSubject(o) ? src(o.kaleNaam()) : null);
-        if (bare != null && huidigSubject != null) {
-            Datatype dt = huidigSubject.attribute(bare);
-            if (dt != null) return new Expr.AttributeReference(bare, huidigSubject, src(o), null, dt, source(o));
+        if (bare != null && currentSubject != null) {
+            Datatype dt = currentSubject.attribute(bare);
+            if (dt != null) return new Expr.AttributeReference(bare, currentSubject, src(o), null, dt, source(o));
         }
         return null;
     }
@@ -3207,25 +3207,25 @@ final class ExpressionBuilder {
      *  when it is one (a "zijn <rol>" navigation is not an attribute and is left to the
      *  generic path). Returns null when it is not a subject-attribute possessive. */
     private Expr subjectPossessive(OnderwerpContext o, Source source) {
-        if (huidigSubject == null || o.onderwerpKeten() == null) return null;
+        if (currentSubject == null || o.onderwerpKeten() == null) return null;
         OnderwerpKetenContext k = o.onderwerpKeten();
         if (k.ZIJN() == null || k.kaleNaam() == null) return null;
         String attr = src(k.kaleNaam());
-        Datatype dt = huidigSubject.attribute(attr);
+        Datatype dt = currentSubject.attribute(attr);
         // a subject-own attribute — no role navigation
-        if (dt != null) return new Expr.AttributeReference(attr, huidigSubject, "zijn", null, dt, source);
+        if (dt != null) return new Expr.AttributeReference(attr, currentSubject, "zijn", null, dt, source);
         // §3.6 the bare name may be a gedimensioneerd attribuut READ with the label woven in
         // ("zijn betaalde belasting in jaar van huidig jaar"): peel "<voorzetsel> <label>" off the run. An
         // own-attribute read carries no navigation role (navRole null), exactly as the scalar branch above.
-        Expr cell = dimensionCell(attr, huidigSubject, null, "zijn", source);
+        Expr cell = dimensionCell(attr, currentSubject, null, "zijn", source);
         if (cell != null) return cell;
         // §8.1.7/§8.1.8 a possessive that names a feittype ROLE the subject reaches ("zijn partner een <k>
         // heeft") is a to-one navigation, not an own attribute — emit the SAME navigated AttributeReference shape
         // buildAttribute produces for the written "de <rol> van <X>", so a navigated kenmerkcheck reaches
         // navigationCharacteristicCheck and a navigated value read reaches the to-one getter (the symmetric mirror of the
         // working "de <rol> van <X>" form; without it the possessive role stayed Unresolved and markered).
-        if (model.roleTargetTypeToSubject(huidigSubject, attr) != null)
-            return new Expr.AttributeReference(attr, huidigSubject, "zijn", model.navigationRoleName(attr), unknown(), source);
+        if (model.roleTargetTypeToSubject(currentSubject, attr) != null)
+            return new Expr.AttributeReference(attr, currentSubject, "zijn", model.navigationRoleName(attr), unknown(), source);
         // §8.1.8.1 the greedy onderwerp can absorb a TRAILING "niet"/"geen" negator into the possessive role
         // ("zijn reis niet <kenmerk>" -> role "reis niet", unresolvable). Strip it to resolve the role, but keep the
         // FULL bron so navigationCharacteristicCheck/navigationTail recover the negator onto the kenmerk and the §8.1.8 navigated
@@ -3235,13 +3235,13 @@ final class ExpressionBuilder {
             if (attr.regionMatches(true, attr.length() - neg.length(), neg, 0, neg.length())) {
                 String plain = attr.substring(0, attr.length() - neg.length()).trim();
                 if (plain.isEmpty()) continue;
-                if (model.roleTargetTypeToSubject(huidigSubject, plain) != null)
-                    return new Expr.AttributeReference(plain, huidigSubject, "zijn", model.navigationRoleName(plain), unknown(), source);
+                if (model.roleTargetTypeToSubject(currentSubject, plain) != null)
+                    return new Expr.AttributeReference(plain, currentSubject, "zijn", model.navigationRoleName(plain), unknown(), source);
                 // §8.1.3/§8.1.4 a possessive ATTRIBUTE with a greedily-absorbed trailing "niet" (the vragende negated
                 // elfproef / numeriek-met-exact "zijn <attr> niet aan de elfproef voldoet"): resolve the BARE
                 // attribuut so the read lowers, keeping the FULL bron so the predicate builder recovers the negation.
-                Datatype adt = huidigSubject.attribute(plain);
-                if (adt != null) return new Expr.AttributeReference(plain, huidigSubject, "zijn", null, adt, source);
+                Datatype adt = currentSubject.attribute(plain);
+                if (adt != null) return new Expr.AttributeReference(plain, currentSubject, "zijn", null, adt, source);
             }
         }
         // §3.5 a possessive that names a ROLE followed by an ARTICLE-led kenmerk ("zijn reis HET recht op korting
@@ -3254,8 +3254,8 @@ final class ExpressionBuilder {
         String[] words = attr.split("\\s+");
         for (int n = words.length - 1; n >= 1; n--) {
             String prefix = String.join(" ", java.util.Arrays.copyOfRange(words, 0, n));
-            if (model.roleTargetTypeToSubject(huidigSubject, prefix) != null)
-                return new Expr.AttributeReference(prefix, huidigSubject, "zijn", model.navigationRoleName(prefix), unknown(), source);
+            if (model.roleTargetTypeToSubject(currentSubject, prefix) != null)
+                return new Expr.AttributeReference(prefix, currentSubject, "zijn", model.navigationRoleName(prefix), unknown(), source);
         }
         return null;
     }
@@ -3358,8 +3358,8 @@ final class ExpressionBuilder {
      */
     private ObjectType typeViaPlural(String name) {
         if (name == null) return null;
-        for (String kandidaat : RegelSpraakModel.nameCandidates(name)) {
-            ObjectType ot = PluralMatcher.findObjectType(model.objectTypes.values(), kandidaat);
+        for (String candidate : RegelSpraakModel.nameCandidates(name)) {
+            ObjectType ot = PluralMatcher.findObjectType(model.objectTypes.values(), candidate);
             if (ot != null) return ot;
         }
         return null;
@@ -3465,7 +3465,7 @@ final class ExpressionBuilder {
         return unresolvedMarker(Source.of(ctx, lexemeText), REASON_ENUM_WITHOUT_DOMAIN);
     }
 
-    /** Promote an enumeratiewaarde marker to the domain {@code context} names, or hand back {@code kandidaat}
+    /** Promote an enumeratiewaarde marker to the domain {@code context} names, or hand back {@code candidate}
      *  untouched. The two contexts that name one are the two the §13.3.4.2 membership check already reads: a
      *  WRITE TARGET's declared datatype (a rule's doel, an objectcreatie member) and the OTHER side of a
      *  comparison. The label is the source lexeme minus its delimiters, via the shared reader — total and
@@ -3483,22 +3483,22 @@ final class ExpressionBuilder {
      *  positions WF-034 (r) refuses instead of one. The descent follows the shape {@code RuleChecker.peeled}
      *  follows, and stops where that one still resolves: a body that reads an OUTER binder past an inner Let
      *  stays a marker, loud and honest, rather than being half-promoted. */
-    static Expr enumAgainstContext(Expr kandidaat, Datatype context) {
-        if (!(context instanceof Datatype.Enumeration)) return kandidaat;
-        if (kandidaat instanceof Expr.Unresolved o && REASON_ENUM_WITHOUT_DOMAIN.equals(o.reason()))
+    static Expr enumAgainstContext(Expr candidate, Datatype context) {
+        if (!(context instanceof Datatype.Enumeration)) return candidate;
+        if (candidate instanceof Expr.Unresolved o && REASON_ENUM_WITHOUT_DOMAIN.equals(o.reason()))
             return new Expr.Literal(Literals.enumLabel(o.source().snippet()), context, o.source());
-        if (kandidaat instanceof Expr.Let l) {
+        if (candidate instanceof Expr.Let l) {
             if (l.body() instanceof Expr.BinderRef b && b.name().equals(l.binder())) {
                 Expr value = enumAgainstContext(l.value(), context);
-                if (value == l.value()) return kandidaat;
+                if (value == l.value()) return candidate;
                 return new Expr.Let(l.binder(), value,
                         new Expr.BinderRef(b.name(), context, b.source()), context, l.source());
             }
             Expr body = enumAgainstContext(l.body(), context);
-            if (body == l.body()) return kandidaat;
+            if (body == l.body()) return candidate;
             return new Expr.Let(l.binder(), l.value(), body, body.type(), l.source());
         }
-        return kandidaat;
+        return candidate;
     }
 
     /** The label of a value that IS an enumeratiewaarde — the bare label of a promoted literal, or the lexeme

@@ -137,10 +137,10 @@ public final class ComputeHelpers {
     /** A date or a date-time plus or minus {@code count} in the calendar or clock unit {@code unit}
      *  ({@code rsDatumReken}); a step or a count outside the range of RUNTIME-SEMANTICS ch. 3.8 is an evaluation fault
      *  ({@link #dateFault}). */
-    public static Object dateStep(Object date, Object countOf, String unit, boolean optellen) {
+    public static Object dateStep(Object date, Object countOf, String unit, boolean adding) {
         java.time.temporal.Temporal d = (java.time.temporal.Temporal) date;
         try {
-            return RegelSpraakRuntime.rsDatumReken(d, countOf, unit, optellen);
+            return RegelSpraakRuntime.rsDatumReken(d, countOf, unit, adding);
         } catch (IllegalStateException e) {
             throw dateFault(e);
         }
@@ -148,9 +148,9 @@ public final class ComputeHelpers {
 
     /** A date plus or minus a count of days of the day kind {@code datePredicate} (RUNTIME-SEMANTICS ch. 3.8,
      *  {@code rsDatumPlusDagsoort}); a walk past the reach of ch. 3.8 is an evaluation fault ({@link #dateFault}). */
-    public static Object dayKindStep(Object date, Object countOf, Predicate<LocalDate> datePredicate, boolean optellen) {
+    public static Object dayKindStep(Object date, Object countOf, Predicate<LocalDate> datePredicate, boolean adding) {
         try {
-            return RegelSpraakRuntime.rsDatumPlusDagsoort((LocalDate) date, countOf, datePredicate, optellen);
+            return RegelSpraakRuntime.rsDatumPlusDagsoort((LocalDate) date, countOf, datePredicate, adding);
         } catch (IllegalStateException e) {
             throw dateFault(e);
         }
@@ -159,9 +159,9 @@ public final class ComputeHelpers {
     /** As {@link #dayKindStep}, on a date-time over its date part, the clock time riding through
      *  ({@code rsDatumTijdPlusDagsoort}). */
     public static Object dateTimeDayKindStep(Object date, Object countOf, Predicate<LocalDate> datePredicate,
-                                               boolean optellen) {
+                                               boolean adding) {
         try {
-            return RegelSpraakRuntime.rsDatumTijdPlusDagsoort((LocalDateTime) date, countOf, datePredicate, optellen);
+            return RegelSpraakRuntime.rsDatumTijdPlusDagsoort((LocalDateTime) date, countOf, datePredicate, adding);
         } catch (IllegalStateException e) {
             throw dateFault(e);
         }
@@ -642,23 +642,23 @@ public final class ComputeHelpers {
     }
 
     /** The facts the distribution of one allocation inserts for one source {@code source} (RUNTIME-SEMANTICS ch. 4.2 to
-     *  4.4), computed by {@link Allocation#bereken} from the {@code pot} and {@code recipients}, the list of the source's
+     *  4.4), computed by {@link Allocation#compute} from the {@code pot} and {@code recipients}, the list of the source's
      *  {@link Recipient} facts, in the order its consequence inserts them: the §9.5 inconsistency of the form
      *  {@code form} on each recipient a degradation surfaces on; the share of every recipient that receives one, a
-     *  {@link Value} of {@code aandeel} written by {@code writer}; and where the allocation writes a rest
+     *  {@link Value} of {@code share} written by {@code writer}; and where the allocation writes a rest
      *  ({@code rest} not null) and something is distributed, that rest, a {@link Value} of {@code rest} on the
      *  source. */
     public static List<Object> payout(String form, Object source, ResolvedAllocation.Method method, Object pot,
-                                         Object recipients, boolean gewogen, boolean capped, boolean descending,
-                                         Integer decimals, ElementKey aandeel, ElementKey rest, String writer) {
+                                         Object recipients, boolean weighted, boolean capped, boolean descending,
+                                         Integer decimals, ElementKey share, ElementKey rest, String writer) {
         List<Recipient> list = new ArrayList<>();
         for (Object o : (List<?>) recipients) list.add((Recipient) o);
-        Allocation.Result u = Allocation.bereken(method, pot, list, gewogen, capped, decimals, descending);
+        Allocation.Result u = Allocation.compute(method, pot, list, weighted, capped, decimals, descending);
         List<Object> out = new ArrayList<>();
         for (Map.Entry<Object, Set<String>> d : u.depositors().entrySet())
             out.add(inconsistency(form, d.getKey(), List.copyOf(d.getValue())));
         for (Map.Entry<Object, BigDecimal> e : u.shares().entrySet())
-            out.add(new Value(e.getKey(), aandeel, e.getValue(), writer));
+            out.add(new Value(e.getKey(), share, e.getValue(), writer));
         if (rest != null && u.rest() != null) out.add(new Value(source, rest, u.rest(), writer));
         return out;
     }

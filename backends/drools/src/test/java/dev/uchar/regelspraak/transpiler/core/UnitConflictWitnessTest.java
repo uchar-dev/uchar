@@ -415,9 +415,9 @@ class UnitConflictWitnessTest {
         return e.isObject() && !e.has("denominator") ? name : null;
     }
 
-    /** Give {@code houder}'s unit a "mnd" denominator; null when there is no plain unit to give one to. */
-    private static JsonNode withDenominator(JsonNode copy, ObjectNode houder) throws Exception {
-        if (houder == null || !(houder.get("unit") instanceof ObjectNode e)) return null;
+    /** Give {@code holder}'s unit a "mnd" denominator; null when there is no plain unit to give one to. */
+    private static JsonNode withDenominator(JsonNode copy, ObjectNode holder) throws Exception {
+        if (holder == null || !(holder.get("unit") instanceof ObjectNode e)) return null;
         if (e.has("denominator")) return null;    // already a rate
         e.set("denominator", JSON.readTree(DENOMINATOR));
         return copy;

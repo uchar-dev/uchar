@@ -17,34 +17,34 @@ final class TermTree {
         return switch (t) {
             case Term.Const c -> "Const " + value(c.value())
                     + (c.type() == null || c.type().unitOf() == null ? "" : " " + c.type().unitOf().rendering());
-            case Term.SlotValue l -> "Lees " + l.slot();
-            case Term.Input i -> "Invoer " + i.field().javaClass().getSimpleName() + "." + i.field().name() + " " + i.form()
+            case Term.SlotValue l -> "Read " + l.slot();
+            case Term.Input i -> "Input " + i.field().javaClass().getSimpleName() + "." + i.field().name() + " " + i.form()
                     + " (" + tree(i.object()) + ")";
             case Term.Binder b -> "Binder " + b.slot() + " " + b.name();
-            case Term.Let l -> "Let " + l.slot() + " " + l.name() + (l.eager() ? " gretig" : "") + " [" + tree(l.value())
+            case Term.Let l -> "Let " + l.slot() + " " + l.name() + (l.eager() ? " eager" : "") + " [" + tree(l.value())
                     + "] in [" + tree(l.body()) + "]";
-            case Term.Choice k -> "Keuze(" + tree(k.condition()) + ", " + tree(k.then()) + ", " + tree(k.otherwise()) + ")";
+            case Term.Choice k -> "Choice(" + tree(k.condition()) + ", " + tree(k.then()) + ", " + tree(k.otherwise()) + ")";
             case Term.Call a -> a.function() + list(a.arguments());
-            case Term.Restate h -> "Herschaal " + h.function() + " " + unit(h.from()) + "->" + unit(h.destination())
+            case Term.Restate h -> "Restate " + h.function() + " " + unit(h.from()) + "->" + unit(h.destination())
                     + " " + h.counter() + (h.denominator() == null ? "" : "/" + h.denominator()) + " (" + tree(h.term()) + ")";
-            case Term.Division d -> "Deel " + d.function() + " sonde " + d.depositFlag() + " (" + tree(d.left()) + ", "
+            case Term.Division d -> "Division " + d.function() + " probe " + d.depositFlag() + " (" + tree(d.left()) + ", "
                     + tree(d.right()) + ")";
-            case Term.SquareRoot w -> "Wortel " + w.function() + " sonde " + w.depositFlag() + " (" + tree(w.radicand()) + ")";
-            case Term.Fail f -> "Faal '" + f.sentence() + "'";
-            case Term.Required v -> "Vereist (" + tree(v.value()) + ") '" + v.sentence() + "'";
-            case Term.TextComposition s -> "Tekstreeks" + list(s.parts());
-            case Term.ListedFold g -> "GelijsteVouw " + g.function() + list(g.operands());
-            case Term.FoldRead v -> "Vouwlezing " + v.deposits() + " " + v.depositFlag() + " " + v.filterFault() + " "
+            case Term.SquareRoot w -> "SquareRoot " + w.function() + " probe " + w.depositFlag() + " (" + tree(w.radicand()) + ")";
+            case Term.Fail f -> "Fail '" + f.sentence() + "'";
+            case Term.Required v -> "Required (" + tree(v.value()) + ") '" + v.sentence() + "'";
+            case Term.TextComposition s -> "TextComposition" + list(s.parts());
+            case Term.ListedFold g -> "ListedFold " + g.function() + list(g.operands());
+            case Term.FoldRead v -> "FoldRead " + v.deposits() + " " + v.depositFlag() + " " + v.filterFault() + " "
                     + v.memberFault() + " (" + tree(v.outcome()) + ")";
-            case Term.DayKind d -> "Dagsoort " + d.name();
-            case Term.Compound s -> "Samengesteld " + s.quantifier() + " " + s.threshold() + list(s.members());
-            case Term.QuantifierRead k -> "Kwantorlezing " + k.function() + " " + k.quantifier() + " " + k.threshold()
-                    + " sonde " + k.depositFlag() + " (" + tree(k.count()) + ", " + tree(k.contributions()) + ")";
-            case Term.WithoutFault z -> "ZonderFout(" + tree(z.condition()) + ")";
+            case Term.DayKind d -> "DayKind " + d.name();
+            case Term.Compound s -> "Compound " + s.quantifier() + " " + s.threshold() + list(s.members());
+            case Term.QuantifierRead k -> "QuantifierRead " + k.function() + " " + k.quantifier() + " " + k.threshold()
+                    + " probe " + k.depositFlag() + " (" + tree(k.count()) + ", " + tree(k.contributions()) + ")";
+            case Term.WithoutFault z -> "WithoutFault(" + tree(z.condition()) + ")";
         };
     }
 
-    /** Every node of {@code t} in pre-order, each as one line that opens with {@code naam}: its position (the root
+    /** Every node of {@code t} in pre-order, each as one line that opens with {@code name}: its position (the root
      *  {@code site}, the i-th child of the node at p at p.i), its kind, its source fragment where it carries one, and
      *  of a constant the class of its value and, where it has one, its whole IR type, as the type's record prints
      *  it. */
@@ -53,7 +53,7 @@ final class TermTree {
         if (t instanceof Term.Const c)
             rule.append(" ").append(c.value() == null ? "null" : c.value().getClass().getSimpleName())
                     .append(c.type() == null ? "" : " type " + c.type());
-        if (t.source() != null) rule.append(" bron '").append(t.source()).append("'");
+        if (t.source() != null) rule.append(" source '").append(t.source()).append("'");
         out.add(rule.toString());
         List<Term> children = children(t);
         for (int i = 0; i < children.size(); i++) fields(name, children.get(i), site + "." + i, out);

@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code DroolsBackend.fixpointOf} gives, the facts at the fixpoint and the outcome of the fire. The firings and their order
  * are left out, as in {@link BranchDumps}: they follow the agenda, which differs between the two renderings, while the
  * fixpoint is the same. A case whose fire reaches no fixpoint, at a cap, at the creation budget or by an exception,
- * would compare only its input and its line {@code fixpunt}, strictly, since the facts where a fire stops depend on the
+ * would compare only its input and its line {@code fixpoint}, strictly, since the facts where a fire stops depend on the
  * order of the firings; no case of a played golden is one (measured 2026-10-14), and {@link #WITHOUT_FIXPOINT} names
  * them, so that one that arrives shows by name. A golden the exec-model branch does not play is gate 12's channel, and
  * this witness skips it.
@@ -92,7 +92,7 @@ class BranchDumpsCorpusWitnessTest {
                 JsonNode c = TmsDocuments.JSON.readTree(casePath.toFile());
                 String which = name + "/" + casePath.getFileName();
                 String a = BranchDumps.dump(exec, c), b = BranchDumps.dump(drl, c);
-                if (a.lines().noneMatch(r -> r.equals("fixpunt ja"))) withoutFixpoint.add(which);
+                if (a.lines().noneMatch(r -> r.equals("fixpoint yes"))) withoutFixpoint.add(which);
                 String difference = firstDifference(comparable(a), comparable(b));
                 if (difference != null) differences.add(which + ": " + difference);
                 cases++;
@@ -127,10 +127,10 @@ class BranchDumpsCorpusWitnessTest {
     }
 
     /** What the two branches must have alike in a dump: at a fixpoint everything but the firings, and without one only
-     *  the input and the line {@code fixpunt}. */
+     *  the input and the line {@code fixpoint}. */
     private static String comparable(String dump) {
-        if (dump.lines().anyMatch(r -> r.equals("fixpunt ja"))) return BranchDumps.withoutFirings(dump);
-        return Stream.of(dump.split("\n")).filter(r -> r.startsWith("invoer ") || r.startsWith("fixpunt "))
+        if (dump.lines().anyMatch(r -> r.equals("fixpoint yes"))) return BranchDumps.withoutFirings(dump);
+        return Stream.of(dump.split("\n")).filter(r -> r.startsWith("input ") || r.startsWith("fixpoint "))
                 .collect(Collectors.joining("\n"));
     }
 

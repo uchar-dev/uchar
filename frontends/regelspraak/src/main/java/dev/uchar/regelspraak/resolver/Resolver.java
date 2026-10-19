@@ -271,8 +271,8 @@ public final class Resolver {
         }
         java.util.List<String> foreign = new java.util.ArrayList<>();
         if (java.nio.file.Files.isDirectory(map))
-            try (var inhoud = java.nio.file.Files.list(map)) {
-                inhoud.map(p -> p.getFileName().toString())
+            try (var entries = java.nio.file.Files.list(map)) {
+                entries.map(p -> p.getFileName().toString())
                         .filter(n -> n.matches("case.*\\.json") && !cases.containsKey(n)).sorted().forEach(foreign::add);
             }
         if (!foreign.isEmpty()) {

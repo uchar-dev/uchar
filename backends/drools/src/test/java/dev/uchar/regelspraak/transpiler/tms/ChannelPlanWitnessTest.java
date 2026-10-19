@@ -89,286 +89,286 @@ class ChannelPlanWitnessTest {
 
     @Test void a_consistency_and_a_uniqueness_without_scope() throws Exception {
         assertEquals(List.of(
-                "regel aanmelding niet voor de vondstdag | vorm aanmelding niet voor de vondstdag | groep null",
-                "  lezingen [0 INPUT $aanmelddatum (eigen ElementKey[objectType=vondst, name=aanmelddatum,"
+                "rule aanmelding niet voor de vondstdag | form aanmelding niet voor de vondstdag | group null",
+                "  readings [0 INPUT $aanmelddatum (eigen ElementKey[objectType=vondst, name=aanmelddatum,"
                         + " characteristic=false]), 1 INPUT $vondstdag (eigen ElementKey[objectType=vondst,"
                         + " name=vondstdag, characteristic=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] join [] bind [$aanmelddatum = [] Vondst.aanmelddatum VALUE,"
+                "  subject Vondst $onderwerp alpha [] join [] bind [$aanmelddatum = [] Vondst.aanmelddatum VALUE,"
                         + " $vondstdag = [] Vondst.vondstdag VALUE]",
-                "  toets voorwaarde_0 CONDITION sonde -1 slots [0, 1] grootte 2: NIET(DATE_COMPARE(Lees 0, Lees 1,"
+                "  test voorwaarde_0 CONDITION probe -1 slots [0, 1] size 2: NIET(DATE_COMPARE(Read 0, Read 1,"
                         + " Const LATER_OF_GELIJK))",
-                "    toets 0 Call bron 'De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag"
+                "    test 0 Call source 'De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag"
                         + " van de Vondst'",
-                "    toets 0.0 Call bron 'De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag"
+                "    test 0.0 Call source 'De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag"
                         + " van de Vondst'",
-                "    toets 0.0.0 SlotValue bron 'De aanmelddatum van een Vondst'",
-                "    toets 0.0.1 SlotValue bron 'de vondstdag van de Vondst'",
-                "    toets 0.0.2 Const Operator",
-                "  gevolg Inconsistency [subject=$onderwerp, form=aanmelding niet voor de vondstdag,"
+                "    test 0.0.0 SlotValue source 'De aanmelddatum van een Vondst'",
+                "    test 0.0.1 SlotValue source 'de vondstdag van de Vondst'",
+                "    test 0.0.2 Const Operator",
+                "  consequence Inconsistency [subject=$onderwerp, form=aanmelding niet voor de vondstdag,"
                         + " codes=[EF-025], insertion=LOGICAL]",
-                "regel eenmalig vondstnummer: sleutel van Vondst 1 | vorm eenmalig vondstnummer | groep null",
-                "  lezingen [0 INPUT $vondstnummer (eigen ElementKey[objectType=vondst, name=vondstnummer,"
+                "rule eenmalig vondstnummer: sleutel van Vondst 1 | form eenmalig vondstnummer | group null",
+                "  readings [0 INPUT $vondstnummer (eigen ElementKey[objectType=vondst, name=vondstnummer,"
                         + " characteristic=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] join [] bind [$vondstnummer = [] Vondst.vondstnummer VALUE]",
-                "  toets voorwaarde_1 VORM sonde -1 slots [0] grootte 1: Samengesteld ALLE 0(EMPTY_TEST(Lees 0, Const"
+                "  subject Vondst $onderwerp alpha [] join [] bind [$vondstnummer = [] Vondst.vondstnummer VALUE]",
+                "  test voorwaarde_1 VORM probe -1 slots [0] size 1: Compound ALLE 0(EMPTY_TEST(Read 0, Const"
                         + " false))",
-                "    toets 0 Compound",
-                "    toets 0.0 Call",
-                "    toets 0.0.0 SlotValue",
-                "    toets 0.0.1 Const Boolean",
-                "  gevolg UniquenessKey [subject=$onderwerp, uniqueness=eenmalig vondstnummer, source=0,"
-                        + " components=[Lees 0], timeline=-1, scope=-1, slots=[0], size=1, insertion=LOGICAL]",
+                "    test 0 Compound",
+                "    test 0.0 Call",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "  consequence UniquenessKey [subject=$onderwerp, uniqueness=eenmalig vondstnummer, source=0,"
+                        + " components=[Read 0], timeline=-1, scope=-1, slots=[0], size=1, insertion=LOGICAL]",
                 "    components 0 0 SlotValue",
-                "regel eenmalig vondstnummer | vorm eenmalig vondstnummer | groep null",
-                "  lezingen [0 COLLISIONS $botsingen (botsingen)]",
-                "  patroon UniquenessKey $sleutel alfa [uniciteit_2: [[] uniqueness VALUE GELIJK eenmalig"
+                "rule eenmalig vondstnummer | form eenmalig vondstnummer | group null",
+                "  readings [0 COLLISIONS $botsingen (botsingen)]",
+                "  pattern UniquenessKey $sleutel alpha [uniciteit_2: [[] uniqueness VALUE GELIJK eenmalig"
                         + " vondstnummer]] join [] beta [] bind [$element = [] UniquenessKey.element VALUE]",
-                "  accumulatie UniquenessKey $ander alfa [uniciteit_3: [[] uniqueness VALUE GELIJK eenmalig"
-                        + " vondstnummer]] join [] beta [botsing_4: COLLIDES_WITH $sleutel] bind [] functies [COUNT null"
+                "  accumulation UniquenessKey $ander alpha [uniciteit_3: [[] uniqueness VALUE GELIJK eenmalig"
+                        + " vondstnummer]] join [] beta [botsing_4: COLLIDES_WITH $sleutel] bind [] functions [COUNT null"
                         + " -> $botsingen]",
-                "  toets dubbel_5 VORM sonde -1 slots [0] grootte 1: DUPLICATE(Lees 0)",
-                "    toets 0 Call",
-                "    toets 0.0 SlotValue",
-                "  gevolg UniquenessViolation [subject=$element, uniqueness=eenmalig vondstnummer, insertion=LOGICAL]",
-                "regel eenmalig vondstnummer: kanaal | vorm eenmalig vondstnummer | groep null",
-                "  lezingen []",
-                "  patroon UniquenessViolation $schending alfa [schending_6: [[] uniqueness VALUE GELIJK eenmalig"
+                "  test dubbel_5 VORM probe -1 slots [0] size 1: DUPLICATE(Read 0)",
+                "    test 0 Call",
+                "    test 0.0 SlotValue",
+                "  consequence UniquenessViolation [subject=$element, uniqueness=eenmalig vondstnummer, insertion=LOGICAL]",
+                "rule eenmalig vondstnummer: kanaal | form eenmalig vondstnummer | group null",
+                "  readings []",
+                "  pattern UniquenessViolation $schending alpha [schending_6: [[] uniqueness VALUE GELIJK eenmalig"
                         + " vondstnummer]] join [] beta [] bind [$subject = [] UniquenessViolation.element VALUE]",
-                "  gevolg Inconsistency [subject=$subject, form=eenmalig vondstnummer, codes=[EF-026], insertion=LOGICAL]"),
+                "  consequence Inconsistency [subject=$subject, form=eenmalig vondstnummer, codes=[EF-026], insertion=LOGICAL]"),
                 plans(golden("jutterswet-vondstnummer"), List.of("aanmelding niet voor de vondstdag",
                         "eenmalig vondstnummer")));
     }
 
     @Test void a_uniqueness_over_an_enumeration() throws Exception {
         assertEquals(List.of(
-                "regel eenmalige staat: sleutel van Vondst 1 | vorm eenmalige staat | groep null",
-                "  lezingen [0 INPUT $staat (eigen ElementKey[objectType=vondst, name=staat, characteristic=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] join [] bind [$staat = [] Vondst.staat VALUE]",
-                "  toets voorwaarde_5 VORM sonde -1 slots [0] grootte 1: Samengesteld ALLE 0(EMPTY_TEST(Lees 0, Const"
+                "rule eenmalige staat: sleutel van Vondst 1 | form eenmalige staat | group null",
+                "  readings [0 INPUT $staat (eigen ElementKey[objectType=vondst, name=staat, characteristic=false])]",
+                "  subject Vondst $onderwerp alpha [] join [] bind [$staat = [] Vondst.staat VALUE]",
+                "  test voorwaarde_5 VORM probe -1 slots [0] size 1: Compound ALLE 0(EMPTY_TEST(Read 0, Const"
                         + " false))",
-                "    toets 0 Compound",
-                "    toets 0.0 Call",
-                "    toets 0.0.0 SlotValue",
-                "    toets 0.0.1 Const Boolean",
-                "  gevolg UniquenessKey [subject=$onderwerp, uniqueness=eenmalige staat, source=0,"
-                        + " components=[RS_ENUM_NAME(Lees 0)], timeline=-1, scope=-1, slots=[0], size=1,"
+                "    test 0 Compound",
+                "    test 0.0 Call",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "  consequence UniquenessKey [subject=$onderwerp, uniqueness=eenmalige staat, source=0,"
+                        + " components=[RS_ENUM_NAME(Read 0)], timeline=-1, scope=-1, slots=[0], size=1,"
                         + " insertion=LOGICAL]",
                 "    components 0 0 Call",
                 "    components 0 0.0 SlotValue",
-                "regel eenmalige staat | vorm eenmalige staat | groep null",
-                "  lezingen [0 COLLISIONS $botsingen (botsingen)]",
-                "  patroon UniquenessKey $sleutel alfa [uniciteit_6: [[] uniqueness VALUE GELIJK eenmalige staat]]"
+                "rule eenmalige staat | form eenmalige staat | group null",
+                "  readings [0 COLLISIONS $botsingen (botsingen)]",
+                "  pattern UniquenessKey $sleutel alpha [uniciteit_6: [[] uniqueness VALUE GELIJK eenmalige staat]]"
                         + " join [] beta [] bind [$element = [] UniquenessKey.element VALUE]",
-                "  accumulatie UniquenessKey $ander alfa [uniciteit_7: [[] uniqueness VALUE GELIJK eenmalige"
-                        + " staat]] join [] beta [botsing_8: COLLIDES_WITH $sleutel] bind [] functies [COUNT null ->"
+                "  accumulation UniquenessKey $ander alpha [uniciteit_7: [[] uniqueness VALUE GELIJK eenmalige"
+                        + " staat]] join [] beta [botsing_8: COLLIDES_WITH $sleutel] bind [] functions [COUNT null ->"
                         + " $botsingen]",
-                "  toets dubbel_9 VORM sonde -1 slots [0] grootte 1: DUPLICATE(Lees 0)",
-                "    toets 0 Call",
-                "    toets 0.0 SlotValue",
-                "  gevolg UniquenessViolation [subject=$element, uniqueness=eenmalige staat, insertion=LOGICAL]",
-                "regel eenmalige staat: kanaal | vorm eenmalige staat | groep null",
-                "  lezingen []",
-                "  patroon UniquenessViolation $schending alfa [schending_10: [[] uniqueness VALUE GELIJK eenmalige"
+                "  test dubbel_9 VORM probe -1 slots [0] size 1: DUPLICATE(Read 0)",
+                "    test 0 Call",
+                "    test 0.0 SlotValue",
+                "  consequence UniquenessViolation [subject=$element, uniqueness=eenmalige staat, insertion=LOGICAL]",
+                "rule eenmalige staat: kanaal | form eenmalige staat | group null",
+                "  readings []",
+                "  pattern UniquenessViolation $schending alpha [schending_10: [[] uniqueness VALUE GELIJK eenmalige"
                         + " staat]] join [] beta [] bind [$subject = [] UniquenessViolation.element VALUE]",
-                "  gevolg Inconsistency [subject=$subject, form=eenmalige staat, codes=[EF-026], insertion=LOGICAL]"),
+                "  consequence Inconsistency [subject=$subject, form=eenmalige staat, codes=[EF-026], insertion=LOGICAL]"),
                 plans(golden("jutterswet-keurspelling"), List.of("eenmalige staat")));
     }
 
     @Test void a_consistency_and_the_two_channel_states() throws Exception {
         assertEquals(List.of(
-                "regel controle saldo | vorm controle saldo | groep null",
-                "  lezingen [0 INPUT $saldo (eigen ElementKey[objectType=rekeninghouder, name=saldo,"
+                "rule controle saldo | form controle saldo | group null",
+                "  readings [0 INPUT $saldo (eigen ElementKey[objectType=rekeninghouder, name=saldo,"
                         + " characteristic=false])]",
-                "  onderwerp Rekeninghouder $onderwerp alfa [] join [] bind [$saldo = [] Rekeninghouder.saldo"
+                "  subject Rekeninghouder $onderwerp alpha [] join [] bind [$saldo = [] Rekeninghouder.saldo"
                         + " VALUE]",
-                "  toets voorwaarde_2 CONDITION sonde -1 slots [0] grootte 1: NIET(RS_AGG_COMPARE(Lees 0, Const 0,"
+                "  test voorwaarde_2 CONDITION probe -1 slots [0] size 1: NIET(RS_AGG_COMPARE(Read 0, Const 0,"
                         + " Const >=))",
-                "    toets 0 Call bron 'zijn saldo is groter dan of gelijk aan 0'",
-                "    toets 0.0 Call bron 'zijn saldo is groter dan of gelijk aan 0'",
-                "    toets 0.0.0 SlotValue bron 'zijn saldo'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
-                "    toets 0.0.2 Const String",
-                "  gevolg Inconsistency [subject=$onderwerp, form=controle saldo, codes=[EF-025], insertion=LOGICAL]",
-                "regel kanaalstand controle saldo: inconsistent | vorm null | groep null",
-                "  lezingen []",
-                "  bestaat [Inconsistentie $inconsistentie alfa [kanaal_3: [[] rule VALUE GELIJK controle saldo]]"
+                "    test 0 Call source 'zijn saldo is groter dan of gelijk aan 0'",
+                "    test 0.0 Call source 'zijn saldo is groter dan of gelijk aan 0'",
+                "    test 0.0.0 SlotValue source 'zijn saldo'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '0'",
+                "    test 0.0.2 Const String",
+                "  consequence Inconsistency [subject=$onderwerp, form=controle saldo, codes=[EF-025], insertion=LOGICAL]",
+                "rule kanaalstand controle saldo: inconsistent | form null | group null",
+                "  readings []",
+                "  exists [Inconsistentie $inconsistentie alpha [kanaal_3: [[] rule VALUE GELIJK controle saldo]]"
                         + " join [] beta [] bind []]",
-                "  gevolg InsertChannelState [producer=controle saldo, inconsistent=true, insertion=LOGICAL]",
-                "regel kanaalstand controle saldo: consistent | vorm null | groep null",
-                "  lezingen []",
-                "  niet Inconsistentie $inconsistentie alfa [kanaal_4: [[] rule VALUE GELIJK controle saldo]] join"
+                "  consequence InsertChannelState [producer=controle saldo, inconsistent=true, insertion=LOGICAL]",
+                "rule kanaalstand controle saldo: consistent | form null | group null",
+                "  readings []",
+                "  not Inconsistentie $inconsistentie alpha [kanaal_4: [[] rule VALUE GELIJK controle saldo]] join"
                         + " [] beta [] bind []",
-                "  gevolg InsertChannelState [producer=controle saldo, inconsistent=false, insertion=LOGICAL]"),
+                "  consequence InsertChannelState [producer=controle saldo, inconsistent=false, insertion=LOGICAL]"),
                 plans(document(TestTermWitnessTest.TOEZICHT), List.of("controle saldo")));
     }
 
     @Test void a_uniqueness_with_scope_and_a_union() throws Exception {
         assertEquals(List.of(
-                "regel eenmalig kaveletiket: sleutel van Kavel 1 | vorm eenmalig kaveletiket | groep null",
-                "  lezingen [0 INPUT $etiket (eigen ElementKey[objectType=kavel, name=etiket, characteristic=false]),"
+                "rule eenmalig kaveletiket: sleutel van Kavel 1 | form eenmalig kaveletiket | group null",
+                "  readings [0 INPUT $etiket (eigen ElementKey[objectType=kavel, name=etiket, characteristic=false]),"
                         + " 1 SCOPE $gemeente (scope kavelindeling gemeente)]",
-                "  onderwerp Kavel $onderwerp alfa [] join [] bind [$etiket = [] Kavel.etiket VALUE, $gemeente ="
+                "  subject Kavel $onderwerp alpha [] join [] bind [$etiket = [] Kavel.etiket VALUE, $gemeente ="
                         + " [] Kavel.gemeente VALUE]",
-                "  toets voorwaarde_5 VORM sonde -1 slots [0, 1] grootte 2: Samengesteld ALLE 0(EMPTY_TEST(Lees 0,"
-                        + " Const false), EMPTY_TEST(Lees 1, Const false))",
-                "    toets 0 Compound",
-                "    toets 0.0 Call",
-                "    toets 0.0.0 SlotValue",
-                "    toets 0.0.1 Const Boolean",
-                "    toets 0.1 Call",
-                "    toets 0.1.0 SlotValue",
-                "    toets 0.1.1 Const Boolean",
-                "  gevolg UniquenessKey [subject=$onderwerp, uniqueness=eenmalig kaveletiket, source=0,"
-                        + " components=[Lees 0], timeline=-1, scope=1, slots=[0, 1], size=2, insertion=LOGICAL]",
+                "  test voorwaarde_5 VORM probe -1 slots [0, 1] size 2: Compound ALLE 0(EMPTY_TEST(Read 0,"
+                        + " Const false), EMPTY_TEST(Read 1, Const false))",
+                "    test 0 Compound",
+                "    test 0.0 Call",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "    test 0.1 Call",
+                "    test 0.1.0 SlotValue",
+                "    test 0.1.1 Const Boolean",
+                "  consequence UniquenessKey [subject=$onderwerp, uniqueness=eenmalig kaveletiket, source=0,"
+                        + " components=[Read 0], timeline=-1, scope=1, slots=[0, 1], size=2, insertion=LOGICAL]",
                 "    components 0 0 SlotValue",
-                "regel eenmalig kaveletiket | vorm eenmalig kaveletiket | groep null",
-                "  lezingen [0 COLLISIONS $botsingen (botsingen)]",
-                "  patroon UniquenessKey $sleutel alfa [uniciteit_6: [[] uniqueness VALUE GELIJK eenmalig"
+                "rule eenmalig kaveletiket | form eenmalig kaveletiket | group null",
+                "  readings [0 COLLISIONS $botsingen (botsingen)]",
+                "  pattern UniquenessKey $sleutel alpha [uniciteit_6: [[] uniqueness VALUE GELIJK eenmalig"
                         + " kaveletiket]] join [] beta [] bind [$element = [] UniquenessKey.element VALUE]",
-                "  accumulatie UniquenessKey $ander alfa [uniciteit_7: [[] uniqueness VALUE GELIJK eenmalig"
-                        + " kaveletiket]] join [] beta [botsing_8: COLLIDES_WITH $sleutel] bind [] functies [COUNT null"
+                "  accumulation UniquenessKey $ander alpha [uniciteit_7: [[] uniqueness VALUE GELIJK eenmalig"
+                        + " kaveletiket]] join [] beta [botsing_8: COLLIDES_WITH $sleutel] bind [] functions [COUNT null"
                         + " -> $botsingen]",
-                "  toets dubbel_9 VORM sonde -1 slots [0] grootte 1: DUPLICATE(Lees 0)",
-                "    toets 0 Call",
-                "    toets 0.0 SlotValue",
-                "  gevolg UniquenessViolation [subject=$element, uniqueness=eenmalig kaveletiket, insertion=LOGICAL]",
-                "regel eenmalig kaveletiket: kanaal | vorm eenmalig kaveletiket | groep null",
-                "  lezingen []",
-                "  patroon UniquenessViolation $schending alfa [schending_10: [[] uniqueness VALUE GELIJK eenmalig"
+                "  test dubbel_9 VORM probe -1 slots [0] size 1: DUPLICATE(Read 0)",
+                "    test 0 Call",
+                "    test 0.0 SlotValue",
+                "  consequence UniquenessViolation [subject=$element, uniqueness=eenmalig kaveletiket, insertion=LOGICAL]",
+                "rule eenmalig kaveletiket: kanaal | form eenmalig kaveletiket | group null",
+                "  readings []",
+                "  pattern UniquenessViolation $schending alpha [schending_10: [[] uniqueness VALUE GELIJK eenmalig"
                         + " kaveletiket]] join [] beta [] bind [$subject = [] UniquenessViolation.element VALUE]",
-                "  gevolg Inconsistency [subject=$subject, form=eenmalig kaveletiket, codes=[EF-026], insertion=LOGICAL]",
-                "regel eenmalig vondstnummer: sleutel van Strandvondst 1 | vorm eenmalig vondstnummer | groep null",
-                "  lezingen [0 INPUT $vondstnummer (eigen ElementKey[objectType=strandvondst,"
+                "  consequence Inconsistency [subject=$subject, form=eenmalig kaveletiket, codes=[EF-026], insertion=LOGICAL]",
+                "rule eenmalig vondstnummer: sleutel van Strandvondst 1 | form eenmalig vondstnummer | group null",
+                "  readings [0 INPUT $vondstnummer (eigen ElementKey[objectType=strandvondst,"
                         + " name=vondstnummer, characteristic=false])]",
-                "  onderwerp Strandvondst $onderwerp alfa [] join [] bind [$vondstnummer = []"
+                "  subject Strandvondst $onderwerp alpha [] join [] bind [$vondstnummer = []"
                         + " Strandvondst.vondstnummer VALUE]",
-                "  toets voorwaarde_17 VORM sonde -1 slots [0] grootte 1: Samengesteld ALLE 0(EMPTY_TEST(Lees 0, Const"
+                "  test voorwaarde_17 VORM probe -1 slots [0] size 1: Compound ALLE 0(EMPTY_TEST(Read 0, Const"
                         + " false))",
-                "    toets 0 Compound",
-                "    toets 0.0 Call",
-                "    toets 0.0.0 SlotValue",
-                "    toets 0.0.1 Const Boolean",
-                "  gevolg UniquenessKey [subject=$onderwerp, uniqueness=eenmalig vondstnummer, source=0,"
-                        + " components=[Lees 0], timeline=-1, scope=-1, slots=[0], size=1, insertion=LOGICAL]",
+                "    test 0 Compound",
+                "    test 0.0 Call",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "  consequence UniquenessKey [subject=$onderwerp, uniqueness=eenmalig vondstnummer, source=0,"
+                        + " components=[Read 0], timeline=-1, scope=-1, slots=[0], size=1, insertion=LOGICAL]",
                 "    components 0 0 SlotValue",
-                "regel eenmalig vondstnummer: sleutel van Wrakvondst 2 | vorm eenmalig vondstnummer | groep null",
-                "  lezingen [0 INPUT $vondstnummer (eigen ElementKey[objectType=wrakvondst, name=vondstnummer,"
+                "rule eenmalig vondstnummer: sleutel van Wrakvondst 2 | form eenmalig vondstnummer | group null",
+                "  readings [0 INPUT $vondstnummer (eigen ElementKey[objectType=wrakvondst, name=vondstnummer,"
                         + " characteristic=false])]",
-                "  onderwerp Wrakvondst $onderwerp alfa [] join [] bind [$vondstnummer = [] Wrakvondst.vondstnummer"
+                "  subject Wrakvondst $onderwerp alpha [] join [] bind [$vondstnummer = [] Wrakvondst.vondstnummer"
                         + " VALUE]",
-                "  toets voorwaarde_18 VORM sonde -1 slots [0] grootte 1: Samengesteld ALLE 0(EMPTY_TEST(Lees 0, Const"
+                "  test voorwaarde_18 VORM probe -1 slots [0] size 1: Compound ALLE 0(EMPTY_TEST(Read 0, Const"
                         + " false))",
-                "    toets 0 Compound",
-                "    toets 0.0 Call",
-                "    toets 0.0.0 SlotValue",
-                "    toets 0.0.1 Const Boolean",
-                "  gevolg UniquenessKey [subject=$onderwerp, uniqueness=eenmalig vondstnummer, source=1,"
-                        + " components=[Lees 0], timeline=-1, scope=-1, slots=[0], size=1, insertion=LOGICAL]",
+                "    test 0 Compound",
+                "    test 0.0 Call",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "  consequence UniquenessKey [subject=$onderwerp, uniqueness=eenmalig vondstnummer, source=1,"
+                        + " components=[Read 0], timeline=-1, scope=-1, slots=[0], size=1, insertion=LOGICAL]",
                 "    components 0 0 SlotValue",
-                "regel eenmalig vondstnummer | vorm eenmalig vondstnummer | groep null",
-                "  lezingen [0 COLLISIONS $botsingen (botsingen)]",
-                "  patroon UniquenessKey $sleutel alfa [uniciteit_19: [[] uniqueness VALUE GELIJK eenmalig"
+                "rule eenmalig vondstnummer | form eenmalig vondstnummer | group null",
+                "  readings [0 COLLISIONS $botsingen (botsingen)]",
+                "  pattern UniquenessKey $sleutel alpha [uniciteit_19: [[] uniqueness VALUE GELIJK eenmalig"
                         + " vondstnummer]] join [] beta [] bind [$element = [] UniquenessKey.element VALUE]",
-                "  accumulatie UniquenessKey $ander alfa [uniciteit_20: [[] uniqueness VALUE GELIJK eenmalig"
-                        + " vondstnummer]] join [] beta [botsing_21: COLLIDES_WITH $sleutel] bind [] functies [COUNT null"
+                "  accumulation UniquenessKey $ander alpha [uniciteit_20: [[] uniqueness VALUE GELIJK eenmalig"
+                        + " vondstnummer]] join [] beta [botsing_21: COLLIDES_WITH $sleutel] bind [] functions [COUNT null"
                         + " -> $botsingen]",
-                "  toets dubbel_22 VORM sonde -1 slots [0] grootte 1: DUPLICATE(Lees 0)",
-                "    toets 0 Call",
-                "    toets 0.0 SlotValue",
-                "  gevolg UniquenessViolation [subject=$element, uniqueness=eenmalig vondstnummer, insertion=LOGICAL]",
-                "regel eenmalig vondstnummer: kanaal | vorm eenmalig vondstnummer | groep null",
-                "  lezingen []",
-                "  patroon UniquenessViolation $schending alfa [schending_23: [[] uniqueness VALUE GELIJK eenmalig"
+                "  test dubbel_22 VORM probe -1 slots [0] size 1: DUPLICATE(Read 0)",
+                "    test 0 Call",
+                "    test 0.0 SlotValue",
+                "  consequence UniquenessViolation [subject=$element, uniqueness=eenmalig vondstnummer, insertion=LOGICAL]",
+                "rule eenmalig vondstnummer: kanaal | form eenmalig vondstnummer | group null",
+                "  readings []",
+                "  pattern UniquenessViolation $schending alpha [schending_23: [[] uniqueness VALUE GELIJK eenmalig"
                         + " vondstnummer]] join [] beta [] bind [$subject = [] UniquenessViolation.element VALUE]",
-                "  gevolg Inconsistency [subject=$subject, form=eenmalig vondstnummer, codes=[EF-026], insertion=LOGICAL]"),
+                "  consequence Inconsistency [subject=$subject, form=eenmalig vondstnummer, codes=[EF-026], insertion=LOGICAL]"),
                 plans(golden("anchor/jutterswet-kustregister"), List.of("eenmalig kaveletiket",
                         "eenmalig vondstnummer")));
     }
 
     @Test void a_key_on_a_timeline_and_the_key_form_rule() throws Exception {
         assertEquals(List.of(
-                "regel eenmalig nummer: sleutel van Strandvondst 1 | vorm eenmalig nummer | groep null",
-                "  lezingen [0 TIJDLIJN $tijdlijn_0 (tijdlijn ElementKey[objectType=strandvondst,"
+                "rule eenmalig nummer: sleutel van Strandvondst 1 | form eenmalig nummer | group null",
+                "  readings [0 TIJDLIJN $tijdlijn_0 (tijdlijn ElementKey[objectType=strandvondst,"
                         + " name=vondstnummer, characteristic=false])]",
-                "  onderwerp Strandvondst $onderwerp alfa [] join [] bind []",
-                "  patroon State $stand_0 alfa [stand_0: [[] attribute VALUE GELIJK"
+                "  subject Strandvondst $onderwerp alpha [] join [] bind []",
+                "  pattern State $stand_0 alpha [stand_0: [[] attribute VALUE GELIJK"
                         + " ElementKey[objectType=strandvondst, name=vondstnummer, characteristic=false]]] join"
                         + " [stand-onderwerp_1: subject = $onderwerp] beta [] bind [$tijdlijn_0 = [] State.value"
                         + " VALUE]",
-                "  toets voorwaarde_2 VORM sonde -1 slots [0] grootte 1: Samengesteld ALLE 0(BUCKET_SCALAR(Lees 0,"
+                "  test voorwaarde_2 VORM probe -1 slots [0] size 1: Compound ALLE 0(BUCKET_SCALAR(Read 0,"
                         + " Const false))",
-                "    toets 0 Compound",
-                "    toets 0.0 Call",
-                "    toets 0.0.0 SlotValue",
-                "    toets 0.0.1 Const Boolean",
-                "  gevolg UniquenessKey [subject=$onderwerp, uniqueness=eenmalig nummer, source=0,"
-                        + " components=[Lees 0], timeline=0, scope=-1, slots=[0], size=1, insertion=LOGICAL]",
+                "    test 0 Compound",
+                "    test 0.0 Call",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "  consequence UniquenessKey [subject=$onderwerp, uniqueness=eenmalig nummer, source=0,"
+                        + " components=[Read 0], timeline=0, scope=-1, slots=[0], size=1, insertion=LOGICAL]",
                 "    components 0 0 SlotValue",
-                "regel eenmalig nummer: sleutelvorm van Strandvondst 1 | vorm eenmalig nummer | groep null",
-                "  lezingen [0 TIJDLIJN $tijdlijn_0 (tijdlijn ElementKey[objectType=strandvondst,"
+                "rule eenmalig nummer: sleutelvorm van Strandvondst 1 | form eenmalig nummer | group null",
+                "  readings [0 TIJDLIJN $tijdlijn_0 (tijdlijn ElementKey[objectType=strandvondst,"
                         + " name=vondstnummer, characteristic=false])]",
-                "  onderwerp Strandvondst $onderwerp alfa [] join [] bind []",
-                "  patroon State $stand_0 alfa [stand_3: [[] attribute VALUE GELIJK"
+                "  subject Strandvondst $onderwerp alpha [] join [] bind []",
+                "  pattern State $stand_0 alpha [stand_3: [[] attribute VALUE GELIJK"
                         + " ElementKey[objectType=strandvondst, name=vondstnummer, characteristic=false]]] join"
                         + " [stand-onderwerp_4: subject = $onderwerp] beta [] bind [$tijdlijn_0 = [] State.value"
                         + " VALUE]",
-                "  toets voorwaarde_5 VORM sonde -1 slots [0] grootte 1: Samengesteld ALLE 0(BUCKET_SCALAR(Lees 0,"
+                "  test voorwaarde_5 VORM probe -1 slots [0] size 1: Compound ALLE 0(BUCKET_SCALAR(Read 0,"
                         + " Const true))",
-                "    toets 0 Compound",
-                "    toets 0.0 Call",
-                "    toets 0.0.0 SlotValue",
-                "    toets 0.0.1 Const Boolean",
-                "  gevolg InputFormFault [subject=$onderwerp, before=the ever-unique key \"vondstnummer\" needs the"
+                "    test 0 Compound",
+                "    test 0.0 Call",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "  consequence InputFormFault [subject=$onderwerp, before=the ever-unique key \"vondstnummer\" needs the"
                         + " full timeline; , after= supplies only a scalar (ch. 5.9), fault=FaultName[form=eenmalig nummer,"
                         + " rule=eenmalig nummer], insertion=LOGICAL]",
-                "regel eenmalig nummer | vorm eenmalig nummer | groep null",
-                "  lezingen [0 COLLISIONS $botsingen (botsingen)]",
-                "  patroon UniquenessKey $sleutel alfa [uniciteit_6: [[] uniqueness VALUE GELIJK eenmalig nummer]]"
+                "rule eenmalig nummer | form eenmalig nummer | group null",
+                "  readings [0 COLLISIONS $botsingen (botsingen)]",
+                "  pattern UniquenessKey $sleutel alpha [uniciteit_6: [[] uniqueness VALUE GELIJK eenmalig nummer]]"
                         + " join [] beta [] bind [$element = [] UniquenessKey.element VALUE]",
-                "  accumulatie UniquenessKey $ander alfa [uniciteit_7: [[] uniqueness VALUE GELIJK eenmalig"
-                        + " nummer]] join [] beta [botsing_8: COLLIDES_WITH $sleutel] bind [] functies [COUNT null ->"
+                "  accumulation UniquenessKey $ander alpha [uniciteit_7: [[] uniqueness VALUE GELIJK eenmalig"
+                        + " nummer]] join [] beta [botsing_8: COLLIDES_WITH $sleutel] bind [] functions [COUNT null ->"
                         + " $botsingen]",
-                "  toets dubbel_9 VORM sonde -1 slots [0] grootte 1: DUPLICATE(Lees 0)",
-                "    toets 0 Call",
-                "    toets 0.0 SlotValue",
-                "  gevolg UniquenessViolation [subject=$element, uniqueness=eenmalig nummer, insertion=LOGICAL]",
-                "regel eenmalig nummer: kanaal | vorm eenmalig nummer | groep null",
-                "  lezingen []",
-                "  patroon UniquenessViolation $schending alfa [schending_10: [[] uniqueness VALUE GELIJK eenmalig"
+                "  test dubbel_9 VORM probe -1 slots [0] size 1: DUPLICATE(Read 0)",
+                "    test 0 Call",
+                "    test 0.0 SlotValue",
+                "  consequence UniquenessViolation [subject=$element, uniqueness=eenmalig nummer, insertion=LOGICAL]",
+                "rule eenmalig nummer: kanaal | form eenmalig nummer | group null",
+                "  readings []",
+                "  pattern UniquenessViolation $schending alpha [schending_10: [[] uniqueness VALUE GELIJK eenmalig"
                         + " nummer]] join [] beta [] bind [$subject = [] UniquenessViolation.element VALUE]",
-                "  gevolg Inconsistency [subject=$subject, form=eenmalig nummer, codes=[EF-026], insertion=LOGICAL]"),
+                "  consequence Inconsistency [subject=$subject, form=eenmalig nummer, codes=[EF-026], insertion=LOGICAL]"),
                 plans(golden("anchor/jutterswet-strandregister"), List.of("eenmalig nummer")));
     }
 
     @Test void an_allocation_with_recipients_rest_and_a_deposit() throws Exception {
         assertEquals(List.of(
-                "regel verdeel het penningbudget van een penningkas: ontvanger | vorm verdeel het penningbudget van"
-                        + " een penningkas | groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $voorranggewicht (eigen"
+                "rule verdeel het penningbudget van een penningkas: ontvanger | form verdeel het penningbudget van"
+                        + " een penningkas | group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf), 1 INPUT $voorranggewicht (eigen"
                         + " ElementKey[objectType=wachter, name=voorranggewicht, characteristic=false]), 2 INPUT"
                         + " $wachtjaar (eigen ElementKey[objectType=wachter, name=wachtjaar, characteristic=false]), 3"
                         + " INPUT $penningmaximum (eigen ElementKey[objectType=wachter, name=penningmaximum,"
                         + " characteristic=false])]",
-                "  patroon Penningkas $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Wachter $onderwerp alfa [] join [verdelingsbereik_0: penningkas = $vouwonderwerp] bind"
+                "  pattern Penningkas $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Wachter $onderwerp alpha [] join [verdelingsbereik_0: penningkas = $vouwonderwerp] bind"
                         + " [$voorranggewicht = [] Wachter.voorranggewicht VALUE, $wachtjaar = []"
                         + " Wachter.wachtjaar VALUE, $penningmaximum = [] Wachter.penningmaximum VALUE]",
-                "  gevolg Recipient [subject=$vouwonderwerp, allocation=verdeel het penningbudget van een penningkas,"
+                "  consequence Recipient [subject=$vouwonderwerp, allocation=verdeel het penningbudget van een penningkas,"
                         + " recipient=0, weight=1, key=2, maximum=3, insertion=LOGICAL]",
-                "regel verdeel het penningbudget van een penningkas | vorm verdeel het penningbudget van een"
-                        + " penningkas | groep null",
-                "  lezingen [0 INPUT $penningbudget (eigen ElementKey[objectType=penningkas,"
+                "rule verdeel het penningbudget van een penningkas | form verdeel het penningbudget van een"
+                        + " penningkas | group null",
+                "  readings [0 INPUT $penningbudget (eigen ElementKey[objectType=penningkas,"
                         + " name=penningbudget, characteristic=false]), 1 RECIPIENTS $ontvangers_verdeling_2 (ontvangers"
                         + " verdeel het penningbudget van een penningkas)]",
-                "  onderwerp Penningkas $onderwerp alfa [] join [] bind [$penningbudget = []"
+                "  subject Penningkas $onderwerp alpha [] join [] bind [$penningbudget = []"
                         + " Penningkas.penningbudget VALUE]",
-                "  accumulatie Recipient $ontvanger_verdeling_1 alfa [ontvanger_3: [[] allocation VALUE GELIJK verdeel"
+                "  accumulation Recipient $ontvanger_verdeling_1 alpha [ontvanger_3: [[] allocation VALUE GELIJK verdeel"
                         + " het penningbudget van een penningkas]] join [ontvanger-bron_4: source = $onderwerp] beta []"
-                        + " bind [] functies [LIST null -> $ontvangers_verdeling_2]",
-                "  gevolg Payout [subject=$onderwerp, form=verdeel het penningbudget van een penningkas,"
-                        + " method=OP_VOLGORDE, pot=0, list=1, gewogen=true, capped=true, descending=false,"
-                        + " decimals=0, aandeel=ElementKey[objectType=wachter, name=penningtoewijzing,"
+                        + " bind [] functions [LIST null -> $ontvangers_verdeling_2]",
+                "  consequence Payout [subject=$onderwerp, form=verdeel het penningbudget van een penningkas,"
+                        + " method=OP_VOLGORDE, pot=0, list=1, weighted=true, capped=true, descending=false,"
+                        + " decimals=0, share=ElementKey[objectType=wachter, name=penningtoewijzing,"
                         + " characteristic=false], rest=ElementKey[objectType=penningkas, name=onuitgekeerd budget,"
                         + " characteristic=false], writer=verdeel het penningbudget van een penningkas,"
                         + " insertion=LOGICAL]"),
@@ -378,25 +378,25 @@ class ChannelPlanWitnessTest {
 
     @Test void an_allocation_whose_source_points_to_the_recipient() throws Exception {
         assertEquals(List.of(
-                "regel verdeel de opbrengst van een berging: ontvanger | vorm verdeel de opbrengst van een berging |"
-                        + " groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf)]",
-                "  patroon Berging $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Hoofdberger $onderwerp alfa [] join [verdelingsbereik_0: null ="
+                "rule verdeel de opbrengst van een berging: ontvanger | form verdeel de opbrengst van een berging |"
+                        + " group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf)]",
+                "  pattern Berging $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Hoofdberger $onderwerp alpha [] join [verdelingsbereik_0: null ="
                         + " $vouwonderwerp.Berging.berger] bind []",
-                "  gevolg Recipient [subject=$vouwonderwerp, allocation=verdeel de opbrengst van een berging,"
+                "  consequence Recipient [subject=$vouwonderwerp, allocation=verdeel de opbrengst van een berging,"
                         + " recipient=0, weight=-1, key=-1, maximum=-1, insertion=LOGICAL]",
-                "regel verdeel de opbrengst van een berging | vorm verdeel de opbrengst van een berging | groep null",
-                "  lezingen [0 INPUT $opbrengst (eigen ElementKey[objectType=berging, name=opbrengst,"
+                "rule verdeel de opbrengst van een berging | form verdeel de opbrengst van een berging | group null",
+                "  readings [0 INPUT $opbrengst (eigen ElementKey[objectType=berging, name=opbrengst,"
                         + " characteristic=false]), 1 RECIPIENTS $ontvangers_verdeling_2 (ontvangers verdeel de opbrengst"
                         + " van een berging)]",
-                "  onderwerp Berging $onderwerp alfa [] join [] bind [$opbrengst = [] Berging.opbrengst VALUE]",
-                "  accumulatie Recipient $ontvanger_verdeling_1 alfa [ontvanger_3: [[] allocation VALUE GELIJK verdeel"
+                "  subject Berging $onderwerp alpha [] join [] bind [$opbrengst = [] Berging.opbrengst VALUE]",
+                "  accumulation Recipient $ontvanger_verdeling_1 alpha [ontvanger_3: [[] allocation VALUE GELIJK verdeel"
                         + " de opbrengst van een berging]] join [ontvanger-bron_4: source = $onderwerp] beta [] bind []"
-                        + " functies [LIST null -> $ontvangers_verdeling_2]",
-                "  gevolg Payout [subject=$onderwerp, form=verdeel de opbrengst van een berging,"
-                        + " method=GELIJKE_DELEN, pot=0, list=1, gewogen=false, capped=false, descending=false,"
-                        + " decimals=0, aandeel=ElementKey[objectType=berger, name=bergingsaandeel,"
+                        + " functions [LIST null -> $ontvangers_verdeling_2]",
+                "  consequence Payout [subject=$onderwerp, form=verdeel de opbrengst van een berging,"
+                        + " method=GELIJKE_DELEN, pot=0, list=1, weighted=false, capped=false, descending=false,"
+                        + " decimals=0, share=ElementKey[objectType=berger, name=bergingsaandeel,"
                         + " characteristic=false], rest=ElementKey[objectType=berging, name=onverdeelde rest,"
                         + " characteristic=false], writer=verdeel de opbrengst van een berging, insertion=LOGICAL]"),
                 plans(sourcePointsToRecipient(), List.of("verdeel de opbrengst van een berging")));
@@ -442,26 +442,26 @@ class ChannelPlanWitnessTest {
 
     @Test void an_allocation_over_a_relation_that_makes_a_creation() throws Exception {
         assertEquals(List.of(
-                "regel verdeel de opbrengst gelijk: ontvanger | vorm verdeel de opbrengst gelijk | groep null",
-                "  lezingen [0 SUBJECT $onderwerp (onderwerp zelf)]",
-                "  patroon Berging $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Berger $onderwerp alfa [] join [] bind []",
-                "  bestaat [RelationLink $koppeling_bereik_0 alfa [bereik-koppeling_1: [[] relation VALUE GELIJK"
+                "rule verdeel de opbrengst gelijk: ontvanger | form verdeel de opbrengst gelijk | group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf)]",
+                "  pattern Berging $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Berger $onderwerp alpha [] join [] bind []",
+                "  exists [RelationLink $koppeling_bereik_0 alpha [bereik-koppeling_1: [[] relation VALUE GELIJK"
                         + " bergingsdeelname]] join [bereik-lid_2: second = $onderwerp, bereik-drager_3: first ="
                         + " $vouwonderwerp] beta [] bind []]",
-                "  gevolg Recipient [subject=$vouwonderwerp, allocation=verdeel de opbrengst gelijk, recipient=0,"
+                "  consequence Recipient [subject=$vouwonderwerp, allocation=verdeel de opbrengst gelijk, recipient=0,"
                         + " weight=-1, key=-1, maximum=-1, insertion=LOGICAL]",
-                "regel verdeel de opbrengst gelijk | vorm verdeel de opbrengst gelijk | groep null",
-                "  lezingen [0 INPUT $opbrengst (eigen ElementKey[objectType=berging, name=opbrengst,"
+                "rule verdeel de opbrengst gelijk | form verdeel de opbrengst gelijk | group null",
+                "  readings [0 INPUT $opbrengst (eigen ElementKey[objectType=berging, name=opbrengst,"
                         + " characteristic=false]), 1 RECIPIENTS $ontvangers_verdeling_5 (ontvangers verdeel de opbrengst"
                         + " gelijk)]",
-                "  onderwerp Berging $onderwerp alfa [] join [] bind [$opbrengst = [] Berging.opbrengst VALUE]",
-                "  accumulatie Recipient $ontvanger_verdeling_4 alfa [ontvanger_6: [[] allocation VALUE GELIJK verdeel"
-                        + " de opbrengst gelijk]] join [ontvanger-bron_7: source = $onderwerp] beta [] bind [] functies"
+                "  subject Berging $onderwerp alpha [] join [] bind [$opbrengst = [] Berging.opbrengst VALUE]",
+                "  accumulation Recipient $ontvanger_verdeling_4 alpha [ontvanger_6: [[] allocation VALUE GELIJK verdeel"
+                        + " de opbrengst gelijk]] join [ontvanger-bron_7: source = $onderwerp] beta [] bind [] functions"
                         + " [LIST null -> $ontvangers_verdeling_5]",
-                "  gevolg Payout [subject=$onderwerp, form=verdeel de opbrengst gelijk, method=GELIJKE_DELEN,"
-                        + " pot=0, list=1, gewogen=false, capped=false, descending=false, decimals=0,"
-                        + " aandeel=ElementKey[objectType=berger, name=bergingsaandeel, characteristic=false],"
+                "  consequence Payout [subject=$onderwerp, form=verdeel de opbrengst gelijk, method=GELIJKE_DELEN,"
+                        + " pot=0, list=1, weighted=false, capped=false, descending=false, decimals=0,"
+                        + " share=ElementKey[objectType=berger, name=bergingsaandeel, characteristic=false],"
                         + " rest=ElementKey[objectType=berging, name=onverdeelde rest, characteristic=false],"
                         + " writer=verdeel de opbrengst gelijk, insertion=LOGICAL]"),
                 plans(recipientFromCreation(), List.of("verdeel de opbrengst gelijk")));
@@ -505,16 +505,16 @@ class ChannelPlanWitnessTest {
             if (forms.stream().noneMatch(v -> p.name().equals(v) || p.name().startsWith(v + ": ")
                     || p.name().startsWith("kanaalstand " + v + ": ")))
                 continue;
-            out.add("regel " + p.name() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
+            out.add("rule " + p.name() + " | form " + p.form() + " | group " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
             for (Read l : p.readings().slots())
                 slots.add(l.slot() + " " + l.kind() + " " + l.name() + " (" + l.key() + ")");
-            out.add("  lezingen " + slots);
+            out.add("  readings " + slots);
             for (LhsItem item : p.leftSide()) {
                 out.add("  " + item(item));
-                if (item instanceof TestItem t) TermTree.fields("    toets", t.test(), "0", out);
+                if (item instanceof TestItem t) TermTree.fields("    test", t.test(), "0", out);
             }
-            out.add("  gevolg " + consequence(p.consequence()));
+            out.add("  consequence " + consequence(p.consequence()));
             for (RecordComponent c : p.consequence().getClass().getRecordComponents()) {
                 Object w = c.getAccessor().invoke(p.consequence());
                 if (w instanceof Term t) TermTree.fields("    " + c.getName(), t, "0", out);
@@ -536,22 +536,22 @@ class ChannelPlanWitnessTest {
 
     private static String item(LhsItem item) {
         return switch (item) {
-            case Subject o -> "onderwerp " + o.beanClass().getSimpleName() + " " + o.name() + " alfa "
+            case Subject o -> "subject " + o.beanClass().getSimpleName() + " " + o.name() + " alpha "
                     + alpha(o.alpha()) + " join " + joins(o.joins()) + " bind " + bindings(o.bindings());
-            case FactPattern p -> "patroon " + pattern(p);
-            case Not n -> "niet " + (n.patterns().size() == 1 ? pattern(n.patterns().get(0)) : "binnen "
-                    + n.inside() + " buiten " + n.outside() + " "
+            case FactPattern p -> "pattern " + pattern(p);
+            case Not n -> "not " + (n.patterns().size() == 1 ? pattern(n.patterns().get(0)) : "inside "
+                    + n.inside() + " outside " + n.outside() + " "
                     + n.patterns().stream().map(ChannelPlanWitnessTest::pattern).toList());
-            case Exists b -> "bestaat " + b.patterns().stream().map(ChannelPlanWitnessTest::pattern).toList();
-            case Accumulation a -> "accumulatie " + pattern(a.source()) + " functies "
+            case Exists b -> "exists " + b.patterns().stream().map(ChannelPlanWitnessTest::pattern).toList();
+            case Accumulation a -> "accumulation " + pattern(a.source()) + " functions "
                     + a.aggregations().stream().map(f -> f.kind() + " " + f.source() + " -> " + f.target()).toList();
-            case TestItem t -> "toets " + t.id() + " " + t.role() + " sonde " + t.depositFlag() + " slots " + t.slots()
-                    + " grootte " + t.size() + ": " + TermTree.tree(t.test());
+            case TestItem t -> "test " + t.id() + " " + t.role() + " probe " + t.depositFlag() + " slots " + t.slots()
+                    + " size " + t.size() + ": " + TermTree.tree(t.test());
         };
     }
 
     private static String pattern(FactPattern p) {
-        return p.factClass().getSimpleName() + " " + p.name() + " alfa " + alpha(p.alpha()) + " join "
+        return p.factClass().getSimpleName() + " " + p.name() + " alpha " + alpha(p.alpha()) + " join "
                 + joins(p.joins()) + " beta " + p.betaTests().stream().map(t -> t.id() + ": " + t.function() + " "
                 + t.target()).toList() + " bind " + bindings(p.bindings());
     }

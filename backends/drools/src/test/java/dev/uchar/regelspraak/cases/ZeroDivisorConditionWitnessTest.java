@@ -241,9 +241,9 @@ class ZeroDivisorConditionWitnessTest {
                 + "\"}},\"roles\":{},\"characteristics\":[]}";
     }
 
-    private static String vondst(String label, String geschat, String gewogen, boolean ofJ1) {
+    private static String vondst(String label, String geschat, String weighted, boolean ofJ1) {
         return "{\"label\":\"" + label + "\",\"objectType\":\"Vondst\",\"attributes\":{\"geschatte gewicht\":{\"number\":\""
-                + geschat + "\"},\"gewogen gewicht\":{\"number\":\"" + gewogen + "\"}},\"roles\":{" + (ofJ1 ? "\"jutter\":"
+                + geschat + "\"},\"gewogen gewicht\":{\"number\":\"" + weighted + "\"}},\"roles\":{" + (ofJ1 ? "\"jutter\":"
                 + "[\"J1\"]" : "") + "},\"characteristics\":[]}";
     }
 

@@ -52,14 +52,14 @@ class TestRoleWitnessTest {
                 "zware vondsten: CONDITION",
                 "drukte: WITHOUT_FAULT",
                 "drukte: FAULT",
-                "drukte: DEPOSIT sonde 4",
+                "drukte: DEPOSIT probe 4",
                 "vondstental: geen toets",
                 "zware vondsten: WITHOUT_FAULT",
                 "zware vondsten: FAULT",
-                "zware vondsten: DEPOSIT sonde 2",
+                "zware vondsten: DEPOSIT probe 2",
                 "drukte: WITHOUT_FAULT",
                 "drukte: FAULT",
-                "drukte: DEPOSIT sonde 2"), roles("jutterswet-filterwacht"));
+                "drukte: DEPOSIT probe 2"), roles("jutterswet-filterwacht"));
     }
 
     @Test void a_test_that_composes_the_form_itself_has_the_role_form() throws Exception {
@@ -79,7 +79,7 @@ class TestRoleWitnessTest {
             boolean tested = false;
             for (LhsItem item : p.leftSide())
                 if (item instanceof TestItem t) {
-                    out.add(p.form() + ": " + t.role() + (t.depositFlag() < 0 ? "" : " sonde " + t.depositFlag()));
+                    out.add(p.form() + ": " + t.role() + (t.depositFlag() < 0 ? "" : " probe " + t.depositFlag()));
                     tested = true;
                 }
             if (!tested) out.add(p.form() + ": geen toets");

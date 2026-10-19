@@ -34,8 +34,8 @@ class SpellingTest {
 
     private static Path nameTable() {
         for (Path p = Path.of("").toAbsolutePath(); p != null; p = p.getParent()) {
-            Path kandidaat = p.resolve(NAME_TABLE);
-            if (Files.isRegularFile(kandidaat)) return kandidaat;
+            Path candidate = p.resolve(NAME_TABLE);
+            if (Files.isRegularFile(candidate)) return candidate;
         }
         return fail("kon " + NAME_TABLE + " niet vinden vanaf " + Path.of("").toAbsolutePath()
                 + " — deze toets LEEST de sectie waarden en mag niet overslaan als hij haar niet vindt");

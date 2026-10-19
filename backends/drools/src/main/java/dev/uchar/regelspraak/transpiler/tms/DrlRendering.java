@@ -117,7 +117,7 @@ final class DrlRendering {
     /** The classes the text imports, by their canonical names. */
     private final Set<String> imports = new TreeSet<>();
     /** The canonical name of each imported class by its simple name, so that two classes of one name fail loudly. */
-    private final Map<String, String> enkelvoudig = new HashMap<>();
+    private final Map<String, String> bySimpleName = new HashMap<>();
     /** The globals of the day kinds the terms name, by their names, each with the node of its day kind, which carries
      *  the predicate the analysis compiled. */
     private final Map<String, Term.DayKind> dayKinds = new LinkedHashMap<>();
@@ -187,7 +187,7 @@ final class DrlRendering {
         if (isBean(k)) return canonical;
         if (k.getPackageName().startsWith("java."))
             return k.getPackageName().equals("java.lang") && k.getEnclosingClass() == null ? k.getSimpleName() : canonical;
-        String earlier = enkelvoudig.putIfAbsent(k.getSimpleName(), canonical);
+        String earlier = bySimpleName.putIfAbsent(k.getSimpleName(), canonical);
         if (earlier != null && !earlier.equals(canonical))
             throw new IllegalStateException("twee klassen heten " + k.getSimpleName() + " in de DRL-tekst: " + earlier
                     + " en " + canonical);
@@ -654,10 +654,10 @@ final class DrlRendering {
             return "eval( " + name + "(" + c.arguments() + ") )";
         }
 
-        /** A try with {@code probeer} as its body and {@code vangst} as the body of its catch of a
+        /** A try with {@code tryBody} as its body and {@code catchBody} as the body of its catch of a
          *  {@code RuntimeException e}. */
-        private String tryCatch(String probeer, String vangst) {
-            return "    try {\n" + probeer + "    } catch (RuntimeException e) {\n" + vangst + "    }\n";
+        private String tryCatch(String tryBody, String catchBody) {
+            return "    try {\n" + tryBody + "    } catch (RuntimeException e) {\n" + catchBody + "    }\n";
         }
 
         /** The context of a function of a position: a parameter per slot the position passes, in its order; the probe
@@ -1189,13 +1189,13 @@ final class DrlRendering {
                     .append(", ").append(d.stratum()).append(", ").append(str(d.type())).append(", (java.util.List) ")
                     .append(slot(d.origin(), c)).append(", ").append(d.budget()).append(");\n");
             if (!values.isEmpty()) {
-                StringBuilder probeer = new StringBuilder();
+                StringBuilder tryBody = new StringBuilder();
                 for (int i = 0; i < values.size(); i++) {
                     f.append("    Object i").append(i).append(" = null;\n");
-                    probeer.append("        i").append(i).append(" = ")
+                    tryBody.append("        i").append(i).append(" = ")
                             .append(call(StaticFunction.COLLAPSE, List.of(value(values.get(i), c))).text()).append(";\n");
                 }
-                f.append(tryCatch(probeer.toString(), "        return " + route(Route.CAUGHT) + "(e);\n"));
+                f.append(tryCatch(tryBody.toString(), "        return " + route(Route.CAUGHT) + "(e);\n"));
             }
             f.append("    Object nieuw = ").append(route(Route.NEW_OBJECT)).append("(").append(x.subject())
                     .append(", ").append(str(x.construction().javaClass().getName())).append(");\n");
@@ -1247,10 +1247,10 @@ final class DrlRendering {
         private void payout(Consequence.Payout x, StringBuilder b) {
             b.append("    for (Object feit : ").append(route(Route.PAYOUT)).append("(").append(str(x.form()))
                     .append(", ").append(x.subject()).append(", ").append(enumlabel(x.method())).append(", ")
-                    .append(variable(x.pot())).append(", ").append(variable(x.list())).append(", ").append(x.gewogen())
+                    .append(variable(x.pot())).append(", ").append(variable(x.list())).append(", ").append(x.weighted())
                     .append(", ").append(x.capped()).append(", ").append(x.descending()).append(", ")
                     .append(x.decimals() == null ? "null" : "Integer.valueOf(" + x.decimals() + ")").append(", ")
-                    .append(key(x.aandeel())).append(", ").append(x.rest() == null ? "null" : key(x.rest()))
+                    .append(key(x.share())).append(", ").append(x.rest() == null ? "null" : key(x.rest()))
                     .append(", ").append(str(x.writer())).append(")) {\n");
             insert(b, "        ", x.insertion(), "feit");
             b.append("    }\n");

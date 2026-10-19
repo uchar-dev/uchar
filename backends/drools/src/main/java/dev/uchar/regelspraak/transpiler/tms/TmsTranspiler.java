@@ -1461,8 +1461,8 @@ public final class TmsTranspiler {
         Term holds = conditionTerm(c.assertion(), reads);
         boolean canFail = reads.canFail();
         reads.stop();
-        Term geschonden = new Term.Call(StaticFunction.NIET, List.of(holds), source(c.assertion().source()));
-        List<LhsItem> items = reads.plan(conditionRole(canFail), geschonden, read, c.assertion());
+        Term violated = new Term.Call(StaticFunction.NIET, List.of(holds), source(c.assertion().source()));
+        List<LhsItem> items = reads.plan(conditionRole(canFail), violated, read, c.assertion());
         String name = c.name();
         reads.recorder();
         List<RulePlan> out = new ArrayList<>();
@@ -1832,14 +1832,14 @@ public final class TmsTranspiler {
         if (method != ResolvedAllocation.Method.OP_VOLGORDE && v.orderingAttribute() != null)
             throw new Refusal(DroolsCode.ORDERING_KEY_WITHOUT_METHOD.reason());
         Member pot = numberMember(source, v.sourceAttribute(), Msg.drools("PART.allocation-role.pot"));
-        Member aandeel = numberMember(target, v.targetAttribute(), Msg.drools("PART.allocation-role.share"));
+        Member share = numberMember(target, v.targetAttribute(), Msg.drools("PART.allocation-role.share"));
         Member rest = v.remainderAttribute() == null ? null : numberMember(source, v.remainderAttribute(), Msg.drools("PART.allocation-role.remainder"));
         Member weight = v.ratioAttribute() == null ? null : numberMember(target, v.ratioAttribute(), Msg.drools("PART.allocation-role.weight"));
         Member maximum = v.maximumAttribute() == null ? null : numberMember(target, v.maximumAttribute(), Msg.drools("PART.allocation-role.maximum"));
         Member key = v.orderingAttribute() == null ? null : member(target, v.orderingAttribute(), false);
         if (key != null && !key.datatype().isOrderable())
             throw new Refusal(DroolsCode.ORDERING_KEY_NOT_ORDERABLE.reason("attribute", key.name(), "datatype", typeName(key.datatype())));
-        allocationWriters(v, target, aandeel);
+        allocationWriters(v, target, share);
         if (rest != null) allocationWriters(v, source, rest);
 
         String ruleName = model.emittedRuleName(name);
@@ -1870,12 +1870,12 @@ public final class TmsTranspiler {
         int p = reads.own(pot);
         int list = reads.recipients(name);
         List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read, v.condition());
-        ElementKey aandeelKey = aandeel.key(), restKey = rest == null ? null : rest.key();
+        ElementKey shareKey = share.key(), restKey = rest == null ? null : rest.key();
         reads.recorder();
         out.add(reads.rulePlan(ruleName, items, new Consequence.Payout(SUBJECT, name, method, p, list,
-                weight != null, maximum != null, v.descending(), v.roundingDecimals(), aandeelKey, restKey,
+                weight != null, maximum != null, v.descending(), v.roundingDecimals(), shareKey, restKey,
                 name, Consequence.Insertion.LOGICAL)));
-        derived.put(aandeelKey, aandeel);
+        derived.put(shareKey, share);
         if (rest != null) derived.put(restKey, rest);
         if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, v.condition(), null));
         RulePlan deposit = depositRule(name, ruleName, fresh, v.condition(), null);
@@ -2024,8 +2024,8 @@ public final class TmsTranspiler {
         boolean newIsFirst = Namen.norm(ft.roles.get(0).name()).equals(Namen.norm(k.fwdRole()));
         String name = oc.name();
         String ruleName = model.emittedRuleName(name);
-        Supplier<Reads> nieuwe = () -> new Reads(subject).valid(oc.validity());
-        Reads reads = nieuwe.get();
+        Supplier<Reads> newReads = () -> new Reads(subject).valid(oc.validity());
+        Reads reads = newReads.get();
         Set<Integer> read = reads.follow();
         Term testTerm = oc.condition() == null ? null : conditionTerm(oc.condition(), reads);
         boolean canFail = reads.canFail();
@@ -2095,8 +2095,8 @@ public final class TmsTranspiler {
         creationStrata.add(stratum);
         List<RulePlan> out = new ArrayList<>();
         out.add(reads.rulePlan(ruleName, OBJECT_CREATION, items, creation));
-        if (canFail) out.add(conditionFaultRule(name, ruleName, nieuwe, oc.condition(), null));
-        RulePlan deposit = depositRule(name, ruleName, nieuwe, oc.condition(), null);
+        if (canFail) out.add(conditionFaultRule(name, ruleName, newReads, oc.condition(), null));
+        RulePlan deposit = depositRule(name, ruleName, newReads, oc.condition(), null);
         if (deposit != null) out.add(deposit);
         RulePlan withoutDate = validityFault(ruleName, name, oc.validity());
         if (withoutDate != null) out.add(withoutDate);
@@ -3062,12 +3062,12 @@ public final class TmsTranspiler {
         boolean dateLeft = eff.typeOf(b.left()).isDate();
         Expr dateExpr = dateLeft ? b.left() : b.right();
         Expr durationExpr = dateLeft ? b.right() : b.left();
-        boolean optellen = op == Expr.BinOp.PLUS;
-        if (eff.typeOf(durationExpr).isDate() || (!optellen && !dateLeft))
+        boolean adding = op == Expr.BinOp.PLUS;
+        if (eff.typeOf(durationExpr).isDate() || (!adding && !dateLeft))
             throw new Refusal(DroolsCode.DATE_ARITHMETIC_INVALID_OPERANDS.reason("snippet", snippet(b.source())));
         // ch. 3.8 puts the calendar table first, as TimeCalculation.dayKindForUnit looks a spelling up for every branch
         String dayKind = TimeCalculation.dayKindForUnit(model, eff.typeOf(durationExpr).unitOf());
-        if (dayKind != null) return dayKindStep(b, dateExpr, durationExpr, optellen, dayKind, reads);
+        if (dayKind != null) return dayKindStep(b, dateExpr, durationExpr, adding, dayKind, reads);
         String unit = TimeCalculation.chronoUnit(eff.typeOf(durationExpr));
         if (unit == null) throw new Refusal(DroolsCode.DURATION_WITHOUT_TIME_UNIT.reason("snippet", snippet(b.source())));
         boolean clock = switch (unit) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
@@ -3075,7 +3075,7 @@ public final class TmsTranspiler {
             throw new Refusal(DroolsCode.CLOCK_UNIT_ON_DATE.reason("snippet", snippet(b.source())));
         reads.markFail();
         Term d = value(dateExpr, reads), n = value(durationExpr, reads);
-        return new Term.Call(StaticFunction.DATE_STEP, List.of(d, n, constant(unit), constant(optellen)),
+        return new Term.Call(StaticFunction.DATE_STEP, List.of(d, n, constant(unit), constant(adding)),
                 source(b.source()));
     }
 
@@ -3090,7 +3090,7 @@ public final class TmsTranspiler {
      * of the reference interpreter ({@link ComputeHelpers#dayKindStep}), a {@link Fault} that counts only where it stands
      * at the fixpoint. The date is evaluated before the count (ch. 5.11).
      */
-    private Term dayKindStep(Expr.Binary b, Expr dateExpr, Expr durationExpr, boolean optellen, String dayKind,
+    private Term dayKindStep(Expr.Binary b, Expr dateExpr, Expr durationExpr, boolean adding, String dayKind,
                               Reads reads) {
         java.util.function.Predicate<LocalDate> datePredicate =
                 dayKindPredicate(dayKind, Msg.drools("PART.desc.day-kind-duration", "snippet", snippet(b.source())));
@@ -3098,7 +3098,7 @@ public final class TmsTranspiler {
         reads.markFail();
         Term d = value(dateExpr, reads), n = value(durationExpr, reads);
         return new Term.Call(dateTime ? StaticFunction.DATE_TIME_DAY_KIND_STEP : StaticFunction.DAY_KIND_STEP,
-                List.of(d, n, new Term.DayKind(dayKind, datePredicate, null), constant(optellen)), source(b.source()));
+                List.of(d, n, new Term.DayKind(dayKind, datePredicate, null), constant(adding)), source(b.source()));
     }
 
     /**

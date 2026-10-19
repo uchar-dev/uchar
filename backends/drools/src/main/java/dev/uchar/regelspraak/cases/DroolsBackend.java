@@ -481,7 +481,7 @@ public final class DroolsBackend {
         return new BucketInput(e.bean(), ProducerConsumer.elementOf(ot, e.attribute(), false));
     }
 
-    /** One to-many list: the reference field {@code field} its members hold toward {@code houder}, and the relation that
+    /** One to-many list: the reference field {@code field} its members hold toward {@code holder}, and the relation that
      *  field stands for on the members' bean ({@link FactModelGenerator#origin}), since beans of two types can hold
      *  fields of one name toward one holder over two fact types, and a fold reads the members of one relation. The
      *  holder is compared by identity, as the beans do not override {@code equals}. */
@@ -490,15 +490,15 @@ public final class DroolsBackend {
     /**
      * The places of the members of every to-many list a rule reads ({@code read}, the fields the members hold toward
      * the holder): per field, holder and relation, the beans of the input whose field holds the holder, in the order of
-     * the beans, or in the order of the list {@code opgegeven} gives for that holder. A given list is checked against the
+     * the beans, or in the order of the list {@code suppliedLists} gives for that holder. A given list is checked against the
      * beans whether or not a rule reads its field, and counts only where one does; split by the relations of its
      * members, the order kept, it must name every bean of the input whose field of that relation holds the holder.
      */
     private static List<ListPlace> listPlaces(Build build, Set<String> read, List<Object> beans,
-                                                   Map<Object, ObjectType> types, List<Input.ToManyList> opgegeven) {
+                                                   Map<Object, ObjectType> types, List<Input.ToManyList> suppliedLists) {
         RegelSpraakModel model = build.model();
         Set<String> fields = new HashSet<>(read);
-        for (Input.ToManyList l : opgegeven) fields.add(Namen.ident(l.role(), false));
+        for (Input.ToManyList l : suppliedLists) fields.add(Namen.ident(l.role(), false));
         Map<ObjectType, List<String>> referenceFields = new HashMap<>();
         Map<ObjectType, Map<String, FactModelGenerator.Origin>> relations = new HashMap<>();
         Function<Object, Function<String, FactModelGenerator.Origin>> relation = beanObject -> field ->
@@ -517,7 +517,7 @@ public final class DroolsBackend {
         Map<ListKey, List<Object>> lists = new LinkedHashMap<>();
         actual.forEach((k, members) -> { if (read.contains(k.field())) lists.put(k, members); });
         Set<ListKey> given = new HashSet<>();
-        for (Input.ToManyList l : opgegeven) {
+        for (Input.ToManyList l : suppliedLists) {
             String field = Namen.ident(l.role(), false);
             String description = "insert: de lijst van " + name(l.holder()) + " onder de rol '" + l.role() + "'";
             Map<ListKey, List<Object>> parts = new LinkedHashMap<>();
@@ -863,10 +863,10 @@ public final class DroolsBackend {
     public static List<ScenarioResult.CoverageRule> coverage(Build build, Set<String> firedForms) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(firedForms, "firedForms");
-        Set<String> posten = new HashSet<>();
-        for (Coverage d : build.coverage()) posten.add(d.name());
+        Set<String> coverageNames = new HashSet<>();
+        for (Coverage d : build.coverage()) coverageNames.add(d.name());
         for (String form : firedForms)
-            if (!posten.contains(form))
+            if (!coverageNames.contains(form))
                 throw new IllegalArgumentException("de vorm '" + form + "' is geen post van het manifest van deze build,"
                         + " dus geen sessie van deze build vuurt haar; komen de gevuurde vormen van een andere build?");
         List<ScenarioResult.CoverageRule> out = new ArrayList<>();

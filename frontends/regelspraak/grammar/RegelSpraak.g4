@@ -46,8 +46,8 @@ private boolean onPreviousWordLine() {
     org.antlr.v4.runtime.Token previous = _input.LT(-1), next = _input.LT(1);
     if (previous == null || next == null) return true;
     int end = previous.getLine();
-    String tekst = previous.getText();
-    if (tekst != null) for (int i = 0; i < tekst.length(); i++) if (tekst.charAt(i) == '\n') end++;
+    String text = previous.getText();
+    if (text != null) for (int i = 0; i < text.length(); i++) if (text.charAt(i) == '\n') end++;
     return next.getLine() == end;
 }
 }

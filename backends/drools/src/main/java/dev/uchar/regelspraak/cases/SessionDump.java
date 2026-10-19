@@ -48,19 +48,19 @@ import java.util.function.Predicate;
  * <p>Every line starts with its section, so a diff counts its lines per section ({@code awk '{print $2}'} over the
  * changed lines): {@code input} (every object in working memory and every global right before the fire: the input of
  * the session, so that a comparison couples a session to its case and not only to its document),
- * {@code vuringen} (the firings, the cap and the sentence of a run without a fixpoint), {@code fixpunt} (the outcome
- * of the fire in one line: {@code ja}, {@code nee} with the sentence of the cap or the budget, or {@code gooit} with
- * the exception the fire threw), {@code spoor-telling} (the firings per rule), {@code spoor-volgorde} (the rules in the
- * order they fired), {@code lees} (everything {@link DroolsBackend#fixpointOf} gives) and {@code facts}/{@code feit}
+ * {@code firings} (the firings, the cap and the sentence of a run without a fixpoint), {@code fixpoint} (the outcome
+ * of the fire in one line: {@code yes}, {@code no} with the sentence of the cap or the budget, or {@code throws} with
+ * the exception the fire threw), {@code trace-count} (the firings per rule), {@code trace-order} (the rules in the
+ * order they fired), {@code read} (everything {@link DroolsBackend#fixpointOf} gives) and {@code facts}/{@code fact}
  * (every object in working memory at the fixpoint, the beans with their fields among them, so that a write on a bean
  * during the fire shows).
  * The order and the count of the firings depend on the order in which a rendering adds the rules, so a step reports
  * them and explains a difference; the other sections hold strictly, the outcome of the fire among them (round 5b of
- * card drl-teksttak-op-truth-maintenance: before, it stood only in the reported line {@code vuringen}).
+ * card drl-teksttak-op-truth-maintenance: before, it stood only in the reported line {@code firings}).
  *
  * <p>The text names every object by a name of its own and never by its identity, which differs between two runs: an
  * input bean by its case label, quoted, and a made object by its creation, the name of its subject and its number,
- * {@code «"creatie"»("onderwerp")#k} ({@link Name}). Every name and every text stands quoted and escaped as it is: a case
+ * {@code «"creation"»("subject")#k} ({@link Name}). Every name and every text stands quoted and escaped as it is: a case
  * label, the name of a rule, a global, an attribute, a characteristic, a fact type and its roles, the type and the name
  * of a member's key, a text value and a sentence. So no line holds a real line break, and two different names never
  * print alike, also where a name holds a space, "=", ".", "(" or ")", which WF-057 admits (lens on round 4). Only a
@@ -75,7 +75,7 @@ import java.util.function.Predicate;
 final class SessionDump {
 
     /** The system property that turns the seam of {@link CaseRunner} on: the directory it writes to. */
-    static final String PROPERTY = "uchar.vuurspoor";
+    static final String PROPERTY = "uchar.fireTrace";
 
     /** The directory of the seam, read once; null without the property, and then the seam does nothing. */
     static final String SEAM_DIRECTORY = System.getProperty(PROPERTY);
@@ -177,12 +177,12 @@ final class SessionDump {
     void write(StringBuilder out, DroolsBackend.Build build, DroolsBackend.Firing v, Map<String, Object> labels) {
         session.removeEventListener(listener);
         Naming n = naming(labels);
-        for (String r : input) out.append("invoer ").append(r).append('\n');
-        out.append("vuringen ").append(v.firings()).append(" plafond ").append(v.cap()).append(" geenFixpunt ")
+        for (String r : input) out.append("input ").append(r).append('\n');
+        out.append("firings ").append(v.firings()).append(" cap ").append(v.cap()).append(" noFixpoint ")
                 .append(v.noFixpoint() == null ? "null" : n.sentence(v.noFixpoint())).append('\n');
         // the count of the firings differs between two renderings that reach the same fixpoint, so the comparison only
         // reports the line above; whether there is a fixpoint at all it holds strictly, in a line of its own
-        out.append("fixpunt ").append(v.noFixpoint() == null ? "ja" : "nee " + n.sentence(v.noFixpoint())).append('\n');
+        out.append("fixpoint ").append(v.noFixpoint() == null ? "yes" : "no " + n.sentence(v.noFixpoint())).append('\n');
         trace(out);
         if (v.noFixpoint() != null) {
             facts(out, n);
@@ -193,19 +193,19 @@ final class SessionDump {
         Fixpoint fp = DroolsBackend.fixpointOf(build, session, label::get);
         List<String> read = new ArrayList<>();
         for (Fixpoint.DerivedValue w : fp.values())
-            read.add("waarde " + n.nameOf(w.object()) + "." + quote(w.attribute()) + " = " + n.render(w.value()));
+            read.add("value " + n.nameOf(w.object()) + "." + quote(w.attribute()) + " = " + n.render(w.value()));
         for (Fixpoint.DerivedCharacteristic k : fp.characteristics())
-            read.add("kenmerk " + n.nameOf(k.object()) + " " + quote(k.characteristic()));
+            read.add("characteristic " + n.nameOf(k.object()) + " " + quote(k.characteristic()));
         for (Fixpoint.MadeObject g : fp.objects())
-            read.add("object " + n.nameOf(g.object()) + " door " + quote(g.creation()) + " voor "
+            read.add("object " + n.nameOf(g.object()) + " by " + quote(g.creation()) + " for "
                     + n.nameOf(g.subject()));
         for (Fixpoint.MadeLink k : fp.links())
-            read.add("koppeling " + quote(k.factType()) + " " + quote(k.firstRole()) + "=" + n.nameOf(k.first())
+            read.add("link " + quote(k.factType()) + " " + quote(k.firstRole()) + "=" + n.nameOf(k.first())
                     + " " + quote(k.secondRole()) + "=" + n.nameOf(k.second()));
         for (Fault f : fp.faults())
-            read.add("fout " + n.nameOf(f.subject()) + " " + quote(f.rule()) + ": " + n.sentence(f.fault()));
-        for (Object i : fp.inconsistencies()) read.add("inconsistentie " + n.render(i));
-        rules(out, "lees", read);
+            read.add("fault " + n.nameOf(f.subject()) + " " + quote(f.rule()) + ": " + n.sentence(f.fault()));
+        for (Object i : fp.inconsistencies()) read.add("inconsistency " + n.render(i));
+        rules(out, "read", read);
         facts(out, n);
     }
 
@@ -214,9 +214,9 @@ final class SessionDump {
     void write(StringBuilder out, RuntimeException e, Map<String, Object> labels) {
         session.removeEventListener(listener);
         Naming n = naming(labels);
-        for (String r : input) out.append("invoer ").append(r).append('\n');
-        out.append("vuringen gooit ").append(n.fault(e)).append('\n');
-        out.append("fixpunt gooit ").append(n.fault(e)).append('\n');
+        for (String r : input) out.append("input ").append(r).append('\n');
+        out.append("firings throws ").append(n.fault(e)).append('\n');
+        out.append("fixpoint throws ").append(n.fault(e)).append('\n');
         trace(out);
         facts(out, n);
     }
@@ -225,8 +225,8 @@ final class SessionDump {
     private void facts(StringBuilder out, Naming n) {
         List<String> facts = new ArrayList<>();
         for (Object o : session.getObjects()) facts.add(n.fact(o));
-        out.append("feiten ").append(facts.size()).append('\n');
-        rules(out, "feit", facts);
+        out.append("facts ").append(facts.size()).append('\n');
+        rules(out, "fact", facts);
     }
 
     /** Appends the firings per rule and in order, each rule by its name quoted. */
@@ -236,8 +236,8 @@ final class SessionDump {
         List<String> counted = new ArrayList<>(), order = new ArrayList<>();
         count.forEach((r, n) -> counted.add(quote(r) + "=" + n));
         for (String r : trace) order.add(quote(r));
-        out.append("spoor-telling {").append(String.join(", ", counted)).append("}\n");
-        out.append("spoor-volgorde [").append(String.join(", ", order)).append("]\n");
+        out.append("trace-count {").append(String.join(", ", counted)).append("}\n");
+        out.append("trace-order [").append(String.join(", ", order)).append("]\n");
     }
 
     private static void rules(StringBuilder out, String section, List<String> rules) {
@@ -318,7 +318,7 @@ final class SessionDump {
         /** {@code o} where an object stands in a line: a bean by its name, null as {@code leeg}, any other object by
          *  {@link #render}. */
         String nameOf(Object o) {
-            return o == null ? "leeg" : render(o);
+            return o == null ? "empty" : render(o);
         }
 
         /** One object in working memory: a bean with its name and its fields, and every other fact as {@link #render}. */
@@ -356,7 +356,7 @@ final class SessionDump {
         /** A sentence of the branch, quoted and escaped; refused where it names an object of the session by its type
          *  and identity, since such a name differs between two runs and a dump neither writes nor replaces one. */
         String sentence(String sentence) {
-            if (sentence == null) return "leeg";
+            if (sentence == null) return "empty";
             if (identities == null) {
                 identities = new HashMap<>();
                 for (Object o : session.getObjects()) identities.put(identity(o), o);
@@ -392,7 +392,7 @@ final class SessionDump {
          * bean without a name, and an object whose class prints its identity, are refused.
          */
         String render(Object o) {
-            if (o == null) return "leeg";
+            if (o == null) return "empty";
             if (isBean(o)) {
                 Name n = name.get(o);
                 if (n != null) return n.inTheDump();
@@ -410,7 +410,7 @@ final class SessionDump {
             if (o instanceof String s) return "String(" + quote(s) + ")";
             if (o instanceof Enum<?> e) return e.getDeclaringClass().getSimpleName() + "." + e.name();
             if (o instanceof ElementKey k)
-                return quote(k.objectType()) + "." + quote(k.name()) + (k.characteristic() ? " (kenmerk)" : "");
+                return quote(k.objectType()) + "." + quote(k.name()) + (k.characteristic() ? " (characteristic)" : "");
             if (o instanceof Throwable e) return fault(e);
             if (o instanceof List<?> l) {
                 List<String> r = new ArrayList<>();

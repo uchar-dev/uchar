@@ -162,28 +162,28 @@ public class TestTermWitnessTest {
         List<RulePlan> plans = plans(golden("jutterswet-opvolgerquorum"));
         assertEquals(List.of(
                 "merk van een wachter: geen toets",
-                "werf een opvolger CONDITION: Samengesteld ALLE 0(RS_AGG_COMPARE(Lees 0, Const 5, Const <), "
-                        + "QUANTIFIER_VERDICT(Lees 1, Lees 2, Const TEN_MINSTE, Const 1), QUANTIFIER_VERDICT(Lees 3, Lees "
+                "werf een opvolger CONDITION: Compound ALLE 0(RS_AGG_COMPARE(Read 0, Const 5, Const <), "
+                        + "QUANTIFIER_VERDICT(Read 1, Read 2, Const TEN_MINSTE, Const 1), QUANTIFIER_VERDICT(Read 3, Read "
                         + "4, Const ALLE, Const 0))",
                 "merk van een wachter: geen toets",
                 "werf een opvolger: geen toets",
                 "werf een opvolger: geen toets"), trees(plans));
         assertEquals(List.of(
-                "werf een opvolger CONDITION 0 Compound bron 'de rang van de Wachter is kleiner dan 5, ten "
+                "werf een opvolger CONDITION 0 Compound source 'de rang van de Wachter is kleiner dan 5, ten "
                         + "minste 1 opvolger van de Wachter heeft een rang groter dan 3 en alle ploegleden van de "
                         + "Wachter hebben een merk groter dan 1'",
-                "werf een opvolger CONDITION 0.0 Call bron 'de rang van de Wachter is kleiner dan 5'",
-                "werf een opvolger CONDITION 0.0.0 SlotValue bron 'de rang van de Wachter'",
+                "werf een opvolger CONDITION 0.0 Call source 'de rang van de Wachter is kleiner dan 5'",
+                "werf een opvolger CONDITION 0.0.0 SlotValue source 'de rang van de Wachter'",
                 "werf een opvolger CONDITION 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, "
-                        + "sign=ONBEPAALD, unit=null] bron '5'",
+                        + "sign=ONBEPAALD, unit=null] source '5'",
                 "werf een opvolger CONDITION 0.0.2 Const String",
-                "werf een opvolger CONDITION 0.1 Call bron 'ten minste 1 opvolger van de Wachter heeft een rang "
+                "werf een opvolger CONDITION 0.1 Call source 'ten minste 1 opvolger van de Wachter heeft een rang "
                         + "groter dan 3'",
                 "werf een opvolger CONDITION 0.1.0 SlotValue",
                 "werf een opvolger CONDITION 0.1.1 SlotValue",
                 "werf een opvolger CONDITION 0.1.2 Const Quantifier",
                 "werf een opvolger CONDITION 0.1.3 Const Integer",
-                "werf een opvolger CONDITION 0.2 Call bron 'alle ploegleden van de Wachter hebben een merk "
+                "werf een opvolger CONDITION 0.2 Call source 'alle ploegleden van de Wachter hebben een merk "
                         + "groter dan 1'",
                 "werf een opvolger CONDITION 0.2.0 SlotValue",
                 "werf een opvolger CONDITION 0.2.1 SlotValue",
@@ -194,24 +194,24 @@ public class TestTermWitnessTest {
     @Test void the_end_verdict_with_order_is_a_quantifier_read() throws Exception {
         List<RulePlan> plans = plans(golden("jutterswet-ploegpremie"));
         assertEquals(List.of(
-                "premiegerechtigd bij dagvergoeding WITHOUT_FAULT: Kwantorlezing QUANTIFIER_READ ALLE 0 sonde -1 (Lees "
-                        + "0, Lees 1)",
-                "premiegerechtigd bij dagvergoeding FAULT: Kwantorlezing QUANTIFIER_READ ALLE 0 sonde -1 (Lees 0, Lees "
+                "premiegerechtigd bij dagvergoeding WITHOUT_FAULT: QuantifierRead QUANTIFIER_READ ALLE 0 probe -1 (Read "
+                        + "0, Read 1)",
+                "premiegerechtigd bij dagvergoeding FAULT: QuantifierRead QUANTIFIER_READ ALLE 0 probe -1 (Read 0, Read "
                         + "1)",
-                "wisselvallig bij dagvergoeding WITHOUT_FAULT: Kwantorlezing QUANTIFIER_READ GEEN 0 sonde -1 (Lees 0, "
-                        + "Lees 1)",
-                "wisselvallig bij dagvergoeding FAULT: Kwantorlezing QUANTIFIER_READ GEEN 0 sonde -1 (Lees 0, Lees 1)",
+                "wisselvallig bij dagvergoeding WITHOUT_FAULT: QuantifierRead QUANTIFIER_READ GEEN 0 probe -1 (Read 0, "
+                        + "Read 1)",
+                "wisselvallig bij dagvergoeding FAULT: QuantifierRead QUANTIFIER_READ GEEN 0 probe -1 (Read 0, Read 1)",
                 "bergertal van een bergingsploeg: geen toets",
                 "premiegerechtigd bij dagvergoeding: geen toets",
                 "wisselvallig bij dagvergoeding: geen toets",
                 "bergertal van een bergingsploeg: geen toets"), trees(plans));
         assertEquals(List.of(
-                "premiegerechtigd bij dagvergoeding WITHOUT_FAULT 0 QuantifierRead bron 'de dagvergoeding van alle "
+                "premiegerechtigd bij dagvergoeding WITHOUT_FAULT 0 QuantifierRead source 'de dagvergoeding van alle "
                         + "bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40'",
                 "premiegerechtigd bij dagvergoeding WITHOUT_FAULT 0.0 SlotValue",
                 "premiegerechtigd bij dagvergoeding WITHOUT_FAULT 0.1 SlotValue",
                 "premiegerechtigd bij dagvergoeding FAULT: zoals de vorige toets",
-                "wisselvallig bij dagvergoeding WITHOUT_FAULT 0 QuantifierRead bron 'de dagvergoeding van geen van de "
+                "wisselvallig bij dagvergoeding WITHOUT_FAULT 0 QuantifierRead source 'de dagvergoeding van geen van de "
                         + "bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40'",
                 "wisselvallig bij dagvergoeding WITHOUT_FAULT 0.0 SlotValue",
                 "wisselvallig bij dagvergoeding WITHOUT_FAULT 0.1 SlotValue",
@@ -221,34 +221,34 @@ public class TestTermWitnessTest {
     @Test void a_channel_test_reads_the_state_of_the_channel() throws Exception {
         List<RulePlan> plans = plans(JSON.readTree(TOEZICHT));
         assertEquals(List.of(
-                "toezicht CONDITION: CHANNEL(Lees 0)",
-                "controle saldo CONDITION: NIET(RS_AGG_COMPARE(Lees 0, Const 0, Const >=))"), trees(plans));
+                "toezicht CONDITION: CHANNEL(Read 0)",
+                "controle saldo CONDITION: NIET(RS_AGG_COMPARE(Read 0, Const 0, Const >=))"), trees(plans));
         assertEquals(List.of(
-                "toezicht CONDITION 0 Call bron 'regelversie controle saldo is inconsistent'",
+                "toezicht CONDITION 0 Call source 'regelversie controle saldo is inconsistent'",
                 "toezicht CONDITION 0.0 SlotValue",
-                "controle saldo CONDITION 0 Call bron 'zijn saldo is groter dan of gelijk aan 0'",
-                "controle saldo CONDITION 0.0 Call bron 'zijn saldo is groter dan of gelijk aan 0'",
-                "controle saldo CONDITION 0.0.0 SlotValue bron 'zijn saldo'",
+                "controle saldo CONDITION 0 Call source 'zijn saldo is groter dan of gelijk aan 0'",
+                "controle saldo CONDITION 0.0 Call source 'zijn saldo is groter dan of gelijk aan 0'",
+                "controle saldo CONDITION 0.0.0 SlotValue source 'zijn saldo'",
                 "controle saldo CONDITION 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, "
-                        + "sign=ONBEPAALD, unit=null] bron '0'",
+                        + "sign=ONBEPAALD, unit=null] source '0'",
                 "controle saldo CONDITION 0.0.2 Const String"), fields(plans));
     }
 
     @Test void a_consistency_tests_the_negation_of_its_assertion() throws Exception {
         List<RulePlan> plans = plans(golden("jutterswet-vondstnummer"));
         assertEquals(List.of(
-                "aanmelding niet voor de vondstdag CONDITION: NIET(DATE_COMPARE(Lees 0, Lees 1, Const "
+                "aanmelding niet voor de vondstdag CONDITION: NIET(DATE_COMPARE(Read 0, Read 1, Const "
                         + "LATER_OF_GELIJK))",
-                "eenmalig vondstnummer VORM: Samengesteld ALLE 0(EMPTY_TEST(Lees 0, Const false))",
-                "eenmalig vondstnummer VORM: DUPLICATE(Lees 0)",
+                "eenmalig vondstnummer VORM: Compound ALLE 0(EMPTY_TEST(Read 0, Const false))",
+                "eenmalig vondstnummer VORM: DUPLICATE(Read 0)",
                 "eenmalig vondstnummer: geen toets"), trees(plans));
         assertEquals(List.of(
-                "aanmelding niet voor de vondstdag CONDITION 0 Call bron 'De aanmelddatum van een Vondst moet "
+                "aanmelding niet voor de vondstdag CONDITION 0 Call source 'De aanmelddatum van een Vondst moet "
                         + "later of gelijk zijn aan de vondstdag van de Vondst'",
-                "aanmelding niet voor de vondstdag CONDITION 0.0 Call bron 'De aanmelddatum van een Vondst moet "
+                "aanmelding niet voor de vondstdag CONDITION 0.0 Call source 'De aanmelddatum van een Vondst moet "
                         + "later of gelijk zijn aan de vondstdag van de Vondst'",
-                "aanmelding niet voor de vondstdag CONDITION 0.0.0 SlotValue bron 'De aanmelddatum van een Vondst'",
-                "aanmelding niet voor de vondstdag CONDITION 0.0.1 SlotValue bron 'de vondstdag van de Vondst'",
+                "aanmelding niet voor de vondstdag CONDITION 0.0.0 SlotValue source 'De aanmelddatum van een Vondst'",
+                "aanmelding niet voor de vondstdag CONDITION 0.0.1 SlotValue source 'de vondstdag van de Vondst'",
                 "aanmelding niet voor de vondstdag CONDITION 0.0.2 Const Operator",
                 "eenmalig vondstnummer VORM 0 Compound",
                 "eenmalig vondstnummer VORM 0.0 Call",
@@ -261,14 +261,14 @@ public class TestTermWitnessTest {
     @Test void a_key_tests_its_participation_and_its_form() throws Exception {
         List<RulePlan> plans = plans(golden("anchor/jutterswet-strandregister"));
         assertEquals(List.of(
-                "eenmalig nummer VORM: Samengesteld ALLE 0(BUCKET_SCALAR(Lees 0, Const false))",
-                "eenmalig nummer VORM: Samengesteld ALLE 0(BUCKET_SCALAR(Lees 0, Const true))",
-                "eenmalig nummer VORM: DUPLICATE(Lees 0)",
+                "eenmalig nummer VORM: Compound ALLE 0(BUCKET_SCALAR(Read 0, Const false))",
+                "eenmalig nummer VORM: Compound ALLE 0(BUCKET_SCALAR(Read 0, Const true))",
+                "eenmalig nummer VORM: DUPLICATE(Read 0)",
                 "eenmalig nummer: geen toets",
-                "kavel per kust VORM: Samengesteld ALLE 0(BUCKET_SCALAR(Lees 0, Const false), EMPTY_TEST(Lees 1, "
+                "kavel per kust VORM: Compound ALLE 0(BUCKET_SCALAR(Read 0, Const false), EMPTY_TEST(Read 1, "
                         + "Const false))",
-                "kavel per kust VORM: Samengesteld ALLE 0(BUCKET_SCALAR(Lees 0, Const true))",
-                "kavel per kust VORM: DUPLICATE(Lees 0)",
+                "kavel per kust VORM: Compound ALLE 0(BUCKET_SCALAR(Read 0, Const true))",
+                "kavel per kust VORM: DUPLICATE(Read 0)",
                 "kavel per kust: geen toets"), trees(plans));
         assertEquals(List.of(
                 "eenmalig nummer VORM 0 Compound",
@@ -297,47 +297,47 @@ public class TestTermWitnessTest {
         List<RulePlan> plans = plans(keurlastWithDividingFilter());
         assertEquals(List.of(
                 "keurlast van een jutter: geen toets",
-                "keurlast van een jutter WITHOUT_FAULT: RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 0, Lees 1),"
+                "keurlast van een jutter WITHOUT_FAULT: RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 0, Read 1),"
                         + " Const 2, Const >)",
-                "keurlast van een jutter FAULT: RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3), Const 2,"
+                "keurlast van een jutter FAULT: RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 2, Read 3), Const 2,"
                         + " Const >)",
-                "keurlast van een jutter VORM: Samengesteld ALLE 0(ZonderFout(RS_AGG_COMPARE(Deel DIVIDED sonde"
-                        + " -1 (Lees 2, Lees 3), Const 2, Const >)), BUCKET_SCALAR(Lees 5, Const true))",
-                "keurlast van een jutter DEPOSIT sonde 2: RS_AGG_COMPARE(Deel DIVIDED sonde 2 (Lees 0, Lees "
+                "keurlast van een jutter VORM: Compound ALLE 0(WithoutFault(RS_AGG_COMPARE(Division DIVIDED probe"
+                        + " -1 (Read 2, Read 3), Const 2, Const >)), BUCKET_SCALAR(Read 5, Const true))",
+                "keurlast van een jutter DEPOSIT probe 2: RS_AGG_COMPARE(Division DIVIDED probe 2 (Read 0, Read "
                         + "1), Const 2, Const >)"), trees(plans));
         assertEquals(List.of(
-                "keurlast van een jutter WITHOUT_FAULT 0 Call bron 'zijn gewicht gedeeld door zijn deelnemers "
+                "keurlast van een jutter WITHOUT_FAULT 0 Call source 'zijn gewicht gedeeld door zijn deelnemers "
                         + "groter is dan 2'",
-                "keurlast van een jutter WITHOUT_FAULT 0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "keurlast van een jutter WITHOUT_FAULT 0.0.0 SlotValue bron 'zijn gewicht'",
-                "keurlast van een jutter WITHOUT_FAULT 0.0.1 SlotValue bron 'zijn deelnemers'",
+                "keurlast van een jutter WITHOUT_FAULT 0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "keurlast van een jutter WITHOUT_FAULT 0.0.0 SlotValue source 'zijn gewicht'",
+                "keurlast van een jutter WITHOUT_FAULT 0.0.1 SlotValue source 'zijn deelnemers'",
                 "keurlast van een jutter WITHOUT_FAULT 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, "
-                        + "sign=ONBEPAALD, unit=null] bron '2'",
+                        + "sign=ONBEPAALD, unit=null] source '2'",
                 "keurlast van een jutter WITHOUT_FAULT 0.2 Const String",
                 "keurlast van een jutter FAULT: zoals de vorige toets",
                 "keurlast van een jutter VORM 0 Compound",
-                "keurlast van een jutter VORM 0.0 WithoutFault bron 'zijn gewicht gedeeld door zijn deelnemers groter "
+                "keurlast van een jutter VORM 0.0 WithoutFault source 'zijn gewicht gedeeld door zijn deelnemers groter "
                         + "is dan 2'",
-                "keurlast van een jutter VORM 0.0.0 Call bron 'zijn gewicht gedeeld door zijn deelnemers groter "
+                "keurlast van een jutter VORM 0.0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers groter "
                         + "is dan 2'",
-                "keurlast van een jutter VORM 0.0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "keurlast van een jutter VORM 0.0.0.0.0 SlotValue bron 'zijn gewicht'",
-                "keurlast van een jutter VORM 0.0.0.0.1 SlotValue bron 'zijn deelnemers'",
+                "keurlast van een jutter VORM 0.0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "keurlast van een jutter VORM 0.0.0.0.0 SlotValue source 'zijn gewicht'",
+                "keurlast van een jutter VORM 0.0.0.0.1 SlotValue source 'zijn deelnemers'",
                 "keurlast van een jutter VORM 0.0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, "
-                        + "sign=ONBEPAALD, unit=null] bron '2'",
+                        + "sign=ONBEPAALD, unit=null] source '2'",
                 "keurlast van een jutter VORM 0.0.0.2 Const String",
                 "keurlast van een jutter VORM 0.1 Call",
                 "keurlast van een jutter VORM 0.1.0 SlotValue",
                 "keurlast van een jutter VORM 0.1.1 Const Boolean",
-                "keurlast van een jutter DEPOSIT sonde 2 0 Call bron 'zijn gewicht gedeeld door zijn "
+                "keurlast van een jutter DEPOSIT probe 2 0 Call source 'zijn gewicht gedeeld door zijn "
                         + "deelnemers groter is dan 2'",
-                "keurlast van een jutter DEPOSIT sonde 2 0.0 Division bron 'zijn gewicht gedeeld door zijn "
+                "keurlast van een jutter DEPOSIT probe 2 0.0 Division source 'zijn gewicht gedeeld door zijn "
                         + "deelnemers'",
-                "keurlast van een jutter DEPOSIT sonde 2 0.0.0 SlotValue bron 'zijn gewicht'",
-                "keurlast van een jutter DEPOSIT sonde 2 0.0.1 SlotValue bron 'zijn deelnemers'",
-                "keurlast van een jutter DEPOSIT sonde 2 0.1 Const BigDecimal type Numeric[wholeNumber=true, "
-                        + "decimals=0, sign=ONBEPAALD, unit=null] bron '2'",
-                "keurlast van een jutter DEPOSIT sonde 2 0.2 Const String"), fields(plans));
+                "keurlast van een jutter DEPOSIT probe 2 0.0.0 SlotValue source 'zijn gewicht'",
+                "keurlast van een jutter DEPOSIT probe 2 0.0.1 SlotValue source 'zijn deelnemers'",
+                "keurlast van een jutter DEPOSIT probe 2 0.1 Const BigDecimal type Numeric[wholeNumber=true, "
+                        + "decimals=0, sign=ONBEPAALD, unit=null] source '2'",
+                "keurlast van een jutter DEPOSIT probe 2 0.2 Const String"), fields(plans));
     }
 
     /**
@@ -411,6 +411,6 @@ public class TestTermWitnessTest {
     }
 
     private static String name(RulePlan p, TestItem t) {
-        return p.form() + " " + t.role() + (t.depositFlag() < 0 ? "" : " sonde " + t.depositFlag());
+        return p.form() + " " + t.role() + (t.depositFlag() < 0 ? "" : " probe " + t.depositFlag());
     }
 }

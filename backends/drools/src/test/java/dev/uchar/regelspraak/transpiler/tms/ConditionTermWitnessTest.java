@@ -67,72 +67,72 @@ class ConditionTermWitnessTest {
         List<RulePlan> plans = rulePlans("jutterswet-filterwacht");
         assertEquals(List.of(
                 "vondstental: geen toets",
-                "zware vondsten CONDITION: KENMERK(Lees 0, Const true)",
-                "drukte WITHOUT_FAULT: Samengesteld ALLE 0(KENMERK(Lees 0, Const true), RS_AGG_COMPARE(Vouwlezing 3"
-                        + " -1 2 -1 (COUNT(Lees 1)), Const 0, Const >))",
-                "drukte FAULT: Samengesteld ALLE 0(KENMERK(Lees 0, Const true), RS_AGG_COMPARE(Vouwlezing 3 -1 2"
-                        + " -1 (COUNT(Lees 1)), Const 0, Const >))",
-                "drukte DEPOSIT sonde 4: Samengesteld ALLE 0(KENMERK(Lees 0, Const true), "
-                        + "RS_AGG_COMPARE(Vouwlezing 3 4 2 -1 (COUNT(Lees 1)), Const 0, Const >))",
+                "zware vondsten CONDITION: KENMERK(Read 0, Const true)",
+                "drukte WITHOUT_FAULT: Compound ALLE 0(KENMERK(Read 0, Const true), RS_AGG_COMPARE(FoldRead 3"
+                        + " -1 2 -1 (COUNT(Read 1)), Const 0, Const >))",
+                "drukte FAULT: Compound ALLE 0(KENMERK(Read 0, Const true), RS_AGG_COMPARE(FoldRead 3 -1 2"
+                        + " -1 (COUNT(Read 1)), Const 0, Const >))",
+                "drukte DEPOSIT probe 4: Compound ALLE 0(KENMERK(Read 0, Const true), "
+                        + "RS_AGG_COMPARE(FoldRead 3 4 2 -1 (COUNT(Read 1)), Const 0, Const >))",
                 "vondstental: geen toets",
-                "zware vondsten WITHOUT_FAULT: Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 0, Lees"
+                "zware vondsten WITHOUT_FAULT: Compound DE 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 0, Read"
                         + " 1), Const 2, Const >))",
-                "zware vondsten FAULT: Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3),"
+                "zware vondsten FAULT: Compound DE 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 2, Read 3),"
                         + " Const 2, Const >))",
-                "zware vondsten DEPOSIT sonde 2: Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde 2 (Lees "
-                        + "0, Lees 1), Const 2, Const >))",
-                "drukte WITHOUT_FAULT: Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 0, Lees 1),"
+                "zware vondsten DEPOSIT probe 2: Compound DE 0(RS_AGG_COMPARE(Division DIVIDED probe 2 (Read "
+                        + "0, Read 1), Const 2, Const >))",
+                "drukte WITHOUT_FAULT: Compound DE 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 0, Read 1),"
                         + " Const 2, Const >))",
-                "drukte FAULT: Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde -1 (Lees 2, Lees 3), Const 2,"
+                "drukte FAULT: Compound DE 0(RS_AGG_COMPARE(Division DIVIDED probe -1 (Read 2, Read 3), Const 2,"
                         + " Const >))",
-                "drukte DEPOSIT sonde 2: Samengesteld DE 0(RS_AGG_COMPARE(Deel DIVIDED sonde 2 (Lees 0, Lees "
+                "drukte DEPOSIT probe 2: Compound DE 0(RS_AGG_COMPARE(Division DIVIDED probe 2 (Read 0, Read "
                         + "1), Const 2, Const >))"), trees(plans));
         assertEquals(List.of(
-                "zware vondsten CONDITION 0 Call bron 'hij actief is'",
+                "zware vondsten CONDITION 0 Call source 'hij actief is'",
                 "zware vondsten CONDITION 0.0 SlotValue",
                 "zware vondsten CONDITION 0.1 Const Boolean",
-                "drukte WITHOUT_FAULT 0 Compound bron 'hij aan alle volgende voorwaarden voldoet: - hij is actief "
+                "drukte WITHOUT_FAULT 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - hij is actief "
                         + "- het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht "
                         + "gedeeld door zijn deelnemers is groter dan 2 is groter dan 0.'",
-                "drukte WITHOUT_FAULT 0.0 Call bron 'hij is actief'",
+                "drukte WITHOUT_FAULT 0.0 Call source 'hij is actief'",
                 "drukte WITHOUT_FAULT 0.0.0 SlotValue",
                 "drukte WITHOUT_FAULT 0.0.1 Const Boolean",
-                "drukte WITHOUT_FAULT 0.1 Call bron 'het aantal vondsten van de Jutter die aan de volgende "
+                "drukte WITHOUT_FAULT 0.1 Call source 'het aantal vondsten van de Jutter die aan de volgende "
                         + "voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter "
                         + "dan 0'",
-                "drukte WITHOUT_FAULT 0.1.0 FoldRead bron 'het aantal vondsten van de Jutter die aan de volgende "
+                "drukte WITHOUT_FAULT 0.1.0 FoldRead source 'het aantal vondsten van de Jutter die aan de volgende "
                         + "voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
-                "drukte WITHOUT_FAULT 0.1.0.0 Call bron 'het aantal vondsten van de Jutter die aan de volgende "
+                "drukte WITHOUT_FAULT 0.1.0.0 Call source 'het aantal vondsten van de Jutter die aan de volgende "
                         + "voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
                 "drukte WITHOUT_FAULT 0.1.0.0.0 SlotValue",
                 "drukte WITHOUT_FAULT 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD, "
-                        + "unit=null] bron '0'",
+                        + "unit=null] source '0'",
                 "drukte WITHOUT_FAULT 0.1.2 Const String",
                 "drukte FAULT: zoals de vorige toets",
-                "drukte DEPOSIT sonde 4: zoals de vorige toets",
-                "zware vondsten WITHOUT_FAULT 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht "
+                "drukte DEPOSIT probe 4: zoals de vorige toets",
+                "zware vondsten WITHOUT_FAULT 0 Compound source 'aan de volgende voorwaarde voldoen: zijn gewicht "
                         + "gedeeld door zijn deelnemers is groter dan 2'",
-                "zware vondsten WITHOUT_FAULT 0.0 Call bron 'zijn gewicht gedeeld door zijn deelnemers is groter "
+                "zware vondsten WITHOUT_FAULT 0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers is groter "
                         + "dan 2'",
-                "zware vondsten WITHOUT_FAULT 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "zware vondsten WITHOUT_FAULT 0.0.0.0 SlotValue bron 'zijn gewicht'",
-                "zware vondsten WITHOUT_FAULT 0.0.0.1 SlotValue bron 'zijn deelnemers'",
+                "zware vondsten WITHOUT_FAULT 0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "zware vondsten WITHOUT_FAULT 0.0.0.0 SlotValue source 'zijn gewicht'",
+                "zware vondsten WITHOUT_FAULT 0.0.0.1 SlotValue source 'zijn deelnemers'",
                 "zware vondsten WITHOUT_FAULT 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, "
-                        + "sign=ONBEPAALD, unit=null] bron '2'",
+                        + "sign=ONBEPAALD, unit=null] source '2'",
                 "zware vondsten WITHOUT_FAULT 0.0.2 Const String",
                 "zware vondsten FAULT: zoals de vorige toets",
-                "zware vondsten DEPOSIT sonde 2: zoals de vorige toets",
-                "drukte WITHOUT_FAULT 0 Compound bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld "
+                "zware vondsten DEPOSIT probe 2: zoals de vorige toets",
+                "drukte WITHOUT_FAULT 0 Compound source 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld "
                         + "door zijn deelnemers is groter dan 2'",
-                "drukte WITHOUT_FAULT 0.0 Call bron 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
-                "drukte WITHOUT_FAULT 0.0.0 Division bron 'zijn gewicht gedeeld door zijn deelnemers'",
-                "drukte WITHOUT_FAULT 0.0.0.0 SlotValue bron 'zijn gewicht'",
-                "drukte WITHOUT_FAULT 0.0.0.1 SlotValue bron 'zijn deelnemers'",
+                "drukte WITHOUT_FAULT 0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers is groter dan 2'",
+                "drukte WITHOUT_FAULT 0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "drukte WITHOUT_FAULT 0.0.0.0 SlotValue source 'zijn gewicht'",
+                "drukte WITHOUT_FAULT 0.0.0.1 SlotValue source 'zijn deelnemers'",
                 "drukte WITHOUT_FAULT 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD, "
-                        + "unit=null] bron '2'",
+                        + "unit=null] source '2'",
                 "drukte WITHOUT_FAULT 0.0.2 Const String",
                 "drukte FAULT: zoals de vorige toets",
-                "drukte DEPOSIT sonde 2: zoals de vorige toets"), fields(plans));
+                "drukte DEPOSIT probe 2: zoals de vorige toets"), fields(plans));
     }
 
     @Test void a_whole_period_test_is_a_call_over_the_full_timeline() throws Exception {
@@ -142,27 +142,27 @@ class ConditionTermWitnessTest {
                 "maandwachtdagen van een jutter: geen toets",
                 "toelagesom van een jutter: geen toets",
                 "maandtoelagesom van een jutter: geen toets",
-                "stormpremie van een jutter WITHOUT_FAULT: WHOLE_PERIOD(COMPLETE(Lees 0, Const the whole-period "
-                        + "qualifier over \"stormwachtdagen\" needs the full timeline; , Lees 1, Const  supplies only "
+                "stormpremie van een jutter WITHOUT_FAULT: WHOLE_PERIOD(COMPLETE(Read 0, Const the whole-period "
+                        + "qualifier over \"stormwachtdagen\" needs the full timeline; , Read 1, Const  supplies only "
                         + "the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)), Const null, Const JAAR, Const 6, Const "
                         + "false)",
-                "stormpremie van een jutter FAULT: WHOLE_PERIOD(COMPLETE(Lees 0, Const the whole-period qualifier "
-                        + "over \"stormwachtdagen\" needs the full timeline; , Lees 1, Const  supplies only the "
+                "stormpremie van een jutter FAULT: WHOLE_PERIOD(COMPLETE(Read 0, Const the whole-period qualifier "
+                        + "over \"stormwachtdagen\" needs the full timeline; , Read 1, Const  supplies only the "
                         + "asOfDate-bucket scalar (ch. 3.9, ch. 8.4)), Const null, Const JAAR, Const 6, Const false)",
-                "maandpremie van een jutter WITHOUT_FAULT: WHOLE_PERIOD(COMPLETE(Lees 0, Const the whole-period "
-                        + "qualifier over \"maandwachtdagen\" needs the full timeline; , Lees 1, Const  supplies only "
+                "maandpremie van een jutter WITHOUT_FAULT: WHOLE_PERIOD(COMPLETE(Read 0, Const the whole-period "
+                        + "qualifier over \"maandwachtdagen\" needs the full timeline; , Read 1, Const  supplies only "
                         + "the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)), Const 0, Const MAAND, Const 2, Const "
                         + "false)",
-                "maandpremie van een jutter FAULT: WHOLE_PERIOD(COMPLETE(Lees 0, Const the whole-period qualifier "
-                        + "over \"maandwachtdagen\" needs the full timeline; , Lees 1, Const  supplies only the "
+                "maandpremie van een jutter FAULT: WHOLE_PERIOD(COMPLETE(Read 0, Const the whole-period qualifier "
+                        + "over \"maandwachtdagen\" needs the full timeline; , Read 1, Const  supplies only the "
                         + "asOfDate-bucket scalar (ch. 3.9, ch. 8.4)), Const 0, Const MAAND, Const 2, Const false)",
                 "weektoelagesom van een jutter: geen toets",
                 "kwartaaltoelagesom van een jutter: geen toets"), trees(plans));
         assertEquals(List.of(
-                "stormpremie van een jutter WITHOUT_FAULT 0 Call bron 'zijn stormwachtdagen gedurende het gehele "
+                "stormpremie van een jutter WITHOUT_FAULT 0 Call source 'zijn stormwachtdagen gedurende het gehele "
                         + "jaar gevuld is'",
-                "stormpremie van een jutter WITHOUT_FAULT 0.0 Call bron 'zijn stormwachtdagen'",
-                "stormpremie van een jutter WITHOUT_FAULT 0.0.0 SlotValue bron 'zijn stormwachtdagen'",
+                "stormpremie van een jutter WITHOUT_FAULT 0.0 Call source 'zijn stormwachtdagen'",
+                "stormpremie van een jutter WITHOUT_FAULT 0.0.0 SlotValue source 'zijn stormwachtdagen'",
                 "stormpremie van een jutter WITHOUT_FAULT 0.0.1 Const String",
                 "stormpremie van een jutter WITHOUT_FAULT 0.0.2 SlotValue",
                 "stormpremie van een jutter WITHOUT_FAULT 0.0.3 Const String",
@@ -171,15 +171,15 @@ class ConditionTermWitnessTest {
                 "stormpremie van een jutter WITHOUT_FAULT 0.3 Const Integer",
                 "stormpremie van een jutter WITHOUT_FAULT 0.4 Const Boolean",
                 "stormpremie van een jutter FAULT: zoals de vorige toets",
-                "maandpremie van een jutter WITHOUT_FAULT 0 Call bron 'zijn maandwachtdagen gedurende de gehele "
+                "maandpremie van een jutter WITHOUT_FAULT 0 Call source 'zijn maandwachtdagen gedurende de gehele "
                         + "maand groter is dan 0'",
-                "maandpremie van een jutter WITHOUT_FAULT 0.0 Call bron 'zijn maandwachtdagen'",
-                "maandpremie van een jutter WITHOUT_FAULT 0.0.0 SlotValue bron 'zijn maandwachtdagen'",
+                "maandpremie van een jutter WITHOUT_FAULT 0.0 Call source 'zijn maandwachtdagen'",
+                "maandpremie van een jutter WITHOUT_FAULT 0.0.0 SlotValue source 'zijn maandwachtdagen'",
                 "maandpremie van een jutter WITHOUT_FAULT 0.0.1 Const String",
                 "maandpremie van een jutter WITHOUT_FAULT 0.0.2 SlotValue",
                 "maandpremie van een jutter WITHOUT_FAULT 0.0.3 Const String",
                 "maandpremie van een jutter WITHOUT_FAULT 0.1 Const BigDecimal type Numeric[wholeNumber=true, "
-                        + "decimals=0, sign=ONBEPAALD, unit=null] bron '0'",
+                        + "decimals=0, sign=ONBEPAALD, unit=null] source '0'",
                 "maandpremie van een jutter WITHOUT_FAULT 0.2 Const String",
                 "maandpremie van een jutter WITHOUT_FAULT 0.3 Const Integer",
                 "maandpremie van een jutter WITHOUT_FAULT 0.4 Const Boolean",
@@ -231,6 +231,6 @@ class ConditionTermWitnessTest {
     }
 
     private static String name(RulePlan p, TestItem t) {
-        return p.form() + " " + t.role() + (t.depositFlag() < 0 ? "" : " sonde " + t.depositFlag());
+        return p.form() + " " + t.role() + (t.depositFlag() < 0 ? "" : " probe " + t.depositFlag());
     }
 }

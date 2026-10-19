@@ -68,73 +68,73 @@ class ValueTermWitnessTest {
     @Test void a_runtime_call_with_unit_rescaling_is_a_tree_of_named_calls() throws Exception {
         List<RulePlan> plans = plans("jutterswet-sleepbaan");
         assertEquals(List.of(
-                "sleeplengte van een sleepbaan: Herschaal RESTATE_EXACT km->m 1000/1 (RS_PLUS(Const 2.5 km, "
-                        + "Herschaal RESTATE_EXACT m->km 1/1000 (Lees 0)))"), trees(plans));
+                "sleeplengte van een sleepbaan: Restate RESTATE_EXACT km->m 1000/1 (RS_PLUS(Const 2.5 km, "
+                        + "Restate RESTATE_EXACT m->km 1/1000 (Read 0)))"), trees(plans));
         // the write boundary has no node of its own in the IR: it carries the fragment of the value it restates, and so
         // does the restatement of the right operand
         assertEquals(List.of(
-                "sleeplengte van een sleepbaan 0 Restate bron '2,5 km plus de aanloop van de Sleepbaan'",
-                "sleeplengte van een sleepbaan 0.0 Call bron '2,5 km plus de aanloop van de Sleepbaan'",
+                "sleeplengte van een sleepbaan 0 Restate source '2,5 km plus de aanloop van de Sleepbaan'",
+                "sleeplengte van een sleepbaan 0.0 Call source '2,5 km plus de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0.0 Const BigDecimal type Numeric[wholeNumber=false, decimals=1, "
                         + "sign=ONBEPAALD, unit=Unit[abbreviation=km, system=Afstand, canonical=m, "
-                        + "factorToCanonical=1000, denominator=null]] bron '2,5 km'",
-                "sleeplengte van een sleepbaan 0.0.1 Restate bron 'de aanloop van de Sleepbaan'",
-                "sleeplengte van een sleepbaan 0.0.1.0 SlotValue bron 'de aanloop van de Sleepbaan'"), fields(plans));
+                        + "factorToCanonical=1000, denominator=null]] source '2,5 km'",
+                "sleeplengte van een sleepbaan 0.0.1 Restate source 'de aanloop van de Sleepbaan'",
+                "sleeplengte van een sleepbaan 0.0.1.0 SlotValue source 'de aanloop van de Sleepbaan'"), fields(plans));
     }
 
     @Test void a_let_is_a_node_with_its_binder_and_its_eagerness() throws Exception {
         List<RulePlan> plans = plans("anchor/jutterswet-tariefstelling");
         assertEquals(List.of(
-                "aanslag van een jutter: Let 1 ink [Lees 0] in [Let 3 aftrek [RS_TIMES(Lees 2, Const 250)] in "
+                "aanslag van een jutter: Let 1 ink [Read 0] in [Let 3 aftrek [RS_TIMES(Read 2, Const 250)] in "
                         + "[Let 4 belasting [RS_ROUNDING(RS_TIMES(Binder 1 ink, Const 0.21), Const 2, Const HALF_UP)] in "
-                        + "[Keuze(RS_AGG_COMPARE(Binder 3 aftrek, Binder 4 belasting, Const >), Const 0, "
+                        + "[Choice(RS_AGG_COMPARE(Binder 3 aftrek, Binder 4 belasting, Const >), Const 0, "
                         + "RS_MIN(Binder 4 belasting, Binder 3 aftrek))]]]",
-                "factor van een jutter: RS_PLUS(Const 1, Deel DIVIDED sonde 1 (Lees 0, Const 2))",
-                "gewogen inkomen van een jutter: RS_ROUNDING(Let 1 ink2 gretig [Lees 0] in "
-                        + "[RS_TIMES(Binder 1 ink2, Lees 2)], Const 2, Const HALF_UP)"), trees(plans));
+                "factor van een jutter: RS_PLUS(Const 1, Division DIVIDED probe 1 (Read 0, Const 2))",
+                "gewogen inkomen van een jutter: RS_ROUNDING(Let 1 ink2 eager [Read 0] in "
+                        + "[RS_TIMES(Binder 1 ink2, Read 2)], Const 2, Const HALF_UP)"), trees(plans));
         // the constants of the analysis, the decimals and the rounding mode, have no type and no node in the IR
         assertEquals(List.of(
-                "aanslag van een jutter 0 Let bron 'ink is het inkomen van de Jutter'",
-                "aanslag van een jutter 0.0 SlotValue bron 'het inkomen van de Jutter'",
-                "aanslag van een jutter 0.1 Let bron 'aftrek is het kindertal van de Jutter maal 250,00'",
-                "aanslag van een jutter 0.1.0 Call bron 'het kindertal van de Jutter maal 250,00'",
-                "aanslag van een jutter 0.1.0.0 SlotValue bron 'het kindertal van de Jutter'",
+                "aanslag van een jutter 0 Let source 'ink is het inkomen van de Jutter'",
+                "aanslag van een jutter 0.0 SlotValue source 'het inkomen van de Jutter'",
+                "aanslag van een jutter 0.1 Let source 'aftrek is het kindertal van de Jutter maal 250,00'",
+                "aanslag van een jutter 0.1.0 Call source 'het kindertal van de Jutter maal 250,00'",
+                "aanslag van een jutter 0.1.0.0 SlotValue source 'het kindertal van de Jutter'",
                 "aanslag van een jutter 0.1.0.1 Const BigDecimal type "
-                        + "Numeric[wholeNumber=false, decimals=2, sign=ONBEPAALD, unit=null] bron '250,00'",
-                "aanslag van een jutter 0.1.1 Let bron 'belasting is ink maal 0,2100 rekenkundig afgerond op 2 "
+                        + "Numeric[wholeNumber=false, decimals=2, sign=ONBEPAALD, unit=null] source '250,00'",
+                "aanslag van een jutter 0.1.1 Let source 'belasting is ink maal 0,2100 rekenkundig afgerond op 2 "
                         + "decimalen'",
-                "aanslag van een jutter 0.1.1.0 Call bron 'ink maal 0,2100 rekenkundig afgerond op 2 decimalen'",
-                "aanslag van een jutter 0.1.1.0.0 Call bron 'ink maal 0,2100'",
-                "aanslag van een jutter 0.1.1.0.0.0 Binder bron 'ink'",
+                "aanslag van een jutter 0.1.1.0 Call source 'ink maal 0,2100 rekenkundig afgerond op 2 decimalen'",
+                "aanslag van een jutter 0.1.1.0.0 Call source 'ink maal 0,2100'",
+                "aanslag van een jutter 0.1.1.0.0.0 Binder source 'ink'",
                 "aanslag van een jutter 0.1.1.0.0.1 Const BigDecimal type "
-                        + "Numeric[wholeNumber=false, decimals=4, sign=ONBEPAALD, unit=null] bron '0,2100'",
+                        + "Numeric[wholeNumber=false, decimals=4, sign=ONBEPAALD, unit=null] source '0,2100'",
                 "aanslag van een jutter 0.1.1.0.1 Const Integer",
                 "aanslag van een jutter 0.1.1.0.2 Const RoundingMode",
-                "aanslag van een jutter 0.1.1.1 Choice bron 'als aftrek groter dan belasting dan 0,00 anders belasting "
+                "aanslag van een jutter 0.1.1.1 Choice source 'als aftrek groter dan belasting dan 0,00 anders belasting "
                         + "min aftrek'",
-                "aanslag van een jutter 0.1.1.1.0 Call bron 'aftrek groter dan belasting'",
-                "aanslag van een jutter 0.1.1.1.0.0 Binder bron 'aftrek'",
-                "aanslag van een jutter 0.1.1.1.0.1 Binder bron 'belasting'",
+                "aanslag van een jutter 0.1.1.1.0 Call source 'aftrek groter dan belasting'",
+                "aanslag van een jutter 0.1.1.1.0.0 Binder source 'aftrek'",
+                "aanslag van een jutter 0.1.1.1.0.1 Binder source 'belasting'",
                 "aanslag van een jutter 0.1.1.1.0.2 Const String",
                 "aanslag van een jutter 0.1.1.1.1 Const BigDecimal type "
-                        + "Numeric[wholeNumber=false, decimals=2, sign=ONBEPAALD, unit=null] bron '0,00'",
-                "aanslag van een jutter 0.1.1.1.2 Call bron 'belasting min aftrek'",
-                "aanslag van een jutter 0.1.1.1.2.0 Binder bron 'belasting'",
-                "aanslag van een jutter 0.1.1.1.2.1 Binder bron 'aftrek'",
-                "factor van een jutter 0 Call bron '1,0000 plus het kindertal van de Jutter gedeeld door 2,0000'",
+                        + "Numeric[wholeNumber=false, decimals=2, sign=ONBEPAALD, unit=null] source '0,00'",
+                "aanslag van een jutter 0.1.1.1.2 Call source 'belasting min aftrek'",
+                "aanslag van een jutter 0.1.1.1.2.0 Binder source 'belasting'",
+                "aanslag van een jutter 0.1.1.1.2.1 Binder source 'aftrek'",
+                "factor van een jutter 0 Call source '1,0000 plus het kindertal van de Jutter gedeeld door 2,0000'",
                 "factor van een jutter 0.0 Const BigDecimal type "
-                        + "Numeric[wholeNumber=false, decimals=4, sign=ONBEPAALD, unit=null] bron '1,0000'",
-                "factor van een jutter 0.1 Division bron 'het kindertal van de Jutter gedeeld door 2,0000'",
-                "factor van een jutter 0.1.0 SlotValue bron 'het kindertal van de Jutter'",
+                        + "Numeric[wholeNumber=false, decimals=4, sign=ONBEPAALD, unit=null] source '1,0000'",
+                "factor van een jutter 0.1 Division source 'het kindertal van de Jutter gedeeld door 2,0000'",
+                "factor van een jutter 0.1.0 SlotValue source 'het kindertal van de Jutter'",
                 "factor van een jutter 0.1.1 Const BigDecimal type "
-                        + "Numeric[wholeNumber=false, decimals=4, sign=ONBEPAALD, unit=null] bron '2,0000'",
-                "gewogen inkomen van een jutter 0 Call bron 'ink2 maal de factor van de Jutter rekenkundig "
+                        + "Numeric[wholeNumber=false, decimals=4, sign=ONBEPAALD, unit=null] source '2,0000'",
+                "gewogen inkomen van een jutter 0 Call source 'ink2 maal de factor van de Jutter rekenkundig "
                         + "afgerond op 2 decimalen'",
-                "gewogen inkomen van een jutter 0.0 Let bron 'ink2 is het inkomen van de Jutter'",
-                "gewogen inkomen van een jutter 0.0.0 SlotValue bron 'het inkomen van de Jutter'",
-                "gewogen inkomen van een jutter 0.0.1 Call bron 'ink2 maal de factor van de Jutter'",
-                "gewogen inkomen van een jutter 0.0.1.0 Binder bron 'ink2'",
-                "gewogen inkomen van een jutter 0.0.1.1 SlotValue bron 'de factor van de Jutter'",
+                "gewogen inkomen van een jutter 0.0 Let source 'ink2 is het inkomen van de Jutter'",
+                "gewogen inkomen van een jutter 0.0.0 SlotValue source 'het inkomen van de Jutter'",
+                "gewogen inkomen van een jutter 0.0.1 Call source 'ink2 maal de factor van de Jutter'",
+                "gewogen inkomen van een jutter 0.0.1.0 Binder source 'ink2'",
+                "gewogen inkomen van een jutter 0.0.1.1 SlotValue source 'de factor van de Jutter'",
                 "gewogen inkomen van een jutter 0.1 Const Integer",
                 "gewogen inkomen van een jutter 0.2 Const RoundingMode"), fields(plans));
     }

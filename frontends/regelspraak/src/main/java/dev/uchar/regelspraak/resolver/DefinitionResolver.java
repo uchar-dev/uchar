@@ -242,12 +242,12 @@ public final class DefinitionResolver {
      *  reported, so every later pass over the model terminates on a document the resolver has already
      *  rejected. */
     private void refuseSupertypeCycles() {
-        java.util.Map<ObjectType, Integer> kleur = new java.util.IdentityHashMap<>();
-        for (ObjectType ot : model.objectTypes.values()) findCycle(ot, kleur, new ArrayList<>());
+        java.util.Map<ObjectType, Integer> color = new java.util.IdentityHashMap<>();
+        for (ObjectType ot : model.objectTypes.values()) findCycle(ot, color, new ArrayList<>());
     }
 
-    private void findCycle(ObjectType t, java.util.Map<ObjectType, Integer> kleur, List<ObjectType> path) {
-        Integer k = kleur.get(t);
+    private void findCycle(ObjectType t, java.util.Map<ObjectType, Integer> color, List<ObjectType> path) {
+        Integer k = color.get(t);
         if (k != null && k == 2) return;
         if (k != null && k == 1) {                       // grey: a back edge onto the current path
             List<String> names = new ArrayList<>();
@@ -260,11 +260,11 @@ public final class DefinitionResolver {
             back.supertype = null;
             return;
         }
-        kleur.put(t, 1);
+        color.put(t, 1);
         path.add(t);
-        if (t.supertype != null) findCycle(t.supertype, kleur, path);
+        if (t.supertype != null) findCycle(t.supertype, color, path);
         path.remove(path.size() - 1);
-        kleur.put(t, 2);
+        color.put(t, 2);
     }
 
     /** WF-105: no attribute or characteristic name is declared twice along one chain (ci) — WF-002's
@@ -1217,9 +1217,9 @@ public final class DefinitionResolver {
      *  segments cannot both claim the same role. */
     private int findHead(List<Role> result, String[] words, boolean[] roleOccupied) {
         for (int len = words.length; len >= 1; len--) {
-            String kandidaat = String.join(" ", java.util.Arrays.copyOfRange(words, 0, len));
+            String candidate = String.join(" ", java.util.Arrays.copyOfRange(words, 0, len));
             for (int j = 0; j < result.size(); j++)
-                if (!roleOccupied[j] && RegelSpraakModel.roleNameMatches(result.get(j), kandidaat)) return j;
+                if (!roleOccupied[j] && RegelSpraakModel.roleNameMatches(result.get(j), candidate)) return j;
         }
         return -1;
     }

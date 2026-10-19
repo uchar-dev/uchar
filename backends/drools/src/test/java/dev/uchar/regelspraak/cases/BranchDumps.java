@@ -34,7 +34,7 @@ final class BranchDumps {
 
     /** {@code dump}, of a session that reached its fixpoint: only there does it hold what {@code read} gives. */
     private static String fixpoint(String dump, String which) {
-        assertTrue(dump.lines().anyMatch(r -> r.startsWith("vuringen ") && r.endsWith(" geenFixpunt null")),
+        assertTrue(dump.lines().anyMatch(r -> r.startsWith("firings ") && r.endsWith(" noFixpoint null")),
                 () -> "geen fixpunt, " + which + ":\n" + dump);
         return dump;
     }
@@ -70,7 +70,7 @@ final class BranchDumps {
 
     /** {@code dump} without the lines of the firings. */
     static String withoutFirings(String dump) {
-        return Stream.of(dump.split("\n")).filter(r -> !r.startsWith("vuringen ") && !r.startsWith("spoor-"))
+        return Stream.of(dump.split("\n")).filter(r -> !r.startsWith("firings ") && !r.startsWith("trace-"))
                 .collect(Collectors.joining("\n"));
     }
 }

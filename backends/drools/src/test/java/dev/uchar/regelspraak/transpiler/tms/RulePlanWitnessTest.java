@@ -80,282 +80,282 @@ class RulePlanWitnessTest {
 
     @Test void a_characteristic_rule_and_a_parameter_state() throws Exception {
         assertEquals(List.of(
-                "regel Kenmerktoekenning jutter penninggerechtigd | vorm Kenmerktoekenning jutter penninggerechtigd |"
-                        + " groep null",
-                "  lezingen [0 INPUT $aantalAangemeldeVondsten (eigen ElementKey[objectType=jutter,"
+                "rule Kenmerktoekenning jutter penninggerechtigd | form Kenmerktoekenning jutter penninggerechtigd |"
+                        + " group null",
+                "  readings [0 INPUT $aantalAangemeldeVondsten (eigen ElementKey[objectType=jutter,"
                         + " name=aantal aangemelde vondsten, characteristic=false]), 1 PARAMETER $vondstdrempel (parameter"
                         + " vondstdrempel)]",
-                "  onderwerp Jutter $onderwerp alfa [] bind [$aantalAangemeldeVondsten = [].aantal aangemelde"
+                "  subject Jutter $onderwerp alpha [] bind [$aantalAangemeldeVondsten = [].aantal aangemelde"
                         + " vondsten VALUE]",
-                "  patroon ParameterState $parameter_1 alfa [parameter_0: [parameter GELIJK vondstdrempel]] join []"
+                "  pattern ParameterState $parameter_1 alpha [parameter_0: [parameter GELIJK vondstdrempel]] join []"
                         + " bind [$vondstdrempel = [].value VALUE]",
-                "  toets voorwaarde_1 CONDITION sonde -1 slots [0, 1] grootte 2: RS_AGG_COMPARE(Lees 0, Lees 1,"
+                "  test voorwaarde_1 CONDITION probe -1 slots [0, 1] size 2: RS_AGG_COMPARE(Read 0, Read 1,"
                         + " Const >=)",
-                "    toets 0 Call bron 'zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel'",
-                "    toets 0.0 SlotValue bron 'zijn aantal aangemelde vondsten'",
-                "    toets 0.1 SlotValue bron 'de vondstdrempel'",
-                "    toets 0.2 Const String",
-                "  gevolg Characteristic [subject=$onderwerp, characteristic=ElementKey[objectType=jutter,"
+                "    test 0 Call source 'zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel'",
+                "    test 0.0 SlotValue source 'zijn aantal aangemelde vondsten'",
+                "    test 0.1 SlotValue source 'de vondstdrempel'",
+                "    test 0.2 Const String",
+                "  consequence Characteristic [subject=$onderwerp, characteristic=ElementKey[objectType=jutter,"
                         + " name=penninggerechtigd, characteristic=true], insertion=LOGICAL]",
-                "regel parameterstand vondstdrempel | vorm null | groep null",
-                "  lezingen []",
-                "  gevolg InsertParameterState [parameter=vondstdrempel, global=vondstdrempel, insertion=LOGICAL]"),
+                "rule parameterstand vondstdrempel | form null | group null",
+                "  readings []",
+                "  consequence InsertParameterState [parameter=vondstdrempel, global=vondstdrempel, insertion=LOGICAL]"),
                 rules(golden("jutterswet-penningdrempel")));
     }
 
     @Test void a_computing_rule_with_a_deposit_flag_and_the_rules_of_its_condition() throws Exception {
         assertEquals(List.of(
-                "regel bergingsaandeel van een jutter | vorm bergingsaandeel van een jutter | groep null",
-                "  lezingen [0 INPUT $ploegomvang (eigen ElementKey[objectType=jutter, name=ploegomvang,"
+                "rule bergingsaandeel van een jutter | form bergingsaandeel van een jutter | group null",
+                "  readings [0 INPUT $ploegomvang (eigen ElementKey[objectType=jutter, name=ploegomvang,"
                         + " characteristic=false]), 1 INPUT $vangstwaarde (eigen ElementKey[objectType=jutter,"
                         + " name=vangstwaarde, characteristic=false]), 2 DEPOSIT_FLAG null (null)]",
-                "  onderwerp Jutter $onderwerp alfa [] bind [$ploegomvang = [].ploegomvang VALUE, $vangstwaarde ="
+                "  subject Jutter $onderwerp alpha [] bind [$ploegomvang = [].ploegomvang VALUE, $vangstwaarde ="
                         + " [].vangstwaarde VALUE]",
-                "  toets voorwaarde_0 WITHOUT_FAULT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE"
-                        + " 0(RS_AGG_COMPARE(Lees 0, Const 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Deel"
-                        + " DIVIDED sonde -1 (Lees 1, Lees 0), Const 0, Const FLOOR), Const 0, Const >))",
-                "    toets 0 Compound bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
+                "  test voorwaarde_0 WITHOUT_FAULT probe -1 slots [0, 1] size 3: Compound ALLE"
+                        + " 0(RS_AGG_COMPARE(Read 0, Const 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Division"
+                        + " DIVIDED probe -1 (Read 1, Read 0), Const 0, Const FLOOR), Const 0, Const >))",
+                "    test 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
                         + " ongelijk aan 0 - het aandeel is groter dan 0.'",
-                "    toets 0.0 Call bron 'zijn ploegomvang is ongelijk aan 0'",
-                "    toets 0.0.0 SlotValue bron 'zijn ploegomvang'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
-                "    toets 0.0.2 Const String",
-                "    toets 0.1 Call bron 'het aandeel is groter dan 0'",
-                "    toets 0.1.0 Call bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                "    test 0.0 Call source 'zijn ploegomvang is ongelijk aan 0'",
+                "    test 0.0.0 SlotValue source 'zijn ploegomvang'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '0'",
+                "    test 0.0.2 Const String",
+                "    test 0.1 Call source 'het aandeel is groter dan 0'",
+                "    test 0.1.0 Call source 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
                         + " Jutter naar beneden afgerond op 0 decimalen'",
-                "    toets 0.1.0.0 Division bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                "    test 0.1.0.0 Division source 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
                         + " Jutter'",
-                "    toets 0.1.0.0.0 SlotValue bron 'de vangstwaarde van de Jutter'",
-                "    toets 0.1.0.0.1 SlotValue bron 'de ploegomvang van de Jutter'",
-                "    toets 0.1.0.1 Const Integer",
-                "    toets 0.1.0.2 Const RoundingMode",
-                "    toets 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
-                "    toets 0.1.2 Const String",
-                "  gevolg Value [subject=$onderwerp, target=ElementKey[objectType=jutter, name=bergingsaandeel,"
+                "    test 0.1.0.0.0 SlotValue source 'de vangstwaarde van de Jutter'",
+                "    test 0.1.0.0.1 SlotValue source 'de ploegomvang van de Jutter'",
+                "    test 0.1.0.1 Const Integer",
+                "    test 0.1.0.2 Const RoundingMode",
+                "    test 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '0'",
+                "    test 0.1.2 Const String",
+                "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=jutter, name=bergingsaandeel,"
                         + " characteristic=false], writer=bergingsaandeel van een jutter, value=Const 1, slots=[],"
                         + " size=3, collapse=true, writesEmpty=false, deposit=Deposit[depositFlag=2,"
                         + " form=bergingsaandeel van een jutter], fault=FaultName[form=bergingsaandeel van een jutter,"
                         + " rule=bergingsaandeel van een jutter], insertion=LOGICAL]",
                 "    value 0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD, unit=null]"
-                        + " bron '1'",
-                "regel bergingsaandeel van een jutter: fout in de voorwaarde | vorm bergingsaandeel van een jutter |"
-                        + " groep null",
-                "  lezingen [0 INPUT $ploegomvang (eigen ElementKey[objectType=jutter, name=ploegomvang,"
+                        + " source '1'",
+                "rule bergingsaandeel van een jutter: fout in de voorwaarde | form bergingsaandeel van een jutter |"
+                        + " group null",
+                "  readings [0 INPUT $ploegomvang (eigen ElementKey[objectType=jutter, name=ploegomvang,"
                         + " characteristic=false]), 1 INPUT $vangstwaarde (eigen ElementKey[objectType=jutter,"
                         + " name=vangstwaarde, characteristic=false]), 2 DEPOSIT_FLAG null (null)]",
-                "  onderwerp Jutter $onderwerp alfa [] bind [$ploegomvang = [].ploegomvang VALUE, $vangstwaarde ="
+                "  subject Jutter $onderwerp alpha [] bind [$ploegomvang = [].ploegomvang VALUE, $vangstwaarde ="
                         + " [].vangstwaarde VALUE]",
-                "  toets voorwaarde_1 FAULT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE"
-                        + " 0(RS_AGG_COMPARE(Lees 0, Const 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Deel"
-                        + " DIVIDED sonde -1 (Lees 1, Lees 0), Const 0, Const FLOOR), Const 0, Const >))",
-                "    toets 0 Compound bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
+                "  test voorwaarde_1 FAULT probe -1 slots [0, 1] size 3: Compound ALLE"
+                        + " 0(RS_AGG_COMPARE(Read 0, Const 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Division"
+                        + " DIVIDED probe -1 (Read 1, Read 0), Const 0, Const FLOOR), Const 0, Const >))",
+                "    test 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
                         + " ongelijk aan 0 - het aandeel is groter dan 0.'",
-                "    toets 0.0 Call bron 'zijn ploegomvang is ongelijk aan 0'",
-                "    toets 0.0.0 SlotValue bron 'zijn ploegomvang'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
-                "    toets 0.0.2 Const String",
-                "    toets 0.1 Call bron 'het aandeel is groter dan 0'",
-                "    toets 0.1.0 Call bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
-                        + " Jutter naar beneden afgerond op 0 decimalen'",
-                "    toets 0.1.0.0 Division bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
-                        + " Jutter'",
-                "    toets 0.1.0.0.0 SlotValue bron 'de vangstwaarde van de Jutter'",
-                "    toets 0.1.0.0.1 SlotValue bron 'de ploegomvang van de Jutter'",
-                "    toets 0.1.0.1 Const Integer",
-                "    toets 0.1.0.2 Const RoundingMode",
-                "    toets 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
-                "    toets 0.1.2 Const String",
-                "  gevolg TestFault [subject=$onderwerp, test=Samengesteld ALLE 0(RS_AGG_COMPARE(Lees 0, Const"
-                        + " 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Deel DIVIDED sonde -1 (Lees 1, Lees 0),"
-                        + " Const 0, Const FLOOR), Const 0, Const >)), role=FAULT, slots=[0, 1], size=3,"
-                        + " fault=FaultName[form=bergingsaandeel van een jutter, rule=bergingsaandeel van een"
-                        + " jutter], insertion=LOGICAL]",
-                "    test 0 Compound bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
-                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
-                "    test 0.0 Call bron 'zijn ploegomvang is ongelijk aan 0'",
-                "    test 0.0.0 SlotValue bron 'zijn ploegomvang'",
+                "    test 0.0 Call source 'zijn ploegomvang is ongelijk aan 0'",
+                "    test 0.0.0 SlotValue source 'zijn ploegomvang'",
                 "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
+                        + " unit=null] source '0'",
                 "    test 0.0.2 Const String",
-                "    test 0.1 Call bron 'het aandeel is groter dan 0'",
-                "    test 0.1.0 Call bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                "    test 0.1 Call source 'het aandeel is groter dan 0'",
+                "    test 0.1.0 Call source 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
                         + " Jutter naar beneden afgerond op 0 decimalen'",
-                "    test 0.1.0.0 Division bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                "    test 0.1.0.0 Division source 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
                         + " Jutter'",
-                "    test 0.1.0.0.0 SlotValue bron 'de vangstwaarde van de Jutter'",
-                "    test 0.1.0.0.1 SlotValue bron 'de ploegomvang van de Jutter'",
+                "    test 0.1.0.0.0 SlotValue source 'de vangstwaarde van de Jutter'",
+                "    test 0.1.0.0.1 SlotValue source 'de ploegomvang van de Jutter'",
                 "    test 0.1.0.1 Const Integer",
                 "    test 0.1.0.2 Const RoundingMode",
                 "    test 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
+                        + " unit=null] source '0'",
                 "    test 0.1.2 Const String",
-                "regel bergingsaandeel van een jutter: deponering in de voorwaarde | vorm bergingsaandeel van een"
-                        + " jutter | groep null",
-                "  lezingen [0 INPUT $ploegomvang (eigen ElementKey[objectType=jutter, name=ploegomvang,"
+                "  consequence TestFault [subject=$onderwerp, test=Compound ALLE 0(RS_AGG_COMPARE(Read 0, Const"
+                        + " 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Division DIVIDED probe -1 (Read 1, Read 0),"
+                        + " Const 0, Const FLOOR), Const 0, Const >)), role=FAULT, slots=[0, 1], size=3,"
+                        + " fault=FaultName[form=bergingsaandeel van een jutter, rule=bergingsaandeel van een"
+                        + " jutter], insertion=LOGICAL]",
+                "    test 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
+                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
+                "    test 0.0 Call source 'zijn ploegomvang is ongelijk aan 0'",
+                "    test 0.0.0 SlotValue source 'zijn ploegomvang'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '0'",
+                "    test 0.0.2 Const String",
+                "    test 0.1 Call source 'het aandeel is groter dan 0'",
+                "    test 0.1.0 Call source 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter naar beneden afgerond op 0 decimalen'",
+                "    test 0.1.0.0 Division source 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                        + " Jutter'",
+                "    test 0.1.0.0.0 SlotValue source 'de vangstwaarde van de Jutter'",
+                "    test 0.1.0.0.1 SlotValue source 'de ploegomvang van de Jutter'",
+                "    test 0.1.0.1 Const Integer",
+                "    test 0.1.0.2 Const RoundingMode",
+                "    test 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '0'",
+                "    test 0.1.2 Const String",
+                "rule bergingsaandeel van een jutter: deponering in de voorwaarde | form bergingsaandeel van een"
+                        + " jutter | group null",
+                "  readings [0 INPUT $ploegomvang (eigen ElementKey[objectType=jutter, name=ploegomvang,"
                         + " characteristic=false]), 1 INPUT $vangstwaarde (eigen ElementKey[objectType=jutter,"
                         + " name=vangstwaarde, characteristic=false]), 2 DEPOSIT_FLAG null (null)]",
-                "  onderwerp Jutter $onderwerp alfa [] bind [$ploegomvang = [].ploegomvang VALUE, $vangstwaarde ="
+                "  subject Jutter $onderwerp alpha [] bind [$ploegomvang = [].ploegomvang VALUE, $vangstwaarde ="
                         + " [].vangstwaarde VALUE]",
-                "  toets voorwaarde_2 DEPOSIT sonde 2 slots [0, 1] grootte 3: Samengesteld ALLE"
-                        + " 0(RS_AGG_COMPARE(Lees 0, Const 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Deel DIVIDED"
-                        + " sonde 2 (Lees 1, Lees 0), Const 0, Const FLOOR), Const 0, Const >))",
-                "    toets 0 Compound bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
+                "  test voorwaarde_2 DEPOSIT probe 2 slots [0, 1] size 3: Compound ALLE"
+                        + " 0(RS_AGG_COMPARE(Read 0, Const 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Division DIVIDED"
+                        + " probe 2 (Read 1, Read 0), Const 0, Const FLOOR), Const 0, Const >))",
+                "    test 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
                         + " ongelijk aan 0 - het aandeel is groter dan 0.'",
-                "    toets 0.0 Call bron 'zijn ploegomvang is ongelijk aan 0'",
-                "    toets 0.0.0 SlotValue bron 'zijn ploegomvang'",
-                "    toets 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
-                "    toets 0.0.2 Const String",
-                "    toets 0.1 Call bron 'het aandeel is groter dan 0'",
-                "    toets 0.1.0 Call bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                "    test 0.0 Call source 'zijn ploegomvang is ongelijk aan 0'",
+                "    test 0.0.0 SlotValue source 'zijn ploegomvang'",
+                "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '0'",
+                "    test 0.0.2 Const String",
+                "    test 0.1 Call source 'het aandeel is groter dan 0'",
+                "    test 0.1.0 Call source 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
                         + " Jutter naar beneden afgerond op 0 decimalen'",
-                "    toets 0.1.0.0 Division bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                "    test 0.1.0.0 Division source 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
                         + " Jutter'",
-                "    toets 0.1.0.0.0 SlotValue bron 'de vangstwaarde van de Jutter'",
-                "    toets 0.1.0.0.1 SlotValue bron 'de ploegomvang van de Jutter'",
-                "    toets 0.1.0.1 Const Integer",
-                "    toets 0.1.0.2 Const RoundingMode",
-                "    toets 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
-                "    toets 0.1.2 Const String",
-                "  gevolg ConditionDeposit [subject=$onderwerp, form=bergingsaandeel van een jutter,"
-                        + " condition=Samengesteld ALLE 0(RS_AGG_COMPARE(Lees 0, Const 0, Const !=),"
-                        + " RS_AGG_COMPARE(RS_ROUNDING(Deel DIVIDED sonde 2 (Lees 1, Lees 0), Const 0, Const FLOOR),"
+                "    test 0.1.0.0.0 SlotValue source 'de vangstwaarde van de Jutter'",
+                "    test 0.1.0.0.1 SlotValue source 'de ploegomvang van de Jutter'",
+                "    test 0.1.0.1 Const Integer",
+                "    test 0.1.0.2 Const RoundingMode",
+                "    test 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '0'",
+                "    test 0.1.2 Const String",
+                "  consequence ConditionDeposit [subject=$onderwerp, form=bergingsaandeel van een jutter,"
+                        + " condition=Compound ALLE 0(RS_AGG_COMPARE(Read 0, Const 0, Const !=),"
+                        + " RS_AGG_COMPARE(RS_ROUNDING(Division DIVIDED probe 2 (Read 1, Read 0), Const 0, Const FLOOR),"
                         + " Const 0, Const >)), depositFlag=2, slots=[0, 1], size=3, insertion=LOGICAL]",
-                "    condition 0 Compound bron 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
+                "    condition 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
                         + " ongelijk aan 0 - het aandeel is groter dan 0.'",
-                "    condition 0.0 Call bron 'zijn ploegomvang is ongelijk aan 0'",
-                "    condition 0.0.0 SlotValue bron 'zijn ploegomvang'",
+                "    condition 0.0 Call source 'zijn ploegomvang is ongelijk aan 0'",
+                "    condition 0.0.0 SlotValue source 'zijn ploegomvang'",
                 "    condition 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
+                        + " unit=null] source '0'",
                 "    condition 0.0.2 Const String",
-                "    condition 0.1 Call bron 'het aandeel is groter dan 0'",
-                "    condition 0.1.0 Call bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                "    condition 0.1 Call source 'het aandeel is groter dan 0'",
+                "    condition 0.1.0 Call source 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
                         + " Jutter naar beneden afgerond op 0 decimalen'",
-                "    condition 0.1.0.0 Division bron 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
+                "    condition 0.1.0.0 Division source 'de vangstwaarde van de Jutter gedeeld door de ploegomvang van de"
                         + " Jutter'",
-                "    condition 0.1.0.0.0 SlotValue bron 'de vangstwaarde van de Jutter'",
-                "    condition 0.1.0.0.1 SlotValue bron 'de ploegomvang van de Jutter'",
+                "    condition 0.1.0.0.0 SlotValue source 'de vangstwaarde van de Jutter'",
+                "    condition 0.1.0.0.1 SlotValue source 'de ploegomvang van de Jutter'",
                 "    condition 0.1.0.1 Const Integer",
                 "    condition 0.1.0.2 Const RoundingMode",
                 "    condition 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
+                        + " unit=null] source '0'",
                 "    condition 0.1.2 Const String"),
                 rules(golden("jutterswet-ploegaandeel")));
     }
 
     @Test void a_clamped_validity_and_the_evaluation_date_state() throws Exception {
         assertEquals(List.of(
-                "regel vensterheffing in 2026 | vorm vensterheffing in 2026 | groep null",
-                "  lezingen [0 INPUT $meldwaarde (eigen ElementKey[objectType=vondstmelding, name=meldwaarde,"
+                "rule vensterheffing in 2026 | form vensterheffing in 2026 | group null",
+                "  readings [0 INPUT $meldwaarde (eigen ElementKey[objectType=vondstmelding, name=meldwaarde,"
                         + " characteristic=false])]",
-                "  onderwerp Vondstmelding $onderwerp alfa [] bind [$meldwaarde = [].meldwaarde VALUE]",
-                "  patroon EvaluationDate $geldigheid_0 alfa [geldig_0: [date WITHIN Validity[from=2026-01-01,"
+                "  subject Vondstmelding $onderwerp alpha [] bind [$meldwaarde = [].meldwaarde VALUE]",
+                "  pattern EvaluationDate $geldigheid_0 alpha [geldig_0: [date WITHIN Validity[from=2026-01-01,"
                         + " until=2026-12-31]]] join [] bind []",
-                "  gevolg Value [subject=$onderwerp, target=ElementKey[objectType=vondstmelding,"
+                "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondstmelding,"
                         + " name=vensterheffing, characteristic=false], writer=vensterheffing in 2026,"
-                        + " value=RS_PLUS(Lees 0, Const 25), slots=[0], size=1, collapse=true, writesEmpty=true,"
+                        + " value=RS_PLUS(Read 0, Const 25), slots=[0], size=1, collapse=true, writesEmpty=true,"
                         + " deposit=null, fault=FaultName[form=vensterheffing in 2026, rule=vensterheffing in"
                         + " 2026], insertion=LOGICAL]",
-                "    value 0 Call bron 'de meldwaarde van de Vondstmelding vermeerderd met 25'",
-                "    value 0.0 SlotValue bron 'de meldwaarde van de Vondstmelding'",
+                "    value 0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 25'",
+                "    value 0.0 SlotValue source 'de meldwaarde van de Vondstmelding'",
                 "    value 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '25'",
-                "regel vensterheffing in 2026: geen rekendatum | vorm vensterheffing in 2026 | groep null",
-                "  lezingen []",
-                "  patroon EvaluationDate $rekendatum alfa [geen-rekendatum_1: [date LEEG]] join [] bind []",
-                "  gevolg Fault [subject=$rekendatum, sentence=a validity-bounded form needs an evaluation date; this"
+                        + " unit=null] source '25'",
+                "rule vensterheffing in 2026: geen rekendatum | form vensterheffing in 2026 | group null",
+                "  readings []",
+                "  pattern EvaluationDate $rekendatum alpha [geen-rekendatum_1: [date LEEG]] join [] bind []",
+                "  consequence Fault [subject=$rekendatum, sentence=a validity-bounded form needs an evaluation date; this"
                         + " session is time-free, fault=FaultName[form=vensterheffing in 2026, rule=vensterheffing in"
                         + " 2026], insertion=LOGICAL]",
-                "regel overgangsheffing tot en met 2025 | vorm overgangsheffing tot en met 2025 | groep null",
-                "  lezingen [0 INPUT $meldwaarde (eigen ElementKey[objectType=vondstmelding, name=meldwaarde,"
+                "rule overgangsheffing tot en met 2025 | form overgangsheffing tot en met 2025 | group null",
+                "  readings [0 INPUT $meldwaarde (eigen ElementKey[objectType=vondstmelding, name=meldwaarde,"
                         + " characteristic=false])]",
-                "  onderwerp Vondstmelding $onderwerp alfa [] bind [$meldwaarde = [].meldwaarde VALUE]",
-                "  patroon EvaluationDate $geldigheid_0 alfa [geldig_2: [date WITHIN Validity[from=null,"
+                "  subject Vondstmelding $onderwerp alpha [] bind [$meldwaarde = [].meldwaarde VALUE]",
+                "  pattern EvaluationDate $geldigheid_0 alpha [geldig_2: [date WITHIN Validity[from=null,"
                         + " until=2025-12-31]]] join [] bind []",
-                "  gevolg Value [subject=$onderwerp, target=ElementKey[objectType=vondstmelding,"
+                "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondstmelding,"
                         + " name=overgangsheffing, characteristic=false], writer=overgangsheffing tot en met 2025,"
-                        + " value=RS_PLUS(Lees 0, Const 40), slots=[0], size=1, collapse=true, writesEmpty=true,"
+                        + " value=RS_PLUS(Read 0, Const 40), slots=[0], size=1, collapse=true, writesEmpty=true,"
                         + " deposit=null, fault=FaultName[form=overgangsheffing tot en met 2025,"
                         + " rule=overgangsheffing tot en met 2025], insertion=LOGICAL]",
-                "    value 0 Call bron 'de meldwaarde van de Vondstmelding vermeerderd met 40'",
-                "    value 0.0 SlotValue bron 'de meldwaarde van de Vondstmelding'",
+                "    value 0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 40'",
+                "    value 0.0 SlotValue source 'de meldwaarde van de Vondstmelding'",
                 "    value 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '40'",
-                "regel overgangsheffing tot en met 2025: geen rekendatum | vorm overgangsheffing tot en met 2025 |"
-                        + " groep null",
-                "  lezingen []",
-                "  patroon EvaluationDate $rekendatum alfa [geen-rekendatum_3: [date LEEG]] join [] bind []",
-                "  gevolg Fault [subject=$rekendatum, sentence=a validity-bounded form needs an evaluation date; this"
+                        + " unit=null] source '40'",
+                "rule overgangsheffing tot en met 2025: geen rekendatum | form overgangsheffing tot en met 2025 |"
+                        + " group null",
+                "  readings []",
+                "  pattern EvaluationDate $rekendatum alpha [geen-rekendatum_3: [date LEEG]] join [] bind []",
+                "  consequence Fault [subject=$rekendatum, sentence=a validity-bounded form needs an evaluation date; this"
                         + " session is time-free, fault=FaultName[form=overgangsheffing tot en met 2025,"
                         + " rule=overgangsheffing tot en met 2025], insertion=LOGICAL]",
-                "regel rekendatumstand | vorm null | groep null",
-                "  lezingen []",
-                "  gevolg EvaluationDateState [global=rekendatum, insertion=LOGICAL]"),
+                "rule rekendatumstand | form null | group null",
+                "  readings []",
+                "  consequence EvaluationDateState [global=rekendatum, insertion=LOGICAL]"),
                 rules(golden("jutterswet-vensterheffing")));
     }
 
     @Test void two_writers_of_a_target() throws Exception {
         assertEquals(List.of(
-                "regel vrijgave zonder beletsel | vorm vrijgave zonder beletsel | groep null",
-                "  lezingen [0 INPUT $geclaimd (eigen ElementKey[objectType=bergingszaak, name=geclaimd,"
+                "rule vrijgave zonder beletsel | form vrijgave zonder beletsel | group null",
+                "  readings [0 INPUT $geclaimd (eigen ElementKey[objectType=bergingszaak, name=geclaimd,"
                         + " characteristic=true]), 1 INPUT $bezwaren (eigen ElementKey[objectType=bergingszaak,"
                         + " name=bezwaren, characteristic=false])]",
-                "  onderwerp Bergingszaak $onderwerp alfa [] bind [$geclaimd = [].geclaimd WAAR, $bezwaren ="
+                "  subject Bergingszaak $onderwerp alpha [] bind [$geclaimd = [].geclaimd WAAR, $bezwaren ="
                         + " [].bezwaren VALUE]",
-                "  toets voorwaarde_0 CONDITION sonde -1 slots [0, 1] grootte 2: Samengesteld GEEN 0(KENMERK(Lees 0,"
-                        + " Const true), RS_AGG_COMPARE(Lees 1, Const 0, Const >))",
-                "    toets 0 Compound bron 'geen van: geclaimd, bezwaren boven 0'",
-                "    toets 0.0 Call bron 'de Bergingszaak geclaimd is'",
-                "    toets 0.0.0 SlotValue",
-                "    toets 0.0.1 Const Boolean",
-                "    toets 0.1 Call bron 'haar bezwaren groter zijn dan 0'",
-                "    toets 0.1.0 SlotValue bron 'de bezwaren van de Bergingszaak'",
-                "    toets 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
-                "    toets 0.1.2 Const String",
-                "  gevolg Value [subject=$onderwerp, target=ElementKey[objectType=bergingszaak, name=status,"
+                "  test voorwaarde_0 CONDITION probe -1 slots [0, 1] size 2: Compound GEEN 0(KENMERK(Read 0,"
+                        + " Const true), RS_AGG_COMPARE(Read 1, Const 0, Const >))",
+                "    test 0 Compound source 'geen van: geclaimd, bezwaren boven 0'",
+                "    test 0.0 Call source 'de Bergingszaak geclaimd is'",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "    test 0.1 Call source 'haar bezwaren groter zijn dan 0'",
+                "    test 0.1.0 SlotValue source 'de bezwaren van de Bergingszaak'",
+                "    test 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '0'",
+                "    test 0.1.2 Const String",
+                "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=bergingszaak, name=status,"
                         + " characteristic=false], writer=vrijgave zonder beletsel, value=Const vrijgegeven, slots=[],"
                         + " size=2, collapse=true, writesEmpty=true, deposit=null, fault=FaultName[form=vrijgave"
                         + " zonder beletsel, rule=vrijgave zonder beletsel], insertion=LOGICAL]",
-                "    value 0 Const String type Text[] bron ''vrijgegeven''",
-                "regel aanhouding bij beletsel | vorm aanhouding bij beletsel | groep null",
-                "  lezingen [0 INPUT $geclaimd (eigen ElementKey[objectType=bergingszaak, name=geclaimd,"
+                "    value 0 Const String type Text[] source ''vrijgegeven''",
+                "rule aanhouding bij beletsel | form aanhouding bij beletsel | group null",
+                "  readings [0 INPUT $geclaimd (eigen ElementKey[objectType=bergingszaak, name=geclaimd,"
                         + " characteristic=true]), 1 INPUT $bezwaren (eigen ElementKey[objectType=bergingszaak,"
                         + " name=bezwaren, characteristic=false])]",
-                "  onderwerp Bergingszaak $onderwerp alfa [] bind [$geclaimd = [].geclaimd WAAR, $bezwaren ="
+                "  subject Bergingszaak $onderwerp alpha [] bind [$geclaimd = [].geclaimd WAAR, $bezwaren ="
                         + " [].bezwaren VALUE]",
-                "  toets voorwaarde_1 CONDITION sonde -1 slots [0, 1] grootte 2: Samengesteld TEN_MINSTE"
-                        + " 1(KENMERK(Lees 0, Const true), RS_AGG_COMPARE(Lees 1, Const 0, Const >))",
-                "    toets 0 Compound bron 'ten minste één van: geclaimd, bezwaren boven 0'",
-                "    toets 0.0 Call bron 'de Bergingszaak geclaimd is'",
-                "    toets 0.0.0 SlotValue",
-                "    toets 0.0.1 Const Boolean",
-                "    toets 0.1 Call bron 'haar bezwaren groter zijn dan 0'",
-                "    toets 0.1.0 SlotValue bron 'de bezwaren van de Bergingszaak'",
-                "    toets 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '0'",
-                "    toets 0.1.2 Const String",
-                "  gevolg Value [subject=$onderwerp, target=ElementKey[objectType=bergingszaak, name=status,"
+                "  test voorwaarde_1 CONDITION probe -1 slots [0, 1] size 2: Compound TEN_MINSTE"
+                        + " 1(KENMERK(Read 0, Const true), RS_AGG_COMPARE(Read 1, Const 0, Const >))",
+                "    test 0 Compound source 'ten minste één van: geclaimd, bezwaren boven 0'",
+                "    test 0.0 Call source 'de Bergingszaak geclaimd is'",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "    test 0.1 Call source 'haar bezwaren groter zijn dan 0'",
+                "    test 0.1.0 SlotValue source 'de bezwaren van de Bergingszaak'",
+                "    test 0.1.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '0'",
+                "    test 0.1.2 Const String",
+                "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=bergingszaak, name=status,"
                         + " characteristic=false], writer=aanhouding bij beletsel, value=Const aangehouden, slots=[],"
                         + " size=2, collapse=true, writesEmpty=true, deposit=null,"
                         + " fault=FaultName[form=aanhouding bij beletsel, rule=aanhouding bij beletsel],"
                         + " insertion=LOGICAL]",
-                "    value 0 Const String type Text[] bron ''aangehouden''",
-                "regel schrijvers Bergingszaak.status: verschil | vorm null | groep null",
-                "  lezingen [0 VALUES $waarden (waarden)]",
-                "  onderwerp Bergingszaak $onderwerp alfa [] bind []",
-                "  accumulatie Value $waarde alfa [waarde_2: [attribute GELIJK"
+                "    value 0 Const String type Text[] source ''aangehouden''",
+                "rule schrijvers Bergingszaak.status: verschil | form null | group null",
+                "  readings [0 VALUES $waarden (waarden)]",
+                "  subject Bergingszaak $onderwerp alpha [] bind []",
+                "  accumulation Value $waarde alpha [waarde_2: [attribute GELIJK"
                         + " ElementKey[objectType=bergingszaak, name=status, characteristic=false]]] join"
-                        + " [waarde-onderwerp_3: subject = $onderwerp] bind [] functies [LIST null -> $waarden]",
-                "  toets verschil_4 VORM sonde -1 slots [0] grootte 1: DIFFER(Lees 0)",
-                "    toets 0 Call",
-                "    toets 0.0 SlotValue",
-                "  gevolg WritersConflict [subject=$onderwerp, values=0,"
+                        + " [waarde-onderwerp_3: subject = $onderwerp] bind [] functions [LIST null -> $waarden]",
+                "  test verschil_4 VORM probe -1 slots [0] size 1: DIFFER(Read 0)",
+                "    test 0 Call",
+                "    test 0.0 SlotValue",
+                "  consequence WritersConflict [subject=$onderwerp, values=0,"
                         + " target=ElementKey[objectType=bergingszaak, name=status, characteristic=false],"
                         + " attribute=status, documentOrder=[vrijgave zonder beletsel, aanhouding bij beletsel],"
                         + " typeClasses=[Bergingszaak], types=[Bergingszaak], insertion=LOGICAL]"),
@@ -364,135 +364,135 @@ class RulePlanWitnessTest {
 
     @Test void a_subject_outside_a_stack() throws Exception {
         assertEquals(List.of(
-                "regel uitkering van een strandrecht | vorm uitkering van een strandrecht | groep null",
-                "  lezingen [0 INPUT $grondslag (eigen ElementKey[objectType=strandrecht, name=grondslag,"
+                "rule uitkering van een strandrecht | form uitkering van een strandrecht | group null",
+                "  readings [0 INPUT $grondslag (eigen ElementKey[objectType=strandrecht, name=grondslag,"
                         + " characteristic=false])]",
-                "  onderwerp Strandrecht $onderwerp alfa [niet-in-een-stapel_0: [null CLASS_NOT_IN [Wrakrecht]]]"
+                "  subject Strandrecht $onderwerp alpha [niet-in-een-stapel_0: [null CLASS_NOT_IN [Wrakrecht]]]"
                         + " bind [$grondslag = [].grondslag VALUE]",
-                "  gevolg Value [subject=$onderwerp, target=ElementKey[objectType=strandrecht, name=uitkering,"
-                        + " characteristic=false], writer=uitkering van een strandrecht, value=RS_TIMES(Lees 0, Const 2),"
+                "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=strandrecht, name=uitkering,"
+                        + " characteristic=false], writer=uitkering van een strandrecht, value=RS_TIMES(Read 0, Const 2),"
                         + " slots=[0], size=1, collapse=true, writesEmpty=false, deposit=null,"
                         + " fault=FaultName[form=uitkering van een strandrecht, rule=uitkering van een strandrecht],"
                         + " insertion=LOGICAL]",
-                "    value 0 Call bron 'zijn grondslag maal 2'",
-                "    value 0.0 SlotValue bron 'zijn grondslag'",
+                "    value 0 Call source 'zijn grondslag maal 2'",
+                "    value 0.0 SlotValue source 'zijn grondslag'",
                 "    value 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '2'"),
+                        + " unit=null] source '2'"),
                 rules(golden("jutterswet-wrakerfbasis"), p -> !RulePlanWitnessTest.ofStack(p)));
     }
 
     @Test void an_initialisation_without_other_writer() throws Exception {
         assertEquals(List.of(
-                "regel standaardbergloon | vorm standaardbergloon | groep null",
-                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                "rule standaardbergloon | form standaardbergloon | group null",
+                "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false])]",
-                "  onderwerp Vondst $onderwerp alfa [doel-leeg-in-de-invoer_1: [bergloon LEEG]] bind [$gewicht ="
+                "  subject Vondst $onderwerp alpha [doel-leeg-in-de-invoer_1: [bergloon LEEG]] bind [$gewicht ="
                         + " [].gewicht VALUE]",
-                "  toets voorwaarde_0 CONDITION sonde -1 slots [0] grootte 1: RS_AGG_COMPARE(Lees 0, Const 10,"
+                "  test voorwaarde_0 CONDITION probe -1 slots [0] size 1: RS_AGG_COMPARE(Read 0, Const 10,"
                         + " Const >)",
-                "    toets 0 Call bron 'zijn gewicht groter is dan 10'",
-                "    toets 0.0 SlotValue bron 'zijn gewicht'",
-                "    toets 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '10'",
-                "    toets 0.2 Const String",
-                "  niet Value $andere_schrijver alfa [andere-schrijver_2: [attribute GELIJK"
+                "    test 0 Call source 'zijn gewicht groter is dan 10'",
+                "    test 0.0 SlotValue source 'zijn gewicht'",
+                "    test 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '10'",
+                "    test 0.2 Const String",
+                "  not Value $andere_schrijver alpha [andere-schrijver_2: [attribute GELIJK"
                         + " ElementKey[objectType=vondst, name=bergloon, characteristic=false], writer NOT_EQUAL"
                         + " standaardbergloon]] join [andere-schrijver-onderwerp_3: subject = $onderwerp] bind []",
-                "  gevolg Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
-                        + " characteristic=false], writer=standaardbergloon, value=RS_TIMES(Const 2, Lees 0), slots=[0],"
+                "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
+                        + " characteristic=false], writer=standaardbergloon, value=RS_TIMES(Const 2, Read 0), slots=[0],"
                         + " size=1, collapse=true, writesEmpty=false, deposit=null,"
                         + " fault=FaultName[form=standaardbergloon, rule=standaardbergloon], insertion=LOGICAL]",
-                "    value 0 Call bron '2 maal zijn gewicht'",
+                "    value 0 Call source '2 maal zijn gewicht'",
                 "    value 0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '2'",
-                "    value 0.1 SlotValue bron 'zijn gewicht'"),
+                        + " unit=null] source '2'",
+                "    value 0.1 SlotValue source 'zijn gewicht'"),
                 rules(golden("jutterswet-voorwaardelijke-initialisatie")));
     }
 
     @Test void an_initialisation_beside_a_writer_that_writes_empty() throws Exception {
         assertEquals(List.of(
-                "regel standaardbergloon | vorm standaardbergloon | groep null",
-                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                "rule standaardbergloon | form standaardbergloon | group null",
+                "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false]), 1 EMPTY_WRITERS $lege_schrijvers (lege schrijvers), 2 SUBJECT"
                         + " $onderwerp (onderwerp zelf)]",
-                "  onderwerp Vondst $onderwerp alfa [] bind [$gewicht = [].gewicht VALUE]",
-                "  toets voorwaarde_0 CONDITION sonde -1 slots [0] grootte 1: RS_AGG_COMPARE(Lees 0, Const 10,"
+                "  subject Vondst $onderwerp alpha [] bind [$gewicht = [].gewicht VALUE]",
+                "  test voorwaarde_0 CONDITION probe -1 slots [0] size 1: RS_AGG_COMPARE(Read 0, Const 10,"
                         + " Const >)",
-                "    toets 0 Call bron 'zijn gewicht groter is dan 10'",
-                "    toets 0.0 SlotValue bron 'zijn gewicht'",
-                "    toets 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '10'",
-                "    toets 0.2 Const String",
-                "  niet Value $andere_schrijver alfa [andere-schrijver_1: [attribute GELIJK"
+                "    test 0 Call source 'zijn gewicht groter is dan 10'",
+                "    test 0.0 SlotValue source 'zijn gewicht'",
+                "    test 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '10'",
+                "    test 0.2 Const String",
+                "  not Value $andere_schrijver alpha [andere-schrijver_1: [attribute GELIJK"
                         + " ElementKey[objectType=vondst, name=bergloon, characteristic=false], writer NOT_EQUAL"
                         + " standaardbergloon, value GEVULD]] join [andere-schrijver-onderwerp_2: subject ="
                         + " $onderwerp] bind []",
-                "  accumulatie Value $lege_schrijver alfa [lege-schrijver_3: [attribute GELIJK"
+                "  accumulation Value $lege_schrijver alpha [lege-schrijver_3: [attribute GELIJK"
                         + " ElementKey[objectType=vondst, name=bergloon, characteristic=false], writer NOT_EQUAL"
                         + " standaardbergloon, value LEEG]] join [lege-schrijver-onderwerp_4: subject ="
-                        + " $onderwerp] bind [] functies [COUNT null -> $lege_schrijvers]",
-                "  toets doel-leeg_5 VORM sonde -1 slots [1, 2] grootte 3: TARGET_EMPTY(Lees 1, Invoer Vondst.bergloon"
-                        + " VALUE (Lees 2))",
-                "    toets 0 Call",
-                "    toets 0.0 SlotValue",
-                "    toets 0.1 Input",
-                "    toets 0.1.0 SlotValue",
-                "  gevolg Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
-                        + " characteristic=false], writer=standaardbergloon, value=RS_TIMES(Const 2, Lees 0), slots=[0],"
+                        + " $onderwerp] bind [] functions [COUNT null -> $lege_schrijvers]",
+                "  test doel-leeg_5 VORM probe -1 slots [1, 2] size 3: TARGET_EMPTY(Read 1, Input Vondst.bergloon"
+                        + " VALUE (Read 2))",
+                "    test 0 Call",
+                "    test 0.0 SlotValue",
+                "    test 0.1 Input",
+                "    test 0.1.0 SlotValue",
+                "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
+                        + " characteristic=false], writer=standaardbergloon, value=RS_TIMES(Const 2, Read 0), slots=[0],"
                         + " size=3, collapse=true, writesEmpty=false, deposit=null,"
                         + " fault=FaultName[form=standaardbergloon, rule=standaardbergloon], insertion=LOGICAL]",
-                "    value 0 Call bron '2 maal zijn gewicht'",
+                "    value 0 Call source '2 maal zijn gewicht'",
                 "    value 0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '2'",
-                "    value 0.1 SlotValue bron 'zijn gewicht'",
-                "regel zwaar bergloon | vorm zwaar bergloon | groep null",
-                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                        + " unit=null] source '2'",
+                "    value 0.1 SlotValue source 'zijn gewicht'",
+                "rule zwaar bergloon | form zwaar bergloon | group null",
+                "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] bind [$gewicht = [].gewicht VALUE]",
-                "  toets voorwaarde_6 CONDITION sonde -1 slots [0] grootte 1: RS_AGG_COMPARE(Lees 0, Const 10,"
+                "  subject Vondst $onderwerp alpha [] bind [$gewicht = [].gewicht VALUE]",
+                "  test voorwaarde_6 CONDITION probe -1 slots [0] size 1: RS_AGG_COMPARE(Read 0, Const 10,"
                         + " Const >)",
-                "    toets 0 Call bron 'zijn gewicht groter is dan 10'",
-                "    toets 0.0 SlotValue bron 'zijn gewicht'",
-                "    toets 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '10'",
-                "    toets 0.2 Const String",
-                "  gevolg Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
-                        + " characteristic=false], writer=zwaar bergloon, value=RS_TIMES(Const 2, Lees 0), slots=[0],"
+                "    test 0 Call source 'zijn gewicht groter is dan 10'",
+                "    test 0.0 SlotValue source 'zijn gewicht'",
+                "    test 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '10'",
+                "    test 0.2 Const String",
+                "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
+                        + " characteristic=false], writer=zwaar bergloon, value=RS_TIMES(Const 2, Read 0), slots=[0],"
                         + " size=1, collapse=true, writesEmpty=true, deposit=null, fault=FaultName[form=zwaar"
                         + " bergloon, rule=zwaar bergloon], insertion=LOGICAL]",
-                "    value 0 Call bron '2 maal zijn gewicht'",
+                "    value 0 Call source '2 maal zijn gewicht'",
                 "    value 0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '2'",
-                "    value 0.1 SlotValue bron 'zijn gewicht'",
-                "regel licht bergloon | vorm licht bergloon | groep null",
-                "  lezingen [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
+                        + " unit=null] source '2'",
+                "    value 0.1 SlotValue source 'zijn gewicht'",
+                "rule licht bergloon | form licht bergloon | group null",
+                "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] bind [$gewicht = [].gewicht VALUE]",
-                "  toets voorwaarde_7 CONDITION sonde -1 slots [0] grootte 1: RS_AGG_COMPARE(Lees 0, Const 10,"
+                "  subject Vondst $onderwerp alpha [] bind [$gewicht = [].gewicht VALUE]",
+                "  test voorwaarde_7 CONDITION probe -1 slots [0] size 1: RS_AGG_COMPARE(Read 0, Const 10,"
                         + " Const >)",
-                "    toets 0 Call bron 'zijn gewicht groter is dan 10'",
-                "    toets 0.0 SlotValue bron 'zijn gewicht'",
-                "    toets 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '10'",
-                "    toets 0.2 Const String",
-                "  gevolg Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
-                        + " characteristic=false], writer=licht bergloon, value=RS_TIMES(Const 2, Lees 0), slots=[0],"
+                "    test 0 Call source 'zijn gewicht groter is dan 10'",
+                "    test 0.0 SlotValue source 'zijn gewicht'",
+                "    test 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '10'",
+                "    test 0.2 Const String",
+                "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
+                        + " characteristic=false], writer=licht bergloon, value=RS_TIMES(Const 2, Read 0), slots=[0],"
                         + " size=1, collapse=true, writesEmpty=true, deposit=null, fault=FaultName[form=licht"
                         + " bergloon, rule=licht bergloon], insertion=LOGICAL]",
-                "    value 0 Call bron '2 maal zijn gewicht'",
+                "    value 0 Call source '2 maal zijn gewicht'",
                 "    value 0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] bron '2'",
-                "    value 0.1 SlotValue bron 'zijn gewicht'",
-                "regel schrijvers Vondst.bergloon: verschil | vorm null | groep null",
-                "  lezingen [0 VALUES $waarden (waarden)]",
-                "  onderwerp Vondst $onderwerp alfa [] bind []",
-                "  accumulatie Value $waarde alfa [waarde_8: [attribute GELIJK ElementKey[objectType=vondst,"
+                        + " unit=null] source '2'",
+                "    value 0.1 SlotValue source 'zijn gewicht'",
+                "rule schrijvers Vondst.bergloon: verschil | form null | group null",
+                "  readings [0 VALUES $waarden (waarden)]",
+                "  subject Vondst $onderwerp alpha [] bind []",
+                "  accumulation Value $waarde alpha [waarde_8: [attribute GELIJK ElementKey[objectType=vondst,"
                         + " name=bergloon, characteristic=false]]] join [waarde-onderwerp_9: subject = $onderwerp] bind []"
-                        + " functies [LIST null -> $waarden]",
-                "  toets verschil_10 VORM sonde -1 slots [0] grootte 1: DIFFER(Lees 0)",
-                "    toets 0 Call",
-                "    toets 0.0 SlotValue",
-                "  gevolg WritersConflict [subject=$onderwerp, values=0,"
+                        + " functions [LIST null -> $waarden]",
+                "  test verschil_10 VORM probe -1 slots [0] size 1: DIFFER(Read 0)",
+                "    test 0 Call",
+                "    test 0.0 SlotValue",
+                "  consequence WritersConflict [subject=$onderwerp, values=0,"
                         + " target=ElementKey[objectType=vondst, name=bergloon, characteristic=false],"
                         + " attribute=bergloon, documentOrder=[standaardbergloon, zwaar bergloon, licht"
                         + " bergloon], typeClasses=[Vondst], types=[Vondst], insertion=LOGICAL]"),
@@ -532,16 +532,16 @@ class RulePlanWitnessTest {
         for (RulePlan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
                 .modelplan().rules()) {
             if (!which.test(p)) continue;
-            out.add("regel " + p.name() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
+            out.add("rule " + p.name() + " | form " + p.form() + " | group " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
             for (Read l : p.readings().slots())
                 slots.add(l.slot() + " " + l.kind() + " " + l.name() + " (" + l.key() + ")");
-            out.add("  lezingen " + slots);
+            out.add("  readings " + slots);
             for (LhsItem item : p.leftSide()) {
                 out.add("  " + item(item));
-                if (item instanceof TestItem t) TermTree.fields("    toets", t.test(), "0", out);
+                if (item instanceof TestItem t) TermTree.fields("    test", t.test(), "0", out);
             }
-            out.add("  gevolg " + consequence(p.consequence()));
+            out.add("  consequence " + consequence(p.consequence()));
             for (RecordComponent c : p.consequence().getClass().getRecordComponents())
                 if (c.getAccessor().invoke(p.consequence()) instanceof Term t)
                     TermTree.fields("    " + c.getName(), t, "0", out);
@@ -556,22 +556,22 @@ class RulePlanWitnessTest {
 
     private static String item(LhsItem item) {
         return switch (item) {
-            case Subject o -> "onderwerp " + o.beanClass().getSimpleName() + " " + o.name() + " alfa "
+            case Subject o -> "subject " + o.beanClass().getSimpleName() + " " + o.name() + " alpha "
                     + alpha(o.alpha()) + " bind " + bindings(o.bindings());
-            case FactPattern p -> "patroon " + pattern(p);
-            case Not n -> "niet " + (n.patterns().size() == 1 ? pattern(n.patterns().get(0)) : "binnen "
-                    + n.inside() + " buiten " + n.outside() + " "
+            case FactPattern p -> "pattern " + pattern(p);
+            case Not n -> "not " + (n.patterns().size() == 1 ? pattern(n.patterns().get(0)) : "inside "
+                    + n.inside() + " outside " + n.outside() + " "
                     + n.patterns().stream().map(RulePlanWitnessTest::pattern).toList());
-            case Exists b -> "bestaat " + b.patterns().stream().map(RulePlanWitnessTest::pattern).toList();
-            case Accumulation a -> "accumulatie " + pattern(a.source()) + " functies "
+            case Exists b -> "exists " + b.patterns().stream().map(RulePlanWitnessTest::pattern).toList();
+            case Accumulation a -> "accumulation " + pattern(a.source()) + " functions "
                     + a.aggregations().stream().map(f -> f.kind() + " " + f.source() + " -> " + f.target()).toList();
-            case TestItem t -> "toets " + t.id() + " " + t.role() + " sonde " + t.depositFlag() + " slots " + t.slots()
-                    + " grootte " + t.size() + ": " + TermTree.tree(t.test());
+            case TestItem t -> "test " + t.id() + " " + t.role() + " probe " + t.depositFlag() + " slots " + t.slots()
+                    + " size " + t.size() + ": " + TermTree.tree(t.test());
         };
     }
 
     private static String pattern(FactPattern p) {
-        return p.factClass().getSimpleName() + " " + p.name() + " alfa " + alpha(p.alpha()) + " join "
+        return p.factClass().getSimpleName() + " " + p.name() + " alpha " + alpha(p.alpha()) + " join "
                 + p.joins().stream().map((Join j) -> j.id() + ": " + j.field() + " = " + j.target()).toList() + " bind "
                 + bindings(p.bindings());
     }

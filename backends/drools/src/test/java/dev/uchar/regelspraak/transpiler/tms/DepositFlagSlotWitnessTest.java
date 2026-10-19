@@ -64,12 +64,12 @@ class DepositFlagSlotWitnessTest {
             for (RulePlan p : b.execModelTranspiler().modelplan().rules()) {
                 for (LhsItem i : p.leftSide()) {
                     if (!(i instanceof TestItem t)) continue;
-                    Set<Integer> s = sondes(t.test());
+                    Set<Integer> s = probes(t.test());
                     if (s.isEmpty()) continue;
                     if (t.role() == TestItem.Role.DEPOSIT && s.equals(Set.of(t.depositFlag()))) filled++;
-                    else unfilled.add(golden + " | " + p.name() + " | toets " + t.role() + " " + s);
+                    else unfilled.add(golden + " | " + p.name() + " | test " + t.role() + " " + s);
                 }
-                Set<Integer> s = sondes(p.consequence());
+                Set<Integer> s = probes(p.consequence());
                 if (s.isEmpty()) continue;
                 Integer fills = switch (p.consequence()) {
                     case Consequence.Value w when w.deposit() != null -> w.deposit().depositFlag();
@@ -80,7 +80,7 @@ class DepositFlagSlotWitnessTest {
                     default -> null;
                 };
                 if (fills != null && s.equals(Set.of(fills))) filled++;
-                else unfilled.add(golden + " | " + p.name() + " | gevolg " + p.consequence().getClass().getSimpleName()
+                else unfilled.add(golden + " | " + p.name() + " | consequence " + p.consequence().getClass().getSimpleName()
                         + " " + s);
             }
         }
@@ -93,7 +93,7 @@ class DepositFlagSlotWitnessTest {
     /** The probe slots the terms under {@code o} name: of a division, a square root, a fold's evaluation and a
      *  quantifier fold. The probe of a test, of a deposit and of a member's test is the slot a position fills, so it is
      *  left out. */
-    private static Set<Integer> sondes(Object o) throws ReflectiveOperationException {
+    private static Set<Integer> probes(Object o) throws ReflectiveOperationException {
         Set<Integer> out = new TreeSet<>();
         collect(o, out);
         return out;
