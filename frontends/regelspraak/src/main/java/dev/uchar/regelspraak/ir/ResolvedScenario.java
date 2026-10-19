@@ -17,12 +17,12 @@ import java.util.List;
  * unit of its target, a date a {@link LocalDate}, a date-time a {@link LocalDateTime}, an enumeration value its
  * bare label.
  *
- * @param naam          the scenario name as written, whitespace collapsed
+ * @param name          the scenario name as written, whitespace collapsed
  * @param scope         the rules the scenario tests, or null when the header names none (the whole document)
- * @param peildatum     the evaluation date, or null when the header sets none (a time-free case)
- * @param situatie      the merged situation: the based-on situations in written order, then the inline one; its
+ * @param asOfDate     the evaluation date, or null when the header sets none (a time-free case)
+ * @param situation      the merged situation: the based-on situations in written order, then the inline one; its
  *                      parameter values open with those of the chosen parameter set on the peildatum
- * @param verwachtingen the expectations in written order; the segment bullets of one timeline are one entry, at
+ * @param expectations the expectations in written order; the segment bullets of one timeline are one entry, at
  *                      the position of its first bullet
  * @param line          the 1-based source line of the {@code Scenario} header
  */

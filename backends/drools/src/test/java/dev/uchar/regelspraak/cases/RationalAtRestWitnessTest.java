@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * ({@code whole: false}, {@code decimals: 0}). The division gives the fraction 1/3, which no decimal holds exactly.
  * Before the value comes to rest in a fact, the plan collapses it ({@code collapse} of a value consequence,
  * {@code ComputeHelpers.collapse}): a fraction that terminates becomes its decimal, and one that does not becomes
- * {@code Rational.naarDecimal()}, cut off at {@code DECIMAL64}. Until this witness no case of the corpus and no witness
+ * {@code Breuk.naarDecimal()}, cut off at {@code DECIMAL64}. Until this witness no case of the corpus and no witness
  * brought a non-terminating fraction at rest through either branch, so a DRL rendering that ignored the collapse of the
  * plan (mutation W4 of Fable advice 4) and a plan without it (A1) passed every measurement of behaviour; only the pins
  * of the text and of the plan saw them.
@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * the spec asks for a rule (the v0 mirror note of ch. 2.4), not for a change in a branch.
  *
  * <p>The witness fires the case on both branches, demands the same verdict and the same dump ({@link BranchDumps}), and
- * pins the value in the facts at the fixpoint as both branches hold it, and what {@code DroolsBackend.read} gives. The
+ * pins the value in the facts at the fixpoint as both branches hold it, and what {@code DroolsBackend.fixpointOf} gives. The
  * pins guard the recorded limit of this backend, so that a change to it shows; they do not make the approximation the
  * norm, which stays the exact 1/3 of ch. 2.4.
  *

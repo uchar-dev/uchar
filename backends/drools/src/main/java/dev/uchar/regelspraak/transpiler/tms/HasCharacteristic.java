@@ -22,7 +22,7 @@ public record HasCharacteristic(Object subject, ElementKey characteristic) {
 
     public HasCharacteristic {
         Objects.requireNonNull(subject, "subject");
-        Objects.requireNonNull(characteristic, "kenmerk");
+        Objects.requireNonNull(characteristic, "characteristic");
     }
 
     @Override public boolean equals(Object o) {
@@ -34,6 +34,6 @@ public record HasCharacteristic(Object subject, ElementKey characteristic) {
     }
 
     @Override public String toString() {
-        return "HeeftKenmerk(" + FactNames.object(subject) + ", " + FactNames.member(characteristic) + ")";
+        return "HasCharacteristic(" + FactNames.object(subject) + ", " + FactNames.member(characteristic) + ")";
     }
 }

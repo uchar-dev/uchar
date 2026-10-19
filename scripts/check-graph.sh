@@ -100,10 +100,10 @@ n_goldens=$(grep -c . "$TMP/goldens")
 # failure here, since every golden is well-formed by gate 3
 if ! java -cp "$JAR" dev.uchar.regelspraak.graph.GraphProjection $(cat "$TMP/goldens") >"$TMP/graaf" 2>"$TMP/graaf.err"; then
     tail -20 "$TMP/graaf.err" >&2
-    fail "GraafProjectie did not read every golden"
+    fail "GraphProjection did not read every golden"
 fi
 [ "$(grep -c '^document	' "$TMP/graaf")" -eq "$n_goldens" ] \
-    || fail "GraafProjectie reported $(grep -c '^document	' "$TMP/graaf") documents for $n_goldens goldens"
+    || fail "GraphProjection reported $(grep -c '^document	' "$TMP/graaf") documents for $n_goldens goldens"
 
 # the verifier side, projected: every edge over an attribute or characteristic node, a form at either end named
 # by the document list its pointer names (/rules/<list>/...), the kind and the type dropped; names normalised as

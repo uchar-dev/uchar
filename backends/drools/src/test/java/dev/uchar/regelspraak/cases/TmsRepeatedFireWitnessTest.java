@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Two fires in one session of the exec-model branch, through the entry a consumer has ({@link DroolsBackend#insert},
- * {@link DroolsBackend#fire}, {@link DroolsBackend#read}), with an input change between them (card tms-omschakeling,
+ * {@link DroolsBackend#fire}, {@link DroolsBackend#fixpointOf}), with an input change between them (card tms-omschakeling,
  * points 4 and 11). The beans hold the input alone between the fires, so a derivation whose reads change lapses, a
  * fault arises or lapses, and an initialisation fires again, and the second reading equals that of a fresh session of
  * the new input.
@@ -267,9 +267,9 @@ class TmsRepeatedFireWitnessTest {
                 DroolsBackend.setDerivedValues(b, session);
                 assertNumber("15", TmsDocuments.read(beans.get("V1"), "vindloon"), "V1 vindloon written back");
                 IllegalStateException e = assertThrows(IllegalStateException.class, () -> DroolsBackend.fire(b, session));
-                assertEquals("deze sessie is teruggezet (zetAfgeleideWaarden): haar beans dragen afgeleide waarden naast"
+                assertEquals("deze sessie is teruggezet (setDerivedValues): haar beans dragen afgeleide waarden naast"
                         + " de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
-                        + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met beans die"
+                        + " DroolsBackend.fixpointOf en zet pas na de laatste fire terug, of open een verse sessie met beans die"
                         + " alleen invoer dragen", e.getMessage());
                 assertEquals(FIRST_VALUES, describe(DroolsBackend.fixpointOf(b, session), beans),
                         "the reading after the write-back is the one it wrote");
@@ -294,7 +294,7 @@ class TmsRepeatedFireWitnessTest {
             }
             session.update(session.getFactHandle(j1), j1);
             IllegalStateException e = assertThrows(IllegalStateException.class, () -> DroolsBackend.fire(build, session));
-            assertEquals("dit model heeft creatieregels, en deze sessie is al via DroolsBackend.vuur gevuurd: wat een"
+            assertEquals("dit model heeft creatieregels, en deze sessie is al via DroolsBackend.fire gevuurd: wat een"
                     + " creatie maakte, met de initialisaties, de koppelingen en de fout van een mislukte initialisatie,"
                     + " is gesteld en vervalt niet (RUNTIME-SEMANTICS ch. 5.5), dus een volgende fire zou na een"
                     + " invoerwijziging een toestand geven die geen verse evaluatie geeft; open per invoer een verse"
@@ -361,11 +361,11 @@ class TmsRepeatedFireWitnessTest {
     @Test void input_added_or_removed_outside_insert_refuses_fire() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(valueDocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSession(b, () -> {
-            String newOrAway = "): een afnemer geeft alle beans in één Invoer aan voegIn en verandert daarna alleen hun"
-                    + " attributen en kenmerken, met update, want voegIn legt de plaatsen van een lijst en de"
+            String newOrAway = "): een afnemer geeft alle beans in één Input aan insert en verandert daarna alleen hun"
+                    + " attributen en kenmerken, met update, want insert legt de plaatsen van een lijst en de"
                     + " emmerscalairen vast over de beans van één invoer; een nieuw of verwijderd object vraagt een verse"
                     + " sessie";
-            String afterFire = "sinds de laatste DroolsBackend.vuur van deze sessie kwam er buiten voegIn om invoer bij of"
+            String afterFire = "sinds de laatste DroolsBackend.fire van deze sessie kwam er buiten insert om invoer bij of"
                     + " ging er invoer weg (";
             // J2 inserted between the fires and V1 set on it: J2 is in the session, so the reference check would pass
             Map<String, Object> beans = valueBeans(b, "10");
@@ -408,10 +408,10 @@ class TmsRepeatedFireWitnessTest {
             try {
                 DroolsBackend.insert(b, vooraf, new Input().beans(third.values()));
                 vooraf.insert(j3);
-                assertEquals("sinds DroolsBackend.voegIn kwam er buiten voegIn om invoer bij of ging er invoer weg ("
+                assertEquals("sinds DroolsBackend.insert kwam er buiten insert om invoer bij of ging er invoer weg ("
                         + TmsConsumerWitnessTest.name(j3) + " werd ingevoegd" + newOrAway,
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.fire(b, vooraf)).getMessage(),
-                        "a bean inserted after voegIn, before the first fire");
+                        "a bean inserted after insert, before the first fire");
             } finally {
                 vooraf.dispose();
             }
@@ -419,24 +419,24 @@ class TmsRepeatedFireWitnessTest {
     }
 
     /** The way on of the two readings where input came or went outside {@code insert}. */
-    static final String NEW_OR_AWAY = "invoer die buiten DroolsBackend.voegIn om bijkwam of wegging, vraagt een verse"
-            + " sessie, dus DroolsBackend.vuur weigert haar: open een verse sessie met alle beans in één Invoer";
+    static final String NEW_OR_AWAY = "invoer die buiten DroolsBackend.insert om bijkwam of wegging, vraagt een verse"
+            + " sessie, dus DroolsBackend.fire weigert haar: open een verse sessie met alle beans in één Input";
 
     /** The call of the entry the watch keeps from after a fire. */
-    static final String AFTER_FIRE = "de laatste DroolsBackend.vuur van deze sessie";
+    static final String AFTER_FIRE = "de laatste DroolsBackend.fire van deze sessie";
 
     /** The sentence of {@code fire} where, since {@code since}, more happened outside it than an update of an attribute
      *  or a characteristic of a bean, {@code description} naming it. */
     static String moreThanOneUpdate(String since, String description) {
-        return "sinds " + since + " gebeurde er buiten vuur om meer dan een update van een attribuut of kenmerk van een"
+        return "sinds " + since + " gebeurde er buiten fire om meer dan een update van een attribuut of kenmerk van een"
                 + " bean (" + description + "), en meer laat de ingang niet toe: open een verse sessie met alle beans in één"
-                + " Invoer";
+                + " Input";
     }
 
     /** The way on of the two readings where {@code fire} refuses for that reason. */
-    static final String FRESH_OUTSIDE_FIRE = "DroolsBackend.vuur weigert een sessie waarin buiten vuur om meer gebeurde"
+    static final String FRESH_OUTSIDE_FIRE = "DroolsBackend.fire weigert een sessie waarin buiten fire om meer gebeurde"
             + " dan een update van een attribuut of kenmerk van een bean: open een verse sessie met alle beans in één"
-            + " Invoer";
+            + " Input";
 
     /** The clause of a relation that an update changed: field {@code field} of {@code beanObject}. */
     static String relation(String field, Object beanObject) {
@@ -448,7 +448,7 @@ class TmsRepeatedFireWitnessTest {
         Path ir = Path.of("..", "..", "corpus", "golden", "jutterswet-aanvoergeld", "ir.json");
         String caseDocument = Files.readString(ir.resolveSibling("case.json"));
         CaseRunner runner = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL);
-        String changed = "de global 'aanvoertarief' veranderde van 12.50 in 22.50 na de eerste DroolsBackend.vuur van"
+        String changed = "de global 'aanvoertarief' veranderde van 12.50 in 22.50 na de eerste DroolsBackend.fire van"
                 + " deze sessie";
         runner.withSession(TmsDocuments.JSON.readTree(caseDocument), (build, session, labels) -> {
             assertNull(DroolsBackend.fire(build, session).noFixpoint(), "first fire");
@@ -461,7 +461,7 @@ class TmsRepeatedFireWitnessTest {
                     assertThrows(IllegalStateException.class, () -> DroolsBackend.fire(build, session)).getMessage(),
                     "the second fire");
             String expectedSentence = "geen fixpunt om te lezen of terug te zetten: " + changed + ", en het fixpunt hoort bij de"
-                    + " oude waarde; DroolsBackend.vuur weigert de sessie, dus open een verse sessie";
+                    + " oude waarde; DroolsBackend.fire weigert de sessie, dus open een verse sessie";
             assertEquals(expectedSentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(build, session))
                     .getMessage(), "the reading");
             assertEquals(expectedSentence, assertThrows(IllegalStateException.class,
@@ -634,7 +634,7 @@ class TmsRepeatedFireWitnessTest {
      *  {@code before} at {@code insert} and holds {@code after}. */
     static String withoutUpdate(String field, Object bean, Object before, Object after) {
         return "het veld '" + field + "' van " + TmsConsumerWitnessTest.name(bean) + ", een relatie, veranderde zonder"
-                + " update: het hield bij DroolsBackend.voegIn " + TmsConsumerWitnessTest.name(before) + " en houdt nu "
+                + " update: het hield bij DroolsBackend.insert " + TmsConsumerWitnessTest.name(before) + " en houdt nu "
                 + TmsConsumerWitnessTest.name(after);
     }
 
@@ -655,16 +655,16 @@ class TmsRepeatedFireWitnessTest {
                 setRole(v1, "vinder", j2);
                 String changed = withoutUpdate("vinder", v1, j1, j2);
                 String expectedSentence = "geen fixpunt om te lezen of terug te zetten: " + changed + ", en het fixpunt hoort bij"
-                        + " de oude relatie; DroolsBackend.vuur weigert de sessie, dus open een verse sessie met alle"
-                        + " beans in één Invoer";
+                        + " de oude relatie; DroolsBackend.fire weigert de sessie, dus open een verse sessie met alle"
+                        + " beans in één Input";
                 assertEquals(expectedSentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session))
                         .getMessage(), "the reading");
                 assertEquals(expectedSentence, assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.setDerivedValues(b, session)).getMessage(), "the write-back");
                 assertEquals(changed + ": Drools ziet een veld pas na een update, dus een fire zou de oude relatie"
                         + " blijven lezen, en ook met een update vraagt een gewijzigde relatie een verse sessie, want"
-                        + " voegIn legt de plaatsen van een lijst vast over de relaties van één invoer; open een verse"
-                        + " sessie met alle beans in één Invoer", assertThrows(IllegalStateException.class,
+                        + " insert legt de plaatsen van een lijst vast over de relaties van één invoer; open een verse"
+                        + " sessie met alle beans in één Input", assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.fire(b, session)).getMessage(), "the second fire");
             } finally {
                 session.dispose();
@@ -685,7 +685,7 @@ class TmsRepeatedFireWitnessTest {
             try {
                 DroolsBackend.insert(b, session, new Input().beans(beans.values()));
                 session.getAgenda().clear();
-                assertEquals(moreThanOneUpdate("DroolsBackend.voegIn", main), assertThrows(IllegalStateException.class,
+                assertEquals(moreThanOneUpdate("DroolsBackend.insert", main), assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.fire(b, session)).getMessage(), "the fire after the agenda was cleared");
             } finally {
                 session.dispose();
@@ -775,13 +775,13 @@ class TmsRepeatedFireWitnessTest {
                 assertNull(DroolsBackend.fire(b, session).noFixpoint(), "first fire");
                 for (org.kie.api.event.rule.RuleRuntimeEventListener l : List.copyOf(session.getRuleRuntimeEventListeners()))
                     session.removeEventListener(l);
-                assertEquals("de bewaking die DroolsBackend.vuur op deze sessie zette, staat er niet meer op, dus wat er"
-                        + " na de laatste vuur gebeurde, is niet te zien; open een verse sessie met alle beans in één"
-                        + " Invoer", assertThrows(IllegalStateException.class, () -> DroolsBackend.fire(b, session))
+                assertEquals("de bewaking die DroolsBackend.fire op deze sessie zette, staat er niet meer op, dus wat er"
+                        + " na de laatste fire gebeurde, is niet te zien; open een verse sessie met alle beans in één"
+                        + " Input", assertThrows(IllegalStateException.class, () -> DroolsBackend.fire(b, session))
                         .getMessage(), "the second fire");
-                assertEquals("geen fixpunt om te lezen of terug te zetten: de bewaking die DroolsBackend.vuur op deze"
-                        + " sessie zet, staat er niet meer op, dus wat er na de laatste vuur gebeurde, is niet te zien;"
-                        + " DroolsBackend.vuur weigert haar ook: open een verse sessie met alle beans in één Invoer",
+                assertEquals("geen fixpunt om te lezen of terug te zetten: de bewaking die DroolsBackend.fire op deze"
+                        + " sessie zet, staat er niet meer op, dus wat er na de laatste fire gebeurde, is niet te zien;"
+                        + " DroolsBackend.fire weigert haar ook: open een verse sessie met alle beans in één Input",
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session)).getMessage(),
                         "the reading");
             } finally {

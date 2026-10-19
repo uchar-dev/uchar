@@ -39,7 +39,7 @@ public record Period(LocalDate van, LocalDate to, BigDecimal value) {
 
     public Period {
         Objects.requireNonNull(van, "van");
-        Objects.requireNonNull(to, "tot");
+        Objects.requireNonNull(to, "to");
     }
 
     public LocalDate getVan() { return van; }
@@ -58,7 +58,7 @@ public record Period(LocalDate van, LocalDate to, BigDecimal value) {
     }
 
     @Override public String toString() {
-        return "[" + van + ", " + to + ")=" + (value == null ? "leeg" : value.toPlainString());
+        return "[" + van + ", " + to + ")=" + (value == null ? "empty" : value.toPlainString());
     }
 
     /** The timeline {@code segments} as this branch carries it, immutable and in the given order: from the segments a

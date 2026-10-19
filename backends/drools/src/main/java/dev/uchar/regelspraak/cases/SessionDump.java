@@ -51,7 +51,7 @@ import java.util.function.Predicate;
  * {@code vuringen} (the firings, the cap and the sentence of a run without a fixpoint), {@code fixpunt} (the outcome
  * of the fire in one line: {@code ja}, {@code nee} with the sentence of the cap or the budget, or {@code gooit} with
  * the exception the fire threw), {@code spoor-telling} (the firings per rule), {@code spoor-volgorde} (the rules in the
- * order they fired), {@code lees} (everything {@link DroolsBackend#read} gives) and {@code facts}/{@code feit}
+ * order they fired), {@code lees} (everything {@link DroolsBackend#fixpointOf} gives) and {@code facts}/{@code feit}
  * (every object in working memory at the fixpoint, the beans with their fields among them, so that a write on a bean
  * during the fire shows).
  * The order and the count of the firings depend on the order in which a rendering adds the rules, so a step reports
@@ -170,7 +170,7 @@ final class SessionDump {
     }
 
     /** Appends the dump of a session whose {@code fire} returned {@code v}: its input, the firings, at a fixpoint what
-     *  {@link DroolsBackend#read} gives, and every object in working memory. A session without a fixpoint gets its
+     *  {@link DroolsBackend#fixpointOf} gives, and every object in working memory. A session without a fixpoint gets its
      *  objects too, as they stand where the fire stopped: {@code read} refuses such a session, and without them a
      *  rebuild that changes what a capped session derives would pass the comparison unseen. {@code labels} maps each
      *  case label to its input bean. */

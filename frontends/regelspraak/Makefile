@@ -74,15 +74,18 @@ parser: $(ANTLR4_JAR)
 
 # Compile the generated parser, then the frontend (resolver + IR emitter)
 # against it. The ANTLR complete jar provides the runtime both link against.
+# -Xdoclint:reference keeps @param and {@link} naming members that exist (a rename leaves them behind otherwise).
+DOCLINT := -Xdoclint:reference
+
 compile: parser
 	mkdir -p $(OUT_DIR)
 	javac -cp $(ANTLR4_JAR) -d $(OUT_DIR) $(GEN_DIR)/*.java
-	javac -cp $(ANTLR4_JAR):$(OUT_DIR) -d $(OUT_DIR) $(MAIN_SRC)
+	javac $(DOCLINT) -cp $(ANTLR4_JAR):$(OUT_DIR) -d $(OUT_DIR) $(MAIN_SRC)
 	cp -R src/main/resources/. $(OUT_DIR)/
 
 # Build + run the JUnit 5 tests via the standalone console launcher.
 test: compile $(JUNIT_JAR)
-	javac -cp $(ANTLR4_JAR):$(JUNIT_JAR):$(OUT_DIR) -d $(OUT_DIR) $(TEST_SRC)
+	javac $(DOCLINT) -cp $(ANTLR4_JAR):$(JUNIT_JAR):$(OUT_DIR) -d $(OUT_DIR) $(TEST_SRC)
 	java -jar $(JUNIT_JAR) execute --class-path $(ANTLR4_JAR):$(OUT_DIR) \
 		--scan-class-path --details=tree --disable-banner
 

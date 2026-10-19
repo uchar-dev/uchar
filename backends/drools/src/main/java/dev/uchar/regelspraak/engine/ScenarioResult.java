@@ -11,16 +11,16 @@ import java.util.List;
  * <p>It carries what the replay knows and nothing a later layer adds: an explanation of the outcome in words is
  * presentation, built by a layer that verbalises, and that layer carries it beside this record.
  *
- * @param naam          the case file's name
+ * @param name          the case file's name
  * @param status        PASS (every expectation met), FAIL (an expectation missed, no fixpoint, or the case could not
  *                      be played: its play raised an exception), or MARKER (the backend does not carry the document or
  *                      a form of the case — the replay's EXCLUDE, a construct the transpiler does not lower among them —
  *                      so accepted-but-inert never reads as a pass)
- * @param verwachtingen the per-expectation verdicts, in the case's order; empty for MARKER and for a case that could not
+ * @param expectations the per-expectation verdicts, in the case's order; empty for MARKER and for a case that could not
  *                      be played
  * @param trace         the firings per form with the labels of the input instances they bound
- * @param dekking       per lowered construct whether it fired in this case
- * @param diagnose      why it is not a PASS: the replay's verdict line for FAIL (for a case that could not be played,
+ * @param coverage       per lowered construct whether it fired in this case
+ * @param diagnostic      why it is not a PASS: the replay's verdict line for FAIL (for a case that could not be played,
  *                      the case's name and the replay's ERROR line), the reason for MARKER; empty for PASS
  */
 public record ScenarioResult(String name, Status status, List<ExpectationResult> expectations,

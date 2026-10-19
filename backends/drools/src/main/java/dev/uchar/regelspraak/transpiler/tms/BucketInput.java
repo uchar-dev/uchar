@@ -22,7 +22,7 @@ public record BucketInput(Object subject, ElementKey attribute) {
 
     public BucketInput {
         Objects.requireNonNull(subject, "subject");
-        Objects.requireNonNull(attribute, "attribuut");
+        Objects.requireNonNull(attribute, "attribute");
     }
 
     @Override public boolean equals(Object o) {
@@ -34,6 +34,6 @@ public record BucketInput(Object subject, ElementKey attribute) {
     }
 
     @Override public String toString() {
-        return "Emmerinvoer(" + FactNames.object(subject) + ", " + FactNames.member(attribute) + ")";
+        return "BucketInput(" + FactNames.object(subject) + ", " + FactNames.member(attribute) + ")";
     }
 }

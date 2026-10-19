@@ -10,8 +10,8 @@ package dev.uchar.regelspraak.ir;
  * / an executable-model {@code Predicate<LocalDate>}), which §8.1.5 dagsoortcontrole and the
  * §6.10/§6.11 dagsoort durations then call.
  *
- * @param naam       the dagsoort name (the §3.12 declared singular, e.g. "kerstdag")
- * @param voorwaarde the resolved condition over "de dag" that makes a date this dagsoort
- * @param geldigheid the §13.4.2.5 version validity window (typically {@link Validity#ALTIJD})
+ * @param name       the dagsoort name (the §3.12 declared singular, e.g. "kerstdag")
+ * @param condition the resolved condition over "de dag" that makes a date this dagsoort
+ * @param validity the §13.4.2.5 version validity window (typically {@link Validity#ALTIJD})
  */
 public record ResolvedDayKindDefinition(String name, Condition condition, Validity validity) {}

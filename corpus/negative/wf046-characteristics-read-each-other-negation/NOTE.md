@@ -52,7 +52,7 @@ to evaluate it under WF-045; the ASP program has two stable models, one with
 first; both Drools branches answer `uitgesloten`, and with the two rules in
 the other order `penninggerechtigd`. Since that day the frontend refuses the
 source before it writes a document, in the verifier's sentence after a Dutch
-part that names WF-045 and WF-046 (`ZelflezingKringTest`;
+part that names WF-045 and WF-046 (`SelfReadCycleTest`;
 `frontends/regelspraak/grammar/DIVERGENCES.md`, "Kringen: WF-045 en WF-051
 in check"):
 

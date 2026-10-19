@@ -13,14 +13,14 @@ import java.util.List;
  * and likewise feitcreatie, startpunt, dagsoort, consistentie and uniciteit. The voorwaardendeel
  * joined the IR as the {@code condition} component below.
  *
- * @param naam           the regel name (with a per-version suffix when the rule has more
+ * @param name           the regel name (with a per-version suffix when the rule has more
  *                       than one §13.4.2.3 version, so each version is a distinct DRL rule)
- * @param soort          which assignment form produced it
- * @param doel           the assignment target — typically an {@link Expr.AttributeReference}
- * @param waarde         the resolved value expression (the rule's "then")
- * @param voorwaarde     the resolved condition guarding the rule, or null if unconditional
+ * @param category          which assignment form produced it
+ * @param target           the assignment target — typically an {@link Expr.AttributeReference}
+ * @param value         the resolved value expression (the rule's "then")
+ * @param condition     the resolved condition guarding the rule, or null if unconditional
  *                       (the rule's "when")
- * @param geldigheid     the §13.4.2.5 version validity window; {@link Validity#ALTIJD} when
+ * @param validity     the §13.4.2.5 version validity window; {@link Validity#ALTIJD} when
  *                       always-valid (the transpiler then emits no Rekendatum guard)
  * @param statuteAnnotations the {@code // Bron: …} statuutannotaties written directly above the rule
  *                       (the text after {@code Bron:}, in source order), so uitleg can cite the

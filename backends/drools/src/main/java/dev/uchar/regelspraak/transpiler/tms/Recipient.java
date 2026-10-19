@@ -22,8 +22,8 @@ public record Recipient(String allocation, Object source, Object recipient, Obje
 
     public Recipient {
         Objects.requireNonNull(allocation, "allocation");
-        Objects.requireNonNull(source, "bron");
-        Objects.requireNonNull(recipient, "ontvanger");
+        Objects.requireNonNull(source, "source");
+        Objects.requireNonNull(recipient, "recipient");
     }
 
     @Override public boolean equals(Object o) {
@@ -46,8 +46,8 @@ public record Recipient(String allocation, Object source, Object recipient, Obje
     }
 
     @Override public String toString() {
-        return "Ontvanger(" + allocation + ", " + FactNames.object(source) + ", " + FactNames.object(recipient)
-                + ", gewicht " + (weight == null ? "leeg" : weight) + ", sleutel " + (key == null ? "leeg" : key)
-                + ", maximum " + (maximum == null ? "leeg" : maximum) + ")";
+        return "Recipient(" + allocation + ", " + FactNames.object(source) + ", " + FactNames.object(recipient)
+                + ", weight " + (weight == null ? "empty" : weight) + ", key " + (key == null ? "empty" : key)
+                + ", maximum " + (maximum == null ? "empty" : maximum) + ")";
     }
 }

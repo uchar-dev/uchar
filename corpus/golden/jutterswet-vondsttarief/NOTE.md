@@ -3,7 +3,7 @@
 The **frontend bare-%-literal** witness. This golden's `source.rgs` uses a
 BARE percentage literal (`21%`, no `van`) in two value positions the grammar
 admits, so uchar's own frontend (`getalWaarde : NUMBER PERCENT_SIGN`,
-RegelSpraak.g4:973; resolver `ExpressieBouwer.java:200`) emits a
+RegelSpraak.g4:973; resolver `ExpressionBuilder.java:200`) emits a
 **`Literal` typed as a percentage** (a `Number` with the unit `%`) — the
 round-trip gate 10 never exercised before (the two existing %-goldens use `%`
 only as the left operand of `percentageOf`, which the frontend types as a
@@ -90,6 +90,6 @@ without `%` PLAYS+PASSES through the same Drools jar — `jutterswet-strandgoed`
 (a `>` comparison of numbers without a unit) plays, and a minimal `… gelijk
 is aan 21` (bare number equality, `%` stripped) also plays `PLAYED 1`. The bare
 percentage literal is intrinsically typed as a percentage (RegelSpraak.g4:973 →
-`ExpressieBouwer.java:200`), so no bare-`%` witness can both carry the
+`ExpressionBuilder.java:200`), so no bare-`%` witness can both carry the
 `%`-lexeme AND be lowered by the v0 Drools exec-model — the auto-exclusion is
 unavoidable for this construct, and self-documenting.

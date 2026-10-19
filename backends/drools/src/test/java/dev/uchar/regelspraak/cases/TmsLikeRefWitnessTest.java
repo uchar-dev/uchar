@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * leeg with a deposit. The destructive branch refused a fold and a division under one Let.
  * <li>{@code defaults-quantifier-fold-justification} ({@code DefaultsJustificationWitnessTest}): a quantifier fold in the
  * justification of a default; the destructive branch refused it.
- * <li>{@code many-to-many-self-relation} ({@code OpslagDirectionWitnessTest}): a count over a self-relation with both
+ * <li>{@code many-to-many-self-relation} ({@code StorageDirectionWitnessTest}): a count over a self-relation with both
  * roles plural, the golden {@code anchor/jutterswet-erflijn} with a case of that witness; the destructive branch refused
  * the join, which the bean model holds on no field.
  * <li>{@code fact-creation-name-sharing-write-role} ({@code RoleFieldReaderWitnessTest}): a fact creation whose written role

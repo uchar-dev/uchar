@@ -154,11 +154,11 @@ if [ "$FAST" -eq 0 ]; then
   # both its rows, by name, as its surefire report written after the build began says.
   branch_dumps=backends/drools/target/surefire-reports/TEST-dev.uchar.regelspraak.cases.BranchDumpsCorpusWitnessTest.xml
   [ -f "$branch_dumps" ] && [ "$branch_dumps" -nt "$suite_begin" ] \
-    || fail "TakdumpsCorpusWitnessTest did not run in this build (no surefire report newer than its start: $branch_dumps) — the suite's comparison of the two branches per case is required"
+    || fail "BranchDumpsCorpusWitnessTest did not run in this build (no surefire report newer than its start: $branch_dumps) — the suite's comparison of the two branches per case is required"
   for table_row in every_case_of_every_played_golden_has_the_same_dump_on_both_branches \
              every_red_case_gives_the_same_red_result_on_both_branches; do
     grep -q "<testcase name=\"$table_row\"" "$branch_dumps" \
-      || fail "TakdumpsCorpusWitnessTest ran without its row '$table_row' — the comparison of the two branches per case is required whole"
+      || fail "BranchDumpsCorpusWitnessTest ran without its row '$table_row' — the comparison of the two branches per case is required whole"
   done
 fi
 
@@ -204,7 +204,7 @@ EXCLUDE_KNOWN=(
   # empty list.
   # jutterswet-keurmerk LEFT the list 2026-08-29 (card triage-sluiting, PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q11): the
   # embedded-double-quote divergence was a backends/drools string-encoding defect, not a v0 semantic
-  # difference. ExecModelTranspiler.tekstOfEnumLabel now strips only the paired Tekst DELIMITERS (as
+  # difference. Literals.textOrEnumLabel now strips only the paired Tekst DELIMITERS (as
   # Literalen.enumLabel does for single quotes) instead of every quote, so an embedded quote survives
   # the equality AND the computed-text write — ref ≡ clingo ≡ Drools on the quote-bearing golden, which
   # now PLAYS+PASSES. Removing this entry is mandatory: a listed golden that plays trips the stale guard.
@@ -760,12 +760,12 @@ EXPECTED_CHANNEL=(
 # filled count gives back is a GUARD that is writable, since it may stand in a rule's condition where
 # the instance count reads 1 for a member with no value and would let the division through. The
 # golden pins that the guard is reached and that the division is not; its red twin
-# (corpus/red/filled-count-unguarded-division) pins the fault the guard prevents in all THREE
+# (corpus/golden/filled-count-unguarded-division) pins the fault the guard prevents in all THREE
 # executors, this backend among them. EXPECTED_DRL_PLAYED moves by one as well.
 #
 # 169 -> 171 (2026-09-20, card drools-enumlabel-lezer): TWO new players, jutterswet-keurstaat and
 # jutterswet-vondstklasse — the corpus's two enumeration-value documents, refused by BOTH branches for
-# as long as each has existed. ONE shared reader was the whole cause: Literalen.tekstOfEnumLabel routed
+# as long as each has existed. ONE shared reader was the whole cause: Literals.textOrEnumLabel routed
 # an Enumeratie-typed literal through enumLabel, which DEMANDS the '…' delimiters of the RegelSpraak
 # source, while the wire carries the BARE label (WF-039 crosses it byte-exactly against the declared
 # domain). It therefore answered null on every conforming document, and the five arms that guard on

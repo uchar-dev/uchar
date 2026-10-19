@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * fold found it, the navigation read leeg), a member written on the subject instead of the mint, a second
  * mint where the fact base already answered the question. Those are asserted directly here, on the
  * exec-model branch, through the entry a consumer uses: one {@link DroolsBackend#fire} to the fixpoint, the
- * objects and links the creations made as {@link DroolsBackend#read} gives them, and the beans after
+ * objects and links the creations made as {@link DroolsBackend#fixpointOf} gives them, and the beans after
  * {@link DroolsBackend#setDerivedValues}, which puts the derived values and the links on them (the branch writes no
  * bean while it fires).
  *
@@ -498,7 +498,7 @@ class ObjectCreationWitnessTest {
 
     /** One case of {@code irPath} on the exec-model branch, as a consumer plays it through the entry: the input
      *  through {@link DroolsBackend#insert} (the replay's set-up), one {@link DroolsBackend#fire} to the fixpoint, the
-     *  fixpoint {@link DroolsBackend#read} gives, and then {@link DroolsBackend#setDerivedValues}, so that the beans
+     *  fixpoint {@link DroolsBackend#fixpointOf} gives, and then {@link DroolsBackend#setDerivedValues}, so that the beans
      *  of the input and of the made objects carry the derived values and the links. */
     private static After afterFire(Path irPath, JsonNode c) throws Exception {
         return CaseRunner.forMeasurement(irPath, DroolsBackend.Branch.EXEC_MODEL).withSession(c,

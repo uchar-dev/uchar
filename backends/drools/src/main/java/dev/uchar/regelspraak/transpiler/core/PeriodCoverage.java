@@ -48,10 +48,10 @@ import java.util.Map;
  * <p><b>Idiomatiek.</b> Als {@link Coverage} is {@link #check} PUUR (het meldt niets) en is {@link #report} de aparte
  * consumer-aangeroepen methode die deduplicerend een WARNING op het model zet — precies zoals {@code Coverage.report}.
  *
- * @param regel       de (mogelijk {@code #k}-versie-gesuffixte) regelnaam
+ * @param rule       de (mogelijk {@code #k}-versie-gesuffixte) regelnaam
  * @param parameter   de gerefereerde parameternaam zoals in de sets/pool
  * @param rulePeriod de {@link Validity} van deze regelversie (de regelperiode)
- * @param ontbrekend  de deelperiodes van {@code rulePeriod} die niet door enig parameter-interval gedekt zijn
+ * @param missing  de deelperiodes van {@code rulePeriod} die niet door enig parameter-interval gedekt zijn
  *                    ({@link Validity}-shape, {@code null} = open kant); nooit leeg voor een bestaande {@code PeriodCoverage}
  */
 public record PeriodCoverage(String rule, String parameter, Validity rulePeriod, List<Validity> missing) {

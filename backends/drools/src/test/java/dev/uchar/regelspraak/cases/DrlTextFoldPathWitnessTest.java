@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * and the fault of a member ({@code MemberFault}). The documents are those of the witnesses of the exec-model branch that
  * make these facts, {@link TmsFilterDepositWitnessTest} and part E of {@link TmsInputFormWitnessTest}, here fired
  * through both branches: each case gets the same verdict, and the dump of its session ({@link SessionDump}) is the same
- * in its input, in what {@code DroolsBackend.read} gives and in the facts at the fixpoint ({@link BranchDumps}), and holds
+ * in its input, in what {@code DroolsBackend.fixpointOf} gives and in the facts at the fixpoint ({@link BranchDumps}), and holds
  * the fact. The third path the lens named, a member's place over two steps, the corpus fires on the DRL-text branch
  * (measured at fix round 3a: in five goldens a contribution or the fault of a filter with such a place, the same as on
  * the exec-model branch).

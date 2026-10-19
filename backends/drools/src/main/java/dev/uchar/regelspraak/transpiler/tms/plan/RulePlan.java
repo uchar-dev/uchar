@@ -15,15 +15,15 @@ import java.util.Set;
  * in scope for every item after it; one inside a negation or an existence lives only inside it ({@link Exists}), so
  * two quantifications may each declare one name, while neither may declare a name in scope where it stands.
  *
- * @param naam        the rule's name, by which a KieBase keeps one rule
- * @param vorm        the form of the document the rule belongs to, as the manifest names it ({@code formOf}); null for
+ * @param name        the rule's name, by which a KieBase keeps one rule
+ * @param form        the form of the document the rule belongs to, as the manifest names it ({@code formOf}); null for
  *                    a rule of no form, such as a standing or the rule of two writers of one target
- * @param agendagroep the agenda group the rule fires in, null for the main group
- * @param lezingen    the slots of the rule's value array, which the test and the consequence read
- * @param linkerkant  the left-hand side in order: the subject pattern with its constraints and bindings where the rule
+ * @param agendaGroup the agenda group the rule fires in, null for the main group
+ * @param readings    the slots of the rule's value array, which the test and the consequence read
+ * @param leftSide  the left-hand side in order: the subject pattern with its constraints and bindings where the rule
  *                    has a subject, the patterns, the negations, the accumulates and the tests, each constraint with
  *                    its id
- * @param gevolg      what the rule does when it fires
+ * @param consequence      what the rule does when it fires
  */
 public record RulePlan(String name, String form, String agendaGroup, ReadTable readings, List<LhsItem> leftSide,
                         Consequence consequence) {

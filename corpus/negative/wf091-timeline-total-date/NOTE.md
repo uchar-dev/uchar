@@ -13,7 +13,7 @@ over a Number only.
     calendar positions
 
 **Origin.** Until the card ref-klipvouw-nul this document was the red case
-`corpus/red/datumtijdlijn-totaalvouw` (card temporele-datumvouw), and it is
+`datumtijdlijn-totaalvouw` (card temporele-datumvouw), and it is
 byte-identical: `golden/jutterswet-tempototaal` reduced to its third rule,
 with the totalled attribute (granularity `month`) and the target retyped to
 a day-precision `Date`. It was verifier-clean because the `total` row of the

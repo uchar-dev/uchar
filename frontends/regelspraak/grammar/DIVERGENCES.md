@@ -768,8 +768,8 @@ read exactly where the language reads one elsewhere; it is required, so a bare
 `is een <Naam>` records a parent NAME; the binding happens once every
 declaration has been read, so resolution is **document-wide and order-free** —
 a forward reference is legal and only an undeclared name refuses. The bound
-parent lands in `Objecttype.supertype`, whose chain accessors (`keten`,
-`isEen`, `attribute`, `heeftLid`, `kenmerkSoort`, `declarantOf`) the model
+parent lands in `ObjectType.supertype`, whose chain accessors (`chain`,
+`isA`, `attribute`, `hasMember`, `characteristicKind`, `declarantOf`) the model
 already carried; the member maps stay OWN, so a subtype declares only what it
 adds.
 
@@ -966,12 +966,12 @@ fixture (`FilledCountDialectTest`).
 The phrase builds an ordinary `Expr.Functie` with `kind = AANTAL_GEVULDE` and
 one argument, reusing the value folds' machinery rather than adding any:
 
-- the element type is the argument's own object type (`aggregatieElement`), the
+- the element type is the argument's own object type (`aggregationElement`), the
   VALUE-fold derivation — not the count's, whose element word is a role name;
 - the range is the shared one: a single written step goes out as `sourceRole`,
   and a resolved multi-step range as `sourcePath` (WF-102), which is ch. 3.4b's
   flat union and the reason the kind exists at that width;
-- the `die/dat` subselectie rides the shared `aggregatieFilter` path;
+- the `die/dat` subselectie rides the shared `aggregationFilter` path;
 - the result type is a whole, unitless, non-negative number whatever the folded
   attribute measures (ch. 3.4c). The source's unit is deliberately NOT inherited;
   a cardinality has none.

@@ -11,7 +11,7 @@ part are typed over a Number only.
     part is arithmetic over a Number, and Date values are calendar positions
 
 **Origin.** Until the card ref-klipvouw-nul this document was the red case
-`corpus/red/datumsetbron-totaalvouw` (card datum-setbron-breuk), and it is
+`datumsetbron-totaalvouw` (card datum-setbron-breuk), and it is
 byte-identical: the `total` twin of `wf091-set-source-sum-date`, both built
 from `golden/jutterswet-vondstvenster` with its `first` fold turned into an
 additive one. It was verifier-clean because the `total` row of the

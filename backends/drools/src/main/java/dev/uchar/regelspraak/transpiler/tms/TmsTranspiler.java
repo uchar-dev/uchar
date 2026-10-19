@@ -347,10 +347,10 @@ public final class TmsTranspiler {
             Map<Object, List<RoleBindingRef>> sourcePaths,
             Map<Object, List<RoleBindingRef>> navigationBindings) {
         Objects.requireNonNull(defaults, "side table 'defaults' is null — pass an empty list for a document without one");
-        Objects.requireNonNull(roleBindings, "side table 'rolBindingen' is null — pass an empty map for a document without one");
+        Objects.requireNonNull(roleBindings, "side table 'roleBindings' is null — pass an empty map for a document without one");
         Objects.requireNonNull(lets, "side table 'lets' is null — pass an empty list for a document without one");
-        Objects.requireNonNull(sourcePaths, "side table 'bronPaden' is null — pass an empty map for a document without one");
-        Objects.requireNonNull(navigationBindings, "side table 'navigatieBindingen' is null — pass an empty map for a document without one");
+        Objects.requireNonNull(sourcePaths, "side table 'sourcePaths' is null — pass an empty map for a document without one");
+        Objects.requireNonNull(navigationBindings, "side table 'navigationBindings' is null — pass an empty map for a document without one");
         // copied by identity: the loader keys its tables on the nodes, which are records with value equality
         Map<Object, List<RoleBindingRef>> nav = new IdentityHashMap<>(navigationBindings);
         TmsTranspiler t = new TmsTranspiler(m, beanLoader, defaults, nav, new IdentityHashMap<>(roleBindings),
@@ -558,20 +558,20 @@ public final class TmsTranspiler {
      *  again, or open a fresh session where the driver refuses a further fire ({@code DroolsBackend.fire}). */
     private String fireAway(KieSession session, Watch watch, String agenda) {
         if (!creationRules.isEmpty())
-            return "dit model heeft creatieregels, dus DroolsBackend.vuur weigert een tweede fire: open een verse sessie";
+            return "dit model heeft creatieregels, dus DroolsBackend.fire weigert een tweede fire: open een verse sessie";
         if (!session.getObjects(new ClassObjectFilter(WrittenBack.class)).isEmpty())
-            return "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een verse sessie met beans die"
+            return "deze sessie is teruggezet, dus DroolsBackend.fire weigert haar: open een verse sessie met beans die"
                     + " alleen invoer dragen";
         if (watch.onOrOff() != null)
-            return "invoer die buiten DroolsBackend.voegIn om bijkwam of wegging, vraagt een verse sessie, dus"
-                    + " DroolsBackend.vuur weigert haar: open een verse sessie met alle beans in één Invoer";
+            return "invoer die buiten DroolsBackend.insert om bijkwam of wegging, vraagt een verse sessie, dus"
+                    + " DroolsBackend.fire weigert haar: open een verse sessie met alle beans in één Input";
         if (watch.moreThanOneUpdate() != null || agenda != null)
-            return "DroolsBackend.vuur weigert een sessie waarin buiten vuur om meer gebeurde dan een update van een"
-                    + " attribuut of kenmerk van een bean: open een verse sessie met alle beans in één Invoer";
+            return "DroolsBackend.fire weigert een sessie waarin buiten fire om meer gebeurde dan een update van een"
+                    + " attribuut of kenmerk van een bean: open een verse sessie met alle beans in één Input";
         if (watch.changedGlobal(session) != null)
-            return "DroolsBackend.vuur weigert een sessie waarvan een global na de eerste vuur veranderde: open een verse"
+            return "DroolsBackend.fire weigert een sessie waarvan een global na de eerste fire veranderde: open een verse"
                     + " sessie";
-        return "vuur haar eerst opnieuw met DroolsBackend.vuur";
+        return "vuur haar eerst opnieuw met DroolsBackend.fire";
     }
 
     private Read readFixpoint(KieSession session, Function<Object, String> label) {
@@ -579,39 +579,39 @@ public final class TmsTranspiler {
         List<Object> marks = new ArrayList<>(session.getObjects(new ClassObjectFilter(Fired.class)));
         if (marks.isEmpty())
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: deze sessie is niet via"
-                    + " DroolsBackend.vuur gevuurd, dat tot het fixpunt vuurt"
+                    + " DroolsBackend.fire gevuurd, dat tot het fixpunt vuurt"
                     + (creationRules.isEmpty() ? "" : " en de creaties van dit model in generaties laat vuren"));
         if (marks.size() > 1)
-            throw new IllegalStateException("de sessie houdt " + marks.size() + " merken van DroolsBackend.vuur, waar"
+            throw new IllegalStateException("de sessie houdt " + marks.size() + " merken van DroolsBackend.fire, waar"
                     + " de driver er na elke run één laat: " + marks);
         String noFixpoint = ((Fired) marks.get(0)).noFixpoint();
         if (noFixpoint != null)
-            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur"
+            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.fire"
                     + " van deze sessie bereikte er geen — " + noFixpoint);
         Watch watch = Watch.van(session);
         // the driver puts the watch back after every run, so only a consumer that took it off leaves a mark without it,
         // and the driver refuses such a session
         if (watch == null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de bewaking die"
-                    + " DroolsBackend.vuur op deze sessie zet, staat er niet meer op, dus wat er na de laatste vuur"
-                    + " gebeurde, is niet te zien; DroolsBackend.vuur weigert haar ook: open een verse sessie met alle"
-                    + " beans in één Invoer");
+                    + " DroolsBackend.fire op deze sessie zet, staat er niet meer op, dus wat er na de laatste fire"
+                    + " gebeurde, is niet te zien; DroolsBackend.fire weigert haar ook: open een verse sessie met alle"
+                    + " beans in één Input");
         String agenda = Watch.agenda(session);
         String outsideClause = watch.outsideClause();
         String description = outsideClause == null ? agenda : agenda == null ? outsideClause : outsideClause + " en " + agenda;
         if (description != null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: sinds de laatste"
-                    + " DroolsBackend.vuur van deze sessie gebeurde er iets buiten vuur om, wat het fixpunt van die vuur"
+                    + " DroolsBackend.fire van deze sessie gebeurde er iets buiten fire om, wat het fixpunt van die fire"
                     + " kan veranderen (" + description + "); " + fireAway(session, watch, agenda));
         String global = watch.changedGlobal(session);
         if (global != null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: " + global + ", en het fixpunt"
-                    + " hoort bij de oude waarde; DroolsBackend.vuur weigert de sessie, dus open een verse sessie");
+                    + " hoort bij de oude waarde; DroolsBackend.fire weigert de sessie, dus open een verse sessie");
         String relation = watch.changedRelation();
         if (relation != null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: " + relation + ", en het fixpunt"
-                    + " hoort bij de oude relatie; DroolsBackend.vuur weigert de sessie, dus open een verse sessie met"
-                    + " alle beans in één Invoer");
+                    + " hoort bij de oude relatie; DroolsBackend.fire weigert de sessie, dus open een verse sessie met"
+                    + " alle beans in één Input");
         List<Runnable> acts = new ArrayList<>();
         // a set: the fault of two writers that the rule of verschilregel stated and the one read off the values below
         // are one fault, equal as facts are
@@ -1941,7 +1941,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * How the rule of an allocation joins a recipient, its subject, to the source, its {@link Reads#carrier}, over the
+     * How the rule of an allocation joins a recipient, its subject, to the source, its source, over the
      * connecting relation {@code rb}, whose bound role is the recipient's and its sibling the source's (IR-SPEC ch. 3.2),
      * as a fold's one-step range joins a member ({@link #oneStepRange}): over a relation a form creates, through a
      * {@link RelationLink} in an {@code exists}; over an input relation, through the one scalar bean field §13.3.9 stores
@@ -4677,7 +4677,7 @@ public final class TmsTranspiler {
      * never a pick, bound as a value the test reads, so the check stands in a composite as any condition does. A
      * relation a form creates is read over its {@link RelationLink} facts, which its creations state while the session
      * fires and which the input's links insert logically; any other relation is input and is read where the bean model
-     * stores it ({@link FactModelGenerator#membershipOpslag}): a to-one other role is the subject's own reference
+     * stores it ({@link FactModelGenerator#membershipStorage}): a to-one other role is the subject's own reference
      * field, read off the subject's bean, and a to-many other role is the field of the other end, which names the
      * subject, counted over the beans of the counterpart's class. Both roles to-many leaves no field, and the check is
      * refused in the sentence of {@code FactModelGenerator.noReferenceFieldReason}, on both branches.

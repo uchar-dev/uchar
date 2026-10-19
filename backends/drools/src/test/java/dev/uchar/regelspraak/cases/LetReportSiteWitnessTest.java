@@ -8,7 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * The §9.5 channel reason for a §6.5 place inside a {@link dev.uchar.regelspraak.model.Expr.Let}
+ * The §9.5 channel reason for a §6.5 place inside a {@link dev.uchar.regelspraak.ir.Expr.Let}
  * BODY, pinned in BOTH transpiler branches ({@link BothBranches}).
  *
  * <p>WHY it exists: until 2026-09-19 the DRL-text branch deposited no Inconsistency for a §6.5 site whose

@@ -23,7 +23,7 @@ The denominator strip is a **measured four-source divergence**, recorded at
 the card and not resolved by it: §4.20 states the strip, and the RegelSpraak
 frontend applies it — but, since the *set-fold "totaal van"* card, not
 unconditionally. The frontend strips on every reading **except** the
-non-temporal set one, tested by one predicate (`ExpressieBouwer.setLezing`:
+non-temporal set one, tested by one predicate (`ExpressionBuilder.setRead`:
 exactly one operand, an attribute reference read as the set source, over an
 attribute its object type declares no granularity for; since L2 the set source
 is the argument of a fold that carries a range, IR-SPEC ch. 4.3), because that

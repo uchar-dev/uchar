@@ -19,8 +19,8 @@ import java.util.Objects;
 public record ListPlace(Object member, String field, int place) {
 
     public ListPlace {
-        Objects.requireNonNull(member, "lid");
-        Objects.requireNonNull(field, "veld");
+        Objects.requireNonNull(member, "member");
+        Objects.requireNonNull(field, "field");
         if (place < 0) throw new IllegalArgumentException("een plaats in een lijst telt vanaf 0, niet " + place);
     }
 
@@ -33,6 +33,6 @@ public record ListPlace(Object member, String field, int place) {
     }
 
     @Override public String toString() {
-        return "Lijstplaats(" + FactNames.object(member) + ", " + field + ", " + place + ")";
+        return "ListPlace(" + FactNames.object(member) + ", " + field + ", " + place + ")";
     }
 }

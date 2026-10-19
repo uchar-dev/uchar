@@ -135,7 +135,7 @@ class ZeroDivisorConditionWitnessTest {
     @Test void a_consumer_that_itself_fires_reads_the_rule_and_the_condition() throws Exception {
         // the distribution's service fires the KieBase itself, on the exec-model branch through the entry: the
         // fire reaches its fixpoint with the deposit of the condition standing as an inconsistency, which
-        // DroolsBackend.read gives as data, no fault, and DroolsBackend.setDerivedValues writes back. Until the card
+        // DroolsBackend.fixpointOf gives as data, no fault, and DroolsBackend.setDerivedValues writes back. Until the card
         // zero-division-channel the condition's fault stood instead, and the write-back threw it.
         // The destructive exec-model branch threw Drools' ConstraintEvaluationException out of the fire instead, which
         // DroolsBackend.designate named, and so did the destructive DRL-text branch until card

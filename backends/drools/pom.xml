@@ -150,6 +150,10 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.13.0</version>
         <configuration>
+          <!-- @param and {@link} must name members that exist; a rename leaves them behind otherwise -->
+          <compilerArgs>
+            <arg>-Xdoclint:reference</arg>
+          </compilerArgs>
           <!-- keep the ANTLR-coupled frontend packages out of this build: only the
                engine-neutral IR records (model/ir/kern) are compiled from the frontend. -->
           <excludes>

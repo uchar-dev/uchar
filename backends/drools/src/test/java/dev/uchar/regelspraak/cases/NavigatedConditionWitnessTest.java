@@ -188,7 +188,7 @@ class NavigatedConditionWitnessTest {
         // reference), and the one rule "De toeslag van een Schuit moet gesteld worden op de lengte van de Schuit
         // indien zijn werf bedrijvig is". The far-side join of the check asks for the role's field and finds the
         // attribute's, so the rule is refused by name, as every other reader of that field is (RoleFieldReaderWitnessTest,
-        // OpslagDirectionWitnessTest). Measured 2026-09-28: ref and clingo answer toeslag leeg; on the jar of the claim
+        // StorageDirectionWitnessTest). Measured 2026-09-28: ref and clingo answer toeslag leeg; on the jar of the claim
         // the check read the attribute as the relation, an unclassified fault at fire once it is filled
         // (ERROR ConstraintEvaluationException). On the exec-model branch, whose sentence names the missing
         // reference field.

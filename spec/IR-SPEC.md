@@ -890,7 +890,7 @@ false`, `decimals = 0` (no precision ceiling; §13.3.3 form (c)). The
   attribute it reads; it is called out because its shape is checked by
   the fold-source rules (WF-034/WF-053/WF-080/WF-083) rather than by the
   ordinary expression walk, and that routing, not the rule, once left it
-  uncrossed (`corpus/negative/wf089-foldbron-enum`). Three reference
+  uncrossed (`corpus/negative/wf089-aggregation-pass-through-enum`). Three reference
   shapes need no arm of their own because
   an existing rule already crosses their full type *structurally* against
   the declaration: a `TemporalRead`'s type equals the timeline's element
@@ -3580,7 +3580,7 @@ they do not disagree symmetrically: `ref` and the ASP translator do not
 strip at all (both answer operand 0's unit whole), while the RegelSpraak
 frontend — since the *set-fold "totaal van"* card — strips on every reading
 *except* the non-temporal set one, tested there by one predicate
-(`ExpressieBouwer.setLezing`: exactly one operand, an attribute reference
+(`ExpressionBuilder.setRead`: exactly one operand, an attribute reference
 read as the set source — since L2 the argument of a fold that carries a
 range, ch. 4.3 — over an attribute its object type declares **no** granularity
 for). This rule mirrors that predicate rather than restating it,
@@ -5030,7 +5030,7 @@ written role stays in `source`.
   | listed operand, the SET reading (`set: true`, `objecttype` = `elementObjecttype`) | PASS | idem | idem | **EXCLUDE**, transpiler SKIP — refused per form |
   | a plain read (the whole rule value, or a composite's operand) | already refused | idem | idem | **PLAYED** — it fires and answers 12.00 |
   | single-argument BUILTIN operand, the degraded read and the wart verbatim (`elementObjecttype` present, no source) | PASS | idem | idem | **PLAYED** (12.00) and **ERROR** `IllegalStateException` respectively; the `set: true` third spelling is an **EXCLUDE** |
-  | listed operand, the UNSPELLED TWIN (`"type": null`) | PASS | **PASS** — it plays, on the declaration | FAULT (`mixed date/non-date operands …` on the date fold, `expression kind not translated` on the numeric one) | **PLAYED** on the date fold; **ERROR** `NullPointerException: Cannot invoke "…Datatype.eenheidOf()"` on a unit-bearing numeric operand |
+  | listed operand, the UNSPELLED TWIN (`"type": null`) | PASS | **PASS** — it plays, on the declaration | FAULT (`mixed date/non-date operands …` on the date fold, `expression kind not translated` on the numeric one) | **PLAYED** on the date fold; **ERROR** `NullPointerException: Cannot invoke "…Datatype.unitOf()"` on a unit-bearing numeric operand |
 
   How to read each row, because they are not equally attributable:
 
@@ -5060,7 +5060,7 @@ written role stays in `source`.
 
   **Four kinds of dead end** over one position — played with an answer, thrown
   from a missing getter (`IllegalStateException`), thrown from a missing unit
-  (`NullPointerException` on `Datatype.eenheidOf`), and declined as a form —
+  (`NullPointerException` on `Datatype.unitOf`), and declined as a form —
   and no executor that carries the shape across the board. That spread is the
   argument for refusing it at the wire instead of in four places. It is also
   why the earlier "the two OCaml executors refuse every one of them with the
@@ -5316,8 +5316,8 @@ never constructs the sentinel at all — but one route escapes that
 description: a set aggregation over a CHARACTERISTIC of the element type.
 The frontend's unresolved-member gate asks whether the element type
 declares a MEMBER, and a characteristic is one, so the gate stays open
-(`RegelSpraakModel.heeftLid` in the frontend's model package; the gate in
-`ExpressieBouwer`, the resolver's expression builder), while the reference
+(`RegelSpraakModel.ObjectType.hasMember` in the frontend's model package; the gate in
+`ExpressionBuilder`, the resolver's expression builder), while the reference
 builder finds no attribute datatype and falls back to the sentinel (the same
 class). Emitted and checked: "de som van het
 waardevol van alle vondsten van de Jutter" produces exactly this source,
@@ -9448,7 +9448,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-118 | the effective names of one scope are unique per vocabulary (ci) — the designation where there is one, else the canonical name — so that the way back from a name in a vocabulary to the declaration is a function (ch. 2.12). The scopes are the canonical ones: **(a)** the object types, the fact types, the parameters, the named forms (WF-020) and the rule groups, each on its own; **(b)** the attributes of an object type with the ones it inherits, and likewise its characteristics; **(c)** the roles of a fact type; **(d)** the values of an enumeration domain. A collision of two canonical names is WF-001's, WF-002's, WF-020's or WF-105's | gate 3 | `jutterswet-vocabulaires` | `wf118-effective-name-object-types` (a) + `wf118-effective-name-attributes` (b) + `wf118-effective-name-roles` (c) + `wf118-effective-name-labels` (d) |
 | WF-119 | the default vocabulary is complete (ch. 2.12): every object type, attribute, characteristic, fact type, role, parameter, named form and rule group, and every value of every enumeration domain, carries a designation in it | gate 3 | `jutterswet-vocabulaires` (every declaration named in `cgm`) | `wf119-default-vocabulary-incomplete` |
 | WF-120 | a redundant designation — in a vocabulary that is not the default, spelling its declaration's canonical name byte for byte — is admitted with a warning: some diagnostic's `message` contains it verbatim (ch. 2.12), the accounting of WF-113 (b) and its weakness | gate 3 | `jutterswet-vocabulaires` (the `handboek` designation `naam` of the attribute `naam`, and the frontend's warning that quotes it) | `wf120-redundant-designation-without-warning` |
-| WF-121 | every origin (ch. 2.13): **(a)** its `form` is one of the five forms and its `from.kind` one of the ten kinds, byte for byte (an executor refuses either outside its set at load, in this sentence without its number); **(b)** its `from` carries `owner` exactly for an attribute, a characteristic, a role or an enumeration value, and, unless its kind is `decisionTable`, names a declaration of that kind in the document (ci): an attribute or a characteristic declared by the object type `owner` itself, a role of the fact type `owner`, a value of the enumeration domain `owner`, a named form in WF-020's namespace, an object type, fact type, parameter or rule group of that name; **(c)** its `from` does not name its own declaration, and following `from` through the declarations that carry an origin never comes back; **(d)** the kind of its `from` is the one its form names: `attribute` under `inputAboveComputation` and `stepsAfterSet`, `namedForm` under `exceptionForSubtype` and `startPoint`, `decisionTable` under `decisionTableRow`. Which declarations a form makes is the dialect's and is not checked | gate 3 | `jutterswet-opgave-vormen` (`inputAboveComputation` on three attributes, and two rows of a decision table, `decisionTableRow` from a `decisionTable`), `jutterswet-meldtermijn-strandjutter` (`exceptionForSubtype` from a `namedForm`), `jutterswet-zwaarste-weging` (`stepsAfterSet`, three members and their rules); `inputAboveComputation` also in `jutterswet-opgave-bedrag`, `-opgave-boven-berekening`, `-opgave-datum`, `-opgave-subtype` and `jutterswet-sluitdag-gemeld`, `decisionTableRow` in `jutterswet-rubriektabel-rgs`. No golden carries `startPoint`: no golden source writes a start-point determination; the frontend suite carries it (`HerkomstOpDeDraadTest`) | `wf121-origin-form-unknown` (a) + `wf121-origin-source-unknown` (b) + `wf121-origin-itself` (c, its own declaration) + `wf121-origin-cycle` (c, a cycle of two) + `wf121-origin-kind-fits-negated` (d) |
+| WF-121 | every origin (ch. 2.13): **(a)** its `form` is one of the five forms and its `from.kind` one of the ten kinds, byte for byte (an executor refuses either outside its set at load, in this sentence without its number); **(b)** its `from` carries `owner` exactly for an attribute, a characteristic, a role or an enumeration value, and, unless its kind is `decisionTable`, names a declaration of that kind in the document (ci): an attribute or a characteristic declared by the object type `owner` itself, a role of the fact type `owner`, a value of the enumeration domain `owner`, a named form in WF-020's namespace, an object type, fact type, parameter or rule group of that name; **(c)** its `from` does not name its own declaration, and following `from` through the declarations that carry an origin never comes back; **(d)** the kind of its `from` is the one its form names: `attribute` under `inputAboveComputation` and `stepsAfterSet`, `namedForm` under `exceptionForSubtype` and `startPoint`, `decisionTable` under `decisionTableRow`. Which declarations a form makes is the dialect's and is not checked | gate 3 | `jutterswet-opgave-vormen` (`inputAboveComputation` on three attributes, and two rows of a decision table, `decisionTableRow` from a `decisionTable`), `jutterswet-meldtermijn-strandjutter` (`exceptionForSubtype` from a `namedForm`), `jutterswet-zwaarste-weging` (`stepsAfterSet`, three members and their rules); `inputAboveComputation` also in `jutterswet-opgave-bedrag`, `-opgave-boven-berekening`, `-opgave-datum`, `-opgave-subtype` and `jutterswet-sluitdag-gemeld`, `decisionTableRow` in `jutterswet-rubriektabel-rgs`. No golden carries `startPoint`: no golden source writes a start-point determination; the frontend suite carries it (`OriginOnTheWireTest`) | `wf121-origin-form-unknown` (a) + `wf121-origin-source-unknown` (b) + `wf121-origin-itself` (c, its own declaration) + `wf121-origin-cycle` (c, a cycle of two) + `wf121-origin-kind-fits-negated` (d) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

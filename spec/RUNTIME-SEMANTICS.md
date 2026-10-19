@@ -181,7 +181,7 @@ decision 2026-09-04, landed 2026-09-05):** the numeric half of this fold
 is a v1 *widening*, not a mirror. v0's static typing (§4.14/§4.15)
 admits eerste/laatste over date expressions only — a concrete non-date
 operand is a compile-time ERROR ("eerste van vereist datumexpressies,
-kreeg …", `Typering.datumAggregatie`) and the model is refused; only
+kreeg …", `Typing.dateAggregation`) and the model is refused; only
 Onbekend-typed operands reach v0's runtime fold, which is itself the
 type-generic ordering above. v1 admits **any single comparable family**
 under that same ordering, and the fence is now written where the wire
@@ -198,7 +198,7 @@ millisecond-precision one, which are two representations with no order
 between them. That last
 half is where v1 and v0 agree rather than diverge: v0's static typing
 demands one precision too ("alle datumexpressies moeten dezelfde
-tijd-precisie hebben", the same `Typering.datumAggregatie`), so the
+tijd-precisie hebben", the same `Typing.dateAggregation`), so the
 tightening puts the wire fence and the frontend that writes to it in
 agreement. An operand without a static type defers: since L2 that is a
 reference whose declaration does not resolve (WF-034 reports it) or an
@@ -206,7 +206,7 @@ reference whose declaration does not resolve (WF-034 reports it) or an
 WF-044). Until L2 it was the unknown sentinel, the one operand shape v0
 never typed and did hand to this very fold at runtime; the sentinel left
 the datatype union at L2 (B16). The
-delta belongs to the `FunctieKind` (aggregations) row of
+delta belongs to the `FunctionKind` (aggregations) row of
 `spec/CONSTRUCTS.md` at the serial merge update.
 Worked examples (ref tests verbatim; the `jutterswet-peildatum` golden
 pins them through both executors — the numeric pair is the widening's

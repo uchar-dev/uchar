@@ -53,15 +53,15 @@ public final class SourcePath {
 
     /** The lowering plan for one path, or a refusal.
      *
-     *  @param stappen       the hops, subject-outward; empty on a refusal.
+     *  @param steps       the hops, subject-outward; empty on a refusal.
      *  @param nodeTypes    the object type at every NODE, {@code nodeTypes[0]} the subject and
      *                       {@code nodeTypes[n]} the fold's elementType (which may be a strict SUBTYPE of
      *                       what the last step's role fills — ch. 2.2's exclusion direction).
-     *  @param voorwaarts    how many LEADING steps are forward, i.e. the highest node index still reachable from
+     *  @param forward    how many LEADING steps are forward, i.e. the highest node index still reachable from
      *                       the subject by a pure getter chain.
      *  @param backwardFrom the lowest node index still reachable from the ELEMENT by a pure getter chain, i.e.
      *                       the start of the trailing backward run.
-     *  @param weigering     null when the plan carries, else the one-sentence per-form reason.
+     *  @param refusal     null when the plan carries, else the one-sentence per-form reason.
      */
     public record Plan(List<Step> steps, List<ObjectType> nodeTypes, int forward, int backwardFrom,
                        Reason refusal) {

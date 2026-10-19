@@ -11,7 +11,7 @@ the reference arms of all three rules left the wire with it (the index rows
 WF-089, WF-090 and WF-091 in `IR-SPEC.md`). What the golden pins since then:
 the verifier passes a well-formed `DimensionCellRead` over a unit-bearing
 dimensioned attribute, the cell's own shape checks stay live (WF-034,
-`corpus/negative/wf034-dimensiecel-*`), and gate 10 re-emits it byte for
+`corpus/negative/wf034-dimension-cell-*`), and gate 10 re-emits it byte for
 byte.
 
 It is the **second verifier-only golden** (see the "witness cabinet"

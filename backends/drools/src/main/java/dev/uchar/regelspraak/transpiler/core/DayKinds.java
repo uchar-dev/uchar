@@ -21,7 +21,7 @@ import java.util.function.Predicate;
  * THE §9.8 dagsoortdefinitie compiler — the one implementation both back-ends share (single shared implementation).
  * A definitie's condition over "de dag" compiles to a {@code Predicate<LocalDate>}: the exec model
  * captures it directly in its lambdas, and the DRL back-end declares it as a session {@code global}
- * ({@code rsDagsoort_<Naam>}) that the session builder supplies from {@link #globals()} — so the
+ * ({@code rsDagsoort_<Naam>}) that the session builder supplies from {@link #datePredicate} — so the
  * predicate SEMANTICS exist exactly once, and the generated DRL carries no {@code function} bodies.
  *
  * <p>Compilation is idempotent and cycle-safe: a nested dagsoort reference (a feestdag tests

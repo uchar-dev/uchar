@@ -13,7 +13,7 @@ import java.util.Objects;
 public record BucketScalar(Period bucket) {
 
     public BucketScalar {
-        Objects.requireNonNull(bucket, "emmer");
+        Objects.requireNonNull(bucket, "bucket");
     }
 
     /** The bucket scalar the bean of an {@link BucketInput} carries as {@code segments}: the case input lays it there
@@ -32,6 +32,6 @@ public record BucketScalar(Period bucket) {
     }
 
     @Override public String toString() {
-        return "emmerscalair " + bucket;
+        return "BucketScalar " + bucket;
     }
 }

@@ -18,7 +18,7 @@ public record Decides(Object subject, String stack, int index) implements Contro
 
     public Decides {
         Objects.requireNonNull(subject, "subject");
-        Objects.requireNonNull(stack, "stapel");
+        Objects.requireNonNull(stack, "stack");
     }
 
     @Override public boolean equals(Object o) {
@@ -30,6 +30,6 @@ public record Decides(Object subject, String stack, int index) implements Contro
     }
 
     @Override public String toString() {
-        return "Beslist(" + FactNames.object(subject) + ", " + stack + ", " + index + ")";
+        return "Decides(" + FactNames.object(subject) + ", " + stack + ", " + index + ")";
     }
 }

@@ -38,8 +38,8 @@ public final class DecisionTableDesugar {
     /**
      * Desugar a captured beslistabel into ordinary {@code Regel} source strings (one per data-row × conclusie-column).
      *
-     * @param naam    the beslistabel name (each row's regel is named "{@code <naam> <rij-nummer>}")
-     * @param geldig  the validity phrase verbatim from the header ("altijd", "vanaf 2024 t/m 2024", …)
+     * @param name    the beslistabel name (each row's regel is named "{@code <name> <rij-nummer>}")
+     * @param valid   the validity phrase verbatim from the header ("altijd", "vanaf 2024 t/m 2024", …)
      * @param headers the header cells INCLUDING the numbering column at index 0
      * @param rows    the data rows, each a cell list aligned to {@code headers} (cell[0] = the row numbering)
      */

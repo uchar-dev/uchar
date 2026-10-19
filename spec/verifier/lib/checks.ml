@@ -2969,7 +2969,7 @@ let times_unit (a : measure_unit option) (b : measure_unit option) : measure_uni
       in
       (match cancel x y with Some u -> Some u | None -> cancel y x)
 
-(* The RegelSpraak frontend's set reading (`ExpressieBouwer`), mirrored — the
+(* The RegelSpraak frontend's set reading (`ExpressionBuilder`), mirrored — the
    scheidslijn the §4.20 denominator strip below turns on, taken from the
    emitter rather than restated beside it. An aggregation operand list is a
    NON-TEMPORAL SET reading when the fold carries a range ([ranged]: its one

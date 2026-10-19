@@ -173,7 +173,7 @@ public final class CaseInput {
         JsonNode input = c.get("input");
         JsonNode instances = input == null ? null : input.get("instances");
         if (instances == null || !instances.isArray())
-            throw new IllegalArgumentException("CaseInvoer.van: de case draagt geen array input.instances, het deel van"
+            throw new IllegalArgumentException("CaseInput.van: de case draagt geen array input.instances, het deel van"
                     + " een uchar-case-v0-case dat de invoer beschrijft");
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(build.beanLoader());

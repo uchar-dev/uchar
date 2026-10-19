@@ -47,8 +47,8 @@ class TimelineDateFoldWitnessTest {
     private static final String TOTAL = "wf091-timeline-total-date";
     private static final String CLIP = "wf091-clip-fold-date";
 
-    // The inputs of the two former red cases (corpus/red/datumtijdlijn-totaalvouw and
-    // corpus/red/datumtijdlijn-klipvouw, case1.json), without their expectedFault pins, which were ref's and
+    // The inputs of the two former red cases (datumtijdlijn-totaalvouw and
+    // datumtijdlijn-klipvouw, in the red zone, case1.json), without their expectedFault pins, which were ref's and
     // clingo's.
     private static final String TOTAL_CASE = """
             {"format": "uchar-case-v0", "asOfDate": "2026-03-15",

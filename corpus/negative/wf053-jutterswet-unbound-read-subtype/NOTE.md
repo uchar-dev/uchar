@@ -17,7 +17,7 @@ document writes the read as the sentence names it: `attribute: "toeslag"`,
 
 The RegelSpraak frontend refuses the sentence before it writes a document,
 in this sentence after a Dutch part that names the member, the filler, the
-role and the subtype (`OngebondenLezingTest`;
+role and the subtype (`UnboundReadTest`;
 `frontends/regelspraak/grammar/DIVERGENCES.md`, "An undeclared attribute
 read"). Measured before that refusal (2026-10-01): the frontend wrote the
 read as an attribute `toeslag van de jutter` of `Vondst` with

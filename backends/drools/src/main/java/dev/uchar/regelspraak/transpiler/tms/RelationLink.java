@@ -19,9 +19,9 @@ import java.util.Objects;
 public record RelationLink(String relation, Object first, Object second, int phase) {
 
     public RelationLink {
-        Objects.requireNonNull(relation, "relatie");
-        Objects.requireNonNull(first, "eerste");
-        Objects.requireNonNull(second, "tweede");
+        Objects.requireNonNull(relation, "relation");
+        Objects.requireNonNull(first, "first");
+        Objects.requireNonNull(second, "second");
         if (phase < 0) throw new IllegalArgumentException("fase " + phase + " < 0");
     }
 
@@ -34,7 +34,7 @@ public record RelationLink(String relation, Object first, Object second, int pha
     }
 
     @Override public String toString() {
-        return "Koppeling(" + relation + ", " + FactNames.object(first) + ", " + FactNames.object(second) + ", fase "
+        return "RelationLink(" + relation + ", " + FactNames.object(first) + ", " + FactNames.object(second) + ", phase "
                 + phase + ")";
     }
 }

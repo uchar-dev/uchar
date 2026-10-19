@@ -13,7 +13,7 @@ import java.util.List;
  * RegelSpraak expressie denotes, and the input the Drools transpiler will consume.
  *
  * Every node carries (a) its result {@link Datatype}, computed via the typeringen
- * matrix ({@link dev.uchar.regelspraak.resolver.Typing}), and (b) the original
+ * matrix ({@code dev.uchar.regelspraak.resolver.Typing}), and (b) the original
  * source slice, for diagnostics and traceability back to the regel text.
  *
  * References are bound to the model where the resolver can do so —
@@ -337,7 +337,7 @@ public sealed interface Expr {
      * then EXACTLY the chosen branch is evaluated — strict, no coalesce, the other branch not evaluated at
      * all. Both branches agree on {@code type}, which is the node's. WF-069 restricts where it may stand.
      *
-     * <p>Never emitter-produced: no RegelSpraak construct lowers to it, so {@link dev.uchar.regelspraak.emit.IrEmitter}
+     * <p>Never emitter-produced: no RegelSpraak construct lowers to it, so {@code dev.uchar.regelspraak.emit.IrEmitter}
      * writes none and no {@code source.rgs} golden carries one. It is here because the union is the shape
      * every consumer walks: a wire form parsed into anything else is an opaque leaf to {@link #contains} and
      * to every hand-written tree walk built on it, which under-report in silence.

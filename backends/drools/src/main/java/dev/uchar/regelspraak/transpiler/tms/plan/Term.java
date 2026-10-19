@@ -88,7 +88,7 @@ public sealed interface Term {
     /**
      * The value of {@code term} restated from the unit {@code van} into the unit {@code destination} (RUNTIME-SEMANTICS ch.
      * 2.6) through {@code function}: {@link StaticFunction#RESTATE_EXACT}, a number times {@code counter} and divided by
-     * {@code denominator}, the exact canonical factors, as exact rationals; or {@link StaticFunction#RESCALE}, where
+     * {@code denominator}, the exact canonical factors, as exact rationals; or {@link StaticFunction#RESTATE}, where
      * {@code denominator} is null, times the single ratio {@code counter} of the two units. A leeg value and a value that is
      * no number pass unchanged. The analysis adds no node where no restatement is due.
      */

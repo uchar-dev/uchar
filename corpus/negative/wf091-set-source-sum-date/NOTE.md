@@ -10,7 +10,7 @@ part are typed over a Number only.
     part is arithmetic over a Number, and Date values are calendar positions
 
 **Origin.** Until the card ref-klipvouw-nul this document was the red case
-`corpus/red/datumsetbron-somvouw` (card datum-setbron-breuk), and it is
+`datumsetbron-somvouw` (card datum-setbron-breuk), and it is
 byte-identical: `golden/jutterswet-vondstvenster` with its `first` fold
 turned into a `sum`, the member and the target `Date` as before. It was
 verifier-clean because the `sum` row of the derived-type identity passes

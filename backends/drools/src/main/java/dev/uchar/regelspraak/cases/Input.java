@@ -52,7 +52,7 @@ public final class Input {
     /** States that the bean {@code bean} holds the input of attribute {@code attribute}, an attribute on a timeline
      *  named as the model declares it, as the asOfDate-bucket scalar (RUNTIME-SEMANTICS ch. 8.4). */
     public Input bucketScalar(Object bean, String attribute) {
-        emmers.add(new Bucket(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(attribute, "attribuut")));
+        emmers.add(new Bucket(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(attribute, "attribute")));
         return this;
     }
 
@@ -60,10 +60,10 @@ public final class Input {
      *  {@code houder}, in this order. {@code role} is the role the holder plays in the fact type, the name of that field;
      *  the list must name every bean of this input whose field holds the holder, and each once. */
     public Input list(Object houder, String role, List<?> members) {
-        Objects.requireNonNull(members, "leden");
+        Objects.requireNonNull(members, "members");
         List<Object> l = new ArrayList<>();
-        for (Object member : members) l.add(Objects.requireNonNull(member, "lid"));
-        lists.add(new ToManyList(Objects.requireNonNull(houder, "houder"), Objects.requireNonNull(role, "rol"), List.copyOf(l)));
+        for (Object member : members) l.add(Objects.requireNonNull(member, "member"));
+        lists.add(new ToManyList(Objects.requireNonNull(houder, "houder"), Objects.requireNonNull(role, "role"), List.copyOf(l)));
         return this;
     }
 

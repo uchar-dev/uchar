@@ -23,7 +23,7 @@ import java.util.Objects;
 public record FilterDeposit(String fold, Object subject, Object element, List<String> codes) {
 
     public FilterDeposit {
-        Objects.requireNonNull(fold, "vouw");
+        Objects.requireNonNull(fold, "fold");
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(element, "element");
         codes = List.copyOf(codes);
@@ -39,6 +39,6 @@ public record FilterDeposit(String fold, Object subject, Object element, List<St
     }
 
     @Override public String toString() {
-        return "Filterdeponering(" + fold + ", " + FactNames.object(subject) + ", " + FactNames.object(element) + ")";
+        return "FilterDeposit(" + fold + ", " + FactNames.object(subject) + ", " + FactNames.object(element) + ")";
     }
 }

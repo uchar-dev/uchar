@@ -22,8 +22,8 @@ public record Value(Object subject, ElementKey attribute, Object value, String w
 
     public Value {
         Objects.requireNonNull(subject, "subject");
-        Objects.requireNonNull(attribute, "attribuut");
-        Objects.requireNonNull(writer, "schrijver");
+        Objects.requireNonNull(attribute, "attribute");
+        Objects.requireNonNull(writer, "writer");
     }
 
     @Override public boolean equals(Object o) {
@@ -36,7 +36,7 @@ public record Value(Object subject, ElementKey attribute, Object value, String w
     }
 
     @Override public String toString() {
-        return "Waarde(" + FactNames.object(subject) + ", " + FactNames.member(attribute) + ", "
-                + (value == null ? "leeg" : value) + ", " + writer + ")";
+        return "Value(" + FactNames.object(subject) + ", " + FactNames.member(attribute) + ", "
+                + (value == null ? "empty" : value) + ", " + writer + ")";
     }
 }

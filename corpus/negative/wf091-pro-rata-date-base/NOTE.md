@@ -12,7 +12,7 @@ over a Number only. The target stays numeric; the arm reads the base.
     Date values are calendar positions
 
 **Origin.** Until the card ref-klipvouw-nul this document was the red case
-`corpus/red/datumbasis-prorata` (card temporele-datumvouw, fix round), and
+`datumbasis-prorata` (card temporele-datumvouw, fix round), and
 it is byte-identical: `golden/anchor/jutterswet-borgdeel` reduced to its
 `borgdeel` rule, with the base `borgtarief` (granularity `year`) retyped to
 a day-precision `Date`. It was verifier-clean. Measured on it (2026-09-23):

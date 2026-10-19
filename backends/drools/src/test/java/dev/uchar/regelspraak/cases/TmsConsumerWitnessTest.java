@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The entry for a consumer of the exec-model branch (card tms-omschakeling, point 12): a model with a creation
- * fires through {@link DroolsBackend#fire} in generations, {@link DroolsBackend#read} gives what the creations made, and
+ * fires through {@link DroolsBackend#fire} in generations, {@link DroolsBackend#fixpointOf} gives what the creations made, and
  * {@link DroolsBackend#setDerivedValues} puts the links they laid on the reference fields of the beans, so that a
  * consumer that reads the beans reaches a made object as it reaches an object of the input.
  *
@@ -154,7 +154,7 @@ class TmsConsumerWitnessTest {
     @Test void a_model_with_creation_fires_via_fire_and_not_with_a_bare_fire() throws Exception {
         play("jutterswet-dubbelverbinding", "case1-binnen-venster.json", (build, session, labels) -> {
             session.fireAllRules();
-            String sentence = "geen fixpunt om te lezen of terug te zetten: deze sessie is niet via DroolsBackend.vuur gevuurd,"
+            String sentence = "geen fixpunt om te lezen of terug te zetten: deze sessie is niet via DroolsBackend.fire gevuurd,"
                     + " dat tot het fixpunt vuurt en de creaties van dit model in generaties laat vuren";
             assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(build, session))
                     .getMessage());
@@ -172,7 +172,7 @@ class TmsConsumerWitnessTest {
             KieSession session = b.kieBase().newKieSession();
             try {
                 DroolsBackend.insert(b, session, new Input().beans(beans.values()));
-                String sentence = "geen fixpunt om te lezen of terug te zetten: deze sessie is niet via DroolsBackend.vuur"
+                String sentence = "geen fixpunt om te lezen of terug te zetten: deze sessie is niet via DroolsBackend.fire"
                         + " gevuurd, dat tot het fixpunt vuurt";
                 assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session))
                         .getMessage(), "a session that did not fire");
@@ -198,7 +198,7 @@ class TmsConsumerWitnessTest {
                 DroolsBackend.insert(b, session, new Input().beans(beans.values()));
                 DroolsBackend.Firing truncated = DroolsBackend.fire(b, session, 0.01, 1);
                 assertNotNull(truncated.noFixpoint(), "the run stops at a cap of a few firings");
-                String sentence = "geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur van deze sessie"
+                String sentence = "geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.fire van deze sessie"
                         + " bereikte er geen — " + truncated.noFixpoint();
                 assertEquals(sentence, assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session))
                         .getMessage(), "the reading");
@@ -229,7 +229,7 @@ class TmsConsumerWitnessTest {
                 session.insert(v1);
                 RuntimeException e = assertThrows(RuntimeException.class, () -> DroolsBackend.fire(b, session));
                 String sentence = assertThrows(IllegalStateException.class, () -> DroolsBackend.fixpointOf(b, session)).getMessage();
-                assertTrue(sentence.startsWith("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur van"
+                assertTrue(sentence.startsWith("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.fire van"
                         + " deze sessie bereikte er geen — de fire brak af met " + e.getClass().getSimpleName() + ": "), sentence);
             } finally {
                 session.dispose();
@@ -364,17 +364,17 @@ class TmsConsumerWitnessTest {
 
     /** The way on where something happened outside {@code fire} after it: a further {@code fire}, or a fresh session
      *  where {@code fire} refuses the session. */
-    static final String FIRE_FIRST = "vuur haar eerst opnieuw met DroolsBackend.vuur";
-    static final String FRESH_AT_CREATION = "dit model heeft creatieregels, dus DroolsBackend.vuur weigert een tweede"
+    static final String FIRE_FIRST = "vuur haar eerst opnieuw met DroolsBackend.fire";
+    static final String FRESH_AT_CREATION = "dit model heeft creatieregels, dus DroolsBackend.fire weigert een tweede"
             + " fire: open een verse sessie";
-    static final String FRESH_AFTER_WRITE_BACK = "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een"
+    static final String FRESH_AFTER_WRITE_BACK = "deze sessie is teruggezet, dus DroolsBackend.fire weigert haar: open een"
             + " verse sessie met beans die alleen invoer dragen";
 
     /** The sentence of {@code read} and {@code setDerivedValues} where {@code description} happened outside {@code fire}
      *  after the last one, with {@code way} the way on. */
     static String outsideFire(String description, String way) {
-        return "geen fixpunt om te lezen of terug te zetten: sinds de laatste DroolsBackend.vuur van deze sessie gebeurde"
-                + " er iets buiten vuur om, wat het fixpunt van die vuur kan veranderen (" + description + "); " + way;
+        return "geen fixpunt om te lezen of terug te zetten: sinds de laatste DroolsBackend.fire van deze sessie gebeurde"
+                + " er iets buiten fire om, wat het fixpunt van die fire kan veranderen (" + description + "); " + way;
     }
 
     /** Fires {@code session} with a plain {@code fireAllRules}, as a consumer can, and gives the name of the first rule

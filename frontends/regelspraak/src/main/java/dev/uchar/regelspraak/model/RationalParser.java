@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 /**
  * §13.2.5 numeric-literal parsing — the single home for reading a literal's leading number into an exact
- * rational. Shared by the resolver (which needs the literal's precision, {@link ExpressionBuilder}) and the
+ * rational. Shared by the resolver (which needs the literal's precision, {@code ExpressionBuilder}) and the
  * transpiler (which lowers the number, {@code DrlTranspiler}); the regex, the group convention, and the
  * {@code -0_b/c} sign fix all live in one place rather than in two byte-identical copies.
  */

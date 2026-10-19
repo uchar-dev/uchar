@@ -164,7 +164,7 @@ public final class RegelSpraakModel {
      *  <p>Reads the OWN declaration deliberately, and it is the one temporality lookup that does. The
      *  §9.9 anchor family is not a member lookup but a protocol: a startpuntbepaling DECLARES a
      *  synthetic attribute on a named subject, {@link #startPointMember} and {@link #isStartPointMember} key on
-     *  that subject's name, and {@link dev.uchar.regelspraak.resolver.RuleChecker} reserves the
+     *  that subject's name, and {@code dev.uchar.regelspraak.resolver.RuleChecker} reserves the
      *  name and writes the attribute. Resolving one of the four through the chain while the others key
      *  on the declared name would leave the anchor half-reachable. Closing the family is a change with
      *  its own measurement (its consumers are all in the back-ends, where no corpus witness exercises a
@@ -1178,7 +1178,7 @@ public final class RegelSpraakModel {
     }
 
     /** Package-visible role-name match (singular, declared plural, or best-effort plural),
-     *  used by {@link dev.uchar.regelspraak.resolver.DefinitionResolver} to map a cardinaliteit
+     *  used by {@code dev.uchar.regelspraak.resolver.DefinitionResolver} to map a cardinaliteit
      *  noun onto a role. */
     public static boolean roleNameMatches(Role r, String word) { return roleMatches(r, word); }
 
@@ -1358,8 +1358,8 @@ public final class RegelSpraakModel {
     /** Where a generated element comes from: the declared element ({@code source}) and the form that made it. */
     public record GeneratedFrom(Designatable source, OriginForm form) {
         public GeneratedFrom {
-            java.util.Objects.requireNonNull(source, "bron");
-            java.util.Objects.requireNonNull(form, "vorm");
+            java.util.Objects.requireNonNull(source, "source");
+            java.util.Objects.requireNonNull(form, "form");
         }
     }
 

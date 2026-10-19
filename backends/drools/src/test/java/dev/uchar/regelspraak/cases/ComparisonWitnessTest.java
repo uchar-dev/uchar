@@ -216,7 +216,7 @@ class ComparisonWitnessTest {
         IllegalStateException notFired = refusal(IllegalStateException.class, KUSTWACHT, c, caselabels(),
                 c.get("expected"), (build, session, label) -> { });
         assertTrue(notFired.getMessage().startsWith("geen fixpunt om te lezen of terug te zetten: deze sessie is niet"
-                + " via DroolsBackend.vuur gevuurd"), notFired.getMessage());
+                + " via DroolsBackend.fire gevuurd"), notFired.getMessage());
 
         IllegalStateException updated = refusal(IllegalStateException.class, KUSTWACHT, c, caselabels(),
                 c.get("expected"), (build, session, label) -> {
@@ -224,7 +224,7 @@ class ComparisonWitnessTest {
                     Object beanObject = session.getObjects(o -> "W1".equals(label.apply(o))).iterator().next();
                     session.update(session.getFactHandle(beanObject), beanObject);
                 });
-        assertTrue(updated.getMessage().contains("gebeurde er iets buiten vuur om"), updated.getMessage());
+        assertTrue(updated.getMessage().contains("gebeurde er iets buiten fire om"), updated.getMessage());
     }
 
     /** A fault at the fixpoint: the rules give no answer, the write-back throws instead of writing, and the entry says

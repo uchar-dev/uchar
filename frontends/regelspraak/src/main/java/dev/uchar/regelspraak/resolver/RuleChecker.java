@@ -3145,7 +3145,7 @@ final class RuleChecker {
      *  collection the node does not read. Keeping it here was a LEAK, not a stale comment: measured
      *  2026-09-19, a count over a set reading passed this naloop untouched and was emitted with
      *  {@code diagnostics: []} although the verifier rejected it under WF-096 and nothing else
-     *  ({@link dev.uchar.regelspraak.CountSetSourceTest}).
+     *  ({@code dev.uchar.regelspraak.CountSetSourceTest}).
      *
      *  <p><b>One boundary, one consumer — measured before narrowing.</b> The verifier had to SPLIT its
      *  hoisted exemption then, because one boolean there fed two rules (WF-034's sentinel fence, which
@@ -5366,7 +5366,7 @@ final class RuleChecker {
     /** The (operand, negatie) of an elfproef / numeriek-met-exact predicate. The §8.1 Tabel-16 vragende negated form
      *  "&lt;X&gt; niet aan de elfproef voldoet" / "&lt;X&gt; niet numeriek is met exact N cijfers" has its leading
      *  "niet" greedily absorbed into the operand's bareName (NIET is a kaleNaamWoord), so op.NIET() is null; recover
-     *  it by stripping the absorbed " niet" off the operand (verbatim-first via {@link #stripAbsorbedNiet}). The
+     *  it by stripping the absorbed " niet" off the operand (verbatim-first via {@link #absorbedNegator}). The
      *  stellende form carries an explicit NIET token, so {@code explicit} short-circuits the strip. */
     private record ElfOperand(Expr operand, boolean negation) {}
     private static ElfOperand elfOperand(boolean explicit, Expr lhs) {

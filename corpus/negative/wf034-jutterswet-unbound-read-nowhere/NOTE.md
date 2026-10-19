@@ -17,7 +17,7 @@ the member does not.
 The RegelSpraak frontend refuses the sentence before it writes a document,
 in this sentence after a Dutch part that names the member, the filler and
 the role, and says that no other object type declares the member
-(`OngebondenLezingTest`; `frontends/regelspraak/grammar/DIVERGENCES.md`, "An
+(`UnboundReadTest`; `frontends/regelspraak/grammar/DIVERGENCES.md`, "An
 undeclared attribute read"). Measured before that refusal (2026-10-01): the
 frontend wrote the read as an attribute `rang van de jutter` of `Vondst` with
 `diagnostics: []`; the verifier refused that document under WF-034 on that

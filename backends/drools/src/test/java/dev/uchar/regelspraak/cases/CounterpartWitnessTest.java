@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * IR-SPEC ch. 4.5, the {@code counterpartType} of a {@code RoleMembership}: "a link of the fact type exists in which
  * the subject fills the role AND the filler of the other role is an instance of that type". Absent, the check asks
  * existence alone. Both transpiler branches decide it at each of the two places the bean model stores the link
- * ({@code FactModelGenerator.membershipOpslag}), and each place gets a row here plus its twist: the same
+ * ({@code FactModelGenerator.membershipStorage}), and each place gets a row here plus its twist: the same
  * document with the narrowing removed must answer differently, so a branch that read past the field cannot pass.
  * Where the link sits on the other end the rows replay values; where it sits on the subject they pin the lowering,
  * for the reason given at that row.

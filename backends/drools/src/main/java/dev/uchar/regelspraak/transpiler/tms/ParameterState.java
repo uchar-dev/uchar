@@ -22,6 +22,6 @@ public record ParameterState(String parameter, Object value) {
     }
 
     @Override public String toString() {
-        return "ParameterStand(" + parameter + ", " + (value == null ? "leeg" : value) + ")";
+        return "ParameterState(" + parameter + ", " + (value == null ? "empty" : value) + ")";
     }
 }

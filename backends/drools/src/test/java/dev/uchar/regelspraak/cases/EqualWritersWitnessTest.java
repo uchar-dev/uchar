@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * both orders of the two rules, each on both branches, with the rules of the branch in the KieBase in the order the
  * branch generates them and in the reverse order, so that the agenda fires the two writers both ways round, with eight
  * jutters. Each jutter must get the value of the writer that comes first in the document, with its scale, 5.00 or 5,
- * on its bean and in what {@code DroolsBackend.read} gives; and both writers must stand on each, with their scales,
+ * on its bean and in what {@code DroolsBackend.fixpointOf} gives; and both writers must stand on each, with their scales,
  * which is the premise of the witness.
  *
  * <p><b>Red</b> before the repair (measured 2026-10-14 on {@code 10492758}): the reader of the fixpoint took the first
@@ -113,7 +113,7 @@ class EqualWritersWitnessTest {
      * refuses a default whose value has another scale than its target, so the document could not be confirmed there.
      * The document is played in both orders of the two groups, each on both branches, with the rules in the KieBase in
      * the order the branch generates them and in the reverse order, with eight jutters. Each jutter must get the value
-     * of the group that comes first in the document, with its scale, on its bean and in {@code DroolsBackend.read};
+     * of the group that comes first in the document, with its scale, on its bean and in {@code DroolsBackend.fixpointOf};
      * the premises are that both groups decide on each jutter, the first in the document as chain 0, and that the
      * stack writes one value fact there. The reference interpreter and the ASP backend give 5 for either order.
      *

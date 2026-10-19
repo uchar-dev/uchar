@@ -8,7 +8,7 @@ import java.util.Objects;
  * case gives the member's timeline as the asOfDate-bucket scalar ({@link BucketScalar}), which states no period of its
  * own, where the fold collapses each member's own timeline over time (RUNTIME-SEMANTICS ch. 3.6, §7.1, ch. 8.4).
  * Inserted logically by the rule beside the fold's contribution rule for a member whose filter holds
- * ({@code TmsTranspiler.memberErrorRule}), on the fold's subject, with the fault that names the member ({@code fault},
+ * ({@code TmsTranspiler.memberFaultRule}), on the fold's subject, with the fault that names the member ({@code fault},
  * unnamed); it is no fault by itself. The reference interpreter evaluates the filter of every member before it reads a
  * value, and then reads the values in fold order and faults at the first member that brings no timeline of its own. The
  * rule that reads the fold binds these facts beside its contributions and its {@link FilterFault} facts, and where its
@@ -28,10 +28,10 @@ public final class MemberFault implements Comparable<MemberFault> {
     private final List<Integer> place;
 
     public MemberFault(String fold, Object subject, Object element, RuntimeException fault, List<Integer> place) {
-        this.fold = Objects.requireNonNull(fold, "vouw");
+        this.fold = Objects.requireNonNull(fold, "fold");
         this.subject = Objects.requireNonNull(subject, "subject");
         this.element = Objects.requireNonNull(element, "element");
-        this.fault = Objects.requireNonNull(fault, "fout");
+        this.fault = Objects.requireNonNull(fault, "fault");
         this.place = List.copyOf(place);
         if (this.place.isEmpty()) throw new IllegalArgumentException("een plaats in de vouwvolgorde begint met de selectie");
     }
@@ -71,7 +71,7 @@ public final class MemberFault implements Comparable<MemberFault> {
     }
 
     @Override public String toString() {
-        return "Lidfout(" + FactNames.object(subject) + ", " + FactNames.object(element) + ", " + place + ", "
+        return "MemberFault(" + FactNames.object(subject) + ", " + FactNames.object(element) + ", " + place + ", "
                 + fault.getMessage() + ")";
     }
 }

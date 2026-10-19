@@ -593,7 +593,7 @@ class CreationPlanWitnessTest {
     /** The insertions and updates of the session of {@code caseDocument} on {@code ir} after the input, in order: a bean a
      *  creation made with its attributes as they stand at its insertion, and each fact of a creation by its class and
      *  what it names. Through the measuring seam of {@code CaseRunner}, by reflection, as
-     *  {@code FoldPlanWitnessTest.filterErrors} reads its facts. */
+     *  {@code FoldPlanWitnessTest.filterFaults} reads its facts. */
     @SuppressWarnings("unchecked")
     private static List<String> insertions(Path ir, JsonNode caseDocument) throws Exception {
         Method forMeasurement = CaseRunner.class.getDeclaredMethod("forMeasurement", Path.class, DroolsBackend.Branch.class);

@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The §13.3.9 reference-field readers that are NOT navigated reads — the second half of the family
- * {@link OpslagDirectionWitnessTest} section 3 opened. Those five READ an attribute over a hop; these six TOUCH the
+ * {@link StorageDirectionWitnessTest} section 3 opened. Those five READ an attribute over a hop; these six TOUCH the
  * relation field for something else: an exists-join, a fold's own join, a timeline hop, an allocation's recipient
  * join, a creation's three field positions, and a presence count.
  *
@@ -72,7 +72,7 @@ class RoleFieldReaderWitnessTest {
         // corpus and the differential square could not arbitrate this reader. What the gate buys is therefore the
         // DIAGNOSIS, not a value: an unclassified fault and a bare compiler message both become the one §13.3.9
         // sentence. Since L2 of the v1 wire migration the check is one node, RoleMembership, and where its link is
-        // stored is one derivation (FactModelGenerator.membershipOpslag) with one sentence for both branches.
+        // stored is one derivation (FactModelGenerator.membershipStorage) with one sentence for both branches.
         Path ir = farSideRoleCheck(), c = caseOf(werfAndSchuit(false, "{}", "{ \"kind\": \"attributeEmpty\","
                 + " \"label\": \"W1\", \"attribute\": \"wachtgeld\" }"));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,

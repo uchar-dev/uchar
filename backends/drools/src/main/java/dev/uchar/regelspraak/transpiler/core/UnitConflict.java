@@ -88,7 +88,7 @@ public final class UnitConflict extends RuntimeException {
      * concrete and do not inter-convert. Called at the HEAD of each restatement helper, before its own
      * "no conversion due" test, so the two facts that test conflates stay apart.
      *
-     * @param plek the site, for the message — the fault names where it stood, the way the verifier names a path.
+     * @param site the site, for the message — the fault names where it stood, the way the verifier names a path.
      */
     public static void requireRescalable(Unit van, Unit destination, String site) {
         if (van == null || destination == null) return;              // a unitless side adopts the other (ch. 2.6)

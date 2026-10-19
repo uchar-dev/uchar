@@ -117,9 +117,9 @@ public final class TmsMeasurement {
                 .append(" processors, max heap ").append(rt.maxMemory() >> 20).append(" MB.\n");
         out.append("- Tak: de exec-model-tak met truth maintenance (`").append(BRANCH).append("`). Gemeten: elke golden met")
                 .append(" cases die hij speelt (het oordeel van de replay).\n");
-        out.append("- Opzet per case: een verse sessie, gevuld zoals de replay dat doet (`CaseRunner.metSessie`, via")
-                .append(" `DroolsBackend.voegIn`); dan `DroolsBackend.vuur` onder het plafond dat een afnemer krijgt en")
-                .append(" `DroolsBackend.zetAfgeleideWaarden`, elk apart getimed. Niet getimed: sessie, beans, invoegen.")
+        out.append("- Opzet per case: een verse sessie, gevuld zoals de replay dat doet (`CaseRunner.forMeasurement`, via")
+                .append(" `DroolsBackend.insert`); dan `DroolsBackend.fire` onder het plafond dat een afnemer krijgt en")
+                .append(" `DroolsBackend.setDerivedValues`, elk apart getimed. Niet getimed: sessie, beans, invoegen.")
                 .append(" De schrijfconflictluisteraar van de replay hangt niet aan de sessie, zoals bij een afnemer.\n");
         out.append("- Herhalingen: eerst een ronde over alle gemeten goldens, ").append(RONDE)
                 .append(" keer per case (opwarmen van de gedeelde engine); dan per golden: bouw ")
@@ -129,7 +129,7 @@ public final class TmsMeasurement {
                 .append(" per golden de som van de medianen.\n");
         out.append("- Vuringen: wat `vuur` teruggeeft, opgeteld over de cases (een bereik als herhalingen verschillen).")
                 .append(" R: de regels van de KieBase. N0: de feiten in de sessie vlak vóór het vuren (ook de")
-                .append(" `Emmerinvoer`- en `Lijstplaats`-feiten van `voegIn`), opgeteld over de cases. max v/(R×N0):")
+                .append(" `Emmerinvoer`- en `Lijstplaats`-feiten van `insert`), opgeteld over de cases. max v/(R×N0):")
                 .append(" het grootste vuringen / (R × N0) van één case, want het plafond geldt per")
                 .append(" sessie; \"–\" waar elke case N0 = 0 heeft. max v/(R×N) per fase: wat een case van de factor")
                 .append(" van het plafond vraagt nu de driver het plafond bij elke creatiefase opnieuw uitrekent over de")

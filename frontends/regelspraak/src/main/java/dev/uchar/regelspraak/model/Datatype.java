@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * The RegelSpraak datatypes (§13.3.3), the typed core of the resolved AST. Every
  * attribute, parameter, domain, and (inferred) expression carries one of these.
- * The typeringen matrix (see {@link dev.uchar.regelspraak.resolver.Typing}) is
+ * The typeringen matrix (see {@code dev.uchar.regelspraak.resolver.Typing}) is
  * defined over them.
  *
  * Units live on {@link Numeric}: a unit is optional, but once one operand in an

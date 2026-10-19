@@ -6,7 +6,7 @@ import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
 /**
  * An evaluation fault of the exec-model branch other than a division by a numeric zero
- * ({@link Rational.DelingDoorNul}): a date step or a duration count outside the range of RUNTIME-SEMANTICS ch. 3.8, a
+ * ({@link Breuk.DelingDoorNul}): a date step or a duration count outside the range of RUNTIME-SEMANTICS ch. 3.8, a
  * walk over the days of a day kind that passes the reach of ch. 3.8 without one, a context value, a validity window or
  * the subject's own temporal total without a clip that needs the evaluation date in a session that carries none
  * (ch. 3.6, 8.1, 8.2), the bound day outside a day-kind evaluation (ch. 8.2), an {@code Unresolved} node the evaluation
@@ -63,7 +63,7 @@ public final class ComputeFault extends RuntimeException {
     }
 
     /** The same fault named after the rule {@code rule} it ran in, with this one as its cause, as
-     *  {@link Rational.DelingDoorNul#inDeRegel} names a division. */
+     *  {@link Breuk.DelingDoorNul#inDeRegel} names a division. */
     public ComputeFault inRule(String rule) {
         return new ComputeFault(sentence, rule, this);
     }

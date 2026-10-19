@@ -13,7 +13,7 @@ operand must be a Number as for the unclipped total
     calendar positions
 
 **Origin.** Until the card ref-klipvouw-nul this document was the red case
-`corpus/red/datumtijdlijn-klipvouw` (card temporele-datumvouw), and it is
+`datumtijdlijn-klipvouw` (card temporele-datumvouw), and it is
 byte-identical: `golden/jutterswet-erfwacht` with the clipped attribute and
 the target retyped to a day-precision `Date`. It was verifier-clean. With a
 value inside the clip `ref` faults on the multiplication (`maal: expected a

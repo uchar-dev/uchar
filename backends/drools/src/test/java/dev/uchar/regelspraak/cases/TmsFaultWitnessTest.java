@@ -303,7 +303,7 @@ class TmsFaultWitnessTest {
     /** The fault a consumer meets at the fixpoint is the fault named after its rule, with the unnamed fault the
      *  evaluation raised as its cause, so the red path's cause chain reads both. Two faults are one exception whose cause
      *  is the first fault of its message and whose suppressed exception is the second. Until the card
-     *  zero-division-channel the fault was the named division, with the division as {@code Rational.delen} threw it as
+     *  zero-division-channel the fault was the named division, with the division as {@code Breuk.delen} threw it as
      *  its cause. */
     @Test void the_faults_at_the_fixpoint_carry_the_unnamed_fault_as_cause() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(persistent(PERSISTENT), DroolsBackend.Branch.EXEC_MODEL);

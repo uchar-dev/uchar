@@ -5,7 +5,7 @@ import java.util.Objects;
 
 /**
  * What stands in a session of either branch, the exec-model branch or the DRL-text branch, after a fire that reached
- * its fixpoint, read without writing anything on a bean ({@code DroolsBackend.read}). Both branches derive with logical
+ * its fixpoint, read without writing anything on a bean ({@code DroolsBackend.fixpointOf}). Both branches derive with logical
  * facts and leave the case input alone on the beans, so a consumer that fires one session more than once reads the
  * answer here between the fires: a bean that carried a derived value would have it read as input by the next fire, and
  * an initialisation of that member would not fire again. {@link TmsTranspiler#setDerivedValues} writes exactly this
@@ -16,14 +16,14 @@ import java.util.Objects;
  * shows a list sorts it itself. Only {@code faults} is sorted, as its description below says. An object is a bean of
  * the build's bean model, compared by identity; a member is named as the model declares it.
  *
- * @param waarden         the derived value of every attribute a rule, a default or an allocation derived
- * @param kenmerken       every characteristic derived to hold; a characteristic the input sets is on the bean already,
+ * @param values         the derived value of every attribute a rule, a default or an allocation derived
+ * @param characteristics       every characteristic derived to hold; a characteristic the input sets is on the bean already,
  *                        and nothing derives a characteristic not to hold
- * @param objecten        every object a creation made
- * @param koppelingen     every link a creation laid, an object creation's link to its new object among them
- * @param fouten          the evaluation faults that stand, as data, in the order {@link TmsTranspiler#setDerivedValues}
+ * @param objects        every object a creation made
+ * @param links     every link a creation laid, an object creation's link to its new object among them
+ * @param faults          the evaluation faults that stand, as data, in the order {@link TmsTranspiler#setDerivedValues}
  *                        reports them: by the name of the form, then by the sentence
- * @param inconsistenties the §9.5 deposits, the beans of the generated class {@code Inconsistency}, each with its rule
+ * @param inconsistencies the §9.5 deposits, the beans of the generated class {@code Inconsistency}, each with its rule
  *                        and its subject
  */
 public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> characteristics, List<MadeObject> objects,
@@ -47,7 +47,7 @@ public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> ch
     public record DerivedValue(Object object, String attribute, Object value) {
         public DerivedValue {
             Objects.requireNonNull(object, "object");
-            Objects.requireNonNull(attribute, "attribuut");
+            Objects.requireNonNull(attribute, "attribute");
         }
     }
 
@@ -55,7 +55,7 @@ public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> ch
     public record DerivedCharacteristic(Object object, String characteristic) {
         public DerivedCharacteristic {
             Objects.requireNonNull(object, "object");
-            Objects.requireNonNull(characteristic, "kenmerk");
+            Objects.requireNonNull(characteristic, "characteristic");
         }
     }
 
@@ -64,7 +64,7 @@ public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> ch
     public record MadeObject(Object object, String creation, Object subject) {
         public MadeObject {
             Objects.requireNonNull(object, "object");
-            Objects.requireNonNull(creation, "creatie");
+            Objects.requireNonNull(creation, "creation");
             Objects.requireNonNull(subject, "subject");
         }
     }
@@ -73,11 +73,11 @@ public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> ch
      *  {@code firstRole}, and {@code second} its second, {@code secondRole}. */
     public record MadeLink(String factType, String firstRole, Object first, String secondRole, Object second) {
         public MadeLink {
-            Objects.requireNonNull(factType, "feittype");
-            Objects.requireNonNull(firstRole, "eersteRol");
-            Objects.requireNonNull(first, "eerste");
-            Objects.requireNonNull(secondRole, "tweedeRol");
-            Objects.requireNonNull(second, "tweede");
+            Objects.requireNonNull(factType, "factType");
+            Objects.requireNonNull(firstRole, "firstRole");
+            Objects.requireNonNull(first, "first");
+            Objects.requireNonNull(secondRole, "secondRole");
+            Objects.requireNonNull(second, "second");
         }
     }
 }

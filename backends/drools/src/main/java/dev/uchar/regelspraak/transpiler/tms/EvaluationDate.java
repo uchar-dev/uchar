@@ -16,6 +16,6 @@ import java.time.LocalDate;
 public record EvaluationDate(LocalDate date) {
 
     @Override public String toString() {
-        return "Rekendatum(" + (date == null ? "geen" : date) + ")";
+        return "EvaluationDate(" + (date == null ? "none" : date) + ")";
     }
 }

@@ -22,7 +22,7 @@ public record State(Object subject, ElementKey attribute, Object value) {
 
     public State {
         Objects.requireNonNull(subject, "subject");
-        Objects.requireNonNull(attribute, "attribuut");
+        Objects.requireNonNull(attribute, "attribute");
     }
 
     @Override public boolean equals(Object o) {
@@ -35,7 +35,7 @@ public record State(Object subject, ElementKey attribute, Object value) {
     }
 
     @Override public String toString() {
-        return "Stand(" + FactNames.object(subject) + ", " + FactNames.member(attribute) + ", "
-                + (value == null ? "leeg" : value) + ")";
+        return "State(" + FactNames.object(subject) + ", " + FactNames.member(attribute) + ", "
+                + (value == null ? "empty" : value) + ")";
     }
 }

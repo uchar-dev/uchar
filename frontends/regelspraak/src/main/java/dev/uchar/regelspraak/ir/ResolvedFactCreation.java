@@ -20,15 +20,15 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
  * intermediate hops from the anker; the {@code joinField} then joins the {@code target} to the LAST step,
  * or — for the 1-hop shape, with {@code pathSteps} empty — directly to the anker.
  *
- * @param naam          the regel name
- * @param anker         the onderwerp1 object type — the "one" side, the rule's iterated subject
- * @param doel          the filler object type — the "many" side of both {@code roleB} and the final {@code roleC} hop
+ * @param name          the regel name
+ * @param anchor         the onderwerp1 object type — the "one" side, the rule's iterated subject
+ * @param target          the filler object type — the "many" side of both {@code roleB} and the final {@code roleC} hop
  * @param setField       the reference field on {@code target} -&gt; {@code anchor} for the NEW feittype (set in the consequence)
  * @param joinField      the reference field on {@code target} for the EXISTING final-hop relation (joined in the when)
- * @param tussenstappen the intermediate objects on the navigation path anker &rarr; … &rarr; doel-parent (empty = 1-hop)
- * @param voorwaarde    the condition guarding the creation (on the anker or doel), or null
- * @param geldigheid    the §13.4.2.5 validity window ({@link Validity#ALTIJD} if always)
- * @param feittype      the uchar symbolic form: the created fact type's name (null unless the whole
+ * @param pathSteps the intermediate objects on the navigation path anker &rarr; … &rarr; doel-parent (empty = 1-hop)
+ * @param condition    the condition guarding the creation (on the anker or doel), or null
+ * @param validity    the §13.4.2.5 validity window ({@link Validity#ALTIJD} if always)
+ * @param factType      the uchar symbolic form: the created fact type's name (null unless the whole
  *                      symbolic form is derivable — WF-028 all-or-nothing)
  * @param anchorRole      the created fact type's role filled by {@code anchor} (== {@code setField}), symbolic
  * @param targetRole       the created fact type's role filled by {@code target}, symbolic

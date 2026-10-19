@@ -15,7 +15,7 @@ share the channel and differ in their code, so an executor that coalesced
 the numeric zero into the empty-divisor kind (or into a 0 result) fails
 this case on the code or on the value.
 
-Until 2026-10-19 this was the red case `corpus/red/division-by-numeric-zero`:
+Until 2026-10-19 this was the red case `corpus/golden/division-by-numeric-zero`:
 the v0-mirror hard fault EF-005 in ref (`arith.div_gen`), in the ASP
 backend (a `viol/2` witness) and in the Drools backend (`DelingDoorNul`).
 The production runtime still faults there; uchar's executors deposit.

@@ -266,7 +266,7 @@ public final class IrLoader {
      *         endpoints only, and a path's intermediate types are its own claim; a consumer that dropped this list
      *         would silently fold whatever direct relation happens to connect subject and element. Empty for a
      *         document whose folds all carry the one-step range.
-     *  @param path the IR-SPEC ch. 4.1a navigation walk per navigated {@link Expr.AttributeReference}
+     *  @param navigationBindings the IR-SPEC ch. 4.1a navigation walk per navigated {@link Expr.AttributeReference}
      *         (its {@code navigationBindings}, one binding per hop, subject-outward) and per navigated
      *         {@link Condition.CharacteristicCheck} (its {@code navigation}, a one-hop list), by IDENTITY, verbatim off the
      *         wire. Where a node carries one it decides the walk in both transpiler branches; a node without one

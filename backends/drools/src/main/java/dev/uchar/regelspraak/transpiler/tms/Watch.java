@@ -139,7 +139,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         Watch b = van(session);
         if (b == null) {
             b = new Watch(beans);
-            b.recorded = Objects.requireNonNull(since, "sinds");
+            b.recorded = Objects.requireNonNull(since, "since");
             session.addEventListener((RuleRuntimeEventListener) b);
             session.addEventListener((AgendaEventListener) b);
         }
@@ -154,7 +154,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
 
     /** Forgets what happened and keeps from now on, {@code since} naming the call of the entry it keeps from. */
     public void forget(String since) {
-        this.since = Objects.requireNonNull(since, "sinds");
+        this.since = Objects.requireNonNull(since, "since");
         fact = null;
         rule = null;
         agendaChange = null;
@@ -178,7 +178,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
             Object fresh = now.get(name);
             if (!Objects.equals(oud, fresh))
                 return "de global '" + name + "' veranderde van " + value(oud) + " in " + value(fresh)
-                        + " na de eerste DroolsBackend.vuur van deze sessie";
+                        + " na de eerste DroolsBackend.fire van deze sessie";
         }
         return null;
     }

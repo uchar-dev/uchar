@@ -23,7 +23,7 @@ public record CharacteristicState(Object subject, ElementKey characteristic, boo
 
     public CharacteristicState {
         Objects.requireNonNull(subject, "subject");
-        Objects.requireNonNull(characteristic, "kenmerk");
+        Objects.requireNonNull(characteristic, "characteristic");
     }
 
     @Override public boolean equals(Object o) {
@@ -35,7 +35,7 @@ public record CharacteristicState(Object subject, ElementKey characteristic, boo
     }
 
     @Override public String toString() {
-        return "KenmerkStand(" + FactNames.object(subject) + ", " + FactNames.member(characteristic) + ", "
-                + (holds ? "waar" : "onwaar") + ")";
+        return "CharacteristicState(" + FactNames.object(subject) + ", " + FactNames.member(characteristic) + ", "
+                + (holds ? "true" : "false") + ")";
     }
 }

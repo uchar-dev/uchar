@@ -12,6 +12,6 @@ import java.util.List;
  * E1" for the ordered group of E1's children, "Uitzonderingen ongeordend op E1" for a member's group.
  *
  * @param defaults the member's priority chain, highest first (at least one)
- * @param bron     the source text, or null
+ * @param source     the source text, or null
  */
 public record ExceptionGroup(List<Default> defaults, String source) {}

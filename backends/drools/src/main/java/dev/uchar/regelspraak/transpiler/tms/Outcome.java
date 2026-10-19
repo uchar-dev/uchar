@@ -32,8 +32,8 @@ public record Outcome(Object subject, String stack, int chain, int position, Kin
 
     public Outcome {
         Objects.requireNonNull(subject, "subject");
-        Objects.requireNonNull(stack, "stapel");
-        Objects.requireNonNull(category, "soort");
+        Objects.requireNonNull(stack, "stack");
+        Objects.requireNonNull(category, "category");
         if (category == Kind.DECIDED ? value == null || key != null : value != null || key == null)
             throw new IllegalArgumentException("een beslissing draagt een waarde, een conflict een sleutel: " + category
                     + " met waarde " + value + " en sleutel " + key);
@@ -59,7 +59,7 @@ public record Outcome(Object subject, String stack, int chain, int position, Kin
     }
 
     @Override public String toString() {
-        return "Uitkomst(" + FactNames.object(subject) + ", " + stack + ", keten " + chain + ", positie " + position
-                + ", " + (category == Kind.DECIDED ? "beslist " + value : "conflict " + key) + ")";
+        return "Outcome(" + FactNames.object(subject) + ", " + stack + ", chain " + chain + ", position " + position
+                + ", " + (category == Kind.DECIDED ? "decided " + value : "conflict " + key) + ")";
     }
 }

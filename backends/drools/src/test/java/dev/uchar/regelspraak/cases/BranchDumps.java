@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * One case fired through both branches of the analysis of card drl-teksttak-op-truth-maintenance, the exec-model branch
  * and the DRL-text branch, its rendering as DRL text: the same verdict, and the same dump of the session
- * ({@link SessionDump}) in its input, in what {@code DroolsBackend.read} gives and in the facts at the fixpoint. The
+ * ({@link SessionDump}) in its input, in what {@code DroolsBackend.fixpointOf} gives and in the facts at the fixpoint. The
  * firings are left out of the comparison: in a document with a fold their order and number follow the agenda, which
  * differs between the two renderings, while the fixpoint is the same. Made for {@link DrlTextFoldPathWitnessTest} (fix
  * round 3a), and shared since a second witness compares dumps over the two branches (fix round 3b).

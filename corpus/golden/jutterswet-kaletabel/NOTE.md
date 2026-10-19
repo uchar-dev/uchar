@@ -20,7 +20,7 @@ table starts:
 That `warning` is the whole of `diagnostics`. WF-113 (a) holds: severity
 `warning`, a non-empty message, an integer line. The document carries no
 `Unresolved` node, so (b) has nothing to account for here; the two red documents
-under `corpus/red/wf044-onopgelost-*` are its witnesses.
+under `corpus/red/wf044-unresolved-*` are its witnesses.
 
 ## Hand computation
 

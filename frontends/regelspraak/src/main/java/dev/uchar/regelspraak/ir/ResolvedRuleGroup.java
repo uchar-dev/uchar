@@ -19,11 +19,11 @@ import java.util.List;
  * The resolver checks: a recursief group with NO objectcreatie member is an ERROR (the marker is meaningless);
  * an objectcreatie member WITHOUT a bounding voorwaarde is a WARNING (termination not automatable).
  *
- * @param naam      the group name as written (whitespace-normalised)
- * @param recursief whether the header carried {@code is recursief}
- * @param leden     the member RULE NAMES in written order (the bare names, matching the {@link ResolvedRule}
+ * @param name      the group name as written (whitespace-normalised)
+ * @param recursive whether the header carried {@code is recursief}
+ * @param members     the member RULE NAMES in written order (the bare names, matching the {@link ResolvedRule}
  *                  / consistentie / objectcreatie / … entries the members produced)
- * @param bron      the source slice of the header (for diagnostics)
+ * @param source      the source slice of the header (for diagnostics)
  * @param line      the 1-based source line of the header
  */
 public record ResolvedRuleGroup(String name, boolean recursive, List<String> members, Source source, int line) {

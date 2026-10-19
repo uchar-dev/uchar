@@ -22,8 +22,8 @@ public record Fault(Object subject, String rule, RuntimeException fault) {
     public Fault {
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(rule, "rule");
-        Objects.requireNonNull(fault, "fout");
-        Objects.requireNonNull(fault.getMessage(), "de zin van de fout");
+        Objects.requireNonNull(fault, "fault");
+        Objects.requireNonNull(fault.getMessage(), "the sentence of the fault");
     }
 
     /** The sentence of the fault. */
@@ -41,6 +41,6 @@ public record Fault(Object subject, String rule, RuntimeException fault) {
     }
 
     @Override public String toString() {
-        return "Fout(" + FactNames.object(subject) + ", " + rule + ", " + message() + ")";
+        return "Fault(" + FactNames.object(subject) + ", " + rule + ", " + message() + ")";
     }
 }

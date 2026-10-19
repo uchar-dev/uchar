@@ -14,7 +14,7 @@ the right-hand operand of the rule's comparison, the date literal
 declare, which is how a resolver hands the wire an operand it could not
 resolve — and the comparison's own source snippet follows it.
 `diagnostics` stays empty. The marker itself is legal wire content (WF-044 is
-behavioural, see `corpus/red/wf044-onopgelost-*`); what this rule refuses is a
+behavioural, see `corpus/red/wf044-unresolved-*`); what this rule refuses is a
 marker nothing reports. The marker sits INSIDE a condition, so this witness
 also pins that the verifier's marker walk descends from a condition into its
 operands. The condition-marker variant is witnessed by

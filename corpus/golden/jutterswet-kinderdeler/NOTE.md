@@ -35,6 +35,5 @@ case2 (`kindertallen = []`): the fold base fires on `lpres`, so
 Both cases match exactly in ref and clingo (gate 5 ≡ gate 6). ROOD-EERST: before
 the broadening clingo faulted `a closed-body division needs a compile-time
 positive constant divisor (no corpus case for a runtime or non-positive
-divisor)`. The numeric-zero fence fires in body context — pinned by the red
-`corpus/red/closed-runtime-division-by-zero` (`kindertallen = [2, 0]`, both
+divisor)`. The numeric-zero fence fires in body context — pinned by the golden `corpus/golden/closed-runtime-division-by-zero` (`kindertallen = [2, 0]`, both
 executors *"division by numeric zero"*).

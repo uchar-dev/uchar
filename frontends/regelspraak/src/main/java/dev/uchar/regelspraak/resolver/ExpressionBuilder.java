@@ -2129,7 +2129,7 @@ final class ExpressionBuilder {
      *  argument. Measured 2026-09-20: three sentences reached the wire unblocked — the {@code en} and
      *  {@code comma} spellings with {@code diagnostics: []} and the element-binding spelling with a
      *  non-blocking WARNING — all rejected by the verifier
-     *  ({@link dev.uchar.regelspraak.CountEnumeratedTest}).
+     *  ({@code dev.uchar.regelspraak.CountEnumeratedTest}).
      *
      *  <p>ERROR and not WARNING, deliberately: {@link Resolver#irMode} writes nothing when the model
      *  carries an error, so the fail-fast is what keeps the ill-formed document off disk. That is the

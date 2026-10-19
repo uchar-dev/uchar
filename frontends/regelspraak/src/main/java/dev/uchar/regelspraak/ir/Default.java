@@ -13,12 +13,12 @@ import java.util.List;
  * default (own content too — the exception groups decide first, its own decision the fall-back when
  * they decide nothing).
  *
- * @param besluit       the characteristic decision (true/false), or null on an attribute default
- * @param voorwaarde    the justification, or null on the initialisation default
- * @param consequentie  the attribute default's value, or null on a characteristic/group default
- * @param initialisatie the initialisation default marker (lowest only)
- * @param excepties     the nested exception groups (ch. 7.9), or null
- * @param bron          the statute/source annotation, or null; on a group-default the dialect's head that made it;
+ * @param decision       the characteristic decision (true/false), or null on an attribute default
+ * @param condition    the justification, or null on the initialisation default
+ * @param consequence  the attribute default's value, or null on a characteristic/group default
+ * @param initialisation the initialisation default marker (lowest only)
+ * @param exceptions     the nested exception groups (ch. 7.9), or null
+ * @param source          the statute/source annotation, or null; on a group-default the dialect's head that made it;
  *                      on the opgave and the computation default the opgave marker generates, the name of the
  *                      attribute the default reads ({@code opgegeven X}, {@code berekende X}), so an explanation
  *                      can name the deciding block

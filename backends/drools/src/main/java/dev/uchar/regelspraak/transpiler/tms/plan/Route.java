@@ -3,7 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
 import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
 
 /**
- * A public static method of the branch that a rendering calls around the functions of a term ({@link Aggregation}), by its
+ * A public static method of the branch that a rendering calls around the functions of a term ({@link Term}), by its
  * class and its name: what a test of deposits and a consequence do beside the evaluation of a term, and the facts a
  * consequence makes whose class or constructor is not public; and what a DRL text needs where MVEL has no construct of
  * its own: catching, naming and throwing an evaluation fault, reading a bean and walking a path, the cell of a

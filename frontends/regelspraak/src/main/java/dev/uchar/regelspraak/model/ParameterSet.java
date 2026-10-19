@@ -29,8 +29,8 @@ import java.util.Map;
  * <p>Bounds zijn inclusief; een {@code null}-bound is open (zie {@link Validity#contains}). {@link Validity#ALTIJD}
  * (beide null) overlapt elk ander interval en bevat elke datum — het degenererende single-value-geval.
  *
- * @param naam    de naam van de set (organisatorisch; verschijnt op /info)
- * @param waarden per parameternaam de lijst intervallen; de keys zijn de namen zoals in de set gebruikt
+ * @param name    de naam van de set (organisatorisch; verschijnt op /info)
+ * @param values per parameternaam de lijst intervallen; de keys zijn de namen zoals in de set gebruikt
  *                (de lader normaliseert naar de canonieke {@code model}-Parameter.name())
  */
 public record ParameterSet(String name, Map<String, List<ValueInterval>> values) {

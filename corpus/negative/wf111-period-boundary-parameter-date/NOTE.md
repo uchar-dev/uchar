@@ -14,7 +14,7 @@ Expected verifier report:
 ## Where the rule comes from
 
 Until 2026-09-23 this same document was the red witness
-`corpus/red/periodegrens-parameterdatum`. It was verifier-clean then, and
+`periodegrens-parameterdatum`. It was verifier-clean then, and
 all four executors refused it at their own phase: `ref` at evaluation,
 clingo in translation, the Drools exec-model branch with a transpiler
 SKIP, and the DRL-text branch with a marker that names the bound. The

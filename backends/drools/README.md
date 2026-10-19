@@ -91,7 +91,7 @@ consumer does.
    `CaseInput.RoleCollision` (an `IllegalArgumentException`); both name the link the case wrote, its instance, role key
    and target (`CaseInput.RoleError`), and both come from `van`, before anything goes into a session (witness
    `CaseInputWitnessTest`). The parameters and the evaluation date stay the caller's, as globals (step 1).
-3. `DroolsBackend.vuur(build, session)`, which fires to the fixpoint under a cap, a model with a creation in
+3. `DroolsBackend.fire(build, session)`, which fires to the fixpoint under a cap, a model with a creation in
    generations per stratum (below), and returns a `Firing`: the firings, the cap, and `noFixpoint`, the sentence of a
    run without a fixpoint, at the cap or at the creation budget, or null. The cap is `max(10 000, FACTOR × R × N0)`,
    with R the rules of
@@ -100,23 +100,23 @@ consumer does.
    goldens and the scale model (`DroolsBackend.FACTOR`, with the measurement). The cap is a safeguard against a fault
    of the lowering, not a norm: the build refuses a cycle (`Cycles`), and a chain of creations ends at the creation
    budget. Nothing can be read of a run without a fixpoint: `fixpointOf` and `setDerivedValues` refuse it.
-   `DroolsBackend.vuur(build, session, observer)` fires the same run and records what it fired in a
+   `DroolsBackend.fire(build, session, observer)` fires the same run and records what it fired in a
    `DroolsBackend.Observer`, made with a function that gives the label of an input bean and null for any other
    object: `firings()`, per form of the document without its version suffix, how often its rules fired and the labels
    their matches bound, and `forms()`, the exact names of the forms that fired, from which
-   `DroolsBackend.dekking(build, vormen)` gives per manifest entry `GEVUURD` or `NIET_GERAAKT`. The scenario report
-   (`CaseRunner.report`) is made from these two. A waarnemer belongs to one session and is refused at a `fire` of
+   `DroolsBackend.coverage(build, forms)` gives per manifest entry `FIRED` or `NOT_FIRED`. The scenario report
+   (`CaseRunner.report`) is made from these two. An observer belongs to one session and is refused at a `fire` of
    another, and its listener is on the session only during that `fire`, so parallel sessions of one build each record
    their own firings (witness `ObserverWitnessTest`).
-4. `DroolsBackend.lees(build, session)`, or at the end `DroolsBackend.setDerivedValues(build, session)`; or
-   `lees(build, session, label)` and `setDerivedValues(build, session, label)` with a function that gives the
+4. `DroolsBackend.fixpointOf(build, session)`, or at the end `DroolsBackend.setDerivedValues(build, session)`; or
+   `fixpointOf(build, session, label)` and `setDerivedValues(build, session, label)` with a function that gives the
    label of an input bean, and null for a made object, by which a fault then names its object as the reference
    interpreter does ("V, een Vondst"), where without labels it names the type and the identity. Both read only a
    session whose last `fire` reached its fixpoint and in which nothing happened outside `fire` since (below), so what
    `fixpointOf` gives is always a fixpoint, that of the input as the session knows it: an attribute or a characteristic set
-   without `session.update` is not seen (below). After the write-back, `DroolsBackend.vergelijk(build, session, label,
+   without `session.update` is not seen (below). After the write-back, `DroolsBackend.compare(build, session, label,
    expected)` compares the `expected` of a `uchar-case-v0` case with the session and returns a
-   `DroolsBackend.Comparison`: per expectation a `ScenarioResult.ExpectationResult`, the diagnose of the
+   `DroolsBackend.Comparison`: per expectation a `ScenarioResult.ExpectationResult`, the diagnostic of the
    scenario report, and `pass()`. `label` is a function as above, and an expectation names the bean to which it gives
    the expectation's label, so the labels may be the ids of a request rather than those of a case file. It reads the
    beans, which carry the fixpoint only after `setDerivedValues`, and refuses a session that was not written back,
@@ -480,7 +480,7 @@ interpreter keeps it (ch. 3.4b). The rule that reads the fold binds the least `F
 contributions, the first in fold order, and where its own evaluation reaches the fold while one stands, that
 evaluation faults as a division in it would; the `Fault` is that rule's, inserted by its consequence or by its fault
 rule, named after it, and withdrawn when the `FilterFault` goes. A member whose place the input did not state makes the
-rule fail loudly. Witness `TmsFilterErrorWitnessTest`.
+rule fail loudly. Witness `TmsFilterFaultWitnessTest`.
 
 A filter that deposits for a member (a division by leeg, a negative root) inserts a `FilterDeposit` for that member
 in the same way, through a rule beside the contribution rule with a probe in its test, and no inconsistency: the
@@ -505,7 +505,7 @@ settled for every member before the matrix, with its faults and deposits as for 
 an existence question bound as a value, so it stands in a composite like any condition: over a relation a form
 creates, an accumulate over the relation's `RelationLink` facts that hold the subject at its end; over an input
 relation, the subject's own reference field where the other role is to-one, and else an accumulate over the beans
-whose field names the subject, as the bean model stores the link (`FactModelGenerator.membershipOpslag`); a
+whose field names the subject, as the bean model stores the link (`FactModelGenerator.membershipStorage`); a
 counterpart type is a class test, which a subtype passes. A uniqueness (ch. 5.9), over one source or more: per source a
 rule inserts each instance's key (`UniquenessKey`), its components bound in the left-hand side, a derived one
 through its standing, and for a scoped form its parent, where every component is gevuld and the parent is there; the

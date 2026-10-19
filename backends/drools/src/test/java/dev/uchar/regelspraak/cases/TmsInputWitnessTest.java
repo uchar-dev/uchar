@@ -105,7 +105,7 @@ class TmsInputWitnessTest {
             try {
                 IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> DroolsBackend.insert(b,
                         session, new Input().beans(List.of(j1, v1, v2)).list(j1, "aanmelder", List.of(v1))));
-                assertEquals("voegIn: de lijst van " + name(j1) + " onder de rol 'aanmelder' mist " + name(v2) + ", dat"
+                assertEquals("insert: de lijst van " + name(j1) + " onder de rol 'aanmelder' mist " + name(v2) + ", dat"
                         + " met zijn veld 'aanmelder' naar de houder wijst: een lid buiten de gegeven volgorde heeft geen"
                         + " plaats", e.getMessage());
                 assertEquals(0, session.getFactCount(), "nothing was inserted");
@@ -124,7 +124,7 @@ class TmsInputWitnessTest {
             Object v3 = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of(), List.of());
             TmsRepeatedFireWitnessTest.setRole(v3, "aanmelder", j2);
             List<Object> beans = List.of(j1, v1, v2);
-            String list = "voegIn: de lijst van " + name(j1) + " onder de rol 'aanmelder'";
+            String list = "insert: de lijst van " + name(j1) + " onder de rol 'aanmelder'";
             List<String> sentences = new ArrayList<>();
             sentences.add(refusal(b, new Input().beans(beans).list(j1, "aanmelder", List.of(v1, v2, v3))));
             sentences.add(refusal(b, new Input().beans(List.of(j1, v1, v2, j2, v3))
@@ -147,27 +147,27 @@ class TmsInputWitnessTest {
                     list + " noemt " + name(v3) + ", dat geen bean van de invoer is",
                     list + " noemt " + name(v3) + ", maar diens veld 'aanmelder' wijst naar " + name(j2),
                     list + " noemt " + name(v1) + " twee keer",
-                    "voegIn: de lijst van " + name(j1) + " onder de rol 'vondst' noemt " + name(v1) + ", maar een Vondst"
+                    "insert: de lijst van " + name(j1) + " onder de rol 'vondst' noemt " + name(v1) + ", maar een Vondst"
                             + " heeft geen referentieveld 'vondst'; de rol is die van de houder, de naam van het veld"
                             + " waarmee een lid naar de houder wijst",
                     list + " is twee keer gegeven",
                     list + " is leeg gegeven, maar " + name(v1) + " wijst met zijn veld 'aanmelder' naar de houder",
-                    "voegIn: emmerscalair 'gewicht' op " + name(v3) + ", een bean die niet in de invoer staat",
-                    "voegIn: emmerscalair 'gewicht' op " + name(v1) + ", maar dat attribuut van Vondst ligt niet op een"
+                    "insert: emmerscalair 'gewicht' op " + name(v3) + ", een bean die niet in de invoer staat",
+                    "insert: emmerscalair 'gewicht' op " + name(v1) + ", maar dat attribuut van Vondst ligt niet op een"
                             + " tijdlijn; alleen de invoer van een tijdlijn kent de emmerconventie (RUNTIME-SEMANTICS ch."
                             + " 8.4)",
-                    "voegIn: emmerscalair 'lengte' op " + name(v1) + ", maar Vondst heeft geen attribuut van die naam",
-                    "voegIn: de bean " + name(v1) + " staat twee keer in de invoer",
-                    "voegIn: " + name(foreign) + " is geen bean van dit model: een bean is een instantie van een klasse die"
+                    "insert: emmerscalair 'lengte' op " + name(v1) + ", maar Vondst heeft geen attribuut van die naam",
+                    "insert: de bean " + name(v1) + " staat twee keer in de invoer",
+                    "insert: " + name(foreign) + " is geen bean van dit model: een bean is een instantie van een klasse die"
                             + " Build.beanLoader() laadt"), sentences);
             KieSession session = b.kieBase().newKieSession();
             try {
                 DroolsBackend.insert(b, session, new Input().beans(beans));
                 IllegalStateException e = assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.insert(b, session, new Input().bean(j2)));
-                assertEquals("voegIn vult een verse sessie, maar deze houdt al " + session.getFactCount() + " feiten: de"
+                assertEquals("insert vult een verse sessie, maar deze houdt al " + session.getFactCount() + " feiten: de"
                         + " plaatsen van een lijst worden over de beans van één invoer geteld, en een bean die zonder"
-                        + " voegIn in de sessie kwam, heeft er geen; geef alle beans in één Invoer aan een verse sessie,"
+                        + " insert in de sessie kwam, heeft er geen; geef alle beans in één Input aan een verse sessie,"
                         + " en verander tussen twee fires hun waarden met update", e.getMessage());
             } finally {
                 session.dispose();
@@ -188,7 +188,7 @@ class TmsInputWitnessTest {
             try {
                 IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
                         () -> DroolsBackend.insert(b, session, new Input().bean(j1)));
-                assertEquals("voegIn: het veld 'rekenkamer' van " + name(j1) + " wijst naar een Rekenkamer ("
+                assertEquals("insert: het veld 'rekenkamer' van " + name(j1) + " wijst naar een Rekenkamer ("
                         + name(r1) + ") die niet als bean in de invoer staat: de tak leidt alleen af voor de objecten"
                         + " in de sessie, dus geef elk object waarnaar een bean wijst ook zelf als bean op",
                         e.getMessage());

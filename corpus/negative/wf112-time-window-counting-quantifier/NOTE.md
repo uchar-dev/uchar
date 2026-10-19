@@ -22,7 +22,7 @@ position is refused instead of left for each executor to read.
 ## Where the rule comes from
 
 Until 2026-09-23 this same document was the red witness
-`corpus/red/periodevenster-tellende-kwantor`. It was verifier-clean then,
+`periodevenster-tellende-kwantor`. It was verifier-clean then,
 and all four executors refused it. The limit was measured on the Drools
 branches, not chosen: both play the window under `all` and `the` and
 refuse it under `none`, `atLeast`, `atMost` and `exactly`. The

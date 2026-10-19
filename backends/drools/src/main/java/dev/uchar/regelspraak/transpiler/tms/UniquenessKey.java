@@ -29,7 +29,7 @@ public final class UniquenessKey {
     private final List<Object> values;
 
     public UniquenessKey(String uniqueness, int source, Object element, Object scope, List<Object> values) {
-        this.uniqueness = Objects.requireNonNull(uniqueness, "uniciteit");
+        this.uniqueness = Objects.requireNonNull(uniqueness, "uniqueness");
         this.source = source;
         this.element = Objects.requireNonNull(element, "element");
         this.scope = scope;
@@ -63,7 +63,7 @@ public final class UniquenessKey {
     }
 
     @Override public String toString() {
-        return "Uniciteitssleutel(" + uniqueness + " " + source + ", " + FactNames.object(element)
+        return "UniquenessKey(" + uniqueness + " " + source + ", " + FactNames.object(element)
                 + (scope == null ? "" : ", " + FactNames.object(scope)) + ", " + values + ")";
     }
 }

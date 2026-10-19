@@ -20,6 +20,6 @@ public record ChannelState(String rule, boolean inconsistent) {
     }
 
     @Override public String toString() {
-        return "KanaalStand(" + rule + ", " + (inconsistent ? "inconsistent" : "consistent") + ")";
+        return "ChannelState(" + rule + ", " + (inconsistent ? "inconsistent" : "consistent") + ")";
     }
 }

@@ -138,7 +138,7 @@ public final class ProducerConsumer {
      * so a form's reads and writes of those are not here.
      */
     public static List<Form> forms(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigation navigation) {
-        return read(model, defaults, java.util.Objects.requireNonNull(navigation, "navigatie"));
+        return read(model, defaults, java.util.Objects.requireNonNull(navigation, "navigation"));
     }
 
     /** The reading behind {@link #forms} and {@link #producerIndex}. Without {@code navigation} every read set is
@@ -228,7 +228,7 @@ public final class ProducerConsumer {
      * source text ({@code Default.source()}, or that of its justification or consequence) beside the path.
      */
     public static List<DefaultRead> readings(RegelSpraakModel model, PrioritizedDefaults group, Navigation navigation) {
-        return readDefaults(model, group, java.util.Objects.requireNonNull(navigation, "navigatie"));
+        return readDefaults(model, group, java.util.Objects.requireNonNull(navigation, "navigation"));
     }
 
     /** The reading behind {@link #readings}; without {@code navigation} every set is empty, as in {@link #read}. */
@@ -326,7 +326,7 @@ public final class ProducerConsumer {
      *  answer (see {@link Navigation}). */
     public static Set<ElementKey> consumed(ResolvedRule r, Navigation navigation) {
         Set<ElementKey> out = new LinkedHashSet<>();
-        Reader reader = new Reader(java.util.Objects.requireNonNull(navigation, "navigatie"), out);
+        Reader reader = new Reader(java.util.Objects.requireNonNull(navigation, "navigation"), out);
         RegelSpraakModel.ObjectType subject = r.target() instanceof Expr.AttributeReference ref ? ref.objectType() : null;
         reader.condition(r.condition(), subject);
         reader.expr(r.value(), subject);

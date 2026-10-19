@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Compiles the {@link FactModelGenerator}-emitted bean sources IN MEMORY (javax.tools) and serves the resulting
  * classes from a child-first classloader — the engine-side, reusable form of the fact-model compile harness the
- * tests use (test code cannot be called from {@code engine/main}). The {@link ScenarioRunner}
+ * tests use (test code cannot be called from {@code engine/main}). The {@code ScenarioRunner}
  * compiles the bundle's beans ONCE (they are the same for every scenario in a run) and hands the loader to the
  * exec-model transpiler's {@code build(model, classLoader)} passthrough so the compiled rules bind against these
  * beans, and to the {@link dev.uchar.regelspraak.schema.ContractValidator} so the contract is checked against them.

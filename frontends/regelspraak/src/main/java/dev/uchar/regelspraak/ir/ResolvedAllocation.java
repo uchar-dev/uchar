@@ -42,7 +42,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
  *                           undistributed remainder; null = none
  * @param orderingAttribute  §9.7.2 the bare recipient ordering key partitioning the recipients into
  *                           groups; null unless {@link Method#OP_VOLGORDE}
- * @param afnemend           §9.7.2 true = descending ("afnemende"), false = ascending ("toenemende");
+ * @param descending          §9.7.2 true = descending ("afnemende"), false = ascending ("toenemende");
  *                           read only when {@link Method#OP_VOLGORDE}
  * @param connectingRole     the recipient join (IR-SPEC ch. 3.2 {@code connectingRole}): the role the recipient
  *                           phrase names where it names one relation between the two types, else the one relation

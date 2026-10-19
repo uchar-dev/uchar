@@ -18,16 +18,16 @@ import java.util.List;
  * X, the opgave above the computation and an authored initialisation of X as the lowest default. The Catala frontend
  * and the hand-authored anchors carry the same node.
  *
- * @param naam       the defaults-group name, or null
- * @param onderwerp  the subject objecttype NAME (resolved by the consumer against its model)
- * @param kenmerk    the characteristic target, or null on attribute defaults (exactly one of
+ * @param name       the defaults-group name, or null
+ * @param subject  the subject objecttype NAME (resolved by the consumer against its model)
+ * @param characteristic    the characteristic target, or null on attribute defaults (exactly one of
  *                   kenmerk/attribuut is non-null, WF-050)
- * @param attribuut  the attribute target, or null on characteristic defaults
- * @param ongeordend declared-unordered: two or more defaults groups on one target require this marking on
+ * @param attribute  the attribute target, or null on characteristic defaults
+ * @param unordered declared-unordered: two or more defaults groups on one target require this marking on
  *                   every one
  * @param defaults   the priority chain, highest first
- * @param bron       the statute/source annotation, or null
- * @param geldigheid the §13.4.2.5 validity window ({@link Validity#ALTIJD} = always), or null
+ * @param source       the statute/source annotation, or null
+ * @param validity the §13.4.2.5 validity window ({@link Validity#ALTIJD} = always), or null
  */
 public record PrioritizedDefaults(String name, String subject, String characteristic, String attribute,
                                   boolean unordered, List<Default> defaults, String source,

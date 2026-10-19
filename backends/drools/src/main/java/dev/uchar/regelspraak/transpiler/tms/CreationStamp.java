@@ -39,7 +39,7 @@ public record CreationStamp(String rule, Object subject, Object object, int phas
     }
 
     @Override public String toString() {
-        return "Gemaakt(" + rule + ", " + FactNames.object(subject) + ", " + FactNames.object(object) + ", fase "
-                + phase + ", stratum " + stratum + ", diepte " + depth + ")";
+        return "CreationStamp(" + rule + ", " + FactNames.object(subject) + ", " + FactNames.object(object) + ", phase "
+                + phase + ", stratum " + stratum + ", depth " + depth + ")";
     }
 }

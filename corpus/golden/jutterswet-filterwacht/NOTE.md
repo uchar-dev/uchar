@@ -66,7 +66,7 @@ holds the fold IS evaluated, its filter divides, and it decides both ways
 (`J2` counts 1, `J3` counts 0, not leeg).
 
 Where `J1` IS actief the fold is reached and `V2` divides by 0: that is the
-red case `corpus/red/fold-filter-divides-by-zero`, which pins the fault in
+red case `corpus/golden/fold-filter-divides-by-zero`, which pins the fault in
 `ref`, clingo and the Drools exec-model branch.
 
 ## Why the two cases are separate

@@ -11,12 +11,12 @@ import java.util.List;
  * feittype that relates them. This is the unit the transpiler turns into a DRL
  * consequence that inserts a new fact.
  *
- * @param naam          the regel name
+ * @param name          the regel name
  * @param createdType     the object type being created (null if unresolved)
  * @param subject       the object type that owns the rule (the creator)
- * @param toekenningen  the attribute assignments on the new object
- * @param voorwaarde    the condition guarding the creation, or null
- * @param geldigheid    the §13.4.2.5 version validity window ({@link Validity#ALTIJD} if always)
+ * @param initialisations  the attribute assignments on the new object
+ * @param condition    the condition guarding the creation, or null
+ * @param validity    the §13.4.2.5 version validity window ({@link Validity#ALTIJD} if always)
  * @param connectingRole the created-side role of the back-link where the sentence names one (IR-SPEC ch. 3.3
  *                      {@code connectingRole}), or null: the sentence names the type, or its role name binds no
  *                      unique role, and the back-link is then derived from the type pair

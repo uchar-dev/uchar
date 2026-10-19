@@ -74,7 +74,7 @@ public final class MemberTest implements Comparable<MemberTest> {
     }
 
     @Override public String toString() {
-        return "Lidtoets(" + place + ", " + (fault != null ? "fout " + fault.getMessage() : holds ? "waar" : "onwaar")
-                + (deposited ? ", gedeponeerd" : "") + ")";
+        return "MemberTest(" + place + ", " + (fault != null ? "fault " + fault.getMessage() : holds ? "true" : "false")
+                + (deposited ? ", deposited" : "") + ")";
     }
 }

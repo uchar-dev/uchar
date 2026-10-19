@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  *
  * <p>The analysis with truth maintenance does not throw out of its fire: it inserts an evaluation fault as a fact, so
  * its consumer fires through {@code DroolsBackend.fire} to the fixpoint, reads the fault as data with
- * {@code DroolsBackend.read}, and {@code DroolsBackend.setDerivedValues} throws the named {@code DelingDoorNul} there,
+ * {@code DroolsBackend.fixpointOf}, and {@code DroolsBackend.setDerivedValues} throws the named {@code DelingDoorNul} there,
  * the sentence the replay gives ({@code TmsFaultWitnessTest}). Since card drl-teksttak-op-truth-maintenance that holds on
  * both branches, and a consumer that fires a KieBase itself gets no exception out of the fire at all. The rows of
  * Drools' exception, and of {@code designate} naming it, asked the DRL-text branch alone from card tms-omschakeling

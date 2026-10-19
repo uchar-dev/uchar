@@ -86,7 +86,7 @@ import java.util.Map;
  *
  * <p><b>A point of the second fire</b> is one N on the model without (g), in a JVM of its own with {@code -Xmx16g}, one
  * warm-up and three measured rounds. A round fills a session through the public entry, fires it ({@link
- * DroolsBackend#fire}) and reads it ({@link DroolsBackend#read}), makes the change on the bean of {@code V1_1} and tells
+ * DroolsBackend#fire}) and reads it ({@link DroolsBackend#fixpointOf}), makes the change on the bean of {@code V1_1} and tells
  * the session ({@code update}), fires again and reads again; beside it a fresh session with the changed case, filled,
  * fired and read. The two readings after the change must be equal, every value, characteristic, fault and
  * inconsistency named by its case label, and the reading must differ from the one before the change; else the point
@@ -117,7 +117,7 @@ public final class ScaleTrial {
     static final List<Integer> NS = List.of(100, 1_000, 10_000);
 
     /** The exec-model branch: the one the points measure by default, and the only one that reads a session between two
-     *  fires ({@link DroolsBackend#read}). */
+     *  fires ({@link DroolsBackend#fixpointOf}). */
     static final DroolsBackend.Branch BRANCH = DroolsBackend.Branch.EXEC_MODEL;
 
     private static final int WARM_UP = 1, REPETITIONS = 3;
@@ -586,7 +586,7 @@ public final class ScaleTrial {
         jvm(out);
         out.append("- Per punt: bouw 1 opwarmer + mediaan van ").append(REPETITIONS).append("; vuren ").append(WARM_UP)
                 .append(" opwarmer + mediaan van ").append(REPETITIONS).append(", elk in een verse sessie; vuren via de")
-                .append(" publieke `DroolsBackend.vuur`, onder het plafond dat een afnemer krijgt. Belasting: de load")
+                .append(" publieke `DroolsBackend.fire`, onder het plafond dat een afnemer krijgt. Belasting: de load")
                 .append(" average over 1, 5 en 15 minuten (`uptime`) bij de start van het punt.\n\n");
         out.append("| tak | N | belasting | vuringen | vuren (ms) | terugzetten (ms) | vuren+terugzetten (ms) | piekfeiten")
                 .append(" | heap (MB) | bouw (ms) | R | N0 | vuringen/(R×N0) | plafond | vuringen/plafond | kusttotaal")
@@ -634,13 +634,13 @@ public final class ScaleTrial {
         jvm(out);
         out.append("- Model zonder (g), de creatieketen (`schaal/zonder-creatie/`); tak ").append(BRANCH).append(". Per punt ")
                 .append(WARM_UP).append(" opwarmronde + mediaan van ").append(REPETITIONS).append(" rondes. Een ronde:")
-                .append(" `voegIn`, `vuur`, `lees`; het gewicht van ").append(CHANGED_VONDST).append(" op ")
+                .append(" `insert`, `vuur`, `lees`; het gewicht van ").append(CHANGED_VONDST).append(" op ")
                 .append(CHANGED_WEIGHT.toPlainString()).append(" met `update`; `vuur`, `lees`; daarnaast een verse")
-                .append(" sessie met de gewijzigde case: `voegIn`, `vuur`, `lees`. De lezing na de tweede fire is gelijk aan")
+                .append(" sessie met de gewijzigde case: `insert`, `vuur`, `lees`. De lezing na de tweede fire is gelijk aan")
                 .append(" die van de verse sessie, anders faalt het punt. Belasting: de load average over 1, 5 en 15")
                 .append(" minuten (`uptime`) bij de start van het punt.\n");
         out.append("- Tweede fire: de wijziging (`set` en `update`) en `vuur` samen. Verse sessie, opzetten: sessie, beans")
-                .append(" uit de case en `voegIn` (`CaseRunner.metSessie`); vuren: `vuur`.\n\n");
+                .append(" uit de case en `insert` (`CaseRunner.forMeasurement`); vuren: `vuur`.\n\n");
         out.append("| N | belasting | R | N0 | vuringen eerste fire | vuringen tweede fire | vuringen verse sessie")
                 .append(" | plafond tweede fire | eerste fire (ms) | tweede fire (ms) | verse sessie: opzetten (ms)")
                 .append(" | verse sessie: vuren (ms) | tweede/vers (vuren) | regels in de lezing | gewijzigd tegen de")

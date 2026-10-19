@@ -19,8 +19,8 @@ public record PathState(Object subject, String path, ElementKey member, Object v
 
     public PathState {
         Objects.requireNonNull(subject, "subject");
-        Objects.requireNonNull(path, "pad");
-        Objects.requireNonNull(member, "lid");
+        Objects.requireNonNull(path, "path");
+        Objects.requireNonNull(member, "member");
     }
 
     @Override public boolean equals(Object o) {
@@ -33,7 +33,7 @@ public record PathState(Object subject, String path, ElementKey member, Object v
     }
 
     @Override public String toString() {
-        return "PadStand(" + FactNames.object(subject) + ", " + path + ", " + FactNames.member(member) + ", "
-                + (value == null ? "afwezig of leeg" : value) + ")";
+        return "PathState(" + FactNames.object(subject) + ", " + path + ", " + FactNames.member(member) + ", "
+                + (value == null ? "absent or empty" : value) + ")";
     }
 }

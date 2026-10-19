@@ -6,7 +6,7 @@ negative edge under `all`, `none`, `atMost` and `exactly` and positive under
 `atLeast`; the MATRIX is negative under `none`, `atMost` and `exactly` and
 positive under `atLeast` and `all`. This document puts both positive parts
 on a cycle through a recursive creation, and it is verifier-clean. The
-negative parts are pinned by the `corpus/negative/wf046-kwantorvouw-*`
+negative parts are pinned by the `corpus/negative/wf046-quantifier-fold-*`
 cases.
 
 One recursive creation and one rule, over Wachters in two relations:

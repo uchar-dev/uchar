@@ -355,28 +355,28 @@ public final class DroolsBackend {
      */
     public static void insert(Build build, KieSession session, Input input) {
         Objects.requireNonNull(build, "build");
-        Objects.requireNonNull(session, "sessie");
-        Objects.requireNonNull(input, "invoer");
+        Objects.requireNonNull(session, "session");
+        Objects.requireNonNull(input, "input");
         List<Object> beans = input.beans();
         TmsTranspiler tms = build.execModelTranspiler();
         if (session.getFactCount() != 0)
-            throw new IllegalStateException("voegIn vult een verse sessie, maar deze houdt al " + session.getFactCount()
+            throw new IllegalStateException("insert vult een verse sessie, maar deze houdt al " + session.getFactCount()
                     + " feiten: de plaatsen van een lijst worden over de beans van één invoer geteld, en een bean die"
-                    + " zonder voegIn in de sessie kwam, heeft er geen; geef alle beans in één Invoer aan een verse"
+                    + " zonder insert in de sessie kwam, heeft er geen; geef alle beans in één Input aan een verse"
                     + " sessie, en verander tussen twee fires hun waarden met update");
         Map<Object, ObjectType> types = new IdentityHashMap<>();
         // a case of ten thousand objects has a handful of bean classes
         Map<Class<?>, ObjectType> perClass = new HashMap<>();
         for (Object beanObject : beans)
             if (types.put(beanObject, perClass.computeIfAbsent(beanObject.getClass(), k -> objectType(build, beanObject))) != null)
-                throw new IllegalArgumentException("voegIn: de bean " + name(beanObject) + " staat twee keer in de invoer");
-        String outsideSentence = targetOutsideInput("voegIn", build, beans, types, perClass);
+                throw new IllegalArgumentException("insert: de bean " + name(beanObject) + " staat twee keer in de invoer");
+        String outsideSentence = targetOutsideInput("insert", build, beans, types, perClass);
         if (outsideSentence != null) throw new IllegalArgumentException(outsideSentence);
         List<Object> facts = new ArrayList<>(beans);
         for (Input.Bucket e : input.emmers()) facts.add(bucketInput(types, e));
         facts.addAll(listPlaces(build, tms.listFields(), beans, types, input.lists()));
         for (Object fact : facts) session.insert(fact);
-        Watch.op(session, relationFields(build, beansClasses(build)), beans, "DroolsBackend.voegIn");
+        Watch.op(session, relationFields(build, beansClasses(build)), beans, "DroolsBackend.insert");
     }
 
     /** The sentence that refuses a reference field of a bean of {@code beans} that holds an object outside
@@ -460,7 +460,7 @@ public final class DroolsBackend {
                 throw new IllegalStateException("geen beanklasse voor objecttype " + ot.name, e);
             }
         }
-        throw new IllegalArgumentException("voegIn: " + name(beanObject) + " is geen bean van dit model: een bean is een"
+        throw new IllegalArgumentException("insert: " + name(beanObject) + " is geen bean van dit model: een bean is een"
                 + " instantie van een klasse die Build.beanLoader() laadt");
     }
 
@@ -469,13 +469,13 @@ public final class DroolsBackend {
     private static BucketInput bucketInput(Map<Object, ObjectType> types, Input.Bucket e) {
         ObjectType ot = types.get(e.bean());
         if (ot == null)
-            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
+            throw new IllegalArgumentException("insert: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
                     + ", een bean die niet in de invoer staat");
         if (ot.attribute(e.attribute()) == null)
-            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
+            throw new IllegalArgumentException("insert: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
                     + ", maar " + ot.name + " heeft geen attribuut van die naam");
         if (!Namen.containsName(ot.granularityMembers(), e.attribute()))
-            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
+            throw new IllegalArgumentException("insert: emmerscalair '" + e.attribute() + "' op " + name(e.bean())
                     + ", maar dat attribuut van " + ot.name + " ligt niet op een tijdlijn; alleen de invoer van een"
                     + " tijdlijn kent de emmerconventie (RUNTIME-SEMANTICS ch. 8.4)");
         return new BucketInput(e.bean(), ProducerConsumer.elementOf(ot, e.attribute(), false));
@@ -519,7 +519,7 @@ public final class DroolsBackend {
         Set<ListKey> given = new HashSet<>();
         for (Input.ToManyList l : opgegeven) {
             String field = Namen.ident(l.role(), false);
-            String description = "voegIn: de lijst van " + name(l.houder()) + " onder de rol '" + l.role() + "'";
+            String description = "insert: de lijst van " + name(l.houder()) + " onder de rol '" + l.role() + "'";
             Map<ListKey, List<Object>> parts = new LinkedHashMap<>();
             Set<Object> named = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
             for (Object member : l.members()) {
@@ -617,7 +617,7 @@ public final class DroolsBackend {
 
     private static Fixpoint readFixpoint(Build build, KieSession session, Function<Object, String> label) {
         Objects.requireNonNull(build, "build");
-        Objects.requireNonNull(session, "sessie");
+        Objects.requireNonNull(session, "session");
         return build.execModelTranspiler().readOf(session, label);
     }
 
@@ -628,7 +628,7 @@ public final class DroolsBackend {
      * hold it (§13.3.9). Until this call the beans hold the input alone, since the branch writes no bean while it fires.
      *
      * <p>Before anything is written, it throws the evaluation faults that stand at the fixpoint, and then writes nothing:
-     * one fault as its own exception, which is a {@link Rational.DelingDoorNul} for a division by a numeric zero (an
+     * one fault as its own exception, which is a {@link Breuk.DelingDoorNul} for a division by a numeric zero (an
      * {@code ArithmeticException}, named after the rule with the operands), a {@code ComputeFault} for a fault of a
      * computation or of the evaluation date, a
      * {@code WritersConflict} for two writers of one attribute that disagree (an {@code IllegalStateException},
@@ -646,7 +646,7 @@ public final class DroolsBackend {
      */
     public static void setDerivedValues(Build build, KieSession session) {
         Objects.requireNonNull(build, "build");
-        Objects.requireNonNull(session, "sessie");
+        Objects.requireNonNull(session, "session");
         build.execModelTranspiler().setDerivedValues(session);
     }
 
@@ -656,7 +656,7 @@ public final class DroolsBackend {
      *  labels gets the type and the identity. The replay writes back through it. */
     public static void setDerivedValues(Build build, KieSession session, Function<Object, String> label) {
         Objects.requireNonNull(build, "build");
-        Objects.requireNonNull(session, "sessie");
+        Objects.requireNonNull(session, "session");
         Objects.requireNonNull(label, "label");
         build.execModelTranspiler().setDerivedValues(session, label);
     }
@@ -749,7 +749,7 @@ public final class DroolsBackend {
      */
     public static Firing fire(Build build, KieSession session) {
         Objects.requireNonNull(build, "build");
-        Objects.requireNonNull(session, "sessie");
+        Objects.requireNonNull(session, "session");
         return fire(build, session, FACTOR, FLOOR);
     }
 
@@ -763,8 +763,8 @@ public final class DroolsBackend {
      */
     public static Firing fire(Build build, KieSession session, Observer observer) {
         Objects.requireNonNull(build, "build");
-        Objects.requireNonNull(session, "sessie");
-        Objects.requireNonNull(observer, "waarnemer");
+        Objects.requireNonNull(session, "session");
+        Objects.requireNonNull(observer, "observer");
         observer.bind(session);
         AgendaEventListener listener = observer.listener(build.execModelTranspiler());
         session.addEventListener(listener);
@@ -862,7 +862,7 @@ public final class DroolsBackend {
      */
     public static List<ScenarioResult.CoverageRule> coverage(Build build, Set<String> firedForms) {
         Objects.requireNonNull(build, "build");
-        Objects.requireNonNull(firedForms, "gevuurdeVormen");
+        Objects.requireNonNull(firedForms, "firedForms");
         Set<String> posten = new HashSet<>();
         for (Coverage d : build.coverage()) posten.add(d.name());
         for (String form : firedForms)
@@ -885,7 +885,7 @@ public final class DroolsBackend {
     public record Comparison(List<ScenarioResult.ExpectationResult> expectations, String diagnostic) {
         public Comparison {
             expectations = List.copyOf(expectations);
-            Objects.requireNonNull(diagnostic, "diagnose");
+            Objects.requireNonNull(diagnostic, "diagnostic");
         }
 
         /** Whether every expectation held. */
@@ -926,9 +926,9 @@ public final class DroolsBackend {
     public static Comparison compare(Build build, KieSession session, Function<Object, String> label,
                                          JsonNode expectations) {
         Objects.requireNonNull(build, "build");
-        Objects.requireNonNull(session, "sessie");
+        Objects.requireNonNull(session, "session");
         Objects.requireNonNull(label, "label");
-        Objects.requireNonNull(expectations, "verwachtingen");
+        Objects.requireNonNull(expectations, "expectations");
         if (!expectations.isArray())
             throw new IllegalArgumentException("vergelijk: de verwachtingen zijn de array 'expected' van een case, en dit"
                     + " is een " + expectations.getNodeType());
@@ -936,11 +936,11 @@ public final class DroolsBackend {
         if (!faults.isEmpty())
             throw new IllegalStateException("vergelijk: aan het fixpunt van deze sessie staan " + faults.size()
                     + " evaluatiefout(en), de eerste van '" + faults.get(0).rule() + "': " + faults.get(0).message()
-                    + "; de regels geven op deze invoer geen antwoord, en zetAfgeleideWaarden werpt de fouten en zet niets"
+                    + "; de regels geven op deze invoer geen antwoord, en setDerivedValues werpt de fouten en zet niets"
                     + " terug, dus er is niets om met de verwachtingen te vergelijken");
         if (session.getObjects(new ClassObjectFilter(WrittenBack.class)).isEmpty())
             throw new IllegalStateException("vergelijk: deze sessie is niet teruggezet; de beans dragen het fixpunt pas na"
-                    + " DroolsBackend.zetAfgeleideWaarden, en tot dan alleen de invoer, dus zet eerst terug");
+                    + " DroolsBackend.setDerivedValues, en tot dan alleen de invoer, dus zet eerst terug");
         Map<String, Object> perLabel = new HashMap<>();
         Map<String, ObjectType> types = new HashMap<>();
         for (Map.Entry<Class<?>, ObjectType> k : beansClasses(build).entrySet())
@@ -1087,40 +1087,40 @@ public final class DroolsBackend {
         // what a creation made is stated and does not lapse, so a later fire would keep it beside an input it no longer
         // follows from; checked first, since a written-back session of such a model cannot be read between fires either
         if (!marks.isEmpty() && !tms.creationRules().isEmpty())
-            throw new IllegalStateException("dit model heeft creatieregels, en deze sessie is al via DroolsBackend.vuur"
+            throw new IllegalStateException("dit model heeft creatieregels, en deze sessie is al via DroolsBackend.fire"
                     + " gevuurd: wat een creatie maakte, met de initialisaties, de koppelingen en de fout van een mislukte"
                     + " initialisatie, is gesteld en vervalt niet (RUNTIME-SEMANTICS ch. 5.5), dus een volgende fire zou"
                     + " na een invoerwijziging een toestand geven die geen verse evaluatie geeft; open per invoer een"
                     + " verse sessie");
         if (!session.getObjects(new ClassObjectFilter(WrittenBack.class)).isEmpty())
-            throw new IllegalStateException("deze sessie is teruggezet (zetAfgeleideWaarden): haar beans dragen afgeleide"
+            throw new IllegalStateException("deze sessie is teruggezet (setDerivedValues): haar beans dragen afgeleide"
                     + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
-                    + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met beans die"
+                    + " DroolsBackend.fixpointOf en zet pas na de laatste fire terug, of open een verse sessie met beans die"
                     + " alleen invoer dragen");
         Watch installedWatch = Watch.van(session);
         // insert puts the watch on, or the first run where there was no insert, and every run puts it back, so only a
         // consumer that took it off leaves a fired session without it, and what happened since is then not to be seen
         if (installedWatch == null && !marks.isEmpty())
-            throw new IllegalStateException("de bewaking die DroolsBackend.vuur op deze sessie zette, staat er niet meer"
-                    + " op, dus wat er na de laatste vuur gebeurde, is niet te zien; open een verse sessie met alle beans"
-                    + " in één Invoer");
+            throw new IllegalStateException("de bewaking die DroolsBackend.fire op deze sessie zette, staat er niet meer"
+                    + " op, dus wat er na de laatste fire gebeurde, is niet te zien; open een verse sessie met alle beans"
+                    + " in één Input");
         if (installedWatch != null && installedWatch.onOrOff() != null)
-            throw new IllegalStateException("sinds " + installedWatch.since() + " kwam er buiten voegIn om invoer bij of ging er"
-                    + " invoer weg (" + installedWatch.onOrOff() + "): een afnemer geeft alle beans in één Invoer aan"
-                    + " voegIn en verandert daarna alleen hun attributen en kenmerken, met update, want voegIn legt de"
+            throw new IllegalStateException("sinds " + installedWatch.since() + " kwam er buiten insert om invoer bij of ging er"
+                    + " invoer weg (" + installedWatch.onOrOff() + "): een afnemer geeft alle beans in één Input aan"
+                    + " insert en verandert daarna alleen hun attributen en kenmerken, met update, want insert legt de"
                     + " plaatsen van een lijst en de emmerscalairen vast over de beans van één invoer; een nieuw of"
                     + " verwijderd object vraagt een verse sessie");
         String agenda = Watch.agenda(session);
         String more = installedWatch == null ? agenda : installedWatch.moreThanOneUpdate() != null ? installedWatch.moreThanOneUpdate() : agenda;
         if (more != null)
             throw new IllegalStateException("sinds " + (installedWatch == null ? "het begin van deze sessie" : installedWatch.since())
-                    + " gebeurde er buiten vuur om meer dan een update van een attribuut of kenmerk van een bean (" + more
-                    + "), en meer laat de ingang niet toe: open een verse sessie met alle beans in één Invoer");
+                    + " gebeurde er buiten fire om meer dan een update van een attribuut of kenmerk van een bean (" + more
+                    + "), en meer laat de ingang niet toe: open een verse sessie met alle beans in één Input");
         String global = installedWatch == null ? null : installedWatch.changedGlobal(session);
         if (global != null)
             throw new IllegalStateException(global + ": de tak leest een global één keer, in een regel die haar bij de"
                     + " eerste fire als feit stelt, dus een volgende fire zou met de oude waarde rekenen; zet de globals"
-                    + " vóór de eerste vuur, en open voor een andere waarde een verse sessie");
+                    + " vóór de eerste fire, en open voor een andere waarde een verse sessie");
         Map<Class<?>, ObjectType> classes = beansClasses(build);
         String outsideSentence = targetOutsideSession(build, session, classes);
         if (outsideSentence != null) throw new IllegalStateException(outsideSentence);
@@ -1128,13 +1128,13 @@ public final class DroolsBackend {
         if (relation != null)
             throw new IllegalStateException(relation + ": Drools ziet een veld pas na een update, dus een fire zou de oude"
                     + " relatie blijven lezen, en ook met een update vraagt een gewijzigde relatie een verse sessie, want"
-                    + " voegIn legt de plaatsen van een lijst vast over de relaties van één invoer; open een verse sessie"
-                    + " met alle beans in één Invoer");
+                    + " insert legt de plaatsen van een lijst vast over de relaties van één invoer; open een verse sessie"
+                    + " met alle beans in één Input");
         Watch watch = installedWatch != null ? installedWatch
                 : Watch.op(session, relationFields(build, classes), beansInSession(session, classes),
-                        "de eerste DroolsBackend.vuur van deze sessie");
+                        "de eerste DroolsBackend.fire van deze sessie");
         watch.recordGlobals(session);
-        watch.forget("de laatste DroolsBackend.vuur van deze sessie");
+        watch.forget("de laatste DroolsBackend.fire van deze sessie");
         return watch.without(session, () -> {
             for (FactHandle mark : marks) session.delete(mark);
             Firing firing;
@@ -1216,7 +1216,7 @@ public final class DroolsBackend {
     }
 
     /** Names the fault behind {@code e}, the exception Drools' default handler throws out of the fire when a consequence
-     *  throws: a {@link Rational.DelingDoorNul} in its cause chain becomes one naming the rule, with what the consequence
+     *  throws: a {@link Breuk.DelingDoorNul} in its cause chain becomes one naming the rule, with what the consequence
      *  threw as its cause; any other {@code e} is returned unchanged. Neither branch throws an evaluation fault out of
      *  its fire, which stands as a fact at the fixpoint, so what comes here is a broken contract or a bug, and this
      *  hands it on as it is. Until card drl-teksttak-op-truth-maintenance the DRL-text branch threw a division by a

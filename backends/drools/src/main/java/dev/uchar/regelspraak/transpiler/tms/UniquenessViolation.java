@@ -12,7 +12,7 @@ import java.util.Objects;
 public record UniquenessViolation(String uniqueness, Object element) {
 
     public UniquenessViolation {
-        Objects.requireNonNull(uniqueness, "uniciteit");
+        Objects.requireNonNull(uniqueness, "uniqueness");
         Objects.requireNonNull(element, "element");
     }
 
@@ -25,6 +25,6 @@ public record UniquenessViolation(String uniqueness, Object element) {
     }
 
     @Override public String toString() {
-        return "Uniciteitsschending(" + uniqueness + ", " + FactNames.object(element) + ")";
+        return "UniquenessViolation(" + uniqueness + ", " + FactNames.object(element) + ")";
     }
 }

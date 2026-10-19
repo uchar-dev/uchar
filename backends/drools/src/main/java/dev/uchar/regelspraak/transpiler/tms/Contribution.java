@@ -19,7 +19,7 @@ import java.util.Objects;
 public record Contribution(String fold, Object subject, Object element, Object value) {
 
     public Contribution {
-        Objects.requireNonNull(fold, "vouw");
+        Objects.requireNonNull(fold, "fold");
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(element, "element");
     }
@@ -40,7 +40,7 @@ public record Contribution(String fold, Object subject, Object element, Object v
     }
 
     @Override public String toString() {
-        return "Bijdrage(" + fold + ", " + FactNames.object(subject) + ", " + FactNames.object(element)
+        return "Contribution(" + fold + ", " + FactNames.object(subject) + ", " + FactNames.object(element)
                 + (value == null ? "" : ", " + value) + ")";
     }
 }
