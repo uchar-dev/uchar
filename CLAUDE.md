@@ -578,9 +578,13 @@ A gate that gets no floor carries one sentence in its script saying why.
   constructors and functions, ASP predicates, shell variables, CLI flags
   and test names; so is every file and directory name.
 - Where the wire has a name for a concept, the code uses it
-  (`emptyFallback`, not `leegwaarde`). `scripts/lib/naming/glossary.tsv`
-  gives the English word for the Dutch words in the code, with its source
-  per row (wire, spec, field or plain).
+  (`emptyFallback`, not `leegwaarde`); otherwise the term of the English
+  spec text (`spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`). A few fixed
+  choices: `fout` is error for a parse, load or document error and fault
+  for an evaluation fault; `voorwaarde` is condition; `soort` is kind;
+  `terugzetten` is write back. The renaming programme of 2026-10-17/19 and
+  its tool are in the git history (`backlog/done/20261017-engelse-namen-afspraak.md`
+  and the cards after it).
 - Dutch, as authored: domain content (the Jutterswet, declared names,
   RegelSpraak sources, case labels, the `jutterswet-*` names) and the
   RegelSpraak keywords (the lexer's literals and the token names that
