@@ -244,7 +244,7 @@ class DecisionTableDesugarTest {
         assertTrue(m.errors().isEmpty(), () -> "resolver-fout: " + m.errors());
         assertEquals(2, m.resolvedRules.size());
         for (ResolvedRule r : m.resolvedRules) {
-            assertEquals(ResolvedRule.Kind.GELIJKSTELLING, r.category());
+            assertEquals(ResolvedRule.Kind.GELIJKSTELLING, r.kind());
             assertTrue(r.target() instanceof Expr.AttributeReference a && a.attribute().equals("korting"),
                     () -> "doel niet de korting: " + r.target());
             assertNotNull(r.condition(), "voorwaarde ontbreekt");

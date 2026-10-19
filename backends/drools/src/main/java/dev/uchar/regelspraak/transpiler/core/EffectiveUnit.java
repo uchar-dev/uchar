@@ -88,7 +88,7 @@ public final class EffectiveUnit {
     /** The datatype every §4 restatement site must use: the node's datatype ({@link #typeOf}) with its unit
      *  replaced by the DERIVED one. Non-numeric types (and a node whose derivation lands on the annotation anyway)
      *  pass through unchanged, so a verifier-clean document lowers byte-for-byte as before. */
-    public Datatype van(Expr e) {
+    public Datatype of(Expr e) {
         Datatype t = typeOf(e);
         if (!(t instanceof Datatype.Numeric) && !(t instanceof Datatype.Percentage)) return t;
         Unit derived = unit(e, LEEG, 0);
@@ -101,7 +101,7 @@ public final class EffectiveUnit {
 
     /** The derived unit itself (null = unitless), for a caller that compares units rather than datatypes. */
     public Unit unitOf(Expr e) {
-        Datatype t = van(e);
+        Datatype t = of(e);
         return t == null ? null : t.unitOf();
     }
 

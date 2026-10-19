@@ -440,8 +440,8 @@ class CreationPlanWitnessTest {
      * memory, as a later setter after the insertion would, or that would insert a fact naming the bean before it.
      */
     @Test void the_plan_of_a_creation_constructs_before_inserting() {
-        ElementKey amount = ElementKey.van("Penning", "bedrag", false);
-        ElementKey uitgereikt = ElementKey.van("Penning", "uitgereikt", true);
+        ElementKey amount = ElementKey.of("Penning", "bedrag", false);
+        ElementKey uitgereikt = ElementKey.of("Penning", "uitgereikt", true);
         List<Consequence.Initialisation> inits = List.of(new Consequence.Initialisation(amount, new Term.SlotValue(1, "bedrag")),
                 new Consequence.Initialisation(uitgereikt, new Term.Const(true, null, "waar")));
         Consequence.Construction build = new Consequence.Construction(Object.class,
@@ -481,10 +481,10 @@ class CreationPlanWitnessTest {
      * characteristic before the link, two attributes set in reverse.
      */
     @Test void the_creation_keeps_the_order_of_its_consequence() {
-        ElementKey amount = ElementKey.van("Penning", "bedrag", false);
-        ElementKey weight = ElementKey.van("Penning", "gewicht", false);
-        ElementKey uitgereikt = ElementKey.van("Penning", "uitgereikt", true);
-        ElementKey minted = ElementKey.van("Penning", "gemunt", true);
+        ElementKey amount = ElementKey.of("Penning", "bedrag", false);
+        ElementKey weight = ElementKey.of("Penning", "gewicht", false);
+        ElementKey uitgereikt = ElementKey.of("Penning", "uitgereikt", true);
+        ElementKey minted = ElementKey.of("Penning", "gemunt", true);
         List<Consequence.Initialisation> inits = List.of(new Consequence.Initialisation(amount, new Term.SlotValue(1, "bedrag")),
                 new Consequence.Initialisation(uitgereikt, new Term.Const(true, null, "waar")),
                 new Consequence.Initialisation(minted, new Term.Const(true, null, "waar")),
@@ -523,8 +523,8 @@ class CreationPlanWitnessTest {
      * creatie stelt wat ze maakt, …]&gt; but was: &lt;[ok, ok, ok, ok, ok, ok]&gt;".
      */
     @Test void a_creation_sets_what_it_makes() {
-        ElementKey amount = ElementKey.van("Penning", "bedrag", false);
-        ElementKey uitgereikt = ElementKey.van("Penning", "uitgereikt", true);
+        ElementKey amount = ElementKey.of("Penning", "bedrag", false);
+        ElementKey uitgereikt = ElementKey.of("Penning", "uitgereikt", true);
         List<Consequence.Initialisation> inits = List.of(new Consequence.Initialisation(amount, new Term.SlotValue(1, "bedrag")),
                 new Consequence.Initialisation(uitgereikt, new Term.Const(true, null, "waar")));
         Consequence.Construction build = new Consequence.Construction(Object.class,
@@ -735,7 +735,7 @@ class CreationPlanWitnessTest {
             out.add("regel " + p.name() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
             for (Read l : p.readings().slots())
-                slots.add(l.slot() + " " + l.category() + " " + l.name() + " (" + l.key() + ")");
+                slots.add(l.slot() + " " + l.kind() + " " + l.name() + " (" + l.key() + ")");
             out.add("  lezingen " + slots);
             for (LhsItem item : p.leftSide()) {
                 out.add("  " + item(item));
@@ -757,7 +757,7 @@ class CreationPlanWitnessTest {
             case Exists b -> "bestaat binnen " + b.inside() + " buiten " + b.outside() + " "
                     + b.patterns().stream().map(CreationPlanWitnessTest::pattern).toList();
             case Accumulation a -> "accumulatie " + pattern(a.source()) + " functies "
-                    + a.aggregations().stream().map(f -> f.category() + " " + f.source() + " -> " + f.target()).toList();
+                    + a.aggregations().stream().map(f -> f.kind() + " " + f.source() + " -> " + f.target()).toList();
             case TestItem t -> "toets " + t.id() + " " + t.role() + " sonde " + t.depositFlag() + " slots " + t.slots()
                     + " grootte " + t.size() + ": " + TermTree.tree(t.test());
         };

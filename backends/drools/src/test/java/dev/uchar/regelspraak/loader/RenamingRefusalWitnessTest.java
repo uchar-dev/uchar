@@ -431,7 +431,7 @@ class RenamingRefusalWitnessTest {
         assertNotNull(v.right());
         assertTrue(v.period().year());
         Condition.Predicate p = assertInstanceOf(Condition.Predicate.class, s.components().get(1));
-        assertEquals(Condition.PredicateKind.DAGSOORT, p.category());
+        assertEquals(Condition.PredicateKind.DAGSOORT, p.kind());
         assertEquals("feestdag", p.dayKind());
         assertTrue(p.negation());
         assertEquals(3, p.digits());

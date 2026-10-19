@@ -29,7 +29,7 @@ import java.util.TreeMap;
  * The replay reads every case here ({@link CaseRunner}: the gate, the report, the red path and every witness seam), so a
  * consumer that reads a case here puts in the beans the gate plays.
  *
- * <p>{@link #van} reads two members of the case. First {@code asOfDate}, the evaluation date: a scalar input on an
+ * <p>{@link #of} reads two members of the case. First {@code asOfDate}, the evaluation date: a scalar input on an
  * attribute on a timeline is placed in the period of the attribute's grid that holds that date, the asOfDate-bucket
  * convention of RUNTIME-SEMANTICS ch. 8.4, so the date is read before any input. Then {@code input.instances}. The
  * parameters and the evaluation date go on the session as globals, by the caller, and the expectations are compared
@@ -56,7 +56,7 @@ import java.util.TreeMap;
  * into the list, by label in plain byte order (ch. 5.7a, "member ORDER"), a member in both counting once, where it was
  * written. The order decides which member a fault of a fold names (ch. 5.11), never a value.
  *
- * <p>{@link #van} refuses, before anything goes into a session:
+ * <p>{@link #of} refuses, before anything goes into a session:
  * <ul>
  *   <li>a form this backend does not carry (an unknown object type, an undeclared attribute, a dimensioned attribute,
  *       a rational value, …): a {@link CaseRunner.Excluded}, in the sentence of the replay's report;</li>
@@ -70,7 +70,7 @@ import java.util.TreeMap;
  *       {@link IllegalArgumentException}.</li>
  * </ul>
  * The two refusals of a role link name the link the case wrote ({@link RoleError}), so a consumer can point at the field
- * of its own request that wrote it. While it reads, {@link #van} holds {@link DroolsBackend.Build#beanLoader()} as the
+ * of its own request that wrote it. While it reads, {@link #of} holds {@link DroolsBackend.Build#beanLoader()} as the
  * thread's context class loader, and gives the previous one back.
  */
 public final class CaseInput {
@@ -166,14 +166,14 @@ public final class CaseInput {
      * @throws IllegalArgumentException a defect of the case, a {@link RoleCollision} among them, and a case without an
      *                                  array {@code input.instances}
      */
-    public static CaseInput van(DroolsBackend.Build build, JsonNode c) {
+    public static CaseInput of(DroolsBackend.Build build, JsonNode c) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(c, "c");
         LocalDate evaluationDate = CaseRunner.asOfDate(c);
         JsonNode input = c.get("input");
         JsonNode instances = input == null ? null : input.get("instances");
         if (instances == null || !instances.isArray())
-            throw new IllegalArgumentException("CaseInput.van: de case draagt geen array input.instances, het deel van"
+            throw new IllegalArgumentException("CaseInput.of: de case draagt geen array input.instances, het deel van"
                     + " een uchar-case-v0-case dat de invoer beschrijft");
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(build.beanLoader());
@@ -214,12 +214,12 @@ public final class CaseInput {
     public Input inputData() {
         Input inputData = new Input().beans(labelToBean.values());
         for (Input.Bucket e : emmers) inputData.bucketScalar(e.bean(), e.attribute());
-        for (Map.Entry<Object, Map<String, ToManyList>> perHouder : lists.entrySet())
-            for (ToManyList l : perHouder.getValue().values()) {
+        for (Map.Entry<Object, Map<String, ToManyList>> perHolder : lists.entrySet())
+            for (ToManyList l : perHolder.getValue().values()) {
                 List<Object> members = new ArrayList<>(l.written);
                 for (Object member : l.mirrored.values())
                     if (members.stream().noneMatch(x -> x == member)) members.add(member);
-                inputData.list(perHouder.getKey(), l.role, members);
+                inputData.list(perHolder.getKey(), l.role, members);
             }
         return inputData;
     }
@@ -399,8 +399,8 @@ public final class CaseInput {
         }
     }
 
-    private ToManyList list(Object houder, String role) {
-        return lists.computeIfAbsent(houder, k -> new LinkedHashMap<>())
+    private ToManyList list(Object holder, String role) {
+        return lists.computeIfAbsent(holder, k -> new LinkedHashMap<>())
                 .computeIfAbsent(Namen.ident(role, false), k -> new ToManyList(role));
     }
 
@@ -436,22 +436,22 @@ public final class CaseInput {
         // of a SUBTYPE of the role's filler, which the field of the filler's class takes (IR-SPEC ch. 2.6) and which
         // the type gate then refused by equality. Two same-named roles toward different types
         // (corpus/red/ambiguous-case-role-key) are the cause that sentence was written for, and it now names them.
-        FactModelGenerator.Origin houder = FactModelGenerator.fieldOrigin(model, carrier, role);
+        FactModelGenerator.Origin holder = FactModelGenerator.fieldOrigin(model, carrier, role);
         String field = Namen.ident(carrier.name, true) + "." + Namen.ident(role, false);
         String cause;
         if (carrier.hasMember(role)) cause = "which shares its name with a declared member";
-        else if (houder == null) cause = "for which the bean model derives no field";
-        else if (houder.category() != FactModelGenerator.Origin.Kind.ROL)
-            cause = "whose bean property " + field + " belongs to " + described(houder);
-        else if (!houder.equals(FactModelGenerator.roleOrigin(model, carrier, target, role)))
-            cause = "whose field " + field + " another role already holds, " + described(houder);
+        else if (holder == null) cause = "for which the bean model derives no field";
+        else if (holder.kind() != FactModelGenerator.Origin.Kind.ROL)
+            cause = "whose bean property " + field + " belongs to " + described(holder);
+        else if (!holder.equals(FactModelGenerator.roleOrigin(model, carrier, target, role)))
+            cause = "whose field " + field + " another role already holds, " + described(holder);
         else cause = "whose field " + field + " cannot hold a " + target.name;
         throw new RoleRefusal(DroolsCode.NAME_SHARING_ONE_ROLE.reason("role", link.role(), "targetRole", role, "objectType", carrier.name, "cause", cause), link);
     }
 
     /** A declaration in the words of this reader's refusals. */
     private static String described(FactModelGenerator.Origin h) {
-        return switch (h.category()) {
+        return switch (h.kind()) {
             case ATTRIBUUT -> "the attribute '" + h.name() + "' of " + h.source();
             case KENMERK -> "the characteristic '" + h.name() + "' of " + h.source();
             case ROL -> "the role '" + h.name() + "'" + (h.source() == null ? "" : " of fact type '" + h.source() + "'");

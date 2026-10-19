@@ -994,7 +994,7 @@ class TmsCreationStratumWitnessTest {
 
     /** A document of {@code creations} and {@code rules} in the order given. */
     interface Build {
-        Path van(List<String> creations, List<String> rules) throws Exception;
+        Path of(List<String> creations, List<String> rules) throws Exception;
     }
 
     /** Plays case {@code caseDocument} through the replay on every order of {@code creations} and of {@code rules} in the
@@ -1005,7 +1005,7 @@ class TmsCreationStratumWitnessTest {
         for (List<String> c : permutations(creations))
             for (List<String> r : permutations(rules)) {
                 String names = ruleNames(c) + " " + ruleNames(r);
-                outcomes.add(names + " " + TmsFaultWitnessTest.playBoth(build.van(c, r), caseDocument));
+                outcomes.add(names + " " + TmsFaultWitnessTest.playBoth(build.of(c, r), caseDocument));
                 expected.add(names + " gespeeld");
             }
         assertEquals(expected, outcomes);

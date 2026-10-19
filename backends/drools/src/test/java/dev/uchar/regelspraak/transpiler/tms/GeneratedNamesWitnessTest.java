@@ -32,7 +32,7 @@ class GeneratedNamesWitnessTest {
     }
 
     private static String element(Designatable b) {
-        return b.category() + " " + (b.owner() == null ? "" : b.owner() + ".") + b.name();
+        return b.kind() + " " + (b.owner() == null ? "" : b.owner() + ".") + b.name();
     }
 
     private static List<String> table(DroolsBackend.Build b) {

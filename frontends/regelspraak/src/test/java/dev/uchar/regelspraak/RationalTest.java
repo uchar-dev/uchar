@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class RationalTest {
 
     private static void assertRational(String source, String numerator, String denominator) {
-        BigDecimal[] r = RationalParser.van(source);
+        BigDecimal[] r = RationalParser.of(source);
         assertNotNull(r, () -> "geen getal in: " + source);
         assertEquals(0, new BigDecimal(numerator).compareTo(r[0]), () -> "teller van " + source + " = " + r[0]);
         assertEquals(0, new BigDecimal(denominator).compareTo(r[1]), () -> "noemer van " + source + " = " + r[1]);
@@ -34,7 +34,7 @@ class RationalTest {
     }
 
     @Test void no_number_is_null() {
-        assertNull(RationalParser.van("geen cijfer hier"));
+        assertNull(RationalParser.of("geen cijfer hier"));
     }
 
     @Test void leading_words_are_skipped() {

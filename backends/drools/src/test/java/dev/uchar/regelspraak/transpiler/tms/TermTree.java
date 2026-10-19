@@ -25,7 +25,7 @@ final class TermTree {
                     + "] in [" + tree(l.body()) + "]";
             case Term.Choice k -> "Keuze(" + tree(k.condition()) + ", " + tree(k.then()) + ", " + tree(k.otherwise()) + ")";
             case Term.Call a -> a.function() + list(a.arguments());
-            case Term.Restate h -> "Herschaal " + h.function() + " " + unit(h.van()) + "->" + unit(h.destination())
+            case Term.Restate h -> "Herschaal " + h.function() + " " + unit(h.from()) + "->" + unit(h.destination())
                     + " " + h.counter() + (h.denominator() == null ? "" : "/" + h.denominator()) + " (" + tree(h.term()) + ")";
             case Term.Division d -> "Deel " + d.function() + " sonde " + d.depositFlag() + " (" + tree(d.left()) + ", "
                     + tree(d.right()) + ")";

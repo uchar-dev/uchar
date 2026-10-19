@@ -112,9 +112,9 @@ class SessionDumpWitnessTest {
      *  and "a" with "b.c", and the attribute "b (kenmerk)" with the characteristic "b". Each pair gives two dumps that
      *  differ, with the type and the name of the key quoted. */
     @Test void two_keys_that_coincide_as_text_differ_in_the_dump() throws Exception {
-        assertKeys(ElementKey.van("A.B", "c", false), ElementKey.van("A", "B.c", false),
+        assertKeys(ElementKey.of("A.B", "c", false), ElementKey.of("A", "B.c", false),
                 "\"a.b\".\"c\"", "\"a\".\"b.c\"");
-        assertKeys(ElementKey.van("A", "b (kenmerk)", false), ElementKey.van("A", "b", true),
+        assertKeys(ElementKey.of("A", "b (kenmerk)", false), ElementKey.of("A", "b", true),
                 "\"a\".\"b (kenmerk)\"", "\"a\".\"b\" (kenmerk)");
     }
 
@@ -303,7 +303,7 @@ class SessionDumpWitnessTest {
                 map, set, SampleType.FIRST_KIND, new IllegalArgumentException("een \"fout\""),
                 new SampleRecord("r", new BigDecimal("1.50"), List.of(false)), Boolean.TRUE, 7, 8L,
                 java.time.LocalDate.of(2026, 10, 14), java.time.LocalDateTime.of(2026, 10, 14, 9, 15, 30),
-                java.time.LocalTime.of(9, 15), ElementKey.van("Vondst", "wrak", true));
+                java.time.LocalTime.of(9, 15), ElementKey.of("Vondst", "wrak", true));
     }
 
     /** The dump of a session into which {@code object} is put right before the dump, which must refuse it. */

@@ -952,7 +952,7 @@ class IrEmitterTest {
                         Source.synthetic("groter dan 0")),
                 original.value(), original.value(), original.value().type(),
                 Source.synthetic("als … dan … anders …"));
-        m.resolvedRules.set(0, new ResolvedRule(original.name(), original.category(), original.target(),
+        m.resolvedRules.set(0, new ResolvedRule(original.name(), original.kind(), original.target(),
                 choice, original.condition(), original.validity()));
 
         UnsupportedOperationException refused =
@@ -1015,9 +1015,9 @@ class IrEmitterTest {
                 assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnoses: " + m.diagnostics);
                 ResolvedRule r = m.resolvedRules.get(0);
                 m.resolvedRules.set(0, condition
-                        ? new ResolvedRule(r.name(), r.category(), r.target(), r.value(),
+                        ? new ResolvedRule(r.name(), r.kind(), r.target(), r.value(),
                                 new Condition.Unresolved(source, "test"), r.validity())
-                        : new ResolvedRule(r.name(), r.category(), r.target(),
+                        : new ResolvedRule(r.name(), r.kind(), r.target(),
                                 new Expr.Unresolved(r.value().type(), source, "test"), r.condition(), r.validity()));
                 m.diagnostics.add(new Diagnostic(Severity.WARNING, "een melding", 1));
                 IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
@@ -1087,7 +1087,7 @@ class IrEmitterTest {
         assertTrue(without.contains("\"role\":\"toegewezenwachtpost\",\"negated\":false,"),
                 () -> "de gedeclareerde vuller vernauwt niets:\n" + without);
         Condition.FarRoleMembership v = (Condition.FarRoleMembership) r.condition();
-        m.resolvedRules.set(0, new ResolvedRule(r.name(), r.category(), r.target(), r.value(),
+        m.resolvedRules.set(0, new ResolvedRule(r.name(), r.kind(), r.target(), r.value(),
                 new Condition.FarRoleMembership(m.objectTypes.get("Strandjutter"), v.backref(), v.negation(), v.source()),
                 r.validity()));
         String with = IrEmitter.emit(m).replaceAll("\\s+", "");
@@ -1183,7 +1183,7 @@ class IrEmitterTest {
         ResolvedRule r = m.resolvedRules.get(0);
         Expr.Binary b = (Expr.Binary) r.value();
         Datatype unknown = new Datatype.Unknown("test");
-        m.resolvedRules.set(0, new ResolvedRule(r.name(), r.category(), r.target(),
+        m.resolvedRules.set(0, new ResolvedRule(r.name(), r.kind(), r.target(),
                 new Expr.Binary(b.op(), b.left(), b.right(), unknown, b.source()), r.condition(), r.validity()));
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
         assertTrue(c.contains("\"type\":null,\"source\":{\"snippet\":\"devondsttellervandeJutter"),
@@ -1191,13 +1191,13 @@ class IrEmitterTest {
         assertFalse(c.contains("Onbekend"), () -> "het onbekende type heeft geen spelling:\n" + c);
 
         Expr.Literal six = (Expr.Literal) b.right();
-        m.resolvedRules.set(0, new ResolvedRule(r.name(), r.category(), r.target(),
+        m.resolvedRules.set(0, new ResolvedRule(r.name(), r.kind(), r.target(),
                 new Expr.Binary(b.op(), b.left(), new Expr.Literal(six.valueText(), unknown, six.source()), b.type(), b.source()),
                 r.condition(), r.validity()));
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(e.getMessage().contains("onbekend datatype"), e::getMessage);
 
-        m.resolvedRules.set(0, new ResolvedRule(r.name(), r.category(), r.target(),
+        m.resolvedRules.set(0, new ResolvedRule(r.name(), r.kind(), r.target(),
                 new Expr.Unresolved(unknown, b.source(), "test"), r.condition(), r.validity()));
         m.diagnostics.add(new Diagnostic(Severity.WARNING, "onopgelost: " + b.source().snippet(), 1));
         String marker = IrEmitter.emit(m).replaceAll("\\s+", "");
@@ -1258,7 +1258,7 @@ class IrEmitterTest {
             RegelSpraakModel m = threeRules();
             for (int i = 0; i < 3; i++) {
                 ResolvedRule r = m.resolvedRules.get(i);
-                m.resolvedRules.set(i, new ResolvedRule(g.names().get(i), r.category(), r.target(), r.value(),
+                m.resolvedRules.set(i, new ResolvedRule(g.names().get(i), r.kind(), r.target(), r.value(),
                         r.condition(), r.validity(), g.annotations().get(i)));
             }
             IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
@@ -1270,7 +1270,7 @@ class IrEmitterTest {
         List<String> names = List.of("x", "x #1", "x #2");
         for (int i = 0; i < 3; i++) {
             ResolvedRule r = m.resolvedRules.get(i);
-            m.resolvedRules.set(i, new ResolvedRule(names.get(i), r.category(), r.target(), r.value(), r.condition(),
+            m.resolvedRules.set(i, new ResolvedRule(names.get(i), r.kind(), r.target(), r.value(), r.condition(),
                     r.validity(), r.statuteAnnotations()));
         }
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
@@ -1458,7 +1458,7 @@ class IrEmitterTest {
                 new Expr.Literal("ja", new Datatype.BooleanType(), one.source()),
                 new Expr.Constant("Rekenmaand", new Datatype.DateInDays(), one.source()),
                 new Expr.Constant("de dag", null, one.source()))) {
-            m.resolvedRules.set(0, new ResolvedRule(r.name(), r.category(), r.target(), value, r.condition(),
+            m.resolvedRules.set(0, new ResolvedRule(r.name(), r.kind(), r.target(), value, r.condition(),
                     r.validity()));
             IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
                     () -> "geschreven: " + value);
@@ -1496,7 +1496,7 @@ class IrEmitterTest {
                         r.value().type(), r.value().source()),
                 new Expr.FunctionCall(Expr.FunctionKind.SOM, List.of(attributeRead), null, null, null, null,
                         r.value().type(), r.value().source(), RegelSpraakModel.Granularity.MAAND))) {
-            m.resolvedRules.set(0, new ResolvedRule(r.name(), r.category(), r.target(), value, r.condition(),
+            m.resolvedRules.set(0, new ResolvedRule(r.name(), r.kind(), r.target(), value, r.condition(),
                     r.validity()));
             IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
                     () -> "geschreven: " + value);

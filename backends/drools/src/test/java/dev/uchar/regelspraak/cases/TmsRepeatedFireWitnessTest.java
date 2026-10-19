@@ -457,7 +457,7 @@ class TmsRepeatedFireWitnessTest {
             session.setGlobal("aanvoertarief", new BigDecimal("22.50"));
             assertEquals(changed + ": de tak leest een global één keer, in een regel die haar bij de eerste fire als"
                     + " feit stelt, dus een volgende fire zou met de oude waarde rekenen; zet de globals vóór de eerste"
-                    + " vuur, en open voor een andere waarde een verse sessie",
+                    + " fire, en open voor een andere waarde een verse sessie",
                     assertThrows(IllegalStateException.class, () -> DroolsBackend.fire(build, session)).getMessage(),
                     "the second fire");
             String expectedSentence = "geen fixpunt om te lezen of terug te zetten: " + changed + ", en het fixpunt hoort bij de"

@@ -237,7 +237,7 @@ final class PatternDslRendering {
             case Consequence.Conflict x -> {
                 ValueFunction key = ClosureRendering.valueFunction(x.key());
                 yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, subject, w) ->
-                        insert(drools, x.insertion(), stackFact(x.fact(), subject, key.van(w))));
+                        insert(drools, x.insertion(), stackFact(x.fact(), subject, key.of(w))));
             }
             case Consequence.Payout x -> consequenceItem(x.subject(), slotsOf(x.pot(), x.list()), (drools, source, w) -> {
                 for (Object fact : ComputeHelpers.payout(x.form(), source, x.method(), w[x.pot()], w[x.list()],
@@ -255,7 +255,7 @@ final class PatternDslRendering {
             components.add(ClosureRendering.valueFunction(t));
         return consequenceItem(g.subject(), g.slots(), g.size(), (drools, element, w) -> {
             List<Object> values = new ArrayList<>(components.size());
-            for (ValueFunction c : components) values.add(c.van(w));
+            for (ValueFunction c : components) values.add(c.of(w));
             Object parent = g.scope() < 0 ? null : w[g.scope()];
             for (UniquenessKey k : ComputeHelpers.uniquenessKeys(g.uniqueness(), g.source(), element, parent, values,
                     g.timeline()))
@@ -384,7 +384,7 @@ final class PatternDslRendering {
             if (s != null) w[deposit.depositFlag()] = s;
             Object v;
             try {
-                v = value.van(w);
+                v = value.of(w);
                 if (g.collapse()) v = ComputeHelpers.collapse(v);
             } catch (RuntimeException e) {
                 if (!ComputeHelpers.isEvaluationFault(e)) throw e;
@@ -420,7 +420,7 @@ final class PatternDslRendering {
             Object[] v = new Object[values.size()];
             for (int i = 0; i < v.length; i++) {
                 try {
-                    v[i] = ComputeHelpers.collapse(values.get(i).van(w));
+                    v[i] = ComputeHelpers.collapse(values.get(i).of(w));
                 } catch (RuntimeException e) {
                     if (!ComputeHelpers.isEvaluationFault(e)) throw e;
                     insert(drools, g.faultInsertion(),
@@ -458,7 +458,7 @@ final class PatternDslRendering {
         return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {
             Object v;
             try {
-                v = value.van(w);
+                v = value.of(w);
                 if (g.collapse()) v = ComputeHelpers.collapse(v);
             } catch (RuntimeException e) {
                 if (g.fault() == null || !ComputeHelpers.isEvaluationFault(e)) throw e;
@@ -478,7 +478,7 @@ final class PatternDslRendering {
             case Consequence.StackFact.Value x -> new Value(subject, x.target(), v, x.writer());
             case Consequence.StackFact.Characteristic x -> new HasCharacteristic(subject, x.characteristic());
             case Consequence.StackFact.Decides x -> new Decides(subject, x.stack(), x.index());
-            case Consequence.StackFact.Outcome x -> x.category() == Outcome.Kind.DECIDED
+            case Consequence.StackFact.Outcome x -> x.kind() == Outcome.Kind.DECIDED
                     ? new Outcome(subject, x.stack(), x.chain(), x.position(), Outcome.Kind.DECIDED, v, null)
                     : new Outcome(subject, x.stack(), x.chain(), x.position(), Outcome.Kind.CONFLICT, null,
                             (String) v);
@@ -617,7 +617,7 @@ final class PatternDslRendering {
         for (int i = 0; i < f.length; i++) {
             Accumulation.Aggregation fn = a.aggregations().get(i);
             Variable<Object> over = fn.source() == null ? source.variable() : known(fn.source());
-            f[i] = DSL.accFunction(function(fn.category()), over).as(bind(fn.target()));
+            f[i] = DSL.accFunction(function(fn.kind()), over).as(bind(fn.target()));
         }
         return DSL.accumulate(source.def(), f[0], Arrays.copyOfRange(f, 1, f.length));
     }
@@ -770,7 +770,7 @@ final class PatternDslRendering {
         field(Outcome.class, "stack", Outcome::stack);
         field(Outcome.class, "chain", Outcome::chain);
         field(Outcome.class, "position", Outcome::position);
-        field(Outcome.class, "category", Outcome::category);
+        field(Outcome.class, "kind", Outcome::kind);
         field(Outcome.class, "value", Outcome::value);
         field(Outcome.class, "key", Outcome::key);
     }

@@ -252,7 +252,7 @@ public final class RegelSpraakModel {
      *  ONLY the lowering; emission is additionally gated on the name being in {@link #firedReferences()}. */
     public boolean firedProducer(String name) {
         if (name == null) return false;
-        return resolvedRules.stream().anyMatch(r -> name.equals(r.name()) && firedInstrumentable(r.category()));
+        return resolvedRules.stream().anyMatch(r -> name.equals(r.name()) && firedInstrumentable(r.kind()));
     }
 
     /** The §8.1.9 main-regel() rule kinds whose consequence carries a {@code RuleFired} insert (the scalar/kenmerk
@@ -360,41 +360,41 @@ public final class RegelSpraakModel {
     }
 
     /**
-     * The role name to navigate from {@code houder} to {@code target} — the
-     * reference field on a {@code houder} fact that points at a {@code target},
+     * The role name to navigate from {@code holder} to {@code target} — the
+     * reference field on a {@code holder} fact that points at a {@code target},
      * which is the role {@code target} plays in a feittype that also relates a
-     * {@code houder}. So from a deelnemer (Persoon) to its group (Ploeg)
+     * {@code holder}. So from a deelnemer (Persoon) to its group (Ploeg)
      * this is "groep". Returns null when there is no such feittype or more than one
      * (ambiguous) — the caller then emits a marker rather than a wrong join. This is
      * the by-pair fallback used when the source did not name the role; prefer
      * {@link #connectingRoleViaName} whenever the written role is available.
      */
-    public String connectingRole(ObjectType houder, ObjectType target) {
-        if (houder == null || target == null) return null;
+    public String connectingRole(ObjectType holder, ObjectType target) {
+        if (holder == null || target == null) return null;
         String found = null;
         int n = 0;
         for (FactType ft : factTypes.values())
             for (Role targetName : ft.roles)
-                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, houder)) {
+                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, holder)) {
                     found = targetName.name();
                     n++;
                 }
         return n == 1 ? found : null;
     }
 
-    /** How many roles of {@code target} are reachable from {@code houder} — the count {@link #connectingRole}
+    /** How many roles of {@code target} are reachable from {@code holder} — the count {@link #connectingRole}
      *  collapses into null at zero and at several; a refusal names it. */
-    public int connectingRoleCount(ObjectType houder, ObjectType target) {
-        if (houder == null || target == null) return 0;
+    public int connectingRoleCount(ObjectType holder, ObjectType target) {
+        if (holder == null || target == null) return 0;
         int n = 0;
         for (FactType ft : factTypes.values())
             for (Role targetName : ft.roles)
-                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, houder)) n++;
+                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, holder)) n++;
         return n;
     }
 
     /**
-     * Every role of {@code target} that is reachable from {@code houder} AND uniquely addressable BY ITS
+     * Every role of {@code target} that is reachable from {@code holder} AND uniquely addressable BY ITS
      * OWN DECLARED NAME — the set {@link #connectingRole} collapses to null as soon as the type pair is
      * connected by more than one feittype. One role per uniquely-resolving name, in wire order.
      *
@@ -403,19 +403,19 @@ public final class RegelSpraakModel {
      * the roles a WRITTEN name can still select. A name two roles share resolves to nothing and neither of
      * them joins the set — the ambiguity is refused per NAME instead of per PAIR. On a uniquely connected
      * pair the two authorities coincide: the single candidate is the single name, so the set is exactly
-     * {@code [connectingRole(houder, doelwit)]}.
+     * {@code [connectingRole(holder, doelwit)]}.
      *
      * <p>Cardinality is deliberately NOT filtered here: this answers "which roles are addressable", and
      * whether a role's storage lives on this side is the caller's own {@link #toManyRole} question (the
      * same split {@link #connectingRole}'s callers already make).
      */
-    public List<String> connectingRoles(ObjectType houder, ObjectType target) {
+    public List<String> connectingRoles(ObjectType holder, ObjectType target) {
         List<String> result = new ArrayList<>();
-        if (houder == null || target == null) return result;
+        if (holder == null || target == null) return result;
         for (FactType ft : factTypes.values())
             for (Role targetName : ft.roles)
-                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, houder)) {
-                    String r = connectingRoleViaName(houder, target, targetName.name());
+                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, holder)) {
+                    String r = connectingRoleViaName(holder, target, targetName.name());
                     if (r != null && r.equalsIgnoreCase(targetName.name())
                             && result.stream().noneMatch(x -> x.equalsIgnoreCase(r))) result.add(r);
                 }
@@ -437,23 +437,23 @@ public final class RegelSpraakModel {
      * another role whose +s/+en plural happens to collide (§3.1 footnote 2: a synthesized
      * plural is outside the language and must never override a declared name).
      */
-    public String connectingRoleViaName(ObjectType houder, ObjectType target, String writtenRole) {
+    public String connectingRoleViaName(ObjectType holder, ObjectType target, String writtenRole) {
         if (target == null || writtenRole == null) return null;
-        String exact = findConnectingRole(houder, target, writtenRole, true);
-        return exact != null ? exact : findConnectingRole(houder, target, writtenRole, false);
+        String exact = findConnectingRole(holder, target, writtenRole, true);
+        return exact != null ? exact : findConnectingRole(holder, target, writtenRole, false);
     }
 
     /** The unique role of {@code target} that {@code writtenRole} names in a feittype
-     *  relating {@code houder}, or null when none or more than one matches. With
+     *  relating {@code holder}, or null when none or more than one matches. With
      *  {@code exactOnly} only declared role names count; otherwise the best-effort plural
      *  is also allowed (used only when no declared name matched). */
-    private String findConnectingRole(ObjectType houder, ObjectType target, String writtenRole, boolean exactOnly) {
+    private String findConnectingRole(ObjectType holder, ObjectType target, String writtenRole, boolean exactOnly) {
         String found = null;
         int n = 0;
         for (FactType ft : factTypes.values())
             for (Role targetName : ft.roles) {
                 boolean nameMatches = exactOnly ? roleMatchesExact(targetName, writtenRole) : roleMatches(targetName, writtenRole);
-                if (nameMatches && roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, houder)) {
+                if (nameMatches && roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, holder)) {
                     found = targetName.name();
                     n++;
                 }
@@ -461,15 +461,15 @@ public final class RegelSpraakModel {
         return n == 1 ? found : null;
     }
 
-    /** Does {@code ft} relate {@code houder} through its other end of {@code targetRole}?
-     *  For a normal feittype that means a DISTINCT role filled by {@code houder}; for a
+    /** Does {@code ft} relate {@code holder} through its other end of {@code targetRole}?
+     *  For a normal feittype that means a DISTINCT role filled by {@code holder}; for a
      *  wederkerig feittype (§13.3.9.2) the single role relates the object type to
-     *  itself, so it is enough that that role's own type is {@code houder}. A null
-     *  {@code houder} imposes no constraint. */
-    private boolean factTypeRelates(FactType ft, Role targetRole, ObjectType houder) {
-        if (houder == null) return true;
-        if (ft.reciprocal) return roleHasObjectType(targetRole, houder);
-        return ft.roles.stream().anyMatch(h -> h != targetRole && roleHasObjectType(h, houder));
+     *  itself, so it is enough that that role's own type is {@code holder}. A null
+     *  {@code holder} imposes no constraint. */
+    private boolean factTypeRelates(FactType ft, Role targetRole, ObjectType holder) {
+        if (holder == null) return true;
+        if (ft.reciprocal) return roleHasObjectType(targetRole, holder);
+        return ft.roles.stream().anyMatch(h -> h != targetRole && roleHasObjectType(h, holder));
     }
 
     /** The object type a role named {@code writtenRole} reaches FROM {@code subject}:
@@ -571,14 +571,14 @@ public final class RegelSpraakModel {
      * wederkerig feittype is withheld — the two-role binding form does not cover the
      * single-role reciprocal shape, so it stays bindingless there rather than mis-bound.
      */
-    public RoleBindingRef connectingRoleBinding(ObjectType houder, ObjectType target) {
-        if (houder == null || target == null) return null;
+    public RoleBindingRef connectingRoleBinding(ObjectType holder, ObjectType target) {
+        if (holder == null || target == null) return null;
         RoleBindingRef found = null;
         boolean reciprocal = false;
         int n = 0;
         for (FactType ft : factTypes.values())
             for (Role targetName : ft.roles)
-                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, houder)) {
+                if (roleHasObjectType(targetName, target) && factTypeRelates(ft, targetName, holder)) {
                     found = new RoleBindingRef(ft.name, targetName.name());
                     reciprocal = ft.reciprocal;
                     n++;
@@ -612,14 +612,14 @@ public final class RegelSpraakModel {
      * so a guessed plural stays bindingless rather than bound to a spelling the model never defined.
      * Null when no role, or more than one, matches.
      */
-    public RoleBindingRef connectingRoleViaNameBinding(ObjectType houder, ObjectType target, String writtenRole) {
+    public RoleBindingRef connectingRoleViaNameBinding(ObjectType holder, ObjectType target, String writtenRole) {
         if (target == null || writtenRole == null) return null;
         RoleBindingRef found = null;
         int n = 0;
         for (FactType ft : factTypes.values())
             for (Role targetName : ft.roles)
                 if (roleMatchesExact(targetName, writtenRole) && roleHasObjectType(targetName, target)
-                        && factTypeRelates(ft, targetName, houder)) {
+                        && factTypeRelates(ft, targetName, holder)) {
                     found = new RoleBindingRef(ft.name, targetName.name());
                     n++;
                 }
@@ -714,15 +714,15 @@ public final class RegelSpraakModel {
      *  (RUNTIME-SEMANTICS ch. 3.4b: a to-one step contributes its zero-or-one instance like any other). */
     public record RangeHop(RoleBindingRef binding, ObjectType targetName) {}
 
-    /** Resolve ONE written step of a fold-source range from {@code houder}: the unique fact-type role
-     *  that {@code writtenElement} names, in a fact type that also relates {@code houder}. The written
+    /** Resolve ONE written step of a fold-source range from {@code holder}: the unique fact-type role
+     *  that {@code writtenElement} names, in a fact type that also relates {@code holder}. The written
      *  name is authoritative (§13.4.1), and only a DECLARED name binds — singular or declared plural,
      *  never the best-effort plural — which is exactly {@link #elementBinding}'s contract and exactly
      *  WF-047's ("the plural does not bind"). Null on no match, on an ambiguous one, or on a reciprocal
      *  fact type (whose single role cannot produce the two-role step shape); the caller then declines the
      *  WHOLE path rather than binding part of it. */
-    public RangeHop rangeHop(ObjectType houder, String writtenElement) {
-        ElementBindingRef eb = elementBinding(houder, writtenElement);
+    public RangeHop rangeHop(ObjectType holder, String writtenElement) {
+        ElementBindingRef eb = elementBinding(holder, writtenElement);
         if (eb == null) return null;
         FactType ft = factTypes.get(eb.factType());
         if (ft == null) return null;
@@ -737,7 +737,7 @@ public final class RegelSpraakModel {
     /** A role a written step of a fold-source range names from a holder, with the fact type it belongs to. */
     public record StepCandidate(FactType factType, Role role) {}
 
-    /** The roles a written step of a fold-source range names from {@code houder}, split by why {@link #rangeHop}
+    /** The roles a written step of a fold-source range names from {@code holder}, split by why {@link #rangeHop}
      *  takes them or not. {@code declared}: by a DECLARED name (singular or declared plural) in a two-role fact
      *  type, one entry for each binding {@link #elementBinding} counts, so the step binds exactly when there is one
      *  and its filler is a declared object type. {@code derived}: by the best-effort plural alone, which binds no
@@ -746,18 +746,18 @@ public final class RegelSpraakModel {
     public record StepCandidates(List<StepCandidate> declared, List<StepCandidate> derived,
                                  List<StepCandidate> reciprocal) {}
 
-    public StepCandidates stepCandidates(ObjectType houder, String writtenElement) {
+    public StepCandidates stepCandidates(ObjectType holder, String writtenElement) {
         List<StepCandidate> declared = new ArrayList<>(), derived = new ArrayList<>(),
                 reciprocal = new ArrayList<>();
-        if (houder != null && writtenElement != null)
+        if (holder != null && writtenElement != null)
             for (FactType ft : factTypes.values())
                 for (Role r : ft.roles) {
-                    if (!roleMatches(r, writtenElement) || !factTypeRelates(ft, r, houder)) continue;
+                    if (!roleMatches(r, writtenElement) || !factTypeRelates(ft, r, holder)) continue;
                     StepCandidate k = new StepCandidate(ft, r);
                     if (ft.reciprocal) reciprocal.add(k);
                     else if (!roleMatchesExact(r, writtenElement)) derived.add(k);
                     else for (Role h : ft.roles)
-                        if (h != r && roleHasObjectType(h, houder)) declared.add(k);
+                        if (h != r && roleHasObjectType(h, holder)) declared.add(k);
                 }
         return new StepCandidates(declared, derived, reciprocal);
     }
@@ -1143,19 +1143,19 @@ public final class RegelSpraakModel {
         public Role(String name, String objectTypeName, String plural) { this(name, objectTypeName, plural, false); }
     }
 
-    /** Whether navigating from {@code houder} to {@code target} through the role named
-     *  {@code roleName} crosses a TO-MANY (meerdere) role — i.e. the field on {@code houder}
+    /** Whether navigating from {@code holder} to {@code target} through the role named
+     *  {@code roleName} crosses a TO-MANY (meerdere) role — i.e. the field on {@code holder}
      *  would be a collection, so a scalar getter chain is wrong and the read needs an
      *  aggregation (§13.3.9.1 cardinaliteit). Finds the unique {@code target} role that
-     *  {@code roleName} names in a feittype relating {@code houder} and returns its
+     *  {@code roleName} names in a feittype relating {@code holder} and returns its
      *  cardinality; false when single, unknown, or not uniquely found (fail-open: never
      *  refuse a navigation we cannot prove is to-many). */
-    public boolean toManyRole(ObjectType houder, ObjectType target, String roleName) {
+    public boolean toManyRole(ObjectType holder, ObjectType target, String roleName) {
         if (target == null || roleName == null) return false;
         Role found = null; int n = 0;
         for (FactType ft : factTypes.values())
             for (Role r : ft.roles)
-                if (r.name().equalsIgnoreCase(roleName) && roleHasObjectType(r, target) && factTypeRelates(ft, r, houder)) {
+                if (r.name().equalsIgnoreCase(roleName) && roleHasObjectType(r, target) && factTypeRelates(ft, r, holder)) {
                     found = r; n++;
                 }
         return n == 1 && found.many();
@@ -1187,26 +1187,26 @@ public final class RegelSpraakModel {
     public record ChainHop(String role, ObjectType targetName) {}
 
     /** Resolve one written chain filler (a role name or an objecttype name, article already stripped)
-     *  into a to-ONE hop from {@code houder} — or null when it does not resolve uniquely or crosses a
+     *  into a to-ONE hop from {@code holder} — or null when it does not resolve uniquely or crosses a
      *  to-many role, in which case the caller declines the WHOLE chain (an honest marker, never a wrong
      *  join). A filler that names an objecttype directly takes the by-pair role (§13.4.1.2/.3: the
      *  objecttype reading), any other filler the by-name role reading. */
-    public ChainHop chainHop(ObjectType houder, String written) {
-        ChainHop hop = writtenHop(houder, written);
-        return hop == null || toManyRole(houder, hop.targetName(), hop.role()) ? null : hop;
+    public ChainHop chainHop(ObjectType holder, String written) {
+        ChainHop hop = writtenHop(holder, written);
+        return hop == null || toManyRole(holder, hop.targetName(), hop.role()) ? null : hop;
     }
 
     /** The hop {@link #chainHop} resolves, a to-MANY one included, or null when the filler names no role or
      *  several. The check of a read that did not bind walks the same hops and must tell a to-many step apart from
      *  a name that is no role ({@code RuleChecker}). */
-    public ChainHop writtenHop(ObjectType houder, String written) {
-        if (houder == null || written == null) return null;
+    public ChainHop writtenHop(ObjectType holder, String written) {
+        if (holder == null || written == null) return null;
         ObjectType asType = objectTypeByName(written);   // STRICT name match — a role-named filler must take the role reading
         String role; ObjectType targetName;
-        if (asType != null) { targetName = asType; role = connectingRole(houder, asType); }
+        if (asType != null) { targetName = asType; role = connectingRole(holder, asType); }
         else {
-            targetName = roleTargetTypeToSubject(houder, written);
-            role = targetName == null ? null : connectingRoleViaName(houder, targetName, written);
+            targetName = roleTargetTypeToSubject(holder, written);
+            role = targetName == null ? null : connectingRoleViaName(holder, targetName, written);
         }
         return role == null || targetName == null ? null : new ChainHop(role, targetName);
     }
@@ -1310,7 +1310,7 @@ public final class RegelSpraakModel {
      *  is scoped — the object type of an attribute or a characteristic (the one that DECLARES it), the fact type of a
      *  role, the domain of an enumeration value; null otherwise — and its canonical name, each as declared. A named
      *  form ({@link Kind#VORM}) is named by its form name, without a version suffix, whatever list it stands in. */
-    public record Designatable(Kind category, String owner, String name) {
+    public record Designatable(Kind kind, String owner, String name) {
         public enum Kind { OBJECTTYPE, ATTRIBUUT, KENMERK, FEITTYPE, ROL, ENUMERATIEWAARDE, PARAMETER, VORM, REGELGROEP }
 
         public static Designatable objectType(String name) { return new Designatable(Kind.OBJECTTYPE, null, name); }
@@ -1428,7 +1428,7 @@ public final class RegelSpraakModel {
         }
         Designatable found = null;
         for (Designatable b : designatable()) {
-            if (b.category() != category) continue;
+            if (b.kind() != category) continue;
             if (b.owner() == null ? !owners.isEmpty()
                     : owners.stream().noneMatch(e -> e.equalsIgnoreCase(b.owner()))) continue;
             if (!effectiveName(vocabulary, b).equalsIgnoreCase(name)) continue;
@@ -1485,7 +1485,7 @@ public final class RegelSpraakModel {
 
     /** Whether two elements name one declaration: the same kind, and owner and name equal under the name identity. */
     private static boolean same(Designatable a, Designatable b) {
-        return a.category() == b.category() && a.name().equalsIgnoreCase(b.name())
+        return a.kind() == b.kind() && a.name().equalsIgnoreCase(b.name())
                 && (a.owner() == null ? b.owner() == null
                     : b.owner() != null && a.owner().equalsIgnoreCase(b.owner()));
     }

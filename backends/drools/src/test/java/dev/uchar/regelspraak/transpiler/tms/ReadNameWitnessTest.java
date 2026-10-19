@@ -165,7 +165,7 @@ class ReadNameWitnessTest {
         ReadTable empty = new ReadTable(List.of());
         Consequence channel = new Consequence.InsertChannelState("proef", true, Consequence.Insertion.LOGICAL);
         Subject subject = new Subject(Object.class, "$o", List.of(), List.of(),
-                List.of(Binding.van("$v", Value.class, "value")));
+                List.of(Binding.of("$v", Value.class, "value")));
         assertEquals("de regel twee patronen declareert de variabele $o twee keer", assertThrows(
                 IllegalArgumentException.class, () -> new RulePlan("twee patronen", null, null, empty,
                         List.of(subject, new FactPattern(Value.class, "$o", List.of(), List.of(), List.of())), channel))
@@ -204,7 +204,7 @@ class ReadNameWitnessTest {
         List<String> out = new ArrayList<>();
         for (RulePlan p : b.execModelTranspiler().modelplan().rules())
             if (p.name().equals(rule))
-                for (Read l : p.readings().slots()) out.add(l.category() + " " + l.name());
+                for (Read l : p.readings().slots()) out.add(l.kind() + " " + l.name());
         return out;
     }
 

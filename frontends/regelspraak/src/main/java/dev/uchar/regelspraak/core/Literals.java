@@ -81,7 +81,7 @@ public final class Literals {
     /** A NUMBER literal (incl. a §13.2.16 rationaal "1/3") as BigDecimal via the shared {@link RationalParser}
      *  reader: exact when the quotient terminates, DECIMAL64 otherwise. null for a non-numeric literal. */
     public static BigDecimal number(Expr.Literal lit) {
-        BigDecimal[] r = RationalParser.van(lit.valueText());
+        BigDecimal[] r = RationalParser.of(lit.valueText());
         if (r == null) return null;
         try { return r[0].divide(r[1]); }                                   // exact (terminating quotient)
         catch (ArithmeticException nonTerminating) { return r[0].divide(r[1], java.math.MathContext.DECIMAL64); }

@@ -86,13 +86,13 @@ public sealed interface Term {
     }
 
     /**
-     * The value of {@code term} restated from the unit {@code van} into the unit {@code destination} (RUNTIME-SEMANTICS ch.
+     * The value of {@code term} restated from the unit {@code from} into the unit {@code destination} (RUNTIME-SEMANTICS ch.
      * 2.6) through {@code function}: {@link StaticFunction#RESTATE_EXACT}, a number times {@code counter} and divided by
      * {@code denominator}, the exact canonical factors, as exact rationals; or {@link StaticFunction#RESTATE}, where
      * {@code denominator} is null, times the single ratio {@code counter} of the two units. A leeg value and a value that is
      * no number pass unchanged. The analysis adds no node where no restatement is due.
      */
-    record Restate(StaticFunction function, Term term, Unit van, Unit destination, BigDecimal counter, BigDecimal denominator,
+    record Restate(StaticFunction function, Term term, Unit from, Unit destination, BigDecimal counter, BigDecimal denominator,
                      String source) implements Term {
         public Restate {
             boolean exact = function == StaticFunction.RESTATE_EXACT;

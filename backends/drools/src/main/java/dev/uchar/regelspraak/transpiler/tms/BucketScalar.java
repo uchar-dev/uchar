@@ -18,7 +18,7 @@ public record BucketScalar(Period bucket) {
 
     /** The bucket scalar the bean of an {@link BucketInput} carries as {@code segments}: the case input lays it there
      *  as the one segment of the evaluation date's period. Anything else breaks that contract. */
-    static BucketScalar van(List<?> segments) {
+    static BucketScalar of(List<?> segments) {
         List<Period> timeline = Period.list(segments);
         if (timeline == null || timeline.size() != 1)
             throw new IllegalStateException("een emmerscalair staat op de bean als het ene segment van de periode van de"

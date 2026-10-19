@@ -364,12 +364,12 @@ public final class Spelling {
      *  not exist or another one under the table's name. Every other source is its kind's spelling. */
     public static String originKind(GeneratedFrom generatedFrom) {
         if (generatedFrom.form() == OriginForm.BESLISTABELRIJ) {
-            if (generatedFrom.source().category() != Designatable.Kind.VORM)
+            if (generatedFrom.source().kind() != Designatable.Kind.VORM)
                 throw new IllegalArgumentException("Spelling: a decision table row comes from a table, recorded as a "
                         + "form, and this one comes from " + generatedFrom.source());
             return ORIGIN_DECISION_TABLE;
         }
-        return ORIGIN_KIND.spelling(generatedFrom.source().category());
+        return ORIGIN_KIND.spelling(generatedFrom.source().kind());
     }
 
     /** The in-memory kind a wire kind names at {@code OriginSource.kind}: a decision table is a form, as the model

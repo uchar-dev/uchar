@@ -39,7 +39,7 @@ class IrTest {
 
         ResolvedRule rr = m.resolvedRules.get(0);
         assertEquals("bereken totaal", rr.name());
-        assertEquals(ResolvedRule.Kind.BEREKENING, rr.category());
+        assertEquals(ResolvedRule.Kind.BEREKENING, rr.kind());
     }
 
     @Test void target_is_a_bound_attribute_reference() {

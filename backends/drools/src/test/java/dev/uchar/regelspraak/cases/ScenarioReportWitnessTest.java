@@ -66,7 +66,7 @@ class ScenarioReportWitnessTest {
         }
     }
 
-    private static ScenarioResult van(List<ScenarioResult> report, String name) {
+    private static ScenarioResult of(List<ScenarioResult> report, String name) {
         return report.stream().filter(r -> r.name().equals(name)).findFirst()
                 .orElseThrow(() -> new AssertionError("geen rapport voor " + name + ": " + report));
     }
@@ -76,7 +76,7 @@ class ScenarioReportWitnessTest {
         assertEquals(4, report.size());
         assertTrue(report.stream().allMatch(ScenarioResult::pass), () -> report.toString());
 
-        ScenarioResult refused = van(report, "case1-geweigerd.json");
+        ScenarioResult refused = of(report, "case1-geweigerd.json");
         assertEquals(List.of(
                 new ExpectationResult("characteristicPresent M uitgesloten", "aanwezig", "aanwezig", true, 1),
                 new ExpectationResult("characteristicAbsent M penninggerechtigd", "afwezig", "afwezig", true, 2),
@@ -92,7 +92,7 @@ class ScenarioReportWitnessTest {
         assertEquals(CoverageKind.FIRED, coverage(refused, "defaults K:Jutter.uitgesloten"));
         // the rule reads 'niet uitgesloten': with the refusal standing it never matches, without it it fires
         assertEquals(CoverageKind.NOT_FIRED, coverage(refused, "penninggerechtigd tenzij uitgesloten"));
-        assertEquals(CoverageKind.FIRED, coverage(van(report, "case4-kaal.json"), "penninggerechtigd tenzij uitgesloten"));
+        assertEquals(CoverageKind.FIRED, coverage(of(report, "case4-kaal.json"), "penninggerechtigd tenzij uitgesloten"));
     }
 
     @Test void a_firing_counts_under_the_form_of_its_rule() throws Exception {
@@ -112,7 +112,7 @@ class ScenarioReportWitnessTest {
                 "zwaarte [V1, V3, V7] 3"), trace, "één rij per vorm, en geen rij voor een regel zonder vorm");
         assertEquals(70, r.trace().total(), "het rapport telt elke vuring van een regel van een vorm");
         for (ScenarioResult.CoverageRule d : r.coverage())
-            assertEquals(CoverageKind.FIRED, d.category(), () -> d.rule() + " vuurde: " + trace);
+            assertEquals(CoverageKind.FIRED, d.kind(), () -> d.rule() + " vuurde: " + trace);
         assertEquals(6, r.coverage().size(), () -> r.coverage().toString());
     }
 
@@ -151,7 +151,7 @@ class ScenarioReportWitnessTest {
 
     private static CoverageKind coverage(ScenarioResult r, String rule) {
         return r.coverage().stream().filter(d -> d.rule().equals(rule)).findFirst()
-                .orElseThrow(() -> new AssertionError("geen dekking voor " + rule + ": " + r.coverage())).category();
+                .orElseThrow(() -> new AssertionError("geen dekking voor " + rule + ": " + r.coverage())).kind();
     }
 
     @Test void a_missed_expectation_carries_expected_and_actual() throws Exception {
@@ -217,13 +217,13 @@ class ScenarioReportWitnessTest {
         List<ScenarioResult> report =
                 CaseRunner.report(golden.resolve("ir.json"), List.of(outside, golden.resolve("case2-jaargrens.json")));
         assertEquals(2, report.size(), report::toString);
-        ScenarioResult red = van(report, "case1-buiten-raster.json");
+        ScenarioResult red = of(report, "case1-buiten-raster.json");
         assertEquals(Status.FAIL, red.status(), red::toString);
         assertEquals("case1-buiten-raster.json: ERROR IllegalArgumentException: "
                 + "segmentgrens op 'borgdagen' ligt niet op het MAAND-raster", red.diagnostic());
         assertTrue(red.expectations().isEmpty() && red.trace().firings().isEmpty() && red.coverage().isEmpty(),
                 "een case die niet uitspeelde draagt geen verdicten: " + red);
-        assertEquals(Status.PASS, van(report, "case2-jaargrens.json").status());
+        assertEquals(Status.PASS, of(report, "case2-jaargrens.json").status());
     }
 
     @Test void a_document_that_the_backend_does_not_carry_is_a_marker() throws Exception {

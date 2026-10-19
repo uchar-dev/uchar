@@ -231,7 +231,7 @@ class StatePlanWitnessTest {
             out.add("regel " + p.name() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
             for (Read l : p.readings().slots())
-                slots.add(l.slot() + " " + l.category() + " " + l.name() + " (" + l.key() + ")");
+                slots.add(l.slot() + " " + l.kind() + " " + l.name() + " (" + l.key() + ")");
             out.add("  lezingen " + slots);
             for (LhsItem item : p.leftSide()) out.add("  " + item(item));
             out.add("  gevolg " + consequence(p.consequence()));

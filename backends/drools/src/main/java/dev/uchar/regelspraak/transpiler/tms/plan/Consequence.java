@@ -506,7 +506,7 @@ public sealed interface Consequence {
             facts = List.copyOf(facts);
             if (facts.isEmpty()) throw new IllegalArgumentException("een besluit voegt ten minste één feit in");
             for (StackFact f : facts)
-                if (f instanceof StackFact.Inconsistency || f instanceof StackFact.Outcome u && u.category() != Kind.DECIDED)
+                if (f instanceof StackFact.Inconsistency || f instanceof StackFact.Outcome u && u.kind() != Kind.DECIDED)
                     throw new IllegalArgumentException("een besluit voegt geen conflict in: " + f);
         }
     }
@@ -525,7 +525,7 @@ public sealed interface Consequence {
         public Conflict {
             slots = List.copyOf(slots);
             if (!(fact instanceof StackFact.Inconsistency
-                    || fact instanceof StackFact.Outcome u && u.category() == Kind.CONFLICT))
+                    || fact instanceof StackFact.Outcome u && u.kind() == Kind.CONFLICT))
                 throw new IllegalArgumentException("een conflict voegt zijn uitkomst of de inconsistentie in, niet " + fact);
         }
     }
@@ -548,9 +548,9 @@ public sealed interface Consequence {
         record Decides(String stack, int index) implements StackFact {}
 
         /** The control fact of the general form: the default at {@code position} in chain {@code chain} of the stack
-         *  {@code stack} settled as {@code category} says, {@code DECIDED} with the decision as its value or
+         *  {@code stack} settled as {@code kind} says, {@code DECIDED} with the decision as its value or
          *  {@code CONFLICT} with the key of the conflict: an {@code Outcome}. */
-        record Outcome(String stack, int chain, int position, Kind category) implements StackFact {}
+        record Outcome(String stack, int chain, int position, Kind kind) implements StackFact {}
 
         /** The §9.5 inconsistency of the stack's conflict at its root, under the key of the conflict, through the
          *  route {@link Route#INCONSISTENCY}, with {@link #CODES}. */

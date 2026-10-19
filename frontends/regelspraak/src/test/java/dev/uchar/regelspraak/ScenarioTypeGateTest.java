@@ -611,7 +611,7 @@ class ScenarioTypeGateTest {
         assertNull(s.situation().instance("J").characteristics().get(1).periods(), "een vast kenmerk draagt geen perioden");
         // the two segment bullets of one timeline are one expectation, at the place of the first
         assertEquals(List.of(ExpectationKind.ATTRIBUTE_TIMELINE, ExpectationKind.CHARACTERISTIC_PRESENT,
-                ExpectationKind.CONSISTENT), s.expectations().stream().map(Expectation::category).toList());
+                ExpectationKind.CONSISTENT), s.expectations().stream().map(Expectation::kind).toList());
         assertEquals(2, s.expectations().get(0).timeline().size());
     }
 }

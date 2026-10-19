@@ -48,7 +48,7 @@ public final class StandingTargets {
 
     /** The classification of {@code model} with the ch. 7 prioritized-defaults extension beside it (the
      *  {@code other_writer} clause consults it). A flat v0 document passes an empty list. */
-    public static StandingTargets van(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults) {
+    public static StandingTargets of(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults) {
         return new StandingTargets(model, prioritizedDefaults);
     }
 
@@ -68,7 +68,7 @@ public final class StandingTargets {
      *  KENMERKTOEKENNING must never inherit it (the key carries no member kind, WF-002), and an
      *  INITIALISATIE keeps its own §9.6 leeg-guard (ref's Initialisatie branch carries no standing arm). */
     public boolean standingScalar(ResolvedRule r) {
-        if (r.category() != ResolvedRule.Kind.GELIJKSTELLING && r.category() != ResolvedRule.Kind.BEREKENING)
+        if (r.kind() != ResolvedRule.Kind.GELIJKSTELLING && r.kind() != ResolvedRule.Kind.BEREKENING)
             return false;
         String k = key(r.target());
         return scalarTargets().contains(k) || desugaredTargets().contains(k);
@@ -137,7 +137,7 @@ public final class StandingTargets {
         if (desugared != null) return desugared;
         Map<String, List<ResolvedRule>> perTarget = new LinkedHashMap<>();
         for (ResolvedRule r : model.resolvedRules) {
-            if (r.category() == ResolvedRule.Kind.KENMERKTOEKENNING) continue;
+            if (r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING) continue;
             String k = key(r.target());
             if (k != null) perTarget.computeIfAbsent(k, x -> new ArrayList<>()).add(r);
         }
@@ -145,7 +145,7 @@ public final class StandingTargets {
         for (Map.Entry<String, List<ResolvedRule>> e : perTarget.entrySet()) {
             List<ResolvedRule> inits = new ArrayList<>(), comps = new ArrayList<>();
             for (ResolvedRule r : e.getValue()) {
-                if (r.category() == ResolvedRule.Kind.INITIALISATIE) inits.add(r);
+                if (r.kind() == ResolvedRule.Kind.INITIALISATIE) inits.add(r);
                 if (isComputing(r)) comps.add(r);
             }
             // ref's `desugarable`: no rule outside the two families (a versioned computing rule falls in
@@ -168,7 +168,7 @@ public final class StandingTargets {
         if (writers != null) return writers;
         Map<String, Integer> count = new LinkedHashMap<>();
         for (ResolvedRule r : model.resolvedRules) {
-            if (r.category() == ResolvedRule.Kind.KENMERKTOEKENNING) continue;
+            if (r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING) continue;
             String k = key(r.target());
             if (k != null) count.merge(k, 1, Integer::sum);
         }
@@ -180,7 +180,7 @@ public final class StandingTargets {
      *  version-freedom clause is what keeps a VERSIONED target out of every domain — selection is temporal
      *  (ch. 7.4) and never defeasible. */
     private static boolean isComputing(ResolvedRule r) {
-        return (r.category() == ResolvedRule.Kind.GELIJKSTELLING || r.category() == ResolvedRule.Kind.BEREKENING)
+        return (r.kind() == ResolvedRule.Kind.GELIJKSTELLING || r.kind() == ResolvedRule.Kind.BEREKENING)
                 && (r.validity() == null || r.validity().always()) && r.value() != null;
     }
 

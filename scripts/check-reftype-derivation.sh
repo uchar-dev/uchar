@@ -69,7 +69,7 @@
 # And the same honesty about HOW MUCH of the two Drools legs a green line covers. On the UNTOUCHED
 # corpus the derivation never disagreed with the annotation — WF-091 made the repetition faithful,
 # so effType(e) equalled e.type() at every call (measured 2026-09-04 with a StackWalker probe on
-# EffectiveUnit.van, attributing each call to its transpiler frame: zero divergences over every
+# EffectiveUnit.of, attributing each call to its transpiler frame: zero divergences over every
 # replayable golden, in BOTH branches). Since L2 a reference carries no annotation, so there the
 # derivation has nothing to disagree with, and WF-091 holds the derived annotations that remain. On
 # the LYING copies the same probe showed the derivation overriding the annotation at a handful of
@@ -116,7 +116,7 @@
 # tms-omschakeling it also reached a golden the exec branch could not play at all
 # (jutterswet-vondsttarief, which the destructive exec transpiler SKIPped as "waarde buiten scope" while
 # the text branch lowers and plays it); the exec branch with truth maintenance plays it too. Measured
-# by mutation on 2026-09-04 — EffectiveUnit.van() put back on the node's own annotation, the state
+# by mutation on 2026-09-04 — EffectiveUnit.of() put back on the node's own annotation, the state
 # before the derivation existed — the DRL leg alone goes red on NINE of the eleven twistable goldens,
 # including that one. The two that stay green under the mutant are the two the text branch markers (the ch. 4.10
 # Let: lichterloon, vondstrecht), which is the honest reading of a branch that does not lower them.
@@ -315,8 +315,8 @@ WORK=$(mktemp -d) || exit 2
 LIST=$(mktemp) || exit 2
 CASES=$(mktemp) || exit 2
 UNCOVERED=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
-RAKERS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
-trap 'rm -rf "$TWISTER" "$VOCABULARY_TWISTER" "$HSTRIPPER" "$WORK" "$LIST" "$CASES" "$UNCOVERED" "$RAKERS"' EXIT
+HITS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
+trap 'rm -rf "$TWISTER" "$VOCABULARY_TWISTER" "$HSTRIPPER" "$WORK" "$LIST" "$CASES" "$UNCOVERED" "$HITS"' EXIT
 
 cat > "$TWISTER" <<'PY'
 import json, os, sys
@@ -863,7 +863,7 @@ while IFS= read -r ir; do
         n_gecontroleerd=$((n_gecontroleerd + 2))
         if ! report_line=$("$RUNNER_REF" "$tw" "$case" 2>&1); then
             if mention "$ident" ref; then
-                n_survivors=$((n_survivors + 1)); echo "$ident|ref" >> "$RAKERS"
+                n_survivors=$((n_survivors + 1)); echo "$ident|ref" >> "$HITS"
             else
                 printf 'FAIL: %s — ref answers differently on the lying copy:\n%s\n' "$case" "$report_line" >&2
                 status=1
@@ -871,7 +871,7 @@ while IFS= read -r ir; do
         fi
         if ! report_line=$("$RUNNER_CLINGO" "$tw" "$case" 2>&1); then
             if mention "$ident" clingo; then
-                n_survivors=$((n_survivors + 1)); echo "$ident|clingo" >> "$RAKERS"
+                n_survivors=$((n_survivors + 1)); echo "$ident|clingo" >> "$HITS"
             else
                 printf 'FAIL: %s — clingo answers differently on the lying copy:\n%s\n' "$case" "$report_line" >&2
                 status=1
@@ -891,7 +891,7 @@ while IFS= read -r ir; do
     [ "${base_expr%% *}" = PLAYED ] && n_exec_played=$((n_exec_played + 1))
     if [ "$base_expr" != "$twisted" ]; then
         if mention "$ident" drools; then
-            n_survivors=$((n_survivors + 1)); echo "$ident|drools" >> "$RAKERS"
+            n_survivors=$((n_survivors + 1)); echo "$ident|drools" >> "$HITS"
         else
             printf 'FAIL: %s — Drools answers differently on the lying copy:\n  untouched: %s\n  lying:     %s\n' \
                 "$ident" "$base_expr" "$twisted" >&2
@@ -914,7 +914,7 @@ while IFS= read -r ir; do
     [ "${drl_baseline%% *}" = PLAYED ] && n_drl=$((n_drl + 1))
     if [ "$drl_baseline" != "$d_twisted" ]; then
         if mention "$ident" drl; then
-            n_survivors=$((n_survivors + 1)); echo "$ident|drl" >> "$RAKERS"
+            n_survivors=$((n_survivors + 1)); echo "$ident|drl" >> "$HITS"
         else
             printf 'FAIL: %s — the DRL-text branch answers differently on the lying copy:\n  untouched: %s\n  lying:     %s\n' \
                 "$ident" "$drl_baseline" "$d_twisted" >&2
@@ -1060,7 +1060,7 @@ dropped=$(printf '%s\n' "$SURVIVORS" | while IFS= read -r s; do
         echo "  $g|$ex — unknown executor (expected ref, clingo, drools or drl)"
     elif [ ! -d "corpus/golden/$g" ]; then
         echo "  $g|$ex — no such golden"
-    elif ! grep -qxF "$g|$ex" "$RAKERS" 2>/dev/null; then
+    elif ! grep -qxF "$g|$ex" "$HITS" 2>/dev/null; then
         echo "  $g|$ex — no longer diverges under the twist; drop the entry"
     fi
 done)

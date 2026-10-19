@@ -331,7 +331,7 @@ public final class DefinitionResolver {
                 ctx = d.dagsoortDefinition();
                 category = new String[] {"dagsoort", "dayKinds", name(d.dagsoortDefinition().lowerNaam())};
             }
-            if (category == null || hersteld(ctx)) continue;
+            if (category == null || recovered(ctx)) continue;
             int line = ctx.getStart().getLine();
             String[] first = earlier.putIfAbsent(category[1] + "\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(category[2]),
                     new String[] {category[2], String.valueOf(line)});
@@ -378,9 +378,9 @@ public final class DefinitionResolver {
      *  parser recovered inside is left alone: its syntax error is the one to act on. */
     private void refuseRedeclarations() {
         for (Member d : members) {
-            if (!d.extension() || hersteld(d.definition())) continue;
+            if (!d.extension() || recovered(d.definition())) continue;
             Member b = existing(d);
-            if (b == null || hersteld(b.definition())) continue;
+            if (b == null || recovered(b.definition())) continue;
             if (b != d) judgeRepetition(d, b);
             else if (d.attribute()) refuseRoleRedeclaration(d);
         }
@@ -1104,15 +1104,15 @@ public final class DefinitionResolver {
         FactType ft = new FactType(src(ctx.feitTypeNaam()));
         ft.reciprocal = ctx.WEDERKERIG_FEITTYPE() != null;
         List<Role> roles = new ArrayList<>();
-        boolean hersteld = hersteld(ctx);
-        java.util.Set<ParserRuleContext> onPreviousLine = hersteld ? java.util.Set.of()
+        boolean recovered = recovered(ctx);
+        java.util.Set<ParserRuleContext> onPreviousLine = recovered ? java.util.Set.of()
                 : reportMembersOnPreviousLine(ctx, ctx.rolSpecificatie(), RolSpecificatieContext.class, "feittype '" + ft.name + "'");
         for (RolSpecificatieContext rs : ctx.rolSpecificatie()) {
             String roleName = src(rs.rolNaam());
             String plural = rs.meervoudsvorm() != null ? src(rs.meervoudsvorm()) : null; // declared "(mv: …)"
-            if (!hersteld && !onPreviousLine.contains(rs))
+            if (!recovered && !onPreviousLine.contains(rs))
                 reportUnreadableName("feittype '" + ft.name + "'", Msg.frontend("PART.member-category.role"), roleName, rs.getStart().getLine());
-            if (!hersteld && rs.objectTypeNaam() != null && rs.objectTypeNaam().getStart() != null)
+            if (!recovered && rs.objectTypeNaam() != null && rs.objectTypeNaam().getStart() != null)
                 roleFillers.add(new RoleFiller(ft.name, roleName, src(rs.objectTypeNaam()),
                         rs.objectTypeNaam().getStart().getLine()));
             // §13.3.9.3: feitTypeNaam excludes 'de'/'het' (it stops at the role's article), so a feittype
@@ -1227,7 +1227,7 @@ public final class DefinitionResolver {
     /** The two checks on the members of one head: the line check, and the readability of every name it did not
      *  refuse — a refused member is a misreading, so its name is not the one the author declared. */
     private void membersAfterHead(ObjectType ot, ParserRuleContext definition, List<ObjectTypeMemberContext> members) {
-        if (hersteld(definition)) return;
+        if (recovered(definition)) return;
         String carrier = "objecttype '" + ot.name + "'";
         java.util.Set<ParserRuleContext> refused = reportMembersOnPreviousLine(definition, members, ObjectTypeMemberContext.class, carrier);
         for (ObjectTypeMemberContext m : members) {
@@ -1243,10 +1243,10 @@ public final class DefinitionResolver {
     /** Whether the parser recovered inside {@code t}: an error node, or a rule that caught a recognition error. The
      *  boundaries of a recovered definition are the recovery's and not the author's, so the checks below leave it
      *  alone; its syntax error is reported already, and it is the one to act on. */
-    private static boolean hersteld(ParseTree t) {
+    private static boolean recovered(ParseTree t) {
         if (t instanceof ErrorNode) return true;
         if (t instanceof ParserRuleContext p && p.exception != null) return true;
-        for (int i = 0; i < t.getChildCount(); i++) if (hersteld(t.getChild(i))) return true;
+        for (int i = 0; i < t.getChildCount(); i++) if (recovered(t.getChild(i))) return true;
         return false;
     }
 
@@ -1526,7 +1526,7 @@ public final class DefinitionResolver {
      *  ctx yields a synthetic empty anchor, mirroring {@link #src}'s null handling. */
     static dev.uchar.regelspraak.ir.Source source(ParserRuleContext ctx) {
         return ctx == null ? dev.uchar.regelspraak.ir.Source.synthetic("")
-                           : dev.uchar.regelspraak.ir.Source.van(ctx, src(ctx));
+                           : dev.uchar.regelspraak.ir.Source.of(ctx, src(ctx));
     }
 
     private static String unquote(String s) {

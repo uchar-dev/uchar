@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * One segment {@code [van, tot)} of a timeline as the exec-model branch carries it in a fact (RUNTIME-SEMANTICS
- * ch. 3.1): a value, or leeg (null), from day {@code van} up to, not including, day {@code to}; a true period of a
+ * One segment {@code [from, to)} of a timeline as the exec-model branch carries it in a fact (RUNTIME-SEMANTICS
+ * ch. 3.1): a value, or leeg (null), from day {@code from} up to, not including, day {@code to}; a true period of a
  * time-dependent characteristic carries null. A timeline is an immutable {@code List<Period>}, ordered as its producer
  * gave it: a {@link State} or a {@link Value} holds one as its value.
  *
@@ -20,7 +20,7 @@ import java.util.Objects;
  * ({@link #list}) and back where the write-back puts it on one ({@link #beans}); nothing in between sees a
  * {@code Segment}.
  *
- * <p>Two segments are equal where they have the same {@code van}, the same {@code to}, and values that are equal as
+ * <p>Two segments are equal where they have the same {@code from}, the same {@code to}, and values that are equal as
  * numbers or both leeg: 7 and 7.00 are one value, as in the reference interpreter's comparison of two timelines
  * ({@code World.write_timeline}, {@code Arith.equal}) and the change detection of ch. 3.1. The hash code is taken over
  * the value without trailing zeros, so that it agrees with that equality: a record's own hash code is that of
@@ -35,30 +35,30 @@ import java.util.Objects;
  * of {@code (LocalDate, LocalDate, BigDecimal)} ({@link RegelSpraakRuntime#newSegment}): given this class as their
  * segment class they compute with it as with the bean model's, and nothing in {@code runtime/} changes.
  */
-public record Period(LocalDate van, LocalDate to, BigDecimal value) {
+public record Period(LocalDate from, LocalDate to, BigDecimal value) {
 
     public Period {
-        Objects.requireNonNull(van, "van");
+        Objects.requireNonNull(from, "van");
         Objects.requireNonNull(to, "to");
     }
 
-    public LocalDate getVan() { return van; }
+    public LocalDate getVan() { return from; }
 
     public LocalDate getTot() { return to; }
 
     public BigDecimal getWaarde() { return value; }
 
     @Override public boolean equals(Object o) {
-        return o instanceof Period t && t.van.equals(van) && t.to.equals(to)
+        return o instanceof Period t && t.from.equals(from) && t.to.equals(to)
                 && (value == null ? t.value == null : t.value != null && t.value.compareTo(value) == 0);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(van, to, value == null ? null : value.stripTrailingZeros());
+        return Objects.hash(from, to, value == null ? null : value.stripTrailingZeros());
     }
 
     @Override public String toString() {
-        return "[" + van + ", " + to + ")=" + (value == null ? "empty" : value.toPlainString());
+        return "[" + from + ", " + to + ")=" + (value == null ? "empty" : value.toPlainString());
     }
 
     /** The timeline {@code segments} as this branch carries it, immutable and in the given order: from the segments a
@@ -77,7 +77,7 @@ public record Period(LocalDate van, LocalDate to, BigDecimal value) {
      *  mutable list of new segments, so no bean shares a segment with another. */
     public static List<Object> beans(List<Period> timeline, Class<?> segmentClass) {
         List<Object> out = new ArrayList<>(timeline.size());
-        for (Period t : timeline) out.add(RegelSpraakRuntime.newSegment(segmentClass, t.van, t.to, t.value));
+        for (Period t : timeline) out.add(RegelSpraakRuntime.newSegment(segmentClass, t.from, t.to, t.value));
         return out;
     }
 }

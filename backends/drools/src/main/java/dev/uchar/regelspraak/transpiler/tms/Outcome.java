@@ -24,7 +24,7 @@ import java.util.Objects;
  * decide 10.0 and 10.00 merge into one fact, as the reconciliation reads them as one decision; a characteristic's
  * decision is {@code value} as a Boolean.
  */
-public record Outcome(Object subject, String stack, int chain, int position, Kind category, Object value,
+public record Outcome(Object subject, String stack, int chain, int position, Kind kind, Object value,
                        String key) implements ControlFact {
 
     /** How a default settled. */
@@ -33,13 +33,13 @@ public record Outcome(Object subject, String stack, int chain, int position, Kin
     public Outcome {
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(stack, "stack");
-        Objects.requireNonNull(category, "category");
-        if (category == Kind.DECIDED ? value == null || key != null : value != null || key == null)
-            throw new IllegalArgumentException("een beslissing draagt een waarde, een conflict een sleutel: " + category
+        Objects.requireNonNull(kind, "kind");
+        if (kind == Kind.DECIDED ? value == null || key != null : value != null || key == null)
+            throw new IllegalArgumentException("een beslissing draagt een waarde, een conflict een sleutel: " + kind
                     + " met waarde " + value + " en sleutel " + key);
     }
 
-    public boolean conflict() { return category == Kind.CONFLICT; }
+    public boolean conflict() { return kind == Kind.CONFLICT; }
 
     /** Two decisions as RUNTIME-SEMANTICS ch. 7.2 compares them: numbers by value, everything else by equality. */
     static boolean equal(Object a, Object b) {
@@ -49,17 +49,17 @@ public record Outcome(Object subject, String stack, int chain, int position, Kin
 
     @Override public boolean equals(Object o) {
         return o instanceof Outcome u && u.subject == subject && u.stack.equals(stack) && u.chain == chain
-                && u.position == position && u.category == category && equal(u.value, value)
+                && u.position == position && u.kind == kind && equal(u.value, value)
                 && Objects.equals(u.key, key);
     }
 
     @Override public int hashCode() {
         Object w = value instanceof BigDecimal b ? b.stripTrailingZeros() : value;
-        return Objects.hash(System.identityHashCode(subject), stack, chain, position, category, w, key);
+        return Objects.hash(System.identityHashCode(subject), stack, chain, position, kind, w, key);
     }
 
     @Override public String toString() {
         return "Outcome(" + FactNames.object(subject) + ", " + stack + ", chain " + chain + ", position " + position
-                + ", " + (category == Kind.DECIDED ? "decided " + value : "conflict " + key) + ")";
+                + ", " + (kind == Kind.DECIDED ? "decided " + value : "conflict " + key) + ")";
     }
 }

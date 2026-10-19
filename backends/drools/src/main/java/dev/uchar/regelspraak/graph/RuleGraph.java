@@ -60,7 +60,7 @@ public final class RuleGraph {
     public record Node(String id, String label, NodeKind kind, boolean endOutput) {}
 
     /** A directed dataflow edge from {@code van} to {@code destination} (both node ids). */
-    public record Edge(String van, String destination) {}
+    public record Edge(String from, String destination) {}
 
     /** One dependency the graph draws: form {@code producer}, of kind {@code producerForm}, writes {@code element},
      *  and form {@code consumer}, of kind {@code consumerForm}, reads it — a path producent → element → consument
@@ -96,13 +96,13 @@ public final class RuleGraph {
         // the consumer edges run element -> form, so they leave an element node
         Map<String, List<String>> readers = new LinkedHashMap<>();
         for (Edge e : edges)
-            if (elements.containsKey(e.van())) readers.computeIfAbsent(e.van(), k -> new ArrayList<>()).add(e.destination());
+            if (elements.containsKey(e.from())) readers.computeIfAbsent(e.from(), k -> new ArrayList<>()).add(e.destination());
         List<Dependency> out = new ArrayList<>();
         for (Edge in : edges) {
             ElementKey el = elements.get(in.destination());
             if (el == null) continue;                           // not a producer edge
             for (String reader : readers.getOrDefault(in.destination(), List.of()))
-                out.add(new Dependency(formKinds.get(in.van()), label.get(in.van()), el,
+                out.add(new Dependency(formKinds.get(in.from()), label.get(in.from()), el,
                         formKinds.get(reader), label.get(reader)));
         }
         return out;
@@ -117,11 +117,11 @@ public final class RuleGraph {
     public static RuleGraph build(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigation navigation) {
         List<Form> forms = ProducerConsumer.forms(model, defaults, navigation);
         // A form node is one form under its kind and base name, so the versions of a form are one node.
-        record FormKey(FormKind category, String name) {}
+        record FormKey(FormKind kind, String name) {}
         Map<ElementKey, Set<FormKey>> producers = new LinkedHashMap<>();
         for (Form v : forms)
             for (ElementKey el : v.writes())
-                producers.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(new FormKey(v.category(), v.name()));
+                producers.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(new FormKey(v.kind(), v.name()));
         // Every element that is consumed by at least one form, so we can tell producties zonder afnemer apart.
         Set<ElementKey> consumedElements = new LinkedHashSet<>();
         for (Form v : forms) consumedElements.addAll(v.reads());
@@ -150,10 +150,10 @@ public final class RuleGraph {
 
         // 2. form nodes: every form, whatever it writes or reads.
         for (Form v : forms)
-            formId.computeIfAbsent(new FormKey(v.category(), v.name()), s -> {
+            formId.computeIfAbsent(new FormKey(v.kind(), v.name()), s -> {
                 String id = "r" + formId.size();
                 nodes.add(new Node(id, s.name(), NodeKind.RULE, false));
-                formKinds.put(id, s.category());
+                formKinds.put(id, s.kind());
                 return id;
             });
 
@@ -162,7 +162,7 @@ public final class RuleGraph {
             for (FormKey s : e.getValue()) edgeSet.add(new Edge(formId.get(s), elemId.get(e.getKey())));
         // 4. consumer edges: element -> form that reads it.
         for (Form v : forms) {
-            String to = formId.get(new FormKey(v.category(), v.name()));
+            String to = formId.get(new FormKey(v.kind(), v.name()));
             for (ElementKey el : v.reads()) edgeSet.add(new Edge(elemId.get(el), to));
         }
         Map<String, ElementKey> elements = new LinkedHashMap<>();
@@ -194,7 +194,7 @@ public final class RuleGraph {
                     .append('"').append(close).append('\n');
         }
         b.append('\n');
-        for (Edge e : edges) b.append("  ").append(e.van()).append(" --> ").append(e.destination()).append('\n');
+        for (Edge e : edges) b.append("  ").append(e.from()).append(" --> ").append(e.destination()).append('\n');
         b.append('\n');
         // class definitions + assignments
         b.append("  classDef regel fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;\n");

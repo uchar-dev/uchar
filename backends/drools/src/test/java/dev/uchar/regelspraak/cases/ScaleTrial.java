@@ -561,14 +561,14 @@ public final class ScaleTrial {
             }
         System.out.print(table(results));
         if (!complete) return 1;
-        return results.values().stream().allMatch(perN -> Floor.van(perN).reached()) ? 0 : 2;
+        return results.values().stream().allMatch(perN -> Floor.of(perN).reached()) ? 0 : 2;
     }
 
     /** The floor of point 9 of the card on one branch: the firings against the cap at N = 10 000, under half, and the
      *  slope of fire plus write-back from N = 1 000 to N = 10 000 in log-log, at most 1.2; NaN where a point is missing
      *  or failed, which misses the floor. */
     private record Floor(double capShare, double helling) {
-        static Floor van(Map<Integer, Result> perN) {
+        static Floor of(Map<Integer, Result> perN) {
             Result a = perN.get(1_000), z = perN.get(10_000);
             boolean zGemeten = z != null && z.failure() == null;
             boolean both = zGemeten && a != null && a.failure() == null;
@@ -613,7 +613,7 @@ public final class ScaleTrial {
             }
         out.append('\n');
         for (Map.Entry<DroolsBackend.Branch, Map<Integer, Result>> e : results.entrySet()) {
-            Floor v = Floor.van(e.getValue());
+            Floor v = Floor.of(e.getValue());
             boolean both = !Double.isNaN(v.helling());
             out.append("- Helling ").append(e.getKey()).append(" (vuren+terugzetten, log-log, N = 1 000 → 10 000): ")
                     .append(both ? String.format(Locale.ROOT, "%.2f", v.helling()) : "–").append('\n');

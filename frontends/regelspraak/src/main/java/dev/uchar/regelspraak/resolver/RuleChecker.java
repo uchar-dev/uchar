@@ -166,7 +166,7 @@ final class RuleChecker {
         for (Input o : inputs) {
             GeneratedFrom generatedFrom = new GeneratedFrom(Designatable.attribute(o.type().name, o.attribute()),
                     OriginForm.OPGAVE_BOVEN_BEREKENING);
-            kandidaat(candidates, Designatable.attribute(o.type().name, o.opgegeven()), generatedFrom);
+            kandidaat(candidates, Designatable.attribute(o.type().name, o.supplied()), generatedFrom);
             kandidaat(candidates, Designatable.attribute(o.type().name, o.computed()), generatedFrom);
             kandidaat(candidates, Designatable.characteristic(o.type().name, o.deviating()), generatedFrom);
             if (lowered.contains(o))
@@ -280,7 +280,7 @@ final class RuleChecker {
 
     /** The name identity of an element (IR-SPEC ch. 2.1): its kind, owner and name under the frontend's norm. */
     private static String elementKey(Designatable b) {
-        return b.category() + "\u0000" + (b.owner() == null ? "" : dev.uchar.regelspraak.emit.IrEmitter.norm(b.owner()))
+        return b.kind() + "\u0000" + (b.owner() == null ? "" : dev.uchar.regelspraak.emit.IrEmitter.norm(b.owner()))
                 + "\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(b.name());
     }
 
@@ -861,11 +861,11 @@ final class RuleChecker {
             Typing.Coded error = null;
             if (a.objectType() == null)
                 error = new Typing.Coded("RGS-306", params("written", written, "subjectSource", a.subjectSource()));
-            else if (r.category() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) == null
+            else if (r.kind() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) == null
                     && cellAsName(a.objectType(), a.attribute()) != null)
                 error = new Typing.Coded("RGS-307",
                         params("written", written, "attribute", a.attribute(), "cell", cellAsName(a.objectType(), a.attribute())));
-            else if (r.category() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) != null
+            else if (r.kind() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) != null
                     && cellAfterSubject(a.objectType(), a.attribute(), a.subjectSource()) != null)
                 error = new Typing.Coded("RGS-308",
                         params("written", written, "cell", cellAfterSubject(a.objectType(), a.attribute(), a.subjectSource())));
@@ -873,7 +873,7 @@ final class RuleChecker {
                 // "Het kadegeld van zijn thuishaven moet …": the target reads another instance's attribute, which
                 // ended in the emitter's exception, since the target fixes the rule's subject
                 error = new Typing.Coded("RGS-111", params("written", written, "subjectSource", a.subjectSource()));
-            else if (r.category() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) == null)
+            else if (r.kind() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) == null)
                 error = a.attribute().matches("(?i).*\\svan\\s.*")
                         ? new Typing.Coded("RGS-112",
                                 params("written", written, "attribute", a.attribute(), "objectType", a.objectType().name))
@@ -1691,7 +1691,7 @@ final class RuleChecker {
             ResolvedRule baseRule = base.get(0);
             if (refusedTargets.contains(baseRule)) continue;   // its target is refused already, and by name
             DefaultsTarget targetName = targetOf(baseRule);
-            if (targetName == null || baseRule.category() == ResolvedRule.Kind.INITIALISATIE) {
+            if (targetName == null || baseRule.kind() == ResolvedRule.Kind.INITIALISATIE) {
                 error(head.line,
                         "RGS-133", params("head", head.head));
                 continue;
@@ -1857,7 +1857,7 @@ final class RuleChecker {
             case Condition.Predicate p -> {
                 Expr o = opSubtype(p.operand(), sup, sub);
                 yield o == p.operand() ? p
-                        : new Condition.Predicate(p.category(), o, p.dayKind(), p.negation(), p.digits(), p.period(), p.source());
+                        : new Condition.Predicate(p.kind(), o, p.dayKind(), p.negation(), p.digits(), p.period(), p.source());
             }
             case Condition.TimeWindow p -> {
                 Expr van = opSubtype(p.from(), sup, sub), until = opSubtype(p.until(), sup, sub);
@@ -1994,7 +1994,7 @@ final class RuleChecker {
         ResolvedRule resolvedRule = r.get(0);
         if (refusedTargets.contains(resolvedRule)) return false;   // refused already, by name
         DefaultsTarget own = targetOf(resolvedRule);
-        if (own == null || resolvedRule.category() == ResolvedRule.Kind.INITIALISATIE) {
+        if (own == null || resolvedRule.kind() == ResolvedRule.Kind.INITIALISATIE) {
             error(k.line,
                     "RGS-136", params("head", k.head, "node", withArticle(k)));
             return false;
@@ -2058,7 +2058,7 @@ final class RuleChecker {
         for (ObjectType t = own.subjectType(); t != null && t != rootType; t = t.supertype) {
             DefaultsTarget opT = new DefaultsTarget(t, own.characteristic(), own.name());
             for (ResolvedRule b : model.resolvedRules)
-                if (b.category() != ResolvedRule.Kind.INITIALISATIE && !refusedTargets.contains(b)
+                if (b.kind() != ResolvedRule.Kind.INITIALISATIE && !refusedTargets.contains(b)
                         && !nodeNames.contains(withoutVersion(b.name())) && opT.equal(targetOf(b)))
                     return new Base(withoutVersion(b.name()), t);
         }
@@ -2254,7 +2254,7 @@ final class RuleChecker {
                 if (rr.size() > 1) { multiVersionError(Msg.frontend("PART.node-kind.member"), name, line); error = true; break; }
                 if (refusedTargets.contains(rr.get(0))) { error = true; break; }   // refused already, by name
                 DefaultsTarget d = targetOf(rr.get(0));
-                if (d == null || rr.get(0).category() == ResolvedRule.Kind.INITIALISATIE) {
+                if (d == null || rr.get(0).kind() == ResolvedRule.Kind.INITIALISATIE) {
                     model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-144", params("member", name), line));
                     error = true; break;
                 }
@@ -2352,7 +2352,7 @@ final class RuleChecker {
      *  plain attribute/characteristic reference (an objectcreatie/verdeling/consistentie never lands here). */
     private DefaultsTarget targetOf(ResolvedRule r) {
         if (!(r.target() instanceof Expr.AttributeReference d) || d.objectType() == null) return null;
-        return new DefaultsTarget(d.objectType(), r.category() == ResolvedRule.Kind.KENMERKTOEKENNING, d.attribute());
+        return new DefaultsTarget(d.objectType(), r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING, d.attribute());
     }
 
     private static Msg targetText(DefaultsTarget d) {
@@ -2408,7 +2408,7 @@ final class RuleChecker {
      *  six generated names are fixed by the attribute's declared name; the form names are unique in the whole model
      *  (WF-020), the member names in the inheritance line of the type. */
     private record Input(ObjectType type, String attribute, int line, AttribuutSpecificatieContext declaration) {
-        String opgegeven() { return "opgegeven " + attribute; }
+        String supplied() { return "opgegeven " + attribute; }
         String computed() { return "berekende " + attribute; }
         String deviating() { return "afwijkende opgave " + attribute; }
         String group() { return "opgave boven berekening " + attribute; }
@@ -2476,7 +2476,7 @@ final class RuleChecker {
             for (var e : oud.entrySet()) {
                 t.attributes.put(e.getKey(), e.getValue());
                 if (e.getKey().equals(o.attribute())) {
-                    t.attributes.put(o.opgegeven(), dt);
+                    t.attributes.put(o.supplied(), dt);
                     t.attributes.put(o.computed(), dt);
                 }
             }
@@ -2533,7 +2533,7 @@ final class RuleChecker {
                     params("head", o.head(), "attribute", x, "dimensions", String.join(" en ", dimensions)));
         // a subtype inherits the generated members, a supertype's members are inherited by T: either way one
         // instance would carry two declarations of one name (WF-105)
-        for (String g : List.of(o.opgegeven(), o.computed(), o.deviating())) {
+        for (String g : List.of(o.supplied(), o.computed(), o.deviating())) {
             String key = dev.uchar.regelspraak.emit.IrEmitter.norm(g);
             for (ObjectType u : model.objectTypes.values()) {
                 if (u != t && !u.isA(t) && !t.isA(u)) continue;
@@ -2583,10 +2583,10 @@ final class RuleChecker {
             List<ResolvedRule> subInit = new ArrayList<>();
             for (int i = 0; i < model.resolvedRules.size(); i++) {
                 ResolvedRule r = model.resolvedRules.get(i);
-                if (r.category() == ResolvedRule.Kind.KENMERKTOEKENNING) continue;
+                if (r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING) continue;
                 ObjectType u = ownTarget(r.target(), o.attribute());
                 if (u == null || !u.isA(t)) continue;
-                if (r.category() != ResolvedRule.Kind.INITIALISATIE) computing.add(i);
+                if (r.kind() != ResolvedRule.Kind.INITIALISATIE) computing.add(i);
                 else if (u == t) init.add(r);
                 else subInit.add(r);
             }
@@ -2599,7 +2599,7 @@ final class RuleChecker {
             Typing.Coded reason = inputWriterError(o);
             if (reason == null && computing.isEmpty() && groups.isEmpty()) {
                 // nothing to put the opgave above: X is input already
-                o.type().attributes.remove(o.opgegeven());
+                o.type().attributes.remove(o.supplied());
                 o.type().attributes.remove(o.computed());
                 o.type().characteristics.remove(o.deviating());
                 o.type().characteristicKinds.remove(o.deviating());
@@ -2620,7 +2620,7 @@ final class RuleChecker {
             // 2. the computing writers keep their names and shapes and write 'berekende X'
             for (int i : computing) {
                 ResolvedRule r = model.resolvedRules.get(i);
-                ResolvedRule moved = new ResolvedRule(r.name(), r.category(),
+                ResolvedRule moved = new ResolvedRule(r.name(), r.kind(),
                         toComputed((Expr.AttributeReference) r.target(), o.computed()), r.value(), r.condition(),
                         r.validity(), r.statuteAnnotations());
                 if (refusedTargets.contains(r)) refusedTargets.add(moved);
@@ -2638,7 +2638,7 @@ final class RuleChecker {
             //    justification is "X is empty in the input", which on 'berekende X' (never input) would always hold
             Datatype dt = t.attributes.get(o.attribute());
             List<Default> defaults = new ArrayList<>();
-            defaults.add(new Default(null, ALTIJD, attributeRead(o, o.opgegeven(), dt), false, null, o.opgegeven()));
+            defaults.add(new Default(null, ALTIJD, attributeRead(o, o.supplied(), dt), false, null, o.supplied()));
             defaults.add(new Default(null, ALTIJD, attributeRead(o, o.computed(), dt), false, null, o.computed()));
             if (!init.isEmpty()) {
                 ResolvedRule r = init.get(0);
@@ -2648,20 +2648,20 @@ final class RuleChecker {
             model.prioritizedDefaults.add(new PrioritizedDefaults(o.group(), t.name, null, o.attribute(), false,
                     defaults, null, Validity.ALTIJD));
             // 4. the deviation characteristic, spelled as the frontend emits the hand-written rule
-            String p0 = "zijn " + o.opgegeven() + " is gevuld";
+            String p0 = "zijn " + o.supplied() + " is gevuld";
             String p1 = "zijn " + o.computed() + " is gevuld";
-            String p2 = "zijn " + o.opgegeven() + " is ongelijk aan zijn " + o.computed();
+            String p2 = "zijn " + o.supplied() + " is ongelijk aan zijn " + o.computed();
             AttribuutSpecificatieContext a = o.declaration();
             Condition deviation = new Condition.Compound(Condition.Quantifier.ALLE, 0, List.of(
-                    new Condition.Predicate(Condition.PredicateKind.GEVULD, attributeRead(o, o.opgegeven(), dt), Source.van(a, p0)),
-                    new Condition.Predicate(Condition.PredicateKind.GEVULD, attributeRead(o, o.computed(), dt), Source.van(a, p1)),
-                    new Condition.Comparison(Condition.Operator.ONGELIJK, attributeRead(o, o.opgegeven(), dt),
-                            attributeRead(o, o.computed(), dt), Source.van(a, p2))),
-                    Source.van(a, "hij aan alle volgende voorwaarden voldoet: - " + p0 + " - " + p1 + " - " + p2 + "."));
+                    new Condition.Predicate(Condition.PredicateKind.GEVULD, attributeRead(o, o.supplied(), dt), Source.of(a, p0)),
+                    new Condition.Predicate(Condition.PredicateKind.GEVULD, attributeRead(o, o.computed(), dt), Source.of(a, p1)),
+                    new Condition.Comparison(Condition.Operator.ONGELIJK, attributeRead(o, o.supplied(), dt),
+                            attributeRead(o, o.computed(), dt), Source.of(a, p2))),
+                    Source.of(a, "hij aan alle volgende voorwaarden voldoet: - " + p0 + " - " + p1 + " - " + p2 + "."));
             String subjectType = "Een " + t.name;
             model.resolvedRules.add(new ResolvedRule(o.ruleName(), ResolvedRule.Kind.KENMERKTOEKENNING,
                     new Expr.AttributeReference(o.deviating(), t, subjectType, null, new Datatype.BooleanType(),
-                            Source.van(a, subjectType + " heeft " + o.deviating())),
+                            Source.of(a, subjectType + " heeft " + o.deviating())),
                     new Expr.Literal("waar", new Datatype.BooleanType(), Source.synthetic("waar")), deviation,
                     Validity.ALTIJD, List.of()));
             // 5. the consistency: its source is the marked declaration, the one place it was written
@@ -2669,8 +2669,8 @@ final class RuleChecker {
                     a.getStart().getStartIndex(), a.MAG_OPGEGEVEN_WORDEN().getSymbol().getStopIndex()))
                     .replaceAll("\\s+", " ").trim();
             model.consistencies.add(new dev.uchar.regelspraak.ir.ResolvedConsistency(o.consistencyCheck(), t,
-                    new Condition.CharacteristicCheck(o.deviating(), null, true, Source.van(a, "hij heeft geen " + o.deviating())),
-                    Source.van(a, declaration), o.line(), Validity.ALTIJD));
+                    new Condition.CharacteristicCheck(o.deviating(), null, true, Source.of(a, "hij heeft geen " + o.deviating())),
+                    Source.of(a, declaration), o.line(), Validity.ALTIJD));
             for (String n : List.of(o.group(), o.ruleName(), o.consistencyCheck()))
                 generated.put(dev.uchar.regelspraak.emit.IrEmitter.norm(n), o);
             lowered.add(o);
@@ -2698,7 +2698,7 @@ final class RuleChecker {
 
     /** A read of the subject's own generated attribute, spelled as the frontend spells the hand-written read. */
     private static Expr.AttributeReference attributeRead(Input o, String name, Datatype dt) {
-        return new Expr.AttributeReference(name, o.type(), "zijn", null, dt, Source.van(o.declaration(), "zijn " + name));
+        return new Expr.AttributeReference(name, o.type(), "zijn", null, dt, Source.of(o.declaration(), "zijn " + name));
     }
 
     /** The writer refusals: an allocation or an object creation that writes X, and a writer of a generated member.
@@ -2720,7 +2720,7 @@ final class RuleChecker {
                                 "computedAttribute", o.computed()));
         // a generated member has one writer or none: the case supplies 'opgegeven X', the moved writers compute
         // 'berekende X', the generated rule attributes 'afwijkende opgave X'
-        for (String g : List.of(o.opgegeven(), o.computed(), o.deviating())) {
+        for (String g : List.of(o.supplied(), o.computed(), o.deviating())) {
             Msg writer = null;
             int sourceLine = 0;
             for (ResolvedRule r : model.resolvedRules) {
@@ -2755,7 +2755,7 @@ final class RuleChecker {
             if (writer != null)
                 return new Typing.Coded("RGS-317",
                         params("head", o.head(), "line", o.line(), "writer", writer, "member", g,
-                                "writerLine", sourceLine > 0 ? sourceLine : "", "inputMember", o.opgegeven(),
+                                "writerLine", sourceLine > 0 ? sourceLine : "", "inputMember", o.supplied(),
                                 "computedMember", o.computed(), "attribute", x, "deviatingMember", o.deviating(),
                                 "rule", o.ruleName(), "writerAt", Msg.frontendIf(sourceLine > 0, "RGS-317.at", "line", sourceLine)));
         }
@@ -2870,7 +2870,7 @@ final class RuleChecker {
      *  of the inheritance line, a check of the characteristic, or an allocation naming one of the attributes. The
      *  walk reaches every condition and value the emitter writes, conditions nested in expressions included. */
     private String readGenerated(Input o) {
-        for (String g : List.of(o.opgegeven(), o.computed(), o.deviating())) {
+        for (String g : List.of(o.supplied(), o.computed(), o.deviating())) {
             String key = dev.uchar.regelspraak.emit.IrEmitter.norm(g);
             java.util.function.Predicate<Expr> ref = e -> e instanceof Expr.AttributeReference r
                     && sameName(r.attribute(), g) && (r.objectType() == null || inLine(o.type(), r.objectType()));
@@ -3007,7 +3007,7 @@ final class RuleChecker {
                                     Map<ReadNode, String> text) {
         if (!(r.target() instanceof Expr.AttributeReference d) || d.navigationRole() != null || d.objectType() == null) return;
         ReadNode targetName = readNode(d.objectType(), d.attribute(),
-                r.category() == ResolvedRule.Kind.KENMERKTOEKENNING, text);
+                r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING, text);
         Set<ReadNode> reads = uses.computeIfAbsent(targetName, k -> new java.util.LinkedHashSet<>());
         collectOwnReads(r.value(), d.objectType(), reads, text);
         collectOwnReads(r.condition(), d.objectType(), reads, text);
@@ -4038,7 +4038,7 @@ final class RuleChecker {
     private static boolean transpilable(Condition c) {
         if (c instanceof Condition.Comparison) return true;
         if (c instanceof Condition.Predicate p)
-            return p.category() == Condition.PredicateKind.LEEG || p.category() == Condition.PredicateKind.GEVULD;
+            return p.kind() == Condition.PredicateKind.LEEG || p.kind() == Condition.PredicateKind.GEVULD;
         // A compound is lowerable when every criterion is: under ALLE the violation is the OR of the
         // criteria's violations, under GEEN and the counting kwantoren (ten minste/hoogste/precies) the
         // negation of the count of the criteria that hold against the drempel — both Drools branches carry
@@ -4433,13 +4433,13 @@ final class RuleChecker {
         return null;                                                        // bare 1-1: side not derivable
     }
 
-    /** True when an objectcreatie creates {@code houder} linked to {@code target} ("Een doelwit heeft een
-     *  houder"), so — by the convention objectCreatie sets the reference on the new object — {@code houder}
+    /** True when an objectcreatie creates {@code holder} linked to {@code target} ("Een doelwit heeft een
+     *  holder"), so — by the convention objectCreatie sets the reference on the new object — {@code holder}
      *  holds the reference field to {@code target}. Any objectcreatie of the document counts, wherever it stands
      *  ({@link #createdObjects}); until 2026-10-06 only one earlier in the document did, so a feitcreatie
      *  written above the objectcreatie it walks through was dropped with a WARNING. */
-    private boolean createdTo(ObjectType houder, ObjectType target) {
-        return objectCreations.stream().anyMatch(p -> p[0] == houder && p[1] == target);
+    private boolean createdTo(ObjectType holder, ObjectType target) {
+        return objectCreations.stream().anyMatch(p -> p[0] == holder && p[1] == target);
     }
 
     /** The objectcreaties of the document as (created type, subject) pairs, read off every rule version before any
@@ -4603,7 +4603,7 @@ final class RuleChecker {
     /** Whether {@code r} is a negated kenmerktoekenning — the {@link #NEGATED} value, matched on content so a copy
      *  of the rule record keeps it. A positive kenmerktoekenning always carries the synthetic "waar". */
     private static boolean isNegated(ResolvedRule r) {
-        return r.category() == ResolvedRule.Kind.KENMERKTOEKENNING && r.value() instanceof Expr.Literal l
+        return r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING && r.value() instanceof Expr.Literal l
                 && "onwaar".equals(l.valueText());
     }
 
@@ -5776,7 +5776,7 @@ final class RuleChecker {
             return new Condition.Comparison(v.op(), v.left() == oud ? fresh : v.left(),
                     v.right() == oud ? fresh : v.right(), v.period(), v.source());
         if (c instanceof Condition.Predicate p)
-            return new Condition.Predicate(p.category(), fresh, p.dayKind(), p.negation(), p.digits(),
+            return new Condition.Predicate(p.kind(), fresh, p.dayKind(), p.negation(), p.digits(),
                     p.period(), p.source());
         return c;
     }
@@ -5803,9 +5803,9 @@ final class RuleChecker {
     }
     private boolean characteristicCheckTemporal(Condition.CharacteristicCheck k) {
         ObjectType subject = builder.subject();
-        ObjectType houder = k.navigation() == null ? subject
+        ObjectType holder = k.navigation() == null ? subject
                 : (subject != null ? model.roleTargetTypeToSubject(subject, k.navigation()) : null);
-        return houder != null && houder.characteristicGranularityOf(k.characteristic()) != null;
+        return holder != null && holder.characteristicGranularityOf(k.characteristic()) != null;
     }
 
     private Condition conditionFromNonToplevelBare(Expr lhs, NonToplevelOperatorContext op, Source source) {
@@ -5890,19 +5890,19 @@ final class RuleChecker {
      *  &lt;bijvoeglijk&gt;", "is geen &lt;bezittelijk&gt;") slips through with the right meaning but the wrong register.
      *  Surface it as a WARNING — a writing-form lint, never a wrong gate (the lowering is unchanged). Only a de-negated
      *  kenmerk (negatie=true) is checked; the positive form's verb-keying is the EEN-form split's job. */
-    private void checkNegationKind(ObjectType houder, Condition kc, boolean hasVerb) {
+    private void checkNegationKind(ObjectType holder, Condition kc, boolean hasVerb) {
         // a condition's warning stands at the line of the sentence that writes the check; it stood at 0, which points
         // an author at nothing in a document with many rules
-        checkNegationKind(houder, kc, hasVerb, rowTableLine > 0 ? rowTableLine
+        checkNegationKind(holder, kc, hasVerb, rowTableLine > 0 ? rowTableLine
                 : kc == null || kc.source() == null ? 0 : kc.source().line());
     }
 
     /** As above, at {@code line}. A negated RESULT (dialect §4) passes its sentence's line, so its warning stands at
      *  the rule on the wire; a condition passes the line of its check, or the table's line in a row of a decision
      *  table. */
-    private void checkNegationKind(ObjectType houder, Condition kc, boolean hasVerb, int line) {
-        if (houder == null || !(kc instanceof Condition.CharacteristicCheck k) || !k.negation()) return;
-        ObjectType.CharacteristicKind category = houder.characteristicKind(k.characteristic());
+    private void checkNegationKind(ObjectType holder, Condition kc, boolean hasVerb, int line) {
+        if (holder == null || !(kc instanceof Condition.CharacteristicCheck k) || !k.negation()) return;
+        ObjectType.CharacteristicKind category = holder.characteristicKind(k.characteristic());
         if (category == null) return;
         boolean owns = category == ObjectType.CharacteristicKind.BEZITTELIJK;
         if (owns != hasVerb)

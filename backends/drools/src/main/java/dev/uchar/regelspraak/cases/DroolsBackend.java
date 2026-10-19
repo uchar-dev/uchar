@@ -225,7 +225,7 @@ public final class DroolsBackend {
         Map<ProducerConsumer.ElementKey, Msg> use = new java.util.HashMap<>();
         for (ProducerConsumer.Form v : ProducerConsumer.forms(model, loaded.prioritizedDefaults(),
                 ProducerConsumer.wireNavigation(loaded))) {
-            Msg formName = Msg.drools("PART.form-named." + v.category().name().toLowerCase(java.util.Locale.ROOT).replace('_', '-'), "name", v.name());
+            Msg formName = Msg.drools("PART.form-named." + v.kind().name().toLowerCase(java.util.Locale.ROOT).replace('_', '-'), "name", v.name());
             for (ProducerConsumer.ElementKey e : v.writes()) use.putIfAbsent(e, formName);
             for (ProducerConsumer.ElementKey e : v.reads()) use.putIfAbsent(e, formName);
         }
@@ -236,9 +236,9 @@ public final class DroolsBackend {
             FactModelGenerator.Origin h = v.displaced();
             // a role without a field of its own is refused where it is used, by the gate that asks the field's name
             // and type (FactModelGenerator.hasReferenceField); rolbotsing above took the one shape that gate passes
-            if (h.category() == FactModelGenerator.Origin.Kind.ROL) continue;
-            Msg formName = use.get(ProducerConsumer.ElementKey.van(h.source(), h.name(),
-                    h.category() == FactModelGenerator.Origin.Kind.KENMERK));
+            if (h.kind() == FactModelGenerator.Origin.Kind.ROL) continue;
+            Msg formName = use.get(ProducerConsumer.ElementKey.of(h.source(), h.name(),
+                    h.kind() == FactModelGenerator.Origin.Kind.KENMERK));
             if (formName != null) throw new Excluded(DroolsCode.BEAN_NAME_COLLISION_USE.reason("reason", FactModelGenerator.displacementReason(v).msg(), "form", formName));
         }
     }
@@ -485,7 +485,7 @@ public final class DroolsBackend {
      *  field stands for on the members' bean ({@link FactModelGenerator#origin}), since beans of two types can hold
      *  fields of one name toward one holder over two fact types, and a fold reads the members of one relation. The
      *  holder is compared by identity, as the beans do not override {@code equals}. */
-    private record ListKey(String field, Object houder, FactModelGenerator.Origin relation) {}
+    private record ListKey(String field, Object holder, FactModelGenerator.Origin relation) {}
 
     /**
      * The places of the members of every to-many list a rule reads ({@code read}, the fields the members hold toward
@@ -509,9 +509,9 @@ public final class DroolsBackend {
         for (Object beanObject : beans)
             for (String field : referenceFields.computeIfAbsent(types.get(beanObject), t -> referenceFields(model, t))) {
                 if (!fields.contains(field)) continue;
-                Object houder = Accessors.leesEigenschap(beanObject, field);
-                if (houder != null)
-                    actual.computeIfAbsent(new ListKey(field, houder, relation.apply(beanObject).apply(field)),
+                Object holder = Accessors.leesEigenschap(beanObject, field);
+                if (holder != null)
+                    actual.computeIfAbsent(new ListKey(field, holder, relation.apply(beanObject).apply(field)),
                             k -> new ArrayList<>()).add(beanObject);
             }
         Map<ListKey, List<Object>> lists = new LinkedHashMap<>();
@@ -519,7 +519,7 @@ public final class DroolsBackend {
         Set<ListKey> given = new HashSet<>();
         for (Input.ToManyList l : opgegeven) {
             String field = Namen.ident(l.role(), false);
-            String description = "insert: de lijst van " + name(l.houder()) + " onder de rol '" + l.role() + "'";
+            String description = "insert: de lijst van " + name(l.holder()) + " onder de rol '" + l.role() + "'";
             Map<ListKey, List<Object>> parts = new LinkedHashMap<>();
             Set<Object> named = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
             for (Object member : l.members()) {
@@ -529,17 +529,17 @@ public final class DroolsBackend {
                     throw new IllegalArgumentException(description + " noemt " + name(member) + ", maar een " + ot.name
                             + " heeft geen referentieveld '" + field + "'; de rol is die van de houder, de naam van het"
                             + " veld waarmee een lid naar de houder wijst");
-                Object houder = Accessors.leesEigenschap(member, field);
-                if (houder != l.houder())
+                Object holder = Accessors.leesEigenschap(member, field);
+                if (holder != l.holder())
                     throw new IllegalArgumentException(description + " noemt " + name(member) + ", maar diens veld '" + field
-                            + "' wijst " + (houder == null ? "nergens heen" : "naar " + name(houder)));
+                            + "' wijst " + (holder == null ? "nergens heen" : "naar " + name(holder)));
                 if (!named.add(member)) throw new IllegalArgumentException(description + " noemt " + name(member) + " twee keer");
-                parts.computeIfAbsent(new ListKey(field, houder, relation.apply(member).apply(field)),
+                parts.computeIfAbsent(new ListKey(field, holder, relation.apply(member).apply(field)),
                         k -> new ArrayList<>()).add(member);
             }
             if (parts.isEmpty())
                 for (Map.Entry<ListKey, List<Object>> e : actual.entrySet())
-                    if (e.getKey().field().equals(field) && e.getKey().houder() == l.houder())
+                    if (e.getKey().field().equals(field) && e.getKey().holder() == l.holder())
                         throw new IllegalArgumentException(description + " is leeg gegeven, maar " + name(e.getValue().get(0))
                                 + " wijst met zijn veld '" + field + "' naar de houder");
             for (Map.Entry<ListKey, List<Object>> part : parts.entrySet()) {
@@ -1097,7 +1097,7 @@ public final class DroolsBackend {
                     + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
                     + " DroolsBackend.fixpointOf en zet pas na de laatste fire terug, of open een verse sessie met beans die"
                     + " alleen invoer dragen");
-        Watch installedWatch = Watch.van(session);
+        Watch installedWatch = Watch.of(session);
         // insert puts the watch on, or the first run where there was no insert, and every run puts it back, so only a
         // consumer that took it off leaves a fired session without it, and what happened since is then not to be seen
         if (installedWatch == null && !marks.isEmpty())

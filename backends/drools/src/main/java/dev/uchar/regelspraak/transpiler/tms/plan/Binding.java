@@ -19,7 +19,7 @@ public record Binding(String target, List<Field> path, Field field, ReadForm for
     }
 
     /** The field {@code field} of an object of {@code javaClass}, as it is. */
-    public static Binding van(String target, Class<?> javaClass, String field) {
+    public static Binding of(String target, Class<?> javaClass, String field) {
         return new Binding(target, List.of(), new Field(javaClass, field), ReadForm.VALUE, null);
     }
 

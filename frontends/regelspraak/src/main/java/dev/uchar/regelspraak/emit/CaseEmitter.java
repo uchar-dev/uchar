@@ -135,7 +135,7 @@ public final class CaseEmitter {
 
     private static void expectation(IrEmitter.Json w, Expectation v) {
         w.beginObject();
-        switch (v.category()) {
+        switch (v.kind()) {
             case ATTRIBUTE_VALUE -> {
                 w.key("kind").value("attributeValue");
                 w.key("label").value(v.label());

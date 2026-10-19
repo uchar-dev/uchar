@@ -83,7 +83,7 @@ class LeftSidePlanWitnessTest {
             if (r.form() == null) continue;
             Map<String, Integer> t = out.computeIfAbsent(r.form(), v -> new TreeMap<>());
             tally(t, "plan");
-            for (Read l : r.readings().slots()) tally(t, "lezing " + l.category());
+            for (Read l : r.readings().slots()) tally(t, "lezing " + l.kind());
             for (LhsItem item : r.leftSide()) {
                 switch (item) {
                     case Subject o -> {
@@ -95,7 +95,7 @@ class LeftSidePlanWitnessTest {
                     case Exists b -> b.patterns().forEach(p -> pattern(t, "bestaat", p));
                     case Accumulation a -> {
                         pattern(t, "accumulatie", a.source());
-                        a.aggregations().forEach(f -> tally(t, "functie " + f.category()));
+                        a.aggregations().forEach(f -> tally(t, "functie " + f.kind()));
                     }
                     case TestItem x -> tally(t, "toets");
                 }

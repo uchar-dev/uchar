@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * </ul>
  *
  * <p><b>Red</b> before the step, on {@code 36a3b0a9}, with the routes that a DRL text needed and that were not public:
- * routes naming {@code ComputeFault.isEvaluationFault}, {@code ComputeFault.designate} and {@code WritersConflict.van}, which
+ * routes naming {@code ComputeFault.isEvaluationFault}, {@code ComputeFault.designate} and {@code WritersConflict.of}, which
  * are package-private, fail both checks; and the overloaded {@code lijst} of the spike of FABLE-2 fails the first.
  */
 class ReachabilityWitnessTest {

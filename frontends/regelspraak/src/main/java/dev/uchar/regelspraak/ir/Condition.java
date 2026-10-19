@@ -52,12 +52,12 @@ public sealed interface Condition {
      *  {@code digits} is the §8.1.4 digit-count N of the NUMERIEK_MET_EXACT predicate ("numeriek met exact N
      *  cijfers" — the §13.4.15.84 &lt;geheelgetal&gt;); 0 for every other soort. */
     enum PredicateKind { LEEG, GEVULD, ELFPROEF, NUMERIEK_MET_EXACT, DAGSOORT }
-    record Predicate(PredicateKind category, Expr operand, String dayKind, boolean negation, int digits, WholePeriod period, Source source) implements Condition {
-        public Predicate(PredicateKind category, Expr operand, String dayKind, WholePeriod period, Source source) { this(category, operand, dayKind, false, 0, period, source); }
-        public Predicate(PredicateKind category, Expr operand, boolean negation, WholePeriod period, Source source) { this(category, operand, null, negation, 0, period, source); }
-        public Predicate(PredicateKind category, Expr operand, boolean negation, int digits, WholePeriod period, Source source) { this(category, operand, null, negation, digits, period, source); }
-        public Predicate(PredicateKind category, Expr operand, WholePeriod period, Source source) { this(category, operand, null, false, 0, period, source); }
-        public Predicate(PredicateKind category, Expr operand, Source source) { this(category, operand, null, false, 0, null, source); }
+    record Predicate(PredicateKind kind, Expr operand, String dayKind, boolean negation, int digits, WholePeriod period, Source source) implements Condition {
+        public Predicate(PredicateKind kind, Expr operand, String dayKind, WholePeriod period, Source source) { this(kind, operand, dayKind, false, 0, period, source); }
+        public Predicate(PredicateKind kind, Expr operand, boolean negation, WholePeriod period, Source source) { this(kind, operand, null, negation, 0, period, source); }
+        public Predicate(PredicateKind kind, Expr operand, boolean negation, int digits, WholePeriod period, Source source) { this(kind, operand, null, negation, digits, period, source); }
+        public Predicate(PredicateKind kind, Expr operand, WholePeriod period, Source source) { this(kind, operand, null, false, 0, period, source); }
+        public Predicate(PredicateKind kind, Expr operand, Source source) { this(kind, operand, null, false, 0, null, source); }
     }
 
     /** §8.1.8 kenmerk-membership test ("de Meting is oud" / "hij heeft het recht …"): true when the

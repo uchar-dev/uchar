@@ -416,13 +416,13 @@ final class ExpressionBuilder {
 
     private static boolean hasRational(Expr.Literal l) {
         if (!(l.type() instanceof Datatype.Numeric)) return false;
-        java.math.BigDecimal[] r = dev.uchar.regelspraak.model.RationalParser.van(l.valueText());
+        java.math.BigDecimal[] r = dev.uchar.regelspraak.model.RationalParser.of(l.valueText());
         return r != null && r[0].remainder(r[1]).signum() != 0;
     }
 
     /** The literal as written with its number truncated toward zero, the count every executor steps. */
     private static String truncated(Expr.Literal l, String written) {
-        java.math.BigDecimal[] r = dev.uchar.regelspraak.model.RationalParser.van(l.valueText());
+        java.math.BigDecimal[] r = dev.uchar.regelspraak.model.RationalParser.of(l.valueText());
         String whole = r[0].divide(r[1], 0, java.math.RoundingMode.DOWN).toPlainString();
         return written.replaceFirst(java.util.regex.Pattern.quote(l.valueText()),
                 java.util.regex.Matcher.quoteReplacement(whole));
@@ -440,7 +440,7 @@ final class ExpressionBuilder {
         java.math.BigDecimal[] f = van.exactRestateFactors(target);
         if (f == null || f[0].remainder(f[1]).signum() == 0) return null;
         // a literal's count is known, so its restatement is too: 12 mnd is exactly 1 jr
-        java.math.BigDecimal[] r = sub instanceof Expr.Literal l ? dev.uchar.regelspraak.model.RationalParser.van(l.valueText()) : null;
+        java.math.BigDecimal[] r = sub instanceof Expr.Literal l ? dev.uchar.regelspraak.model.RationalParser.of(l.valueText()) : null;
         if (r != null && r[0].multiply(f[0]).remainder(r[1].multiply(f[1])).signum() == 0) return null;
         return new Rational(sub, Msg.frontend("PART.fraction-conversion", "target", target.rendering(), "from", van.rendering()));
     }
@@ -779,7 +779,7 @@ final class ExpressionBuilder {
      *  value (4/2 -> 0, 3/2 -> 1); a non-terminating one (1/3) has no finite scale, so it is read at
      *  DECIMAL64 and types as "many decimals" — which §6.1.2 then rightly demands be rounded. */
     private static int literalDecimals(String source) {
-        java.math.BigDecimal[] r = dev.uchar.regelspraak.model.RationalParser.van(source);
+        java.math.BigDecimal[] r = dev.uchar.regelspraak.model.RationalParser.of(source);
         if (r == null) return 0;
         // the literal's exact value teller/noemer (a decimal/integer has noemer ONE, so the divide is exact);
         // a non-terminating rational (1/3) has no finite scale, so read it at DECIMAL64 — §6.1.2 then rightly
@@ -905,8 +905,8 @@ final class ExpressionBuilder {
         String attributeRead = read.endsWith(suffix) ? read.substring(0, read.length() - suffix.length()) : read;
         String article = attributeRead.regionMatches(true, 0, "het ", 0, 4) ? "Het" : "De";
         HelperMember h = new HelperMember(name, element, member, target, type, List.copyOf(roles),
-                Source.van(f, article + " " + name + " van een " + element.name),
-                Source.van(f, attributeRead + " van de " + element.name));
+                Source.of(f, article + " " + name + " van een " + element.name),
+                Source.of(f, attributeRead + " van de " + element.name));
         helperMembers.put(element.name + "\u0000" + keyName, h);
         return h;
     }
@@ -2908,12 +2908,12 @@ final class ExpressionBuilder {
             return RangeWalk.refused(Msg.frontend("PART.range-not-at-subject", "source", src(subjectType), "anchor", anchor,
                     "subject", huidigSubject.name), null);
         java.util.List<RegelSpraakModel.RoleBindingRef> path = new java.util.ArrayList<>();
-        ObjectType houder = huidigSubject;
+        ObjectType holder = huidigSubject;
         for (int i = segments.size() - 2; i >= 0; i--) {
-            RegelSpraakModel.RangeHop hop = model.rangeHop(houder, segments.get(i));
-            if (hop == null) return stepRefusal(subjectType, houder, segments.get(i));
+            RegelSpraakModel.RangeHop hop = model.rangeHop(holder, segments.get(i));
+            if (hop == null) return stepRefusal(subjectType, holder, segments.get(i));
             path.add(hop.binding());
-            houder = hop.targetName();
+            holder = hop.targetName();
         }
         // The last step bound the written element name to a role from the holder before it, so the walk lands on
         // that role's filler. Where the name is no object type (not its name, not its declared plural), it named
@@ -2923,10 +2923,10 @@ final class ExpressionBuilder {
         // binding decided, through the first role in declaration order that carried the name, so the order of the
         // fact types could refuse the walk (grammar/DIVERGENCES.md §13.4.1).
         ObjectType written = elementNameObjectType(segments.get(0));
-        if (written != null && written != houder && !written.isA(houder))
-            return RangeWalk.refused(Msg.frontend("PART.range-element-mismatch", "source", src(subjectType), "holder", houder.name,
+        if (written != null && written != holder && !written.isA(holder))
+            return RangeWalk.refused(Msg.frontend("PART.range-element-mismatch", "source", src(subjectType), "holder", holder.name,
                     "written", written.name), null);
-        return new RangeWalk(java.util.List.copyOf(path), null, null, written == null ? houder : written);
+        return new RangeWalk(java.util.List.copyOf(path), null, null, written == null ? holder : written);
     }
 
     /** The object type a written element name names as a whole — its name or its declared plural — or null; a role
@@ -2936,15 +2936,15 @@ final class ExpressionBuilder {
         return t != null ? t : PluralMatcher.findObjectType(model.objectTypes.values(), name);
     }
 
-    /** Why the written step {@code step} binds no role from {@code houder}: the classes of
+    /** Why the written step {@code step} binds no role from {@code holder}: the classes of
      *  {@link RegelSpraakModel#stepCandidates}, so the words follow the search that declined the step. A plural the
      *  model does not declare binds no step, also where the one-step range accepts it: the uchar wire has no
      *  best-effort plural (IR-SPEC ch. 2.6, decided 2026-08-25), and a path step has no type-pair derivation to fall
      *  back on (WF-102). Only that cause has a way out a declaration gives, so only it carries one. */
-    private RangeWalk stepRefusal(OnderwerpContext subjectType, ObjectType houder, String step) {
-        RegelSpraakModel.StepCandidates k = model.stepCandidates(houder, step);
+    private RangeWalk stepRefusal(OnderwerpContext subjectType, ObjectType holder, String step) {
+        RegelSpraakModel.StepCandidates k = model.stepCandidates(holder, step);
         java.util.function.Function<Msg, Msg> head = tail -> Msg.frontend("PART.step-refusal", "source", src(subjectType),
-                "step", step, "holder", houder.name, "tail", tail);
+                "step", step, "holder", holder.name, "tail", tail);
         if (k.declared().size() > 1)
             return RangeWalk.refused(head.apply(Msg.frontend("PART.step-tail-ambiguous", "step", step,
                     "roles", roles(k.declared(), false))), null);
@@ -2960,7 +2960,7 @@ final class ExpressionBuilder {
         if (!k.reciprocal().isEmpty())
             return RangeWalk.refused(head.apply(Msg.frontend("PART.step-tail-reciprocal", "step", step,
                     "roles", roles(k.reciprocal(), true))), null);
-        return RangeWalk.refused(head.apply(Msg.frontend("PART.step-tail-none", "holder", houder.name, "step", step)), null);
+        return RangeWalk.refused(head.apply(Msg.frontend("PART.step-tail-none", "holder", holder.name, "step", step)), null);
     }
 
     /** The candidates a step refusal names, each once: "de rol 'x' van het feittype 'f'", or "de rollen 'x' van het
@@ -3462,7 +3462,7 @@ final class ExpressionBuilder {
      *  folded snippet and refused a correct document. The bron is also where {@link #enumAgainstContext} reads
      *  the label back from, which is why the marker must carry the unfolded token. */
     private Expr enumValue(ParserRuleContext ctx, String lexemeText) {
-        return unresolvedMarker(Source.van(ctx, lexemeText), REASON_ENUM_WITHOUT_DOMAIN);
+        return unresolvedMarker(Source.of(ctx, lexemeText), REASON_ENUM_WITHOUT_DOMAIN);
     }
 
     /** Promote an enumeratiewaarde marker to the domain {@code context} names, or hand back {@code kandidaat}

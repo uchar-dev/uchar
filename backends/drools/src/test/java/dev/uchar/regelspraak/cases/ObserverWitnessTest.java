@@ -59,7 +59,7 @@ class ObserverWitnessTest {
         List<String> trace = new ArrayList<>();
         for (ScenarioResult.Firing v : w.firings()) trace.add(v.rule() + " " + v.labels() + " " + v.count());
         List<String> coverage = new ArrayList<>();
-        for (ScenarioResult.CoverageRule d : DroolsBackend.coverage(build, w.forms())) coverage.add(d.rule() + " " + d.category());
+        for (ScenarioResult.CoverageRule d : DroolsBackend.coverage(build, w.forms())) coverage.add(d.rule() + " " + d.kind());
         return new Observed(trace, w.forms(), coverage);
     }
 
@@ -104,7 +104,7 @@ class ObserverWitnessTest {
             ScenarioResult r = report(EXCLUSION, caseFileName);
             Observed w = play(EXCLUSION, caseFileName, DroolsBackend.Branch.EXEC_MODEL);
             assertEquals(w.trace(), r.trace().firings().stream().map(v -> v.rule() + " " + v.labels() + " " + v.count()).toList(), caseFileName);
-            assertEquals(w.coverage(), r.coverage().stream().map(d -> d.rule() + " " + d.category()).toList(), caseFileName);
+            assertEquals(w.coverage(), r.coverage().stream().map(d -> d.rule() + " " + d.kind()).toList(), caseFileName);
         }
     }
 
@@ -302,6 +302,6 @@ class ObserverWitnessTest {
                 + " sessie van deze build vuurt haar; komen de gevuurde vormen van een andere build?", e.getMessage());
         assertFalse(DroolsBackend.coverage(build, Set.of()).isEmpty(), "zonder gevuurde vorm is elke post NOT_FIRED");
         assertTrue(DroolsBackend.coverage(build, Set.of()).stream()
-                .allMatch(d -> d.category() == ScenarioResult.CoverageKind.NOT_FIRED));
+                .allMatch(d -> d.kind() == ScenarioResult.CoverageKind.NOT_FIRED));
     }
 }

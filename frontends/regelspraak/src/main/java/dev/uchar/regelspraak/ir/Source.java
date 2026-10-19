@@ -33,7 +33,7 @@ public record Source(String file, int line, int column, String snippet) {
      *  caller's whitespace-normalised source slice. The file name is the char stream's source name
      *  (set by {@code CharStreams.fromString(text, name)} at the front end; {@code "<unknown>"} for a
      *  nameless string input). A null ctx (or one with no start token) yields a synthetic anchor. */
-    public static Source van(ParserRuleContext ctx, String snippet) {
+    public static Source of(ParserRuleContext ctx, String snippet) {
         if (ctx == null || ctx.getStart() == null) return synthetic(snippet);
         Token t = ctx.getStart();
         String file = t.getInputStream() != null ? t.getInputStream().getSourceName() : null;

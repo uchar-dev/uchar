@@ -210,7 +210,7 @@ class ComparisonWitnessTest {
         IllegalStateException notWrittenBack = refusal(IllegalStateException.class, KUSTWACHT, c, caselabels(),
                 c.get("expected"), (build, session, label) -> assertNull(DroolsBackend.fire(build, session).noFixpoint()));
         assertEquals("vergelijk: deze sessie is niet teruggezet; de beans dragen het fixpunt pas na"
-                + " DroolsBackend.zetAfgeleideWaarden, en tot dan alleen de invoer, dus zet eerst terug",
+                + " DroolsBackend.setDerivedValues, en tot dan alleen de invoer, dus zet eerst terug",
                 notWrittenBack.getMessage());
 
         IllegalStateException notFired = refusal(IllegalStateException.class, KUSTWACHT, c, caselabels(),

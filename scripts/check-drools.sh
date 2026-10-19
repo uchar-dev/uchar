@@ -1578,8 +1578,8 @@ while IFS= read -r ir; do
 done < <(find corpus/golden -name ir.json | sort)
 # computed BEFORE the checks, and printed here: a FAILING sweep costs exactly as much as a passing
 # one, so hiding the figure behind a pass would hide it from the run that most wants to know it.
-drl_kosten=$(( $(date +%s) - drl_begin ))
-echo "  DRL-text sweep: ${drl_kosten}s wall clock over ${drl_seen} goldens"
+drl_cost=$(( $(date +%s) - drl_begin ))
+echo "  DRL-text sweep: ${drl_cost}s wall clock over ${drl_seen} goldens"
 
 if [ ${#DRL_DRIFT[@]} -gt 0 ]; then
   echo "check-drools: FAIL — ${#DRL_DRIFT[@]} golden(s) whose DRL-text status line differs from the exec-model branch's:" >&2
@@ -1604,5 +1604,5 @@ fi
 echo "  value-divergence $div_excl  (listed with reason — the exec-model differs from ref/clingo)"
 echo "  no-case $nocase  (goldens without a case file)"
 echo "  channel floor ${#EXPECTED_CHANNEL[@]} non-PLAYED goldens pinned by name; played matches the pinned $EXPECTED_PLAYED"
-echo "  DRL-text branch played $drl_played  (the second rendering of the analysis: every status line equal to the exec-model branch's; sweep cost ${drl_kosten}s wall clock)"
+echo "  DRL-text branch played $drl_played  (the second rendering of the analysis: every status line equal to the exec-model branch's; sweep cost ${drl_cost}s wall clock)"
 echo "  JUnit $tests tests, floor $EXPECTED_MIN_TESTS  (the backend's own suite, green with a non-zero count)"

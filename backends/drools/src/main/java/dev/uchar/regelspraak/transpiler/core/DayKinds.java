@@ -74,7 +74,7 @@ public final class DayKinds {
             Condition.Operator op = v.op();
             return d -> compare(lo.apply(d), ro.apply(d), op);
         }
-        if (c instanceof Condition.Predicate p && p.category() == Condition.PredicateKind.DAGSOORT) {
+        if (c instanceof Condition.Predicate p && p.kind() == Condition.PredicateKind.DAGSOORT) {
             // The §9.8 composition is carried ON THE BOUND DAY ONLY (uchar RUNTIME-SEMANTICS ch. 3.8, the narrow
             // route of 2026-09-19): a nested test on some OTHER date is a recognised, unexecuted form in `ref` and
             // in the ASP backend, so this backend does not answer it either — one executor computing what two

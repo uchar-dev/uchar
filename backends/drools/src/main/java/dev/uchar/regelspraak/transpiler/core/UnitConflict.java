@@ -70,31 +70,31 @@ import dev.uchar.regelspraak.model.Unit;
  */
 public final class UnitConflict extends RuntimeException {
 
-    private final transient Unit van;
+    private final transient Unit from;
     private final transient Unit destination;
     private final String site;
 
-    private UnitConflict(Unit van, Unit destination, String site) {
-        super("onverenigbare eenheden bij " + site + ": '" + van.rendering() + "' (canoniek " + van.canonical()
+    private UnitConflict(Unit from, Unit destination, String site) {
+        super("onverenigbare eenheden bij " + site + ": '" + from.rendering() + "' (canoniek " + from.canonical()
                 + ") herschaalt niet naar '" + destination.rendering() + "' (canoniek " + destination.canonical()
                 + ") — er bestaat geen omrekenfactor");
-        this.van = van;
+        this.from = from;
         this.destination = destination;
         this.site = site;
     }
 
     /**
-     * Guard a restatement of a {@code van}-unit quantity into {@code destination}: raise when the two are unit-bearing,
+     * Guard a restatement of a {@code from}-unit quantity into {@code destination}: raise when the two are unit-bearing,
      * concrete and do not inter-convert. Called at the HEAD of each restatement helper, before its own
      * "no conversion due" test, so the two facts that test conflates stay apart.
      *
      * @param site the site, for the message — the fault names where it stood, the way the verifier names a path.
      */
-    public static void requireRescalable(Unit van, Unit destination, String site) {
-        if (van == null || destination == null) return;              // a unitless side adopts the other (ch. 2.6)
-        if (van.convertibleTo(destination)) return;                // a factor exists (or the two are the same unit)
-        if (opaqueProduct(van) || opaqueProduct(destination)) return;   // ch. 2.10's recorded conservative no-op
-        throw new UnitConflict(van, destination, site);
+    public static void requireRescalable(Unit from, Unit destination, String site) {
+        if (from == null || destination == null) return;              // a unitless side adopts the other (ch. 2.6)
+        if (from.convertibleTo(destination)) return;                // a factor exists (or the two are the same unit)
+        if (opaqueProduct(from) || opaqueProduct(destination)) return;   // ch. 2.10's recorded conservative no-op
+        throw new UnitConflict(from, destination, site);
     }
 
     /** An opaque product THIS backend's derivation built — provenance, by identity, never the abbreviation.
@@ -103,7 +103,7 @@ public final class UnitConflict extends RuntimeException {
         return EffectiveUnit.isDerivedProduct(e);
     }
 
-    public Unit van() { return van; }
+    public Unit from() { return from; }
 
     public Unit destination() { return destination; }
 

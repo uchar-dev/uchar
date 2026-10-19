@@ -31,3 +31,8 @@ dd5fa651131c8ee64272dbfe34c00302df284b2c
 f683e7e1c6c2d92e3025b2c48a87f681c0f2cfa0
 # unfreeze-model: de bevroren namen van het kernmodel en de Drools-feiten Engels (rename.py, tabel model)
 42cd398c32de5ffb4fc24e3ecf305aed28618325
+# review-fixes: category wird kind, van(...) wird of(...), gemiste namen (mapping: werk/engelse-namen/na/docs/MAPPING.tsv)
+d17df03981e2999fe7949791031e57213883e55b
+350519feb28e7861b02abc9fedf9e747a8713cd2
+1b7526f51d16b19707f355b352ccbc331a17a327
+77fac1ea97c331c0be55aafce45e3043e69a4359

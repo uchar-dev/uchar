@@ -24,7 +24,7 @@ public final class RationalParser {
      * "a,b" (or "a.b") decimal. Matching only the leading "a" would silently drop "/c", so "maal 4/2" must
      * lower to ·2 (not ·4) and "macht 4/2" to pow(2).
      */
-    public static BigDecimal[] van(String source) {
+    public static BigDecimal[] of(String source) {
         Matcher m = PATTERN.matcher(source);
         if (!m.find()) return null;
         BigDecimal whole = new BigDecimal(m.group(1));

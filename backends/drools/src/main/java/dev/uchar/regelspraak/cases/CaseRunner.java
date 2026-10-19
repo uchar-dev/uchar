@@ -274,7 +274,7 @@ public final class CaseRunner {
      *  stay out: they live on a {@link KieSession}, which is fire's concern, not this layer's. The beans are those of
      *  the backend's entry ({@link CaseInput}), which every replay reads its case through. */
     static Map<String, Object> inputBeans(Path irPath, JsonNode c) throws java.io.IOException {
-        return new LinkedHashMap<>(CaseInput.van(build(irPath).backendBuild, c).beans());
+        return new LinkedHashMap<>(CaseInput.of(build(irPath).backendBuild, c).beans());
     }
 
     /** One case's input beans plus every fact the session holds AFTER fire — the §13.4.6 witness seam of
@@ -618,7 +618,7 @@ public final class CaseRunner {
     /** Reads case {@code c} through the backend's entry ({@link CaseInput}), as a consumer reads it, and keeps its
      *  labels for this runner's report, seam and write-back. */
     private CaseInput readInput(JsonNode c) {
-        CaseInput input = CaseInput.van(backendBuild, c);
+        CaseInput input = CaseInput.of(backendBuild, c);
         labelToBean.putAll(input.beans());
         labelType.putAll(input.types());
         return input;

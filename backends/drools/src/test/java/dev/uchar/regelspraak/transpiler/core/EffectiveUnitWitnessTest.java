@@ -94,7 +94,7 @@ class EffectiveUnitWitnessTest {
         // the derivation claims no unit and no datatype rather than reading the slot.
         Expr.AttributeReference loose = new Expr.AttributeReference("gewicht", null, "iets", null, num(TON), source());
         assertNull(bare().unitOf(loose));
-        assertTrue(bare().van(loose).isUnknown(), "geen declaratie, dus geen datatype");
+        assertTrue(bare().of(loose).isUnknown(), "geen declaratie, dus geen datatype");
         ObjectType empty = new ObjectType("Vondst");   // declares no member of that name
         assertNull(bare().unitOf(new Expr.AttributeReference("gewicht", empty, "een vondst", null, num(TON), source())));
     }
@@ -228,7 +228,7 @@ class EffectiveUnitWitnessTest {
 
         assertNull(eff.unitOf(read), "de binding is eenheidloos; de annotatie (t) is haar leugen");
         assertNull(eff.unitOf(let), "en de Let draagt haar body");
-        assertNull(eff.van(read).unitOf(), "ook op de datatype-route (van) blijft de eenheid weg");
+        assertNull(eff.of(read).unitOf(), "ook op de datatype-route (van) blijft de eenheid weg");
     }
 
     @Test void an_unbound_binder_read_claims_nothing() {
@@ -236,7 +236,7 @@ class EffectiveUnitWitnessTest {
         // annotation of its own, so it claims no unit — the same answer as an AttributeReference without a declaration.
         Expr read = new Expr.BinderRef("onbekend", num(TON), source());
         assertNull(overLets().unitOf(read));
-        assertTrue(overLets().van(read).isUnknown(), "geen binding, dus geen datatype");
+        assertTrue(overLets().of(read).isUnknown(), "geen binding, dus geen datatype");
     }
 
     @Test void a_choice_reads_the_branch_not_its_own_claim() {
@@ -316,9 +316,9 @@ class EffectiveUnitWitnessTest {
 
     @Test void a_non_numeric_type_comes_back_unchanged() {
         Expr.Literal text = new Expr.Literal("aap", new Datatype.Text(), source());
-        assertSame(text.type(), bare().van(text));
+        assertSame(text.type(), bare().of(text));
         assertNull(bare().unitOf(text));
-        assertNull(bare().van(null));
+        assertNull(bare().of(null));
     }
 
     @Test void only_the_unit_is_grafted_the_rest_of_the_annotation_stays() {
@@ -330,9 +330,9 @@ class EffectiveUnitWitnessTest {
         ObjectType ot = vondst();
         Expr.Binary sum = new Expr.Binary(Expr.BinOp.PLUS, lyingRef(ot), lyingRef(ot),
                 new Datatype.Numeric(true, 7, Datatype.Sign.POSITIEF, TON), source());
-        Datatype out = bare().van(sum);
+        Datatype out = bare().of(sum);
         assertEquals(new Datatype.Numeric(true, 7, Datatype.Sign.POSITIEF, KG), out);
-        assertSame(ot.attribute("gewicht"), bare().van(lyingRef(ot)), "de lezing draagt de declaratie zelf");
+        assertSame(ot.attribute("gewicht"), bare().of(lyingRef(ot)), "de lezing draagt de declaratie zelf");
     }
 
     @Test void an_annotation_that_already_holds_yields_the_same_object() {
@@ -341,6 +341,6 @@ class EffectiveUnitWitnessTest {
         ObjectType ot = vondst();
         Expr.AttributeReference read = new Expr.AttributeReference("gewicht", ot, "een vondst", null, null, source());
         Expr.Binary honest = new Expr.Binary(Expr.BinOp.PLUS, read, read, num(KG), source());
-        assertSame(honest.type(), bare().van(honest));
+        assertSame(honest.type(), bare().of(honest));
     }
 }

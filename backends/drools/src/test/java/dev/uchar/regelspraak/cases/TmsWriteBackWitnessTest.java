@@ -138,7 +138,7 @@ class TmsWriteBackWitnessTest {
             assertNull(DroolsBackend.fire(b, session, 100_000).noFixpoint(), branch + "the fixpoint");
             // the derivation is a fact of the session, and the bean does not carry it yet
             List<Object> derived = new ArrayList<>(session.getObjects(o -> o instanceof HasCharacteristic));
-            assertEquals(List.of(new HasCharacteristic(j1, ElementKey.van("Jutter", "vergund", true))), derived,
+            assertEquals(List.of(new HasCharacteristic(j1, ElementKey.of("Jutter", "vergund", true))), derived,
                     branch + "the derivation");
             assertFalse(has(j1, "vergund"), branch + "J1 is vergund before the write-back");
             DroolsBackend.setDerivedValues(b, session);
@@ -311,7 +311,7 @@ class TmsWriteBackWitnessTest {
         Thread.currentThread().setContextClassLoader(b.beanLoader());
         try {
             Object v1 = beanObject(b.beanLoader(), "Vondst", Map.of(), List.of());
-            ElementKey uitkering = ElementKey.van("Vondst", "uitkering", false);
+            ElementKey uitkering = ElementKey.of("Vondst", "uitkering", false);
             Value a = new Value(v1, uitkering, first, "uitkering");
             Value z = new Value(v1, uitkering, second, "uitkering volgens een tweede regel");
             for (List<Value> order : List.of(List.of(a, z), List.of(z, a))) {

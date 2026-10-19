@@ -81,7 +81,7 @@ class UnitConflictWitnessTest {
     @Test void two_concrete_units_without_shared_canonical_are_a_fault() {
         UnitConflict f = assertThrows(UnitConflict.class,
                 () -> UnitConflict.requireRescalable(JR, KG, "een §4-waardeherschaling"));
-        assertSame(JR, f.van());
+        assertSame(JR, f.from());
         assertSame(KG, f.destination());
         assertEquals("een §4-waardeherschaling", f.site());
         // the message must name BOTH sides, the way ref's "incompatible units: schouwdagen vs uur" does:

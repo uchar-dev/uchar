@@ -132,7 +132,7 @@ class InheritanceRefusalWitnessTest {
 
     // ---------------- 1b. what STAYS refused ----------------
     //
-    // On the exec-model branch with truth maintenance, whose composition of ch. 7.10 is Stapels, in its sentences (card
+    // On the exec-model branch with truth maintenance, whose composition of ch. 7.10 is Stacks, in its sentences (card
     // tms-omschakeling, 2026-10-10); the destructive exec-model branch gave the same three refusals in English.
 
     @Test void an_inherited_unordered_set_is_refused_loudly() throws Exception {

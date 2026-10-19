@@ -44,7 +44,7 @@ public record ScenarioResult(String name, Status status, List<ExpectationResult>
     public record Firing(String rule, List<String> labels, int count) {}
 
     /** One lowered construct's coverage in this case. */
-    public record CoverageRule(String rule, CoverageKind category) {}
+    public record CoverageRule(String rule, CoverageKind kind) {}
     /** Whether a lowered construct fired. A construct the transpiler does not lower has no entry: the replay
      *  refuses the document before a case plays, and the case's status says MARKER. */
     public enum CoverageKind { FIRED, NOT_FIRED }

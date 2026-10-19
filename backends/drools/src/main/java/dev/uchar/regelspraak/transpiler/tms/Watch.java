@@ -62,7 +62,7 @@ import java.util.function.Supplier;
  * </ul>
  *
  * <p>It lives on the session as a listener, so that it goes where the session goes and needs no table beside it, and
- * the entry finds it there ({@link #van}). The entry takes it off the session for its own work ({@link #without}): while
+ * the entry finds it there ({@link #of}). The entry takes it off the session for its own work ({@link #without}): while
  * {@code fire} fires, the session holds no listener of the watch, and Drools makes no event for it, so the watch costs
  * a fire nothing per firing. No rule reads it. Drools makes no event for {@code Agenda.clear}, and puts a call to
  * {@code AgendaGroup.clear} or {@code AgendaGroup.setFocus} on its propagation list for the next fire, so
@@ -124,7 +124,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
     }
 
     /** The watch on {@code session}, or null where the entry put none there. */
-    public static Watch van(KieSession session) {
+    public static Watch of(KieSession session) {
         for (RuleRuntimeEventListener l : session.getRuleRuntimeEventListeners())
             if (l instanceof Watch b) return b;
         return null;
@@ -136,7 +136,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
      *  the watch there, the call at which it took the beans. */
     public static Watch op(KieSession session, Map<Class<?>, RelationFields> beans, Iterable<?> inputBeans,
                               String since) {
-        Watch b = van(session);
+        Watch b = of(session);
         if (b == null) {
             b = new Watch(beans);
             b.recorded = Objects.requireNonNull(since, "since");

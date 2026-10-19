@@ -49,7 +49,7 @@ final class ClosureRendering {
             case Term.Input i -> {
                 ValueFunction object = valueFunction(i.object());
                 Function<Object, Object> read = PatternDslRendering.inputReader(i.field(), i.form(), null);
-                yield w -> read.apply(object.van(w));
+                yield w -> read.apply(object.of(w));
             }
             case Term.Binder b -> {
                 int i = b.slot();
@@ -59,7 +59,7 @@ final class ClosureRendering {
             case Term.Choice k -> {
                 Predicate<Object[]> condition = test(k.condition());
                 ValueFunction then = valueFunction(k.then()), otherwise = valueFunction(k.otherwise());
-                yield w -> condition.test(w) ? then.van(w) : otherwise.van(w);
+                yield w -> condition.test(w) ? then.of(w) : otherwise.of(w);
             }
             case Term.Call a -> call(a.function(), a.arguments());
             case Term.Restate h -> restate(h);
@@ -68,8 +68,8 @@ final class ClosureRendering {
                 Implementation f = implementation(d.function());
                 int depositFlag = d.depositFlag();
                 yield w -> {
-                    Object lv = l.van(w), rv = r.van(w);
-                    return f.van(new Object[]{lv, rv, depositFlag < 0 ? null : w[depositFlag]});
+                    Object lv = l.of(w), rv = r.of(w);
+                    return f.of(new Object[]{lv, rv, depositFlag < 0 ? null : w[depositFlag]});
                 };
             }
             case Term.SquareRoot x -> {
@@ -77,8 +77,8 @@ final class ClosureRendering {
                 Implementation f = implementation(x.function());
                 int depositFlag = x.depositFlag();
                 yield w -> {
-                    Object v = radicand.van(w);
-                    return f.van(new Object[]{v, depositFlag < 0 ? null : w[depositFlag]});
+                    Object v = radicand.of(w);
+                    return f.of(new Object[]{v, depositFlag < 0 ? null : w[depositFlag]});
                 };
             }
             case Term.Fail f -> {
@@ -88,13 +88,13 @@ final class ClosureRendering {
             case Term.Required v -> {
                 ValueFunction f = valueFunction(v.value());
                 String sentence = v.sentence();
-                yield w -> ComputeHelpers.required(f.van(w), sentence);
+                yield w -> ComputeHelpers.required(f.of(w), sentence);
             }
             case Term.TextComposition s -> {
                 List<ValueFunction> parts = s.parts().stream().map(ClosureRendering::valueFunction).toList();
                 yield w -> {
                     List<Object> values = new ArrayList<>(parts.size());
-                    for (ValueFunction part : parts) values.add(part.van(w));
+                    for (ValueFunction part : parts) values.add(part.of(w));
                     return ComputeHelpers.textComposition(values);
                 };
             }
@@ -122,7 +122,7 @@ final class ClosureRendering {
         if (t instanceof Term.Compound s) return compound(s);
         if (t instanceof Term.WithoutFault z) return withoutFault(test(z.condition()));
         ValueFunction f = valueFunction(t);
-        return w -> (Boolean) f.van(w);
+        return w -> (Boolean) f.of(w);
     }
 
     /** The test of {@code t}, the condition of a rule's left-hand side, that asks {@code role} of it
@@ -187,8 +187,8 @@ final class ClosureRendering {
         for (int i = 0; i < argument.length; i++) argument[i] = valueFunction(arguments.get(i));
         return w -> {
             Object[] x = new Object[argument.length];
-            for (int i = 0; i < x.length; i++) x[i] = argument[i].van(w);
-            return f.van(x);
+            for (int i = 0; i < x.length; i++) x[i] = argument[i].of(w);
+            return f.of(x);
         };
     }
 
@@ -199,8 +199,8 @@ final class ClosureRendering {
         ValueFunction f = valueFunction(h.term());
         Implementation g = implementation(h.function());
         BigDecimal counter = h.counter(), denominator = h.denominator();
-        if (denominator != null) return w -> g.van(new Object[]{f.van(w), counter, denominator});
-        return w -> g.van(new Object[]{f.van(w), counter});
+        if (denominator != null) return w -> g.of(new Object[]{f.of(w), counter, denominator});
+        return w -> g.of(new Object[]{f.of(w), counter});
     }
 
     /**
@@ -218,9 +218,9 @@ final class ClosureRendering {
         return w -> {
             Barrier barrier = new Barrier();
             Object[] inside = w.clone();
-            inside[slot] = new Need(() -> value.van(w), barrier);
+            inside[slot] = new Need(() -> value.of(w), barrier);
             try {
-                return body.van(inside);
+                return body.of(inside);
             } catch (Barrier b) {
                 if (b != barrier) throw b;
                 return null;
@@ -255,8 +255,8 @@ final class ClosureRendering {
         Condition.Quantifier kw = k.quantifier();
         int threshold = k.threshold(), depositFlag = k.depositFlag();
         return w -> {
-            Object n = count.van(w), b = contributions.van(w);
-            return f.van(new Object[]{n, b, kw, threshold, depositFlag < 0 ? null : w[depositFlag]});
+            Object n = count.of(w), b = contributions.of(w);
+            return f.of(new Object[]{n, b, kw, threshold, depositFlag < 0 ? null : w[depositFlag]});
         };
     }
 
@@ -267,7 +267,7 @@ final class ClosureRendering {
         List<ValueFunction> operands = g.operands().stream().map(ClosureRendering::valueFunction).toList();
         return w -> {
             Object acc = null;
-            for (ValueFunction op : operands) acc = step.van(new Object[]{acc, op.van(w)});
+            for (ValueFunction op : operands) acc = step.of(new Object[]{acc, op.of(w)});
             return acc;
         };
     }
@@ -282,7 +282,7 @@ final class ClosureRendering {
             if (filterFault >= 0 && w[filterFault] != null) throw ((FilterFault) w[filterFault]).fault();
             // the reference interpreter reads the members' values once every member's filter is evaluated
             if (memberFault >= 0 && w[memberFault] != null) throw ((MemberFault) w[memberFault]).fault();
-            return outcome.van(w);
+            return outcome.of(w);
         };
     }
 
@@ -298,14 +298,14 @@ final class ClosureRendering {
             a[0] = x;
             a[1] = o;
             System.arraycopy(c, 0, a, 2, c.length);
-            return (Boolean) f.van(a);
+            return (Boolean) f.of(a);
         };
     }
 
     /** A function of the plan as a call on evaluated arguments. */
     @FunctionalInterface
     private interface Implementation {
-        Object van(Object[] x);
+        Object of(Object[] x);
     }
 
     /** The call of {@code function}: the method its constant names, with the arguments cast as its parameters take

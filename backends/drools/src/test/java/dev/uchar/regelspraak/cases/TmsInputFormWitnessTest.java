@@ -226,7 +226,7 @@ class TmsInputFormWitnessTest {
                     TmsTimelineDocuments.beanSegment(b.beanLoader(), "2024-01-01", "2025-01-01", "366")));
             TmsTimelineDocuments.set(j1, "borgplichtig", List.of(
                     TmsTimelineDocuments.beanSegment(b.beanLoader(), "2024-03-01", "2025-03-01", null)));
-            BucketInput bucket = new BucketInput(j1, ElementKey.van("Jutter", "jaartarief", false));
+            BucketInput bucket = new BucketInput(j1, ElementKey.of("Jutter", "jaartarief", false));
             TmsLetWitnessTest.Facts facts = new TmsLetWitnessTest.Facts();
             assertNull(TmsDocuments.fixpoint(b, order, List.of(j1, bucket), session -> session.addEventListener(facts)),
                     () -> "volgorde " + names);

@@ -4,5 +4,5 @@ package dev.uchar.regelspraak.transpiler.tms;
  *  rendering of a planned value ({@link ClosureRendering}). */
 @FunctionalInterface
 interface ValueFunction {
-    Object van(Object[] w);
+    Object of(Object[] w);
 }

@@ -49,14 +49,14 @@ public final class ProducerConsumer {
      *  touched it happens to range over — see {@link #elementOf}. A member is declared once and inherited, so
      *  a write on the supertype and a read on the subtype touch ONE element and must key alike. */
     public record ElementKey(String objectType, String name, boolean characteristic) {
-        public static ElementKey van(String objectType, String name, boolean characteristic) {
+        public static ElementKey of(String objectType, String name, boolean characteristic) {
             return new ElementKey(Namen.norm(objectType), Namen.norm(name), characteristic);
         }
     }
 
     /**
-     * The element identity of member {@code naam} touched through {@code houder} — keyed by the type on
-     * {@code houder}'s chain that DECLARES it (IR-SPEC ch. 2.2), so producer and consumer meet on one key.
+     * The element identity of member {@code naam} touched through {@code holder} — keyed by the type on
+     * {@code holder}'s chain that DECLARES it (IR-SPEC ch. 2.2), so producer and consumer meet on one key.
      *
      * <p>This is the whole ⊑-awareness of this analysis, and it sits HERE rather than in each reader because
      * both readers ask the same question of the same index: the scope check matches a consumed element against
@@ -77,19 +77,19 @@ public final class ProducerConsumer {
      * different types of one chain, and the model's own {@code declarantOf} answers for both kinds at once. A
      * member nothing on the chain declares keeps its holder, which is the reading from before this rule existed.
      */
-    public static ElementKey elementOf(RegelSpraakModel.ObjectType houder, String name, boolean characteristic) {
-        if (houder == null) return ElementKey.van("", name, characteristic);
-        return ElementKey.van(declarant(houder, name, characteristic).name, name, characteristic);
+    public static ElementKey elementOf(RegelSpraakModel.ObjectType holder, String name, boolean characteristic) {
+        if (holder == null) return ElementKey.of("", name, characteristic);
+        return ElementKey.of(declarant(holder, name, characteristic).name, name, characteristic);
     }
 
-    private static RegelSpraakModel.ObjectType declarant(RegelSpraakModel.ObjectType houder, String name,
+    private static RegelSpraakModel.ObjectType declarant(RegelSpraakModel.ObjectType holder, String name,
                                                          boolean characteristic) {
-        if (name == null) return houder;
-        for (RegelSpraakModel.ObjectType t : houder.chain())
+        if (name == null) return holder;
+        for (RegelSpraakModel.ObjectType t : holder.chain())
             if (characteristic ? t.characteristics.stream().anyMatch(k -> sameName(k, name))
                         : t.attributes.keySet().stream().anyMatch(a -> sameName(a, name)))
                 return t;
-        return houder;
+        return holder;
     }
 
     /**
@@ -113,7 +113,7 @@ public final class ProducerConsumer {
 
     /** One form as this analysis reads it: its kind, its base name ({@link #baseName}; a defaults group without a
      *  name is named by its pointer in the document), the elements it WRITES and the elements it READS. */
-    public record Form(FormKind category, String name, Set<ElementKey> writes, Set<ElementKey> reads) {}
+    public record Form(FormKind kind, String name, Set<ElementKey> writes, Set<ElementKey> reads) {}
 
     /**
      * Every form of the rule layer with the attributes and characteristics it writes and reads, per IR-SPEC ch. 5.1
@@ -150,7 +150,7 @@ public final class ProducerConsumer {
             Set<ElementKey> writes = new LinkedHashSet<>();
             if (r.target() instanceof Expr.AttributeReference ref)
                 writes.add(elementOf(ref.objectType(), ref.attribute(),
-                        r.category() == ResolvedRule.Kind.KENMERKTOEKENNING));
+                        r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING));
             out.add(new Form(FormKind.REGEL, baseName(r.name()), writes,
                     navigation == null ? Set.of() : consumed(r, navigation)));
         }
@@ -341,9 +341,9 @@ public final class ProducerConsumer {
 
         /** A member a form names outright rather than through an expression: an allocation's source amount or
          *  recipient attribute, a key of a uniqueness. */
-        void member(RegelSpraakModel.ObjectType houder, String name, boolean characteristic) {
+        void member(RegelSpraakModel.ObjectType holder, String name, boolean characteristic) {
             if (navigation == null || name == null) return;
-            out.add(elementOf(houder, name, characteristic));
+            out.add(elementOf(holder, name, characteristic));
         }
 
         void condition(Condition c, RegelSpraakModel.ObjectType subject) {

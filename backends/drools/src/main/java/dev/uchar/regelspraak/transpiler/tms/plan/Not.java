@@ -20,6 +20,6 @@ public record Not(List<FactPattern> patterns, List<String> inside, List<String> 
     /** The absence of an object that {@code pattern} matches, in the scope of that one pattern: what it declares lives
      *  inside, what it reads comes from before. */
     public Not(FactPattern pattern) {
-        this(List.of(pattern), Exists.verklaard(List.of(pattern)), Exists.read(List.of(pattern)));
+        this(List.of(pattern), Exists.declared(List.of(pattern)), Exists.read(List.of(pattern)));
     }
 }

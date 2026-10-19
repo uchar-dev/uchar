@@ -167,7 +167,7 @@ class PercentageReadTest {
     }
 
     @Test void parentheses_after_something_else_than_a_percentage_are_refused() {
-        // before: a syntax error ("no viable alternative at input 'van(zijngetaxeerdewaarde)'")
+        // before: a syntax error ("no viable alternative at input 'of(zijngetaxeerdewaarde)'")
         RegelSpraakModel m = Resolver.resolve(MODEL.replace("Objecttype de Vondst",
                 "Parameter de korting : Numeriek (getal met 2 decimalen)\n\nObjecttype de Vondst")
                 + "Regel havengeld\n    geldig altijd\n        Het havengeld van een Vondst moet berekend worden als "

@@ -612,7 +612,7 @@ public final class ComputeHelpers {
     /** The input timeline {@code timeline}, a list of segments, as the asOfDate-bucket scalar the case gave
      *  ({@link BucketScalar}, RUNTIME-SEMANTICS ch. 8.4): what the standing of such an input carries. */
     public static BucketScalar bucketScalarOf(Object timeline) {
-        return BucketScalar.van((List<?>) timeline);
+        return BucketScalar.of((List<?>) timeline);
     }
 
     /** The fault of the form of an input ({@link InputFormFault}), the sentence {@code before}, the object {@code object}
@@ -893,7 +893,7 @@ public final class ComputeHelpers {
                                           List<?> typeClasses, List<?> types) {
         List<Value> list = new ArrayList<>();
         for (Object w : (List<?>) values) list.add((Value) w);
-        WritersConflict c = WritersConflict.van(subject, attribute, list, documentOrder, typeClasses, types);
+        WritersConflict c = WritersConflict.of(subject, attribute, list, documentOrder, typeClasses, types);
         return new Fault(subject, c.writers().get(0).writer(), c);
     }
 

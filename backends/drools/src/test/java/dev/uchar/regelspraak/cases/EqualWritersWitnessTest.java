@@ -159,7 +159,7 @@ class EqualWritersWitnessTest {
                         for (Object j : jutters) {
                             TreeSet<String> decides = new TreeSet<>();
                             for (Object f : session.getObjects(o -> o instanceof Outcome u && u.subject() == j
-                                    && u.category() == Outcome.Kind.DECIDED))
+                                    && u.kind() == Outcome.Kind.DECIDED))
                                 decides.add(((Outcome) f).chain() + "="
                                         + ((BigDecimal) ((Outcome) f).value()).toPlainString());
                             if (!decides.equals(besluiten)) faults.add(where + ": de besluiten " + decides);

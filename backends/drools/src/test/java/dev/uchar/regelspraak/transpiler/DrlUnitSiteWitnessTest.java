@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * document the loader accepts, so a golden that gains a unit-bearing rescale is covered here the day it
  * lands, whether or not it is replayable.
  *
- * <p><b>What its reach is, measured and said out loud.</b> With {@code EffectiveUnit.van} put back on
+ * <p><b>What its reach is, measured and said out loud.</b> With {@code EffectiveUnit.of} put back on
  * {@code e.type()} (the state before that class existed) this witness goes red on <b>21</b> goldens
  * (measured 2026-09-18). It used to be 9, the same nine the harness's DRL leg caught, and the difference is
  * this branch's ch. 4.10 lowering: while a Let was a MARKER here, a golden whose unit-bearing positions sat

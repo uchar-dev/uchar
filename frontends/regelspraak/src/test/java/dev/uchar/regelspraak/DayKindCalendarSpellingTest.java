@@ -50,13 +50,13 @@ class DayKindCalendarSpellingTest {
         return Resolver.resolve(source);
     }
 
-    private static List<Diagnostic> van(RegelSpraakModel m, Severity s) {
+    private static List<Diagnostic> of(RegelSpraakModel m, Severity s) {
         return m.diagnostics.stream().filter(d -> d.severity() == s).toList();
     }
 
     /** The single diagnostic of severity {@code s}, or an assertion failure naming what was there instead. */
     private static Diagnostic onlyDiagnostic(RegelSpraakModel m, Severity s) {
-        List<Diagnostic> d = van(m, s);
+        List<Diagnostic> d = of(m, s);
         assertEquals(1, d.size(), "exactly one " + s + ": " + m.diagnostics);
         return d.get(0);
     }

@@ -260,7 +260,7 @@ public final class TmsTranspiler {
     /** The members a defaults group writes, on their declaring type. */
     private final Set<ElementKey> defaultsTargets = new LinkedHashSet<>();
     /** The effective stacks of RUNTIME-SEMANTICS ch. 7.10 and the fold of ordinary rules into them. */
-    private Stapels stapels;
+    private Stacks stacks;
     /** The targets on which a computed leeg writes nothing (RUNTIME-SEMANTICS ch. 7.7 and 7.8), classified by the class
      *  both branches share. */
     private StandingTargets standingTargets;
@@ -545,7 +545,7 @@ public final class TmsTranspiler {
         if (!faults.isEmpty()) throw new EvaluationFaults(faults);
         readFixpoint.writeActs().forEach(Runnable::run);
         // the entry's own insert and links: the session is read after them as before them
-        Watch watch = Watch.van(session);
+        Watch watch = Watch.of(session);
         watch.without(session, () -> session.insert(new WrittenBack()));
         watch.recordRelations();
     }
@@ -588,7 +588,7 @@ public final class TmsTranspiler {
         if (noFixpoint != null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.fire"
                     + " van deze sessie bereikte er geen — " + noFixpoint);
-        Watch watch = Watch.van(session);
+        Watch watch = Watch.of(session);
         // the driver puts the watch back after every run, so only a consumer that took it off leaves a mark without it,
         // and the driver refuses such a session
         if (watch == null)
@@ -722,7 +722,7 @@ public final class TmsTranspiler {
      *  {@code subjectType}: the writers as {@link WritersConflict#inDocumentOrder} ranks them over the document's
      *  rules {@link #documentOrder}, the attribute as declared, and the object's own type. */
     private WritersConflict conflict(Object subjectType, ElementKey key, List<Value> values) {
-        return WritersConflict.van(subjectType, memberOf(subjectType, key).name(), values, documentOrder, typeClasses,
+        return WritersConflict.of(subjectType, memberOf(subjectType, key).name(), values, documentOrder, typeClasses,
                 types);
     }
 
@@ -735,7 +735,7 @@ public final class TmsTranspiler {
 
     private Modelplan run() {
         writers = ProducerConsumer.producerIndex(model, defaults);
-        standingTargets = StandingTargets.van(model, defaults);
+        standingTargets = StandingTargets.of(model, defaults);
         for (ResolvedRule r : model.resolvedRules)
             if (r.name() != null && !documentOrder.contains(r.name())) documentOrder.add(r.name());
         for (ObjectType t : model.objectTypes.values()) {
@@ -766,9 +766,9 @@ public final class TmsTranspiler {
         for (ResolvedRule r : model.resolvedRules) {
             if (!(r.target() instanceof Expr.AttributeReference d) || d.objectType() == null || d.attribute() == null) continue;
             Map<ElementKey, List<ResolvedRule>> per =
-                    r.category() == ResolvedRule.Kind.GELIJKSTELLING || r.category() == ResolvedRule.Kind.BEREKENING
+                    r.kind() == ResolvedRule.Kind.GELIJKSTELLING || r.kind() == ResolvedRule.Kind.BEREKENING
                             ? computeRules
-                            : r.category() == ResolvedRule.Kind.INITIALISATIE ? initialisations : null;
+                            : r.kind() == ResolvedRule.Kind.INITIALISATIE ? initialisations : null;
             if (per != null)
                 per.computeIfAbsent(ProducerConsumer.elementOf(d.objectType(), d.attribute(), false),
                         k -> new ArrayList<>()).add(r);
@@ -778,12 +778,12 @@ public final class TmsTranspiler {
                 defaultsTargets.add(ProducerConsumer.elementOf(model.objectTypeByName(p.subject()), p.target(),
                         p.isCharacteristic()));
         // composed before the rules, since a rule the fold takes into a stack must not fire on the stack's type
-        stapels = new Stapels(model, defaults);
-        List<Stapels.Stack> effective;
-        Stapels.Uncomposable composition = null;
+        stacks = new Stacks(model, defaults);
+        List<Stacks.Stack> effective;
+        Stacks.Uncomposable composition = null;
         try {
-            effective = stapels.stapels();
-        } catch (Stapels.Uncomposable o) {
+            effective = stacks.stacks();
+        } catch (Stacks.Uncomposable o) {
             effective = List.of();
             composition = o;
         }
@@ -802,7 +802,7 @@ public final class TmsTranspiler {
         for (ResolvedUniquenessUnion u : model.uniquenessUnions)
             rules.addAll(meet("uniciteit-unie", nameOf(u.name()), () -> uniquenessUnionRules(u)));
         if (composition != null) refuse(composition.reason(), "defaults", "effectieve stapels");
-        for (Stapels.Stack st : effective) {
+        for (Stacks.Stack st : effective) {
             generated.put(stackName(st), new RegelSpraakModel.GeneratedFrom(stackTarget(st),
                     RegelSpraakModel.OriginForm.DEFAULTS_STACK));
             rules.addAll(meet("defaults", stackName(st), () -> stackRules(st)));
@@ -895,7 +895,7 @@ public final class TmsTranspiler {
         if (navigationBindings.containsKey(target)) throw new Refusal(DroolsCode.RULE_NAVIGATED_TARGET.reason());
         // a version with a bounded validity gates on the evaluation date: its rules bind the date where the window
         // admits it (Reads.valid), and beside them a rule faults the session that carries no date
-        List<RulePlan> out = new ArrayList<>(switch (r.category()) {
+        List<RulePlan> out = new ArrayList<>(switch (r.kind()) {
             case KENMERKTOEKENNING -> characteristicRule(r, target);
             case GELIJKSTELLING, BEREKENING -> computeRule(r, target);
             case INITIALISATIE -> initialisationRule(r, target);
@@ -1138,7 +1138,7 @@ public final class TmsTranspiler {
     private List<String> otherWriters(ResolvedRule r, ObjectType type, ElementKey key) {
         Set<String> out = new LinkedHashSet<>();
         for (ResolvedRule x : model.resolvedRules)
-            if (x != r && x.category() != ResolvedRule.Kind.KENMERKTOEKENNING && x.target() instanceof Expr.AttributeReference d
+            if (x != r && x.kind() != ResolvedRule.Kind.KENMERKTOEKENNING && x.target() instanceof Expr.AttributeReference d
                     && d.objectType() != null && d.attribute() != null && related(d.objectType(), type)
                     && ProducerConsumer.elementOf(d.objectType(), d.attribute(), false).equals(key))
                 out.add(ProducerConsumer.baseName(x.name()));
@@ -1172,10 +1172,10 @@ public final class TmsTranspiler {
      */
     private Set<Class<?>> absorbed(Expr.AttributeReference target, Member member) {
         if (!defaultsTargets.contains(member.key())) return Set.of();
-        if (stapels.ownGroup(target.objectType(), target.attribute()))
+        if (stacks.ownGroup(target.objectType(), target.attribute()))
             throw new Refusal(DroolsCode.RULE_BESIDE_DEFAULTS_GROUP.reason("attribute", member.name(), "objectType", target.objectType().name));
         Set<Class<?>> out = new LinkedHashSet<>();
-        for (ObjectType t : stapels.absorbedOn(target.objectType(), target.attribute())) out.add(beanClass(t));
+        for (ObjectType t : stacks.absorbedOn(target.objectType(), target.attribute())) out.add(beanClass(t));
         return out;
     }
 
@@ -1524,7 +1524,7 @@ public final class TmsTranspiler {
             if (form != null) out.add(form);
         }
         FactPattern key = new FactPattern(UniquenessKey.class, "$sleutel", List.of(equal(id("uniciteit"), "uniqueness",
-                name)), List.of(), List.of(Binding.van("$element", UniquenessKey.class, "element")));
+                name)), List.of(), List.of(Binding.of("$element", UniquenessKey.class, "element")));
         Alpha ofUniqueness = equal(id("uniciteit"), "uniqueness", name);
         BetaTest collision = new BetaTest(id("botsing"), StaticFunction.COLLIDES_WITH, "$sleutel");
         Accumulation collisions = new Accumulation(new FactPattern(UniquenessKey.class, "$ander", List.of(ofUniqueness),
@@ -1537,7 +1537,7 @@ public final class TmsTranspiler {
         out.add(new RulePlan(ruleName, form, null, table, List.of(key, collisions, duplicate),
                 new Consequence.UniquenessViolation("$element", name, Consequence.Insertion.LOGICAL)));
         FactPattern violation = new FactPattern(UniquenessViolation.class, "$schending", List.of(equal(id("schending"),
-                "uniqueness", name)), List.of(), List.of(Binding.van("$subject", UniquenessViolation.class, "element")));
+                "uniqueness", name)), List.of(), List.of(Binding.of("$subject", UniquenessViolation.class, "element")));
         out.add(new RulePlan(ruleName + ": kanaal", form, null, new ReadTable(List.of()),
                 // EF-026: a key of the uniqueness occurs more than once (RUNTIME-SEMANTICS ch. 5.6, 5.9, 5.7b)
                 List.of(violation), new Consequence.Inconsistency("$subject", name, List.of("EF-026"),
@@ -1672,7 +1672,7 @@ public final class TmsTranspiler {
         for (ResolvedUniquenessUnion u : model.uniquenessUnions) if (name.equals(u.name())) return true;
         for (ResolvedRule r : model.resolvedRules)
             if (name.equals(r.name()) && (deposits(r.condition())
-                    || r.category() != ResolvedRule.Kind.KENMERKTOEKENNING && deposits(r.value())))
+                    || r.kind() != ResolvedRule.Kind.KENMERKTOEKENNING && deposits(r.value())))
                 return true;
         return false;
     }
@@ -1885,11 +1885,11 @@ public final class TmsTranspiler {
         return out;
     }
 
-    /** Attribute {@code naam} of {@code houder} as an allocation reads or writes it as a number: the pot, a share, the
+    /** Attribute {@code naam} of {@code holder} as an allocation reads or writes it as a number: the pot, a share, the
      *  rest, a weight or a cap, {@code role} naming which. The distribution computes with numbers only, so another
      *  datatype is refused by name. */
-    private Member numberMember(ObjectType houder, String name, Msg role) {
-        Member member = member(houder, name, false);
+    private Member numberMember(ObjectType holder, String name, Msg role) {
+        Member member = member(holder, name, false);
         if (!member.datatype().isNumberLike())
             throw new Refusal(DroolsCode.ALLOCATION_NON_NUMERIC_MEMBER.reason("role", role, "attribute", member.name(), "declarant", member.declarant().name, "datatype", typeName(member.datatype())));
         return member;
@@ -1931,7 +1931,7 @@ public final class TmsTranspiler {
         if (!groups.isEmpty())
             throw new Refusal(DroolsCode.ALLOCATION_BESIDE_DEFAULTS_GROUP.reason("groups", String.join(", ", groups), "attribute", member.name(), "objectType", type.name));
         for (ResolvedRule r : model.resolvedRules)
-            if (r.category() != ResolvedRule.Kind.KENMERKTOEKENNING
+            if (r.kind() != ResolvedRule.Kind.KENMERKTOEKENNING
                     && r.target() instanceof Expr.AttributeReference d && d.objectType() != null && d.attribute() != null
                     && related(d.objectType(), type)
                     && ProducerConsumer.elementOf(d.objectType(), d.attribute(), false).equals(el))
@@ -2346,17 +2346,17 @@ public final class TmsTranspiler {
         return out;
     }
 
-    /** The links of {@code relation} the reference field {@code field} of the beans of {@code houder} carries, the holder
-     *  being the link's first end where {@code houderIsFirst}: a rule of no form, whose subject is the holder and whose
+    /** The links of {@code relation} the reference field {@code field} of the beans of {@code holder} carries, the holder
+     *  being the link's first end where {@code holderIsFirst}: a rule of no form, whose subject is the holder and whose
      *  link has phase 0, the input's. */
-    private RulePlan inputLink(String relation, ObjectType houder, String field, boolean houderIsFirst) {
-        Class<?> javaClass = beanClass(houder);
+    private RulePlan inputLink(String relation, ObjectType holder, String field, boolean holderIsFirst) {
+        Class<?> javaClass = beanClass(holder);
         Subject h = new Subject(javaClass, "$houder", List.of(new Alpha(id("koppeling-invoer"),
                 List.of(new Alpha.FieldTest(field, Alpha.Comparator.GEVULD, null)))), List.of(),
-                List.of(Binding.van("$ander", javaClass, field)));
-        return new RulePlan("koppeling " + relation + " uit de invoer: " + houder.name + "." + field, null, null,
-                new ReadTable(List.of()), List.of(h), new Consequence.RelationLink(relation, houderIsFirst ? "$houder" : "$ander",
-                houderIsFirst ? "$ander" : "$houder", -1, Consequence.Insertion.LOGICAL));
+                List.of(Binding.of("$ander", javaClass, field)));
+        return new RulePlan("koppeling " + relation + " uit de invoer: " + holder.name + "." + field, null, null,
+                new ReadTable(List.of()), List.of(h), new Consequence.RelationLink(relation, holderIsFirst ? "$houder" : "$ander",
+                holderIsFirst ? "$ander" : "$houder", -1, Consequence.Insertion.LOGICAL));
     }
 
     /** The fault of two links of {@code relation} from one object to two different fillers of the to-one role
@@ -2367,7 +2367,7 @@ public final class TmsTranspiler {
         String sentence = "de naar-één-rol \"" + role + "\" van een " + nearType.name + " heeft twee verschillende vullingen;"
                 + " een tweede vulling is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)";
         FactPattern one = new FactPattern(RelationLink.class, "$een", List.of(equal(id("vulling"), "relation", relation)), List.of(),
-                List.of(Binding.van("$nabij", RelationLink.class, nearEnd)));
+                List.of(Binding.of("$nabij", RelationLink.class, nearEnd)));
         FactPattern two = new FactPattern(RelationLink.class, "$twee", List.of(equal(id("tweede-vulling"), "relation", relation)),
                 List.of(new Join(id("tweede-vulling-nabij"), nearEnd, "$een",
                         new Binding.Field(RelationLink.class, nearEnd))),
@@ -2383,14 +2383,14 @@ public final class TmsTranspiler {
 
     /** The name of an effective stack, as the destructive lowering named the rule of the group: the kind-discriminated
      *  target on the stack's owner, so two types that share one inherited target name two stacks. */
-    private static String stackName(Stapels.Stack st) {
+    private static String stackName(Stacks.Stack st) {
         PrioritizedDefaults l0 = st.members().get(0);
         return "defaults " + (l0.isCharacteristic() ? "K:" : "A:") + st.owner().name + "." + l0.target();
     }
 
     /** The member a stack decides, as declared: on the type of its owner's chain that declares it, in that type's
      *  spelling, the way the model names it ({@link RegelSpraakModel#designatable}). */
-    private static RegelSpraakModel.Designatable stackTarget(Stapels.Stack st) {
+    private static RegelSpraakModel.Designatable stackTarget(Stacks.Stack st) {
         PrioritizedDefaults l0 = st.members().get(0);
         for (ObjectType t : st.owner().chain()) {
             if (l0.isCharacteristic()) {
@@ -2453,7 +2453,7 @@ public final class TmsTranspiler {
      * without a justification; a target on a timeline or with dimensions through {@link #member}. Refused besides: a
      * division anywhere in a default ({@link #division(Conditie, Expr)}).
      */
-    private List<RulePlan> stackRules(Stapels.Stack st) {
+    private List<RulePlan> stackRules(Stacks.Stack st) {
         PrioritizedDefaults l0 = st.members().get(0);
         ObjectType owner = st.owner();
         boolean characteristic = l0.isCharacteristic();
@@ -2505,7 +2505,7 @@ public final class TmsTranspiler {
         return new Alpha(id("concreet-type"), List.of(new Alpha.FieldTest(null, Alpha.Comparator.CLASS_IS, javaClass)));
     }
 
-    /** The knots of one chain, {@code id}, with its defaults' levels: a root default's own ({@link Stapels#levelOf}), an
+    /** The knots of one chain, {@code id}, with its defaults' levels: a root default's own ({@link Stacks#levelOf}), an
      *  exception group's defaults on the level of the default that carries them ({@code carrier}); every knot carries
      *  the validity of the group at the root of its chain. */
     private List<Node> chain(StackBuild b, List<Default> ds, int id, ObjectType carrier, ObjectType owner,
@@ -2513,7 +2513,7 @@ public final class TmsTranspiler {
         List<Node> out = new ArrayList<>();
         for (int i = 0; i < ds.size(); i++) {
             Default d = ds.get(i);
-            ObjectType levelOf = carrier != null ? carrier : stapels.levelOf(d, owner);
+            ObjectType levelOf = carrier != null ? carrier : stacks.levelOf(d, owner);
             verifyDefault(b, d);
             List<Integer> ownPath = new ArrayList<>(path);
             ownPath.add(i);
@@ -2721,12 +2721,12 @@ public final class TmsTranspiler {
                             Consequence.StackFact atDecision, boolean onlyTrue, boolean between, List<RulePlan> out) {
         String name = b.name;
         int to = earliest + itemCount;
-        Binding ofSubject = Binding.van(SUBJECT, Outcome.class, "subject");
+        Binding ofSubject = Binding.of(SUBJECT, Outcome.class, "subject");
         if (membersConflict) {
             List<LhsItem> items = new ArrayList<>();
             items.add(new FactPattern(Outcome.class, "$conflict",
                     List.of(outcomeOfMember("lid-conflict", name, Outcome.Kind.CONFLICT, earliest, to, false)), List.of(),
-                    List.of(ofSubject, Binding.van("$sleutel", Outcome.class, "key"))));
+                    List.of(ofSubject, Binding.of("$sleutel", Outcome.class, "key"))));
             if (itemCount > 1) items.add(new Not(outcomes(name, earliest, to, Outcome.Kind.CONFLICT,
                     "eerder-lid", StaticFunction.EARLIER_MEMBER, "$conflict")));
             items.addAll(guard.get());
@@ -2747,7 +2747,7 @@ public final class TmsTranspiler {
             if (membersConflict) items.add(new Not(outcomes(name, earliest, to, Outcome.Kind.CONFLICT)));
             FactPattern another = outcomes(name, earliest, to, Outcome.Kind.DECIDED, "ander-besluit", StaticFunction.OTHER_DECISION,
                     "$besluit");
-            items.add(new Exists(List.of(another), Exists.verklaard(List.of(another)), Exists.read(List.of(another))));
+            items.add(new Exists(List.of(another), Exists.declared(List.of(another)), Exists.read(List.of(another))));
             items.addAll(guard.get());
             out.add(new RulePlan(name + ": verschil " + label, form, null, new ReadTable(List.of()), items,
                     new Consequence.Conflict(SUBJECT, constant(key), List.of(), 0, atConflict,
@@ -2757,7 +2757,7 @@ public final class TmsTranspiler {
         List<LhsItem> items = new ArrayList<>();
         items.add(new FactPattern(Outcome.class, "$besluit",
                 List.of(outcomeOfMember("lid-besluit", name, Outcome.Kind.DECIDED, earliest, to, onlyTrue)), List.of(),
-                List.of(ofSubject, Binding.van("$waarde", Outcome.class, "value"))));
+                List.of(ofSubject, Binding.of("$waarde", Outcome.class, "value"))));
         if (itemCount > 1) {
             items.add(new Not(outcomes(name, earliest, to, Outcome.Kind.DECIDED, "eerder-lid", StaticFunction.EARLIER_MEMBER,
                     "$besluit")));
@@ -2781,7 +2781,7 @@ public final class TmsTranspiler {
                                 boolean onlyTrue) {
         List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
                 new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
-                new Alpha.FieldTest("category", Alpha.Comparator.GELIJK, outcome),
+                new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, outcome),
                 new Alpha.FieldTest("chain", Alpha.Comparator.AT_LEAST, earliest),
                 new Alpha.FieldTest("chain", Alpha.Comparator.UNDER, to)));
         if (onlyTrue) tests.add(new Alpha.FieldTest("value", Alpha.Comparator.GELIJK, Boolean.TRUE));
@@ -2803,7 +2803,7 @@ public final class TmsTranspiler {
                 new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
                 new Alpha.FieldTest("chain", Alpha.Comparator.AT_LEAST, van),
                 new Alpha.FieldTest("chain", Alpha.Comparator.UNDER, to)));
-        if (category != null) tests.add(new Alpha.FieldTest("category", Alpha.Comparator.GELIJK, category));
+        if (category != null) tests.add(new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, category));
         Alpha alpha = new Alpha(id("uitkomst"), tests);
         Join onSubject = new Join(id("uitkomst-onderwerp"), "subject", SUBJECT);
         List<BetaTest> beta = betaKind == null ? List.of() : List.of(new BetaTest(id(betaKind), function, target));
@@ -2966,7 +2966,7 @@ public final class TmsTranspiler {
         Datatype t = l.type();
         String source = source(l.source());
         if (t instanceof Datatype.Numeric || t instanceof Datatype.Percentage) {
-            BigDecimal[] r = RationalParser.van(l.valueText());
+            BigDecimal[] r = RationalParser.of(l.valueText());
             if (r == null) throw new Refusal(DroolsCode.NUMERIC_LITERAL_UNREADABLE.reason("valueText", l.valueText()));
             Breuk b = Breuk.van(r[0]).delen(Breuk.van(r[1]));
             Object v = b.isTerminerend() ? b.naarDecimal() : b;
@@ -3039,7 +3039,7 @@ public final class TmsTranspiler {
 
     /** The whole exponent of at least 0 the lexeme writes, or null. */
     private static Integer wholeExponent(String lexeme) {
-        BigDecimal[] r = RationalParser.van(lexeme);
+        BigDecimal[] r = RationalParser.of(lexeme);
         if (r == null || r[1].signum() == 0) return null;
         try {
             BigDecimal v = r[0].divide(r[1]);
@@ -3152,7 +3152,7 @@ public final class TmsTranspiler {
 
     /** The day-kind tests in {@code c}, in wire order, through its composites. */
     private static void dayKindTests(Condition c, List<Condition.Predicate> out) {
-        if (c instanceof Condition.Predicate p && p.category() == Condition.PredicateKind.DAGSOORT) out.add(p);
+        if (c instanceof Condition.Predicate p && p.kind() == Condition.PredicateKind.DAGSOORT) out.add(p);
         else if (c instanceof Condition.Compound s) for (Condition d : s.components()) dayKindTests(d, out);
     }
 
@@ -4251,7 +4251,7 @@ public final class TmsTranspiler {
         BetaTest ofMember = new BetaTest(id("plaats-lid"), StaticFunction.PLACE_OF, node,
                 List.of(constant(List.copyOf(chain))));
         member.addToRangePlan(new Accumulation(new FactPattern(ListPlace.class, p, List.of(ofField), List.of(), List.of(ofMember),
-                List.of(Binding.van(value, ListPlace.class, "place"))),
+                List.of(Binding.of(value, ListPlace.class, "place"))),
                 List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, itemCount),
                         new Accumulation.Aggregation(Accumulation.Kind.MINIMUM, value, least))));
         int n = member.size();
@@ -4600,10 +4600,10 @@ public final class TmsTranspiler {
      */
     private Term wholePeriodPredicate(Condition.Predicate p, Reads reads) {
         Msg description = Msg.drools("PART.desc.whole-period-predicate", "snippet", snippet(p));
-        boolean filled = switch (p.category()) {
+        boolean filled = switch (p.kind()) {
             case LEEG -> p.negation();
             case GEVULD -> !p.negation();
-            default -> throw new Refusal(DroolsCode.WHOLE_PERIOD_PREDICATE_KIND.reason("description", description, "spelling", Spelling.PREDICATE_KIND.spelling(p.category())));
+            default -> throw new Refusal(DroolsCode.WHOLE_PERIOD_PREDICATE_KIND.reason("description", description, "spelling", Spelling.PREDICATE_KIND.spelling(p.kind())));
         };
         if (!(p.operand() instanceof Expr.AttributeReference a) || a.objectType() == null || a.attribute() == null)
             throw new Refusal(DroolsCode.PERIOD_PREDICATE_NON_ATTRIBUTE.reason("description", description));
@@ -4908,11 +4908,11 @@ public final class TmsTranspiler {
      *  ({@link #wholePeriodPredicate}). */
     private Term predicate(Condition.Predicate p, Reads reads) {
         if (p.period() != null) return wholePeriodPredicate(p, reads);
-        switch (p.category()) {
+        switch (p.kind()) {
             case LEEG, GEVULD -> {
                 Term operand = value(p.operand(), reads);
                 return new Term.Call(StaticFunction.EMPTY_TEST, List.of(operand,
-                        constant(p.category() == Condition.PredicateKind.LEEG)), source(p.source()));
+                        constant(p.kind() == Condition.PredicateKind.LEEG)), source(p.source()));
             }
             case ELFPROEF, NUMERIEK_MET_EXACT -> {
                 return digitTrial(p, reads);
@@ -4920,7 +4920,7 @@ public final class TmsTranspiler {
             // a day kind is consulted as a classifier of a bare date before the rule graph, never as a read inside the
             // fixpoint (ch. 5.4); inside a day-kind definition the test is the definition's own (dagsoortpredikaat)
             case DAGSOORT -> throw new Refusal(DroolsCode.DAY_KIND_PREDICATE_OUTSIDE.reason("snippet", snippet(p)));
-            default -> throw new IllegalStateException("predicaatsoort " + p.category());
+            default -> throw new IllegalStateException("predicaatsoort " + p.kind());
         }
     }
 
@@ -4931,10 +4931,10 @@ public final class TmsTranspiler {
      *  operand is refused by name. The reference interpreter and the ASP backend do not evaluate these predicates. */
     private Term digitTrial(Condition.Predicate p, Reads reads) {
         if (p.operand() instanceof Expr.AttributeReference a && navigationBindings.containsKey(a))
-            throw new Refusal(DroolsCode.PREDICATE_OVER_NAVIGATED_PATH.reason("spelling", Spelling.PREDICATE_KIND.spelling(p.category()), "snippet", snippet(p)));
+            throw new Refusal(DroolsCode.PREDICATE_OVER_NAVIGATED_PATH.reason("spelling", Spelling.PREDICATE_KIND.spelling(p.kind()), "snippet", snippet(p)));
         Term operand = value(p.operand(), reads);
         boolean desired = !p.negation();
-        if (p.category() == Condition.PredicateKind.ELFPROEF)
+        if (p.kind() == Condition.PredicateKind.ELFPROEF)
             return new Term.Call(StaticFunction.ELEVEN_TEST, List.of(operand, constant(desired)), source(p.source()));
         return new Term.Call(StaticFunction.NUMERIEK_MET_EXACT, List.of(operand, constant(p.digits()), constant(desired)),
                 source(p.source()));
@@ -5181,7 +5181,7 @@ public final class TmsTranspiler {
                 String contributionValue = "$bijdragewaarde_" + id("vouw");
                 String outcome = "$vouw_" + id("vouw");
                 states(new Accumulation(new FactPattern(Contribution.class, b, List.of(ofFold), List.of(onSubject),
-                        List.of(Binding.van(contributionValue, Contribution.class, "value"))),
+                        List.of(Binding.of(contributionValue, Contribution.class, "value"))),
                         List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, itemCount),
                                 new Accumulation.Aggregation(function, contributionValue, outcome))));
                 out = new int[]{allocateSlot(ReadKind.FOLD_COUNT, "vouw " + key, itemCount),
@@ -5231,7 +5231,7 @@ public final class TmsTranspiler {
             String r = "$rekendatum_" + slots.size();
             String d = "$rekendatumwaarde_" + slots.size();
             parameters(new FactPattern(EvaluationDate.class, r, List.of(), List.of(),
-                    List.of(Binding.van(d, EvaluationDate.class, "date"))));
+                    List.of(Binding.of(d, EvaluationDate.class, "date"))));
             return allocateSlot(ReadKind.REKENDATUM, "rekendatum", d);
         }
 
@@ -5275,7 +5275,7 @@ public final class TmsTranspiler {
             if (known >= 0) return known;
             parameters(new FactPattern(CreationPhase.class, "$creatiefase", List.of(new Alpha(id("creatiestratum"),
                     List.of(new Alpha.FieldTest("stratum", Alpha.Comparator.AT_LEAST, stratum)))), List.of(),
-                    List.of(Binding.van("$fase", CreationPhase.class, "number"))));
+                    List.of(Binding.of("$fase", CreationPhase.class, "number"))));
             return allocateSlot(ReadKind.CREATION_PHASE, "creatiefase", "$fase");
         }
 
@@ -5320,7 +5320,7 @@ public final class TmsTranspiler {
             String w = readName(producer + " inconsistent");
             String st = "$kanaal_" + slots.size();
             states(new FactPattern(ChannelState.class, st, List.of(equal(id("kanaal"), "rule", producer)), List.of(),
-                    List.of(Binding.van(w, ChannelState.class, "inconsistent"))));
+                    List.of(Binding.of(w, ChannelState.class, "inconsistent"))));
             channelNames.add(producer);
             return allocateSlot(ReadKind.CHANNEL, key, w);
         }
@@ -5448,7 +5448,7 @@ public final class TmsTranspiler {
         private FactPattern state(Class<?> javaClass, String name, String memberField, ElementKey lk, String field, String w) {
             Alpha ofMember = equal(id("stand"), memberField, lk);
             Join onSubject = onSubject(id("stand-onderwerp"));
-            return new FactPattern(javaClass, name, List.of(ofMember), List.of(onSubject), List.of(Binding.van(w, javaClass, field)));
+            return new FactPattern(javaClass, name, List.of(ofMember), List.of(onSubject), List.of(Binding.of(w, javaClass, field)));
         }
 
         int own(Member member) {
@@ -5526,7 +5526,7 @@ public final class TmsTranspiler {
                         new Alpha.FieldTest("member", Alpha.Comparator.GELIJK, lk)));
                 Join onSubject = onSubject(id("padstand-onderwerp"));
                 states(new FactPattern(PathState.class, st, List.of(ofPath), List.of(onSubject),
-                        List.of(Binding.van(w, PathState.class, "value"))));
+                        List.of(Binding.of(w, PathState.class, "value"))));
                 paths.put(p.key(), p);
                 return allocateSlot(ReadKind.PATH_STATE, key, w);
             }
@@ -5549,7 +5549,7 @@ public final class TmsTranspiler {
             String w = readName(p.name());
             String st = "$parameter_" + slots.size();
             parameters(new FactPattern(ParameterState.class, st, List.of(equal(id("parameter"), "parameter", name)),
-                    List.of(), List.of(Binding.van(w, ParameterState.class, "value"))));
+                    List.of(), List.of(Binding.of(w, ParameterState.class, "value"))));
             return allocateSlot(ReadKind.PARAMETER, key, w);
         }
     }
@@ -5708,7 +5708,7 @@ public final class TmsTranspiler {
             case Term.Restate h -> {
                 Term z = withoutDepositFlag(h.term());
                 return z == h.term() ? h
-                        : new Term.Restate(h.function(), z, h.van(), h.destination(), h.counter(), h.denominator(), h.source());
+                        : new Term.Restate(h.function(), z, h.from(), h.destination(), h.counter(), h.denominator(), h.source());
             }
             case Term.Division d -> {
                 Term l = withoutDepositFlag(d.left()), r = withoutDepositFlag(d.right());
@@ -5869,7 +5869,7 @@ public final class TmsTranspiler {
 
         if (writers.containsKey(key)) {
             FactPattern value = new FactPattern(Value.class, "$waarde", List.of(equal(id("waarde"), "attribute", key)),
-                    List.of(onSubject(id("waarde-onderwerp"))), List.of(Binding.van("$v", Value.class, "value")));
+                    List.of(onSubject(id("waarde-onderwerp"))), List.of(Binding.of("$v", Value.class, "value")));
             out.add(new RulePlan(name + "uit een afleiding", null, null,
                     oneSlot(ReadKind.DERIVATION, "afleiding " + key, "$v"),
                     List.of(new Subject(member.javaClass(), SUBJECT, List.of(), List.of(), List.of()), value),
@@ -5942,7 +5942,7 @@ public final class TmsTranspiler {
         FactPattern state = new FactPattern(stateClass, "$stand",
                 List.of(equal(id("stand"), member.characteristic() ? "characteristic" : "attribute", lk)),
                 List.of(new Join(id("stand-bereikt"), "subject", "$bereikt")),
-                List.of(Binding.van("$v", stateClass, member.characteristic() ? "holds" : "value")));
+                List.of(Binding.of("$v", stateClass, member.characteristic() ? "holds" : "value")));
         RulePlan present = new RulePlan(name + "link aanwezig", null, null,
                 oneSlot(ReadKind.REACHED_STATE, "stand " + ps + " " + lk, "$v"),
                 List.of(new Subject(javaClass, SUBJECT, List.of(link), List.of(), List.of(reaches)), state),
@@ -5991,7 +5991,7 @@ public final class TmsTranspiler {
             items.add(new FactPattern(stateClass, "$stand",
                     List.of(equal(id("stand"), member.characteristic() ? "characteristic" : "attribute", lk)),
                     List.of(new Join(id("stand-bereikt"), "subject", chain.get(chain.size() - 1).name())),
-                    List.of(Binding.van("$v", stateClass, member.characteristic() ? "holds" : "value"))));
+                    List.of(Binding.of("$v", stateClass, member.characteristic() ? "holds" : "value"))));
             value = oneSlot(ReadKind.REACHED_STATE, "stand " + ps + " " + lk, "$v");
         } else {
             // the input of the member off the bean the chain reaches, read as the binding's form says
@@ -6008,7 +6008,7 @@ public final class TmsTranspiler {
         List<FactPattern> none = chain(path.hops(), SUBJECT, null);
         RulePlan absent = new RulePlan(name + "link afwezig", null, null, new ReadTable(List.of()),
                 List.of(new Subject(javaClass, SUBJECT, List.of(), List.of(), List.of()),
-                        new Not(none, Exists.verklaard(none), List.of(SUBJECT))),
+                        new Not(none, Exists.declared(none), List.of(SUBJECT))),
                 new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.MISSING_LINK, -1,
                         Consequence.Insertion.LOGICAL));
         return List.of(present, absent);
@@ -6038,7 +6038,7 @@ public final class TmsTranspiler {
                 List<BetaTest> earlier = phase == null ? List.of()
                         : List.of(new BetaTest(id("koppeling-eerder"), StaticFunction.NOT_IN_PHASE, phase));
                 out.add(new FactPattern(RelationLink.class, relationLink, List.of(ofRelation), List.of(onNear), earlier,
-                        List.of(Binding.van(otherSide, RelationLink.class, earliest ? "second" : "first"))));
+                        List.of(Binding.of(otherSide, RelationLink.class, earliest ? "second" : "first"))));
                 out.add(new FactPattern(javaClass, far, List.of(), List.of(new Join(id("koppeling-ver"), null, otherSide)),
                         List.of()));
             } else {
@@ -6084,26 +6084,26 @@ public final class TmsTranspiler {
         return Binding.ReadForm.VALUE;
     }
 
-    /** Member {@code naam} as declared on {@code houder}'s chain, compared as the verifier compares names, holding one
+    /** Member {@code naam} as declared on {@code holder}'s chain, compared as the verifier compares names, holding one
      *  value. A member on a timeline is refused here: the positions that read or write one ask {@link #timeMember}. A
      *  member with dimensions is refused. */
-    private Member member(ObjectType houder, String name, boolean characteristic) {
-        Member member = declared(houder, name, characteristic);
+    private Member member(ObjectType holder, String name, boolean characteristic) {
+        Member member = declared(holder, name, characteristic);
         if (member.time() != null)
             throw new Refusal(DroolsCode.TIMED_MEMBER_SINGLE_PLACE.reason("category", Msg.drools(characteristic ? "PART.member-kind.characteristic-kind" : "PART.member-kind.attribute"), "member", member.name(), "objectType", member.declarant().name));
         return member;
     }
 
     /**
-     * Member {@code naam} as declared on {@code houder}'s chain, on a timeline: {@code description} reads or writes its timeline
+     * Member {@code naam} as declared on {@code holder}'s chain, on a timeline: {@code description} reads or writes its timeline
      * (RUNTIME-SEMANTICS ch. 3). Refused by name: a member that holds one value there, one on a grid of more than one
      * unit, which carries no operation (ch. 3.2, OPEN in ch. 3.12), and one on a timeline with a variable start point,
      * whose grid is laid per object from an anchor a {@code StartPointDetermination} derives: no golden with cases
      * reads or writes one, and the case input lays no timeline on such a grid, so no case can confirm this branch's
      * reading of it against the reference interpreter.
      */
-    private Member timeMember(ObjectType houder, String name, boolean characteristic, Object description) {
-        Member member = declared(houder, name, characteristic);
+    private Member timeMember(ObjectType holder, String name, boolean characteristic, Object description) {
+        Member member = declared(holder, name, characteristic);
         Msg category = Msg.drools(characteristic ? "PART.member-kind.characteristic-kind" : "PART.member-kind.attribute");
         if (member.time() == null)
             throw new Refusal(DroolsCode.TIMED_MEMBER_NOT_TEMPORAL.reason("description", description, "category", category, "member", member.name(), "objectType", member.declarant().name));
@@ -6115,14 +6115,14 @@ public final class TmsTranspiler {
         return member;
     }
 
-    /** Member {@code naam} as declared on {@code houder}'s chain, its granularity set where it lies on a timeline. A
+    /** Member {@code naam} as declared on {@code holder}'s chain, its granularity set where it lies on a timeline. A
      *  member with dimensions is refused. */
-    private Member declared(ObjectType houder, String name, boolean characteristic) {
-        for (ObjectType t : houder.chain()) {
+    private Member declared(ObjectType holder, String name, boolean characteristic) {
+        for (ObjectType t : holder.chain()) {
             if (characteristic) {
                 for (String k : t.characteristics)
                     if (Namen.norm(k).equals(Namen.norm(name)))
-                        return new Member(ProducerConsumer.elementOf(houder, name, true), t, k, true, null, beanClass(t),
+                        return new Member(ProducerConsumer.elementOf(holder, name, true), t, k, true, null, beanClass(t),
                                 t.characteristicGranularity.get(k));
             } else {
                 for (Map.Entry<String, Datatype> e : t.attributes.entrySet())
@@ -6132,19 +6132,19 @@ public final class TmsTranspiler {
                         // timeline; a dimensioned one is read only per cell, through dimensionedMember
                         if (t.attributeDimensions.containsKey(a))
                             throw new Refusal(DroolsCode.DIMENSIONED_READ_OUTSIDE_CELL.reason("attribute", a, "objectType", t.name));
-                        return new Member(ProducerConsumer.elementOf(houder, name, false), t, a, false, e.getValue(),
+                        return new Member(ProducerConsumer.elementOf(holder, name, false), t, a, false, e.getValue(),
                                 beanClass(t), t.attributeGranularity.get(a));
                     }
             }
         }
-        throw new Refusal(DroolsCode.MEMBER_NOT_DECLARED.reason("category", Msg.drools(characteristic ? "PART.member-kind.characteristic-kind" : "PART.member-kind.attribute"), "member", name, "objectType", houder.name));
+        throw new Refusal(DroolsCode.MEMBER_NOT_DECLARED.reason("category", Msg.drools(characteristic ? "PART.member-kind.characteristic-kind" : "PART.member-kind.attribute"), "member", name, "objectType", holder.name));
     }
 
-    /** The dimensioned attribute {@code naam} as declared on {@code houder}'s chain (§3.6): its bean member is a
+    /** The dimensioned attribute {@code naam} as declared on {@code holder}'s chain (§3.6): its bean member is a
      *  {@code Map<label, value>}, read whole by a dimension cell or a fold over a dimension selection. An attribute that
      *  is not dimensioned, or that also lies on a timeline, is refused by name. */
-    private Member dimensionedMember(ObjectType houder, String name) {
-        for (ObjectType t : houder.chain())
+    private Member dimensionedMember(ObjectType holder, String name) {
+        for (ObjectType t : holder.chain())
             for (Map.Entry<String, Datatype> e : t.attributes.entrySet())
                 if (Namen.norm(e.getKey()).equals(Namen.norm(name))) {
                     String a = e.getKey();
@@ -6152,10 +6152,10 @@ public final class TmsTranspiler {
                         throw new Refusal(DroolsCode.DIMENSION_READ_NOT_DIMENSIONED.reason("attribute", a, "objectType", t.name));
                     if (t.attributeGranularity.containsKey(a))
                         throw new Refusal(DroolsCode.DIMENSIONED_ATTRIBUTE_TIMELINE.reason("attribute", a, "objectType", t.name));
-                    return new Member(ProducerConsumer.elementOf(houder, name, false), t, a, false, e.getValue(),
+                    return new Member(ProducerConsumer.elementOf(holder, name, false), t, a, false, e.getValue(),
                             beanClass(t), null);
                 }
-        throw new Refusal(DroolsCode.ATTRIBUTE_NOT_DECLARED.reason("attribute", name, "objectType", houder.name));
+        throw new Refusal(DroolsCode.ATTRIBUTE_NOT_DECLARED.reason("attribute", name, "objectType", holder.name));
     }
 
     /** A path of to-one roles from a subject type over the reference fields of the beans: the walk

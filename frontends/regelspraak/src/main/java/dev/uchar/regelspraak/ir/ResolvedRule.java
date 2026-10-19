@@ -15,7 +15,7 @@ import java.util.List;
  *
  * @param name           the regel name (with a per-version suffix when the rule has more
  *                       than one §13.4.2.3 version, so each version is a distinct DRL rule)
- * @param category          which assignment form produced it
+ * @param kind              which assignment form produced it
  * @param target           the assignment target — typically an {@link Expr.AttributeReference}
  * @param value         the resolved value expression (the rule's "then")
  * @param condition     the resolved condition guarding the rule, or null if unconditional
@@ -26,14 +26,14 @@ import java.util.List;
  *                       (the text after {@code Bron:}, in source order), so uitleg can cite the
  *                       wetsartikel. On the wire they are the rule form's statuteAnnotations (WF-082).
  */
-public record ResolvedRule(String name, Kind category, Expr target, Expr value,
+public record ResolvedRule(String name, Kind kind, Expr target, Expr value,
                             Condition condition, Validity validity, List<String> statuteAnnotations) {
     public enum Kind { GELIJKSTELLING, BEREKENING, INITIALISATIE, KENMERKTOEKENNING }
 
     /** Without statuutannotaties (an empty list) — for the construction sites that carry no
      *  {@code // Bron:} context (or none was written above the rule). */
-    public ResolvedRule(String name, Kind category, Expr target, Expr value,
+    public ResolvedRule(String name, Kind kind, Expr target, Expr value,
                          Condition condition, Validity validity) {
-        this(name, category, target, value, condition, validity, List.of());
+        this(name, kind, target, value, condition, validity, List.of());
     }
 }

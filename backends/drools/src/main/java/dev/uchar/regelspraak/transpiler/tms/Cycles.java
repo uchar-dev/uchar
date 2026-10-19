@@ -80,7 +80,7 @@ public final class Cycles {
      *  reads. A form with irrevocable writes, a characteristic attribution, a consistency, a uniqueness or a creation,
      *  reads every value that is not a characteristic strictly (the verifier's {@code strict_unless_char},
      *  RUNTIME-SEMANTICS ch. 6.1): a transient it acted on would persist. */
-    private record Form(ProducerConsumer.FormKind category, String name, Object source, boolean recursiveCreation,
+    private record Form(ProducerConsumer.FormKind kind, String name, Object source, boolean recursiveCreation,
                         boolean irrevocable, Set<String> writes, List<Read> reads) {}
 
     /** An edge from the form that writes {@code node} to the form that reads it; {@code strict} where ch. 5.2 makes
@@ -88,7 +88,7 @@ public final class Cycles {
     private record Edge(int producer, int consumer, String node, boolean negative, boolean strict) {}
 
     private static final Comparator<Form> FORM_ORDER =
-            Comparator.comparing((Form v) -> v.category().ordinal()).thenComparing(Form::name);
+            Comparator.comparing((Form v) -> v.kind().ordinal()).thenComparing(Form::name);
 
     /** The refusal of the cycles of {@code loaded}'s forms that WF-045 or WF-046 forbids, or null when there is none.
      *  A cycle names its nodes and the forms whose reads and writes close it, both sorted, so every order of the same
@@ -132,7 +132,7 @@ public final class Cycles {
         int n = graphForms.size();
         List<Edge> edges = new ArrayList<>();
         for (Edge r : edges(graphForms))
-            if (!(graphForms.get(r.producer()).category() == ProducerConsumer.FormKind.REGEL && r.node().startsWith("chan:")))
+            if (!(graphForms.get(r.producer()).kind() == ProducerConsumer.FormKind.REGEL && r.node().startsWith("chan:")))
                 edges.add(r);
         List<List<Integer>> next = new ArrayList<>();
         for (int i = 0; i < n; i++) next.add(new ArrayList<>());
@@ -280,7 +280,7 @@ public final class Cycles {
     }
 
     private static Msg form(Form v) {
-        String category = switch (v.category()) {
+        String category = switch (v.kind()) {
             case REGEL -> "rule";
             case OBJECT_CREATION -> "object-creation";
             case ALLOCATION -> "allocation";
@@ -313,7 +313,7 @@ public final class Cycles {
         private final Map<Object, List<RoleBindingRef>> navigation;
         private final Map<Object, RoleBindingRef> roleBindings;
         private final Map<Object, List<RoleBindingRef>> sourcePaths;
-        private final Stapels stapels;
+        private final Stacks stapels;
         /** How a node is shown, by key: a member as "Type.naam", spelled as declared. */
         private final Map<String, Object> names = new HashMap<>();
         /** The order nodes are listed in: the members first, by type and name, then the other nodes. */
@@ -326,7 +326,7 @@ public final class Cycles {
             this.navigation = navigation;
             this.roleBindings = roleBindings;
             this.sourcePaths = sourcePaths;
-            this.stapels = new Stapels(model, defaults);
+            this.stapels = new Stacks(model, defaults);
         }
 
         Object node(String k) {
@@ -413,7 +413,7 @@ public final class Cycles {
             List<Form> out = new ArrayList<>();
             for (ResolvedRule r : model.resolvedRules) {
                 if (!(r.target() instanceof Expr.AttributeReference d) || d.objectType() == null || d.attribute() == null) continue;
-                boolean characteristic = r.category() == ResolvedRule.Kind.KENMERKTOEKENNING;
+                boolean characteristic = r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING;
                 Set<String> writes = extensionWrite(d.objectType(), d.attribute(), characteristic);
                 if (r.name() != null) writes.add(channel(r.name()));
                 List<Read> reads = new ArrayList<>();
@@ -627,7 +627,7 @@ public final class Cycles {
             switch (c) {
                 case Condition.Comparison v -> { expr(v.left(), subject, out); expr(v.right(), subject, out); }
                 case Condition.Predicate p -> {
-                    if (p.category() == Condition.PredicateKind.LEEG || p.category() == Condition.PredicateKind.GEVULD) {
+                    if (p.kind() == Condition.PredicateKind.LEEG || p.kind() == Condition.PredicateKind.GEVULD) {
                         List<Read> under = new ArrayList<>();
                         expr(p.operand(), subject, under);
                         out.addAll(negative(under));

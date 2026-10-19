@@ -222,8 +222,8 @@ class GeneratedDesignationsTest {
         error(source, "de meldingsdatum", "Het attribuut 'meldingsdatum' van 'Vondst' draagt geen benaming in het "
                 + "standaardvocabulaire 'cgm', dat elke declaratie noemt (WF-119)");
         for (Designatable e : FAMILY)
-            error(source, "de meldingsdatum", (e.category() == Designatable.Kind.VORM ? "De regel '" + e.name() + "'"
-                    : "Het " + (e.category() == Designatable.Kind.KENMERK ? "kenmerk" : "attribuut") + " '" + e.name()
+            error(source, "de meldingsdatum", (e.kind() == Designatable.Kind.VORM ? "De regel '" + e.name() + "'"
+                    : "Het " + (e.kind() == Designatable.Kind.KENMERK ? "kenmerk" : "attribuut") + " '" + e.name()
                     + "' van 'Vondst'") + " draagt geen benaming in het standaardvocabulaire 'cgm', dat elke "
                     + "declaratie noemt (WF-119); de frontend stelt de benaming van deze declaratie samen uit die van "
                     + "het attribuut 'meldingsdatum' van 'Vondst', en dat draagt er geen");

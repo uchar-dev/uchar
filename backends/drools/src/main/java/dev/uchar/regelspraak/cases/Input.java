@@ -33,9 +33,9 @@ public final class Input {
     /** A bucket scalar: attribute {@code attribute} of {@code bean}, named as the model declares it. */
     record Bucket(Object bean, String attribute) {}
 
-    /** The members of a to-many list in their order: {@code members}, each holding {@code houder} in its reference field
+    /** The members of a to-many list in their order: {@code members}, each holding {@code holder} in its reference field
      *  {@code role}. */
-    record ToManyList(Object houder, String role, List<Object> members) {}
+    record ToManyList(Object holder, String role, List<Object> members) {}
 
     /** Adds {@code bean}. */
     public Input bean(Object bean) {
@@ -57,13 +57,13 @@ public final class Input {
     }
 
     /** States the order of a to-many list: {@code members} are the members whose reference field {@code role} holds
-     *  {@code houder}, in this order. {@code role} is the role the holder plays in the fact type, the name of that field;
+     *  {@code holder}, in this order. {@code role} is the role the holder plays in the fact type, the name of that field;
      *  the list must name every bean of this input whose field holds the holder, and each once. */
-    public Input list(Object houder, String role, List<?> members) {
+    public Input list(Object holder, String role, List<?> members) {
         Objects.requireNonNull(members, "members");
         List<Object> l = new ArrayList<>();
         for (Object member : members) l.add(Objects.requireNonNull(member, "member"));
-        lists.add(new ToManyList(Objects.requireNonNull(houder, "houder"), Objects.requireNonNull(role, "role"), List.copyOf(l)));
+        lists.add(new ToManyList(Objects.requireNonNull(holder, "holder"), Objects.requireNonNull(role, "role"), List.copyOf(l)));
         return this;
     }
 

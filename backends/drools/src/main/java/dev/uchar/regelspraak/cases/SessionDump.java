@@ -122,7 +122,7 @@ final class SessionDump {
                 if (w instanceof Predicate<?>) continue;
                 globals.put(g.getName(), n.render(w));
             }
-        globals.forEach((g, w) -> rules.add("global " + citeer(g) + " = " + w));
+        globals.forEach((g, w) -> rules.add("global " + quote(g) + " = " + w));
         rules.sort(Comparator.naturalOrder());
         return rules;
     }
@@ -193,17 +193,17 @@ final class SessionDump {
         Fixpoint fp = DroolsBackend.fixpointOf(build, session, label::get);
         List<String> read = new ArrayList<>();
         for (Fixpoint.DerivedValue w : fp.values())
-            read.add("waarde " + n.nameOf(w.object()) + "." + citeer(w.attribute()) + " = " + n.render(w.value()));
+            read.add("waarde " + n.nameOf(w.object()) + "." + quote(w.attribute()) + " = " + n.render(w.value()));
         for (Fixpoint.DerivedCharacteristic k : fp.characteristics())
-            read.add("kenmerk " + n.nameOf(k.object()) + " " + citeer(k.characteristic()));
+            read.add("kenmerk " + n.nameOf(k.object()) + " " + quote(k.characteristic()));
         for (Fixpoint.MadeObject g : fp.objects())
-            read.add("object " + n.nameOf(g.object()) + " door " + citeer(g.creation()) + " voor "
+            read.add("object " + n.nameOf(g.object()) + " door " + quote(g.creation()) + " voor "
                     + n.nameOf(g.subject()));
         for (Fixpoint.MadeLink k : fp.links())
-            read.add("koppeling " + citeer(k.factType()) + " " + citeer(k.firstRole()) + "=" + n.nameOf(k.first())
-                    + " " + citeer(k.secondRole()) + "=" + n.nameOf(k.second()));
+            read.add("koppeling " + quote(k.factType()) + " " + quote(k.firstRole()) + "=" + n.nameOf(k.first())
+                    + " " + quote(k.secondRole()) + "=" + n.nameOf(k.second()));
         for (Fault f : fp.faults())
-            read.add("fout " + n.nameOf(f.subject()) + " " + citeer(f.rule()) + ": " + n.sentence(f.fault()));
+            read.add("fout " + n.nameOf(f.subject()) + " " + quote(f.rule()) + ": " + n.sentence(f.fault()));
         for (Object i : fp.inconsistencies()) read.add("inconsistentie " + n.render(i));
         rules(out, "lees", read);
         facts(out, n);
@@ -234,8 +234,8 @@ final class SessionDump {
         TreeMap<String, Integer> count = new TreeMap<>();
         for (String r : trace) count.merge(r, 1, Integer::sum);
         List<String> counted = new ArrayList<>(), order = new ArrayList<>();
-        count.forEach((r, n) -> counted.add(citeer(r) + "=" + n));
-        for (String r : trace) order.add(citeer(r));
+        count.forEach((r, n) -> counted.add(quote(r) + "=" + n));
+        for (String r : trace) order.add(quote(r));
         out.append("spoor-telling {").append(String.join(", ", counted)).append("}\n");
         out.append("spoor-volgorde [").append(String.join(", ", order)).append("]\n");
     }
@@ -267,7 +267,7 @@ final class SessionDump {
         /** As the dump writes it: a case label quoted and escaped; a made object as {@code «"creatie"»(subject)#k},
          *  which no quoted label can be read as. */
         String inTheDump() {
-            return label != null ? citeer(label) : "«" + citeer(creation) + "»(" + subject.inTheDump() + ")#" + number;
+            return label != null ? quote(label) : "«" + quote(creation) + "»(" + subject.inTheDump() + ")#" + number;
         }
 
         /** As a sentence of the branch names the object where it is given a label ({@code named}): the case label
@@ -307,12 +307,12 @@ final class SessionDump {
         private Name subject(CreationStamp g) {
             Name n = name.get(g.subject());
             if (n == null) throw new IllegalStateException("de dump heeft geen naam voor het onderwerp van de creatie "
-                    + citeer(g.rule()) + " in fase " + g.phase() + ", een " + g.subject().getClass().getSimpleName());
+                    + quote(g.rule()) + " in fase " + g.phase() + ", een " + g.subject().getClass().getSimpleName());
             return n;
         }
 
         private String key(CreationStamp g) {
-            return "«" + citeer(g.rule()) + "»(" + subject(g).inTheDump() + ")";
+            return "«" + quote(g.rule()) + "»(" + subject(g).inTheDump() + ")";
         }
 
         /** {@code o} where an object stands in a line: a bean by its name, null as {@code leeg}, any other object by
@@ -364,10 +364,10 @@ final class SessionDump {
             }
             for (Map.Entry<String, Object> i : identities.entrySet())
                 if (sentence.contains(i.getKey()))
-                    throw new IllegalStateException("de dump schrijft geen identiteit: de zin " + citeer(sentence) + " noemt "
+                    throw new IllegalStateException("de dump schrijft geen identiteit: de zin " + quote(sentence) + " noemt "
                             + i.getKey() + ", " + (name.containsKey(i.getValue()) ? "het object "
                             + name.get(i.getValue()).inTheDump() : "een object zonder naam") + " van de sessie");
-            return citeer(sentence);
+            return quote(sentence);
         }
 
         private static String identity(Object o) {
@@ -407,10 +407,10 @@ final class SessionDump {
                         + ": geen caselabel en geen creatie die haar maakte");
             }
             if (o instanceof BigDecimal d) return "BigDecimal(" + d + ")";
-            if (o instanceof String s) return "String(" + citeer(s) + ")";
+            if (o instanceof String s) return "String(" + quote(s) + ")";
             if (o instanceof Enum<?> e) return e.getDeclaringClass().getSimpleName() + "." + e.name();
             if (o instanceof ElementKey k)
-                return citeer(k.objectType()) + "." + citeer(k.name()) + (k.characteristic() ? " (kenmerk)" : "");
+                return quote(k.objectType()) + "." + quote(k.name()) + (k.characteristic() ? " (kenmerk)" : "");
             if (o instanceof Throwable e) return fault(e);
             if (o instanceof List<?> l) {
                 List<String> r = new ArrayList<>();
@@ -468,7 +468,7 @@ final class SessionDump {
             if (o instanceof Boolean || o instanceof Integer || o instanceof Long || o instanceof java.time.LocalDate
                     || o instanceof java.time.LocalDateTime)
                 return javaClass.getSimpleName() + "(" + o + ")";
-            return javaClass.getSimpleName() + "(" + citeer(o.toString()) + ")";
+            return javaClass.getSimpleName() + "(" + quote(o.toString()) + ")";
         }
     }
 
@@ -478,7 +478,7 @@ final class SessionDump {
 
     /** {@code s} between double quotes, with a quote, a backslash and a line break escaped, so that a text stays on its
      *  line and tells where it ends. */
-    private static String citeer(String s) {
+    private static String quote(String s) {
         return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
     }
 }

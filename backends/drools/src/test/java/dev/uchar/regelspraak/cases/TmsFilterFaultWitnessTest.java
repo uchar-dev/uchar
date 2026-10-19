@@ -326,7 +326,7 @@ class TmsFilterFaultWitnessTest {
         int orders = 0;
         for (List<Rule> order : rules.size() <= 6 ? TmsDocuments.permutations(rules)
                 : TmsDocuments.sample(rules, 20261008L, 100)) {
-            String outcome = TmsFaultWitnessTest.fire(b, order, input.van(b), new DefaultAgendaEventListener() {},
+            String outcome = TmsFaultWitnessTest.fire(b, order, input.of(b), new DefaultAgendaEventListener() {},
                     new TmsFaultWitnessTest.FaultFacts());
             if (!sentence.equals(outcome)) deviating.add(order.stream().map(Rule::getName).toList() + ": " + outcome);
             orders++;
@@ -337,7 +337,7 @@ class TmsFilterFaultWitnessTest {
 
     @FunctionalInterface
     private interface Input {
-        List<Object> van(DroolsBackend.Build b) throws Exception;
+        List<Object> of(DroolsBackend.Build b) throws Exception;
     }
 
     // ---------------- a fold in a member of a composite that is not read ----------------

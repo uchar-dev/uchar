@@ -291,9 +291,9 @@ final class DrlRendering {
         throw new IllegalStateException("een veldtoets met een constante van het type " + w.getClass().getName());
     }
 
-    /** The key of a member, as {@link ElementKey#van} makes every key of the plan. */
+    /** The key of a member, as {@link ElementKey#of} makes every key of the plan. */
     private String key(ElementKey e) {
-        return typeName(ElementKey.class) + ".van(" + str(e.objectType()) + ", " + str(e.name()) + ", "
+        return typeName(ElementKey.class) + ".of(" + str(e.objectType()) + ", " + str(e.name()) + ", "
                 + e.characteristic() + ")";
     }
 
@@ -478,7 +478,7 @@ final class DrlRendering {
             List<String> f = new ArrayList<>();
             for (Accumulation.Aggregation x : a.aggregations()) {
                 String over = x.source() == null ? a.source().name() : x.source();
-                f.add(x.target() + " : " + switch (x.category()) {
+                f.add(x.target() + " : " + switch (x.kind()) {
                     case COUNT -> "count()";
                     case SUM -> "sumBD(" + over + ")";
                     case MINIMUM -> "min(" + over + ")";
@@ -1152,8 +1152,8 @@ final class DrlRendering {
                 case Consequence.StackFact.Decides x -> "new " + typeName(Decides.class) + "(" + subject + ", "
                         + str(x.stack()) + ", " + x.index() + ")";
                 case Consequence.StackFact.Outcome x -> "new " + typeName(Outcome.class) + "(" + subject + ", "
-                        + str(x.stack()) + ", " + x.chain() + ", " + x.position() + ", " + enumlabel(x.category()) + ", "
-                        + (x.category() == Outcome.Kind.DECIDED ? "v, null" : "null, (String) v") + ")";
+                        + str(x.stack()) + ", " + x.chain() + ", " + x.position() + ", " + enumlabel(x.kind()) + ", "
+                        + (x.kind() == Outcome.Kind.DECIDED ? "v, null" : "null, (String) v") + ")";
                 case Consequence.StackFact.Inconsistency x -> route(Route.INCONSISTENCY) + "((String) v, " + subject + ", "
                         + list(texts(Consequence.StackFact.Inconsistency.CODES)) + ")";
             };
@@ -1243,7 +1243,7 @@ final class DrlRendering {
 
         /** The distribution of {@link Consequence.Payout}: the facts of the route, each inserted. The method stands as its
          *  enumeration label, which MVEL reads in the argument of a call (FABLE-3 §2.2), the decimals as an
-         *  {@code Integer} or null, and the keys as {@code ElementKey.van}. */
+         *  {@code Integer} or null, and the keys as {@code ElementKey.of}. */
         private void payout(Consequence.Payout x, StringBuilder b) {
             b.append("    for (Object feit : ").append(route(Route.PAYOUT)).append("(").append(str(x.form()))
                     .append(", ").append(x.subject()).append(", ").append(enumlabel(x.method())).append(", ")

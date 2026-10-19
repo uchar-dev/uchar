@@ -33,7 +33,7 @@ import java.util.Set;
  * initialisation default with its condition. Such a rule is absorbed on the concrete types whose stack took it
  * ({@link #absorbedOn}) and must not fire there as a rule as well.
  */
-final class Stapels {
+final class Stacks {
 
     /** One effective stack: the groups that run on instances of exactly {@code owner}, more than one only for a
      *  declared-unordered root. */
@@ -52,7 +52,7 @@ final class Stapels {
 
     /** The vacuously true justification an unconditional rule gets when it becomes a base, the shape of the ch. 7.7
      *  desugaring. */
-    private static final Condition ALTIJD = new Condition.Compound(Condition.Quantifier.ALLE, 0, List.of(), null);
+    private static final Condition ALWAYS = new Condition.Compound(Condition.Quantifier.ALLE, 0, List.of(), null);
 
     private final RegelSpraakModel model;
     private final List<PrioritizedDefaults> defaults;
@@ -60,14 +60,14 @@ final class Stapels {
      *  defaults are read on the level of the default that carries them and are not in here. */
     private final Map<Default, ObjectType> origin = new IdentityHashMap<>();
 
-    Stapels(RegelSpraakModel model, List<PrioritizedDefaults> defaults) {
+    Stacks(RegelSpraakModel model, List<PrioritizedDefaults> defaults) {
         this.model = model;
         this.defaults = defaults;
     }
 
     /** Every effective stack of the model, per type in the model's order and per target in the order of
      *  {@link #effectiveStacks}. */
-    List<Stack> stapels() {
+    List<Stack> stacks() {
         List<Stack> out = new ArrayList<>();
         for (ObjectType ot : model.objectTypes.values())
             for (List<PrioritizedDefaults> members : effectiveStacks(ot, chainGroupKeys(ot)).values())
@@ -142,7 +142,7 @@ final class Stapels {
         for (ResolvedRule r : model.resolvedRules) {
             if (!(r.target() instanceof Expr.AttributeReference d) || d.attribute() == null) continue;
             if (d.objectType() != level || !("A:" + Namen.norm(d.attribute())).equals(key)) continue;
-            switch (r.category()) {
+            switch (r.kind()) {
                 case GELIJKSTELLING, BEREKENING -> { comps.add(r); all.add(r); }
                 case INITIALISATIE -> { inits.add(r); all.add(r); }
                 default -> { }
@@ -161,7 +161,7 @@ final class Stapels {
         String attr = null;
         for (ResolvedRule r : comps) {
             attr = ((Expr.AttributeReference) r.target()).attribute();
-            ds.add(new Default(null, r.condition() != null ? r.condition() : ALTIJD, r.value(), false, null, r.name()));
+            ds.add(new Default(null, r.condition() != null ? r.condition() : ALWAYS, r.value(), false, null, r.name()));
         }
         // the initialisation keeps its condition: justified where the target is empty in the input and the condition
         // holds; folded without it, it wrote its value where the condition failed

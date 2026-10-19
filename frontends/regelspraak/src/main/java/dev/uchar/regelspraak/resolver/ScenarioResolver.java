@@ -1326,7 +1326,7 @@ public final class ScenarioResolver {
      *  value is a terminating decimal without trailing zeros, or else a reduced fraction. */
     private ScenarioValue number(GetalWaardeContext g, Datatype target, int line, Object what) {
         String text = g.NUMBER().getText();
-        BigDecimal[] r = RationalParser.van(text);
+        BigDecimal[] r = RationalParser.of(text);
         // the parse enters a number value on a NUMBER token only, and every NUMBER token is a number RationalParser reads
         if (r == null) throw new IllegalStateException("ScenarioResolver: het getal '" + text + "' is geen getal");
         BigInteger[] rational = rational(r[0], r[1]);

@@ -53,7 +53,7 @@ class GraphDefaultReadTest {
         List<Form> groupForms = forms.subList(forms.size() - groups.size(), forms.size());
         for (int i = 0; i < groups.size(); i++) {
             Form v = groupForms.get(i);
-            assertEquals(FormKind.DEFAULTS_GROUP, v.category(), where);
+            assertEquals(FormKind.DEFAULTS_GROUP, v.kind(), where);
             Set<ElementKey> combined = new LinkedHashSet<>();
             for (DefaultRead d : ProducerConsumer.readings(model, groups.get(i), navigation)) {
                 combined.addAll(d.justification());

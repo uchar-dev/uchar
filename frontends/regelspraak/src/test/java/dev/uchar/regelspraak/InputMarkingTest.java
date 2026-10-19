@@ -127,7 +127,7 @@ class InputMarkingTest {
         // 2: the computing writer keeps its name and shape and targets berekende X
         ResolvedRule w = rule(m, "waardering");
         assertEquals("berekende waarde", targetOf(w));
-        assertEquals(ResolvedRule.Kind.BEREKENING, w.category());
+        assertEquals(ResolvedRule.Kind.BEREKENING, w.kind());
         assertEquals("taxatie", read(((Expr.Binary) w.value()).left()));
 
         // 3: one group on X, from the top: the opgave, then the computation
@@ -158,7 +158,7 @@ class InputMarkingTest {
         assertEquals(List.of("afwijkende opgave waarde"), v.characteristics);
         assertEquals(ObjectType.CharacteristicKind.BEZITTELIJK, v.characteristicKinds.get("afwijkende opgave waarde"));
         ResolvedRule a = rule(m, "afwijking opgave waarde");
-        assertEquals(ResolvedRule.Kind.KENMERKTOEKENNING, a.category());
+        assertEquals(ResolvedRule.Kind.KENMERKTOEKENNING, a.kind());
         assertEquals("afwijkende opgave waarde", targetOf(a));
         assertEquals(Validity.ALTIJD, a.validity());
         Condition.Compound all = assertInstanceOf(Condition.Compound.class, a.condition());
@@ -167,9 +167,9 @@ class InputMarkingTest {
         Condition.Predicate p0 = assertInstanceOf(Condition.Predicate.class, all.components().get(0));
         Condition.Predicate p1 = assertInstanceOf(Condition.Predicate.class, all.components().get(1));
         Condition.Comparison p2 = assertInstanceOf(Condition.Comparison.class, all.components().get(2));
-        assertEquals(Condition.PredicateKind.GEVULD, p0.category());
+        assertEquals(Condition.PredicateKind.GEVULD, p0.kind());
         assertEquals("opgegeven waarde", read(p0.operand()));
-        assertEquals(Condition.PredicateKind.GEVULD, p1.category());
+        assertEquals(Condition.PredicateKind.GEVULD, p1.kind());
         assertEquals("berekende waarde", read(p1.operand()));
         assertEquals(Condition.Operator.ONGELIJK, p2.op());
         assertEquals("opgegeven waarde", read(p2.left()));
@@ -602,7 +602,7 @@ class InputMarkingTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         ResolvedRule init = rule(m, "melding bij schade zonder aanspoeldag");
-        assertEquals(ResolvedRule.Kind.INITIALISATIE, init.category());
+        assertEquals(ResolvedRule.Kind.INITIALISATIE, init.kind());
         assertEquals("meldingsdatum", targetOf(init));
         assertEquals("Strandvondst", targetType(init).name);
         assertNotNull(init.condition(), "de voorwaarde blijft");

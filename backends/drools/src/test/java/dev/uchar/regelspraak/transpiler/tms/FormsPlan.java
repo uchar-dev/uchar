@@ -70,7 +70,7 @@ final class FormsPlan {
         List<RulePlan> rules = new ArrayList<>();
         rules.add(allTerms(wachter, post, kustvak));
         Subject subject = new Subject(wachter, O, List.of(), List.of(),
-                List.of(Binding.van("$uitkijkbonus", wachter, "uitkijkbonus")));
+                List.of(Binding.of("$uitkijkbonus", wachter, "uitkijkbonus")));
         ReadTable one = new ReadTable(List.of(new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus")));
         Term division = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Division(StaticFunction.DIVIDED, readOf(0), readOf(0),
                 -1, "uitkijkbonus gedeeld door uitkijkbonus"), number("1"), text(">")), "de deling groter dan 1");
@@ -80,7 +80,7 @@ final class FormsPlan {
                 new Consequence.TestFault(O, division, TestItem.Role.FAULT, List.of(0), 1, faultName, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("kenmerk zonder fout", "proef", "proefgroep", one, List.of(subject,
                 new TestItem("zonder", TestItem.Role.WITHOUT_FAULT, division, -1, List.of(0), 1)),
-                new Consequence.Characteristic(O, ElementKey.van("wachter", "gevarenwacht", true), Consequence.Insertion.LOGICAL)));
+                new Consequence.Characteristic(O, ElementKey.of("wachter", "gevarenwacht", true), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("vaste fout", "proef", null, one, List.of(subject,
                 new TestItem("vorm", TestItem.Role.VORM, new Term.Call(StaticFunction.BUCKET_SCALAR, List.of(readOf(0),
                         new Term.Const(Boolean.FALSE, null, null)), null), -1, List.of(0), 1)),
@@ -96,14 +96,14 @@ final class FormsPlan {
                 List.of(subject, new TestItem("deponering", TestItem.Role.DEPOSIT, depositing, 1, List.of(0), 2)),
                 new Consequence.ConditionDeposit(O, "proef", depositing, 1, List.of(0), 2, Consequence.Insertion.LOGICAL)));
         FactPattern values = new FactPattern(Value.class, "$waarde", List.of(new Alpha("attribuut", List.of(
-                new Alpha.FieldTest("attribute", Alpha.Comparator.GELIJK, ElementKey.van("wachter", "uitkijkbonus", false))))),
+                new Alpha.FieldTest("attribute", Alpha.Comparator.GELIJK, ElementKey.of("wachter", "uitkijkbonus", false))))),
                 List.of(new Join("subject", "subject", O)), List.of());
         List<String> documentRules = List.of("a", "b", "c", "d", "e", "f", "g", "h");
         rules.add(new RulePlan("schrijvers", null, null,
                 new ReadTable(List.of(new Read(0, ReadKind.VALUES, "waarden", "$waarden"))),
                 List.of(new Subject(wachter, O, List.of(), List.of(), List.of()), new Accumulation(values,
                         List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, "$waarden")))),
-                new Consequence.WritersConflict(O, 0, ElementKey.van("wachter", "uitkijkbonus", false), "uitkijkbonus",
+                new Consequence.WritersConflict(O, 0, ElementKey.of("wachter", "uitkijkbonus", false), "uitkijkbonus",
                         documentRules, List.of("Wachter"), List.of("Wachter"), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("parameterstand", null, null, new ReadTable(List.of()), List.of(),
                 new Consequence.InsertParameterState("drempel", "drempel", Consequence.Insertion.LOGICAL)));
@@ -111,17 +111,17 @@ final class FormsPlan {
                 new Consequence.EvaluationDateState("rekendatum", Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("kenmerkstand", null, null, new ReadTable(List.of()),
                 List.of(new Subject(wachter, O, List.of(), List.of(), List.of())),
-                new Consequence.InsertCharacteristicState(O, ElementKey.van("wachter", "rustwacht", true), Consequence.StateSource.NONE, false,
+                new Consequence.InsertCharacteristicState(O, ElementKey.of("wachter", "rustwacht", true), Consequence.StateSource.NONE, false,
                         Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("stand", null, null, one, List.of(subject), new Consequence.State(O,
-                ElementKey.van("wachter", "uitkijkbonus", false), Consequence.StateSource.INPUT, 0, true,
+                ElementKey.of("wachter", "uitkijkbonus", false), Consequence.StateSource.INPUT, 0, true,
                 Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("padstand zonder link", null, null, new ReadTable(List.of()),
                 List.of(new Subject(wachter, O, List.of(), List.of(), List.of())), new Consequence.InsertPathState(O, "Wachter:post",
-                ElementKey.van("post", "hoogte", false), Consequence.StateSource.MISSING_LINK, -1,
+                ElementKey.of("post", "hoogte", false), Consequence.StateSource.MISSING_LINK, -1,
                 Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("padstand", null, null, one, List.of(subject), new Consequence.InsertPathState(O,
-                "Wachter:post", ElementKey.van("post", "hoogte", false), Consequence.StateSource.REACHED, 0,
+                "Wachter:post", ElementKey.of("post", "hoogte", false), Consequence.StateSource.REACHED, 0,
                 Consequence.Insertion.LOGICAL)));
         return new Modelplan(List.of(new Modelplan.Global("drempel", BigDecimal.class),
                 new Modelplan.Global("rekendatum", LocalDate.class)), rules);
@@ -134,12 +134,12 @@ final class FormsPlan {
             "    insertLogical(new Recipient(\"proefverdeling\", $bron, $onderwerp, null, null, null));",
             "    for (Object feit : ComputeHelpers.payout(\"proefverdeling\", $onderwerp,"
                     + " dev.uchar.regelspraak.ir.ResolvedAllocation.Method.NAAR_RATO, $pot, $ontvangers, true, true, false,"
-                    + " Integer.valueOf(2), ElementKey.van(\"wachter\", \"uitkijkbonus\", false),"
-                    + " ElementKey.van(\"post\", \"hoogte\", false), \"proefverdeling\")) {\n"
+                    + " Integer.valueOf(2), ElementKey.of(\"wachter\", \"uitkijkbonus\", false),"
+                    + " ElementKey.of(\"post\", \"hoogte\", false), \"proefverdeling\")) {\n"
                     + "        insertLogical(feit);\n    }",
             "ComputeHelpers.payout(\"proefverdeling\", $onderwerp,"
                     + " dev.uchar.regelspraak.ir.ResolvedAllocation.Method.OP_VOLGORDE, $pot, $ontvangers, false, false, true,"
-                    + " null, ElementKey.van(\"wachter\", \"uitkijkbonus\", false), null, \"proefverdeling\")",
+                    + " null, ElementKey.of(\"wachter\", \"uitkijkbonus\", false), null, \"proefverdeling\")",
             "dev.uchar.regelspraak.ir.ResolvedAllocation.Method.GELIJKE_DELEN");
 
     /**
@@ -152,7 +152,7 @@ final class FormsPlan {
         List<RulePlan> rules = new ArrayList<>();
         FactPattern source = new FactPattern(post, "$bron", List.of(), List.of(), List.of());
         Subject recipient = new Subject(wachter, O, List.of(), List.of(),
-                List.of(Binding.van("$uitkijkbonus", wachter, "uitkijkbonus")));
+                List.of(Binding.of("$uitkijkbonus", wachter, "uitkijkbonus")));
         rules.add(new RulePlan("ontvanger met waarden", "proefverdeling", null,
                 table(memberSlot(0), new Read(1, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus")),
                 List.of(recipient, source), new Consequence.Recipient("$bron", "proefverdeling", 0, 1, 1, 1,
@@ -160,17 +160,17 @@ final class FormsPlan {
         rules.add(new RulePlan("ontvanger zonder waarden", "proefverdeling", null, table(memberSlot(0)),
                 List.of(new Subject(wachter, O, List.of(), List.of(), List.of()), source),
                 new Consequence.Recipient("$bron", "proefverdeling", 0, -1, -1, -1, Consequence.Insertion.LOGICAL)));
-        Subject pot = new Subject(post, O, List.of(), List.of(), List.of(Binding.van("$pot", post, "hoogte")));
+        Subject pot = new Subject(post, O, List.of(), List.of(), List.of(Binding.of("$pot", post, "hoogte")));
         Accumulation recipients = new Accumulation(new FactPattern(Recipient.class, "$ontvanger", List.of(new Alpha("verdeling",
                 List.of(new Alpha.FieldTest("allocation", Alpha.Comparator.GELIJK, "proefverdeling")))),
                 List.of(new Join("ontvanger-bron", "source", O)), List.of()),
                 List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, "$ontvangers")));
         ReadTable payout = table(new Read(0, ReadKind.INPUT, "hoogte", "$pot"),
                 new Read(1, ReadKind.RECIPIENTS, "ontvangers proefverdeling", "$ontvangers"));
-        ElementKey aandeel = ElementKey.van("wachter", "uitkijkbonus", false);
+        ElementKey aandeel = ElementKey.of("wachter", "uitkijkbonus", false);
         rules.add(new RulePlan("uitdeling naar rato", "proefverdeling", null, payout, List.of(pot, recipients),
                 new Consequence.Payout(O, "proefverdeling", ResolvedAllocation.Method.NAAR_RATO, 0, 1, true, true, false, 2,
-                        aandeel, ElementKey.van("post", "hoogte", false), "proefverdeling", Consequence.Insertion.LOGICAL)));
+                        aandeel, ElementKey.of("post", "hoogte", false), "proefverdeling", Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("uitdeling op volgorde", "proefverdeling", null, payout, List.of(pot, recipients),
                 new Consequence.Payout(O, "proefverdeling", ResolvedAllocation.Method.OP_VOLGORDE, 0, 1, false, false, true,
                         null, aandeel, null, "proefverdeling", Consequence.Insertion.LOGICAL)));
@@ -194,7 +194,7 @@ final class FormsPlan {
             "    int fase = ((Integer) $fase).intValue();",
             "    feiten.add(nieuw);\n    feiten.add(new CreationStamp(\"proefcreatie\", $onderwerp, nieuw, fase, 0, diepte));\n"
                     + "    feiten.add(new RelationLink(\"wachterpost\", $onderwerp, nieuw, fase));\n"
-                    + "    feiten.add(Boolean.TRUE.equals(i1) ? new HasCharacteristic(nieuw, ElementKey.van(\"post\","
+                    + "    feiten.add(Boolean.TRUE.equals(i1) ? new HasCharacteristic(nieuw, ElementKey.of(\"post\","
                     + " \"bemand\", true)) : null);\n    return feiten;",
             "    agenda-group \"uchar-objectcreatie\"",
             "    if (ComputeHelpers.isEvaluationFault(v)) {\n        insert(new Fault($onderwerp, \"proefcreatie\","
@@ -224,7 +224,7 @@ final class FormsPlan {
         List<RulePlan> rules = new ArrayList<>();
         FactPattern phase = new FactPattern(CreationPhase.class, "$creatiefase", List.of(new Alpha("creatiestratum", List.of(
                 new Alpha.FieldTest("stratum", Alpha.Comparator.AT_LEAST, 0)))), List.of(),
-                List.of(Binding.van("$fase", CreationPhase.class, "number")));
+                List.of(Binding.of("$fase", CreationPhase.class, "number")));
         Accumulation origin = new Accumulation(new FactPattern(CreationStamp.class, "$herkomst", List.of(),
                 List.of(new Join("herkomst", "object", O)), List.of()),
                 List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, "$herkomsten")));
@@ -234,11 +234,11 @@ final class FormsPlan {
                         new Read(1, ReadKind.CREATION_PHASE, "creatiefase", "$fase"),
                         new Read(2, ReadKind.ORIGIN, "herkomst", "$herkomsten")),
                 List.of(new Subject(wachter, O, List.of(), List.of(),
-                        List.of(Binding.van("$uitkijkbonus", wachter, "uitkijkbonus"))), phase, origin),
+                        List.of(Binding.of("$uitkijkbonus", wachter, "uitkijkbonus"))), phase, origin),
                 new Consequence.Creation(O, "proefcreatie", new Consequence.CreationDepth(2, 0, "Wachter", 3), List.of(
-                        new Consequence.Initialisation(ElementKey.van("post", "hoogte", false), new Term.SlotValue(0,
+                        new Consequence.Initialisation(ElementKey.of("post", "hoogte", false), new Term.SlotValue(0,
                                 "uitkijkbonus")),
-                        new Consequence.Initialisation(ElementKey.van("post", "bemand", true),
+                        new Consequence.Initialisation(ElementKey.of("post", "bemand", true),
                                 new Term.Const(Boolean.TRUE, null, null))),
                         fault, Consequence.Insertion.STATED, new Consequence.Construction(post, List.of(
                                 new Consequence.Construction.Setting(0, new Binding.Field(post, "hoogte")))), 1,
@@ -257,7 +257,7 @@ final class FormsPlan {
                                 new Consequence.Insert.Mark(Consequence.Insertion.STATED),
                                 new Consequence.Insert.Link("opvolging", true, Consequence.Insertion.STATED)),
                         List.of(0, 1), 2)));
-        Subject withPost = new Subject(wachter, O, List.of(), List.of(), List.of(Binding.van("$post", wachter,
+        Subject withPost = new Subject(wachter, O, List.of(), List.of(), List.of(Binding.of("$post", wachter,
                 "post")));
         rules.add(new RulePlan("koppeling uit de invoer", null, null, table(), List.of(withPost),
                 new Consequence.RelationLink("wachterpost", O, "$post", -1, Consequence.Insertion.LOGICAL)));
@@ -294,14 +294,14 @@ final class FormsPlan {
     static Modelplan channel(Class<?> wachter, Class<?> post, Class<?> inconsistency) {
         List<RulePlan> rules = new ArrayList<>();
         Subject withBonus = new Subject(wachter, O, List.of(), List.of(),
-                List.of(Binding.van("$uitkijkbonus", wachter, "uitkijkbonus")));
+                List.of(Binding.of("$uitkijkbonus", wachter, "uitkijkbonus")));
         rules.add(new RulePlan("sleutel", "proefuniciteit", null,
                 table(new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus")), List.of(withBonus),
                 new Consequence.UniquenessKey(O, "proefuniciteit", 0, List.of(new Term.SlotValue(0, "zijn uitkijkbonus"),
                         new Term.Const(null, null, null), new Term.Call(StaticFunction.FALLBACK, List.of(readOf(0), number("0")),
                                 "zijn uitkijkbonus of 0")), -1, -1, List.of(0), 1, Consequence.Insertion.LOGICAL)));
         Subject withKustvak = new Subject(post, O, List.of(), List.of(),
-                List.of(Binding.van("$hoogte", post, "hoogte"), Binding.van("$kustvak", post, "kustvak")));
+                List.of(Binding.of("$hoogte", post, "hoogte"), Binding.of("$kustvak", post, "kustvak")));
         rules.add(new RulePlan("sleutel met scope en tijdlijn", "proefuniciteit", null,
                 table(heightSlot(), new Read(1, ReadKind.SCOPE, "kustvak", "$kustvak")), List.of(withKustvak),
                 new Consequence.UniquenessKey(O, "proefuniciteit", 1, List.of(readOf(0)), 0, 1, List.of(0, 1), 2,
@@ -315,10 +315,10 @@ final class FormsPlan {
         List<FactPattern> channel = List.of(new FactPattern(inconsistency, "$inconsistentie", List.of(new Alpha("kanaal",
                 List.of(new Alpha.FieldTest("rule", Alpha.Comparator.GELIJK, "proef")))), List.of(), List.of()));
         rules.add(new RulePlan("kanaalstand proef: inconsistent", null, null, table(),
-                List.of(new Exists(channel, Exists.verklaard(channel), Exists.read(channel))),
+                List.of(new Exists(channel, Exists.declared(channel), Exists.read(channel))),
                 new Consequence.InsertChannelState("proef", true, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("kanaalstand proef: consistent", null, null, table(),
-                List.of(new Not(channel, Exists.verklaard(channel), Exists.read(channel))),
+                List.of(new Not(channel, Exists.declared(channel), Exists.read(channel))),
                 new Consequence.InsertChannelState("proef", false, Consequence.Insertion.LOGICAL)));
         return new Modelplan(List.of(), rules);
     }
@@ -329,11 +329,11 @@ final class FormsPlan {
                     + "        return ComputeHelpers.caught(e);",
             "    if (ComputeHelpers.isEvaluationFault(v)) {\n        insertLogical(new Fault($onderwerp, \"proefstapel\","
                     + " ComputeHelpers.designate(v, \"proefstapel\")));\n    } else if (v != null) {",
-            "insertLogical(new Value($onderwerp, ElementKey.van(\"wachter\", \"uitkijkbonus\", false), v,"
+            "insertLogical(new Value($onderwerp, ElementKey.of(\"wachter\", \"uitkijkbonus\", false), v,"
                     + " \"proefstapel\"));",
             "insertLogical(new Decides($onderwerp, \"proefstapel\", 0));",
             "Object r1_afloop0() {\n    return Boolean.TRUE;\n}",
-            "insertLogical(new HasCharacteristic($onderwerp, ElementKey.van(\"wachter\", \"waakzaam\", true)));",
+            "insertLogical(new HasCharacteristic($onderwerp, ElementKey.of(\"wachter\", \"waakzaam\", true)));",
             "Object r2_afloop0() {\n    return Boolean.FALSE;\n}",
             "    if (v != null) {\n        insertLogical(new Decides($onderwerp, \"proefstapel\", 2));\n    }",
             "insertLogical(new Outcome($onderwerp, \"proefstapel\", 1, 2,"
@@ -354,24 +354,24 @@ final class FormsPlan {
     static Modelplan defaults(Class<?> wachter) {
         List<RulePlan> rules = new ArrayList<>();
         Subject withBonus = new Subject(wachter, O, List.of(), List.of(),
-                List.of(Binding.van("$uitkijkbonus", wachter, "uitkijkbonus")));
+                List.of(Binding.of("$uitkijkbonus", wachter, "uitkijkbonus")));
         rules.add(new RulePlan("default 0", "proefstapel", null,
                 table(new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus")), List.of(withBonus),
                 new Consequence.Decision(O, readOf(0), List.of(0), 1, true, new Consequence.FaultName("proefstapel", "proefstapel"),
-                        List.of(new Consequence.StackFact.Value(ElementKey.van("wachter", "uitkijkbonus", false),
+                        List.of(new Consequence.StackFact.Value(ElementKey.of("wachter", "uitkijkbonus", false),
                                 "proefstapel"), new Consequence.StackFact.Decides("proefstapel", 0)),
                         Consequence.Insertion.LOGICAL)));
         Subject subject = new Subject(wachter, O, List.of(), List.of(), List.of());
         rules.add(new RulePlan("default 1", "proefstapel", null, table(), List.of(subject),
                 new Consequence.Decision(O, new Term.Const(Boolean.TRUE, null, null), List.of(), 0, false, null,
-                        List.of(new Consequence.StackFact.Characteristic(ElementKey.van("wachter", "waakzaam", true)),
+                        List.of(new Consequence.StackFact.Characteristic(ElementKey.of("wachter", "waakzaam", true)),
                                 new Consequence.StackFact.Decides("proefstapel", 1)), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("default 2", "proefstapel", null, table(), List.of(subject),
                 new Consequence.Decision(O, new Term.Const(Boolean.FALSE, null, null), List.of(), 0, false, null,
                         List.of(new Consequence.StackFact.Decides("proefstapel", 2)), Consequence.Insertion.LOGICAL)));
         FactPattern decision = new FactPattern(Outcome.class, "$besluit", List.of(new Alpha("lid-besluit", List.of(
-                new Alpha.FieldTest("category", Alpha.Comparator.GELIJK, Outcome.Kind.DECIDED)))), List.of(),
-                List.of(Binding.van(O, Outcome.class, "subject"), Binding.van("$waarde", Outcome.class, "value")));
+                new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, Outcome.Kind.DECIDED)))), List.of(),
+                List.of(Binding.of(O, Outcome.class, "subject"), Binding.of("$waarde", Outcome.class, "value")));
         rules.add(new RulePlan("eens 0", "proefstapel", null, table(new Read(0, ReadKind.DECISION, "besluit",
                 "$waarde")), List.of(decision), new Consequence.Decision(O, readOf(0), List.of(0), 1, false, null,
                 List.of(new Consequence.StackFact.Outcome("proefstapel", 1, 2, Outcome.Kind.DECIDED)),
@@ -381,8 +381,8 @@ final class FormsPlan {
                         new Consequence.StackFact.Outcome("proefstapel", 0, 1, Outcome.Kind.CONFLICT),
                         Consequence.Insertion.LOGICAL)));
         FactPattern conflict = new FactPattern(Outcome.class, "$conflict", List.of(new Alpha("lid-conflict", List.of(
-                new Alpha.FieldTest("category", Alpha.Comparator.GELIJK, Outcome.Kind.CONFLICT)))), List.of(),
-                List.of(Binding.van(O, Outcome.class, "subject"), Binding.van("$sleutel", Outcome.class, "key")));
+                new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, Outcome.Kind.CONFLICT)))), List.of(),
+                List.of(Binding.of(O, Outcome.class, "subject"), Binding.of("$sleutel", Outcome.class, "key")));
         rules.add(new RulePlan("doorgeven wortel", "proefstapel", null, table(new Read(0, ReadKind.CONFLICT_KEY,
                 "conflictsleutel", "$sleutel")), List.of(conflict), new Consequence.Conflict(O, readOf(0), List.of(0), 1,
                 new Consequence.StackFact.Inconsistency(), Consequence.Insertion.LOGICAL)));
@@ -412,7 +412,7 @@ final class FormsPlan {
     static Modelplan folds(Class<?> wachter, Class<?> post, Class<?> kustvak) {
         String v = "$vouwonderwerp";
         FactPattern foldSubject = new FactPattern(kustvak, v, List.of(), List.of(), List.of());
-        Binding height = Binding.van("$hoogte", post, "hoogte");
+        Binding height = Binding.of("$hoogte", post, "hoogte");
         Term matrix = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(readOf(0), number("5"), text(">")),
                 "de hoogte groter dan 5");
         Term depositing = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Division(StaticFunction.DIVIDED, readOf(0),
@@ -498,7 +498,7 @@ final class FormsPlan {
     private static Accumulation places(int n, String field, BetaTest ofMember) {
         return new Accumulation(new FactPattern(ListPlace.class, "$lijstplaats_" + n, List.of(new Alpha("veld-" + n,
                 List.of(new Alpha.FieldTest("field", Alpha.Comparator.GELIJK, field)))), List.of(), List.of(ofMember),
-                List.of(Binding.van("$lijstplaatswaarde_" + n, ListPlace.class, "place"))),
+                List.of(Binding.of("$lijstplaatswaarde_" + n, ListPlace.class, "place"))),
                 List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, "$lijstplaatsen_" + n),
                         new Accumulation.Aggregation(Accumulation.Kind.MINIMUM, "$lijstplaatswaarde_" + n, "$plaats_" + n)));
     }
@@ -539,13 +539,13 @@ final class FormsPlan {
                                 Binding.ReadForm.VALUE, null)));
         FactPattern parameter = new FactPattern(ParameterState.class, "$parameter", List.of(new Alpha("parameter",
                 List.of(new Alpha.FieldTest("parameter", Alpha.Comparator.GELIJK, "drempel")))), List.of(),
-                List.of(Binding.van("$drempel", ParameterState.class, "value")));
+                List.of(Binding.of("$drempel", ParameterState.class, "value")));
         FactPattern evaluationDate = new FactPattern(EvaluationDate.class, "$rekendatum", List.of(new Alpha("geldig",
                 List.of(new Alpha.FieldTest("date", Alpha.Comparator.WITHIN,
                         new Validity(LocalDate.of(2026, 1, 1), null))))), List.of(),
-                List.of(Binding.van("$datum", EvaluationDate.class, "date")));
+                List.of(Binding.of("$datum", EvaluationDate.class, "date")));
         FactPattern outcome = new FactPattern(Outcome.class, "$uitkomst", List.of(new Alpha("rang", List.of(
-                new Alpha.FieldTest("category", Alpha.Comparator.GELIJK, Outcome.Kind.DECIDED),
+                new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, Outcome.Kind.DECIDED),
                 new Alpha.FieldTest("chain", Alpha.Comparator.AT_LEAST, 1),
                 new Alpha.FieldTest("position", Alpha.Comparator.UNDER, 3)))),
                 List.of(new Join("uitkomst", "subject", O)), List.of());
@@ -561,7 +561,7 @@ final class FormsPlan {
         FactPattern contribution = new FactPattern(Contribution.class, "$bijdrage", List.of(new Alpha("vouw", List.of(
                 new Alpha.FieldTest("fold", Alpha.Comparator.GELIJK, "proefvouw")))),
                 List.of(new Join("bijdrage", "subject", O)),
-                List.of(Binding.van("$bijdragewaarde", Contribution.class, "value")));
+                List.of(Binding.of("$bijdragewaarde", Contribution.class, "value")));
         Accumulation fold = new Accumulation(contribution, List.of(
                 new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, "$aantal"),
                 new Accumulation.Aggregation(Accumulation.Kind.SUM, "$bijdragewaarde", "$som"),
@@ -629,11 +629,11 @@ final class FormsPlan {
                         false, "b is als a groter is dan de drempel"),
                 false, "a is de uitkijkbonus plus 1,50");
         List<LhsItem> lhs = List.of(subject, parameter, evaluationDate, outcome, relationLink,
-                new Not(not, Exists.verklaard(not), Exists.read(not)), new Exists(List.of(state),
+                new Not(not, Exists.declared(not), Exists.read(not)), new Exists(List.of(state),
                         List.of("$stand"), List.of(O)), fold,
                 new TestItem("deponering", TestItem.Role.DEPOSIT, test, 14, read, names.length));
         return new RulePlan("alle termen", "proef", "proefgroep", new ReadTable(slots), lhs,
-                new Consequence.Value(O, ElementKey.van("wachter", "risicotoeslag", false), "alle termen", value, read,
+                new Consequence.Value(O, ElementKey.of("wachter", "risicotoeslag", false), "alle termen", value, read,
                         names.length, true, false, new Consequence.Deposit(14, "proef"), new Consequence.FaultName("proef",
                         "alle termen"), Consequence.Insertion.LOGICAL));
     }

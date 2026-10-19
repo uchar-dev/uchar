@@ -47,7 +47,7 @@ class JoinWithTwoNullsWitnessTest {
 
     private static final Path KUSTWACHT = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-kustwacht",
             "ir.json");
-    private static final ElementKey RUSTWACHT = ElementKey.van("wachter", "rustwacht", true);
+    private static final ElementKey RUSTWACHT = ElementKey.of("wachter", "rustwacht", true);
 
     @Test void a_join_whose_both_sides_read_null_meets_nothing_in_both_renderings() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(KUSTWACHT, DroolsBackend.Branch.EXEC_MODEL);
@@ -84,7 +84,7 @@ class JoinWithTwoNullsWitnessTest {
      *  characteristic rustwacht. */
     private static Modelplan plan(Class<?> wachter) {
         Subject subject = new Subject(wachter, "$onderwerp", List.of(), List.of(),
-                List.of(Binding.van("$post", wachter, "post")));
+                List.of(Binding.of("$post", wachter, "post")));
         FactPattern other = new FactPattern(wachter, "$ander", List.of(), List.of(new Join("ander-post", "post", "$post")),
                 List.of());
         return new Modelplan(List.of(), List.of(new RulePlan("join op de post", null, null, new ReadTable(List.of()),

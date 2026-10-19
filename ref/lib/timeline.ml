@@ -298,14 +298,14 @@ let whole_period_value (g : Ir_v0.Ast.grain) ~(tl : t) (pred : Value.t -> bool) 
     | v -> fault "whole-period day count is not numeric: %s" (Value.to_string v)
   in
   let touched = count_days_in g (List.map interval segs) in
-  let goed =
+  let satisfying =
     count_days_in g
       (List.filter_map (fun s -> if pred s.s_value then Some (interval s) else None) segs)
   in
   List.for_all
     (fun (b : segment) ->
       let satisfied =
-        match List.find_opt (fun (x : segment) -> x.s_from = b.s_from) goed with
+        match List.find_opt (fun (x : segment) -> x.s_from = b.s_from) satisfying with
         | Some x -> day_count x
         | None -> 0
       in

@@ -62,7 +62,7 @@ class GraphChainTest {
                 De premie van een Klipjutter moet gesteld worden op 5 indien de Klipjutter ervaren is.
         """;
 
-    private static final ElementKey ERVAREN = ElementKey.van("Jutter", "ervaren", true);
+    private static final ElementKey ERVAREN = ElementKey.of("Jutter", "ervaren", true);
 
     @Test void producer_and_consumer_key_on_the_declaring_type() {
         TwoRoutes.Twin t = TwoRoutes.read(MODEL_CHAIN + PRODUCER_SUPER + CONSUMER_SUB);
@@ -94,9 +94,9 @@ class GraphChainTest {
             """);
         for (RegelSpraakModel m : List.of(t.sourceModel(), t.wire().model())) {
             RegelSpraakModel.ObjectType klipjutter = m.objectTypeByName("Klipjutter");
-            assertEquals(ElementKey.van("Jutter", "gekeurd", true),
+            assertEquals(ElementKey.of("Jutter", "gekeurd", true),
                     ProducerConsumer.elementOf(klipjutter, "gekeurd", true), "het kenmerk is op Jutter gedeclareerd");
-            assertEquals(ElementKey.van("Klipjutter", "gekeurd", false),
+            assertEquals(ElementKey.of("Klipjutter", "gekeurd", false),
                     ProducerConsumer.elementOf(klipjutter, "gekeurd", false), "het gelijknamige attribuut op Klipjutter");
         }
     }

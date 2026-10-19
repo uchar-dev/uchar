@@ -70,6 +70,6 @@ final class TwoRoutes {
     /** The graph's edges as "label -> label", so an assertion reads on names rather than allocated ids. */
     static List<String> edges(RuleGraph g) {
         Map<String, String> label = g.nodes().stream().collect(Collectors.toMap(RuleGraph.Node::id, RuleGraph.Node::label));
-        return g.edges().stream().map(e -> label.get(e.van()) + " -> " + label.get(e.destination())).toList();
+        return g.edges().stream().map(e -> label.get(e.from()) + " -> " + label.get(e.destination())).toList();
     }
 }

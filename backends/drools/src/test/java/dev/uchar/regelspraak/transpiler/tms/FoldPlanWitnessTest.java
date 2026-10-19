@@ -715,7 +715,7 @@ class FoldPlanWitnessTest {
      *  item after it that names the value fails loudly instead of joining a value of the quantification. */
     @Test void the_scope_of_an_exists_includes_the_bindings_of_its_patterns() {
         FactPattern withBinding = new FactPattern(Value.class, "$waarde", List.of(), List.of(),
-                List.of(Binding.van("$v", Value.class, "value")));
+                List.of(Binding.of("$v", Value.class, "value")));
         IllegalArgumentException without = assertThrows(IllegalArgumentException.class,
                 () -> new Exists(List.of(withBinding), List.of("$waarde"), List.of()));
         assertEquals("een bestaat-item declareert de variabelen van zijn patronen en van hun bindingen,"
@@ -734,9 +734,9 @@ class FoldPlanWitnessTest {
      *  of the name as well, and an item after both that names the value still fails loudly. */
     @Test void two_quantifications_each_bind_the_same_local_name() {
         Exists exists = new Exists(List.of(new FactPattern(Value.class, "$eerste", List.of(), List.of(),
-                List.of(Binding.van("$v", Value.class, "value")))), List.of("$eerste", "$v"), List.of());
+                List.of(Binding.of("$v", Value.class, "value")))), List.of("$eerste", "$v"), List.of());
         Not not = new Not(new FactPattern(Value.class, "$tweede", List.of(), List.of(),
-                List.of(Binding.van("$v", Value.class, "value"))));
+                List.of(Binding.of("$v", Value.class, "value"))));
         Consequence channel = new Consequence.InsertChannelState("bestaan", true, Consequence.Insertion.LOGICAL);
         RulePlan two = new RulePlan("twee kwantificaties", null, null, new ReadTable(List.of()),
                 List.of(exists, not), channel);
@@ -833,7 +833,7 @@ class FoldPlanWitnessTest {
             out.add("regel " + p.name() + " | vorm " + p.form() + " | groep " + p.agendaGroup());
             List<String> slots = new ArrayList<>();
             for (Read l : p.readings().slots())
-                slots.add(l.slot() + " " + l.category() + " " + l.name() + " (" + l.key() + ")");
+                slots.add(l.slot() + " " + l.kind() + " " + l.name() + " (" + l.key() + ")");
             out.add("  lezingen " + slots);
             for (LhsItem item : p.leftSide()) {
                 out.add("  " + item(item));
@@ -856,7 +856,7 @@ class FoldPlanWitnessTest {
             case Exists b -> "bestaat binnen " + b.inside() + " buiten " + b.outside() + " "
                     + b.patterns().stream().map(FoldPlanWitnessTest::pattern).toList();
             case Accumulation a -> "accumulatie " + pattern(a.source()) + " functies "
-                    + a.aggregations().stream().map(f -> f.category() + " " + f.source() + " -> " + f.target()).toList();
+                    + a.aggregations().stream().map(f -> f.kind() + " " + f.source() + " -> " + f.target()).toList();
             case TestItem t -> "toets " + t.id() + " " + t.role() + " sonde " + t.depositFlag() + " slots " + t.slots()
                     + " grootte " + t.size() + ": " + TermTree.tree(t.test());
         };

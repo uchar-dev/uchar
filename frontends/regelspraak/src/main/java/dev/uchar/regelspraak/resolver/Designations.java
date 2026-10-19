@@ -262,7 +262,7 @@ final class Designations {
             Designatable element = e.getKey(), source = e.getValue().source();
             String name = element.name();
             int clip = name.length() - source.name().length();
-            if (source.category() != Designatable.Kind.ATTRIBUUT || clip < 1 || name.charAt(clip - 1) != ' '
+            if (source.kind() != Designatable.Kind.ATTRIBUUT || clip < 1 || name.charAt(clip - 1) != ' '
                     || !name.regionMatches(true, clip, source.name(), 0, source.name().length()))
                 throw new IllegalStateException("het gegenereerde element " + element + " heet niet naar zijn bron "
                         + source + ", en de frontend kan er geen benaming voor samenstellen");
@@ -344,7 +344,7 @@ final class Designations {
         List<Designatable> all = model.designatable();
         // a designation on a rule that is no named form on the wire would be lost with the rule's form
         for (Designatable b : model.designations.keySet())
-            if (b.category() == Designatable.Kind.VORM && all.stream().noneMatch(x -> x.equals(b)))
+            if (b.kind() == Designatable.Kind.VORM && all.stream().noneMatch(x -> x.equals(b)))
                 error(
                         "RGS-052", params("name", b.name()), rules.getOrDefault(b, 0));
         for (Vocabulary v : model.vocabularies) {
@@ -392,23 +392,23 @@ final class Designations {
     private void unique(Vocabulary v, List<Designatable> all) {
         for (Designatable.Kind s : List.of(Designatable.Kind.OBJECTTYPE, Designatable.Kind.FEITTYPE,
                 Designatable.Kind.PARAMETER, Designatable.Kind.VORM, Designatable.Kind.REGELGROEP))
-            collisions(v, van(all, s, null), List.of());
+            collisions(v, of(all, s, null), List.of());
         for (Designatable.Kind s : List.of(Designatable.Kind.ROL, Designatable.Kind.ENUMERATIEWAARDE)) {
             List<String> owners = new ArrayList<>();
-            for (Designatable b : all) if (b.category() == s && !owners.contains(b.owner())) owners.add(b.owner());
-            for (String e : owners) collisions(v, van(all, s, e), List.of());
+            for (Designatable b : all) if (b.kind() == s && !owners.contains(b.owner())) owners.add(b.owner());
+            for (String e : owners) collisions(v, of(all, s, e), List.of());
         }
         for (Designatable.Kind s : List.of(Designatable.Kind.ATTRIBUUT, Designatable.Kind.KENMERK))
             for (ObjectType ot : model.objectTypes.values()) {
-                List<Designatable> own = van(all, s, ot.name);
+                List<Designatable> own = of(all, s, ot.name);
                 List<Designatable> members = new ArrayList<>(own);
-                for (ObjectType t : ot.chain().subList(1, ot.chain().size())) members.addAll(van(all, s, t.name));
+                for (ObjectType t : ot.chain().subList(1, ot.chain().size())) members.addAll(of(all, s, t.name));
                 collisions(v, members, own);
             }
     }
 
-    private static List<Designatable> van(List<Designatable> all, Designatable.Kind category, String owner) {
-        return all.stream().filter(b -> b.category() == category
+    private static List<Designatable> of(List<Designatable> all, Designatable.Kind category, String owner) {
+        return all.stream().filter(b -> b.kind() == category
                 && (owner == null || owner.equals(b.owner()))).toList();
     }
 
@@ -434,7 +434,7 @@ final class Designations {
     // --- sentences -------------------------------------------------------------------------------
 
     static Msg description(Designatable b) {
-        return switch (b.category()) {
+        return switch (b.kind()) {
             case OBJECTTYPE -> Msg.frontend("PART.designation.objecttype", "name", b.name());
             case ATTRIBUUT -> Msg.frontend("PART.designation.attribute", "name", b.name(), "owner", b.owner());
             case KENMERK -> Msg.frontend("PART.designation.characteristic-of-type", "name", b.name(), "owner", b.owner());

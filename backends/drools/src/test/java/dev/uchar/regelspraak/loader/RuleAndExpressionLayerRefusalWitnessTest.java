@@ -582,15 +582,15 @@ class RuleAndExpressionLayerRefusalWitnessTest {
     }
 
     @Test void the_kind_of_a_version_is_its_structure() throws Exception {
-        assertEquals(ResolvedRule.Kind.BEREKENING, IrLoader.load(golden(PREMIEVENSTER)).resolvedRules.get(0).category());
-        assertEquals(ResolvedRule.Kind.GELIJKSTELLING, IrLoader.load(golden(KEURSTAAT)).resolvedRules.get(3).category());
+        assertEquals(ResolvedRule.Kind.BEREKENING, IrLoader.load(golden(PREMIEVENSTER)).resolvedRules.get(0).kind());
+        assertEquals(ResolvedRule.Kind.GELIJKSTELLING, IrLoader.load(golden(KEURSTAAT)).resolvedRules.get(3).kind());
         assertEquals(ResolvedRule.Kind.KENMERKTOEKENNING,
-                IrLoader.load(golden(PENNINGDREMPEL)).resolvedRules.get(0).category());
-        assertEquals(ResolvedRule.Kind.INITIALISATIE, IrLoader.load(golden(WAARDERING)).resolvedRules.get(1).category());
+                IrLoader.load(golden(PENNINGDREMPEL)).resolvedRules.get(0).kind());
+        assertEquals(ResolvedRule.Kind.INITIALISATIE, IrLoader.load(golden(WAARDERING)).resolvedRules.get(1).kind());
         // the tag is read as written: equation on the same version is the other computing kind
         ObjectNode ir = golden(PREMIEVENSTER);
         ((ObjectNode) ir.at(VERSION)).put("presentation", "equation");
-        assertEquals(ResolvedRule.Kind.GELIJKSTELLING, IrLoader.load(ir).resolvedRules.get(0).category());
+        assertEquals(ResolvedRule.Kind.GELIJKSTELLING, IrLoader.load(ir).resolvedRules.get(0).kind());
     }
 
     @Test void a_fact_creation_reads_its_target_kind_and_its_path() throws Exception {

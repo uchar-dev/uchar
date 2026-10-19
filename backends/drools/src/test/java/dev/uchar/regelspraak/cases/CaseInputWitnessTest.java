@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * The input step of a case as a consumer calls it ({@link CaseInput}): the case read onto beans, the role links set
  * after RUNTIME-SEMANTICS ch. 5.7a, the {@link Input} that {@link DroolsBackend#insert} takes, and the refusals with
- * the link they name. Every row reads its case through {@link CaseInput#van} and fires, where it fires, through
+ * the link they name. Every row reads its case through {@link CaseInput#of} and fires, where it fires, through
  * {@link DroolsBackend}, as a consumer with a request of its own does; no row goes through the replay's seams, so what
  * holds here holds for a consumer outside this package.
  *
@@ -70,7 +70,7 @@ class CaseInputWitnessTest {
         // directions; nothing fills it toward W1.
         DroolsBackend.Build b = build(KETENBAND);
         for (String c : List.of("case1", "case2", "case3")) {
-            CaseInput input = CaseInput.van(b, caseFile(KETENBAND, c));
+            CaseInput input = CaseInput.of(b, caseFile(KETENBAND, c));
             Map<String, Object> beans = input.beans();
             assertEquals(List.of("W1", "W2", "W3"), List.copyOf(beans.keySet()), c + ": the labels in case order");
             assertSame(beans.get("W1"), field(beans.get("W2"), "voorligger"), c);
@@ -85,7 +85,7 @@ class CaseInputWitnessTest {
         // entry writes the far field too: K2's noordbuur is K1, K3's is K2. case1 writes both legs: the same beans.
         DroolsBackend.Build b = build(KAVELGRENS);
         for (String c : List.of("case1", "case2")) {
-            Map<String, Object> k = CaseInput.van(b, caseFile(KAVELGRENS, c)).beans();
+            Map<String, Object> k = CaseInput.of(b, caseFile(KAVELGRENS, c)).beans();
             assertSame(k.get("K2"), field(k.get("K1"), "zuidbuur"), c);
             assertSame(k.get("K3"), field(k.get("K2"), "zuidbuur"), c);
             assertSame(k.get("K1"), field(k.get("K2"), "noordbuur"), c + ": the far field of K1's link");
@@ -97,11 +97,11 @@ class CaseInputWitnessTest {
 
     @Test void a_reciprocal_role_out_of_a_leg_applies_on_both_sides_and_two_legs_are_a_relation() throws Exception {
         DroolsBackend.Build b = build(MAATSCHAP);
-        Map<String, Object> one = CaseInput.van(b, caseFile(MAATSCHAP, "case1")).beans();
+        Map<String, Object> one = CaseInput.of(b, caseFile(MAATSCHAP, "case1")).beans();
         assertSame(one.get("J2"), field(one.get("J1"), "maat"), "the leg the case writes");
         assertSame(one.get("J1"), field(one.get("J2"), "maat"), "the reverse leg of the separate pass");
         assertNull(field(one.get("J3"), "maat"), "the pass writes no more than the relation");
-        Map<String, Object> two = CaseInput.van(b, maatschap(List.of("J1", "J2", "J3"),
+        Map<String, Object> two = CaseInput.of(b, maatschap(List.of("J1", "J2", "J3"),
                 Map.of("J1", List.of("J2"), "J2", List.of("J1")))).beans();
         assertSame(two.get("J2"), field(two.get("J1"), "maat"));
         assertSame(two.get("J1"), field(two.get("J2"), "maat"));
@@ -110,14 +110,14 @@ class CaseInputWitnessTest {
     // ---------------- WF-013: a second, different target on a to-one field, at each of the four places ----------------
 
     @Test void a_second_target_on_the_own_to_one_role_names_that_link() throws Exception {
-        CaseInput.RoleError f = roleError(() -> CaseInput.van(build(MAATSCHAP), maatschap(List.of("J1", "J2", "J3"),
+        CaseInput.RoleError f = roleError(() -> CaseInput.of(build(MAATSCHAP), maatschap(List.of("J1", "J2", "J3"),
                 Map.of("J1", List.of("J2", "J3")))));
         collision(f, "J1", "maat", "J3");
     }
 
     @Test void a_second_target_on_the_far_field_of_a_one_to_one_relation_names_that_link() throws Exception {
         // K1 and K3 both name K2 as their zuidbuur: the forward fields are two, the far field, K2's noordbuur, is one.
-        CaseInput.RoleError f = roleError(() -> CaseInput.van(build(KAVELGRENS), chain("Duinkavel", "kavelbreedte",
+        CaseInput.RoleError f = roleError(() -> CaseInput.of(build(KAVELGRENS), chain("Duinkavel", "kavelbreedte",
                 List.of("K1", "K2", "K3"), Map.of("K1", Map.of("zuidbuur", List.of("K2")),
                         "K3", Map.of("zuidbuur", List.of("K2"))))));
         collision(f, "K3", "zuidbuur", "K2");
@@ -126,7 +126,7 @@ class CaseInputWitnessTest {
     @Test void a_second_target_on_the_field_of_a_to_many_role_names_that_link() throws Exception {
         // W2 names W3 as its voorligger first; then W1 writes W2 among its opvolgers, which is stored in that same
         // field of W2. The forward write of W2 came first, so the link that collides is W1's.
-        CaseInput.RoleError f = roleError(() -> CaseInput.van(build(KETENBAND), chain("Wachter", "rangnummer",
+        CaseInput.RoleError f = roleError(() -> CaseInput.of(build(KETENBAND), chain("Wachter", "rangnummer",
                 List.of("W2", "W3", "W1"), Map.of("W2", Map.of("voorligger", List.of("W3")),
                         "W1", Map.of("opvolgers", List.of("W2"))))));
         collision(f, "W1", "opvolgers", "W2");
@@ -136,7 +136,7 @@ class CaseInputWitnessTest {
         // J1's maat is J2 and J2's maat is J3: the reverse leg of J1's link would make J2's maat J1. In either order
         // of the instances the pass meets the collision at J1's leg, and names the link J1 wrote.
         for (List<String> order : List.of(List.of("J1", "J2", "J3"), List.of("J2", "J3", "J1"))) {
-            CaseInput.RoleError f = roleError(() -> CaseInput.van(build(MAATSCHAP), maatschap(order,
+            CaseInput.RoleError f = roleError(() -> CaseInput.of(build(MAATSCHAP), maatschap(order,
                     Map.of("J1", List.of("J2"), "J2", List.of("J3")))));
             collision(f, "J1", "maat", "J2");
             assertTrue(((RuntimeException) f).getMessage().contains("de omgekeerde poot botst"), order.toString());
@@ -146,14 +146,14 @@ class CaseInputWitnessTest {
     // ---------------- a link the bean model cannot hold ----------------
 
     @Test void an_unknown_target_label_is_refused_with_the_link() throws Exception {
-        CaseInput.RoleError f = roleError(() -> CaseInput.van(build(KETENBAND), chain("Wachter", "rangnummer",
+        CaseInput.RoleError f = roleError(() -> CaseInput.of(build(KETENBAND), chain("Wachter", "rangnummer",
                 List.of("W1", "W2"), Map.of("W1", Map.of("opvolgers", List.of("W2", "W9"))))));
         refusal(f, "W1", "opvolgers", "W9", "role 'opvolgers' names unknown label W9");
     }
 
     @Test void a_role_without_to_a_reference_field_is_refused_with_the_link() throws Exception {
         // a key that names no role of the self-typed pair: neither by name nor by the pair, which carries two roles
-        CaseInput.RoleError f = roleError(() -> CaseInput.van(build(KETENBAND), chain("Wachter", "rangnummer",
+        CaseInput.RoleError f = roleError(() -> CaseInput.of(build(KETENBAND), chain("Wachter", "rangnummer",
                 List.of("W1", "W2"), Map.of("W1", Map.of("buur", List.of("W2"))))));
         refusal(f, "W1", "buur", "W2", "role 'buur' (Wachter -> Wachter) reaches no to-one reference field: the"
                 + " written role name resolves to no unique role, and neither direction of the type pair derives a"
@@ -169,7 +169,7 @@ class CaseInputWitnessTest {
                 .put("name", "voorligger").set("datatype", JSON.readTree(
                         "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}"));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        CaseInput.RoleError f = roleError(() -> CaseInput.van(b, chain("Wachter", "rangnummer", List.of("W1", "W2"),
+        CaseInput.RoleError f = roleError(() -> CaseInput.of(b, chain("Wachter", "rangnummer", List.of("W1", "W2"),
                 Map.of("W2", Map.of("voorligger", List.of("W1"))))));
         refusal(f, "W2", "voorligger", "W1", "role 'voorligger' resolves to the to-one role 'voorligger' on Wachter,"
                 + " which shares its name with a declared member — the bean cannot carry the reference field"
@@ -204,7 +204,7 @@ class CaseInputWitnessTest {
         assertEquals(new ScenarioResult(report.name(), report.status(), expectations,
                 new ScenarioResult.Trace(firings), entry.coverage(), entry.diagnostic()), report);
         // and a collision names the ids
-        CaseInput.RoleError f = roleError(() -> CaseInput.van(build(KAVELGRENS), chain("Duinkavel", "kavelbreedte",
+        CaseInput.RoleError f = roleError(() -> CaseInput.of(build(KAVELGRENS), chain("Duinkavel", "kavelbreedte",
                 List.of("kavel-1", "kavel-2", "kavel-3"), Map.of("kavel-1", Map.of("zuidbuur", List.of("kavel-2")),
                         "kavel-3", Map.of("zuidbuur", List.of("kavel-2"))))));
         collision(f, "kavel-3", "zuidbuur", "kavel-2");
@@ -218,13 +218,13 @@ class CaseInputWitnessTest {
         // written members in the order written, then the mirrored ones by label in byte order ("W10" < "W2"), and
         // W3, in both, once, where it was written.
         DroolsBackend.Build b = build(KETENBAND);
-        CaseInput input = CaseInput.van(b, chain("Wachter", "rangnummer", List.of("W1", "W9", "W3", "W2", "W10"),
+        CaseInput input = CaseInput.of(b, chain("Wachter", "rangnummer", List.of("W1", "W9", "W3", "W2", "W10"),
                 Map.of("W1", Map.of("opvolgers", List.of("W9", "W3")), "W3", Map.of("voorligger", List.of("W1")),
                         "W10", Map.of("voorligger", List.of("W1")), "W2", Map.of("voorligger", List.of("W1")))));
         Map<String, Object> w = input.beans();
         List<Input.ToManyList> lists = input.inputData().lists();
         assertEquals(1, lists.size(), () -> "one list: " + lists);
-        assertSame(w.get("W1"), lists.get(0).houder());
+        assertSame(w.get("W1"), lists.get(0).holder());
         assertEquals("voorligger", lists.get(0).role());
         assertEquals(List.of("W9", "W3", "W10", "W2"), labels(w, lists.get(0).members()));
         // insert takes it, and the session counts the four
@@ -255,7 +255,7 @@ class CaseInputWitnessTest {
 
     @Test void a_scalar_on_a_timeline_is_a_bucket_scalar_and_a_timeline_is_not() throws Exception {
         DroolsBackend.Build b = build("jutterswet-penningjaar");
-        CaseInput scalar = CaseInput.van(b, penningjaar("{ \"number\": \"14\" }"));
+        CaseInput scalar = CaseInput.of(b, penningjaar("{ \"number\": \"14\" }"));
         Object j1 = scalar.beans().get("J1");
         List<Input.Bucket> emmers = scalar.inputData().emmers();
         assertEquals(1, emmers.size(), () -> "one bucket scalar: " + emmers);
@@ -265,13 +265,13 @@ class CaseInputWitnessTest {
         assertEquals(1, tl.size(), "the bean holds the one segment of the asOfDate bucket");
         assertEquals(LocalDate.of(2026, 1, 1), RegelSpraakRuntime.get(tl.get(0), "van"));
         assertEquals(LocalDate.of(2027, 1, 1), RegelSpraakRuntime.get(tl.get(0), "tot"));
-        CaseInput timeline = CaseInput.van(b, penningjaar(
+        CaseInput timeline = CaseInput.of(b, penningjaar(
                 "{ \"timeline\": [ { \"from\": \"2026-01-01\", \"to\": \"2027-01-01\", \"value\": { \"number\": \"14\" } } ] }"));
         assertEquals(List.of(), timeline.inputData().emmers(), "a full timeline is no bucket scalar");
     }
 
     @Test void input_is_at_each_call_fresh_and_beans_is_not_to_be_changed() throws Exception {
-        CaseInput input = CaseInput.van(build(KETENBAND), caseFile(KETENBAND, "case2"));
+        CaseInput input = CaseInput.of(build(KETENBAND), caseFile(KETENBAND, "case2"));
         Input one = input.inputData(), two = input.inputData();
         assertNotSame(one, two);
         one.bean(new Object());
@@ -286,9 +286,9 @@ class CaseInputWitnessTest {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         try (URLClassLoader own = new URLClassLoader(new URL[0], previous)) {
             Thread.currentThread().setContextClassLoader(own);
-            CaseInput.van(b, caseFile(MAATSCHAP, "case1"));
+            CaseInput.of(b, caseFile(MAATSCHAP, "case1"));
             assertSame(own, Thread.currentThread().getContextClassLoader());
-            assertThrows(CaseInput.RoleCollision.class, () -> CaseInput.van(b, maatschap(List.of("J1", "J2", "J3"),
+            assertThrows(CaseInput.RoleCollision.class, () -> CaseInput.of(b, maatschap(List.of("J1", "J2", "J3"),
                     Map.of("J1", List.of("J2", "J3")))));
             assertSame(own, Thread.currentThread().getContextClassLoader());
         } finally {
@@ -301,8 +301,8 @@ class CaseInputWitnessTest {
         for (String c : List.of("{ \"asOfDate\": null }", "{ \"input\": { \"parameters\": {} } }",
                 "{ \"input\": { \"instances\": {} } }")) {
             IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                    () -> CaseInput.van(b, JSON.readTree(c)));
-            assertTrue(e.getMessage().startsWith("CaseInput.van: de case draagt geen array input.instances"),
+                    () -> CaseInput.of(b, JSON.readTree(c)));
+            assertTrue(e.getMessage().startsWith("CaseInput.of: de case draagt geen array input.instances"),
                     e.getMessage());
         }
     }
@@ -310,7 +310,7 @@ class CaseInputWitnessTest {
     // ---------------- the whole corpus, through the entries alone ----------------
 
     @Test void every_case_of_the_corpus_plays_via_the_entries_as_in_the_report() throws Exception {
-        // Every golden with case files, read with CaseInput.van and played with insert, vuur, setDerivedValues and
+        // Every golden with case files, read with CaseInput.of and played with insert, vuur, setDerivedValues and
         // vergelijk as a consumer plays it, gives per case the ScenarioResult of the report: verdict, expectations,
         // firings, coverage, and for a form not carried the MARKER with the replay's reason.
         int goldens = 0, cases = 0, played = 0;
@@ -452,7 +452,7 @@ class CaseInputWitnessTest {
 
     /** The dividends of the divisions by zero that stand at the fixpoint of case {@code c}, as "n gedeeld door 0". */
     private static List<String> rootFaults(DroolsBackend.Build b, JsonNode c) {
-        Fixpoint f = fire(b, CaseInput.van(b, c), Map.of());
+        Fixpoint f = fire(b, CaseInput.of(b, c), Map.of());
         List<String> out = new ArrayList<>();
         for (var fault : f.faults()) {
             java.util.regex.Matcher m = java.util.regex.Pattern.compile("square root of (\\d+)")
@@ -523,7 +523,7 @@ class CaseInputWitnessTest {
     /** Case {@code c} as a consumer plays it: read through {@link CaseInput}, its parameters and asOfDate as globals,
      *  put in, fired with a waarnemer, written back and compared. */
     private static ScenarioResult play(DroolsBackend.Build b, String name, JsonNode c) {
-        CaseInput input = CaseInput.van(b, c);
+        CaseInput input = CaseInput.of(b, c);
         Map<Object, String> label = new IdentityHashMap<>();
         input.beans().forEach((l, bean) -> label.put(bean, l));
         ClassLoader previous = Thread.currentThread().getContextClassLoader();

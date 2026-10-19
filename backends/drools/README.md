@@ -80,7 +80,7 @@ consumer does.
    where the order of a to-many list is not the order of the beans, `role` being the role the holder plays, the name
    of the reference field each member holds toward it. `insert` states the facts the branch reads from these
    (`BucketInput`, `ListPlace`), so a consumer states no fact class of the branch itself.
-   `CaseInput.van(build, case)` makes that `Input` from a `uchar-case-v0` case, as the replay makes it for every
+   `CaseInput.of(build, case)` makes that `Input` from a `uchar-case-v0` case, as the replay makes it for every
    case: it reads `asOfDate` and `input.instances` onto fresh beans, sets the attributes, characteristics and role
    links (RUNTIME-SEMANTICS ch. 5.7a: the written role by name, else by the type pair; on a one-to-one relation the
    far field as well; a to-many role in the far end's field; the reverse leg of a reciprocal role in a separate

@@ -46,7 +46,7 @@ public final class WritersConflict extends IllegalStateException {
      *  writers as {@link #inDocumentOrder} ranks them over the document's rules {@code documentOrder}, and the
      *  object's own type named by the type in {@code types} whose bean class's simple name stands at the same place in
      *  {@code typeClasses}, or by that simple name where none does. */
-    static WritersConflict van(Object subject, String attribute, List<Value> values, List<?> documentOrder,
+    static WritersConflict of(Object subject, String attribute, List<Value> values, List<?> documentOrder,
                                   List<?> typeClasses, List<?> types) {
         List<Value> ordered = new ArrayList<>(values);
         ordered.sort(inDocumentOrder(documentOrder));

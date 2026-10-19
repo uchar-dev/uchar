@@ -7,4 +7,4 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
  * named after what it reads. A binder and a probe have neither key nor variable: no pattern binds them, the consequence
  * fills them.
  */
-public record Read(int slot, ReadKind category, String key, String name) {}
+public record Read(int slot, ReadKind kind, String key, String name) {}

@@ -777,7 +777,7 @@ public final class IrEmitter {
      *  sign refusal, so both read it here. */
     public static String numberLexeme(String value) {
         if (!RATIONAL.matcher(value).matches()) return value.replace(',', '.');
-        BigDecimal[] r = dev.uchar.regelspraak.model.RationalParser.van(value);
+        BigDecimal[] r = dev.uchar.regelspraak.model.RationalParser.of(value);
         java.math.BigInteger numerator = r[0].toBigIntegerExact(), denominator = r[1].toBigIntegerExact();
         java.math.BigInteger divisor = numerator.gcd(denominator);
         numerator = numerator.divide(divisor);
@@ -1106,7 +1106,7 @@ public final class IrEmitter {
             }
             case Condition.Predicate p -> {
                 w.key("node").value("Predicate");
-                w.key("kind").value(Spelling.PREDICATE_KIND.spelling(p.category()));
+                w.key("kind").value(Spelling.PREDICATE_KIND.spelling(p.kind()));
                 w.key("operand"); expr(p.operand());
                 if (p.dayKind() != null) w.key("dayKind").value(p.dayKind());
                 w.key("negated").value(p.negation());
@@ -1377,7 +1377,7 @@ public final class IrEmitter {
      *  attribute reference, and a name that is both an attribute and a characteristic of the subject type decides
      *  no member, so such a target is refused (WF-022). */
     private void ruleVersion(ResolvedRule r) {
-        if (r.category() == null)
+        if (r.kind() == null)
             throw new IllegalStateException("IrEmitter: regel '" + r.name() + "' heeft geen soort; de wire schrijft "
                     + "een versie als initialisatie of niet, met of zonder presentatie");
         if (!(r.target() instanceof Expr.AttributeReference d))
@@ -1401,9 +1401,9 @@ public final class IrEmitter {
         w.key("target"); expr(d);
         w.key("value"); expr(r.value());
         if (r.condition() != null) { w.key("condition"); condition(r.condition()); }
-        w.key("initialisation").value(r.category() == ResolvedRule.Kind.INITIALISATIE);
-        if (r.category() == ResolvedRule.Kind.GELIJKSTELLING || r.category() == ResolvedRule.Kind.BEREKENING)
-            w.key("presentation").value(Spelling.PRESENTATION.spelling(r.category()));
+        w.key("initialisation").value(r.kind() == ResolvedRule.Kind.INITIALISATIE);
+        if (r.kind() == ResolvedRule.Kind.GELIJKSTELLING || r.kind() == ResolvedRule.Kind.BEREKENING)
+            w.key("presentation").value(Spelling.PRESENTATION.spelling(r.kind()));
         w.endObject();
         huidigSubject = null;
     }
