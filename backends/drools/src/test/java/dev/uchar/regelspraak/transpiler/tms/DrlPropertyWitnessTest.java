@@ -86,13 +86,13 @@ class DrlPropertyWitnessTest {
             if (n.drlProperty() != null) {
                 read++;
                 for (Map.Entry<String, String> u : places(p, n.drlProperty(), n, null).entrySet())
-                    if (!u.getValue().equals("leest")) faults.add(name + " | " + n.drlProperty() + " | " + u.getKey()
+                    if (!u.getValue().equals("reads")) faults.add(name + " | " + n.drlProperty() + " | " + u.getKey()
                             + " | " + u.getValue());
             } else {
                 refused++;
                 // the property the stem gives, which the helper withholds: some place does not read it as the member
                 String stam = n.getter().substring(3), own = Character.toLowerCase(stam.charAt(0)) + stam.substring(1);
-                if (places(p, own, n, null).values().stream().allMatch("leest"::equals))
+                if (places(p, own, n, null).values().stream().allMatch("reads"::equals))
                     faults.add(name + " | " + own + " | wordt overal gelezen, en de hulp geeft geen naam");
             }
         }
@@ -108,7 +108,7 @@ class DrlPropertyWitnessTest {
         for (String name : names) {
             Namen.Lidnamen n = Namen.lidnamen(Namen.property(name));
             for (Map.Entry<String, String> u : places(p, n.drlProperty(), n, n.drlProperty()).entrySet())
-                if (!u.getValue().equals("leest")) faults.add(name + " | " + u.getKey() + " | " + u.getValue());
+                if (!u.getValue().equals("reads")) faults.add(name + " | " + u.getKey() + " | " + u.getValue());
         }
         assertEquals(List.of(), faults, "leden die een global van dezelfde naam verdringt");
     }
@@ -125,14 +125,14 @@ class DrlPropertyWitnessTest {
                 DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
                 String text = DrlRendering.text(b.execModelTranspiler().modelplan());
                 List<String> faults = DrlRenderingWitnessTest.compile(text, b.beanLoader());
-                outcome.add(name + " | " + (faults.isEmpty() ? "compileert" : "compileert niet: " + faults.get(0)));
+                outcome.add(name + " | " + (faults.isEmpty() ? "compiles" : "does not compile: " + faults.get(0)));
             } catch (DrlRendering.Refusal w) {
                 outcome.add(name + " | " + w.getMessage());
             } finally {
                 Files.delete(ir);
             }
         }
-        assertEquals(List.of("ışık | compileert", "日 X | compileert",
+        assertEquals(List.of("ışık | compiles", "日 X | compiles",
                 "in | de DRL-weergave draagt het lid \"in\" nog niet",
                 "drools | de DRL-weergave draagt het lid \"drools\" nog niet",
                 "nil | de DRL-weergave draagt het lid \"nil\" nog niet"), outcome);
@@ -150,13 +150,13 @@ class DrlPropertyWitnessTest {
             Namen.Lidnamen n = Namen.lidnamen(Namen.property(name));
             if (n.drlProperty() != null) {
                 read++;
-                for (Map.Entry<String, String> u : places(p, n.drlProperty(), n, null, KENMERK).entrySet())
-                    if (!u.getValue().equals("leest")) faults.add(name + " | " + n.drlProperty() + " | " + u.getKey()
+                for (Map.Entry<String, String> u : places(p, n.drlProperty(), n, null, CHARACTERISTIC).entrySet())
+                    if (!u.getValue().equals("reads")) faults.add(name + " | " + n.drlProperty() + " | " + u.getKey()
                             + " | " + u.getValue());
             } else {
                 refused++;
                 String stam = n.getter().substring(3), own = Character.toLowerCase(stam.charAt(0)) + stam.substring(1);
-                if (places(p, own, n, null, KENMERK).values().stream().allMatch("leest"::equals))
+                if (places(p, own, n, null, CHARACTERISTIC).values().stream().allMatch("reads"::equals))
                     faults.add(name + " | " + own + " | wordt overal gelezen, en de hulp geeft geen naam");
             }
         }
@@ -177,16 +177,16 @@ class DrlPropertyWitnessTest {
                 String text = DrlRendering.text(b.execModelTranspiler().modelplan());
                 String drl = Namen.lidnamen(Namen.property(name)).drlProperty();
                 List<String> faults = DrlRenderingWitnessTest.compile(text, b.beanLoader());
-                outcome.add(name + " | " + (faults.isEmpty() ? "compileert" : "compileert niet: " + faults.get(0))
-                        + (text.contains("(" + drl + ")") ? ", gespeld als " + drl : ", niet gespeld als " + drl));
+                outcome.add(name + " | " + (faults.isEmpty() ? "compiles" : "does not compile: " + faults.get(0))
+                        + (text.contains("(" + drl + ")") ? ", spelled as " + drl : ", not spelled as " + drl));
             } catch (DrlRendering.Refusal w) {
                 outcome.add(name + " | " + w.getMessage());
             } finally {
                 Files.delete(ir);
             }
         }
-        assertEquals(List.of("ışık | compileert, gespeld als işık", "日 X | compileert, gespeld als 日X",
-                "not | compileert, gespeld als not",
+        assertEquals(List.of("ışık | compiles, spelled as işık", "日 X | compiles, spelled as 日X",
+                "not | compiles, spelled as not",
                 "in | de DRL-weergave draagt het lid \"in\" nog niet",
                 "drools | de DRL-weergave draagt het lid \"drools\" nog niet"), outcome);
     }
@@ -215,9 +215,9 @@ class DrlPropertyWitnessTest {
     private record MemberKind(Class<?> type, String test, Object setValue, Object empty) {}
 
     private static final MemberKind ATTRIBUUT = new MemberKind(BigDecimal.class, " != null", new BigDecimal("7.25"), null);
-    private static final MemberKind KENMERK = new MemberKind(boolean.class, " == true", Boolean.TRUE, Boolean.FALSE);
+    private static final MemberKind CHARACTERISTIC = new MemberKind(boolean.class, " == true", Boolean.TRUE, Boolean.FALSE);
 
-    /** Per place of a pattern, what a rule that spells the number attribute as {@code s} reads ("leest", or what went
+    /** Per place of a pattern, what a rule that spells the number attribute as {@code s} reads ("reads", or what went
      *  otherwise), in a text that declares a global {@code global} where that is not null. */
     private static Map<String, String> places(Trial p, String s, Namen.Lidnamen n, String global) throws Exception {
         return places(p, s, n, global, ATTRIBUUT);
@@ -242,7 +242,7 @@ class DrlPropertyWitnessTest {
         return out;
     }
 
-    /** "leest" where the rule of {@code text} reads the member: set through the generator's {@code setter}, a binding
+    /** "reads" where the rule of {@code text} reads the member: set through the generator's {@code setter}, a binding
      *  gives the value and a test lets the bean through; not set, a binding gives what the member then holds and a
      *  test stops the bean. Else what it gave, or the first compile error. */
     private static String fire(String text, Trial p, String setter, boolean value, String global, MemberKind category)
@@ -255,7 +255,7 @@ class DrlPropertyWitnessTest {
             helper.addContent(text, PACKAGE.replace('.', '/') + "/r.drl");
             Results result = helper.verify();
             for (Message m : result.getMessages(Message.Level.ERROR))
-                return "compileert niet: " + m.getText().replace('\n', ' ');
+                return "does not compile: " + m.getText().replace('\n', ' ');
             KieBase kb = helper.build(EqualityBehaviorOption.EQUALITY);
             List<Object> whenSet, empty;
             try {
@@ -263,12 +263,12 @@ class DrlPropertyWitnessTest {
                 empty = session(kb, p.javaClass(), setter, category, category.empty(), global);
             } catch (RuntimeException f) {
                 // MVEL compiles a constraint on first use, so "drools == true" fails only when the session fires
-                return "vuurt niet: " + String.valueOf(f.getMessage()).replace('\n', ' ');
+                return "does not fire: " + String.valueOf(f.getMessage()).replace('\n', ' ');
             }
-            boolean goed = value ? whenSet.equals(List.of(category.setValue()))
+            boolean correct = value ? whenSet.equals(List.of(category.setValue()))
                     && empty.equals(java.util.Collections.singletonList(category.empty()))
                     : whenSet.size() == 1 && empty.isEmpty();
-            return goed ? "leest" : "gezet " + whenSet + ", leeg " + empty;
+            return correct ? "reads" : "set " + whenSet + ", empty " + empty;
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }

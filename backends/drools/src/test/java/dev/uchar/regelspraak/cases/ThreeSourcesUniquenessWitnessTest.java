@@ -60,7 +60,7 @@ class ThreeSourcesUniquenessWitnessTest {
         for (Path casePath : cases) {
             String which = casePath.getFileName().toString();
             String dump = BranchDumps.equal(ir, JSON.readTree(casePath.toFile()), which);
-            assertTrue(dump.contains("feit UniquenessKey(uniqueness=String(\"eenmalige reekscode\"), source=Integer(2),"
+            assertTrue(dump.contains("fact UniquenessKey(uniqueness=String(\"eenmalige reekscode\"), source=Integer(2),"
                     + " element=\"D1\""), () -> "de sleutel van de derde bron staat niet in de dump van " + which + ":\n"
                     + dump);
         }
