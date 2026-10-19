@@ -284,7 +284,7 @@ final class RuleChecker {
                 + "\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(b.name());
     }
 
-    /** The type on {@code t}'s chain that declares attribute {@code naam}. */
+    /** The type on {@code t}'s chain that declares attribute {@code name}. */
     private static ObjectType attributeDeclarant(ObjectType t, String name) {
         for (ObjectType k : t.chain())
             for (String a : k.attributes.keySet())
@@ -887,10 +887,10 @@ final class RuleChecker {
         }
     }
 
-    /** "cel van het gedimensioneerde attribuut 'premie' (dimensie seizoen, label 'voorjaar')" when {@code naam} is
+    /** "cel van het gedimensioneerde attribuut 'premie' (dimensie seizoen, label 'voorjaar')" when {@code name} is
      *  a dimensioned attribute of {@code ot} with its preposition and one of its labels written behind it as one
      *  name ("premie in voorjaar"), else null. Single-dimension attributes, the suffix form — the shape
-     *  {@code ExpressionBuilder.dimensionCell} reads. */
+     *  {@link ExpressionBuilder#dimensionCell} reads. */
     private Msg cellAsName(ObjectType ot, String name) {
         for (var e : ot.dimensionedMembers().entrySet()) {
             if (e.getValue().size() != 1) continue;
@@ -927,7 +927,7 @@ final class RuleChecker {
      *  quantifier fold. The window gates the RULE (RUNTIME-SEMANTICS ch. 3.10); a quantifier that complements or
      *  counts its verdict reads it as something no clause specifies. Before this fence each such document was
      *  written without a word and refused by the verifier. The walk mirrors the verifier's: every condition the
-     *  emitter writes (the roots {@code Resolver.reportUnresolved} sweeps), into the conditions nested in
+     *  emitter writes (the roots {@link Resolver#reportUnresolved} sweeps), into the conditions nested in
      *  expressions, with {@link Condition#containsTimeWindow} as the window test — the reach of its
      *  {@code cond_has_window}. One ERROR per offending composite or fold, so {@link Resolver#irMode} writes
      *  nothing. */
@@ -2339,7 +2339,7 @@ final class RuleChecker {
     private static final Condition ALTIJD =
             new Condition.Compound(Condition.Quantifier.ALLE, 0, List.of(), Source.synthetic("altijd"));
 
-    /** The resolved versions of the rule named {@code naam} — matched exactly or by the "&lt;naam&gt; #k" version
+    /** The resolved versions of the rule named {@code name} — matched exactly or by the "&lt;naam&gt; #k" version
      *  suffix. Empty when no such rule resolved (it was a non-scalar construct, or the name is unknown). */
     private List<ResolvedRule> resolvedOf(String name) {
         List<ResolvedRule> result = new ArrayList<>();
@@ -2677,7 +2677,7 @@ final class RuleChecker {
         }
     }
 
-    /** The object type whose own attribute {@code naam} the target {@code target} writes, or null: a navigated target
+    /** The object type whose own attribute {@code name} the target {@code target} writes, or null: a navigated target
      *  never reaches here (the target fixes the subject). */
     private static ObjectType ownTarget(Expr targetName, String name) {
         if (!(targetName instanceof Expr.AttributeReference d) || d.objectType() == null || !sameName(d.attribute(), name))
@@ -3153,7 +3153,7 @@ final class RuleChecker {
      *  split is needed and that was checked rather than assumed: this set has exactly ONE reader, the
      *  fold-source test in {@link #checkSetRead}, and it is the frontend's only collection of fold
      *  kinds at all — the count's own element derivation keys on {@code kind == AANTAL} directly
-     *  ({@code ExpressionBuilder.aggregationElement}) and never consults this set. So the narrowing moves
+     *  ({@link ExpressionBuilder#aggregationElement}) and never consults this set. So the narrowing moves
      *  the set fence and nothing else. The SENTINEL half has no counterpart here: the frontend writes
      *  the row-1 wart from its own route and WF-093 governs it, which is why the bare count stays
      *  clean under this narrowing and its witness says so. */
@@ -5734,7 +5734,7 @@ final class RuleChecker {
      *  verb lint all apply unchanged. Null when the name is no kenmerk of the element (a §8.1.7 rolcheck
      *  among them), which keeps the caller's marker rather than inventing a membership.
      *
-     *  <p>{@code naam} is the name as written: the caller has put back in front of the operator's name what
+     *  <p>{@code name} is the name as written: the caller has put back in front of the operator's name what
      *  the greedy onderwerp parse pulled INTO the member phrase ("geen van de wachten van de Schouwploeg NIET
      *  gediplomeerd is" leaves the anchor's bareName reading "Schouwploeg niet" and the operator's the bare
      *  kenmerk), so the ordinary verbatim-first de-negation handles a "niet" or "geen" there and a kenmerk

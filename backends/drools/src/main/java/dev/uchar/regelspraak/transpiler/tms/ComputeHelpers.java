@@ -519,7 +519,7 @@ public final class ComputeHelpers {
 
     /**
      * The temporal total of the subject's own timeline without a clip (RUNTIME-SEMANTICS ch. 3.6): of the input
-     * {@code input} of the attribute {@code naam}, which takes the asOfDate-bucket scalar, the session's date being the
+     * {@code input} of the attribute {@code name}, which takes the asOfDate-bucket scalar, the session's date being the
      * horizon: {@code rsTijdTotaal} of the one period of the grid {@code granularity} that holds the evaluation date
      * ({@link BucketScalar}), and leeg where the attribute has no input. A full timeline faults, in the reference
      * interpreter's words and naming {@code subject}, and so does a session without an evaluation date, where the
@@ -596,7 +596,7 @@ public final class ComputeHelpers {
     /** The §9.5 inconsistency of the form {@code form} on {@code subject} with {@code codes}, the EF codes of the kinds
      *  it deposits (RUNTIME-SEMANTICS ch. 5.6, 5.7b): an instance of the class the fact model generates for it
      *  ({@link TmsTranspiler#INCONSISTENCY}), found through the context class loader as the runtime finds it
-     *  ({@code RegelSpraakRuntime.newInconsistentie}). */
+     *  ({@link RegelSpraakRuntime#newInconsistentie}). */
     public static Object inconsistency(String form, Object subject, List<?> codes) {
         try {
             ClassLoader tccl = Thread.currentThread().getContextClassLoader();
@@ -758,7 +758,7 @@ public final class ComputeHelpers {
 
     /** The member {@code property}, a bean property ({@code plan.Binding.Field#property}), of the bean
      *  {@code object}, through the getter the bean generator wrote for it on the object's own class
-     *  ({@code Accessors.leesEigenschap}); null where {@code object} is null, a link that is absent. */
+     *  ({@link Accessors#leesEigenschap}); null where {@code object} is null, a link that is absent. */
     public static Object readProperty(Object object, String property) {
         return Accessors.leesEigenschap(object, property);
     }
@@ -993,7 +993,7 @@ public final class ComputeHelpers {
         return !Outcome.equal(((Outcome) x).value(), ((Outcome) y).value());
     }
 
-    /** The creation depth of the object that the object creation {@code naam} of stratum {@code stratum} makes for a
+    /** The creation depth of the object that the object creation {@code name} of stratum {@code stratum} makes for a
      *  subject of declared type {@code type}, whose own marks are {@code origin}, the {@link CreationStamp} facts whose object
      *  is the subject: none for an object of the input, one for an object a creation made. It is one more than the
      *  subject's depth in this stratum, where an object of the input and one a lower stratum made stand at 0, since a

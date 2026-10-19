@@ -578,7 +578,9 @@ A gate that gets no floor carries one sentence in its script saying why.
 - Every identifier is English: classes, interfaces, records, enums and
   their constants, methods, fields, variables, OCaml modules, types,
   constructors and functions, ASP predicates, shell variables, CLI flags
-  and test names; so is every file and directory name.
+  and test names; so is every file and directory name. Existing card
+  files in `backlog/new/` keep their Dutch names; a new card follows the
+  rule.
 - Where the wire has a name for a concept, the code uses it
   (`emptyFallback`, not `leegwaarde`); otherwise the term of the English
   spec text (`spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`). This holds
@@ -595,14 +597,20 @@ A gate that gets no floor carries one sentence in its script saying why.
   English, also when it is spelled like one of them or was read by a
   test; owner's decisions 2026-10-18 and 2026-10-19):
   1. domain content: the Jutterswet, declared names, RegelSpraak sources,
-     case labels, the `jutterswet-*` names;
+     case labels, the `jutterswet-*` names, the golden slugs `synth*` (names
+     from the synthetic casus, which is own domain content) and `ww-*` (the
+     WW, a Dutch statute; both owner's decision on card `rename-paths`,
+     2026-10-19), and a case file name that carries such a label
+     (`case2-leeg-lijst.json`);
   2. RegelSpraak keywords: the lexer's literals and the token names that
      spell them (`NEGATIEF`, `GEEN`);
   3. the parser rules and labels of the RegelSpraak grammar and what ANTLR
      generates from them: `FeitTypeNaamContext`, `ctx.feitTypeNaam()`,
      `visitFeitTypeNaam`. A plain Java field, record component, method
      or variable that happens to be spelled like a rule (`tekst`,
-     `periode`, `naam`) is English;
+     `periode`, `naam`) is English. The grammar has a few inherited mixed
+     rule names (`objectTypeDefinition` beside `objectTypeExtensie`); they
+     stay, because an ANTLR name is not renamed;
   4. enum constants that are the v0 spelling and reach `name()` in a
      message, a dump or the wire: the families of `ir/Spelling.java` (the
      section `waarden` of `spec/proposals/v1-naamtabel.json`, compared by
@@ -611,14 +619,20 @@ A gate that gets no floor carries one sentence in its script saying why.
      `Designatable.Kind` and their mirrors in `backends/drools`
      (`FactModelGenerator.Origin.Kind`, `TestItem.Role`), which the
      distribution writes into its JSON;
-  5. what the production runtime reads (below).
+  5. what the production runtime reads (below);
+  6. the variable names in the DRL text the Drools backend generates
+     (`$houder`, `uitkomst`): the text is the output of the plan, and the
+     tests pin it.
 - Not renamed, each for its reason: the production runtime under
   `backends/drools/src/main/java/dev/uchar/regelspraak/runtime/` (gate 1
   recognises a copy by its names) and the members of `backends/drools`
   that it reads (`Namen`, `Namen.lidnamen`, the getters of `Period` it
-  looks up by reflection); the 47 TOKA fragments `toka/casus/toka-*.rgs`,
-  which stay verbatim (the two tests under `toka/src/test/java` are own
-  work and follow every rename mechanically); v0 names where they stand as
+  looks up by reflection); the generated fact-model classes `Inconsistentie`
+  and `Segment(van, tot, waarde)` (`schema/FactModelGenerator.java`), which
+  the runtime builds and reads by name; the 47 TOKA fragments
+  `toka/casus/toka-*.rgs`, which stay verbatim (the two tests under
+  `toka/src/test/java` are own work and follow every rename
+  mechanically); v0 names where they stand as
   v0 names (IR-SPEC "v0 name:", CONSTRUCTS, `spec/proposals/`); git
   history and `backlog/done/`. Messages and prose that quote a RegelSpraak
   term, a v0 wire name or a Dutch diagnostic stay as written.

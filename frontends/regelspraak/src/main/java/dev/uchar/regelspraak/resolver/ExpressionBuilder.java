@@ -59,7 +59,7 @@ final class ExpressionBuilder {
     // definition sees exactly what pass 1 saw there: earlier declarations only, a forward reference still unbound.
     private Map<String, Expr> visible = variables;
 
-    /** One §13.4.2.10 declared variable in BINDER form: its lookup {@code key}, the {@code naam} the Let binder
+    /** One §13.4.2.10 declared variable in BINDER form: its lookup {@code key}, the {@code name} the Let binder
      *  and every BinderRef carry (the written name minus a leading bepaald lidwoord), the resolved value, and the
      *  declaration's source anchor. */
     record Variable(String key, String name, Expr value, Source source) {}
@@ -95,7 +95,7 @@ final class ExpressionBuilder {
      * against the subject, so {@link #setSubject} must be called BEFORE this.
      *
      * <p><b>Why two forms.</b> A rule's voorwaarde and its waarde are two SEPARATE wire fields
-     * ({@code ResolvedRule.condition} is a {@link Condition}, {@code .waarde} an {@link Expr}), and a ch. 4.10
+     * ({@code ResolvedRule.condition} is a {@link Condition}, {@code .value} an {@link Expr}), and a ch. 4.10
      * {@code Let} is an Expr node — so no Let can span them. A variable read in the RESULT part therefore becomes a
      * {@link Expr.BinderRef} under the Let chain {@link #wrapWithVariables} builds (sharing survives: two reads,
      * one Let); a variable read in the VOORWAARDE keeps the v0 route and is SUBSTITUTED at its use site. What that
@@ -744,7 +744,7 @@ final class ExpressionBuilder {
 
     /* The RegelSpraak SOURCE readers: the §13.2.19/.21 DATE token as the author wrote it, day-first, the
      * variable-width day and month the token admits cut to one or two digits, matched whole. They live here
-     * and not in kern.Literals because Literalen is the WIRE reader the back-ends link, and the wire carries
+     * and not in core.Literals because Literals is the WIRE reader the back-ends link, and the wire carries
      * the ISO lexeme alone (WF-084, WF-095); until 2026-09-23 the two were one reader, so every back-end also
      * read the snippet that no conforming document carries (card datumtijd-lezers-versmalling). The Drools
      * backend's build excludes this package, so no back-end can reach these. */
@@ -2594,7 +2594,7 @@ final class ExpressionBuilder {
         return referenceWithOrdinal(k.onderwerpKeten());
     }
 
-    /** §5.5.3: how many universele onderwerpen ("een &lt;naam&gt;") the enclosing rule binds under {@code naam} —
+    /** §5.5.3: how many universele onderwerpen ("een &lt;naam&gt;") the enclosing rule binds under {@code name} —
      *  the mentions a rangtelwoord indexes ("de plaats van het bedoelde onderwerp in de regel"). A definite
      *  back-reference is a REFERENCE to a binding, not a new one, so only the indefinite form counts. */
     private int countBindings(ParserRuleContext ref, String name) {
@@ -2609,7 +2609,7 @@ final class ExpressionBuilder {
         return n;
     }
 
-    /** §5.5.3/§13.2.12 consume a rangtelwoord on a reference to the onderwerp {@code naam}. Returns null when
+    /** §5.5.3/§13.2.12 consume a rangtelwoord on a reference to the onderwerp {@code name}. Returns null when
      *  the reference may resolve as the BARE form — the ordinal trivially selects the rule's single (or sole
      *  implied) binding — or the Expr that replaces it:
      *  - positie beyond the rule's same-named bindings: ERROR (the rule does not name that many onderwerpen);
@@ -2984,7 +2984,7 @@ final class ExpressionBuilder {
                 && model.fillsSelfRole(currentSubject, anchor);
     }
 
-    /** The {@link Parameter} named {@code naam} (lidwoord-stripped) when it is Percentage-typed — the §13.4.17.12
+    /** The {@link Parameter} named {@code name} (lidwoord-stripped) when it is Percentage-typed — the §13.4.17.12
      *  "het percentage P van V" left operand. Null otherwise. §13.4.17.12 lets a '%' follow P, and the name parts
      *  take it as a word of their own ("percentage havengeld %"), so a trailing '%' is no part of the name. */
     private Parameter percentageParameter(String name) {
@@ -3183,7 +3183,7 @@ final class ExpressionBuilder {
         return k.universeelOnderwerp() != null ? k.universeelOnderwerp().kaleNaam() : null;
     }
 
-    /** Whether {@code naam} is a DECLARED plural — an objecttype's "(mv: …)" or a feittype role's. It is
+    /** Whether {@code name} is a DECLARED plural — an objecttype's "(mv: …)" or a feittype role's. It is
      *  what tells a bare "de &lt;leden&gt; van de &lt;X&gt;" written as a SET from an ordinary to-one
      *  navigation ("de reis van de passagier"), so only the former hears that a quantifier fold declined.
      *  Declared forms only: RegelSpraak defines no plural morphology (§3.1 footnote 2), and a synthesised
@@ -3289,7 +3289,7 @@ final class ExpressionBuilder {
         return new Expr.DimensionCellRead(ref, List.of(bestLabel), source);
     }
 
-    /** The declared label of {@code d} that equals {@code naam} case-insensitively (returning the declared
+    /** The declared label of {@code d} that equals {@code name} case-insensitively (returning the declared
      *  spelling), or null. */
     private static String dimensionLabel(RegelSpraakModel.Dimension d, String name) {
         for (String w : d.values()) if (w.equalsIgnoreCase(name)) return w;
@@ -3457,7 +3457,7 @@ final class ExpressionBuilder {
      *  <p>{@code lexemeText} is the ENUM_LITERAL TOKEN text, and the bron snippet is that token rather than
      *  {@link DefinitionResolver#src}: an ENUM_LITERAL is one lexer token, so the token IS the whole source
      *  slice, while src() folds every whitespace run to a single space. The DECLARATION keeps the token text
-     *  ({@code DefinitionResolver.enumeration}), so a folded label would not equal a declared value carrying a
+     *  ({@link DefinitionResolver#enumeration}), so a folded label would not equal a declared value carrying a
      *  whitespace run — before this, such a value could not be written at all: the membership check read the
      *  folded snippet and refused a correct document. The bron is also where {@link #enumAgainstContext} reads
      *  the label back from, which is why the marker must carry the unfolded token. */
@@ -3480,7 +3480,7 @@ final class ExpressionBuilder {
      *  value (ch. 10.6): {@code Daarbij geldt: de tint is 'gaaf'} writes exactly what the bare literal writes
      *  and must reach the wire in the same shape. Rebuilding the chain is not cosmetic — the Let and its
      *  BinderRef are typed FROM the value, so an unpromoted chain carries the unknown sentinel at three
-     *  positions WF-034 (r) refuses instead of one. The descent follows the shape {@code RuleChecker.peeled}
+     *  positions WF-034 (r) refuses instead of one. The descent follows the shape {@link RuleChecker#peeled}
      *  follows, and stops where that one still resolves: a body that reads an OUTER binder past an inner Let
      *  stays a marker, loud and honest, rather than being half-promoted. */
     static Expr enumAgainstContext(Expr candidate, Datatype context) {

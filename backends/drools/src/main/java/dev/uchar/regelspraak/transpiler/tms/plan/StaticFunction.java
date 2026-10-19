@@ -110,7 +110,7 @@ public enum StaticFunction {
      *  known; a leeg value and a value that is no number pass unchanged. The function of a {@link Term.Restate}. */
     RESTATE(ComputeHelpers.class, "restate", false),
     /** One step of a listed fold that keeps the least operand (ch. 1.2e): from the value so far and the next operand,
-     *  a leeg operand skipped, a tie taking the later one, compared exactly ({@code ComputeHelpers.compare}). The function
+     *  a leeg operand skipped, a tie taking the later one, compared exactly ({@link ComputeHelpers#compare}). The function
      *  of a {@link Term.ListedFold}. */
     SMALLEST(ComputeHelpers.class, "smallest", false),
     /** As {@link #SMALLEST}, keeping the greatest operand. */

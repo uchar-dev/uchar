@@ -23,13 +23,13 @@ public record Binding(String target, List<Field> path, Field field, ReadForm for
         return new Binding(target, List.of(), new Field(javaClass, field), ReadForm.VALUE, null);
     }
 
-    /** A property {@code naam} of the objects of {@code javaClass}, as the document declares the member or as a fact of
+    /** A property {@code name} of the objects of {@code javaClass}, as the document declares the member or as a fact of
      *  the branch names its component, and {@code property}, the property a rendering reads or writes: the name of
      *  the bean property, whose getter and setter are the member's ({@link Namen#property}), and on a fact of the
      *  branch the component itself. */
     public record Field(Class<?> javaClass, String name, String property) {
 
-        /** The property {@code naam} of the objects of {@code javaClass}, with the bean property it has. */
+        /** The property {@code name} of the objects of {@code javaClass}, with the bean property it has. */
         public Field(Class<?> javaClass, String name) {
             this(javaClass, name, Namen.property(name));
         }

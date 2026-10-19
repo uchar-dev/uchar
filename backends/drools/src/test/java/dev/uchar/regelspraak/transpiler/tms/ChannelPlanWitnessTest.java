@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * constraint ids in their order, among them an identity join on the subject pattern that reads a reference field on the
  * other side and a constraint between two keys by value; and whose consequence carries every decision as a field, with
  * what it computes as a route of the plan ({@code plan.Route}): the keys of a uniqueness, the fault of a key's form and
- * the facts of a distribution, which {@code Allocation.bereken} computes. This witness pins those plans as text, per
+ * the facts of a distribution, which {@code Allocation.compute} computes. This witness pins those plans as text, per
  * plan in order: the name, the form and the group; the slots, each with its kind, its variable and its key; every item
  * of the left-hand side in order with its kind, its pattern class, its constraint ids, each field test with its path
  * and its form of reading, its joins with the reference field they read on the other side, its constraints by value

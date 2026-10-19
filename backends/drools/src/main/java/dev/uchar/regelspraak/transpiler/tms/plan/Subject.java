@@ -2,7 +2,7 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
 
 import java.util.List;
 
-/** The pattern of the rule's subject: a bean of {@code beanClass}, bound to the variable {@code naam}, with its
+/** The pattern of the rule's subject: a bean of {@code beanClass}, bound to the variable {@code name}, with its
  *  constraints on the bean alone ({@code alpha}), its identity joins to objects a pattern before it binds
  *  ({@code joins}), its other constraints between the bean and such an object ({@code betaTests}), and the values the
  *  rule binds off it, in that order. */

@@ -165,7 +165,7 @@ class LetNeedWitnessTest {
                 .formatted(type, binder, value, body, binder);
     }
 
-    /** NB the wire field is {@code name}, not {@code naam}. */
+    /** NB the wire field is {@code name}, not {@code name}. */
     private static String bref(String name, String type) {
         return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(name, name);
     }

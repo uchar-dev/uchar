@@ -13,7 +13,7 @@ public record Accumulation(FactPattern source, List<Aggregation> aggregations) i
         if (aggregations.isEmpty()) throw new IllegalArgumentException("een accumulatie vouwt met ten minste één functie");
     }
 
-    /** {@code category} over the matched object itself where {@code source} is null, else over the variable {@code source}
+    /** {@code kind} over the matched object itself where {@code source} is null, else over the variable {@code source}
      *  that the pattern binds, into the variable {@code target}. */
     public record Aggregation(Kind kind, String source, String target) {}
 

@@ -60,7 +60,7 @@ import java.util.TreeSet;
  *   <li>The constraints that decide which fact a pattern matches stay DRL constraints: the key of a fact, a null
  *       test, the rank of a control fact and an identity join, so that Drools indexes them. A test of a class goes
  *       through a route, since the text imports no bean class. A member of a bean stands as the name Drools reads
- *       the generator's getter under ({@code Namen.lidnamen}); a member Drools reads as something else under that
+ *       the generator's getter under ({@link Namen#lidnamen}); a member Drools reads as something else under that
  *       name, a word of DRL or MVEL, is refused by name.</li>
  *   <li>A join meets nothing where a side reads null, as the identity join of the executable model does: where the
  *       pattern's side is a field and the other side can read null, a field of an object or a value a binding binds,
@@ -209,7 +209,7 @@ final class DrlRendering {
         return Namen.drlString(s);
     }
 
-    /** The one public method of {@code javaClass} called {@code naam}; the witnesses of the routes hold that there is one. */
+    /** The one public method of {@code javaClass} called {@code name}; the witnesses of the routes hold that there is one. */
     private static Method method(Class<?> javaClass, String name) {
         Method out = null;
         for (Method m : javaClass.getMethods())
@@ -542,7 +542,7 @@ final class DrlRendering {
 
         /** How the text spells the field {@code property} of an object of {@code javaClass}: a component of a fact of
          *  the branch by its name, a member of a bean by the name Drools reads its getter under
-         *  ({@code Namen.lidnamen}); a member {@code naam} that Drools reads as something else where a pattern spells
+         *  ({@link Namen#lidnamen}); a member {@code name} that Drools reads as something else where a pattern spells
          *  its name is refused, by name, since a constraint on it could hold or fail without a word. */
         private String fieldName(Class<?> javaClass, String property, String name) {
             if (!isBean(javaClass)) return property;
@@ -1243,7 +1243,7 @@ final class DrlRendering {
 
         /** The distribution of {@link Consequence.Payout}: the facts of the route, each inserted. The method stands as its
          *  enumeration label, which MVEL reads in the argument of a call (FABLE-3 §2.2), the decimals as an
-         *  {@code Integer} or null, and the keys as {@code ElementKey.of}. */
+         *  {@code Integer} or null, and the keys as {@link ElementKey#of}. */
         private void payout(Consequence.Payout x, StringBuilder b) {
             b.append("    for (Object feit : ").append(route(Route.PAYOUT)).append("(").append(str(x.form()))
                     .append(", ").append(x.subject()).append(", ").append(enumlabel(x.method())).append(", ")

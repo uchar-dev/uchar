@@ -219,7 +219,7 @@ public final class DefinitionResolver {
         refuseShadowedMembers();
     }
 
-    /** What the document DOES declare {@code naam} as, when it is not an object type — so the refusal can
+    /** What the document DOES declare {@code name} as, when it is not an object type — so the refusal can
      *  say "een domein, geen objecttype" instead of sending the author hunting for a typo. Null when the
      *  name is not declared at all. */
     private String nameKind(String name) {
@@ -1407,7 +1407,7 @@ public final class DefinitionResolver {
                 "RGS-032", params("carrier", carrier, "category", category, "name", name, "word", words.get(error), "example", String.join(" ", example)), line));
     }
 
-    /** The index, among the tokens of {@code naam} lexed on their own, of the first word that keeps the
+    /** The index, among the tokens of {@code name} lexed on their own, of the first word that keeps the
      *  {@code bareName} of rule text from reading the whole name; -1 when it reads it. {@code words} receives the
      *  tokens' texts. */
     static int unreadableWord(String name, List<String> words) {

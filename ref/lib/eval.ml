@@ -3086,7 +3086,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
           | Some (k, _) ->
               failwith
                 (Printf.sprintf
-                   "ref/lib/eval.ml, run_object_creatie: object creation \"%s\" of stratum %d meets \
+                   "ref/lib/eval.ml, run_object_creation: object creation \"%s\" of stratum %d meets \
                     the subject %s, which a creation of stratum %d minted"
                    name stratum self.label k)
         in

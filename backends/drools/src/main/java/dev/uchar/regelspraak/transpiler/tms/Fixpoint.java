@@ -23,7 +23,7 @@ import java.util.Objects;
  * @param links     every link a creation laid, an object creation's link to its new object among them
  * @param faults          the evaluation faults that stand, as data, in the order {@link TmsTranspiler#setDerivedValues}
  *                        reports them: by the name of the form, then by the sentence
- * @param inconsistencies the §9.5 deposits, the beans of the generated class {@code Inconsistency}, each with its rule
+ * @param inconsistencies the §9.5 deposits, the beans of the generated class {@code Inconsistentie}, each with its rule
  *                        and its subject
  */
 public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> characteristics, List<MadeObject> objects,

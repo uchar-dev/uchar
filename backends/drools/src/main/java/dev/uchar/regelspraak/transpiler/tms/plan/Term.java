@@ -58,14 +58,14 @@ public sealed interface Term {
     record Input(Term object, Binding.Field field, Binding.ReadForm form, String source) implements Term {}
 
     /**
-     * The read of the binder {@code naam} of the {@link Let} whose slot is {@code slot} (RUNTIME-SEMANTICS ch. 10.6): the
+     * The read of the binder {@code name} of the {@link Let} whose slot is {@code slot} (RUNTIME-SEMANTICS ch. 10.6): the
      * first read evaluates the {@code Let}'s value and every further one reads that result; a leeg value ends that
      * {@code Let} with leeg.
      */
     record Binder(int slot, String name, String source) implements Term {}
 
     /**
-     * {@code body} with the binder {@code naam} bound to {@code value} as a need (RUNTIME-SEMANTICS ch. 10.6): the
+     * {@code body} with the binder {@code name} bound to {@code value} as a need (RUNTIME-SEMANTICS ch. 10.6): the
      * value is evaluated at the first read of the binder ({@link Binder}, slot {@code slot}, which no pattern binds) and
      * not at all where the body reads none. {@code eager} holds where the body reads the binder before anything else of
      * it can fault, deposit or end an evaluation, so that evaluating the value before the body gives the same outcome,
@@ -194,7 +194,7 @@ public sealed interface Term {
      */
     record WithoutFault(Term condition, String source) implements Term {}
 
-    /** The predicate of the day kind {@code naam} over a calendar day: a constant of the document, which reads nothing
+    /** The predicate of the day kind {@code name} over a calendar day: a constant of the document, which reads nothing
      *  of working memory (IR-SPEC ch. 3.7, WF-031). */
     record DayKind(String name, Predicate<LocalDate> datePredicate, String source) implements Term {}
 }

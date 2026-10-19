@@ -55,7 +55,7 @@ public final class ProducerConsumer {
     }
 
     /**
-     * The element identity of member {@code naam} touched through {@code holder} — keyed by the type on
+     * The element identity of member {@code name} touched through {@code holder} — keyed by the type on
      * {@code holder}'s chain that DECLARES it (IR-SPEC ch. 2.2), so producer and consumer meet on one key.
      *
      * <p>This is the whole ⊑-awareness of this analysis, and it sits HERE rather than in each reader because
@@ -225,7 +225,7 @@ public final class ProducerConsumer {
      * ch. 7.9: a descendant's read is the group's read). The walk is that of {@link #forms}, which takes the group's
      * reads from here, so the union of every justification and consequence set is exactly that group's
      * {@link Form#reads()}. A consumer that names the default where a read falls outside a scope reads the default's own
-     * source text ({@code Default.source()}, or that of its justification or consequence) beside the path.
+     * source text ({@link Default#source}, or that of its justification or consequence) beside the path.
      */
     public static List<DefaultRead> readings(RegelSpraakModel model, PrioritizedDefaults group, Navigation navigation) {
         return readDefaults(model, group, java.util.Objects.requireNonNull(navigation, "navigation"));

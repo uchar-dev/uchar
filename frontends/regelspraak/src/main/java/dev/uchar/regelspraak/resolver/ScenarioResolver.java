@@ -178,7 +178,7 @@ public final class ScenarioResolver {
         ownBlocks.put(name, block);
     }
 
-    /** The blocks situation {@code naam} contributes, in merge order: each basis expanded in written order, then its
+    /** The blocks situation {@code name} contributes, in merge order: each basis expanded in written order, then its
      *  own block. A basis that names no situation, or that closes a cycle, is an ERROR at the basis. */
     private List<BlockResult> foldOut(String name, List<String> path) {
         List<BlockResult> done = expandedBlocks.get(name);

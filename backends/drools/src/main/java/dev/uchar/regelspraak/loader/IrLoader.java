@@ -97,7 +97,7 @@ import java.util.Map;
  * {@link Datatype.DateTime}. The exact factor becomes the record's decimal {@code factorToCanonical} — a whole
  * number exactly, any other fraction rounded to 16 significant digits ({@link MathContext#DECIMAL64}), the rounding
  * the frontend gives a declared "1/N" — and the unit system keeps the fraction itself beside it
- * ({@code UnitSystem.exactFactors}). From there this backend restates between units with the ratio of those
+ * ({@link UnitSystem#exactFactors}). From there this backend restates between units with the ratio of those
  * decimals, where {@code ref} reckons with the fraction: a tracked delta of the Drools backend (CONSTRUCTS row 26). The
  * corpus does not see it, since every factor there is a whole number, but a verifier-clean document the frontend
  * emits does: with a unit declared "= 1/3" of another, 1.00 of the one plus 3.00 of the other reads 1.9999999999999999
@@ -234,14 +234,14 @@ public final class IrLoader {
      *           <li>a {@link ResolvedObjectCreation} — IR-SPEC ch. 3.3 {@code connectingRole}, naming the role the
      *               CREATED object plays. It is the only route to the back-link of a SELF-TYPED pair, whose
      *               by-pair derivation is ambiguous by construction (two same-typed sibling roles); ch. 5.5 makes
-     *               it authoritative, and {@code ref/lib/eval.ml}'s {@code run_object_creatie} lets it WIN over
+     *               it authoritative, and {@code ref/lib/eval.ml}'s {@code run_object_creation} lets it WIN over
      *               the type-pair derivation.</li>
      *           <li>an {@link Expr.FunctionCall} aggregation — {@code sourceRole}, naming the role the aggregated ELEMENT
      *               plays. Same self-typed gap: "de som van de rang van alle opvolgers van de Wachter" joins two
      *               Wachters, which no by-pair search can disambiguate.</li>
      *           <li>a {@link ResolvedAllocation} — IR-SPEC ch. 3.2 {@code connectingRole}, naming the role the
      *               RECIPIENT plays. It decides the recipient join in both transpiler branches
-     *               (V1-WIREMIGRATIE P3), as {@code run_verdeling} lets it decide in ref; since L2 the wire
+     *               (V1-WIREMIGRATIE P3), as {@code run_allocation} lets it decide in ref; since L2 the wire
      *               requires it.</li>
      *           <li>a {@link Condition.RoleMembership} — the IR-SPEC ch. 4.5 {@code RoleMembership}, whose binding is its
      *               {@code factType} and the {@code role} the SUBJECT plays. The record is the carrier: its
@@ -689,7 +689,7 @@ public final class IrLoader {
         table.put(name, value);
     }
 
-    /** The declared name {@code naam} collides with under {@link Namen#norm}, or null. */
+    /** The declared name {@code name} collides with under {@link Namen#norm}, or null. */
     private static String collision(java.util.Collection<String> names, String name) {
         String key = Namen.norm(name);
         for (String n : names) if (Namen.norm(n).equals(key)) return n;
@@ -881,7 +881,7 @@ public final class IrLoader {
      *  PROTOCOL keyed on the DECLARED SUBJECT NAME: a startpuntbepaling declares a synthetic attribute
      *  on a named objecttype, and {@code hasVariableStart}, {@code startPointMember} and
      *  {@code isStartPointMember} all key on that name (see the note at
-     *  {@code RegelSpraakModel.hasVariableStart}: resolving one of the four through the chain only
+     *  {@link RegelSpraakModel#hasVariableStart}: resolving one of the four through the chain only
      *  moves the seam). Two sites, and they fall independently:
      *
      *  <p>(a) an ancestor declares an attribute riding a named tijdlijn WITH A VARIABEL STARTPUNT.
@@ -1979,7 +1979,7 @@ public final class IrLoader {
             Expr.FunctionKind.SOM, Expr.FunctionKind.TOTAAL, Expr.FunctionKind.MINIMUM, Expr.FunctionKind.MAXIMUM,
             Expr.FunctionKind.EERSTE, Expr.FunctionKind.LAATSTE, Expr.FunctionKind.AANTAL_GEVULDE);
 
-    /** Does {@code naam} name a declared role — by its declared name or its declared plural, in the WF-001 form? */
+    /** Does {@code name} name a declared role — by its declared name or its declared plural, in the WF-001 form? */
     private boolean isRoleName(String name) {
         for (FactType ft : m.factTypes.values())
             for (RegelSpraakModel.Role r : ft.roles)
@@ -1987,7 +1987,7 @@ public final class IrLoader {
         return false;
     }
 
-    /** Does {@code naam} name a role reachable from {@code st}: the far role of a two-role fact type whose near role
+    /** Does {@code name} name a role reachable from {@code st}: the far role of a two-role fact type whose near role
      *  {@code st} fills (⊑ through the supertype chain, ch. 2.6), or the one role of a reciprocal fact type it
      *  fills? */
     private boolean isRoleNameFrom(ObjectType st, String name) {

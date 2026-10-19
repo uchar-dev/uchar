@@ -1735,7 +1735,7 @@ let map_predicates f s =
 
 (* a leaf's truth in the pass before a creation ([leaf_reads_role]): the rules
    its translation wrote, [segment], written again under names of their own,
-   with every role atom read from the case's own links (inputrol/3), so that a
+   with every role atom read from the case's own links (inputrole/3), so that a
    member a creation adds is in no range; its guards and the model's own
    predicates are not written again. Returns its atoms under those names *)
 let pre_clone ctx segment atoms =
@@ -1848,7 +1848,7 @@ let role_canonical (r : role_ref) =
   | Some m, None -> m
   | None, None -> fault "role without a name"
 
-(* ch. 3.4b / WF-102: the fold source's range as rol/3 atoms, one per
+(* ch. 3.4b / WF-102: the fold source's range as role/3 atoms, one per
    step, ending on the element variable [x]. The one-step form is the
    node's sourceRole; a sourcePath walks two or more steps through fresh
    intermediate variables. The range is written, never derived (B12). A
@@ -3899,7 +3899,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         in
         ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v, scale)
       | Some rbs ->
-        (* the navigated read (ch. 5.8): one rol/3 body join per to-one
+        (* the navigated read (ch. 5.8): one role/3 body join per to-one
            hop — an absent link leaves the body underivable, which IS the
            leeg-on-absent-relation rule (leeg as absence, for free). The
            hop roles are the bindings, resolved through ref's resolver. *)
@@ -7380,7 +7380,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          existence over the relation, never a count and never a pick, so the
          number of links the far end holds is no part of it. The subject's
          links are read over the OTHER role of the fact type (a reciprocal
-         fact type's one role is its own other end): positive, a rol/3 join
+         fact type's one role is its own other end): positive, a role/3 join
          whose far variable is free, N groundings collapsing onto one head;
          negated, a helper deriving that presence, negated as failure, with
          the subject kept bound by the caller's is_a base. A counterpart
@@ -7390,7 +7390,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          declared filler needs no literal. Reading the subject's OWN links is
          reading the relation, not a direction (ch. 5.7a): the case emission
          mirrors every supplied link and every materialised reverse leg into
-         rol/3 alike. *)
+         role/3 alike. *)
       let own, other =
         match
           Ir_v0.Checks.resolve_binding { doc = ctx.doc } { rb_fact_type = fact_type; rb_role = role }
@@ -10040,8 +10040,8 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
    ref/'s deterministic label. Member initialisations become val/heeft
    heads on the term; the back-link relation (the explicit
    connectingRole binding, else the uniquely-derivable pair) lands both
-   rol/3 ends. The 1:1 shape's linked-instance guard reads the INPUT
-   links only (inputrol/3, the case facts) — the same input-snapshot
+   role/3 ends. The 1:1 shape's linked-instance guard reads the INPUT
+   links only (inputrole/3, the case facts) — the same input-snapshot
    narrowing ref/ records for its guard.
 
    In a document with a recursive creation every creation grounds along a
@@ -10214,15 +10214,15 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   end
 
 (* fact creation (IR-SPEC ch. 3.4; RUNTIME-SEMANTICS ch. 5.5): the join
-   chain becomes a body join over rol/3, and the head derives the
-   created relation's rol/3 facts — both ends, exactly the two
+   chain becomes a body join over role/3, and the head derives the
+   created relation's role/3 facts — both ends, exactly the two
    directions ref/'s writer lands; set semantics carries the
    idempotence (a target reached along two paths is one atom). The
    symbolic form is the whole of the relational content; the wire
    requires it (B7). *)
 let translate_fact_creation ctx (fc : resolved_fact_creation) =
   (* the ch. 8.2 validity gate: an excluded fact creation does not apply —
-     no rol/3 lands and its to-one guards stay unemitted (ref adds no
+     no role/3 lands and its to-one guards stay unemitted (ref adds no
      link, so no second-filler fault can arise from this form) *)
   if applies ctx fc.fc_validity then begin
   let ftn = fc.fc_fact_type in
@@ -10750,7 +10750,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
      STRICT SUPERTYPE of doelType, and the role then reaches instances this
      allocation does not target. One derived predicate carries the
      intersection and every recipient body below joins on it instead of
-     rol/3 — including the wrap fences and the recipient counts, which must
+     role/3 — including the wrap fences and the recipient counts, which must
      see the same set the shares are computed over. `isa/2` is the
      chain-closed relation the solver derives (the isa_sub block in
      [translate]), so where the filler is doelType or below — every
@@ -11125,7 +11125,7 @@ let translate_uniqueness ctx (u : resolved_uniqueness) =
     List.mapi (fun i k -> uni_key_atom ctx ~otype:subject_ot ~label ~pos:i k) keys
   in
   (* the scope hop (ch. 5.9, WF-054): both rows join the same scope
-     parent — an instance without the rol/3 atom (scope-less) never
+     parent — an instance without the role/3 atom (scope-less) never
      matches, the pinned runtime's narrowing for free *)
   let scope_atoms =
     (* D12: the scope is the binding; a uniqueness without it is unscoped *)
@@ -11407,7 +11407,7 @@ let translate_case ctx (case : Case.t) =
               emit ctx "role(%s,%s,%s)." (str_raw label) (str canonical) (str_raw t);
               (* the 1:1 creation guard reads the input links only
                  (ch. 5.5's snapshot narrowing) — mirror them as
-                 inputrol/3 when a creation could consult them *)
+                 inputrole/3 when a creation could consult them *)
               if doc.object_creations <> [] then
                 emit ctx "inputrole(%s,%s,%s)." (str_raw label) (str canonical) (str_raw t))
             targets)

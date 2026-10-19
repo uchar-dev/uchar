@@ -414,7 +414,7 @@ public final class TmsTranspiler {
     public Set<String> listFields() { return Set.copyOf(listFields); }
 
     /**
-     * The size of the lowering of one effective defaults stack, counted when it is built: {@code naam} as the manifest
+     * The size of the lowering of one effective defaults stack, counted when it is built: {@code name} as the manifest
      * and the control facts name it, whether it took the general form (exception groups, or more than one group at the
      * root) or the simple one, the number of Drools rules it consists of, and the kinds of control fact those rules
      * insert ({@link ControlFact}). The standing rules of the target are shared with every other reader and not counted.
@@ -1547,7 +1547,7 @@ public final class TmsTranspiler {
         return out;
     }
 
-    /** The key rule of source {@code b} of the uniqueness {@code naam}: over the instances of the source's type, gated
+    /** The key rule of source {@code b} of the uniqueness {@code name}: over the instances of the source's type, gated
      *  on the evaluation date by the form's validity, the key components and the parent bound, and the instance's
      *  {@link UniquenessKey} inserted logically where it takes part ({@link #unionUniquenessRules}). An enumeration
      *  component is compared as the declared name it is, up to normalisation (ch. 5.6).
@@ -1607,7 +1607,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The rule beside the key rule of source {@code b} of the uniqueness {@code naam} where its key has a component on a
+     * The rule beside the key rule of source {@code b} of the uniqueness {@code name} where its key has a component on a
      * timeline: over the instances of the source's type, gated by the form's validity, the components up to that one
      * bound as the key rule binds them, the test that every component before it is gevuld and that the case gives the
      * timeline as the asOfDate-bucket scalar ({@link BucketScalar}), and a consequence that inserts the fault of
@@ -1664,7 +1664,7 @@ public final class TmsTranspiler {
         return new Term.Call(StaticFunction.CHANNEL, List.of(new Term.SlotValue(i, null)), source(rv.source()));
     }
 
-    /** Whether the form named {@code naam}, spelled as the error facts carry it, fills a channel this branch lowers. */
+    /** Whether the form named {@code name}, spelled as the error facts carry it, fills a channel this branch lowers. */
     private boolean channelProducer(String name) {
         if (name == null) return false;
         for (ResolvedConsistency c : model.consistencies) if (name.equals(c.name())) return true;
@@ -1885,7 +1885,7 @@ public final class TmsTranspiler {
         return out;
     }
 
-    /** Attribute {@code naam} of {@code holder} as an allocation reads or writes it as a number: the pot, a share, the
+    /** Attribute {@code name} of {@code holder} as an allocation reads or writes it as a number: the pot, a share, the
      *  rest, a weight or a cap, {@code role} naming which. The distribution computes with numbers only, so another
      *  datatype is refused by name. */
     private Member numberMember(ObjectType holder, String name, Msg role) {
@@ -2143,13 +2143,13 @@ public final class TmsTranspiler {
         return found;
     }
 
-    /** Whether role {@code r} carries the name {@code naam} and is filled by exactly {@code type}. */
+    /** Whether role {@code r} carries the name {@code name} and is filled by exactly {@code type}. */
     private static boolean fills(RegelSpraakModel.Role r, String name, ObjectType type) {
         return name != null && Namen.norm(r.name()).equals(Namen.norm(name))
                 && type.name.equalsIgnoreCase(r.objectTypeName());
     }
 
-    /** The guard of an object creation beside its condition: no {@link CreationStamp} of creation {@code naam} for the
+    /** The guard of an object creation beside its condition: no {@link CreationStamp} of creation {@code name} for the
      *  subject, so that it makes one object per subject, and no {@link CreationStamp} that made the subject itself in the
      *  current phase, bound at {@code phase} ({@link Reads#creationPhase}), so that an object waits for the next phase,
      *  after the rule layer has reached a fixpoint over it. */
@@ -2164,7 +2164,7 @@ public final class TmsTranspiler {
                         List.of(new BetaTest(id("nieuw-in-deze-fase"), StaticFunction.IN_PHASE, f)), List.of())));
     }
 
-    /** The evaluation stratum of the creation {@code form}, named {@code naam}: every creation is a form of the
+    /** The evaluation stratum of the creation {@code form}, named {@code name}: every creation is a form of the
      *  dependency graph, so a creation without one is a fault of this transpiler. */
     private int stratum(Object form, String name) {
         Integer s = strata.get(form);
@@ -2774,7 +2774,7 @@ public final class TmsTranspiler {
         if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
     }
 
-    /** The constraint {@code category} on the outcome a reconciliation binds: of stack {@code naam}, settled as
+    /** The constraint {@code category} on the outcome a reconciliation binds: of stack {@code name}, settled as
      *  {@code outcome}, of a member chain in {@code [eerste, tot)}, and where {@code onlyTrue} an attribution, the one
      *  decision on a characteristic that writes. */
     private Alpha outcomeOfMember(String category, String name, Outcome.Kind outcome, int earliest, int to,
@@ -2788,7 +2788,7 @@ public final class TmsTranspiler {
         return new Alpha(id(category), tests);
     }
 
-    /** The outcomes of the chains {@code [van, tot)} of stack {@code naam} for the subject, of {@code category}, or of
+    /** The outcomes of the chains {@code [van, tot)} of stack {@code name} for the subject, of {@code category}, or of
      *  either where it is null, under a variable of their own. */
     private FactPattern outcomes(String name, int van, int to, Outcome.Kind category) {
         return outcomes(name, van, to, category, null, null, null);
@@ -3102,8 +3102,8 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The predicate of the day kind {@code naam} over a calendar day, from its definition (IR-SPEC ch. 3.7), compiled by
-     * the backend's day-kind compiler ({@code kern.DayKinds}) the first time a form needs it and the same object for
+     * The predicate of the day kind {@code name} over a calendar day, from its definition (IR-SPEC ch. 3.7), compiled by
+     * the backend's day-kind compiler ({@code core.DayKinds}) the first time a form needs it and the same object for
      * every form after: the bound day, its date parts, the first Easter day, literals and other day kinds on the bound
      * day. The form {@code description} that steps or counts in the day kind is refused by name where the definition does not
      * compile ({@link #dayKindRefusal}); a definition that no form uses is never compiled, so it refuses nothing.
@@ -3118,7 +3118,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * Why the day kind {@code naam} has no predicate here, found in its definition and in the definitions it refers to
+     * Why the day kind {@code name} has no predicate here, found in its definition and in the definitions it refers to
      * ({@code visited} holds those already looked at, the reference graph being acyclic by WF-085): no definition; a
      * parameter, which WF-031 admits and the reference interpreter reads, and which this branch does not read, since
      * the day-kind compiler binds nothing; a day-kind test on another day than the bound day, which no executor carries
@@ -4680,7 +4680,7 @@ public final class TmsTranspiler {
      * stores it ({@link FactModelGenerator#membershipStorage}): a to-one other role is the subject's own reference
      * field, read off the subject's bean, and a to-many other role is the field of the other end, which names the
      * subject, counted over the beans of the counterpart's class. Both roles to-many leaves no field, and the check is
-     * refused in the sentence of {@code FactModelGenerator.noReferenceFieldReason}, on both branches.
+     * refused in the sentence of {@link FactModelGenerator#noReferenceFieldReason}, on both branches.
      */
     private Term roleCheck(Condition.RoleMembership r, Reads reads) {
         RoleBindingRef rb = roleBindings.get(r);
@@ -5054,7 +5054,7 @@ public final class TmsTranspiler {
                     List.copyOf(read), slots.size());
         }
 
-        /** The plan of this rule, {@code naam}, of the form being lowered: the planned items before the subject
+        /** The plan of this rule, {@code name}, of the form being lowered: the planned items before the subject
          *  pattern, the subject pattern with its constraints, joins, other constraints and bindings as they stand now,
          *  the planned items right after it, {@code items} after those, and {@code consequence}. */
         RulePlan rulePlan(String name, List<LhsItem> items, Consequence consequence) {
@@ -5412,7 +5412,7 @@ public final class TmsTranspiler {
             return TmsTranspiler.readName(read, names);
         }
 
-        /** A slot that a binding of the plan binds to the variable {@code naam}, read once per rule under
+        /** A slot that a binding of the plan binds to the variable {@code name}, read once per rule under
          *  {@code key}. */
         private int allocateSlot(ReadKind category, String key, String name) {
             int i = slots.size();
@@ -5563,9 +5563,9 @@ public final class TmsTranspiler {
      * The variable of a slot that reads {@code read}, a name as the document declares it, in a rule whose slots
      * before it have the variables {@code occupied}: {@code $} and that name as an identifier ({@link Namen#ident}), so
      * that a rendering shows what the slot holds, in DRL text as well. Only the characters a Java identifier may hold
-     * stay: {@code Namen.ident} keeps every letter and every number of Unicode, and a number such as {@code ²} or
+     * stay: {@link Namen#ident} keeps every letter and every number of Unicode, and a number such as {@code ²} or
      * {@code ½} is none, so "artikel 3²" reads {@code $artikel3}. A name of which nothing stays reads {@code $x}, the
-     * name {@code Namen.ident} gives an empty name. It is unique within the rule by construction: the identifier has no
+     * name {@link Namen#ident} gives an empty name. It is unique within the rule by construction: the identifier has no
      * underscore, while every other variable of a rule has one ({@link TmsTranspiler#id}, the numbered names of
      * {@code Reads}) or is one of {@link #FIXED_NAMES}; where such a fixed name or a name in {@code occupied} has it
      * already, the first free number from 2 after it makes it unique. It depends only on the reads of the rule before
@@ -5886,7 +5886,7 @@ public final class TmsTranspiler {
         return out;
     }
 
-    /** The input rule {@code naam} of {@link #attributeStateRules}: where no {@link Value} stands on the object, the
+    /** The input rule {@code name} of {@link #attributeStateRules}: where no {@link Value} stands on the object, the
      *  {@link State} of the input on the bean, read as it is, or as its segments for a member on a timeline
      *  ({@link #inputForm}); with {@code bucket} null for a member that holds one value, and for a member on a timeline
      *  only where an {@link BucketInput} of the member on the object exists ({@code true}), the input then standing as
@@ -5912,7 +5912,7 @@ public final class TmsTranspiler {
     }
 
     /** The value array of a standing rule whose consequence reads one value: slot 0, of {@code category}, which the
-     *  variable {@code naam} binds. */
+     *  variable {@code name} binds. */
     private static ReadTable oneSlot(ReadKind category, String key, String name) {
         return new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, category, key, name)));
     }
@@ -6084,7 +6084,7 @@ public final class TmsTranspiler {
         return Binding.ReadForm.VALUE;
     }
 
-    /** Member {@code naam} as declared on {@code holder}'s chain, compared as the verifier compares names, holding one
+    /** Member {@code name} as declared on {@code holder}'s chain, compared as the verifier compares names, holding one
      *  value. A member on a timeline is refused here: the positions that read or write one ask {@link #timeMember}. A
      *  member with dimensions is refused. */
     private Member member(ObjectType holder, String name, boolean characteristic) {
@@ -6095,7 +6095,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * Member {@code naam} as declared on {@code holder}'s chain, on a timeline: {@code description} reads or writes its timeline
+     * Member {@code name} as declared on {@code holder}'s chain, on a timeline: {@code description} reads or writes its timeline
      * (RUNTIME-SEMANTICS ch. 3). Refused by name: a member that holds one value there, one on a grid of more than one
      * unit, which carries no operation (ch. 3.2, OPEN in ch. 3.12), and one on a timeline with a variable start point,
      * whose grid is laid per object from an anchor a {@code StartPointDetermination} derives: no golden with cases
@@ -6115,7 +6115,7 @@ public final class TmsTranspiler {
         return member;
     }
 
-    /** Member {@code naam} as declared on {@code holder}'s chain, its granularity set where it lies on a timeline. A
+    /** Member {@code name} as declared on {@code holder}'s chain, its granularity set where it lies on a timeline. A
      *  member with dimensions is refused. */
     private Member declared(ObjectType holder, String name, boolean characteristic) {
         for (ObjectType t : holder.chain()) {
@@ -6140,7 +6140,7 @@ public final class TmsTranspiler {
         throw new Refusal(DroolsCode.MEMBER_NOT_DECLARED.reason("category", Msg.drools(characteristic ? "PART.member-kind.characteristic-kind" : "PART.member-kind.attribute"), "member", name, "objectType", holder.name));
     }
 
-    /** The dimensioned attribute {@code naam} as declared on {@code holder}'s chain (§3.6): its bean member is a
+    /** The dimensioned attribute {@code name} as declared on {@code holder}'s chain (§3.6): its bean member is a
      *  {@code Map<label, value>}, read whole by a dimension cell or a fold over a dimension selection. An attribute that
      *  is not dimensioned, or that also lies on a timeline, is refused by name. */
     private Member dimensionedMember(ObjectType holder, String name) {
@@ -6228,7 +6228,7 @@ public final class TmsTranspiler {
         return new Hop(van, destination, null, false, Namen.norm(ft.name), farIsSecond);
     }
 
-    /** The declared fact type named {@code naam}, compared as the verifier compares names, or null. */
+    /** The declared fact type named {@code name}, compared as the verifier compares names, or null. */
     private RegelSpraakModel.FactType factType(String name) {
         for (RegelSpraakModel.FactType ft : model.factTypes.values())
             if (Namen.norm(ft.name).equals(Namen.norm(name))) return ft;

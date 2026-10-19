@@ -225,7 +225,7 @@ public sealed interface Consequence {
 
     /**
      * The distribution of an allocation over the recipients of the source {@code subject} binds (ch. 4.2 to 4.4),
-     * computed by the route {@link Route#PAYOUT}, which calls {@code Allocation.bereken}: by {@code method}, of the
+     * computed by the route {@link Route#PAYOUT}, which calls {@code Allocation.compute}: by {@code method}, of the
      * pot in slot {@code pot} over the list of {@code Recipient} facts in slot {@code list}, {@code weighted} where the
      * allocation declares a ratio attribute, {@code capped} where it declares a cap, {@code descending} the ordered
      * method's direction, {@code decimals} the floor's decimals (null: none). Each share is a value of {@code share}

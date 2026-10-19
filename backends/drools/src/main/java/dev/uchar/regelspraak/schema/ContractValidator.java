@@ -15,7 +15,7 @@ import java.util.List;
  * Checks that the fact beans on a classpath honour the contract a resolved model implies:
  * per objecttype a class in {@code dev.uchar.regelspraak.facts}, per implied member (the SAME derivation
  * {@link FactModelGenerator#members} the generator renders) a getter and setter of the right shape, plus the
- * {@code Segment}/{@code Inconsistency} carriers when the model needs them. Returns ALL violations — the
+ * {@code Segment}/{@code Inconsistentie} carriers when the model needs them. Returns ALL violations — the
  * engine fails fast with the complete list, so a consumer fixes the bean contract in one round trip instead
  * of chasing one reflective fire-time abort per run.
  */

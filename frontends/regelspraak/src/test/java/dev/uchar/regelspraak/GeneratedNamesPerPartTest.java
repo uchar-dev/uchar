@@ -27,7 +27,7 @@ class GeneratedNamesPerPartTest {
         return m;
     }
 
-    /** The designations the IR writes as the last field of the node {@code node} named {@code naam}, each
+    /** The designations the IR writes as the last field of the node {@code node} named {@code name}, each
      *  "vocabulary: designation", in written order; empty where the node carries none. */
     private static List<String> onTheWire(String ir, String node, String name) {
         String[] r = ir.split("\n", -1);

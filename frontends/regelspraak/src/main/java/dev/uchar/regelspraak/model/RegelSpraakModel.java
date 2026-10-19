@@ -150,7 +150,7 @@ public final class RegelSpraakModel {
         return n;
     }
 
-    /** The FIRST declared tijdlijn whose normalised name matches {@code naam} (the same first-match rule
+    /** The FIRST declared tijdlijn whose normalised name matches {@code name} (the same first-match rule
      *  the §13.3.6.10 attribute adoption uses), or null. */
     public Timeline timelineByName(String name) {
         if (name == null) return null;
@@ -215,7 +215,7 @@ public final class RegelSpraakModel {
     public boolean isOk() { return diagnostics.stream().noneMatch(Diagnostic::isError); }
     public List<Diagnostic> errors() { return diagnostics.stream().filter(Diagnostic::isError).toList(); }
 
-    /** §8.1.9 whether {@code naam} names a rule that INSERTS §9.5 Inconsistentie flag facts — a
+    /** §8.1.9 whether {@code name} names a rule that INSERTS §9.5 Inconsistentie flag facts — a
      *  consistentie, uniciteit, uniciteit-unie or (via the §9.7.6 Tabel-19 fout channel) verdeling.
      *  The "regelversie X is inconsistent" regelpredicaat lowers to an exists on that channel ONLY for
      *  a known producer; any other name would be a never-matching exists (a silent never-fire), so the
@@ -243,7 +243,7 @@ public final class RegelSpraakModel {
         return result;
     }
 
-    /** §8.1.9 whether {@code naam} names a rule the back-ends INSTRUMENT with a {@code RuleFired} marker — a
+    /** §8.1.9 whether {@code name} names a rule the back-ends INSTRUMENT with a {@code RuleFired} marker — a
      *  main {@code regel()}-path rule (gelijkstelling / berekening / initialisatie / kenmerktoekenning), the
      *  common case whose consequence both back-ends unconditionally mark. "regelversie X is gevuurd" lowers to
      *  an {@code exists RuleFired} ONLY for such a name (else the exists would never match — a silent never-fire);
@@ -302,7 +302,7 @@ public final class RegelSpraakModel {
         return null;
     }
 
-    /** The names {@link #resolveObjectType} tries for {@code naam}, in its order: the HEAD noun phrase
+    /** The names {@link #resolveObjectType} tries for {@code name}, in its order: the HEAD noun phrase
      *  before any " van " navigation ("deelnemers van de groep" names the deelnemer; "van de groep" only
      *  scopes which one), then that head with leading words dropped one at a time (a multi-word role like
      *  "groep met punten" binds before its head noun does). Shared so a caller that must reconcile the
@@ -318,7 +318,7 @@ public final class RegelSpraakModel {
         return result;
     }
 
-    /** The object type DIRECTLY named {@code naam} (case-insensitively), or null — a name match
+    /** The object type DIRECTLY named {@code name} (case-insensitively), or null — a name match
      *  only, never a feittype role. Distinct from {@link #resolveObjectType}, which also reaches a
      *  type through a role; a feitcreatie back-reference needs the strict form to tell "de groep"
      *  (the iterated anker itself) from "de buurgroep" (a different group of the same type). */
@@ -331,7 +331,7 @@ public final class RegelSpraakModel {
     }
 
     /** The object type a role name denotes: the filler of the roles whose DECLARED name or declared plural is
-     *  {@code naam}, and only where no role declares it so, of the roles whose guessed plural (+s/+en) it is. One
+     *  {@code name}, and only where no role declares it so, of the roles whose guessed plural (+s/+en) it is. One
      *  filler per pass or none: roles of one name with different fillers choose neither, so no position in the
      *  declaration order decides, and a guessed plural never defeats a declared form (grammar/DIVERGENCES.md
      *  §13.4.1). Until 2026-10-02 the first role in declaration order whose name or plural matched, a guessed plural
@@ -343,7 +343,7 @@ public final class RegelSpraakModel {
         return derived == null ? null : derived[0];
     }
 
-    /** The one filler of the roles {@code naam} names by their declared forms ({@code declared}) or by a guessed
+    /** The one filler of the roles {@code name} names by their declared forms ({@code declared}) or by a guessed
      *  plural: a one-element array holding it, or holding null when those roles have different fillers; null when no
      *  role is named so. A role whose filler is no declared object type is skipped. */
     private ObjectType[] rolesFiller(String name, boolean declared) {
@@ -951,7 +951,7 @@ public final class RegelSpraakModel {
          *  zelfstandig/noch-noch ("is een &lt;k&gt;"). An untagged declaration is zelfstandig. */
         public enum CharacteristicKind { BIJVOEGLIJK, BEZITTELIJK, ZELFSTANDIG }
 
-        /** What {@code map} holds for member {@code naam} on the NEAREST type of this chain that has
+        /** What {@code map} holds for member {@code name} on the NEAREST type of this chain that has
          *  an entry for it, matched case-INsensitively; null when nothing on the chain does. Every
          *  member-keyed side map is read through this one walk, because reading any of them on the own
          *  type alone answers "no such member" for an inherited one — and for the TEMPORAL maps that
@@ -968,7 +968,7 @@ public final class RegelSpraakModel {
             return null;
         }
 
-        /** The declared datatype of attribute {@code naam}, matched case-INsensitively —
+        /** The declared datatype of attribute {@code name}, matched case-INsensitively —
          *  object-type names already resolve this way (see {@link #objectTypeByName}), so a
          *  reference that differs only in case (casus source writes both "datum-tijd" and
          *  "Datum-tijd") binds the same attribute. Null when this type declares no such
@@ -977,7 +977,7 @@ public final class RegelSpraakModel {
             return onChain(t -> t.attributes, name);
         }
 
-        /** The DECLARED spelling of attribute {@code naam} (which may differ from the written one only
+        /** The DECLARED spelling of attribute {@code name} (which may differ from the written one only
          *  in case), or null when the chain declares no such attribute. The IR carries declared names
          *  only, so a writer that reconstructs a reference reads its spelling here. */
         public String attributeName(String name) {
@@ -987,7 +987,7 @@ public final class RegelSpraakModel {
             return null;
         }
 
-        /** The DECLARED spelling of kenmerk {@code naam}, or null when the chain declares no such
+        /** The DECLARED spelling of kenmerk {@code name}, or null when the chain declares no such
          *  kenmerk — the kenmerk twin of {@link #attributeName}. */
         public String characteristicName(String name) {
             for (ObjectType t : chain())
@@ -996,7 +996,7 @@ public final class RegelSpraakModel {
             return null;
         }
 
-        /** The §13.3.7 dimensions of attribute {@code naam} (case-insensitively), in declared order,
+        /** The §13.3.7 dimensions of attribute {@code name} (case-insensitively), in declared order,
          *  or an empty list when the attribute is scalar or undeclared. */
         public List<String> dimensionsOf(String name) {
             List<String> dims = onChain(t -> t.attributeDimensions, name);
@@ -1032,7 +1032,7 @@ public final class RegelSpraakModel {
             return onChainMap(t -> t.attributeDimensions);
         }
 
-        /** §13.3.6 the tijdlijn granularity of attribute {@code naam}, or null when it is an ordinary
+        /** §13.3.6 the tijdlijn granularity of attribute {@code name}, or null when it is an ordinary
          *  single-value attribute. */
         public Granularity granularityOf(String name) {
             return onChain(t -> t.attributeGranularity, name);
@@ -1046,7 +1046,7 @@ public final class RegelSpraakModel {
             return onChainMap(t -> t.attributeGranularity);
         }
 
-        /** §13.3.6.7 the period COUNT of attribute {@code naam}'s multi-period tijdlijn, or null where the model
+        /** §13.3.6.7 the period COUNT of attribute {@code name}'s multi-period tijdlijn, or null where the model
          *  records none — the resolver records none for a single-period (count 1) one; see
          *  {@link #attributeTimelineCount}. */
         public Integer timelineCountOf(String name) {
@@ -1059,7 +1059,7 @@ public final class RegelSpraakModel {
             return onChainMap(t -> t.attributeTimelineCount);
         }
 
-        /** §13.3.6.3–.7 the fixed start point of attribute {@code naam}'s tijdlijn in its wire spelling, or null
+        /** §13.3.6.3–.7 the fixed start point of attribute {@code name}'s tijdlijn in its wire spelling, or null
          *  on the calendar grid — chain-closed like the granularity, since an inherited attribute brings its facet. */
         public String fixedStartPointOf(String name) {
             return onChain(t -> t.attributeFixedStartPoint, name);
@@ -1067,7 +1067,7 @@ public final class RegelSpraakModel {
 
         // NOTE: attributeTimelineName has NO chain accessor on purpose — see hasVariableStart.
 
-        /** §13.3.6 the tijdlijn granularity of kenmerk {@code naam} — the kenmerk twin of
+        /** §13.3.6 the tijdlijn granularity of kenmerk {@code name} — the kenmerk twin of
          *  {@link #granularityOf}; null for an ordinary boolean kenmerk. */
         public Granularity characteristicGranularityOf(String name) {
             return onChain(t -> t.characteristicGranularity, name);
@@ -1088,7 +1088,7 @@ public final class RegelSpraakModel {
             return onChainMap(t -> t.characteristicTimelineCount);
         }
 
-        /** Does this type declare a member named {@code naam} (an attribute or a kenmerk),
+        /** Does this type declare a member named {@code name} (an attribute or a kenmerk),
          *  case-insensitively? Used to decide whether a navigation can emit a getter for it
          *  or must stay an honest marker. */
         public boolean hasMember(String name) {
@@ -1102,13 +1102,13 @@ public final class RegelSpraakModel {
             return other != null && chain().contains(other);
         }
 
-        /** The §3.5 soort of kenmerk {@code naam} (case-insensitively), or null when no such kenmerk is
+        /** The §3.5 soort of kenmerk {@code name} (case-insensitively), or null when no such kenmerk is
          *  declared. An untagged kenmerk is {@link CharacteristicKind#ZELFSTANDIG}. */
         public CharacteristicKind characteristicKind(String name) {
             return onChain(t -> t.characteristicKinds, name);
         }
 
-        /** The type on this chain that DECLARES {@code naam} as an attribute or kenmerk — this type
+        /** The type on this chain that DECLARES {@code name} as an attribute or kenmerk — this type
          *  itself when it declares it, null when nothing on the chain does. The ch. 7.2 conflict key
          *  names it, so one target reports under one name however many subtypes inherit it. */
         public ObjectType declarantOf(String name) {
@@ -1277,7 +1277,7 @@ public final class RegelSpraakModel {
      *  &lt;attribuut&gt;"). */
     public record Dimension(String name, String pluralName, String preposition, List<String> values) {}
 
-    /** The §13.3.7 dimension named {@code naam} (singular) case-insensitively, or null. */
+    /** The §13.3.7 dimension named {@code name} (singular) case-insensitively, or null. */
     public Dimension dimensionByName(String name) {
         if (name == null) return null;
         Dimension exact = dimensions.get(name);
@@ -1383,7 +1383,7 @@ public final class RegelSpraakModel {
         return m.matches() ? m.group(1) : name;
     }
 
-    /** The vocabulary named {@code naam}, compared case-insensitively (IR-SPEC ch. 2.1), or null. */
+    /** The vocabulary named {@code name}, compared case-insensitively (IR-SPEC ch. 2.1), or null. */
     public Vocabulary vocabulary(String name) {
         if (name == null) return null;
         for (Vocabulary v : vocabularies) if (v.name().equalsIgnoreCase(name)) return v;
@@ -1410,7 +1410,7 @@ public final class RegelSpraakModel {
     }
 
     /** The reverse of {@link #effectiveName}: the declaration of kind {@code category} whose effective name in
-     *  {@code vocabulary} is {@code naam}, compared case-insensitively, within {@code owner} where the kind is scoped
+     *  {@code vocabulary} is {@code name}, compared case-insensitively, within {@code owner} where the kind is scoped
      *  — for an attribute or a characteristic along the supertype chain of that object type, so an inherited member is
      *  found from its subtype; null {@code owner} for the other kinds. Empty when no declaration has that effective
      *  name, or when two have (WF-118 refuses the second on the wire, so a verifier-clean document answers uniquely);

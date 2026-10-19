@@ -329,7 +329,7 @@ public final class DroolsBackend {
      * the words of the model and states none of them. That is an
      * {@code BucketInput} for every bucket scalar {@code input} names ({@link Input#bucketScalar}), without which the
      * branch reads an input timeline as a full timeline (RUNTIME-SEMANTICS ch. 8.4); and where a rule of the model reads
-     * the order of a to-many list ({@code TmsTranspiler.listFields}), a {@code ListPlace} for every member of every
+     * the order of a to-many list ({@link TmsTranspiler#listFields}), a {@code ListPlace} for every member of every
      * such list, in the order {@link Input#list} gives or else in the order of the beans.
      *
      * <p>It checks all of it before it inserts anything, and refuses by name: a session
@@ -464,7 +464,7 @@ public final class DroolsBackend {
                 + " instantie van een klasse die Build.beanLoader() laadt");
     }
 
-    /** The {@code BucketInput} of bucket scalar {@code e}, keyed as {@code ProducerConsumer.elementOf} keys the
+    /** The {@code BucketInput} of bucket scalar {@code e}, keyed as {@link ProducerConsumer#elementOf} keys the
      *  attribute, on the type that declares it. */
     private static BucketInput bucketInput(Map<Object, ObjectType> types, Input.Bucket e) {
         ObjectType ot = types.get(e.bean());
@@ -880,7 +880,7 @@ public final class DroolsBackend {
      * The verdict of the expectations of a case on a session ({@link #compare}): per expectation, in the order of the
      * case, its {@link ScenarioResult.ExpectationResult}, and the diagnose of the scenario report, the line of
      * every expectation that did not hold, joined by "; ", empty where every one held. The scenario report
-     * ({@code CaseRunner.report}) puts the name of the case file and ": " before a diagnose that is not empty.
+     * ({@link CaseRunner#report}) puts the name of the case file and ": " before a diagnose that is not empty.
      */
     public record Comparison(List<ScenarioResult.ExpectationResult> expectations, String diagnostic) {
         public Comparison {
@@ -896,7 +896,7 @@ public final class DroolsBackend {
 
     /**
      * Compares {@code expectations}, the {@code expected} of a {@code uchar-case-v0} case, with {@code session} of
-     * {@code build}: per expectation the verdict the scenario report gives ({@code CaseRunner.report}), which compares
+     * {@code build}: per expectation the verdict the scenario report gives ({@link CaseRunner#report}), which compares
      * through this, as the replay of every case does. It reads the beans of a session that {@link #setDerivedValues}
      * wrote back: they then carry its fixpoint, the input and over it what {@link #fixpointOf} gives, and they are the answer a
      * consumer hands out. Since the write-back closes the session, a session is compared once, after its last fire. A
@@ -992,7 +992,7 @@ public final class DroolsBackend {
      * gives 0.
      *
      * <p>The generations run per evaluation stratum of the reference interpreter, in ascending order
-     * ({@code TmsTranspiler.creationStrata}): the phases of stratum k carry k, and a creation rule fires only in a phase
+     * ({@link TmsTranspiler#creationStrata}): the phases of stratum k carry k, and a creation rule fires only in a phase
      * of its own stratum or one above. A creation writes irrevocably, so it reads strictly and sits above the producers
      * of what it reads (RUNTIME-SEMANTICS ch. 6.1); the reference interpreter evaluates stratum k to its fixpoint before
      * a form of stratum k+1 fires (ch. 6.3). In one phase for all strata, a creation that reads what another creation

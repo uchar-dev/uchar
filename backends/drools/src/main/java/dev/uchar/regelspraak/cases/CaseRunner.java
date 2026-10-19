@@ -129,7 +129,7 @@ public final class CaseRunner {
     }
 
     /** Refuses a case that sets or reads ({@code action}) the attribute or, with {@code kenmerk}, the
-     *  characteristic {@code naam} of an instance of {@code ot} when that member has no bean field of its own. */
+     *  characteristic {@code name} of an instance of {@code ot} when that member has no bean field of its own. */
     void ownField(ObjectType ot, String name, boolean characteristic, String action) {
         Reason cause = ot == null ? null : FactModelGenerator.displacedMember(displacements, ot, name, characteristic);
         if (cause != null) throw new Excluded(cause.framed("case-" + action));
@@ -637,8 +637,8 @@ public final class CaseRunner {
         return !ot.dimensionsOf(attr).isEmpty();
     }
 
-    /** The declared name of the attribute a case writes as {@code naam} on {@code ot} or one of its ancestors, under the
-     *  name equality of the reference interpreter ({@link Namen#declaredName}); {@code naam} where {@code ot} is null
+    /** The declared name of the attribute a case writes as {@code name} on {@code ot} or one of its ancestors, under the
+     *  name equality of the reference interpreter ({@link Namen#declaredName}); {@code name} where {@code ot} is null
      *  or declares none. The generator derives a member's getter and setter from its declared name, and a case may
      *  write the name in another capitalisation, "vondstNummer" for a declared "vondstnummer", which the reference
      *  interpreter reads as the same member: a method derived from the written name would be one the bean lacks. */

@@ -72,7 +72,7 @@ final class Dependencies {
         return false;
     }
 
-    /** {@code naam} without the " #i" of a version of a form with several ({@code strip_version}). */
+    /** {@code name} without the " #i" of a version of a form with several ({@code strip_version}). */
     static String withoutVersion(String name) { return Graph.withoutVersion(name); }
 
     private static List<Cycle> wf045(List<Form> forms, Graph g) {
@@ -291,7 +291,7 @@ final class Dependencies {
             return false;
         }
 
-        /** Whether {@code naam}, with its supertypes, declares the attribute or the characteristic {@code member}. */
+        /** Whether {@code name}, with its supertypes, declares the attribute or the characteristic {@code member}. */
         boolean carries(String name, String member, boolean characteristic) {
             Map<String, Object> ot = objectType(name);
             if (ot == null) return false;

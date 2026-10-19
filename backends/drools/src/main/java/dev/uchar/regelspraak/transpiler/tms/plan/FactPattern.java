@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * A pattern over the objects of {@code factClass}, a fact class of the branch or a bean class, bound to the variable
- * {@code naam}: its constraints on the object alone ({@code alpha}), its identity joins to objects other patterns bind
+ * {@code name}: its constraints on the object alone ({@code alpha}), its identity joins to objects other patterns bind
  * ({@code joins}), its other constraints between its object and an object or a value another pattern binds
  * ({@code betaTests}), its constraints on the object alone that come after those ({@code afterAlpha}), and the values it
  * binds ({@code bindings}), in that order. Drools keeps the constraints of a pattern in the order the model adds them,

@@ -471,7 +471,7 @@ class UnitConflictWitnessTest {
         return (ObjectNode) attr;
     }
 
-    /** The entry of a declaration list whose {@code nameField} is {@code naam}, or null. A miss is an answer here,
+    /** The entry of a declaration list whose {@code nameField} is {@code name}, or null. A miss is an answer here,
      *  not a fault: it means "this golden does not carry the shape" (an inherited attribute, say), the same null
      *  the v0 map lookup gave. */
     private static JsonNode findMember(JsonNode list, String nameField, String name) {

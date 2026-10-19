@@ -69,11 +69,11 @@ public final class IrPath {
         return (ObjectNode) v;
     }
 
-    /** The named form called {@code naam} in the rules list {@code list}, failing LOUDLY when there is none: a twist
+    /** The named form called {@code name} in the rules list {@code list}, failing LOUDLY when there is none: a twist
      *  that silently hit nothing would leave its witness testing the untwisted document. */
     public static ObjectNode form(JsonNode ir, String list, String name) { return memberWith(rulesList(ir, list), "name", name); }
 
-    /** The first version of the named form called {@code naam} in the rules list {@code list}. */
+    /** The first version of the named form called {@code name} in the rules list {@code list}. */
     public static ObjectNode version(JsonNode ir, String list, String name) {
         JsonNode v = form(ir, list, name).path("versions").path(0);
         if (!v.isObject()) throw new AssertionError("form '" + name + "' in '" + list + "' has no version");

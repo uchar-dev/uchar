@@ -47,7 +47,7 @@ public enum Route {
      *  {@link Consequence.UniquenessKey} inserts. */
     UNIQUENESS_KEYS(ComputeHelpers.class, "uniquenessKeys"),
     /** The facts of the distribution of an allocation over the recipients of one source, computed by
-     *  {@code Allocation.bereken}: its deposits, its shares and its rest, which {@link Consequence.Payout} inserts. */
+     *  {@code Allocation.compute}: its deposits, its shares and its rest, which {@link Consequence.Payout} inserts. */
     PAYOUT(ComputeHelpers.class, "payout"),
     /** The contribution of a member to a fold by its value, or none where the value is leeg or the member's timeline
      *  stands as the asOfDate-bucket scalar, which {@link Consequence.Input.MemberValue} inserts. */

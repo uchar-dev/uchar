@@ -46,7 +46,7 @@ import java.util.Map;
  * {@code [2026-01-01 t/m open]}.
  *
  * <p><b>Idiomatiek.</b> Als {@link Coverage} is {@link #check} PUUR (het meldt niets) en is {@link #report} de aparte
- * consumer-aangeroepen methode die deduplicerend een WARNING op het model zet — precies zoals {@code Coverage.report}.
+ * consumer-aangeroepen methode die deduplicerend een WARNING op het model zet — precies zoals {@link Coverage#report}.
  *
  * @param rule       de (mogelijk {@code #k}-versie-gesuffixte) regelnaam
  * @param parameter   de gerefereerde parameternaam zoals in de sets/pool
@@ -95,12 +95,12 @@ public record PeriodCoverage(String rule, String parameter, Validity rulePeriod,
         }
     }
 
-    /** De ParameterRef-namen in een waarde/doel-Expr — dezelfde {@code Expr.contains}-walk als {@code regelParameters}. */
+    /** De ParameterRef-namen in een waarde/doel-Expr — dezelfde {@link Expr#contains}-walk als {@code regelParameters}. */
     private static void catchExpr(Expr e, LinkedHashSet<String> out) {
         Expr.contains(e, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().name()); return false; });
     }
 
-    /** De ParameterRef-namen in een voorwaarde/assertie — dezelfde {@code Condition.containsOperand}-walk. */
+    /** De ParameterRef-namen in een voorwaarde/assertie — dezelfde {@link Condition#containsOperand}-walk. */
     private static void catchCondition(Condition c, LinkedHashSet<String> out) {
         Condition.containsOperand(c, x -> { if (x instanceof Expr.ParameterRef pr) out.add(pr.parameter().name()); return false; });
     }
@@ -154,7 +154,7 @@ public record PeriodCoverage(String rule, String parameter, Validity rulePeriod,
     private static LocalDate min(LocalDate a, LocalDate b) { return a.isBefore(b) ? a : b; }
 
     /**
-     * Meld deze bevinding als één WARNING-diagnostic op {@code model}, gededupliceerd (zoals {@code Coverage.report}): één
+     * Meld deze bevinding als één WARNING-diagnostic op {@code model}, gededupliceerd (zoals {@link Coverage#report}): één
      * regel tekst die BEIDE periodes citeert — de regelperiode en elk ontbrekend gat. Consumer-aangeroepen; de check
      * ({@link #check}) blijft puur.
      */

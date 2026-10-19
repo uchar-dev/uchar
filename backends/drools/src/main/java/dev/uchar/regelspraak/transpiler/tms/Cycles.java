@@ -376,7 +376,7 @@ public final class Cycles {
             return key;
         }
 
-        /** Whether {@code ot} carries member {@code naam}, declared on it or inherited. */
+        /** Whether {@code ot} carries member {@code name}, declared on it or inherited. */
         private static boolean carries(ObjectType ot, String name, boolean characteristic) {
             for (ObjectType t : ot.chain())
                 if (characteristic ? t.characteristics.stream().anyMatch(k -> Namen.norm(k).equals(Namen.norm(name)))

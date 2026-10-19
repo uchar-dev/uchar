@@ -1986,7 +1986,7 @@ let () =
       check (ident ^ ": verifier-clean") (findings = []);
       match evalueer () with
       | exception Failure m ->
-          check (ident ^ " (" ^ m ^ ")") (substring m "ref/lib/eval.ml, run_object_creatie")
+          check (ident ^ " (" ^ m ^ ")") (substring m "ref/lib/eval.ml, run_object_creation")
       | exception Value.Fault { text = m; _ } -> check (ident ^ " (an evaluation fault: " ^ m ^ ")") false
       | _ -> check (ident ^ " (no failure)") false)
 

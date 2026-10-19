@@ -325,7 +325,7 @@ class PropertyWitnessTest {
         }
     }
 
-    /** One reader or writer {@code label} of the member {@code naam}: what it gives, or the fault it throws, where that is
+    /** One reader or writer {@code label} of the member {@code name}: what it gives, or the fault it throws, where that is
      *  not {@code expected}. */
     private static void meet(List<String> faults, String name, String label, Object expected,
                              java.util.concurrent.Callable<Object> readCall) {

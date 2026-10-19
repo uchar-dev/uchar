@@ -89,7 +89,7 @@ public final class Typing {
             // §4.1 / §4.2: numeriek±numeriek (units convertible), OR datum ± a numerieke
             // tijdsWAARDE -> datum (Tabel 2/5 scenario 2): the right operand must carry a TIJDseenheid
             // (or a §6.11 dagsoort) — "datum plus 5 km" is a typing ERROR, not a valid date shift (the
-            // kern's chronoUnit is the one time-unit classifier, so the resolver rejects exactly what the
+            // core's chronoUnit is the one time-unit classifier, so the resolver rejects exactly what the
             // back-ends cannot execute). The result stays the LEFT type. A sub-day unit on a day-precision date is
             // refused, as the verifier refuses it (WF-035): such a date has no time of day to shift; §4.1's
             // "datum + sub-day unit -> Datum-tijd" reading has no wire form.

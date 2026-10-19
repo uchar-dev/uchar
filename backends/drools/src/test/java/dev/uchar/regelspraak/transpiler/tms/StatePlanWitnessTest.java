@@ -219,7 +219,7 @@ class StatePlanWitnessTest {
                 statePlans("jutterswet-premiestaffel"));
     }
 
-    /** Every plan of a standing rule of the golden {@code naam}, in the order of the model, as text. */
+    /** Every plan of a standing rule of the golden {@code name}, in the order of the model, as text. */
     private static List<String> statePlans(String name) throws Exception {
         JsonNode document = JSON.readTree(GOLDEN.resolve(name).resolve("ir.json").toFile());
         List<String> out = new ArrayList<>();

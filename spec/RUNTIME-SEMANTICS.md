@@ -1208,7 +1208,7 @@ declared plural `vaten`) by its declared name and binds `vatberging`/`vat`:
 that Jutter's two Vaten count **2**. A Jutter with no links counts **0**
 and **0**. In the ASP backend both counts key the bound role's canonical
 name (`duinkavel`, `vaten`), never the written lexeme, which as a raw
-`rol/3` key silently counted 0. With a second fact type connecting Jutter
+`role/3` key silently counted 0. With a second fact type connecting Jutter
 to Duinkavel the count still reads the relation its binding names and
 counts **3** (WV-3.4a-typenpaar-tweede-feittype-bindt); until L2 the
 bindingless written form faulted loudly there.
@@ -4217,7 +4217,7 @@ other end. The rules:
    may spell a link from either end and the verdict is the same. The
    reference interpreter reads the subject's links over the other role
    (the leg the loader materialises from either spelling), and the ASP
-   backend joins `rol/3` from the subject over that role; a
+   backend joins `role/3` from the subject over that role; a
    reference-field executor asks the mirror-image question — does some
    instance of the class hold a stored reference back at this subject —
    because that is the side its fact model stores. It is the same
@@ -4230,7 +4230,7 @@ other end. The rules:
    ch. 5.8 rule 3, where the negation sits behind a hop and an absent
    link fails the positive and the negated form alike. Both forms read
    the same narrowed set, so they cannot disagree about which instances
-   count. In the ASP reading the positive form is a `rol/3` join over the
+   count. In the ASP reading the positive form is a `role/3` join over the
    other role (an absent link never binds, so the gated rule does not
    fire), and the negation a per-subject helper deriving the link's
    presence, read under negation-as-failure with the subject kept bound by

@@ -1408,14 +1408,14 @@ public final class IrEmitter {
         currentSubject = null;
     }
 
-    /** Whether {@code naam} is an attribute of {@code ot}, own or inherited, under the name identity (WF-001). */
+    /** Whether {@code name} is an attribute of {@code ot}, own or inherited, under the name identity (WF-001). */
     private static boolean isAttribute(ObjectType ot, String name) {
         for (ObjectType t : ot.chain())
             for (String a : t.attributes.keySet()) if (norm(a).equals(norm(name))) return true;
         return false;
     }
 
-    /** Whether {@code naam} is a characteristic of {@code ot}, own or inherited, under the name identity (WF-001). */
+    /** Whether {@code name} is a characteristic of {@code ot}, own or inherited, under the name identity (WF-001). */
     private static boolean isCharacteristic(ObjectType ot, String name) {
         for (ObjectType t : ot.chain())
             for (String k : t.characteristics) if (norm(k).equals(norm(name))) return true;
@@ -1820,7 +1820,7 @@ public final class IrEmitter {
                 || !selfDenoting(m, subject, a.navigationRole());
     }
 
-    /** Whether the type {@code subject} itself plays a role that {@code naam} denotes (declared name or
+    /** Whether the type {@code subject} itself plays a role that {@code name} denotes (declared name or
      *  declared plural, under the verifier's name identity) — the self-denotation of WF-053's ch. 4.1a
      *  reading, on the declared filler type exactly. */
     private static boolean selfDenoting(RegelSpraakModel m, ObjectType subject, String name) {
@@ -1946,13 +1946,13 @@ public final class IrEmitter {
         return null;
     }
 
-    /** Whether {@code naam} denotes {@code r}: its declared name or its declared plural. */
+    /** Whether {@code name} denotes {@code r}: its declared name or its declared plural. */
     private static boolean denotes(Role r, String name) {
         return name != null && ((r.name() != null && norm(r.name()).equals(norm(name)))
                 || (r.plural() != null && norm(r.plural()).equals(norm(name))));
     }
 
-    /** Whether {@code naam} is an attribute or a kenmerk of {@code ot}, own or inherited. */
+    /** Whether {@code name} is an attribute or a kenmerk of {@code ot}, own or inherited. */
     private static boolean isMember(ObjectType ot, String name) {
         if (ot == null || name == null) return false;
         for (ObjectType t : ot.chain()) {

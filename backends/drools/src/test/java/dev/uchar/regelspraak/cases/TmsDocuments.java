@@ -632,7 +632,7 @@ final class TmsDocuments {
                 + ",\"else\":" + otherwise + ",\"source\":{\"snippet\":\"als … dan … anders …\"}}";
     }
 
-    /** The context value {@code naam} (evaluationDate, evaluationYear) of {@code type}. */
+    /** The context value {@code name} (evaluationDate, evaluationYear) of {@code type}. */
     static String contextValue(String name, String type) {
         return "{\"node\":\"ContextValue\",\"name\":\"" + name + "\",\"type\":" + type + ",\"source\":{\"snippet\":\"het "
                 + name + "\"}}";

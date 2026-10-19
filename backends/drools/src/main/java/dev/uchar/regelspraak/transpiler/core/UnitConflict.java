@@ -30,7 +30,7 @@ import dev.uchar.regelspraak.model.Unit;
  * instead of answering it with a number.
  *
  * <p><b>Where the fault is raised.</b> Most sites ask at BUILD time, where the pair is already known, and the
- * KieBase assembly is what fails. Two do not: {@code valueFactor} and {@code exactHerschaalFactoren} are also
+ * KieBase assembly is what fails. Two do not: {@code valueFactor} and {@code exactRestateFactors} are also
  * reached from inside a fired consequence, so a document whose only irreconcilable pair sits on that path
  * faults during fire and the CLI reports it wrapped in a {@code ConsequenceException}. That is not a weaker
  * outcome and the choice is not build-time-or-nothing: for the gate an ERROR out of a consequence is exactly as

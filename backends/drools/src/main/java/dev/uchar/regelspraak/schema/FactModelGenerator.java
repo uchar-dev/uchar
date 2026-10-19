@@ -25,7 +25,8 @@ import java.util.Map;
  * feittype — the to-one REFERENCE field on the MANY side, named after the ONE side's role, including the
  * §13.3.9.2 wederkerig SELF-PAIR field (see {@link #selfPairRole}) and the ORDINARY self-typed pair's one
  * field per to-one role (see {@link #selfPairRoles}). {@code Segment} and
- * {@code Inconsistency} are emitted alongside.
+ * {@code Inconsistentie} are emitted alongside; the production runtime builds and reads both by name (with {@code van},
+ * {@code tot}, {@code waarde}), so they keep these names.
  *
  * <p>The MEMBER DERIVATION ({@link #members}) is shared with {@link ContractValidator}, so what this
  * generator emits and what the validator demands can never drift apart.
@@ -40,8 +41,8 @@ public final class FactModelGenerator {
      *  boolean {@code is<X>} form (a scalar kenmerk). */
     public record Member(String property, String javaType, boolean isForm) {}
 
-    /** The declaration a bean member stands for: an attribute or a characteristic {@code naam} of the object type
-     *  {@code source} that declares it, or the role {@code naam} of the fact type {@code source} (null when the role
+    /** The declaration a bean member stands for: an attribute or a characteristic {@code name} of the object type
+     *  {@code source} that declares it, or the role {@code name} of the fact type {@code source} (null when the role
      *  resolves to no single declaration). One origin reached twice is one declaration: a role field is derived
      *  again on every subtype of the type that plays the other role, and once per subtype of its own filler. */
     public record Origin(Kind kind, String name, String source) {
@@ -231,7 +232,7 @@ public final class FactModelGenerator {
     /** A bean member without a field of its own. On the bean of {@code type} the property of the member
      *  {@code displaced} stands for belongs to {@code owner}, which the generator ports first: an ancestor's
      *  member before a descendant's, and within one type the attributes, the kenmerken, the reference fields, in
-     *  that order and each in declaration order. {@code Namen.ident} drops the spaces and hyphens of a name and
+     *  that order and each in declaration order. {@link Namen#ident} drops the spaces and hyphens of a name and
      *  camel-cases its words, so two names the verifier keeps apart can meet here, and WF-002 lets an attribute and
      *  a characteristic share even the same name. Whatever reads or writes {@code displaced} reaches the field of
      *  {@code owner}: a crash at fire when their types differ, and when they agree the one member silently
@@ -298,7 +299,7 @@ public final class FactModelGenerator {
             Map.of("Segment", Msg.drools("PART.helper-class.segment"), "Inconsistentie", Msg.drools("PART.helper-class.inconsistency"));
 
     /** Why the object types of {@code model} do not each get a fact class of their own, or null when they do:
-     *  two types on one class name ({@code Namen.ident} is not injective, while WF-001 compares the names
+     *  two types on one class name ({@link Namen#ident} is not injective, while WF-001 compares the names
      *  case-insensitively and keeps them apart), a type on the name of a class the generator writes itself, or a
      *  type on the name of a public {@code java.lang} type, which the fact class then hides from the generated beans
      *  (their own package comes first) and from the DRL text (which imports every fact class by name). */
@@ -444,7 +445,7 @@ public final class FactModelGenerator {
      * Naming it "enkelvoudig" there would assert of the document the very thing that is false about it.
      *
      * <p>A third cause is named apart since 2026-09-28: the property EXISTS and another declaration holds it — a
-     * member under another spelling ({@code Namen.ident} is not injective) or the field of another role, the shape
+     * member under another spelling ({@link Namen#ident} is not injective) or the field of another role, the shape
      * two same-named roles in two fact types give when one filler is a subtype of the other. "The bean model
      * derives no reference field" is true there and names no cause, so the sentence names the holder.
      */
@@ -576,7 +577,7 @@ public final class FactModelGenerator {
      * name displaces the reference, which is refused by name rather than leaving the link one-sided. Where neither end
      * has a field, the mint would be reachable from nothing: an ambiguous pair is ch. 5.5's refusal to guess
      * ({@code ambiguous}), a self-typed pair without a binding, a pair without a unique connecting fact type and a
-     * pair of two to-many roles are backend gaps, named apart. {@code naam} names the creation in the exception of a
+     * pair of two to-many roles are backend gaps, named apart. {@code name} names the creation in the exception of a
      * broken invariant: the 1:1 shape must have the forward field its guard reads.
      */
     public static CreationLink creationLink(RegelSpraakModel model, ObjectType fresh, ObjectType subject,
@@ -688,7 +689,7 @@ public final class FactModelGenerator {
      * direction WF-053 and ref demand: every object the walk can reach must be one the read may address). The caller refuses such a read
      * with its own unresolved-navigation reason. It never falls back to the written name: a document whose
      * binding does not fit is refused, not read along a route the wire did not name. The same subject-fit the
-     * written-chain derivation ({@code RegelSpraakModel.followChain}) applies, so a read the transpiler meets
+     * written-chain derivation ({@link RegelSpraakModel#followChain}) applies, so a read the transpiler meets
      * under another subject than the one it was bound to is refused exactly as before.
      *
      * <p>No cross-check against the written step: WF-053 already demands that every written step denote its
@@ -862,7 +863,7 @@ public final class FactModelGenerator {
         return "Object";
     }
 
-    /** All bean sources the model implies: simple class name → Java source (incl. Segment + Inconsistency). */
+    /** All bean sources the model implies: simple class name → Java source (incl. Segment + Inconsistentie). */
     public static Map<String, String> generate(RegelSpraakModel model) {
         Map<String, String> out = new LinkedHashMap<>();
         for (ObjectType ot : model.objectTypes.values()) {
@@ -936,7 +937,7 @@ public final class FactModelGenerator {
                 public String getRule() { return rule; }
                 public Object getSubject() { return subject; }
                 public java.util.List<String> getCodes() { return codes; }
-                @Override public String toString() { return "Inconsistency[" + rule + " @ " + subject + "]"; }
+                @Override public String toString() { return "Inconsistentie[" + rule + " @ " + subject + "]"; }
             }
             """;
 }

@@ -83,7 +83,7 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
     /** One period in which a time-dependent characteristic holds, {@code van} inclusive and {@code until} exclusive. */
     public record TimeWindow(LocalDate van, LocalDate until) {}
 
-    /** One expectation; {@code category} selects the meaningful fields. {@code timeline} is the expected timeline of an
+    /** One expectation; {@code kind} selects the meaningful fields. {@code timeline} is the expected timeline of an
      *  {@link ExpectationKind#ATTRIBUTE_TIMELINE} (empty when the whole timeline is expected empty); {@code rule}
      *  and {@code label} of an {@link ExpectationKind#INCONSISTENT} are its optional key. */
     public record Expectation(ExpectationKind kind, String label, String attribute, String characteristic,

@@ -159,7 +159,7 @@ class GraphDefaultReadTest {
                 indien hij erkend is.
         """;
 
-    /** The reads of the group named {@code naam}, on both routes, one line per default: "pad R[…] C[…]". */
+    /** The reads of the group named {@code name}, on both routes, one line per default: "pad R[…] C[…]". */
     private static void readings(String source, String name, List<String> expected) {
         TwoRoutes.Twin t = TwoRoutes.read(source);
         RegelSpraakModel m = t.sourceModel();

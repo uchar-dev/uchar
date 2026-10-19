@@ -163,7 +163,7 @@ spec bug.
   initialisations are `val`/`has_atom` heads on the term; the back-link
   relation (the explicit `verbindendeRol` binding, else the
   uniquely-derivable pair) lands both `role/3` ends; the
-  1:1 linked-instance guard is `not inputrol/3` over the case links
+  1:1 linked-instance guard is `not inputrole/3` over the case links
   only (ch. 5.5's input-snapshot narrowing). An ambiguous connecting
   relation faults the translation, as in `ref/`.
 - In a document with an object creation in a **recursive rule group**

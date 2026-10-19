@@ -8,7 +8,7 @@ import java.util.Objects;
  * case gives the member's timeline as the asOfDate-bucket scalar ({@link BucketScalar}), which states no period of its
  * own, where the fold collapses each member's own timeline over time (RUNTIME-SEMANTICS ch. 3.6, §7.1, ch. 8.4).
  * Inserted logically by the rule beside the fold's contribution rule for a member whose filter holds
- * ({@code TmsTranspiler.memberFaultRule}), on the fold's subject, with the fault that names the member ({@code fault},
+ * ({@link TmsTranspiler#memberFaultRule}), on the fold's subject, with the fault that names the member ({@code fault},
  * unnamed); it is no fault by itself. The reference interpreter evaluates the filter of every member before it reads a
  * value, and then reads the values in fold order and faults at the first member that brings no timeline of its own. The
  * rule that reads the fold binds these facts beside its contributions and its {@link FilterFault} facts, and where its

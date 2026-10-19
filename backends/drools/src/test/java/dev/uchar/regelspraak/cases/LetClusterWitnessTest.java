@@ -215,7 +215,7 @@ class LetClusterWitnessTest {
                 .formatted(num(dec), binder, value, body, binder);
     }
 
-    /** ch. 4.10 a read of the nearest enclosing binder. NB the wire field is {@code name}, not {@code naam}. */
+    /** ch. 4.10 a read of the nearest enclosing binder. NB the wire field is {@code name}, not {@code name}. */
     private static String bref(String name, int dec) {
         return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(name, name);
     }

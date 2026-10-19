@@ -41,15 +41,15 @@ public final class Namen {
         return letter;
     }
 
-    /** The getter of the member named {@code naam}, as the fact-model generator writes it: {@code get} and the stem of
+    /** The getter of the member named {@code name}, as the fact-model generator writes it: {@code get} and the stem of
      *  its property ({@link #lidnamen}); a scalar characteristic has the {@code is} form instead, which a reader of a
      *  name tries second. */
     public static String getter(String name) { return lidnamen(property(name)).getter(); }
 
-    /** The setter of the member named {@code naam}, as the fact-model generator writes it ({@link #lidnamen}). */
+    /** The setter of the member named {@code name}, as the fact-model generator writes it ({@link #lidnamen}). */
     public static String setter(String name) { return lidnamen(property(name)).setter(); }
 
-    /** The bean property of a member named {@code naam}: the camel identifier of the name, which is the field the
+    /** The bean property of a member named {@code name}: the camel identifier of the name, which is the field the
      *  fact-model generator writes for the member and the property a DRL constraint spells. Its getter and setter are
      *  {@link #lidnamen} of it. The executable-model branch plans the property once (its plan's {@code Binding.Field},
      *  {@code Alpha.FieldTest} and {@code Join}), so that no rendering derives a property from a declared name with
@@ -158,7 +158,7 @@ public final class Namen {
         return out.toString();
     }
 
-    /** ref's {@code Checks.attr_temporal} as a name contract: whether {@code naam} occurs among the keys of a
+    /** ref's {@code Checks.attr_temporal} as a name contract: whether {@code name} occurs among the keys of a
      *  declared-name-keyed map, compared with {@link #norm}. THE one temporality test of both back-ends' key
      *  sites — deriving it locally is how the DRL text and the executable model came to disagree with ref
      *  about a mis-capitalised uniqueness key (backlog: drools-sleutelconventies). */
@@ -168,7 +168,7 @@ public final class Namen {
     }
 
     /** {@link #containsName}'s reading twin: the value {@code perName} holds for the declaration that IS
-     *  {@code naam} under {@link #norm}, null when none does. The temporal facet maps (granularity, period
+     *  {@code name} under {@link #norm}, null when none does. The temporal facet maps (granularity, period
      *  count) are keyed by DECLARED name while every rule and case names a member as WRITTEN, so a lookup
      *  that decides "temporal" by norm and then reads the granularity or the period count by exact spelling
      *  would split one member into a timeline without a grain, or a multi-period timeline read as a single
@@ -179,7 +179,7 @@ public final class Namen {
     }
 
     /** The DECLARED spelling of a WRITTEN name: the member of {@code declared} that IS this name under
-     *  {@link #norm}, or {@code naam} unchanged when nothing declares it. The naming contract above turns a
+     *  {@link #norm}, or {@code name} unchanged when nothing declares it. The naming contract above turns a
      *  DECLARED name into a bean member, so every name that reaches {@link #ident}, {@link #getter} or the
      *  runtime's property resolver must first be brought back to its declaration: a reference written in
      *  another capitalisation ("vondstNummer" for a declared "vondstnummer") resolves for ref, clingo and

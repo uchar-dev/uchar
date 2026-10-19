@@ -345,7 +345,7 @@ public final class EffectiveUnit {
      *
      * <p>The unspellable case (a rate factor, "€·m/jr") reaches a consumer only on a document the frontend
      * never wrote — {@code Typing} makes it a loud error rather than a type. This join answers it with a
-     * DENOMINATOR-LESS opaque product ({@code Unit.product} keeps the numerator factors and drops the
+     * DENOMINATOR-LESS opaque product ({@link Unit#product} keeps the numerator factors and drops the
      * noemer, so "€/jr maal kg" and "€/jr maal kg/jr" both yield €·kg): again the conservative,
      * non-restatable outcome rather than an invented factor. RUNTIME-SEMANTICS ch. 2.10 records it as the
      * fourth MAAL outcome and names the three consumers that refuse it.
@@ -382,7 +382,7 @@ public final class EffectiveUnit {
      * one small record.
      *
      * <p>Correctness is unaffected by the growth: a stale entry can never mark a NEW unit, because
-     * {@code Unit.product} never returns an existing instance, so no aliasing is possible however long the
+     * {@link Unit#product} never returns an existing instance, so no aliasing is possible however long the
      * table lives. Clearing it per transpilation was considered and rejected this round: it would need a
      * guarantee that no other derivation instance is live, and nothing in the build route provides one — the
      * two transpiler branches each construct their own {@code EffectiveUnit}, and a clear on construction
@@ -470,7 +470,7 @@ public final class EffectiveUnit {
     }
 
     /**
-     * Every Expr-carrying component of an ordinary v0 node (the {@code Expr.contains} inventory minus its ch. 4.10
+     * Every Expr-carrying component of an ordinary v0 node (the {@link Expr#contains} inventory minus its ch. 4.10
      * arms — {@link #noteUnit} matches all three cluster nodes itself, because each needs a SCOPE this cannot
      * carry).
      *
@@ -481,7 +481,7 @@ public final class EffectiveUnit {
      * every binder read beneath it silently loses its recorded unit — falling back to the annotation this class
      * exists to not read. So the {@code switch} below is EXHAUSTIVE over the sealed union, with no
      * {@code default}: the next node the union grows is a COMPILE ERROR here rather than a silent gap, exactly
-     * as {@code Expr.contains} is written for the same reason. The six genuine leaves are spelled out; the three
+     * as {@link Expr#contains} is written for the same reason. The six genuine leaves are spelled out; the three
      * ch. 4.10 nodes are unreachable — {@link #noteUnit} intercepts each before it gets here — and they REFUSE
      * rather than answering, because handing back their children from a place that carries no scope is the
      * defect, not the fix.
@@ -540,7 +540,7 @@ public final class EffectiveUnit {
     /**
      * The ROOT of every Expr operand a condition carries — the nodes {@link #noteUnit} may start a walk at.
      *
-     * <p><b>Roots, never descendants.</b> The shared {@code Condition.containsOperand} scan is a FULL pre-order walk:
+     * <p><b>Roots, never descendants.</b> The shared {@link Condition#containsOperand} scan is a FULL pre-order walk:
      * asked with a predicate that never short-circuits it yields each operand AND every node beneath it. Handing
      * that flat list to {@link #noteUnit} makes it RE-ENTER each operand tree midway, carrying the enclosing scope
      * into a place that scope does not govern. For a SHADOWING inner {@code Let} that is not redundant work but a

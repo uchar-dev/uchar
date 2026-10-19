@@ -56,7 +56,7 @@ public enum ReadKind {
     ROLE_FILLERS,
     /** The number of links of a created relation that hold the subject ({@code rolkoppelingen}). */
     ROLE_LINKS,
-    /** The parent of the subject in the scope of a uniqueness ({@code scopelezing}). */
+    /** The parent of the subject in the scope of a uniqueness (the scope read). */
     SCOPE,
     /** The binder of a {@code Let}: no pattern binds it ({@code binder}). */
     BINDER,

@@ -13,7 +13,7 @@ in tests.
   the fact classes it inserts, and its two renderings: `PatternDslRendering`, Drools' executable
   model, for the exec-model branch (below, "The exec-model branch"), and `DrlRendering`, DRL text,
   for the DRL-text branch (below, "The DRL-text branch").
-- `transpiler/kern/` — parts of the lowering the analysis shares with the rest of the backend: names, the coverage manifest,
+- `transpiler/core/` — parts of the lowering the analysis shares with the rest of the backend: names, the coverage manifest,
   the classification of standing targets, units, day kinds, the plans of fold sources.
 - `runtime/` — the production runtime (`RegelSpraakRuntime`, `Breuk`, `Accessors`, …). It
   lives **only here**; `ref/` and `spec/verifier/` share no code with it (gate 1's
@@ -34,7 +34,7 @@ in tests.
 - `cases/CaseRunner.java`, `cases/DroolsBackendMain.java` — the case runner and the
   jar-only CLI the gate drives.
 
-The shared IR record types (`model/`, `ir/`, `kern/`) are **not** copied here — the pom
+The shared IR record types (`model/`, `ir/`, `core/`) are **not** copied here — the pom
 compiles them in-tree from `frontends/regelspraak/src/main/java` (the ANTLR-coupled
 `resolver`/`emit` packages are excluded). This is the card's "no second copy".
 
@@ -72,7 +72,7 @@ consumer does.
    declare is one no rule reads; `setGlobal` refuses it, and the replay passes it over. A global keeps its value from
    the first `fire` on: the branch states it as a fact once, at the first fire,
    so `fire`, `fixpointOf` and `setDerivedValues` refuse a session whose global changed after it.
-2. `DroolsBackend.insert(build, session, invoer)`, with an `Input` that holds the beans, instances of the classes
+2. `DroolsBackend.insert(build, session, input)`, with an `Input` that holds the beans, instances of the classes
    `build.beanLoader()` loads with their attributes, characteristics and reference fields set, and what the branch
    reads beside them: `emmerscalair(bean, attribute)` for every attribute on
    a timeline whose input the bean holds as the asOfDate-bucket scalar, the one segment of the period of the
@@ -190,7 +190,7 @@ attribute that disagree (RUNTIME-SEMANTICS ch. 5.7) and an `InputFormFault` for 
 convention (ch. 8.4); two or more as `EvaluationFaults`, with each fault in `faults()`. Any other exception is no
 evaluation fault: a broken contract or a bug.
 
-**Deposits, made objects and links.** The §9.5 deposits are the facts of the generated class `Inconsistency`, with
+**Deposits, made objects and links.** The §9.5 deposits are the facts of the generated class `Inconsistentie`, with
 the rule and the subject: `fixpointOf` gives them, and on both branches a consumer reads them from the working memory. A made
 object is a bean in the working memory of the session; on the exec-model branch `fixpointOf` names it with its creation and
 subject, and after the write-back the reference fields reach it.
@@ -453,7 +453,7 @@ a bound value. Witnesses `TmsLetWitnessTest`, `TmsComputeFormWitnessTest`, `TmsB
 members that are not time-dependent, `minimum`, `maximum`, `first`, `last`) is an accumulate in the left-hand side of
 the rule that reads it, over `Contribution` facts: one per member of the range that passes the fold's filter, inserted
 logically by a contribution rule of the fold. That rule binds the fold's subject, the member joined to it through the
-range (`sourceRole`, or `sourcePath` on the plan of `transpiler/kern/SourcePath`, with the intermediates in an `exists`),
+range (`sourceRole`, or `sourcePath` on the plan of `transpiler/core/SourcePath`, with the intermediates in an `exists`),
 the member's value and every read of the filter, with the member as the filter's subject; a member whose value or
 filter reading changes gives up its contribution and makes the new one, and the accumulate follows. A value fold skips
 a leeg member, a count counts every member, and over no contribution a sum is leeg or its fallback, a total 0, a count
@@ -518,7 +518,7 @@ evaluates the form. Witnesses `TmsQuantifierFoldWitnessTest`, `TmsRoleCheckWitne
 
 **Writers of one target.** A computing rule is an equation (RUNTIME-SEMANTICS ch. 5.1), and a target may have any
 number of them, the versions of one form among them. On a standing target (ch. 7.8, and the desugaring domain of ch.
-7.7, as `transpiler/kern/StandingTargets` classifies it for both branches) a computed leeg inserts nothing; outside
+7.7, as `transpiler/core/StandingTargets` classifies it for both branches) a computed leeg inserts nothing; outside
 it the rule inserts a `Value` that carries leeg (ch. 1.2g), which takes the input standing away and is a value
 another writer can disagree with. Where two writers stand on one object with different values, a rule per attribute
 on which two can stand (two computing rules, or one outside the standing domain beside an initialisation; an
@@ -544,7 +544,7 @@ side binds. A rule of the allocation inserts, per source and per recipient, an `
 `RelationLink` facts of a relation a form creates, so a recipient a creation adds counts as well, with its weight,
 ordering key and cap bound in that rule's left-hand side, a derived one through its standing. The allocation's own
 rule binds the source, its pot, the reads of its condition and, through an accumulate, the list of the source's
-`Recipient` facts; its consequence computes the distribution from those values alone (`Allocation.bereken`, a public
+`Recipient` facts; its consequence computes the distribution from those values alone (`Allocation.compute`, a public
 function of plain values, so that a rendering as DRL text can call it too). Every share and the rest is a `Value`
 with the allocation as its writer, and every degradation of ch. 4.3 and 4.4, an empty weight, a negative proportional
 weight, an empty or negative cap, is the allocation's §9.5 deposit on that recipient. All of it is logical, so a
@@ -639,7 +639,7 @@ negation is read per member: a counting quantifier counts the members for which 
 `TmsWholePeriodWitnessTest`, over timelines that a rule derives later, in every order of the rules.
 
 **Day kinds.** A day-kind definition (IR-SPEC ch. 3.7) reads nothing of working memory (WF-031), so its predicate over
-a calendar day is a constant of the document: the backend's day-kind compiler (`kern/DayKinds`) compiles it the first
+a calendar day is a constant of the document: the backend's day-kind compiler (`transpiler/core/DayKinds`) compiles it the first
 time a form steps or counts in its kind, and the value function of the form holds it. No rule binds anything for it,
 and a definition is no form of the manifest. A date or a date-time plus or minus a count of days of a kind walks the
 calendar (`rsDatumPlusDagsoort`, `rsDatumTijdPlusDagsoort`, ch. 3.8), and a duration in whole days of a kind between

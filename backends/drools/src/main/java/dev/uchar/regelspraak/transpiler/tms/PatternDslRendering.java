@@ -689,7 +689,7 @@ final class PatternDslRendering {
         };
     }
 
-    /** The value variable {@code naam}, which an item rendered before binds: a slot, a join and an accumulate name only
+    /** The value variable {@code name}, which an item rendered before binds: a slot, a join and an accumulate name only
      *  what the plan bound already. */
     private Variable<Object> known(String name) {
         Variable<Object> v = values.get(name);
@@ -697,7 +697,7 @@ final class PatternDslRendering {
         return v;
     }
 
-    /** The value variable {@code naam} for the binding that binds it, made here: each is bound once. */
+    /** The value variable {@code name} for the binding that binds it, made here: each is bound once. */
     private Variable<Object> bind(String name) {
         if (!bound.add(name) || values.containsKey(name))
             throw new IllegalStateException("de variabele " + name + " wordt twee keer gebonden");
@@ -780,7 +780,7 @@ final class PatternDslRendering {
         FIELDS.computeIfAbsent(javaClass, k -> new HashMap<>()).put(name, (Function1<Object, Object>) (Function1<?, ?>) reader);
     }
 
-    /** The read of field {@code naam} of an object of {@code javaClass}: a component of a fact of the branch, or a bean
+    /** The read of field {@code name} of an object of {@code javaClass}: a component of a fact of the branch, or a bean
      *  property, read through the getter the bean generator wrote for it. */
     private static Function1<Object, Object> field(Class<?> javaClass, String name) {
         if (javaClass.getPackageName().equals(PatternDslRendering.class.getPackageName())) {
@@ -887,7 +887,7 @@ final class PatternDslRendering {
      * puts the alpha nodes of one number in one hash map, keyed by the number and the constant
      * ({@code CompositeObjectSinkAdapter}), so two alpha nodes on one constant replace each other there unless Drools
      * shares them as one node, which it does only for constraints with equal ids. Every constraint of this branch has
-     * an id of its own ({@code TmsTranspiler.id}): two rules that read one attribute each have an alpha node on it, and
+     * an id of its own ({@link TmsTranspiler#id}): two rules that read one attribute each have an alpha node on it, and
      * with an alpha index one of the two would never see a fact. An alpha index therefore waits for equal ids on equal
      * constraints.
      */

@@ -55,7 +55,7 @@ The fixed predicate vocabulary:
 | `tl/5` | instance, attribute, from, to, scaled value (timeline segment) |
 | `ktl/4` | instance, characteristic, from, to (condition timeline) |
 | `param/2`, `param_tl/4` | parameter values, scalar and vintaged |
-| `inputval/3`, `inputtl/5`, `inputrol/3` | case input that enters *defeasibly* (S10) |
+| `inputval/3`, `inputtl/5`, `inputrole/3` | case input that enters *defeasibly* (S10) |
 | `inconsistent/2` | the §9.5 channel: rule-or-form name, subject |
 | `viol/2` | a hard-fault witness: reason, subject |
 | `depth/2` | creation-budget bookkeeping (S11) |
@@ -184,7 +184,7 @@ input, that input enters as `inputval/3` (scalar) or `inputtl/5`
 everything else enters as plain facts. Case input on a *non-standing*
 computed target is refused loudly (ref overwrites; a monotone
 encoding would union — the hunted superset model of ch. 6d). Role
-fillings are doubled as `inputrol/3` when object creation is present
+fillings are doubled as `inputrole/3` when object creation is present
 (the ch. 5.5 input-snapshot narrowing, S11). With recursive creation,
 every input instance gets `depth(L,0)` under the creation budget.
 
@@ -1385,7 +1385,7 @@ false, so the deposit fires exactly on true and the mark stays unset on
 false (closed-world, ref's reading; `translate_case` carries a boolean
 input attribute the same way — `has(label,a)` when true, absence when
 false). The 1:1 input-snapshot narrowing guards
-the creating body with `not inputrol(S,new_role,_)` — creation reads
+the creating body with `not inputrole(S,new_role,_)` — creation reads
 the *input* world, not the growing one (ch. 5.5). Recursive creation
 is budgeted: `depth(ocI(S),D+1) :- ⟨body⟩, depth(S,D), D <
 oc_budget.` with `viol("generation budget exhausted",X) :-

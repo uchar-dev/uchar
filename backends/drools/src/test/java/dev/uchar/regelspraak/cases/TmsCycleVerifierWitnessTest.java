@@ -82,7 +82,7 @@ class TmsCycleVerifierWitnessTest {
                     Files.readString(CORPUS.resolve("golden").resolve(g).resolve("ir.json"))))), g);
     }
 
-    /** Every {@code ir.json} under {@code squareRoot} whose directory name matches {@code naam}, sorted. */
+    /** Every {@code ir.json} under {@code squareRoot} whose directory name matches {@code name}, sorted. */
     private static List<Path> documents(Path squareRoot, String name) throws Exception {
         try (Stream<Path> s = Files.walk(squareRoot)) {
             return s.filter(p -> p.getFileName().toString().equals("ir.json"))

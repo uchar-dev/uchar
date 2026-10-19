@@ -116,7 +116,7 @@ class TmsDayKindWitnessTest {
         return "{\"node\":\"DayKind\",\"name\":\"" + name + "\",\"plural\":\"" + plural + "\"}";
     }
 
-    /** "Een dag is een {@code naam} indien {@code condition}", always valid. */
+    /** "Een dag is een {@code name} indien {@code condition}", always valid. */
     static String definition(String name, String condition) {
         return "{\"node\":\"DayKindDefinition\",\"dayKind\":\"" + name + "\",\"condition\":" + condition
                 + ",\"validity\":{\"node\":\"Validity\"}}";

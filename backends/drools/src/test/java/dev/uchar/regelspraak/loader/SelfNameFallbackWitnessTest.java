@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The nameless-declaration witness. Until M1 a keyed declaration whose {@code naam} was null took its MAP KEY as its
+ * The nameless-declaration witness. Until M1 a keyed declaration whose {@code name} was null took its MAP KEY as its
  * name (WF-094 clause (d), maintainer decision 2026-09-09), on all five map-shaped tables; before that fall-back
  * existed, a null name reached the identifier contract and the load died in a NullPointerException. M1 turned the
  * five tables into lists (delta B2): the name is written once, on the node, so there is no key left to stand in for

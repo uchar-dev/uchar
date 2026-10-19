@@ -18,7 +18,7 @@ import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
  *
  * <p>Like a division by zero it never leaves the fire: the consequence that computes a value, or the fault rule of a
  * condition, inserts it logically as a {@link Fault}, which counts only where it stands at the fixpoint
- * ({@code TmsTranspiler.setDerivedValues}). The branch passes intermediate states the reference interpreter does not
+ * ({@link TmsTranspiler#setDerivedValues}). The branch passes intermediate states the reference interpreter does not
  * see, and a fault thrown there could not be withdrawn when the state passes (PLAN §9, 2026-10-09, "Faults and deposits
  * count at the fixpoint").
  */

@@ -237,7 +237,7 @@ class ReadNameWitnessTest {
         for (Binding b : pt.bindings()) out.add(b.target());
     }
 
-    /** Whether {@code naam} is {@code $} and a Java identifier, which DRL text can spell as a variable. */
+    /** Whether {@code name} is {@code $} and a Java identifier, which DRL text can spell as a variable. */
     private static boolean identifier(String name) {
         if (name.length() < 2 || name.charAt(0) != '$') return false;
         for (int i = 1; i < name.length(); i++)

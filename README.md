@@ -93,6 +93,16 @@ IR. So: reference interpreter, then Clingo, then the extra source languages.
 | `scripts/` | The gate set: sixteen checks, run locally before every landing (`CLAUDE.md`, Gate set) |
 | `toka/` | Parity fixtures on the TOKA casus of the Belastingdienst (third-party material), used to prove the RegelSpraak frontend byte-identical to the original toolchain (gate 11). Not covered by the licenses below; provenance and status under License and in `toka/README.md` |
 
+## Naming
+
+Every identifier and every file or directory name is English: Java, OCaml,
+Python, shell, ASP predicates and test names. What stays Dutch is what the
+source language spells (the Jutterswet, RegelSpraak keywords and the names
+ANTLR generates from the grammar), the v0 wire names where they stand as
+v0 names, and what the production runtime reads by name (`Inconsistentie`,
+`Segment`). The full list, with the reasons, is under Conventions in
+`CLAUDE.md`; a new card follows the rule too.
+
 ## Status
 
 The spec regime is in force and the corpus exercises it end to end. The IR

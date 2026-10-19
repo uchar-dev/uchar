@@ -500,7 +500,7 @@ class LetResultArmWitnessTest {
                 .formatted(num(2, false, bodySign), binder, value, body, binder);
     }
 
-    /** ch. 4.10 a read of the nearest enclosing binder. NB the wire field is {@code name}, not {@code naam};
+    /** ch. 4.10 a read of the nearest enclosing binder. NB the wire field is {@code name}, not {@code name};
      *  WF-091 makes the read's sign that of the value it is bound to, so it rides along. */
     private static String bref(String name, String sign) {
         return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"de %s\"}}"

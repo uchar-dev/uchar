@@ -393,7 +393,7 @@ class SessionDumpWitnessTest {
                 + "{\"text\":\"" + mark + "\"}},\"roles\":{},\"characteristics\":[]}"), List.of(TmsDocuments.consistent()));
     }
 
-    /** The document of a consistency named {@code naam} that every Vondst be verdacht. */
+    /** The document of a consistency named {@code name} that every Vondst be verdacht. */
     private static Path inconsistency(String name) throws Exception {
         String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(), List.of("verdacht"))),
                 List.of());

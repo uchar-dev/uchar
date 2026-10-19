@@ -42,7 +42,7 @@ public final class DayKinds {
 
     public DayKinds(RegelSpraakModel model) { this.model = model; }
 
-    /** Compile (idempotently, cycle-safe) the §9.8 definitie of {@code naam}; null when no such definitie
+    /** Compile (idempotently, cycle-safe) the §9.8 definitie of {@code name}; null when no such definitie
      *  exists or its condition is not a pure date predicate (the caller then markers/skips). */
     public Predicate<LocalDate> datePredicate(String name) {
         String key = name.toLowerCase();

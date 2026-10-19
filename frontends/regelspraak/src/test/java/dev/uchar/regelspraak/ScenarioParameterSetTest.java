@@ -37,7 +37,7 @@ class ScenarioParameterSetTest {
         de parameter het penningbedrag is 275 van 01-01-2026 tot 01-01-2027
         """;
 
-    /** A scenario named {@code naam} on one Jutter, with header lines {@code head} and expectation {@code expected}. */
+    /** A scenario named {@code name} on one Jutter, with header lines {@code head} and expectation {@code expected}. */
     private static String scenario(String name, String head, String expected) {
         return "Scenario " + name + "\n" + head + "Gegeven is de volgende situatie:\neen Jutter J\n"
                 + "- het vondstgewicht is 12,00 kg\nMet als verwacht resultaat:\n" + expected;
