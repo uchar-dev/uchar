@@ -4,7 +4,7 @@ import java.util.Objects;
 
 /**
  * The control fact of a defaults group in its simple form, one chain of defaults without exception groups: default
- * {@code index} of the stack {@code stapel} decided for {@code onderwerp}. A default inserts it, beside its write, only
+ * {@code index} of the stack {@code stack} decided for {@code onderwerp}. A default inserts it, beside its write, only
  * when a lower default of the stack has a rule; every such lower default carries {@code not Beslist} over the indices
  * above its own. A decision therefore displaces every lower one by truth maintenance alone: when a higher default
  * decides after a lower one already wrote, the lower one's match goes and its write with it, and when the higher

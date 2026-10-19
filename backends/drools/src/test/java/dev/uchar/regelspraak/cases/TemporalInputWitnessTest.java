@@ -235,7 +235,7 @@ class TemporalInputWitnessTest {
     }
 
     @Test void expectation_on_unknown_label_is_hard() throws Exception {
-        // an expectation naming no case instance is a case defect; before this check it reached emmer()
+        // an expectation naming no case instance is a case defect; before this check it reached bucket()
         // with a null granularity and died as an unnamed NPE.
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> playBakenmeester("""
                 { "kind": "attributeTimeline", "label": "B9", "attribute": "onderhoudstarief", "timeline": [] }"""));

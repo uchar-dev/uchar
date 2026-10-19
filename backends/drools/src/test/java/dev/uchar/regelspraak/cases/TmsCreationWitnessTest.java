@@ -781,7 +781,7 @@ class TmsCreationWitnessTest {
                 + ",\"validity\":{\"node\":\"Validity\"},\"connectingRole\":" + roleBinding(factType, role) + "}]}";
     }
 
-    /** An initialisation of attribute {@code lid} of the created object. */
+    /** An initialisation of attribute {@code member} of the created object. */
     static String init(String member, String value) {
         return "{\"node\":\"MemberInit\",\"member\":\"" + member + "\",\"value\":" + value + ",\"characteristic\":false}";
     }
@@ -796,7 +796,7 @@ class TmsCreationWitnessTest {
                 + (condition.equals("null") ? "" : ",\"condition\":" + condition) + ",\"validity\":{\"node\":\"Validity\"}}]}";
     }
 
-    /** A recursive rule group of {@code leden}. */
+    /** A recursive rule group of {@code members}. */
     static String ruleGroup(String naam, List<String> members) {
         List<String> l = new ArrayList<>();
         for (String member : members) l.add("\"" + member + "\"");
@@ -809,9 +809,9 @@ class TmsCreationWitnessTest {
     /**
      * Fires {@code beans} through the rules of {@code b} added in {@code order}, with the backend's own driver
      * ({@code DroolsBackend.fire}, reached by name: this witness also compiles against the code before creation was
-     * carried, whose build refuses these documents before any fire). {@code voor} sees the session before the fire. The
+     * carried, whose build refuses these documents before any fire). {@code before} sees the session before the fire. The
      * fire must stay below the cap. At a fixpoint the derivations are written back and null is returned; at the
-     * generation budget the driver's sentence. {@code na} sees the session either way, before it is disposed.
+     * generation budget the driver's sentence. {@code after} sees the session either way, before it is disposed.
      */
     static String fire(DroolsBackend.Build b, List<Rule> order, List<Object> beans, Consumer<KieSession> before,
                        Consumer<KieSession> after) throws Exception {
@@ -820,7 +820,7 @@ class TmsCreationWitnessTest {
     }
 
     /** {@link #fire(DroolsBackend.Build, List, List, Consumer, Consumer)} through the rules of {@code b} named in
-     *  {@code namen}, in that order, as its branch builds them ({@link TmsDocuments#kieBaseOf}): on the exec-model
+     *  {@code names}, in that order, as its branch builds them ({@link TmsDocuments#kieBaseOf}): on the exec-model
      *  branch the rules of its executable model, on {@code DRL_TEXT} those of its text (round 5b). */
     static String fireInOrder(DroolsBackend.Build b, List<String> names, List<Object> beans,
                                  Consumer<KieSession> before, Consumer<KieSession> after) throws Exception {
@@ -887,7 +887,7 @@ class TmsCreationWitnessTest {
         }
     }
 
-    /** Counts into {@code teller} every {@link Value} of attribute {@code attribute} with value {@code lexeme} that is
+    /** Counts into {@code counter} every {@link Value} of attribute {@code attribute} with value {@code lexeme} that is
      *  inserted: an intermediate state of the defaults group of that attribute passing. */
     private static DefaultRuleRuntimeEventListener valueCounter(String attribute, String lexeme, int[] counter) {
         BigDecimal v = new BigDecimal(lexeme);

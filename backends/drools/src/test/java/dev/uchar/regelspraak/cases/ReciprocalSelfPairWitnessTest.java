@@ -137,7 +137,7 @@ class ReciprocalSelfPairWitnessTest {
     }
 
     @Test void a_name_dividing_characteristic_displaces_the_field_and_is_refused_loudly() throws Exception {
-        // leden() ports every member through a name-dedup (attribute > kenmerk > reference), so a kenmerk
+        // members() ports every member through a name-dedup (attribute > kenmerk > reference), so a kenmerk
         // sharing the reciprocal role's name displaces the self-pair field. That shape must be a loud
         // per-form Excluded (the name-sharing bean limit), never an unclassified ERROR at mirror time —
         // authored on an in-memory copy of the golden's ir, the corpus itself untouched.

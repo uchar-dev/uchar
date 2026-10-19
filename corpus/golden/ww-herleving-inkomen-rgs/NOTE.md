@@ -101,7 +101,7 @@ basisregel; het anker draagt een eigen omschrijving. `name` is geen
 staan. Geen case leest de naam.
 
 **De literal.** Het frontend typeert een numerieke literal op zijn kleinste
-schaal (`ExpressieBouwer.decimalenVanLiteral`): `0,8750` op drie decimalen,
+schaal (`ExpressionBuilder.literalDecimals`): `0,8750` op drie decimalen,
 het product op vijf; het lexeem blijft `0.8750`. RUNTIME-SEMANTICS ch. 2.10
 maakt het type van een `Literal` de bron. De waarde is dezelfde, en de
 afgeronde inkomensgrens ook (2100,00). clingo's gesplitste geld-×-

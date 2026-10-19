@@ -38,7 +38,7 @@ public sealed interface Term {
     String source();
 
     /**
-     * The value {@code waarde}, exactly as the analysis made it: a number as a {@code BigDecimal} with its scale or as
+     * The value {@code value}, exactly as the analysis made it: a number as a {@code BigDecimal} with its scale or as
      * an exact rational ({@code Breuk}), a date, a date-time, a truth value, a text or an enumeration label. {@code type}
      * is the IR's type of a literal, with its unit, and a text for the literal chunk of a text composition; it is null
      * for a constant of the analysis that an argument of a {@link StaticFunction} takes (a number of decimals, a rounding mode,
@@ -65,7 +65,7 @@ public sealed interface Term {
     record Binder(int slot, String naam, String source) implements Term {}
 
     /**
-     * {@code body} with the binder {@code naam} bound to {@code waarde} as a need (RUNTIME-SEMANTICS ch. 10.6): the
+     * {@code body} with the binder {@code naam} bound to {@code value} as a need (RUNTIME-SEMANTICS ch. 10.6): the
      * value is evaluated at the first read of the binder ({@link Binder}, slot {@code slot}, which no pattern binds) and
      * not at all where the body reads none. {@code eager} holds where the body reads the binder before anything else of
      * it can fault, deposit or end an evaluation, so that evaluating the value before the body gives the same outcome,
@@ -86,10 +86,10 @@ public sealed interface Term {
     }
 
     /**
-     * The value of {@code term} restated from the unit {@code van} into the unit {@code naar} (RUNTIME-SEMANTICS ch.
-     * 2.6) through {@code function}: {@link StaticFunction#RESTATE_EXACT}, a number times {@code teller} and divided by
-     * {@code noemer}, the exact canonical factors, as exact rationals; or {@link StaticFunction#RESCALE}, where
-     * {@code noemer} is null, times the single ratio {@code teller} of the two units. A leeg value and a value that is
+     * The value of {@code term} restated from the unit {@code van} into the unit {@code destination} (RUNTIME-SEMANTICS ch.
+     * 2.6) through {@code function}: {@link StaticFunction#RESTATE_EXACT}, a number times {@code counter} and divided by
+     * {@code denominator}, the exact canonical factors, as exact rationals; or {@link StaticFunction#RESCALE}, where
+     * {@code denominator} is null, times the single ratio {@code counter} of the two units. A leeg value and a value that is
      * no number pass unchanged. The analysis adds no node where no restatement is due.
      */
     record Restate(StaticFunction function, Term term, Unit van, Unit destination, BigDecimal counter, BigDecimal denominator,
@@ -121,7 +121,7 @@ public sealed interface Term {
      *  {@code Unresolved} node (RUNTIME-SEMANTICS ch. 5.7, WF-044) or the bound day outside a day kind (ch. 8.2). */
     record Fail(String sentence, String source) implements Term {}
 
-    /** The value of {@code waarde}, and the evaluation fault {@code sentence} where it is leeg: the evaluation date in a
+    /** The value of {@code value}, and the evaluation fault {@code sentence} where it is leeg: the evaluation date in a
      *  session without one (RUNTIME-SEMANTICS ch. 8.2). */
     record Required(Term value, String sentence, String source) implements Term {}
 
@@ -150,7 +150,7 @@ public sealed interface Term {
      * filter's deposits bound at slot {@code depositCount} is not 0, the probe in slot {@code depositFlag} hears the deposit,
      * with {@code codes}, the EF codes of the kind the filter deposits (ch. 5.7b; none for the square root);
      * then, where the least filter fault bound at slot {@code filterFault} stands, its fault; then, where the least member
-     * fault bound at slot {@code memberFault} stands, its fault; then the fold's value {@code uitkomst}. A slot of -1: the
+     * fault bound at slot {@code memberFault} stands, its fault; then the fold's value {@code outcome}. A slot of -1: the
      * fold has none of that kind. The analysis adds no node where the fold has none of the three.
      */
     record FoldRead(Term outcome, int depositCount, int depositFlag, List<String> codes, int filterFault, int memberFault,
@@ -162,7 +162,7 @@ public sealed interface Term {
 
     /**
      * A composite condition (RUNTIME-SEMANTICS ch. 5.10, IR-SPEC ch. 4.5): its members, truth values, read in the order
-     * of {@code leden}, the wire order, and counted under {@code quantifier}, with the threshold {@code drempel} of a
+     * of {@code members}, the wire order, and counted under {@code quantifier}, with the threshold {@code threshold} of a
      * counting quantifier. Before each member the stop triggers of ch. 5.10 are tested on the members read so far
      * ({@code ComputeHelpers.established}), and the composite stops at the first point from which its verdict stands, so a
      * member after it is not evaluated: it raises no fault and deposits nothing. Where no trigger stops it, every member
@@ -177,8 +177,8 @@ public sealed interface Term {
     /**
      * The verdict of a quantifier fold whose matrix can fault or deposit, in the rule that reads the fold
      * (RUNTIME-SEMANTICS ch. 3.9a, 5.10, 5.11), through {@code function} ({@link StaticFunction#QUANTIFIER_READ}): the outcome of
-     * the matrix per contributor, the list {@code contributions} over the count {@code aantal}, read in the contributors'
-     * order under {@code quantifier} with the threshold {@code drempel} of a counting quantifier, the stop triggers of
+     * the matrix per contributor, the list {@code contributions} over the count {@code count}, read in the contributors'
+     * order under {@code quantifier} with the threshold {@code threshold} of a counting quantifier, the stop triggers of
      * ch. 5.10 tested before each contributor. A contributor that is reached deposits where its matrix deposited, heard
      * by the probe in slot {@code depositFlag} of the value array (-1: the matrix does not deposit), and faults where its
      * matrix faulted; one that is not reached does neither. A fold whose matrix can do neither is an {@link Call} of

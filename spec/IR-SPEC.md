@@ -4212,7 +4212,7 @@ compares it VERBATIM (ch. 4.1's raw-string comparison). The rule binds the
 PRODUCER: an emitter that writes the delimiter-carrying snippet puts a
 second spelling of one text value on the wire, which is what this decision
 removed. Its machine-checkable artifacts are the emitter witness (`IrEmitt
-erTest.tekst_literal_lexeme_is_de_geparste_waarde_snippet_in_bron`, gate
+erTest.text_literal_lexeme_is_the_parsed_value_snippet_in_source`, gate
 10) and gate 11's byte-identical re-emission of the pinned dumps.
 
 **The literal's variant against its type (WF-114).** A `Literal`'s value
@@ -4272,7 +4272,7 @@ what WF-088 demands of every use site. Where neither position names an
 `Unresolved` marker rather than a guessed domain — a label written under a
 domain nobody declared for that position would be a silently wrong answer
 where the marker is a visible gap. The machine-checkable artifacts are the
-emitter witnesses (`IrEmitterTest.enum_literal_krijgt_zijn_domein_van_het_schrijfdoel`
+emitter witnesses (`IrEmitterTest.enum_literal_gets_its_domain_of_the_write_target`
 and its three siblings, gate 10) and the golden `jutterswet-vondstklasse`,
 which carries an enumeration literal in both positions and replays through
 ref and clingo against hand-computed values (gates 3, 5 and 6).

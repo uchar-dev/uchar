@@ -80,7 +80,7 @@ public final class SourcePath {
             return out;
         }
 
-        /** The backward {@code veld}s to apply, in order, to walk from the ELEMENT up to node {@code doel}
+        /** The backward {@code veld}s to apply, in order, to walk from the ELEMENT up to node {@code target}
          *  (nodes {@code backwardFrom}..n only). */
         public List<String> chainFromElement(int target) {
             List<String> out = new ArrayList<>();
@@ -88,7 +88,7 @@ public final class SourcePath {
             return out;
         }
 
-        /** The forward {@code veld}s to apply, in order, to walk from the SUBJECT down to node {@code doel}
+        /** The forward {@code veld}s to apply, in order, to walk from the SUBJECT down to node {@code target}
          *  (nodes 0..{@code forward} only). */
         public List<String> chainFromSubject(int target) {
             List<String> out = new ArrayList<>();

@@ -18,7 +18,7 @@ class CharacteristicMatcherTest {
         return ot;
     }
 
-    /** A subtype of {@code ouder} with its own kenmerken — the chain SUBTYPING §3.2 resolves along. */
+    /** A subtype of {@code parent} with its own kenmerken — the chain SUBTYPING §3.2 resolves along. */
     private static Objecttype under(Objecttype parent, String... kenmerken) {
         Objecttype ot = with(kenmerken);
         ot.supertype = parent;

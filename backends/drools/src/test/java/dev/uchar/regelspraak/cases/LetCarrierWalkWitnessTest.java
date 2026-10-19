@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       ({@code exprLeesnamen}) each over a producer FORCED by §9.2 stratification to fire after its consumer,
  *       so the witness is deterministic rather than agenda luck;</li>
  *   <li><b>the three §9.5/exactness walks.</b> A Let-wrapped division by leeg (§6.5) and a Let-wrapped wortel
- *       of a negative number (§6.6) must raise the SAME Inconsistentie as the bare form — each is pinned
+ *       of a negative number (§6.6) must raise the SAME Inconsistency as the bare form — each is pinned
  *       beside its bare twin in one method, so an implementation that raises neither fails on the twin too —
  *       and a Breuk behind a Let must route the comparison through the exact helper instead of a
  *       {@code (BigDecimal)} cast that throws;</li>
@@ -67,14 +67,14 @@ class LetCarrierWalkWitnessTest {
         // exec-model branch restates the comparison (RUNTIME-SEMANTICS ch. 2.6) and answers 2.00, consistent,
         // as ref; clingo answers 1.00, an existing fault of the ASP backend (card
         // 20261010-clingo-let-binder-vergelijking-over-eenheden). The document and case are those of
-        // TmsLikeRefWitnessTest's let-kruiseenheid.
+        // TmsLikeRefWitnessTest's let-cross-unit.
         assertNull(playTms(crossUnitModel(), caseOf(inst("B1", "Baan", "\"aanloop\": { \"number\": \"500\" }", ""),
                 valueJson("B1", "uit", "2.00") + ", " + consistent())), "de herrekende vergelijking kiest de ANDERS-tak");
     }
 
     @Test void the_defaults_division_fence_fires_through_a_let() throws Exception {
         // The ch. 7 defaults lowering refuses a consequence that can DEPOSIT in the §6.5 fout channel, because
-        // a default that is evaluated and then discarded would leave the Inconsistentie behind. The division
+        // a default that is evaluated and then discarded would leave the Inconsistency behind. The division
         // here sits behind a Let ("Let d = deler in inkomen gedeeld door d"), so a bevatDeling that does not take
         // letKinderen would let the group through and the fence would be a dead letter on every such default.
         // ref on this model+case: toeslag = 5.0000 (kindertal 3, inkomen 10.00, deler 2.00) — a value this
@@ -188,7 +188,7 @@ class LetCarrierWalkWitnessTest {
 
     @Test void a_division_behind_a_passed_empty_barrier_yields_no_error() throws Exception {
         // the sister: "Let d = deler in d plus (inkomen gedeeld door tweede)", `deler` and `tweede` absent. Now the
-        // body READS `d` — and reads it FIRST (the left operand; ref evaluates a Binair left before right). That
+        // body READS `d` — and reads it FIRST (the left operand; ref evaluates a Binary left before right). That
         // read forces the leeg need, raises the barrier at the read (clause 2) and ends the Let before the
         // division is ever reached: no §6.5 fault, uit leeg. This is the ch. 10.6-L shape of "a barrier the
         // division sits behind" — the read place, not the bind place, is where the path is cut.

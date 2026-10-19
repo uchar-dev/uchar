@@ -367,7 +367,7 @@ class TmsWritersWitnessTest {
     // ---------------- helpers ----------------
 
     /** The sentence of RUNTIME-SEMANTICS ch. 5.7 for the two writers {@code a} and {@code b}, in the order of the
-     *  document whose rules are {@code namen}. */
+     *  document whose rules are {@code names}. */
     private static String conflict(List<String> names, String a, String valueA, String b, String valueB, String member,
                                    String object) {
         boolean aFirst = names.indexOf(a) < names.indexOf(b);

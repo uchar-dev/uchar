@@ -41,7 +41,7 @@ creation written above the object creation the frontend writes the same
 document byte for byte. Until 2026-10-06 it dropped the fact creation then,
 with the WARNING "referentieveld-zijde voor tussenstap 'premiehaven' niet af
 te leiden", because it only counted an object creation that stood earlier in
-the source (`BronvolgordeTest`).
+the source (`SourceOrderTest`).
 
 ## Hand computation
 

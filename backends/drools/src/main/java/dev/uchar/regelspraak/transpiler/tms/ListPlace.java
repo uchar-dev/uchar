@@ -3,7 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 import java.util.Objects;
 
 /**
- * The place of {@code lid}, counted from 0, in the to-many list of the case it belongs to through its reference field
+ * The place of {@code member}, counted from 0, in the to-many list of the case it belongs to through its reference field
  * {@code field}: stated beside the beans by the case input, never derived. The bean model stores a to-many role as one
  * reference field on each member (§13.3.9) and keeps no order, while the order of a fold's members is visible where
  * more than one of them can fault, as where its filter faults: the reference interpreter evaluates the filter per

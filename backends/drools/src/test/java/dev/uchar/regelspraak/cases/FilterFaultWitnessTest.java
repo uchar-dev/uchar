@@ -285,7 +285,7 @@ class FilterFaultWitnessTest {
             pathRead("telling", "Melding", "JutterHeeftMelding", "melding"), "null");
 
     /** A quantifier fold over the vondsten of the Jutter under {@code quantifier}, with the subselection {@code filter}
-     *  ("null" for none) and the matrix {@code toets}. */
+     *  ("null" for none) and the matrix {@code test}. */
     static String quantifierFold(String quantifier, String filter, String test) {
         return "{\"node\":\"QuantifierFold\",\"quantifier\":\"" + quantifier + "\"" + (quantifier.equals("atLeast")
                 ? ",\"threshold\":1" : "") + ",\"elementType\":\"Vondst\"" + (filter.equals("null") ? ""
@@ -650,7 +650,7 @@ class FilterFaultWitnessTest {
         assertEquals(List.of(), deviating);
     }
 
-    /** Adds to {@code afwijkend} where a branch does not play {@code caseDocument} on {@code ir}, a composite ({@code bron})
+    /** Adds to {@code deviating} where a branch does not play {@code caseDocument} on {@code ir}, a composite ({@code source})
      *  whose fold divides, with the reference interpreter's answer. Until card drl-teksttak-op-truth-maintenance the
      *  DRL-text branch refused the rule "drukte" here ("drl-transpiler MARKER: regel: drukte — …"). */
     private static void likeRef(Path ir, JsonNode caseDocument, String source, List<String> deviating) throws Exception {

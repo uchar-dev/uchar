@@ -195,7 +195,7 @@ public final class RegelSpraakModel {
         return dev.uchar.regelspraak.core.FixedStartPoint.anchor(l);
     }
 
-    /** §9.9 whether {@code lid} is the synthetic startpunt-anchor attribute of {@code objectType} — the
+    /** §9.9 whether {@code member} is the synthetic startpunt-anchor attribute of {@code objectType} — the
      *  back-ends key the §6.8 leeg-fout companion on it. */
     public boolean isStartPointMember(Objecttype objectType, String member) {
         return objectType != null && resolvedStartPointDeterminations.stream()
@@ -740,7 +740,7 @@ public final class RegelSpraakModel {
     /** The roles a written step of a fold-source range names from {@code houder}, split by why {@link #rangeHop}
      *  takes them or not. {@code declared}: by a DECLARED name (singular or declared plural) in a two-role fact
      *  type, one entry for each binding {@link #elementBinding} counts, so the step binds exactly when there is one
-     *  and its filler is a declared object type. {@code afgeleid}: by the best-effort plural alone, which binds no
+     *  and its filler is a declared object type. {@code derived}: by the best-effort plural alone, which binds no
      *  step. {@code reciprocal}: in a reciprocal fact type, whose single role gives no two-role step. It exists for
      *  the refusal that names the step and its cause, so the words follow the search that declined the step. */
     public record StepCandidates(List<StepCandidate> declared, List<StepCandidate> derived,
@@ -909,7 +909,7 @@ public final class RegelSpraakModel {
         /** §13.3.6.7 the period COUNT of a MULTI-period tijdlijn ("voor elke 5 maanden" -&gt; 5), keyed by the
          *  attribute naam — absent (count 1) for a single-period "voor elke maand" as the resolver records it; a
          *  model the Drools IR loader builds carries every facet's count, 1 included. Each tijdvak then spans
-         *  {@code aantal} units of {@link #attribuutGranulariteit}, so a temporal fold must divide by it. */
+         *  {@code count} units of {@link #attribuutGranulariteit}, so a temporal fold must divide by it. */
         public final Map<String, Integer> attribuutTijdlijnAantal = new LinkedHashMap<>();
         /** §13.3.6.9 the NAMED tijdlijn an attribute rides ("voor elke &lt;tijdlijnnaam&gt;"), keyed by the
          *  attribute naam — absent for the inline forms ("voor elke maand"). Recorded so the §9.9 machinery
@@ -951,7 +951,7 @@ public final class RegelSpraakModel {
          *  zelfstandig/noch-noch ("is een &lt;k&gt;"). An untagged declaration is zelfstandig. */
         public enum CharacteristicKind { BIJVOEGLIJK, BEZITTELIJK, ZELFSTANDIG }
 
-        /** What {@code kaart} holds for member {@code naam} on the NEAREST type of this chain that has
+        /** What {@code map} holds for member {@code naam} on the NEAREST type of this chain that has
          *  an entry for it, matched case-INsensitively; null when nothing on the chain does. Every
          *  member-keyed side map is read through this one walk, because reading any of them on the own
          *  type alone answers "no such member" for an inherited one — and for the TEMPORAL maps that
@@ -1003,7 +1003,7 @@ public final class RegelSpraakModel {
             return dims == null ? List.of() : dims;
         }
 
-        /** The chain-closed VIEW of member-keyed side map {@code kaart}: every entry this type or an
+        /** The chain-closed VIEW of member-keyed side map {@code map}: every entry this type or an
          *  ancestor declares, nearest declaration first (a nearer entry wins — WF-105 refuses shadowing,
          *  so the collision is unreachable and the rule only fixes the reading). The map-shaped twin of
          *  {@link #onChain}, for the two readers a one-name question does not serve: one that must
@@ -1095,7 +1095,7 @@ public final class RegelSpraakModel {
             return attribute(naam) != null || characteristicName(naam) != null;
         }
 
-        /** Is {@code ander} this type or one of its ancestors? The ⊑ of IR-SPEC ch. 2.2, which is
+        /** Is {@code other} this type or one of its ancestors? The ⊑ of IR-SPEC ch. 2.2, which is
          *  what every type-ranging position ranges over and what a role's declared filler type
          *  bounds from above. */
         public boolean isA(Objecttype other) {
@@ -1133,7 +1133,7 @@ public final class RegelSpraakModel {
         public boolean reciprocal;
         public FactType(String naam) { this.naam = naam; }
     }
-    /** A feittype role. `meervoud` is the plural the model DECLARES via "(mv: …)"
+    /** A feittype role. `plural` is the plural the model DECLARES via "(mv: …)"
      *  (§13.3.9.1), or null when none is declared — the resolver matches plural
      *  references against the declared form, never a synthesised one. `meervoudig` is the
      *  role's cardinality from the feittype's cardinaliteit line (§13.3.9.1): true when this
@@ -1162,11 +1162,11 @@ public final class RegelSpraakModel {
     }
 
     /** §13.4.6/§9 whether {@code subject} can relate to MORE THAN ONE instance of the created type
-     *  {@code nieuw} — the cardinality that decides an objectcreatie's idempotence guard shape: a 1:1
+     *  {@code fresh} — the cardinality that decides an objectcreatie's idempotence guard shape: a 1:1
      *  target ({@code false}) can be keyed on the LINKED-INSTANCE's absence (a fact-base-derived check on
      *  the created type itself); a to-many target ({@code true}) needs a per-rule per-subject control fact
-     *  (a linked instance already existing is legitimate). Reads the cardinality of {@code nieuw}'s own role
-     *  in the unique feittype relating the pair — {@link #connectingRole}(subject, nieuw) names that role,
+     *  (a linked instance already existing is legitimate). Reads the cardinality of {@code fresh}'s own role
+     *  in the unique feittype relating the pair — {@link #connectingRole}(subject, fresh) names that role,
      *  {@link #toManyRole} reads its meervoudig. Fail-open to to-many ({@code true}) when the role cannot be
      *  uniquely resolved: the control-fact guard is always correct (at-most-once), only less tight than the
      *  1:1 instance check, so an unprovable pair is never wrongly treated as 1:1. */
@@ -1264,7 +1264,7 @@ public final class RegelSpraakModel {
      *  reduce to one of these. */
     public enum Granulariteit { DAG, WEEK, MAAND, KWARTAAL, JAAR }
 
-    /** §13.3.6.10 a named timeline: its naam, its {@link Granulariteit} and period {@code aantal} (so a "voor
+    /** §13.3.6.10 a named timeline: its naam, its {@link Granulariteit} and period {@code count} (so a "voor
      *  elke &lt;naam&gt;" attribute reference adopts BOTH — "heeft tijdvakken van 5 maanden" is granularity MAAND,
      *  count 5), whether `variabelStartpunt` is bound by a §13.4.12 startpuntbepaling, and its fixed start point
      *  in the wire spelling (IR-SPEC ch. 2.8), null on the calendar grid or with a variable start. */
@@ -1287,7 +1287,7 @@ public final class RegelSpraakModel {
         return null;
     }
 
-    /** The §13.3.7 dimension whose PLURAL name (dimensienaammeervoud) is {@code meervoud},
+    /** The §13.3.7 dimension whose PLURAL name (dimensienaammeervoud) is {@code plural},
      *  case-insensitively, or null — the §13.4.17.52-.54 over-forms reference a dimension by its
      *  plural ("over alle jaardimensies", "over de jaardimensies vanaf … t/m …"). */
     public Dimension dimensionByPlural(String plural) {
@@ -1355,7 +1355,7 @@ public final class RegelSpraakModel {
         public String key() { return key; }
     }
 
-    /** Where a generated element comes from: the declared element ({@code bron}) and the form that made it. */
+    /** Where a generated element comes from: the declared element ({@code source}) and the form that made it. */
     public record GeneratedFrom(Designatable source, OriginForm form) {
         public GeneratedFrom {
             java.util.Objects.requireNonNull(source, "bron");
@@ -1409,10 +1409,10 @@ public final class RegelSpraakModel {
         return benaming(vocabulary, element).orElse(element.naam());
     }
 
-    /** The reverse of {@link #effectiveName}: the declaration of kind {@code soort} whose effective name in
-     *  {@code vocabulary} is {@code naam}, compared case-insensitively, within {@code eigenaar} where the kind is scoped
+    /** The reverse of {@link #effectiveName}: the declaration of kind {@code category} whose effective name in
+     *  {@code vocabulary} is {@code naam}, compared case-insensitively, within {@code owner} where the kind is scoped
      *  — for an attribute or a characteristic along the supertype chain of that object type, so an inherited member is
-     *  found from its subtype; null {@code eigenaar} for the other kinds. Empty when no declaration has that effective
+     *  found from its subtype; null {@code owner} for the other kinds. Empty when no declaration has that effective
      *  name, or when two have (WF-118 refuses the second on the wire, so a verifier-clean document answers uniquely);
      *  the vocabulary need not name every declaration. */
     public java.util.Optional<Designatable> namedElement(String vocabulary, Designatable.Kind category, String owner,

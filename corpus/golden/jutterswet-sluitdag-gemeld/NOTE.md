@@ -93,7 +93,7 @@ renders the same analysis and plays them too (`PLAYED 2`, measured
 Measured on the exec-model branch before the card
 drools-exec-defaults-consequentie-vouw (2026-09-30):
 
-    EXCLUDE transpiler SKIP: defaults: defaults A:Kustwacht.sluitdag — defaults (Kustwacht.sluitdag): niet-reduceerbare consequentie (far-side/aggregatie): <default>
+    EXCLUDE transpiler SKIP: defaults: defaults A:Kustwacht.sluitdag — defaults (Kustwacht.sluitdag): niet-reduceerbare consequentie (far-side/aggregation): <default>
 
 The branch refused every group whose consequence folds. It now lowers such a
 fold as it lowers one in a rule's value: an accumulate on the group's rule,

@@ -29,7 +29,7 @@ import java.util.List;
 public record ResolvedScenario(String naam, Scope scope, LocalDate asOfDate, Situation situation,
                                List<Expectation> expectations, int line) {
 
-    /** The rules a scenario tests: {@code vormen} holds the names of the model forms the scope carries, as the model
+    /** The rules a scenario tests: {@code forms} holds the names of the model forms the scope carries, as the model
      *  spells them — what the emitted IR keeps; {@code omitted} holds the source lines of the blocks (a rule, a
      *  decision table, an extension block, a rule group) whose every form the scope leaves out, so the IR document
      *  drops the diagnostics raised there. */
@@ -37,7 +37,7 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate asOfDate, Sit
         public Scope(List<String> forms) { this(forms, List.of()); }
     }
 
-    /** The source lines {@code van} to {@code tot}, both inclusive. */
+    /** The source lines {@code van} to {@code until}, both inclusive. */
     public record LineRange(int van, int until) {
         public boolean contains(int regel) { return regel >= van && regel <= until; }
     }
@@ -58,7 +58,7 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate asOfDate, Sit
     public record Instance(String label, Objecttype objectType, List<AttributeValue> attributen,
                             List<RoleValue> rollen, List<CharacteristicValue> kenmerken) {}
 
-    /** An attribute assignment under its declared name: a scalar {@code waarde}, or for a time-dependent
+    /** An attribute assignment under its declared name: a scalar {@code value}, or for a time-dependent
      *  attribute a {@code tijdlijn} of segments in written order. Exactly one of the two is non-null. */
     public record AttributeValue(String attribute, ScenarioValue value, List<Segment> tijdlijn, int line) {}
 
@@ -73,17 +73,17 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate asOfDate, Sit
      *  characteristic and holds the periods in which a time-dependent one holds, in written order. */
     public record CharacteristicValue(String characteristic, List<TimeWindow> periods, int line) {}
 
-    /** A parameter value under its declared name: a scalar {@code waarde} or, for a time-dependent parameter, a
+    /** A parameter value under its declared name: a scalar {@code value} or, for a time-dependent parameter, a
      *  {@code tijdlijn}. Exactly one of the two is non-null. */
     public record ParameterValue(String parameter, ScenarioValue value, List<Segment> tijdlijn, int line) {}
 
-    /** One timeline segment, {@code van} inclusive and {@code tot} exclusive. */
+    /** One timeline segment, {@code van} inclusive and {@code until} exclusive. */
     public record Segment(LocalDate van, LocalDate until, ScenarioValue value) {}
 
-    /** One period in which a time-dependent characteristic holds, {@code van} inclusive and {@code tot} exclusive. */
+    /** One period in which a time-dependent characteristic holds, {@code van} inclusive and {@code until} exclusive. */
     public record TimeWindow(LocalDate van, LocalDate until) {}
 
-    /** One expectation; {@code soort} selects the meaningful fields. {@code tijdlijn} is the expected timeline of an
+    /** One expectation; {@code category} selects the meaningful fields. {@code tijdlijn} is the expected timeline of an
      *  {@link ExpectationKind#ATTRIBUTE_TIMELINE} (empty when the whole timeline is expected empty); {@code regel}
      *  and {@code label} of an {@link ExpectationKind#INCONSISTENT} are its optional key. */
     public record Expectation(ExpectationKind category, String label, String attribute, String characteristic,

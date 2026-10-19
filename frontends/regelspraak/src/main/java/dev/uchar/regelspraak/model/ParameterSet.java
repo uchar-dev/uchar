@@ -36,7 +36,7 @@ import java.util.Map;
 public record ParameterSet(String naam, Map<String, List<ValueInterval>> waarden) {
 
     /**
-     * Eén geversioneerde parameterwaarde: de gedecodeerde {@code waarde} (Java-type per {@link Datatype}, {@code null}
+     * Eén geversioneerde parameterwaarde: de gedecodeerde {@code value} (Java-type per {@link Datatype}, {@code null}
      * = expliciete leegwaarde) geldig binnen {@code validity}.
      */
     public record ValueInterval(Object value, Validity validity) {}
@@ -87,7 +87,7 @@ public record ParameterSet(String naam, Map<String, List<ValueInterval>> waarden
     }
 
     /**
-     * Per parameter (gepoold over alle sets) de waarde van het unieke interval dat {@code peildatum} bevat. Ontbreekt
+     * Per parameter (gepoold over alle sets) de waarde van het unieke interval dat {@code asOfDate} bevat. Ontbreekt
      * zo'n interval, dan wordt een fout die parameter + peildatum noemt aan {@code faults} toegevoegd (loud, nooit een
      * default) en de parameter niet in het resultaat opgenomen. De keys van het resultaat zijn de parameternamen zoals
      * ze in de sets staan. Een expliciete leegwaarde ({@code null}) is een geldige uitkomst en wordt wél opgenomen.

@@ -48,8 +48,8 @@ public final class BeanCompiler {
      */
     private static final Map<String, ClassLoader> CACHE = new ConcurrentHashMap<>();
 
-    /** Compile {@code bronnen} (simple class name → Java source) in memory; return a loader serving them.
-     *  Identical {@code bronnen} within one JVM are compiled ONCE (content-keyed cache) and share the loader. */
+    /** Compile {@code sources} (simple class name → Java source) in memory; return a loader serving them.
+     *  Identical {@code sources} within one JVM are compiled ONCE (content-keyed cache) and share the loader. */
     public static ClassLoader compile(Map<String, String> sources) {
         return CACHE.computeIfAbsent(key(sources), k -> compileUncached(sources));
     }

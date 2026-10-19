@@ -37,7 +37,7 @@ since (measured again 2026-09-24, on both sentences: `… hier wordt één waard
 verwacht, en een meervoudige stap in een lezing vraagt een aggregatie (WF-053,
 IR-SPEC ch. 4.1a)`): the frontend's quantifier lowering
 declines a written range that resolved to a multi-step path rather than
-bind its first step (the `bereikPad` guard in `RuleChecker.kwantorvouw`),
+bind its first step (the `rangePath` guard in `RuleChecker.quantifierFold`),
 and the same holds with "van de gevoerde boten" instead of "van alle".
 The document is therefore hand-written: the one-step sentences "… van de
 geborgen vondsten van de Boot …" were emitted by the frontend and their

@@ -72,7 +72,7 @@ consumer does.
    declare is one no rule reads; `setGlobal` refuses it, and the replay passes it over. A global keeps its value from
    the first `fire` on: the branch states it as a fact once, at the first fire,
    so `fire`, `fixpointOf` and `setDerivedValues` refuse a session whose global changed after it.
-2. `DroolsBackend.voegIn(build, session, invoer)`, with an `Input` that holds the beans, instances of the classes
+2. `DroolsBackend.insert(build, session, invoer)`, with an `Input` that holds the beans, instances of the classes
    `build.beanLoader()` loads with their attributes, characteristics and reference fields set, and what the branch
    reads beside them: `emmerscalair(bean, attribute)` for every attribute on
    a timeline whose input the bean holds as the asOfDate-bucket scalar, the one segment of the period of the
@@ -80,7 +80,7 @@ consumer does.
    where the order of a to-many list is not the order of the beans, `role` being the role the holder plays, the name
    of the reference field each member holds toward it. `insert` states the facts the branch reads from these
    (`BucketInput`, `ListPlace`), so a consumer states no fact class of the branch itself.
-   `CaseInvoer.van(build, case)` makes that `Input` from a `uchar-case-v0` case, as the replay makes it for every
+   `CaseInput.van(build, case)` makes that `Input` from a `uchar-case-v0` case, as the replay makes it for every
    case: it reads `asOfDate` and `input.instances` onto fresh beans, sets the attributes, characteristics and role
    links (RUNTIME-SEMANTICS ch. 5.7a: the written role by name, else by the type pair; on a one-to-one relation the
    far field as well; a to-many role in the far end's field; the reverse leg of a reciprocal role in a separate
@@ -108,8 +108,8 @@ consumer does.
    (`CaseRunner.report`) is made from these two. A waarnemer belongs to one session and is refused at a `fire` of
    another, and its listener is on the session only during that `fire`, so parallel sessions of one build each record
    their own firings (witness `ObserverWitnessTest`).
-4. `DroolsBackend.lees(build, session)`, or at the end `DroolsBackend.zetAfgeleideWaarden(build, session)`; or
-   `lees(build, session, label)` and `zetAfgeleideWaarden(build, session, label)` with a function that gives the
+4. `DroolsBackend.lees(build, session)`, or at the end `DroolsBackend.setDerivedValues(build, session)`; or
+   `lees(build, session, label)` and `setDerivedValues(build, session, label)` with a function that gives the
    label of an input bean, and null for a made object, by which a fault then names its object as the reference
    interpreter does ("V, een Vondst"), where without labels it names the type and the identity. Both read only a
    session whose last `fire` reached its fixpoint and in which nothing happened outside `fire` since (below), so what
@@ -191,7 +191,7 @@ attribute that disagree (RUNTIME-SEMANTICS ch. 5.7) and an `InputFormFault` for 
 convention (ch. 8.4); two or more as `EvaluationFaults`, with each fault in `faults()`. Any other exception is no
 evaluation fault: a broken contract or a bug.
 
-**Deposits, made objects and links.** The §9.5 deposits are the facts of the generated class `Inconsistentie`, with
+**Deposits, made objects and links.** The §9.5 deposits are the facts of the generated class `Inconsistency`, with
 the rule and the subject: `fixpointOf` gives them, and on both branches a consumer reads them from the working memory. A made
 object is a bean in the working memory of the session; on the exec-model branch `fixpointOf` names it with its creation and
 subject, and after the write-back the reference fields reach it.
@@ -377,7 +377,7 @@ rule, which rests on the `equals` and `hashCode` of the fact classes, the subjec
 **Initialisations, consistencies, defaults.** An initialisation fires where the target is empty in the input on the
 bean and no other writer holds a `Value` on it (beside a writer outside the standing domain, a written leeg leaves
 the target empty: below); its guard excludes its own write, since a guard that counted its own `Value` would undo the
-write it justified. A consistency inserts a logical `Inconsistentie`, and "regelversie X is
+write it justified. A consistency inserts a logical `Inconsistency`, and "regelversie X is
 inconsistent" reads the total standing fact `ChannelState`. A defaults group decides with control facts (`ControlFact`).
 In the simple form, one chain without exception groups, a deciding default inserts `Decides` where a lower default
 has a rule, and every lower default carries `not Decides` over the ones above it. In the general form, with
@@ -389,7 +389,7 @@ reference interpreter reaches the exception groups of a default only where that 
 exception group below a displaced default settles no `Outcome` and raises no fault at the fixpoint, so no control
 fact stands under a displaced default.
 
-**The write-back.** After a fire that reached its fixpoint, `DroolsBackend.zetAfgeleideWaarden(build, session)` puts
+**The write-back.** After a fire that reached its fixpoint, `DroolsBackend.setDerivedValues(build, session)` puts
 the derivations on the beans: `setX(true)` per `HasCharacteristic`, the attribute's setter per `Value`. Input on a
 characteristic stands, since nothing writes false; a derived value replaces input on an attribute, a computed leeg
 of a standing writer writes nothing, so the input stands (ch. 7.1, 7.8), and a computed leeg of a writer outside the
@@ -862,7 +862,7 @@ read of it on a strict subtype of the created type, where ch. 5.1 closes the wri
 The tests that need the frontend's resolver live under `src/source-route/`, outside this build, which carries no
 parser; the gate compiles them against the frontend's classes and this jar.
 
-What a defaults group reads is public per default too, since 2026-10-01: `ProducentConsument.lezingen(model, group,
+What a defaults group reads is public per default too, since 2026-10-01: `ProducerConsumer.readings(model, group,
 navigation)` gives, per default of the group in the order of the group and each default before those of its exception
 groups, its path in the tree (`[i]`, `[i, g, j]`, …), the default itself, and what its justification and its consequence
 read. A consumer that names the default where a read falls outside a scope reads it there, with the source text the

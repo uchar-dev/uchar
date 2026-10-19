@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>Red before the fix</b> (measured 2026-09-30 on the transpiler of the claim, exec-model branch): every row that
  * plays was refused for the whole group in one lumped sentence that names neither the form nor the consequence
- * ({@code niet-reduceerbare consequentie (far-side/aggregatie): <default>}; {@code <default>} because a default carries
+ * ({@code niet-reduceerbare consequentie (far-side/aggregation): <default>}; {@code <default>} because a default carries
  * no source text on the wire); the two refusal rows found that same sentence where they look for the form. The row over
  * two number folds came after the fix and was red on the transpiler of the claim in the same sentence. The row over
  * five folds pinned a refusal of the group until a consequence bound more than nine variables (2026-10-01); red against
@@ -397,7 +397,7 @@ class DefaultsConsequenceFoldWitnessTest {
         return defaultEntry(filled(own("gemelde " + attribute, "Berging")), own("gemelde " + attribute, "Berging"));
     }
 
-    /** The sluitdag of a Berging: the gemelde sluitdag where filled, above {@code basis}. */
+    /** The sluitdag of a Berging: the gemelde sluitdag where filled, above {@code base}. */
     private static String closingDayGroup(String naam, String base) {
         return group(naam, "Berging", "sluitdag", reportedPrecedes("sluitdag"), defaultEntry(ALTIJD, base));
     }

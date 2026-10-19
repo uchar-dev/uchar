@@ -29,7 +29,7 @@ public sealed interface Condition {
     /** §8.2 / §13.4.15.70 "gedurende de/het gehele &lt;periode&gt;" whole-period qualifier on a predicate over a
      *  tijdsafhankelijk onderwerp (§8.2). The qualified predicate yields "waar" only if the underlying
      *  check holds at EVERY moment of each named calendar period the subject's timeline touches (§8.2).
-     *  {@code jaar} = "gedurende het gehele jaar" (false = "de gehele maand"); {@code niet} = the §8.2
+     *  {@code year} = "gedurende het gehele jaar" (false = "de gehele maand"); {@code negated} = the §8.2
      *  "niet gedurende …" form, which complements the whole-period result. Attached to the temporal predicate it
      *  qualifies — a {@link Comparison}, a {@link Predicate}, or a {@link CharacteristicCheck}; null on an ordinary predicate. */
     record WholePeriod(boolean year, boolean negated) {}
@@ -65,7 +65,7 @@ public sealed interface Condition {
      *  (lowered to the subject's boolean property, {@code oud == true}); for a TO-ONE navigated kenmerk
      *  ("de partner van X is gepensioneerd") it is the navigation role, lowered to the property path
      *  {@code partner.gepensioneerd == true}. A to-many navigation in a single-pattern rule stays
-     *  {@link Unresolved}. {@code eigenaar}, when non-null, is the object type whose pattern this BARE
+     *  {@link Unresolved}. {@code owner}, when non-null, is the object type whose pattern this BARE
      *  constraint must attach to — a §13.4.7 feitcreatie hosts a doel-kenmerk on the {@code $doel} pattern,
      *  so the transpiler emits it only on that type and markers it elsewhere (never on the anker, even when
      *  the anker declares a same-named kenmerk). null leaves it unconstrained (the single-subject rule). */
@@ -98,8 +98,8 @@ public sealed interface Condition {
     /** §8.4.3 / §13.4.15.68-.69 periodevergelijking as a CONDITION: the rule applies during the period
      *  bounded by the datum-expressies — "vanaf X" / "van X tot [en met] Y" / "tot [en met] X". Standalone it is
      *  the §13.4.13.1 voorwaardendeel alternative ("… van dd. 1-1-2024 tot dd. 8-2-2025"); inside a compound it
-     *  is the §13.4.15.69 "het is de periode …" bullet. §5.1.3 bound semantics: {@code vanaf} is INCLUSIVE,
-     *  {@code tot} EXCLUSIVE unless {@code toInclusive} (the "tot en met" form). Either bound may be null
+     *  is the §13.4.15.69 "het is de periode …" bullet. §5.1.3 bound semantics: {@code from} is INCLUSIVE,
+     *  {@code until} EXCLUSIVE unless {@code toInclusive} (the "tot en met" form). Either bound may be null
      *  (the one-sided vanaf/tot forms); never both. The engine evaluates scalar rules as of the §4.2 Rekendatum,
      *  so the transpilers lower this to "rekendatum inside the period" (see grammar/DIVERGENCES.md). */
     record TimeWindow(Expr from, Expr until, boolean toInclusive, Source source) implements Condition {}
@@ -115,7 +115,7 @@ public sealed interface Condition {
     }
 
     /** §8.1.9 collect the rule names referenced by a "regelversie &lt;X&gt; is gevuurd" predicate inside
-     *  {@code c} into {@code uit} — the gevuurd (NOT inconsistent) arm of {@link RuleStatusCheck}, recursing
+     *  {@code c} into {@code result} — the gevuurd (NOT inconsistent) arm of {@link RuleStatusCheck}, recursing
      *  through compound children. The transpilers walk every construct's voorwaarde with this FIRST, so
      *  only a rule whose fired-status is actually referenced emits the {@code RuleFired} marker (§8.1.9
      *  opt-in emission — no fact-base bloat from markers no rule reads). Null-safe. */
@@ -129,7 +129,7 @@ public sealed interface Condition {
         }
     }
 
-    /** Whether any operand {@link Expr} inside {@code c} matches {@code toets} — comparison sides, the
+    /** Whether any operand {@link Expr} inside {@code c} matches {@code test} — comparison sides, the
      *  one-sided predicate operand, periode bounds, recursing through compound children. Null-safe. */
     static boolean containsExpr(Condition c, java.util.function.Predicate<Expr> test) {
         if (c == null) return false;
@@ -141,7 +141,7 @@ public sealed interface Condition {
         return false;
     }
 
-    /** Whether any operand {@link Expr} inside {@code c} matches {@code toets} — the PUBLIC form of
+    /** Whether any operand {@link Expr} inside {@code c} matches {@code test} — the PUBLIC form of
      *  {@link #containsExpr}, for cross-package IR consumers (the scenariotoetsen resolver's parametergate /
      *  peildatum-gate need to see whether a scope rule's condition references a parameter or the Rekendatum).
      *  A pure read; identical semantics to the package-private walker. Null-safe. */
@@ -166,7 +166,7 @@ public sealed interface Condition {
     }
 
     /** §13.4.14 compound condition: a quantifier over a bullet list of sub-conditions.
-     *  `drempel` is the threshold count N for the counting quantifiers (ten minste / ten
+     *  `threshold` is the threshold count N for the counting quantifiers (ten minste / ten
      *  hoogste / precies N, §13.4.14.4); 0 and unused for alle / geen / de. */
     enum Quantifier { DE, ALLE, GEEN, TEN_MINSTE, TEN_HOOGSTE, PRECIES }
     record Compound(Quantifier quantifier, int threshold, List<Condition> components, Source source) implements Condition {}
@@ -180,10 +180,10 @@ public sealed interface Condition {
      *  &lt;p&gt;{@code quantifier} is the WRITTEN quantor — recording it is the point of the node:
      *  {@code AttributeReference.set} is true for "alle", "geen van de" and every counting quantor alike, so a
      *  reading that took the set flag for a forall would answer ALLE for a sentence that wrote "geen van
-     *  de". {@code drempel} is the counting quantifier's threshold N (ten minste / ten hoogste / precies
+     *  de". {@code threshold} is the counting quantifier's threshold N (ten minste / ten hoogste / precies
      *  N) and 0 under ALLE / GEEN, where the wire omits the field altogether (WF-108 (e)).
      *  {@code filter} is the die/dat subselection (which members are quantified
-     *  over) and {@code toets} the quantified matrix (what each selected member must satisfy); both are
+     *  over) and {@code test} the quantified matrix (what each selected member must satisfy); both are
      *  evaluated PER CONTRIBUTOR with the element as subject, exactly as {@link Expr.FunctionCall#filter} is.
      *  {@code sourceRole} / {@code sourcePath} are the range, spelled exactly as the fold's and mutually
      *  exclusive (IR-SPEC ch. 4.5, WF-108; RUNTIME-SEMANTICS ch. 3.9a). */
@@ -202,7 +202,7 @@ public sealed interface Condition {
     /** §8.1.9 / §13.4.15.66 regelpredicaat: "regelversie &lt;regel&gt; [(&lt;geldigheid&gt;)] is gevuurd |
      *  is inconsistent" — a control on the EXECUTION of the named rule, not on a subject. {@code regel} is
      *  the referenced rule's name (the parenthesised versie-aanduiding is parsed but kept only in
-     *  {@code bron}: the §9.5 Inconsistentie channel is already geldigheids-window-gated at insert time).
+     *  {@code source}: the §9.5 Inconsistentie channel is already geldigheids-window-gated at insert time).
      *  {@code inconsistent} distinguishes "is inconsistent" (reads the §9.5 Inconsistentie flag facts of a
      *  consistentie/uniciteit/verdeling rule — an exists-join) from "is gevuurd" (whether the named rule's
      *  voorwaardendeel was satisfied — no observable runtime record, so both back-ends decline it
@@ -224,7 +224,7 @@ public sealed interface Condition {
      *  then stays quiet rather than saying it twice. */
     record Unresolved(Source source, String reason) implements Condition {}
 
-    /** Every {@link Unresolved} inside {@code c}, in structural order, handed to {@code uit} as its
+    /** Every {@link Unresolved} inside {@code c}, in structural order, handed to {@code result} as its
      *  {@code (bron, reden)} pair — the traversal the frontend's survivor report runs over the finished
      *  model. Recurses through compound children, the fold's filter/matrix, and every operand
      *  {@link Expr} (an aggregation's own filter is reached back through {@link Expr}). Null-safe.

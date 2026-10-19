@@ -32,15 +32,15 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  *
  * <p><b>Red before the fix</b> (measured 2026-10-02 on the backend of {@code 385b36a5}, whose KieBases carried
  * {@code DroolsBackend.Nuldelingmelder}): the direct fire threw the named {@code DelingDoorNul} out of that handler
- * instead of Drools' exception, on both branches, and {@code benoem} did not exist.
+ * instead of Drools' exception, on both branches, and {@code designate} did not exist.
  *
  * <p>The analysis with truth maintenance does not throw out of its fire: it inserts an evaluation fault as a fact, so
  * its consumer fires through {@code DroolsBackend.fire} to the fixpoint, reads the fault as data with
  * {@code DroolsBackend.read}, and {@code DroolsBackend.setDerivedValues} throws the named {@code DelingDoorNul} there,
  * the sentence the replay gives ({@code TmsFaultWitnessTest}). Since card drl-teksttak-op-truth-maintenance that holds on
  * both branches, and a consumer that fires a KieBase itself gets no exception out of the fire at all. The rows of
- * Drools' exception, and of {@code benoem} naming it, asked the DRL-text branch alone from card tms-omschakeling
- * (2026-10-10), when the destructive exec-model branch stopped throwing it, until that card; {@code benoem} stays and
+ * Drools' exception, and of {@code designate} naming it, asked the DRL-text branch alone from card tms-omschakeling
+ * (2026-10-10), when the destructive exec-model branch stopped throwing it, until that card; {@code designate} stays and
  * passes any other consequence fault as it is.
  */
 class ZeroDivisorConsumerWitnessTest {
@@ -53,7 +53,7 @@ class ZeroDivisorConsumerWitnessTest {
     /** A consumer that fires a KieBase of either branch itself gets nothing out of the fire: the division by zero is
      *  a fact of the fixpoint. Until card drl-teksttak-op-truth-maintenance the DRL-text branch threw Drools'
      *  {@code ConsequenceException} here, naming the rule "verhouding", with "Breuk deling door 0" in its cause chain,
-     *  and {@code benoem} turned it into the sentence of the replay. */
+     *  and {@code designate} turned it into the sentence of the replay. */
     @Test void self_fire_lets_no_fault_out_of_the_fire() throws Exception {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
             assertNull(fireSelf(branch), branch::name);

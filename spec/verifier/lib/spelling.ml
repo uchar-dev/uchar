@@ -200,7 +200,7 @@ let context_value_names = [ evaluation_date; evaluation_year ]
 (* The wire node name of an in-memory expression (IR-SPEC ch. 4), for a
    reader that refuses a node by naming it: the constructors keep their v0
    names, as the enumeration values above do, and [Loader.expr] reads the
-   other direction. [Functie] holds both an Aggregation and a BuiltinCall,
+   other direction. [Function_call] holds both an Aggregation and a BuiltinCall,
    told apart by kind as the wire tells them apart. *)
 let expr_node (e : expr) : string =
   match e with

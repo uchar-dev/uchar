@@ -130,7 +130,7 @@ class GeneratedDesignationsTest {
         assertEquals(List.of(), onTheWire(IrEmitter.emit(plain), "Attribute", "opgegeven meldingsdatum"));
     }
 
-    /** The ERROR {@code fragment} stands on the first line of {@code bron} that carries {@code merker}. */
+    /** The ERROR {@code fragment} stands on the first line of {@code source} that carries {@code merker}. */
     private static void error(String source, String merker, String fragment) {
         RegelSpraakModel m = Resolver.resolve(source);
         String[] regels = source.split("\n", -1);

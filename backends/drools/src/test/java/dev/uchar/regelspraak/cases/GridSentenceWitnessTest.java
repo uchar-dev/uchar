@@ -72,7 +72,7 @@ class GridSentenceWitnessTest {
                 "{\"node\":\"Attribute\",\"name\":\"meetdatum\",\"datatype\":{\"node\":\"Date\",\"precision\":\"day\"}},");
     }
 
-    /** A case with {@code m} set to {@code waarde} (a timeline or a scalar) and, when {@code expected} is not null,
+    /** A case with {@code m} set to {@code value} (a timeline or a scalar) and, when {@code expected} is not null,
      *  an expected timeline on {@code m}. */
     private static JsonNode caseDocument(String value, String expected) throws Exception {
         return JSON.readTree("{\"format\":\"uchar-case-v0\",\"asOfDate\":\"2024-06-01\",\"input\":{\"instances\":"

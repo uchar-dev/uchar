@@ -88,7 +88,7 @@ class TmsEverUniquenessWitnessTest {
 
     static final List<String> RULES = List.of(REGISTRATIE, NUMBER);
 
-    /** The year {@code jaar} as a segment with the number {@code lexeme}. */
+    /** The year {@code year} as a segment with the number {@code lexeme}. */
     static String year(int year, String lexeme) {
         return segment(year + "-01-01", (year + 1) + "-01-01", lexeme);
     }

@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>Until 2026-09-19 this frontend nevertheless opened its lowering with a qualifier test
  * ({@code if (wholePeriodOf(c) == null) return c;}) and refused the plain spelling: the comparison form
  * fell on WF-096 ("setlezing buiten een vouwbron") and the membership form resolved to an
- * {@code Onopgelost} marker. That put a FRONTEND boundary where the language has none — measured on
+ * {@code Unresolved} marker. That put a FRONTEND boundary where the language has none — measured on
  * the two corpus goldens whose hand-written IR carried exactly these nodes with no {@code source.rgs}
  * beside them, because no RegelSpraak source could produce them. Maintainer reading 2026-09-17: the
  * unqualified form is valid RegelSpraak and the frontend must carry it.
@@ -200,7 +200,7 @@ class NonTemporalFoldTest {
      * quantifier sits on the attribuutVanOnderwerp itself and the operand resolves as "the wachten of
      * the Schouwploeg" — a reference that is no set reading and carries no quantor. There was therefore
      * no set reading for WF-096 to fence and no operand for the fold to find: the sentence resolved to an
-     * {@code Onopgelost} marker, silently emitted.
+     * {@code Unresolved} marker, silently emitted.
      */
     @Test void the_characteristic_form_becomes_a_fold_over_a_characteristic_of_the_element() {
         RegelSpraakModel m = resolve(KENMERK.formatted("alle", "gediplomeerd zijn"));
@@ -221,7 +221,7 @@ class NonTemporalFoldTest {
 
     /**
      * "geen van de wachten van de Schouwploeg NIET gediplomeerd is" — the negation belongs to the
-     * MATRIX and is evaluated per member, so it must land on the {@code Kenmerk} and not on the fold.
+     * MATRIX and is evaluated per member, so it must land on the {@code CharacteristicCheck} and not on the fold.
      * It is worth its own row because the greedy onderwerp parse ABSORBS the "niet" into the anchor's
      * kaleNaam ("Schouwploeg niet"), leaving the operator with the bare kenmerk; dropping it there
      * would emit the positive membership — the same reading, inverted, with nothing saying so.
@@ -306,7 +306,7 @@ class NonTemporalFoldTest {
      * sentence and a silent wrong set is {@code checkPartSelections}, whose whole point is that it is an
      * ERROR and not a WARNING. The fold therefore hands the subselectie BACK when it declines —
      * measured regression during this card: for one commit the sentence produced a document with a
-     * silent {@code Onopgelost} and a WARNING the CLI does not even print.
+     * silent {@code Unresolved} and a WARNING the CLI does not even print.
      */
     @Test void a_non_binding_subselection_blocks_the_characteristic_form() {
         // 'gekeurd' is a kenmerk of the SUBJECT, not of the element, so the subselectie binds nothing.

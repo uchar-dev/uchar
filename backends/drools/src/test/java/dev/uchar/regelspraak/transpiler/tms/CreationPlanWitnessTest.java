@@ -515,7 +515,7 @@ class CreationPlanWitnessTest {
 
     /**
      * A creation states what it makes (RUNTIME-SEMANTICS ch. 5.5; the owner's decision at card 1: a creation is stated,
-     * not logical), and the analysis makes every insertion of a creation {@code GESTELD}. The constructor refuses a plan
+     * not logical), and the analysis makes every insertion of a creation {@code STATED}. The constructor refuses a plan
      * that would insert the new object, its mark, its link or a characteristic logically, and one that would insert the
      * fault at the making logically, each with a sentence that names it (round 5b, on the lens of round 5: a rendering
      * that inserted a logical characteristic as a stated one passed every measurement, since no plan of the analysis
@@ -725,7 +725,7 @@ class CreationPlanWitnessTest {
 
     // ---------------- the plans as text ----------------
 
-    /** Every plan of {@code document} that {@code keuze} takes, in the order of the model, as text; after a
+    /** Every plan of {@code document} that {@code choice} takes, in the order of the model, as text; after a
      *  line that holds a term, the term node by node. */
     static List<String> plans(JsonNode document, Predicate<RulePlan> choice) {
         List<String> out = new ArrayList<>();

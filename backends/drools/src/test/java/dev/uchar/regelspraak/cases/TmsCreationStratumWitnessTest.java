@@ -413,7 +413,7 @@ class TmsCreationStratumWitnessTest {
      *  wachter, which "werf de opvolger" writes, so this chain sits a stratum above the other. */
     static final String LEG = leg(52);
 
-    /** The chain of Boeien while the nummer is below {@code grens}: from B1, {@code grens - 1} generations. */
+    /** The chain of Boeien while the nummer is below {@code bound}: from B1, {@code grens - 1} generations. */
     static String leg(int bound) {
         return objectCreation("leg de volgende boei", "Boei", "Boei",
                 List.of(init("nummer", binary("plus", ownRead("nummer", "Boei"), number("1"))),
@@ -488,7 +488,7 @@ class TmsCreationStratumWitnessTest {
     static final String NUMBERED = TmsDocuments.characteristicRule("genummerd", "Boei", "genummerd",
             comparison("greater", ownRead("nummer", "Boei"), number("0")));
 
-    /** Document B with the chain of Boeien running while the nummer is below {@code grens}, beside {@code rules}. */
+    /** Document B with the chain of Boeien running while the nummer is below {@code bound}, beside {@code rules}. */
     static Path documentL(int bound, List<String> creations, List<String> rules) throws Exception {
         List<String> c = new ArrayList<>();
         for (String creation : creations) c.add(creation.equals(LEG) ? leg(bound) : creation);
@@ -551,7 +551,7 @@ class TmsCreationStratumWitnessTest {
             List.of(factType("opvolging", "voorganger", "Wachter", "opvolger", "Wachter")));
 
     /** The chain of {@code corpus/red} {@code finite-chain-over-budget} without its consistency, while the rang is below
-     *  {@code grens}: from W1 of rang 1, {@code grens - 1} generations in one stratum. */
+     *  {@code bound}: from W1 of rang 1, {@code grens - 1} generations in one stratum. */
     static Path documentG(int bound) throws Exception {
         return document(MODEL_G, List.of(), List.of(),
                 List.of(objectCreation("werf de lange keten", "Wachter", "Wachter",
@@ -561,7 +561,7 @@ class TmsCreationStratumWitnessTest {
                 List.of(), List.of(ruleGroup("lange estafette", List.of("werf de lange keten"))));
     }
 
-    /** The sentence of a mint at depth 101 by the object creation {@code creatie} of stratum {@code stratum}, on a subject
+    /** The sentence of a mint at depth 101 by the object creation {@code creation} of stratum {@code stratum}, on a subject
      *  of type {@code type} (RUNTIME-SEMANTICS ch. 5.5). */
     static String budget(String creation, int stratum, String type) {
         return "creation budget exhausted: objectcreatie \"" + creation + "\" van stratum " + stratum + " zou een object"
@@ -682,7 +682,7 @@ class TmsCreationStratumWitnessTest {
         assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(d.resolve("ir.json"), inheritanceLineCase(103)));
     }
 
-    /** "werf de opvolger" gives a Wachter whose rang is below {@code grens} and who has a maatgever an opvolger with rang
+    /** "werf de opvolger" gives a Wachter whose rang is below {@code bound} and who has a maatgever an opvolger with rang
      *  plus 1, and "maak maten" makes every Wachter a maatgever of its opvolger; both are members of the recursive group
      *  "estafette", so they share one stratum. "Eén maat heeft meerdere maatgevers": a Wachter has one maat, so the case
      *  can give W0 its maat W1 in a reference field of the bean model, which a relation of two to-many roles lacks. */

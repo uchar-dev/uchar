@@ -98,7 +98,7 @@ class IrTest {
     @Test void aggregation_dimension_selection_on_scalar_attribute_stays_a_marker() {
         // A dimensieselectie ("over alle <dim>") whose operand is NOT a gedimensioneerd attribuut (here
         // the scalar "prijs") cannot be lowered — there is no label set to range over — so the resolver
-        // keeps the honest marker: an Onopgelost filter + a WARNING, never a silent aggregation of the
+        // keeps the honest marker: an Unresolved filter + a WARNING, never a silent aggregation of the
         // whole set. (The lowerable case — a genuinely dimensioned operand — is the next test.)
         String src = """
             Dimensie de jaardimensie, bestaande uit de jaardimensies (na het attribuut met voorzetsel van):

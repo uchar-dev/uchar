@@ -23,7 +23,7 @@ Het sloeptal van een Reddingsvloot moet berekend worden als het aantal sloepen
 document's cells verbatim.
 
 `source.rgs` is the source: the §8.2-qualified sentence is exactly what
-`RuleChecker.kwantorvouw` lowers, and since this card it lowers all five
+`RuleChecker.quantifierFold` lowers, and since this card it lowers all five
 quantifiers rather than two, carrying the written telwoord as the fold's
 `threshold`. Gate 10 re-emits the document byte-identically.
 

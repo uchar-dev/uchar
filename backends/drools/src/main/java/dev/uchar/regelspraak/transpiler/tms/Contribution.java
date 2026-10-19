@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * One member's contribution to one aggregation of the exec-model branch, inserted logically: {@code element} is
  * a member of the range of the fold {@code fold}, reached from the fold's subject {@code onderwerp} and passing the
- * fold's filter, and {@code waarde} the value it contributes, or null for a count, where the member itself is what
+ * fold's filter, and {@code value} the value it contributes, or null for a count, where the member itself is what
  * counts. A rule per range of a fold inserts it, with the member's value and every read of the filter bound in its
  * left-hand side; the fold is an accumulate over these facts in the left-hand side of the rule that reads it. A member
  * whose value or filter reading changes gives its contribution up and inserts the new one, and the accumulate follows.

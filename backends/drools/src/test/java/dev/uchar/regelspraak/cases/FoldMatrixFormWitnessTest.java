@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The two MATRIX FORMS of the quantifier fold that the exec-model branch did not carry until
- * 2026-09-19 — a {@code Samengesteld} composite (at any depth) and a comparison whose bound is a
+ * 2026-09-19 — a {@code Compound} composite (at any depth) and a comparison whose bound is a
  * Parameter — replayed through BOTH transpiler branches, plus the refusals that remain.
  *
  * <p><b>Why beside gate 12.</b> Gate 12 replays every golden through the EXEC-MODEL branch only, and
@@ -179,7 +179,7 @@ class FoldMatrixFormWitnessTest {
      * name in the constraint text and needs no variable at all.
      *
      * <p>That refusal was the destructive exec-model branch's. The exec-model branch with truth maintenance plays the
-     * form as {@code ref} answers, on this row's case ({@code TmsLikeRefWitnessTest}, {@code matrix-twee-parameters}).
+     * form as {@code ref} answers, on this row's case ({@code TmsLikeRefWitnessTest}, {@code matrix-two-parameters}).
      */
     @Test void two_parameters_in_a_matrix_plays_with_truth_maintenance() throws Exception {
         Path ir = twoParameters();
@@ -201,7 +201,7 @@ class FoldMatrixFormWitnessTest {
      * free name there) and so does {@code ref}, while the clingo backend refuses it on its own axis, so
      * this form has no corpus witness to be had and stays a named refusal on both sides of the register.
      * That refusal was the destructive exec-model branch's; the exec-model branch with truth maintenance plays the form
-     * as {@code ref} answers, on this row's case ({@code TmsLikeRefWitnessTest}, {@code matrix-tekstparameter}).
+     * as {@code ref} answers, on this row's case ({@code TmsLikeRefWitnessTest}, {@code matrix-text-parameter}).
      */
     @Test void a_text_parameter_as_bound_plays_with_truth_maintenance() throws Exception {
         Path ir = textParameter();

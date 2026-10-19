@@ -36,7 +36,7 @@ import java.util.Map;
  * and its load, so no test may assert them; its name therefore ends without {@code Test}, and neither surefire nor a
  * gate runs it.
  *
- * <p><b>The model</b> is {@code src/test/resources/schaal/schaal.rgs}, written in RegelSpraak so that it uses the forms
+ * <p><b>The model</b> is {@code src/test/resources/scale/scale.rgs}, written in RegelSpraak so that it uses the forms
  * the frontend gives a rule set of the distribution, and its {@code ir.json} beside it is what
  * {@code frontends/regelspraak} emits for it (the verifier passes it). One Kustwacht, Wachters, and Vondsten per
  * Wachter, with the card's forms: (a) a rule per Vondst from its input times a parameter ("waarde"); (b) a
@@ -47,11 +47,11 @@ import java.util.Map;
  * up, so an input Wachter of rang 0 gets three). No gate regenerates the {@code ir.json}; after a change of the source,
  * emit it again from the root of the repository:
  * <pre>
- *   make -C frontends/regelspraak ir FILE=$PWD/backends/drools/src/test/resources/schaal/schaal.rgs \
- *       OUT=$PWD/backends/drools/src/test/resources/schaal/ir.json
+ *   make -C frontends/regelspraak ir FILE=$PWD/backends/drools/src/test/resources/scale/scale.rgs \
+ *       OUT=$PWD/backends/drools/src/test/resources/scale/ir.json
  * </pre>
  *
- * <p><b>The model without (g)</b>, {@code schaal/zonder-creatie/}, is the same source without the rule group of the
+ * <p><b>The model without (g)</b>, {@code scale/without-creation/}, is the same source without the rule group of the
  * creation chain, emitted the same way: the same declarations, so the same case serves both, and the same answers on
  * every input object. The second fire runs on it. A creation is stated and does not lapse (RUNTIME-SEMANTICS ch. 5.5),
  * so after a change of the input a second fire would keep what the first made and initialised, where a fresh session
@@ -103,7 +103,7 @@ import java.util.Map;
  *       dev.uchar.regelspraak.cases.ScaleTrial
  * </pre>
  * With branch names as arguments it measures those branches; with {@code punt <branch> <N>} it measures one point in
- * its own JVM and prints its line; with {@code tweede} every point of the second fire, and with {@code tweedepunt <N>}
+ * its own JVM and prints its line; with {@code second} every point of the second fire, and with {@code tweedepunt <N>}
  * one; with {@code controle <N>} it replays a case of N Wachters with its expected values, and the changed case with
  * its own, through the exec-model branch on both models; with {@code case <N> <file> [gewijzigd]} it writes that
  * case, or the changed one, for the reference interpreter and clingo.

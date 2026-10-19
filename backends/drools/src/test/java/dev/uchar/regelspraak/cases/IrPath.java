@@ -61,7 +61,7 @@ public final class IrPath {
         return t;
     }
 
-    /** The version record at {@code version} of the named form at {@code form} in the rules list {@code lijst} (IR-SPEC
+    /** The version record at {@code version} of the named form at {@code form} in the rules list {@code list} (IR-SPEC
      *  ch. 3, Versioning: a form is its name and its versions, and a version carries no node of its own). */
     public static ObjectNode version(JsonNode ir, String list, int form, int version) {
         JsonNode v = rulesList(ir, list).path(form).path("versions").path(version);
@@ -69,18 +69,18 @@ public final class IrPath {
         return (ObjectNode) v;
     }
 
-    /** The named form called {@code naam} in the rules list {@code lijst}, failing LOUDLY when there is none: a twist
+    /** The named form called {@code naam} in the rules list {@code list}, failing LOUDLY when there is none: a twist
      *  that silently hit nothing would leave its witness testing the untwisted document. */
     public static ObjectNode form(JsonNode ir, String list, String naam) { return memberWith(rulesList(ir, list), "name", naam); }
 
-    /** The first version of the named form called {@code naam} in the rules list {@code lijst}. */
+    /** The first version of the named form called {@code naam} in the rules list {@code list}. */
     public static ObjectNode version(JsonNode ir, String list, String naam) {
         JsonNode v = form(ir, list, naam).path("versions").path(0);
         if (!v.isObject()) throw new AssertionError("form '" + naam + "' in '" + list + "' has no version");
         return (ObjectNode) v;
     }
 
-    /** Source {@code bron} of the one version of the {@code form}-th uniqueness (IR-SPEC ch. 3.6: the single-type
+    /** Source {@code source} of the one version of the {@code form}-th uniqueness (IR-SPEC ch. 3.6: the single-type
      *  form has one source, the union two or more, and both stand in the one list). */
     public static ObjectNode source(JsonNode ir, int form, int source) {
         JsonNode b = version(ir, "uniquenesses", form, 0).path("sources").path(source);
@@ -111,7 +111,7 @@ public final class IrPath {
         return JsonNodeFactory.instance.objectNode().put("snippet", snippet);
     }
 
-    /** A Rule of one always-valid version in the wire's shape (IR-SPEC ch. 3.1): {@code soort} names the kind the way
+    /** A Rule of one always-valid version in the wire's shape (IR-SPEC ch. 3.1): {@code category} names the kind the way
      *  the frontend's records name it and becomes the version's initialisation and presentation, the latter in its wire
      *  spelling through the translation table, and a {@code condition} of "null" writes no condition. */
     public static String regel(String naam, String category, String target, String value, String condition) {

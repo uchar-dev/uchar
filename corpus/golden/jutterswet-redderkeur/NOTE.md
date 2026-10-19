@@ -39,7 +39,7 @@ evaluated per contributor with the element as subject — a composite is one.
 ## Why this ir.json is hand-written and carries no source.rgs
 
 When it was written, for the reason its two siblings were:
-`RuleChecker.kwantorvouw` lowered only the §8.2-QUALIFIED condition, so an
+`RuleChecker.quantifierFold` lowered only the §8.2-QUALIFIED condition, so an
 unqualified comparison was refused (`setlezing buiten een vouwbron`, a message
 that cited WF-096 until L2) and the characteristic spelling resolved to
 `Onopgelost`. Measured again at L2 (2026-09-24) on the frontend of this

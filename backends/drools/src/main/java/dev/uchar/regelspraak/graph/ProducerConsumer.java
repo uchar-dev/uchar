@@ -220,7 +220,7 @@ public final class ProducerConsumer {
                                 Set<ElementKey> consequence) {}
 
     /**
-     * What every default of {@code groep} reads, in the order of the group (highest priority first) and per default the
+     * What every default of {@code group} reads, in the order of the group (highest priority first) and per default the
      * default itself before the defaults of its exception groups, all against the subject of the group (RUNTIME-SEMANTICS
      * ch. 7.9: a descendant's read is the group's read). The walk is that of {@link #forms}, which takes the group's
      * reads from here, so the union of every justification and consequence set is exactly that group's
@@ -317,7 +317,7 @@ public final class ProducerConsumer {
     /** The kenmerken/attributen a resolved rule CONSUMES: every kenmerk check and attribuut read in its
      *  voorwaarde and in its RHS {@code waarde}, at any depth — the conditions inside an expression included (an
      *  aggregation's filter, a branch of an instance-set union, the guard of an if-then-else), each with the
-     *  subject it is evaluated against. The rule's OWN write target ({@code doel}) is not scanned — a rule
+     *  subject it is evaluated against. The rule's OWN write target ({@code target}) is not scanned — a rule
      *  reading what it writes is not a cross-rule dependency. The walk reads what IR-SPEC ch. 5.1 lets a rule
      *  read of attributes and characteristics, node kind by node kind, and each switch below is exhaustive, so a
      *  node kind the IR records gain later fails to compile here until someone decides what it reads.

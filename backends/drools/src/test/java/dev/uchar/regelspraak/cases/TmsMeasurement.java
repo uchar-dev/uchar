@@ -218,7 +218,7 @@ public final class TmsMeasurement {
         }
     }
 
-    /** What the run of one case needs of the factor of the fire cap: {@code verhouding}, the largest over its stretches
+    /** What the run of one case needs of the factor of the fire cap: {@code ratio}, the largest over its stretches
      *  of the firings at the end of a stretch over R times the largest number of facts the cap has counted by then,
      *  with those firings and that number; -1 where every count is 0. */
     private record Phases(double ratio, long firings, long n) {}

@@ -316,7 +316,7 @@ final class PatternDslRendering {
         return ComputeHelpers.foldPlace(p.reason(), fold, member, p.selection(), fields, counts, places);
     }
 
-    /** The slot {@code lid} and the slots of the place {@code p}. */
+    /** The slot {@code member} and the slots of the place {@code p}. */
     private static int[] placeSlots(int member, Consequence.FoldPlace p) {
         int[] out = new int[1 + 2 * p.steps().size()];
         out[0] = member;
@@ -457,7 +457,7 @@ final class PatternDslRendering {
         };
     }
 
-    /** A new bean of {@code klasse} by its constructor without arguments, every field unset. */
+    /** A new bean of {@code javaClass} by its constructor without arguments, every field unset. */
     private static Object newObject(Class<?> javaClass) {
         try {
             return javaClass.getConstructor().newInstance();
@@ -485,7 +485,7 @@ final class PatternDslRendering {
     }
 
     /** A consequence over the object {@code onderwerp} binds and the values at {@code slots}, in a value array of
-     *  {@code grootte} slots. */
+     *  {@code size} slots. */
     @SuppressWarnings("rawtypes")
     private RuleItemBuilder<?> consequenceItem(String onderwerp, List<Integer> slots, int size, ConsequenceFunction f) {
         int[] pos = slots.stream().mapToInt(Integer::intValue).toArray();
@@ -533,7 +533,7 @@ final class PatternDslRendering {
         return new Rendered(v, def);
     }
 
-    /** The identity join {@code j} on a pattern over {@code klasse}: the field it names of the pattern's object, or the
+    /** The identity join {@code j} on a pattern over {@code javaClass}: the field it names of the pattern's object, or the
      *  object itself, against the object its variable binds, or the reference field it names of that object. */
     private PatternDSL.PatternDef<Object> join(PatternDSL.PatternDef<Object> def, Class<?> javaClass, Join j) {
         Function1<Object, Object> left = j.field() == null ? x -> x : field(javaClass, j.property());
@@ -560,7 +560,7 @@ final class PatternDslRendering {
     }
 
     /** The patterns of an existence or a negation, rendered in the scope its plan states: what it reads from before
-     *  ({@code buiten}) is bound, and what it declares ({@code binnen}), the variables of its patterns and those their
+     *  ({@code outside}) is bound, and what it declares ({@code inside}), the variables of its patterns and those their
      *  bindings bind, is known to the patterns after them inside it and to nothing after it. */
     private PatternDSL.PatternDef<?>[] quantified(List<FactPattern> patterns, List<String> inside,
                                                        List<String> outside) {
@@ -610,7 +610,7 @@ final class PatternDslRendering {
     }
 
     /** The test of the condition over the values at its slots, as a standalone test after the patterns that bind them,
-     *  asking of the condition what the plan's role says ({@link ClosureRendering#test(Toetsitem)});
+     *  asking of the condition what the plan's role says ({@link ClosureRendering#test(TestItem)});
      *  a condition that reads nothing is a constant. The analysis refuses a condition over more than
      *  {@link TmsTranspiler#MAX_READS} values, the most the DSL's standalone test takes. */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -750,7 +750,7 @@ final class PatternDslRendering {
         FIELDS.computeIfAbsent(javaClass, k -> new HashMap<>()).put(naam, (Function1<Object, Object>) (Function1<?, ?>) reader);
     }
 
-    /** The read of field {@code naam} of an object of {@code klasse}: a component of a fact of the branch, or a bean
+    /** The read of field {@code naam} of an object of {@code javaClass}: a component of a fact of the branch, or a bean
      *  property, read through the getter the bean generator wrote for it. */
     private static Function1<Object, Object> field(Class<?> javaClass, String naam) {
         if (javaClass.getPackageName().equals(PatternDslRendering.class.getPackageName())) {
@@ -832,7 +832,7 @@ final class PatternDslRendering {
     }
 
     /** {@code getter} as {@code form} reads what it gives: as it is, as whether it holds {@code true}, as the segments
-     *  of a timeline, or as whether a reference is set, to an instance of {@code soort} where that is not null. */
+     *  of a timeline, or as whether a reference is set, to an instance of {@code category} where that is not null. */
     private static Function<Object, Object> form(Function<Object, Object> getter, Binding.ReadForm form,
                                                  Class<?> category) {
         return switch (form) {

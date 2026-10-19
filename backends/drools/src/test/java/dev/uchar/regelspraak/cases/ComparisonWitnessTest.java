@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The comparison of the expectations of a case with a session, through the backend's public entry:
- * {@code DroolsBackend.compare(build, session, label, expected)}, after {@code vuur} and
+ * {@code DroolsBackend.compare(build, session, label, expected)}, after {@code fire} and
  * {@code setDerivedValues}. A consumer that fires a session itself, as the distribution's decision service does,
  * gets the verdict the scenario report gives ({@code CaseRunner.report}, whose replay compares through the same entry)
  * without a copy of the comparison. Every session here is set up as the replay sets it up ({@code CaseRunner.withSession})
@@ -204,7 +204,7 @@ class ComparisonWitnessTest {
     }
 
     /** The beans carry the fixpoint only after the write-back: before it the entry refuses, as it refuses what
-     *  {@code lees} refuses, a session not fired and one updated after its write-back. */
+     *  {@code read} refuses, a session not fired and one updated after its write-back. */
     @Test void a_session_without_answer_is_refused() throws Exception {
         JsonNode c = read(KUSTWACHT.resolve("case1.json"));
         IllegalStateException notWrittenBack = refusal(IllegalStateException.class, KUSTWACHT, c, caselabels(),

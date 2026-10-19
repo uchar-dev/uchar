@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Rood-eerst end-to-end proof of the eenheid-identiteit typerfix (besluit 16Y + 17b): the
  * dimensionless "1" is the group identity and absorbs under multiplication (1 × E = E), while a
  * unit the {@link dev.uchar.regelspraak.model.Unit} model cannot spell is a LOUD
- * resolver error — never the old Onbekend degradation that silently rode a Binair onto the wire.
+ * resolver error — never the old Onbekend degradation that silently rode a Binary onto the wire.
  *
  * <p>Each test was RED on the pre-fix code: (a) the product's type emitted as
  * {@code {"node":"Onbekend","reden":"samengestelde eenheid"}}; (b) and (c) resolved clean (no
@@ -51,7 +51,7 @@ class UnitIdentityTest {
                 () -> "het product moet het echte EUR-type (2 decimalen) dragen:\n" + c);
     }
 
-    /** (b) A unitless numerator divided by a unit-bearing denominator is a reciprocal 1/E the Eenheid
+    /** (b) A unitless numerator divided by a unit-bearing denominator is a reciprocal 1/E the Unit
      *  model cannot spell — besluit 17b diverges from the (unsound) Tabel 14 rij 4 with a LOUD error. */
     @Test void unitless_divided_by_unit_is_refused_loudly() {
         String src = """

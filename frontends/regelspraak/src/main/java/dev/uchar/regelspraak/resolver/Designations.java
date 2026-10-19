@@ -412,7 +412,7 @@ final class Designations {
                 && (owner == null || owner.equals(b.owner()))).toList();
     }
 
-    /** The collisions among {@code leden}; with a non-empty {@code eigen} only the pairs one of whose members is in it. */
+    /** The collisions among {@code members}; with a non-empty {@code own} only the pairs one of whose members is in it. */
     private void collisions(Vocabulary v, List<Designatable> members, List<Designatable> own) {
         for (int j = 0; j < members.size(); j++)
             for (int i = 0; i < j; i++) {

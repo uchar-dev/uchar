@@ -141,7 +141,7 @@ class IfThenElseUnionWitnessTest {
         return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"source\":{\"snippet\":\"%s\"}}".formatted(name, name);
     }
 
-    /** The ch. 10.2 node as the LEFT operand of an ordinary Binair — so the walk must pass an ordinary node
+    /** The ch. 10.2 node as the LEFT operand of an ordinary Binary — so the walk must pass an ordinary node
      *  first and the form cannot be found by looking at the value root alone. */
     private static String nestedModel() {
         String choice = ite(compare("greater", attr("grondslag", num(2)), lit("1.00", num(2))),

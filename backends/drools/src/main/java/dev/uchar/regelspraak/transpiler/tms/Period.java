@@ -10,7 +10,7 @@ import java.util.Objects;
 
 /**
  * One segment {@code [van, tot)} of a timeline as the exec-model branch carries it in a fact (RUNTIME-SEMANTICS
- * ch. 3.1): a value, or leeg (null), from day {@code van} up to, not including, day {@code tot}; a true period of a
+ * ch. 3.1): a value, or leeg (null), from day {@code van} up to, not including, day {@code to}; a true period of a
  * time-dependent characteristic carries null. A timeline is an immutable {@code List<Period>}, ordered as its producer
  * gave it: a {@link State} or a {@link Value} holds one as its value.
  *
@@ -20,7 +20,7 @@ import java.util.Objects;
  * ({@link #list}) and back where the write-back puts it on one ({@link #beans}); nothing in between sees a
  * {@code Segment}.
  *
- * <p>Two segments are equal where they have the same {@code van}, the same {@code tot}, and values that are equal as
+ * <p>Two segments are equal where they have the same {@code van}, the same {@code to}, and values that are equal as
  * numbers or both leeg: 7 and 7.00 are one value, as in the reference interpreter's comparison of two timelines
  * ({@code World.write_timeline}, {@code Arith.equal}) and the change detection of ch. 3.1. The hash code is taken over
  * the value without trailing zeros, so that it agrees with that equality: a record's own hash code is that of

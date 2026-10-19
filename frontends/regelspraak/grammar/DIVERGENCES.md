@@ -463,7 +463,7 @@ placement since, with no new wire field (card `frontend-bron-annotatie-in-defaul
   the wire through its default alone;
 - nesting (form 2): a nested block's annotation lands on its own default inside
   the `ExceptionGroup`. Every lifted rule becomes a default in one place
-  (`RuleChecker.defaultVan`), so the nested lowering inherits the placement. The
+  (`RuleChecker.defaultOf`), so the nested lowering inherits the placement. The
   `ExceptionGroup` itself and a group-default carry the text of the head that
   made them, not an annotation (form 2, above; witness
   `ExceptionOnExceptionTest`);
@@ -769,7 +769,7 @@ read exactly where the language reads one elsewhere; it is required, so a bare
 declaration has been read, so resolution is **document-wide and order-free** —
 a forward reference is legal and only an undeclared name refuses. The bound
 parent lands in `Objecttype.supertype`, whose chain accessors (`keten`,
-`isEen`, `attribuut`, `heeftLid`, `kenmerkSoort`, `declarantVan`) the model
+`isEen`, `attribute`, `heeftLid`, `kenmerkSoort`, `declarantOf`) the model
 already carried; the member maps stay OWN, so a subtype declares only what it
 adds.
 
@@ -975,12 +975,12 @@ one argument, reusing the value folds' machinery rather than adding any:
 - the result type is a whole, unitless, non-negative number whatever the folded
   attribute measures (ch. 3.4c). The source's unit is deliberately NOT inherited;
   a cardinality has none.
-- `meldAggregatie` carries an explicit no-check arm for the kind. Decision G8
+- `reportAggregation` carries an explicit no-check arm for the kind. Decision G8
   makes the test typeless — presence is asked of a text, a date, an enumeration
   value and a boolean alike — so a numeric-operand check here would undo the
   decision in silence.
 
-`RuleChecker.VOUWSOORTEN` grows with the kind in the same movement, because
+`RuleChecker.FOLD_KINDS` grows with the kind in the same movement, because
 WF-096 admits a set reading on a value fold's source alone and a filled count
 is a count in its RESULT but a value fold in its READING. That set and the
 verifier's `set_source_exempt` are one boundary in two languages;
@@ -1043,7 +1043,7 @@ Measured before the fence (2026-09-23): a parameter, a navigated read, a
 datum-tijd attribute, a computed date ("zijn peildatum plus 1 dg"), a
 time-dependent attribute, a datum-tijd literal and an attribute of another
 object type each reached disk with `diagnostics: []`, and the verifier refused
-every one. `RuleChecker.periodeGrensFout` refuses them now with an ERROR in the
+every one. `RuleChecker.periodBoundaryError` refuses them now with an ERROR in the
 verifier's WF-111 sentence for the bound it would write, after the written
 bound, so the document never reaches disk. No source in any zone writes a
 window with such a bound, so nothing moves.
@@ -1060,7 +1060,7 @@ no fact type relates them the emitter refuses the model (measured 2026-09-25),
 so no document carries that bound and its refusal keeps the Dutch words, which
 for the supertype-named read say how to read the subject's own date instead.
 So the fence compares by identity, as the Drools gate
-`Tijdrekening.periodeGrensLowerbaar` does; with `⊑` it would pass the
+`TimeCalculation.periodBoundLowerable` does; with `⊑` it would pass the
 supertype-named read on to a verifier that refuses it. Witness:
 `PeriodBoundaryTest`, `StructureSentenceTest`.
 
@@ -1072,7 +1072,7 @@ under any quantifier. The wire does not: a window gates the RULE, so under
 specified for that. Measured before the fence: the bullet under each of those
 four quantifiers, and under a 'geen van de' sub-compound of an 'alle' compound,
 reached disk with `diagnostics: []`, and the verifier refused every one.
-`RuleChecker.keurVensterposities` now walks every condition the emitter writes —
+`RuleChecker.checkWindowPositions` now walks every condition the emitter writes —
 the reach of the verifier's own walk, conditions nested in expressions included
 — and refuses each composite or quantifier fold of that kind that holds a
 window, with an ERROR naming the quantifier, in the verifier's WF-112
@@ -1102,7 +1102,7 @@ strandvak" on Jutter — the name swallowed the navigation — reaching disk wit
 undeclared attribute target did the same, and so did a characteristic whose
 subject is a navigation, which resolves to no object type at all. Since fix
 round 2 (2026-09-23) each is an ERROR naming the form
-(`RuleChecker.keurRegeldoelen`). An undeclared characteristic on a resolved
+(`RuleChecker.checkRuleTargets`). An undeclared characteristic on a resolved
 subject is not fenced here: that is the ground of the dialect card for negated
 decisions ("is niet X"). No source in any zone writes the refused forms. A
 refused target inside an extension block speaks alone: the defaults lowering
@@ -1156,7 +1156,7 @@ at all (a reference by type name points back to a subject of that type,
    exactly one relation joins the two types. That derivation is a convenience
    of this frontend; v2.3.0 has no such navigation.
 4. Every other navigated read is refused with an ERROR
-   (`RuleChecker.keurNavigatiebindingen`, over what the emitter writes, from
+   (`RuleChecker.checkPaths`, over what the emitter writes, from
    the subject it writes each read from). Where the read names another type
    than the subject's, the refusal is the verifier's WF-053 sentence for the
    document without a path (`an attribute reference without a path is the
@@ -1299,7 +1299,7 @@ a `sourcePath` (WF-102) walks from the subject TO the elements.
 
 **Lowering.** For a value fold (som, totaal, minimum, maximum, eerste, laatste,
 aantal gevulde waarden) whose one argument is a set read with a member its
-element type does not have, `ExpressieBouwer.stappenNaDeVerzameling` walks the
+element type does not have, `ExpressionBuilder.stepsAfterSet` walks the
 name's steps from the element type as a chain is walked from a subject: fewest
 steps first, each a to-one role, the rest of the name a declared attribute of
 the type reached. Where they reach a scalar member, a member is generated:
@@ -1430,7 +1430,7 @@ deliberate, narrowing reconstruction — a trailing `maal`/`plus` binds OUTSIDE
 the count, which §4.11 requires — and it is noted at the rule. The operand LIST
 is the widening, and until 2026-09-20 it was noted nowhere.
 
-**What it cost, measured 2026-09-20.** `ExpressieBouwer.args` builds every child
+**What it cost, measured 2026-09-20.** `ExpressionBuilder.args` builds every child
 as its own argument, so the list reached the wire as an `AANTAL` with two or
 more `argumenten`. Three sentences emitted unblocked — the `en` spelling and the
 `comma` spelling with `diagnostics: []`, the element-binding spelling ("het
@@ -1440,8 +1440,8 @@ that day's count-arity decision (`spec/IR-SPEC.md` ch. 4.3), the third under
 WF-034 as well. One executor answered such a document and three refused it,
 which is the class `spec/PLAN.md` §6 calls a spec fault.
 
-**The fence stands in the resolver, not in the grammar** — `ExpressieBouwer`'s
-`tellingAriteitFout`, an ERROR, so `Resolver.irModus` writes nothing and the
+**The fence stands in the resolver, not in the grammar** — `ExpressionBuilder`'s
+`countArityError`, an ERROR, so `Resolver.irMode` writes nothing and the
 ill-formed document never reaches disk. Witness:
 `CountEnumeratedTest` (both spellings, the element-binding route, the
 off-disk property, and the two forms that must stay clean).
@@ -1479,7 +1479,7 @@ So the grammar's `( COMMA primaireExpressie )* ( EN primaireExpressie )?` is now
 **two things at once**, and the resolver is where they part:
 
 - operands that are **rolselecties** ("aangemelde vondsten van de Jutter die
-  gemerkt zijn") are the §5.7 concatenation. `ExpressieBouwer.bouwInstantieUnie`
+  gemerkt zijn") are the §5.7 concatenation. `ExpressionBuilder.buildInstanceUnion`
   builds ONE `Expr.InstanceSetUnion` from them — a selection per operand, each
   with its own population, its own one-step relation and its own die/dat
   subselection — and the count carries it as its SINGLE argument. The wire form
@@ -1487,7 +1487,7 @@ So the grammar's `( COMMA primaireExpressie )* ( EN primaireExpressie )?` is now
   production is no longer a divergence: it spells what the source language
   spells.
 - operands that are **waardelezingen** ("de gewogen vangst van de Jutter") stay
-  the widening, and `tellingAriteitFout` keeps refusing them.
+  the widening, and `countArityError` keeps refusing them.
 
 The refusal's message gained a TAIL rather than a rewrite, because its Dutch
 head would have misled on its own: it said the source language spells no
@@ -1495,7 +1495,7 @@ listed form, which is true of the list and false of the sentence. Since
 2026-09-25 the message is the verifier's WF-037 sentence for the listed count
 after the written count, and the tail that named the §5.7 route for value
 operands left with the head it corrected. Where the route opened and
-`bouwInstantieUnie` refused it for a reason of its own, that reason stands in
+`buildInstanceUnion` refused it for a reason of its own, that reason stands in
 the Dutch context before the sentence (`opgesomde telling '<zin>', geen unie
 van selecties: <reden>: a count folds INSTANCES …`). Three such reasons, each an
 ERROR that keeps the document off disk:
@@ -1577,7 +1577,7 @@ de haven van de jutter`, read on the Vondst. A count's range is one relation fro
 the rule subject (`spec/IR-SPEC.md` ch. 4.3, WF-102 (c): a path is the range of a
 value fold's set source only), and the emitter takes it from the head of the name,
 by the role it names, or from the type pair of subject and element
-(`IrEmitter.vouwbereik`). The other steps fell away without a word: measured
+(`IrEmitter.foldRange`). The other steps fell away without a word: measured
 2026-10-02 on the frontend of `da03d480`, the count went out as a count over
 `JutterHeeftVondst.jutter` with `diagnostics: []`, verifier-clean, and ref and
 clingo answered 1 where the path reaches 2. So did a count in a condition, in a
@@ -1589,7 +1589,7 @@ union, which takes its range from its head alone, so that "het aantal vondsten v
 de Jutter en vondsten van de havenjutters van de haven van de Jutter" went out with
 both selections over one relation and counted the Jutter's own vondsten alone.
 
-`ExpressieBouwer.bouwFunctie` refuses a count whose written source walks more than
+`ExpressionBuilder.buildFunction` refuses a count whose written source walks more than
 one relation wherever the emitter would still write a range: the parts of its name
 at every `van` (a name that names a role or an object type as a whole is one part),
 then those of its onderwerp, the anchor dropped where it denotes the subject
@@ -1628,7 +1628,7 @@ van (zijn getaxeerde waarde)" parse here.
 **The re-reading without the '%'.** "het percentage havengeld van het
 taxatiebedrag van de taxatie van de Vondst" parses as one attribute read, the
 name "percentage havengeld van het taxatiebedrag van de taxatie" on the subject
-"de Vondst". `ExpressieBouwer.bouwAttribuut` reads it as the percentage
+"de Vondst". `ExpressionBuilder.buildAttribute` reads it as the percentage
 function where the first name part is a Percentage parameter: P is that
 parameter, and Y is the ordinary value read of every remaining name part on the
 subject, which walks a chain of to-one steps as any read does (§13.4.1). With
@@ -2165,7 +2165,7 @@ casus re-emit unchanged.
 The resolver (`Designations`) reads the side table in two passes. After the
 declarations it reads every vocabulary head, then every annotation of every
 designatable declaration, and adds each designation to the model's side
-table (`RegelSpraakModel.vocabulaires`, `.benamingen`) under the declaration
+table (`RegelSpraakModel.vocabulaires`, `.designations`) under the declaration
 — its kind, its owner where the kind is scoped, and its model name. After
 the rule check it composes the designations of the elements a lowered opgave
 marker generates, from the designations of the marked attribute, and those
@@ -2319,7 +2319,7 @@ on the corpus).
   13's vocabulary leg replays them stripped, exchanged and rotated), the
   frontend's `VocabularyDialectTest` and the Drools backend's
   `VocabularyWitnessTest` (the model's reading entry: `benaming`,
-  `effectieveNaam`, `benoemd`).
+  `effectiveName`, `named`).
 
 ---
 
@@ -2573,7 +2573,7 @@ runner: the executors replay them as they replay every other case (gates 5,
 6 and 12). Nothing in the case format or in an executor changes. What the
 source toolchain's runner added on top of the comparison — the fired rules,
 the coverage per rule, the marker status — is a report of the Drools
-backend's replay (`ScenarioResultaat`), not a form of this frontend.
+backend's replay (`ScenarioResult`), not a form of this frontend.
 
 ### Surface
 
@@ -2720,7 +2720,7 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   reads it at that date (RUNTIME-SEMANTICS ch. 8.4). A parameter that both the
   set and the merged situation give a value is refused: neither wins.
 - **Typing**: every value is typed against its declaration by the rule
-  pipeline's own assignment typing (`Typering.toekenning`), so a unit is
+  pipeline's own assignment typing (`Typing.toekenning`), so a unit is
   required where the declaration has one and a value may carry no more
   decimals than its target. A convertible unit is restated exactly into the
   declared unit. An enumeration value must be one of its domain's values,
@@ -3009,10 +3009,10 @@ every expectation kind of the case format.
 
 `check` runs no verifier. The frontend repeats rules of the verifier as an ERROR in the verifier's sentence where
 the document it would write breaks them — among them WF-020, WF-022, WF-033, WF-050, WF-053, WF-111 and WF-112 — and
-since 2026-10-02 the two cycle rules WF-045 and WF-051. `resolver/Afhankelijkheden` reads the dependency graph of
+since 2026-10-02 the two cycle rules WF-045 and WF-051. `resolver/Dependencies` reads the dependency graph of
 IR-SPEC ch. 5 over the written document as the verifier reads it (the forms in `dep_forms` order, their reads and
 writes, the edges in reading order, the depth-first walk of WF-045 that names the first cycle it meets, and the
-reach test of WF-051); `RuleChecker.keurAfhankelijkheidskringen`, the last check, refuses each cycle at the head of
+reach test of WF-051); `RuleChecker.checkDependencyCycles`, the last check, refuses each cycle at the head of
 the form the verifier reports: "regel 'restgewicht' hangt via een kring van zichzelf af; de afhankelijkheden zijn
 kringvrij buiten een recursieve creatie (WF-045): dependency cycle through no recursive creation: restgewicht ->
 bergingsgewicht -> restgewicht", and "defaults-groep 'meldtermijn' ligt op een afhankelijkheidskring, en een kring
@@ -3028,7 +3028,7 @@ created object closed the cycle (RUNTIME-SEMANTICS ch. 6.1, golden `jutterswet-p
 day, in the verifier and in `Dependencies`, and the bound with it: the casus has no cycle, and a cycle through an
 object creation — a creation of its own subject's type reads the population it grows — is refused like any other
 (`CreationRoleTest`, `SetReadWithoutFoldTest`). Since that day a role check reads the relation it names as well,
-negated as a negative edge (`resolver/FeitcreatieRandenTest`).
+negated as a negative edge (`resolver/FactCreationEdgesTest`).
 
 A cycle the warning "kringverwijzing tussen berekeningen" names on a rule's own subject kept that WARNING alone until
 2026-10-06; since then it is refused like any other, and the WARNING stays beside the ERROR, naming the cycle in the
@@ -3365,11 +3365,11 @@ name: an author writes "berekende" or " voor " in a name of his own (the golden
 `jutterswet-wachtgeld` has the rule `wachtgeld voor kustwachters`, an unordered
 member, beside groups the frontend names `<base> voor <subtype>` elsewhere).
 
-**The table.** `RegelSpraakModel.gegenereerd` maps an element of
-`benoembaar()` (kind, owner, name, spelled as that list spells it) to
-`GegenereerdUit(bron, vorm)`: the declared element it comes from and a
+**The table.** `RegelSpraakModel.generated` maps an element of
+`designatable()` (kind, owner, name, spelled as that list spells it) to
+`GeneratedFrom(bron, vorm)`: the declared element it comes from and a
 `OriginForm`, each with a fixed key. Read it through
-`RegelSpraakModel.gegenereerdUit`, under the name identity of IR-SPEC ch. 2.1.
+`RegelSpraakModel.generatedFrom`, under the name identity of IR-SPEC ch. 2.1.
 
 | Key | Elements | Source |
 |---|---|---|
@@ -3522,7 +3522,7 @@ and `OriginOnTheWireTest`). A version of a form with several versions is no
 element (the element is the form; the model entry is `<form> #<k>`), and an
 effective defaults stack is no element either: both are names of the Drools
 backend's coverage manifest, and its TMS transpiler gives their source the
-same way (`TmsTranspiler.gegenereerd()`: a stack `defaults A:<type>.<member>`
+same way (`TmsTranspiler.generated()`: a stack `defaults A:<type>.<member>`
 or `defaults K:<type>.<member>` from the member as declared, key
 `defaultsstapel`; a version from its form, key `versie`).
 

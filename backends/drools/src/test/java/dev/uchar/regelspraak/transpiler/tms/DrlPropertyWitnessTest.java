@@ -113,7 +113,7 @@ class DrlPropertyWitnessTest {
         assertEquals(List.of(), faults, "leden die een global van dezelfde naam verdringt");
     }
 
-    /** Documents after {@code eigenschap/turks-lid} whose member "İş" has another name, which the rule reads: the
+    /** Documents after {@code eigenschap/turkish-member} whose member "İş" has another name, which the rule reads: the
      *  rendering spells a member by its name in DRL, and refuses by name a member that has none. */
     @Test void the_rendering_spells_the_member_or_refuses_it() throws Exception {
         String source = Files.readString(Path.of("src", "test", "resources", "property", "turkish-member", "ir.json"));
@@ -164,7 +164,7 @@ class DrlPropertyWitnessTest {
         assertEquals(List.of(6, 2), List.of(read, refused), "gelezen en geweigerd");
     }
 
-    /** Documents after {@code eigenschap/turks-kenmerk} whose input characteristic "ışık" has another name: the rendering
+    /** Documents after {@code eigenschap/turkish-characteristic} whose input characteristic "ışık" has another name: the rendering
      *  spells the characteristic by its name in DRL, and refuses by name one that has none. */
     @Test void the_rendering_spells_a_characteristic_or_refuses_it() throws Exception {
         String source = Files.readString(Path.of("src", "test", "resources", "property", "turkish-characteristic", "ir.json"));
@@ -223,7 +223,7 @@ class DrlPropertyWitnessTest {
         return places(p, s, n, global, ATTRIBUUT);
     }
 
-    /** As above, for a member of {@code soort}. */
+    /** As above, for a member of {@code category}. */
     private static Map<String, String> places(Trial p, String s, Namen.Lidnamen n, String global, MemberKind category)
             throws Exception {
         String javaClass = p.javaClass().getName();
@@ -274,7 +274,7 @@ class DrlPropertyWitnessTest {
         }
     }
 
-    /** What the rule adds to {@code uit} over one bean whose member, of {@code soort}, holds {@code w}, with the global
+    /** What the rule adds to {@code out} over one bean whose member, of {@code category}, holds {@code w}, with the global
      *  {@code global}, where that is not null, at another value. */
     private static List<Object> session(KieBase kb, Class<?> javaClass, String setter, MemberKind category, Object w,
                                        String global) throws Exception {

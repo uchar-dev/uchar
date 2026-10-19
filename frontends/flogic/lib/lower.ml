@@ -25,7 +25,7 @@
    - [sum{?V | ?V = ?K.role.attr}] and [count{?V | ?V = ?K.role}] are the
      aggregations; the role hop becomes the fold's sourceRole. Flora-2's
      aggregates answer 0 over an empty set (measured), which is what the
-     sum's [leegwaarde] says in uchar's vocabulary, at the target's
+     sum's [empty_fallback] says in uchar's vocabulary, at the target's
      declared scale. *)
 
 open Syntax
@@ -407,7 +407,7 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
       let f, el = find_hop m ~line ~subject:ctx.c_subject role in
       let dt = attr_type m ~line el attr in
       (* Flora-2 answers 0 for an aggregate over an empty set (measured on
-         2.2 beta); [leegwaarde] is that answer in uchar's vocabulary,
+         2.2 beta); [empty_fallback] is that answer in uchar's vocabulary,
          written at the summed attribute's declared scale. *)
       let zero =
         match dt with
@@ -439,7 +439,7 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
 
 (* the vacuously true justification WF-050 asks of a base: the quantifier
    all over no parts. F-logic writes no justification for an unconditional rule, so
-   the [bron] stays null rather than borrowing a phrase. *)
+   the [source_name] stays null rather than borrowing a phrase. *)
 let always = A.Compound { quantifier_kind = A.All; cutoff = 0; components = []; source_name = None }
 
 let conjoin ~source_name = function
@@ -662,7 +662,7 @@ and low_quantifier_fold m ctx ~line ~op ~q ~rhs ~source_name : A.condition_expr 
 type definition = {
   d_name : string option;
   d_target : string * string; (* subject class, attribute or characteristic *)
-  d_var : string; (* the head variable, for the [bron] renderings *)
+  d_var : string; (* the head variable, for the [source_name] renderings *)
   d_characteristic : bool; (* from the isa head ?S : k *)
   d_target_source : string; (* the head in its own spelling *)
   d_barred : bool; (* from c[|attr -> v|], which is a base by decision *)
@@ -718,7 +718,7 @@ let low_rule m (r : rule) : definition =
             r.r_subj k subject k;
         (* a characteristic has ONE value it can be given, and the head does
            not write it — the slice does not invent a lexeme for it either,
-           so the literal's [bron] stays null *)
+           so the literal's [source_name] stays null *)
         ( k,
           A.Literal { variant = A.Lv_boolean true; typ = Some A.Boolean; source_name = None },
           true )

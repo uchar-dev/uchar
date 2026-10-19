@@ -122,17 +122,17 @@ class TmsDayKindWitnessTest {
                 + ",\"validity\":{\"node\":\"Validity\"}}";
     }
 
-    /** The unit of a count of days of the day kind whose plural is {@code meervoud}. */
+    /** The unit of a count of days of the day kind whose plural is {@code plural}. */
     static String dayKindUnit(String plural) {
         return unit(plural, null, plural, 1, 1);
     }
 
-    /** A whole number of days of the day kind whose plural is {@code meervoud}. */
+    /** A whole number of days of the day kind whose plural is {@code plural}. */
     static String dayKindNumber(String plural) {
         return numberType(true, 0, dayKindUnit(plural));
     }
 
-    /** "de dag {@code op} {@code datum}", a comparison of the bound day with a date literal. */
+    /** "de dag {@code op} {@code date}", a comparison of the bound day with a date literal. */
     static String dayComparison(String op, String date) {
         return "{\"node\":\"Comparison\",\"op\":\"" + op + "\",\"left\":" + THE_DAY + ",\"right\":" + literal(date, DATE)
                 + ",\"source\":{\"snippet\":\"de dag " + op + " " + date + "\"}}";
@@ -146,13 +146,13 @@ class TmsDayKindWitnessTest {
                 + ",\"source\":{\"snippet\":\"de dag uit de dag gelijk is aan " + n + "\"}}";
     }
 
-    /** A date step, {@code op} plus or minus, of {@code datum} by {@code duur}, with the result {@code type}. */
+    /** A date step, {@code op} plus or minus, of {@code date} by {@code duration}, with the result {@code type}. */
     static String dateStep(String op, String date, String duration, String type, String source) {
         return "{\"node\":\"Binary\",\"op\":\"" + op + "\",\"left\":" + date + ",\"right\":" + duration + ",\"type\":" + type
                 + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
-    /** A duration, {@code kind} {@code duration} or {@code absoluteDuration}, from {@code van} to {@code tot}. */
+    /** A duration, {@code kind} {@code duration} or {@code absoluteDuration}, from {@code van} to {@code to}. */
     static String duration(String kind, String van, String to, String type, String source) {
         return TmsDocuments.builtin(kind, List.of(van, to), type, source);
     }
@@ -204,7 +204,7 @@ class TmsDayKindWitnessTest {
         return out;
     }
 
-    /** What {@link #inEveryOrder} gives where every order gives {@code uitkomst}. */
+    /** What {@link #inEveryOrder} gives where every order gives {@code outcome}. */
     static List<String> everywhere(List<String> rules, List<String> definitions, String outcome) throws Exception {
         List<String> out = new ArrayList<>();
         for (List<String> order : TmsDocuments.permutations(rules))

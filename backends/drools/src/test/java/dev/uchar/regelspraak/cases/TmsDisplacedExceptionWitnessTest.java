@@ -216,7 +216,7 @@ class TmsDisplacedExceptionWitnessTest {
             }
     }
 
-    /** Fires V1 through {@code kieBase}, the rules of {@code b} in the order {@code namen}: no fault stands at the
+    /** Fires V1 through {@code kieBase}, the rules of {@code b} in the order {@code names}: no fault stands at the
      *  fixpoint, every {@link Outcome} there decides 10, and the heffing is 10. Whether a fault stood on the way. */
     private static boolean fireSample(DroolsBackend.Build b, KieBase kieBase, List<String> names, String description)
             throws Exception {

@@ -107,7 +107,7 @@ public record PeriodCoverage(String regel, String parameter, Validity rulePeriod
 
     /**
      * De deelperiodes van {@code rulePeriod} die door geen enkel {@code intervals}-venster gedekt zijn: regelperiode
-     * MINUS unie(intervallen). Sorteert de dekking op {@code vanaf} ({@code null} eerst = open begin), loopt de
+     * MINUS unie(intervallen). Sorteert de dekking op {@code from} ({@code null} eerst = open begin), loopt de
      * regelperiode af met een cursor; inclusieve bounds ({@code null} = open kant): een gat begint op de dag NÁ de vorige
      * dekking-tot en eindigt op de dag VÓÓR de volgende dekking-vanaf. Overlappende/aangrenzende dekkingen worden gemerged
      * via de cursor. Leeg als de dekking de hele regelperiode omvat.

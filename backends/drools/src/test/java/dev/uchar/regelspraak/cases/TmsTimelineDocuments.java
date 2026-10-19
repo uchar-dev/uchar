@@ -26,7 +26,7 @@ final class TmsTimelineDocuments {
     static final String WHOLE = TmsDocuments.WHOLE;
 
     /** A timeline facet of {@code granularity} in its wire spelling ({@code month}, {@code year}, …), with the fixed
-     *  start point {@code vast} (null on the calendar grid). */
+     *  start point {@code fixed} (null on the calendar grid). */
     static String facet(String granularity, String fixed) {
         return "{\"node\":\"TimelineFacet\",\"granularity\":\"" + granularity + "\",\"count\":1"
                 + (fixed == null ? "" : ",\"fixedStart\":\"" + fixed + "\"") + "}";
@@ -37,7 +37,7 @@ final class TmsTimelineDocuments {
         return timeAttribute(naam, datatype, granularity, null);
     }
 
-    /** As {@link #timeAttribute(String, String, String)}, on the grid of the fixed start point {@code vast}. */
+    /** As {@link #timeAttribute(String, String, String)}, on the grid of the fixed start point {@code fixed}. */
     static String timeAttribute(String naam, String datatype, String granularity, String fixed) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + ",\"timeline\":"
                 + facet(granularity, fixed) + "}";
@@ -144,7 +144,7 @@ final class TmsTimelineDocuments {
         return TmsDocuments.caseOn(asOfDate, instances, expectations);
     }
 
-    /** The months {@code [van, tot)} from the first of month {@code vanaf} of {@code jaar}, {@code aantal} of them, each
+    /** The months {@code [van, tot)} from the first of month {@code from} of {@code year}, {@code count} of them, each
      *  a segment with the number {@code lexeme}. */
     static List<String> months(int year, int from, int count, String lexeme) {
         List<String> out = new ArrayList<>();
@@ -162,7 +162,7 @@ final class TmsTimelineDocuments {
                 LocalDate.parse(van), LocalDate.parse(to), lexeme == null ? null : new BigDecimal(lexeme));
     }
 
-    /** Puts the list {@code segments} of bean segments on member {@code lid} of {@code beanObject}, as the case runner puts a
+    /** Puts the list {@code segments} of bean segments on member {@code member} of {@code beanObject}, as the case runner puts a
      *  case timeline or the true periods of a characteristic there. */
     static void set(Object beanObject, String member, List<Object> segments) throws Exception {
         beanObject.getClass().getMethod(Namen.setter(member), List.class).invoke(beanObject, segments);

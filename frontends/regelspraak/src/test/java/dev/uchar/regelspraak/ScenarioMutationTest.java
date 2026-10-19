@@ -35,7 +35,7 @@ class ScenarioMutationTest {
         - de gegevens zijn consistent
         """;
 
-    /** {@link #DOCUMENT} with {@code van} replaced by {@code naar} exactly once. */
+    /** {@link #DOCUMENT} with {@code van} replaced by {@code to} exactly once. */
     private static String muteer(String van, String to) {
         int i = DOCUMENT.indexOf(van);
         assertTrue(i >= 0 && DOCUMENT.indexOf(van, i + 1) < 0, () -> "de mutatie '" + van + "' past niet precies één keer");

@@ -306,7 +306,7 @@ public final class Spelling {
             .row("Rekenjaar", "evaluationYear")
             .asFree();
 
-    /** The whole-period qualifier: the record's {@code jaar} flag (true: the whole year, false: the whole
+    /** The whole-period qualifier: the record's {@code year} flag (true: the whole year, false: the whole
      *  month). */
     public static final Family<Boolean> WHOLE_PERIOD_GRANULARITY = new Family<Boolean>("WholePeriod.granularity",
             "WholePeriod.granularity")
@@ -358,7 +358,7 @@ public final class Spelling {
     /** The wire kind of a decision table, the source of each of its rows. */
     public static final String ORIGIN_DECISION_TABLE = "decisionTable";
 
-    /** The wire kind of the source of {@code uit}. The model records a decision table as a form, because it is no
+    /** The wire kind of the source of {@code generatedFrom}. The model records a decision table as a form, because it is no
      *  element of the model (its rows are) and the table has no kind of its own there; on the wire it is
      *  {@link #ORIGIN_DECISION_TABLE}, so that a row's {@code from} never names a form, which would be a form that does
      *  not exist or another one under the table's name. Every other source is its kind's spelling. */

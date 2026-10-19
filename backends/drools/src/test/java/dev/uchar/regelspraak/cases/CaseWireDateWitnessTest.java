@@ -278,7 +278,7 @@ class CaseWireDateWitnessTest {
 
     /** The refusal message {@code lexeme} must raise on a route — or an assertion failure naming what the
      *  reader did instead: the value it accepted, the bare exception it let through, or the exclusion it
-     *  filed. {@code lees} performs the read; {@code toon} renders what a read returned. */
+     *  filed. {@code read} performs the read; {@code show} renders what a read returned. */
     private static String refusal(ThrowingRead readOf, String lexeme, String why) throws Exception {
         Object read;
         try {

@@ -29,11 +29,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * verdict of a quantifier fold, a test of the §9.5 channel, the negation of a consistency's assertion and the tests a
  * form composes itself are trees of calls ({@link Term}) like every other condition, and only {@link ClosureRendering}
  * makes their predicates. Every decision such a test held in its lambda is a node or a field of a node: whether the
- * order of a fold's contributors shows, by the node ({@link Term.QuantifierRead}, or a call of {@code KWANTOROORDEEL}
+ * order of a fold's contributors shows, by the node ({@link Term.QuantifierRead}, or a call of {@code QUANTIFIER_VERDICT}
  * over the count and the sum of the verdicts where it does not); the quantifier, the threshold and the probe of a
- * deposit; the channel's standing, by the function {@code KANAAL}; the negation, by the function {@code NIET}; and the
+ * deposit; the channel's standing, by the function {@code CHANNEL}; the negation, by the function {@code NIET}; and the
  * checks of a test a form composes itself, their order and their polarity, as a composite under all whose members are
- * {@code LEEGTOETS}, {@code EMMERSCALAIR} and a member's filter, tested without its fault where another rule takes it
+ * {@code EMPTY_TEST}, {@code BUCKET_SCALAR} and a member's filter, tested without its fault where another rule takes it
  * ({@link Term.WithoutFault}). This witness pins those trees as {@link ConditionTermWitnessTest} does, in two lists per
  * document: per rule of a form, in the order of the model, its form, the role of each test and the condition as a
  * tree text ({@link TermTree#tree}); and per test every node of its condition in pre-order with its position, its kind,

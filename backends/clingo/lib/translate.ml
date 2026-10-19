@@ -63,7 +63,7 @@ let fault = Value.fault
 let faultc = Value.faultc
 
 (* WF-097: the two qualifications a gedurende clip member has no reading for.
-   Every clip arm here matched `eigenaar` and `periode` away with `_`, so a
+   Every clip arm here matched `holder` and `time_period` away with `_`, so a
    document carrying either was translated as if it said nothing.
 
    ONE helper for the THREE clips — the temporal total (ch. 3.6), the pro-rata
@@ -747,7 +747,7 @@ let attr_datetime_typed ctx ~otype ~attr =
    arm below anchors its reads at the element variable — and on the
    operand's own objecttype otherwise, where the read IS the subject's.
    Before this decision the arms disagreed: the temporal Totaal refusal
-   hung its temporality guard on the operand's [objecttype], the Som and
+   hung its temporality guard on the operand's [object_type], the Som and
    Minimum/Maximum guards on [elementObjecttype]. On every frontend-emitted
    form the two coincide; on a MIXED annotation they do not, and the set
    fold then fell reasonlessly into the catch-all. One anchor, all arms. *)
@@ -761,7 +761,7 @@ let fold_operand_otype ~element_object_type ~ranged (ot : string option) =
    that actually translates the node.
 
    The declaration is the EFFECTIVE one (ch. 2.2), for the reason every
-   other lookup here funnels through [objecttype]: a fold anchored at a
+   other lookup here funnels through [object_type]: a fold anchored at a
    SUBTYPE whose temporal attribute is declared on the ancestor read "not
    temporal" off the raw map, so the §4.20 noemer strip below did not fire
    and the write fence then refused a document ref and the Drools backend
@@ -952,7 +952,7 @@ let oc_strata_of ctx = List.sort_uniq compare (List.map snd ctx.oc_strata)
 
 (* the deepest a minted term may nest, over all strata. Set (2026-10-09) on
    the reading that clingo 5.8.2's JSON output aborts (SIGABRT) once a term
-   nests past about 200 levels: heeft(X,"k") aborted with X nested 201
+   nests past about 200 levels: has(X,"k") aborted with X nested 201
    levels and val(X,"a",V) at 202. It aborts on a shown string atom of
    certain lengths instead, whatever its nesting (heeft at 202 to 229 levels
    prints; README, Recorded limitations); with the functor oc0 and short
@@ -2715,7 +2715,7 @@ let rec term_decimals ctx scope (e : expr) : int option =
       term_decimals ctx ((norm binder, term_decimals ctx scope value) :: scope) body
   | _ -> None
 
-(* the money × rate product under [basis] (possibly under ch. 10.6 Lets) that
+(* the money × rate product under [base_expr] (possibly under ch. 10.6 Lets) that
    the split encoding carries, and the side the money stands on: [Some false]
    left, [Some true] right, [None] for any other product. The money is a term
    at two decimals, the rate a term at four — or at one to three, where the
@@ -2794,7 +2794,7 @@ let is_struct_operand ctx = function
    String.equal — spelling and case are load-bearing), an enum label is its
    NORMALISED quoted string (ref compares norm-equal, so both executors
    normalise at the same point), a boolean is the bare symbol waar/onwaar —
-   NOT the closed-world heeft/2 (which cannot tell false from leeg; the
+   NOT the closed-world has/2 (which cannot tell false from leeg; the
    equality read needs the three-way distinction). Day-precision dates are
    NOT here: they ride the integer day number — but their gelijk-aan takes
    the positive join in cond_atoms, not the eqN both-unbound arm (the
@@ -3559,7 +3559,7 @@ let emit_value_days ctx ~p ~attr ~sat =
    caller reads its negation for the plain qualifier and the atom itself
    under the qualifier's "niet", as on the comparison arm.
 
-   [soort] and [negatie] together pick one of two folds, because the inner
+   [variety] and [negation] together pick one of two folds, because the inner
    negation is per day and "niet leeg" holds on exactly the days "gevuld"
    does (ch. 3.9, decided 2026-09-26):
    - GEVULD: per touched bucket the filled days must reach the bucket's
@@ -4097,7 +4097,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      emit val(<subject>,…) — every read is anchored at the ELEMENT variable,
      with the attribute's declaration looked up on [el], exactly as ref
      anchors it (its set-source arm binds no objecttype either). The
-     operand's own [objecttype] is therefore INERT on both sides, so a
+     operand's own [object_type] is therefore INERT on both sides, so a
      control on it could only refuse forms ref answers. Measured on
      jutterswet-vondsttelling's shape and on jutterswet-vondstpiek, twisting
      the operand's objecttype to a name-sharing sister type, with and
@@ -7035,7 +7035,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : condition_expr) : string list =
 and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
   match c with
   (* ch. 3.9's value test over a timeline, executed here since 2026-09-16
-     (the fold itself is [whole_period_fails]). Every other Vergelijking arm
+     (the fold itself is [whole_period_fails]). Every other Comparison arm
      below guards `periode = None`, so this arm sees every qualified
      comparison and nothing else reaches it.
 
@@ -7062,7 +7062,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       (* ch. 11.2: record equality is POSITIVE ground-term unification, the
          sum-type pattern (S14). Both operands bind their record term (an own
          attribute read via its val atom, a StructLiteral as its computed
-         term); Gelijk tests == — a leeg operand binds no term, so equality
+         term); Equal tests == — a leeg operand binds no term, so equality
          fails (Tabel 38's non-numeric branch, the case3 dubbel-afwezig corner).
          Ongelijk is now the Tabel-44 uniform inequality (neq_helper): exactly
          one empty → waar (case3 afwijkend now aanwezig), both empty → onwaar.
@@ -7076,9 +7076,9 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
     when is_sum_operand ctx left_side || is_sum_operand ctx right_side ->
       (* ch. 9.3: sum-typed equality is POSITIVE ground-term unification.
          Both operand terms bind (an own attribute read via its val atom, a
-         Construct as a bare ground term); Gelijk tests T1 == T2 — a leeg
+         Construct as a bare ground term); Equal tests T1 == T2 — a leeg
          operand fails the positive join, so equality is false (Tabel 38, the
-         non-numeric branch). Ongelijk is the Tabel-44 uniform inequality
+         non-numeric branch). Not_equal is the Tabel-44 uniform inequality
          (neq_helper): exactly one empty → waar (beschikking leeg ≠ Aangehouden
          fires afgehandeld), both empty → onwaar. The one-empty-true cell needs
          the eqN-negation route — a bare `not gelijk` positive join could not
@@ -7092,7 +7092,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
     when is_symbolic_operand ctx left_side || is_symbolic_operand ctx right_side ->
       (* ch. 1.2d text/enum/boolean comparison. Gelijk is POSITIVE ground-term
          comparison — both operands bind (an own attribute read via its val
-         atom, a literal as a ground term) and Gelijk tests ==; ANY empty
+         atom, a literal as a ground term) and Equal tests ==; ANY empty
          operand fails the unbound positive join, so equality is false (Tabel
          38, unchanged — the equality asymmetry between numeric leeg=leeg-waar
          and this non-numeric leeg=leeg-onwaar stays). Ongelijk is now uniform
@@ -7236,10 +7236,10 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       (* ch. 3.9, the §8.2 whole-period qualifier over a characteristic —
          the second of ch. 3.3's two "dedicated collapses", and therefore
          NOT the scalar context ch. 3.3 refuses. Until 2026-09-11 both arms
-         below matched `periode` away with `_`: a temporal characteristic is
+         below matched `time_period` away with `_`: a temporal characteristic is
          never delivered in the flat `characteristics` list (the ch. 8.2
          apartness, refused at load since 2026-09-09), so the dropped
-         qualifier left a bare heeft/2 lookup over facts that can never
+         qualifier left a bare has/2 lookup over facts that can never
          exist — the rule simply never fired, and the answer was leeg where
          the chapter says the vacuous cases pass.
 
@@ -8765,7 +8765,7 @@ and filter_condition ctx (c : condition_expr) : string list =
         "a FilterList condition here is a sum-typed (in)equality over the bound element (no \
          corpus case for more)"
 
-(* is [basis] a money × rate product (possibly under ch. 10.6 Lets) the split
+(* is [base_expr] a money × rate product (possibly under ch. 10.6 Lets) the split
    encoding carries? — a 2-decimal money times a rate of one to four
    decimals, the money on either side ([money_mult_roles]): the [Mult_mon_rat]
    shape the Catala plugin wraps in Rounding{halfAwayFromZero,2} (§5) at four,
@@ -9609,8 +9609,8 @@ let translate_rule ctx (r : resolved_rule) =
           (match r.rr_presentation with
           | Some Characteristic_attribution ->
               (* ch. 3.11: a temporal characteristic's write is a TIMELINE of
-                 true-periods, and heeft/2 is the scalar reading. Until
-                 2026-09-23 this arm wrote heeft/2 on such a target anyway —
+                 true-periods, and has/2 is the scalar reading. Until
+                 2026-09-23 this arm wrote has/2 on such a target anyway —
                  measured on the document of red case
                  time-window-timeline-characteristic without its window: PASS
                  here, where ref refuses. Refused now, in ref's words. *)
@@ -9694,7 +9694,7 @@ let translate_rule ctx (r : resolved_rule) =
           | Some (Calculation | Equation)
             when attr_symbolic_datatype ctx ~otype:ot ~attr:a = Some Boolean ->
               (* a boolean is a characteristic in v0: rule forms READ it
-                 closed-world through heeft/2 (bool_atoms, the WF-027 guard),
+                 closed-world through has/2 (bool_atoms, the WF-027 guard),
                  which a derived val/3 would not feed — the two encodings
                  would split. No corpus case computes a boolean attribute;
                  refuse loudly rather than encode half of it. *)
@@ -9948,7 +9948,7 @@ let translate_rule ctx (r : resolved_rule) =
 (* a boolean-typed characteristic-initialisation EXPRESSION → the body atoms
    that hold exactly when it is TRUE (WF-027 relaxation, besluit 1). A boolean
    is a characteristic in v0 (booleans are characteristics), so an own-subject
-   boolean-attribute read is [heeft(S,a)] — present iff true, absent iff false
+   boolean-attribute read is [has(S,a)] — present iff true, absent iff false
    (closed-world, ref's reading). The boolean constant forms stay the v0 shape,
    handled at the call site; this covers the expression form the tutorial's
    navigated subscope input needs. *)
@@ -11232,10 +11232,10 @@ let translate_case ctx (case : Case.t) =
           match v with
           | Value.Bool b ->
               (* a boolean attribute is a characteristic in v0 (booleans are
-                 characteristics): true → heeft/2, false → absence
+                 characteristics): true → has/2, false → absence
                  (closed-world), the [bool_atoms] read-shape on the case side.
                  The ch. 1.2d equality read additionally needs the three-way
-                 distinction (waar / onwaar / leeg) the closed-world heeft/2
+                 distinction (waar / onwaar / leeg) the closed-world has/2
                  cannot carry, so the value ALSO enters as val/3 with the
                  bare symbol waar/onwaar — false is a VALUE there, distinct
                  from absence (S2/S5). *)

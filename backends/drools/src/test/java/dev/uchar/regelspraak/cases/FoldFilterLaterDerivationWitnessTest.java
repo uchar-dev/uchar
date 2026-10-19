@@ -313,7 +313,7 @@ class FoldFilterLaterDerivationWitnessTest {
                 + ",\"source\":{\"snippet\":\"hij is " + (negated ? "niet " : "") + naam + "\"}}";
     }
 
-    /** "die aan de volgende voorwaarde voldoen: {@code deel}". */
+    /** "die aan de volgende voorwaarde voldoen: {@code part}". */
     private static String subselection(String part) {
         return "{\"node\":\"Compound\",\"quantifier\":\"the\",\"threshold\":0,\"parts\":[" + part
                 + "],\"source\":{\"snippet\":\"aan de volgende voorwaarde voldoen\"}}";
@@ -326,7 +326,7 @@ class FoldFilterLaterDerivationWitnessTest {
                 + "\"de maximale waarde van het gewicht\"}}";
     }
 
-    /** A quantifier over the vondsten of the Berging; {@code drempel} below 0 for a quantifier without one. */
+    /** A quantifier over the vondsten of the Berging; {@code threshold} below 0 for a quantifier without one. */
     private static String quantifierFold(String quantifier, int threshold, String filter, String test) {
         return "{\"node\":\"QuantifierFold\",\"quantifier\":\"" + quantifier + "\"" + (threshold < 0 ? "" : ",\"threshold\":" + threshold)
                 + ",\"elementType\":\"Vondst\",\"filter\":" + filter + ",\"test\":" + test + ",\"source\":{\"snippet\":\""

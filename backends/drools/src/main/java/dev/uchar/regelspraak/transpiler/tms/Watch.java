@@ -38,24 +38,24 @@ import java.util.function.Supplier;
  * {@code DroolsBackend.fire} on, the first fact that was inserted, updated or deleted outside the entry, the first rule
  * that fired outside it, the first change of the agenda, the first insert or delete of a fact of a kind {@code insert}
  * puts in, and the first change beyond such an update: any insert or delete, an update of a fact that is no bean of the
- * input, and an update that changed a relation, a reference field, of a bean of the input. From the first {@code vuur}
+ * input, and an update that changed a relation, a reference field, of a bean of the input. From the first {@code fire}
  * on it keeps the globals as they stood then. It records the relations of the beans of the input when it takes them,
  * and tells a relation changed without an update from the beans themselves ({@link #changedRelation}), since such a
  * change makes no event and Drools keeps reading the old relation. Two readings rest on it.
  *
  * <ul>
  *   <li>{@link TmsTranspiler#read} and {@link TmsTranspiler#setDerivedValues} read a session only where it kept
- *       nothing after the last {@code vuur}, the agenda holds no change ({@link #agenda}) and no global changed: after
+ *       nothing after the last {@code fire}, the agenda holds no change ({@link #agenda}) and no global changed: after
  *       an update, or after a relation changed without one, the facts of the last fixpoint belong to an input that
  *       no longer stands, and a plain
  *       {@code fireAllRules} fires the rule layer without the cap and, on a model with a creation, without the
- *       creations, which fire only in the generations of {@code vuur}. A mark in the session ({@link Fired}) cannot
+ *       creations, which fire only in the generations of {@code fire}. A mark in the session ({@link Fired}) cannot
  *       see either, since it is itself a fact that no event touches.</li>
- *   <li>{@code vuur} fires a session only where nothing but such updates happened outside it. {@code insert} states
+ *   <li>{@code fire} fires a session only where nothing but such updates happened outside it. {@code insert} states
  *       the places of a list ({@link ListPlace}) over the relations of one input, so a relation changed between two
  *       fires leaves a place behind or none, and the first fault of a fold is then that of the wrong member, or the
  *       fold stops the fire; the branch states its own facts, so a fact of the branch inserted, deleted or updated by
- *       a consumer stands beside what the rules derive; a rule that fires outside {@code vuur} fires without its cap and
+ *       a consumer stands beside what the rules derive; a rule that fires outside {@code fire} fires without its cap and
  *       its generations; a cleared agenda drops what the network had to fire, and a focus change fires another group
  *       first; and a rule reads a global once, in the rule that states it as a fact at the first fire, so a fire after
  *       a change keeps the old value.</li>
@@ -63,7 +63,7 @@ import java.util.function.Supplier;
  *
  * <p>It lives on the session as a listener, so that it goes where the session goes and needs no table beside it, and
  * the entry finds it there ({@link #van}). The entry takes it off the session for its own work ({@link #without}): while
- * {@code vuur} fires, the session holds no listener of the watch, and Drools makes no event for it, so the watch costs
+ * {@code fire} fires, the session holds no listener of the watch, and Drools makes no event for it, so the watch costs
  * a fire nothing per firing. No rule reads it. Drools makes no event for {@code Agenda.clear}, and puts a call to
  * {@code AgendaGroup.clear} or {@code AgendaGroup.setFocus} on its propagation list for the next fire, so
  * {@link #agenda} reads those from the agenda itself.
@@ -98,7 +98,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
     private final List<Object> inputBeans = new ArrayList<>();
     /** The call of the entry at which the watch took the beans of the input, as a sentence names it. */
     private String recorded;
-    /** The globals at the first {@code vuur}, by name; null before it. */
+    /** The globals at the first {@code fire}, by name; null before it. */
     private Map<String, Object> globals;
     /** The call of the entry the watch keeps from, as a sentence names it. */
     private String since;
@@ -163,13 +163,13 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
     }
 
     /** Keeps the globals of {@code session} as they stand now, where it keeps none yet: the entry calls this at the
-     *  first {@code vuur}. */
+     *  first {@code fire}. */
     public void recordGlobals(KieSession session) {
         if (globals == null) globals = globals(session);
     }
 
-    /** The first global of {@code session} whose value differs from the one it had at the first {@code vuur}, as a
-     *  clause, by name; null where none does, or before the first {@code vuur}. */
+    /** The first global of {@code session} whose value differs from the one it had at the first {@code fire}, as a
+     *  clause, by name; null where none does, or before the first {@code fire}. */
     public String changedGlobal(KieSession session) {
         if (globals == null) return null;
         Map<String, Object> now = globals(session);

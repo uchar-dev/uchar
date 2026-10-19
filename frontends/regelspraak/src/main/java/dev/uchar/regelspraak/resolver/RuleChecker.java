@@ -219,7 +219,7 @@ final class RuleChecker {
         }
     }
 
-    /** The element of {@code alle} that {@code b} names under the name identity, or null. */
+    /** The element of {@code all} that {@code b} names under the name identity, or null. */
     private static Designatable onName(List<Designatable> all, Designatable b) {
         return all.stream().filter(x -> elementKey(x).equals(elementKey(b))).findFirst().orElse(null);
     }
@@ -268,7 +268,7 @@ final class RuleChecker {
         return result;
     }
 
-    /** Records {@code uit} as the origin of {@code element}. Two different origins for one element are two forms that
+    /** Records {@code generatedFrom} as the origin of {@code element}. Two different origins for one element are two forms that
      *  generate one name, which a refusal (WF-020, a member name taken) reports in a model with an error; in a model
      *  without one they are a fault of the frontend. */
     private void kandidaat(Map<String, GeneratedFrom> candidates, Designatable element, GeneratedFrom generatedFrom) {
@@ -658,7 +658,7 @@ final class RuleChecker {
         }
     }
 
-    /** Whether characteristic {@code kenmerk} has a writer that composes with the defaults groups on {@code type}:
+    /** Whether characteristic {@code characteristic} has a writer that composes with the defaults groups on {@code type}:
      *  a live plain rule on {@code type} itself (WF-050's second writer), or a defaults group or a live plain rule on
      *  a strict ancestor or descendant of {@code type} (ch. 7.10). A sibling subtype composes with nothing here. */
     private boolean otherCharacteristicWriter(Objecttype type, String characteristic) {
@@ -673,7 +673,7 @@ final class RuleChecker {
         return false;
     }
 
-    /** Whether {@code ander} is a strict ancestor or a strict descendant of {@code type}. */
+    /** Whether {@code other} is a strict ancestor or a strict descendant of {@code type}. */
     private static boolean inInheritanceLine(Objecttype type, Objecttype other) {
         return other != null && other != type && (type.isA(other) || other.isA(type));
     }
@@ -1136,7 +1136,7 @@ final class RuleChecker {
 
     private static final java.util.regex.Pattern VAN = java.util.regex.Pattern.compile("\\s+van\\s+");
 
-    /** A carrier's conjuncts repeat under its exceptions as the very same nodes, so {@code gemeld} keeps one
+    /** A carrier's conjuncts repeat under its exceptions as the very same nodes, so {@code reported} keeps one
      *  refusal per node. */
     private void navigationDefaults(List<Default> defaults, Objecttype subject, Set<Object> reported) {
         if (defaults == null) return;
@@ -1473,7 +1473,7 @@ final class RuleChecker {
                 params("expression", a.source(), "member", member, "fillerType", fillerType.naam, "roleName", roleName));
     }
 
-    /** Whether {@code o} itself — not a supertype — declares a member {@code lid}, case-insensitively. */
+    /** Whether {@code o} itself — not a supertype — declares a member {@code member}, case-insensitively. */
     private static boolean declaresMember(Objecttype o, String member) {
         return o.attributen.keySet().stream().anyMatch(n -> n.equalsIgnoreCase(member))
                 || o.kenmerken.stream().anyMatch(n -> n.equalsIgnoreCase(member));
@@ -1733,7 +1733,7 @@ final class RuleChecker {
         model.resolvedRegels.removeIf(gelift::contains);
     }
 
-    /** Checks the children of one carrier ({@code drager} null: the base rule), top-down: which kinds may stand
+    /** Checks the children of one carrier ({@code carrier} null: the base rule), top-down: which kinds may stand
      *  together, then each child's own body and its edge, then its subtree. Whether the subtree is sound; every
      *  refusal speaks once, and below a refused node nothing is checked any more. The members of one
      *  'Uitzonderingen ongeordend op' block share its header, so a block speaks once too: after one member is
@@ -1975,7 +1975,7 @@ final class RuleChecker {
      *  directly under the base is the subtype's own exception ({@link #subtypeBlockError}), and no member of an
      *  unordered block stands among a subtype's own exceptions; the window is the group's; the target is the
      *  group's (WF-050) or, directly under the base, the one a subtype inherits. The checks and their texts at the
-     *  first level are the first card's. {@code doel} is the carrier's target: below a subtype's own block, the
+     *  first level are the first card's. {@code target} is the carrier's target: below a subtype's own block, the
      *  subtype's. {@code nodeNames} are the rules written as nodes ({@link #nodeNames}): a rule outside them on the
      *  subtype's target is a base the subtype's own exception can hang on. */
     private boolean checkNode(Node k, Node carrier, String carrierName, ResolvedRule base, DefaultsTarget targetName,
@@ -2045,8 +2045,8 @@ final class RuleChecker {
     /** The base rule a type writes on a target of its own: the rule's name, without a version suffix, and the type. */
     private record Base(String regel, Objecttype type) {}
 
-    /** The nearest base on the line from {@code eigen}'s subject up to {@code rootType}, that type excluded: a plain
-     *  rule — no initialisation, no node of a tree, a tree's base included — that writes {@code eigen}'s target on a
+    /** The nearest base on the line from {@code own}'s subject up to {@code rootType}, that type excluded: a plain
+     *  rule — no initialisation, no node of a tree, a tree's base included — that writes {@code own}'s target on a
      *  type of that line. Null where none does, so the subject inherits the base of the tree under
      *  {@code rootType} (RUNTIME-SEMANTICS ch. 7.10: an own base replaces the inherited one, and an ordinary rule is
      *  the base of its level). */
@@ -2264,8 +2264,8 @@ final class RuleChecker {
         }
     }
 
-    /** Assemble a {@link PrioritizedDefaults} group for target {@code doel}: kenmerk XOR attribuut per WF-050,
-     *  the base/member's geldigheid faithfully, and as {@code bron} the statute annotation of the rule the group
+    /** Assemble a {@link PrioritizedDefaults} group for target {@code target}: kenmerk XOR attribuut per WF-050,
+     *  the base/member's geldigheid faithfully, and as {@code source} the statute annotation of the rule the group
      *  is named after — the base of an ordered family, the member itself for an unordered sibling. */
     private PrioritizedDefaults defaultsOf(String naam, DefaultsTarget targetName, boolean unordered, List<Default> defaults,
                                             Validity g, String source) {
@@ -2278,7 +2278,7 @@ final class RuleChecker {
      *  and a negated one (dialect §4, form 1: {@link #NEGATED}) decides {@code false} — which writes nothing, so
      *  §9.2's monotone writes and ch. 5.3 hold; on attribute defaults the default's value is the rule's resolved
      *  value expression. The justification is the rule's condition.
-     *  The rule's {@code // Bron:} annotation becomes the default's {@code bron}: lifting takes the rule out of
+     *  The rule's {@code // Bron:} annotation becomes the default's {@code source}: lifting takes the rule out of
      *  resolvedRegels, and its {@code statuteAnnotations} with it, so this is the one place the citation can
      *  survive — and since every lifted rule becomes a default HERE, a nested exception inherits the placement
      *  by construction. */
@@ -2295,7 +2295,7 @@ final class RuleChecker {
                 : new Default(null, justification, r.value(), false, exceptions, source);
     }
 
-    /** The annotations of one block as the single string a {@code bron} field holds: the non-blank entries in
+    /** The annotations of one block as the single string a {@code source} field holds: the non-blank entries in
      *  source order joined with "; ", or null when there are none — so an unannotated block writes no
      *  {@code source}, as no defaults golden without annotations has one. A blank entry is dropped as the
      *  emitter drops it from {@code statuteAnnotations}: it cites nothing. */
@@ -2310,7 +2310,7 @@ final class RuleChecker {
      *  where the citation has to go. Not an ERROR: the document is sound, only the citation is lost. These two
      *  headers warn because they open rules, which is where an author expects the citation to reach; an
      *  annotation above a definition documents the declaration and has no wire slot to miss. The group's own
-     *  {@code bron} is no place for it either: on a rule group that record's snippet is its name. */
+     *  {@code source} is no place for it either: on a rule group that record's snippet is its name. */
     private void headAnnotation(ParserRuleContext head, String headName, String reference, int line) {
         String tekst = annotationText(statuteAnnotations(head));
         if (tekst == null) return;
@@ -2665,7 +2665,7 @@ final class RuleChecker {
         }
     }
 
-    /** The object type whose own attribute {@code naam} the target {@code doel} writes, or null: a navigated target
+    /** The object type whose own attribute {@code naam} the target {@code target} writes, or null: a navigated target
      *  never reaches here (the target fixes the subject). */
     private static Objecttype ownTarget(Expr targetName, String naam) {
         if (!(targetName instanceof Expr.AttributeReference d) || d.objectType() == null || !sameName(d.attribute(), naam))
@@ -3158,7 +3158,7 @@ final class RuleChecker {
      *
      *  <p>Measured on this frontend (2026-09-11), all from the one sentence fragment "het gewicht van
      *  alle vondsten van de Jutter": eight routes reached the wire with {@code diagnostics: []} — a
-     *  BEREKENING value, an operand of a {@code Binair}, a §13.4.4 GELIJKSTELLING value, a §13.4.9
+     *  BEREKENING value, an operand of a {@code Binary}, a §13.4.4 GELIJKSTELLING value, a §13.4.9
      *  INITIALISATIE value, a rule voorwaarde, a §13.4.8 consistentieregel, an objectcreatie
      *  voorwaarde and a §13.4.6 objectcreatie-toekenning value — and the uchar verifier rejected all
      *  eight under WF-096.
@@ -3177,7 +3177,7 @@ final class RuleChecker {
      *  route — asserts that a rule value of exactly this shape resolves error-free, and moving that is
      *  the maintainer's call. Raising the level is a one-token change at the {@link Severity} below.
      *
-     *  <p>Scope: the READ. A rule's {@code doel} is a WRITE position, outside the fence (under WF-096 it was
+     *  <p>Scope: the READ. A rule's {@code target} is a WRITE position, outside the fence (under WF-096 it was
      *  verifier-clean and all three executors ignored the field; since L2 the wire carries no set flag at all),
      *  so it is deliberately not walked.
      *  <p>The three VALUE slots of this repo's IR are all walked, and that is the whole list rather than
@@ -3597,7 +3597,7 @@ final class RuleChecker {
         LocalDate b = limit(d, under);
         if (b == null)
             reportOnce(new Diagnostic(Severity.ERROR, "RGS-173", params("bound", d != null ? src(d) : ""), line));
-        // The DATE token admits a time of day, but Geldigheid holds LocalDates: there is no
+        // The DATE token admits a time of day, but Validity holds LocalDates: there is no
         // carrier for it, and reading only the date part used to drop the time silently.
         boolean time = d != null && d.DATE() != null && d.DATE().getText().contains(":");
         if (time)
@@ -3802,7 +3802,7 @@ final class RuleChecker {
         EnkelvoudigeConsistentieRegelContext e = cr.enkelvoudigeConsistentieRegel();
         if (e != null && e.expressie() != null && e.toplevelOperator() != null) {
             Expr lhs = builder.build(e.expressie());
-            // The voorwaarde's operator machinery MINUS the ch. 4.5 quantifier fold: a Kwantorvouw has no
+            // The voorwaarde's operator machinery MINUS the ch. 4.5 quantifier fold: a QuantifierFold has no
             // violation rule on this carrier (transpileerbaar declines it), so folding a quantified
             // assertion here would trade the set fence's ERROR for the "nog niet omgezet" WARNING below and drop
             // the check from the wire. The set reading keeps its fence until the §13.4.8 consistentieregel
@@ -4088,7 +4088,7 @@ final class RuleChecker {
         }
         // §9.7.2 op volgorde van: partition the recipients by an ordering attribute and deplete the pot
         // group-by-group; within a tie-group the share is "in gelijke delen" or "naar rato van <gewicht>"
-        // (the same role as `rato`, so reuse it). The whole allocation lowers via rsVerdeelOpVolgorde — it
+        // (the same role as `ratio`, so reuse it). The whole allocation lowers via rsVerdeelOpVolgorde — it
         // stays COMPLEX (a marker) only when the ordering key or the tie weight is missing or non-getalachtig
         // (the helper compareTo-sorts the key and sums the weight, so both must be numeric to lower).
         VerdelenOverGroepenContext og = mc != null ? mc.verdelenOverGroepen() : null;
@@ -4213,7 +4213,7 @@ final class RuleChecker {
                 Datatype targetType = createdType.attribute(t.attribute());
                 if (targetType == null) continue;
                 // §13.2.14: a member init is a WRITE TARGET too (WF-023 names all three), so the created
-                // type's declared datatype is this enumeratiewaarde's domain — promoted in place, like registreer.
+                // type's declared datatype is this enumeratiewaarde's domain — promoted in place, like register.
                 Expr promoted = ExpressionBuilder.enumAgainstContext(t.value(), targetType);
                 if (promoted != t.value()) {
                     t = new ResolvedObjectCreation.MemberInit(t.attribute(), promoted, t.characteristic());
@@ -4296,7 +4296,7 @@ final class RuleChecker {
 
     /** §13.4.7 feitcreatie: "Een &lt;roleB&gt; van een &lt;anker&gt; is een &lt;roleC&gt; van
      *  &lt;onderwerpD&gt;" creates an instance of the feittype that {@code roleB} names, relating each
-     *  {@code anchor} to the {@code doel} objects that fill {@code roleC} of it (§9.4). The grammar's
+     *  {@code anchor} to the {@code target} objects that fill {@code roleC} of it (§9.4). The grammar's
      *  greedy kaleNaam splits the RHS at the LAST "van" (the rule's trailing {@code VAN onderwerp}),
      *  so the role part is the FIRST kaleNaam segment and any further segment is a navigation; this
      *  resolver re-splits per the §13.4-names design rather than changing the grammar.
@@ -4361,7 +4361,7 @@ final class RuleChecker {
                     Condition effective = targetCondition(condition, vd, anchor, targetName, roleC);
                     // uchar symbolic form (WF-028, all-or-nothing): the created relation (anker/doel via
                     // roleB) and the final join relation (cur/doel via roleC), each as a declared-name
-                    // binding, plus a RolBinding on every tussenstap. Emitted only when all of that is
+                    // binding, plus a RolBinding on every pathStep. Emitted only when all of that is
                     // uniquely derivable AND the created relation differs from the final hop's; otherwise
                     // the bean-field-only form stays (symbolic fields, and the tussenstap bindings, absent).
                     ElementBindingRef created = model.elementBinding(anchor, roleB);
@@ -4501,7 +4501,7 @@ final class RuleChecker {
         } finally {
             targetRole = null;
             builder.setSubject(anchor);                       // restore: the anker is the iterated subject
-            // This second build is SPECULATIVE — the anker build and the separate voorwaarden() type-check own
+            // This second build is SPECULATIVE — the anker build and the separate conditions() type-check own
             // the diagnostics; drop any this pass appended so a flawed guard is never reported twice.
             model.diagnostics.subList(diagSnapshot, model.diagnostics.size()).clear();
         }
@@ -4725,7 +4725,7 @@ final class RuleChecker {
         // §11 the RESULT-part value: variable reads become BinderRefs under the variabelendeel's ch. 4.10 Let chain.
         // This is the ONE slot the chain is BUILT for — a rule's `waarde` — and it reaches the wire in two shapes:
         // as the ResolvedRule's own value, and (when the §4 defaults pass lifts this rule) as a Default's
-        // `consequentie`, which {@link #defaultOf} copies straight from it. The other resultaatdeel kinds
+        // `consequence`, which {@link #defaultOf} copies straight from it. The other resultaatdeel kinds
         // (verdeling amounts, objectcreatie toekenningen, feitcreatie, a consistentieregel's asserted expression)
         // keep the v0 inline route: a consistentie assertion is a Conditie, which cannot host an Expr Let at all,
         // and the remaining ones carry several independent value slots that no single chain spans. Documented as a
@@ -4828,8 +4828,8 @@ final class RuleChecker {
     // Built alongside (not instead of) the exhaustive type-check walk below, so it
     // adds structure without changing any diagnostic. The kenmerk/objecttype membership
     // tests and period comparisons this comment once listed as unstructured have since
-    // gained their own nodes (Condition.CharacteristicCheck, Rollidmaatschap/FarRoleMembership,
-    // Periode); what is still unstructured becomes Onopgelost.
+    // gained their own nodes (Condition.CharacteristicCheck, RoleMembership/FarRoleMembership,
+    // Periode); what is still unstructured becomes Unresolved.
     private Condition buildCondition(VoorwaardeDeelContext v) {
         if (v.toplevelSamengesteldeVoorwaarde() != null) return buildCompound(
                 v.toplevelSamengesteldeVoorwaarde().voorwaardeKwantificatie(),
@@ -4994,7 +4994,7 @@ final class RuleChecker {
         // COUNTING quantifier AND-merges what the spec OR-s/counts -> a fired-WRONG result (the DRL oracle computed a
         // wrong kenmerk/SOM). The grammar discards depth, but ANTLR retains each bullet token's COLUMN and GLYPH: a list
         // whose direct bullets sit at different columns OR carry different glyphs (e.g. a top-level '-' absorbed into a
-        // nested '..' list) absorbed an outer-level sibling. Marker such a list (Onopgelost) so BOTH back-ends decline
+        // nested '..' list) absorbed an outer-level sibling. Marker such a list (Unresolved) so BOTH back-ends decline
         // rather than fire a mis-parsed compound — for ANY quantifier (a well-formatted compound is column- AND
         // glyph-consistent, so only a genuinely-ambiguous input trips; the ALLE/DE merge is AND-idempotent but markering
         // it is still safe). A structural depth-2 fallback covers the residual fully-ambiguous case (same glyph AND same
@@ -5202,7 +5202,7 @@ final class RuleChecker {
             }
             Condition.Quantifier kw = quantifierQuantification(sp.kwantificatie());
             // §13.4.14.6 IR-integrity guard: a nested-compound bullet with a DEEPER compound child under a
-            // COUNTING quantifier stays Onopgelost — the indentation-blind bullet grammar can flatten sibling
+            // COUNTING quantifier stays Unresolved — the indentation-blind bullet grammar can flatten sibling
             // bullets into a depth-2 child in ways the column re-nesting cannot always rebuild, and a
             // mis-merged bullet under a COUNT changes what is counted (AND-merging what the spec OR-s): a
             // fired-wrong shared value. Under ALLE/DE the merge is semantics-preserving (every bullet must
@@ -5224,7 +5224,7 @@ final class RuleChecker {
         }
     }
 
-    /** §13.4.14.5 kwantificatie (used by the compound subselectie) -> Kwantor. Distinct from voorwaardeKwantificatie:
+    /** §13.4.14.5 kwantificatie (used by the compound subselectie) -> Quantifier. Distinct from voorwaardeKwantificatie:
      *  it admits 'al' (AL, treated as ALLE) and ALLE has no "( van de )?" tail. A bare DE quantifies the whole set. */
     private static Condition.Quantifier quantifierQuantification(KwantificatieContext k) {
         if (k == null || k.ALLE() != null || k.AL() != null) return Condition.Quantifier.ALLE;
@@ -5340,8 +5340,8 @@ final class RuleChecker {
     }
 
     /** §8.2 / §13.4.15.70: the optional "(niet) gedurende de/het gehele jaar|maand" whole-period qualifier that
-     *  precedes a predicate (verb-split or verb-leading); null when absent. {@code jaar} reads the JAAR vs MAAND
-     *  keyword, {@code niet} the leading negation. The transpilers honour it on a tijdsafhankelijk onderwerp. */
+     *  precedes a predicate (verb-split or verb-leading); null when absent. {@code year} reads the JAAR vs MAAND
+     *  keyword, {@code negated} the leading negation. The transpilers honour it on a tijdsafhankelijk onderwerp. */
     private static Condition.WholePeriod wholePeriod(GehelePeriodevergelijkingContext g) {
         if (g == null) return null;
         boolean year = g.JAAR() != null;   // else MAAND
@@ -5446,7 +5446,7 @@ final class RuleChecker {
     private Condition conditionFromNonToplevel(Expr lhs, ExpressieContext lhsCtx, NonToplevelOperatorContext op, Source source) {
         Condition plain = conditionFromNonToplevelBare(lhs, op, source);
         // op.NIET() guards the §8.1.8.3 "is niet een <k>" branch above: it resolves the POSITIVE form and
-        // flips it, so a null binding there arrives as an Onopgelost whose negation is not in the parse
+        // flips it, so a null binding there arrives as an Unresolved whose negation is not in the parse
         // tree any more. Re-binding it here would emit the POSITIVE membership — silently inverted.
         if (plain instanceof Condition.Unresolved && op.gehelePeriodevergelijking() == null && op.NIET() == null) {
             Condition fold = quantifierCharacteristicCheck(lhs, lhsCtx, op.kaleNaam(), op.EEN() != null,
@@ -5459,7 +5459,7 @@ final class RuleChecker {
 
     /** §8.2: the "gedurende de/het gehele &lt;periode&gt;" check is only defined when the predicate's
      *  onderwerp is TIJDSAFHANKELIJK. A qualifier over a static onderwerp is a spec error — reject it (an ERROR +
-     *  Onopgelost) rather than silently markering a rule that can never fire. {@code niet} is irrelevant here (a
+     *  Onopgelost) rather than silently markering a rule that can never fire. {@code negated} is irrelevant here (a
      *  whole-period NEGATION of a static check is just as ill-defined). */
     private Condition checkWholePeriod(Condition c, Condition.WholePeriod periode, Source source) {
         if (periode == null || subjectIsTemporal(c)) return c;
@@ -5501,7 +5501,7 @@ final class RuleChecker {
      * {@link #consistency}.
      *
      * <p>All five §13.4.14 quantifiers over a set lower: ALLE and GEEN, and — since 2026-09-16 — the three
-     * COUNTING quantors, which carry the written telwoord as the fold's {@code drempel} (IR-SPEC ch. 4.5,
+     * COUNTING quantors, which carry the written telwoord as the fold's {@code threshold} (IR-SPEC ch. 4.5,
      * WF-108 (e); the verdict counts the contributors the matrix holds of). A telwoord that is not a
      * positive whole number declines and keeps the fence's error: "ten minste 0 van de" would read as a
      * forall or as nothing at all depending on which arm saw it, and WF-041 refuses the wire form, so
@@ -5782,7 +5782,7 @@ final class RuleChecker {
     }
 
     /** {@code c} with the operand {@code oud} (matched by identity — it was just found there) replaced by
-     *  {@code nieuw}; every other field, the §8.2 qualifier included, unchanged. */
+     *  {@code fresh}; every other field, the §8.2 qualifier included, unchanged. */
     private static Condition withOperand(Condition c, Expr oud, Expr fresh) {
         if (c instanceof Condition.Comparison v)
             return new Condition.Comparison(v.op(), v.left() == oud ? fresh : v.left(),
@@ -5853,7 +5853,7 @@ final class RuleChecker {
         Condition characteristic = characteristicCheckPredicate(lhs, op.kaleNaam(), op.EEN() != null,
                 op.HEEFT() != null || op.HEBBEN() != null, periode, source); // (is|heeft) een? kaleNaam: §8.1.8
         // else objecttype/navigation membership — reason-carrying, not reported here: see the sister in
-        // conditionFromToplevelBare, whose caller may still fold this very marker into a Kwantorvouw.
+        // conditionFromToplevelBare, whose caller may still fold this very marker into a QuantifierFold.
         return characteristic != null ? characteristic : new Condition.Unresolved(source, REASON_NO_CHARACTERISTIC_NO_ROLE);
     }
 
@@ -5864,7 +5864,7 @@ final class RuleChecker {
      *  resolver disambiguates by lookup, kenmerk-first (Tabel 16): a ZELFSTANDIG kenmerk (§8.1.8.3 "is een
      *  &lt;k&gt;") binds first, otherwise a role the subject fills is the §8.1.7 rolcheck. A bijvoeglijk /
      *  bezittelijk kenmerk is NOT written with "een", so the EEN-form never binds it. A name that resolves to
-     *  neither stays Onopgelost (an honest marker), never a silently-true gate. */
+     *  neither stays Unresolved (an honest marker), never a silently-true gate. */
     private Condition characteristicCheckPredicate(Expr lhs, KaleNaamContext nameCtx, boolean withIndefiniteArticle, boolean hasVerb,
                                       Condition.WholePeriod periode, Source source) {
         Condition c = characteristicCheckPredicateBare(lhs, nameCtx, withIndefiniteArticle, hasVerb, source);
@@ -5887,7 +5887,7 @@ final class RuleChecker {
 
     /** Flip the negatie of a resolved kenmerk-/rolcheck (the §8.1.8.3 "is niet een &lt;k&gt;" negation). The positive
      *  binding has negatie=false; flipping it yields the "== false" membership. A form that did not structure into a
-     *  kenmerk/rolcheck (null, or an Onopgelost) becomes an honest marker, never a silently-true gate. */
+     *  kenmerk/rolcheck (null, or an Unresolved) becomes an honest marker, never a silently-true gate. */
     private static Condition negate(Condition c, Source source) {
         if (c instanceof Condition.CharacteristicCheck k)
             return new Condition.CharacteristicCheck(k.characteristic(), k.navigation(), !k.negation(), k.owner(), k.periode(), k.source());
@@ -6046,7 +6046,7 @@ final class RuleChecker {
     /** §8.1.7 rolcheck: "&lt;subject&gt; is (een) &lt;rolnaam&gt;" — true when the subject fills that role.
      *  Resolves to a {@link Condition.RoleMembership} carrying the OTHER end of the feittype (so the
      *  transpiler can null-test the subject's reference to it). Null when no role the subject fills bears
-     *  that name (-> Onopgelost marker, never a wrong gate). */
+     *  that name (-> Unresolved marker, never a wrong gate). */
     private Condition roleMembership(Objecttype subject, String naam, Source source) {
         return roleMembership(subject, naam, source, false);
     }
@@ -6071,7 +6071,7 @@ final class RuleChecker {
         return null;
     }
 
-    /** Resolve {@code kenmerk} on {@code type} into a {@link Condition.CharacteristicCheck}, honouring a leading "niet"
+    /** Resolve {@code characteristic} on {@code type} into a {@link Condition.CharacteristicCheck}, honouring a leading "niet"
      *  or "geen" as NEGATION — but each only after the WHOLE name fails, so a declared "niet-…" kenmerk
      *  still binds positively. {@code navigation} is the to-one navigation role (null for the subject's own).
      *  {@code hasVerb} is true when the predicate verb is hebben (§8.1.8: see the "geen" branch).
@@ -6357,8 +6357,8 @@ final class RuleChecker {
     }
 
     /** Tabel 57 (§5.15): the written name resolved to a DECLARED dagsoort but the operand is not datum-typed —
-     *  the Typering DAGSOORT ERROR (this is its only live call site on the condition path), and the conditie
-     *  stays an Onopgelost marker so neither back-end builds a dagsoort check over a non-date. */
+     *  the Typing DAGSOORT ERROR (this is its only live call site on the condition path), and the conditie
+     *  stays an Unresolved marker so neither back-end builds a dagsoort check over a non-date. */
     private Condition dayKindOperandError(Expr lhs, KaleNaamContext nameCtx, Source source) {
         reportPredicate(Typing.UnairePred.DAGSOORT, lhs.type(), nameCtx.getStart().getLine());
         return new Condition.Unresolved(source, null);   // reportPredicate's ERROR is this marker's diagnosis

@@ -15,7 +15,7 @@ import java.util.Objects;
  * component, or without a parent where the form is scoped, gets no key: it takes no part (ch. 5.9, rule 2). The key
  * rule binds the components in its left-hand side, so a key whose value changes gives way to the new one.
  *
- * <p>{@code bron} is the number of the source in the form: an instance that two sources of a union reach has a key in
+ * <p>{@code source} is the number of the source in the form: an instance that two sources of a union reach has a key in
  * each, and they count apart, so an instance whose two keys are equal duplicates against itself (ch. 5.9, rule 1).
  * Compared by the form's name, the source, the instance and the parent by identity, and the components by value, a
  * number by {@code compareTo}; two keys of different instances collide where {@link #collidesWith} holds.

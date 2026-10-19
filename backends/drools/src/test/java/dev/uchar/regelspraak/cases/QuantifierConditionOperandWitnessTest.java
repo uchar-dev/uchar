@@ -235,7 +235,7 @@ class QuantifierConditionOperandWitnessTest {
                 + ",\"source\":{\"snippet\":\"" + op + "\"}}";
     }
 
-    /** A quantifier fold over the vondsten of the Berging; {@code drempel} below 0 for a quantifier without one. */
+    /** A quantifier fold over the vondsten of the Berging; {@code threshold} below 0 for a quantifier without one. */
     private static String quantifierFold(String quantifier, int threshold, String test) {
         return "{\"node\":\"QuantifierFold\",\"quantifier\":\"" + quantifier + "\"" + (threshold < 0 ? "" : ",\"threshold\":" + threshold)
                 + ",\"elementType\":\"Vondst\",\"test\":" + test + ",\"source\":{\"snippet\":\"" + quantifier + " van de vondsten\"},"

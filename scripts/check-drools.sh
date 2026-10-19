@@ -348,7 +348,7 @@ EXPECTED_CHANNEL=(
 # transpiler already carried the form, so the golden arrived playing and matched the pinned values
 # on the first run — the square holds on it without a backend change.
 # 2026-09-09: 118 -> 119, synth3-operandvolgorde (the ch. 5.11 operand-order witness). It arrived
-# playing: the backend reads a Binair's links before its rechts, so the ch. 10.6 barrier in the left
+# playing: the backend reads a Binary's links before its rechts, so the ch. 10.6 barrier in the left
 # operand suppresses the right operand's §9.5 deposit exactly as ref and clingo have it, and the
 # runner verifies the channel count itself (consistent = no Inconsistentie fact at all). The square
 # holds on it. NB the SAME backend does NOT hold ch. 5.11 for a Begrensd's two bounds — it evaluates
@@ -514,7 +514,7 @@ EXPECTED_CHANNEL=(
 # 2026-09-16 (card heelperiode-forall), 137 -> 138: `jutterswet-ploegpremie` joins as a NEW PLAYER —
 # the QUANTIFIER FOLD (IR-SPEC ch. 4.5, WF-108; RUNTIME-SEMANTICS ch. 3.9a), a condition quantified
 # over the members of a linked instance set, carrying ALLE and GEEN in one document. It plays all six
-# hand-computed cells on the exec-model path: the loader decodes `Kwantorvouw`, the transpiler builds
+# hand-computed cells on the exec-model path: the loader decodes `QuantifierFold`, the transpiler builds
 # the collectList accumulate over the contributors' own timelines and the runtime answers each member
 # with `rsGeheelPeriode` — the §8.2 whole-period check the backend already had, now asked per member.
 # The DRL-TEXT branch MARKERS it by name (its set accumulate keys on a `set` read and derives its join
@@ -626,7 +626,7 @@ EXPECTED_CHANNEL=(
 # DRL-text 123 -> 124, and exactly this one report line moves — no other golden changes channel or reason.
 # 2026-09-19 (card exec-bladvertaling-verbreedt), 151 -> 153: `jutterswet-redderkeur` and
 # `jutterswet-loodsgrens` join as NEW PLAYERS — the two fold-matrix forms the exec branch declined while
-# the DRL-text branch carried and played them (measured per form in both branches): a `Samengesteld`
+# the DRL-text branch carried and played them (measured per form in both branches): a `Compound`
 # matrix, at any depth, and a matrix whose bound is a Parameter. Both were already verifier-clean, played
 # by `ref`, by clingo and by the DRL-text branch, so the two goldens landed RED here on purpose and this
 # step is what turns them green. The exec branch now asks ch. 3.9a's `test` through one recursive matrix

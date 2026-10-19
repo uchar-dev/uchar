@@ -86,7 +86,7 @@ final class TmsDocuments {
                 + String.join(",", k) + "]}";
     }
 
-    /** The expectation that {@code label} carries {@code kenmerk} at the end, or does not. */
+    /** The expectation that {@code label} carries {@code characteristic} at the end, or does not. */
     static String expected(String label, String characteristic, boolean present) {
         return "{\"kind\":\"" + (present ? "characteristicPresent" : "characteristicAbsent") + "\",\"label\":\"" + label
                 + "\",\"characteristic\":\"" + characteristic + "\"}";
@@ -131,7 +131,7 @@ final class TmsDocuments {
         return beanObject.getClass().getMethod(Namen.getter(attribute)).invoke(beanObject);
     }
 
-    /** Whether the bean carries {@code kenmerk}, read as the replay reads it. */
+    /** Whether the bean carries {@code characteristic}, read as the replay reads it. */
     static boolean has(Object beanObject, String characteristic) throws Exception {
         return (Boolean) beanObject.getClass().getMethod("is" + Namen.ident(characteristic, true)).invoke(beanObject);
     }
@@ -161,7 +161,7 @@ final class TmsDocuments {
     }
 
     /** A fact type of a to-one role {@code roleOne} played by {@code typeOne} and a to-many role {@code roleMany}, plural
-     *  {@code meervoud}, played by {@code typeMany}: each {@code typeMany} relates to at most one {@code typeOne}. */
+     *  {@code plural}, played by {@code typeMany}: each {@code typeMany} relates to at most one {@code typeOne}. */
     static String factTypeOneToMany(String naam, String roleOne, String typeOne, String roleMany, String typeMany,
                                       String plural) {
         return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\""
@@ -280,7 +280,7 @@ final class TmsDocuments {
                 + "\"source\":{\"snippet\":\"" + kind + "\"}}";
     }
 
-    /** An assignment of attribute {@code doel} of {@code type} ({@code soort} as {@link IrPath#regel} names it). */
+    /** An assignment of attribute {@code targetName} of {@code type} ({@code soort} as {@link IrPath#regel} names it). */
     static String computingRule(String naam, String category, String type, String targetName, String value, String condition) {
         String target = "{\"node\":\"AttributeReference\",\"attribute\":\"" + targetName + "\",\"subjectType\":\"" + type + "\","
                 + "\"source\":{\"snippet\":\"De " + targetName + " van een " + type + "\"}}";
@@ -334,7 +334,7 @@ final class TmsDocuments {
                 + attribute + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
-    /** A defaults group on characteristic {@code kenmerk} of {@code type}, its {@code defaults} highest first. */
+    /** A defaults group on characteristic {@code characteristic} of {@code type}, its {@code defaults} highest first. */
     static String characteristicGroup(String naam, String type, String characteristic, List<String> defaults) {
         return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type
                 + "\",\"characteristic\":\"" + characteristic + "\",\"defaults\":[" + String.join(",", defaults)
@@ -376,18 +376,18 @@ final class TmsDocuments {
                 + "\"regelversie " + regel + " is inconsistent\"}}";
     }
 
-    /** The expectation that the session holds no §9.5 Inconsistentie at all. */
+    /** The expectation that the session holds no §9.5 Inconsistency at all. */
     static String consistent() {
         return "{\"kind\":\"consistent\"}";
     }
 
-    /** The expectation of a §9.5 Inconsistentie that rule {@code regel} deposited on {@code label}. */
+    /** The expectation of a §9.5 Inconsistency that rule {@code regel} deposited on {@code label}. */
     static String inconsistent(String regel, String label) {
         return "{\"kind\":\"inconsistent\",\"rule\":\"" + regel + "\",\"label\":\"" + label + "\"}";
     }
 
     /** A sample of the orders of {@code l} too long to try every order: {@code l} itself, its reverse, and
-     *  {@code aantal} shuffles from {@code seed}, so a failing order can be replayed. */
+     *  {@code count} shuffles from {@code seed}, so a failing order can be replayed. */
     static <T> List<List<T>> sample(List<T> l, long seed, int count) {
         List<List<T>> out = new ArrayList<>();
         out.add(l);
@@ -444,7 +444,7 @@ final class TmsDocuments {
         return text;
     }
 
-    /** A KieBase of the rules of {@code b} named in {@code namen}, each once and in that order, as its branch builds
+    /** A KieBase of the rules of {@code b} named in {@code names}, each once and in that order, as its branch builds
      *  them: the rules of its executable model ({@link #kieBase}), or on {@code DRL_TEXT} the rules of its plan
      *  rendered as text ({@code TextOrder}). */
     static org.kie.api.KieBase kieBaseOf(DroolsBackend.Build b, List<String> names) {
@@ -464,9 +464,9 @@ final class TmsDocuments {
         return kieBase(b, order);
     }
 
-    /** Fires {@code beans} through the rules of {@code b} added in {@code order}: {@code voor} sees the session before
+    /** Fires {@code beans} through the rules of {@code b} added in {@code order}: {@code before} sees the session before
      *  the fire (to add a listener), the fire must reach its fixpoint below the cap, the derivations are written back,
-     *  and {@code na} sees the session before it is disposed. */
+     *  and {@code after} sees the session before it is disposed. */
     static void fire(DroolsBackend.Build b, List<org.drools.model.Rule> order, List<Object> beans,
                      java.util.function.Consumer<org.kie.api.runtime.KieSession> before,
                      java.util.function.Consumer<org.kie.api.runtime.KieSession> after) {
@@ -474,7 +474,7 @@ final class TmsDocuments {
     }
 
     /** As {@link #fire(DroolsBackend.Build, List, List, java.util.function.Consumer, java.util.function.Consumer)}
-     *  through {@code kieBase}, which holds the rules of {@code b} in the order {@code namen}: those of the executable
+     *  through {@code kieBase}, which holds the rules of {@code b} in the order {@code names}: those of the executable
      *  model ({@link #kieBase}) or those of the text ({@code TextOrder}). */
     static void fire(DroolsBackend.Build b, org.kie.api.KieBase kieBase, List<String> names, List<Object> beans,
                      java.util.function.Consumer<org.kie.api.runtime.KieSession> before,
@@ -545,7 +545,7 @@ final class TmsDocuments {
     /** The unit of a percentage, which the loader reads as the Percentage datatype. */
     static final String PERCENT = unit("%", null, "%", 1, 1);
 
-    /** A unit system of {@code eenheden}, Unit nodes of that system. */
+    /** A unit system of {@code units}, Unit nodes of that system. */
     static String unitSystem(String naam, List<String> units) {
         return "{\"node\":\"UnitSystem\",\"name\":\"" + naam + "\",\"units\":[" + String.join(",", units) + "]}";
     }
@@ -574,13 +574,13 @@ final class TmsDocuments {
                 + ",\"source\":{\"snippet\":\"" + op + "\"}}";
     }
 
-    /** "{@code basis} afgerond op {@code decimals} decimalen" in the mode's wire spelling. */
+    /** "{@code base} afgerond op {@code decimals} decimalen" in the mode's wire spelling. */
     static String rounding(String base, String mode, int decimals, String type) {
         return "{\"node\":\"Rounding\",\"base\":" + base + ",\"mode\":\"" + mode + "\",\"decimals\":" + decimals
                 + ",\"type\":" + type + ",\"source\":{\"snippet\":\"afgerond op " + decimals + " decimalen\"}}";
     }
 
-    /** "{@code basis} begrensd" with a minimum and a maximum, each "null" for none. */
+    /** "{@code base} begrensd" with a minimum and a maximum, each "null" for none. */
     static String clamp(String base, String minimum, String maximum, String type) {
         return "{\"node\":\"Clamp\",\"base\":" + base + (minimum.equals("null") ? "" : ",\"minimum\":" + minimum)
                 + (maximum.equals("null") ? "" : ",\"maximum\":" + maximum) + ",\"type\":" + type
@@ -593,7 +593,7 @@ final class TmsDocuments {
                 + "],\"type\":" + type + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
-    /** "Daarbij geldt: {@code binder} is {@code waarde}" around {@code body}: a Let of the body's {@code type}. */
+    /** "Daarbij geldt: {@code binder} is {@code value}" around {@code body}: a Let of the body's {@code type}. */
     static String let(String binder, String value, String body, String type) {
         return "{\"node\":\"Let\",\"type\":" + type + ",\"binder\":\"" + binder + "\",\"value\":" + value + ",\"body\":"
                 + body + ",\"source\":{\"snippet\":\"" + binder + " is …\"}}";
@@ -616,7 +616,7 @@ final class TmsDocuments {
                 + naam + "\"}}";
     }
 
-    /** A TimeWindow from {@code van} to {@code tot}, each "null" for an open bound. */
+    /** A TimeWindow from {@code van} to {@code to}, each "null" for an open bound. */
     static String window(String van, String to, boolean toInclusive) {
         return "{\"node\":\"TimeWindow\"" + (van.equals("null") ? "" : ",\"from\":" + van)
                 + (to.equals("null") ? "" : ",\"to\":" + to) + ",\"toInclusive\":" + toInclusive
@@ -637,7 +637,7 @@ final class TmsDocuments {
         return "{\"node\":\"EmbeddedExpression\",\"expr\":" + expr + "}";
     }
 
-    /** A Validity from {@code van} to {@code tot}, both inclusive, each null for an open bound. */
+    /** A Validity from {@code van} to {@code to}, both inclusive, each null for an open bound. */
     static String validity(String van, String to) {
         return "{\"node\":\"Validity\"" + (van == null ? "" : ",\"from\":\"" + van + "\"")
                 + (to == null ? "" : ",\"to\":\"" + to + "\"") + "}";
@@ -679,7 +679,7 @@ final class TmsDocuments {
         return "{\"text\":\"" + text + "\"}";
     }
 
-    /** Fires {@code beans} through the rules of {@code b} added in {@code order}, with {@code voor} seeing the session
+    /** Fires {@code beans} through the rules of {@code b} added in {@code order}, with {@code before} seeing the session
      *  before the fire (a listener, a global). The fire must reach its fixpoint below the cap without throwing: an
      *  evaluation fault is a fact of the session, not an exception out of the fire. Returns the fault the write-back
      *  raises at the fixpoint as "SimpleName: message", or null where it writes the derivations back. */

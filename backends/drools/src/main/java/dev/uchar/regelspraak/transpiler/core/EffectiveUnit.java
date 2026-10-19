@@ -43,7 +43,7 @@ import java.util.Objects;
  *   <li>ch. 2.10's FOURTH class, which says something weaker: every POSITION whose result unit v0 does not
  *       DERIVE (a division, a power, a percentage-of, a root, an absolute value, the date/time extractors)
  *       keeps the annotation because there is nothing to put in its place — not because the annotation is the
- *       source. A position, not a node kind: {@code GEDEELD_DOOR} and {@code PLUS} are both {@code Binair}
+ *       source. A position, not a node kind: {@code GEDEELD_DOOR} and {@code PLUS} are both {@code Binary}
  *       and only one of them derives, which is why the {@code switch}es below dispatch on the OP and the
  *       KIND, and why the harness's clamp keys on (node, op) / (node, kind) too. The ASP translator answers
  *       {@code None} there and fences; this backend has no such fence and computes with the annotation,
@@ -316,7 +316,7 @@ public final class EffectiveUnit {
      * <p>That opacity is load-bearing here, not cosmetic: it is what stands between a two-unit product and a
      * restatement by a live factor. Handing back the left operand's unit would scale €·kg into a € target.
      * But what an opaque product buys downstream is NOT uniformly an honest marker, and the two shapes must
-     * not be conflated (measured 2026-09-04 on {@code Eenheid}: for m·m against m, {@code convertibleTo} is
+     * not be conflated (measured 2026-09-04 on {@code Unit}: for m·m against m, {@code convertibleTo} is
      * false, {@code requiredConversion} is false, {@code conversionFactorTo} FAULTS rather than answering 1 —
      * the fail-fast card of the same day, and the reason the no-op below is each site's OWN identity, taken
      * before it ever asks, and never an invented factor — and {@code exactRestateFactors} is null):
@@ -344,7 +344,7 @@ public final class EffectiveUnit {
      * selects the DRL-text leg (the harness/measurement entry).
      *
      * <p>The unspellable case (a rate factor, "€·m/jr") reaches a consumer only on a document the frontend
-     * never wrote — {@code Typering} makes it a loud error rather than a type. This join answers it with a
+     * never wrote — {@code Typing} makes it a loud error rather than a type. This join answers it with a
      * DENOMINATOR-LESS opaque product ({@code Unit.product} keeps the numerator factors and drops the
      * noemer, so "€/jr maal kg" and "€/jr maal kg/jr" both yield €·kg): again the conservative,
      * non-restatable outcome rather than an invented factor. RUNTIME-SEMANTICS ch. 2.10 records it as the
@@ -363,13 +363,13 @@ public final class EffectiveUnit {
      * {@link UnitConflict} keys its exemption on.
      *
      * <p><b>Why identity and not the value.</b> {@link Unit#product} builds "€·kg" as a plain
-     * {@code Eenheid} with no canonical, no factor and no denominator, and the wire can declare a unit with
+     * {@code Unit} with no canonical, no factor and no denominator, and the wire can declare a unit with
      * exactly those four fields and a "·" in its name. The two are therefore value-indistinguishable, and a
      * test on the ABBREVIATION hands a wire-declared "appel·peer" the exemption meant for a derived product —
      * measured 2026-09-09: {@code ref} faults on such a document, this backend replayed it. Only WHERE the unit
      * came from separates them, and provenance is identity.
      *
-     * <p>A marker field on {@code Eenheid} itself would be the smaller encoding, but that record lives in the
+     * <p>A marker field on {@code Unit} itself would be the smaller encoding, but that record lives in the
      * frontend module and is outside this card's reach; this table is the same statement made from the one place
      * in the backend that builds such a product.
      *
@@ -553,7 +553,7 @@ public final class EffectiveUnit {
      * entry that another entry contains is a descendant by definition, and what is left is exactly the operand
      * roots. That keeps one source of truth for which conditions carry operands — a {@code Conditie} arm added
      * later is covered here the moment the shared walk covers it, with nothing to keep in step. The same
-     * derivation serves {@link #children}'s {@code Functie} filter, so both callers gained the repair at once.
+     * derivation serves {@link #children}'s {@code FunctionCall} filter, so both callers gained the repair at once.
      *
      * <p><b>Aliasing, stated rather than left implicit.</b> Should ONE instance appear both as a bare operand and
      * as a descendant of another operand, the containment test drops it as a descendant and only the enclosing

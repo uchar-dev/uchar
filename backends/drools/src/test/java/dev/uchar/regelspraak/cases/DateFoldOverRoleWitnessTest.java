@@ -305,14 +305,14 @@ class DateFoldOverRoleWitnessTest {
         return "{\"node\":\"Comparison\",\"op\":\"" + op + "\",\"left\":" + left + ",\"right\":" + right + "}";
     }
 
-    /** A fold of {@code kind} over {@code lid} of the vondsten of the Jutter; {@code filter} null for none. */
+    /** A fold of {@code kind} over {@code member} of the vondsten of the Jutter; {@code filter} null for none. */
     private static String fold(String kind, String member, String filter) {
         return "{\"node\":\"Aggregation\",\"kind\":\"" + kind + "\",\"arguments\":[" + own(member, "Vondst") + "],\"elementType\":"
                 + "\"Vondst\"" + (filter == null ? "" : ",\"filter\":" + filter) + ",\"sourceRole\":{\"node\":\"RoleBinding\","
                 + "\"factType\":\"JutterHeeftVondst\",\"role\":\"vondst\"},\"type\":" + foldType(kind, member) + "}";
     }
 
-    /** A fold of {@code kind} over {@code lid} of the vondsten of all beheerde jutters of the Strandvoogd. */
+    /** A fold of {@code kind} over {@code member} of the vondsten of all beheerde jutters of the Strandvoogd. */
     private static String pathFold(String kind, String member) {
         return "{\"node\":\"Aggregation\",\"kind\":\"" + kind + "\",\"arguments\":[" + own(member, "Vondst") + "],\"elementType\":"
                 + "\"Vondst\",\"sourcePath\":[{\"node\":\"RoleBinding\",\"factType\":\"StrandvoogdBeheertJutter\",\"role\":"

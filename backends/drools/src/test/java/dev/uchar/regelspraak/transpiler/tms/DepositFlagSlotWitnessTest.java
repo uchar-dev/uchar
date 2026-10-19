@@ -27,14 +27,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A term names a probe slot only where its position in the rule fills it (card drl-teksttak-op-truth-maintenance, step
- * 1e; FABLE-2 §1.2 point 3): a test of deposits ({@link TestItem.Role#DEPONERING}), the value of a
+ * 1e; FABLE-2 §1.2 point 3): a test of deposits ({@link TestItem.Role#DEPOSIT}), the value of a
  * {@link Consequence.Value} with a deposit, and the matrix of a {@link Consequence.Input.MemberTest} with a probe, each with the
  * slot it fills. Everywhere else, as in the rule of a condition's fault or of a filter's fault, the analysis sets the
  * probe of a division, a square root, a fold's evaluation and a quantifier fold to -1, so that a rendering needs no rule
  * for a slot nobody fills. Over the plans of every golden the branch builds.
  *
  * <p><b>Red</b> before the step, on {@code 8447b5f2}: 36 positions named a probe slot that nobody filled, the tests
- * with the role {@code WITHOUT_FAULT} or {@code FOUT}, the {@code TestFault} and the {@code FilterFault} of
+ * with the role {@code WITHOUT_FAULT} or {@code FAULT}, the {@code TestFault} and the {@code FilterFault} of
  * {@code jutterswet-filterwacht}, {@code jutterswet-ploegaandeel} and others.
  */
 class DepositFlagSlotWitnessTest {

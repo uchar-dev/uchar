@@ -27,7 +27,7 @@ public final class DroolsBackendMain {
         System.exit(run(args, System.out));
     }
 
-    /** The CLI without its exit: prints the status line on {@code uit} and returns the exit code. A witness runs the
+    /** The CLI without its exit: prints the status line on {@code out} and returns the exit code. A witness runs the
      *  CLI through here inside the test JVM, which {@code System.exit} would end. */
     static int run(String[] args, PrintStream out) {
         // --drl replays through the OTHER branch, the analysis rendered as DRL text and compiled here, instead of the

@@ -149,7 +149,7 @@ class ZeroDivisorWitnessTest {
                 + "\"verhouding\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
     }
 
-    /** The rule "verhouding" with {@code waarde} as its value, without a condition. */
+    /** The rule "verhouding" with {@code value} as its value, without a condition. */
     private static String regel(String value) {
         return "{\"node\":\"Rule\",\"name\":\"verhouding\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
                 + "{\"node\":\"AttributeReference\",\"attribute\":\"verhouding\",\"subjectType\":\"Vondst\",\"source\":"

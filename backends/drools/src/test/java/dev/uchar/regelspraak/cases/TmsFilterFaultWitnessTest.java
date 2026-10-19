@@ -460,7 +460,7 @@ class TmsFilterFaultWitnessTest {
         @Override public void objectDeleted(ObjectDeletedEvent e) {}
     }
 
-    /** Sets the to-one reference field {@code role} of {@code beanObject} to {@code doel}, as the case reader does. */
+    /** Sets the to-one reference field {@code role} of {@code beanObject} to {@code target}, as the case reader does. */
     private static void setRole(Object beanObject, String role, Object target) throws Exception {
         for (java.lang.reflect.Method m : beanObject.getClass().getMethods())
             if (m.getName().equals(dev.uchar.regelspraak.transpiler.core.Namen.setter(role)) && m.getParameterCount() == 1) {

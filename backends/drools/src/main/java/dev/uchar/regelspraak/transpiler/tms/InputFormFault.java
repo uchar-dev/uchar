@@ -27,7 +27,7 @@ public final class InputFormFault extends RuntimeException {
     private final String after;
     private final String regel;
 
-    /** The fault whose sentence is {@code voor}, the object {@code object}, then {@code na}. */
+    /** The fault whose sentence is {@code before}, the object {@code object}, then {@code after}. */
     InputFormFault(String before, Object object, String after) {
         this(before, object, "\"" + FactNames.object(object) + "\"", after, null);
     }

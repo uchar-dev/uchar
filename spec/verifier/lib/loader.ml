@@ -43,7 +43,7 @@
    '%', and a sign other than unspecified on a number whose unit is '%'. The
    last two follow from the in-memory form ([Ast]): a number whose unit is
    '%' is read as a [Percentage], which carries no sign, and any other
-   number as a [Numeriek], which carries no presentation.
+   number as a [Number], which carries no presentation.
 
    The L4 rules enforced here and in the schema alike (the rule and the
    expression layer): a named form is {node, name, versions} with at least
@@ -69,7 +69,7 @@
 
    The source record, the first step of L5 (delta B26), enforced here and in
    the schema alike: a node's source text is the record `source` {snippet,
-   line?}, optional on every node and read onto the in-memory `bron` fields
+   line?}, optional on every node and read onto the in-memory `source_name` fields
    ([source_record]); `bron` and a `line` beside the record are unknown fields,
    and an empty snippet is refused in every stance. The schema requires the
    record on an Unresolved marker; the verifier loads a marker without one for
@@ -360,7 +360,7 @@ let domain_datatype name path j : datatype =
   match node_kind path kvs with
   | "Enumeration" ->
       (* the designations of the values stand here and only here (IR-SPEC
-         ch. 2.12); [vocabulaires] reads them *)
+         ch. 2.12); [vocabularies] reads them *)
       check_keys path kvs ~ext:[ "valueDesignations" ] [ "node"; "values" ];
       Enumeration { domain_spec = Some name; label_list = str_opt_list (path / "values") (f "values") }
   | "SumType" ->
@@ -506,7 +506,7 @@ let rec expr path j : expr =
           source_name = source_name ();
         }
   | "Aggregation" ->
-      (* the eight folds (delta B21), read into the in-memory [Functie] with
+      (* the eight folds (delta B21), read into the in-memory [Function_call] with
          no granularity: that field is a builtin's and unknown here *)
       check_keys path kvs
         ~ext:[ "elementType"; "filter"; "emptyFallback"; "dimensionSelection"; "sourceRole";
@@ -1037,7 +1037,7 @@ and condition_expr path j : condition_expr =
 
 (* An M1 ObjectType node. Its members are Attribute and Characteristic
    nodes, each carrying its own TimelineFacet; the in-memory record keeps
-   the name-keyed facet tables (Ast, [objecttype]), built here member by
+   the name-keyed facet tables (Ast, [object_type]), built here member by
    member in declaration order. An optional key that is absent adds no
    table entry: no plural, no dimension list, no timeline.
    Only an attribute's facet may name a timeline: v0 recorded no timeline
@@ -1259,7 +1259,7 @@ let named_form ~node ?(ext = []) path j =
   let kvs = obj path j in
   expect_node path kvs node;
   (* the form's designations (IR-SPEC ch. 2.12) stand on the form, as its
-     name does; [vocabulaires] reads them *)
+     name does; [vocabularies] reads them *)
   check_keys path kvs ~ext:("origin" :: "designations" :: ext) [ "node"; "name"; "versions" ];
   let name =
     match str_opt (path / "name") (field path kvs "name") with
@@ -1509,7 +1509,7 @@ let target_filler fact_types ~fact_type ~role =
   | _ -> None
 
 (* A fact creation's path is its whole join chain (IR-SPEC ch. 3.4), anchor
-   outward: every hop but the last is a [tussenstap], the last reaches the
+   outward: every hop but the last is a [path_step], the last reaches the
    target and is the [join_role]. *)
 let fact_creation fact_types path j : resolved_fact_creation list =
   let _, versions = named_form ~node:"FactCreation" path j in

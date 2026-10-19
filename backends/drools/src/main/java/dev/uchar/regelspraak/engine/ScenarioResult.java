@@ -30,7 +30,7 @@ public record ScenarioResult(String naam, Status status, List<ExpectationResult>
 
     public boolean pass() { return status == Status.PASS; }
 
-    /** One expectation's verdict: the expectation ({@code bron}: its kind and what it is about), the expected and the
+    /** One expectation's verdict: the expectation ({@code source}: its kind and what it is about), the expected and the
      *  actual value rendered alike, whether it held, and its 1-based position in the case's {@code expected}. */
     public record ExpectationResult(String source, String expected, String actual, boolean ok, int position) {}
 

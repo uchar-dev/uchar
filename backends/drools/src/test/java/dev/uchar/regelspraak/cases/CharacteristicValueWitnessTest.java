@@ -72,7 +72,7 @@ class CharacteristicValueWitnessTest {
         return p;
     }
 
-    /** The negative's document with the attribution's value set to {@code waarde}. */
+    /** The negative's document with the attribution's value set to {@code value}. */
     private static String document(String value) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(NEGATIVE));
         ObjectNode literal = (ObjectNode) IrPath.version(doc, "rules", 0, 0).get("value");

@@ -60,7 +60,7 @@ class TmsCompoundWitnessTest {
         playDocument(condition, jutters, expected);
     }
 
-    /** The document with {@code condition} over the eight Jutters, ingedeeld where {@code oordeel} holds of the number
+    /** The document with {@code condition} over the eight Jutters, ingedeeld where {@code verdict} holds of the number
      *  of the three members that hold. */
     private static void play(String condition, IntPredicate verdict) throws Exception {
         List<String> jutters = new ArrayList<>(), expected = new ArrayList<>();

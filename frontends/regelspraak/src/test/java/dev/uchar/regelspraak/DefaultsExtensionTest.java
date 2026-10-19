@@ -191,7 +191,7 @@ class DefaultsExtensionTest {
         assertNull(l.attribute());
         assertFalse(l.unordered());
         assertEquals(2, l.defaults().size(), "verwachtte een uitzonderingsdefault boven een basisdefault");
-        // the exception default (a Samengesteld voorwaarde) sits ABOVE the base default (a bare Vergelijking)
+        // the exception default (a Samengesteld voorwaarde) sits ABOVE the base default (a bare Comparison)
         assertInstanceOf(dev.uchar.regelspraak.ir.Condition.Compound.class, l.defaults().get(0).condition());
         assertInstanceOf(dev.uchar.regelspraak.ir.Condition.Comparison.class, l.defaults().get(1).condition());
         assertEquals(Boolean.TRUE, l.defaults().get(0).decision());

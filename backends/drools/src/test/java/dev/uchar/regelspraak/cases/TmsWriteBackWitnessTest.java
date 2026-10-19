@@ -301,7 +301,7 @@ class TmsWriteBackWitnessTest {
         }
     }
 
-    /** Puts a Waarde of {@code eerste} by the rule "uitkering" and one of {@code tweede} by another writer on the
+    /** Puts a Waarde of {@code first} by the rule "uitkering" and one of {@code second} by another writer on the
      *  uitkering of one Vondst, in both orders, each in a fresh session of {@code branch}, writes back, and collects the
      *  failures. */
     private static Object twoWriters(DroolsBackend.Branch branch, BigDecimal first, BigDecimal second,

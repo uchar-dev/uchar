@@ -100,7 +100,7 @@ class DrlAllocationDubbelbezetWitnessTest {
         assertEquals(24, orders);
     }
 
-    /** Fires B1 and its three Bergers through {@code kieBase}, the rules of {@code b} in the order {@code namen}, and
+    /** Fires B1 and its three Bergers through {@code kieBase}, the rules of {@code b} in the order {@code names}, and
      *  writes back: the shares, the rests and the two inconsistencies on D2 of the class comment. */
     private static void fire(DroolsBackend.Build b, KieBase kieBase, List<String> names) throws Exception {
         Object b1 = TmsDocuments.beanObject(b.beanLoader(), "Berging", Map.of("opbrengst", "1000"), List.of());

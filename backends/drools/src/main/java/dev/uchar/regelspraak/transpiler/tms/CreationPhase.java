@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 /**
- * The creation phase the driver opened, as a stated control fact: {@code nummer} counts the phases of one session from
+ * The creation phase the driver opened, as a stated control fact: {@code number} counts the phases of one session from
  * 1, and exactly one stands while the session fires a phase; {@code stratum} is the evaluation stratum the phase
  * belongs to. A generation is one phase, in which the fact creations fire and then the object creations, both on the
  * fixpoint the rule layer reached before the phase; the driver runs the generations of a stratum until one creates

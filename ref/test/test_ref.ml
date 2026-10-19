@@ -20,9 +20,9 @@ let total = ref 0
    used to die on a bare "Fatal error: exception Value.Fault" with no clue which
    example was in flight — measured on the mutant harness, which killed two
    mutants with zero report lines. The handler below turns that into a named
-   report. Nothing here changes an assertion or its verdict: [laatste] is a
+   report. Nothing here changes an assertion or its verdict: [last_item] is a
    write-only breadcrumb and the handler runs only on the way out. *)
-let last_item = ref "<nog geen voorbeeld gerapporteerd>"
+let last_item = ref "<no example reported yet>"
 
 let check name ok =
   incr total;
@@ -37,10 +37,10 @@ let () =
       (match e with
       | Value.Fault { text = m; _ } ->
           Printf.printf
-            "FAIL <onafgevangen fault> na het laatst gerapporteerde voorbeeld %S\n  fault: %s\n"
+            "FAIL <uncaught fault> after the last reported example %S\n  fault: %s\n"
             !last_item m
       | e ->
-          Printf.printf "FAIL <onafgevangen uitzondering> na het laatst gerapporteerde voorbeeld %S\n  %s\n"
+          Printf.printf "FAIL <uncaught exception> after the last reported example %S\n  %s\n"
             !last_item (Printexc.to_string e));
       Printexc.print_raw_backtrace stdout bt;
       flush stdout)
@@ -465,7 +465,7 @@ let () =
   (* a unit fault must NAME the two units apart: a rate and its numerator
      both printed as the numerator's abbreviation, so every mismatch
      between them read "€ vs €" and said nothing *)
-  check "verify-show-unit-noemer"
+  check "verify-show-unit-denominator"
     (Arith.show_unit (Value.Unit eur_per_jr) = "€/jr" && Arith.show_unit (Value.Unit eur) = "€");
   (match Arith.restate_into (Value.Unit eur) (q "1") (Value.Unit eur_per_jr) with
   | exception Value.Fault { text = m; _ } ->
@@ -529,28 +529,28 @@ let mnd_half_b : Ir_v0.Ast.measure_unit = { mnd with canonical_form = None }
 
 let () =
   (* the bare form: unchanged, factor 1 *)
-  check "verify-wf092-kaal-is-factor-1" (Q.equal (Arith.factor mnd_bare) Q.one);
+  check "verify-wf092-bare-is-factor-1" (Q.equal (Arith.factor mnd_bare) Q.one);
   (match Arith.add (num_with_unit mnd_bare "2") (num_with_unit mnd_bare "12") with
   | Value.Num (v, Value.Unit u) ->
-      check "verify-wf092-kaal-telt-op" (Q.equal v (q "14") && u.abbr_text = Some "mnd")
-  | _ -> check "verify-wf092-kaal-telt-op" false);
+      check "verify-wf092-bare-adds-up" (Q.equal v (q "14") && u.abbr_text = Some "mnd")
+  | _ -> check "verify-wf092-bare-adds-up" false);
   (* …and it is a canonical TARGET, not an island: `jr` declares canonical
      "mnd", the bare unit spells "mnd" as its abbreviation, so they are
      convertible and 2 jr restates on jr's own factor 12 *)
   (match Arith.add (num_with_unit mnd_bare "3") (num_with_unit jr "2") with
   | Value.Num (v, Value.Unit u) ->
-      check "verify-wf092-kaal-is-canoniek-doel"
+      check "verify-wf092-bare-is-canonical-target"
         (Q.equal v (q "27") && u.abbr_text = Some "mnd")
-  | _ -> check "verify-wf092-kaal-is-canoniek-doel" false);
+  | _ -> check "verify-wf092-bare-is-canonical-target" false);
   (* half-filled (a): a loud fault naming the unit and its target *)
   (match Arith.factor jr_half with
   | exception Value.Fault { text = m; _ } ->
-      check "verify-wf092-halfvorm-faalt-luid"
+      check "verify-wf092-half-form-fails-loudly"
         (m = "unit jr names canonical unit \"mnd\" but carries no conversion factor into it")
-  | _ -> check "verify-wf092-halfvorm-faalt-luid" false);
+  | _ -> check "verify-wf092-half-form-fails-loudly" false);
   (* and it faults where it would otherwise have lied: the restatement
      that used to read the missing factor as 1 (2 jr + 12 mnd = 3 jr) *)
-  expect_fault "verify-wf092-halfvorm-faalt-in-omrekening" (fun () ->
+  expect_fault "verify-wf092-half-form-fails-in-conversion" (fun () ->
       Arith.add (num_with_unit jr_half "2") (num_with_unit mnd "12"));
   (* half-filled (b), the mirror: a factor with nothing to convert into.
      Symmetric to (a) and equally loud — the arm that used to answer the
@@ -558,11 +558,11 @@ let () =
      into *)
   (match Arith.factor mnd_half_b with
   | exception Value.Fault { text = m; _ } ->
-      check "verify-wf092-halfvorm-b-faalt-luid"
+      check "verify-wf092-half-form-b-fails-loudly"
         (m
        = "unit mnd carries conversion factor 1 but names no canonical unit to convert into")
-  | _ -> check "verify-wf092-halfvorm-b-faalt-luid" false);
-  expect_fault "verify-wf092-halfvorm-b-faalt-in-omrekening" (fun () ->
+  | _ -> check "verify-wf092-half-form-b-fails-loudly" false);
+  expect_fault "verify-wf092-half-form-b-fails-in-conversion" (fun () ->
       Arith.add (num_with_unit mnd_half_b "12") (num_with_unit jr "2"))
 
 (* --- ch. 2.7: clamping -------------------------------------------------- *)
@@ -733,13 +733,13 @@ let () =
   (* one number grammar since the L4 landing (WF-081): the case format's, so
      a decimal comma, a bare leading point and a denominator with a leading
      0 are malformed, never read as the number they resemble *)
-  expect_fault_msg "verify-lexeme-komma" (fun () -> Value.q_of_lexeme "12,50")
+  expect_fault_msg "verify-lexeme-comma" (fun () -> Value.q_of_lexeme "12,50")
     {|malformed number lexeme "12,50"|};
   expect_fault_msg "verify-lexeme-kale-punt" (fun () -> Value.q_of_lexeme ".5")
     {|malformed number lexeme ".5"|};
-  expect_fault_msg "verify-lexeme-negatieve-kale-punt" (fun () -> Value.q_of_lexeme "-.5")
+  expect_fault_msg "verify-lexeme-negative-bare-point" (fun () -> Value.q_of_lexeme "-.5")
     {|malformed number lexeme "-.5"|};
-  expect_fault_msg "verify-lexeme-noemer-voorloopnul" (fun () -> Value.q_of_lexeme "3/04")
+  expect_fault_msg "verify-lexeme-denominator-leading-zero" (fun () -> Value.q_of_lexeme "3/04")
     {|malformed number lexeme "3/04"|};
   check "verify-lexeme-neg-dec" (Q.equal (Value.q_of_lexeme "-0.5") (q "-1/2"));
   (* a unit factor reads as the exact rational the wire writes, never
@@ -1609,7 +1609,7 @@ let () =
 
 (* The document and the case as files, loaded the way the runner loads them.
    [f] gets the verifier's findings, the case and the evaluation, deferred so
-   that a fault can be caught where it is pinned. [wereld] changes the input
+   that a fault can be caught where it is pinned. [world_state] changes the input
    world before the evaluation, for a state no case can write. *)
 let with_files ?(world_state = Fun.id) ~ir ~case_data f =
   let write suffix body_text =
@@ -1633,7 +1633,7 @@ let with_files ?(world_state = Fun.id) ~ir ~case_data f =
             (world_state c.world)))
 
 (* verifier-clean, evaluated without a fault, every expectation of the case
-   met, then [verder] on the end state. A fault or a mismatch is carried in
+   met, then [further] on the end state. A fault or a mismatch is carried in
    the example's name, so a red run says what came out. *)
 let plays ~ident ~ir ~case_data further =
   with_files ~ir ~case_data (fun findings c evalueer ->
@@ -1860,7 +1860,7 @@ let () =
                 in
                 check (Printf.sprintf "%s: %d Boeien (got %d)" ident boundary boeien) (boeien = boundary);
                 let last_item = String.concat "" (List.init (boundary - 1) (fun _ -> "oc1::")) ^ "B1" in
-                expect_num (ident ^ ": kopie2 of the last Boei") (attribute_of final last_item "kopie2")
+                expect_num (ident ^ ": copy2 of the last Boei") (attribute_of final last_item "kopie2")
                   (string_of_int boundary))
           else
             with_files ~ir ~case_data (fun findings _ evalueer ->
@@ -2074,7 +2074,7 @@ let () =
           in
           check (ident ^ ": one Post") (List.length posten = 1);
           expect_num (ident ^ ": a of the Post = 5") (attribute_of final "oc0::H1" "a") "5";
-          check (ident ^ ": the Post is not gemarkeerd")
+          check (ident ^ ": the Post is not marked")
             (List.for_all (fun i -> not (World.has_char i "gemarkeerd")) posten)))
     [ ("gemarkeerde post eerst", [ marked; y; open_; a; bewaakt ]);
       ("a van een post eerst", [ a; y; open_; marked; bewaakt ]) ]
@@ -2154,7 +2154,7 @@ let () =
           in
           check (ident ^ ": one Post") (posten = [ "oc0::H1" ]);
           expect_num (ident ^ ": a of the Post = 5") (attribute_of final "oc0::H1" "a") "5";
-          check (ident ^ ": the channel carries controle post on the Post, once")
+          check (ident ^ ": the channel carries check post on the Post, once")
             (List.map (fun (f : World.error_fact) -> (f.rule, f.subject)) final.channel
             = [ ("controle post", "oc0::H1") ])))
     [ ("y, a, gesloten, open", [ y; a; sealed; open_ ]);
@@ -2228,7 +2228,7 @@ let () =
       (String.concat ", " (List.map snd rule_defs))
       consistencies uniquenesses
   in
-  (* W1 → W2 → W3 over opvolging, W1 ervaren; [basis] gives each its basis *)
+  (* W1 → W2 → W3 over opvolging, W1 ervaren; [base_expr] gives each its basis *)
   let case_data ?base_expr expected_value =
     let wachter label successor characteristic b =
       Printf.sprintf
@@ -3573,7 +3573,7 @@ let () =
    Afgerond node (ch. 2.5; ch. 2.1 also admits the ch. 2.2 abs-division,
    not exercised here). Witness: the non-terminating quotient 100 ÷ 3 = 33,333…, bound
    in a Let whose value is DECLARED at two decimals, read at the
-   endpoint through a single Afgerond. Rounded to 2 the endpoint is 33,33;
+   endpoint through a single Rounding. Rounded to 2 the endpoint is 33,33;
    rounded to 4 it is 33,3333 — not 33,3300, the value a scale that bound the
    intermediate step would have forced (ref ignores the binder's declared
    scale and carries the exact rational to the endpoint). clingo materialises
@@ -3627,10 +3627,10 @@ let () =
    of an exact, non-terminating intermediate: the strict-Let witness above
    pins the Let carrier, this one pins the Match arm. Witness: 100 ÷ 3 =
    33,333… is the payload of a Toegekend construct; the Match binds it to the
-   arm binder [deel] — DECLARED at two decimals, as the Let binder was — and
-   reads it at the endpoint through a single Afgerond. The binder's declared
+   arm binder [portion] — DECLARED at two decimals, as the Let binder was — and
+   reads it at the endpoint through a single Rounding. The binder's declared
    scale never collapses the intermediate: the exact rational crosses the arm
-   (ch. 9.2 binds the payload value verbatim) and the sole endpoint Afgerond
+   (ch. 9.2 binds the payload value verbatim) and the sole endpoint Rounding
    is the one collapse → 33,33; had the arm binding pre-rounded to two
    decimals this would still read 33,33, but the ch. 2.9 norm forbids that
    intermediate collapse and the exact carry is what this pins. Card-
@@ -4858,7 +4858,7 @@ let () =
 (* WV-3.4a-opgesomd: a count handed VALUES instead of instances, and why this
    evaluator now refuses it by name.
 
-   Every shape that reaches the value arm under `Aantal` is fenced on the
+   Every shape that reaches the value arm under `Count` is fenced on the
    wire: the listed operand list of two or more by WF-037 (2026-09-20) and
    the count of ONE operand or none without an element type by WF-037
    (2026-09-23); a ranged single source counts instances since L2. Until 2026-09-23
@@ -6013,7 +6013,7 @@ let () =
    qualifier that lifts it) and a LOUD ch. 3.3 refusal on b/c/d ("temporal
    characteristic in a scalar condition"), while ch. 3.3 names ch. 3.9 as
    one of its own two exits; the ASP backend dropped the qualifier and read
-   a heeft/2 fact a temporal characteristic can never have, answering leeg
+   a has/2 fact a temporal characteristic can never have, answering leeg
    on a/b/c without a word. The Drools backend answered all four rows
    correctly all along, so the corpus golden `synth-gehelejaarkenmerk`
    closes the square on exactly these values.
@@ -6360,7 +6360,7 @@ let () =
    either order, both faults are available, and no value is ever produced. An
    executor that walks the node's operands the other way fails BOTH examples
    of the row, which is what the corpus witnesses alone did not give: the
-   golden and the two red cases pin `Binair`, `Begrensd` and tijdsduur, and
+   golden and the two red cases pin `Binary`, `Clamp` and tijdsduur, and
    every other visible row of ch. 5.11's sweep table was spec text with no
    artifact until this battery (measured: reversing both ordered walks in
    Eval left every gate green).
@@ -6418,7 +6418,7 @@ let () =
   expect_msg "WV-5.11-vergelijking-links-eerst" (run_c (cmp Equal tree pit)) bm;
   expect_msg "WV-5.11-vergelijking-rechts-later" (run_c (cmp Equal pit tree)) pm;
   (* row: aggregation — the contributors in wire order, and BEFORE the
-     leegwaarde. The stand-in is the LAST operand of the node, not the first. *)
+     empty_fallback. The stand-in is the LAST operand of the node, not the first. *)
   let summed args empty_value : Ir_v0.Ast.expr =
     Function_call
       { kind = Sum_function; call_arguments = args; element_object_type = None; empty_fallback = empty_value;
@@ -7811,7 +7811,7 @@ let () =
     if !hits_list = 0 then failwith (Printf.sprintf "vervang: %S does not occur" sub);
     Buffer.contents b
   in
-  check "vervang fails on a slot that does not occur"
+  check "replace fails on a slot that does not occur"
     (match substitute ~sub:"{geen-slot}" ~via:"x" template with
     | (_ : string) -> false
     | exception Failure _ -> true);
@@ -7847,20 +7847,20 @@ let () =
   (match load_doc (case_with "" "") with
   | `Loaded c ->
       let v1 = World.get c.world "V1" in
-      check "caselader-lexeem-canoniek-laadt" true;
-      check "caselader-lexeem-canoniek-datum"
+      check "case-loader-lexeme-canonical-loads" true;
+      check "case-loader-lexeme-canonical-date"
         (World.attr v1 "vondstdag" = Value.date_of_iso "2026-03-10");
-      check "caselader-lexeem-canoniek-negatief-decimaal"
+      check "case-loader-lexeme-canonical-negative-decimal"
         (match World.attr v1 "gewicht" with Value.Num (x, _) -> Q.equal x (q "-25/2") | _ -> false);
-      check "caselader-lexeem-canoniek-breuk"
+      check "case-loader-lexeme-canonical-rational"
         (match World.SMap.find_opt "heffing" c.params with
          | Some (Value.Num (x, _)) -> Q.equal x (q "3/4")
          | _ -> false);
-      check "caselader-lexeem-canoniek-datumtijd"
+      check "case-loader-lexeme-canonical-date-time"
         (World.SMap.find_opt "peilstip" c.params
         = Some (Value.Date_time (Case.ms_of_datetime "2026-03-10T09:00:00.250")))
-  | `Refused m -> check ("caselader-lexeem-canoniek-laadt (refused: " ^ m ^ ")") false
-  | `Fault m -> check ("caselader-lexeem-canoniek-laadt (fault: " ^ m ^ ")") false);
+  | `Refused m -> check ("case-loader-lexeme-canonical-loads (refused: " ^ m ^ ")") false
+  | `Fault m -> check ("case-loader-lexeme-canonical-loads (fault: " ^ m ^ ")") false);
   let d at lex why =
     Printf.sprintf "%s %S is not the uchar-case-v0 date lexeme yyyy-mm-dd (%s)" at lex why
   in
@@ -7870,7 +7870,7 @@ let () =
   let dm = "10-03-2026" in
   (* date: every position, day-first *)
   List.iter
-    (fun (ident, slot, at) -> rejects ("caselader-lexeem-" ^ ident) slot dm (d at dm (form_kind dm)))
+    (fun (ident, slot, at) -> rejects ("case-loader-lexeme-" ^ ident) slot dm (d at dm (form_kind dm)))
     [ ("attribuut-datum", "vondstdag", "V1.vondstdag");
       ("lijstelement-datum", "vangstdag", "V1.vangstdagen[1]");
       ("structveld-datum", "peildag", "V1.dossier.peildag");
@@ -7889,9 +7889,9 @@ let () =
       ("verwachte-tijdlijn-tot", "verwacht-tot", "expected V1.tarief.timeline[0].to") ];
   (* the calendar half, which the case schema's pattern lets through: the
      reader's own reason rides along whatever it is *)
-  rejects "caselader-lexeem-attribuut-datum-30-februari" "vondstdag" "2026-02-30"
+  rejects "case-loader-lexeme-attribute-date-30-february" "vondstdag" "2026-02-30"
     (d "V1.vondstdag" "2026-02-30" (day_number "2026-02-30"));
-  rejects "caselader-lexeem-attribuuttijdlijn-van-maand-13" "tarief-van" "2026-13-01"
+  rejects "case-loader-lexeme-attribute-timeline-from-month-13" "tarief-van" "2026-13-01"
     (d "V1.tarief.timeline[0].from" "2026-13-01" (month_kind "2026-13-01"));
   (* dateTime: the reader's refusal names the grammar position, the loader
      adds the case position *)
@@ -7903,12 +7903,12 @@ let () =
   in
   let space = "2026-03-10 09:00:00" in
   List.iter
-    (fun (ident, slot, at) -> rejects ("caselader-lexeem-" ^ ident) slot space (dt at space))
+    (fun (ident, slot, at) -> rejects ("case-loader-lexeme-" ^ ident) slot space (dt at space))
     [ ("attribuut-datumtijd", "meldstip", "V1.meldstip");
       ("parameter-datumtijd", "peilstip", "parameter peilstip");
       ("verwachte-waarde-datumtijd", "verwacht-meldstip", "expected V1.meldstip") ];
   (* the clock half, which the dateTime pattern lets through *)
-  rejects "caselader-lexeem-attribuut-datumtijd-uur-24" "meldstip" "2026-03-10T24:00:00"
+  rejects "case-loader-lexeme-attribute-date-time-hour-24" "meldstip" "2026-03-10T24:00:00"
     (Printf.sprintf
        "V1.meldstip %S is not the uchar-case-v0 dateTime lexeme yyyy-mm-ddThh:mm:ss[.fff] (malformed \
         dateTime %S (hour 24 is out of range))"
@@ -7924,7 +7924,7 @@ let () =
       at lex
   in
   List.iter
-    (fun (ident, slot, lex, at) -> rejects ("caselader-lexeem-" ^ ident) slot lex (g at lex))
+    (fun (ident, slot, lex, at) -> rejects ("case-loader-lexeme-" ^ ident) slot lex (g at lex))
     [ ("attribuut-getal-komma", "gewicht", "1,000", "V1.gewicht");
       ("attribuut-getal-kale-punt", "gewicht", ".5", "V1.gewicht");
       ("attribuut-getal-exponent", "gewicht", "1E3", "V1.gewicht");
@@ -8002,11 +8002,11 @@ let () =
   (* the per-segment refusals beside the lexeme ones name their segment the
      same way; the two that compare segments with each other keep the
      timeline's own position *)
-  rejects "caselader-segment-tot-niet-na-van" "tarief-tot" "2026-02-01"
+  rejects "case-loader-segment-to-not-after-from" "tarief-tot" "2026-02-01"
     "V1.tarief.timeline[1]: segment 'to' must lie after 'from'";
-  rejects "caselader-segment-buiten-rooster" "tarief-van" "2026-01-15"
+  rejects "case-loader-segment-outside-grid" "tarief-van" "2026-01-15"
     "V1.tarief.timeline[0]: segment boundaries must sit on the declared granularity grid";
-  rejects "caselader-periode-tot-niet-na-van" "dienst-tot" "2026-03-01"
+  rejects "case-loader-period-to-not-after-from" "dienst-tot" "2026-03-01"
     "V1.dienstdoend[1]: period 'to' must lie after 'from'";
   (* The JSON-shape refusals: a value of the wrong JSON kind, or a missing
      field, named by the same positions as the lexeme refusals above, with
@@ -8329,10 +8329,10 @@ let () =
     (sentence_text "a computed value");
   (* both halves of the constant, each on its own (lens mutants MW3 and MW4
      dropped one half each and the suite stayed green): the text waar, and
-     the boolean variant true under a type other than Booleaan. Since the
+     the boolean variant true under a type other than Boolean. Since the
      L4 landing a boolean literal is a JSON boolean, so a capitalised "Waar"
      is no spelling of one any more and the type half is probed by the true
-     variant under Tekst — a node only a hand builds, since the loader
+     variant under Text_type — a node only a hand builds, since the loader
      refuses a variant its type does not name (WF-114) *)
   rejects "WF-022-kenmerk-waar-als-tekst-weigert" (litv "waar" Ir_v0.Ast.Text_type)
     (sentence_text {|the literal {"text": "waar"} typed Text|});

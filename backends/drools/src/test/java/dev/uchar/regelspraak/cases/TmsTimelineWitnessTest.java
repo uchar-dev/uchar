@@ -240,7 +240,7 @@ class TmsTimelineWitnessTest {
         return j;
     }
 
-    /** The timeline on member {@code lid} of {@code beanObject} as "[van, tot)=waarde", or null where the bean holds none. */
+    /** The timeline on member {@code member} of {@code beanObject} as "[van, tot)=waarde", or null where the bean holds none. */
     static List<String> timelineOf(Object beanObject, String member) throws Exception {
         Object l = TmsDocuments.read(beanObject, member);
         if (l == null) return null;

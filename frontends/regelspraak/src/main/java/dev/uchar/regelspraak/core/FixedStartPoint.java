@@ -49,7 +49,7 @@ public final class FixedStartPoint {
         return null;
     }
 
-    /** The days of {@code maand} in a leap year. */
+    /** The days of {@code month} in a leap year. */
     private static int daysIn(int month) {
         return LocalDate.of(ANCHOR_YEAR, month, 1).lengthOfMonth();
     }
@@ -64,8 +64,8 @@ public final class FixedStartPoint {
         };
     }
 
-    /** The canonical day-month of a single-unit month, quarter or year grid with a wall on day {@code dag} of month
-     *  {@code maand}: the earliest month of the year in that month's cycle that has the day itself. Null when no
+    /** The canonical day-month of a single-unit month, quarter or year grid with a wall on day {@code day} of month
+     *  {@code month}: the earliest month of the year in that month's cycle that has the day itself. Null when no
      *  month of the cycle has it. */
     public static String canoniek(Granulariteit g, int month, int day) {
         int step = stepMonths(g);
@@ -75,7 +75,7 @@ public final class FixedStartPoint {
         return null;
     }
 
-    /** WF-115 (b): the refusal of fixed start point {@code s} on a grid of {@code g} and {@code aantal}, in the
+    /** WF-115 (b): the refusal of fixed start point {@code s} on a grid of {@code g} and {@code count}, in the
      *  verifier's sentence, or null when it fits. A count below 1 is WF-005's, and this answers null there. */
     public static String refusal(Granulariteit g, int count, String s) {
         if (count < 1) return null;
@@ -117,8 +117,8 @@ public final class FixedStartPoint {
         return s == null ? "none" : "'" + s + "'";
     }
 
-    /** Whether day {@code d} is a wall of the grid of {@code g}, {@code aantal} units and fixed start point
-     *  {@code vast} (null: no fixed start), or null where that grid lays no wall a day can be held against: a grid of
+    /** Whether day {@code d} is a wall of the grid of {@code g}, {@code count} units and fixed start point
+     *  {@code fixed} (null: no fixed start), or null where that grid lays no wall a day can be held against: a grid of
      *  several units without a date start, a week grid of one unit without one, and a fixed start point that is no
      *  lexeme of WF-115 for its grid (RUNTIME-SEMANTICS ch. 3.2). The calendar's month, quarter and year grids are
      *  the grids {@code --01-01} lays; a day grid of one unit has a wall at every day. */
@@ -148,7 +148,7 @@ public final class FixedStartPoint {
         }
     }
 
-    /** The date a day-month start's walls are computed from: day {@code dag} of month {@code maand} in a leap
+    /** The date a day-month start's walls are computed from: day {@code day} of month {@code month} in a leap
      *  year. A date start is its own anchor. */
     public static LocalDate anchor(Lexeme l) {
         return l.isDate() ? l.date() : LocalDate.of(ANCHOR_YEAR, l.month(), l.day());

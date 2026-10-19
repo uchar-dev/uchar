@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * loaded it long before, with or without the property.
  *
  * <p><b>Red</b> with the mutant of the lens (not committed; the diff and the output are kept with step 6b of the card): a
- * seam that writes no dump on the DRL-text branch where {@code vuur} reports no fixpoint, so the dump of the budget case on
+ * seam that writes no dump on the DRL-text branch where {@code fire} reports no fixpoint, so the dump of the budget case on
  * that branch was missing.
  */
 class SeamWitnessTest {

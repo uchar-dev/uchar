@@ -138,7 +138,7 @@ class TmsStackWitnessTest {
         assertTrue(inTheText[0] > 0, "de initialisatiedefault van de stapel vuurde in de tekst nooit op W2");
     }
 
-    /** Fires the objects of {@link #CASES} through {@code kieBase}, the rules of {@code b} in the order {@code namen}:
+    /** Fires the objects of {@link #CASES} through {@code kieBase}, the rules of {@code b} in the order {@code names}:
      *  the rule never fires on a Wrakvondst, and every bergloon ends as it should; counts in {@code folded} the
      *  firings of the stack's initialisation default on W2. */
     private static void fireSample(DroolsBackend.Build b, KieBase kieBase, List<String> names, int[] folded)

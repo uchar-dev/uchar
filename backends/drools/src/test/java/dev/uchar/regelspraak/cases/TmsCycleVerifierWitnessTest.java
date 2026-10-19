@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The cycle refusal of the exec-model branch agrees with the verifier on WF-045 and WF-046 over the corpus: no
- * golden, every one of which the verifier passes (gate 3), has a cycle {@code Kringen} refuses, and every negative case
+ * golden, every one of which the verifier passes (gate 3), has a cycle {@code Cycles} refuses, and every negative case
  * of WF-045, WF-046 and WF-051 (the defaults fold of the same graph) is refused. Among the goldens are the recursive
  * creations WF-045 admits ({@code anchor/jutterswet-wachtersketen} and its kin) and the three wrakboeking documents,
  * whose creation mints a {@code Strandrecht} and reads {@code Wrakrecht.bergingsvergoeding}, which a rule computes from

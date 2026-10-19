@@ -52,7 +52,7 @@ card the resolver then found no declared label, left the selection unresolved
 with a WARNING, and the emitter refused the fold; that is why this source
 writes the set form with three labels. The resolver now reads such a member as
 labels joined by `en` when exactly one grouping of its words gives declared
-labels only, a declared label being read whole first (`DimensievouwTest`), so
+labels only, a declared label being read whole first (`DimensionFoldTest`), so
 `{voorjaar en najaar}` selects `voorjaar` and `najaar`.
 
 ## Why no replay case — measured, per executor

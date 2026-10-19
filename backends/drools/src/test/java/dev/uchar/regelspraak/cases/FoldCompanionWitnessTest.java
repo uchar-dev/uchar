@@ -116,7 +116,7 @@ class FoldCompanionWitnessTest {
         // destructive exec-model branch could not; it refused the rule by name ("een vouw over een setbron en een deling
         // of wortel onder één Let of IfThenElse") until card drl-teksttak-op-truth-maintenance. The analysis with truth
         // maintenance has no companions: it deposits where the division reads leeg, and answers as ref
-        // (TmsLikeRefWitnessTest, vouw-onder-let-naast-deling), on both branches since that card.
+        // (TmsLikeRefWitnessTest, fold-under-let-beside-division), on both branches since that card.
         String let = "{\"node\":\"Let\",\"type\":" + TWO_DECIMALS + ",\"binder\":\"vangst\",\"value\":" + SUM + ",\"body\":"
                 + rounded(binary("dividedBy", "{\"node\":\"BinderRef\",\"name\":\"vangst\",\"source\":{\"snippet\":\"de vangst\"}}",
                         own("deler"), UNBOUNDED)) + ",\"source\":{\"snippet\":\"de vangst is de som …\"}}";

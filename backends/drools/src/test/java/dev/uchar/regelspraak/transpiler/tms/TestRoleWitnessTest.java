@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * what it asks of the condition, which the analysis decides and a rendering into text cannot tell from the condition
  * itself. One compiled condition stands behind the test of a form's rule, the rule of its fault and the rule of its
  * deposit; the role says that the first asks that it holds without a fault ({@code WITHOUT_FAULT}), the second that it
- * faults ({@code FOUT}) and the third that it reaches a place that deposits, heard by the probe in its slot
- * ({@code DEPONERING}). This witness pins the role of every test of every rule of a form, in the order of the model,
+ * faults ({@code FAULT}) and the third that it reaches a place that deposits, heard by the probe in its slot
+ * ({@code DEPOSIT}). This witness pins the role of every test of every rule of a form, in the order of the model,
  * for two goldens; that the rendering of the roles tests what the wrapped conditions tested before the step is what
  * the harness {@code FireTrace} shows.
  *

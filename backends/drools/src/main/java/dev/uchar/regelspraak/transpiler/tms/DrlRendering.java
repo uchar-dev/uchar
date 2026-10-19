@@ -65,7 +65,7 @@ import java.util.TreeSet;
  *   <li>A join meets nothing where a side reads null, as the identity join of the executable model does: where the
  *       pattern's side is a field and the other side can read null, a field of an object or a value a binding binds,
  *       the join tests the field for null first, since DRL finds two nulls equal.</li>
- *   <li>A read along a path is a function that walks the path with the routes {@code along} and {@code lees}, null
+ *   <li>A read along a path is a function that walks the path with the routes {@code along} and {@code read}, null
  *       where a link is absent; never the null-safe navigation of the dialect, which drops the match instead.</li>
  *   <li>Every helper is called through its class, never through an {@code import function}: a helper named like a
  *       field of a fact shadows that field without a complaint (FABLE-2 §2.1). The text imports the classes of the
@@ -209,7 +209,7 @@ final class DrlRendering {
         return Namen.drlString(s);
     }
 
-    /** The one public method of {@code klasse} called {@code naam}; the witnesses of the routes hold that there is one. */
+    /** The one public method of {@code javaClass} called {@code naam}; the witnesses of the routes hold that there is one. */
     private static Method method(Class<?> javaClass, String naam) {
         Method out = null;
         for (Method m : javaClass.getMethods())
@@ -415,7 +415,7 @@ final class DrlRendering {
             return "r" + n + "_" + category + place;
         }
 
-        /** Writes the function at {@code place}: the RegelSpraak sentence {@code bron} as a comment, where the node has
+        /** Writes the function at {@code place}: the RegelSpraak sentence {@code source} as a comment, where the node has
          *  one, its head and its body. */
         private void fill(int place, String source, String head, String body) {
             StringBuilder f = new StringBuilder();
@@ -523,7 +523,7 @@ final class DrlRendering {
         }
 
         /** A value a pattern binds: a field of a fact of the branch as it is; a member of a bean by its name in DRL,
-         *  or by the route {@code lees} where the pattern's class does not declare it, read as its form says; along a path
+         *  or by the route {@code read} where the pattern's class does not declare it, read as its form says; along a path
          *  a function that walks it. */
         private String binding(Class<?> javaClass, Binding b) {
             if (!b.path().isEmpty())
@@ -540,7 +540,7 @@ final class DrlRendering {
             return b.target() + " : (" + readForm(read, b.form(), b.category()) + ")";
         }
 
-        /** How the text spells the field {@code property} of an object of {@code klasse}: a component of a fact of
+        /** How the text spells the field {@code property} of an object of {@code javaClass}: a component of a fact of
          *  the branch by its name, a member of a bean by the name Drools reads its getter under
          *  ({@code Namen.lidnamen}); a member {@code naam} that Drools reads as something else where a pattern spells
          *  its name is refused, by name, since a constraint on it could hold or fail without a word. */
@@ -551,7 +551,7 @@ final class DrlRendering {
             return drl;
         }
 
-        /** {@code lees} read as {@code form}, through its route. */
+        /** {@code read} read as {@code form}, through its route. */
         private String readForm(String read, Binding.ReadForm form, Class<?> category) {
             return switch (form) {
                 case VALUE -> read;
@@ -1142,7 +1142,7 @@ final class DrlRendering {
          * and makes the facts, and the rule inserts them. The function computes the depth through its route, which throws
          * past the budget before anything is made; then the value of each initialisation, collapsed, the first evaluation
          * fault being its outcome, as in the executable model, which then makes nothing; then the new bean through the
-         * route {@code newObject}, with each attribute initialisation set on it through the route {@code zet} before it
+         * route {@code newObject}, with each attribute initialisation set on it through the route {@code set} before it
          * is inserted; and it gives the facts of the insertions in the order of the plan, null for a characteristic whose
          * value is not true. The rule inserts the fault, or each fact as the plan inserts it at its place. The function
          * makes the facts since MVEL resolves no constructor with an {@code int} parameter from an argument of static
@@ -1255,7 +1255,7 @@ final class DrlRendering {
 
         /**
          * The member's place {@code p} in the order of the fold {@code fold}, through the route, as a function of this
-         * rule over the member in slot {@code lid} and the count and the least place of each step, by the variables of
+         * rule over the member in slot {@code member} and the count and the least place of each step, by the variables of
          * their slots; returns its call, which reads those variables where it stands: in the consequence, where the
          * left-hand side binds them, or in the function whose context is {@code c}, which must pass them.
          */
@@ -1289,7 +1289,7 @@ final class DrlRendering {
 
         // ---------------- the day kinds of a term ----------------
 
-        /** Adds to {@code uit} the global of every day kind {@code t} names, in the order of the tree. */
+        /** Adds to {@code out} the global of every day kind {@code t} names, in the order of the tree. */
         private void dayKinds(Term t, Set<String> out) {
             switch (t) {
                 case Term.DayKind d -> out.add(dayKind(d));

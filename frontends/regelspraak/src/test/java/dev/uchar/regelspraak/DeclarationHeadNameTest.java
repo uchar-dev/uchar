@@ -42,7 +42,7 @@ class DeclarationHeadNameTest {
         return m;
     }
 
-    /** Exactly one diagnostic of {@code ernst} carries {@code sentence}, and it stands on {@code regel}. */
+    /** Exactly one diagnostic of {@code severity} carries {@code sentence}, and it stands on {@code regel}. */
     private static void onlyMessage(RegelSpraakModel m, Severity severity, int regel, String sentence) {
         List<Diagnostic> matching = m.diagnostics.stream()
                 .filter(d -> d.severity() == severity && d.message().equals(sentence)).toList();

@@ -59,7 +59,7 @@ public final class RuleGraph {
      *  {@code endOutput} marks a produced-but-never-consumed datum (a product-less eind-output). */
     public record Node(String id, String label, NodeKind kind, boolean endOutput) {}
 
-    /** A directed dataflow edge from {@code van} to {@code naar} (both node ids). */
+    /** A directed dataflow edge from {@code van} to {@code destination} (both node ids). */
     public record Edge(String van, String destination) {}
 
     /** One dependency the graph draws: form {@code producer}, of kind {@code producerForm}, writes {@code element},

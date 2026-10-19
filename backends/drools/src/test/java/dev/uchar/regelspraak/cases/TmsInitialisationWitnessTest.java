@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 'bergloon' van Vondst): de truth-maintenance-tak draagt deze vorm nog niet&gt;". The rows on the exec-model branch
  * were green from the start.
  *
- * <p><b>Red by mutation</b> (measured the same day, not committed). (1) The naive guard, no {@code Waarde} of any
+ * <p><b>Red by mutation</b> (measured the same day, not committed). (1) The naive guard, no {@code Value} of any
  * writer on the target, so the initialisation's own write counts: the replay reached the fire cap in the document
  * orders, "volgorde [standaardbergloon, standaardvindloon, berekend gewicht van een vondst] ==&gt; expected: &lt;null&gt;
  * but was: &lt;case: geen fixpunt (kringverwijzing?)&gt;", in the displacement document, "volgorde [registratie,
@@ -81,7 +81,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * &lt;case: attribuut bergloon: verwacht 40, werkelijk 26; attribuut vindloon: verwacht 3, werkelijk 18; attribuut
  * vindloon: verwacht 7, werkelijk 36&gt;", and the deposit row, "V2 ==&gt; expected: &lt;null&gt; but was: &lt;case:
  * verwacht consistent, werkelijk inconsistent (standaardaandeel @ V2)&gt;". (3) Without the other writers'
- * {@code Waarde} in the guard, only the displacement rows failed, at the write-back: "geen fixpunt: twee schrijvers van
+ * {@code Value} in the guard, only the displacement rows failed, at the write-back: "geen fixpunt: twee schrijvers van
  * één doel geven verschillende waarden — de regel "bergloon" schrijft 30 en de regel "standaardbergloon" schrijft 7 in
  * het attribuut bergloon van een Vondst (Vondst@…); divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)".
  */

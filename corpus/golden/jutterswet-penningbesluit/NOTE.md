@@ -41,7 +41,7 @@ penningbedrag of 250 euro.
 **Why there is no binding.** The frontend writes a `connectingRole` where the
 creation's noun is the declared name or plural of a role the created type
 fills in a fact type that also relates the subject
-(`RegelSpraakModel.benoemdeRolBinding`). Here the noun is the type name
+(`RegelSpraakModel.namedRoleBinding`). Here the noun is the type name
 `Penningbesluit`, and no role is declared under that name, so the frontend
 writes none: `/rules/objectCreations/0/versions/0` has no `connectingRole`.
 The back-link is then derived from the type pair: `penningtoekenning` is the

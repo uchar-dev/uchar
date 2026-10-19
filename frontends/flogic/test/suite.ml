@@ -312,35 +312,35 @@ let () =
       rule_groups = []; diagnostics = []; prioritized_defaults = [ visible ]; function_defs = [];
       presentation_annotations = [] }
   in
-  Printf.printf "[emit-proef] de vormen die geen F-logic-bron bereikt\n%!";
+  Printf.printf "[emit-trial] the forms that no F-logic source reaches\n%!";
   let text = Flogic_frontend_lib.Emit.to_string trial in
   let out = Filename.temp_file "flogic-proef" ".ir.json" in
   let oc = open_out out in
   output_string oc text;
   close_out oc;
   let vc, vo = run [ verifier; out ] in
-  check "emit-proef : verifier-clean" (vc = 0 && contains ~needle:"PASS" vo) vo;
+  check "emit-trial : verifier-clean" (vc = 0 && contains ~needle:"PASS" vo) vo;
   (match Ir_v0.Loader.document (Yojson.Safe.from_string text) with
    | back ->
-       check "emit-proef : loads for an executor" true "";
+       check "emit-trial : loads for an executor" true "";
        let breedte =
          List.find (fun (r : A.resolved_rule) -> r.rr_name = Some "breedte van een sein")
            back.resolved_rules
        in
-       check "emit-proef : reads the host back" (breedte.rr_condition = Some gehesen) text;
-       check "emit-proef : reads both validity bounds back" (breedte.rr_validity = Some seizoen) text;
-       check "emit-proef : reads the role plural back"
+       check "emit-trial : reads the host back" (breedte.rr_condition = Some gehesen) text;
+       check "emit-trial : reads both validity bounds back" (breedte.rr_validity = Some seizoen) text;
+       check "emit-trial : reads the role plural back"
          ((List.assoc "seinpaar" back.fact_types).role_names = sein_pair.role_names) text;
-       check "emit-proef : reads the characteristic group and its decision back"
+       check "emit-trial : reads the characteristic group and its decision back"
          (match back.prioritized_defaults with
           | [ pd ] ->
               pd.pd_characteristic = Some "zichtbaar" && pd.pd_attribute = None
               && List.map (fun (d : A.default) -> d.default_decision) pd.defaults = [ Some true ]
           | _ -> false)
          text
-   | exception Ir_v0.Loader.Error (p, m) -> check "emit-proef : loads for an executor" false (p ^ ": " ^ m));
+   | exception Ir_v0.Loader.Error (p, m) -> check "emit-trial : loads for an executor" false (p ^ ": " ^ m));
   List.iter
-    (fun needle -> check ("emit-proef : writes " ^ needle) (contains ~needle text) text)
+    (fun needle -> check ("emit-trial : writes " ^ needle) (contains ~needle text) text)
     [ {|"host": "Sein"|}; {|"from": "2026-04-01"|}; {|"to": "2026-10-01"|};
       {|"plural": "bijseinen"|}; {|"characteristic": "zichtbaar"|}; {|"decision": true|};
       {|"node": "Text"|}; {|"precision": "day"|}; {|"presentation": "equation"|} ];

@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>the property entry of {@code Accessors}, through which the PatternDSL rendering reads a field, a binding, a
  *       step of a path and an input, sets the initialisations of a creation, and the analysis writes the derived values
  *       and links onto the beans, and the entry of the replay reads the reference fields;</li>
- *   <li>{@code PatternDslRendering.inputReader}, and the routes {@code lees}, {@code langs} and {@code ontmoeting}.</li>
+ *   <li>{@code PatternDslRendering.inputReader}, and the routes {@code read}, {@code along} and {@code meeting}.</li>
  * </ul>
  * Two documents fire through the branch with the value the reference interpreter and the ASP backend give: one with a
  * member {@code İş}, with and without an input for it, and one with an input member {@code 日 X} and a derived member
@@ -275,7 +275,7 @@ class PropertyWitnessTest {
     }
 
     /** The case of {@link #the_replay_sets_and_reads_each_characteristic}: one {@code Kenmerkproef} with every characteristic of
-     *  {@code kenmerken} as input where {@code aanwezig}, and expected present, or else none and each expected absent. */
+     *  {@code kenmerken} as input where {@code present}, and expected present, or else none and each expected absent. */
     static String characteristicCase(List<String> kenmerken, boolean present) {
         StringBuilder input = new StringBuilder(), expected = new StringBuilder();
         for (String k : kenmerken) {
@@ -288,7 +288,7 @@ class PropertyWitnessTest {
                 + "]}], \"parameters\": {}}, \"expected\": [" + expected + "{\"kind\": \"consistent\"}]}";
     }
 
-    /** The document {@code eigenschap/turks-kenmerk}, verifier-clean: "het uit van een Jutter moet gesteld worden op
+    /** The document {@code eigenschap/turkish-characteristic}, verifier-clean: "het uit van een Jutter moet gesteld worden op
      *  1,00 indien hij ışık is" and "een Jutter is İç indien hij ışık is". The replay sets the input characteristic
      *  through {@code setIşık}, the branch reads it through {@code isIşık}, derives uit and İç, and the replay reads İç
      *  back through {@code isIç}; without the input uit stays empty and İç absent. The reference interpreter and the
@@ -338,7 +338,7 @@ class PropertyWitnessTest {
         }
     }
 
-    /** A document whose object type {@code Proef} has a number attribute for each of {@code namen}. */
+    /** A document whose object type {@code Proef} has a number attribute for each of {@code names}. */
     static String trialDocument(List<String> names) {
         return trialDocument(names, List.of());
     }
@@ -369,7 +369,7 @@ class PropertyWitnessTest {
                 + " \"diagnostics\": []}";
     }
 
-    /** Whether {@code klasse} has the {@code get} or the {@code is} form of {@code namen}. */
+    /** Whether {@code javaClass} has the {@code get} or the {@code is} form of {@code names}. */
     private static boolean hasGetter(Class<?> javaClass, Namen.Lidnamen names) {
         for (String m : List.of(names.getter(), names.isGetter())) {
             try {
@@ -382,7 +382,7 @@ class PropertyWitnessTest {
         return false;
     }
 
-    /** The document {@code eigenschap/turks-lid}: "het uit van een Jutter moet berekend worden als het İş van de
+    /** The document {@code eigenschap/turkish-member}: "het uit van een Jutter moet berekend worden als het İş van de
      *  Jutter plus 1,00", verifier-clean. Without an input for İş the branch reads the member, leeg, through the getter
      *  the generator wrote, and gives 1.00; with an input of 4.50 the replay sets it through the setter the generator
      *  wrote, {@code setIş}, and the branch gives 5.50; the reference interpreter and the ASP backend give both. */
@@ -395,7 +395,7 @@ class PropertyWitnessTest {
                 .toFile())));
     }
 
-    /** The document {@code eigenschap/lastige-leden}: "het İç van een Jutter moet berekend worden als het 日 X van de
+    /** The document {@code eigenschap/awkward-members}: "het İç van een Jutter moet berekend worden als het 日 X van de
      *  Jutter plus 1,00", verifier-clean. The replay sets the input 日 X = 2.00 through {@code set日X}, the branch reads
      *  it through {@code get日X}, writes 3.00 through {@code setIç} after the fixpoint, and the replay reads it through
      *  {@code getIç}; the reference interpreter and the ASP backend give 3.00. */
@@ -406,7 +406,7 @@ class PropertyWitnessTest {
                 .toFile())));
     }
 
-    /** The cases {@code eigenschap/spelling} on a copy of the golden {@code jutterswet-sluimerwacht}, each with one key in
+    /** The cases {@code property/spelling} on a copy of the golden {@code jutterswet-sluimerwacht}, each with one key in
      *  another capitalisation than its declaration (fix round 2a2, point 1): in the input an attribute ("melDingen" for
      *  "meldingen") and a characteristic ("beMand"), in an expectation an attribute ("meldingsAfschrift") and a
      *  characteristic ("sluimerEnd"). The reference interpreter and the ASP backend read each key as the declared member

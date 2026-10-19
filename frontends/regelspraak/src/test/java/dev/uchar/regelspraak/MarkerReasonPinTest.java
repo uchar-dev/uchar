@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * The clamp on the {@code reden == null} convention (maintainer decision 2026-09-19, lens round of the
  * same date).
  *
- * <p><b>What it guards.</b> Since the card, every {@code Onopgelost} carries a {@code reden} and the
+ * <p><b>What it guards.</b> Since the card, every {@code Unresolved} carries a {@code reason} and the
  * resolver's survivor sweep reports each surviving marker whose reden is non-null. A reden of null means
  * "the marker's diagnosis is raised elsewhere" — by the producing route itself, by its caller, or by the
  * route that replaces it. The compiler forces every NEW production site to pass SOMETHING; it cannot
@@ -70,7 +70,7 @@ class MarkerReasonPinTest {
             new Site("ExpressionBuilder.java", "checkOrdinal", 2,
                     "de §5.5.3-ERROR respectievelijk -WARNING staat vlak boven de marker"));
 
-    /** A marker construction: the two record constructors and the two {@code onopgelost(…)} helpers. */
+    /** A marker construction: the two record constructors and the two {@code unresolvedMarker(…)} helpers. */
     private static final Pattern BUILD =
             Pattern.compile("\\b(?:new\\s+(?:Condition|Expr)\\.Unresolved|unresolvedMarker)\\s*\\(");
 
@@ -144,7 +144,7 @@ class MarkerReasonPinTest {
 
     // ---------------- source scanning ----------------
 
-    /** {@code bron} with every string literal and line comment blanked to spaces (offsets preserved):
+    /** {@code source} with every string literal and line comment blanked to spaces (offsets preserved):
      *  several diagnostic texts contain the word "onopgelost" followed by a '(' section reference, and a
      *  scanner that read those would attribute a construction to a sentence. */
     private static String withoutTextAndComment(String source) {
@@ -164,7 +164,7 @@ class MarkerReasonPinTest {
     }
 
     /** The last argument of the call whose '(' sits at {@code bracket}, trimmed — parenthesis-balanced,
-     *  so a nested {@code bron(f)} does not end the scan. */
+     *  so a nested {@code source(f)} does not end the scan. */
     private static String lastArgument(String s, int bracket) {
         int depth = 0, i = bracket, lastComma = bracket;
         for (; i < s.length(); i++) {

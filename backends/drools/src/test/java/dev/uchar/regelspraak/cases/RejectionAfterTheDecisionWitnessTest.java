@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Two object creations without a connectingRole binding, the first of which reads, negatively, the relation the second
  * makes (card drl-teksttak-op-truth-maintenance, section "Na 20261010-objectcreatie-zonder-connectingrole-binding"). The
- * document {@code src/test/resources/objectcreatie/afwijzing-na-het-besluit} comes from the RegelSpraak frontend, its
+ * document {@code src/test/resources/objectcreatie/rejection-after-the-decision} comes from the RegelSpraak frontend, its
  * {@code source.rgs} beside it: "wijs af zonder besluit" makes an Afwijzing for a Jutter that is no begunstigde, and "stel
  * het penningbesluit vast" makes the Penningbesluit that makes a penninggerechtigde Jutter one. The first reads the
  * relation the second derives from its type pair, so it stands a stratum above it (RUNTIME-SEMANTICS ch. 6.1, 6.3): J1
@@ -101,7 +101,7 @@ class RejectionAfterTheDecisionWitnessTest {
         assertEquals(2, orders);
     }
 
-    /** Fires J1 and J2 of the case through {@code kieBase}, the rules of {@code b} in the order {@code namen}, with the
+    /** Fires J1 and J2 of the case through {@code kieBase}, the rules of {@code b} in the order {@code names}, with the
      *  parameters of the case, and writes back: J1 penninggerechtigd without an Afwijzing, J2 with one. */
     private static void fire(DroolsBackend.Build b, KieBase kieBase, List<String> names) throws Exception {
         Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of("aantal aangemelde vondsten", "14",

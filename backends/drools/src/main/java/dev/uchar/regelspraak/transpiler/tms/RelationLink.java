@@ -3,8 +3,8 @@ package dev.uchar.regelspraak.transpiler.tms;
 import java.util.Objects;
 
 /**
- * One link of a relation that a form of the document creates: {@code eerste} fills the first declared role of the fact
- * type {@code relation} and {@code tweede} the second. An object creation inserts the link over its connecting relation
+ * One link of a relation that a form of the document creates: {@code first} fills the first declared role of the fact
+ * type {@code relation} and {@code second} the second. An object creation inserts the link over its connecting relation
  * and a fact creation the link it creates, each stated, so that it never lapses (RUNTIME-SEMANTICS ch. 5.5); the links
  * the case input carries over such a relation are facts as well, inserted logically from the reference fields of the
  * beans, which do not change while the session fires. A form that reads a created relation, a navigation, the range of

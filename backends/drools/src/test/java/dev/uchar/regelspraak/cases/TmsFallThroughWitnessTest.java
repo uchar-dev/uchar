@@ -53,11 +53,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * branch passed the same case.
  *
  * <p><b>Red with a control fact or a write stated</b> (measured 2026-10-08 on two mutants of the simple form, not
- * committed; the document orders passed both, the sample did not). With {@code Beslist} inserted by {@code insert}
+ * committed; the document orders passed both, the sample did not). With {@code Decides} inserted by {@code insert}
  * instead of {@code logicalInsert}, the give-back failed: "V1111 doel in volgorde [kenmerkstand Vondst.tussen: waar uit
  * een afleiding, …, defaults A:Vondst.doel: default 0, …, defaults A:Vondst.doel: default 1, tussenstap, afwijzing, …]
  * ==&gt; expected: &lt;200&gt; but was: &lt;null&gt;": the stated fact outlived the decision it recorded, and the lower
- * default stayed blocked after the higher one's justification went. With the {@code Waarde} of a decision stated, the
+ * default stayed blocked after the higher one's justification went. With the {@code Value} of a decision stated, the
  * takeover failed: "IllegalState geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel
  * "defaults A:Vondst.doel" schrijft 100 en de regel "defaults A:Vondst.doel" schrijft 200 in het attribuut doel van een
  * Vondst".
@@ -158,8 +158,8 @@ class TmsFallThroughWitnessTest {
         assertTrue(textReturn[0] > 0, "geen volgorde van de tekst liet de hogere default zijn besluit verliezen");
     }
 
-    /** Fires the sixteen Vondsten through {@code kieBase}, the rules of {@code b} in the order {@code namen}: every doel
-     *  ends as ch. 7.1 says, and a simple group inserts no other control fact than {@code Beslist}; counts the takeovers
+    /** Fires the sixteen Vondsten through {@code kieBase}, the rules of {@code b} in the order {@code names}: every doel
+     *  ends as ch. 7.1 says, and a simple group inserts no other control fact than {@code Decides}; counts the takeovers
      *  and the give-backs. */
     private static void fireSample(DroolsBackend.Build b, KieBase kieBase, List<String> names, int[] adoption,
                                        int[] returns) throws Exception {

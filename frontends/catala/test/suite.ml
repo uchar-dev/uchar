@@ -385,7 +385,7 @@ let () =
          now mirror the sibling [is_subscope] guard *)
       ("refuse_per_element_wholestruct_read.catala_en", "read other than per field");
       ("refuse_per_element_wholestruct_whole.catala_en", "read other than per field");
-      (* besluit 1-A lens round — two ref-only lowerings the map-body/functie
+      (* besluit 1-A lens round — two ref-only lowerings the map-body/function_name
          route let slip past: (1) the same inline call written directly in a
          FOLD reducer body (not the map body) — its Invoke would land as a
          closed_term the clingo backend cannot translate; the gate is the DIRECT
@@ -664,33 +664,33 @@ let () =
       rule_groups = []; diagnostics = []; prioritized_defaults = [ tariff ]; function_defs = [];
       presentation_annotations = [] }
   in
-  Printf.printf "[emit-proef] de vormen die geen Catala-bron bereikt\n%!";
+  Printf.printf "[emit-trial] the forms that no Catala source reaches\n%!";
   let text = Catala_frontend_lib.Emit.to_string trial in
   let out = Filename.temp_file "catfe-proef" ".ir.json" in
   let oc = open_out out in
   output_string oc text;
   close_out oc;
   let vc, vo = run [ verifier; out ] in
-  check "emit-proef : verifier-clean" (vc = 0 && contains ~needle:"PASS" vo) vo;
+  check "emit-trial : verifier-clean" (vc = 0 && contains ~needle:"PASS" vo) vo;
   (match Ir_v0.Loader.document (Yojson.Safe.from_string text) with
    | back ->
-       check "emit-proef : loads for an executor" true "";
+       check "emit-trial : loads for an executor" true "";
        let toeslag =
          List.find (fun (r : A.resolved_rule) -> r.rr_name = Some "toeslag van een zaak")
            back.resolved_rules
        in
-       check "emit-proef : reads the host back" (toeslag.rr_condition = Some spoedeisend) text;
-       check "emit-proef : reads both validity bounds back" (toeslag.rr_validity = Some year_2026) text;
-       check "emit-proef : reads the role plural back"
+       check "emit-trial : reads the host back" (toeslag.rr_condition = Some spoedeisend) text;
+       check "emit-trial : reads both validity bounds back" (toeslag.rr_validity = Some year_2026) text;
+       check "emit-trial : reads the role plural back"
          ((List.assoc "Zaakkoppeling" back.fact_types).role_names = link.role_names) text;
-       check "emit-proef : reads the initialisation default back"
+       check "emit-trial : reads the initialisation default back"
          (List.map (fun (d : A.default) -> (d.default_initialisation, d.default_justification = None))
             (List.hd back.prioritized_defaults).defaults
           = [ (false, false); (true, true) ])
          text
-   | exception Ir_v0.Loader.Error (p, m) -> check "emit-proef : loads for an executor" false (p ^ ": " ^ m));
+   | exception Ir_v0.Loader.Error (p, m) -> check "emit-trial : loads for an executor" false (p ^ ": " ^ m));
   List.iter
-    (fun needle -> check ("emit-proef : writes " ^ needle) (contains ~needle text) text)
+    (fun needle -> check ("emit-trial : writes " ^ needle) (contains ~needle text) text)
     [ {|"node": "ContextValue"|}; {|"name": "evaluationDate"|}; {|"node": "BoundDay"|};
       {|"text": "proef"|}; {|"dateTime": "2026-03-15T12:00:00"|}; {|"presentation": "equation"|};
       {|"initialisation": true|}; {|"condition": {|}; {|"host": "Zaak"|};

@@ -243,7 +243,7 @@ class ChainConditionWitnessTest {
                 roleBinding("KustwachtBewaaktHaven", "kustwacht"));
     }
 
-    /** {@code datum} plus or minus {@code n} months. */
+    /** {@code date} plus or minus {@code n} months. */
     private static String months(String op, String date, String n, String snippet) {
         return "{\"node\":\"Binary\",\"op\":\"" + op + "\",\"left\":" + date + ",\"right\":{\"node\":\"Literal\",\"value\":"
                 + "{\"number\":\"" + n + "\"},\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\","

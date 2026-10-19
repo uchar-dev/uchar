@@ -12,54 +12,54 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * The documents on which the destructive exec-model branch refused a form or answered otherwise than the reference
  * interpreter, and which this branch plays as the reference interpreter answers. Each lies under
- * {@code src/test/resources/zoals-ref/<name>/} with a case whose expectations the reference interpreter passes; this
+ * {@code src/test/resources/like-ref/<name>/} with a case whose expectations the reference interpreter passes; this
  * witness replays every case through the branch and demands the reference interpreter's values, so the switch-over of
  * the exec-model branch to this one keeps them. The documents are those of witnesses of the destructive branch, which
  * pin its refusal or its answer; they are listed with that witness, the form, and what the destructive branch gave.
  *
  * <ul>
- * <li>{@code begrenzing-deling-in-maximum} and {@code begrenzing-nuldeling-in-maximum} ({@code CompanionPathWitnessTest}):
+ * <li>{@code clamp-division-in-maximum} and {@code clamp-zero-division-in-maximum} ({@code CompanionPathWitnessTest}):
  * "Let d = deler in begrensd(inkomen, minimum d, maximum inkomen ÷ tweede)" and the same with "÷ nul". A clamp evaluates
  * its base, its minimum and its maximum in that order (RUNTIME-SEMANTICS ch. 2.7), so the minimum's leeg read ends the
  * Let before the maximum divides: uit leeg, consistent. The destructive branch evaluated the maximum first: inconsistent,
  * and "DelingDoorNul … 10 gedeeld door 0". The witness's documents type the clamp with 4 decimals over a base of 2,
  * which the verifier refuses (WF-091); these carry the clamp's own type, 2 decimals. Clingo declines a clamp bound that
  * is no literal.
- * <li>{@code let-telling-deling} ({@code DateFoldOverRoleWitnessTest}): "de vangst gedeeld door zijn gewicht. Daarbij
+ * <li>{@code let-count-division} ({@code DateFoldOverRoleWitnessTest}): "de vangst gedeeld door zijn gewicht. Daarbij
  * geldt: de vangst is het aantal vondsten van de Jutter", with a gewicht per jutter in this case: 2.00, 0.00, 0.25,
  * leeg with a deposit. The destructive branch refused a fold and a division under one Let.
- * <li>{@code defaults-kwantorvouw-rechtvaardiging} ({@code DefaultsJustificationWitnessTest}): a quantifier fold in the
+ * <li>{@code defaults-quantifier-fold-justification} ({@code DefaultsJustificationWitnessTest}): a quantifier fold in the
  * justification of a default; the destructive branch refused it.
- * <li>{@code dubbelmeervoudige-zelfrelatie} ({@code OpslagDirectionWitnessTest}): a count over a self-relation with both
+ * <li>{@code many-to-many-self-relation} ({@code OpslagDirectionWitnessTest}): a count over a self-relation with both
  * roles plural, the golden {@code anchor/jutterswet-erflijn} with a case of that witness; the destructive branch refused
  * the join, which the bean model holds on no field.
- * <li>{@code feitcreatie-naamdelende-schrijfrol} ({@code RoleFieldReaderWitnessTest}): a fact creation whose written role
+ * <li>{@code fact-creation-name-sharing-write-role} ({@code RoleFieldReaderWitnessTest}): a fact creation whose written role
  * shares its name with a declared member; the destructive branch refused it.
- * <li>{@code filtervouw-ten-hoogste-1}, {@code filtervouw-ten-minste-2}, {@code filtervouw-geen-over-alle} and
- * {@code filtervouw-andere-kwantor-1} to {@code -5} ({@code FilterErrorWitnessTest}): a fold whose subselection divides
+ * <li>{@code filter-fold-at-most-1}, {@code filter-fold-at-least-2}, {@code filter-fold-none-over-all} and
+ * {@code filter-fold-other-quantifier-1} to {@code -5} ({@code FilterErrorWitnessTest}): a fold whose subselection divides
  * and can fault, as a member of a composite condition that the short circuit of ch. 5.10 can settle before the fold; the
  * destructive branch refused every composite other than "alle" with such a fold.
- * <li>{@code geneste-vouw-als-matrix} ({@code NonTemporalQuantifierFoldWitnessTest}), {@code matrix-tekstparameter} and
- * {@code matrix-twee-parameters} ({@code FoldMatrixFormWitnessTest}): a quantifier fold whose matrix is itself a fold,
+ * <li>{@code nested-fold-as-matrix} ({@code NonTemporalQuantifierFoldWitnessTest}), {@code matrix-text-parameter} and
+ * {@code matrix-two-parameters} ({@code FoldMatrixFormWitnessTest}): a quantifier fold whose matrix is itself a fold,
  * compares with a text parameter, or reads two parameters; the destructive branch refused them. Clingo declines the text
  * parameter.
- * <li>{@code heelperiode-filter-dat-hijst}, {@code heelperiode-niet-conjunctieve-kwantor} and
- * {@code heelperiode-niet-scalaire-grens} ({@code WholePeriodQuantifierFoldWitnessTest}): "gedurende het gehele jaar" as the
+ * <li>{@code whole-period-filter-that-hoists}, {@code whole-period-non-conjunctive-quantifier} and
+ * {@code whole-period-non-scalar-bound} ({@code WholePeriodQuantifierFoldWitnessTest}): "gedurende het gehele jaar" as the
  * matrix of a quantifier fold with a subselection, under a quantifier other than "alle", and against a bound the element
  * reads itself; the destructive branch refused them. The third case expects zeewaardig absent, the reference
  * interpreter's answer, where the witness's own case expected it present; clingo declines that bound.
- * <li>{@code let-kruiseenheid} ({@code LetCarrierWalkWitnessTest}): "Let a = aanloop in (als a groter dan 1 km dan
+ * <li>{@code let-cross-unit} ({@code LetCarrierWalkWitnessTest}): "Let a = aanloop in (als a groter dan 1 km dan
  * 1,00 anders 2,00)" with an aanloop of 500 m: 2.00, the comparison restated (ch. 2.6). The destructive branch refused
  * the rule. Clingo answers 1.00, an existing fault of the ASP backend: card
  * {@code 20261010-clingo-let-binder-vergelijking-over-eenheden}.
- * <li>{@code literaal-deeltal-1} and {@code -2} ({@code LetReportSiteWitnessTest}): "100,00 gedeeld door restpost" with
+ * <li>{@code literal-dividend-1} and {@code -2} ({@code LetReportSiteWitnessTest}): "100,00 gedeeld door restpost" with
  * the restpost absent, with and without a Let: uit leeg and the §9.5 deposit, inconsistent. The destructive branch made
  * no deposit for a literal dividend and answered consistent.
- * <li>{@code rekenjaar-in-consistentie} ({@code EvaluationYearWitnessTest}): the calculation year in the assertion of a
+ * <li>{@code evaluation-year-in-consistency} ({@code EvaluationYearWitnessTest}): the calculation year in the assertion of a
  * consistency; the destructive branch refused it.
- * <li>{@code unieselectie-via-rol} ({@code FoldFilterRemoteSideWitnessTest}): the subselection of an instance-set union
+ * <li>{@code union-selection-via-role} ({@code FoldFilterRemoteSideWitnessTest}): the subselection of an instance-set union
  * that reads through a role of the element; the destructive branch refused it.
- * <li>{@code vouw-onder-let-naast-deling} ({@code FoldCompanionWitnessTest}): a fold and a division under one Let; the
+ * <li>{@code fold-under-let-beside-division} ({@code FoldCompanionWitnessTest}): a fold and a division under one Let; the
  * destructive branch refused it.
  * </ul>
  *

@@ -36,7 +36,7 @@ class DuplicateFormNameTest {
 
         """;
 
-    /** The line of the {@code n}-th declaration head (1-based) in {@code bron}: a line that opens with "Regel " or
+    /** The line of the {@code n}-th declaration head (1-based) in {@code source}: a line that opens with "Regel " or
      *  "Beslistabel ", after indentation. */
     private static int head(String source, int n) {
         String[] regels = source.split("\n", -1);

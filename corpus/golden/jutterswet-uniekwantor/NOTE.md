@@ -20,7 +20,7 @@ daar op leden die NIET gelden, dus een kenmerklezing eronder beslist zoals een
 genegeerde lezing dat doet, en de regel hoort een band te zakken.
 
 De Drools-stratificatie las de polariteit tot 2026-09-22 uitsluitend uit
-`Kenmerk.negatie()` en liep een samengestelde binnen zonder negatiecontext.
+`Kenmerk.negated()` en liep een samengestelde binnen zonder negatiecontext.
 Gemeten op dit document, vóór die reparatie:
 
     ref     11 verwachtingen PASS

@@ -12,7 +12,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The marker discipline (maintainer decision 2026-09-19): EVERY {@code Onopgelost} that survives into
+ * The marker discipline (maintainer decision 2026-09-19): EVERY {@code Unresolved} that survives into
  * the emitted model carries a WARNING beside it, so the document stays emittable — the marker remains
  * the honest wire form — while the author is told what stayed unresolved and why.
  *
@@ -116,7 +116,7 @@ class SilentMarkerTest {
     }
 
     /** §8.1.8.3 "is niet een &lt;naam&gt;" over a name that binds nothing: the positive form is resolved
-     *  and then flipped, so the refusal arrives at {@code negeer} with the negation no longer in the
+     *  and then flipped, so the refusal arrives at {@code negate} with the negation no longer in the
      *  parse tree. Its own reason says so. */
     @Test void a_negated_form_without_binding_is_reported() {
         RegelSpraakModel m = resolve("""
@@ -348,7 +348,7 @@ class SilentMarkerTest {
      *
      * <p>Their siblings that no input reaches at all carry a GEEN GETUIGE comment at the production
      * site instead ({@code buildFromNodes}, {@code buildCriterion}, {@code buildElementary},
-     * {@code characteristicCheckPredicate}'s §8.2 arm, {@code bouw}'s fall-through, {@code buildPrimary(null)} and
+     * {@code characteristicCheckPredicate}'s §8.2 arm, {@code build}'s fall-through, {@code buildPrimary(null)} and
      * {@code buildAttribute}'s guard).
      */
     private static void messageAtSyntaxError(RegelSpraakModel m, String fragment) {
@@ -384,7 +384,7 @@ class SilentMarkerTest {
         messageAtSyntaxError(m, "deze bullet van de samengestelde voorwaarde is geen geneste");
     }
 
-    /** {@code bouw(null)} and {@code buildPrimary}'s fall-through, in one document: the recovery leaves
+    /** {@code build(null)} and {@code buildPrimary}'s fall-through, in one document: the recovery leaves
      *  an operand position empty and a primaire expressie that binds nothing. */
     @Test void a_missing_expression_and_an_unbindable_primary_are_reported() {
         RegelSpraakModel m = resolve("""

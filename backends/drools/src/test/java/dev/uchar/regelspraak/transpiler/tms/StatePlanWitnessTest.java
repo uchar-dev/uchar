@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * The standing rules of the exec-model branch come whole from a plan (card drl-teksttak-op-truth-maintenance, step
- * 1c-A2): the three rules of a characteristic's {@code CharacteristicState}, the rules of an attribute's {@code Stand} from a
+ * 1c-A2): the three rules of a characteristic's {@code CharacteristicState}, the rules of an attribute's {@code State} from a
  * derivation and from the input, for a member on a timeline also as its asOfDate-bucket scalar, and the two rules of a
  * {@code PathState}. Each is a {@link RulePlan} whose left-hand side holds the patterns, the negations and the
  * existence that the rule built itself before, with their constraint ids in their order, and whose consequence says

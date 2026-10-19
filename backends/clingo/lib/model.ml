@@ -283,7 +283,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
              translator uses and parsed by the SAME term parser — one source
              of truth, no independent encoding to drift (the ctor/struct
              pattern). A boolean expectation reads the val/3 carriage
-             (waar/onwaar), never heeft/2 — mirroring ref, which checks the
+             (waar/onwaar), never has/2 — mirroring ref, which checks the
              attribute slot, not the characteristic set. *)
           let because = arg_of_term (parse_term (Translate.symbolic_value_term value)) in
           match val_present model label attr with

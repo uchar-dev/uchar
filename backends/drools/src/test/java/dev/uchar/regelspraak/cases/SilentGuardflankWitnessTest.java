@@ -49,17 +49,17 @@ class SilentGuardflankWitnessTest {
      *  §5.8 AANTAL over the created relation — so what the creation does is a NUMBER on the anker. */
     private static final String POSTWACHT = "jutterswet-postwacht";
 
-    // ---------------- 1. the Onopgelost guard: a fault that became a zero ----------------
+    // ---------------- 1. the Unresolved guard: a fault that became a zero ----------------
 
     @Test void the_unresolved_fact_creation_guard_fails_or_refuses() throws Exception {
         // The RegelSpraak frontend emits this shape itself: on a creation whose doel type EQUALS its anker type the
         // doel-comparison guard has no second subject to rebuild against, so the resolver hands the wire a literal
-        // `Onopgelost` condition. Measured RED FIRST on the pre-card jar, with P1 risicopost and both seinen linked:
+        // `Unresolved` condition. Measured RED FIRST on the pre-card jar, with P1 risicopost and both seinen linked:
         //     verifier : PASS
         //     ref      : EVALUATION FAULT: Onopgelost condition reached in evaluation (WF-044)
         //     clingo   : TRANSLATION FAULT: condition kind not translated (no corpus case exercises it)
         //     exec     : PLAYED 1 — vakseinaantal 0, and a probe pinning 2 FAILS observably, so the 0 is a value
-        //                and not a token: an Onopgelost DISAPPEARED into an ordinary answer
+        //                and not a token: an Unresolved DISAPPEARED into an ordinary answer
         //     drl-tekst: EXCLUDE drl-transpiler MARKER: feitcreatie: vakbeseining door het kustvak
         //                — TODO voorwaarde niet naar anker of doel te lowereren — regel inert i.p.v. over-creatie
         // The guard is unreadable in every executor that reads it; this backend is the only one that answered.
@@ -79,7 +79,7 @@ class SilentGuardflankWitnessTest {
     // ---------------- 2. the third-type owner: a hosting no pattern carries ----------------
 
     @Test void the_third_type_owner_refuses_in_both_branches() throws Exception {
-        // A characteristic check whose `eigenaar` is a declared type that is NEITHER the anker NOR the doel — here
+        // A characteristic check whose `owner` is a declared type that is NEITHER the anker NOR the doel — here
         // the tussenstap's own type, which declares the characteristic, so WF-100's declaration half is satisfied.
         // The creation has exactly two patterns to host a guard on; this names a third object. Measured RED FIRST on
         // the pre-card jar (the verifier line has MOVED since: WF-109, 2026-09-19, refuses this host by name, so the
@@ -103,7 +103,7 @@ class SilentGuardflankWitnessTest {
     // ---------------- 3+4. the flanks: a guard that DOES lower still plays ----------------
 
     @Test void the_target_hosted_guard_still_plays_in_both_branches() throws Exception {
-        // The over-refusal flank on the side the refusal is nearest to: `eigenaar` names the DOEL, so the anker
+        // The over-refusal flank on the side the refusal is nearest to: `owner` names the DOEL, so the anker
         // attempt declines and the doel attempt carries it. It must keep playing, and keep playing the DOEL: S1
         // carries the characteristic and S2 does not, so the count is 1 and not 2 (the anker reading) or 0 (a dropped
         // guard). Measured 2026-09-19, unchanged by this card — and the two OCaml lines have MOVED since, at the card
@@ -119,7 +119,7 @@ class SilentGuardflankWitnessTest {
     }
 
     @Test void the_anchor_hosted_guard_still_plays_in_both_branches() throws Exception {
-        // The flank on the other side, and the one the whole differential square reaches: `eigenaar` names the ANKER,
+        // The flank on the other side, and the one the whole differential square reaches: `owner` names the ANKER,
         // which IS the subject of the anker-first attempt, so the guard lowers there and no owner test fires at all.
         // This is the only one of the four that every executor reads. Measured 2026-09-19, unchanged by this card:
         //     verifier : PASS

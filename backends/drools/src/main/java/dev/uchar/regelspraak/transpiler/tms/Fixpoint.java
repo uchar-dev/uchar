@@ -23,7 +23,7 @@ import java.util.Objects;
  * @param koppelingen     every link a creation laid, an object creation's link to its new object among them
  * @param fouten          the evaluation faults that stand, as data, in the order {@link TmsTranspiler#setDerivedValues}
  *                        reports them: by the name of the form, then by the sentence
- * @param inconsistenties the §9.5 deposits, the beans of the generated class {@code Inconsistentie}, each with its rule
+ * @param inconsistenties the §9.5 deposits, the beans of the generated class {@code Inconsistency}, each with its rule
  *                        and its subject
  */
 public record Fixpoint(List<DerivedValue> waarden, List<DerivedCharacteristic> kenmerken, List<MadeObject> objects,
@@ -51,7 +51,7 @@ public record Fixpoint(List<DerivedValue> waarden, List<DerivedCharacteristic> k
         }
     }
 
-    /** Characteristic {@code kenmerk} of {@code object} derived to hold. */
+    /** Characteristic {@code characteristic} of {@code object} derived to hold. */
     public record DerivedCharacteristic(Object object, String characteristic) {
         public DerivedCharacteristic {
             Objects.requireNonNull(object, "object");
@@ -59,7 +59,7 @@ public record Fixpoint(List<DerivedValue> waarden, List<DerivedCharacteristic> k
         }
     }
 
-    /** {@code object}, which the object creation named {@code creatie} made for {@code onderwerp}. Its attribute
+    /** {@code object}, which the object creation named {@code creation} made for {@code onderwerp}. Its attribute
      *  initialisations are on its bean already; what it derives besides is in {@link #waarden} and {@link #kenmerken}. */
     public record MadeObject(Object object, String creation, Object onderwerp) {
         public MadeObject {
@@ -69,8 +69,8 @@ public record Fixpoint(List<DerivedValue> waarden, List<DerivedCharacteristic> k
         }
     }
 
-    /** A link of fact type {@code factType} that a creation laid: {@code eerste} fills its first declared role,
-     *  {@code firstRole}, and {@code tweede} its second, {@code secondRole}. */
+    /** A link of fact type {@code factType} that a creation laid: {@code first} fills its first declared role,
+     *  {@code firstRole}, and {@code second} its second, {@code secondRole}. */
     public record MadeLink(String factType, String firstRole, Object first, String secondRole, Object second) {
         public MadeLink {
             Objects.requireNonNull(factType, "feittype");

@@ -402,7 +402,7 @@ class ObjectCreationWitnessTest {
         // §9.5 form (b): an AANTAL over a role compared with 1. Over a TO-ONE role the count is the PRESENCE
         // count — 0 or 1 — per subject, as ref counts it (its role_links are per instance per role key). Model:
         // penninguitgifte with the houderscontrole rewritten onto `dossiervoering`, the 1:1 relation. The model's
-        // dossier creation makes that relation, so this branch counts it over Koppeling facts, each link once with
+        // dossier creation makes that relation, so this branch counts it over RelationLink facts, each link once with
         // its two ends, and a link the case supplies enters as such a fact too (the flank below); the bean field is
         // not what it reads. A jutter who is not penninggerechtigd gets no dossier minted, so the count is 0 and the
         // assertion is violated. ref agrees: inconsistent @ J1. The creations of the penninguitgifte model have no
@@ -426,7 +426,7 @@ class ObjectCreationWitnessTest {
         // clingo play it (measured with J1 holding P1, and P2 without a houder: aantal penningen 1, houderscontrole
         // @ P2). With its creations the golden plays on this branch since card
         // 20261010-objectcreatie-zonder-connectingrole-binding: they create `penningbezit`, and a created relation is
-        // read over Koppeling facts, each link once with its two ends, not over the shared field.
+        // read over RelationLink facts, each link once with its two ends, not over the shared field.
         CaseRunner.Excluded e = refusal(withoutCreations());
         assertTrue(e.getMessage().contains("houderscontrole"), e.getMessage());
         assertTrue(e.getMessage().contains("zusterrol 'penning' meervoudig"), e.getMessage());
@@ -704,7 +704,7 @@ class ObjectCreationWitnessTest {
         return write(ir, "vanaf-2030");
     }
 
-    /** J1 (240/90) replayed AS OF {@code datum}; {@code heffing} null expects the attribute to stay leeg. */
+    /** J1 (240/90) replayed AS OF {@code date}; {@code heffing} null expects the attribute to stay leeg. */
     private static JsonNode jutterOp(String date, String heffing) throws Exception {
         String expectation = heffing == null
                 ? "{ \"kind\": \"attributeEmpty\", \"label\": \"J1\", \"attribute\": \"heffing\" }"

@@ -152,7 +152,7 @@ class TmsWholePeriodWitnessTest {
                 + "\"digits\":0,\"wholePeriod\":" + qualifier + ",\"source\":{\"snippet\":\"" + source + "\"}}";
     }
 
-    /** A check of {@code kenmerk} of the object one role away, {@code role} of {@code factType}, under the qualifier. */
+    /** A check of {@code characteristic} of the object one role away, {@code role} of {@code factType}, under the qualifier. */
     static String wholeCheck(String characteristic, String factType, String role, String qualifier, String source) {
         return "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"" + characteristic + "\",\"negated\":false,"
                 + "\"wholePeriod\":" + qualifier + ",\"source\":{\"snippet\":\"" + source + "\"},\"navigation\":{\"node\":"

@@ -86,7 +86,7 @@ public final class Resolver {
      *
      * <p>A {@code reason} of null means the producing route already raises its own diagnostic (an ERROR
      * that blocks the document, or a WARNING with a more specific text); repeating it here would be
-     * noise, so the sweep stays quiet. Such a WARNING must quote the marker's {@code bron} verbatim, as the
+     * noise, so the sweep stays quiet. Such a WARNING must quote the marker's {@code sourceText} verbatim, as the
      * sweep's own text does: that quotation is how a written document accounts for its marker (WF-113 (b)). The roots are the model's IR-carrying collections, i.e. what
      * {@code IrEmitter} serialises: a marker unreachable from those never reaches a consumer either.
      */

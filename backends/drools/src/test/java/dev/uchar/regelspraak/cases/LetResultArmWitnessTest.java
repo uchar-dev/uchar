@@ -72,7 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       {@code a_let_in_the_not_taken_arm_is_not_forced} ERRORS with "Breuk deling door 0";</li>
  *   <li><b>the value of a conditionally-read need walked under the bare gate</b> (the lens's second) →
  *       {@code a_division_in_an_unread_need_does_not_report_itself} goes red with a fabricated
- *       Inconsistentie.</li>
+ *       Inconsistency.</li>
  * </ul>
  */
 class LetResultArmWitnessTest {
@@ -145,7 +145,7 @@ class LetResultArmWitnessTest {
         // veilig = inkomen in Let r = teller gedeeld door beschermdeler in veilig plus r, with BOTH inkomen and
         // the divisor absent. The read of `veilig` empties the Let before `r` is ever forced, so no division
         // runs and there is nothing to report — ref: bescherm leeg, CONSISTENT. A companion that fired on the
-        // bare "dividend vol, divisor leeg" pattern would invent an Inconsistentie on a path that never ran.
+        // bare "dividend vol, divisor leeg" pattern would invent an Inconsistency on a path that never ran.
         playBoth(jutter(EMPTY_DIVISOR_BEHIND_THE_BARRIER, valueJson("heffing", "11.00") + ", " + empty("bescherm")));
     }
 
@@ -266,7 +266,7 @@ class LetResultArmWitnessTest {
     @Test void the_same_division_in_the_not_taken_arm_does_not_report_itself() throws Exception {
         // the same rule and the same absent divisor at inkomen 2,00: the ANDERS arm runs, the division is never
         // evaluated, and there is nothing to report — ref: takdeling 7.00, CONSISTENT. A companion without the
-        // branch guard invents an Inconsistentie here.
+        // branch guard invents an Inconsistency here.
         //
         // NOTE, measured 2026-09-18 and reported rather than pinned away: on THIS shape the clingo backend
         // answers inconsistent where ref answers consistent ("expected consistent, but the model carries 1
@@ -301,7 +301,7 @@ class LetResultArmWitnessTest {
         // clause 3 its need is never forced and its §6.5 site never runs — ref: takgat 4.00, CONSISTENT.
         //
         // As landed on 2026-09-18 the companion walk entered that need's value under the BARE gate, ignoring
-        // that the read was conditional, and this branch inserted an Inconsistentie for a division that never
+        // that the read was conditional, and this branch inserted an Inconsistency for a division that never
         // executed. synth3-takbarriere has exactly this shape: one division in its opslag definition and the
         // corpus golden would have gone red on a fabricated fault. Measured then: ref PASS consistent, exec
         // PLAYED, --drl FAIL "verwacht consistent, werkelijk inconsistent".

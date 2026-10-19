@@ -148,9 +148,9 @@ class TmsExceptionWitnessTest {
         assertTrue(inTheText[0] > 0, "geen volgorde van de tekst trok een stuurfeit in");
     }
 
-    /** Fires the Jutters of {@link #CASES} through {@code kieBase}, the rules of {@code b} in the order {@code namen}:
+    /** Fires the Jutters of {@link #CASES} through {@code kieBase}, the rules of {@code b} in the order {@code names}:
      *  the conflicts and the heffing of each are as pinned, and a general group inserts no other control fact than
-     *  {@code Uitkomst}; counts in {@code withdrawn} the outcomes truth maintenance withdrew. */
+     *  {@code Outcome}; counts in {@code withdrawn} the outcomes truth maintenance withdrew. */
     private static void fireSample(DroolsBackend.Build b, KieBase kieBase, List<String> names, int[] withdrawn)
             throws Exception {
         Map<Object, String> labels = new IdentityHashMap<>();

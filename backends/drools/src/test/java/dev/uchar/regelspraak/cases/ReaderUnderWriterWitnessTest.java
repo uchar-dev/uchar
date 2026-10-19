@@ -443,7 +443,7 @@ class ReaderUnderWriterWitnessTest {
                 roleBinding("JutterHeeftVondst", "jutter"), roleBinding("HavenHeeftJutter", "haven"));
     }
 
-    /** "het aantal &lt;meervoud&gt; van de Jutter" over the role {@code bron}. */
+    /** "het aantal &lt;meervoud&gt; van de Jutter" over the role {@code source}. */
     private static String count(String plural, String elementType, String source) {
         return "{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[{\"node\":\"AttributeReference\",\"attribute\":\""
                 + plural + "\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"" + plural + " van de Jutter\"}}],"
@@ -570,7 +570,7 @@ class ReaderUnderWriterWitnessTest {
         return instance(label, "Haven", openingsdag == null ? "" : "\"openingsdag\":{\"date\":\"" + openingsdag + "\"}", "");
     }
 
-    /** A Jutter with an optional vergunningsdag and haven, and {@code meer} further attributes. */
+    /** A Jutter with an optional vergunningsdag and haven, and {@code more} further attributes. */
     private static String jutter(String label, String vergunningsdag, String haven, String more) {
         List<String> a = new ArrayList<>();
         if (vergunningsdag != null) a.add("\"vergunningsdag\":{\"date\":\"" + vergunningsdag + "\"}");
@@ -578,7 +578,7 @@ class ReaderUnderWriterWitnessTest {
         return instance(label, "Jutter", String.join(",", a), haven == null ? "" : "\"haven\":[\"" + haven + "\"]");
     }
 
-    /** A Vondst with its vinddag, an optional jutter, and {@code meer} further attributes. */
+    /** A Vondst with its vinddag, an optional jutter, and {@code more} further attributes. */
     private static String vondst(String label, String vinddag, String jutter, String more) {
         String a = "\"vinddag\":{\"date\":\"" + vinddag + "\"}" + (more.isEmpty() ? "" : "," + more);
         return instance(label, "Vondst", a, jutter == null ? "" : "\"jutter\":[\"" + jutter + "\"]");

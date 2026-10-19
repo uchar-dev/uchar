@@ -278,7 +278,7 @@ class BeanNameCollisionWitnessTest {
     // ---------------- 5. the generator: one field per property on a chain ----------------
 
     @Test void a_grandchild_does_not_declare_an_inherited_reference_field_again() throws Exception {
-        // leden() subtracted the DIRECT supertype's own members only, so a grandchild re-derived the role field its
+        // members() subtracted the DIRECT supertype's own members only, so a grandchild re-derived the role field its
         // grandparent already declares and hid it with a field of its own; the subtraction is over the chain now
         ObjectNode ir = ir(PREMIERECHT);
         objectType(ir, "Wrakrecht op premie", "Recht op premie");
@@ -314,7 +314,7 @@ class BeanNameCollisionWitnessTest {
     }
 
     /** premierecht with a characteristic 'vondstgewicht' beside the attribute of that name, which no rule uses;
-     *  {@code temporeel} gives the characteristic a year timeline. */
+     *  {@code temporal} gives the characteristic a year timeline. */
     private static Path unusedCharacteristic(boolean temporal) throws Exception {
         ObjectNode ir = ir(PREMIERECHT);
         ObjectNode k = (ObjectNode) JSON.readTree("{\"node\":\"Characteristic\",\"name\":\"vondstgewicht\",\"kind\":\"adjectival\"}");

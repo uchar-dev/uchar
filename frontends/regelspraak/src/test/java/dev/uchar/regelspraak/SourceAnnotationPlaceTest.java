@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * annotation belongs to the rule directly below it ({@code statuteAnnotations}, IR-SPEC ch. 3.1). A {@code Regelgroep}
  * header is no rule, so an annotation above it reached nothing and vanished without a word — measured on the
  * frontend before this fix (df485007): {@code diagnostics: []}, the annotation nowhere in the IR. It now draws the
- * WARNING the {@code Uitzonderingen ongeordend:} header already draws. The group's own {@code bron} field is no
+ * WARNING the {@code Uitzonderingen ongeordend:} header already draws. The group's own {@code source} field is no
  * place for it: that field is the v0 source snippet of the group's name.
  *
  * <p>A {@code Beslistabel} header is no rule either, but the table IS rules: it desugars to one rule per row. An

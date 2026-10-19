@@ -389,7 +389,7 @@ public final class IrLoader {
         // §6.1 (Phase 4) the prioritized-defaults extension, parsed AFTER the declarations so a default's
         // condition/value resolves its objecttype/parameter references against the fully-built model. A malformed
         // defaults bundle (a missing subject or target) raises a loud Refusal from these parsers; an unknown inner
-        // node is a Documentfout, as it is at every other position.
+        // node is a DocumentError, as it is at every other position.
         if (rules.has("prioritizedDefaults"))
             list(rules, "/rules", "prioritizedDefaults", (p, n) -> prioritizedDefaults.add(prioritizedDefaults(n)));
         checkSubjects();
@@ -1551,7 +1551,7 @@ public final class IrLoader {
             // selection names its own population and its own relation, and a backend that re-derived either
             // from the type pair would give the selections one and the same range — they all share one pair
             // by WF-110 (d) — and count a restatement of one of them. The two required fields are refused
-            // BY NAME here, on the verplicht() pattern, so a document that reaches this executor without
+            // BY NAME here, on the required() pattern, so a document that reaches this executor without
             // passing the verifier fails naming the shape it violates.
             case "InstanceSetUnion" -> {
                 List<Expr.InstanceSetUnion.Branch> branches = new ArrayList<>();
@@ -1571,7 +1571,7 @@ public final class IrLoader {
                 yield new Expr.InstanceSetUnion(List.copyOf(branches), source(n));
             }
             // the members of IR-SPEC ch. 4's expression union that have no record here: a form this backend does not
-            // carry (the temporal read's keys are checked all the same, see EXPRESSIE)
+            // carry (the temporal read's keys are checked all the same, see EXPRESSION)
             case "TemporalRead" -> throw new Refusal(DroolsCode.EXPR_TEMPORAL_READ.reason("node", node), "Expr:" + node);
             case "Construct" -> throw new Refusal(DroolsCode.EXPR_CONSTRUCT.reason("node", node), "Expr:" + node);
             case "Match" -> throw new Refusal(DroolsCode.EXPR_MATCH.reason("node", node), "Expr:" + node);
@@ -1603,7 +1603,7 @@ public final class IrLoader {
         // node this backend does not carry — that argument, a ListLiteral among them, or a node under it — refuses as
         // a node while it is read, where the verifier, ref and the ASP backend refuse the shape. That refusal
         // therefore waits until the range and the source have been asked below, and is raised only when neither is
-        // refused; a Documentfout while reading (an unbound VariableReference, WF-034; an Unresolved marker without a
+        // refused; a DocumentError while reading (an unbound VariableReference, WF-034; an Unresolved marker without a
         // source, WF-113) is not held back, as ref and the ASP backend refuse those first, while loading
         List<Expr> args = new ArrayList<>();
         Refusal uncarried = null;
@@ -2137,7 +2137,7 @@ public final class IrLoader {
             }
             // IR-SPEC ch. 4.5 / WF-108 the QUANTIFIER FOLD. Unlike Compound — whose quantifier ranges over the
             // BULLETS of one subject — this one ranges over INSTANCES, and its range fields are the instance fold's
-            // (ch. 4.3) spelled unchanged. Both range fields are decoded INTO the record: Kwantorvouw is not part
+            // (ch. 4.3) spelled unchanged. Both range fields are decoded INTO the record: QuantifierFold is not part
             // of the vendored frontend slice the function/object-creation side-channel exists for, so its sourceRole
             // needs no Loaded#roleBindings entry.
             case "QuantifierFold" -> {
@@ -2223,7 +2223,7 @@ public final class IrLoader {
                 qualifier, source(n));
     }
 
-    /** IR-SPEC ch. 4.5: the whole-period qualifier, its granularity read onto the record's {@code jaar} flag (year
+    /** IR-SPEC ch. 4.5: the whole-period qualifier, its granularity read onto the record's {@code year} flag (year
      *  true, month false). */
     private Condition.WholePeriod wholePeriod(JsonNode n) {
         if (n == null || n.isNull()) return null;
@@ -2610,7 +2610,7 @@ public final class IrLoader {
         return out;
     }
 
-    /** The validity window of {@code eigenaar} — a day-kind definition or a defaults group, the two carriers outside
+    /** The validity window of {@code owner} — a day-kind definition or a defaults group, the two carriers outside
      *  the named forms, whose validity may be null (every version of a named form carries its {@code validity}, see
      *  {@link #validity}) — read from ITS node, not from a detached child, so a malformed bound can be reported
      *  against the declaration that carries it: "from" alone does not locate the defect among the hundreds of windows
@@ -2746,7 +2746,7 @@ public final class IrLoader {
         if (array != null && array.isArray()) array.forEach(f);
     }
 
-    /** The node at {@code fieldName} of {@code ouder}: null when the field is absent or null, and a scalar or an array
+    /** The node at {@code fieldName} of {@code parent}: null when the field is absent or null, and a scalar or an array
      *  there refused at the field's own pointer. A node is found by identity ({@link #pathOf}), which a scalar does
      *  not have — Jackson shares small numbers, booleans and null — so its place is the parent's and the field's. */
     private JsonNode nodeField(JsonNode parent, String fieldName) {
@@ -2756,7 +2756,7 @@ public final class IrLoader {
         return c;
     }
 
-    /** Each node of the list at {@code fieldName} of {@code ouder}, in order; an absent list is empty, and an entry that is
+    /** Each node of the list at {@code fieldName} of {@code parent}, in order; an absent list is empty, and an entry that is
      *  not an object is refused at its own pointer (see {@link #nodeField}). */
     private void elements(JsonNode parent, String fieldName, java.util.function.Consumer<JsonNode> f) {
         JsonNode a = parent.get(fieldName);

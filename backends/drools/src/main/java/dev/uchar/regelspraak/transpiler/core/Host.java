@@ -39,7 +39,7 @@ public final class Host {
      *  qualifier anywhere: WF-109's third scope fence binds only the anker there, so a doel lowering answers a
      *  question the document did not ask. Measured 2026-09-23 on verifier-clean documents that reach the doel
      *  attempt: the exec branch read the doel where ref and clingo read the anker, and the DRL-text branch — whose
-     *  whole-period lowering is wired to {@code $subject}, the anker inside the {@code $doel} pattern — either sank
+     *  whole-period lowering is wired to {@code $subject}, the anker inside the {@code $target} pattern — either sank
      *  the whole package at compile or read the anker from the doel's pattern. */
     public static boolean targetAttemptAllowed(Condition c) {
         return !carriesWholePeriod(c);

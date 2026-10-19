@@ -12,7 +12,7 @@ import org.antlr.v4.runtime.Token;
  *
  * <p><b>Wire discipline.</b> {@link #toString()} returns exactly the {@link #snippet()}, so the
  * emitter (which writes the snippet) stays byte-identical and every prose consumer that spliced
- * a {@code bron()} into a comment keeps its text. Only the added coordinates are new, and they
+ * a {@code source()} into a comment keeps its text. Only the added coordinates are new, and they
  * are never emitted to the wire.
  *
  * @param file    the source file name (from the token's char stream; {@code "<unknown>"} when the
@@ -40,6 +40,6 @@ public record Source(String file, int line, int column, String snippet) {
         return new Source(file, t.getLine(), t.getCharPositionInLine(), snippet);
     }
 
-    /** The snippet — so a {@code bron()} spliced into a string keeps its old text (wire-preserving). */
+    /** The snippet — so a {@code source()} spliced into a string keeps its old text (wire-preserving). */
     @Override public String toString() { return snippet; }
 }

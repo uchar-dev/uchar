@@ -140,14 +140,14 @@ final class SessionDump {
         }
     }
 
-    /** The seam: writes the dump of a session that {@code vuur} fired to the next file of {@code hash} and the branch. */
+    /** The seam: writes the dump of a session that {@code fire} fired to the next file of {@code hash} and the branch. */
     void seam(String hash, DroolsBackend.Build build, DroolsBackend.Firing firing, Map<String, Object> labels) {
         StringBuilder out = new StringBuilder();
         write(out, build, firing, labels);
         keep(hash, build, out);
     }
 
-    /** The seam: writes the dump of a session whose {@code vuur} threw {@code e} to the next file of {@code hash}. */
+    /** The seam: writes the dump of a session whose {@code fire} threw {@code e} to the next file of {@code hash}. */
     void seam(String hash, DroolsBackend.Build build, RuntimeException e, Map<String, Object> labels) {
         StringBuilder out = new StringBuilder();
         write(out, e, labels);
@@ -169,9 +169,9 @@ final class SessionDump {
         }
     }
 
-    /** Appends the dump of a session whose {@code vuur} returned {@code v}: its input, the firings, at a fixpoint what
+    /** Appends the dump of a session whose {@code fire} returned {@code v}: its input, the firings, at a fixpoint what
      *  {@link DroolsBackend#read} gives, and every object in working memory. A session without a fixpoint gets its
-     *  objects too, as they stand where the fire stopped: {@code lees} refuses such a session, and without them a
+     *  objects too, as they stand where the fire stopped: {@code read} refuses such a session, and without them a
      *  rebuild that changes what a capped session derives would pass the comparison unseen. {@code labels} maps each
      *  case label to its input bean. */
     void write(StringBuilder out, DroolsBackend.Build build, DroolsBackend.Firing v, Map<String, Object> labels) {
@@ -209,7 +209,7 @@ final class SessionDump {
         facts(out, n);
     }
 
-    /** Appends the dump of a session whose {@code vuur} threw {@code e}: its input, the exception, the firings before
+    /** Appends the dump of a session whose {@code fire} threw {@code e}: its input, the exception, the firings before
      *  it, and every object in working memory as it stands where the fire stopped. */
     void write(StringBuilder out, RuntimeException e, Map<String, Object> labels) {
         session.removeEventListener(listener);

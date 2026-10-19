@@ -24,7 +24,7 @@ import java.util.Map;
  * feittype — the to-one REFERENCE field on the MANY side, named after the ONE side's role, including the
  * §13.3.9.2 wederkerig SELF-PAIR field (see {@link #selfPairRole}) and the ORDINARY self-typed pair's one
  * field per to-one role (see {@link #selfPairRoles}). {@code Segment} and
- * {@code Inconsistentie} are emitted alongside.
+ * {@code Inconsistency} are emitted alongside.
  *
  * <p>The MEMBER DERIVATION ({@link #members}) is shared with {@link ContractValidator}, so what this
  * generator emits and what the validator demands can never drift apart.
@@ -40,7 +40,7 @@ public final class FactModelGenerator {
     public record Member(String property, String javaType, boolean isForm) {}
 
     /** The declaration a bean member stands for: an attribute or a characteristic {@code naam} of the object type
-     *  {@code bron} that declares it, or the role {@code naam} of the fact type {@code bron} (null when the role
+     *  {@code source} that declares it, or the role {@code naam} of the fact type {@code source} (null when the role
      *  resolves to no single declaration). One origin reached twice is one declaration: a role field is derived
      *  again on every subtype of the type that plays the other role, and once per subtype of its own filler. */
     public record Origin(Kind category, String naam, String source) {
@@ -90,7 +90,7 @@ public final class FactModelGenerator {
         // kenmerk and to-one role may legally share a name (a single name can be declared as both a kenmerk
         // and a Boolean attribute); the bean can carry only one field, and the runtime property resolution
         // reads whichever getter exists — so the FIRST derivation (attribute > kenmerk > referentie) wins.
-        // What lost the property has no field of its own: verdringingen() names it, and the backend refuses
+        // What lost the property has no field of its own: displacements() names it, and the backend refuses
         // every use of it by name.
         for (Kandidaat k : candidates(model, ot))
             if (seen.add(k.member().property())) out.add(k);
@@ -227,12 +227,12 @@ public final class FactModelGenerator {
     }
 
     /** A bean member without a field of its own. On the bean of {@code type} the property of the member
-     *  {@code displaced} stands for belongs to {@code eigenaar}, which the generator ports first: an ancestor's
+     *  {@code displaced} stands for belongs to {@code owner}, which the generator ports first: an ancestor's
      *  member before a descendant's, and within one type the attributes, the kenmerken, the reference fields, in
      *  that order and each in declaration order. {@code Namen.ident} drops the spaces and hyphens of a name and
      *  camel-cases its words, so two names the verifier keeps apart can meet here, and WF-002 lets an attribute and
      *  a characteristic share even the same name. Whatever reads or writes {@code displaced} reaches the field of
-     *  {@code eigenaar}: a crash at fire when their types differ, and when they agree the one member silently
+     *  {@code owner}: a crash at fire when their types differ, and when they agree the one member silently
      *  written through the other. */
     public record Displacement(Objecttype type, Origin displaced, Member displacedMember, Origin owner,
                               Member ownerMember) {
@@ -380,10 +380,10 @@ public final class FactModelGenerator {
 
     /**
      * §13.3.9 — whether {@code ot}'s bean really carries the SCALAR REFERENCE field for role {@code role} pointing
-     * at {@code doel}: the property name AND its type, asked of {@link #members}, the ONE derivation this generator
+     * at {@code targetName}: the property name AND its type, asked of {@link #members}, the ONE derivation this generator
      * renders and {@link ContractValidator} demands.
      *
-     * <p>The TYPE half is the whole point. {@code leden} ports every member through a name-dedup — attribuut &gt;
+     * <p>The TYPE half is the whole point. {@code members} ports every member through a name-dedup — attribuut &gt;
      * kenmerk &gt; referentie, because a bean can carry only one field per name — so a declared member that shares
      * the role's name DISPLACES the reference: the property still exists, but it holds a {@code BigDecimal} or a
      * {@code boolean}. A name-only test therefore reads "field present" and sends a FACT into it, which is an
@@ -395,13 +395,13 @@ public final class FactModelGenerator {
      * filled by {@code Vondst} holds a {@code Wrakvondst}. Asked as equality, every reader and writer of that link
      * refused a document ref and clingo play: the case input, the navigation, the fold and quantifier joins, the
      * allocation's recipient join, the far-side role check and the object and fact creations. A strict ancestor's class is accepted only for the
-     * field of the very role declaration that {@code ot}, {@code role} and {@code doel} resolve to: a field of the same
-     * name that ANOTHER role took keeps refusing, even when {@code doel} fits its class, since writing through it
+     * field of the very role declaration that {@code ot}, {@code role} and {@code targetName} resolve to: a field of the same
+     * name that ANOTHER role took keeps refusing, even when {@code target} fits its class, since writing through it
      * would join one relation through another's storage.
      */
     public static boolean hasReferenceField(RegelSpraakModel model, Objecttype ot, String role, Objecttype targetName) {
         if (model == null || ot == null || role == null || targetName == null) return false;
-        // the bean CARRIES a field it inherits: `leden` is own-members-only since the generated
+        // the bean CARRIES a field it inherits: `members` is own-members-only since the generated
         // subtype bean extends its supertype's, so the question is asked over the whole chain
         Kandidaat field = field(model, ot, Namen.ident(role, false));
         if (field == null) return false;
@@ -550,7 +550,7 @@ public final class FactModelGenerator {
      * reference field on the subject that holds the created object and {@code backRef} the one on the created object
      * that holds the subject, each null where that end has no field of its own (a to-many role is stored as the
      * other end's field). {@code oneToOne} is the 1:1 shape, whose idempotence guard reads {@code fwdRef}. Where the
-     * creation cannot be lowered, {@code weigering} says why (a backend gap) or {@code ambiguous} names the
+     * creation cannot be lowered, {@code refusal} says why (a backend gap) or {@code ambiguous} names the
      * ambiguous back-link (a fault of the program, RUNTIME-SEMANTICS ch. 5.5), and the rest is not set.
      */
     public record CreationLink(String fwdRole, boolean fwdMany, String backRole, boolean backMany, String fwdRef,
@@ -618,7 +618,7 @@ public final class FactModelGenerator {
         return new CreationLink(fwdRole, fwdMany, backRole, backMany, fwdRef, backRef, oneToOne, null, null);
     }
 
-    /** How many fact types RELATE {@code van} and {@code naar} in ch. 5.5's sense, the count the reference interpreter's
+    /** How many fact types RELATE {@code van} and {@code destination} in ch. 5.5's sense, the count the reference interpreter's
      *  {@code connecting_pair} takes: a two-role fact type whose two roles the two types fill, in either order, and, for
      *  one type, a §13.3.9.2 wederkerig one-role fact type. 0 is the linkless shape, 1 derivable, more than one
      *  ch. 5.5's ambiguity. Deliberately not {@code connectingRole}, which collapses 0 and more than one into null. */
@@ -775,7 +775,7 @@ public final class FactModelGenerator {
 
     /** Where the link a role check asks about is stored: the reference {@code beanField}, whether it sits on the SUBJECT
      *  ({@code opSubject}: the subject's field names the other end) or on the other end (its field names the
-     *  subject), and the other role's declared filler {@code ander}; or the {@code weigering} when no field holds
+     *  subject), and the other role's declared filler {@code ander}; or the {@code refusal} when no field holds
      *  it. */
     public record MembershipStorage(String beanField, boolean opSubject, Objecttype otherType, String refusal) {}
 
@@ -864,7 +864,7 @@ public final class FactModelGenerator {
         return "Object";
     }
 
-    /** All bean sources the model implies: simple class name → Java source (incl. Segment + Inconsistentie). */
+    /** All bean sources the model implies: simple class name → Java source (incl. Segment + Inconsistency). */
     public static Map<String, String> generate(RegelSpraakModel model) {
         Map<String, String> out = new LinkedHashMap<>();
         for (Objecttype ot : model.objecttypen.values()) {

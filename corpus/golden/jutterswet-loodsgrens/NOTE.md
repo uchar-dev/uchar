@@ -27,7 +27,7 @@ Het loodstal van een Loodspost moet berekend worden als het aantal loodsen van
 ## Why this ir.json is hand-written and carries no source.rgs
 
 When it was written, for the reason the rest of the non-temporal family was:
-`RuleChecker.kwantorvouw` lowered only the §8.2-QUALIFIED condition, so the
+`RuleChecker.quantifierFold` lowered only the §8.2-QUALIFIED condition, so the
 unqualified comparison was refused (`setlezing buiten een vouwbron`, a message
 that cited WF-096 until L2). Measured again at L2 (2026-09-24) on the frontend
 of this repository: all five sentences above now lower, the four conditions to

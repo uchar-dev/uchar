@@ -79,7 +79,7 @@ Two attribute expectations plus `consistent`.
 - **The tie.** V9 repeats V7's 2025-02-14, so the earliest value is reached by
   two different members. The fold yields a VALUE, not a member, so which of the
   two "wins" is unobservable — and that is the point of including it: `ref`'s
-  `agg_eerste` keeps the later equal contributor where `agg_min` keeps the
+  `agg_first` keeps the later equal contributor where `agg_min` keeps the
   first-seen, and this case pins that the difference cannot show. A reading
   that returned a member instead of a value would have to choose, and would
   have nothing to choose by.

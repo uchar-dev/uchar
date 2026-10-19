@@ -70,7 +70,7 @@ class TmsFoldBinderWitnessTest {
                 sourceRole("vinding", "vondst"), filter, "null", WHOLE, "het aantal vondsten van de Jutter met …");
     }
 
-    /** "alle brokstukken van de Vondst [die {@code filter}] voldoen aan {@code toets}". */
+    /** "alle brokstukken van de Vondst [die {@code filter}] voldoen aan {@code test}". */
     private static String quantifierFold(String filter, String test) {
         return "{\"node\":\"QuantifierFold\",\"quantifier\":\"all\",\"elementType\":\"Brokstuk\""
                 + (filter == null ? "" : ",\"filter\":" + filter) + ",\"test\":" + test + ","

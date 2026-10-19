@@ -259,7 +259,7 @@ class RepeatedTypePairWitnessTest {
     }
 
     @Test void name_sharing_with_a_declared_member_stays_a_refusal_of_its_own() throws Exception {
-        // leden()'s dedup (attribuut > kenmerk > referentie) displaces the reference, so the field EXISTS as a
+        // members()'s dedup (attribuut > kenmerk > referentie) displaces the reference, so the field EXISTS as a
         // BigDecimal. That is a different failure from an underivable role and must keep its own sentence —
         // blaming ambiguity here would accuse the document of something it is not guilty of.
         BothBranches.refused(nameSharingSchuit(), JSON.readTree(twoRolesCase("2", "0", "0", "1")),
@@ -539,7 +539,7 @@ class RepeatedTypePairWitnessTest {
     }
 
     /** One haven with two liggers — S1 gekeurd and 12 long, S2 not and 7 — with the created role's count and,
-     *  when {@code ligprijs} is given, the read back from S1's own side. {@code kenmerk} null makes H1 veilig. */
+     *  when {@code ligprijs} is given, the read back from S1's own side. {@code characteristic} null makes H1 veilig. */
     private static String creationCase(String wintertal, String ligprijs, String characteristic) {
         String lieRow = ligprijs == null
                 ? "{ \"kind\": \"attributeEmpty\", \"label\": \"S1\", \"attribute\": \"ligprijs\" }"

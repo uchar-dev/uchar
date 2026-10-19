@@ -176,7 +176,7 @@ class NonTemporalQuantifierFoldWitnessTest {
      *   clingo   : clingo: PASS (2 expectations)
      * </pre>
      * De analyse met truth maintenance speelt hem zoals {@code ref} antwoordt, met de case van deze rij
-     * ({@code TmsLikeRefWitnessTest}, {@code geneste-vouw-als-matrix}), en sinds kaart
+     * ({@code TmsLikeRefWitnessTest}, {@code nested-fold-as-matrix}), en sinds kaart
      * drl-teksttak-op-truth-maintenance in beide takken. Tot die kaart droeg de destructieve DRL-teksttak hem niet
      * en weigerde hem BIJ NAAM, met de matrixvorm in de reden, zoals de destructieve exec-modeltak deed; vóór de
      * vangst van 2026-09-16 stierf het pakket daar op een parsefout, en de rij {@code de_drl_markertekst_scheidt_de_redenen}

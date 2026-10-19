@@ -5,7 +5,7 @@ gets the `rubriek` "organisch" when its `soort` is "zeewier" or "wrakhout",
 and "overig" when it is neither; it is `weegplichtig` when at least two of
 three grounds hold. The two `rubriek` rules are written as one `Beslistabel`
 in `source.rgs` (§12). A decision table has no node of its own: the
-frontend's `BeslistabelDesugar` turns every data row into an ordinary rule,
+frontend's `DecisionTableDesugar` turns every data row into an ordinary rule,
 so `ir.json` carries two plain rules for the table. Gate 10 re-emits the
 document from the source byte for byte, so the desugaring of a table with
 rows is pinned for the first time; `jutterswet-kaletabel` carries a table

@@ -261,7 +261,7 @@ class DateFoldConditionWitnessTest {
         return "{\"node\":\"Default\",\"justification\":" + justification + ",\"consequence\":" + consequence + "}";
     }
 
-    /** A group on {@code type}; {@code soort} is "attribute" or "characteristic". */
+    /** A group on {@code type}; {@code category} is "attribute" or "characteristic". */
     private static String group(String naam, String type, String category, String target, String... defaults) {
         return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type + "\",\"" + category + "\":\""
                 + target + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";

@@ -5,8 +5,8 @@ import java.util.Objects;
 
 /**
  * The control fact of a defaults group in its general form, with exception groups or with more than one group at the
- * root (RUNTIME-SEMANTICS ch. 7.2 and 7.9): the default at {@code positie} in chain {@code keten} of the stack
- * {@code stapel} settled for {@code onderwerp}, deciding {@code waarde} or conflicting under {@code key}.
+ * root (RUNTIME-SEMANTICS ch. 7.2 and 7.9): the default at {@code position} in chain {@code chain} of the stack
+ * {@code stack} settled for {@code onderwerp}, deciding {@code value} or conflicting under {@code key}.
  *
  * <p>A chain is the list of defaults of a root group or of one exception group; the lowering numbers them per stack,
  * the root groups first, and the exception groups of one default consecutively, so that "a member before this one" is
@@ -22,7 +22,7 @@ import java.util.Objects;
  *
  * <p>Compared by value, the subject by identity, and a decided number by {@code compareTo}, so that two members that
  * decide 10.0 and 10.00 merge into one fact, as the reconciliation reads them as one decision; a characteristic's
- * decision is {@code waarde} as a Boolean.
+ * decision is {@code value} as a Boolean.
  */
 public record Outcome(Object onderwerp, String stack, int chain, int position, Kind category, Object value,
                        String key) implements ControlFact {

@@ -17,7 +17,7 @@ public record Alpha(String id, List<FieldTest> tests) {
     }
 
     /**
-     * A test against {@code waarde} of what the test reads of the pattern's object: its field {@code field}, or with
+     * A test against {@code value} of what the test reads of the pattern's object: its field {@code field}, or with
      * {@code field} null the object itself, or along the reference fields of {@code path} the object the path reaches,
      * null where a link on it is absent; read as {@code form} ({@link Binding.ReadForm}), as the analysis decided,
      * among them a characteristic on a bean as whether it holds {@code true}. A path ends in the object it reaches: the
@@ -61,11 +61,11 @@ public record Alpha(String id, List<FieldTest> tests) {
     }
 
     /** How a field is tested: {@code GELIJK} by {@code equals}, {@code NOT_EQUAL} by its negation, {@code AT_LEAST}
-     *  as a whole number at least the value, {@code ONDER} as a whole number below the value, {@code BINNEN} as a date
-     *  the validity window {@code waarde} admits, {@code IS_A} as an instance of the class {@code waarde},
-     *  {@code LEEG} as null and {@code GEVULD} as not null (both without a {@code waarde}), {@code CLASS_NOT_IN} as an
-     *  object whose own class, exactly, is none of the set of classes {@code waarde}, and {@code CLASS_IS} as an object
-     *  whose own class, exactly, is the class {@code waarde}. */
+     *  as a whole number at least the value, {@code UNDER} as a whole number below the value, {@code WITHIN} as a date
+     *  the validity window {@code value} admits, {@code IS_A} as an instance of the class {@code value},
+     *  {@code LEEG} as null and {@code GEVULD} as not null (both without a {@code value}), {@code CLASS_NOT_IN} as an
+     *  object whose own class, exactly, is none of the set of classes {@code value}, and {@code CLASS_IS} as an object
+     *  whose own class, exactly, is the class {@code value}. */
     public enum Comparator {
         GELIJK, NOT_EQUAL, AT_LEAST, UNDER, WITHIN, IS_A, LEEG, GEVULD, CLASS_NOT_IN, CLASS_IS
     }

@@ -273,9 +273,9 @@ class TmsQuantifierFoldWitnessTest {
                 + " deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
     }
 
-    /** {@code regel} beside the derivation of the deelnemers, in both orders, over P1 with {@code leden} in that order
+    /** {@code regel} beside the derivation of the deelnemers, in both orders, over P1 with {@code members} in that order
      *  (and the members' instances {@code instances}), with the expectations {@code expectations}; each outcome is
-     *  {@code uitkomst}. */
+     *  {@code outcome}. */
     private static void playBoth(String regel, List<String> members, List<String> instances, List<String> expectations,
                                    String outcome, List<String> outcomes, List<String> expected) throws Exception {
         for (List<String> order : TmsDocuments.permutations(List.of(DEELNEMERS, regel))) {

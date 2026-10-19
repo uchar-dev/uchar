@@ -51,7 +51,7 @@ final class ExpressionBuilder {
     private final Map<String, Variable> binders = new LinkedHashMap<>();
     // Which of the two forms nameRef hands back. false (the default) inlines — the VOORWAARDE route; true yields a
     // BinderRef — the RESULTAAT route, under the Let chain wrapWithVariables builds. Scoped by buildResult,
-    // and turned back OFF inside a structure-sensitive position by ingelijnd().
+    // and turned back OFF inside a structure-sensitive position by inlining().
     private boolean binderMode;
     // The inlined definitions nameRef may substitute RIGHT NOW. It is `variables` itself everywhere a rule's own
     // text is built (the voorwaarde and the resultaat see every declaration, as they did in v0), and a growing
@@ -449,7 +449,7 @@ final class ExpressionBuilder {
                 + " is een breuk van een " + target.rendering() + ")");
     }
 
-    /** A rate times a quantity restates the quantity into the rate's denominator (Typering's product arm). */
+    /** A rate times a quantity restates the quantity into the rate's denominator (Typing's product arm). */
     private static Rational denominatorConversion(Expr.Binary b) {
         Unit el = b.left().type() == null ? null : b.left().type().unitOf();
         Unit rightUnit = b.right().type() == null ? null : b.right().type().unitOf();
@@ -598,7 +598,7 @@ final class ExpressionBuilder {
     // ---------------- §13.4.17 primaire expressie ----------------
     private Expr buildPrimary(PrimaireExpressieContext p) {
         // GEEN GETUIGE: ANTLR kiest de primaireExpr-tak van `expressie` pas NA een geslaagde match, dus
-        // een PrimaireExprContext zonder kind is niet te produceren. De zusterwacht in bouw(e) is wel
+        // een PrimaireExprContext zonder kind is niet te produceren. De zusterwacht in build(e) is wel
         // bereikbaar (zie SilentMarkerTest). Gemeten 2026-09-19.
         if (p == null) return unresolvedMarker(p,
                 "er is geen primaire expressie om te bouwen — de ontleding leverde op deze plaats geen boom op");
@@ -981,7 +981,7 @@ final class ExpressionBuilder {
                         "RGS-066", params("kind", Typing.kindWord(emptyFallback.type())), f.getStart().getLine()));
         }
         // declared-names-only IR: an aggregation over a SET read ("de <x> van alle <elem>") whose written form binds NO
-        // declared member of the (known) element type is Onopgelost — with a WARNING — so both back-ends
+        // declared member of the (known) element type is Unresolved — with a WARNING — so both back-ends
         // marker it instead of accumulating over a getter that does not exist (an uncompilable DRL package /
         // a fire-time reflection abort). The plural-binding in attributeRef already mapped a written plural
         // onto its declared singular, so only a genuinely unknown member reaches this.
@@ -1036,7 +1036,7 @@ final class ExpressionBuilder {
                     dimSel, functionType(kind, arguments), source);
         // §13.4.17.51-.58: a dimensieselectie that did NOT resolve, or a conditiebijexpressie ("gedurende
         // de tijd dat …") — the temporal axis is not built yet (p5) — must not be SILENTLY DROPPED, which
-        // would aggregate the whole set as if unrestricted. Capture its source as an Onopgelost filter so
+        // would aggregate the whole set as if unrestricted. Capture its source as an Unresolved filter so
         // the transpiler markers the aggregation (a visible no-op), and surface a WARNING. (Reuses the
         // aggregation-restriction marker path; an already-unresolved die-filter keeps its own marker.)
         Source dimSource = dimensionOrConditionSource(f);
@@ -1044,7 +1044,7 @@ final class ExpressionBuilder {
             // §7.1 a "gedurende de tijd dat <temporeel kenmerk>" restriction on a totaal over a single-period
             // temporal own-attribute resolves to a temporal Condition.CharacteristicCheck the transpiler clips the value
             // timeline by; anything else (a dimensieselectie, a navigated/compound/non-temporal condition) stays
-            // an Onopgelost marker so the aggregation is a visible no-op, not a silently-unrestricted total.
+            // an Unresolved marker so the aggregation is a visible no-op, not a silently-unrestricted total.
             Condition during = duringCharacteristicCheckFilter(f, kind, arguments);
             if (during != null) {
                 filter = during;
@@ -1396,7 +1396,7 @@ final class ExpressionBuilder {
     }
 
     /** Every grouping of {@code parts[van..]} into consecutive runs that are declared labels, appended to
-     *  {@code uit}. */
+     *  {@code result}. */
     private static void groupings(RegelSpraakModel.Dimension d, String[] parts, int van, List<String> until,
                                    List<List<String>> result) {
         if (van == parts.length) { result.add(List.copyOf(until)); return; }
@@ -1438,7 +1438,7 @@ final class ExpressionBuilder {
      *  reads "is <k>", a bezittelijk one "heeft (een) <k>" (§3.5) — the verb is not the discriminator; the
      *  granularity check below is (a role/possession "heeft een <rol>" names no temporal kenmerk, so it still returns
      *  null). Everything else (a navigated/compound/comparison/multi-period condition, a non-temporal or navigated/
-     *  scalar operand) returns null and stays an Onopgelost marker — so a SCALAR (parameter) base, whose §5.1.2
+     *  scalar operand) returns null and stays an Unresolved marker — so a SCALAR (parameter) base, whose §5.1.2
      *  value-timeline the model cannot carry, never lowers as a silently-constant proration. */
     private Condition duringCharacteristicCheckFilter(FunctieAanroepContext f, Expr.FunctionKind kind, List<Expr> arguments) {
         if ((kind != Expr.FunctionKind.TOTAAL && kind != Expr.FunctionKind.TIJDSEVENREDIG_DEEL)
@@ -1469,7 +1469,7 @@ final class ExpressionBuilder {
         // §7.1 a SIMPLE (single) membership, or §8.4.2 a COMPOUND ("er aan alle/ten minste 1 van de volgende
         // voorwaarden wordt voldaan: …") of such memberships. Each bullet must be a single-period temporal kenmerk
         // of the subject; anything else (a comparison, a non-temporal/navigated kenmerk, another kwantor, a nested
-        // compound) leaves the WHOLE condition an Onopgelost marker — so the spec's own mixed temporal+non-temporal
+        // compound) leaves the WHOLE condition an Unresolved marker — so the spec's own mixed temporal+non-temporal
         // §8.4 example never silently drops its non-temporal predicate.
         if (cnd.toplevelElementaireVoorwaarde() != null) {
             ToplevelElementaireVoorwaardeContext c = cnd.toplevelElementaireVoorwaarde();
@@ -1585,7 +1585,7 @@ final class ExpressionBuilder {
      *  TRUE case WIDENS the clip to the full value span (the transpiler branches on the kwantor; the WRITE producers
      *  still marker an OR-mixed). Either compound must still carry at least one temporal kenmerk (the actual clip). Any
      *  OTHER kwantor (geen van de / ten hoogste / precies / ten minste &gt;1), a nested compound bullet, or a
-     *  non-comparison non-temporal bullet returns null — the compound stays an Onopgelost marker, never a dropped
+     *  non-comparison non-temporal bullet returns null — the compound stays an Unresolved marker, never a dropped
      *  predicate. */
     private Condition duringCompound(ToplevelSamengesteldeVoorwaardeContext sv, Source source) {
         VoorwaardeKwantificatieContext q = sv.voorwaardeKwantificatie();
@@ -1692,7 +1692,7 @@ final class ExpressionBuilder {
         // sets — a disjunctively-filtered single accumulate. OR the per-operand kenmerk filters over
         // the shared element (an instance in several sets matches the OR once, so it is counted
         // once). Any operand without a resolvable kenmerk filter (a comparison, an unfiltered set,
-        // a different element) leaves the whole union Onopgelost -> a marker, never a wrong count.
+        // a different element) leaves the whole union Unresolved -> a marker, never a wrong count.
         // (A min/max value-fold reaches here too with >1 operand, but its die is on a sub-operand
         // navigation, not the element — so it is excluded; only AANTAL unions.)
         //
@@ -2042,7 +2042,7 @@ final class ExpressionBuilder {
             rhsCtx = p.nonToplevelOperator().expressie();
         } else return null;
         Expr rhs = build(rhsCtx);
-        // §5.6: the predicate ranges over the SELECTED ELEMENT, but the RHS is bouw()'d in the rule's SUBJECT context.
+        // §5.6: the predicate ranges over the SELECTED ELEMENT, but the RHS is build()'d in the rule's SUBJECT context.
         // A subject/element attribute mis-binds ("zijn drempel" -> the subject's drempel, not the element's), so reject
         // an AttributeReference. Accept a LITERAL (both back-ends lower it as a fact-only source constraint) OR a §13.3.8
         // Parameter — the spec's worked-example RHS "die kleiner zijn dan de volwassenleeftijd". A Parameter is
@@ -2052,7 +2052,7 @@ final class ExpressionBuilder {
         // WF-091 (reference-type identity, IR-SPEC ch. 4.1): the one VALUE-position reference whose type this builder
         // copies from another node instead of looking the declaration up. It invents nothing: it COPIES the fold
         // source, re-anchored on the element (subjectSource/bron reset, and set=false — the LHS reads ONE element,
-        // not the set), carrying that node's (objecttype, attribuut, type) triple verbatim — so it carries no deviation the
+        // not the set), carrying that node's (objectType, attribute, type) triple verbatim — so it carries no deviation the
         // source does not already have, and the verifier checks it at its own use site like any other reference.
         // Deliberately NOT the aggregation's own type: §4.20 strips the noemer off "het totaal van <€/mnd>" (€), while
         // the filter compares the unstripped per-element value (€/mnd). Re-looking the declaration up here would be
@@ -2405,7 +2405,7 @@ final class ExpressionBuilder {
     /**
      * The object type an aggregation ranges over. For value-aggregations
      * (sum/min/max/first/last) it is the object the aggregated attribute belongs to
-     * — the argument's bound AttributeReference objecttype. For a count "het aantal
+     * — the argument's bound AttributeReference objectType. For a count "het aantal
      * <rol> van <onderwerp>" the parser makes <rol> the attribute name, so the
      * counted element type is that role resolved to its object type.
      */
@@ -2414,7 +2414,7 @@ final class ExpressionBuilder {
         return switch (kind) {
             // AANTAL_GEVULDE rides the VALUE-fold derivation, not the count's: its argument is an
             // ATTRIBUTE read over a set, so the element type is the attribute's owner — the very
-            // asymmetry RuleChecker's VOUWSOORTEN note names (a count's element word is a ROLE)
+            // asymmetry RuleChecker's FOLD_KINDS note names (a count's element word is a ROLE)
             case SOM, TOTAAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE, AANTAL_GEVULDE -> a.objectType();
             case AANTAL -> countElement(a.attribute());
             default -> null;
@@ -2534,7 +2534,7 @@ final class ExpressionBuilder {
             case CONCATENATIE -> unknown();
             // §13.4.17.13: a square root is non-negative; its precision comes from the MANDATORY afronding that
             // wraps it (a sqrt is generally irrational), and its unit would be the operand's unit's root —
-            // composite-unit territory, dropped for now (carded). The afronding's Afgerond re-derives decimals.
+            // composite-unit territory, dropped for now (carded). The afronding's Rounding re-derives decimals.
             case WORTEL -> new Datatype.Numeriek(false, 0, Datatype.Teken.NIET_NEGATIEF, null);
             case EERSTE_PAASDAG, DATUM_MET -> new Datatype.DatumInDagen();
             case DATUMTIJD_MET -> new Datatype.DateTime();
@@ -2703,7 +2703,7 @@ final class ExpressionBuilder {
             // §4.8 Tabel 18 requires a NUMERIEK right operand: only reinterpret as the percentage function when V is
             // a getalachtig value. This guards the name collision where the leftmost name is BOTH a Percentage
             // parameter AND a real attribute reachable through the onderwerp ("de korting van zijn bestelling", korting
-            // also a Bestelling attribute): there V is a to-one ROLE navigation (type onbekend), so the percentage
+            // also a Bestelling attribute): there V is a to-one ROLE navigation (type unknown), so the percentage
             // reading is rejected and the construct stays the correct attribute navigation.
             if (v != null && !(v instanceof Expr.Unresolved) && v.type().isNumberLike()) {
                 // §4.8 Tabel 18: the result carries V's unit; §4.8 Precisie makes it an exact fraction, so drop V's
@@ -2803,7 +2803,7 @@ final class ExpressionBuilder {
         // ("de leeftijden van alle deelnemers" reads the attribute declared 'leeftijd'), so the IR only ever
         // carries declared members and no back-end synthesizes a getter from surface morphology. The matcher
         // is ambiguity-safe (declared "(mv: …)" or the conservative regular plural of exactly ONE attribute);
-        // an unbindable written form keeps its Onbekend type and stays a downstream marker.
+        // an unbindable written form keeps its Unknown type and stays a downstream marker.
         if (dt == null && ot != null) {
             String singular = PluralMatcher.findAttribute(ot, attr);
             if (singular != null) {
@@ -2899,7 +2899,7 @@ final class ExpressionBuilder {
 
     /** What the walk of a written fold-source range found: the path and the element type it lands on, or, where it
      *  walked a chain of three segments or more and declined it, why — a clause about the written source
-     *  ({@code weigering}) — and the way out a declaration gives where there is one ({@code exit}). The element type
+     *  ({@code refusal}) — and the way out a declaration gives where there is one ({@code exit}). The element type
      *  and both texts are null for every shape the walk does not decide, the one-step range among them. */
     private record RangeWalk(java.util.List<RegelSpraakModel.RoleBindingRef> path, String refusal,
                                    String exit, Objecttype element) {
@@ -3177,7 +3177,7 @@ final class ExpressionBuilder {
      * runs on over every name word, so in "alle vondsten van de Jutter geen recht op berging hebben" it reads
      * "Jutter geen recht op" and the operator keeps "berging" alone: the negation and the leading words of a
      * multi-word characteristic stand in the anchor. The anchor names the rule subject, so the words after
-     * the name it is written with are the ones the parse took. {@code namen} are the names it may be written
+     * the name it is written with are the ones the parse took. {@code names} are the names it may be written
      * with; the longest that opens the anchor wins.
      *
      * <p>Empty when the anchor is exactly such a name. Null when the anchor is no plain "de|het|een
@@ -3254,7 +3254,7 @@ final class ExpressionBuilder {
         // heeft") is a to-one navigation, not an own attribute — emit the SAME navigated AttributeReference shape
         // buildAttribute produces for the written "de <rol> van <X>", so a navigated kenmerkcheck reaches
         // navigationCharacteristicCheck and a navigated value read reaches the to-one getter (the symmetric mirror of the
-        // working "de <rol> van <X>" form; without it the possessive role stayed Onopgelost and markered).
+        // working "de <rol> van <X>" form; without it the possessive role stayed Unresolved and markered).
         if (model.roleTargetTypeToSubject(huidigSubject, attr) != null)
             return new Expr.AttributeReference(attr, huidigSubject, "zijn", model.navigationRoleName(attr), unknown(), source);
         // §8.1.8.1 the greedy onderwerp can absorb a TRAILING "niet"/"geen" negator into the possessive role
@@ -3554,7 +3554,7 @@ final class ExpressionBuilder {
      *  <p>One caller reaches it only for operands that are already narrowed: {@link #elementComparison}
      *  (the §5.6 die/dat subselectie on an aggregation operand) refuses any right-hand side that is neither
      *  a Literal nor a ParameterRef BEFORE building the comparison, so an enumeratiewaarde marker never
-     *  arrives here and the whole predicaat is refused instead — an Onopgelost conditie or a reason-carrying
+     *  arrives here and the whole predicaat is refused instead — an Unresolved conditie or a reason-carrying
      *  deelselectie, never a silently untyped comparison. That is the pre-existing narrowing of that
      *  position, not a hole this rule opened: the position folds an AGGREGATED attribute, and no aggregation
      *  ranges over an Enumeratie, so a well-typed enum comparison cannot stand there in the first place. */

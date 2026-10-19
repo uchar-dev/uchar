@@ -121,7 +121,7 @@ class StorageDirectionWitnessTest {
         // destructive exec-model branch joined the aggregation over `erfvolgers` on such a field and refused it by
         // name (§13.3.9 storage direction). The exec-model branch with truth maintenance joins over the links of the
         // relation, which need no field, and answers as ref on the erflijn golden with this case: W1 1, W2 0
-        // (TmsLikeRefWitnessTest, dubbelmeervoudige-zelfrelatie).
+        // (TmsLikeRefWitnessTest, many-to-many-self-relation).
         assertNull(playTms(ir(INHERITANCE_LINE), JSON.readTree(chainWithExpectation("1", "0"))), "ref agrees: W1 1, W2 0");
     }
 
@@ -392,7 +392,7 @@ class StorageDirectionWitnessTest {
     }
 
     /** The wachtersketen model with a Numeriek attribute that SHARES the self-pair role name `opvolger`, so
-     *  leden()'s name-dedup displaces the reference field. {@code withFold} keeps the §5.8 fold rule (whose join
+     *  members()'s name-dedup displaces the reference field. {@code withFold} keeps the §5.8 fold rule (whose join
      *  reads that same field, and refuses FIRST); without it the §13.4.6 creation arm is the refusal reached.
      *  Both are in-memory variants; the corpus ir.json is untouched. Both are verifier-clean and ref-clean. */
     private static Path nameSharingWachter(boolean withFold) throws Exception {
@@ -413,7 +413,7 @@ class StorageDirectionWitnessTest {
         return temporary("wachter-naamdeling-invoer", ir);
     }
 
-    /** The navigatiepremie golden with a Numeriek attribute that SHARES the to-one role name `werf`, so leden()'s
+    /** The navigatiepremie golden with a Numeriek attribute that SHARES the to-one role name `werf`, so members()'s
      *  name-dedup displaces Schuit's reference field, reduced to its `premie` rule (`20% van het tarief van de
      *  werf van de Schuit`, one binding). Verifier-clean and ref-clean; the corpus ir.json is untouched. */
     private static Path nameSharingSchuit() throws Exception {

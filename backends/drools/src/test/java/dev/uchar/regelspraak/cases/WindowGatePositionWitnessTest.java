@@ -124,7 +124,7 @@ class WindowGatePositionWitnessTest {
         return c;
     }
 
-    /** The creation golden's case at {@code asOf}, with W1's opvolgerrang expected at {@code rang}. */
+    /** The creation golden's case at {@code asOf}, with W1's opvolgerrang expected at {@code rank}. */
     private static JsonNode creationCase(String asOf, String rank) throws Exception {
         ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(CREATION.resolve("case1.json")));
         if (asOf == null) c.putNull("asOfDate"); else c.put("asOfDate", asOf);

@@ -475,7 +475,7 @@ class SubtypeDialectTest {
 
     @Test void an_inherited_characteristic_binds_in_a_predicate() {
         // Plek 2, CharacteristicMatcher. An inherited kenmerk bound in NO predicaat form — across all eleven
-        // call sites — and the condition fell through to an Onopgelost marker. That marker is LOUD, not
+        // call sites — and the condition fell through to an Unresolved marker. That marker is LOUD, not
         // silent: reaching it in evaluation faults with WF-044, so the rule does not quietly never fire,
         // it takes the document down. The soort check right after the binding (characteristicKind) was already
         // chain-aware, so binding and soort now see one and the same declarant.

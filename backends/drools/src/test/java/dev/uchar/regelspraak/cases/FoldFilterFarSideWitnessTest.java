@@ -295,7 +295,7 @@ class FoldFilterFarSideWitnessTest {
         // selection whose subselection reads through a role of the element. The selections share one element pattern
         // and its test, so the destructive exec-model branch had no join for it and refused the form; before, it
         // counted with the characteristic as it stood at insertion. The exec-model branch with truth maintenance plays
-        // it as ref answers, 3, on this case (TmsLikeRefWitnessTest, unieselectie-via-rol).
+        // it as ref answers, 3, on this case (TmsLikeRefWitnessTest, union-selection-via-role).
         String union = "{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[{\"node\":\"InstanceSetUnion\",\"branches\":["
                 + branch(the(characteristicCheck("gedateerd", false, null))) + "," + branch(the(characteristicCheck("actief", false, VONDST_JUTTER)))
                 + "],\"source\":{\"snippet\":\"vondsten die gedateerd zijn en vondsten wier jutter actief is\"}}],\"type\":" + COUNT_NUMBER
@@ -480,7 +480,7 @@ class FoldFilterFarSideWitnessTest {
         return regel("aantal late vondsten", "Jutter", "aantal late vondsten", count(filter), null);
     }
 
-    /** A quantifier fold over the vondsten of the Jutter; {@code filter} null for none, {@code drempel} 0 under geen. */
+    /** A quantifier fold over the vondsten of the Jutter; {@code filter} null for none, {@code threshold} 0 under geen. */
     private static String quantifierFold(String quantifier, int threshold, String filter, String matrix) {
         return "{\"node\":\"QuantifierFold\",\"quantifier\":\"" + quantifier + "\"" + (threshold == 0 ? "" : ",\"threshold\":" + threshold)
                 + ",\"elementType\":\"Vondst\"" + (filter == null ? "" : ",\"filter\":" + filter) + ",\"test\":" + matrix

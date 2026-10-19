@@ -225,11 +225,11 @@ public enum StaticFunction {
      *  {@code "tweede"}), by identity: the constraint of the rule of a second filler of a to-one role, between the
      *  second link and the first ({@link BetaTest}). */
     OTHER_FILLING(ComputeHelpers.class, "otherFilling", false),
-    /** Whether an {@code Uitkomst} is of an earlier member chain than the one another pattern binds, by the number of
+    /** Whether an {@code Outcome} is of an earlier member chain than the one another pattern binds, by the number of
      *  its chain: the constraint of a reconciliation of a defaults stack that keeps to the first member in member order
      *  (RUNTIME-SEMANTICS ch. 7.2; {@link BetaTest}). */
     EARLIER_MEMBER(ComputeHelpers.class, "earlierMember", false),
-    /** Whether an {@code Uitkomst} decides otherwise than the one another pattern binds, numbers by value
+    /** Whether an {@code Outcome} decides otherwise than the one another pattern binds, numbers by value
      *  (RUNTIME-SEMANTICS ch. 7.2): the constraint of a reconciliation of a defaults stack that finds a member which
      *  decides differently ({@link BetaTest}). */
     OTHER_DECISION(ComputeHelpers.class, "anotherDecision", false);

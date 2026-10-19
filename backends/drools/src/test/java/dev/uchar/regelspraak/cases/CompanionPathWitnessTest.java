@@ -34,11 +34,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <b>Every pinned value was produced by {@code ref/} on this exact model+case first</b> (2026-09-02, the
  * L-ref) — ref is the arbiter, this backend the third executor. Evaluation ORDER matters for the barrier
  * flanks and was measured rather than assumed, PER FORM ({@code ref/lib/eval.ml}, 2026-09-02): a
- * {@code Binair} left before right, a {@code Vergelijking} in a ch. 10.2 guard left before right, and a
- * {@code Begrensd} basis, then MAXIMUM, then minimum — so a read evaluated before a division ends the Let
+ * {@code Binary} left before right, a {@code Comparison} in a ch. 10.2 guard left before right, and a
+ * {@code Clamp} basis, then MAXIMUM, then minimum — so a read evaluated before a division ends the Let
  * before the division, and a read evaluated after it does not. This backend mirrors each measured order
  * (fix round 1 of the companion-onder-drager card: the Begrensd arm evaluated minimum first and fabricated
- * on one Begrensd flank while missing its mirror). Since then ref evaluates a {@code Begrensd} basis, minimum,
+ * on one Begrensd flank while missing its mirror). Since then ref evaluates a {@code Clamp} basis, minimum,
  * maximum (RUNTIME-SEMANTICS ch. 2.7); the rows of (i) pin that order on the exec-model branch.
  *
  * <p><b>"Drager" / "carrier" below means the probe's HOST</b> — the OUTERMOST ch. 4.10 node on the path from
@@ -338,7 +338,7 @@ class CompanionPathWitnessTest {
     }
 
     @Test void the_operands_of_a_choice_condition_evaluate_left_before_right() throws Exception {
-        // the ch. 10.2 guard's Vergelijking: ref evaluates links before rechts (ref/lib/eval.ml, eval_cond).
+        // the ch. 10.2 guard's Comparison: ref evaluates links before rechts (ref/lib/eval.ml, eval_cond).
         // "Let d = deler in (als d groter dan (inkomen ÷ tweede) dan 1 anders 2)", deler and tweede absent: the
         // read of d is the LEFT operand, raises the barrier, the division never runs -> ref uit leeg,
         // CONSISTENT. Mirror "(inkomen ÷ tweede) groter dan d": the division runs and faults, then the read

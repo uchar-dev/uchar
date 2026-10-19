@@ -244,7 +244,7 @@ let count_days_in (g : Ir_v0.Ast.grain) (true_periods : (int * int) list) : t =
    is vacuously true; and a bucket the timeline touches only partly has
    fewer true days than calendar days, so it fails.
 
-   [negatie] is the inner test's own negation ("gedurende het gehele jaar
+   [negation] is the inner test's own negation ("gedurende het gehele jaar
    NIET bedrijvig"): the touched buckets are unchanged — they are still
    the buckets the characteristic's timeline touches — while the
    satisfying days become the complement inside each of them. The
@@ -327,7 +327,7 @@ let whole_period_value (g : Ir_v0.Ast.grain) ~(tl : t) (pred : Value.t -> bool) 
    not change its verdict; it is still computed per bucket, so the code
    reads as the formula does.
 
-   [gevuld] selects the test after the INNER negation, which is per day:
+   [populated] selects the test after the INNER negation, which is per day:
    "niet leeg" holds on exactly the days "gevuld" does, so the caller passes
    the sister test. The qualifier's own negation is the caller's too. *)
 let whole_period_empty_filled (g : Ir_v0.Ast.grain) ~(populated : bool) ~(tl : t) : bool =

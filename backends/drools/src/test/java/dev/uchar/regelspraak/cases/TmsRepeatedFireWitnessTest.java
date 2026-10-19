@@ -67,10 +67,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>A session of a model with a creation fires once (the fix round of step 3, point 1). On golden
  * {@code anchor/jutterswet-rekenkamer}, case 1, the object creation makes a Rekenkamer whose grondslag and aftrek it
  * initialises from J1's, 100 and 30, and J1's heffing is 70. Then J1's grondslag becomes 150 ({@code update}), and
- * {@code vuur} refuses the session, with the sentence that what a creation made is stated and that the way is a fresh
+ * {@code fire} refuses the session, with the sentence that what a creation made is stated and that the way is a fresh
  * session per input. A fresh session of grondslag 150 gives heffing 120, as the reference interpreter and the ASP runner
  * give it on that case (measured 2026-10-10). <b>Red before the change</b> (measured 2026-10-10 on {@code f4b83d7b}):
- * the second {@code vuur} raised nothing, "Expected java.lang.IllegalStateException to be thrown, but nothing was
+ * the second {@code fire} raised nothing, "Expected java.lang.IllegalStateException to be thrown, but nothing was
  * thrown.", and the old form of the row, fire, change, fire and read, gave the state of the first input: "expected:
  * &lt;[…, J1.heffing = 120, gemaakt: richt de rekenkamer op voor J1, gemaakte Rekenkamer.heffing = 120]&gt; but was:
  * &lt;[…, J1.heffing = 70, gemaakt: richt de rekenkamer op voor J1, gemaakte Rekenkamer.heffing = 70]&gt;", since the
@@ -78,12 +78,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Between two fires the input changes through {@code update} on the beans {@code insert} put in, and in no other
  * way (the second fix round of step 3, point 2). On the values document, after the first fire, V1's vinder becomes a
- * Jutter J2 that the input did not give ({@code update}): {@code vuur} refuses, since the update changed a relation
+ * Jutter J2 that the input did not give ({@code update}): {@code fire} refuses, since the update changed a relation
  * (until the addition to step 5a1 it refused here in the sentence of the reference check of {@code insert}, which it
- * now gives where the field changed without an update), and {@code lees} still refuses after that refusal, since
+ * now gives where the field changed without an update), and {@code read} still refuses after that refusal, since
  * the update stands. A fresh session that gives J2 derives J2's totaalgewicht 10 and J1's 4. Where J2 is inserted with
  * {@code session.insert} before V1 is set on it, the reference check would pass, as J2 is in the session; the watch
- * refuses first ({@code Bewaking}): input came in outside {@code insert}, which states the places of a list and the
+ * refuses first ({@code Watch}): input came in outside {@code insert}, which states the places of a list and the
  * bucket scalars over the beans of one input, so a new object asks a fresh session. The watch refuses alike a bean
  * deleted between two fires, and a bean inserted between {@code insert} and the first fire. The reference interpreter
  * and the ASP runner give the reading with J2 given (measured 2026-10-10; the verifier passes the document). <b>Red
@@ -95,17 +95,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the second fire with a {@code ConsequenceException} out of the filter fault rule, "… maar een lid van zijn route
  * heeft geen Lijstplaats onder het veld 'aanmelder' …", since only {@code insert} states the places.
  *
- * <p>Outside {@code vuur} a consumer changes nothing but an attribute or a characteristic of a bean {@code insert} put
- * in, with {@code update}, from {@code insert} on (the addition to step 5a1, 2026-10-10). {@code vuur} refuses, naming
- * what happened and sending the consumer to a fresh session, and {@code lees} and {@code setDerivedValues} refuse
+ * <p>Outside {@code fire} a consumer changes nothing but an attribute or a characteristic of a bean {@code insert} put
+ * in, with {@code update}, from {@code insert} on (the addition to step 5a1, 2026-10-10). {@code fire} refuses, naming
+ * what happened and sending the consumer to a fresh session, and {@code read} and {@code setDerivedValues} refuse
  * with the way to a fresh session:
  * <ul>
- *   <li>a global that changed after the first {@code vuur}: on golden {@code jutterswet-aanvoergeld} the aanvoertarief
+ *   <li>a global that changed after the first {@code fire}: on golden {@code jutterswet-aanvoergeld} the aanvoertarief
  *       12.50 becomes 22.50 with {@code setGlobal}, which no rule sees, since the branch states a global as a fact once,
  *       at the first fire; a fresh session at 22.50 gives J1, J2 and J3 the aanvoergeld 332.50, 109.90 and 22.50, as the
  *       reference interpreter and the ASP runner give it ("oracle: PASS (7 expectations)", "clingo: PASS (7
  *       expectations)", measured 2026-10-10);</li>
- *   <li>a fact of the branch deleted ({@code Waarde} of V1's uitkering) or updated, and a fact of no kind {@code insert}
+ *   <li>a fact of the branch deleted ({@code Value} of V1's uitkering) or updated, and a fact of no kind {@code insert}
  *       puts in inserted;</li>
  *   <li>a plain {@code fireAllRules}, named by the first rule it fired;</li>
  *   <li>a relation changed, a reference field of a bean of the input, since {@code insert} numbers the places of a list
@@ -119,7 +119,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       2026-10-10). The ASP runner faults on all of these inputs, also where the fold is not evaluated: it divides in
  *       the filter of every Vondst ("viol("division by numeric zero","V2")" with V2 in no list), a divergence of its own
  *       that these rows do not pin. A reference field set without an update makes no event: set to an object outside
- *       the session it is refused in the sentence of the reference check of {@code vuur}, and set to an object of the
+ *       the session it is refused in the sentence of the reference check of {@code fire}, and set to an object of the
  *       input in the sentence of the comparison of the relations (below);</li>
  *   <li>the agenda changed: {@code Agenda.clear} after {@code insert}, before the first fire, of which Drools makes no
  *       event; {@code AgendaGroup.clear} after a fire, which Drools queues for the next fire; and
@@ -135,11 +135,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * relation stopped the fire on "… heeft geen Lijstplaats onder het veld 'aanmelder' …"; the moved Vondst gave J2 the
  * fault "4 gedeeld door 0"; after {@code Agenda.clear} the fire derived nothing at all, no uitkering 20 for V1 and no
  * totaalgewicht 14 for J1; and after {@code AgendaGroup.clear} the next fire stopped on an
- * {@code UnsupportedOperationException} out of Drools, while {@code lees} read without a word before it.
+ * {@code UnsupportedOperationException} out of Drools, while {@code read} read without a word before it.
  *
  * <p>A relation changed without an update, and an action of an unknown kind on the propagation list (the lens on step
  * 5a1, 2026-10-10). On the values document with a second Jutter J2 in the input, V1's vinder becomes J2 after the
- * first fire without an update, which makes no event: {@code lees}, {@code setDerivedValues} and {@code vuur}
+ * first fire without an update, which makes no event: {@code read}, {@code setDerivedValues} and {@code fire}
  * refuse, naming the field and the two Jutters, since the watch compares the reference fields of the beans of the
  * input with what they held at {@code insert}; a fresh session gives J1 4 and J2 10 ({@link #WITH_J2}). The reference
  * interpreter and the ASP runner give J1 14 and J2 leeg on the first input and J1 4 and J2 10 on the changed one, and
@@ -157,8 +157,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * zwaar, bonus 7, heffing 40 and vindloon 15, "second reading ==&gt; expected: &lt;[J1.totaalgewicht = 7, V1.uitkering =
  * 13, V1.vindloon = 8, V2.uitkering = 14, V2.vindloon = 9]&gt; but was: &lt;[J1.totaalgewicht = 7, V1 is zwaar, V1.bonus
  * = 7, V1.heffing = 40, V1.uitkering = 13, V1.vindloon = 15, V2.uitkering = 14, V2.vindloon = 9]&gt;", and the fire
- * after the write-back raised nothing, "Expected java.lang.IllegalStateException to be thrown, but nothing was thrown." The witness itself does not compile there: the entry had no {@code insert}, no public {@code vuur} and no
- * {@code lees}.
+ * after the write-back raised nothing, "Expected java.lang.IllegalStateException to be thrown, but nothing was thrown." The witness itself does not compile there: the entry had no {@code insert}, no public {@code fire} and no
+ * {@code read}.
  */
 class TmsRepeatedFireWitnessTest {
 
@@ -425,7 +425,7 @@ class TmsRepeatedFireWitnessTest {
     /** The call of the entry the watch keeps from after a fire. */
     static final String AFTER_FIRE = "de laatste DroolsBackend.vuur van deze sessie";
 
-    /** The sentence of {@code vuur} where, since {@code since}, more happened outside it than an update of an attribute
+    /** The sentence of {@code fire} where, since {@code since}, more happened outside it than an update of an attribute
      *  or a characteristic of a bean, {@code description} naming it. */
     static String moreThanOneUpdate(String since, String description) {
         return "sinds " + since + " gebeurde er buiten vuur om meer dan een update van een attribuut of kenmerk van een"
@@ -433,7 +433,7 @@ class TmsRepeatedFireWitnessTest {
                 + " Invoer";
     }
 
-    /** The way on of the two readings where {@code vuur} refuses for that reason. */
+    /** The way on of the two readings where {@code fire} refuses for that reason. */
     static final String FRESH_OUTSIDE_FIRE = "DroolsBackend.vuur weigert een sessie waarin buiten vuur om meer gebeurde"
             + " dan een update van een attribuut of kenmerk van een bean: open een verse sessie met alle beans in één"
             + " Invoer";
@@ -633,7 +633,7 @@ class TmsRepeatedFireWitnessTest {
     }
 
     /** The clause of a relation that changed without an update: field {@code field} of {@code bean}, which held
-     *  {@code voor} at {@code insert} and holds {@code na}. */
+     *  {@code before} at {@code insert} and holds {@code after}. */
     static String withoutUpdate(String field, Object bean, Object before, Object after) {
         return "het veld '" + field + "' van " + TmsConsumerWitnessTest.naam(bean) + ", een relatie, veranderde zonder"
                 + " update: het hield bij DroolsBackend.voegIn " + TmsConsumerWitnessTest.naam(before) + " en houdt nu "
@@ -796,7 +796,7 @@ class TmsRepeatedFireWitnessTest {
     static final String ZWARE_FAULT = "deling door nul in de regel \"zware vondsten\": %s gedeeld door 0 — een numerieke"
             + " nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
 
-    /** The handle of the {@code Waarde} that gives {@code vondst} its uitkering. */
+    /** The handle of the {@code Value} that gives {@code vondst} its uitkering. */
     private static org.kie.api.runtime.rule.FactHandle uitkering(KieSession session, Object vondst) {
         List<org.kie.api.runtime.rule.FactHandle> out = new ArrayList<>(session.getFactHandles(o ->
                 o instanceof dev.uchar.regelspraak.transpiler.tms.Value w && w.onderwerp() == vondst

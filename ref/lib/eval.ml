@@ -420,7 +420,7 @@ let guard_on_target (doc : document) (fc : resolved_fact_creation) =
    WholePeriod qualifier is therefore not a scalar context at all — it IS
    the second collapse — and the refusal below this helper, which fires where
    the qualifier is ABSENT, may not touch it. Until 2026-09-11 both
-   characteristic-check arms matched `periode` away with `_`, so the
+   characteristic-check arms matched `time_period` away with `_`, so the
    qualified form fell into the scalar refusal (loudly, for the wrong reason)
    or, with no link to follow, into the scalar arm's absent-link `false`
    (silently, contradicting the clause).
@@ -1310,14 +1310,14 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                  WF-072's widened walk (same chapter, same day) settles WHICH
                  FIELDS that domain has ON THE WIRE. It has to, because the
                  loader below does not consult the declaration: value_of_json
-                 builds a record against the INLINE `velden` of the use site
+                 builds a record against the INLINE `field_list` of the use site
                  (case.ml), so before the walk widened, an attribute typed
                  ListType<StructType dossier> with a renamed inline copy let a
                  case input through whose fields the declaration does not carry
                  — verifier-clean, ref faulting HERE, clingo passing green
                  (measured, fix round 1). The walk now pins every StructType in
                  the model and expression layers — through a list element,
-                 inside `domeinen`, at a FunctionDef, at every expression
+                 inside `domain_specs`, at a FunctionDef, at every expression
                  `type` — to its declaration, so the loader's cross IS the
                  declaration's. A rule TARGET's `type` stays outside that walk
                  (WF-022's lvalue, not an expression node), as it does under
@@ -2111,7 +2111,7 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
       (* ch. 3.9: "Negation complements the folded result" *)
       if gp.gp_negated then not verdict else verdict
   (* ch. 3.9, the leeg and gevuld tests under the whole-period qualifier. The
-     two arms below match `periode` away with `_`, which is why this one
+     two arms below match `time_period` away with `_`, which is why this one
      stands before them: until 2026-09-11 the qualifier was dropped there and
      the operand answered its scalar reading, and until 2026-09-26 this arm
      refused the form by name. The inner negation is per day (ch. 1.2), so it
@@ -2543,7 +2543,7 @@ let over_subjects ?(exact = false) ?(except = []) ?read env world ~otype ~rule b
    without true periods writes the EMPTY timeline (v0: a null base
    yields the empty list — the target exists, with no segments). *)
 (* ch. 3.10's clip, applied to a producer's result before anything else
-   looks at it: [venster] is the subject's window as [lo, hi) in day
+   looks at it: [window] is the subject's window as [lo, hi) in day
    numbers, an open bound at the integer's end. The restriction cuts
    segments and keeps their values — Timeline.clip does exactly that — and
    an empty window (hi <= lo) leaves nothing. *)

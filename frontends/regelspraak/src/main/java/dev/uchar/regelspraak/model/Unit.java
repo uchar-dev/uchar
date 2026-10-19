@@ -10,8 +10,8 @@ import java.math.MathContext;
  * factor that expresses one of this unit in that canonical unit.
  *
  * <p>A COMPOSITE (rate) unit (§13.3.3.2, "€/jr", "km/u") additionally carries a
- * denominator unit ({@code noemer}). The {@code afkorting}/{@code canoniek}/
- * {@code factorNaarCanoniek} describe the NUMERATOR; {@code noemer} is the (simple)
+ * denominator unit ({@code denominator}). The {@code afkorting}/{@code canoniek}/
+ * {@code factorNaarCanoniek} describe the NUMERATOR; {@code denominator} is the (simple)
  * denominator unit, or {@code null} for a plain unit. Converting a rate restates the
  * numerator AND inverts the denominator: "120 €/jr" is "10 €/mnd" (÷12), so the rate
  * scales by the numerator factor times the inverse of the denominator factor.

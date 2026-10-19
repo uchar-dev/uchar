@@ -71,7 +71,7 @@ allocation or an object creation: ch. 5.4 places an initialisation beside
 ordinary rules only (no corpus case)`; and the Drools exec-model branch
 refused the stack with `EXCLUDE transpiler SKIP: defaults: defaults
 A:Wrakvondst.bergloon — defaults (Vondst.bergloon): niet-reduceerbare
-consequentie (far-side/aggregatie): standaardbergloon`.
+consequentie (far-side/aggregation): standaardbergloon`.
 
 ## What it pins
 

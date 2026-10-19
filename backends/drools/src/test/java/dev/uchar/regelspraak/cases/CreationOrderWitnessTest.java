@@ -179,7 +179,7 @@ class CreationOrderWitnessTest {
                 + ",\"source\":{\"snippet\":\"" + op + "\"}}";
     }
 
-    /** A fold of kind {@code soort} over the {@code lid} of the vondsten of the Jutter; {@code filter} null for none. */
+    /** A fold of kind {@code category} over the {@code member} of the vondsten of the Jutter; {@code filter} null for none. */
     private static String fold(String category, String member, String filter) {
         return "{\"node\":\"Aggregation\",\"kind\":\"" + category + "\",\"arguments\":[{\"node\":\"AttributeReference\",\"attribute\":\""
                 + member + "\",\"subjectType\":\"Vondst\",\"source\":{\"snippet\":\"het " + member + " van alle vondsten van de Jutter\"}}],"
@@ -212,7 +212,7 @@ class CreationOrderWitnessTest {
                 + "\"Boolean\"},\"source\":{\"snippet\":\"waar\"}},\"condition\":" + condition + ",\"initialisation\":false}]}";
     }
 
-    /** A defaults group on {@code lid} of {@code type}: the opgave where it is filled, else {@code basis}. */
+    /** A defaults group on {@code member} of {@code type}: the opgave where it is filled, else {@code base}. */
     private static String group(String member, String type, String input, String base) {
         return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + member + "\",\"subject\":\"" + type + "\",\"attribute\":\"" + member
                 + "\",\"defaults\":[{\"node\":\"Default\",\"justification\":{\"node\":\"Predicate\",\"kind\":\"filled\",\"operand\":"

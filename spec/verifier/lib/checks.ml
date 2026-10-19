@@ -699,7 +699,7 @@ type ctx = { doc : document }
    subtype-verdeling-keten); every name-keyed member cross — the allocation
    fields, an object creation's subject and created type, a uniqueness key,
    a consistency subject, every reference position in the expression walk —
-   already resolves through [objecttype] below. *)
+   already resolves through [object_type] below. *)
 let declared_object_type ctx name = find_ci ctx.doc.object_types name
 
 (* The chain from [ot] upward, own type first, root last. Cycle-safe by
@@ -1313,7 +1313,7 @@ let rec ggd a b = if b = 0 then a else ggd b (a mod b)
    positivity, since then the factor's wire form); a missing half is simply
    nothing to look at. WF-035/WF-023 cross units for
    COMPATIBILITY through [units_convertible], which reads a missing
-   [canoniek] as the abbreviation and a missing factor not at all — so a
+   [canonical_form] as the abbreviation and a missing factor not at all — so a
    half-filled unit is compatible with its whole sibling by construction.
    WF-091 compares two units BYTE for byte, which passes the moment the
    half-form is copied consistently across the arms it crosses.
@@ -1323,7 +1323,7 @@ let rec ggd a b = if b = 0 then a else ggd b (a mod b)
    same reason WF-092 lives here: [check_unit_form] is the ONE walk that
    reaches every unit record in a document, denominators included, and the
    `system` is a reference like any other — it names the declared unit system
-   whose conversion table gives the unit its meaning. [stelsels] is the
+   whose conversion table gives the unit its meaning. [systems] is the
    declared-system name list, threaded from the context; it is a required
    argument rather than an optional one so a new call site cannot silently opt
    out of the cross. *)
@@ -2931,8 +2931,8 @@ let dt_whole = function Number { whole_part; _ } | Percentage { whole_part; _ } 
 (* A number an arm below derives is built in the loader's reading
    ([Loader.datatype], the Ast header): a unit '%' — a rate whose numerator
    is '%' among them — makes it a [Percentage], any other unit or none a
-   [Numeriek]. The annotation it is crossed against went through that
-   reading at load, so a '%' result built as a [Numeriek] would refuse every
+   [Number]. The annotation it is crossed against went through that
+   reading at load, so a '%' result built as a [Number] would refuse every
    annotation its position can carry. Since L3 that is a live shape: the
    RegelSpraak frontend types a sum of two percentages as a number with the
    unit '%', its emitter writes a `Number` with the unit '%', and the loader
@@ -3771,7 +3771,7 @@ let expr_temporal ctx = function
 (* --- sum-type helpers (IR-SPEC ch. 2.4 / ch. 4.7) ----------------------- *)
 
 (* The declared constructor list of a domain, iff it is declared (in
-   [domeinen]) as a SumType. This is the nominal source of truth for
+   [domain_specs]) as a SumType. This is the nominal source of truth for
    WF-061..064: a use site names a domain, and the declaration is what it
    must agree with — never the inline (possibly drifted) copy. *)
 let sum_decl ctx domain_spec : (string * datatype option) list option =
@@ -3779,7 +3779,7 @@ let sum_decl ctx domain_spec : (string * datatype option) list option =
   | Some (Some (Sum_type { constructor_list; _ })) -> Some constructor_list
   | _ -> None
 
-(* The declared value list of a domain, iff it is declared (in [domeinen]) as
+(* The declared value list of a domain, iff it is declared (in [domain_specs]) as
    an Enumeration — the nominal source of truth for the enumeration arm of
    WF-063, the keuzetype sibling of [sum_decl] (ch. 2.4). An enumeration
    alternative is nullary by construction, so its "payload" is always None:
@@ -3863,7 +3863,7 @@ let constructors_agree (a : (string * datatype option) list)
   List.length a = List.length b
   && List.for_all2 (fun (n1, p1) (n2, p2) -> norm n1 = norm n2 && Option.equal same_datatype p1 p2) a b
 
-(* The declared field list of a domain, iff it is declared (in [domeinen])
+(* The declared field list of a domain, iff it is declared (in [domain_specs])
    as a StructType — the nominal source of truth for WF-072..074, the
    struct sibling of [sum_decl]. *)
 let struct_decl ctx domain_spec : (string * datatype) list option =
@@ -3882,7 +3882,7 @@ let fields_agree (a : (string * datatype) list) (b : (string * datatype) list) =
    [enum_use_site], and for the same measured reason. A `StructType` carries an
    inline copy of the domain's field list on the wire, and the consumers read
    that copy rather than the declaration: ref's shared case loader crosses a
-   record against the inline `velden` of the use site (case.ml), and the ASP
+   record against the inline `field_list` of the use site (case.ml), and the ASP
    backend encodes struct terms POSITIONALLY out of it. So a drifted copy is
    not decoration — it splits the executors. Measured, before this walk
    existed: a `ListType`-element copy renaming the fields let ref fault at the
@@ -3895,7 +3895,7 @@ let fields_agree (a : (string * datatype) list) (b : (string * datatype) list) =
    of the rule).
 
    Two positions are deliberately NOT walked, each because no negative could
-   isolate it. A matched struct's own `velden`: [fields_agree] is an equality
+   isolate it. A matched struct's own `field_list`: [fields_agree] is an equality
    on the WHOLE field datatype, so a drifted nested copy already makes the
    enclosing copy disagree — the argument WF-073/074 make for their nested
    forms. And a sum-type PAYLOAD: WF-060 admits no struct payload in a
@@ -3944,7 +3944,7 @@ let aggregation_kinds =
 
 (* The folds that hand an ELEMENT through unchanged: they select a
    contributor, they never compute a new value, so the node's own type is
-   the operand's type. (`Som`/`Totaal`/`Aantal` compute, and their result is
+   the operand's type. (`Sum_function`/`Total`/`Count` compute, and their result is
    numeric by construction — no keuzetype travels through them.) With one
    contributor `Arith.agg_extreme` makes no comparison at all, so a
    passthrough node whose type names another domain than its operand hands
@@ -5639,7 +5639,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
           | None ->
               [ v ~params:[("objectType", otn)] "WF-034.undeclared-object-type" at ("object type '" ^ otn ^ "' is not declared") ]
           | Some ot ->
-              (* [objecttype] is the type the value lives on — the subject
+              (* [object_type] is the type the value lives on — the subject
                  itself or the navigation endpoint — so the member check
                  covers both shapes *)
               (match attribute_ref with
@@ -6306,7 +6306,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (* WF-110, the §5.7 concatenation of subject expressions (ch. 4.3,
          semantics RUNTIME-SEMANTICS ch. 3.4d; maintainer decision
          2026-09-20). Clause (c) — the count names no source of its own —
-         is a claim about the COUNT and lives in the Functie arm above. *)
+         is a claim about the COUNT and lives in the Function_call arm above. *)
       if not union_ok then
         [ v "WF-110.union-unconsumed" at
             "an instance-set union stands where nothing consumes it: the union of subject \
@@ -7029,7 +7029,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
              | _ -> []))
       (* the matrix and the subselection are read with the ELEMENT as
          subject — the same re-anchoring the fold's filter gets
-         (walk_expr's Functie arm), so an element-own read resolves against
+         (walk_expr's Function_call arm), so an element-own read resolves against
          the element type and not against the outer subject *)
       @ (let esubject =
            match k.kv_element_object_type with Some el -> Some el | None -> subject
@@ -8054,7 +8054,7 @@ let wf028 ctx =
                          Error ("created-role-missing", [ ("role", name); ("factType", ftn) ],
                                 "'" ^ name ^ "' is not a role of '" ^ ftn ^ "'")
                    in
-                   (* ONE-SIDED. [anker] names the type the creation
+                   (* ONE-SIDED. [anchor_point] names the type the creation
                       ranges over; read extensionally that is every
                       instance ⊑ the name, and the created relation's role
                       must be able to hold all of them — so the node's type
@@ -9234,7 +9234,7 @@ let wf061 ctx =
 (* WF-088: the model-layer half of the enumeration use-site rule (the
    expression half rides walk_expr's type prologue, where WF-007 collects
    every expression `type` — the same "every datatype in the document" split).
-   The declarations in [domeinen] are the source of truth and are therefore
+   The declarations in [domain_specs] are the source of truth and are therefore
    not walked here. *)
 let wf088 ctx =
   let site at = function Some d -> enum_use_site ctx at d | None -> [] in
@@ -9324,7 +9324,7 @@ let wf071 ctx =
    declaration. The expression-layer half rides walk_expr's type prologue,
    beside [enum_use_site] (the same "every datatype in the document" split
    WF-088 uses). For the positions deliberately NOT walked — a matched
-   struct's own `velden` and a sum-type payload — see the comment on
+   struct's own `field_list` and a sum-type payload — see the comment on
    [struct_use_site], which motivates both; a rule TARGET's `type` is a third,
    outside the expression walk exactly as it is under WF-088 (IR-SPEC ch. 2.4
    records all three with their measurements). *)
@@ -10258,7 +10258,7 @@ let wf118 (doc : document) (t : vocabulary_table) : violation list =
   in
   let van variety = List.filter (fun (b : designatable) -> b.bn_kind = variety) t.vt_designatable in
   let owner_is n (b : designatable) = match b.bn_owner with Some e -> norm e = norm n | None -> false in
-  (* the pairs of [leden] that collide in [voc], each once; [telt] says which
+  (* the pairs of [member_list] that collide in [voc], each once; [tallies] says which
      pairs this scope reports *)
   let collisions voc ~scope ~tallies member_list =
     let effs = List.map (fun b -> (b, effective voc b)) member_list in

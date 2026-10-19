@@ -32,7 +32,7 @@ final class BranchDumps {
         return out;
     }
 
-    /** {@code dump}, of a session that reached its fixpoint: only there does it hold what {@code lees} gives. */
+    /** {@code dump}, of a session that reached its fixpoint: only there does it hold what {@code read} gives. */
     private static String fixpoint(String dump, String which) {
         assertTrue(dump.lines().anyMatch(r -> r.startsWith("vuringen ") && r.endsWith(" geenFixpunt null")),
                 () -> "geen fixpunt, " + which + ":\n" + dump);

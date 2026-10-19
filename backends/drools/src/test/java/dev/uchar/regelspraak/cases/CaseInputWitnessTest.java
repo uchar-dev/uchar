@@ -378,7 +378,7 @@ class CaseInputWitnessTest {
         return TmsDocuments.caseDocument(instances, List.of());
     }
 
-    /** J1 of the penningjaar golden on asOfDate 2026-03-15, with {@code waarde} as its aantal aangemelde vondsten. */
+    /** J1 of the penningjaar golden on asOfDate 2026-03-15, with {@code value} as its aantal aangemelde vondsten. */
     private static JsonNode penningjaar(String value) throws Exception {
         return JSON.readTree("""
                 { "format": "uchar-case-v0", "asOfDate": "2026-03-15",

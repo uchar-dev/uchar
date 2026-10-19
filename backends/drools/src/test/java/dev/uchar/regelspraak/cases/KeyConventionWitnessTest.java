@@ -178,7 +178,7 @@ class KeyConventionWitnessTest {
      * "vondstnummer == $k0" for the mis-capitalised key, no mixed membership arm in the union, and both mixed arms in
      * the cross-source union. Since that card the text renders the analysis, whose key sites are the exec-model
      * branch's; the rows below ask the DRL-text branch for the same session as the exec-model branch on the documents
-     * and cases of the rows above (Takdumps: the verdict, the input, what lees gives and the facts at the fixpoint). */
+     * and cases of the rows above (BranchDumps: the verdict, the input, what lees gives and the facts at the fixpoint). */
 
     @Test void the_drl_text_reads_a_differently_capitalised_key_temporally() throws Exception {
         Path ir = withKeys(STRANDREGISTER, o -> IrPath.source(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer")));

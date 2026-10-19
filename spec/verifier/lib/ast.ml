@@ -35,9 +35,9 @@
      shapes stay two lists, split by the number of sources; a fact
      creation's target type is the declared filler of its target role, and
      its path splits into the intermediate hops and the final one; an
-     Aggregation and a BuiltinCall are both a [Functie]; a Literal keeps its
+     Aggregation and a BuiltinCall are both a [Function_call]; a Literal keeps its
      v0 lexeme beside the typed value it is read from ([literal_variant]);
-     a ContextValue is a [Constante], and the bound day of a day-kind
+     a ContextValue is a [Context_value], and the bound day of a day-kind
      definition has its own constructor, [Bound_day];
    - since L3 the datatype keeps its in-memory constructors while the wire
      writes two nodes for them: the loader reads a `Number` whose unit is
@@ -144,7 +144,7 @@ type datatype =
   | Date_time_type
   | Enumeration of { domain_spec : string option; label_list : string option list }
   (* Extension node (v1, row 36): the payload-carrying variant family
-     (IR-SPEC ch. 2.4). [domein] names the declaring domain; each
+     (IR-SPEC ch. 2.4). [domain_spec] names the declaring domain; each
      constructor carries a name and either one payload datatype (unary) or
      None (nullary). Never emitter-produced. *)
   | Sum_type of { domain_spec : string; constructor_list : (string * datatype option) list }
@@ -154,7 +154,7 @@ type datatype =
   | List_type of { element : datatype }
   (* Extension node (v1, Phase 5c): the record datatype
      (IR-SPEC ch. 2.4; design spec/proposals/PHASE5C-TUTORIAL.md §2).
-     [domein] names the declaring domain; each field carries a name and a
+     [domain_spec] names the declaring domain; each field carries a name and a
      non-null datatype (WF-071). Never emitter-produced. *)
   | Struct_type of { domain_spec : string; field_list : (string * datatype) list }
 
@@ -246,7 +246,7 @@ type expr =
       navigation_bindings : role_binding list option;
           (* the navigation hops, subject-outward, one binding per hop — the
              bound role is the role the hop reaches. Absent: the subject's
-             own read, whose [objecttype] (the wire's subjectType) is the
+             own read, whose [object_type] (the wire's subjectType) is the
              subject type (WF-053); never empty *)
     }
   | Dimension_cell_read of { attribute_ref : expr option; labels : string option list; source_name : string option }
@@ -254,8 +254,8 @@ type expr =
   | Variable_reference of { ident : string option; source_name : string option }
   (* The wire's ContextValue (IR-SPEC ch. 4.1, delta B23): a session value,
      evaluationDate or evaluationYear, and nothing else — the bound day of a
-     day-kind definition is [Bound_day]. [naam] is the wire name verbatim.
-     [naam] and [typ] are required on the wire, so both are always [Some];
+     day-kind definition is [Bound_day]. [ident] is the wire name verbatim.
+     [ident] and [typ] are required on the wire, so both are always [Some];
      which names are admissible is WF-098's. *)
   | Context_value of { ident : string option; typ : datatype option; source_name : string option }
   (* The wire's BoundDay (IR-SPEC ch. 3.7 and 4.1, delta B23): the day a
@@ -265,8 +265,8 @@ type expr =
   | Expr_unresolved of { typ : datatype option; source_name : string option }
       (* [typ] absent = the type is unknown; present, a real datatype *)
   (* Extension node (v1, row 11): the ch. 3.3 point-in-time read —
-     read(tl, d). [basis] references the timeline (an own temporal
-     attribute or a granular parameter); [datum] is a day-precision date
+     read(tl, d). [base_expr] references the timeline (an own temporal
+     attribute or a granular parameter); [date_value] is a day-precision date
      expression. Never emitter-produced; strict, no nullable children. *)
   | Temporal_read of { base_expr : expr; date_value : expr; typ : datatype option; source_name : string option }
   (* Extension nodes (v1, row 36): the sum-type expression forms
@@ -290,8 +290,8 @@ type expr =
   (* Extension nodes (v1, Phase 5c): the record expression forms
      (IR-SPEC ch. 4.9; semantics RUNTIME-SEMANTICS ch. 11). [typ] is required
      on the wire (non-null, the TemporalRead pattern). [Struct_literal]'s
-     [velden] map field name to value in declaration order; [Field_access]
-     reads one field [veld] of a struct-typed [base]. Never emitter-produced. *)
+     [field_list] map field name to value in declaration order; [Field_access]
+     reads one field [field_name] of a struct-typed [base]. Never emitter-produced. *)
   | Struct_literal of { typ : datatype option; field_list : (string * expr) list; source_name : string option }
   | Field_access of { typ : datatype option; base : expr; field_name : string; source_name : string option }
   (* Extension node (v1, Phase 5c): the Let binding (IR-SPEC ch. 4.10;
@@ -316,7 +316,7 @@ type expr =
      semantics RUNTIME-SEMANTICS ch. 10). [typ] rides the TemporalRead
      pattern — present on the wire (non-null) for every node except [Lambda],
      which is never a value. A [Lambda] as an ordinary expr operand is
-     ill-formed (WF-069); it is legal only as the [functie] of a Fold/MapList,
+     ill-formed (WF-069); it is legal only as the [function_name] of a Fold/MapList,
      where it is a [fold_fn], not this variant. Never emitter-produced. *)
   | List_literal of { typ : datatype option; elements : expr list; source_name : string option }
   | Lambda of { parameters : (string * datatype) list; body : expr; source_name : string option }
@@ -503,7 +503,7 @@ type parameter = {
 
 (* A unit as its unit system declares it: the unit itself and the further
    spellings that resolve to it. Only the declaration carries spellings; an
-   occurrence of the unit elsewhere is a bare [eenheid]. *)
+   occurrence of the unit elsewhere is a bare [measure_unit]. *)
 type declared_unit = { ge_unit : measure_unit; ge_spellings : string list }
 
 type unit_system = {
@@ -659,7 +659,7 @@ type resolved_uniqueness_union = {
 
 (* One intermediate hop of a fact creation's join chain: its binding and
    nothing else (B7). Since L4 the wire writes the chain as one [path]; the
-   loader makes every hop but the last a [tussenstap] and the last the
+   loader makes every hop but the last a [path_step] and the last the
    [join_role]. *)
 type path_step = { ts_role : role_binding }
 

@@ -85,7 +85,7 @@ class TmsUniquenessWitnessTest {
             binary("plus", ownRead("basis", "Vondst"), ownRead("toeslag", "Vondst")), "null");
     static final String SUSPECTED = characteristicRule("verdenking", "Kust", "verdacht", channelTest("eenmalig nummer"));
 
-    /** A Uniqueness of one always-valid version over {@code bronnen} ({@link #source}), scoped where {@code scope} is not
+    /** A Uniqueness of one always-valid version over {@code sources} ({@link #source}), scoped where {@code scope} is not
      *  null. */
     static String uniqueness(String naam, List<String> sources, String scope, String text) {
         return "{\"node\":\"Uniqueness\",\"name\":\"" + naam + "\",\"versions\":[{\"sources\":[" + String.join(",", sources)

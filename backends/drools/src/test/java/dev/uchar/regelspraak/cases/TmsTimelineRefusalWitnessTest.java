@@ -153,7 +153,7 @@ class TmsTimelineRefusalWitnessTest {
     }
 
     /** "Het jaardeel van een Jutter moet berekend worden als het tijdsevenredig deel per jaar van zijn jaartarief
-     *  gedurende de tijd dat hij {@code kenmerk} is", as rule {@code naam} of kind {@code soort}. */
+     *  gedurende de tijd dat hij {@code kenmerk} is", as rule {@code naam} of kind {@code category}. */
     static String jaardeel(String naam, String category, String characteristic, String condition) {
         return computingRule(naam, category, "Jutter", "jaardeel", timeProportional("jaartarief", "Jutter",
                 check(characteristic, false), "year"), condition);

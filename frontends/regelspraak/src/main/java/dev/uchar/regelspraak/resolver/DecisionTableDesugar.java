@@ -75,7 +75,7 @@ public final class DecisionTableDesugar {
                 String resultClause = resultPart(naam, headers.get(cc).trim(), cellAt(row, cc).trim(), nr, warn);
                 if (resultClause == null) continue;   // a forbidden / un-renderable conclusie — resultaatdeel already warned
 
-                // each non-n.v.t. conditie cell -> a Voorwaarde (a predicate kop + its 0..n alternative values).
+                // each non-n.v.t. conditie cell -> a Condition (a predicate kop + its 0..n alternative values).
                 List<Condition> conditions = new ArrayList<>();
                 for (int dc : conditionKol) {
                     String cell = cellAt(row, dc).trim();

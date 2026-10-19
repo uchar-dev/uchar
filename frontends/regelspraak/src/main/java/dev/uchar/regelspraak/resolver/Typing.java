@@ -108,7 +108,7 @@ public final class Typing {
             // §4.4/4.5: Numeriek only (Tabel 11/14 list no Percentage row). Units form a group whose IDENTITY is
             // "geen eenheid" (the dimensionless "1"): 1 × E = E, so a unitless operand ABSORBS under multiplication
             // and the product carries the other operand's unit (besluit 16Y). Two units multiply/divide into a
-            // composite the Eenheid model can spell (a rate "€/jr", an opaque product "€·m") or, when it cannot (a
+            // composite the Unit model can spell (a rate "€/jr", an opaque product "€·m") or, when it cannot (a
             // rate factor, a reciprocal), a LOUD error — a unit it cannot name is never a wire type (besluit 17c).
             case MAAL, GEDEELD_DOOR -> {
                 if (!l.isNumber() || !r.isNumber()) {
@@ -310,7 +310,7 @@ public final class Typing {
      *  example mixes a Datum-tijd operand with a Datum-in-dagen one, violating its own rule; we
      *  follow the normative prose over the inconsistent illustration (the example's standalone
      *  corpus form resolves clean only because its operands are Onbekend "Daarbij geldt"
-     *  variables). Onbekend = no claim. Returns the diagnostic, or null when ok. */
+     *  variables). Unknown = no claim. Returns the diagnostic, or null when ok. */
     public static Coded dateAggregation(String function, String fold, java.util.List<Datatype> operands) {
         Datatype ref = null;
         for (Datatype d : operands) {
@@ -426,7 +426,7 @@ public final class Typing {
 
     // -------- helpers --------
 
-    /** §4.4/4.5 result datatype for a maal/gedeeld of two unit-bearing operands, in the cases the Eenheid
+    /** §4.4/4.5 result datatype for a maal/gedeeld of two unit-bearing operands, in the cases the Unit
      *  model can represent (a numerator over one simple denominator, or an opaque product); the rest are a LOUD
      *  error (besluit 17c: a unit the model cannot spell is never a wire type — it used to degrade to Onbekend).
      *  MAAL: a rate times its (convertible) denominator-unit cancels to the numerator ("€/jr maal jr = €"); two
@@ -445,7 +445,7 @@ public final class Typing {
             // assigned to a € target now flags a unit mismatch (it used to degrade to Onbekend and pass silently).
             if (el.denominator() == null && rightUnit.denominator() == null)
                 return Result.ok(new Datatype.Numeriek(false, dec, Datatype.Teken.ONBEPAALD, Unit.product(el, rightUnit)));
-            // a rate factor (a second denominator / "€·m/jr") is UNSPELLABLE — besluit 17c: a loud error, not Onbekend.
+            // a rate factor (a second denominator / "€·m/jr") is UNSPELLABLE — besluit 17c: a loud error, not Unknown.
             return Result.error(new Coded("RGS-293",
                     params("left", el.rendering(), "right", rightUnit.rendering())));
         }

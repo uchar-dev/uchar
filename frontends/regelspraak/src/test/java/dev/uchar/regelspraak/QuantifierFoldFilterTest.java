@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * field, evaluated per contributor with the element as subject.
  *
  * <p>What this file pins is a correctness boundary, not a missing feature. Before this card the
- * frontend PARSED the subselectie (it shows up in the operand's {@code bron}), lowered the sentence to
+ * frontend PARSED the subselectie (it shows up in the operand's {@code source}), lowered the sentence to
  * a {@link dev.uchar.regelspraak.ir.Condition.QuantifierFold} — and wrote {@code filter: null}
  * with no diagnostic at all. A sentence that quantifies over the AANGEMELDE vondsten produced a
  * document that quantifies over ALL of them: a verifier-clean wire form carrying the wrong set, which

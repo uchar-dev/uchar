@@ -104,7 +104,7 @@ class SetReadWithoutFoldTest {
 
     @Test void set_read_as_operand_of_a_compound_node_is_named() {
         // The card's second witness (corpus/negative/wf096-setlezing-operand): the SAME node, now the
-        // left operand of a Binair PLUS. One rule for both positions — they measure identically, and
+        // left operand of a Binary PLUS. One rule for both positions — they measure identically, and
         // the frontend has no reason to split them that the IR does not have.
         assertEquals(List.of(MESSAGE), meldingen("""
                 Regel maatgevend gewicht
@@ -135,7 +135,7 @@ class SetReadWithoutFoldTest {
 
     @Test void set_read_in_a_condition_gets_a_quantifier_as_home() {
         // The one position that LEFT this fence, on 2026-09-19: a CONDITION has a quantifier to give the
-        // collection a home, so the written "alle" lowers to a Kwantorvouw and there is no set reading
+        // collection a home, so the written "alle" lowers to a QuantifierFold and there is no set reading
         // left to name (QuantifierFoldTest / NonTemporalFoldTest measure the node). Until then this row
         // measured the same WF-096 ERROR as the value positions do.
         assertEquals(List.of(), meldingen("""

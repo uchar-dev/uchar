@@ -11,7 +11,7 @@ import java.nio.file.Path;
  * The §9.5 channel reason for a §6.5 place inside a {@link dev.uchar.regelspraak.model.Expr.Let}
  * BODY, pinned in BOTH transpiler branches ({@link BothBranches}).
  *
- * <p>WHY it exists: until 2026-09-19 the DRL-text branch deposited no Inconsistentie for a §6.5 site whose
+ * <p>WHY it exists: until 2026-09-19 the DRL-text branch deposited no Inconsistency for a §6.5 site whose
  * operand was a BINDER, which is every site inside a {@code Let} body that reads its need. The two documents
  * below differ in nothing but that {@code Let} — {@code uit := inkomen gedeeld door restpost} against
  * {@code uit := Let k = inkomen in (k gedeeld door restpost)} — and the first reported while the second
@@ -94,7 +94,7 @@ class LetReportSiteWitnessTest {
         // restpost", restpost ABSENT: ref uit leeg, INCONSISTENT; the destructive DRL-text branch answered CONSISTENT
         // until card drl-teksttak-op-truth-maintenance, as the destructive exec-model branch did. The analysis with
         // truth maintenance has no companions: it deposits where the division reads leeg, whatever the dividend, and
-        // answers as ref (TmsLikeRefWitnessTest, literaal-deeltal-1 and -2), on both branches.
+        // answers as ref (TmsLikeRefWitnessTest, literal-dividend-1 and -2), on both branches.
         BothBranches.green(write(literalModel()), jutter("", empty() + ", " + inconsistent()),
                 "de deling door een lege deler deponeert");
     }

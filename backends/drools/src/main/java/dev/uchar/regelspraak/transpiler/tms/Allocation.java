@@ -48,10 +48,10 @@ public final class Allocation {
     public record Result(Map<Object, BigDecimal> shares, BigDecimal rest, Map<Object, Set<String>> depositors) {}
 
     /**
-     * The distribution by {@code method} of {@code pot} over {@code ontvangers}, the recipients of one source:
+     * The distribution by {@code method} of {@code pot} over {@code recipients}, the recipients of one source:
      * {@code gewogen} where the allocation declares a ratio attribute, {@code capped} where it declares a cap,
      * {@code decimals} the floor's decimals (null for none), {@code descending} the ordered method's direction. The
-     * order of {@code ontvangers} decides nothing: every share depends only on the values, and a tie group divides the
+     * order of {@code recipients} decides nothing: every share depends only on the values, and a tie group divides the
      * pot as it stands at the group's entry.
      */
     public static Result bereken(ResolvedAllocation.Method method, Object pot, List<Recipient> recipients, boolean gewogen,

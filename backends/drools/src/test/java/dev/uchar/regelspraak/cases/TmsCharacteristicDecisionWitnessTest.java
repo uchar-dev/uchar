@@ -108,7 +108,7 @@ class TmsCharacteristicDecisionWitnessTest {
         assertTrue(inTheText[0] > 0, "geen volgorde van de tekst liet het besluit onwaar de toekenning verdringen");
     }
 
-    /** Fires the Jutters of {@code INVOER} through {@code kieBase}, the rules of {@code b} in the order {@code namen}:
+    /** Fires the Jutters of {@code INVOER} through {@code kieBase}, the rules of {@code b} in the order {@code names}:
      *  every Jutter ends vrijgesteld as it should; counts in {@code displaced} the firings of the attribution on J2. */
     private static void fireSample(DroolsBackend.Build b, KieBase kieBase, List<String> names, int[] displaced)
             throws Exception {

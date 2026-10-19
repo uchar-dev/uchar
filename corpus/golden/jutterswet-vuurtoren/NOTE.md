@@ -25,7 +25,7 @@ Het lampental van een Vuurtoren moet berekend worden als het aantal lampen
 ## This ir.json was written by hand; its source.rgs arrived later
 
 For the same reason `jutterswet-schouwploeg` was, measured again and unchanged
-at the time: `RuleChecker.kwantorvouw` opened with "only the §8.2-QUALIFIED
+at the time: `RuleChecker.quantifierFold` opened with "only the §8.2-QUALIFIED
 condition" and declined everything else, so the unqualified comparison was
 refused (`setlezing buiten een vouwbron`, a message that cited WF-096 until L2;
 since L2 the same refusal cites WF-053, measured 2026-09-24 on this document's

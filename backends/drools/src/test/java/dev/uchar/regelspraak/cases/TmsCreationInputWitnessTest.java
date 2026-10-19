@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p><b>Red before the fix</b> (measured 2026-10-09 on {@code 1738bf61}, the tests unchanged): four of the seven
  * tests. The standing rule: "Schrijversconflict geen fixpunt: twee schrijvers van één doel geven verschillende waarden
  * — de regel "waarde van een melding" schrijft 99 en de regel "meld de vangst" schrijft 7 in het attribuut waarde van
- * een aangemaakte Jutmelding", the creation's stated {@code Waarde} meeting the rule's. The rule that computes leeg and
+ * een aangemaakte Jutmelding", the creation's stated {@code Value} meeting the rule's. The rule that computes leeg and
  * the two rules: refused, "tms-transpiler SKIP: regel: waarde van een jutmelding — een rekenende regel buiten het
  * staande domein op een lid dat een objectcreatie bij het maken zet ('waarde' van Melding, gezet door "meld de
  * vangst"): …". The sister document: "tms-transpiler SKIP: regel: doel van drijfgoed — een deling in een

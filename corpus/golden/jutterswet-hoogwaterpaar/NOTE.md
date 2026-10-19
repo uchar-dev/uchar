@@ -19,7 +19,7 @@ A datum-tijd is one instant: its millisecond count since
 `MSOD` never reaches a full day, ordering by total ms **is** the
 lexicographic ordering `(D, MSOD)`: the civil day dominates, the
 ms-of-day only breaks ties on the same day. `first` returns the minimum
-instant, `last` the maximum (`agg_eerste`/`agg_laatste` over
+instant, `last` the maximum (`agg_first`/`agg_last` over
 `scalar_cmp`; the fold returns the winning **value**, so ties are
 value-neutral). An empty operand is skipped (ch. 1.2e); all-empty
 derives nothing (leeg).

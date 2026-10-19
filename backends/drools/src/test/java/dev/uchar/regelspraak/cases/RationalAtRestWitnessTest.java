@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *       'quotient' is not carried by the v0 backend"; with the expectation 0.3333333333333333 both branches play the
  *       case.</li>
  * </ul>
- * The square does not hold, so the document is no golden: it stays in the test resources ({@code breuk/een-derde}).
+ * The square does not hold, so the document is no golden: it stays in the test resources ({@code rational/one-third}).
  * Measured 2026-10-14 on {@code b53713ed}; the raw output of the verifier (PASS), the reference interpreter and the
  * ASP runner is kept with step 6b of the card ({@code breuk-ruw.txt}). The bounded form, the same quotient into four
  * decimals, is the red case {@code decimal-nonterminating}, which gate 8 lists for this backend as a NOFAULT: there

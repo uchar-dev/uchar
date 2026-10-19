@@ -52,7 +52,7 @@ public final class StandingTargets {
         return new StandingTargets(model, prioritizedDefaults);
     }
 
-    /** ch. 7.8, the TIMELINE arm: is {@code doel} a standing temporal target, i.e. does an EMPTY result
+    /** ch. 7.8, the TIMELINE arm: is {@code target} a standing temporal target, i.e. does an EMPTY result
      *  decide nothing there, leaving the case-supplied input timeline standing whole? The domain holds only
      *  ATTRIBUTE targets, but the key carries no member kind while WF-002 admits a kenmerk sharing an
      *  attribute's name — a kenmerk write site must therefore NOT ask this (ref structurally cannot apply

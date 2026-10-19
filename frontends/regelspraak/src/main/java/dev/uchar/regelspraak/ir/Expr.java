@@ -31,7 +31,7 @@ public sealed interface Expr {
      *  was built from. Its {@link Source#toString()} is the snippet, the node's {@code source} text on the wire. */
     Source source();
 
-    /** Whether {@code e} is or contains a sub-expression matching {@code toets} — a generic IR-tree scan over
+    /** Whether {@code e} is or contains a sub-expression matching {@code test} — a generic IR-tree scan over
      *  every Expr-carrying component (arithmetic operands, functie argumenten + leegwaarde-fallback + its
      *  filter-conditie's operands, rounding/clamp bases, tekst-interpolaties, the dimensiecel base). Null-safe.
      *
@@ -58,12 +58,12 @@ public sealed interface Expr {
             // Both branches are children, and so is every Expr operand of the guard: exactly one branch RUNS
             // (ch. 10.2), but the question this scan answers is structural, and a scan that saw only the taken
             // branch would have to know a runtime verdict it cannot have. The guard's operands are reached
-            // through the shared Conditie walk, the same way a Functie's filter is.
+            // through the shared Conditie walk, the same way a FunctionCall's filter is.
             case IfThenElse k  -> contains(k.then(), test) || contains(k.otherwise(), test)
                                   || Condition.containsExpr(k.condition(), test);
             // A union's own fields are SYMBOLIC — a type name and a role binding — so the only child
             // expressions live in the selections' filters, reached through the shared Conditie walk
-            // exactly as a Functie's filter is.
+            // exactly as a FunctionCall's filter is.
             case InstanceSetUnion u -> u.branches().stream()
                                         .anyMatch(t -> Condition.containsExpr(t.filter(), test));
             case Literal ignored      -> false;
@@ -253,7 +253,7 @@ public sealed interface Expr {
          *  collapses them all to one bit: "alle", "geen van de" and every counting quantor are equally
          *  {@code set == true}, so a reader that took the flag for a forall would answer ALLE for a
          *  sentence that wrote "geen van de". Null for the bare definite "de" (a single object) and for
-         *  every reference built outside the onderwerp path. {@code drempel} is its written telwoord,
+         *  every reference built outside the onderwerp path. {@code threshold} is its written telwoord,
          *  travelling beside it for the same reason: without it "ten minste 2 van de" and "ten minste 3
          *  van de" would reach the resolver as one and the same sentence. 0 when the quantor carries no
          *  count. FRONTEND-INTERNAL, both of them: they are the resolver's
@@ -266,7 +266,7 @@ public sealed interface Expr {
                             java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> rangePath) {
             this(attribute, objectType, subjectSource, navigationRole, type, source, set, navigationPath, rangePath, null);
         }
-        /** {@code drempel} defaults to 0: it is read only under a COUNTING {@code quantifier}, and every
+        /** {@code threshold} defaults to 0: it is read only under a COUNTING {@code quantifier}, and every
          *  reference built outside the onderwerp path carries none. */
         public AttributeReference(String attribute, Objecttype objectType, String subjectSource,
                             String navigationRole, Datatype type, Source source, boolean set,
@@ -359,7 +359,7 @@ public sealed interface Expr {
      *  {@code type} and {@code source}. */
     record Unresolved(Datatype type, Source source, String reason) implements Expr {}
 
-    /** Every {@link Unresolved} inside {@code e}, in structural order, handed to {@code uit} as its
+    /** Every {@link Unresolved} inside {@code e}, in structural order, handed to {@code result} as its
      *  {@code (bron, reden)} pair — the {@link Expr} half of the survivor traversal
      *  {@link Condition#collectUnresolved} drives. Walks every Expr-carrying component, and reaches a
      *  functie's filter and an if-then-else's guard back through the {@link Condition} half. Null-safe.

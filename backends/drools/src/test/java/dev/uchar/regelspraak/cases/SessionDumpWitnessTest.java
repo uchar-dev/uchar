@@ -135,7 +135,7 @@ class SessionDumpWitnessTest {
      * the fire threw. The line {@code vuringen}, which the comparison only reports, keeps the count, the cap and the
      * sentence. Without the line, a session that reached its fixpoint on one branch and not on the other differed only
      * through {@code lees}, which a session that derives nothing leaves empty either way. The fixpoint is a fire of a
-     * case; the two other outcomes are written for the same session as {@code vuur} would hand them over. <b>Red</b> on
+     * case; the two other outcomes are written for the same session as {@code fire} would hand them over. <b>Red</b> on
      * {@code da00178e}, before the line: "expected: &lt;[[fixpunt ja], [fixpunt nee "geen fixpunt binnen \"100\"
      * vuringen"], [fixpunt gooit IllegalStateException: "de proef gooit"]]&gt; but was: &lt;[[], [], []]&gt;".
      */
@@ -172,12 +172,12 @@ class SessionDumpWitnessTest {
      * creation "maak" makes a Boei for V1 and lays the link between them. Until then the dump was held by the baseline
      * of the harness, which is made with the dump code of the worktree and so changes along with it, and by single
      * lines of this class: a change in the spelling of a value or a section passed unseen once the baseline was made
-     * again. The pins live in {@code src/test/resources/sessiedump/<document>/dump.<branch>.txt}; under the property
+     * again. The pins live in {@code src/test/resources/session-dump/<document>/dump.<branch>.txt}; under the property
      * {@code uchar.dumppin} the test writes each dump it makes to that directory as well, to renew a pin by hand after
      * a deliberate change. The two branches give the same dump of each document.
      *
      * <p><b>Red</b> with a mutant of {@code SessionDump} that writes a {@code BigDecimal} without its class (not
-     * committed): "de dump in structuurnamen/dump.exec_model.txt ==&gt; expected: &lt;… lees waarde "V1"."tarief = vak
+     * committed): "de dump in structure-names/dump.exec_model.txt ==&gt; expected: &lt;… lees waarde "V1"."tarief = vak
      * (oud).nieuw" = BigDecimal(1) …&gt; but was: &lt;… lees waarde "V1"."tarief = vak (oud).nieuw" = 1 …&gt;"; and on
      * {@code da00178e}, before the section {@code fixpunt}, where the dump lacked the line "fixpunt ja".
      */

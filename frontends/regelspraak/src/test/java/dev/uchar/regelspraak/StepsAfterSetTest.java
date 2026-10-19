@@ -79,7 +79,7 @@ class StepsAfterSetTest {
                         + m.resolvedRegels.stream().map(ResolvedRule::naam).toList()));
     }
 
-    /** The fold of a rule's value and its one argument, a set read of {@code lid} on Jutter. */
+    /** The fold of a rule's value and its one argument, a set read of {@code member} on Jutter. */
     private static Expr.FunctionCall foldOver(RegelSpraakModel m, String regel, Expr.FunctionKind kind, String member) {
         Expr.FunctionCall f = assertInstanceOf(Expr.FunctionCall.class, regel(m, regel).value());
         assertEquals(kind, f.kind());

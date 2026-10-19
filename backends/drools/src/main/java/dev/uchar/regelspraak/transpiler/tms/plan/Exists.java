@@ -7,10 +7,10 @@ import java.util.Set;
 
 /**
  * The existence of objects that {@code patterns} match together, in that order, without binding them for the rule. The
- * scope is part of the plan, since a rendering cannot tell it from the patterns: {@code binnen} are the variables the
+ * scope is part of the plan, since a rendering cannot tell it from the patterns: {@code inside} are the variables the
  * quantification declares, per pattern in order its own and then those its bindings bind ({@link #verklaard}), which
  * live only inside it, so that a pattern there may join or test an object or a value a pattern before it binds, and no
- * item after the quantification can name one; {@code buiten} are the variables bound before the quantification that
+ * item after the quantification can name one; {@code outside} are the variables bound before the quantification that
  * its patterns join or test, each once, in the order they are met. The same patterns outside a quantification bind
  * their objects for the rule, which then match once per combination of them.
  */
@@ -48,9 +48,9 @@ public record Exists(List<FactPattern> patterns, List<String> inside, List<Strin
         return List.copyOf(read);
     }
 
-    /** Refuses, as a fault of the analysis, the scope {@code binnen} and {@code buiten} of a quantification over
-     *  {@code patterns}, the {@code item}, where it is not the one the patterns give: {@code binnen} what they declare
-     *  ({@link #verklaard}), each once, and {@code buiten} what they read from before the quantification
+    /** Refuses, as a fault of the analysis, the scope {@code inside} and {@code outside} of a quantification over
+     *  {@code patterns}, the {@code item}, where it is not the one the patterns give: {@code inside} what they declare
+     *  ({@link #verklaard}), each once, and {@code outside} what they read from before the quantification
      *  ({@link #read}). */
     static void scope(String item, List<FactPattern> patterns, List<String> inside, List<String> outside) {
         if (patterns.isEmpty()) throw new IllegalArgumentException(item + " heeft ten minste één patroon");

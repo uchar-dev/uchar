@@ -496,7 +496,7 @@ class ChannelPlanWitnessTest {
         return (String) f.get(null);
     }
 
-    /** Every plan of {@code document} of a form named in {@code vormen}, and of the standing of its channel, in the
+    /** Every plan of {@code document} of a form named in {@code forms}, and of the standing of its channel, in the
      *  order of the model, as text; after a line that holds a term, the term node by node. */
     static List<String> plans(JsonNode document, List<String> forms) throws ReflectiveOperationException {
         List<String> out = new ArrayList<>();

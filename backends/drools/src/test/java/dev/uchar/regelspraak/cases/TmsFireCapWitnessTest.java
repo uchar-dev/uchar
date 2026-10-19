@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * drl-teksttak-op-truth-maintenance, which gave it the same cap.
  *
  * <p>The two rows the fix round of step 3 sharpened (point 3), so that each tells the computation it claims from a
- * near one. Through the public {@code vuur}, the values document of {@link TmsRepeatedFireWitnessTest} with J1 and
+ * near one. Through the public {@code fire}, the values document of {@link TmsRepeatedFireWitnessTest} with J1 and
  * 600 Vondsten puts FACTOR × R × N0 above the floor, 4 × 10 × 601 = 24 040, and the cap is that product and not the
  * floor. On the golden {@code jutterswet-dubbelverbinding}, case 1, through the seam with FACTOR and floor 1, the fact
  * creations run four phases or more, and a later phase holds more facts at its start than the first (2026-10-10: N0 = 7,
@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the cap, R and N0.
  *
  * <p><b>Red before the change</b> (measured 2026-10-10 on {@code 095a586a}): the witness does not compile there, since
- * {@code Firing} had no {@code plafond} and {@code vuur} neither a public form nor a factor; the cap was the fixed
+ * {@code Firing} had no {@code cap} and {@code fire} neither a public form nor a factor; the cap was the fixed
  * 100 000 the caller passed, and at the cap {@code noFixpoint} was null. <b>Red by mutation</b> (measured 2026-10-10
  * on the code of the fix round, the mutants not committed): with the floor alone the public row failed on "the
  * public cap is FACTOR × R × N0, not the floor ==&gt; expected: &lt;24040&gt; but was: &lt;10000&gt;"; with the cap

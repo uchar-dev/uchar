@@ -111,7 +111,7 @@ let used_enums = ref EnumName.Set.empty
 (* Structs referenced by the translated document, recorded by [struct_type_of];
    [file_to_document] resets it per run and reads it to emit exactly the used
    structs as domains — the SumType landing pattern (a StructType is hosted by
-   [domeinen], repeated whole at every use site). *)
+   [domain_specs], repeated whole at every use site). *)
 let used_structs = ref StructName.Set.empty
 
 (* The reduce lowering (§3.5) needs a nominal Optional sum type carrying the
@@ -1703,7 +1703,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       | _ -> refuse "a characteristic default's value must be a literal true/false"
     in
     (* lower a parsed defaults tree to IR defaults (ch. 7.9): a plain default, a
-       form-a default (own content plus [excepties]), or a pure group-default (no
+       form-a default (own content plus [exceptions]), or a pure group-default (no
        own content). An exception group inherits the root target kind (attribute
        vs characteristic), so [is_bool] carries through the recursion. *)
     let rec build_default (pdef : _ pdefault) : I.default =
@@ -1759,8 +1759,8 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
              default is covered); refused"
             vname;
         (* a root-level unordered group -> the declared-unordered default group:
-           one [ongeordend] defaults group per member (ch. 7.2, unchanged) —
-           distinct from a NESTED unordered group, which rides [excepties] on one
+           one [unordered] defaults group per member (ch. 7.2, unchanged) —
+           distinct from a NESTED unordered group, which rides [exceptions] on one
            default *)
         List.iteri
           (fun i m ->
@@ -2219,14 +2219,14 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
   (* the closed-body arithmetic fence (besluit 1-A, 2026-08-24; NARROWED
      2026-08-25 by card clingo-bodymult). clingo's closed-body term
      ([closed_term], §S15) now carries — beyond the additive [Plus]/[Min] — the
-     multiplicative [Maal], the money×rate cent product ([Afgerond] over a Maal),
+     multiplicative [Times], the money×rate cent product ([Rounding] over a Maal),
      and a division by a COMPILE-TIME CONSTANT divisor. It still faults on binary
      subtraction ([Reduced_by] — the additive family is Plus/Min only), a
      RUNTIME divisor, the abs-division, a power and a percentage: a per-element
      callee whose closed body carries one computes in ref but TRANSLATION-FAULTs
      in clingo. Refuse those loudly here so the divergence surfaces as a refusal,
      not silent ref-only IR. (decimal-of is pass-through — no node — and the
-     money×rate wrapper rides [Afgerond].) *)
+     money×rate wrapper rides [Rounding].) *)
   let rec fence_expr (e : I.expr) : unit =
     match e with
     | Binary { op = (Plus | Min | Times); left_side; right_side; _ } ->
@@ -2259,9 +2259,9 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         List.iter fence_expr call_arguments; Option.iter fence_expr empty_fallback;
         Option.iter fence_cond filter
     | Rounding { base_expr = Some base_expr; _ } ->
-        (* clingo's closed-body [Afgerond] carries ONLY the money × 4-decimal-rate
+        (* clingo's closed-body [Rounding] carries ONLY the money × 4-decimal-rate
            cent product ([money_mult_shape]: a Maal of a 2-decimal money by a
-           4-decimal rate). A money DIVISION ([Afgerond] over a [Divided_by]) or
+           4-decimal rate). A money DIVISION ([Rounding] over a [Divided_by]) or
            a money×integer rounding has no closed-body image — refuse those, or the
            fence lets a ref-only lowering slip (card clingo-bodymult, S18(c)). *)
         let dec e =

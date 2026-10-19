@@ -25,13 +25,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * <p><b>Red before the fix</b> (measured 2026-09-29 on the jar of the claim, exec-model branch): the ten rows with a
  * count, a sum, a minimum, a maximum, a chain or a parameter in a justification are refused for the whole group in one
- * lumped sentence ({@code niet-reduceerbare justificatie (far-side/aggregatie/global): <default>}); the row where one
+ * lumped sentence ({@code niet-reduceerbare justificatie (far-side/aggregation/global): <default>}); the row where one
  * group reads what a later group writes answers {@code kenmerk zwaar: verwacht afwezig, werkelijk aanwezig} in its
  * first case, and its second case, run on its own, {@code kenmerk ijverig: verwacht afwezig, werkelijk aanwezig}; the
  * row over a quantifier fold is refused in that same lumped sentence, which names neither the form nor the condition.
  * That row pinned the exec-model branch's refusal by name until 2026-10-10; the exec-model branch with truth
  * maintenance plays its document as the reference interpreter answers it ({@code TmsLikeRefWitnessTest}, {@code
- * defaults-kwantorvouw-rechtvaardiging}), so the row is gone.
+ * defaults-quantifier-fold-justification}), so the row is gone.
  *
  * <p>Three rows came after the first fix (2026-09-30), and hold the band a group takes (groepVolgorde). The row where
  * the reached value is written after a group in band 0 could decide: on the transpiler of the claim refused in the

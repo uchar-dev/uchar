@@ -96,7 +96,7 @@ class DrlTextWitnessTest {
         return g.role() == null;
     }
 
-    /** The documents of {@code PropertyWitnessTest} and the cases of {@code eigenschap/spelling}, each case through
+    /** The documents of {@code PropertyWitnessTest} and the cases of {@code property/spelling}, each case through
      *  the DRL-text branch; that test fires them through the exec-model branch. */
     @Test void the_documents_with_awkward_names_fire() throws Exception {
         List<String[]> cases = new ArrayList<>();
@@ -156,7 +156,7 @@ class DrlTextWitnessTest {
      * text that swaps two predicates cannot pass. On the DRL-text branch the predicate of a day kind is a global of the
      * text, which the session sets by its name from {@code Build.dayKindGlobals}; the test of the names alone
      * ({@link #the_flag_drl_plays_through_the_branch}) passes with a swapped pair. The document
-     * {@code src/test/resources/dagsoorten/twee-dagsoorten} is {@code jutterswet-getijklok} with a second day kind
+     * {@code src/test/resources/day-kinds/two-day-kinds} is {@code jutterswet-getijklok} with a second day kind
      * beside the springtijdag (day 1 or 15 of the month): the doodtijdag (day 8 or 22), with a doodtermijn in
      * doodtijdagen and a doodsluiting, the meldtijdstip plus the doodtermijn. The case steps over both: the
      * sluittijdstip of G1 is 2026-04-15T09:15:30 and its doodsluiting 2026-04-22T09:15:30, which a swap turns around.

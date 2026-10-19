@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Consistencies and the §9.5 channel on the exec-model branch (IR-SPEC ch. 3.5, RUNTIME-SEMANTICS ch. 5.6). A
- * consistency is a rule that inserts the {@code Inconsistentie} of its subject logically where its assertion does not
+ * consistency is a rule that inserts the {@code Inconsistency} of its subject logically where its assertion does not
  * hold, so a violation found against a transient value goes when that value changes. The first document has the
  * consistency read an attribute a chain of two rules fills: "Het tussengewicht van een Vondst moet berekend worden als
  * zijn gewicht plus 1", "Het eindgewicht van een Vondst moet berekend worden als zijn tussengewicht plus 1", and "het
@@ -150,7 +150,7 @@ class TmsConsistencyWitnessTest {
         assertTrue(text > 0, "geen volgorde van de tekst vuurde de consistentie op V1");
     }
 
-    /** Fires V1, V2 and V3 through {@code kieBase}, the rules of {@code b} in the order {@code namen}, checks the error
+    /** Fires V1, V2 and V3 through {@code kieBase}, the rules of {@code b} in the order {@code names}, checks the error
      *  facts at the fixpoint and the beans after the write-back, and says whether the consistency fired on V1, which
      *  holds no violation at the end. */
     private static boolean fireChain(DroolsBackend.Build b, KieBase kieBase, List<String> names) throws Exception {
@@ -246,8 +246,8 @@ class TmsConsistencyWitnessTest {
         assertEquals(48, orders);
     }
 
-    /** Fires h1 (with {@code saldo}), h2 (saldo 10), d1 and d2 through {@code kieBase}, the rules of {@code b} in the
-     *  order {@code namen}, and checks the error facts and both dossiers. */
+    /** Fires h1 (with {@code balance}), h2 (saldo 10), d1 and d2 through {@code kieBase}, the rules of {@code b} in the
+     *  order {@code names}, and checks the error facts and both dossiers. */
     private static void fireBalance(DroolsBackend.Build b, KieBase kieBase, List<String> names, String balance)
             throws Exception {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();

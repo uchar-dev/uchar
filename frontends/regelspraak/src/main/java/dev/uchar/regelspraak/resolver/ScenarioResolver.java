@@ -368,7 +368,7 @@ public final class ScenarioResolver {
         return new Scope(forms, List.copyOf(omitted));
     }
 
-    /** {@code vormen} with the defaults groups RUNTIME-SEMANTICS ch. 7.10 composes with them. The own exceptions of a
+    /** {@code forms} with the defaults groups RUNTIME-SEMANTICS ch. 7.10 composes with them. The own exceptions of a
      *  subtype under the base of its supertype are a group of their own on the subtype that holds no base
      *  (grammar/DIVERGENCES.md §4, the inheritance line: {@code <basis> voor <subtype>}), and the instances of that
      *  subtype take the base from the supertype's group. A scope that carries the base therefore carries the groups
@@ -440,7 +440,7 @@ public final class ScenarioResolver {
     }
 
     /** Whether block {@code b} yields a carried form (TRUE), only forms the scope leaves out (FALSE) or no named form
-     *  at all (null); the lines of each block that yields only left-out forms go to {@code uit}. */
+     *  at all (null); the lines of each block that yields only left-out forms go to {@code result}. */
     private Boolean omitted(Block b, Set<String> carried, List<LineRange> result) {
         Boolean carries = null;
         if (b.members().isEmpty()) {
@@ -837,7 +837,7 @@ public final class ScenarioResolver {
      *  jaargang, its value on every date. */
     private record SetParameter(String parameter, List<Vintage> vintages, List<Segment> tijdlijn, int line) {}
 
-    /** One jaargang, {@code van} inclusive and {@code tot} exclusive, the period of a situation's segment; both
+    /** One jaargang, {@code van} inclusive and {@code until} exclusive, the period of a situation's segment; both
      *  null for a row without a period, which holds on every date. */
     private record Vintage(LocalDate van, LocalDate until, ScenarioValue value, int line) {
         boolean contains(LocalDate d) { return van == null || !d.isBefore(van) && d.isBefore(until); }
@@ -1265,7 +1265,7 @@ public final class ScenarioResolver {
 
     // ---------------- values ----------------
 
-    /** Read {@code ctx}, type it against {@code doel} and normalise it to its case form; null after an ERROR. */
+    /** Read {@code ctx}, type it against {@code target} and normalise it to its case form; null after an ERROR. */
     private ScenarioValue readAndType(SituatieWaardeContext ctx, Datatype target, int line, String what) {
         if (ctx instanceof GetalSituatieWaardeContext g) return number(g.getalWaarde(), target, line, what);
         if (ctx instanceof DatumSituatieWaardeContext d) {
@@ -1320,7 +1320,7 @@ public final class ScenarioResolver {
         return false;
     }
 
-    /** A number: its exact value in the unit written, typed against {@code doel}, restated exactly in the declared
+    /** A number: its exact value in the unit written, typed against {@code target}, restated exactly in the declared
      *  unit. Without a restatement the lexeme is the emitter's for the written number
      *  ({@link dev.uchar.regelspraak.emit.IrEmitter#numberLexeme}) — a decimal its written precision (2400,00 stays
      *  2400.00), a fraction reduced (6/8 is 3/4) and a whole number where it reduces to one (2_0/5 is 2); a restated
@@ -1328,7 +1328,7 @@ public final class ScenarioResolver {
     private ScenarioValue number(GetalWaardeContext g, Datatype target, int line, String what) {
         String tekst = g.NUMBER().getText();
         BigDecimal[] r = RationalParser.van(tekst);
-        // the parse enters a number value on a NUMBER token only, and every NUMBER token is a number Rationaal reads
+        // the parse enters a number value on a NUMBER token only, and every NUMBER token is a number RationalParser reads
         if (r == null) throw new IllegalStateException("ScenarioResolver: het getal '" + tekst + "' is geen getal");
         BigInteger[] rational = rational(r[0], r[1]);
         int dec = r[1].compareTo(BigDecimal.ONE) == 0 ? Math.max(0, r[0].stripTrailingZeros().scale())

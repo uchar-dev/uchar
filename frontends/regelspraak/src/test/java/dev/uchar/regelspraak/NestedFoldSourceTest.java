@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * says 3.00 — the differential square agreeing over the wrong set, which no gate can see. Dropping the binding
  * at the emitter does not help: a bindingless fold over a uniquely related pair is verifier-clean and every
  * executor re-derives the same wrong relation. So the RESOLUTION declines, and the fold keeps the visible
- * {@code Onopgelost} marker this resolver already uses for a source it cannot bind — carrying the
+ * {@code Unresolved} marker this resolver already uses for a source it cannot bind — carrying the
  * aggregation's OWN result type, so the refused document stays WELL-FORMED and faults observably under
  * WF-044 in every executor (IR-SPEC ch. 2.4: the marker is legal wire content, the fence is behavioural).
  *
@@ -426,7 +426,7 @@ class NestedFoldSourceTest {
         Eén bergende boot heeft meerdere geborgen vondsten
         """;
 
-    /** A rule on the Jutter that folds the gewicht over {@code bron}. */
+    /** A rule on the Jutter that folds the gewicht over {@code source}. */
     private static String regel(String source) {
         return "\n\nRegel laagste vondstgewicht\n    geldig altijd\n        Het laagste vondstgewicht van een Jutter "
                 + "moet berekend worden als de minimale waarde van het gewicht van " + source + ".\n";

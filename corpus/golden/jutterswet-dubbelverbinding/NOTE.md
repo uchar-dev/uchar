@@ -26,7 +26,7 @@ andere golden dwingt dat onderscheid af:
   `vlaghaven`) en één Schuit-verwijzing op `Haven` (`vlaggenschip`, de
   to-één kant van de 1:1). Leidt hij per PAAR af, dan draagt hij er nul en
   weigert alles tegelijk: de foldjoin, de drie veldposities van de
-  §13.4.7-feitcreatie, de genavigeerde lezing en de case-invoer.
+  §13.4.7-feitcreatie, de genavigeerde lezing en de case-input.
 - **de aggregatie over elk van twee geschreven rollen.** `liggertal` en
   `wintertal` vouwen over hetzelfde typepaar en moeten verschillende
   verzamelingen opleveren.

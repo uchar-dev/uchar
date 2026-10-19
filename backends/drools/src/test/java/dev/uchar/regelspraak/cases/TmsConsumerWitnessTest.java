@@ -47,44 +47,44 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       its own fact type, while thuishaven, the relation the creation joined over, still holds what the case gave, and
  *       S4, whose H3 is not veilig, has none: the row {@code RepeatedTypePairWitnessTest} plays on the exec-model
  *       branch, "the creation wrote the winterberging leg".</li>
- *   <li>A session of that model fired with a plain {@code fireAllRules} holds no creation: {@code lees} and
+ *   <li>A session of that model fired with a plain {@code fireAllRules} holds no creation: {@code read} and
  *       {@code setDerivedValues} refuse it, and the sentence names the creations.</li>
  *   <li>So on every model of the branch (the fix round of step 3, point 4): on the values document of
  *       {@link TmsRepeatedFireWitnessTest} both refuse a session that did not fire, or fired with a plain
- *       {@code fireAllRules}, and write nothing; both refuse a session whose last {@code vuur} stopped at the cap, with
- *       the sentence of that {@code vuur}, and read the next {@code vuur} that reaches the fixpoint; and {@code lees}
- *       refuses a session whose last {@code vuur} broke off with an exception, here the filter document of
+ *       {@code fireAllRules}, and write nothing; both refuse a session whose last {@code fire} stopped at the cap, with
+ *       the sentence of that {@code fire}, and read the next {@code fire} that reaches the fixpoint; and {@code read}
+ *       refuses a session whose last {@code fire} broke off with an exception, here the filter document of
  *       {@link TmsFilterFaultWitnessTest} with its beans inserted without {@code insert}, so that the filter fault rule
- *       finds no place. What {@code lees} gives is thus always a fixpoint.</li>
- *   <li>And after a {@code vuur} that reached its fixpoint (the second fix round of step 3, point 1), both refuse a
- *       session in which something happened outside {@code vuur}, naming what happened and the way on, and write
+ *       finds no place. What {@code read} gives is thus always a fixpoint.</li>
+ *   <li>And after a {@code fire} that reached its fixpoint (the second fix round of step 3, point 1), both refuse a
+ *       session in which something happened outside {@code fire}, naming what happened and the way on, and write
  *       nothing. On {@code anchor/jutterswet-rekenkamer}, case 1, J1's heffing is 70 at the fixpoint; J1's grondslag
  *       becomes 150 ({@code update}) and a plain {@code fireAllRules} follows, which leaves the made Rekenkamer on the
  *       grondslag it was initialised with; the sentence names the update and the first rule the plain fire fired, and
- *       sends the consumer to a fresh session, since {@code vuur} refuses a second fire on a model with a creation; a
+ *       sends the consumer to a fresh session, since {@code fire} refuses a second fire on a model with a creation; a
  *       fresh session of grondslag 150 gives 120 ({@link TmsRepeatedFireWitnessTest}, measured in the reference
  *       interpreter and the ASP runner). On the values document, without a creation, both refuse after an update
- *       alone, with the sentence that asks a {@code vuur} first; after that {@code vuur} the reading is that of a fresh
- *       session of the changed input. A plain fire between two fires makes {@code vuur} refuse as well, so there the
+ *       alone, with the sentence that asks a {@code fire} first; after that {@code fire} the reading is that of a fresh
+ *       session of the changed input. A plain fire between two fires makes {@code fire} refuse as well, so there the
  *       sentence sends the consumer to a fresh session ({@link TmsRepeatedFireWitnessTest}, the row of the plain fire;
  *       until the addition to step 5a1 of 2026-10-10 this row fired again after the plain fire and read the fresh
  *       reading). After the write-back, an update makes
- *       both refuse with the way to a fresh session, since {@code vuur} refuses a written-back session. <b>Red before
+ *       both refuse with the way to a fresh session, since {@code fire} refuses a written-back session. <b>Red before
  *       the change</b> (measured 2026-10-10 on {@code 32a649c4}, the tip of the first fix round): each of the three rows
  *       failed on "Expected java.lang.IllegalStateException to be thrown, but nothing was thrown."; their old form, which
  *       read where these rows expect a refusal, gave the state of the first input: after the update and a plain fire of
  *       two firings, J1's heffing 70, which the write-back then wrote on the bean, where a fresh session gives 120; and
- *       after an update of V1 without a further {@code vuur}, the first reading, J1's totaalgewicht 14 and V1 zwaar with
+ *       after an update of V1 without a further {@code fire}, the first reading, J1's totaalgewicht 14 and V1 zwaar with
  *       bonus 7, heffing 40, uitkering 20 and vindloon 15.</li>
- *   <li>{@code lees} with labels (the fix round of step 3, point 5): on the red case
+ *   <li>{@code read} with labels (the fix round of step 3, point 5): on the red case
  *       {@code corpus/red/jutterswet-dubbele-melding}, case 1, two writers give V's meldingsdatum two dates, and the
- *       fault of the fixpoint names V as "V, een Vondst", where {@code lees} without labels names it by type and
+ *       fault of the fixpoint names V as "V, een Vondst", where {@code read} without labels names it by type and
  *       identity; the write-back with the same labels throws the fault in the same sentence. The reference interpreter
  *       names V alike, "V, a Vondst", and the ASP runner gives "V" beside the fault (measured 2026-10-10; gate 8 pins
  *       both). <b>Red before the change</b> (measured 2026-10-10 on {@code f4b83d7b}): the row does not compile there,
  *       "method lees in class dev.uchar.regelspraak.cases.DroolsBackend cannot be applied to given types", since the
  *       entry read without labels only.</li>
- *   <li>On the exec-model and the DRL-text branch {@code lees} refuses: their rules write the beans as they fire.</li>
+ *   <li>On the exec-model and the DRL-text branch {@code read} refuses: their rules write the beans as they fire.</li>
  *   <li>The entry is public, the seams of the scale harness and the witnesses are not.</li>
  * </ul>
  *
@@ -354,22 +354,22 @@ class TmsConsumerWitnessTest {
     // ---------------- helpers ----------------
 
     /** Sets up case {@code caseFileName} of golden {@code golden} on the exec-model branch as the replay does, through
-     *  {@link DroolsBackend#insert}, and hands the session, not yet fired, to {@code meting}. */
+     *  {@link DroolsBackend#insert}, and hands the session, not yet fired, to {@code measurement}. */
     private static void play(String golden, String caseFileName, CaseRunner.SessionMeasurement<Void> measurement) throws Exception {
         Path ir = CORPUS.resolve(golden).resolve("ir.json");
         JsonNode c = TmsDocuments.JSON.readTree(Files.readString(ir.resolveSibling(caseFileName)));
         CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL).withSession(c, measurement);
     }
 
-    /** The way on where something happened outside {@code vuur} after it: a further {@code vuur}, or a fresh session
-     *  where {@code vuur} refuses the session. */
+    /** The way on where something happened outside {@code fire} after it: a further {@code fire}, or a fresh session
+     *  where {@code fire} refuses the session. */
     static final String FIRE_FIRST = "vuur haar eerst opnieuw met DroolsBackend.vuur";
     static final String FRESH_AT_CREATION = "dit model heeft creatieregels, dus DroolsBackend.vuur weigert een tweede"
             + " fire: open een verse sessie";
     static final String FRESH_AFTER_WRITE_BACK = "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een"
             + " verse sessie met beans die alleen invoer dragen";
 
-    /** The sentence of {@code lees} and {@code setDerivedValues} where {@code description} happened outside {@code vuur}
+    /** The sentence of {@code read} and {@code setDerivedValues} where {@code description} happened outside {@code fire}
      *  after the last one, with {@code way} the way on. */
     static String outsideFire(String description, String way) {
         return "geen fixpunt om te lezen of terug te zetten: sinds de laatste DroolsBackend.vuur van deze sessie gebeurde"

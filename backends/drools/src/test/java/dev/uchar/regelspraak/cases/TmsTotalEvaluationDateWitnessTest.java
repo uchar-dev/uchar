@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 8.4): that route takes the asOfDate-bucket scalar, the session's date being its horizon, so without a date it has no
  * bucket to take, and the reference interpreter faults where it evaluates the total, whether the attribute holds a value
  * or not: "the temporal total of "bedrag" needs the evaluation date: the case carries the asOfDate bucket's value". On
- * this branch the fault is a {@code Fout} that counts only where it stands at the fixpoint, like every evaluation fault.
+ * this branch the fault is a {@code Fault} that counts only where it stands at the fixpoint, like every evaluation fault.
  *
  * <p>The document: "Een Jutter is vrijgesteld indien zijn score kleiner is dan 5" and "De topsom van een Jutter moet
  * berekend worden als het totaal van zijn bedrag, indien hij niet vrijgesteld is", bedrag on a month grid. In a session

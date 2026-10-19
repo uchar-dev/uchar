@@ -142,7 +142,7 @@ class EmptyNegatedWitnessTest {
 
     /** The same for the comparisons (RUNTIME-SEMANTICS ch. 3.9, decided 2026-09-26): a leeg segment reads as a gap for
      *  every test, so it touches no bucket and none of its days satisfies a comparison, the inequality included —
-     *  the chapter's worked examples, tested under the year grid ({@code toets} 2 is "groter dan", 5 "ongelijk aan").
+     *  the chapter's worked examples, tested under the year grid ({@code test} 2 is "groter dan", 5 "ongelijk aan").
      *  No golden can carry the form: the case format has no leeg value, and only this backend writes a leeg segment
      *  to a member (the temporal sum of ch. 3.5), which ref and the ASP backend do not write; ref's suite pins the
      *  same fold on its own timeline ({@code WV-3.9-vgl-leeg-segment-*}). Before that date the comparisons counted the
@@ -162,7 +162,7 @@ class EmptyNegatedWitnessTest {
         assertTrue(RegelSpraakRuntime.rsGeheelPeriode(onlyEmpty, "JAAR", 2, forty), "> 40: no bucket is touched");
     }
 
-    /** meldpremie's rule alone, its test set to {@code soort}/{@code negated} under "gedurende het gehele jaar"
+    /** meldpremie's rule alone, its test set to {@code category}/{@code negated} under "gedurende het gehele jaar"
      *  (with the qualifier's own {@code niet}), over a month-granular lengte: S1 carries 8 over the whole of 2025,
      *  S3 carries 5 over its first half, S2 and S4 carry none. meldpremie is 40 on {@code hits}, leeg on the
      *  others. The ongemeten rule is dropped because it reads the now-temporal lengte without a qualifier and

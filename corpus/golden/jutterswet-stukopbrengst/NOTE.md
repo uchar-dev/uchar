@@ -14,7 +14,7 @@ with the result decimals the SUM of the operands' decimals.
 function ("het aantal … van"); `stuktal` is an ordinary unitless integer
 attribute, so the product is a genuine `stuktal (geen eenheid) × stukprijs (€)`.
 
-`Typering.reken` now types that product as `Numeriek` with the EUR unit
+`Typing.compute` now types that product as `Numeriek` with the EUR unit
 (Tabel 11 rij 4), unconditionally — literal OR attribute left (the old
 literal/attribute split retired). The outer `+` then adds two EUR values into
 the EUR `opbrengst` target, unit-clean. There is **no `Onbekend` on the wire**:

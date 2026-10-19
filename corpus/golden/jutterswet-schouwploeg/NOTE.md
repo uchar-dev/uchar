@@ -37,7 +37,7 @@ were written:
   meervoudige stap in een lezing vraagt een aggregatie (WF-053, IR-SPEC
   ch. 4.1a)`, measured 2026-09-24 on this sentence with "ten minste 0 van
   de wachten", a form the lowering still declines. The lowering to
-  `Kwantorvouw` opened with "only the §8.2-qualified condition" and
+  `QuantifierFold` opened with "only the §8.2-qualified condition" and
   declined everything else;
 - the characteristic form — *"indien alle wachten van de Schouwploeg
   gediplomeerd zijn"* — resolved to `Onopgelost`, and did so silently:

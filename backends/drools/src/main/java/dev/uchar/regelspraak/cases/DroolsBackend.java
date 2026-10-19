@@ -173,7 +173,7 @@ public final class DroolsBackend {
         // (§13.4.6 objectcreatie was refused here until 2026-08-30; the creation consequence now executes —
         // both back-link ends written, the kenmerkinitialisatie honoured — so the shapes it still cannot carry
         // are refused per creation by the transpiler, which knows WHICH one, not blanket for every model.)
-        //   §13.3.9.2 name-sharing bean limit — leden() ports every member through a name-dedup (attribute >
+        //   §13.3.9.2 name-sharing bean limit — members() ports every member through a name-dedup (attribute >
         //     kenmerk > reference), so a declared member sharing the reciprocal role's name displaces the
         //     self-pair reference field; the mirror pass would then read a Boolean or set an impossible type,
         //     an unclassified ERROR at best. Refuse the shape loudly instead (lens finding, 2026-08-30).
@@ -263,7 +263,7 @@ public final class DroolsBackend {
      *  justification per rule in either mode; that merge rests on the equals and hashCode of the branch's fact classes.
      *  A form the transpiler does not lower is refused from its manifest, in the {@code transpiler SKIP:} sentence the
      *  toolchain reads; a cycle of the dependency graph that WF-045 or WF-046 forbids is refused before the KieBase is
-     *  built, since truth maintenance gives such a cycle no single fixpoint ({@code Kringen}). */
+     *  built, since truth maintenance gives such a cycle no single fixpoint ({@code Cycles}). */
     private static Build execModelBranch(IrLoader.Loaded loaded, ClassLoader cl) {
         TmsTranspiler t = analyse(loaded, cl);
         KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(t.model(), EqualityBehaviorOption.EQUALITY);
@@ -344,7 +344,7 @@ public final class DroolsBackend {
      * place the rules need is thus never missing at the fire, where it would stop the run with an
      * {@code IllegalStateException}.
      *
-     * <p>Then it puts the watch of the entry on the session ({@code Bewaking}), with the relations the beans hold now,
+     * <p>Then it puts the watch of the entry on the session ({@code Watch}), with the relations the beans hold now,
      * and {@link #fire} refuses a session in which more happened outside it than an update of an attribute or a
      * characteristic of a bean this call put in: the places of a list and the bucket scalars are stated over the beans
      * and the relations of one input, so a bean inserted later has neither, and a relation changed later keeps the
@@ -580,7 +580,7 @@ public final class DroolsBackend {
      * read without writing anything on a bean: per object the derived attribute values, in the form the bean field takes
      * them, a timeline as the bean model's segments, and the derived characteristics; the objects and links the
      * creations made; the evaluation faults that stand, as data and not thrown; and the §9.5 deposits, the
-     * {@code Inconsistentie} facts. A consumer that fires one session of a model without a creation more than once reads
+     * {@code Inconsistency} facts. A consumer that fires one session of a model without a creation more than once reads
      * every answer but the last here: the beans hold the input alone until {@link #setDerivedValues}, which writes
      * exactly this, and after which the session does not fire again. A fault names its object by type and identity,
      * and by its label in {@link #fixpointOf(Build, KieSession, Function)}.
@@ -665,7 +665,7 @@ public final class DroolsBackend {
      * The factor of the fire cap, {@code FACTOR × R × N0} ({@link #fire}), with N0 the
      * facts before the fire and, for a model with a creation, the facts at the start of each phase. Every firing of that
      * branch makes or renews a logical fact of one rule on one subject, and without a cycle, which the build refuses
-     * ({@code Kringen}), the renewals per rule and subject are bounded by the depth of the dependency graph, so a run
+     * ({@code Cycles}), the renewals per rule and subject are bounded by the depth of the dependency graph, so a run
      * fires a number of times that grows with the rules and the facts. It is twice the largest ratio measured, rounded
      * up, and at least 4. Measured 2026-10-10 (card {@code tms-omschakeling}, step 4): over the 248 goldens the branch
      * plays ({@code TmsMeasurement}), a case needs at most 1.167 firings per rule per fact the cap counts
@@ -715,7 +715,7 @@ public final class DroolsBackend {
      * and the cap. A run that reaches the cap or the creation budget has no fixpoint, and {@link Firing#noFixpoint}
      * says so. Every run leaves a stated mark of how it ended, at its fixpoint, without
      * one, or with an exception out of the fire ({@code Fired}), and keeps a watch on the session from then on
-     * ({@code Bewaking}), a listener that it takes off while it fires itself; {@link #fixpointOf} and
+     * ({@code Watch}), a listener that it takes off while it fires itself; {@link #fixpointOf} and
      * {@link #setDerivedValues} read a session only where the last run reached its fixpoint and the watch saw nothing
      * happen outside {@code fire} since.
      *
@@ -794,7 +794,7 @@ public final class DroolsBackend {
      *
      * <p>A waarnemer belongs to one session: the first {@code fire} it is given binds it to that session, and a
      * {@code fire} of another session refuses it, so sessions that fire at once, as those of a decision service do,
-     * never write into one waarnemer. Given to more than one {@code fire} of its session, it gathers what all of them
+     * never write into one observer. Given to more than one {@code fire} of its session, it gathers what all of them
      * fired. It is read after the fire, by the thread that fired.
      */
     public static final class Observer {
@@ -967,7 +967,7 @@ public final class DroolsBackend {
     }
 
     /**
-     * Fires {@code session} of {@code build} to its fixpoint, at most {@code plafond} firings in all, a cap that does not
+     * Fires {@code session} of {@code build} to its fixpoint, at most {@code cap} firings in all, a cap that does not
      * grow: the seam of the scale harness, which sets a cap that never cuts it off, and of a witness that sets a small
      * one. Without a lowered creation that is one fire.
      *
@@ -1154,7 +1154,7 @@ public final class DroolsBackend {
         });
     }
 
-    /** Fires {@code session} as {@link #fire(Build, KieSession, int)} describes, under {@code plafond}: in one go, or for
+    /** Fires {@code session} as {@link #fire(Build, KieSession, int)} describes, under {@code cap}: in one go, or for
      *  a model with a creation in generations per stratum. */
     private static Firing fireUnderCap(Build build, KieSession session, Cap cap) {
         TmsTranspiler tms = build.execModelTranspiler();

@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (2026-09-11, card {@code 20260911-kenmerktijdlijnaantal-poort}).
  *
  * <p>Both branches asked "is this member a §13.3.6.7 multi-period raster?" as
- * {@code timelineCount.containsKey(lid)}, at 24 sites. The wire's count defaults to ONE (IR-SPEC §2.2's TimelineFacet
+ * {@code timelineCount.containsKey(member)}, at 24 sites. The wire's count defaults to ONE (IR-SPEC §2.2's TimelineFacet
  * table states it as {@code count >= 1}, "1 = single-period", and ch. 2.8's worked example adopts {@code count: 1};
  * ch. 2.10's v0 migration note reads a bare
  * granularity as {@code count: 1}; the verifier's WF-005 substitutes 1 for an absent entry), so an EXPLICIT 1 is the
@@ -157,7 +157,7 @@ class MorePeriodicGateWitnessTest {
 
     @Test void the_whole_period_comparison_does_not_read_the_count_at_all() throws Exception {
         // The card's question 3 on the position a REPLAYING corpus document occupies: jutterswet-keurploeg states a
-        // §8.2 whole-period matrix (a Kwantorvouw) over the MAAND-granular keurvergoeding. Measured rather than
+        // §8.2 whole-period matrix (a QuantifierFold) over the MAAND-granular keurvergoeding. Measured rather than
         // assumed: THIS position routes through the fold's whole-period arm, whose gate elementTijdlijnLid
         // (TmsTranspiler's tijdlid, and DrlTranspiler's until card drl-teksttak-op-truth-maintenance) DOES consult the
         // count table — and must classify an explicit 1 as single-periodic, where the PRE-FIX containsKey test refused
@@ -263,7 +263,7 @@ class MorePeriodicGateWitnessTest {
         return out;
     }
 
-    /** The golden's ir.json with ONE member's period count written explicitly on its timeline facet; {@code leden}
+    /** The golden's ir.json with ONE member's period count written explicitly on its timeline facet; {@code members}
      *  names the member list, {@code attributes} or {@code characteristics}. Since M1 a facet always carries its
      *  count, so for 1 this restates what the golden writes; the guard that the facet is there stays. */
     private static Path withCount(String golden, String objectType, String members, String memberName, int count) throws Exception {

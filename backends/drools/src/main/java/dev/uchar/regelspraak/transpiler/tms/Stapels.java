@@ -35,7 +35,7 @@ import java.util.Set;
  */
 final class Stapels {
 
-    /** One effective stack: the groups that run on instances of exactly {@code eigenaar}, more than one only for a
+    /** One effective stack: the groups that run on instances of exactly {@code owner}, more than one only for a
      *  declared-unordered root. */
     record Stack(Objecttype owner, List<PrioritizedDefaults> members) {}
 
@@ -75,7 +75,7 @@ final class Stapels {
         return out;
     }
 
-    /** The level default {@code d} of a stack owned by {@code eigenaar} is read on. */
+    /** The level default {@code d} of a stack owned by {@code owner} is read on. */
     Objecttype levelOf(Default d, Objecttype owner) {
         return origin.getOrDefault(d, owner);
     }

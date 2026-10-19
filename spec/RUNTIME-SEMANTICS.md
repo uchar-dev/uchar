@@ -6896,7 +6896,7 @@ input) and derived `totaal`; one `Jutter` with **no** vondsten and an
 The barrier would have promised the second row; the frontend emits the
 first. Both rows are `ref/`-measured on the identical case, and the
 frontend's own suite pins the emitted wire
-(`VariabeledeelLoweringTest.de_grens_is_het_hele_aggregatieconstruct_ook_zijn_zuivere_waardeposities`).
+(`VariablePartLoweringTest.the_boundary_is_the_whole_aggregation_construct_also_its_pure_value_positions`).
 
 **Tracked delta 2 — Catala's `let` is call-by-value (a fidelity delta).**
 Catala evaluates a `let … in …` eagerly: the bound expression is computed

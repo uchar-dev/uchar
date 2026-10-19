@@ -24,11 +24,11 @@ final class Dependencies {
     private Dependencies() {}
 
     /** A violation of WF-045 or WF-051 as the verifier reports it: the rule, the pointer, its sentence, and the forms of
-     *  the cycle ({@code vormen}: for WF-045 the cycle in the walk's order, for WF-051 the group alone). */
+     *  the cycle ({@code forms}: for WF-045 the cycle in the walk's order, for WF-051 the group alone). */
     record Cycle(String wf, String at, String sentence, List<Form> forms) {}
 
     /** A form of the graph: its pointer, its name (a version of a form with several is "&lt;naam&gt; #i"), whether it
-     *  is a creation in a recursive rule group, what it writes and what it reads; {@code soort} is the list it comes
+     *  is a creation in a recursive rule group, what it writes and what it reads; {@code category} is the list it comes
      *  from. */
     record Form(String at, String naam, String category, boolean recursiveCreation, List<String> writes, List<NodeRead> uses) {}
 
@@ -291,7 +291,7 @@ final class Dependencies {
             return false;
         }
 
-        /** Whether {@code naam}, with its supertypes, declares the attribute or the characteristic {@code lid}. */
+        /** Whether {@code naam}, with its supertypes, declares the attribute or the characteristic {@code member}. */
         boolean carries(String naam, String member, boolean characteristic) {
             Map<String, Object> ot = objectType(naam);
             if (ot == null) return false;
@@ -349,7 +349,7 @@ final class Dependencies {
             return null;
         }
 
-        /** {@code connecting_candidates}: the fact types relating {@code van} and {@code naar}, in declaration order. */
+        /** {@code connecting_candidates}: the fact types relating {@code van} and {@code to}, in declaration order. */
         List<String> connectingFactTypes(String van, String to) {
             List<String> result = new ArrayList<>();
             for (Map<String, Object> ft : feittypen) {

@@ -7,7 +7,7 @@
    consume, and the callers differ only in what they do with the result:
    the runner matches an UNSAT diagnosis against a case's expectedFault, the
    suite checks a frame's expectations the way [ref_matches] checks ref's.
-   The diagnosis itself lives here too ([diagnose]). *)
+   The diagnosis itself lives here too ([diagnostic]). *)
 
 let read_all ic =
   let b = Buffer.create 4096 in

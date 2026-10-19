@@ -155,7 +155,7 @@ class TmsJustificationWitnessTest {
         }
     }
 
-    /** How many activations justify the logical fact {@code feit}: the size of its belief set. */
+    /** How many activations justify the logical fact {@code fact}: the size of its belief set. */
     private static int justifications(KieSession session, Object fact) {
         InternalFactHandle h = (InternalFactHandle) session.getFactHandle(fact);
         return ((TruthMaintenanceSystemEqualityKey) h.getEqualityKey()).getBeliefSet().size();

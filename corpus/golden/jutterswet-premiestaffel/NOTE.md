@@ -80,7 +80,7 @@ its defaults groups:
 Measured on the exec-model branch before it lowered such a justification
 (2026-09-29), the whole document was refused on its first group:
 `defaults (Melding.gemelde premie): niet-reduceerbare justificatie
-(far-side/aggregatie/global): <default>`. With the justifications lowered
+(far-side/aggregation/global): <default>`. With the justifications lowered
 but the groups built in declared order, each at the salience of its own-type
 producers only (the order switched off in a probe of the branch, 2026-09-30),
 case 1 answered `attribuut gemelde premie: verwacht 20, werkelijk 10` for M1

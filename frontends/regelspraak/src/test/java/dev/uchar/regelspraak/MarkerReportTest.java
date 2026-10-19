@@ -19,9 +19,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * the rule on every document that reaches it; this suite holds it where the documents are made, on the emitted JSON
  * ({@link Report}).
  *
- * <p><b>Every marker route, in three classes.</b> A marker whose {@code reden} is set is reported by the resolver's
+ * <p><b>Every marker route, in three classes.</b> A marker whose {@code reason} is set is reported by the resolver's
  * survivor sweep, whose text quotes the bron; every route test in {@link SilentMarkerTest} passes through its
- * {@code markerWithMessage}, which runs {@link Report#assertAccountedFor} on the emission. A marker whose {@code reden} is
+ * {@code markerWithMessage}, which runs {@link Report#assertAccountedFor} on the emission. A marker whose {@code reason} is
  * null is spoken for by its own route, and {@link MarkerReasonPinTest} lists each such family with the diagnostic that
  * speaks: where that is a WARNING, the route is pinned here with a sentence that reaches it; where it is an ERROR,
  * the frontend writes no document at all (irMode writes nothing, and {@code IrEmitter.emit} refuses the model under

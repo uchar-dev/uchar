@@ -1476,7 +1476,7 @@ public final class DefinitionResolver {
         }
         // A written spelling another day kind already carries names two day kinds (WF-017). It used to be dropped
         // without a word: the second day kind lost its declared plural, or its name came to stand for the first. A
-        // derived plural ({@code meervoud} null) is this frontend's own convenience and gives way without a refusal,
+        // derived plural ({@code plural} null) is this frontend's own convenience and gives way without a refusal,
         // also to a written spelling that comes after it.
         if (plural == null) {                 // a derived plural gives way to every spelling already there
             model.dayKindPerUnit.putIfAbsent(k, dayKind);

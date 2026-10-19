@@ -89,14 +89,14 @@ final class ScenarioFixture {
         return ScenarioResolver.resolve(MODEL + scenarioText);
     }
 
-    /** The 1-based line of the first line of {@code bron} that contains {@code merker}. */
+    /** The 1-based line of the first line of {@code source} that contains {@code merker}. */
     static int lineOf(String source, String merker) {
         String[] regels = source.split("\n", -1);
         for (int i = 0; i < regels.length; i++) if (regels[i].contains(merker)) return i + 1;
         return fail("merker '" + merker + "' staat niet in de bron");
     }
 
-    /** An ERROR whose message contains {@code fragment} stands on the line of {@code bron} that holds {@code merker}. */
+    /** An ERROR whose message contains {@code fragment} stands on the line of {@code source} that holds {@code merker}. */
     static void errorOnLine(ScenarioBundle b, String source, String merker, String fragment) {
         int regel = lineOf(source, merker);
         List<Diagnostic> matching = b.model().errors().stream()

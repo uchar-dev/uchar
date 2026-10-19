@@ -114,7 +114,7 @@ public final class ComputeHelpers {
 
     // ---------------- dates ----------------
 
-    /** A date or a date-time plus or minus {@code aantal} in the calendar or clock unit {@code unit}
+    /** A date or a date-time plus or minus {@code count} in the calendar or clock unit {@code unit}
      *  ({@code rsDatumReken}); a step or a count outside the range of RUNTIME-SEMANTICS ch. 3.8 is an evaluation fault
      *  ({@link #dateFault}). */
     public static Object dateStep(Object date, Object countOf, String unit, boolean optellen) {
@@ -233,7 +233,7 @@ public final class ComputeHelpers {
         return value instanceof Map<?, ?> m ? m : null;
     }
 
-    /** {@code waarde}, or {@code fallback} where it is leeg: a sum's {@code emptyFallback} (§5.8.2), which is evaluated
+    /** {@code value}, or {@code fallback} where it is leeg: a sum's {@code emptyFallback} (§5.8.2), which is evaluated
      *  whether it is used or not (RUNTIME-SEMANTICS ch. 5.11). */
     public static Object fallback(Object value, Object fallback) {
         return value == null ? fallback : value;
@@ -247,12 +247,12 @@ public final class ComputeHelpers {
     }
 
     /** The value of a fold from what the accumulate bound (RUNTIME-SEMANTICS ch. 1.2 "Aggregations"): the folded
-     *  {@code waarde}, or {@code fallback} where the count {@code aantal} of the contributions is 0. */
+     *  {@code value}, or {@code fallback} where the count {@code countOf} of the contributions is 0. */
     public static Object foldValue(Object countOf, Object value, Object fallback) {
         return ((Number) countOf).longValue() == 0 ? fallback : value;
     }
 
-    /** One step of a listed fold that keeps the least operand (RUNTIME-SEMANTICS ch. 1.2e): {@code tot} the value so
+    /** One step of a listed fold that keeps the least operand (RUNTIME-SEMANTICS ch. 1.2e): {@code to} the value so
      *  far, leeg before the first operand, and {@code operand} the next one; a leeg operand is skipped, and a tie takes
      *  the later operand. */
     public static Object smallest(Object to, Object operand) {
@@ -311,25 +311,25 @@ public final class ComputeHelpers {
         return equal ? same && !bothEmpty : !same && !bothEmpty;
     }
 
-    /** The leeg test of {@code waarde}, where {@code leeg}, or else the gevuld test; a read over an absent link is leeg
+    /** The leeg test of {@code value}, where {@code leeg}, or else the gevuld test; a read over an absent link is leeg
      *  (RUNTIME-SEMANTICS ch. 5.8 rule 1). */
     public static boolean emptyTest(Object value, boolean empty) {
         return (value == null) == empty;
     }
 
-    /** The eleven test (§8.1.3, {@code rsElfproef}) of {@code waarde}, a leeg value failing it, whose verdict must equal
+    /** The eleven test (§8.1.3, {@code rsElfproef}) of {@code value}, a leeg value failing it, whose verdict must equal
      *  {@code desired}: false for the written negation, which complements it. */
     public static boolean elevenTest(Object value, boolean desired) {
         return RegelSpraakRuntime.rsElfproef(value) == desired;
     }
 
-    /** The exact-digit test (§8.1.4, {@code rsNumeriekMetExact}) of {@code waarde} with {@code digits} digits, whose
+    /** The exact-digit test (§8.1.4, {@code rsNumeriekMetExact}) of {@code value} with {@code digits} digits, whose
      *  verdict must equal {@code desired}. */
     public static boolean exactDigits(Object value, int digits, boolean desired) {
         return RegelSpraakRuntime.rsNumeriekMetExact(value, digits) == desired;
     }
 
-    /** A characteristic check of the subject (RUNTIME-SEMANTICS ch. 5.8): its truth value {@code waarde}, bound off a
+    /** A characteristic check of the subject (RUNTIME-SEMANTICS ch. 5.8): its truth value {@code value}, bound off a
      *  total standing, so never leeg, equal to {@code desired}, false for a negated check. */
     public static boolean characteristic(Object value, boolean desired) {
         return (Boolean) value == desired;
@@ -341,7 +341,7 @@ public final class ComputeHelpers {
         return value != null && (Boolean) value == desired;
     }
 
-    /** A role check over {@code aantal}, the number of links that hold the subject in the role (RUNTIME-SEMANTICS
+    /** A role check over {@code count}, the number of links that hold the subject in the role (RUNTIME-SEMANTICS
      *  ch. 5.8a): whether there is one, complemented where the check is negated ({@code negated}). */
     public static boolean roleCount(Object countOf, boolean negated) {
         return (((Number) countOf).longValue() > 0) != negated;
@@ -354,7 +354,7 @@ public final class ComputeHelpers {
     }
 
     /** The evaluation-date gate of a time window (RUNTIME-SEMANTICS ch. 3.10): whether the evaluation date
-     *  {@code datum} lies in the window, from {@code van} inclusive to {@code end}, exclusive or, where
+     *  {@code date} lies in the window, from {@code van} inclusive to {@code end}, exclusive or, where
      *  {@code toInclusive}, inclusive. A bound the window does not have ({@code hasFrom}, {@code hasTo}) is open;
      *  an unset evaluation date never matches, nor does a leeg bound; neither is a fault. */
     public static boolean timeWindow(Object van, boolean hasFrom, Object end, boolean hasTo, boolean toInclusive,
@@ -368,7 +368,7 @@ public final class ComputeHelpers {
 
     /** The fold of the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9) as the runtime folds it
      *  ({@code rsGeheelPeriode}): over {@code timeline}, a list of segments or null, on the grid {@code grid}
-     *  ("JAAR" or "MAAND"), with the test of code {@code toets} and the bound {@code grens} of a comparison read as a
+     *  ("JAAR" or "MAAND"), with the test of code {@code testCode} and the bound {@code bound} of a comparison read as a
      *  decimal, null where the test has none; complemented where the qualifier is negated ({@code niet}). */
     public static boolean wholePeriod(Object timeline, Object bound, String grid, int testCode, boolean wholePeriodNegated) {
         List<?> tl = (List<?>) timeline;
@@ -403,8 +403,8 @@ public final class ComputeHelpers {
     }
 
     /** The verdict of a quantifier fold whose matrix can neither fault nor deposit (RUNTIME-SEMANTICS ch. 3.9a): over
-     *  {@code aantal} contributors, of which the sum {@code touch} of the verdicts, 1 or 0 each, hold, under {@code kw}
-     *  with the threshold {@code drempel}. Over no contributor the accumulate's sum is not read. */
+     *  {@code countOf} contributors, of which the sum {@code touch} of the verdicts, 1 or 0 each, hold, under {@code kw}
+     *  with the threshold {@code threshold}. Over no contributor the accumulate's sum is not read. */
     public static boolean quantifierVerdict(Object countOf, Object touch, Condition.Quantifier kw, int threshold) {
         long n = ((Number) countOf).longValue();
         return endVerdict(kw, threshold, n == 0 ? 0 : ((BigDecimal) touch).longValueExact(), n);
@@ -412,7 +412,7 @@ public final class ComputeHelpers {
 
     /**
      * The matrix of a quantifier fold read as the reference interpreter reads it, over the {@link MemberTest} of each
-     * contributor, the list {@code contributions} over the count {@code aantal} (RUNTIME-SEMANTICS ch. 3.9a, 5.10): in the
+     * contributor, the list {@code contributions} over the count {@code countOf} (RUNTIME-SEMANTICS ch. 3.9a, 5.10): in the
      * contributors' order, with the stop triggers of ch. 5.10 tested before each contributor, the empty prefix
      * included. A contributor that is reached deposits where its matrix deposited, heard by {@code depositFlag}, the probe of
      * the reading rule or nothing, and faults where its matrix faulted; one that is not reached does neither. Over no
@@ -442,13 +442,13 @@ public final class ComputeHelpers {
         return Boolean.TRUE.equals(inconsistent);
     }
 
-    /** The negation of {@code waarde}, a condition's truth value: the test of a consistency, which holds where its
+    /** The negation of {@code value}, a condition's truth value: the test of a consistency, which holds where its
      *  assertion does not (IR-SPEC ch. 3.5). */
     public static boolean not(Object value) {
         return !(Boolean) value;
     }
 
-    /** Whether {@code waarde} is the asOfDate-bucket scalar a case gives for a timeline ({@link BucketScalar},
+    /** Whether {@code value} is the asOfDate-bucket scalar a case gives for a timeline ({@link BucketScalar},
      *  RUNTIME-SEMANTICS ch. 8.4), equal to {@code desired}: a part of a test a form composes itself. */
     public static boolean bucketScalar(Object value, boolean desired) {
         return (value instanceof BucketScalar) == desired;
@@ -477,7 +477,7 @@ public final class ComputeHelpers {
         return ((Number) collisions).longValue() > 1;
     }
 
-    /** Whether the key {@code key} is the same key of one form as the key {@code ander}
+    /** Whether the key {@code key} is the same key of one form as the key {@code other}
      *  ({@link UniquenessKey#collidesWith}). */
     public static boolean collidesWith(Object key, Object other) {
         return ((UniquenessKey) key).collidesWith((UniquenessKey) other);
@@ -523,8 +523,8 @@ public final class ComputeHelpers {
     }
 
     /** {@code timeline}, the timeline of an attribute a form reads whole, or the fault where the case gives that input
-     *  as the asOfDate-bucket scalar ({@link BucketScalar}, RUNTIME-SEMANTICS ch. 8.4), in the sentence {@code voor},
-     *  the object {@code object}, {@code na}. */
+     *  as the asOfDate-bucket scalar ({@link BucketScalar}, RUNTIME-SEMANTICS ch. 8.4), in the sentence {@code before},
+     *  the object {@code object}, {@code after}. */
     public static List<?> complete(Object timeline, String before, Object object, String after) {
         if (timeline instanceof BucketScalar) throw new InputFormFault(before, object, after);
         return (List<?>) timeline;
@@ -588,8 +588,8 @@ public final class ComputeHelpers {
         return BucketScalar.van((List<?>) timeline);
     }
 
-    /** The fault of the form of an input ({@link InputFormFault}), the sentence {@code voor}, the object {@code object}
-     *  and {@code na}, named in the rule {@code regel}: the fault a consequence inserts where the case gives an input
+    /** The fault of the form of an input ({@link InputFormFault}), the sentence {@code before}, the object {@code object}
+     *  and {@code after}, named in the rule {@code regel}: the fault a consequence inserts where the case gives an input
      *  in a form the rule cannot read ({@code plan.Consequence.InputFormFault}). A null {@code regel} names no rule yet: the
      *  fault of a member of a fold ({@code plan.Consequence.MemberFault}), which the form that reads the fold names where it
      *  meets it. */
@@ -597,7 +597,7 @@ public final class ComputeHelpers {
         return new InputFormFault(before, object, after).inRule(regel);
     }
 
-    /** The keys of {@code element} in source {@code bron} of the uniqueness {@code uniciteit}, linked to the parent
+    /** The keys of {@code element} in source {@code source} of the uniqueness {@code uniqueness}, linked to the parent
      *  {@code scope} (null for a form without a scope), over its key components {@code waarden} in the source's order
      *  ({@link UniquenessKey}): one key; or, where the component at {@code timeline} is a timeline, one key per value
      *  it ever carries, in ascending order and none where it carries none (ever-uniqueness, RUNTIME-SEMANTICS ch. 5.9,
@@ -614,8 +614,8 @@ public final class ComputeHelpers {
         return out;
     }
 
-    /** The facts the distribution of one allocation inserts for one source {@code bron} (RUNTIME-SEMANTICS ch. 4.2 to
-     *  4.4), computed by {@link Allocation#bereken} from the {@code pot} and {@code ontvangers}, the list of the source's
+    /** The facts the distribution of one allocation inserts for one source {@code source} (RUNTIME-SEMANTICS ch. 4.2 to
+     *  4.4), computed by {@link Allocation#bereken} from the {@code pot} and {@code recipients}, the list of the source's
      *  {@link Recipient} facts, in the order its consequence inserts them: the §9.5 inconsistency of the form
      *  {@code form} on each recipient a degradation surfaces on; the share of every recipient that receives one, a
      *  {@link Value} of {@code aandeel} written by {@code writer}; and where the allocation writes a rest
@@ -636,9 +636,9 @@ public final class ComputeHelpers {
         return out;
     }
 
-    /** The contribution of the member {@code lid} to the fold {@code fold} on {@code onderwerp} by its value
-     *  {@code waarde} ({@link Contribution}, RUNTIME-SEMANTICS ch. 3.4), or null where it contributes nothing: a leeg value is
-     *  skipped (ch. 1.2). Where {@code totaal} is not null the value is the member's timeline and contributes its total
+    /** The contribution of the member {@code member} to the fold {@code fold} on {@code onderwerp} by its value
+     *  {@code value} ({@link Contribution}, RUNTIME-SEMANTICS ch. 3.4), or null where it contributes nothing: a leeg value is
+     *  skipped (ch. 1.2). Where {@code total} is not null the value is the member's timeline and contributes its total
      *  over time per that unit (ch. 3.6, the per-element fold), and nothing where the case gives the timeline as the
      *  asOfDate-bucket scalar ({@link BucketScalar}), since the member's {@link MemberFault} stands instead. Where
      *  {@code filled}, the contribution counts the member and carries no value; otherwise it carries the value, an exact
@@ -651,7 +651,7 @@ public final class ComputeHelpers {
     }
 
     /**
-     * The place of the member {@code lid} in the order of the fold {@code fold}: the selection {@code selection}, then per
+     * The place of the member {@code member} in the order of the fold {@code fold}: the selection {@code selection}, then per
      * to-many step of its route, in order, the least place of the step's member in its list, {@code places}, over
      * {@code counts} {@link ListPlace} facts under the reference field {@code fields}. A step whose member has no
      * place, since the input did not state the order of that list, breaks the contract of the rule that needs the
@@ -715,7 +715,7 @@ public final class ComputeHelpers {
         throw new ComputeFault(sentence);
     }
 
-    /** {@code waarde}, and the evaluation fault of the sentence {@code sentence} where it is leeg: the evaluation date in a
+    /** {@code value}, and the evaluation fault of the sentence {@code sentence} where it is leeg: the evaluation date in a
      *  session without one ({@code plan.Term.Required}). */
     public static Object required(Object value, String sentence) {
         if (value == null) throw new ComputeFault(sentence);
@@ -743,7 +743,7 @@ public final class ComputeHelpers {
         return walk(object, properties);
     }
 
-    /** Whether {@code waarde} holds {@code true}: a characteristic read off a bean ({@code Binding.ReadForm.WAAR}). */
+    /** Whether {@code value} holds {@code true}: a characteristic read off a bean ({@code Binding.ReadForm.WAAR}). */
     public static boolean holds(Object value) {
         return Boolean.TRUE.equals(value);
     }
@@ -754,7 +754,7 @@ public final class ComputeHelpers {
         return Period.list((List<?>) value);
     }
 
-    /** Whether a reference field holds {@code ander}, an instance of the class named {@code soort} where that is not
+    /** Whether a reference field holds {@code other}, an instance of the class named {@code category} where that is not
      *  null ({@code Binding.ReadForm.IS_SET}, {@link #isA}). A name stands for one class here: the replay admits only
      *  a bean whose class {@code Build.beanLoader()} loaded ({@code DroolsBackend.insert}) and refuses a reference
      *  field that points outside the input ({@code targetOutsideInput}), so within a session two classes of one name do
@@ -763,7 +763,7 @@ public final class ComputeHelpers {
         return other != null && (category == null || isA(other, category));
     }
 
-    /** Whether the evaluation date {@code datum} lies in the validity window from {@code vanaf} to {@code tot}, dates in
+    /** Whether the evaluation date {@code date} lies in the validity window from {@code from} to {@code to}, dates in
      *  ISO form, both inclusive and a null bound open; never where the session has no date
      *  ({@code Alpha.Comparator.WITHIN}, {@link Validity#contains}). */
     public static boolean inside(Object date, String from, String to) {
@@ -771,7 +771,7 @@ public final class ComputeHelpers {
                 .contains((LocalDate) date);
     }
 
-    /** Whether {@code object} is an instance of the class named {@code klasse}: its own class or a class or interface
+    /** Whether {@code object} is an instance of the class named {@code javaClass}: its own class or a class or interface
      *  it extends has that name ({@code Alpha.Comparator.IS_A}). A bean class is named, not loaded: a DRL text cannot
      *  reach the classes of the beans. A name stands for one class here: the replay admits only a bean whose class
      *  {@code Build.beanLoader()} loaded ({@code DroolsBackend.insert}) and refuses a reference field that points
@@ -788,7 +788,7 @@ public final class ComputeHelpers {
         return !classes.contains(object.getClass().getName());
     }
 
-    /** Whether the own class of {@code object}, exactly, has the name {@code klasse} ({@code Alpha.Comparator.CLASS_IS}).
+    /** Whether the own class of {@code object}, exactly, has the name {@code javaClass} ({@code Alpha.Comparator.CLASS_IS}).
      *  A name stands for one class here, as for {@link #classNotIn}. */
     public static boolean classIs(Object object, String javaClass) {
         return object.getClass().getName().equals(javaClass);
@@ -813,7 +813,7 @@ public final class ComputeHelpers {
         return ((BinderCell) cell).filled;
     }
 
-    /** Fills the cell {@code cell} with {@code waarde}, the value of its binder, and returns it. */
+    /** Fills the cell {@code cell} with {@code value}, the value of its binder, and returns it. */
     public static Object fillBinderCell(Object cell, Object value) {
         BinderCell c = (BinderCell) cell;
         c.value = value;
@@ -914,8 +914,8 @@ public final class ComputeHelpers {
 
     // ---------------- the constraints of a fold's range (plan.BetaTest) ----------------
 
-    /** Whether the walk over {@code ownChain} from {@code eigen}, a pattern's object, and the walk over
-     *  {@code otherChain} from {@code ander}, the object another pattern binds, reach one object, by identity; a
+    /** Whether the walk over {@code ownChain} from {@code own}, a pattern's object, and the walk over
+     *  {@code otherChain} from {@code other}, the object another pattern binds, reach one object, by identity; a
      *  broken link reads as null and meets nothing. The other walk goes first, and the own one only where it reached an
      *  object. */
     public static boolean meeting(Object own, Object other, List<?> ownChain, List<?> otherChain) {
@@ -924,7 +924,7 @@ public final class ComputeHelpers {
         return walk(own, ownChain) == b;
     }
 
-    /** Whether {@code listPlace}, a {@link ListPlace}, is the place of the object the walk over {@code keten} from
+    /** Whether {@code listPlace}, a {@link ListPlace}, is the place of the object the walk over {@code chain} from
      *  {@code node} reaches: its member is that object, by identity. */
     public static boolean placeOf(Object listPlace, Object node, List<?> chain) {
         return ((ListPlace) listPlace).member() == walk(node, chain);
@@ -942,8 +942,8 @@ public final class ComputeHelpers {
         return ((RelationLink) relationLink).phase() != (Integer) phase;
     }
 
-    /** Whether the links {@code twee} and {@code een}, each a {@link RelationLink}, hold different objects at the end
-     *  {@code einde} names, {@code "eerste"} or {@code "tweede"}, by identity. */
+    /** Whether the links {@code two} and {@code one}, each a {@link RelationLink}, hold different objects at the end
+     *  {@code endName} names, {@code "eerste"} or {@code "tweede"}, by identity. */
     public static boolean otherFilling(Object two, Object one, String endName) {
         RelationLink x = (RelationLink) two, y = (RelationLink) one;
         return switch (endName) {
@@ -993,7 +993,7 @@ public final class ComputeHelpers {
         return depth;
     }
 
-    /** A new bean of the class named {@code klasse}, by its public constructor without arguments, every member unset:
+    /** A new bean of the class named {@code javaClass}, by its public constructor without arguments, every member unset:
      *  the construction of an object creation ({@code plan.Consequence.Construction}) in a DRL text, which names a bean class
      *  and cannot load one, since the text does not see the beans. The class is loaded by the class loader of
      *  {@code onderwerp}, the bean of the creation's subject: within a session every bean is of the build's bean loader
@@ -1017,7 +1017,7 @@ public final class ComputeHelpers {
         }
     }
 
-    /** Sets the member whose bean property is {@code property} on the new bean {@code object} to {@code waarde}, where
+    /** Sets the member whose bean property is {@code property} on the new bean {@code object} to {@code value}, where
      *  that is not null, through the setter that {@code Namen.lidnamen} names ({@link Accessors#eigenschapSetter}): an
      *  attribute initialisation of an object creation ({@code plan.Consequence.Construction.Setting}), set before the bean is
      *  inserted, so no rule ever sees the bean without it; a leeg value leaves the member unset. */

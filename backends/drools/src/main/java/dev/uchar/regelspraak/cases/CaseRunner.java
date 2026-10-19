@@ -49,7 +49,7 @@ import java.util.Map;
  * case (the pom notes Drools' KieBuilder flakiness: the KieBase is built ONCE per model, the session is
  * fresh per case). Expectations are compared with the production comparison discipline of
  * {@code ScenarioRunner.Loop}: {@code BigDecimal.compareTo == 0} (scale-safe), null &hArr; leeg, boolean
- * read, and the §9.5 Inconsistentie channel for consistent/inconsistent.
+ * read, and the §9.5 Inconsistency channel for consistent/inconsistent.
  *
  * <p>A golden is EXCLUDED (not a failure) when the loader refuses a form, the exec transpiler markers a
  * construct (does not lower it), the bean contract is violated, or a case carries an input/expectation
@@ -349,7 +349,7 @@ public final class CaseRunner {
     }
 
     /** Sets up case {@code c} as {@link #runCase} does, in a fresh session with the bean loader as the thread's context
-     *  class loader, and hands that session, not yet fired, to {@code meting}; the session is disposed afterwards. The
+     *  class loader, and hands that session, not yet fired, to {@code measurement}; the session is disposed afterwards. The
      *  seam of the measuring harnesses of card tms-omschakeling, the scale test (point 9) and the measurement over the
      *  corpus (point 7), which fire through {@link DroolsBackend#fire} as a consumer does and time the fire and the
      *  write-back apart, where the replay's own fire times neither. Package-private, no production caller, and no gate
@@ -580,7 +580,7 @@ public final class CaseRunner {
     }
 
     /** Fires {@code session} through the backend's entry ({@link DroolsBackend#fire}), under the cap a consumer gets, and
-     *  returns null at a fixpoint. A run without one returns the sentence of {@code vuur}, which names the cap and what
+     *  returns null at a fixpoint. A run without one returns the sentence of {@code fire}, which names the cap and what
      *  it was computed from, or that of the creation budget. A consequence that throws leaves the fire as
      *  {@link DroolsBackend#designate} names it; every replay, red path and report of this class fires here, on either
      *  branch. At a fixpoint the derivations go onto the beans before anything reads them, or the evaluation faults
@@ -875,7 +875,7 @@ public final class CaseRunner {
         Objecttype ot = labelType.get(label);
         // both are CASE defects, not uncarried forms — ref rejects the same shapes at load ("expected
         // timeline on %S, which declares no granularity"), so they are hard failures here too, and the
-        // unknown-label arm would otherwise reach emmer() with a null granularity (an unnamed NPE).
+        // unknown-label arm would otherwise reach bucket() with a null granularity (an unnamed NPE).
         if (ot == null)
             throw new IllegalArgumentException("attributeTimeline-verwachting op onbekend label '" + label + "'");
         if (!temporal(ot, attr))
@@ -925,9 +925,9 @@ public final class CaseRunner {
                 + (presentExpected ? "aanwezig" : "afwezig") + ", werkelijk " + (present ? "aanwezig" : "afwezig");
     }
 
-    /** The §9.5 consistency check. A {@code consistent} expectation demands NO Inconsistentie fact at all
+    /** The §9.5 consistency check. A {@code consistent} expectation demands NO Inconsistency fact at all
      *  (unchanged presence semantics). An {@code inconsistent} expectation is verified against the pinned §9.5
-     *  KEY (the {@code rule}) — a matching Inconsistentie fact must exist — and, when the expectation pins a
+     *  KEY (the {@code rule}) — a matching Inconsistency fact must exist — and, when the expectation pins a
      *  {@code label}, on that SUBJECT, for every key kind, as ref matches it ({@code ref/lib/case.ml}, the
      *  {@code Inconsistent} arm: rule and exact subject label on the same fact). Until card drools-consistentie-label
      *  (2026-09-23) the subject was checked only for a default-group conflict key and a rule-name key passed on any
@@ -956,13 +956,13 @@ public final class CaseRunner {
                 + renderIncs(facts, code != null);
     }
 
-    /** Every §9.5 Inconsistentie fact the session holds. */
+    /** Every §9.5 Inconsistency fact the session holds. */
     private List<Object> inconsistencies(KieSession session) {
         List<Object> facts = new ArrayList<>();
         try {
             Class<?> inc = Class.forName(FactModelGenerator.PACKAGE + ".Inconsistentie", true, cl);
             facts.addAll(session.getObjects(inc::isInstance));
-        } catch (ClassNotFoundException e) { /* no Inconsistentie bean -> none */ }
+        } catch (ClassNotFoundException e) { /* no Inconsistency bean -> none */ }
         return facts;
     }
 

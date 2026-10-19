@@ -84,7 +84,7 @@ public final class UnitConflict extends RuntimeException {
     }
 
     /**
-     * Guard a restatement of a {@code van}-unit quantity into {@code naar}: raise when the two are unit-bearing,
+     * Guard a restatement of a {@code van}-unit quantity into {@code destination}: raise when the two are unit-bearing,
      * concrete and do not inter-convert. Called at the HEAD of each restatement helper, before its own
      * "no conversion due" test, so the two facts that test conflates stay apart.
      *

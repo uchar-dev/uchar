@@ -1042,7 +1042,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The timeline that the pro-rata part or the day count {@code f} produces for the target {@code doel} of
+     * The timeline that the pro-rata part or the day count {@code f} produces for the target {@code target} of
      * {@code subject} (RUNTIME-SEMANTICS ch. 3.7, 3.8), as a function of the values the rule binds: the true periods of
      * the subject's own characteristic in its gedurende clause and, for the pro-rata part, the timeline of the base, an
      * own attribute, each bound in the left-hand side ({@link Reads#timeline}), so a base that a rule derives later
@@ -1165,7 +1165,7 @@ public final class TmsTranspiler {
 
     /**
      * The bean classes of the concrete types on which the fold of RUNTIME-SEMANTICS ch. 7.10 took the rule writing
-     * {@code doel} into an effective stack, as its base or as its initialisation default: there the stack writes the
+     * {@code target} into an effective stack, as its base or as its initialisation default: there the stack writes the
      * target and the rule must not also fire, so its subject pattern leaves them out. Empty for a target no defaults
      * group writes. A rule beside a group its own type declares on the same target is no fold but two writers of one
      * target (WF-050), which this branch refuses by name: the fold leaves such a rule alone, and both would write.
@@ -1348,7 +1348,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The fault of RUNTIME-SEMANTICS ch. 5.7 as a logical fact: per object of the declaring type of {@code lid}, an
+     * The fault of RUNTIME-SEMANTICS ch. 5.7 as a logical fact: per object of the declaring type of {@code member}, an
      * accumulate over the {@link Value} facts on that object's attribute, and where they hold different values a
      * {@link Fault} with the {@link WritersConflict} that names the writers in the order of the document, under the
      * first of them. The fault rests on the values that stand, so a difference that exists on an intermediate state only
@@ -1378,10 +1378,10 @@ public final class TmsTranspiler {
      * The rule that inserts the fault of a condition that can fault, beside the rule {@code ruleName} of the form
      * {@code form} that tests the condition. A condition is tested in the left-hand side, and an exception there leaves
      * the fire, where truth maintenance cannot withdraw it when the reads it rested on change; the form's own rule
-     * therefore tests the condition with the role {@link TestItem.Role#ZONDER_FOUT}, which does not hold where it
-     * faults, and this rule, whose left-hand side is that rule's own built again over fresh declarations ({@code nieuw}
+     * therefore tests the condition with the role {@link TestItem.Role#WITHOUT_FAULT}, which does not hold where it
+     * faults, and this rule, whose left-hand side is that rule's own built again over fresh declarations ({@code fresh}
      * sets up the subject pattern and what precedes it), with the same {@code blockade} after the test and the test of
-     * the role {@link TestItem.Role#FOUT}, that the condition faults, inserts the named {@link Fault} logically, on the
+     * the role {@link TestItem.Role#FAULT}, that the condition faults, inserts the named {@link Fault} logically, on the
      * subject of the form. It fires exactly where the form's rule tests the condition and the test faults, and the
      * fault goes when a read it rested on changes. The sentence
      * names the form's rule. A condition faults also where it
@@ -1899,7 +1899,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * Refuses the allocation {@code v} where another form writes the attribute {@code lid} that it writes on
+     * Refuses the allocation {@code v} where another form writes the attribute {@code member} that it writes on
      * {@code type}, its share target or its rest, on an instance it writes too: on {@code type}, an ancestor or a
      * descendant ({@link #related}), read per concrete type as WF-026 and WF-050 read it, so a form on a sister subtype
      * does not count. Another allocation, not a version of {@code v}, is ill-formed beside it (WF-026), and so is a
@@ -2282,7 +2282,7 @@ public final class TmsTranspiler {
     }
 
     /** The guard of a fact creation on each target ({@code check}, hosted on a type the target satisfies), for the
-     *  target the variable {@code doel} binds at the end of the creation's path: the target must be of the host's type,
+     *  target the variable {@code target} binds at the end of the creation's path: the target must be of the host's type,
      *  and its characteristic must hold as the check asks, read through its standing where a form writes it and off the
      *  bean otherwise, through the getter of the class that declares it. The constraints on the target come after the
      *  one that reaches it ({@link FactPattern#afterAlpha}), as do those on the standing after its join. */
@@ -2502,14 +2502,14 @@ public final class TmsTranspiler {
     }
 
     /** The constraint that keeps a rule of a stack on instances of exactly the stack's owner, the bean class
-     *  {@code klasse}: the stack runs on instances of exactly that type (RUNTIME-SEMANTICS ch. 7.10,
+     *  {@code javaClass}: the stack runs on instances of exactly that type (RUNTIME-SEMANTICS ch. 7.10,
      *  {@link StackBuild#javaClass}). */
     private Alpha concreteType(Class<?> javaClass) {
         return new Alpha(id("concreet-type"), List.of(new Alpha.FieldTest(null, Alpha.Comparator.CLASS_IS, javaClass)));
     }
 
     /** The knots of one chain, {@code id}, with its defaults' levels: a root default's own ({@link Stapels#levelOf}), an
-     *  exception group's defaults on the level of the default that carries them ({@code drager}); every knot carries
+     *  exception group's defaults on the level of the default that carries them ({@code carrier}); every knot carries
      *  the validity of the group at the root of its chain. */
     private List<Node> chain(StackBuild b, List<Default> ds, int id, Objecttype carrier, Objecttype owner,
                               List<Integer> path, String prefix, Validity validity) {
@@ -2554,7 +2554,7 @@ public final class TmsTranspiler {
             throw new Refusal(DroolsCode.DEFAULT_SQUARE_ROOT.reason("squareRoot", squareRoot));
     }
 
-    /** The snippet of the first division in {@code conditionTerm} or {@code waarde}, or null: in the justification or the
+    /** The snippet of the first division in {@code conditionTerm} or {@code value}, or null: in the justification or the
      *  consequence of a default, and in the condition or the value of an initialisation beside another writer, which
      *  ch. 7.7 reads as the lowest default ({@link #initialisationRule}). The destructive lowering refused a division
      *  below the top of a consequence, whose deposit would persist; here the evaluation itself is speculative, as a
@@ -2572,7 +2572,7 @@ public final class TmsTranspiler {
         return earliest(null, e, TmsTranspiler::isDivision);
     }
 
-    /** The snippet of the first square root in {@code waarde}, or null: a place of the §6.6 deposit, which a member
+    /** The snippet of the first square root in {@code value}, or null: a place of the §6.6 deposit, which a member
      *  initialisation and a default do not make. */
     private static String squareRoot(Expr e) {
         return earliest(null, e, TmsTranspiler::isSquareRoot);
@@ -2590,8 +2590,8 @@ public final class TmsTranspiler {
         return e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.WORTEL;
     }
 
-    /** The snippet of the first expression node for which {@code soort} holds, in {@code conditionTerm} and then in
-     *  {@code waarde} (either may be null), each walked node before its operands, or null. */
+    /** The snippet of the first expression node for which {@code category} holds, in {@code conditionTerm} and then in
+     *  {@code value} (either may be null), each walked node before its operands, or null. */
     private static String earliest(Condition conditionTerm, Expr value, java.util.function.Predicate<Expr> category) {
         String[] found = {null};
         java.util.function.Predicate<Expr> touch = x -> {
@@ -2665,7 +2665,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The rules of {@code keten} and, below each of its defaults, of their member chains. Every rule of a default waits
+     * The rules of {@code chain} and, below each of its defaults, of their member chains. Every rule of a default waits
      * on the positions above it in its own chain and on {@code ancestors}, the positions above each default whose
      * exception group the chain is, at any depth: the reference interpreter reaches the exception groups of a default
      * only where no higher default in its chain decides ({@code decide}), so a group below a displaced default is not
@@ -2715,7 +2715,7 @@ public final class TmsTranspiler {
      * member chains {@code [eerste, eerste + aantal)}: the first conflict
      * in member order passes on unchanged; else the first deciding member's decision, which is a conflict under
      * {@code key} where another member decides differently (numbers by value), and the decision otherwise. A rule
-     * per outcome, each under {@code wacht}; the rules that cannot match are left out (a conflict among members that
+     * per outcome, each under {@code guard}; the rules that cannot match are left out (a conflict among members that
      * cannot conflict, a difference among one member). {@code onlyTrue} restricts the decision to an attribution, the
      * one decision on a characteristic that writes; {@code between} says the outcomes are control facts, not the write.
      */
@@ -2777,8 +2777,8 @@ public final class TmsTranspiler {
         if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
     }
 
-    /** The constraint {@code soort} on the outcome a reconciliation binds: of stack {@code naam}, settled as
-     *  {@code uitkomst}, of a member chain in {@code [eerste, tot)}, and where {@code onlyTrue} an attribution, the one
+    /** The constraint {@code category} on the outcome a reconciliation binds: of stack {@code naam}, settled as
+     *  {@code outcome}, of a member chain in {@code [eerste, tot)}, and where {@code onlyTrue} an attribution, the one
      *  decision on a characteristic that writes. */
     private Alpha outcomeOfMember(String category, String naam, Outcome.Kind outcome, int earliest, int to,
                                 boolean onlyTrue) {
@@ -2791,14 +2791,14 @@ public final class TmsTranspiler {
         return new Alpha(id(category), tests);
     }
 
-    /** The outcomes of the chains {@code [van, tot)} of stack {@code naam} for the subject, of {@code soort}, or of
+    /** The outcomes of the chains {@code [van, tot)} of stack {@code naam} for the subject, of {@code category}, or of
      *  either where it is null, under a variable of their own. */
     private FactPattern outcomes(String naam, int van, int to, Outcome.Kind category) {
         return outcomes(naam, van, to, category, null, null, null);
     }
 
     /** As {@link #outcomes(String, int, int, Outcome.Kind)}, with the constraint {@code betaKind}, which calls
-     *  {@code function}, between the outcome and the one the variable {@code doel} binds, where it is not null. */
+     *  {@code function}, between the outcome and the one the variable {@code target} binds, where it is not null. */
     private FactPattern outcomes(String naam, int van, int to, Outcome.Kind category, String betaKind, StaticFunction function,
                                String target) {
         String variable = "$uitkomst_" + idSeq;
@@ -2813,7 +2813,7 @@ public final class TmsTranspiler {
         return new FactPattern(Outcome.class, variable, List.of(alpha), List.of(onSubject), beta, List.of());
     }
 
-    /** {@code not Uitkomst} over the positions above {@code positie} in chain {@code keten}, for the subject. */
+    /** {@code not Uitkomst} over the positions above {@code position} in chain {@code chain}, for the subject. */
     private LhsItem noOutcome(String naam, int chain, int position) {
         String variable = "$hoger_" + idSeq;
         Alpha higher = new Alpha(id("hoger-uitkomst"), List.of(
@@ -2837,8 +2837,8 @@ public final class TmsTranspiler {
     /**
      * The rule of a default's own decision: the subject pattern on the default's level, restricted to the stack's
      * owner, with the input test of an initialisation default; the reads of its justification and its consequence bound
-     * as any rule binds them; {@code wacht}, the control-fact patterns, before the test of the justification; and a
-     * consequence that hands the decision to {@code besluit}: a characteristic's decision as declared, an attribute's
+     * as any rule binds them; {@code guard}, the control-fact patterns, before the test of the justification; and a
+     * consequence that hands the decision to {@code decision}: a characteristic's decision as declared, an attribute's
      * value computed from what the rule bound, and nothing where that value is leeg (ch. 7.1). The validity of the group
      * at the root of the default's chain gates the rule on the evaluation date ({@link Reads#valid}).
      *
@@ -2932,7 +2932,7 @@ public final class TmsTranspiler {
         return new Term.Const(value, null, null);
     }
 
-    /** A test a form composes itself ({@link TestItem.Role#VORM}) of the checks {@code leden}: their conjunction,
+    /** A test a form composes itself ({@link TestItem.Role#VORM}) of the checks {@code members}: their conjunction,
      *  read in order up to the first that does not hold ({@link Term.Compound} under all). No node of the IR
      *  stands for it, so it carries no source fragment. */
     private static Term all(List<Term> members) {
@@ -3159,7 +3159,7 @@ public final class TmsTranspiler {
         else if (c instanceof Condition.Compound s) for (Condition d : s.components()) dayKindTests(d, out);
     }
 
-    /** {@code t} restated from unit {@code van} into unit {@code naar} (RUNTIME-SEMANTICS ch. 2.6): times the exact
+    /** {@code t} restated from unit {@code van} into unit {@code destination} (RUNTIME-SEMANTICS ch. 2.6): times the exact
      *  canonical factors {@code num ÷ den} as rationals where both are known, so a restatement that does not terminate
      *  stays exact until a collapse point (ch. 2.1), as the reference interpreter restates; times the single ratio of the
      *  two units otherwise, a rate whose factors are not both known; unchanged where no restatement is due, a unitless
@@ -3341,7 +3341,7 @@ public final class TmsTranspiler {
      * another binder, whose need can do all three, or where the read stands in a part that is evaluated only on a
      * condition; null where {@code t} only reads bound values and computes without a fault, so the evaluation goes on
      * to what follows it. A {@code Let} whose body gives TRUE can have its value evaluated before the body with the same
-     * outcome, faults and deposits ({@link Term.Let#gretig}).
+     * outcome, faults and deposits ({@link Term.Let#eager}).
      */
     private static Boolean readsFirst(Term t, int slot) {
         return switch (t) {
@@ -3774,7 +3774,7 @@ public final class TmsTranspiler {
         return readFold(v, i, reads, outcome, fragment);
     }
 
-    /** The value of a fold from the count {@code aantal} and the folded value at slot {@code waarde}, with
+    /** The value of a fold from the count {@code count} and the folded value at slot {@code value}, with
      *  {@code fallback} over no contribution ({@link ComputeHelpers#foldValue}). */
     private static Term foldValue(Term itemCount, int value, Term fallback, String source) {
         return new Term.Call(StaticFunction.FOLD_VALUE, List.of(itemCount, new Term.SlotValue(value, null), fallback), source);
@@ -3938,7 +3938,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * {@code lid}, a member on a timeline whose total over time is taken, where that total is the bare value times the
+     * {@code member}, a member on a timeline whose total over time is taken, where that total is the bare value times the
      * count of whole units of the member's grid, as the runtime's {@code rsTijdTotaal} computes it: a number without a
      * unit, with a unit without a denominator, or a rate whose denominator is the time unit of the grid itself
      * ({@code EUR/mnd} on a grid of months), where the integration of RUNTIME-SEMANTICS ch. 3.6 cancels it one for one.
@@ -4008,7 +4008,7 @@ public final class TmsTranspiler {
      * interpreter evaluates the filter with the reading form's collector, only where that form's evaluation reaches the
      * fold (RUNTIME-SEMANTICS ch. 5.10, 5.11); then, where its filter faulted for a member, the fault of the first in
      * fold order ({@link FilterFault}); then, where the case gives a member's timeline as the asOfDate-bucket scalar, the
-     * fault that names the first such member in fold order ({@link MemberFault}, ch. 3.6, 8.4); then {@code uitkomst}, the
+     * fault that names the first such member in fold order ({@link MemberFault}, ch. 3.6, 8.4); then {@code outcome}, the
      * fold's value, whose fallback the reference interpreter evaluates after the members ({@link Term.FoldRead}). A
      * deposit for a member after the one that faults, which the reference interpreter does not reach, is heard as well:
      * the session faults at the fixpoint, so it changes no outcome.
@@ -4022,7 +4022,7 @@ public final class TmsTranspiler {
     }
 
     /** The fold of {@code f}, an aggregation or a quantifier fold, on the subject of {@code reads}, the rule that reads
-     *  it, built by {@code bouw} from its key and its name the first time it is read. While it is built, the binders in
+     *  it, built by {@code build} from its key and its name the first time it is read. While it is built, the binders in
      *  scope in {@code reads} are those its contribution rules see from outside ({@link #foldBinders}). */
     private Fold foldFor(Object f, Reads reads, BiFunction<String, String, Fold> build) {
         Map<Objecttype, Fold> perSubject = folds.computeIfAbsent(f, k -> new IdentityHashMap<>());
@@ -4084,7 +4084,7 @@ public final class TmsTranspiler {
      * it, where the filter can fault, the rule that inserts the member's {@link FilterFault} ({@link #filterFaultRule}),
      * and where the filter can deposit, the rule that inserts the member's {@link FilterDeposit}
      * ({@link #filterDepositRule}); {@code selection} is the number of the selection of an instance-set union, 0 for any
-     * other fold. The rules go into {@code uit} and their reads into {@code readings}, to be registered with the form;
+     * other fold. The rules go into {@code out} and their reads into {@code readings}, to be registered with the form;
      * returns whether the filter can fault.
      */
     private boolean contributionRules(String key, String naam, Expr.FunctionKind kind, Objecttype subject,
@@ -4239,7 +4239,7 @@ public final class TmsTranspiler {
 
 
     /** The place of a to-many step's member in its list, for the filter fault rule, planned after the subject pattern:
-     *  an accumulate over the {@link ListPlace} facts of field {@code field} on the node the walk over {@code keten}
+     *  an accumulate over the {@link ListPlace} facts of field {@code field} on the node the walk over {@code chain}
      *  reaches from {@code node}, a variable a pattern before it binds (the node itself without a chain), which counts
      *  them and takes the least place. The count gives a row where the input stated no place, so the rule still fires
      *  and its consequence names the gap instead of dropping the fault. */
@@ -4625,7 +4625,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The timeline of the attribute {@code lid} bound at slot {@code timeline}, which the whole-period fold reads whole,
+     * The timeline of the attribute {@code member} bound at slot {@code timeline}, which the whole-period fold reads whole,
      * or the fault where the case gives its input as the asOfDate-bucket scalar ({@link BucketScalar},
      * {@link StaticFunction#COMPLETE}): ch. 8.4 makes a form that needs the one convention and finds the other fault, never
      * guess. The fault names the object by the subject of the rule, through the roles of {@code path} where the attribute
@@ -4664,7 +4664,7 @@ public final class TmsTranspiler {
      * bound of a comparison is read as a decimal ({@code toBd}), after the timeline.
      * The timeline of an attribute is read whole, so its input given as the asOfDate-bucket scalar faults
      * ({@link #fullTimeline}); a characteristic, whose input is its true periods, reads its timeline as it is.
-     * {@code grens} is null where the test has no bound.
+     * {@code bound} is null where the test has no bound.
      */
     private static Term wholePeriod(Condition.WholePeriod qualifier, Term timeline, int testCode, Term bound,
                                       String source) {
@@ -4751,7 +4751,7 @@ public final class TmsTranspiler {
      * model carries one.
      */
     private Term quantifierFold(Condition.QuantifierFold kv, Reads reads) {
-        // WF-112, in the sentence of Vensterpositie, on both branches: a window in the filter or the test under none
+        // WF-112, in the sentence of WindowPosition, on both branches: a window in the filter or the test under none
         // or a counting quantifier has no reading
         Reason window = WindowPosition.refusal(kv);
         if (window != null) throw new Refusal(window.framed("with-snippet", "snippet", snippet(kv)));
@@ -4782,7 +4782,7 @@ public final class TmsTranspiler {
     /**
      * The contribution rules of the quantifier fold {@code kv} on {@code subject}, planned: one over its range, the
      * fold's subject bound first and the member joined to it, the member's reads of the filter and of the matrix bound,
-     * the filter as the test (with the role {@link TestItem.Role#ZONDER_FOUT} where it can fault), and a consequence
+     * the filter as the test (with the role {@link TestItem.Role#WITHOUT_FAULT} where it can fault), and a consequence
      * that evaluates the matrix for the member and inserts the member's {@link Contribution} logically: 1 or 0 for its
      * verdict ({@link Consequence.Input.Verdict}), or, where the matrix can fault or deposit, its {@link MemberTest}
      * ({@link Consequence.Input.MemberTest}), with the member's place bound as the filter fault rule binds it
@@ -5044,7 +5044,7 @@ public final class TmsTranspiler {
             return out;
         }
 
-        /** The test of {@code conditionTerm}, compiled into {@code toets}, over the values at {@code read}, asking
+        /** The test of {@code conditionTerm}, compiled into {@code test}, over the values at {@code read}, asking
          *  {@code role} of it; null where the rule has no condition. */
         private TestItem testItem(TestItem.Role role, Term testTerm, Set<Integer> read, Condition conditionTerm) {
             if (testTerm == null) return null;
@@ -5129,7 +5129,7 @@ public final class TmsTranspiler {
         void markFail() { fail = true; }
 
         /** Whether an expression compiled since the last {@link #follow} can raise an evaluation fault: a condition that
-         *  can is tested with the role {@link TestItem.Role#ZONDER_FOUT}, beside the rule that inserts its fault. */
+         *  can is tested with the role {@link TestItem.Role#WITHOUT_FAULT}, beside the rule that inserts its fault. */
         boolean canFail() { return fail; }
 
         /** Registers what the lowered rule reads with the transpiler: the standings, path standings and channel
@@ -5326,7 +5326,7 @@ public final class TmsTranspiler {
             return allocateSlot(ReadKind.CHANNEL, key, w);
         }
 
-        /** Whether the reference field {@code field} of this rule's subject is set, to an instance of {@code klasse} where
+        /** Whether the reference field {@code field} of this rule's subject is set, to an instance of {@code javaClass} where
          *  a role check narrows the other end (null: any): a link of an input relation stored on the subject
          *  ({@link TmsTranspiler#roleCheck}). Input does not change while the session fires, so it is bound off the
          *  subject's bean, as an input member is ({@link #own}). */
@@ -5340,7 +5340,7 @@ public final class TmsTranspiler {
             return allocateSlot(ReadKind.ROLE_FIELD, key, w);
         }
 
-        /** The number of beans of {@code klasse} whose reference field {@code field} names this rule's subject: the links
+        /** The number of beans of {@code javaClass} whose reference field {@code field} names this rule's subject: the links
          *  of an input relation stored on the other end ({@link TmsTranspiler#roleCheck}), bound off an accumulate,
          *  which over no bean still binds a row. */
         int roleFillers(Class<?> javaClass, String field) {
@@ -5356,7 +5356,7 @@ public final class TmsTranspiler {
         }
 
         /** The number of links of the created relation {@code relation} that hold this rule's subject at its first end
-         *  where {@code subjectIsFirst}, else at its second, with an instance of {@code klasse} at the other end (null:
+         *  where {@code subjectIsFirst}, else at its second, with an instance of {@code javaClass} at the other end (null:
          *  any): the {@link RelationLink} facts, bound off an accumulate, which over no link still binds a row
          *  ({@link TmsTranspiler#roleCheck}). */
         int roleLinks(String relation, boolean subjectIsFirst, Class<?> javaClass) {
@@ -5444,7 +5444,7 @@ public final class TmsTranspiler {
             states.add(item);
         }
 
-        /** The standing of {@code lid} of the subject, a {@link State} or a {@link CharacteristicState}, binding {@code field}
+        /** The standing of {@code member} of the subject, a {@link State} or a {@link CharacteristicState}, binding {@code field}
          *  of it to {@code w}: a constraint on the member, the join on the subject, the binding. */
         private FactPattern state(Class<?> javaClass, String naam, String memberField, ElementKey lk, String field, String w) {
             Alpha ofMember = equal(id("stand"), memberField, lk);
@@ -5562,13 +5562,13 @@ public final class TmsTranspiler {
     private static final String FOLD_SUBJECT = "$vouwonderwerp";
     /**
      * The variable of a slot that reads {@code read}, a name as the document declares it, in a rule whose slots
-     * before it have the variables {@code bezet}: {@code $} and that name as an identifier ({@link Namen#ident}), so
+     * before it have the variables {@code occupied}: {@code $} and that name as an identifier ({@link Namen#ident}), so
      * that a rendering shows what the slot holds, in DRL text as well. Only the characters a Java identifier may hold
      * stay: {@code Namen.ident} keeps every letter and every number of Unicode, and a number such as {@code ²} or
      * {@code ½} is none, so "artikel 3²" reads {@code $artikel3}. A name of which nothing stays reads {@code $x}, the
      * name {@code Namen.ident} gives an empty name. It is unique within the rule by construction: the identifier has no
      * underscore, while every other variable of a rule has one ({@link TmsTranspiler#id}, the numbered names of
-     * {@code Reads}) or is one of {@link #FIXED_NAMES}; where such a fixed name or a name in {@code bezet} has it
+     * {@code Reads}) or is one of {@link #FIXED_NAMES}; where such a fixed name or a name in {@code occupied} has it
      * already, the first free number from 2 after it makes it unique. It depends only on the reads of the rule before
      * it, in their order. {@code RulePlan} refuses a rule that declares one variable twice, so a name that escaped
      * this would fail the build, and not bind two values to one variable.
@@ -5591,7 +5591,7 @@ public final class TmsTranspiler {
             "$v", "$vouwonderwerp", "$waarde", "$waarden");
 
     /** The items {@code lhs} of a rule with the probe of every test that places none at -1
-     *  ({@link #withoutUnfilledDepositFlag(Gevolg)}): a test of deposits places it, every other role does not. */
+     *  ({@link #withoutUnfilledDepositFlag(Consequence)}): a test of deposits places it, every other role does not. */
     private static List<LhsItem> withoutUnfilledDepositFlag(List<LhsItem> lhs) {
         List<LhsItem> out = new ArrayList<>(lhs.size());
         for (LhsItem item : lhs) {
@@ -5607,7 +5607,7 @@ public final class TmsTranspiler {
     /**
      * {@code g} with the probe of its terms at -1 where it places none. Every place that deposits compiles with the
      * probe slot of its rule ({@link Reads#depositFlag}), whatever the role of the rule, but only three positions put a
-     * probe in that slot: a test of deposits ({@link TestItem.Role#DEPONERING}), the value of a rule with a deposit
+     * probe in that slot: a test of deposits ({@link TestItem.Role#DEPOSIT}), the value of a rule with a deposit
      * ({@link Consequence.Value#deposit}) and the test of a member with a probe in a quantifier fold
      * ({@link Consequence.Input.MemberTest}). Elsewhere, as in the rule of a condition's fault or a filter's fault, the
      * places would report to a slot nobody fills, which reads as nothing; the plan says so itself, so that a rendering
@@ -5766,7 +5766,7 @@ public final class TmsTranspiler {
         return otherwise ? out : terms;
     }
 
-    /** A constraint that field {@code field} of a fact equals {@code waarde}. */
+    /** A constraint that field {@code field} of a fact equals {@code value}. */
     private static Alpha equal(String id, String field, Object value) {
         return new Alpha(id, List.of(new Alpha.FieldTest(field, Alpha.Comparator.GELIJK, value)));
     }
@@ -5835,14 +5835,14 @@ public final class TmsTranspiler {
         return List.of(inputData, derivation, falsePlan);
     }
 
-    /** The test that the input of characteristic {@code lid} on the subject's bean, read as whether it holds
+    /** The test that the input of characteristic {@code member} on the subject's bean, read as whether it holds
      *  {@code true}, is {@code polarity}. */
     private static Alpha inputTrue(String id, Member member, boolean polarity) {
         return new Alpha(id, List.of(new Alpha.FieldTest(List.of(), member.naam(), Binding.ReadForm.WAAR,
                 Alpha.Comparator.GELIJK, polarity)));
     }
 
-    /** The pattern of the {@link HasCharacteristic} of {@code kenmerk} that a derivation put on the subject: a constraint on
+    /** The pattern of the {@link HasCharacteristic} of {@code characteristic} that a derivation put on the subject: a constraint on
      *  the characteristic, the join on the subject. */
     private FactPattern derived(ElementKey characteristic) {
         return new FactPattern(HasCharacteristic.class, "$afgeleid", List.of(equal(id("afgeleid"), "characteristic", characteristic)),
@@ -5913,7 +5913,7 @@ public final class TmsTranspiler {
                         Consequence.Insertion.LOGICAL));
     }
 
-    /** The value array of a standing rule whose consequence reads one value: slot 0, of {@code soort}, which the
+    /** The value array of a standing rule whose consequence reads one value: slot 0, of {@code category}, which the
      *  variable {@code naam} binds. */
     private static ReadTable oneSlot(ReadKind category, String key, String naam) {
         return new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, category, key, naam)));
@@ -6069,13 +6069,13 @@ public final class TmsTranspiler {
     private record Member(ElementKey key, Objecttype declarant, String naam, boolean characteristic, Datatype datatype,
                        Class<?> javaClass, RegelSpraakModel.Granulariteit time) {}
 
-    /** Whether {@code lid} is an attribute on a timeline: one the branch reads through its standing, derived or input,
+    /** Whether {@code member} is an attribute on a timeline: one the branch reads through its standing, derived or input,
      *  whose input stands in the convention the case gave it ({@link #attributeStateRules}). */
     private static boolean timelineAttribute(Member member) {
         return member.time() != null && !member.characteristic();
     }
 
-    /** How the input member {@code lid} is read off a bean of a type that declares it, the decision a plan's binding
+    /** How the input member {@code member} is read off a bean of a type that declares it, the decision a plan's binding
      *  carries ({@link Binding.ReadForm}): a characteristic on a timeline as its true periods, a {@code List<Period>}
      *  ({@link Period#list}), null for an absent timeline, a characteristic that holds one truth value as whether it
      *  holds {@code true}, and any other member as its value. An attribute on a timeline is read through its standing
@@ -6174,7 +6174,7 @@ public final class TmsTranspiler {
         }
     }
 
-    /** One hop of a path or a range, from an object of type {@code van} to one of type {@code naar}: over an input
+    /** One hop of a path or a range, from an object of type {@code van} to one of type {@code destination}: over an input
      *  relation by the reference field {@code field} on the bean of one end ({@code onNear}: on the near object, else on
      *  the far one), over a relation a form creates by its {@link RelationLink} facts ({@code relation} set,
      *  {@code nearIsFirst} saying which end of the link the near object is, {@code field} null). */
@@ -6217,7 +6217,7 @@ public final class TmsTranspiler {
                 List.copyOf(hops));
     }
 
-    /** The hop over {@code binding} from {@code van} to {@code naar} where its relation is one a form creates, read over
+    /** The hop over {@code binding} from {@code van} to {@code destination} where its relation is one a form creates, read over
      *  {@link RelationLink} facts; null for an input relation. The binding names the role the far end fills, so the near
      *  end is the first of the link where that role is the fact type's second. */
     private Hop linkHop(RoleBindingRef binding, Objecttype van, Objecttype destination) {

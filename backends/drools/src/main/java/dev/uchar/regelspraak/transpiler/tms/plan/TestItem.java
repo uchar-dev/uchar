@@ -4,8 +4,8 @@ import java.util.List;
 
 /**
  * The test of the rule over the values at {@code slots}, as one constraint with its own {@code id} (see {@link Alpha}),
- * after the patterns that bind them. {@code toets} is the condition as a tree of calls over a value array of
- * {@code grootte} slots with the read values at {@code slots}, a truth value, from which a rendering into the executable
+ * after the patterns that bind them. {@code test} is the condition as a tree of calls over a value array of
+ * {@code size} slots with the read values at {@code slots}, a truth value, from which a rendering into the executable
  * model makes a predicate and one into DRL text makes the calls. {@code role} says what the test asks of the condition,
  * which a rendering cannot tell from the condition itself: that it holds, that it holds without a fault, that it
  * faults, or that it deposits, with the probe in slot {@code depositFlag} (-1 for every other role).

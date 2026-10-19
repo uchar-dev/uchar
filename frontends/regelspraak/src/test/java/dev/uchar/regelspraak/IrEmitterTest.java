@@ -567,7 +567,7 @@ class IrEmitterTest {
     }
 
     @Test void version_validity_with_time_component_is_an_error() {
-        // The validity window is day-granular (Geldigheid holds LocalDates), so a bound written
+        // The validity window is day-granular (Validity holds LocalDates), so a bound written
         // with a time of day has no carrier. It used to be read by a find() that stopped after
         // the date and emitted "vanaf": "2026-01-01" with the 10:00 silently gone.
         String[][] cases = {{"vanaf 01-01-2026 10:00:00.000", "01-01-2026 10:00:00.000"},
@@ -813,7 +813,7 @@ class IrEmitterTest {
         // The fail-fast half of the rule: where NEITHER a write target nor a comparison sibling names
         // an Enumeratie, the frontend has no domain to derive and emits the honest marker rather than
         // guessing one. A Tekst target is exactly such a position. The marker is loud — Resolver's
-        // marker discipline (2026-09-19) raises a WARNING beside every Onopgelost that survives into
+        // marker discipline (2026-09-19) raises a WARNING beside every Unresolved that survives into
         // the finished model — and it carries the delimited source lexeme, so the author sees which
         // one stayed unresolved. A guessed domain would be worse than a marker: it would put a label
         // on the wire under a domain nobody declared for this position.

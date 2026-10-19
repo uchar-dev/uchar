@@ -309,9 +309,9 @@ let () =
   in
   match Normalise.(finest_of_units ~where:"unit system \"Termijn\"" (plain_units deadline)) with
   | finest, to_finest ->
-      check "finest(Termijn) = maand" (finest.Ir_v0.Ast.abbr_text = Some "maand");
+      check "finest(Termijn) = month" (finest.Ir_v0.Ast.abbr_text = Some "maand");
       let year = eenh ~system:"Termijn" ~canonical_form:"maand" "jaar" (Some (12, 1)) in
-      check "jaar -> maand is x12 (non-power-of-ten multiply-only integer)"
+      check "year -> month is x12 (non-power-of-ten multiply-only integer)"
         (Q.equal (to_finest year) (Q.of_int 12))
   | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("finest(Termijn) unexpected fault: " ^ m) false
 
@@ -454,9 +454,9 @@ let () =
   Sys.remove casef;
   (* the pass makes the factor≠1 jaar/maand join+write translate at all *)
   (match translate doc case with
-  | (_ : string) -> check "jaar/maand doc translates end-to-end (pass lifts the factor≠1 fence)" true
+  | (_ : string) -> check "year/month doc translates end-to-end (pass lifts the factor≠1 fence)" true
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check ("jaar/maand doc translates (unexpected fault: " ^ m ^ ")") false);
+      check ("year/month doc translates (unexpected fault: " ^ m ^ ")") false);
   (* and ref pins the value clingo must reproduce: 2 jaar + 3 maand = 27 maand *)
   let env =
     { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
@@ -464,8 +464,8 @@ let () =
   in
   let final = Uchar_ref.Eval.evaluate env case.world in
   (match Uchar_ref.Case.check case final with
-  | [] -> check "jaar/maand: ref pins looptijd = 27" true
-  | ms -> check ("jaar/maand: ref pins looptijd = 27 (" ^ String.concat "; " ms ^ ")") false)
+  | [] -> check "year/month: ref pins looptijd = 27" true
+  | ms -> check ("year/month: ref pins looptijd = 27 (" ^ String.concat "; " ms ^ ")") false)
 
 (* --- the CROSS-SYSTEM unit form (card kruis-stelsel-eenheid, 2026-09-19) ---
 
@@ -1028,9 +1028,9 @@ let () =
   Sys.remove irf;
   Sys.remove casef;
   match translate doc case with
-  | (_ : string) -> check "unknown-typed arithmetic Binair: expected a loud fault, got a model" false
+  | (_ : string) -> check "unknown-typed arithmetic Binary: expected a loud fault, got a model" false
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check ("unknown-typed arithmetic Binair faults loudly (" ^ m ^ ")")
+      check ("unknown-typed arithmetic Binary faults loudly (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:"non-numeric arithmetic operand" m)
 
 (* --- the Construct-payload doors that STAY refused (ASP-TRANSLATION S19) ---
@@ -1298,7 +1298,7 @@ let closed_attr_case =
 |}
 
 let () =
-  faults_with ~name:"S19 door 1 (subject-dependent fold init over a list parameter)"
+  faults_with ~name:"S19 via 1 (subject-dependent fold init over a list parameter)"
     ~ir:plist_init_doc ~case_text:plist_init_case
     ~needle:
       "a subject-dependent Fold init is carried only over an own attribute list, whose id \
@@ -1306,17 +1306,17 @@ let () =
        subjects' init facts collide on that one key and every subject reads every subject's \
        outcome — a wrong answer, not a missing one; a derived source (a mapped list) keeps the \
        subject in its id but has no corpus case";
-  faults_with ~name:"S19 door 2 (rule-level Construct with a parameter payload)"
+  faults_with ~name:"S19 via 2 (rule-level Construct with a parameter payload)"
     ~ir:param_payload_doc ~case_text:param_payload_case
     ~needle:
       "a Construct payload other than a literal or an own attribute read is not translated at \
        rule level (a parameter read, a Match or a composite payload has no corpus case)";
-  faults_with ~name:"S19 door 3 (Construct with a bound payload as a sum-typed operand)"
+  faults_with ~name:"S19 via 3 (Construct with a bound payload as a sum-typed operand)"
     ~ir:sum_operand_doc ~case_text:sum_operand_case
     ~needle:
       "a Construct payload other than a literal is not a ground term (a payload that must be \
        bound needs a body atom this position cannot carry; no corpus case)";
-  faults_with ~name:"S19 door 4 (attribute read at the leaf of a closed-body init)"
+  faults_with ~name:"S19 via 4 (attribute read at the leaf of a closed-body init)"
     ~ir:closed_attr_doc ~case_text:closed_attr_case
     ~needle:
       "an attribute read inside a closed body has no subject to read from (a lambda or function \
@@ -1476,7 +1476,7 @@ let () =
   in
   faults_with ~name:"a sum-typed duration under date arithmetic (declared sum type)"
     ~ir:dagduur_lie_doc ~case_text:dagduur_lie_case ~needle:sumtype;
-  faults_with ~name:"a sum-typed duration under datum-tijd arithmetic (declared sum type)"
+  faults_with ~name:"a sum-typed duration under date-time arithmetic (declared sum type)"
     ~ir:dt_duration_lie_doc ~case_text:dt_duration_lie_case ~needle:sumtype
 
 (* --- the temporal totaal's SUBJECT anchor (the fold-arm narrowing) ---------
@@ -1563,7 +1563,7 @@ let total_doc ?(source_role = false) ~vondst_attribute ~operand () =
 }
 |}
 
-(* [navigeert] writes the one hop over "de bewarende jutter" as the operand's
+(* [navigates] writes the one hop over "de bewarende jutter" as the operand's
    own navigation binding — a fold source never navigates (WF-053), so this is
    the refused form the arm below names *)
 let total_operand ?(navigates = false) ~attribute_ref ~object_type () =
@@ -1574,7 +1574,7 @@ let total_operand ?(navigates = false) ~attribute_ref ~object_type () =
      else "")
   ^ {| }|}
 
-(* [gekoppeld:false] supplies NO relation at all. Since the ch. 5.7a
+(* [linked:false] supplies NO relation at all. Since the ch. 5.7a
    decision (2026-09-10) a link supplied from the Jutter side is read from
    the Vondst side too, so "the fold reaches no member" can no longer be
    staged by writing the link on the far end — it has to be staged by
@@ -1659,7 +1659,7 @@ let translates_with ~name ~ir ~case_text =
 let () =
   (* the wrong-VALUE form: both types carry 'bewaartarief', so reading it off
      the subject found 99 where the navigated object holds 10 *)
-  faults_with ~name:"temporal totaal, navigated operand (attribute name shared)"
+  faults_with ~name:"temporal total, navigated operand (attribute name shared)"
     ~ir:
       (total_doc ~vondst_attribute:"bewaartarief"
          ~operand:(total_operand ~navigates:true ~attribute_ref:"bewaartarief" ~object_type:"Jutter" ())
@@ -1670,7 +1670,7 @@ let () =
     ;
   (* the silent-LEEG form: the same navigation, no shared name — the val atom
      simply found nothing and the target stayed underived *)
-  faults_with ~name:"temporal totaal, navigated operand (no shared name)"
+  faults_with ~name:"temporal total, navigated operand (no shared name)"
     ~ir:
       (total_doc ~vondst_attribute:"vondsttarief"
          ~operand:(total_operand ~navigates:true ~attribute_ref:"bewaartarief" ~object_type:"Jutter" ())
@@ -1724,7 +1724,7 @@ let () =
       {|the case supplies an asOfDate-bucket scalar, which carries no period of its own|};
   (* no navigation written, but the operand is declared on another type: the
      ci-control the gedurende sister arm has always carried *)
-  faults_with ~name:"temporal totaal, foreign-typed operand without navigation"
+  faults_with ~name:"temporal total, foreign-typed operand without navigation"
     ~ir:
       (total_doc ~vondst_attribute:"vondsttarief"
          ~operand:(total_operand ~attribute_ref:"bewaartarief" ~object_type:"Jutter" ())
@@ -1735,7 +1735,7 @@ let () =
     ;
   (* the form the arm DOES carry, in the same frame: the subject's own
      temporal attribute, no navigation, no set — an over-narrowing fails here *)
-  translates_with ~name:"temporal totaal, the subject's own timeline"
+  translates_with ~name:"temporal total, the subject's own timeline"
     ~ir:
       (total_doc ~vondst_attribute:"bewaartarief"
          ~operand:(total_operand ~attribute_ref:"bewaartarief" ~object_type:"Vondst" ())
@@ -1769,7 +1769,7 @@ let jr_unit =
   {|{ "node": "Unit", "abbreviation": "jr", "system": "Bewaartijd", "canonical": "mnd",
       "factorToCanonical": { "num": 12, "den": 1 } }|}
 
-(* [noemer] and [eenheid] are a unit's JSON or "null", which the wire writes
+(* [denominator] and [measure_unit] are a unit's JSON or "null", which the wire writes
    by leaving the field out *)
 let eur denominator =
   {|{ "node": "Unit", "abbreviation": "EUR", "system": "Munt", "canonical": "EUR",
@@ -2033,7 +2033,7 @@ let () =
      the declared factor 1/12, which this integer encoding cannot carry. ref
      computes it; refusing loudly, naming both units, is the only honest
      answer here — never a rounded one. *)
-  faults_with ~name:"§7.1 noemer strip, a convertible but non-1 denominator"
+  faults_with ~name:"§7.1 denominator strip, a convertible but non-1 denominator"
     ~ir:
       (set_fold_doc ~kind:"total" ~operand_ot:"Vondst" ~rate_unit:(eur jr_unit)
          ~objective_unit:(eur "null"))
@@ -2399,8 +2399,8 @@ let right_twisted (doc : Ir_v0.Ast.document) (variant : Ir_v0.Ast.literal_varian
               { r with
                 rr_condition = Some (Comparison { c with right_side = Some (Literal { l with variant }) }) }
               :: rest }
-      | _ -> failwith "rechts_verdraaid: the comparison's right operand is no literal")
-  | _ -> failwith "rechts_verdraaid: the first rule carries no comparison"
+      | _ -> failwith "right_twisted: the comparison's right operand is no literal")
+  | _ -> failwith "right_twisted: the first rule carries no comparison"
 
 let dt_doc ~attributes ~characteristics ~rule_defs =
   Printf.sprintf
@@ -2494,13 +2494,13 @@ let () =
   let backward = pair_case "2026-03-15T18:00:00.000" "2026-03-15T06:00:00.000" false in
   (* the SAME civil day both times, so only the ms-of-day tie-break can
      answer — a day-only reading would call them equal and fire neither *)
-  ref_matches ~name:"datum-tijd ordening zonder literal, vooruit" ~ir:pair_ir
+  ref_matches ~name:"date-time ordering without literal, forward" ~ir:pair_ir
     ~case_text:forward;
-  clingo_matches ~name:"datum-tijd ordening zonder literal, vooruit" ~ir:pair_ir
+  clingo_matches ~name:"date-time ordering without literal, forward" ~ir:pair_ir
     ~case_text:forward;
-  ref_matches ~name:"datum-tijd ordening zonder literal, achteruit" ~ir:pair_ir
+  ref_matches ~name:"date-time ordering without literal, backward" ~ir:pair_ir
     ~case_text:backward;
-  clingo_matches ~name:"datum-tijd ordening zonder literal, achteruit" ~ir:pair_ir
+  clingo_matches ~name:"date-time ordering without literal, backward" ~ir:pair_ir
     ~case_text:backward;
   (* 2. the ORDERING'S EMPTY OPERAND: a positive join, so leeg is false in
      both directions — the ch. 1.2d date row, which the helper gets for free *)
@@ -2508,8 +2508,8 @@ let () =
     dt_case ~attrs:{|"aanvangstip": { "dateTime": "2026-03-15T06:00:00.000" }|}
       ~expected:{|{ "kind": "characteristicAbsent", "label": "W1", "characteristic": "tijdig" }|}
   in
-  ref_matches ~name:"datum-tijd ordening met lege operand" ~ir:pair_ir ~case_text:empty_case;
-  clingo_matches ~name:"datum-tijd ordening met lege operand" ~ir:pair_ir ~case_text:empty_case;
+  ref_matches ~name:"date-time ordering with empty operand" ~ir:pair_ir ~case_text:empty_case;
+  clingo_matches ~name:"date-time ordering with empty operand" ~ir:pair_ir ~case_text:empty_case;
   (* BOTH operands empty. The one-empty row above leaves the other side
      bound, so it cannot tell "the join failed" from "the bound side lost";
      with neither bound, the only thing that can answer is the ch. 1.2d rule
@@ -2519,9 +2519,9 @@ let () =
     dt_case ~attrs:""
       ~expected:{|{ "kind": "characteristicAbsent", "label": "W1", "characteristic": "tijdig" }|}
   in
-  ref_matches ~name:"datum-tijd ordening met BEIDE operanden leeg" ~ir:pair_ir
+  ref_matches ~name:"date-time ordering with BOTH operands leeg" ~ir:pair_ir
     ~case_text:both_empty_case;
-  clingo_matches ~name:"datum-tijd ordening met BEIDE operanden leeg" ~ir:pair_ir
+  clingo_matches ~name:"date-time ordering with BOTH operands leeg" ~ir:pair_ir
     ~case_text:both_empty_case;
   (* 3. the ordering against a LITERAL, at the millisecond boundary: the
      literal enters as a GROUND pair term, never as an absolute ms integer
@@ -2589,7 +2589,7 @@ let () =
       ~characteristics:{|{ "node": "Characteristic", "name": "tijdig", "kind": "adjectival" }|}
       ~rule_defs:(dt_rule ~op:"earlier" ~left_side:(dt_attr "aanvangstip") ~right_side:(day_attr "ijkdag"))
   in
-  faults_with ~name:"gemengde datumprecisie in een ordening" ~ir:mixed_ir
+  faults_with ~name:"mixed date precision in an ordering" ~ir:mixed_ir
     ~case_text:
       (dt_case ~attrs:{|"aanvangstip": { "dateTime": "2026-03-15T06:00:00.000" }, "ijkdag": { "date": "2026-03-15" }|}
          ~expected:{|{ "kind": "characteristicAbsent", "label": "W1", "characteristic": "tijdig" }|})
@@ -2602,7 +2602,7 @@ let () =
       ~rule_defs:(dt_rule ~op:"equal" ~left_side:(dt_attr "aanvangstip")
                  ~right_side:(dt_attr "sluitingstip"))
   in
-  faults_with ~name:"datum-tijd gelijk-aan is een luide flank" ~ir:equal_ir
+  faults_with ~name:"date-time equal-to is a loud flank" ~ir:equal_ir
     ~case_text:forward ~needle:"datum-tijd equal/notEqual is not translated";
   (* 5. an ill-formed literal lexeme: WF-095 refuses the document, and so
      does an executor's loader, in the same sentence. Built past the loader
@@ -2623,14 +2623,14 @@ let () =
     | exception Uchar_ref.Value.Fault { text = m; _ } ->
         check (name ^ " faults loudly (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
   in
-  refused_at_load ~name:"onleesbaar datum-tijd-literal-lexeem bij het laden"
+  refused_at_load ~name:"unreadable date-time literal lexeme on loading"
     ~ir:(tijdig_ir "2026-03-15T12:00:00.1")
     ~needle:
       "millisecond-precision date literal lexeme '2026-03-15T12:00:00.1' is not the canonical ISO \
        form";
-  beyond_the_loader ~name:"onleesbaar datum-tijd-literal-lexeem in de vertaling"
+  beyond_the_loader ~name:"unreadable date-time literal lexeme in the translation"
     "2026-03-15T12:00:00.1" ~needle:"malformed datum-tijd lexeme";
-  (* 6. the day-first source snippet in `waarde`. This backend has no lexeme
+  (* 6. the day-first source snippet in `value_node`. This backend has no lexeme
      reader of its own: it reads the literal through ref's
      [Value.datetime_of_lexeme], so until 2026-09-23 it read the snippet as
      the same instant as the ISO lexeme and translated the rule. WF-095
@@ -2638,12 +2638,12 @@ let () =
      p5-datumtijd-lexeem; the snippet is now refused here, quoted, before
      any program is grounded (card datumtijd-lezers-versmalling). Over the
      wire an executor's loader refuses it first, in WF-095's sentence. *)
-  refused_at_load ~name:"dag-eerst-bronsnippet als datum-tijd-literal bij het laden"
+  refused_at_load ~name:"day-first source snippet as date-time literal on loading"
     ~ir:(tijdig_ir "15-03-2026 12:00:00.000")
     ~needle:
       "millisecond-precision date literal lexeme '15-03-2026 12:00:00.000' is not the canonical \
        ISO form";
-  beyond_the_loader ~name:"dag-eerst-bronsnippet als datum-tijd-literal in de vertaling"
+  beyond_the_loader ~name:"day-first source snippet as date-time literal in the translation"
     "15-03-2026 12:00:00.000"
     ~needle:"malformed datum-tijd lexeme \"15-03-2026 12:00:00.000\": not the canonical ISO form"
 
@@ -2729,13 +2729,13 @@ let loads_case ~name ~case_text ~needle =
 
 let () =
   let dienstdoend_tl = {|"dienstdoend": [ { "from": "2024-01-01", "to": "2024-07-01" } ]|} in
-  loads_case ~name:"een temporeel kenmerk in de statische lijst"
+  loads_case ~name:"a temporal characteristic in the static list"
     ~case_text:(characteristic_delivery_case ~static:{|"dienstdoend"|} ~timelines:"")
     ~needle:(Some "is declared time-dependent");
-  loads_case ~name:"hetzelfde kenmerk als tijdlijn"
+  loads_case ~name:"the same characteristic as timeline"
     ~case_text:(characteristic_delivery_case ~static:"" ~timelines:dienstdoend_tl)
     ~needle:None;
-  loads_case ~name:"een NIET-temporeel kenmerk in de statische lijst"
+  loads_case ~name:"a NIET-temporal characteristic in the static list"
     ~case_text:(characteristic_delivery_case ~static:{|"gemeentelijk"|} ~timelines:dienstdoend_tl)
     ~needle:None
 
@@ -2766,7 +2766,7 @@ let () =
    — folding the arms back into the pre-card catch-all — was seen by the
    removed check alone and has no witness left.
 
-   [granulariteit] is the attribute's `timeline` member, or nothing. *)
+   [grain] is the attribute's `timeline` member, or nothing. *)
 let attribute_delivery_doc ~grain =
   Printf.sprintf
     {|{
@@ -2827,13 +2827,13 @@ let () =
      null". TimelineFacet.granularity is a required enum on the uchar-ir-v1
      wire, so a document with a null granularity cannot be written; WF-059's
      second and third arms lapse with the M1 card. *)
-  loads_ir_case ~name:"hetzelfde attribuut met een echte granulariteit"
+  loads_ir_case ~name:"the same attribute with a real granularity"
     ~ir:
       (attribute_delivery_doc
          ~grain:
            {|, "timeline": { "node": "TimelineFacet", "granularity": "month", "count": 1 }|})
     ~case_text:attribute_delivery_case ~needle:None;
-  loads_ir_case ~name:"een tijdlijn op een attribuut zonder granulariteitssleutel"
+  loads_ir_case ~name:"a timeline on an attribute without a granularity key"
     ~ir:(attribute_delivery_doc ~grain:"")
     ~case_text:attribute_delivery_case
     ~needle:(Some "a timeline value on a non-temporal attribute")
@@ -2870,7 +2870,7 @@ let () =
    the two arms back into the pre-card catch-all — was seen by the removed
    check alone and has no witness left.
 
-   [granulariteit] is the characteristic's `timeline` member, or nothing. *)
+   [grain] is the characteristic's `timeline` member, or nothing. *)
 let characteristic_granularity_doc ~grain =
   Printf.sprintf
     {|{
@@ -2910,13 +2910,13 @@ let () =
      null". TimelineFacet.granularity is a required enum on the uchar-ir-v1
      wire, so a document with a null granularity cannot be written; WF-059's
      second and third arms lapse with the M1 card. *)
-  loads_ir_case ~name:"hetzelfde kenmerk met een echte granulariteit"
+  loads_ir_case ~name:"the same characteristic with a real granularity"
     ~ir:
       (characteristic_granularity_doc
          ~grain:
            {|, "timeline": { "node": "TimelineFacet", "granularity": "month", "count": 1 }|})
     ~case_text:characteristic_granularity_case ~needle:None;
-  loads_ir_case ~name:"een tijdlijn op een kenmerk zonder granulariteitssleutel"
+  loads_ir_case ~name:"a timeline on a characteristic without a granularity key"
     ~ir:(characteristic_granularity_doc ~grain:"")
     ~case_text:characteristic_granularity_case
     ~needle:(Some "a characteristic timeline on a non-temporal characteristic")
@@ -3004,17 +3004,17 @@ let owner_case =
 let () =
   (* the field absent, and the field naming the subject's own type: the same
      answer, and it is the answer ref pins *)
-  ref_matches ~name:"WF-100 eigenaar afwezig" ~ir:(owner_doc ())
+  ref_matches ~name:"WF-100 owner absent" ~ir:(owner_doc ())
     ~case_text:owner_case;
-  clingo_matches ~name:"WF-100 eigenaar afwezig" ~ir:(owner_doc ())
+  clingo_matches ~name:"WF-100 owner absent" ~ir:(owner_doc ())
     ~case_text:owner_case;
-  ref_matches ~name:"WF-100 eigenaar is het onderwerptype"
+  ref_matches ~name:"WF-100 owner is the subject type"
     ~ir:(owner_doc ~holder:{|"Vondst"|} ()) ~case_text:owner_case;
-  clingo_matches ~name:"WF-100 eigenaar is het onderwerptype"
+  clingo_matches ~name:"WF-100 owner is the subject type"
     ~ir:(owner_doc ~holder:{|"Vondst"|} ()) ~case_text:owner_case;
   (* a foreign owner: refused, where before 2026-09-10 the same document
      translated and answered V1's own value under J1's name *)
-  faults_with ~name:"WF-100 vreemde eigenaar" ~ir:(owner_doc ~holder:{|"Jutter"|} ())
+  faults_with ~name:"WF-100 foreign owner" ~ir:(owner_doc ~holder:{|"Jutter"|} ())
     ~case_text:owner_case
     ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\"";
   (* the NAVIGATED form: WF-100's declaration cross does not reach it (the
@@ -3027,7 +3027,7 @@ let () =
      faulting after, both Drools branches refusing throughout — that form had no
      answering executor at all, deliberately, and WF-109 has since taken it off
      the wire. *)
-  faults_with ~name:"WF-100 vreemde eigenaar op de genavigeerde check"
+  faults_with ~name:"WF-100 foreign owner on the navigated check"
     ~ir:(owner_doc ~navigates:true ~holder:{|"Jutter"|} ())
     ~case_text:owner_case
     ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\""
@@ -3162,7 +3162,7 @@ let () =
       ("WF-109 gastheer afwezig", None, {|"2"|}) ];
   (* the intermediate step is an object the chain walks THROUGH, not one the
      guard is about: two patterns, a name for neither *)
-  faults_with ~name:"WF-109 gastheer is de tussenstap"
+  faults_with ~name:"WF-109 host is the intermediate step"
     ~ir:(host_doc ~holder:{|"Post"|} ())
     ~case_text:(host_case ~quantity:{|"1"|} ())
     ~needle:"is hosted on \"Post\" while the subject is \"Kustvak\""
@@ -3199,7 +3199,7 @@ let baken_type =
         "characteristics": [
           { "node": "Characteristic", "name": "gehesen", "kind": "adjectival" } ] },|}
 
-(* a type that declares nothing of its own and inherits from [ouder] — WF-105
+(* a type that declares nothing of its own and inherits from [parent_node] — WF-105
    forbids re-declaring a name along one chain, so the characteristic HAS to be
    inherited for these two rows to be about the host and not about the
    declaration *)
@@ -3209,9 +3209,9 @@ let () =
   let ir_super = host_doc ~extra_type:baken_type ~sein_own:(inherits_from "Baken")
       ~holder:{|"Baken"|} () in
   let case_super = host_case ~quantity:{|"1"|} () in
-  ref_matches ~name:"WF-109 supertype-gastheer leest het doel" ~ir:ir_super ~case_text:case_super;
-  clingo_matches ~name:"WF-109 supertype-gastheer leest het doel" ~ir:ir_super ~case_text:case_super;
-  faults_with ~name:"WF-109 gastheer bereikt anker en doel"
+  ref_matches ~name:"WF-109 supertype host reads the target" ~ir:ir_super ~case_text:case_super;
+  clingo_matches ~name:"WF-109 supertype host reads the target" ~ir:ir_super ~case_text:case_super;
+  faults_with ~name:"WF-109 host reaches anchor and target"
     ~ir:
       (host_doc ~extra_type:baken_type ~kustvak_own:(inherits_from "Baken")
          ~sein_own:(inherits_from "Baken") ~holder:{|"Baken"|} ())
@@ -3256,8 +3256,8 @@ let () =
    clause in OCaml. Neither calls the other.
 
    Measured on 2026-09-11, before the change: this backend dropped the
-   qualifier — both Characteristic_check arms matched `periode` away — and translated
-   a bare heeft/2 lookup. A time-dependent characteristic is never delivered
+   qualifier — both Characteristic_check arms matched `time_period` away — and translated
+   a bare has/2 lookup. A time-dependent characteristic is never delivered
    in the flat `characteristics` list (the ch. 8.2 apartness, refused at load
    since 2026-09-09), so that fact can never exist: rows a, b and c came back
    underived, leeg, with nothing said, where the chapter passes all three
@@ -3325,7 +3325,7 @@ let gp_doc ?(year = true) ?(not_flag = "false") ?(negation = "false")
 |}
     grain negation (if year then "year" else "month") not_flag
 
-(* [tijdlijn] is the `bedrijvig` true-period list (empty = the key absent),
+(* [timeline_state] is the `bedrijvig` true-period list (empty = the key absent),
    [link] whether S1 names W1 on the to-one role, [toeslag] the pinned
    outcome — a value or the empty expectation. *)
 let gp_case ~link ~timeline_state ~truth =
@@ -3431,21 +3431,21 @@ let () =
     both_sides ~name ~ir:(gp_doc ?year ?not_flag ?negation ()) ~case_text:(gp_case ~link ~timeline_state ~truth)
   in
   (* the table: a failed hop and a segmentless timeline touch no bucket *)
-  table_row ~name:"ch3.9 a geen koppeling" ~link:false ~timeline_state:"" ~truth:true ();
-  table_row ~name:"ch3.9 b koppeling zonder tijdlijn" ~link:true ~timeline_state:"" ~truth:true ();
+  table_row ~name:"ch3.9 a no link" ~link:false ~timeline_state:"" ~truth:true ();
+  table_row ~name:"ch3.9 b link without timeline" ~link:true ~timeline_state:"" ~truth:true ();
   table_row ~name:"ch3.9 c heel 2026" ~link:true ~timeline_state:whole_2026 ~truth:true ();
   table_row ~name:"ch3.9 d jan-jul 2026" ~link:true ~timeline_state:jan_jul ~truth:false ();
   (* the QUALIFIER's negation complements every verdict *)
-  table_row ~name:"ch3.9 niet-a" ~not_flag:"true" ~link:false ~timeline_state:"" ~truth:false ();
-  table_row ~name:"ch3.9 niet-c" ~not_flag:"true" ~link:true ~timeline_state:whole_2026 ~truth:false ();
-  table_row ~name:"ch3.9 niet-d" ~not_flag:"true" ~link:true ~timeline_state:jan_jul ~truth:true ();
+  table_row ~name:"ch3.9 not-a" ~not_flag:"true" ~link:false ~timeline_state:"" ~truth:false ();
+  table_row ~name:"ch3.9 not-c" ~not_flag:"true" ~link:true ~timeline_state:whole_2026 ~truth:false ();
+  table_row ~name:"ch3.9 not-d" ~not_flag:"true" ~link:true ~timeline_state:jan_jul ~truth:true ();
   (* the INNER negation: same touched buckets, complementary satisfied days *)
   table_row ~name:"ch3.9 neg-b" ~negation:"true" ~link:true ~timeline_state:"" ~truth:true ();
   table_row ~name:"ch3.9 neg-c" ~negation:"true" ~link:true ~timeline_state:whole_2026 ~truth:false ();
   (* the MONTH grid is the QUALIFIER's, never the characteristic's declared
      granularity: six whole months pass where the year bucket failed *)
-  table_row ~name:"ch3.9 maand-d" ~year:false ~link:true ~timeline_state:jan_jul ~truth:true ();
-  table_row ~name:"ch3.9 maand-deelmaand" ~year:false ~link:true ~timeline_state:half_jan ~truth:false ();
+  table_row ~name:"ch3.9 month-d" ~year:false ~link:true ~timeline_state:jan_jul ~truth:true ();
+  table_row ~name:"ch3.9 month-submonth" ~year:false ~link:true ~timeline_state:half_jan ~truth:false ();
   (* the OWN form — the same qualifier without a hop. Every row above
      navigates, and so does the corpus golden, so this row is what gives the
      "own and navigated" of the ch. 3.12 delta line its artefact on this
@@ -3453,13 +3453,13 @@ let () =
      single case pins both directions: an arm that answered a constant would
      move one of the two. `ref` holds the mirror of this row in its own suite
      (`WV-3.9-kenmerk-eigen-vorm`). *)
-  clingo_matches ~name:"ch3.9 eigen vorm (heel jaar, beide richtingen)"
+  clingo_matches ~name:"ch3.9 own form (whole year, both directions)"
     ~ir:gp_own_doc ~case_text:gp_own_case;
   (* the fence WF-043 does not reach on the navigated form. The case carries
      NO timeline: one on a non-temporal characteristic is refused by the case
      loader first, and the fence under test is a static property of the
      document that must fire without any data at all. *)
-  faults_with ~name:"ch3.9 kwalificator op een niet-tijdsafhankelijk kenmerk"
+  faults_with ~name:"ch3.9 qualifier on a non-time-dependent characteristic"
     ~ir:(gp_doc ~grain:"" ())
     ~case_text:(gp_case ~link:true ~timeline_state:"" ~truth:true)
     ~needle:"is not a time-dependent characteristic of \"Werf\""
@@ -3750,9 +3750,9 @@ let bp_case =
 let () =
   (* the document plays as written: the three refusals below are the FIELD's,
      not the model's *)
-  clingo_matches ~name:"ch3.4b tweestaps bereik speelt" ~ir:bp_doc ~case_text:bp_case;
+  clingo_matches ~name:"ch3.4b two-step range plays" ~ir:bp_doc ~case_text:bp_case;
   (* (b) one step is the sourceRole spelling, not a path *)
-  faults_with ~name:"ch3.4b een pad van één stap"
+  faults_with ~name:"ch3.4b a path of one step"
     ~ir:
       (substitute bp_doc
          ~truth:
@@ -3765,7 +3765,7 @@ let () =
          ~via:"")
     ~case_text:bp_case ~needle:"at least TWO steps";
   (* (a) a path beside a binding: two spellings of one range *)
-  refused_at_load ~name:"ch3.4b een pad naast een bronRol"
+  refused_at_load ~name:"ch3.4b a path beside a sourceRole"
     ~ir:
       (substitute bp_doc ~truth:{|"sourcePath": [|}
          ~via:
@@ -3792,15 +3792,15 @@ let () =
            doc.resolved_rules }
    in
    match translate both_sides case with
-   | (_ : string) -> check "ch3.4b een pad naast een bronRol, voorbij de lader: expected a fault" false
+   | (_ : string) -> check "ch3.4b a path beside a sourceRole, beyond the loader: expected a fault" false
    | exception Uchar_ref.Value.Fault { text = m; _ } ->
-       check ("ch3.4b een pad naast een bronRol, voorbij de lader (" ^ m ^ ")")
+       check ("ch3.4b a path beside a sourceRole, beyond the loader (" ^ m ^ ")")
          (m = "sourcePath beside sourceRole: a fold carries one range, never two"));
   (* (c) a listed fold has no set source (D8 (i): the source is a SINGLE
      argument), so a range beside two operands has nothing to range over, and
      reading the operands while dropping the range would answer over the
      wrong population *)
-  faults_with ~name:"ch3.4b een pad op een gelijste vouw"
+  faults_with ~name:"ch3.4b a path on a list fold"
     ~ir:
       (substitute bp_doc
          ~truth:
@@ -3828,7 +3828,7 @@ let () =
       (substitute bp_doc ~truth:{|"kind": "minimum"|} ~via:{|"kind": "count"|})
       ~truth:{|"attribute": "gewicht",|} ~via:{|"attribute": "geborgen vondsten",|}
   in
-  faults_with ~name:"ch3.4b een telling over een pad" ~ir:counting ~case_text:bp_case
+  faults_with ~name:"ch3.4b a count over a path" ~ir:counting ~case_text:bp_case
     ~needle:"a count's range is one step, spelled sourceRole";
   (* WF-093 (b) before WF-102, as the verifier and the Drools loader judge
      it: a count whose source names a MEMBER of the element type is refused
@@ -3846,14 +3846,14 @@ let () =
       ~via:""
   in
   let member_count = substitute bp_doc ~truth:{|"kind": "minimum"|} ~via:{|"kind": "count"|} in
-  faults_with ~name:"ch3.4b een telling over een lid, met een pad" ~ir:member_count ~case_text:bp_case
+  faults_with ~name:"ch3.4b a count over a member, with a path" ~ir:member_count ~case_text:bp_case
     ~needle:"reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES";
-  faults_with ~name:"ch3.4b een telling over een lid, met een pad van een stap"
+  faults_with ~name:"ch3.4b a count over a member, with a path of a step"
     ~ir:(one_step member_count) ~case_text:bp_case
     ~needle:"reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES";
-  faults_with ~name:"ch3.4b een roltelling over een pad van een stap" ~ir:(one_step counting)
+  faults_with ~name:"ch3.4b a role count over a path of a step" ~ir:(one_step counting)
     ~case_text:bp_case ~needle:"a count's range is one step, spelled sourceRole";
-  faults_with ~name:"ch3.4b een telling over een pad met filter"
+  faults_with ~name:"ch3.4b a count over a path with filter"
     ~ir:
       (substitute counting ~truth:{|"elementType": "Vondst",|}
          ~via:
@@ -4087,7 +4087,7 @@ let bp_to_one_case =
 }|}
 
 let () =
-  clingo_matches ~name:"ch3.4b een to-één stap op het pad"
+  clingo_matches ~name:"ch3.4b a to-one step on the path"
     ~ir:bp_to_one_doc ~case_text:bp_to_one_case
 
 
@@ -4102,7 +4102,7 @@ let () =
    bucket the timeline touches, the satisfying days must equal the bucket's
    WHOLE length — and cross-read against RegelSpraakRuntime.rsGeheelPeriode,
    its non-LEEG branch. They run in BOTH OCaml executors from one document
-   ([beide]: ref folds the clause in OCaml, clingo grounds the ASP encoding
+   ([both_sides]: ref folds the clause in OCaml, clingo grounds the ASP encoding
    below, neither calls the other), which is what makes them the differential
    and not two separate beliefs. The corpus golden `jutterswet-ploegpremie`
    pins the same five `all` cells in all three executors; these rows carry
@@ -4144,7 +4144,7 @@ let kv_vangst_ref =
       "source": { "snippet": "de vangst van de Schuit" } }|}
 
 (* "gedurende de gehele ⟨periode⟩ is de vangst ⟨op⟩ ⟨grens⟩" — the qualifier's
-   grid is its own ([jaar]), never the attribute's declared `month` *)
+   grid is its own ([year]), never the attribute's declared `month` *)
 let kv_whole ?(op = "greater") ?(boundary = "40") ?(year = true) ?(not_flag = "false")
     ?(left_side = kv_vangst_ref) ?right_side () =
   Printf.sprintf
@@ -4160,7 +4160,7 @@ let kv_whole ?(op = "greater") ?(boundary = "40") ?(year = true) ?(not_flag = "f
     (if year then "year" else "month") not_flag op boundary
 
 (* the quantifier-fold document: one rule on Werf, whose condition folds the
-   linked Schuiten. [toets] defaults to the whole-period comparison; [ext] is
+   linked Schuiten. [test] defaults to the whole-period comparison; [ext] is
    the extension slot (sourceRole / sourcePath). *)
 let kv_doc ?(quantifier_kind = "all") ?cutoff ?(test = kv_whole ()) ?filter
     ?(ext = {|, "sourceRole": { "node": "RoleBinding", "factType": "ligplaats", "role": "schuit" }|})
@@ -4239,9 +4239,9 @@ let half_year w = seg ~van:"2026-01-01" ~up_to:"2026-07-01" ~value_node:w
 let whole_2027 w = seg ~van:"2027-01-01" ~up_to:"2028-01-01" ~value_node:w
 let half_2027 w = seg ~van:"2027-01-01" ~up_to:"2027-07-01" ~value_node:w
 
-(* [leden] is (label, timeline JSON or "") per Schuit; "" means the member
+(* [member_list] is (label, timeline JSON or "") per Schuit; "" means the member
    carries no vangst timeline at all. W1 names every member on the to-many
-   role, so the fold's range is exactly [leden]. *)
+   role, so the fold's range is exactly [member_list]. *)
 let kv_case ?(gekeurd = []) ~member_list ~truth () =
   let schuit (l, tl) =
     Printf.sprintf
@@ -4292,22 +4292,22 @@ let () =
     ref_matches ~name ~ir ~case_text;
     clingo_matches ~name ~ir ~case_text
   in
-  table_row ~name:"ch3.9 waarde-a geen tijdlijn" ~timeline_state:"" ~truth:true ();
-  table_row ~name:"ch3.9 waarde-b heel 2026 op 50" ~timeline_state:(whole_year "50") ~truth:true ();
-  table_row ~name:"ch3.9 waarde-c jan-jul 2026 op 50 (het gat)" ~timeline_state:(half_year "50")
+  table_row ~name:"ch3.9 value-a no timeline" ~timeline_state:"" ~truth:true ();
+  table_row ~name:"ch3.9 value-b whole 2026 at 50" ~timeline_state:(whole_year "50") ~truth:true ();
+  table_row ~name:"ch3.9 value-c jan-jul 2026 at 50 (the gap)" ~timeline_state:(half_year "50")
     ~truth:false ();
-  table_row ~name:"ch3.9 waarde-d heel 2026 op 30" ~timeline_state:(whole_year "30") ~truth:false ();
+  table_row ~name:"ch3.9 value-d whole 2026 at 30" ~timeline_state:(whole_year "30") ~truth:false ();
   (* the qualifier's own grid: six WHOLE months pass where the year failed *)
-  table_row ~name:"ch3.9 waarde maand-grid jan-jul" ~test:(kv_whole ~year:false ())
+  table_row ~name:"ch3.9 value month-grid jan-jul" ~test:(kv_whole ~year:false ())
     ~timeline_state:(half_year "50") ~truth:true ();
   (* "niet gedurende …" complements the folded result, both directions *)
-  table_row ~name:"ch3.9 waarde niet-b" ~test:(kv_whole ~not_flag:"true" ()) ~timeline_state:(whole_year "50")
+  table_row ~name:"ch3.9 value not-b" ~test:(kv_whole ~not_flag:"true" ()) ~timeline_state:(whole_year "50")
     ~truth:false ();
-  table_row ~name:"ch3.9 waarde niet-c" ~test:(kv_whole ~not_flag:"true" ()) ~timeline_state:(half_year "50")
+  table_row ~name:"ch3.9 value not-c" ~test:(kv_whole ~not_flag:"true" ()) ~timeline_state:(half_year "50")
     ~truth:true ();
   (* the temporal side on the RIGHT: the operator REVERSES, never negates —
      `40 < de vangst` folds exactly the days `de vangst > 40` folds *)
-  table_row ~name:"ch3.9 waarde omgekeerde operandvolgorde"
+  table_row ~name:"ch3.9 value reversed operand order"
     ~test:
       (kv_whole ~op:"less"
          ~left_side:
@@ -4317,16 +4317,16 @@ let () =
     ~timeline_state:(whole_year "50") ~truth:true ();
   (* EVERY bucket the timeline touches, not just the first: two full years
      pass, and one full year beside a failing one does not *)
-  table_row ~name:"ch3.9 waarde twee volle jaren"
+  table_row ~name:"ch3.9 value two full years"
     ~timeline_state:(whole_year "50" ^ ", " ^ whole_2027 "50")
     ~truth:true ();
-  table_row ~name:"ch3.9 waarde tweede jaar onder de grens"
+  table_row ~name:"ch3.9 value second year under the bound"
     ~timeline_state:(whole_year "50" ^ ", " ^ whole_2027 "30")
     ~truth:false ();
-  table_row ~name:"ch3.9 waarde tweede jaar maar half gedekt"
+  table_row ~name:"ch3.9 value second year but only half covered"
     ~timeline_state:(whole_year "50" ^ ", " ^ half_2027 "50")
     ~truth:false ();
-  table_row ~name:"ch3.9 waarde omgekeerd, onder de grens"
+  table_row ~name:"ch3.9 value reversed, under the bound"
     ~test:
       (kv_whole ~op:"less"
          ~left_side:
@@ -4336,8 +4336,8 @@ let () =
     ~timeline_state:(whole_year "30") ~truth:false ()
 
 (* "de vangst van de Schuit is gedurende de gehele ⟨periode⟩ leeg / gevuld":
-   the ch. 3.9 leeg and gevuld tests (decided 2026-09-26). [negatie] is the
-   inner, per-day negation; [niet] the qualifier's own. *)
+   the ch. 3.9 leeg and gevuld tests (decided 2026-09-26). [negation] is the
+   inner, per-day negation; [not_flag] the qualifier's own. *)
 let kv_empty ?(variety = "empty") ?(negation = false) ?(year = true) ?(not_flag = "false")
     ?(operand = kv_vangst_ref) () =
   Printf.sprintf
@@ -4373,14 +4373,14 @@ let () =
     (half_2025 ^ ", " ^ seg ~van:"2025-07-01" ~up_to:"2027-01-01" ~value_node:"5")
     (false, true, true, false, true);
   (* the qualifier's own grid: six whole months pass where the year failed *)
-  table_row ~name:"ch3.9 leeg-maand c gevuld" ~test:(kv_empty ~variety:"filled" ~year:false ())
+  table_row ~name:"ch3.9 leeg-month c gevuld" ~test:(kv_empty ~variety:"filled" ~year:false ())
     ~timeline_state:half_2025 ~truth:true;
   let year_bound = seg ~van:"2025-07-01" ~up_to:"2026-07-01" ~value_node:"4" in
-  table_row ~name:"ch3.9 leeg-jaargrens jaar gevuld" ~test:(kv_empty ~variety:"filled" ())
+  table_row ~name:"ch3.9 leeg-year-bound year gevuld" ~test:(kv_empty ~variety:"filled" ())
     ~timeline_state:year_bound ~truth:false;
-  table_row ~name:"ch3.9 leeg-jaargrens maand gevuld" ~test:(kv_empty ~variety:"filled" ~year:false ())
+  table_row ~name:"ch3.9 leeg-year-bound month gevuld" ~test:(kv_empty ~variety:"filled" ~year:false ())
     ~timeline_state:year_bound ~truth:true;
-  table_row ~name:"ch3.9 leeg-jaargrens maand leeg" ~test:(kv_empty ~year:false ()) ~timeline_state:year_bound
+  table_row ~name:"ch3.9 leeg-year-bound month leeg" ~test:(kv_empty ~year:false ()) ~timeline_state:year_bound
     ~truth:false
   (* the off-grid row of the chapter (4 on [2025-01-15, 2025-03-01)) is ref's
      alone: a case input sits on the attribute's declared month grid, so no
@@ -4394,17 +4394,17 @@ let () =
     ref_matches ~name ~ir ~case_text;
     clingo_matches ~name ~ir ~case_text
   in
-  every ~name:"ch3.9a ALLE 1 elk lid heel 2026 boven de grens"
+  every ~name:"ch3.9a ALLE 1 each member whole 2026 above the bound"
     ~member_list:[ ("S1", whole_year "50"); ("S2", whole_year "60") ]
     ~truth:true ();
-  every ~name:"ch3.9a ALLE 2 één lid heel 2026 onder de grens"
+  every ~name:"ch3.9a ALLE 2 one member whole 2026 under the bound"
     ~member_list:[ ("S1", whole_year "50"); ("S2", whole_year "30") ]
     ~truth:false ();
-  every ~name:"ch3.9a ALLE 3 één lid dekt maar een half jaar (het gat)"
+  every ~name:"ch3.9a ALLE 3 one member covers only half a year (the gap)"
     ~member_list:[ ("S1", whole_year "50"); ("S2", half_year "50") ]
     ~truth:false ();
-  every ~name:"ch3.9a ALLE 4 lege verzameling (vacuüm waar)" ~member_list:[] ~truth:true ();
-  every ~name:"ch3.9a ALLE 5 elk lid precies OP de grens, strikt groter"
+  every ~name:"ch3.9a ALLE 4 empty set (vacuously true)" ~member_list:[] ~truth:true ();
+  every ~name:"ch3.9a ALLE 5 each member exactly ON the bound, strictly greater"
     ~member_list:[ ("S1", whole_year "40"); ("S2", whole_year "40") ]
     ~truth:false ();
   (* `none` is the same helper read the other way: the witness is a SATISFIER,
@@ -4414,24 +4414,24 @@ let () =
     ref_matches ~name ~ir ~case_text;
     clingo_matches ~name ~ir ~case_text
   in
-  none_value ~name:"ch3.9a GEEN 1 elk lid onder de grens"
+  none_value ~name:"ch3.9a GEEN 1 each member under the bound"
     ~member_list:[ ("S1", whole_year "30"); ("S2", whole_year "20") ]
     ~truth:true;
-  none_value ~name:"ch3.9a GEEN 2 één lid boven de grens"
+  none_value ~name:"ch3.9a GEEN 2 one member above the bound"
     ~member_list:[ ("S1", whole_year "50"); ("S2", whole_year "20") ]
     ~truth:false;
-  none_value ~name:"ch3.9a GEEN 3 lege verzameling (vacuüm waar)" ~member_list:[] ~truth:true;
+  none_value ~name:"ch3.9a GEEN 3 empty set (vacuously true)" ~member_list:[] ~truth:true;
   (* a member with NO timeline touches no bucket and passes the matrix
      vacuously — so `all` keeps standing and `none` falls *)
-  every ~name:"ch3.9a ALLE lid zonder tijdlijn (vacuüm waar)"
+  every ~name:"ch3.9a ALLE member without timeline (vacuously true)"
     ~member_list:[ ("S1", whole_year "50"); ("S2", "") ]
     ~truth:true ();
-  none_value ~name:"ch3.9a GEEN lid zonder tijdlijn (vacuüm waar telt als voldoener)"
+  none_value ~name:"ch3.9a GEEN member without timeline (vacuously true counts as a satisfier)"
     ~member_list:[ ("S1", whole_year "30"); ("S2", "") ]
     ~truth:false;
   (* the one-step range spelled out at the call: sourceRole names the hop, which
      is the frame's own default, and the verdict must not move *)
-  every ~name:"ch3.9a ALLE met een expliciete bronRol"
+  every ~name:"ch3.9a ALLE with an explicit sourceRole"
     ~ir:
       (kv_doc
          ~ext:{|, "sourceRole": { "node": "RoleBinding", "factType": "ligplaats", "role": "schuit" }|}
@@ -4448,11 +4448,11 @@ let () =
             "source": { "snippet": "de Schuit gekeurd is" } }|}
       ()
   in
-  every ~name:"ch3.9a ALLE met filter: het falende lid valt buiten het bereik" ~ir:filtered
+  every ~name:"ch3.9a ALLE with filter: the failing member falls outside the range" ~ir:filtered
     ~gekeurd:[ "S1" ]
     ~member_list:[ ("S1", whole_year "50"); ("S2", whole_year "30") ]
     ~truth:true ();
-  every ~name:"ch3.9a ALLE met filter: het falende lid valt er WEL binnen" ~ir:filtered
+  every ~name:"ch3.9a ALLE with filter: the failing member does fall within it" ~ir:filtered
     ~gekeurd:[ "S1"; "S2" ]
     ~member_list:[ ("S1", whole_year "50"); ("S2", whole_year "30") ]
     ~truth:false ();
@@ -4462,11 +4462,11 @@ let () =
      thing). Under `all` the element's failure is the UN-negated failure
      atom, so the complement flips with it. *)
   let negated_matrix = kv_doc ~test:(kv_whole ~not_flag:"true" ()) () in
-  every ~name:"ch3.9a ALLE over een ONTKENDE matrix, elk lid onder de grens"
+  every ~name:"ch3.9a ALLE over a NEGATED matrix, each member under the bound"
     ~ir:negated_matrix
     ~member_list:[ ("S1", whole_year "30"); ("S2", whole_year "20") ]
     ~truth:true ();
-  every ~name:"ch3.9a ALLE over een ONTKENDE matrix, één lid boven de grens"
+  every ~name:"ch3.9a ALLE over a NEGATED matrix, one member above the bound"
     ~ir:negated_matrix
     ~member_list:[ ("S1", whole_year "50"); ("S2", whole_year "20") ]
     ~truth:false ();
@@ -4490,27 +4490,27 @@ let () =
       ()
   in
   let members2 = [ ("S1", whole_year "50"); ("S2", whole_year "30") ] in
-  every ~name:"ch3.9a ALLE over een kenmerkmatrix, elk lid gekeurd" ~ir:(characteristic_matrix ())
+  every ~name:"ch3.9a ALLE over a characteristic matrix, each member checked" ~ir:(characteristic_matrix ())
     ~gekeurd:[ "S1"; "S2" ] ~member_list:members2 ~truth:true ();
-  every ~name:"ch3.9a ALLE over een kenmerkmatrix, één lid niet gekeurd" ~ir:(characteristic_matrix ())
+  every ~name:"ch3.9a ALLE over a characteristic matrix, one member not checked" ~ir:(characteristic_matrix ())
     ~gekeurd:[ "S1" ] ~member_list:members2 ~truth:false ();
-  every ~name:"ch3.9a ALLE over een kenmerkmatrix, lege verzameling (vacuüm waar)"
+  every ~name:"ch3.9a ALLE over a characteristic matrix, empty set (vacuously true)"
     ~ir:(characteristic_matrix ()) ~member_list:[] ~truth:true ();
-  every ~name:"ch3.9a GEEN over een kenmerkmatrix, geen lid gekeurd"
+  every ~name:"ch3.9a GEEN over a characteristic matrix, no member checked"
     ~ir:(characteristic_matrix ~quantifier_kind:"none" ()) ~member_list:members2 ~truth:true ();
   (* the pair that separates `none` from `not (`all`)`: with S1 gekeurd and S2
      not, the row above is onwaar AND this one is onwaar *)
-  every ~name:"ch3.9a GEEN over een kenmerkmatrix, één lid gekeurd"
+  every ~name:"ch3.9a GEEN over a characteristic matrix, one member checked"
     ~ir:(characteristic_matrix ~quantifier_kind:"none" ()) ~gekeurd:[ "S1" ] ~member_list:members2 ~truth:false ();
-  every ~name:"ch3.9a GEEN over een kenmerkmatrix, lege verzameling (vacuüm waar)"
+  every ~name:"ch3.9a GEEN over a characteristic matrix, empty set (vacuously true)"
     ~ir:(characteristic_matrix ~quantifier_kind:"none" ()) ~member_list:[] ~truth:true ();
   (* the NIET of a non-temporal matrix is the MATRIX's, never the quantifier's:
      "geen van de schuiten is NIET gekeurd" answers what "alle schuiten zijn
      gekeurd" answers, in both directions *)
-  every ~name:"ch3.9a GEEN over een ONTKENDE kenmerkmatrix, elk lid gekeurd"
+  every ~name:"ch3.9a GEEN over a NEGATED characteristic matrix, each member checked"
     ~ir:(characteristic_matrix ~quantifier_kind:"none" ~negation:"true" ()) ~gekeurd:[ "S1"; "S2" ]
     ~member_list:members2 ~truth:true ();
-  every ~name:"ch3.9a GEEN over een ONTKENDE kenmerkmatrix, één lid niet gekeurd"
+  every ~name:"ch3.9a GEEN over a NEGATED characteristic matrix, one member not checked"
     ~ir:(characteristic_matrix ~quantifier_kind:"none" ~negation:"true" ()) ~gekeurd:[ "S1" ] ~member_list:members2
     ~truth:false ();
   (* THE COUNTING QUANTIFIERS (ch. 3.9a, since 2026-09-16). What they need is
@@ -4524,34 +4524,34 @@ let () =
   let tally quantifier_kind cutoff = kv_doc ~quantifier_kind ~cutoff () in
   let two = [ ("S1", whole_year "50"); ("S2", whole_year "60") ] in
   let single = [ ("S1", whole_year "50"); ("S2", whole_year "30") ] in
-  every ~name:"ch3.9a TEN MINSTE 2, telling 2 (op de drempel)" ~ir:(tally "atLeast" 2)
+  every ~name:"ch3.9a TEN MINSTE 2, count 2 (at the threshold)" ~ir:(tally "atLeast" 2)
     ~member_list:two ~truth:true ();
-  every ~name:"ch3.9a TEN MINSTE 2, telling 1 (onder de drempel)" ~ir:(tally "atLeast" 2)
+  every ~name:"ch3.9a TEN MINSTE 2, count 1 (under the threshold)" ~ir:(tally "atLeast" 2)
     ~member_list:single ~truth:false ();
-  every ~name:"ch3.9a TEN HOOGSTE 1, telling 1 (op de drempel)" ~ir:(tally "atMost" 1)
+  every ~name:"ch3.9a TEN HOOGSTE 1, count 1 (at the threshold)" ~ir:(tally "atMost" 1)
     ~member_list:single ~truth:true ();
-  every ~name:"ch3.9a TEN HOOGSTE 1, telling 2 (boven de drempel)" ~ir:(tally "atMost" 1)
+  every ~name:"ch3.9a TEN HOOGSTE 1, count 2 (above the threshold)" ~ir:(tally "atMost" 1)
     ~member_list:two ~truth:false ();
-  every ~name:"ch3.9a PRECIES 1, telling 1" ~ir:(tally "exactly" 1) ~member_list:single ~truth:true ();
-  every ~name:"ch3.9a PRECIES 1, telling 2 is onwaar" ~ir:(tally "exactly" 1) ~member_list:two
+  every ~name:"ch3.9a PRECIES 1, count 1" ~ir:(tally "exactly" 1) ~member_list:single ~truth:true ();
+  every ~name:"ch3.9a PRECIES 1, count 2 is false" ~ir:(tally "exactly" 1) ~member_list:two
     ~truth:false ();
-  every ~name:"ch3.9a PRECIES 1, telling 0 is onwaar" ~ir:(tally "exactly" 1)
+  every ~name:"ch3.9a PRECIES 1, count 0 is false" ~ir:(tally "exactly" 1)
     ~member_list:[ ("S1", whole_year "30"); ("S2", whole_year "20") ]
     ~truth:false ();
   (* the empty set is the COUNT and not a principle: the three part company on
      the same range, where `all` and `none` both read waar *)
-  every ~name:"ch3.9a TEN MINSTE 1 over de lege verzameling is onwaar" ~ir:(tally "atLeast" 1)
+  every ~name:"ch3.9a TEN MINSTE 1 over the empty set is false" ~ir:(tally "atLeast" 1)
     ~member_list:[] ~truth:false ();
-  every ~name:"ch3.9a TEN HOOGSTE 1 over de lege verzameling is waar" ~ir:(tally "atMost" 1)
+  every ~name:"ch3.9a TEN HOOGSTE 1 over the empty set is true" ~ir:(tally "atMost" 1)
     ~member_list:[] ~truth:true ();
-  every ~name:"ch3.9a PRECIES 1 over de lege verzameling is onwaar" ~ir:(tally "exactly" 1)
+  every ~name:"ch3.9a PRECIES 1 over the empty set is false" ~ir:(tally "exactly" 1)
     ~member_list:[] ~truth:false ();
   (* a threshold beyond the contributor count, and one that already covers it:
      ch. 5.10's empty-prefix triggers, over a set instead of a written list *)
-  every ~name:"ch3.9a TEN MINSTE 2 over één lid is buiten bereik" ~ir:(tally "atLeast" 2)
+  every ~name:"ch3.9a TEN MINSTE 2 over one member is outside range" ~ir:(tally "atLeast" 2)
     ~member_list:[ ("S1", whole_year "50") ]
     ~truth:false ();
-  every ~name:"ch3.9a TEN HOOGSTE 2 over één lid is vacuüm waar" ~ir:(tally "atMost" 2)
+  every ~name:"ch3.9a TEN HOOGSTE 2 over one member is vacuously true" ~ir:(tally "atMost" 2)
     ~member_list:[ ("S1", whole_year "50") ]
     ~truth:true ();
   (* the NIET prefix under a counting quantifier. On the whole-period form the
@@ -4564,26 +4564,26 @@ let () =
   let not_count quantifier_kind cutoff =
     kv_doc ~quantifier_kind ~cutoff ~test:(kv_whole ~not_flag:"true" ()) ()
   in
-  every ~name:"ch3.9a NIET + TEN MINSTE 2: geen lid haalt de matrix, dus beide ontkend"
+  every ~name:"ch3.9a NIET + TEN MINSTE 2: no member passes the matrix, so both negated"
     ~ir:(not_count "atLeast" 2)
     ~member_list:[ ("S1", whole_year "30"); ("S2", whole_year "20") ]
     ~truth:true ();
-  every ~name:"ch3.9a NIET + TEN HOOGSTE 1: elk lid haalt de matrix, dus nul ontkend"
+  every ~name:"ch3.9a NIET + TEN HOOGSTE 1: each member passes the matrix, so zero negated"
     ~ir:(not_count "atMost" 1)
     ~member_list:[ ("S1", whole_year "50"); ("S2", whole_year "60") ]
     ~truth:true ();
-  every ~name:"ch3.9a NIET + PRECIES 1: twee halen hem, één niet"
+  every ~name:"ch3.9a NIET + PRECIES 1: two pass it, one does not"
     ~ir:(not_count "exactly" 1)
     ~member_list:[ ("S1", whole_year "50"); ("S2", whole_year "60"); ("S3", whole_year "30") ]
     ~truth:true ();
   (* ch. 3.9's gap counts on the DENIED side: a member whose timeline does not
      cover the period fails the matrix, so it satisfies its negation *)
-  every ~name:"ch3.9a NIET + TEN MINSTE 1: het half dekkende lid telt aan de ontkende kant"
+  every ~name:"ch3.9a NIET + TEN MINSTE 1: the half-covering member counts on the negated side"
     ~ir:(not_count "atLeast" 1)
     ~member_list:[ ("S1", half_year "50") ]
     ~truth:true ();
   (* and n = 0 is still 0 − 0: the empty set does not become "all denied" *)
-  every ~name:"ch3.9a NIET + TEN MINSTE 1 over de lege verzameling is onwaar"
+  every ~name:"ch3.9a NIET + TEN MINSTE 1 over the empty set is false"
     ~ir:(not_count "atLeast" 1) ~member_list:[] ~truth:false ();
   (* the counting arms over a NON-temporal matrix: the same count, the other
      matrix route *)
@@ -4594,32 +4594,32 @@ let () =
             "source": { "snippet": "de Schuit gekeurd is" } }|}
       ()
   in
-  every ~name:"ch3.9a TEN MINSTE 2 over een kenmerkmatrix, twee gekeurd"
+  every ~name:"ch3.9a TEN MINSTE 2 over a characteristic matrix, two checked"
     ~ir:(characteristic_count "atLeast" 2) ~gekeurd:[ "S1"; "S2" ] ~member_list:members2 ~truth:true ();
-  every ~name:"ch3.9a TEN MINSTE 2 over een kenmerkmatrix, één gekeurd"
+  every ~name:"ch3.9a TEN MINSTE 2 over a characteristic matrix, one checked"
     ~ir:(characteristic_count "atLeast" 2) ~gekeurd:[ "S1" ] ~member_list:members2 ~truth:false ();
-  every ~name:"ch3.9a PRECIES 1 over een kenmerkmatrix, één gekeurd"
+  every ~name:"ch3.9a PRECIES 1 over a characteristic matrix, one checked"
     ~ir:(characteristic_count "exactly" 1) ~gekeurd:[ "S1" ] ~member_list:members2 ~truth:true ();
   (* the emitted shape, so the RANGE is pinned and not only the verdict: the
      join sits INSIDE the aggregate element. Outside it the element variable
      would be global and the count would range over the whole population —
      the failure corpus case 5 of jutterswet-reddingsvloot is there to catch *)
-  translates_carrying ~name:"ch3.9a de telling draagt de bereikjoin IN de aggregatie"
+  translates_carrying ~name:"ch3.9a the count carries the range join IN the aggregation"
     ~ir:(tally "atLeast" 2)
     ~case_text:(kv_case ~member_list:[ ("S1", whole_year "50") ] ~truth:false ())
     ~needle:{|#count { X|};
-  translates_carrying ~name:"ch3.9a de telling joint op de rol binnen de aggregatie"
+  translates_carrying ~name:"ch3.9a the count joins on the role within the aggregation"
     ~ir:(tally "atLeast" 2)
     ~case_text:(kv_case ~member_list:[ ("S1", whole_year "50") ] ~truth:false ())
     ~needle:{|: role(S,"schuiten",|};
   (* the emitted shape itself: one negated witness helper over the fold's own
      range, reading the whole-period FAILURE atom per element *)
-  translates_carrying ~name:"ch3.9a ALLE leest het faalatoom per element" ~ir:(kv_doc ())
+  translates_carrying ~name:"ch3.9a ALLE reads the failure atom per element" ~ir:(kv_doc ())
     ~case_text:(kv_case ~member_list:[ ("S1", whole_year "50") ] ~truth:true ())
     ~needle:{|role(S,"schuiten",|};
   (* the REIFICATION itself, so the shape is pinned and not only its verdict:
      `all` emits a satisfaction helper and reads its negation *)
-  translates_carrying ~name:"ch3.9a ALLE reïficeert de matrix" ~ir:(characteristic_matrix ())
+  translates_carrying ~name:"ch3.9a ALLE reifies the matrix" ~ir:(characteristic_matrix ())
     ~case_text:(kv_case ~gekeurd:[ "S1" ] ~member_list:[ ("S1", whole_year "50") ] ~truth:true ())
     ~needle:"not kvs"
 
@@ -4634,7 +4634,7 @@ let () =
      such form: WF-043 admits it, no executor folds it, and it is refused here
      in the words ref uses. (Until 2026-09-26 every whole-period leeg test was
      refused, and this flank used the own attribute.) *)
-  faults_with ~name:"ch3.9a ALLE over een matrix die de vertaler zelf weigert"
+  faults_with ~name:"ch3.9a ALLE over a matrix that the translator itself refuses"
     ~ir:
       (kv_doc
          ~test:
@@ -4669,16 +4669,16 @@ let () =
       | [ { at = at'; reason = sentence_text; _ } ] when at' = at ->
           let doc, case = load_pair ~ir ~case_text:vals in
           (match ref_report doc case with
-          | (_ : string list) -> check (ident ^ ": ref weigert (kreeg een wereld)") false
+          | (_ : string list) -> check (ident ^ ": ref refuses (got a world)") false
           | exception Uchar_ref.Value.Fault { text = m; _ } ->
-              check (ident ^ ": ref weigert in de zin van de verifier (" ^ m ^ ")") (m = sentence_text));
+              check (ident ^ ": ref refuses in the sentence of the verifier (" ^ m ^ ")") (m = sentence_text));
           (match translate doc case with
-          | (_ : string) -> check (ident ^ ": clingo weigert (kreeg een programma)") false
+          | (_ : string) -> check (ident ^ ": clingo refuses (got a program)") false
           | exception Uchar_ref.Value.Fault { text = m; _ } ->
-              check (ident ^ ": clingo weigert in de zin van de verifier (" ^ m ^ ")") (m = sentence_text))
+              check (ident ^ ": clingo refuses in the sentence of the verifier (" ^ m ^ ")") (m = sentence_text))
       | vs ->
           check
-            (Printf.sprintf "%s: de verifier meldt precies één WF-108 op %s (kreeg %d)" ident at
+            (Printf.sprintf "%s: the verifier reports exactly one WF-108 on %s (got %d)" ident at
                (List.length vs))
             false)
     [ ( "ch3.9a vouw zonder matrix (WF-108)", kv_doc ~test:"null" (),
@@ -4696,22 +4696,22 @@ let () =
            (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir)))
     with
    | [ { at = at'; reason; _ } ] ->
-       check "ch3.9a vouw met kwantor the: de verifier noemt WF-108 in de gedeelde zin"
+       check "ch3.9a fold with quantifier the: the verifier names WF-108 in the shared sentence"
          (at' = at && reason = Ir_v0.Checks.quantifier_fold_the_refusal)
    | vs ->
        check
-         (Printf.sprintf "ch3.9a vouw met kwantor the: de verifier meldt precies één WF-108 (kreeg %d)"
+         (Printf.sprintf "ch3.9a fold with quantifier the: the verifier reports exactly one WF-108 (got %d)"
             (List.length vs))
          false);
    match Ir_v0.Loader.document (Yojson.Safe.from_string ir) with
-   | (_ : Ir_v0.Ast.document) -> check "ch3.9a vouw met kwantor the: de uitvoerder weigert bij het laden" false
+   | (_ : Ir_v0.Ast.document) -> check "ch3.9a fold with quantifier the: the executor refuses on loading" false
    | exception Ir_v0.Loader.Error (path, m) ->
-       check ("ch3.9a vouw met kwantor the: de uitvoerder weigert bij het laden (" ^ path ^ ": " ^ m ^ ")")
+       check ("ch3.9a fold with quantifier the: the executor refuses on loading (" ^ path ^ ": " ^ m ^ ")")
          (path = at && m = Ir_v0.Checks.quantifier_fold_the_refusal));
   (* the range's shape is checked in the quantifier fold's own sentences,
      WF-108's, before the range rides [source_join], whose sentences name
      the aggregation's sourceRole and sourcePath *)
-  faults_with ~name:"ch3.9a bereikpad van één stap"
+  faults_with ~name:"ch3.9a range path of one step"
     ~ir:
       (kv_doc
          ~ext:
@@ -4721,7 +4721,7 @@ let () =
     ~needle:
       "a quantifier fold's sourcePath carries at least TWO steps, found 1 — the one-step range is \
        spelled sourceRole";
-  refused_at_load ~name:"ch3.9a bereikpad naast een bronRol"
+  refused_at_load ~name:"ch3.9a range path beside a sourceRole"
     ~ir:
       (kv_doc
          ~ext:
@@ -4733,7 +4733,7 @@ let () =
   (* WF-043 stays intact on the value side: a qualifier over a
      non-time-dependent operand is refused by name, never folded to a
      vacuous pass *)
-  faults_with ~name:"ch3.9 kwalificator op een niet-tijdsafhankelijk attribuut (WF-043)"
+  faults_with ~name:"ch3.9 qualifier on a non-time-dependent attribute (WF-043)"
     ~ir:
       (gpv_doc
          ~test:
@@ -4747,7 +4747,7 @@ let () =
     ~needle:"no time-dependent attribute of \"Schuit\" among its operands";
   (* the bound rides INSIDE the per-segment rule, so only a ground or
      subject-free one is carried *)
-  faults_with ~name:"ch3.9 grens die het onderwerp leest"
+  faults_with ~name:"ch3.9 bound that the subject reads"
     ~ir:
       (gpv_doc
          ~test:
@@ -4760,7 +4760,7 @@ let () =
     ~case_text:(gpv_case ~timeline_state:(whole_year "50") ~truth:true)
     ~needle:"other than a literal or a scalar parameter";
   (* two timelines under one qualifier is a different fold *)
-  faults_with ~name:"ch3.9 twee tijdlijnen onder één kwalificator"
+  faults_with ~name:"ch3.9 two timelines under one qualifier"
     ~ir:(gpv_doc ~test:(kv_whole ~right_side:kv_vangst_ref ()) ())
     ~case_text:(gpv_case ~timeline_state:(whole_year "50") ~truth:true)
     ~needle:"between TWO timelines is not translated"
@@ -4986,13 +4986,13 @@ let both_break ~name ~ir ~case_text ~needle =
       as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
   in
   (match Uchar_ref.Eval.evaluate env case.world with
-  | _ -> check (name ^ ": ref breekt af (kreeg een wereld terug)") false
+  | _ -> check (name ^ ": ref aborts (got a world back)") false
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check (name ^ ": ref breekt af (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m));
+      check (name ^ ": ref aborts (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m));
   let label = name ^ ": clingo is UNSAT" in
   match Solve.run_clingo (translate doc case) with
   | _, Unix.WEXITED 20 -> check label true
-  | _, Unix.WEXITED (10 | 30) -> check (label ^ " (vond een model)") false
+  | _, Unix.WEXITED (10 | 30) -> check (label ^ " (found a model)") false
   | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
   | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
   | _, _ -> check (label ^ " (clingo killed)") false
@@ -5005,17 +5005,17 @@ let () =
   let not_taken =
     arm_case ~inkomen:"40" ~parameters:arm_params12 ~expected_value:arm_heffing_is_base ()
   in
-  ref_matches ~name:"ch10.2 §6.5-plek in de niet-betreden arm" ~ir:arm_doc12
+  ref_matches ~name:"ch10.2 §6.5-site in the not-entered arm" ~ir:arm_doc12
     ~case_text:not_taken;
-  clingo_matches ~name:"ch10.2 §6.5-plek in de niet-betreden arm meldt niet" ~ir:arm_doc12
+  clingo_matches ~name:"ch10.2 §6.5-site in the not-entered arm does not report" ~ir:arm_doc12
     ~case_text:not_taken;
   (* vorm 1, de andere richting — inkomen 5,00 kiest de anders-tak, en dan
      staat het §9.5-kanaalfeit er onverkort, in beide executors *)
   let entered =
     arm_case ~inkomen:"5" ~parameters:arm_params12 ~expected_value:arm_heffing_empty_and_reported ()
   in
-  ref_matches ~name:"ch10.2 §6.5-plek in de BETREDEN arm" ~ir:arm_doc12 ~case_text:entered;
-  clingo_matches ~name:"ch10.2 §6.5-plek in de BETREDEN arm meldt wel" ~ir:arm_doc12
+  ref_matches ~name:"ch10.2 §6.5-site in the ENTERED arm" ~ir:arm_doc12 ~case_text:entered;
+  clingo_matches ~name:"ch10.2 §6.5-site in the ENTERED arm does report" ~ir:arm_doc12
     ~case_text:entered;
   (* vorm 2 — de deling door numeriek NUL in de niet-betreden arm. Hetzelfde
      document, een restpost van 0: de fail-fast-garde mag het programma niet
@@ -5024,17 +5024,17 @@ let () =
     arm_case ~inkomen:"40" ~restpost:"0" ~parameters:arm_params12
       ~expected_value:arm_heffing_is_base ()
   in
-  ref_matches ~name:"ch10.2 nuldeling in de niet-betreden arm" ~ir:arm_doc12
+  ref_matches ~name:"ch10.2 zero division in the not-entered arm" ~ir:arm_doc12
     ~case_text:zero_not_taken;
-  clingo_matches ~name:"ch10.2 nuldeling in de niet-betreden arm breekt niet af" ~ir:arm_doc12
+  clingo_matches ~name:"ch10.2 zero division in the not-entered arm does not abort" ~ir:arm_doc12
     ~case_text:zero_not_taken;
   (* de garde zelf staat er nog — een fix die het hek gewoon weghaalt zou de
      regel hierboven ook groen maken *)
-  translates_carrying ~name:"ch10.2 de nulgarde staat nog in het programma" ~ir:arm_doc12
+  translates_carrying ~name:"ch10.2 the zero guard is still in the program" ~ir:arm_doc12
     ~case_text:zero_not_taken ~needle:{|viol("division by numeric zero"|};
   (* vorm 2, de andere richting: de arm WORDT betreden en dan breken beide
      executors af, met dezelfde reden *)
-  both_break ~name:"ch10.2 nuldeling in de BETREDEN arm"
+  both_break ~name:"ch10.2 zero division in the ENTERED arm"
     ~ir:arm_doc12
     ~case_text:
       (arm_case ~inkomen:"5" ~restpost:"0" ~parameters:arm_params12
@@ -5054,10 +5054,10 @@ let () =
             { "kind": "consistent" } ]|}
       ()
   in
-  ref_matches ~name:"ch10.2 één behoefte onder twee takgardes" ~ir:arm_doc3 ~case_text:case3;
-  translates_with ~name:"ch10.2 één behoefte onder twee takgardes vertaalt" ~ir:arm_doc3
+  ref_matches ~name:"ch10.2 one need under two branch guards" ~ir:arm_doc3 ~case_text:case3;
+  translates_with ~name:"ch10.2 one need under two branch guards translates" ~ir:arm_doc3
     ~case_text:case3;
-  clingo_matches ~name:"ch10.2 één behoefte onder twee takgardes speelt" ~ir:arm_doc3
+  clingo_matches ~name:"ch10.2 one need under two branch guards plays" ~ir:arm_doc3
     ~case_text:case3;
   (* vorm 5 — dezelfde plekken, nu onder een `plus`, dus over het
      hulppredicaat in plaats van over de regelkop-splitsing. De som is
@@ -5073,9 +5073,9 @@ let () =
             { "kind": "consistent" } ]|}
       ()
   in
-  ref_matches ~name:"ch10.2 §6.5-plek in de niet-betreden arm onder een operator"
+  ref_matches ~name:"ch10.2 §6.5-site in the not-entered arm under an operator"
     ~ir:arm_doc5 ~case_text:five_not_taken;
-  clingo_matches ~name:"ch10.2 §6.5-plek in de niet-betreden arm onder een operator meldt niet"
+  clingo_matches ~name:"ch10.2 §6.5-site in the not-entered arm under an operator does not report"
     ~ir:arm_doc5 ~case_text:five_not_taken;
   let five_zero_not_taken =
     arm_case ~inkomen:"40" ~restpost:"0" ~parameters:arm_params12
@@ -5086,10 +5086,10 @@ let () =
             { "kind": "consistent" } ]|}
       ()
   in
-  ref_matches ~name:"ch10.2 nuldeling in de niet-betreden arm onder een operator" ~ir:arm_doc5
+  ref_matches ~name:"ch10.2 zero division in the not-entered arm under an operator" ~ir:arm_doc5
     ~case_text:five_zero_not_taken;
   clingo_matches
-    ~name:"ch10.2 nuldeling in de niet-betreden arm onder een operator breekt niet af"
+    ~name:"ch10.2 zero division in the not-entered arm under an operator does not abort"
     ~ir:arm_doc5 ~case_text:five_zero_not_taken;
   (* en de betreden arm onder diezelfde operator: melden respectievelijk
      afbreken, precies als ref *)
@@ -5102,11 +5102,11 @@ let () =
             { "kind": "inconsistent", "rule": "heffing van een jutter", "label": "J1" } ]|}
       ()
   in
-  ref_matches ~name:"ch10.2 §6.5-plek in de BETREDEN arm onder een operator" ~ir:arm_doc5
+  ref_matches ~name:"ch10.2 §6.5-site in the ENTERED arm under an operator" ~ir:arm_doc5
     ~case_text:five_taken;
-  clingo_matches ~name:"ch10.2 §6.5-plek in de BETREDEN arm onder een operator meldt wel"
+  clingo_matches ~name:"ch10.2 §6.5-site in the ENTERED arm under an operator does report"
     ~ir:arm_doc5 ~case_text:five_taken;
-  both_break ~name:"ch10.2 nuldeling in de BETREDEN arm onder een operator" ~ir:arm_doc5
+  both_break ~name:"ch10.2 zero division in the ENTERED arm under an operator" ~ir:arm_doc5
     ~case_text:
       (arm_case ~inkomen:"5" ~restpost:"0" ~parameters:arm_params12
          ~expected_value:
@@ -5115,14 +5115,14 @@ let () =
     ~needle:"division by numeric zero";
   (* vorm 4 — de behoefte wordt alleen in de niet-betreden arm gelezen, dus
      ch. 10.6 evalueert haar waarde daar niet en de §6.5-plek erin zwijgt *)
-  ref_matches ~name:"ch10.6 behoefte alleen in de niet-betreden arm" ~ir:arm_doc4
+  ref_matches ~name:"ch10.6 need only in the not-entered arm" ~ir:arm_doc4
     ~case_text:not_taken;
-  clingo_matches ~name:"ch10.6 behoefte alleen in de niet-betreden arm meldt niet" ~ir:arm_doc4
+  clingo_matches ~name:"ch10.6 need only in the not-entered arm does not report" ~ir:arm_doc4
     ~case_text:not_taken;
   (* en de spiegel: wordt die arm wél betreden, dan wordt de behoefte gelezen
      en staat het kanaalfeit er *)
-  ref_matches ~name:"ch10.6 behoefte in de BETREDEN arm" ~ir:arm_doc4 ~case_text:entered;
-  clingo_matches ~name:"ch10.6 behoefte in de BETREDEN arm meldt wel" ~ir:arm_doc4
+  ref_matches ~name:"ch10.6 need in the ENTERED arm" ~ir:arm_doc4 ~case_text:entered;
+  clingo_matches ~name:"ch10.6 need in the ENTERED arm does report" ~ir:arm_doc4
     ~case_text:entered
 
 (* --- ch. 10.2 in een GESLOTEN body: de derde route ------------------------
@@ -5166,7 +5166,7 @@ let cb_plus right_side source_name =
     {|{ "node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": { "snippet": "%s" } }|}
     cb_acc right_side cb_sum source_name
 
-(* [drempel] scheidt de twee richtingen; [anders] is de anders-arm, zodat de
+(* [cutoff] scheidt de twee richtingen; [else_branch] is de anders-arm, zodat de
    ch.-10.6-variant (de deling achter een behoefte) hetzelfde raamwerk deelt *)
 let cb_doc ~cutoff ~lambda_body =
   Printf.sprintf
@@ -5261,24 +5261,24 @@ let () =
   let zero_value = {|{ "number": "0" }|} in
   let recht_0 = cb_doc ~cutoff:0 ~lambda_body:cb_body_recht in
   let tallies = cb_case ~kindertallen:zero_value ~expected_value:(cb_total "1.00") in
-  ref_matches ~name:"ch10.2 gesloten body: nuldeling in de niet-betreden arm" ~ir:recht_0
+  ref_matches ~name:"ch10.2 closed body: zero division in the not-entered arm" ~ir:recht_0
     ~case_text:tallies;
-  clingo_matches ~name:"ch10.2 gesloten body: nuldeling in de niet-betreden arm breekt niet af"
+  clingo_matches ~name:"ch10.2 closed body: zero division in the not-entered arm does not abort"
     ~ir:recht_0 ~case_text:tallies;
   (* de garde staat er nog — een fix die het hek weghaalt zou de regel
      hierboven ook groen maken *)
-  translates_carrying ~name:"ch10.2 gesloten body: de nulgarde staat nog in het programma"
+  translates_carrying ~name:"ch10.2 closed body: the zero guard is still in the program"
     ~ir:recht_0 ~case_text:tallies ~needle:{|viol("division by numeric zero"|};
   (* de betreden arm REKENT: drempel 4, kindertal 3 — 0,00 + 60/3 = 20,00 *)
   let recht_4 = cb_doc ~cutoff:4 ~lambda_body:cb_body_recht in
   let calculates = cb_case ~kindertallen:{|{ "number": "3" }|} ~expected_value:(cb_total "20.00") in
-  ref_matches ~name:"ch10.2 gesloten body: de betreden arm rekent" ~ir:recht_4
+  ref_matches ~name:"ch10.2 closed body: the entered arm calculates" ~ir:recht_4
     ~case_text:calculates;
-  clingo_matches ~name:"ch10.2 gesloten body: de betreden arm rekent ook in clingo" ~ir:recht_4
+  clingo_matches ~name:"ch10.2 closed body: the entered arm also calculates in clingo" ~ir:recht_4
     ~case_text:calculates;
   (* en de betreden arm VUURT: drempel 4, kindertal 0 — nu deelt de anders-arm
      wel door nul, en dan breken beide executors af *)
-  both_break ~name:"ch10.2 gesloten body: nuldeling in de BETREDEN arm" ~ir:recht_4
+  both_break ~name:"ch10.2 closed body: zero division in the ENTERED arm" ~ir:recht_4
     ~case_text:
       (cb_case ~kindertallen:zero_value
          ~expected_value:
@@ -5287,13 +5287,13 @@ let () =
   (* dezelfde grens langs ch. 10.6, binnen de gesloten body: de deling zit
      achter een behoefte die alleen de anders-arm leest *)
   let let_0 = cb_doc ~cutoff:0 ~lambda_body:cb_body_let in
-  ref_matches ~name:"ch10.6 gesloten body: behoefte alleen in de niet-betreden arm" ~ir:let_0
+  ref_matches ~name:"ch10.6 closed body: need only in the not-entered arm" ~ir:let_0
     ~case_text:tallies;
   clingo_matches
-    ~name:"ch10.6 gesloten body: behoefte alleen in de niet-betreden arm breekt niet af"
+    ~name:"ch10.6 closed body: need only in the not-entered arm does not abort"
     ~ir:let_0 ~case_text:tallies;
   let let_4 = cb_doc ~cutoff:4 ~lambda_body:cb_body_let in
-  both_break ~name:"ch10.6 gesloten body: behoefte in de BETREDEN arm" ~ir:let_4
+  both_break ~name:"ch10.6 closed body: need in the ENTERED arm" ~ir:let_4
     ~case_text:
       (cb_case ~kindertallen:zero_value
          ~expected_value:
@@ -5385,10 +5385,10 @@ let () =
             { "kind": "consistent" } ]|}
       ()
   in
-  ref_matches ~name:"ch10.6 behoefte in de niet-betreden arm, onder een operator" ~ir:arm_doc6
+  ref_matches ~name:"ch10.6 need in the not-entered arm, under an operator" ~ir:arm_doc6
     ~case_text:not_taken;
   clingo_matches
-    ~name:"ch10.6 behoefte in de niet-betreden arm onder een operator meldt niet en rekent"
+    ~name:"ch10.6 need in the not-entered arm under an operator does not report and calculates"
     ~ir:arm_doc6 ~case_text:not_taken
 
 let () =
@@ -5406,17 +5406,17 @@ let () =
   let on_zero40 =
     arm_case ~inkomen:"40" ~restpost:"0" ~parameters:arm_params12 ~expected_value:five_consistent ()
   in
-  ref_matches ~name:"ch10.6 operator tussen Let en tak, lege deler in de niet-betreden arm"
+  ref_matches ~name:"ch10.6 operator between Let and branch, empty divisor in the not-entered arm"
     ~ir:arm_doc9 ~case_text:on_empty40;
   clingo_matches
-    ~name:"ch10.6 operator tussen Let en tak, lege deler in de niet-betreden arm meldt niet"
+    ~name:"ch10.6 operator between Let and branch, empty divisor in the not-entered arm does not report"
     ~ir:arm_doc9 ~case_text:on_empty40;
-  ref_matches ~name:"ch10.6 operator tussen Let en tak, nuldeler in de niet-betreden arm"
+  ref_matches ~name:"ch10.6 operator between Let and branch, zero divisor in the not-entered arm"
     ~ir:arm_doc9 ~case_text:on_zero40;
   clingo_matches
-    ~name:"ch10.6 operator tussen Let en tak, nuldeler in de niet-betreden arm breekt niet af"
+    ~name:"ch10.6 operator between Let and branch, zero divisor in the not-entered arm does not abort"
     ~ir:arm_doc9 ~case_text:on_zero40;
-  translates_carrying ~name:"ch10.6 operator tussen Let en tak: de nulgarde staat nog in het programma"
+  translates_carrying ~name:"ch10.6 operator between Let and branch: the zero guard is still in the program"
     ~ir:arm_doc9 ~case_text:on_zero40 ~needle:{|viol("division by numeric zero"|};
   (* de spiegel: inkomen 5,00 kiest de anders-arm, en dan wordt z WEL gelezen.
      Met een lege deler meldt §6.5 en maakt de ch.-10.6-barrière het GEHEEL
@@ -5424,7 +5424,7 @@ let () =
      binnen kapot zou maken: de `plus` zou de geleegde arm als 0,00 lezen en
      5,00 antwoorden waar ref leeg zegt. De herschrijving tilt de takknoop
      daarom uit de wikkel in plaats van de Let erin te duwen. *)
-  ref_matches ~name:"ch10.6 operator tussen Let en tak, lege deler in de BETREDEN arm"
+  ref_matches ~name:"ch10.6 operator between Let and branch, empty divisor in the ENTERED arm"
     ~ir:arm_doc9
     ~case_text:
       (arm_case ~inkomen:"5" ~parameters:arm_params12
@@ -5435,7 +5435,7 @@ let () =
                  "label": "J1" } ]|}
          ());
   clingo_matches
-    ~name:"ch10.6 operator tussen Let en tak, lege deler in de BETREDEN arm meldt en leegt"
+    ~name:"ch10.6 operator between Let and branch, empty divisor in the ENTERED arm reports and empties"
     ~ir:arm_doc9
     ~case_text:
       (arm_case ~inkomen:"5" ~parameters:arm_params12
@@ -5445,7 +5445,7 @@ let () =
                { "kind": "inconsistent", "rule": "heffing van een jutter",
                  "label": "J1" } ]|}
          ());
-  both_break ~name:"ch10.6 operator tussen Let en tak, nuldeler in de BETREDEN arm" ~ir:arm_doc9
+  both_break ~name:"ch10.6 operator between Let and branch, zero divisor in the ENTERED arm" ~ir:arm_doc9
     ~case_text:
       (arm_case ~inkomen:"5" ~restpost:"0" ~parameters:arm_params12
          ~expected_value:
@@ -5467,9 +5467,9 @@ let () =
               "label": "J1" } ]|}
       ()
   in
-  ref_matches ~name:"ch10.6 §6.5-plek in de wikkel, buiten de tak" ~ir:arm_doc10
+  ref_matches ~name:"ch10.6 §6.5-site in the wrapper, outside the branch" ~ir:arm_doc10
     ~case_text:wrapper;
-  clingo_matches ~name:"ch10.6 §6.5-plek in de wikkel blijft melden" ~ir:arm_doc10
+  clingo_matches ~name:"ch10.6 §6.5-site in the wrapper keeps reporting" ~ir:arm_doc10
     ~case_text:wrapper
 
 (* --- DRIE TUSSENKNOPEN TUSSEN DE Let EN DE TAKKNOOP ----------------------
@@ -5490,7 +5490,7 @@ let () =
       luid, omdat een fold-init over [closed_term] loopt en die de knoop niet
       draagt. Gemeten, met ref ernaast die hem wél speelt.
    3. EEN AGGREGATIELICHAAM. Bestaat niet in welgevormd IR: elke
-      expressiepositie binnen een `Functie` — de leegwaarde en elk argument —
+      expressiepositie binnen een `Function_call` — de leegwaarde en elk argument —
       wordt door de verifier op regelniveau gelopen, en daar is een
       `IfThenElse` WF-069-ill-formed. De weigering staat dus aan de deur, niet
       in deze backend, en wordt hier met de verifier zelf vastgelegd.
@@ -5522,7 +5522,7 @@ let verifier_refuses ~name ~ir ~wf =
   let vs = wf_ids ir in
   let is v = String.length v >= String.length wf && String.sub v 0 (String.length wf) = wf in
   check
-    (name ^ ": " ^ wf ^ " weigert de vorm aan de deur, en niets anders klaagt ("
+    (name ^ ": " ^ wf ^ " refuses the form at the door, and nothing else complains ("
    ^ String.concat "; " vs ^ ")")
     (vs <> [] && List.for_all is vs)
 
@@ -5655,15 +5655,15 @@ let () =
      plaatsing blijft staan EN is exact, in beide executors, in beide
      richtingen. Deze getuige houdt de herschrijving eerlijk aan de andere
      kant — zij mag niet verplaatsen wat niet arm-lokaal is. *)
-  verifier_clean ~name:"ch10.6 geneste waarde leest de buitenste behoefte" ~ir:arm_doc15;
+  verifier_clean ~name:"ch10.6 nested value reads the outermost need" ~ir:arm_doc15;
   let empty40 = arm_case ~inkomen:"40" ~parameters:arm_params12
                  ~expected_value:arm_heffing_empty_and_reported () in
-  ref_matches ~name:"ch10.6 geneste waarde leest de buitenste behoefte, lege deler"
+  ref_matches ~name:"ch10.6 nested value reads the outermost need, empty divisor"
     ~ir:arm_doc15 ~case_text:empty40;
   clingo_matches
-    ~name:"ch10.6 geneste waarde leest de buitenste behoefte, lege deler meldt en leegt"
+    ~name:"ch10.6 nested value reads the outermost need, empty divisor reports and empties"
     ~ir:arm_doc15 ~case_text:empty40;
-  both_break ~name:"ch10.6 geneste waarde leest de buitenste behoefte, nuldeler" ~ir:arm_doc15
+  both_break ~name:"ch10.6 nested value reads the outermost need, zero divisor" ~ir:arm_doc15
     ~case_text:(arm_case ~inkomen:"40" ~restpost:"0" ~parameters:arm_params12
                   ~expected_value:arm_breaks ())
     ~needle:"division by numeric zero"
@@ -5676,15 +5676,15 @@ let () =
      weigert de vertaling bij naam. ref speelt hem, en die getuige staat
      ernaast: dit is een weigering, geen uitspraak dat de vorm geen betekenis
      heeft. *)
-  verifier_clean ~name:"ch10.6 wikkel tussen twee Lets, conditie-lezende tussenbinder"
+  verifier_clean ~name:"ch10.6 wrapper between two Lets, condition-reading intermediate binder"
     ~ir:arm_doc14;
   let empty40 = arm_case ~inkomen:"40" ~parameters:arm_params12 ~expected_value:(arm_val "5") () in
-  ref_matches ~name:"ch10.6 wikkel tussen twee Lets, conditie-lezende tussenbinder [ref speelt]"
+  ref_matches ~name:"ch10.6 wrapper between two Lets, condition-reading intermediate binder [ref plays]"
     ~ir:arm_doc14 ~case_text:empty40;
-  faults_with ~name:"ch10.6 wikkel tussen twee Lets, conditie-lezende tussenbinder weigert luid"
+  faults_with ~name:"ch10.6 wrapper between two Lets, condition-reading intermediate binder refuses loudly"
     ~ir:arm_doc14 ~case_text:empty40 ~needle:"nor swap the two Lets";
   faults_with
-    ~name:"ch10.6 wikkel tussen twee Lets, conditie-lezende tussenbinder noemt de reden"
+    ~name:"ch10.6 wrapper between two Lets, condition-reading intermediate binder names the reason"
     ~ir:arm_doc14 ~case_text:empty40
     ~needle:"read in exactly one branch arm"
 
@@ -5747,8 +5747,8 @@ let () =
      en geen verplaatsing: hier is de behoefte op beide takken nodig, dus de
      herschrijving moet zich inhouden. Beide executors melden en leggen leeg op
      de case die de DAN-arm kiest — de arm waar V1 juist niets mag doen. *)
-  verifier_clean ~name:"ch10.6 vangst: de conditie leest de geneste binder" ~ir:arm_doc18;
-  verifier_clean ~name:"ch10.6 vangst: de andere arm leest de behoefte direct" ~ir:arm_doc19;
+  verifier_clean ~name:"ch10.6 catch: the condition reads the nested binder" ~ir:arm_doc18;
+  verifier_clean ~name:"ch10.6 catch: the other arm reads the need directly" ~ir:arm_doc19;
   let empty40 = arm_case ~inkomen:"40" ~parameters:arm_params12
                  ~expected_value:arm_heffing_empty_and_reported () in
   let zero40 =
@@ -5888,16 +5888,16 @@ let arm_fold_case expected_value =
     arm_params12 expected_value
 
 let () =
-  verifier_clean ~name:"ch10.6 vouwlichaam tussen Let en tak" ~ir:arm_fold;
+  verifier_clean ~name:"ch10.6 fold body between Let and branch" ~ir:arm_fold;
   let plays = arm_fold_case (arm_val "2") in
-  ref_matches ~name:"ch10.6 vouwlichaam tussen Let en tak [ref speelt]" ~ir:arm_fold
+  ref_matches ~name:"ch10.6 fold body between Let and branch [ref plays]" ~ir:arm_fold
     ~case_text:plays;
-  faults_with ~name:"ch10.6 vouwlichaam tussen Let en tak weigert luid" ~ir:arm_fold
+  faults_with ~name:"ch10.6 fold body between Let and branch refuses loudly" ~ir:arm_fold
     ~case_text:plays ~needle:"a closed-body term here"
 
 (* --- knoop 3: het AGGREGATIELICHAAM ---------------------------------------
    Bestaat niet in welgevormd IR, en dat is de meting: de verifier loopt elke
-   expressiepositie binnen een `Functie` — de leegwaarde en elk argument — op
+   expressiepositie binnen een `Function_call` — de leegwaarde en elk argument — op
    REGELNIVEAU, en daar is een `IfThenElse` WF-069-ill-formed. Er valt dus niets
    te dragen en niets te weigeren in deze backend; de weigering staat aan de
    deur, bij gate 3, en wordt hier met dezelfde [Ir_v0.Checks.all] vastgelegd.
@@ -5947,7 +5947,7 @@ let () =
                                          "role": "vondst" } }|}
                         (arm_on_k ~then_branch:(arm_lit "0.00")) arm_ob))))
   in
-  verifier_refuses ~name:"ch10.6 aggregatielichaam tussen Let en tak (leegwaarde)"
+  verifier_refuses ~name:"ch10.6 aggregation body between Let and branch (emptyFallback)"
     ~ir:empty_fallback_form ~wf:"WF-069";
   (* positie 2: een gelijst waardefold-argument (§5.8.3) *)
   let argument_form =
@@ -5965,7 +5965,7 @@ let () =
                          "source": { "snippet": "het minimum van de twee" } }|}
                      (arm_on_k ~then_branch:(arm_lit "0.00")) (arm_par "basisheffing") arm_ob)))
   in
-  verifier_refuses ~name:"ch10.6 aggregatielichaam tussen Let en tak (argument)"
+  verifier_refuses ~name:"ch10.6 aggregation body between Let and branch (argument)"
     ~ir:argument_form ~wf:"WF-069"
 
 (* --- `first`/`last` over een SETBRON (kaart eerste-laatste-setvouw-kloof,
@@ -6107,28 +6107,28 @@ let () =
   let last_case =
     window_case ~attribute_ref:"laatste vondstdag" ~value_node:"2025-11-01"
   in
-  ref_matches ~name:"ch1.2e EERSTE over een setbron is de VROEGSTE waarde" ~ir:leading
+  ref_matches ~name:"ch1.2e EERSTE over a set source is the EARLIEST value" ~ir:leading
     ~case_text:first_case;
-  clingo_matches ~name:"ch1.2e EERSTE over een setbron is de VROEGSTE waarde" ~ir:leading
+  clingo_matches ~name:"ch1.2e EERSTE over a set source is the EARLIEST value" ~ir:leading
     ~case_text:first_case;
-  ref_matches ~name:"ch1.2e LAATSTE over een setbron is de LAATSTE waarde" ~ir:last_item
+  ref_matches ~name:"ch1.2e LAATSTE over a set source is the LAATSTE value" ~ir:last_item
     ~case_text:last_case;
-  clingo_matches ~name:"ch1.2e LAATSTE over een setbron is de LAATSTE waarde" ~ir:last_item
+  clingo_matches ~name:"ch1.2e LAATSTE over a set source is the LAATSTE value" ~ir:last_item
     ~case_text:last_case;
-  ref_matches ~name:"ch1.2e EERSTE over een lege setbron is leeg" ~ir:leading
+  ref_matches ~name:"ch1.2e EERSTE over a empty set source is leeg" ~ir:leading
     ~case_text:(window_empty_case ~attribute_ref:"eerste vondstdag");
-  clingo_matches ~name:"ch1.2e EERSTE over een lege setbron is leeg" ~ir:leading
+  clingo_matches ~name:"ch1.2e EERSTE over a empty set source is leeg" ~ir:leading
     ~case_text:(window_empty_case ~attribute_ref:"eerste vondstdag");
-  ref_matches ~name:"ch1.2e LAATSTE over een lege setbron is leeg" ~ir:last_item
+  ref_matches ~name:"ch1.2e LAATSTE over a empty set source is leeg" ~ir:last_item
     ~case_text:(window_empty_case ~attribute_ref:"laatste vondstdag");
-  clingo_matches ~name:"ch1.2e LAATSTE over een lege setbron is leeg" ~ir:last_item
+  clingo_matches ~name:"ch1.2e LAATSTE over a empty set source is leeg" ~ir:last_item
     ~case_text:(window_empty_case ~attribute_ref:"laatste vondstdag");
   (* de temporele weigering: `ref` weigert elke RANGSCHIKKENDE vouw over een
      tijdlijndragend elementattribuut (ch. 3.6 — alleen som en totaal dragen
      de per-lid tijdlijnvouw), dus deze arm mag niet uit de asOfDate-emmers
      antwoorden. Geen corpusgetuige kan dit halen: de vorm is in beide
      uitvoerders dood. *)
-  faults_with ~name:"ch3.6 EERSTE over een temporele setbron blijft geweigerd"
+  faults_with ~name:"ch3.6 EERSTE over a temporal set source stays refused"
     ~ir:
       (set_fold_doc ~kind:"first" ~operand_ot:"Vondst" ~rate_unit:(eur mnd_unit)
          ~objective_unit:(eur mnd_unit))
@@ -6136,7 +6136,7 @@ let () =
     ~needle:
       "a ranking fold (minimum/maximum/first/last) over the temporal attribute \
        \"bewaartarief\" of a set has no defined moment to fold";
-  faults_with ~name:"ch3.6 LAATSTE over een temporele setbron blijft geweigerd"
+  faults_with ~name:"ch3.6 LAATSTE over a temporal set source stays refused"
     ~ir:
       (set_fold_doc ~kind:"last" ~operand_ot:"Vondst" ~rate_unit:(eur mnd_unit)
          ~objective_unit:(eur mnd_unit))
@@ -6177,20 +6177,20 @@ let () =
   in
   let min_case = window_case ~attribute_ref:"eerste vondstdag" ~value_node:"2025-02-14" in
   let max_case = window_case ~attribute_ref:"laatste vondstdag" ~value_node:"2025-11-01" in
-  ref_matches ~name:"ch1.2e MINIMUM over een datum-setbron is EERSTE's waarde" ~ir:minimum
+  ref_matches ~name:"ch1.2e MINIMUM over a date set source is EERSTE's value" ~ir:minimum
     ~case_text:min_case;
-  clingo_matches ~name:"ch1.2e MINIMUM over een datum-setbron is EERSTE's waarde" ~ir:minimum
+  clingo_matches ~name:"ch1.2e MINIMUM over a date set source is EERSTE's value" ~ir:minimum
     ~case_text:min_case;
-  ref_matches ~name:"ch1.2e MAXIMUM over een datum-setbron is LAATSTE's waarde" ~ir:maximum
+  ref_matches ~name:"ch1.2e MAXIMUM over a date set source is LAATSTE's value" ~ir:maximum
     ~case_text:max_case;
-  clingo_matches ~name:"ch1.2e MAXIMUM over een datum-setbron is LAATSTE's waarde" ~ir:maximum
+  clingo_matches ~name:"ch1.2e MAXIMUM over a date set source is LAATSTE's value" ~ir:maximum
     ~case_text:max_case;
-  faults_with ~name:"SOM over een datum-setbron telt geen dagnummers op"
+  faults_with ~name:"SOM over a date set source adds up no day numbers"
     ~ir:(window_doc ~kind:"sum" ~attribute_ref:"vondstdatum" ~objective:"eerste vondstdag")
     ~case_text:min_case
     ~needle:
       "a sum fold over the set source \"vondstdatum\" adds DATE-valued members of \"Vondst\"";
-  faults_with ~name:"TOTAAL over een datum-setbron telt geen dagnummers op"
+  faults_with ~name:"TOTAAL over a date set source adds up no day numbers"
     ~ir:(window_doc ~kind:"total" ~attribute_ref:"vondstdatum" ~objective:"eerste vondstdag")
     ~case_text:min_case
     ~needle:
@@ -6209,11 +6209,11 @@ let () =
      \"number\" does not match the declared datatype". Dat de uitkomst niet
      eens op te schrijven is, is scherper dan een pin zou zijn geweest; zij
      staat in corpus/negative/wf091-set-source-total-date/NOTE.md. *)
-  faults_with ~name:"de datum-setbron-weigering gaat over het document, niet over de casus"
+  faults_with ~name:"the date set source refusal concerns the document, not the case"
     ~ir:(window_doc ~kind:"sum" ~attribute_ref:"vondstdatum" ~objective:"eerste vondstdag")
     ~case_text:(window_empty_case ~attribute_ref:"eerste vondstdag")
     ~needle:"Declined in translation";
-  ref_matches ~name:"ref antwoordt leeg op de lege datum-SOM waar clingo weigert"
+  ref_matches ~name:"ref answers leeg on the empty date-SOM where clingo refuses"
     ~ir:(window_doc ~kind:"sum" ~attribute_ref:"vondstdatum" ~objective:"eerste vondstdag")
     ~case_text:(window_empty_case ~attribute_ref:"eerste vondstdag");
   (* de SINGLETON-helft van dezelfde asymmetrie, en zij is scherper dan de
@@ -6222,7 +6222,7 @@ let () =
      DATUM, niet een getal — terwijl de vertaling ook daar weigert. Gemeten
      2026-09-20. Dit is de casus die laat zien dat de grens niet bij "leeg"
      ligt maar bij "minder dan twee bijdragers". *)
-  ref_matches ~name:"ref geeft bij precies EEN datumlid dat lid terug (geen optelling)"
+  ref_matches ~name:"ref gives back that member for exactly EEN date member (no addition)"
     ~ir:(window_doc ~kind:"sum" ~attribute_ref:"vondstdatum" ~objective:"eerste vondstdag")
     ~case_text:(window_singleton_case ~attribute_ref:"eerste vondstdag" ~value_node:"2025-06-30")
 
@@ -6253,7 +6253,7 @@ let pro_rata_date_base_doc =
   {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"borgtarief","datatype":{"node":"Date","precision":"day"},"timeline":{"node":"TimelineFacet","granularity":"year","count":1}},{"node":"Attribute","name":"borgdeel","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"timeline":{"node":"TimelineFacet","granularity":"month","count":1}}],"characteristics":[{"node":"Characteristic","name":"borgplichtig","kind":"adjectival","timeline":{"node":"TimelineFacet","granularity":"month","count":1}}]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"borgdeel van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"borgdeel","subjectType":"Jutter","source":{"snippet":"Het borgdeel van een Jutter"}},"value":{"node":"BuiltinCall","kind":"timeProportionalPart","arguments":[{"node":"AttributeReference","attribute":"borgtarief","subjectType":"Jutter","source":{"snippet":"zijn borgtarief"}}],"filter":{"node":"CharacteristicCheck","characteristic":"borgplichtig","negated":false,"source":{"snippet":"gedurende de tijd dat hij borgplichtig is"}},"granularity":"month","type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"het tijdsevenredig deel per maand van zijn borgtarief gedurende de tijd dat hij borgplichtig is"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
 
 let () =
-  faults_with ~name:"WF-091 tweede linie: de eigen tijdlijntotaal over een datum weigert bij naam"
+  faults_with ~name:"WF-091 second line: the own timeline total over a date refuses by name"
     ~ir:timeline_total_date_doc
     ~case_text:
       {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15",
@@ -6264,7 +6264,7 @@ let () =
     ~needle:
       "the total over the timeline of \"bewaarvergoeding per maand\" on \"Jutter\" multiplies \
        DATE-valued timeline segments";
-  faults_with ~name:"WF-091 tweede linie: de gedurende-klip over een datum weigert bij naam"
+  faults_with ~name:"WF-091 second line: the gedurende clip over a date refuses by name"
     ~ir:clip_fold_date_doc
     ~case_text:
       {|{ "format": "uchar-case-v0", "asOfDate": null,
@@ -6278,7 +6278,7 @@ let () =
     ~needle:
       "the gedurende-clipped total over the timeline of \"wachtvergoeding per maand\" on \
        \"Klipjutter\" multiplies DATE-valued timeline segments";
-  faults_with ~name:"WF-091 tweede linie: de pro-rata-basis over een datum weigert bij naam"
+  faults_with ~name:"WF-091 second line: the pro-rata base over a date refuses by name"
     ~ir:pro_rata_date_base_doc
     ~case_text:
       {|{ "format": "uchar-case-v0", "asOfDate": null,
@@ -6358,7 +6358,7 @@ let unresolved_condition_case =
 |}
 
 let () =
-  faults_with ~name:"WF-044 een Onopgeloste regelvoorwaarde wordt geciteerd, niet weggeslikt"
+  faults_with ~name:"WF-044 an Unresolved rule condition is cited, not swallowed"
     ~ir:unresolved_condition_doc ~case_text:unresolved_condition_case
     ~needle:"Unresolved condition reached in translation: this rule fails observably"
 
@@ -6398,7 +6398,7 @@ let () =
        2026-09-19, en dat is precies de soort onwaarheid waar deze kaart over
        gaat. Hij houdt nu de bodem, en voor hém is die zin waar: geen enkel
        corpus- of pariteitsdocument draagt een `dimensieSelectie` op een
-       `Functie` (gemeten: nul).
+       `Function_call` (gemeten: nul).
 
    De gelijste frames dragen GEEN leegwaarde, waar de rode getuige er wel een
    heeft: de arm weigert de VORM, niet de invaller — en het weigerfragment
@@ -6488,17 +6488,17 @@ let dimension_fold_case =
 |}
 
 let () =
-  faults_with ~name:"§5.8.3 de gelijste som valt op haar eigen, vormnoemende arm"
+  faults_with ~name:"§5.8.3 the list sum falls to its own, form-naming arm"
     ~ir:(listed_fold_doc ~kind:"sum" ~element_object_type:"null" ())
     ~case_text:listed_fold_case
     ~needle:"a sum over listed operands is not translated";
   (* armgrens, as KIND: hetzelfde frame, een buurvouw — de bodem, niet de som *)
-  faults_with ~name:"§5.8.3 armgrens: het gelijste MINIMUM houdt de bodem"
+  faults_with ~name:"§5.8.3 arm bounds: the list MINIMUM holds the bottom"
     ~ir:(listed_fold_doc ~kind:"minimum" ~element_object_type:"null" ())
     ~case_text:listed_fold_case
     ~needle:"expression kind not translated (no corpus case exercises it)";
   (* armgrens, as ELEMENT: dezelfde som mét bron-stempel — ook de bodem *)
-  faults_with ~name:"§5.8.3 armgrens: een som mét elementType houdt de bodem"
+  faults_with ~name:"§5.8.3 arm bounds: a sum with elementType holds the bottom"
     ~ir:(listed_fold_doc ~kind:"sum" ~element_object_type:"\"Vangst\"" ())
     ~case_text:listed_fold_case
     ~needle:"expression kind not translated (no corpus case exercises it)";
@@ -6507,7 +6507,7 @@ let () =
      dit frame) en toch niet gelijst; hij houdt de bodem. Vóór de wacht op
      dimensieSelectie kreeg hij het somfragment, wat onwaar was: `ref` weigert
      hem op eigen grond, "dimension selection not implemented in this card". *)
-  faults_with ~name:"WF-037 armgrens: de dimensiecel-som houdt de bodem"
+  faults_with ~name:"WF-037 arm bounds: the dimension-cell sum holds the bottom"
     ~ir:
       (listed_fold_doc ~dimensions:sum_dimensions
          ~attribute_dimensions:{|, "dimensions": [ "seizoen" ]|}
@@ -6592,21 +6592,21 @@ let () =
                         { "node": "Literal", "value": { "number": "2" }, "type": %s } ] }|}
       sum_num0 sum_num0 sum_num0
   in
-  faults_with ~name:"WF-037 bronloze telling zonder argument (expr_term)"
+  faults_with ~name:"WF-037 sourceless count without argument (expr_term)"
     ~ir:(sourceless_fold_doc ~objective_type:sum_num0 ~kind:"count" ~call_arguments:"" ~value_range:false)
     ~case_text:sourceless_fold_case ~needle:(no_source "count");
-  faults_with ~name:"WF-037 telling met een ListLiteral en bereik (expr_term)"
+  faults_with ~name:"WF-037 count with a ListLiteral and range (expr_term)"
     ~ir:(sourceless_fold_doc ~objective_type:sum_num0 ~kind:"count" ~call_arguments:literal_list ~value_range:true)
     ~case_text:sourceless_fold_case
     ~needle:
       "a count aggregation carries elementType \"Vondst\" and a ListLiteral operand: a listed \
        value is no source of instances";
-  faults_with ~name:"WF-037 tekstgetypeerde first zonder argument (symbolic_term)"
+  faults_with ~name:"WF-037 text-typed first without argument (symbolic_term)"
     ~ir:
       (sourceless_fold_doc ~objective_type:{|{ "node": "Text" }|} ~kind:"first" ~call_arguments:""
          ~value_range:false)
     ~case_text:sourceless_fold_case ~needle:(no_source "first");
-  faults_with ~name:"WF-037 datum-tijd-getypeerde first zonder argument (dt_term)"
+  faults_with ~name:"WF-037 date-time-typed first without argument (dt_term)"
     ~ir:
       (sourceless_fold_doc ~objective_type:{|{ "node": "Date", "precision": "millisecond" }|}
          ~kind:"first" ~call_arguments:"" ~value_range:false)
@@ -6666,25 +6666,25 @@ let () =
           ~ir:(sourceless_fold_doc ~objective_type:sum_num0 ~kind:"count" ~call_arguments:arg ~value_range:true)
           ~case_text:sourceless_fold_case ~needle:(source_arm "count" graph_node))
     form_list;
-  faults_with ~name:"WF-037 bronarm, gevulde telling met a Literal (expr_term)"
+  faults_with ~name:"WF-037 source arm, gevulde count with a Literal (expr_term)"
     ~ir:(sourceless_fold_doc ~objective_type:sum_num0 ~kind:"filledCount" ~call_arguments:literal_node ~value_range:true)
     ~case_text:sourceless_fold_case ~needle:(source_arm "filledCount" "a Literal");
-  faults_with ~name:"WF-037 bronarm, gevulde telling met an InstanceSetUnion (expr_term)"
+  faults_with ~name:"WF-037 source arm, gevulde count with an InstanceSetUnion (expr_term)"
     ~ir:(sourceless_fold_doc ~objective_type:sum_num0 ~kind:"filledCount" ~call_arguments:union ~value_range:true)
     ~case_text:sourceless_fold_case ~needle:(source_arm "filledCount" "an InstanceSetUnion");
   (* the value folds, whose fold source is an AttributeReference too: a sum over a literal and over
      a parameter, a total without a range over a literal (its argument is the subject's own read, so
      its elementType names the subject), and a text- and a datetime-typed first over a literal, which
      reach [symbolic_term] and [dt_term] and fell on their bottom sentences before *)
-  faults_with ~name:"WF-037 bronarm, som met a Literal (expr_term)"
+  faults_with ~name:"WF-037 source arm, sum with a Literal (expr_term)"
     ~ir:(sourceless_fold_doc ~objective_type:sum_num0 ~kind:"sum" ~call_arguments:literal_node ~value_range:true)
     ~case_text:sourceless_fold_case ~needle:(source_arm "sum" "a Literal");
-  faults_with ~name:"WF-037 bronarm, som met a ParameterReference (expr_term)"
+  faults_with ~name:"WF-037 source arm, sum with a ParameterReference (expr_term)"
     ~ir:
       (sourceless_fold_doc ~objective_type:sum_num0 ~kind:"sum"
          ~call_arguments:{|{ "node": "ParameterReference", "parameter": "drempel" }|} ~value_range:true)
     ~case_text:sourceless_fold_case ~needle:(source_arm "sum" "a ParameterReference");
-  faults_with ~name:"WF-037 bronarm, totaal zonder bereik met a Literal (expr_term)"
+  faults_with ~name:"WF-037 source arm, total without range with a Literal (expr_term)"
     ~ir:
       (substitute ~truth:{|"elementType": "Vondst",|} ~via:{|"elementType": "Jutter",|}
          (sourceless_fold_doc ~objective_type:sum_num0 ~kind:"total" ~call_arguments:literal_node ~value_range:false))
@@ -6692,13 +6692,13 @@ let () =
     ~needle:
       "a total aggregation carries elementType \"Jutter\" and a Literal operand: the source of an \
        instance fold is an AttributeReference";
-  faults_with ~name:"WF-037 bronarm, tekstgetypeerde first met a Literal (symbolic_term)"
+  faults_with ~name:"WF-037 source arm, text-typed first with a Literal (symbolic_term)"
     ~ir:
       (sourceless_fold_doc ~objective_type:{|{ "node": "Text" }|} ~kind:"first"
          ~call_arguments:{|{ "node": "Literal", "value": { "text": "Zuiderhoofd" }, "type": { "node": "Text" } }|}
          ~value_range:true)
     ~case_text:sourceless_fold_case ~needle:(source_arm "first" "a Literal");
-  faults_with ~name:"WF-037 bronarm, datum-tijd-getypeerde first met a Literal (dt_term)"
+  faults_with ~name:"WF-037 source arm, date-time-typed first with a Literal (dt_term)"
     ~ir:
       (sourceless_fold_doc ~objective_type:{|{ "node": "Date", "precision": "millisecond" }|} ~kind:"first"
          ~call_arguments:
@@ -6706,7 +6706,7 @@ let () =
                "type": { "node": "Date", "precision": "millisecond" } }|}
          ~value_range:true)
     ~case_text:sourceless_fold_case ~needle:(source_arm "first" "a Literal");
-  faults_with ~name:"WF-037 bronarm, armgrens: de unie onder een telling met bron houdt WF-110"
+  faults_with ~name:"WF-037 source arm, arm bounds: the union under a count with source holds WF-110"
     ~ir:(sourceless_fold_doc ~objective_type:sum_num0 ~kind:"count" ~call_arguments:union ~value_range:true)
     ~case_text:sourceless_fold_case
     ~needle:"a count over an instance-set union names no source of its own, and this node carries elementType + sourceRole"
@@ -6718,7 +6718,7 @@ let () =
    lives here — the composite arms no golden spells, the §9.8 nested
    composition, and the four refusals a green corpus cannot hold. *)
 
-(* [dagsoorten] is the DayKind list; the default day kind carries the
+(* [day_kinds] is the DayKind list; the default day kind carries the
    plural the duration unit spells *)
 let dk_doc ?(day_kinds = {|{ "node": "DayKind", "name": "nevelsdag", "plural": "nevelsdagen" }|})
     ?(day_kinds_defs = "") ?(precondition = "") ?(date_type = {|{ "node": "Date", "precision": "day" }|})
@@ -6849,7 +6849,7 @@ let () =
     [ ("all", "all", 0); ("none", "none", 0); ("atLeast", "atLeast", 1);
       ("atMost", "atMost", 1); ("exactly", "exactly", 1) ];
   (* a bare comparison, with no composite around it at all *)
-  dk_translates ~name:"dagsoortvoorwaarde zonder samenstelling"
+  dk_translates ~name:"day-kind condition without composition"
     ~ir:(dk_doc ~precondition:(part_equal "dayOf" "1") ~value_node:(step_item ()) ());
   (* the §9.8 composition: one day kind referencing another, on the bound day,
      positive and negated. No corpus document carries this shape. *)
@@ -6873,7 +6873,7 @@ let () =
              ~value_node:(step_item ()) ()))
     [ ("positief", false); ("ontkend", true) ];
   (* the four refusals, each named rather than fallen through to *)
-  faults_with ~name:"'de dag' buiten een dagsoortevaluatie"
+  faults_with ~name:"'de dag' outside a day-kind evaluation"
     ~ir:
       (dk_doc ~precondition:(part_equal "dayOf" "1")
          ~value_node:
@@ -6894,13 +6894,13 @@ let () =
                "validity": { "node": "Validity" } }|}
          ~value_node:(step_item ()) ())
     ~case_text:dk_case ~needle:"day-kind reference cycle";
-  faults_with ~name:"eenheidsspelling die geen dagsoort en geen kalendereenheid is"
+  faults_with ~name:"unit spelling that is neither a day kind nor a calendar unit"
     ~ir:
       (dk_doc ~day_kinds:{|{ "node": "DayKind", "name": "nevelsdag" }|}
          ~precondition:(part_equal "dayOf" "1") ~value_node:(step_item ()) ())
     ~case_text:dk_case
     ~needle:"neither a recognised time unit nor a declared day kind";
-  faults_with ~name:"geregistreerde eenheid zonder dagsoortdefinitie (WF-031)"
+  faults_with ~name:"registered unit without day-kind definition (WF-031)"
     ~ir:(dk_doc ~day_kinds_defs:"" ~precondition:"null" ~value_node:(step_item ()) ())
     ~case_text:dk_case ~needle:"without a condition";
   (* §6.11 on a DATUM-TIJD operand is CARRIED since 2026-09-19: the day kind
@@ -6923,11 +6923,11 @@ let () =
   Sys.remove irf;
   Sys.remove casef;
   (match translate doc case with
-  | (_ : string) -> check "datum-tijd plus dagsoort translates" true
+  | (_ : string) -> check "date-time plus day kind translates" true
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check ("datum-tijd plus dagsoort translates (unexpected fault: " ^ m ^ ")") false);
+      check ("date-time plus day kind translates (unexpected fault: " ^ m ^ ")") false);
   (* the §6.10 twin stays refused by name, in ref's words *)
-  faults_with ~name:"dagsoorttijdsduur over datum-tijd-operanden blijft een erkende flank"
+  faults_with ~name:"day-kind duration over date-time operands stays a recognised flank"
     ~ir:
       (dk_doc ~date_type:{|{ "node": "Date", "precision": "millisecond" }|}
          ~objective_type_name:
@@ -6948,7 +6948,7 @@ let () =
      build — the backend must fault in ref's terms, not answer Empty and ship
      a confident table. (The corpus witness is red case
      day-kind-parameter-unbound; this is the translation-level twin.) *)
-  faults_with ~name:"ongebonden parameter in een dagsoortvoorwaarde faalt fail-fast"
+  faults_with ~name:"unbound parameter in a day-kind condition fails fail-fast"
     ~ir:
       (dk_doc
          ~precondition:
@@ -6986,10 +6986,10 @@ let () =
       (fun l -> Uchar_ref.Case.contains ~needle:"viol(\"day-kind walk: no day of the kind" l)
       (String.split_on_char '\n' prog)
   in
-  check "reikwijdteregels bestaan" (List.length reach_rules >= 6);
-  check "elke reikwijdteregel draagt de venster-voorwaarde"
+  check "scope rules exist" (List.length reach_rules >= 6);
+  check "every scope rule carries the window condition"
     (List.for_all (fun l -> Uchar_ref.Case.contains ~needle:"dki" l) reach_rules);
-  check "de reikwijdte heeft een arm voor een ontbrekende rang in een niet-afgekapte tabel"
+  check "the scope has an arm for a missing rank in a non-truncated table"
     (List.exists
        (fun l ->
          Uchar_ref.Case.contains ~needle:"_r(DKR+DKM), not " l
@@ -6997,7 +6997,7 @@ let () =
        reach_rules);
   (* the §9.8 composition on a date OTHER than the bound day: the narrow
      route, refused here and in ref in the same words *)
-  faults_with ~name:"geneste dagsoorttoets op een andere dag dan de gebonden dag"
+  faults_with ~name:"nested day-kind test on a different day than the bound day"
     ~ir:
       (dk_doc ~day_kinds:two_day_kinds
          ~day_kinds_defs:
@@ -7219,11 +7219,11 @@ let counterpart_case =
 |}
 
 let () =
-  ref_matches ~name:"U12 een vernauwde tegenpartij telt alleen haar eigen klasse"
+  ref_matches ~name:"U12 a narrowed counterpart counts only its own class"
     ~ir:(counterpart_doc ()) ~case_text:counterpart_case;
-  clingo_matches ~name:"U12 een vernauwde tegenpartij telt alleen haar eigen klasse"
+  clingo_matches ~name:"U12 a narrowed counterpart counts only its own class"
     ~ir:(counterpart_doc ()) ~case_text:counterpart_case;
-  faults_with ~name:"U12 een tegenpartij buiten de gedeclareerde vuller weigert"
+  faults_with ~name:"U12 a counterpart outside the declared filler refuses"
     ~ir:(counterpart_doc ~counterpart:"Wachtpost" ()) ~case_text:counterpart_case
     ~needle:"the counterpart type \"Wachtpost\" is no subtype of \"Jutter\""
 
@@ -7418,12 +7418,11 @@ let () =
   Sys.remove casef;
   match translate doc case with
   | (_ : string) ->
-      check "AANTAL_GEVULDE: a count derives no unit, so som / count over a kg source translates"
+      check "AANTAL_GEVULDE: a count derives no unit, so sum / count over a kg source translates"
         true
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check
-        ("AANTAL_GEVULDE: a count derives no unit, so som / count over a kg source translates \
-          (unexpected fault: " ^ m ^ ")")
+        ("AANTAL_GEVULDE: a count derives no unit, so sum / count over a kg source translates (unexpected fault: " ^ m ^ ")")
         false
 
 (* ch. 3.10 — de twee helften die GEEN corpusgolden kan dragen.
@@ -7501,10 +7500,10 @@ let () =
             "datatype": { "node": "Date", "precision": "day" } }|}
       ~rule_def:(rule_def parameter_bound)
   in
-  faults_with ~name:"ch3.10 een parametergrens is de uitgestelde grensvorm" ~ir
+  faults_with ~name:"ch3.10 a parameter bound is the deferred bound form" ~ir
     ~case_text:window_case
     ~needle:"neither a date literal nor an own scalar date attribute of the subject";
-  faults_with ~name:"ch3.10 de grensweigering draagt haar fase-staart" ~ir
+  faults_with ~name:"ch3.10 the bound refusal carries its phase-tail" ~ir
     ~case_text:window_case ~needle:"Declined in translation"
 
 (* het tijdlijndoel: dezelfde soort voorwaarde, maar het doel is
@@ -7605,7 +7604,7 @@ let () =
       check (name ^ Printf.sprintf " (%d segment(en))" (List.length segs))
         (segs = [ (day_number "2025-03-15", day_number "2025-07-01", 12) ])
   | Error m -> check (name ^ " (" ^ m ^ ")") false
-  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (fout: " ^ m ^ ")") false);
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (fault: " ^ m ^ ")") false);
   (* de HEKKEN van de producent worden mee geknipt. Met `actief` ook in
      januari 2024 is het 2024-deel 10 x 31/366, niet exact; die bucket valt
      buiten het venster [2025-01-01, open) en wordt nooit geschreven. ref
@@ -7635,19 +7634,19 @@ let () =
                    "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "1 januari 2025" } },
         "toInclusive": false, "source": { "snippet": "vanaf 1 januari 2025" } }|}
   in
-  ref_matches ~name:"ch3.10 een niet-exacte bucket buiten het venster wordt weggeknipt"
+  ref_matches ~name:"ch3.10 an inexact bucket outside the window is clipped"
     ~ir:(clip_doc from_2025) ~case_text:outside_window_case;
-  clingo_matches ~name:"ch3.10 het pro-rata-hek geldt alleen binnen het venster"
+  clingo_matches ~name:"ch3.10 the pro-rata fence applies only within the window"
     ~ir:(clip_doc from_2025) ~case_text:outside_window_case;
   let one_member = {|{ "node": "Compound", "quantifier": "all", "threshold": 0, "parts": [ |}
             ^ clip_window ^ {| ], "source": { "snippet": "alle" } }|} in
-  faults_with ~name:"ch3.10 het venster als lid op een tijdlijndoel blijft geweigerd"
+  faults_with ~name:"ch3.10 the window as a member on a timeline target stays refused"
     ~ir:(clip_doc one_member) ~case_text:clip_case ~needle:"inside a composite on the temporal target";
-  faults_with ~name:"ch3.10 de lidweigering draagt haar fase-staart" ~ir:(clip_doc one_member)
+  faults_with ~name:"ch3.10 the member refusal carries its phase-tail" ~ir:(clip_doc one_member)
     ~case_text:clip_case ~needle:"Declined in translation"
 
 (* ch. 3.11 — een KENMERKTOEKENNING op een tijdsafhankelijk kenmerk schrijft
-   een tijdlijn, en heeft/2 is de scalaire lezing. Tot 2026-09-23 schreef
+   een tijdlijn, en has/2 is de scalaire lezing. Tot 2026-09-23 schreef
    deze vertaling daar stil een heeft/2-feit; ref weigert de vorm bij naam.
    Nu weigeren beide. *)
 let () =
@@ -7685,7 +7684,7 @@ let () =
 }
 |}
   in
-  faults_with ~name:"ch3.11 een tijdsafhankelijk kenmerk krijgt geen scalair heeft-feit" ~ir
+  faults_with ~name:"ch3.11 a time-dependent characteristic gets no scalar has-fact" ~ir
     ~case_text ~needle:"temporal characteristic \"geborgen\": temporal writes are not implemented"
 
 (* WF-110 / ch. 3.4d — the INSTANCE-SET UNION, the §5.7 concatenation of
@@ -7772,16 +7771,16 @@ let () =
   (* the union count answers 4 over {V1,V2,V3} ∪ {V3,V4}: V3 is in both
      selections and contributes once, so the sum of the parts (5) is a
      different number and the check discriminates *)
-  ref_matches ~name:"WF-110 de unie telt het gedeelde element eenmaal" ~ir ~case_text:union_case;
-  clingo_matches ~name:"WF-110 clingo telt de unie gelijk aan ref" ~ir ~case_text:union_case;
+  ref_matches ~name:"WF-110 the union counts the shared element once" ~ir ~case_text:union_case;
+  clingo_matches ~name:"WF-110 clingo counts the union equal to ref" ~ir ~case_text:union_case;
   (* the DEDUP MECHANISM itself, pinned in the emitted text: one helper
      predicate, one rule per selection, and the count over that predicate.
      An atom either holds or it does not, which is what makes the shared
      element contribute once; a disjunction inside one aggregate condition
      or two aggregates added together would not have that property. *)
-  translates_carrying ~name:"WF-110 de takken landen in één hulppredicaat" ~ir
+  translates_carrying ~name:"WF-110 the branches land in one helper predicate" ~ir
     ~case_text:union_case ~needle:"union";
-  translates_carrying ~name:"WF-110 de telling loopt over het hulppredicaat" ~ir
+  translates_carrying ~name:"WF-110 the count runs over the helper predicate" ~ir
     ~case_text:union_case ~needle:"= #count { X";
   (* clause (c): a count that names a source of its own beside the union.
      Ill-formed input (WF-110), named here rather than left to the bottom
@@ -7790,14 +7789,14 @@ let () =
      single-argument fold that names one carries its range. With the range
      written beside it the node loads and reaches the arm, the shape of
      corpus/negative/wf110-union-beside-fold-source. *)
-  refused_at_load ~name:"WF-110 een eigen bron naast de unie"
+  refused_at_load ~name:"WF-110 a source of its own beside the union"
     ~ir:
       (substitute ir ~truth:{|"source": { "snippet": "het aantal ..." }|}
          ~via:{|"elementType": "Vondst", "source": { "snippet": "het aantal ..." }|})
     ~needle:
       "a single-argument fold with an elementType carries its range (sourceRole or sourcePath) \
        under every kind but total: the range is written, never derived";
-  faults_with ~name:"WF-110 een eigen bron met bereik naast de unie"
+  faults_with ~name:"WF-110 a source of its own with a range beside the union"
     ~ir:
       (substitute ir ~truth:{|"source": { "snippet": "het aantal ..." }|}
          ~via:
@@ -7812,7 +7811,7 @@ let () =
   (* clause (c) with the range alone and with the filter alone, in the verifier's sentence: until the
      card aantal-bronarm-en-drools-lader this backend refused both in a sentence of its own, and ref
      answered the first as if the range were not written *)
-  faults_with ~name:"WF-110 een eigen bereik naast de unie"
+  faults_with ~name:"WF-110 a range of its own beside the union"
     ~ir:
       (substitute ir ~truth:{|"source": { "snippet": "het aantal ..." }|}
          ~via:
@@ -7820,7 +7819,7 @@ let () =
              "source": { "snippet": "het aantal ..." }|})
     ~case_text:union_case
     ~needle:"a count over an instance-set union names no source of its own, and this node carries sourceRole:";
-  faults_with ~name:"WF-110 een eigen filter naast de unie"
+  faults_with ~name:"WF-110 a filter of its own beside the union"
     ~ir:
       (substitute ir ~truth:{|"source": { "snippet": "het aantal ..." }|}
          ~via:
@@ -7835,12 +7834,12 @@ let () =
      union's own arm names it; the arm exists so this position never reports
      the fall-through sentence, which describes the position and identifies
      no construct. *)
-  faults_with ~name:"WF-110 de unie op een waardeplek"
+  faults_with ~name:"WF-110 the union in a value position"
     ~ir:(union_body ~value_node:(union_of (arm_aangemeld ^ ", " ^ arm_geborgen)))
     ~case_text:union_case ~needle:"an instance-set union stands where a value term is wanted";
   (* clause (b) in the translator: a one-selection union is refused by name,
      so the backend cannot answer a shape the wire does not admit *)
-  faults_with ~name:"WF-110 een unie met één tak"
+  faults_with ~name:"WF-110 a union with one branch"
     ~ir:(union_doc ~branch_list:arm_aangemeld)
     ~case_text:union_case ~needle:"carries at least TWO selections";
   (* the SECOND LINE for clause (d): one population for the whole union. Out of
@@ -7849,7 +7848,7 @@ let () =
      effect. Measured 2026-09-22: without the arm this backend ANSWERED a union
      over two populations (a silent 3, matching ref and diverging from both
      Drools branches, which refuse it by name). *)
-  faults_with ~name:"WF-110 een unie over twee populaties"
+  faults_with ~name:"WF-110 a union over two populations"
     ~ir:
       (union_doc
          ~branch_list:
@@ -7932,7 +7931,7 @@ let empty_rule ~ident ~ot ~objective ~value_node precondition =
       "condition": |} ^ precondition ^ {|,
       "validity": { "node": "Validity" } } ] }|} )
 
-(* [lengte] as a scalar or, for the whole-period frame, a one-segment timeline *)
+(* [length] as a scalar or, for the whole-period frame, a one-segment timeline *)
 let empty_case ?(params = "") ?(length = fun n -> {|{ "number": "|} ^ n ^ {|" }|}) expected =
   {|{ "format": "uchar-case-v0", "asOfDate": null,
   "input": { "instances": [
@@ -7950,7 +7949,7 @@ let empty_case ?(params = "") ?(length = fun n -> {|{ "number": "|} ^ n ^ {|" }|
     "parameters": { |} ^ params ^ {| } },
   "expected": [ |} ^ String.concat ", " expected ^ {| ] }|}
 
-(* one row per label: [attr] = [waarde] on the labels in [hits], leeg on the rest *)
+(* one row per label: [attr] = [value_node] on the labels in [hits], leeg on the rest *)
 let empty_rows ~attr ~value_node ~labels hits =
   List.map
     (fun l ->
@@ -8057,7 +8056,7 @@ let () =
   own_frame ~name:"GEVULD negated, whole year" ~variety:"filled" ~negation:true [ "S2"; "S4" ];
   own_frame ~name:"LEEG, whole year" ~variety:"empty" ~negation:false [ "S2"; "S4" ];
   own_frame ~name:"GEVULD, whole year" ~variety:"filled" ~negation:false [ "S1"; "S2"; "S4" ];
-  own_frame ~name:"LEEG, niet gedurende het gehele jaar" ~variety:"empty" ~negation:false
+  own_frame ~name:"LEEG, not gedurende the whole year" ~variety:"empty" ~negation:false
     ~not_flag:"true" [ "S1"; "S3" ];
   (* the NAVIGATED operand, one to-one hop to the werf's tarief: S1 and S2
      reach W1, S3 reaches nothing and S4 reaches W2, which carries no tarief.
@@ -8084,7 +8083,7 @@ let () =
     [ "S3"; "S4" ];
   nav_frame ~name:"GEVULD navigated, W1 half year" ~variety:"filled" ~negation:false ~w1:half
     [ "S3"; "S4" ];
-  nav_frame ~name:"GEVULD navigated, niet gedurende, W1 half year" ~variety:"filled" ~negation:false
+  nav_frame ~name:"GEVULD navigated, not gedurende, W1 half year" ~variety:"filled" ~negation:false
     ~not_flag:"true" ~w1:half [ "S1"; "S2" ];
   nav_frame ~name:"GEVULD negated navigated, W1 half year" ~variety:"filled" ~negation:true ~w1:half
     [ "S3"; "S4" ];
@@ -8502,19 +8501,19 @@ let () =
       (if aanwezig then "Present" else "Absent")
   in
   let year = window_ir (Some {|"2026-01-01"|}) (Some {|"2026-12-31"|}) in
-  clingo_matches ~name:"geldigheid canoniek, binnen het venster" ~ir:year
+  clingo_matches ~name:"validity canonical, within the window" ~ir:year
     ~case_text:(window_case "2026-06-01" true);
-  clingo_matches ~name:"geldigheid canoniek, tot inclusief" ~ir:year
+  clingo_matches ~name:"validity canonical, up to and including" ~ir:year
     ~case_text:(window_case "2026-12-31" true);
-  clingo_matches ~name:"geldigheid canoniek, voor het venster" ~ir:year
+  clingo_matches ~name:"validity canonical, before the window" ~ir:year
     ~case_text:(window_case "2025-06-01" false);
-  faults_with ~name:"geldigheid.vanaf dag-eerst"
+  faults_with ~name:"validity.from day-first"
     ~ir:(window_ir (Some {|"01-01-2026"|}) (Some {|"2026-12-31"|}))
     ~case_text:(window_case "2026-06-01" true)
     ~needle:
       "validity gate: validity.from \"01-01-2026\" is not the ISO date lexeme yyyy-mm-dd \
        (malformed date lexeme \"01-01-2026\" (expected ISO yyyy-mm-dd))";
-  faults_with ~name:"geldigheid.tot dag-eerst"
+  faults_with ~name:"validity.to day-first"
     ~ir:(window_ir None (Some {|"31-12-2026"|}))
     ~case_text:(window_case "2026-06-01" true)
     ~needle:
@@ -8623,7 +8622,7 @@ let pf_decl ?(typ = pf_n2) n =
   Printf.sprintf {|{ "node": "Parameter", "name": "%s", "datatype": %s }|} n typ
 
 (* one rule with one version; [presentation] is its tag (absent on an
-   initialisation or a characteristic assignment), [voorwaarde] its condition,
+   initialisation or a characteristic assignment), [precondition] its condition,
    "null" for none *)
 let pf_rule ?(ot = "Jutter") ?(objective = "heffing") ?(presentation = Some "calculation")
     ?(precondition = "null") value_node =
@@ -8988,11 +8987,11 @@ let () =
   let j1_as_of =
     {|{ "label": "J1", "objectType": "Jutter", "attributes": { "peildatum": { "date": "2026-01-31" } }, "roles": {}, "characteristics": [] }|}
   in
-  both_answer ~name:"temporal: tijdsduur from a date parameter, bound" ~ir:duration_doc
+  both_answer ~name:"temporal: duration from a date parameter, bound" ~ir:duration_doc
     ~case_text:
       (pf_case ~instances:[ j1_as_of ] ~params:[ pf_bind ~variant:"date" "startdatum" "2026-01-01" ]
          [ pf_is ~attr:"looptijd" "30"; pf_cons ]);
-  unbound_fires ~name:"temporal: tijdsduur from a date parameter, unbound" ~ir:duration_doc ~param:"startdatum"
+  unbound_fires ~name:"temporal: duration from a date parameter, unbound" ~ir:duration_doc ~param:"startdatum"
     ~case_text:(pf_case ~instances:[ j1_as_of ] [ pf_empty ~attr:"looptijd" (); pf_cons ])
     ~silent:"looptijd leeg";
   (* the whole-period bound, NEGATED: 50 all year is above 40, so NIET makes
@@ -9074,7 +9073,7 @@ let () =
     |> substitute ~truth:{|"objectTypes": [ |}
          ~via:({|"objectTypes": [ |} ^ pf_ot ~ident:"Persoon" ~plural:"Personen" [] ^ ", ")
   in
-  faults_with ~name:"WF-083 een TOTAAL zonder bereik over een supertype" ~ir:persoon_ir
+  faults_with ~name:"WF-083 a TOTAAL without range over a supertype" ~ir:persoon_ir
     ~case_text:
       (pf_case ~instances:[ j1_clip ] ~params:[ pf_bind "klipgrens" "10" ]
          [ pf_is ~attr:"topsom" "66"; pf_cons ])
@@ -9541,7 +9540,7 @@ let () =
       (fun l -> match v with Some v -> pf_is ~label:l ~attr:"veilingdeel" v | None -> pf_empty ~label:l ~attr:"veilingdeel" ())
       [ "J1"; "J2"; "J3" ]
   in
-  pf_position ~name:"allocation: the voorwaarde" ~ir ~param:"minimum" ~value:"0" ~instances
+  pf_position ~name:"allocation: the condition" ~ir ~param:"minimum" ~value:"0" ~instances
     ~bound:(portion (Some "30") @ [ pf_is ~label:"V1" ~attr:"veilingrestant" "0"; pf_cons ])
     ~silent_rows:(portion None @ [ pf_empty ~label:"V1" ~attr:"veilingrestant" (); pf_cons ])
     ~silent:"no shares at all: the source's voorwaarde failed" ()
@@ -9583,7 +9582,7 @@ let () =
     ~ir:(doc ~param:"keurtarief" ~precondition:"null" (pf_p "keurtarief"))
     ~param:"keurtarief" ~value:"7.50" ~instances:[ w1 ] ~bound:(validate (Some "7.5"))
     ~silent_rows:(validate None) ~silent:"keur leeg: the rapport was minted without a bedrag" ();
-  pf_position ~name:"object creation: the voorwaarde"
+  pf_position ~name:"object creation: the condition"
     ~ir:(doc ~param:"drempel" ~precondition:(pf_cmp "greater" (pf_a ~ot:"Werf" "lengte") (pf_p "drempel")) (pf_l "5"))
     ~param:"drempel" ~instances:[ w1 ] ~bound:(validate (Some "5")) ~silent_rows:(validate None)
     ~silent:"keur leeg: no rapport was minted" ();
@@ -10127,14 +10126,14 @@ let () =
   both_answer ~name:"the branch before p: n's leeg need ends the Let before p is read (h-na-tak, control)"
     ~ir:(hoist_doc (pf_bin "plus" branch p)) ~case_text:(pf_case ~instances:[ j1 ~extra:"1" None ] empty_value);
   let duplicate = hoist_doc (pf_ite (n_gt "1") (pf_bin "plus" p branch) (pf_l "0")) in
-  unbound_fires ~name:"an enclosing branch reads n too, restpost 5 (h-dubbel-5)" ~ir:duplicate ~param:"p"
+  unbound_fires ~name:"an enclosing branch reads n too, remainder 5 (h-dubbel-5)" ~ir:duplicate ~param:"p"
     ~case_text:
       (pf_case
          ~instances:
            [ {|{ "label": "J1", "objectType": "Jutter", "attributes": { "inkomen": { "number": "20" }, "restpost": { "number": "5" }, "extra": { "number": "1" } }, "roles": {}, "characteristics": [] }|} ]
          empty_value)
     ~silent:"heffing leeg";
-  both_answer ~name:"an enclosing branch reads n too, restpost leeg (h-dubbel-leeg, control)" ~ir:duplicate
+  both_answer ~name:"an enclosing branch reads n too, remainder leeg (h-dubbel-leeg, control)" ~ir:duplicate
     ~case_text:(pf_case ~instances:[ j1 ~extra:"1" None ] empty_value);
   (* lz-s2: the inner Let's need (extra) is leeg, so it ends before reading k
      and p is reached; with extra filled it reads k, whose need ends the Let *)
@@ -11559,20 +11558,20 @@ let () =
               "roles": {}, "characteristics": [] }|} ]
       [ pf_is "40"; pf_cons ]
   in
-  both_answer ~name:"WF-053 eigen lezing op het subjecttype, een geerfd lid" ~ir:(doc (pf_a "leeftijd"))
+  both_answer ~name:"WF-053 own reading on the subject type, an inherited member" ~ir:(doc (pf_a "leeftijd"))
     ~case_text;
-  faults_with ~name:"WF-053 eigen lezing op een supertype" ~ir:(doc (pf_a ~ot:"Persoon" "leeftijd"))
+  faults_with ~name:"WF-053 own reading on a supertype" ~ir:(doc (pf_a ~ot:"Persoon" "leeftijd"))
     ~case_text
     ~needle:
       "so its subjectType is the subject type 'Jutter' — 'Persoon' names another type, which only a \
        navigation reaches";
-  faults_with ~name:"WF-080 een kenmerk op een waardepositie" ~ir:(doc (pf_a "vrijgesteld")) ~case_text
+  faults_with ~name:"WF-080 a characteristic in a value position" ~ir:(doc (pf_a "vrijgesteld")) ~case_text
     ~needle:
       "'vrijgesteld' is a characteristic of 'Jutter', not an attribute — a characteristic endpoint \
        is ill-formed in a value position";
   (* the same characteristic as a compared operand reaches [symbolic_term],
      which names it rather than falling to its bottom sentence *)
-  faults_with ~name:"WF-080 een kenmerk als vergelijkingsoperand"
+  faults_with ~name:"WF-080 a characteristic as comparison operand"
     ~ir:
       (pf_doc ~object_types:[ persoon; jutter ]
          ~rule_defs:
@@ -11585,7 +11584,7 @@ let () =
     ~needle:
       "'vrijgesteld' is a characteristic of 'Jutter', not an attribute — a characteristic endpoint \
        is ill-formed in a value position";
-  faults_with ~name:"WF-080 een kenmerk als setbron van een waardevouw"
+  faults_with ~name:"WF-080 a characteristic as set source of a value fold"
     ~ir:
       (substitute
          (substitute bp_doc
@@ -11857,15 +11856,15 @@ let () =
     { "kind": "attributeValue", "label": "W1", "attribute": "wachttijd", "value": { "number": "27" } },
     { "kind": "consistent" } ] }|}
   in
-  both_answer ~name:"de factor {1, 24}: 1 dg + 3 uur = 27 uur, exact in ref en clingo" ~ir ~case_text;
+  both_answer ~name:"the factor {1, 24}: 1 dg + 3 uur = 27 uur, exact in ref and clingo" ~ir ~case_text;
   (* and the table the pass builds for it: uur is the finest, dg is 24 of it *)
   let dg_u = eenh ~system:"Tijdsduur" ~canonical_form:"dg" "dg" (Some (1, 1)) in
   let hour_u = eenh ~system:"Tijdsduur" ~canonical_form:"dg" "uur" (Some (1, 24)) in
   match Normalise.finest_of_units ~where:"unit system \"Tijdsduur\"" [ dg_u; hour_u ] with
   | finest, to_finest ->
-      check "de factor {1, 24}: de fijnste eenheid is uur" (finest.Ir_v0.Ast.abbr_text = Some "uur");
-      check "de factor {1, 24}: 1 dg is precies 24 uur" (Q.equal (to_finest dg_u) (Q.of_int 24))
-  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("de factor {1, 24}: onverwachte fout: " ^ m) false
+      check "the factor {1, 24}: the finest unit is uur" (finest.Ir_v0.Ast.abbr_text = Some "uur");
+      check "the factor {1, 24}: 1 dg is exactly 24 uur" (Q.equal (to_finest dg_u) (Q.of_int 24))
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("the factor {1, 24}: unexpected fault: " ^ m) false
 
 (* THE L3 LOAD TABLE. The type system of the wire in its L3 shape: a number
    with its unit and, at a declaration, the percentage tag; a date with its
@@ -11927,30 +11926,30 @@ let () =
       (* and it reads what it carries: the tag, the rational, the spellings,
          the facet and the plural are the in-memory shape, not dropped *)
       let jutter = List.assoc "Jutter" doc.object_types in
-      check "L3-laadtabel: het basisdocument laadt" true;
-      check "L3-laadtabel: Number met % en het label is een percentage"
+      check "L3-load-table: the base document loads" true;
+      check "L3-load-table: Number with % and the label is a percentage"
         (match List.assoc "aandeel" jutter.attributes with
          | Some (Percentage { decimal_places = 2; measure_unit = Some { abbr_text = Some "%"; _ }; _ }) -> true
          | _ -> false);
-      check "L3-laadtabel: de factor is de rationaal {1000, 1}"
+      check "L3-load-table: the factor is the rational {1000, 1}"
         (match List.assoc "afstand" jutter.attributes with
          | Some (Number { sign_char = Some Non_negative; measure_unit = Some { factor_to_canonical = Some { num = 1000; den = 1 }; _ }; _ }) -> true
          | _ -> false);
-      check "L3-laadtabel: de twee precisies"
+      check "L3-load-table: the two precisions"
         (List.assoc "melddatum" jutter.attributes = Some Date_in_days
         && List.assoc "meldmoment" jutter.attributes = Some Date_time_type);
-      check "L3-laadtabel: de parameterfacet"
+      check "L3-load-table: the parameter facet"
         (match List.assoc "tarief" doc.parameters with
          | { par_granularity = Some Month; par_timeline_count = Some 1; _ } -> true
          | _ -> false);
-      check "L3-laadtabel: de spellingen per eenheid"
+      check "L3-load-table: the spellings per unit"
         (List.map (fun (d : Ir_v0.Ast.declared_unit) -> (d.ge_unit.abbr_text, d.ge_spellings))
            (List.assoc "Afstand" doc.unit_systems).unit_list
         = [ (Some "m", [ "meter"; "meters" ]); (Some "km", [ "kilometer" ]) ]);
-      check "L3-laadtabel: de dagsoort met haar meervoud"
+      check "L3-load-table: the day kind with its plural"
         (doc.day_kinds = [ { dk_name = "nevelsdag"; dk_plural = Some "nevelsdagen" } ]);
-      check "L3-laadtabel: geen presentatietag in een annotatie" (doc.presentation_annotations = [])
-  | Error e -> check ("L3-laadtabel: het basisdocument laadt, maar werd geweigerd (" ^ e ^ ")") false);
+      check "L3-load-table: no presentation tag in an annotation" (doc.presentation_annotations = [])
+  | Error e -> check ("L3-load-table: the base document loads, but was refused (" ^ e ^ ")") false);
   let number_value = {|{ "node": "Number", "whole": false, "decimals": 2, "sign": "nonNegative",|} in
   let appended truth extra = (truth, truth ^ " " ^ extra) in
   let factor = {|"factorToCanonical": { "num": 1000, "den": 1 }|} in
@@ -12050,21 +12049,21 @@ let () =
     {|the presentation tag "percentage" on a type annotation: the tag is written only where a datatype is declared|}
   in
   let doc, case = load_pair ~ir ~case_text in
-  check "L3-laadtabel: de presentatietag in een annotatie staat op de lijst"
+  check "L3-load-table: the presentation tag in an annotation is on the list"
     (doc.presentation_annotations = [ "/rules/rules/0/versions/0/value/type/presentation" ]);
   let env =
     { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
       locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
   in
   (match Uchar_ref.Eval.evaluate env case.world with
-  | _ -> check "L3-laadtabel: ref weigert de presentatietag in een annotatie (kreeg een wereld)" false
+  | _ -> check "L3-load-table: ref refuses the presentation tag in an annotation (got a world)" false
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check ("L3-laadtabel: ref weigert de presentatietag in een annotatie (" ^ m ^ ")")
+      check ("L3-load-table: ref refuses the presentation tag in an annotation (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:sentence_text m));
   match translate doc case with
-  | (_ : string) -> check "L3-laadtabel: clingo weigert de presentatietag in een annotatie (kreeg een programma)" false
+  | (_ : string) -> check "L3-load-table: clingo refuses the presentation tag in an annotation (got a program)" false
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check ("L3-laadtabel: clingo weigert de presentatietag in een annotatie (" ^ m ^ ")")
+      check ("L3-load-table: clingo refuses the presentation tag in an annotation (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle:sentence_text m)
 
 (* THE L4 LOAD REFUSALS (the rule and the expression layer), one row per
@@ -12205,25 +12204,25 @@ let () =
    with
   | Ok doc ->
       (* and it reads what it carries onto the in-memory records *)
-      check "L4-laadtabel: het basisdocument laadt" true;
-      check "L4-laadtabel: de regelsoorten uit de vlag en de tag"
+      check "L4-load-table: the base document loads" true;
+      check "L4-load-table: the rule kinds from the flag and the tag"
         (List.map (fun (r : Ir_v0.Ast.resolved_rule) -> r.rr_presentation) doc.resolved_rules
         = [ Some Calculation; Some Equation; Some Characteristic_attribution; Some Initialisation ]);
-      check "L4-laadtabel: de wirepointer van elke versie"
+      check "L4-load-table: the wire pointer of every version"
         (List.map (fun (r : Ir_v0.Ast.resolved_rule) -> r.rr_pointer) doc.resolved_rules
         = List.init 4 (Printf.sprintf "/rules/rules/%d/versions/0"));
-      check "L4-laadtabel: de wetsannotaties op de vorm"
+      check "L4-load-table: the statute annotations on the form"
         ((List.hd doc.resolved_rules).rr_source_annotations = Some [ "art. 1" ]);
-      check "L4-laadtabel: de unie en de enkelvoudige uniciteit uit één lijst"
+      check "L4-load-table: the union and the single uniqueness from one list"
         (List.length doc.uniquenesses = 1 && List.length doc.uniqueness_unions = 1
         && (List.hd doc.uniqueness_unions).uu_pointer = "/rules/uniquenesses/1/versions/0");
-      check "L4-laadtabel: het doeltype van de feitcreatie uit de doelrol"
+      check "L4-load-table: the target type of the fact creation from the target role"
         ((List.hd doc.fact_creations).fc_target = Some "Vondst");
-      check "L4-laadtabel: de contextwaarde en de gebonden dag"
+      check "L4-load-table: the context value and the bound day"
         (match (List.nth doc.resolved_rules 3).value_node with
          | Some (Context_value { ident = Some "evaluationDate"; _ }) -> true
          | _ -> false)
-  | Error e -> check ("L4-laadtabel: het basisdocument laadt, maar werd geweigerd (" ^ e ^ ")") false);
+  | Error e -> check ("L4-load-table: the base document loads, but was refused (" ^ e ^ ")") false);
   let appended truth extra = (truth, truth ^ " " ^ extra) in
   let rule_def = {|{ "node": "Rule", "name": "heffing van een jutter", "versions": [ {|} in
   let summed = {|{ "node": "Aggregation", "kind": "sum", "arguments": [|} in
@@ -12441,7 +12440,7 @@ let () =
       in
       let ident = "L4-laadtabel: " ^ form_kind ^ " is de " ^ wf ^ "-bevinding van de verifier" in
       match Ir_v0.Loader.document j with
-      | (_ : Ir_v0.Ast.document) -> check (ident ^ " (het document laadt)") false
+      | (_ : Ir_v0.Ast.document) -> check (ident ^ " (the document loads)") false
       | exception Ir_v0.Loader.Error (at, m) ->
           check (ident ^ " (" ^ at ^ ": " ^ m ^ ")")
             (finding = [ (wf, at, m) ]))
@@ -12460,11 +12459,11 @@ let () =
           ~case_text:(host_case ~quantity:{|"2"|} ())
       in
       (match ref_report doc case with
-      | (_ : string list) -> check (ident ^ ": ref weigert (kreeg een wereld)") false
-      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": ref weigert (" ^ m ^ ")") (m = sentence_text));
+      | (_ : string list) -> check (ident ^ ": ref refuses (got a world)") false
+      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": ref refuses (" ^ m ^ ")") (m = sentence_text));
       match translate doc case with
-      | (_ : string) -> check (ident ^ ": clingo weigert (kreeg een programma)") false
-      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": clingo weigert (" ^ m ^ ")") (m = sentence_text))
+      | (_ : string) -> check (ident ^ ": clingo refuses (got a program)") false
+      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": clingo refuses (" ^ m ^ ")") (m = sentence_text))
     [ ( "WF-028 onbekende doelrol", {|"targetRole": "vaksein"|}, {|"targetRole": "onbekend"|},
         "'onbekend' is not a role of 'vakbeseining'" );
       ( "WF-028 onbekende ankerrol", {|"anchorRole": "seinvak"|}, {|"anchorRole": "onbekend"|},
@@ -12514,26 +12513,26 @@ let () =
     { "kind": "attributeValue", "label": "V1", "attribute": "meldjaar", "value": { "number": "%s" } } ] }|}
       as_of year
   in
-  check "Rekenjaar: de verifier laat het document door"
+  check "Rekenjaar: the verifier lets the document through"
     (Ir_v0.Checks.all
        (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir))
     = []);
-  both_answer ~name:"Rekenjaar: oudjaarsdag 2026 geeft 2026" ~ir
+  both_answer ~name:"Rekenjaar: New Year's Eve 2026 gives 2026" ~ir
     ~case_text:(case_text {|"2026-12-31"|} "2026");
-  both_answer ~name:"Rekenjaar: nieuwjaarsdag 2027 geeft 2027" ~ir
+  both_answer ~name:"Rekenjaar: New Year's Day 2027 gives 2027" ~ir
     ~case_text:(case_text {|"2027-01-01"|} "2027");
   let sentence_text =
     "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"
   in
   let doc, case = load_pair ~ir ~case_text:(case_text "null" "2026") in
   (match ref_report doc case with
-  | (_ : string list) -> check "Rekenjaar zonder rekendatum: ref weigert (kreeg een wereld)" false
+  | (_ : string list) -> check "Rekenjaar without rekendatum: ref refuses (got a world)" false
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check ("Rekenjaar zonder rekendatum: ref weigert (" ^ m ^ ")") (m = sentence_text));
+      check ("Rekenjaar without rekendatum: ref refuses (" ^ m ^ ")") (m = sentence_text));
   match translate doc case with
-  | (_ : string) -> check "Rekenjaar zonder rekendatum: clingo weigert (kreeg een programma)" false
+  | (_ : string) -> check "Rekenjaar without rekendatum: clingo refuses (got a program)" false
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check ("Rekenjaar zonder rekendatum: clingo weigert (" ^ m ^ ")") (m = sentence_text)
+      check ("Rekenjaar without rekendatum: clingo refuses (" ^ m ^ ")") (m = sentence_text)
 
 (* WF-108 (c) over the wire, on the probe that found the gap: the golden
    jutterswet-ketenkwantor with its first rule alone and that rule's sourcePath
@@ -12572,7 +12571,7 @@ let () =
     "a quantifier fold's sourcePath carries at least TWO steps, found 1 — the one-step range is \
      spelled sourceRole"
   in
-  check "kv-eenstap: de verifier weigert met WF-108 op het pad"
+  check "kv-eenstap: the verifier refuses with WF-108 on the path"
     (List.mem
        ("WF-108", "/rules/rules/0/versions/0/condition/sourcePath", sentence_text)
        (List.map
@@ -12581,11 +12580,11 @@ let () =
              (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir)))));
   let doc, case = load_pair ~ir ~case_text in
   (match ref_report doc case with
-  | (_ : string list) -> check "kv-eenstap: ref weigert (kreeg een wereld)" false
-  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("kv-eenstap: ref weigert (" ^ m ^ ")") (m = sentence_text));
+  | (_ : string list) -> check "kv-eenstap: ref refuses (got a world)" false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("kv-eenstap: ref refuses (" ^ m ^ ")") (m = sentence_text));
   match translate doc case with
-  | (_ : string) -> check "kv-eenstap: clingo weigert (kreeg een programma)" false
-  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("kv-eenstap: clingo weigert (" ^ m ^ ")") (m = sentence_text)
+  | (_ : string) -> check "kv-eenstap: clingo refuses (got a program)" false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("kv-eenstap: clingo refuses (" ^ m ^ ")") (m = sentence_text)
 
 (* ... and the two shapes the loader refuses on the wire, built past it on the
    Werf fixture: both spellings, and none. ref and this backend speak the
@@ -12609,11 +12608,11 @@ let () =
   List.iter
     (fun (ident, d, sentence_text) ->
       (match ref_report d case with
-      | (_ : string list) -> check (ident ^ ": ref weigert (kreeg een wereld)") false
-      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": ref weigert (" ^ m ^ ")") (m = sentence_text));
+      | (_ : string list) -> check (ident ^ ": ref refuses (got a world)") false
+      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": ref refuses (" ^ m ^ ")") (m = sentence_text));
       match translate d case with
-      | (_ : string) -> check (ident ^ ": clingo weigert (kreeg een programma)") false
-      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": clingo weigert (" ^ m ^ ")") (m = sentence_text))
+      | (_ : string) -> check (ident ^ ": clingo refuses (got a program)") false
+      | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": clingo refuses (" ^ m ^ ")") (m = sentence_text))
     [ ( "kwantorvouw met twee bereiken, voorbij de lader", value_range ~role_ref:(Some rb) ~trail:(Some [ rb; rb ]),
         "sourcePath beside sourceRole: a quantifier fold carries one range, never two" );
       ( "kwantorvouw zonder bereik, voorbij de lader", value_range ~role_ref:None ~trail:None,
@@ -12628,7 +12627,7 @@ let () =
 let () =
   let sentence_text = "granularity facet on a non-bucketing kind" in
   let rejected ident ir case_text at =
-    check (ident ^ ": de verifier weigert met WF-037")
+    check (ident ^ ": the verifier refuses with WF-037")
       (List.mem
          ("WF-037", at, sentence_text)
          (List.map
@@ -12637,11 +12636,11 @@ let () =
                (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir)))));
     let doc, case = load_pair ~ir ~case_text in
     (match ref_report doc case with
-    | (_ : string list) -> check (ident ^ ": ref weigert (kreeg een wereld)") false
-    | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": ref weigert (" ^ m ^ ")") (m = sentence_text));
+    | (_ : string list) -> check (ident ^ ": ref refuses (got a world)") false
+    | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": ref refuses (" ^ m ^ ")") (m = sentence_text));
     match translate doc case with
-    | (_ : string) -> check (ident ^ ": clingo weigert (kreeg een programma)") false
-    | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": clingo weigert (" ^ m ^ ")") (m = sentence_text)
+    | (_ : string) -> check (ident ^ ": clingo refuses (got a program)") false
+    | exception Uchar_ref.Value.Fault { text = m; _ } -> check (ident ^ ": clingo refuses (" ^ m ^ ")") (m = sentence_text)
   in
   let year_of =
     Printf.sprintf
@@ -12712,13 +12711,13 @@ let () =
   in
   let doc, case = load_pair ~ir ~case_text in
   (match ref_report doc case with
-  | (_ : string list) -> check "emmerende builtin in een expressie: ref weigert (kreeg een wereld)" false
+  | (_ : string list) -> check "bucketing builtin in an expression: ref refuses (got a world)" false
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check ("emmerende builtin in een expressie: ref weigert (" ^ m ^ ")") (m = sentence_text));
+      check ("bucketing builtin in an expression: ref refuses (" ^ m ^ ")") (m = sentence_text));
   match translate doc case with
-  | (_ : string) -> check "emmerende builtin in een expressie: clingo weigert (kreeg een programma)" false
+  | (_ : string) -> check "bucketing builtin in an expression: clingo refuses (got a program)" false
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check ("emmerende builtin in een expressie: clingo weigert (" ^ m ^ ")") (m = sentence_text)
+      check ("bucketing builtin in an expression: clingo refuses (" ^ m ^ ")") (m = sentence_text)
 
 (* THE M7 LOAD REFUSALS (the source record, delta B26): a node's source text
    is the record `source` {snippet, line?}, optional on every node, which the
@@ -12790,40 +12789,40 @@ let () =
   let both_sides = [ ("uitvoerder", Ir_v0.Loader.Executor); ("verifier", Ir_v0.Loader.Verifier) ] in
   (match load_doc ~reader:Ir_v0.Loader.Executor base with
   | Ok doc ->
-      check "M7-laadtabel: het basisdocument laadt" true;
+      check "M7-load-table: the base document loads" true;
       let version i = (List.nth doc.resolved_rules i : Ir_v0.Ast.resolved_rule) in
-      check "M7-laadtabel: een snippet is de bron in het geheugen"
+      check "M7-load-table: a snippet is the source in memory"
         (match (version 0).objective with
          | Some (Attribute_reference { source_name = Some "De heffing"; _ }) -> true
          | _ -> false);
-      check "M7-laadtabel: een knoop zonder source heeft geen bron"
+      check "M7-load-table: a node without source has no source"
         (match (version 1).objective with Some (Attribute_reference { source_name = None; _ }) -> true | _ -> false);
-      check "M7-laadtabel: de twee markers dragen hun snippet"
+      check "M7-load-table: the two markers carry their snippet"
         ((match (version 0).value_node with
           | Some (Expr_unresolved { source_name = Some "de vondstheffing"; _ }) -> true
           | _ -> false)
         && match (version 0).rr_condition with
            | Some (Condition_unresolved { source_name = Some "de vondst is geborgen" }) -> true
            | _ -> false);
-      check "M7-laadtabel: een line op een andere knoop laadt en valt weg"
+      check "M7-load-table: a line on another node loads and is dropped"
         (match (version 1).value_node with
          | Some (Literal { source_name = Some "10"; _ }) -> true
          | _ -> false);
-      check "M7-laadtabel: de line van een consistentieversie uit haar record"
+      check "M7-load-table: the line of a consistency version from its record"
         (List.map
            (fun (c : Ir_v0.Ast.resolved_consistency) -> (c.cons_source, c.cons_line))
            doc.consistencies
         = [ (Some "inkomen is positief", 12); (None, 0) ]);
-      check "M7-laadtabel: de line van een regelgroep uit haar record"
+      check "M7-load-table: the line of a rule group from its record"
         (List.map
            (fun (g : Ir_v0.Ast.resolved_rule_group) -> (g.rgr_source, g.rgr_line))
            doc.rule_groups
         = [ (Some "Regelgroep heffingsregels", 3) ]);
-      check "M7-laadtabel: WF-113 (b) vindt beide snippets in het verslag"
+      check "M7-load-table: WF-113 (b) finds both snippets in the report"
         (List.for_all
            (fun (x : Ir_v0.Checks.violation) -> x.wf <> "WF-113")
            (Ir_v0.Checks.all doc))
-  | Error e -> check ("M7-laadtabel: het basisdocument laadt, maar werd geweigerd (" ^ e ^ ")") false);
+  | Error e -> check ("M7-load-table: the base document loads, but was refused (" ^ e ^ ")") false);
   let heffing = {|"source": { "snippet": "De heffing" }|} in
   let consistency_rule = {|"source": { "snippet": "inkomen is positief", "line": 12 }|} in
   let cluster = {|"source": { "snippet": "Regelgroep heffingsregels", "line": 3 }|} in
@@ -12861,7 +12860,7 @@ let () =
       List.iter
         (fun (state, reader) ->
           match load_doc ~reader ir with
-          | Ok _ -> check ("M7-laadtabel: " ^ form_kind ^ " (" ^ state ^ "): verwachtte een weigering") false
+          | Ok _ -> check ("M7-laadtabel: " ^ form_kind ^ " (" ^ state ^ "): expected a refusal") false
           | Error e ->
               check ("M7-laadtabel: " ^ form_kind ^ " (" ^ state ^ "): " ^ e) (Uchar_ref.Case.contains ~needle e))
         both_sides)
@@ -12885,7 +12884,7 @@ let () =
             && List.map (fun (c : Ir_v0.Ast.resolved_consistency) -> c.cons_line) doc.consistencies = [ 12; 0 ]
             && List.map (fun (g : Ir_v0.Ast.resolved_rule_group) -> g.rgr_line) doc.rule_groups = [ 3 ]))
     both_sides;
-  check "M7-laadtabel: de zin van de lege snippet"
+  check "M7-load-table: the sentence of the empty snippet"
     (Ir_v0.Loader.empty_snippet_refusal
     = "a source snippet is never empty: a node without source text carries no source");
   (* the marker without a source: refused by an executor, loaded by the
@@ -12894,14 +12893,14 @@ let () =
     (fun (form_kind, (truth, via), at) ->
       let ir = substitute base ~truth ~via in
       (match load_doc ~reader:Ir_v0.Loader.Executor ir with
-      | Ok _ -> check ("M7-laadtabel: " ^ form_kind ^ " (uitvoerder): verwachtte een weigering") false
+      | Ok _ -> check ("M7-laadtabel: " ^ form_kind ^ " (executor): expected a refusal") false
       | Error e ->
           check ("M7-laadtabel: " ^ form_kind ^ " (uitvoerder): " ^ e)
             (e = at ^ ": " ^ Ir_v0.Checks.marker_without_source));
       match load_doc ~reader:Ir_v0.Loader.Verifier ir with
-      | Error e -> check ("M7-laadtabel: " ^ form_kind ^ " (verifier laadt): " ^ e) false
+      | Error e -> check ("M7-laadtabel: " ^ form_kind ^ " (verifier loads): " ^ e) false
       | Ok doc ->
-          check ("M7-laadtabel: " ^ form_kind ^ " (verifier): WF-113 (b) noemt hem")
+          check ("M7-laadtabel: " ^ form_kind ^ " (verifier): WF-113 (b) names it")
             (List.exists
                (fun (x : Ir_v0.Checks.violation) ->
                  x.wf = "WF-113" && x.reason = Ir_v0.Checks.marker_without_source)
@@ -12912,7 +12911,7 @@ let () =
       ( "een Onopgelost-conditie zonder source",
         ({|{ "node": "Unresolved", "source": { "snippet": "de vondst is geborgen" } }|}, {|{ "node": "Unresolved" }|}),
         "/rules/rules/0/versions/0/condition" ) ];
-  check "M7-laadtabel: de kernzin van de marker zonder source"
+  check "M7-load-table: the core sentence of the marker without source"
     (Ir_v0.Checks.marker_without_source
     = "Unresolved marker without a source: no diagnostic message can contain it, so it cannot be \
        accounted for");
@@ -12922,8 +12921,8 @@ let () =
     load_doc ~reader:Ir_v0.Loader.Executor
       (substitute base ~truth:{|"source": { "snippet": "de vondstheffing" }|} ~via:{|"source": { "snippet": " " }|})
   with
-  | Ok _ -> check "M7-laadtabel: een snippet van alleen witruimte laadt" true
-  | Error e -> check ("M7-laadtabel: een snippet van alleen witruimte laadt (" ^ e ^ ")") false
+  | Ok _ -> check "M7-load-table: a snippet of only whitespace loads" true
+  | Error e -> check ("M7-load-table: a snippet of only whitespace loads (" ^ e ^ ")") false
 
 (* THE L5 LOAD REFUSALS (the renaming, deltas B6 and B10): since L5 every node,
    key and enumeration value of the wire carries its IR-SPEC name, and the one
@@ -13510,9 +13509,9 @@ let () =
   List.iter
     (fun (state, reader) ->
       match load_doc ~reader j0 with
-      | Ok _ -> check ("L5-laadtabel: het basisdocument laadt (" ^ state ^ ")") true
+      | Ok _ -> check ("L5-load-table: the base document loads (" ^ state ^ ")") true
       | Error (at, m) ->
-          check ("L5-laadtabel: het basisdocument laadt (" ^ state ^ "), maar " ^ at ^ ": " ^ m) false)
+          check ("L5-load-table: the base document loads (" ^ state ^ "), but " ^ at ^ ": " ^ m) false)
     both_sides;
   let table_rows =
     [ ("/model/objectTypes/0/attributes/2/datatype", Node "Tekst");
@@ -13696,7 +13695,7 @@ let () =
         (fun (state, reader) ->
           let which = "L5-laadtabel: " ^ ident ptr table_row ^ " (" ^ state ^ ")" in
           match load_doc ~reader j with
-          | Ok _ -> check (which ^ ": verwachtte een weigering") false
+          | Ok _ -> check (which ^ ": expected a refusal") false
           | Error (at, m) -> check (which ^ ": " ^ at ^ ": " ^ m) (expected_value ptr table_row (at, m)))
         both_sides)
     table_rows;
@@ -13706,14 +13705,14 @@ let () =
     (fun (form_kind, ptr, table_row, wf, sentence_text) ->
       let j = muteer j0 ptr table_row in
       (match load_doc ~reader:Ir_v0.Loader.Executor j with
-      | Ok _ -> check ("L5-laadtabel: " ^ form_kind ^ " (uitvoerder): verwachtte een weigering") false
+      | Ok _ -> check ("L5-laadtabel: " ^ form_kind ^ " (executor): expected a refusal") false
       | Error (at, m) ->
           check ("L5-laadtabel: " ^ form_kind ^ " (uitvoerder): " ^ at ^ ": " ^ m)
             (String.starts_with ~prefix:ptr at && m = sentence_text));
       match load_doc ~reader:Ir_v0.Loader.Verifier j with
-      | Error (at, m) -> check ("L5-laadtabel: " ^ form_kind ^ " (verifier laadt): " ^ at ^ ": " ^ m) false
+      | Error (at, m) -> check ("L5-laadtabel: " ^ form_kind ^ " (verifier loads): " ^ at ^ ": " ^ m) false
       | Ok doc ->
-          check ("L5-laadtabel: " ^ form_kind ^ " (verifier): " ^ wf ^ " noemt hem")
+          check ("L5-laadtabel: " ^ form_kind ^ " (verifier): " ^ wf ^ " names it")
             (List.exists
                (fun (x : Ir_v0.Checks.violation) -> x.wf = wf && x.reason = sentence_text)
                (Ir_v0.Checks.all doc)))
@@ -13769,8 +13768,8 @@ let () =
   match root_node (Sys.getcwd ()) with
   | None ->
       check
-        ("naamtabel: " ^ name_table_path ^ " niet gevonden vanaf " ^ Sys.getcwd ()
-       ^ " — deze toets leest de sectie waarden en slaat niet over")
+        ("naamtabel: " ^ name_table_path ^ " not found from " ^ Sys.getcwd ()
+       ^ " — this test reads the section waarden and does not skip")
         false
   | Some root ->
       let fetch trail = Yojson.Safe.from_file (Filename.concat root trail) in
@@ -13789,14 +13788,14 @@ let () =
                 | `List [ _; `String l5 ] -> Some l5
                 | p ->
                     check
-                      (Printf.sprintf "naamtabel: %s: %s bevat %s, geen paar [v0, L5]" family_group which
+                      (Printf.sprintf "naamtabel: %s: %s contains %s, not a pair [v0, L5]" family_group which
                          (Yojson.Safe.to_string p))
                       false;
                     None)
               paren
         | None -> []
         | Some j ->
-            check (Printf.sprintf "naamtabel: %s: %s is %s, geen lijst" family_group which (Yojson.Safe.to_string j)) false;
+            check (Printf.sprintf "naamtabel: %s: %s is %s, not a list" family_group which (Yojson.Safe.to_string j)) false;
             []
       in
       let wire (f : _ Ir_v0.Spelling.family) = (List.map fst f.values, List.map fst f.refused) in
@@ -13852,11 +13851,11 @@ let () =
       in
       (match field_name "$defs" schema with
        | Some (`Assoc defs) -> List.iter (fun (ident, d) -> loop d ident false) defs
-       | _ -> check "naamtabel: het schema draagt geen $defs" false);
+       | _ -> check "naamtabel: the schema carries no $defs" false);
       let families = match field_name "waarden" lookup_table with Some (`List fs) -> fs | _ -> [] in
       let idents = List.filter_map (fun f -> match field_name "familie" f with Some (`String n) -> Some n | _ -> None) families in
       check
-        (Printf.sprintf "naamtabel: de sectie waarden draagt precies de families van de OCaml-tabel, in haar volgorde (naamtabel: %s)"
+        (Printf.sprintf "naamtabel: the section waarden carries exactly the families of the OCaml table, in its order (naamtabel: %s)"
            (String.concat ", " idents))
         (idents = List.map fst ocaml);
       let show_text xs = "[" ^ String.concat "; " xs ^ "]" in
@@ -13869,17 +13868,17 @@ let () =
               let table_rows = l5_side family_group "rijen" (field_name "rijen" f)
               and refusal_info = l5_side family_group "geweigerd" (field_name "geweigerd" f) in
               check
-                (Printf.sprintf "naamtabel: %s: de wirewaarden van values zijn de L5-kant van rijen (OCaml %s, naamtabel %s)"
+                (Printf.sprintf "naamtabel: %s: the wire values of values are the L5 side of rows (OCaml %s, naamtabel %s)"
                    family_group (show_text label_list) (show_text table_rows))
                 (sort label_list = sort table_rows);
               check
-                (Printf.sprintf "naamtabel: %s: refused is de L5-kant van geweigerd (OCaml %s, naamtabel %s)"
+                (Printf.sprintf "naamtabel: %s: refused is the L5 side of refused (OCaml %s, naamtabel %s)"
                    family_group (show_text rejected) (show_text refusal_info))
                 (sort rejected = sort refusal_info);
               let free = field_name "vrij" f = Some (`Bool true) in
               if free then
                 check
-                  (Printf.sprintf "naamtabel: %s: de namen zijn Spelling.context_value_names, in die volgorde (OCaml %s, naamtabel %s)"
+                  (Printf.sprintf "naamtabel: %s: the names are Spelling.context_value_names, in that order (OCaml %s, naamtabel %s)"
                      family_group (show_text label_list) (show_text table_rows))
                   (label_list = table_rows);
               let refused_on = strings (field_name "geweigerd_op" f)
@@ -13889,7 +13888,7 @@ let () =
                   let decl = List.filter_map (fun (p, e, c) -> if p = place && not c then Some e else None) !enums in
                   if free then
                     check
-                      (Printf.sprintf "naamtabel: %s: %s is in het schema een vrije string zonder enum" family_group place)
+                      (Printf.sprintf "naamtabel: %s: %s is in the schema a free string without enum" family_group place)
                       (decl = []
                       && List.exists (fun (p, _) -> p = place) !field_list
                       && List.for_all
@@ -13905,19 +13904,19 @@ let () =
                         let admitted = if List.mem place refused_on then [] else rejected in
                         check
                           (Printf.sprintf
-                             "naamtabel: %s: de enum op %s is values in schemavolgorde, plus de geweigerde waar ze niet geweigerd worden (schema %s, OCaml %s, geweigerd %s)"
+                             "naamtabel: %s: the enum on %s is values in schema order, plus the refused ones where they are not refused (schema %s, OCaml %s, refused %s)"
                              family_group place (show_text writes_to) (show_text label_list) (show_text rejected))
                           (null_ok && ordinary = label_list && sort by_name = sort admitted
                           && List.length writes_to + (if List.mem `Null enum then 1 else 0) = List.length enum)
                     | ds ->
                         check
-                          (Printf.sprintf "naamtabel: %s: het schema draagt op %s %d enum(s) buiten een voorwaarde, verwacht één"
+                          (Printf.sprintf "naamtabel: %s: the schema carries on %s %d enum(s) outside a condition, expects one"
                              family_group place (List.length ds))
                           false)
                 (strings (field_name "plaatsen" f))
           | Some (`String family_group) ->
-              check ("naamtabel: de familie " ^ family_group ^ " staat niet in de OCaml-tabel van deze toets") false
-          | _ -> check "naamtabel: een familie zonder naam" false)
+              check ("naamtabel: the family " ^ family_group ^ " is not in the OCaml table of this test") false
+          | _ -> check "naamtabel: a family without a name" false)
         families
 
 (* THE SPLIT MONEY × RATE WITH A RATE OF FEWER THAN FOUR DECIMALS (the card
@@ -14987,7 +14986,7 @@ let () =
   in
   (* [maten] adds the fact type maatschap and the fact creation "maak maten"
      (a Wachter becomes maatgever of its opvolger) to the recursive group;
-     [meer] adds member initialisations after rang and beginstand *)
+     [more] adds member initialisations after rang and beginstand *)
   let doc ?(maten = false) ?(more = "") ~attributes ~begin_value rule_defs =
     Printf.sprintf
       {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}%s], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "initialisations": [{"node": "MemberInit", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": {"snippet": "plus"}}, "characteristic": false}, {"node": "MemberInit", "member": "beginstand", "value": %s, "characteristic": false}%s], "condition": {"node": "Comparison", "op": "less", "left": %s, "right": %s, "source": {"snippet": "less"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [%s], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "estafette", "recursive": true, "members": [%s], "source": {"snippet": "estafette"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
@@ -15188,7 +15187,7 @@ let () =
       {|{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "initialisations": [{"node": "MemberInit", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": {"snippet": "zijn rang plus 1"}}, "characteristic": false}, {"node": "MemberInit", "member": "aangesteld", "value": %s, "characteristic": true}], "condition": {"node": "Comparison", "op": "less", "left": %s, "right": %s, "source": {"snippet": "zijn rang is kleiner dan 4"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}|}
       ranking (literal 1) number_value truth ranking (literal 4)
   in
-  (* [rang] declares the rang of a Wachter, [kenmerken] the characteristics
+  (* [ranking] declares the rang of a Wachter, [characteristics] the characteristics
      beside ervaren, [haven] the attributes of a Haven beside rapportaantal;
      [werf] adds "werf de opvolger" and its group; [pass_on] is the
      validity of "geef door" *)
@@ -15209,7 +15208,7 @@ let () =
        else "")
   in
   (* W1 → W2 → W3 over opvolging, W1 ervaren, all three wachters of H1;
-     [rang] gives Wn rang n, [aangesteld] marks W1 aangesteld, [datum] is
+     [ranking] gives Wn rang n, [aangesteld] marks W1 aangesteld, [date_value] is
      the asOfDate; W3 ends ervaren unless [w3] says not, and H1 at the
      given values *)
   let case_data ?(ranking = false) ?(aangesteld = false) ?(date_value = "null") ?(w3 = true) expected_value =
@@ -15434,7 +15433,7 @@ let () =
   in
   (* both executors fault on the budget, each in its own words, and at the
      same place: the mint at creation depth 101 that the object creation
-     [creatie] (index [idx], stratum 0) would make on the chain from the
+     [creation] (index [idx], stratum 0) would make on the chain from the
      input instance [root]. ref names the creation, its stratum, the depth
      and the subject at depth 100; this backend's one viol/2 witness carries
      the term of that mint. A fault on another object — the root, the
@@ -15471,7 +15470,7 @@ let () =
         | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
         | _, _ -> check (label ^ " (clingo killed)") false)
   in
-  (* the chain of finite-chain-over-budget while the rang is below [grens],
+  (* the chain of finite-chain-over-budget while the rang is below [boundary],
      optionally beside its rank detector *)
   let lange_chain ?(with_detector = false) boundary =
     doc ~types:[ wachter ] ~fact_types:[ opvolging ]

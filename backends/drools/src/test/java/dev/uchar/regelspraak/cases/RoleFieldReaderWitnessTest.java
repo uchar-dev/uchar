@@ -181,7 +181,7 @@ class RoleFieldReaderWitnessTest {
         Path ir = factCreationWithDisplacer("Sein", "seinvak"), c = caseOf(postwachtCase());
         // The destructive exec-model branch refused the creation by name once it was gated. The truth-maintenance
         // branch lays the link as a fact while it fires and answers as ref on this case (TmsLikeRefWitnessTest,
-        // feitcreatie-naamdelende-schrijfrol), on both branches since card drl-teksttak-op-truth-maintenance, before
+        // fact-creation-name-sharing-write-role), on both branches since card drl-teksttak-op-truth-maintenance, before
         // which the DRL-text branch refused it.
         assertNull(CaseRunner.playCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL),
                 "tms — ref agrees");
@@ -211,7 +211,7 @@ class RoleFieldReaderWitnessTest {
     @Test void the_fact_creation_refuses_a_displaced_path_step_field() throws Exception {
         // The hop's gate, the position the row above no longer reaches. The same reduced gemeenteberging with a
         // declared Jutter attribute `gemeente van inschrijving`: that member displaces the hop's reference field
-        // (leden(): attribuut > kenmerk > referentie), so the creation must stop AT THE HOP, before the join.
+        // (members(): attribuut > kenmerk > referentie), so the creation must stop AT THE HOP, before the join.
         // Verifier-clean and ref-clean. With the hop gate removed from both branches the suite stayed green
         // (lens, 2026-09-22): the creation then refused only at the join, which is the row above.
         ObjectNode m = goldenIr(GEMEENTEBERGING);
@@ -239,7 +239,7 @@ class RoleFieldReaderWitnessTest {
 
     @Test void the_count_assertion_reads_the_resolved_role_not_the_written_name() throws Exception {
         // toOneAantalReader tested the name-sharing itself — `subject.hasMember(a.attribute())` — instead of asking
-        // the shared question. That is a second reading of leden()'s law, and it reads the WRONG NAME whenever the
+        // the shared question. That is a second reading of members()'s law, and it reads the WRONG NAME whenever the
         // written element name and the resolved role name differ. They differ in the ordinary case: the AANTAL's
         // argument NAMES the element role as written ("het aantal penningen"), which resolves through the role's
         // meervoud to the field `penning`. A Jutter declaring a Numeriek `penning` therefore passed the copy (it

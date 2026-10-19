@@ -174,7 +174,7 @@ the grid in one function (`Timeline.grid_bucket`), which the ASP backend's
 bucket calendar and its total over the asOfDate bucket call as well; the
 Drools branches hand the doel's constant anchor to the anchored producers a
 variable start uses, and the case runner lays a case timeline on the fixed
-grid through the frontend's shared `kern/VastStartpunt`.
+grid through the frontend's shared `kern/FixedStartPoint`.
 
 Case 5 was red in both Drools branches before the fix round of 2026-09-26,
 which weighs a span by the clamped month step: measured on the union

@@ -17,11 +17,11 @@ public enum ReadKind {
      *  the input that a member's standing carries where no derivation stands
      *  ({@code TmsTranspiler.inputStateRule}). */
     INVOER,
-    /** A derived attribute of the subject, through its {@code Stand} ({@code eigen}). */
+    /** A derived attribute of the subject, through its {@code State} ({@code eigen}). */
     STATE,
     /** A derived characteristic of the subject, through its {@code CharacteristicState} ({@code eigen}). */
     CHARACTERISTIC_STATE,
-    /** The timeline of a member of the subject: an attribute through its {@code Stand}, a characteristic as its true
+    /** The timeline of a member of the subject: an attribute through its {@code State}, a characteristic as its true
      *  periods off the bean ({@code tijdlijn}). */
     TIJDLIJN,
     /** A member at the end of a path, through its {@code PathState} ({@code genavigeerd}). */
@@ -30,7 +30,7 @@ public enum ReadKind {
     INPUT_PATH,
     /** A parameter, through its {@code ParameterState} ({@code parameter}). */
     PARAMETER,
-    /** The session's evaluation date, through its {@code Rekendatum} ({@code rekendatum}). */
+    /** The session's evaluation date, through its {@code EvaluationDate} ({@code rekendatum}). */
     REKENDATUM,
     /** The number of contributions to a fold on the subject ({@code vouw}). */
     FOLD_COUNT,
@@ -72,10 +72,10 @@ public enum ReadKind {
     EMPTY_WRITERS,
     /** The value facts that the writers of one attribute put on the subject ({@code TmsTranspiler.differenceRule}). */
     VALUES,
-    /** The value a writer put on the subject, off its {@code Waarde}: what the standing of a derived attribute carries
+    /** The value a writer put on the subject, off its {@code Value}: what the standing of a derived attribute carries
      *  ({@code TmsTranspiler.attributeStateRules}). */
     DERIVATION,
-    /** The standing of a member on the object a path reaches, off its {@code Stand} or {@code CharacteristicState}: what the
+    /** The standing of a member on the object a path reaches, off its {@code State} or {@code CharacteristicState}: what the
      *  standing of the path carries ({@code TmsTranspiler.pathStateRules}). */
     REACHED_STATE,
     /** The input of a member on the object a path over a relation a form creates reaches, off that bean as the
@@ -86,9 +86,9 @@ public enum ReadKind {
      *  ({@code TmsTranspiler.unionUniquenessRules}). */
     COLLISIONS,
     /** The decision of the first deciding member chain of a reconciliation of a defaults stack, off its
-     *  {@code Uitkomst} ({@code TmsTranspiler.reconciliation}). */
+     *  {@code Outcome} ({@code TmsTranspiler.reconciliation}). */
     DECISION,
     /** The key of the first conflicting member chain of a reconciliation of a defaults stack, off its
-     *  {@code Uitkomst}, which passes on unchanged ({@code TmsTranspiler.reconciliation}). */
+     *  {@code Outcome}, which passes on unchanged ({@code TmsTranspiler.reconciliation}). */
     CONFLICT_KEY
 }

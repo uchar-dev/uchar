@@ -778,7 +778,7 @@ class TmsAllocationWitnessTest {
     }
 
     /**
-     * Case {@code caseDocument} of this class's model fired through the rules of {@code b} named in {@code namen}, in that
+     * Case {@code caseDocument} of this class's model fired through the rules of {@code b} named in {@code names}, in that
      * order, as its branch builds them ({@link TmsDocuments#kieBaseOf}), with the backend's own driver: the beans as
      * the case input makes them (whole numbers, the bergers of a Berging), the evaluation date as the global the case
      * runner sets, then the expectations against the beans written back and the §9.5 facts of the session, the rule

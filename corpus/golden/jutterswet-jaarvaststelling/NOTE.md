@@ -99,7 +99,7 @@ fondspercentage is written into an attribute of its own.
 The refusals of the parameter set — overlapping jaargangen, no jaargang
 on the peildatum, a parameter in the set and in the situation, a scenario
 without peildatum — are pinned in the frontend suite
-(`ScenarioParametersetTest`), because a document that carries one writes no
+(`ScenarioParameterSetTest`), because a document that carries one writes no
 case file.
 
 ## noop refutation (gate 7)

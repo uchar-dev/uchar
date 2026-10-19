@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * are the plan's ({@code TmsTranspiler}), and a function of the plan is called here by its constant, never chosen. The
  * same holds for the role of a rule's test ({@link TestItem.Role}), which the analysis sets and this class carries out.
  *
- * <p>A {@code Let} is rendered by need, as RUNTIME-SEMANTICS ch. 10.6 evaluates it, whatever {@link Term.Let#gretig}
+ * <p>A {@code Let} is rendered by need, as RUNTIME-SEMANTICS ch. 10.6 evaluates it, whatever {@link Term.Let#eager}
  * says: a lambda can carry the need, and evaluating by need is right in every case, where evaluating first is right
  * only where the plan marks it so.
  */
@@ -131,7 +131,7 @@ final class ClosureRendering {
         return test(t.role(), test(t.test()), t.depositFlag());
     }
 
-    /** The test of a rule's left-hand side that asks {@code role} of the condition {@code toets}
+    /** The test of a rule's left-hand side that asks {@code role} of the condition {@code test}
      *  ({@link TestItem.Role}); {@code depositFlag} is the probe's slot of a test of deposits. */
     static Predicate<Object[]> test(TestItem.Role role, Predicate<Object[]> test, int depositFlag) {
         return switch (role) {
@@ -152,8 +152,8 @@ final class ClosureRendering {
         };
     }
 
-    /** {@code toets} where it answers, and not holding where it faults: the fault is the fault rule's
-     *  ({@link TestItem.Role#ZONDER_FOUT}). */
+    /** {@code test} where it answers, and not holding where it faults: the fault is the fault rule's
+     *  ({@link TestItem.Role#WITHOUT_FAULT}). */
     static Predicate<Object[]> withoutFault(Predicate<Object[]> test) {
         return w -> {
             try {
@@ -165,7 +165,7 @@ final class ClosureRendering {
         };
     }
 
-    /** The evaluation fault {@code toets} raises over {@code w}, or null where it answers. An evaluation fault is a
+    /** The evaluation fault {@code test} raises over {@code w}, or null where it answers. An evaluation fault is a
      *  division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) or a {@link ComputeFault}: a date step or a duration
      *  count outside the range of ch. 3.8, a context value or a validity window without an evaluation date, an
      *  {@code Unresolved} node reached, and the other faults that class names. Any other exception is a broken contract

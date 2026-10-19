@@ -421,7 +421,7 @@ class ObjectCreationFoldWitnessTest {
                 + "{\"snippet\":\"de " + member + " van alle vondsten van de Jutter\"}}";
     }
 
-    /** A fold of kind {@code soort} over the {@code lid} of the vondsten of the Jutter. */
+    /** A fold of kind {@code category} over the {@code member} of the vondsten of the Jutter. */
     private static String fold(String category, String member, String type, String snippet) {
         return "{\"node\":\"Aggregation\",\"kind\":\"" + category + "\",\"arguments\":[" + vondstMember(member) + "],\"elementType\":"
                 + "\"Vondst\",\"sourceRole\":" + roleBinding("JutterHeeftVondst", "vondst") + ",\"type\":" + type
@@ -540,7 +540,7 @@ class ObjectCreationFoldWitnessTest {
     private static final String INCONSISTENT = "{\"kind\":\"inconsistent\"}";
     private static final String CONSISTENT = "{\"kind\":\"consistent\"}";
 
-    /** The expectation on {@code lid} of J1 to J4, a null value leeg. */
+    /** The expectation on {@code member} of J1 to J4, a null value leeg. */
     private static String perJutter(String member, String... waarden) {
         List<String> out = new ArrayList<>();
         for (int i = 0; i < waarden.length; i++) {

@@ -33,7 +33,7 @@ public final class Input {
     /** A bucket scalar: attribute {@code attribute} of {@code bean}, named as the model declares it. */
     record Bucket(Object bean, String attribute) {}
 
-    /** The members of a to-many list in their order: {@code leden}, each holding {@code houder} in its reference field
+    /** The members of a to-many list in their order: {@code members}, each holding {@code houder} in its reference field
      *  {@code role}. */
     record ToManyList(Object houder, String role, List<Object> members) {}
 
@@ -56,7 +56,7 @@ public final class Input {
         return this;
     }
 
-    /** States the order of a to-many list: {@code leden} are the members whose reference field {@code role} holds
+    /** States the order of a to-many list: {@code members} are the members whose reference field {@code role} holds
      *  {@code houder}, in this order. {@code role} is the role the holder plays in the fact type, the name of that field;
      *  the list must name every bean of this input whose field holds the holder, and each once. */
     public Input list(Object houder, String role, List<?> members) {

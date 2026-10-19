@@ -58,7 +58,7 @@ expectation alone.
 
 ## The mutant this golden catches
 
-Swapping the two `let`s in the reference interpreter's `Binair` arm —
+Swapping the two `let`s in the reference interpreter's `Binary` arm —
 `rechts` before `links` — leaves every value in the corpus untouched and
 breaks exactly this case:
 

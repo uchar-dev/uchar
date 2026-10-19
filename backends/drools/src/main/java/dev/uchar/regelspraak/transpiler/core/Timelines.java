@@ -9,7 +9,7 @@ import java.util.Map;
  * THE multiplicity question of a timeline facet, asked in ONE place by both transpiler branches: is this member a
  * MULTI-PERIOD raster (§13.3.6.7 "voor elke N maanden"), whose producer semantics neither branch carries?
  *
- * <p>It exists because the question was written 24 times as {@code timelineCount.containsKey(lid)} — a PRESENCE test
+ * <p>It exists because the question was written 24 times as {@code timelineCount.containsKey(member)} — a PRESENCE test
  * where a multiplicity test is meant. The wire's period count defaults to ONE: IR-SPEC §2.2's TimelineFacet table
  * states it as {@code count: integer >= 1 | periods per segment; 1 = single-period}, ch. 2.8 repeats the constraint on
  * the Timeline node and its worked example adopts {@code {granularity: year, count: 1}}, ch. 2.10's v0 migration
@@ -41,8 +41,8 @@ import java.util.Map;
 public final class Timelines {
     private Timelines() {}
 
-    /** Whether {@code lid} is declared a MULTI-PERIOD raster in {@code timelineCount} — two periods or more. An absent
-     *  entry and an explicit 1 are the same single-period facet (see the class note). {@code lid} is the WRITTEN name,
+    /** Whether {@code member} is declared a MULTI-PERIOD raster in {@code timelineCount} — two periods or more. An absent
+     *  entry and an explicit 1 are the same single-period facet (see the class note). {@code member} is the WRITTEN name,
      *  resolved by the same name contract as the temporality test beside it, or a mis-capitalised raster would pass
      *  that test and then read here as single-period. */
     public static boolean morePeriodic(Map<String, Integer> timelineCount, String member) {
@@ -50,7 +50,7 @@ public final class Timelines {
         return count != null && count > 1;
     }
 
-    /** RUNTIME-SEMANTICS ch. 3.2: why a pro-rata part onto {@code doel} of {@code subject} is not carried when its
+    /** RUNTIME-SEMANTICS ch. 3.2: why a pro-rata part onto {@code target} of {@code subject} is not carried when its
      *  target or its base lies on the grid of a fixed start point, or null. The base is constant across a bucket
      *  because its grid nests in the target's, and a start point off the calendar breaks that nesting; {@code ref}
      *  and the ASP backend refuse the form, so both branches do as well, in their sentence. */

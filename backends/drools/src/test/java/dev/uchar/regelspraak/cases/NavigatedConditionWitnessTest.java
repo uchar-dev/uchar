@@ -328,7 +328,7 @@ class NavigatedConditionWitnessTest {
         return value(label, attribute, date, null);
     }
 
-    /** An attributeValue expectation: a date when {@code datum} is set, else the number {@code number}. */
+    /** An attributeValue expectation: a date when {@code date} is set, else the number {@code number}. */
     private static String value(String label, String attribute, String date, String number) {
         return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribute + "\",\"value\":"
                 + (date != null ? "{\"date\":\"" + date + "\"}" : "{\"number\":\"" + number + "\"}") + "}";

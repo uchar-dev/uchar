@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>The rows pin what the report's rows cannot see: that two sessions of one build, fired at once on two threads,
  * each with a waarnemer of its own, see only their own firings; that the waarnemer's listener is on the session during
- * {@code vuur} alone, so a firing outside it is not counted, also after a {@code vuur} that refuses the session; and the
+ * {@code fire} alone, so a firing outside it is not counted, also after a {@code fire} that refuses the session; and the
  * two refusals, of a waarnemer that observed another session and of a fired form outside the manifest.
  */
 class ObserverWitnessTest {
@@ -157,7 +157,7 @@ class ObserverWitnessTest {
 
     private static final int ROUNDS = 20;
 
-    /** A Jutter of {@code bouw}'s bean model, with the characteristic "vergunning geweigerd" where {@code geweigerd}. */
+    /** A Jutter of {@code build}'s bean model, with the characteristic "vergunning geweigerd" where {@code refused}. */
     private static Object jutter(DroolsBackend.Build build, boolean refused) throws Exception {
         Object bean = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident("Jutter", true), true, build.beanLoader())
                 .getConstructor().newInstance();
@@ -165,7 +165,7 @@ class ObserverWitnessTest {
         return bean;
     }
 
-    /** One session of {@code bouw} with one Jutter named {@code label}, put in through {@code insert} and fired through
+    /** One session of {@code build} with one Jutter named {@code label}, put in through {@code insert} and fired through
      *  the entry with a waarnemer of its own, after {@code start} where one is given: the two threads of a round fire
      *  together. */
     private static Observed oneSession(DroolsBackend.Build build, boolean refused, String label, CyclicBarrier start)
@@ -217,7 +217,7 @@ class ObserverWitnessTest {
         return out;
     }
 
-    /** After {@code vuur} the session has the listeners it had before it, and a firing outside {@code vuur}, a plain
+    /** After {@code fire} the session has the listeners it had before it, and a firing outside {@code fire}, a plain
      *  {@code fireAllRules} after an update, adds nothing to the waarnemer. */
     @Test void the_observer_hears_only_the_firing_of_fire() throws Exception {
         JsonNode bare = TmsDocuments.JSON.readTree(EXCLUSION.resolve("case4-kaal.json").toFile());
@@ -243,7 +243,7 @@ class ObserverWitnessTest {
                 });
     }
 
-    /** A {@code vuur} that refuses the session takes the listener off as well: a model with a creation fires once. */
+    /** A {@code fire} that refuses the session takes the listener off as well: a model with a creation fires once. */
     @Test void a_refused_fire_leaves_no_listener_behind() throws Exception {
         JsonNode c = TmsDocuments.JSON.readTree(WRAKBOEKING.resolve("case.json").toFile());
         CaseRunner.forMeasurement(WRAKBOEKING.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL).withSession(c,

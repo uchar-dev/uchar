@@ -31,9 +31,9 @@ public record ResolvedObjectCreation(String naam, Objecttype createdType, Object
         this(naam, createdType, subject, initialisations, condition, validity, null);
     }
 
-    /** One §13.4.6.2 waardetoekenning on the new object. {@code kenmerk} distinguishes the DISTINCT
+    /** One §13.4.6.2 waardetoekenning on the new object. {@code characteristic} distinguishes the DISTINCT
      *  §13.4.6.4 kenmerkwaardetoekenning ("&lt;kenmerknaam&gt; gelijk aan waar|onwaar" — {@code attribute}
-     *  then holds the DECLARED kenmerk name and {@code waarde} a Booleaan literal, resolver-enforced)
+     *  then holds the DECLARED kenmerk name and {@code value} a Booleaan literal, resolver-enforced)
      *  from the §13.4.6.3 attribuutwaardetoekenning (generic expressie RHS). Both back-ends set the
      *  same-named property either way; the flag keeps the IR honest about which spec form it carries. */
     public record MemberInit(String attribute, Expr value, boolean characteristic) {

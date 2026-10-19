@@ -195,7 +195,7 @@ class TypingTest {
         assertNull(res.type().unitOf(), "een quotiënt van gelijke eenheden is eenheidloos");
     }
     @Test void times_two_separate_units_gives_an_opaque_product_unit() {
-        // §4.4: € maal m = €·m — an opaque PRODUCT unit (no canonical), commutative, not Onbekend.
+        // §4.4: € maal m = €·m — an opaque PRODUCT unit (no canonical), commutative, not Unknown.
         Unit m = new Unit("m", "Lengte");
         var res = Typing.compute(BinOp.MAAL, numUnit(EUR), numUnit(m));
         assertTrue(res.ok());

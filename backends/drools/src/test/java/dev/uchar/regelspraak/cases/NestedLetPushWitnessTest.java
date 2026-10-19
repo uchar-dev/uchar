@@ -156,7 +156,7 @@ class NestedLetPushWitnessTest {
         //
         // Measured 2026-09-19 and PRE-EXISTING (identical on the branch state before this card): the guard was
         // resolved against the outer binding, and with saldo 5,00, inkomen 40,00 and restpost ABSENT that made
-        // this branch FABRICATE an Inconsistentie — ref answers uit 5,00 CONSISTENT (the dan-arm runs, `z` is
+        // this branch FABRICATE an Inconsistency — ref answers uit 5,00 CONSISTENT (the dan-arm runs, `z` is
         // never read, the division never happens), the exec branch reproduces it, and clingo refuses the
         // document with its own loud fault. An invented fault is the worst answer available, so the destructive
         // DRL-text lowering refused the shape by name, and a sibling spelling whose two bindings happened to AGREE as

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * <pre>… indien de &lt;attribuut&gt; van ALLE &lt;leden&gt; van de &lt;Onderwerp&gt; gedurende het gehele jaar
  * groter is dan &lt;grens&gt;.</pre>
  *
- * <p>It parses and resolves, but until this card it built a {@code Vergelijking} whose left operand was
+ * <p>It parses and resolves, but until this card it built a {@code Comparison} whose left operand was
  * an {@code AttributeReference} with {@code set: true} — a collection in a slot that takes one value — so
  * WF-096 raised an ERROR and the document never reached disk, let alone a backend. A sanctioned
  * sentence this frontend could read and never emit.
@@ -242,7 +242,7 @@ class QuantifierFoldTest {
 
     @Test void an_unbindable_range_is_not_lowered_and_keeps_the_set_read_fault() {
         // Fail fast over a silent misbinding: with no feittype connecting Jutter and Vondst the range
-        // does not resolve, and a Kwantorvouw without a range quantifies over nothing the sentence
+        // does not resolve, and a QuantifierFold without a range quantifies over nothing the sentence
         // named. The §8.2 qualifier itself is fine here (the attribute is temporal), so the ONLY
         // complaint is the one that was there before — the refusal is intact, not replaced.
         RegelSpraakModel m = Resolver.resolve("""

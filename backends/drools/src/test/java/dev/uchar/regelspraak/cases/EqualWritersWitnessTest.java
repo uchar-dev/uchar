@@ -120,7 +120,7 @@ class EqualWritersWitnessTest {
      * <p><b>Red</b> (measured 2026-10-14 on {@code 763f7571}) where the reconciliation's rule that writes the decision
      * leaves out its test that no earlier chain decided: both chains write, 5 and 5.00 by the stack, on every jutter in
      * both orders, and with "premie uit de basis" first the reader takes 5 by the text of the value, on the beans and
-     * in {@code lees}, on both branches. The lens's own mutation, the reader leaving writers outside the document's
+     * in {@code read}, on both branches. The lens's own mutation, the reader leaving writers outside the document's
      * rules unsorted, leaves this witness green, since it has no second writer to sort.
      */
     @Test void two_unordered_groups_that_agree_give_the_scale_of_the_first_group() throws Exception {
@@ -186,7 +186,7 @@ class EqualWritersWitnessTest {
         assertEquals(List.of(), faults, "de waarde van de eerste groep van het document, met haar schaal");
     }
 
-    /** {@code groep} with the declared-unordered marking, where the schema places it: before the validity. */
+    /** {@code group} with the declared-unordered marking, where the schema places it: before the validity. */
     private static String unordered(String group) {
         String out = group.replace(",\"validity\":", ",\"unordered\":true,\"validity\":");
         if (out.length() != group.length() + ",\"unordered\":true".length())

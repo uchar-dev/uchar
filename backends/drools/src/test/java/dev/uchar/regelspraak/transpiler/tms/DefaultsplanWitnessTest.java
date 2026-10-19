@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * <ul>
  *   <li>{@code anchor/jutterswet-vondstwaardering}: the simple form on an attribute, three defaults, each inserting the
- *       control fact {@code Beslist} beside its value where a lower default has a rule, and each lower one waiting on
+ *       control fact {@code Decides} beside its value where a lower default has a rule, and each lower one waiting on
  *       the higher ones; the lowest an initialisation default, whose subject pattern tests the input on the target
  *       through the getter of the declaring type.</li>
  *   <li>{@link #exclusionDated}, since no golden has a dated group: {@code anchor/jutterswet-uitsluiting} with its
@@ -672,7 +672,7 @@ class DefaultsplanWitnessTest {
         }
     }
 
-    /** "ok" where the constructor of {@link Consequence.Conflict} takes a conflict that inserts {@code feit}, else its
+    /** "ok" where the constructor of {@link Consequence.Conflict} takes a conflict that inserts {@code fact}, else its
      *  refusal. */
     private static String conflict(Consequence.StackFact fact) {
         try {

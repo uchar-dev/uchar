@@ -43,8 +43,8 @@ public sealed interface Consequence {
     record Deposit(int depositFlag, String form) {}
 
     /**
-     * The value of attribute {@code doel} of the object {@code onderwerp} binds, written by {@code writer}: the
-     * consequence evaluates {@code waarde} over a value array of {@code grootte} slots with the bound values at
+     * The value of attribute {@code target} of the object {@code onderwerp} binds, written by {@code writer}: the
+     * consequence evaluates {@code value} over a value array of {@code size} slots with the bound values at
      * {@code slots}, collapses an exact rational to a decimal where {@code collapse}, and inserts the value where it is
      * gevuld, or also where it is leeg (null, or a timeline without a segment) where {@code writesEmpty}. Where the
      * evaluation faults, an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), it inserts that fault under {@code fault} in
@@ -60,11 +60,11 @@ public sealed interface Consequence {
         }
     }
 
-    /** The characteristic {@code kenmerk} of the object {@code onderwerp} binds. */
+    /** The characteristic {@code characteristic} of the object {@code onderwerp} binds. */
     record Characteristic(String onderwerp, ElementKey characteristic, Insertion insertion) implements Consequence {}
 
     /**
-     * The fault of a condition, evaluated again over the value array of {@code grootte} slots with the bound values at
+     * The fault of a condition, evaluated again over the value array of {@code size} slots with the bound values at
      * {@code slots}, asking it {@code role}: its evaluation fault ({@link TestItem.Role#FAULT}), which the test of the
      * rule found, inserted under {@code fault} on the object {@code onderwerp} binds. That the evaluation answers here is
      * a broken contract, since the test faulted over the same values.
@@ -91,7 +91,7 @@ public sealed interface Consequence {
     }
 
     /**
-     * The fault of two or more writers of attribute {@code doel} that stand on one object with different values
+     * The fault of two or more writers of attribute {@code target} that stand on one object with different values
      * (RUNTIME-SEMANTICS ch. 5.7), on the object {@code onderwerp} binds, over the value facts the slot {@code waarden}
      * holds: the writers in the order of the document's rules {@code documentOrder}, each named once, and a writer
      * the document has no rule of after them by name; the attribute named {@code attribute} as declared; and the
@@ -127,8 +127,8 @@ public sealed interface Consequence {
     enum StateSource { INVOER, DERIVATION, GEEN, REACHED, MISSING_LINK }
 
     /**
-     * The standing of characteristic {@code kenmerk} on the object {@code onderwerp} binds, {@code waar} or onwaar:
-     * waar from the input or from a derivation ({@code bron}), onwaar where neither holds. Where both hold, the two
+     * The standing of characteristic {@code characteristic} on the object {@code onderwerp} binds, {@code waar} or onwaar:
+     * waar from the input or from a derivation ({@code source}), onwaar where neither holds. Where both hold, the two
      * waar standings are equal facts, which truth maintenance keeps as one with a justification each.
      */
     record InsertCharacteristicState(String onderwerp, ElementKey characteristic, StateSource source, boolean holds, Insertion insertion)
@@ -143,7 +143,7 @@ public sealed interface Consequence {
 
     /**
      * The standing of attribute {@code attribute} on the object {@code onderwerp} binds: the value in slot
-     * {@code waarde} of the value array, from {@code bron}, a derivation's value or the input on the bean. Where
+     * {@code value} of the value array, from {@code source}, a derivation's value or the input on the bean. Where
      * {@code bucketScalar}, the input, a timeline, stands as the asOfDate-bucket scalar the case gave
      * ({@code BucketScalar}, RUNTIME-SEMANTICS ch. 8.4), which the consequence takes from the bound timeline.
      */
@@ -157,10 +157,10 @@ public sealed interface Consequence {
     }
 
     /**
-     * The standing of member {@code lid} at the end of the path {@code path} on the object {@code onderwerp} binds:
-     * where every link on the path is present ({@code bron} {@code REACHED}), the value in slot {@code waarde} of the
+     * The standing of member {@code member} at the end of the path {@code path} on the object {@code onderwerp} binds:
+     * where every link on the path is present ({@code source} {@code REACHED}), the value in slot {@code value} of the
      * value array, the member's standing on the object the path reaches; where a link is absent
-     * ({@code MISSING_LINK}), null, and {@code waarde} is -1.
+     * ({@code MISSING_LINK}), null, and {@code value} is -1.
      */
     record InsertPathState(String onderwerp, String path, ElementKey member, StateSource source, int value, Insertion insertion)
             implements Consequence {
@@ -173,9 +173,9 @@ public sealed interface Consequence {
     }
 
     /**
-     * The keys of the object {@code onderwerp} binds in source {@code bron} of the uniqueness {@code uniciteit}
+     * The keys of the object {@code onderwerp} binds in source {@code source} of the uniqueness {@code uniqueness}
      * (RUNTIME-SEMANTICS ch. 5.6, 5.9), made by the route {@link Route#UNIQUENESS_KEYS}: its key components in the
-     * source's order, each the value of its term in {@code components} over the value array of {@code grootte} slots
+     * source's order, each the value of its term in {@code components} over the value array of {@code size} slots
      * with the bound values at {@code slots}, an enumeration label in its normalised form; the parent in slot
      * {@code scope}, -1 for a form without a scope; and where the component at position {@code timeline} is on a
      * timeline (-1: none), one key per value that timeline ever carries (ever-uniqueness).
@@ -188,7 +188,7 @@ public sealed interface Consequence {
         }
     }
 
-    /** The violation of the uniqueness {@code uniciteit} by the object {@code onderwerp} binds, a key of which is in a
+    /** The violation of the uniqueness {@code uniqueness} by the object {@code onderwerp} binds, a key of which is in a
      *  duplicate (ch. 5.9). */
     record UniquenessViolation(String onderwerp, String uniqueness, Insertion insertion) implements Consequence {}
 
@@ -202,7 +202,7 @@ public sealed interface Consequence {
     record InsertChannelState(String producer, boolean inconsistent, Insertion insertion) implements Consequence {}
 
     /** A recipient of the allocation {@code verdeling} for the source {@code onderwerp} binds (ch. 4.1): the recipient
-     *  in slot {@code ontvanger}, and its weight, its ordering key and its cap in the slots {@code gewicht},
+     *  in slot {@code recipient}, and its weight, its ordering key and its cap in the slots {@code weight},
      *  {@code key} and {@code maximum}, each -1 where the allocation declares none, so that the fact carries null
      *  there. */
     record Recipient(String onderwerp, String allocation, int recipient, int weight, int key, int maximum,
@@ -211,7 +211,7 @@ public sealed interface Consequence {
     /**
      * The distribution of an allocation over the recipients of the source {@code onderwerp} binds (ch. 4.2 to 4.4),
      * computed by the route {@link Route#PAYOUT}, which calls {@code Allocation.bereken}: by {@code method}, of the
-     * pot in slot {@code pot} over the list of {@code Ontvanger} facts in slot {@code lijst}, {@code gewogen} where the
+     * pot in slot {@code pot} over the list of {@code Recipient} facts in slot {@code list}, {@code gewogen} where the
      * allocation declares a ratio attribute, {@code capped} where it declares a cap, {@code descending} the ordered
      * method's direction, {@code decimals} the floor's decimals (null: none). Each share is a value of {@code aandeel}
      * on its recipient and the rest a value of {@code rest} on the source (null: the allocation writes no rest), both
@@ -245,9 +245,9 @@ public sealed interface Consequence {
     enum PlaceReason { FILTER_FAULT, MEMBER_FAULT, QUANTIFIER }
 
     /**
-     * The contribution ({@code Bijdrage}, RUNTIME-SEMANTICS ch. 3.4) of the member in slot {@code lid}, the subject of a
+     * The contribution ({@code Contribution}, RUNTIME-SEMANTICS ch. 3.4) of the member in slot {@code member}, the subject of a
      * contribution rule, to the fold {@code fold} of the fold's subject, the object {@code onderwerp} binds: what the
-     * member contributes is {@code input}, computed over a value array of {@code grootte} slots with the bound values
+     * member contributes is {@code input}, computed over a value array of {@code size} slots with the bound values
      * at {@code slots}.
      */
     record Contribution(String onderwerp, String fold, int member, Input input, List<Integer> slots, int size,
@@ -262,8 +262,8 @@ public sealed interface Consequence {
         /** The member itself, without a value: a count of the members. */
         record Count() implements Input {}
 
-        /** The member's value in slot {@code waarde}, made by the route {@link Route#CONTRIBUTION}: nothing where it is
-         *  leeg; where {@code totaal} is not null the slot holds the member's timeline, which contributes its total over
+        /** The member's value in slot {@code value}, made by the route {@link Route#CONTRIBUTION}: nothing where it is
+         *  leeg; where {@code total} is not null the slot holds the member's timeline, which contributes its total over
          *  time per that unit, and nothing where the case gives it as the asOfDate-bucket scalar; where {@code filled},
          *  the member without a value, a count of the members whose value is gevuld. */
         record MemberValue(int value, String total, boolean filled) implements Input {}
@@ -286,15 +286,15 @@ public sealed interface Consequence {
         }
     }
 
-    /** That evaluating the filter of the fold {@code fold} for the member in slot {@code lid} deposits, a
+    /** That evaluating the filter of the fold {@code fold} for the member in slot {@code member} deposits, a
      *  {@code FilterDeposit} on the fold's subject, the object {@code onderwerp} binds; the test of the rule found
      *  it. */
     record FilterDeposit(String onderwerp, String fold, int member, Insertion insertion) implements Consequence {}
 
     /**
-     * The fault of the filter of the fold {@code fold} for the member in slot {@code lid}, a {@code FilterFault} on the
+     * The fault of the filter of the fold {@code fold} for the member in slot {@code member}, a {@code FilterFault} on the
      * fold's subject, the object {@code onderwerp} binds: the condition {@code filter}, evaluated again over the value
-     * array of {@code grootte} slots with the bound values at {@code slots}, gives its evaluation fault, which the test
+     * array of {@code size} slots with the bound values at {@code slots}, gives its evaluation fault, which the test
      * of the rule found, so that it answering here is a broken contract; then the member's {@code place} in the fold's
      * order.
      */
@@ -308,7 +308,7 @@ public sealed interface Consequence {
         }
     }
 
-    /** The fault of the member in slot {@code lid} of the per-element fold {@code fold} over an attribute on a
+    /** The fault of the member in slot {@code member} of the per-element fold {@code fold} over an attribute on a
      *  timeline, which the case gives as the asOfDate-bucket scalar, a {@code MemberFault} on the fold's subject, the object
      *  {@code onderwerp} binds: the member's {@code place} in the fold's order, and the fault of the form of an input,
      *  the sentence {@code voor}, the member and {@code na}, named in no rule yet, made by the route
@@ -322,11 +322,11 @@ public sealed interface Consequence {
     }
 
     /**
-     * An object creation (RUNTIME-SEMANTICS ch. 5.5, IR-SPEC ch. 3.3) of the creation {@code creatie} for the subject the
-     * variable {@code onderwerp} binds, over a value array of {@code grootte} slots with the bound values at
+     * An object creation (RUNTIME-SEMANTICS ch. 5.5, IR-SPEC ch. 3.3) of the creation {@code creation} for the subject the
+     * variable {@code onderwerp} binds, over a value array of {@code size} slots with the bound values at
      * {@code slots}. Its consequence takes four steps, in this order:
      * <ol>
-     *   <li>the creation depth of the new object, made by the route {@link Route#CREATION_DEPTH} from {@code diepte}:
+     *   <li>the creation depth of the new object, made by the route {@link Route#CREATION_DEPTH} from {@code depth}:
      *       past the budget it throws, the fault at the making, before anything is made;</li>
      *   <li>the value of each of {@code initialisations}, in order, each collapsed from an exact rational to a decimal;
      *       where one raises an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), that fault, named under {@code fault} and
@@ -416,11 +416,11 @@ public sealed interface Consequence {
      *  {@code budget} the route throws the fault at the making. */
     record CreationDepth(int origin, int stratum, String type, int budget) {}
 
-    /** One member initialisation of an object creation: the member {@code lid} of the new object, and its value
-     *  {@code waarde}, evaluated over the bound values of the rule. */
+    /** One member initialisation of an object creation: the member {@code member} of the new object, and its value
+     *  {@code value}, evaluated over the bound values of the rule. */
     record Initialisation(ElementKey member, Term value) {}
 
-    /** How an object creation makes its new object: a bean of {@code klasse}, by its constructor without arguments, on
+    /** How an object creation makes its new object: a bean of {@code javaClass}, by its constructor without arguments, on
      *  which each of {@code settings} is set, in order, before the bean is inserted. */
     record Construction(Class<?> javaClass, List<Setting> settings) {
         public Construction {
@@ -453,8 +453,8 @@ public sealed interface Consequence {
         record Characteristic(int initialisatie, Insertion insertion) implements Insert {}
     }
 
-    /** The link of the relation {@code relation} whose first end is the object the variable {@code eerste} binds and
-     *  whose second end is the object {@code tweede} binds, so the relation's order of roles decides the direction,
+    /** The link of the relation {@code relation} whose first end is the object the variable {@code first} binds and
+     *  whose second end is the object {@code second} binds, so the relation's order of roles decides the direction,
      *  carrying the creation phase in slot {@code phase} of the value array, or phase 0, the input's, where {@code phase}
      *  is -1: a link a reference field on a bean of the input carries, or the link a fact creation makes. */
     record RelationLink(String relation, String first, String second, int phase, Insertion insertion) implements Consequence {}
@@ -467,7 +467,7 @@ public sealed interface Consequence {
 
     /**
      * The decision of a default or of a reconciliation in a defaults stack (RUNTIME-SEMANTICS ch. 7.1-7.3, 7.9), on the
-     * object {@code onderwerp} binds: the value {@code waarde} evaluates to over a value array of {@code grootte} slots
+     * object {@code onderwerp} binds: the value {@code value} evaluates to over a value array of {@code size} slots
      * with the bound values at {@code slots}, collapsed from an exact rational to a decimal where {@code collapse}. That
      * value is a characteristic's decision as the default declares it, a constant; an attribute's consequence, computed
      * from what the rule bound; or the decision of the first deciding member chain, bound off its outcome
@@ -491,10 +491,10 @@ public sealed interface Consequence {
 
     /**
      * The conflict of a reconciliation in a defaults stack (RUNTIME-SEMANTICS ch. 7.2, 7.9), on the object
-     * {@code onderwerp} binds, under the key {@code key} evaluates to over a value array of {@code grootte} slots
+     * {@code onderwerp} binds, under the key {@code key} evaluates to over a value array of {@code size} slots
      * with the bound values at {@code slots}: the key of the reconciliation itself where two of its members decide
      * differently, a constant, or the key of the first conflicting member chain, bound off its outcome
-     * ({@link ReadKind#CONFLICT_KEY}), which passes on unchanged. The consequence inserts {@code feit} with the key,
+     * ({@link ReadKind#CONFLICT_KEY}), which passes on unchanged. The consequence inserts {@code fact} with the key,
      * as {@code insertion} says: the outcome of the default that reconciles, of the kind {@code CONFLICT}, which the
      * reconciliation above it reads, or at the root of the stack the §9.5 inconsistency under the key.
      */
@@ -511,23 +511,23 @@ public sealed interface Consequence {
     /** A fact the rules of a defaults stack insert on their subject with a decision or with the key of a conflict. */
     sealed interface StackFact {
 
-        /** The value of the stack's target attribute {@code doel}, the decision, written by {@code writer}, the
-         *  stack: a {@code Waarde}. */
+        /** The value of the stack's target attribute {@code target}, the decision, written by {@code writer}, the
+         *  stack: a {@code Value}. */
         record Value(ElementKey target, String writer) implements StackFact {}
 
-        /** The attribution of the stack's target characteristic {@code kenmerk}: a {@code HasCharacteristic}. The analysis
+        /** The attribution of the stack's target characteristic {@code characteristic}: a {@code HasCharacteristic}. The analysis
          *  plans it only where the decision is an attribution, true. */
         record Characteristic(ElementKey characteristic) implements StackFact {}
 
-        /** The control fact of the simple form: default {@code index} of the stack {@code stapel} decided, a
-         *  {@code Beslist}. The analysis plans it only where a lower default of the stack has a rule, which carries the
+        /** The control fact of the simple form: default {@code index} of the stack {@code stack} decided, a
+         *  {@code Decides}. The analysis plans it only where a lower default of the stack has a rule, which carries the
          *  negation of it over the indices above its own: the condition under which this decision displaces a lower
          *  one. */
         record Decides(String stack, int index) implements StackFact {}
 
-        /** The control fact of the general form: the default at {@code positie} in chain {@code keten} of the stack
-         *  {@code stapel} settled as {@code soort} says, {@code BESLIST} with the decision as its value or
-         *  {@code CONFLICT} with the key of the conflict: an {@code Uitkomst}. */
+        /** The control fact of the general form: the default at {@code position} in chain {@code chain} of the stack
+         *  {@code stack} settled as {@code category} says, {@code DECIDED} with the decision as its value or
+         *  {@code CONFLICT} with the key of the conflict: an {@code Outcome}. */
         record Outcome(String stack, int chain, int position, Kind category) implements StackFact {}
 
         /** The §9.5 inconsistency of the stack's conflict at its root, under the key of the conflict, through the

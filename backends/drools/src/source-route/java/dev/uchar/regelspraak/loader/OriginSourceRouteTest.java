@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The origins along the two routes to a model (IR-SPEC ch. 2.13): for every corpus golden with a {@code source.rgs},
- * the table {@code gegenereerd} of the model the loader reads from the committed {@code ir.json} equals the table of
+ * the table {@code generated} of the model the loader reads from the committed {@code ir.json} equals the table of
  * the model the resolver makes of the source. A consumer that holds only the IR document then knows which
  * declarations the frontend made, and from what, as the frontend does. Gate 10 holds the committed document to the
  * emission of that source byte for byte, so the comparison is the frontend's table against its own wire.

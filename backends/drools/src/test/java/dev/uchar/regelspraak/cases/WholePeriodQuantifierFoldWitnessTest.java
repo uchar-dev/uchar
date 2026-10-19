@@ -466,8 +466,8 @@ class WholePeriodQuantifierFoldWitnessTest {
      * ({@code filterThatHoists}), and a fold under a NON-conjunctive quantifier, on the whole-period matrix and on the
      * non-temporal one ({@code foldUnderDisjunction}). The destructive exec-model lowering refused them on the same
      * axes; the analysis with truth maintenance plays each as {@code ref} answers ({@code TmsLikeRefWitnessTest},
-     * {@code heelperiode-niet-scalaire-grens}, {@code heelperiode-filter-dat-hijst},
-     * {@code heelperiode-niet-conjunctieve-kwantor}). Since that card the DRL-text branch renders the same analysis,
+     * {@code whole-period-non-scalar-bound}, {@code whole-period-filter-that-hoists},
+     * {@code whole-period-non-conjunctive-quantifier}). Since that card the DRL-text branch renders the same analysis,
      * so each row now asks one verdict of both branches, case for case, where the case of the former DRL row says
      * the characteristic is present and the analysis, like {@code ref}, answers it absent on the first shape. The
      * text that wrote a clause before it refused went with that lowering.

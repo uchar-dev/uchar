@@ -128,7 +128,7 @@ public final class CaseInput {
     }
 
     /** One link the case wrote: under the {@code roles} of instance {@code label}, the key {@code role}, naming
-     *  {@code doel}. */
+     *  {@code target}. */
     private record RoleLink(String label, String role, String target) {}
 
     /** The runner whose value readers the comparison shares: values, dates, timelines, declared member names. */
@@ -359,7 +359,7 @@ public final class CaseInput {
                     // order-independence argument and its own conflict message keep holding.
                     if (roleLI != null && !roleLI.equalsIgnoreCase(roleIL) && !model.toManyRole(tL, tI, roleLI)) {
                         // The far field must really exist: a declared member of the same name displaces it
-                        // (leden()'s dedup), and then this backend cannot hold the far direction at all. Under
+                        // (members()'s dedup), and then this backend cannot hold the far direction at all. Under
                         // ch. 5.7a that is a per-form refusal with its reason, never a silently one-directional
                         // relation — the same standard the forward write is held to one line up.
                         nameSharingGate(tL, roleLI, tI, link);
@@ -405,7 +405,7 @@ public final class CaseInput {
     }
 
     /** Whether {@code role} is one of the reference fields {@link FactModelGenerator#members} DERIVES on
-     *  {@code drager} toward {@code doel} — the membership test that lets the WRITTEN role name override the
+     *  {@code carrier} toward {@code target} — the membership test that lets the WRITTEN role name override the
      *  by-pair search without ever reaching a setter no bean has. It asks the generator's own two derivations:
      *  {@code selfPairRoles} for a self-typed pair (§13.3.9.2 and the ordinary two-role self-pair) and
      *  {@code connectingRoles} for a cross-type one. Deliberately a NAME test, not
@@ -419,12 +419,12 @@ public final class CaseInput {
                 : model.connectingRoles(carrier, target).contains(role);
     }
 
-    /** The §13.3.9 NAME-SHARING gate on a resolved to-one role write: {@code drager}'s bean must carry the
-     *  reference field for {@code role} TYPED (a field of {@code doel}'s class), not merely a property of that
+    /** The §13.3.9 NAME-SHARING gate on a resolved to-one role write: {@code carrier}'s bean must carry the
+     *  reference field for {@code role} TYPED (a field of {@code target}'s class), not merely a property of that
      *  name. Both roles here come from the very authorities {@link FactModelGenerator#members} derives the fields
      *  from ({@code selfPairRoles} / {@code connectingRoles} / {@code connectingRole}), so the ONE thing that
      *  can still be missing is the
-     *  reference itself, displaced by a declared member of the same name (leden()'s dedup: attribute >
+     *  reference itself, displaced by a declared member of the same name (members()'s dedup: attribute >
      *  characteristic > reference). Without this gate the write below reaches {@code set<X>(BigDecimal)} with a
      *  fact — "kon setter setOpvolger(Wachter) niet aanroepen", an unclassified ERROR the gate refuses to excuse
      *  — where the honest outcome is a loud, reason-carrying exclusion (lens 2, 2026-08-30). The §13.3.9.2
@@ -471,7 +471,7 @@ public final class CaseInput {
         writers.computeIfAbsent(carrier, k -> new LinkedHashMap<>()).putIfAbsent(Namen.getter(role), link);
     }
 
-    /** The class of the reference field {@code role} on {@code drager}'s bean, read off its getter: the class of the
+    /** The class of the reference field {@code role} on {@code carrier}'s bean, read off its getter: the class of the
      *  role's declared filler. The setter is looked up by that class and not by the target's own, because a target
      *  of a subtype of the filler (IR-SPEC ch. 2.6) has a class of its own that no setter names. */
     private static Class<?> fieldClass(Object carrier, String role) {
@@ -532,7 +532,7 @@ public final class CaseInput {
         }
     }
 
-    /** The link of the case that wrote the to-one field {@code role} of {@code drager}. */
+    /** The link of the case that wrote the to-one field {@code role} of {@code carrier}. */
     private RoleLink writtenBy(Object carrier, String role) {
         RoleLink link = writers.getOrDefault(carrier, Map.of()).get(Namen.getter(role));
         if (link == null)
