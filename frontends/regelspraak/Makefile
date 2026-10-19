@@ -77,7 +77,10 @@ parser: $(ANTLR4_JAR)
 # -Xdoclint:reference keeps @param and {@link} naming members that exist (a rename leaves them behind otherwise).
 DOCLINT := -Xdoclint:reference
 
+# javac compiles every source anyway; an empty $(OUT_DIR) keeps a class of a renamed type from staying behind, which on a
+# case-insensitive file system (macOS) takes the new name's place when the rename changes only the case (Objecttype -> ObjectType).
 compile: parser
+	rm -rf $(OUT_DIR)
 	mkdir -p $(OUT_DIR)
 	javac -cp $(ANTLR4_JAR) -d $(OUT_DIR) $(GEN_DIR)/*.java
 	javac $(DOCLINT) -cp $(ANTLR4_JAR):$(OUT_DIR) -d $(OUT_DIR) $(MAIN_SRC)
