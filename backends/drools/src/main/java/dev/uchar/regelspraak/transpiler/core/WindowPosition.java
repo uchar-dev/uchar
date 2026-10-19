@@ -2,6 +2,8 @@ package dev.uchar.regelspraak.transpiler.core;
 
 import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.refusal.DroolsCode;
+import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 
@@ -33,16 +35,17 @@ public final class WindowPosition {
     private WindowPosition() {}
 
     /** The refusal for a window whose bound is neither shape WF-111 admits. */
-    public static final String BOUND_FORM = "een periodevenster met een grens die geen datumliteral en geen eigen"
-            + " scalair datumattribuut van het element is (WF-111)";
+    public static final Reason BOUND_FORM = new Reason(DroolsCode.WINDOW_BOUND_NOT_DATE,
+            "een periodevenster met een grens die geen datumliteral en geen eigen"
+            + " scalair datumattribuut van het element is (WF-111)");
 
     /** The refusal for the first WF-112 position in {@code c}, or null when it has none. Null-safe. */
-    public static String refusal(Condition c) {
+    public static Reason refusal(Condition c) {
         if (c instanceof Condition.Compound s) {
             if (counts(s.quantifier()) && s.components().stream().anyMatch(Condition::containsTimeWindow))
-                return sentence("een " + s.quantifier() + "-samenstelling", COUNTS);
+                return sentence(DroolsCode.COMPOUND_COUNTING_WINDOW, "een " + s.quantifier() + "-samenstelling", COUNTS);
             for (Condition part : s.components()) {
-                String w = refusal(part);
+                Reason w = refusal(part);
                 if (w != null) return w;
             }
             return null;
@@ -52,16 +55,16 @@ public final class WindowPosition {
                 boolean inFilter = Condition.containsTimeWindow(kv.filter()), inTest = Condition.containsTimeWindow(kv.test());
                 if (inFilter || inTest) {
                     String site = inFilter && inTest ? "het filter en de toets" : inFilter ? "het filter" : "de toets";
-                    return sentence(site + " van een kwantorvouw onder " + kv.quantifier() + " over "
+                    return sentence(DroolsCode.QUANTIFIER_FOLD_WINDOW_POSITION, site + " van een kwantorvouw onder " + kv.quantifier() + " over "
                             + (kv.elementObjectType() == null ? "<onopgelost elementtype>" : kv.elementObjectType().naam),
                             inTest ? COUNTS : CHOOSES);
                 }
             }
-            String w = refusal(kv.filter());
+            Reason w = refusal(kv.filter());
             return w != null ? w : refusal(kv.test());
         }
         if (c instanceof Condition.Comparison v) {
-            String w = inExpression(v.left());
+            Reason w = inExpression(v.left());
             return w != null ? w : inExpression(v.right());
         }
         if (c instanceof Condition.Predicate p) return inExpression(p.operand());
@@ -70,8 +73,8 @@ public final class WindowPosition {
 
     /** The refusal for the first WF-112 position in the die/dat filter of an aggregation inside {@code e}, or
      *  null. Null-safe. */
-    public static String inExpression(Expr e) {
-        String[] first = { null };
+    public static Reason inExpression(Expr e) {
+        Reason[] first = { null };
         Expr.contains(e, x -> x instanceof Expr.FunctionCall f && (first[0] = refusal(f.filter())) != null);
         return first[0];
     }
@@ -110,8 +113,8 @@ public final class WindowPosition {
     private static final String COUNTS = "de kwantor telt of ontkent het vensterverdict";
     private static final String CHOOSES = "het venster kiest de leden waarover de kwantor telt of ontkent";
 
-    private static String sentence(String site, String why) {
-        return "periodevenster in " + site + " (WF-112): " + why + ", terwijl het venster de regel poort"
-                + " (RUNTIME-SEMANTICS ch. 3.10), en voor die lezing is niets gespecificeerd";
+    private static Reason sentence(DroolsCode code, String site, String why) {
+        return new Reason(code, "periodevenster in " + site + " (WF-112): " + why + ", terwijl het venster de regel poort"
+                + " (RUNTIME-SEMANTICS ch. 3.10), en voor die lezing is niets gespecificeerd");
     }
 }

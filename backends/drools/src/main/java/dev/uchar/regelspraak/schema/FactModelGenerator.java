@@ -5,6 +5,8 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.FactType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Role;
+import dev.uchar.regelspraak.refusal.DroolsCode;
+import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 
 import java.util.ArrayList;
@@ -259,15 +261,15 @@ public final class FactModelGenerator {
 
     /** Why {@code v}'s member has no field of its own, in the one sentence both branches and the case reader
      *  refuse a use of it with; the caller appends who uses it. */
-    public static String displacementReason(Displacement v) {
-        return "beannaambotsing: " + v.displaced().description() + " valt op de beaneigenschap " + v.javaName()
-                + " van " + v.owner().description() + " en heeft geen eigen veld";
+    public static Reason displacementReason(Displacement v) {
+        return new Reason(DroolsCode.BEAN_PROPERTY_DISPLACED, "beannaambotsing: " + v.displaced().description() + " valt op de beaneigenschap " + v.javaName()
+                + " van " + v.owner().description() + " en heeft geen eigen veld");
     }
 
     /** {@link #displacementReason} for the member a case names on an instance of {@code ot} — an attribute, or with
      *  {@code kenmerk} a characteristic, resolved on {@code ot}'s chain under the verifier's name identity — or
      *  null when that member has a field of its own (or {@code ot} declares none by that name). */
-    public static String displacedMember(List<Displacement> displacements, Objecttype ot, String naam, boolean characteristic) {
+    public static Reason displacedMember(List<Displacement> displacements, Objecttype ot, String naam, boolean characteristic) {
         String key = Namen.norm(naam);
         for (Objecttype t : ot.chain())
             for (String member : characteristic ? t.kenmerken : t.attributen.keySet())
@@ -282,13 +284,13 @@ public final class FactModelGenerator {
     /** Two ROLES on one reference field of one type, as a refusal, or null. A field of another type is left to the
      *  use sites, whose gate asks name and type ({@link #hasReferenceField}) and refuses by name; one of the same
      *  type passes that gate for both roles, and every reader and writer of either then works one relation. */
-    public static String roleCollision(List<Displacement> displacements) {
+    public static Reason roleCollision(List<Displacement> displacements) {
         for (Displacement v : displacements)
             if (v.displaced().category() == Origin.Kind.ROL && v.owner().category() == Origin.Kind.ROL
                     && v.displacedMember().javaType().equals(v.ownerMember().javaType()))
-                return "beannaambotsing: " + v.displaced().description() + " valt op het referentieveld "
+                return new Reason(DroolsCode.BEAN_REFERENCE_FIELD_DISPLACED, "beannaambotsing: " + v.displaced().description() + " valt op het referentieveld "
                         + v.javaName() + " van " + v.owner().description() + ", een veld van hetzelfde type, en de"
-                        + " bean draagt per veld één relatie";
+                        + " bean draagt per veld één relatie");
         return null;
     }
 
@@ -301,20 +303,20 @@ public final class FactModelGenerator {
      *  case-insensitively and keeps them apart), a type on the name of a class the generator writes itself, or a
      *  type on the name of a public {@code java.lang} type, which the fact class then hides from the generated beans
      *  (their own package comes first) and from the DRL text (which imports every fact class by name). */
-    public static String classCollision(RegelSpraakModel model) {
+    public static Reason classCollision(RegelSpraakModel model) {
         Map<String, Objecttype> classes = new java.util.HashMap<>();
         for (Objecttype ot : model.objecttypen.values()) {
             String javaClass = Namen.ident(ot.naam, true), fqn = PACKAGE + "." + javaClass;
             Objecttype earlier = classes.putIfAbsent(javaClass, ot);
             if (earlier != null)
-                return "beannaambotsing: de objecttypen '" + earlier.naam + "' en '" + ot.naam + "' vallen op één"
-                        + " feitklasse, " + fqn + ", en het beanmodel maakt één klasse per naam";
+                return new Reason(DroolsCode.BEAN_CLASS_COLLISION_OBJECTTYPES, "beannaambotsing: de objecttypen '" + earlier.naam + "' en '" + ot.naam + "' vallen op één"
+                        + " feitklasse, " + fqn + ", en het beanmodel maakt één klasse per naam");
             if (HELPER_CLASSES.containsKey(javaClass))
-                return "beannaambotsing: het objecttype '" + ot.naam + "' valt op de feitklasse " + fqn + ", de"
-                        + " hulpklasse die het beanmodel zelf genereert voor " + HELPER_CLASSES.get(javaClass);
+                return new Reason(DroolsCode.BEAN_CLASS_HELPER_COLLISION, "beannaambotsing: het objecttype '" + ot.naam + "' valt op de feitklasse " + fqn + ", de"
+                        + " hulpklasse die het beanmodel zelf genereert voor " + HELPER_CLASSES.get(javaClass));
             if (javaLang(javaClass))
-                return "beannaambotsing: het objecttype '" + ot.naam + "' valt op de feitklasse " + fqn + ", en die"
-                        + " verbergt java.lang." + javaClass + " voor de gegenereerde beans en de DRL-tekst";
+                return new Reason(DroolsCode.BEAN_HIDES_JAVA_LANG, "beannaambotsing: het objecttype '" + ot.naam + "' valt op de feitklasse " + fqn + ", en die"
+                        + " verbergt java.lang." + javaClass + " voor de gegenereerde beans en de DRL-tekst");
         }
         return null;
     }
@@ -450,19 +452,19 @@ public final class FactModelGenerator {
      * two same-named roles in two fact types give when one filler is a subtype of the other. "The bean model
      * derives no reference field" is true there and names no cause, so the sentence names the holder.
      */
-    public static String noReferenceFieldReason(RegelSpraakModel model, Objecttype ot, String role, Objecttype targetName) {
+    public static Reason noReferenceFieldReason(RegelSpraakModel model, Objecttype ot, String role, Objecttype targetName) {
         if (ot.hasMember(role))
-            return "de rol '" + role + "' op " + ot.naam + " deelt haar naam met een gedeclareerd lid — het beanveld"
+            return new Reason(DroolsCode.ROLE_NAME_SHARES_MEMBER, "de rol '" + role + "' op " + ot.naam + " deelt haar naam met een gedeclareerd lid — het beanveld"
                     + " draagt dat attribuut/kenmerk en niet de referentie (leden(): attribuut > kenmerk >"
-                    + " referentie), dus de koppeling naar " + targetName.naam + " heeft geen veld";
+                    + " referentie), dus de koppeling naar " + targetName.naam + " heeft geen veld");
         Kandidaat field = field(model, ot, Namen.ident(role, false));
         Origin houder = field == null ? null : field.origin();
         if (houder != null && !houder.equals(roleOrigin(model, ot, targetName, role)))
-            return "de rol '" + role + "' op " + ot.naam + " heeft geen eigen referentieveld naar " + targetName.naam
+            return new Reason(DroolsCode.ROLE_FIELD_HELD_OTHER, "de rol '" + role + "' op " + ot.naam + " heeft geen eigen referentieveld naar " + targetName.naam
                     + ": de beaneigenschap " + Namen.ident(ot.naam, true) + "." + field.member().property()
-                    + " draagt " + houder.description();
-        return "het beanmodel leidt voor de rol '" + role + "' op " + ot.naam + " geen referentieveld naar " + targetName.naam
-                + " af";
+                    + " draagt " + houder.description());
+        return new Reason(DroolsCode.ROLE_NO_REFERENCE_FIELD, "het beanmodel leidt voor de rol '" + role + "' op " + ot.naam + " geen referentieveld naar " + targetName.naam
+                + " af");
     }
 
     /**
@@ -479,7 +481,7 @@ public final class FactModelGenerator {
      * different sentences — measured on a both-sides-to-many model, exec named the cardinality and the DRL-text
      * branch fell back to the generic reading. Callers still prefix their own reader name.
      */
-    public static String noJoinFieldReason(RegelSpraakModel model, Objecttype carrier, String role, Objecttype targetName) {
+    public static Reason noJoinFieldReason(RegelSpraakModel model, Objecttype carrier, String role, Objecttype targetName) {
         if (!model.toManyRole(carrier, targetName, role)) return noReferenceFieldReason(model, carrier, role, targetName);
         // The far end is where a to-many role's storage lives. Whether it HAS a field there is a second
         // question, and the answer decides how much this sentence may claim: "both sides to-many" is the
@@ -493,12 +495,13 @@ public final class FactModelGenerator {
         boolean otherSideCarries = sister != null && far != null && hasReferenceField(model, far, sister, carrier);
         String sentence = "de rol '" + role + "' op " + carrier.naam + " is meervoudig, dus haar opslag is het veld aan de"
                 + " overzijde";
-        if (otherSideCarries) return sentence;
+        if (otherSideCarries) return new Reason(DroolsCode.ROLE_MULTI_FAR_SIDE, sentence);
         // A TO-ONE sister whose field is missing is no cardinality defect: its field was taken, by a member or by
         // another role, and saying "both sides to-many" there names a cause the document does not have.
         if (sister != null && far != null && !model.toManyRole(far, carrier, sister))
-            return sentence + ", en dat veld ontbreekt: " + noReferenceFieldReason(model, far, sister, carrier);
-        return sentence + ", en ook daar leidt het beanmodel er geen af (beide zijden meervoudig)";
+            return new Reason(DroolsCode.SISTER_FIELD_MISSING, sentence + ", en dat veld ontbreekt: "
+                    + noReferenceFieldReason(model, far, sister, carrier).text());
+        return new Reason(DroolsCode.BOTH_SIDES_MULTI_VALUED, sentence + ", en ook daar leidt het beanmodel er geen af (beide zijden meervoudig)");
     }
 
     /**
@@ -563,8 +566,8 @@ public final class FactModelGenerator {
      * ambiguous back-link (a fault of the program, RUNTIME-SEMANTICS ch. 5.5), and the rest is not set.
      */
     public record CreationLink(String fwdRole, boolean fwdMany, String backRole, boolean backMany, String fwdRef,
-                                   String backRef, boolean oneToOne, String refusal, String ambiguous) {
-        static CreationLink refuse(String reason) {
+                                   String backRef, boolean oneToOne, Reason refusal, Reason ambiguous) {
+        static CreationLink refuse(Reason reason) {
             return new CreationLink(null, false, null, false, null, null, false, reason, null);
         }
     }
@@ -594,8 +597,8 @@ public final class FactModelGenerator {
         if (connectingRole != null) {
             Role[] pair = boundRolePair(model, connectingRole);
             if (pair == null)
-                return CreationLink.refuse("de connectingRole-binding '" + connectingRole.factType() + "."
-                        + connectingRole.role() + "' wijst geen rolpaar aan");
+                return CreationLink.refuse(new Reason(DroolsCode.CONNECTING_ROLE_NO_PAIR, "de connectingRole-binding '" + connectingRole.factType() + "."
+                        + connectingRole.role() + "' wijst geen rolpaar aan"));
             fwdRole = pair[0].naam(); fwdMany = pair[0].meervoudig();
             backRole = pair[1].naam(); backMany = pair[1].meervoudig();
         } else {
@@ -613,16 +616,16 @@ public final class FactModelGenerator {
         if (backRef == null && fwdRef == null) {
             if (connectingRole == null && subject != fresh && connectingFactTypes(model, subject, fresh) > 1)
                 return new CreationLink(null, false, null, false, null, null, false, null,
-                        "more than one fact type relates \"" + subject.naam + "\" to \"" + fresh.naam
-                                + "\"; the created object's back-link is ambiguous (ch. 5.5)");
-            return CreationLink.refuse((connectingRole == null && subject == fresh
+                        new Reason(DroolsCode.CREATION_BACKLINK_AMBIGUOUS, "more than one fact type relates \"" + subject.naam + "\" to \"" + fresh.naam
+                                + "\"; the created object's back-link is ambiguous (ch. 5.5)"));
+            return CreationLink.refuse(new Reason(DroolsCode.CREATION_BACKLINK_UNREACHABLE, (connectingRole == null && subject == fresh
                     ? "zelfgetypeerd rollenpaar zonder connectingRole-binding: uit twee gelijkgetypeerde rollen leidt"
                       + " de bean geen referentieveld af en de draad wijst geen rol aan"
                     : connectingRole == null && (backRole == null || fwdRole == null)
                     ? "geen uniek verbindend feittype: de terugkoppeling is niet af te leiden en ch. 5.5 gist niet"
                     : "beide rollen zijn meervoudig ('" + backRole + "' en '" + fwdRole + "'), dus FactModelGenerator"
                       + " leidt aan geen van beide zijden een referentieveld af")
-                    + ", dus het gecreëerde object zou onbereikbaar zijn");
+                    + ", dus het gecreëerde object zou onbereikbaar zijn"));
         }
         // with a binding the cardinality is the bound role's own, without one the by-pair reading; either way a 1:1
         // arm must HAVE the forward field its guard reads

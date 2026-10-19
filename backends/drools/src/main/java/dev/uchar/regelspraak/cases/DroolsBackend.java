@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import dev.uchar.regelspraak.refusal.DroolsCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.cases.CaseRunner.Excluded;
@@ -11,6 +12,7 @@ import dev.uchar.regelspraak.ir.ResolvedStartPointDetermination;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.schema.ContractValidator;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.core.Coverage;
@@ -181,18 +183,18 @@ public final class DroolsBackend {
             //   objecttype) or a to-many reciprocal role: the transpilers navigate by the written role name
             //   toward a getter no bean carries, an unclassified fire-time ERROR (lens 2, 2026-08-30).
             if (selfRole == null)
-                throw new Excluded("wederkerig self-relation (§13.3.9.2) on " + ot.naam + " derives no scalar "
+                throw new Excluded(DroolsCode.SELF_RELATION_NO_FIELD, "wederkerig self-relation (§13.3.9.2) on " + ot.naam + " derives no scalar "
                         + "reference field (an ambiguous or to-many self-pair role) — not carried by the v0 backend");
             if (!FactModelGenerator.hasReferenceField(model, ot, selfRole, ot))
-                throw new Excluded("wederkerig self-pair role '" + selfRole + "' on " + ot.naam + " shares its name "
+                throw new Excluded(DroolsCode.SELF_PAIR_ROLE_SHARED, "wederkerig self-pair role '" + selfRole + "' on " + ot.naam + " shares its name "
                         + "with a declared member — the bean cannot carry the self-typed reference field "
                         + "(name-sharing bean limit)");
         }
 
         Map<String, String> sources = FactModelGenerator.generate(model);
         ClassLoader cl = BeanCompiler.compile(sources);
-        List<String> violations = ContractValidator.validate(model, cl);
-        if (!violations.isEmpty()) throw new Excluded("contract: " + violations.get(0));
+        List<Reason> violations = ContractValidator.validate(model, cl);
+        if (!violations.isEmpty()) throw new Excluded(violations.get(0).code(), "contract: " + violations.get(0).text());
 
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
@@ -216,12 +218,12 @@ public final class DroolsBackend {
      *  the two names apart; only the bean model does not. */
     private static void refuseBeanNameCollision(IrLoader.Loaded loaded) {
         RegelSpraakModel model = loaded.model();
-        String javaClass = FactModelGenerator.classCollision(model);
-        if (javaClass != null) throw new Excluded(javaClass);
+        Reason javaClass = FactModelGenerator.classCollision(model);
+        if (javaClass != null) throw new Excluded(javaClass.code(), javaClass.text());
         List<FactModelGenerator.Displacement> displacements = FactModelGenerator.displacements(model);
         if (displacements.isEmpty()) return;
-        String role = FactModelGenerator.roleCollision(displacements);
-        if (role != null) throw new Excluded(role);
+        Reason role = FactModelGenerator.roleCollision(displacements);
+        if (role != null) throw new Excluded(role.code(), role.text());
         Map<ProducerConsumer.ElementKey, String> use = new java.util.HashMap<>();
         for (ProducerConsumer.Form v : ProducerConsumer.forms(model, loaded.prioritizedDefaults(),
                 ProducerConsumer.wireNavigation(loaded))) {
@@ -239,7 +241,7 @@ public final class DroolsBackend {
             if (h.category() == FactModelGenerator.Origin.Kind.ROL) continue;
             String formName = use.get(ProducerConsumer.ElementKey.van(h.source(), h.naam(),
                     h.category() == FactModelGenerator.Origin.Kind.KENMERK));
-            if (formName != null) throw new Excluded(FactModelGenerator.displacementReason(v) + "; " + formName + " leest of schrijft het");
+            if (formName != null) throw new Excluded(DroolsCode.BEAN_NAME_COLLISION_USE, FactModelGenerator.displacementReason(v).text() + "; " + formName + " leest of schrijft het");
         }
     }
 
@@ -253,7 +255,7 @@ public final class DroolsBackend {
         java.util.Set<String> names = new java.util.HashSet<>();
         for (org.drools.model.Rule r : model.getRules())
             if (r.getName() != null && !names.add(r.getFullName()))
-                throw new Excluded("exec-model: Duplicate rule name: " + r.getName() + " — twee regels van één naam in "
+                throw new Excluded(DroolsCode.DUPLICATE_RULE_NAME, "exec-model: Duplicate rule name: " + r.getName() + " — twee regels van één naam in "
                         + "pakket " + r.getPackage() + "; de KieBase houdt één regel per naam, zodat de tweede de eerste "
                         + "zou vervangen (vormnamen zijn uniek, WF-020)");
     }
@@ -280,12 +282,12 @@ public final class DroolsBackend {
         TmsTranspiler t = TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.roleBindings(),
                 loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings());
         for (Coverage d : t.coverage())
-            if (!d.lowered()) throw new Excluded("transpiler " + d.verdict() + ": " + d.key()
+            if (!d.lowered()) throw new Excluded(d.code(), "transpiler " + d.verdict() + ": " + d.key()
                     + (d.reason().isEmpty() ? "" : " — " + d.reason()));
         // past the manifest every form of the document is one this branch lowers, so the graph over all forms is the
         // graph over the forms it carries
-        String cycle = Cycles.refusal(loaded);
-        if (cycle != null) throw new Excluded(cycle);
+        Reason cycle = Cycles.refusal(loaded);
+        if (cycle != null) throw new Excluded(cycle.code(), cycle.text());
         refuseDuplicateRuleName(t.model());
         return t;
     }
@@ -305,7 +307,7 @@ public final class DroolsBackend {
         try {
             drl = t.drl();
         } catch (TmsTranspiler.DrlRefusal w) {
-            throw new Excluded("drl: " + w.getMessage());
+            throw new Excluded(w.code(), "drl: " + w.getMessage());
         }
         KieHelper helper = new KieHelper();
         helper.setClassLoader(cl);

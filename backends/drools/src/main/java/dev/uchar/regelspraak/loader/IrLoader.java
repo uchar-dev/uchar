@@ -3,6 +3,7 @@ package dev.uchar.regelspraak.loader;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.uchar.regelspraak.ir.Source;
+import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.ExceptionGroup;
@@ -149,11 +150,14 @@ public final class IrLoader {
      *  differential gate can list the golden with a precise, reason-carrying exclusion. */
     public static final class Refusal extends RuntimeException {
         private final String form;
-        public Refusal(String form, String detail) {
+        private final DroolsCode code;
+        public Refusal(DroolsCode code, String form, String detail) {
             super("form not carried by the v0 Drools backend: " + form + (detail == null ? "" : " (" + detail + ")"));
             this.form = form;
+            this.code = code;
         }
         public String form() { return form; }
+        public DroolsCode code() { return code; }
     }
 
     /** A document that is not a well-formed {@code uchar-ir-v1} document, named by the position it sits at. A hard
@@ -301,7 +305,7 @@ public final class IrLoader {
         // another format is a form this backend does not carry, whatever else that document holds; an absent or
         // non-string format is a defect of this one
         String format = textAt(root, "", "format");
-        if (!"uchar-ir-v1".equals(format)) throw new Refusal("format", format);
+        if (!"uchar-ir-v1".equals(format)) throw new Refusal(DroolsCode.DOCUMENT_FORMAT_UNSUPPORTED, "format", format);
         fields(root, "", null, ROOT, List.of("vocabularies"));
         vocabularies(root);
         JsonNode model = section(root, "", "model");
@@ -312,7 +316,7 @@ public final class IrLoader {
         if (model.has("functionDefs")) {
             JsonNode fd = model.get("functionDefs");
             if (!fd.isArray()) throw new DocumentError("/model/functionDefs", "expected an array, got " + shortQuote(fd));
-            throw new Refusal("functionDefs", "unknown model section");
+            throw new Refusal(DroolsCode.MODEL_FUNCTION_DEFS, "functionDefs", "unknown model section");
         }
         fields(rules, "/rules", null, RULES, List.of("prioritizedDefaults"));
 
@@ -666,7 +670,7 @@ public final class IrLoader {
         if (c == null) throw missing(path, fieldName);
         if (!c.isIntegralNumber()) throw new DocumentError(p, "expected an integer, got " + shortQuote(c));
         if (!c.canConvertToInt())
-            throw new Refusal(formName, c + " at '" + p + "' is outside this backend's integer range ["
+            throw new Refusal(DroolsCode.INTEGER_OUTSIDE_RANGE, formName, c + " at '" + p + "' is outside this backend's integer range ["
                     + Integer.MIN_VALUE + ", " + Integer.MAX_VALUE + "]");
         return c.intValue();
     }
@@ -804,9 +808,9 @@ public final class IrLoader {
         String onderwerp = text(n, "subject");
         String characteristic = text(n, "characteristic");
         String attribute = text(n, "attribute");
-        if (onderwerp == null) throw new Refusal("PrioritizedDefaults", "defaults without a subject");
+        if (onderwerp == null) throw new Refusal(DroolsCode.PRIORITIZED_DEFAULTS_WITHOUT_SUBJECT, "PrioritizedDefaults", "defaults without a subject");
         if ((characteristic == null) == (attribute == null))
-            throw new Refusal("PrioritizedDefaults",
+            throw new Refusal(DroolsCode.PRIORITIZED_DEFAULTS_ONE_TARGET, "PrioritizedDefaults",
                     "defaults must carry exactly one of characteristic/attribute");
         List<Default> defaults = new ArrayList<>();
         elements(n, "defaults", r -> defaults.add(dflt(r)));
@@ -901,13 +905,13 @@ public final class IrLoader {
                 final Objecttype ancestor = t;
                 for (String attr : ancestor.attributeTimelineName.keySet())
                     if (m.hasVariableStart(ancestor, attr))
-                        throw new Refusal("Objecttype.supertype",
+                        throw new Refusal(DroolsCode.INHERITED_VARIABLE_START_TIMELINE, "Objecttype.supertype",
                                 "an INHERITED attribute ('" + attr + "') riding a NAMED tijdlijn with a VARIABEL"
                                 + " STARTPUNT (§13.3.6.9/§9.9) on the chain of '" + ot.naam + "': the anchor family"
                                 + " keys on the DECLARED subject name, so a subtype reads such an attribute as"
                                 + " unanchored");
                 if (m.resolvedStartPointDeterminations.stream().anyMatch(sp -> ancestor.naam.equals(sp.objectType())))
-                    throw new Refusal("Objecttype.supertype",
+                    throw new Refusal(DroolsCode.START_POINT_ON_ANCESTOR, "Objecttype.supertype",
                             "a §9.9 startpuntbepaling declared on an ANCESTOR of '" + ot.naam
                             + "': the anchor family keys on the declared subject name, so the §6.8 leeg-fout "
                             + "companion is not emitted for the subtype");
@@ -1289,7 +1293,9 @@ public final class IrLoader {
             case "Enumeration" -> new Datatype.Enumeratie(text(n, "domain"), stringList(n.get("values")));
             // the members of IR-SPEC ch. 2.4's datatype union that have no record here: a form this backend does not
             // carry
-            case "SumType", "ListType", "StructType" -> throw new Refusal("Datatype:" + node, "unknown datatype node");
+            case "ListType" -> throw new Refusal(DroolsCode.DATATYPE_LIST, "Datatype:" + node, "unknown datatype node");
+            case "StructType" -> throw new Refusal(DroolsCode.DATATYPE_STRUCT, "Datatype:" + node, "unknown datatype node");
+            case "SumType" -> throw new Refusal(DroolsCode.DATATYPE_SUM, "Datatype:" + node, "unknown datatype node");
             // any other name is no node of this format, refused at the discriminator in the shared loader's words:
             // Onbekend among them, because the union has no member for an unknown type (a marker leaves its type out
             // and a derived position the producer could not type is null), the four datatype nodes of the L2 shape,
@@ -1566,7 +1572,7 @@ public final class IrLoader {
                     branches.add(new Expr.InstanceSetUnion.Branch(el, rb, condition(nodeField(b, "filter")), source(b)));
                 });
                 if (branches.size() < 2)
-                    throw new Refusal("InstanceSetUnion.branches",
+                    throw new Refusal(DroolsCode.INSTANCE_UNION_ONE_BRANCH, "InstanceSetUnion.branches",
                             "an instance-set union carries at least TWO selections, found " + branches.size()
                                     + " — a single selection IS the ordinary instance count and has a spelling"
                                     + " of its own (WF-110 (b))");
@@ -1574,9 +1580,18 @@ public final class IrLoader {
             }
             // the members of IR-SPEC ch. 4's expression union that have no record here: a form this backend does not
             // carry (the temporal read's keys are checked all the same, see EXPRESSIE)
-            case "TemporalRead", "Construct", "Match", "StructLiteral", "FieldAccess", "ListLiteral", "Lambda",
-                 "Invoke", "Fold", "MapList", "FilterList", "ListLength" ->
-                    throw new Refusal("Expr:" + node, "unknown expression node");
+            case "TemporalRead" -> throw new Refusal(DroolsCode.EXPR_TEMPORAL_READ, "Expr:" + node, "unknown expression node");
+            case "Construct" -> throw new Refusal(DroolsCode.EXPR_CONSTRUCT, "Expr:" + node, "unknown expression node");
+            case "Match" -> throw new Refusal(DroolsCode.EXPR_MATCH, "Expr:" + node, "unknown expression node");
+            case "StructLiteral" -> throw new Refusal(DroolsCode.EXPR_STRUCT_LITERAL, "Expr:" + node, "unknown expression node");
+            case "FieldAccess" -> throw new Refusal(DroolsCode.EXPR_FIELD_ACCESS, "Expr:" + node, "unknown expression node");
+            case "ListLiteral" -> throw new Refusal(DroolsCode.EXPR_LIST_LITERAL, "Expr:" + node, "unknown expression node");
+            case "Lambda" -> throw new Refusal(DroolsCode.EXPR_LAMBDA, "Expr:" + node, "unknown expression node");
+            case "Invoke" -> throw new Refusal(DroolsCode.EXPR_INVOKE, "Expr:" + node, "unknown expression node");
+            case "Fold" -> throw new Refusal(DroolsCode.EXPR_FOLD, "Expr:" + node, "unknown expression node");
+            case "MapList" -> throw new Refusal(DroolsCode.EXPR_MAP_LIST, "Expr:" + node, "unknown expression node");
+            case "FilterList" -> throw new Refusal(DroolsCode.EXPR_FILTER_LIST, "Expr:" + node, "unknown expression node");
+            case "ListLength" -> throw new Refusal(DroolsCode.EXPR_LIST_LENGTH, "Expr:" + node, "unknown expression node");
             // any other name is no node of this format, refused at the discriminator in the shared loader's words: a
             // node of the v0 shape that L4 replaced or L5 renamed, a node of another union, or no node at all
             default -> throw new DocumentError(pathOf(n) + "/node", "unknown expr node \"" + node + "\"");
@@ -1635,7 +1650,7 @@ public final class IrLoader {
             List<RoleBindingRef> path = roleBindingList(n, p, "sourcePath");
             if (!isMemberFoldSource(n)) throw new DocumentError(p + "/sourcePath", SOURCE_PATH_C);
             if (path.size() < 2)
-                throw new Refusal("Aggregation.sourcePath", "a sourcePath carries at least TWO steps, found "
+                throw new Refusal(DroolsCode.AGGREGATE_PATH_ONE_STEP, "Aggregation.sourcePath", "a sourcePath carries at least TWO steps, found "
                         + path.size() + " — the one-step range is spelled sourceRole");
             sourcePaths.put(f, List.copyOf(path));
         }
@@ -1880,7 +1895,7 @@ public final class IrLoader {
      *  child accessor, and a missing {@code type} silently produces a node typed null, which every walk that reads
      *  a datatype then mis-reads. Fail fast, with the form and the field in the message. */
     private static <T> T required(String formName, String fieldName, T value) {
-        if (value == null) throw new Refusal(formName, "malformed node: missing required field '" + fieldName + "'");
+        if (value == null) throw new Refusal(DroolsCode.REQUIRED_FIELD_MISSING, formName, "malformed node: missing required field '" + fieldName + "'");
         return value;
     }
 
@@ -2145,7 +2160,7 @@ public final class IrLoader {
                 rangeFields(n, p);
                 if (n.has("sourcePath")) {
                     roleBindingList(n, p, "sourcePath");   // its shape first: a malformed path is no document
-                    throw new Refusal("Kwantorvouw.bronPad",
+                    throw new Refusal(DroolsCode.QUANTIFIER_MULTI_STEP_RANGE, "Kwantorvouw.bronPad",
                             "a multi-step quantifier range (WF-108 (c)); the accumulate source carries one join role");
                 }
                 // WF-108 (a): all, none and the three COUNTING quantifiers are the admitted forms. The value the
@@ -2164,7 +2179,7 @@ public final class IrLoader {
                 boolean counts = kw == Condition.Quantifier.TEN_MINSTE || kw == Condition.Quantifier.TEN_HOOGSTE
                         || kw == Condition.Quantifier.PRECIES;
                 if (counts != n.has("threshold"))
-                    throw new Refusal("Kwantorvouw.drempel", "a threshold is written exactly under a counting"
+                    throw new Refusal(DroolsCode.QUANTIFIER_THRESHOLD_MISMATCH, "Kwantorvouw.drempel", "a threshold is written exactly under a counting"
                             + " quantifier (WF-108 (e)); this node has quantifier " + wq
                             + (counts ? " and no threshold" : " and one"));
                 // a subselection is written whole or not at all: absent is none, the record's null
@@ -2209,7 +2224,7 @@ public final class IrLoader {
         // ref and the ASP backend refuse it in this sentence, the wire's own spelling of the name included
         JsonNode operand = nodeField(n, "operand");
         if (emptyOrFilled && qualifier != null && operand != null && "ParameterReference".equals(operand.path("node").asText()))
-            throw new Refusal("Predicate.operand", "a whole-period leeg/gevuld test over the parameter '"
+            throw new Refusal(DroolsCode.PERIOD_TEST_ON_PARAMETER, "Predicate.operand", "a whole-period leeg/gevuld test over the parameter '"
                     + operand.path("parameter").asText() + "' is not executed: the fold reads the timeline of an attribute");
         if (emptyOrFilled && negated) {
             category = category == Condition.PredicateKind.LEEG ? Condition.PredicateKind.GEVULD : Condition.PredicateKind.LEEG;
@@ -2367,7 +2382,7 @@ public final class IrLoader {
                      && l.type() instanceof Datatype.BooleanType)) {
             String value = r.value() instanceof Expr.Literal l ? "'" + l.valueText() + "'"
                     : "een " + r.value().getClass().getSimpleName();
-            throw new Refusal("RuleVersion.value", "de kenmerktoekenning '" + r.naam() + "' kent het kenmerk '"
+            throw new Refusal(DroolsCode.CHARACTERISTIC_FALSE_OUTSIDE_DEFAULTS, "RuleVersion.value", "de kenmerktoekenning '" + r.naam() + "' kent het kenmerk '"
                     + target.attribute() + "' " + value + " toe; WF-022 eist de booleaanse constante waar, en een"
                     + " negatief besluit over een kenmerk bestaat alleen in een defaultsgroep");
         }

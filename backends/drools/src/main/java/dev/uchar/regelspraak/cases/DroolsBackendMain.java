@@ -16,7 +16,7 @@ import java.util.List;
  * <pre>
  *   PLAYED &lt;n&gt;              exit 0   loaded, wholly lowered, every case matched the pinned expectations
  *   FAIL &lt;detail&gt;           exit 1   a played case diverged from the pinned expectation (the square broke)
- *   EXCLUDE &lt;reason&gt;        exit 2   a form the v0 backend does not carry (loader refusal / marker / …)
+ *   EXCLUDE DROOLS-###: &lt;reason&gt;  exit 2   (the register code of the refusal, beside its sentence) a form the v0 backend does not carry (loader refusal / marker / …)
  *   ERROR &lt;detail&gt;          exit 3   an unexpected fault
  * </pre>
  */
@@ -47,7 +47,7 @@ public final class DroolsBackendMain {
             CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlText(ir, cases) : CaseRunner.runGolden(ir, cases);
             switch (r.status()) {
                 case "PLAYED" -> { out.println("PLAYED " + r.casesPlayed()); return 0; }
-                case "EXCLUDE" -> { out.println("EXCLUDE " + r.reason()); return 2; }
+                case "EXCLUDE" -> { out.println("EXCLUDE " + r.code().id() + ": " + r.reason()); return 2; }
                 default -> { out.println("FAIL " + String.join(" | ", r.caseFailures())); return 1; }
             }
         } catch (RuntimeException e) {

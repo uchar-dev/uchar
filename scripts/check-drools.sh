@@ -82,6 +82,13 @@ esac
 
 command -v java >/dev/null 2>&1 || fail "java not found (the Drools runtime needs a JDK/JRE 21+)"
 
+# --- the carrier check of the refusal register (card drools-refusal-codes, 2026-10-19) --------------------------
+# Every place where the backend refuses a form or a case carries a code `DROOLS-###` from one register, beside its
+# sentence. The report of a refusal opens with it, `EXCLUDE DROOLS-014: <sentence>`, and EXPECTED_CHANNEL below pins the
+# code of each EXCLUDE golden. The script checks the register in both directions (every code raised, every raised code
+# registered, numbers without a gap, keys unique, every ef a row of ch. 5.7b) and holds a floor on its size.
+bash scripts/check-drools-codes.sh || fail "the register of refusal codes does not hold (scripts/check-drools-codes.sh)"
+
 # --- build + the backend's own JUnit suite, with a NON-ZERO test count (maintainer decision 2026-08-30) ----
 # The gate-10 obligation, mirrored: the witness tests carry what the corpus replay cannot see — the
 # shape a case input became, a write-guard branch no golden exercises — so a suite that ran NOTHING
@@ -248,7 +255,8 @@ known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]:-}"; do [ -n "$e" ] 
 
 # --- the expected-channel floor: which channel each golden BELONGS to (fails in both directions) ----
 # Entry: "<golden-relative-path>|<channel>|<reason it is not PLAYED>", channels:
-#   EXCLUDE  a per-form auto-refusal (channel 1) — the reason below names the form
+#   EXCLUDE DROOLS-###  a per-form auto-refusal (channel 1), pinned by the register code at the head of its report
+#            (`EXCLUDE DROOLS-014: <sentence>`) — the reason below names the form
 #   DIVERGE  a value-divergence (channel 2) — the golden ALSO carries its full reason in EXCLUDE_KNOWN
 #   NOCASE   a golden with no case file — nothing to replay
 #
@@ -276,54 +284,54 @@ known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]:-}"; do [ -n "$e" ] 
 #     never moves (measured 2026-09-06: a renamed player PASSES). That trade is deliberate —
 #     pinning all 109 players by name was weighed and rejected right above.
 EXPECTED_CHANNEL=(
-  "anchor/jutterswet-aanmeldquotum|EXCLUDE|loader Refusal: Expr:TemporalRead — the v0 backend has no temporal-read lowering"
-  "anchor/jutterswet-aanspraaktelling|EXCLUDE|loader Refusal: functionDefs — no function section in the v0 backend"
-  "anchor/jutterswet-beschikkingsom|EXCLUDE|loader Refusal: Datatype:SumType"
-  "anchor/jutterswet-bootberging|EXCLUDE|transpiler SKIP: sourcePath step 1 (Boot -> Vondst) has no bean field: the role 'geborgen vondst' on Boot is to-many, so its storage is the field at the far end, and the bean model derives none there either, both ends being to-many (§13.3.9). The WF-102 path itself is CARRIED since 2026-09-18 (card drools-bronpad); the middle relation 'berging' declares BOTH roles to-many, and lifting that is a bean-model change (a collection-valued representation for many-to-many) with channel consequences of its own. Since card tms-omschakeling (2026-10-10) the exec-model branch is the lowering with truth maintenance and refuses the golden in this sentence, as the destructive lowering did"
-  "anchor/jutterswet-gemeenteberging|EXCLUDE|transpiler SKIP: the path of the fact creation 'berging door de kustgemeente' steps over 'aanmelding', both of whose roles are to-many, and the bean model has no field for that (§13.3.9). Until card tms-omschakeling (2026-10-10) the destructive lowering refused the golden on another form first, the count 'aantal bergende gemeenten van een vondst' over a to-one element role whose sister role is to-many: one bean field carries both directions, a CONSERVATIVE refusal since 2026-09-10 whose old ground (the directed reading) RUNTIME-SEMANTICS ch. 5.7a withdrew"
-  "anchor/jutterswet-penningvintage|EXCLUDE|loader Refusal: Expr:TemporalRead"
-  "anchor/jutterswet-staffelvergoeding|EXCLUDE|loader Refusal: Datatype:ListType"
-  "anchor/jutterswet-toelagegronden|EXCLUDE|bean name collision, refused before either branch lowers the document: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property, Jutter.toelage, which carries the attribute, and a defaults group writes the characteristic (v0 bean-model limit, not a defaults divergence). Until 2026-09-28 the transpiler's defaults fence refused it one phase later, on the same limit"
-  "anchor/jutterswet-vondstdossier|EXCLUDE|loader Refusal: Datatype:StructType"
-  "jutterswet-aanspraakherziening|EXCLUDE|loader Refusal: functionDefs"
-  "jutterswet-dossierrecht-catala|EXCLUDE|loader Refusal: Datatype:StructType"
-  "jutterswet-dossierspelling|EXCLUDE|loader Refusal: Datatype:StructType"
-  "jutterswet-halfstokspelling|EXCLUDE|bean name collision: the characteristic 'half stok' of Sein falls on the bean property Sein.halfStok of the attribute 'half-stok', has no field of its own, and a rule writes it. Measured 2026-09-28 before the refusal: both branches played the golden and answered two wrong values (a rouwmelding of 1 where ref and clingo keep it leeg, and the characteristic read from the registration), so its pins are a ref = clingo pair"
-  "jutterswet-havenrooster|EXCLUDE|transpiler SKIP: a duration in day kinds whose day kind 'havendag' reads the parameter 'openingsdatum' in its definition, which the branch does not read in a day-kind definition (WF-031 admits it). The destructive lowering refused the same rule until card tms-omschakeling (2026-10-10): its day-kind predicate compiler (kern.DayKinds) carries no PARAMETER operand. Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
-  "jutterswet-kamerheffing-catala|EXCLUDE|loader Refusal: functionDefs"
-  "jutterswet-kamerhuishouden-catala|EXCLUDE|loader Refusal: functionDefs"
-  "jutterswet-ketenkwantor|EXCLUDE|loader Refusal: Kwantorvouw.bronPad — the multi-step range of a COUNTING quantifier (WF-108 (c)); the accumulate source carries one join role. Measured 2026-09-22 (card kwantortelling-pad-golden) in both branches, same sentence. What stands behind it is INFERRED, not measured, since nothing past the loader runs while it refuses: the golden's middle relation 'berging' is many-to-many — the shared element it exists for needs a to-many reverse role on the last step — and that is the relation anchor/jutterswet-bootberging and jutterswet-muntketen are refused on one layer deeper, so lifting the loader alone would most likely move this refusal rather than make the golden play. Its flat-count pins are a ref = clingo pair"
-  "jutterswet-kinderdeler|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kinderfoldheffing|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kinderkap|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kinderkwart|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kinderlet|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kindermacht|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-kinderprocent|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-muntketen|EXCLUDE|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (SourcePathChainWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
-  "jutterswet-meldplichtspoor|EXCLUDE|loader Refusal: Datatype:SumType"
-  "jutterswet-meldtermijnen|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-pachtvenster|EXCLUDE|transpiler SKIP: regel 'jaarpacht van een strandpachter' — a period window in the condition of a rule with the temporal target 'jaarpacht': there the window clips the timeline (RUNTIME-SEMANTICS ch. 3.10), and the branch does not carry the form yet, as the DRL-text branch does not. The clip is built in ref and clingo since 2026-09-23 (card tijdvenster-conditie-normeren); the branch refuses the form by name, before the KieBase is built"
-  "jutterswet-penningbeschikking-catala|EXCLUDE|loader Refusal: Datatype:SumType"
-  "jutterswet-penningstaffel-catala|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-postenheffing|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-premiespelling|EXCLUDE|bean name collision: the object types 'RechtOpPremie' and 'Recht op premie' fall on one fact class, dev.uchar.regelspraak.facts.RechtOpPremie. Measured 2026-09-28 before the refusal: both branches crashed compiling the generated beans (cyclic inheritance), so its pins are a ref = clingo pair"
+  "anchor/jutterswet-aanmeldquotum|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead — the v0 backend has no temporal-read lowering"
+  "anchor/jutterswet-aanspraaktelling|EXCLUDE DROOLS-002|loader Refusal: functionDefs — no function section in the v0 backend"
+  "anchor/jutterswet-beschikkingsom|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "anchor/jutterswet-bootberging|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Vondst) has no bean field: the role 'geborgen vondst' on Boot is to-many, so its storage is the field at the far end, and the bean model derives none there either, both ends being to-many (§13.3.9). The WF-102 path itself is CARRIED since 2026-09-18 (card drools-bronpad); the middle relation 'berging' declares BOTH roles to-many, and lifting that is a bean-model change (a collection-valued representation for many-to-many) with channel consequences of its own. Since card tms-omschakeling (2026-10-10) the exec-model branch is the lowering with truth maintenance and refuses the golden in this sentence, as the destructive lowering did"
+  "anchor/jutterswet-gemeenteberging|EXCLUDE DROOLS-161|transpiler SKIP: the path of the fact creation 'berging door de kustgemeente' steps over 'aanmelding', both of whose roles are to-many, and the bean model has no field for that (§13.3.9). Until card tms-omschakeling (2026-10-10) the destructive lowering refused the golden on another form first, the count 'aantal bergende gemeenten van een vondst' over a to-one element role whose sister role is to-many: one bean field carries both directions, a CONSERVATIVE refusal since 2026-09-10 whose old ground (the directed reading) RUNTIME-SEMANTICS ch. 5.7a withdrew"
+  "anchor/jutterswet-penningvintage|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead"
+  "anchor/jutterswet-staffelvergoeding|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "anchor/jutterswet-toelagegronden|EXCLUDE DROOLS-054|bean name collision, refused before either branch lowers the document: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property, Jutter.toelage, which carries the attribute, and a defaults group writes the characteristic (v0 bean-model limit, not a defaults divergence). Until 2026-09-28 the transpiler's defaults fence refused it one phase later, on the same limit"
+  "anchor/jutterswet-vondstdossier|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
+  "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
+  "jutterswet-dossierrecht-catala|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
+  "jutterswet-dossierspelling|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
+  "jutterswet-halfstokspelling|EXCLUDE DROOLS-054|bean name collision: the characteristic 'half stok' of Sein falls on the bean property Sein.halfStok of the attribute 'half-stok', has no field of its own, and a rule writes it. Measured 2026-09-28 before the refusal: both branches played the golden and answered two wrong values (a rouwmelding of 1 where ref and clingo keep it leeg, and the characteristic read from the registration), so its pins are a ref = clingo pair"
+  "jutterswet-havenrooster|EXCLUDE DROOLS-179|transpiler SKIP: a duration in day kinds whose day kind 'havendag' reads the parameter 'openingsdatum' in its definition, which the branch does not read in a day-kind definition (WF-031 admits it). The destructive lowering refused the same rule until card tms-omschakeling (2026-10-10): its day-kind predicate compiler (kern.DayKinds) carries no PARAMETER operand. Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
+  "jutterswet-kamerheffing-catala|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
+  "jutterswet-kamerhuishouden-catala|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
+  "jutterswet-ketenkwantor|EXCLUDE DROOLS-026|loader Refusal: Kwantorvouw.bronPad — the multi-step range of a COUNTING quantifier (WF-108 (c)); the accumulate source carries one join role. Measured 2026-09-22 (card kwantortelling-pad-golden) in both branches, same sentence. What stands behind it is INFERRED, not measured, since nothing past the loader runs while it refuses: the golden's middle relation 'berging' is many-to-many — the shared element it exists for needs a to-many reverse role on the last step — and that is the relation anchor/jutterswet-bootberging and jutterswet-muntketen are refused on one layer deeper, so lifting the loader alone would most likely move this refusal rather than make the golden play. Its flat-count pins are a ref = clingo pair"
+  "jutterswet-kinderdeler|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderfoldheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderkap|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderkwart|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderlet|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-kindermacht|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderprocent|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-muntketen|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (SourcePathChainWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
+  "jutterswet-meldplichtspoor|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "jutterswet-meldtermijnen|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-pachtvenster|EXCLUDE DROOLS-104|transpiler SKIP: regel 'jaarpacht van een strandpachter' — a period window in the condition of a rule with the temporal target 'jaarpacht': there the window clips the timeline (RUNTIME-SEMANTICS ch. 3.10), and the branch does not carry the form yet, as the DRL-text branch does not. The clip is built in ref and clingo since 2026-09-23 (card tijdvenster-conditie-normeren); the branch refuses the form by name, before the KieBase is built"
+  "jutterswet-penningbeschikking-catala|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "jutterswet-penningstaffel-catala|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-postenheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-premiespelling|EXCLUDE DROOLS-070|bean name collision: the object types 'RechtOpPremie' and 'Recht op premie' fall on one fact class, dev.uchar.regelspraak.facts.RechtOpPremie. Measured 2026-09-28 before the refusal: both branches crashed compiling the generated beans (cyclic inheritance), so its pins are a ref = clingo pair"
   "jutterswet-seizoenvondst|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-seizoenvouw|NOCASE|a golden with no case file — nothing to replay"
-  "jutterswet-vaarwaterspelling|EXCLUDE|loader Refusal: Expr:Match"
-  "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
-  "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-vaarwaterspelling|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
+  "jutterswet-vaarwatertoeslag-catala|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
+  "jutterswet-vangstwaardering|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file — nothing to replay"
-  "jutterswet-waarderingsinvoer|EXCLUDE|loader Refusal: Datatype:StructType"
-  "synth3-armlichaam|EXCLUDE|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
-  "synth3-besluitschakel|EXCLUDE|loader Refusal: Datatype:SumType"
-  "synth3-keuringtal|EXCLUDE|loader Refusal: Datatype:ListType"
-  "synth3-letbeslag|EXCLUDE|loader Refusal: Datatype:SumType"
-  "synth3-metingtal|EXCLUDE|loader Refusal: Datatype:ListType"
-  "synth3-nestwaarde|EXCLUDE|loader Refusal: Datatype:StructType"
-  "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
-  "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
-  "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-waarderingsinvoer|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
+  "synth3-armlichaam|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
+  "synth3-besluitschakel|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "synth3-keuringtal|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "synth3-letbeslag|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "synth3-metingtal|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "synth3-nestwaarde|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
+  "synth3-standtarief|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "synth3-vangstsom|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "synth3-vondststaat|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
 )
 # The count that closes the one direction a played-by-default list cannot see. It moves ONLY with a
 # corpus change, and it moves TOGETHER with the list: a golden that starts playing leaves the list
@@ -1382,6 +1390,13 @@ check_channel_list() {   # <list name> <legal channels> <entry>...
     # strictly weaker than the one it replaces is not a guard, it is a regression with a green light.
     ok=0
     for k in $allowed; do [ "$ch" = "$k" ] && ok=1; done
+    # an EXCLUDE pin names the register code of the refusal beside the channel (`EXCLUDE DROOLS-014`): the gate
+    # compares the code of the status line, not only the channel, so a refusal that moves to another code, or a
+    # report without one, is a difference by golden name
+    case "$ch" in
+      "EXCLUDE DROOLS-"[0-9][0-9][0-9]) ok=1 ;;
+      "EXCLUDE"*) ok=0 ;;
+    esac
     [ $ok -eq 1 ] || fail "malformed channel pin: '$n' is pinned '$ch' in $element_list — the list holds only NON-players ($allowed); PLAYED is the default, so pinning it exempts the golden from the floor instead of fixing it"
     if [ -z "$why" ] || [ "$why" = "$rest" ]; then
       fail "channel pin without a reason: '$n' in $element_list — every entry is '<golden>|<channel>|<why it is not PLAYED>'"
@@ -1431,7 +1446,10 @@ while IFS= read -r ir; do
       if known_reason "$name" >/dev/null; then
         fail "double-listed: '$name' auto-excludes per form AND sits in EXCLUDE_KNOWN — drop the static entry"
       fi
-      auto_excl=$((auto_excl + 1)); SEEN+=("$name|EXCLUDE"); SEEN_LINE+=("$name|$out"); AUTO_REASONS+=("${out#EXCLUDE }") ;;
+      # the code at the head of the report, `EXCLUDE DROOLS-014: <sentence>`, is part of the channel the pin names
+      code=$(printf '%s\n' "$out" | sed -n 's/^EXCLUDE \(DROOLS-[0-9][0-9][0-9]\): .*/\1/p')
+      [ -n "$code" ] || { FAILED+=("$name :: $out  (an EXCLUDE report without a register code at its head)"); continue; }
+      auto_excl=$((auto_excl + 1)); SEEN+=("$name|EXCLUDE $code"); SEEN_LINE+=("$name|$out"); AUTO_REASONS+=("${out#EXCLUDE }") ;;
     FAIL)
       # A value-divergence is a VALUE difference (FAIL: verwacht X, werkelijk Y) — the exec-model genuinely
       # differs from ref/clingo. It must be listed with a reason; an unlisted FAIL breaks the square.

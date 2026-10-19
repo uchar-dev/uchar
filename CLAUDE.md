@@ -241,7 +241,10 @@ reviewer's duty on a machine that has catala. Current gates:
    — the runners print `CODE`/`CODE-PINNED`, Drools heads its status line with it — unless the executor stands in
    the script's reason-carrying divergence list (category REFUSAL or LIMIT, stale both ways); the gate parses the
    ch. 5.7b table strictly, holds every witness to its row's code and every pinned code to a row; floors
-   `EXPECTED_MIN_RED_CODES=93` and `EXPECTED_MIN_EF_CODES=24` (measured 2026-10-18).
+   `EXPECTED_MIN_RED_CODES=93` and `EXPECTED_MIN_EF_CODES=24` (measured 2026-10-18). An `EXCLUDE` entry of the Drools list pins the
+   register code of the refusal (`name|EXCLUDE DROOLS-###  <reason>`) and the leg compares it with the head of the
+   status line, failing by case name with both codes; a `NOFAULT` entry carries none (card `drools-refusal-codes`,
+   floor `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=19`).
 
 9. `scripts/check-catala.sh` — the Catala frontend builds and its
    full test suite passes (E2E through verifier, ref and clingo plus
@@ -326,7 +329,18 @@ reviewer's duty on a machine that has catala. Current gates:
     grouped, in the gate report, and a reason-carrying value-divergence
     list IN THE SCRIPT (the check-noop survivor pattern) names each
     golden whose fired outcome differs from ref/clingo and FAILS WHEN
-    STALE. Since 2026-09-06 an expected-channel floor IN THE SCRIPT pins
+    STALE. Since the card `drools-refusal-codes` (2026-10-19) every such
+    refusal carries a code `DROOLS-###` from one register
+    (`backends/drools/.../refusal/DroolsCode.java`), beside its sentence
+    and at the head of its report (`EXCLUDE DROOLS-014: <sentence>`); the
+    gate compares the code, not only the channel: each of the 45 `EXCLUDE`
+    pins of `EXPECTED_CHANNEL` names its code, and a changed or missing
+    code fails by golden name with both codes.
+    `scripts/check-drools-codes.sh`, called first, holds the register to
+    the sources in both directions (every code raised, every raised code
+    registered, numbers without gap, keys unique, every `ef` a row of
+    RUNTIME-SEMANTICS ch. 5.7b) and carries
+    `EXPECTED_MIN_DROOLS_CODES=289`. Since 2026-09-06 an expected-channel floor IN THE SCRIPT pins
     the played channel itself: every NON-played golden is listed by name
     with its reason (played is the default), so a golden that SHIFTS
     CHANNEL and loses its PLAYED status fails the gate by name instead of

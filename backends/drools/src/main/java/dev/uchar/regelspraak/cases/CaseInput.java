@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import dev.uchar.regelspraak.refusal.DroolsCode;
 
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
@@ -111,8 +112,8 @@ public final class CaseInput {
     public static final class RoleRefusal extends CaseRunner.Excluded implements RoleError {
         private final String label, role, target;
 
-        RoleRefusal(String sentence, RoleLink link) {
-            super(sentence);
+        RoleRefusal(DroolsCode code, String sentence, RoleLink link) {
+            super(code, sentence);
             this.label = link.label();
             this.role = link.role();
             this.target = link.target();
@@ -228,7 +229,7 @@ public final class CaseInput {
         if (bean != null) return bean;
         String otName = i.get("objectType").asText();
         Objecttype ot = model.objectTypeByName(otName);
-        if (ot == null) throw new CaseRunner.Excluded("case names an unknown objectType: " + otName);
+        if (ot == null) throw new CaseRunner.Excluded(DroolsCode.CASE_UNKNOWN_OBJECT_TYPE, "case names an unknown objectType: " + otName);
         try {
             bean = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.naam, true), true, cl)
                     .getConstructor().newInstance();
@@ -246,10 +247,10 @@ public final class CaseInput {
         JsonNode attrs = i.get("attributes");
         if (attrs != null) for (Map.Entry<String, JsonNode> e : attrs.properties()) {
             Datatype dt = ot.attribute(e.getKey());
-            if (dt == null) throw new CaseRunner.Excluded("case sets undeclared attribute '" + e.getKey() + "' on " + ot.naam);
+            if (dt == null) throw new CaseRunner.Excluded(DroolsCode.CASE_UNDECLARED_ATTRIBUTE, "case sets undeclared attribute '" + e.getKey() + "' on " + ot.naam);
             reader.ownField(ot, e.getKey(), false, "zet");
             if (reader.dimensioned(ot, e.getKey()))
-                throw new CaseRunner.Excluded("dimensioned attribute input '" + e.getKey() + "' (§3.6, a Map bean member) "
+                throw new CaseRunner.Excluded(DroolsCode.DIMENSIONED_ATTRIBUTE_INPUT, "dimensioned attribute input '" + e.getKey() + "' (§3.6, a Map bean member) "
                         + "is not carried by the v0 backend");
             if (reader.temporal(ot, e.getKey())) {
                 // the bean member was generated from the DECLARATION, so a case key spelled otherwise must be
@@ -306,7 +307,7 @@ public final class CaseInput {
                 RoleLink link = new RoleLink(i.get("label").asText(), e.getKey(), labelNode.asText());
                 Object target = labelToBean.get(labelNode.asText());
                 if (target == null)
-                    throw new RoleRefusal("role '" + e.getKey() + "' names unknown label " + labelNode.asText(), link);
+                    throw new RoleRefusal(DroolsCode.ROLE_UNKNOWN_LABEL, "role '" + e.getKey() + "' names unknown label " + labelNode.asText(), link);
                 Objecttype tL = beanObjectType(target);
                 // §13.4.1 the WRITTEN role IS the navigation — and wherever the type pair carries more than
                 // one role it is the ONLY route: the by-pair search below counts every candidate and derives
@@ -371,7 +372,7 @@ public final class CaseInput {
                         // 2026-08-30): the erflijn shape resolves `erfvolger` by name PERFECTLY, and what stops it
                         // is its CARDINALITY — a to-many role's storage is the far end's field — where the old
                         // single sentence blamed a non-unique derivation that had in fact succeeded.
-                        throw new RoleRefusal("role '" + e.getKey() + "' (" + tI.naam + " -> " + tL.naam + ") reaches no "
+                        throw new RoleRefusal(DroolsCode.CASE_ROLE_NO_FIELD, "role '" + e.getKey() + "' (" + tI.naam + " -> " + tL.naam + ") reaches no "
                                 + "to-one reference field: " + (viaName == null
                                     ? "the written role name resolves to no unique role"
                                     : model.toManyRole(tI, tL, viaName)
@@ -454,7 +455,7 @@ public final class CaseInput {
         else if (!houder.equals(FactModelGenerator.roleOrigin(model, carrier, target, role)))
             cause = "whose field " + field + " another role already holds, " + described(houder);
         else cause = "whose field " + field + " cannot hold a " + target.naam;
-        throw new RoleRefusal("role '" + link.role() + "' resolves to the to-one role '" + role + "' on " + carrier.naam
+        throw new RoleRefusal(DroolsCode.NAME_SHARING_ONE_ROLE, "role '" + link.role() + "' resolves to the to-one role '" + role + "' on " + carrier.naam
                 + ", " + cause + " — the bean cannot carry the reference field "
                 + "(name-sharing bean limit: attribute > characteristic > reference)", link);
     }
@@ -583,7 +584,7 @@ public final class CaseInput {
         if (w == null || w.isNull()) return null;   // an absent value is an absent timeline (leeg, ch. 3.1)
         if (w.has("timeline")) return reader.timelineSegments(w.get("timeline"), attr, site, gran, false);
         if (evaluationDate == null)
-            throw new CaseRunner.Excluded("scalar input on temporal attribute '" + attr + "' without an asOfDate: the "
+            throw new CaseRunner.Excluded(DroolsCode.SCALAR_TEMPORAL_NO_DATE, "scalar input on temporal attribute '" + attr + "' without an asOfDate: the "
                     + "bucket convention (corpus/golden/README.md) has no evaluation date to place it in");
         LocalDate[] bucket = CaseRunner.bucket(gran, evaluationDate);
         return List.of(reader.segment(bucket[0], bucket[1], reader.segmentValue(w, attr)));

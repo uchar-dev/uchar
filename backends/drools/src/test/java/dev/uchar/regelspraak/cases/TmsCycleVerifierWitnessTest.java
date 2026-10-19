@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.cases;
 
+import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.transpiler.tms.Cycles;
 
@@ -53,7 +54,7 @@ class TmsCycleVerifierWitnessTest {
                 continue;
             }
             loaded++;
-            String w = Cycles.refusal(l);
+            Reason w = Cycles.refusal(l);
             if (w != null) refused.add(CORPUS.relativize(ir.getParent()) + ": " + w);
         }
         assertEquals(List.of(), refused);

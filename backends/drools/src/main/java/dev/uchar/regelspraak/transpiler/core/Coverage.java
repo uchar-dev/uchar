@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.transpiler.core;
 
 import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.refusal.DroolsCode;
 
 /**
  * One entry in a back-end's coverage manifest: for one named construct, did the back-end lower it
@@ -14,20 +15,20 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
  * construct regressed) and the silent marker (a semantically inert rule with no diagnostic). Every
  * non-LOWERED verdict therefore also surfaces as a deduplicated WARNING via {@link #report}.
  */
-public record Coverage(String category, String naam, Verdict verdict, String reason, String spec) {
+public record Coverage(String category, String naam, Verdict verdict, String reason, String spec, DroolsCode code) {
 
     public enum Verdict { LOWERED, MARKER, SKIP }
 
     public static Coverage lowered(String category, String naam) {
-        return new Coverage(category, naam, Verdict.LOWERED, "", "");
+        return new Coverage(category, naam, Verdict.LOWERED, "", "", null);
     }
 
     public static Coverage marker(String category, String naam, String reason) {
-        return new Coverage(category, naam, Verdict.MARKER, reason, specOut(reason));
+        return new Coverage(category, naam, Verdict.MARKER, reason, specOut(reason), null);
     }
 
-    public static Coverage skip(String category, String naam, String reason) {
-        return new Coverage(category, naam, Verdict.SKIP, reason, specOut(reason));
+    public static Coverage skip(DroolsCode code, String category, String naam, String reason) {
+        return new Coverage(category, naam, Verdict.SKIP, reason, specOut(reason), code);
     }
 
     /** The construct's identity across back-ends — soort plus its RegelSpraak name. */

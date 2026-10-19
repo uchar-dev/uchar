@@ -16,7 +16,7 @@ import java.nio.file.Path;
  *                              cap without a fixpoint; the gate matches the pinned fragment, which cites this
  *                              backend's own sentence and never platform text
  *   NOFAULT &lt;detail&gt;  exit 1   the case ran to a model — the backend does not enforce this red-path constraint
- *   EXCLUDE &lt;reason&gt;  exit 2   a form the v0 backend does not carry: a loader refusal, or an Excluded from the
+ *   EXCLUDE DROOLS-###: &lt;reason&gt;  exit 2   (the register code of the refusal, beside its sentence) a form the v0 backend does not carry: a loader refusal, or an Excluded from the
  *                              build (a transpiler marker) or from the case reader (an input it declines)
  *   ERROR &lt;detail&gt;    exit 3   bad invocation, I/O, or an exception while the IR is loaded and the KieBase
  *                              built — a crash AFTER the build is a FAULT, not an ERROR
@@ -43,7 +43,7 @@ public final class DroolsRedMain {
                     System.out.println("FAULT " + (r.code() == null ? "" : r.code() + ": ") + r.detail());
                     System.exit(0);
                 }
-                case "EXCLUDE" -> { System.out.println("EXCLUDE " + r.detail()); System.exit(2); }
+                case "EXCLUDE" -> { System.out.println("EXCLUDE " + r.droolsCode().id() + ": " + r.detail()); System.exit(2); }
                 default -> { System.out.println("NOFAULT " + r.detail()); System.exit(1); }
             }
         } catch (RuntimeException e) {

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.engine.ScenarioResult;
+import dev.uchar.regelspraak.refusal.DroolsCode;
+import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.core.FixedStartPoint;
 import dev.uchar.regelspraak.model.Datatype;
@@ -63,14 +65,22 @@ public final class CaseRunner {
      *  {@link CaseInput.RoleRefusal} is one and names the role link it refuses; with the constructor package-private,
      *  no class outside this package extends it. */
     public static class Excluded extends RuntimeException {
-        Excluded(String reason) { super(reason); }
+        private final DroolsCode code;
+        Excluded(DroolsCode code, String reason) {
+            super(reason);
+            this.code = code;
+        }
+        /** The register code of the refusal, rendered at the head of the report beside the sentence. */
+        public DroolsCode code() { return code; }
     }
 
     /** The outcome of one golden: PLAYED (with a per-case pass/fail list) or EXCLUDED (with a reason). */
-    public record Result(String status, String reason, List<String> caseFailures, int casesPlayed) {
-        public static Result excluded(String reason) { return new Result("EXCLUDE", reason, List.of(), 0); }
+    public record Result(String status, String reason, DroolsCode code, List<String> caseFailures, int casesPlayed) {
+        public static Result excluded(DroolsCode code, String reason) {
+            return new Result("EXCLUDE", reason, code, List.of(), 0);
+        }
         public static Result played(int n, List<String> failures) {
-            return new Result(failures.isEmpty() ? "PLAYED" : "FAIL", "", failures, n);
+            return new Result(failures.isEmpty() ? "PLAYED" : "FAIL", "", null, failures, n);
         }
     }
 
@@ -109,8 +119,8 @@ public final class CaseRunner {
     /** Refuses a case that sets or reads ({@code action}) the attribute or, with {@code kenmerk}, the
      *  characteristic {@code naam} of an instance of {@code ot} when that member has no bean field of its own. */
     void ownField(Objecttype ot, String naam, boolean characteristic, String action) {
-        String cause = ot == null ? null : FactModelGenerator.displacedMember(displacements, ot, naam, characteristic);
-        if (cause != null) throw new Excluded(cause + "; de case " + action + " het");
+        Reason cause = ot == null ? null : FactModelGenerator.displacedMember(displacements, ot, naam, characteristic);
+        if (cause != null) throw new Excluded(cause.code(), cause.text() + "; de case " + action + " het");
     }
 
     /** Load {@code irPath}, build the KieBase, and replay each of {@code casePaths}. Any {@link Excluded}
@@ -155,9 +165,9 @@ public final class CaseRunner {
             }
             return Result.played(played, failures);
         } catch (Excluded e) {
-            return Result.excluded(e.getMessage());
+            return Result.excluded(e.code(), e.getMessage());
         } catch (IrLoader.Refusal e) {
-            return Result.excluded("loader: " + e.getMessage());
+            return Result.excluded(e.code(), "loader: " + e.getMessage());
         } catch (java.io.IOException e) {
             throw new RuntimeException("could not read " + irPath + ": " + e.getMessage(), e);
         }
@@ -380,7 +390,7 @@ public final class CaseRunner {
      *  Drools-carried). {@code code} is the EF code of a FAULT's kind (RUNTIME-SEMANTICS ch. 5.7b), several
      *  comma-separated in the order of the report, beside the text and never inside it; null where the fault names no
      *  kind and for every other status. */
-    public record RedResult(String status, String detail, String code) {}
+    public record RedResult(String status, String detail, String code, DroolsCode droolsCode) {}
 
     /** Replay a single {@code corpus/rood} case and report what the backend observes. The split is by exception
      *  TYPE, not by phase. A loader refusal, or an {@link Excluded} from the build or from a case-input form, is an
@@ -410,9 +420,9 @@ public final class CaseRunner {
         try {
             runner = build(irPath, branch);
         } catch (Excluded e) {
-            return new RedResult("EXCLUDE", e.getMessage(), null);
+            return new RedResult("EXCLUDE", e.getMessage(), null, e.code());
         } catch (IrLoader.Refusal e) {
-            return new RedResult("EXCLUDE", "loader: " + e.getMessage(), null);
+            return new RedResult("EXCLUDE", "loader: " + e.getMessage(), null, e.code());
         } catch (java.io.IOException e) {
             throw new RuntimeException("could not read " + irPath + ": " + e.getMessage(), e);
         }
@@ -420,16 +430,16 @@ public final class CaseRunner {
             JsonNode c = JSON.readTree(Files.readString(casePath));
             DroolsBackend.Firing firing = runner.fireRed(c);
             return firing.noFixpoint() == null
-                    ? new RedResult("NOFAULT", "ran to a model without faulting", null)
-                    : new RedResult("FAULT", firing.noFixpoint(), firing.code());
+                    ? new RedResult("NOFAULT", "ran to a model without faulting", null, null)
+                    : new RedResult("FAULT", firing.noFixpoint(), firing.code(), null);
         } catch (Excluded e) {
-            return new RedResult("EXCLUDE", e.getMessage(), null);
+            return new RedResult("EXCLUDE", e.getMessage(), null, e.code());
         } catch (java.io.IOException e) {
             throw new RuntimeException("could not read " + casePath + ": " + e.getMessage(), e);
         } catch (RuntimeException e) {
             // a fault raised while loading inputs or firing rules — a division by zero surfaces here, wrapped by
             // Drools; the whole cause chain is the report so the pinned fragment can match the deepest message.
-            return new RedResult("FAULT", faultText(e), faultCode(e));
+            return new RedResult("FAULT", faultText(e), faultCode(e), null);
         }
     }
 
@@ -620,7 +630,7 @@ public final class CaseRunner {
         JsonNode params = c.get("input").get("parameters");
         if (params != null) for (Map.Entry<String, JsonNode> e : params.properties()) {
             if (e.getValue().has("timeline"))
-                throw new Excluded("granular (timeline) parameter '" + e.getKey() + "' is not carried by the v0 backend");
+                throw new Excluded(DroolsCode.GRANULAR_PARAMETER_TIMELINE, "granular (timeline) parameter '" + e.getKey() + "' is not carried by the v0 backend");
             setGlobalSafe(session, Namen.ident(e.getKey(), false), valueToArg(e.getValue(), e.getKey()));
         }
         if (evaluationDate != null) setGlobalSafe(session, "rekendatum", evaluationDate);
@@ -657,12 +667,12 @@ public final class CaseRunner {
         if (segs.isEmpty() && !emptyAllowed)
             throw new IllegalArgumentException("tijdlijnwaarde op '" + field + "' draagt geen enkel segment");
         if (gran.count() != 1)
-            throw new Excluded(site + ": the declared grid is " + gran.count() + " " + spelling(gran.gran())
+            throw new Excluded(DroolsCode.TIMELINE_MULTI_PERIOD_GRID, site + ": the declared grid is " + gran.count() + " " + spelling(gran.gran())
                     + " units, a multi-period grid, which carries no operation, a case input included"
                     + " (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the"
                     + " case");
         if (gran.variable())
-            throw new Excluded(site + ": the declared grid is laid per object from the anchor of a variable start,"
+            throw new Excluded(DroolsCode.TIMELINE_VARIABLE_START_GRID, site + ": the declared grid is laid per object from the anchor of a variable start,"
                     + " which this loader does not read (RUNTIME-SEMANTICS ch. 3.2): refused as a v0 limit, not as a"
                     + " defect of the case");
         List<Object> out = new ArrayList<>();
@@ -702,10 +712,10 @@ public final class CaseRunner {
      *  {@link #timelineSegments} refuses the same grids first, in the sentence of ref's case loader. */
     static LocalDate[] bucket(Grid r, LocalDate d) {
         if (r.count() != 1)
-            throw new Excluded("a multi-period grid (" + r.count() + " " + spelling(r.gran()) + " periods) carries"
+            throw new Excluded(DroolsCode.BUCKET_MULTI_PERIOD_GRID, "a multi-period grid (" + r.count() + " " + spelling(r.gran()) + " periods) carries"
                     + " no operation (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12)");
         if (r.variable())
-            throw new Excluded("a variable-start grid is laid per object from the anchor its start-point"
+            throw new Excluded(DroolsCode.BUCKET_VARIABLE_START_GRID, "a variable-start grid is laid per object from the anchor its start-point"
                     + " determination binds, which this interpreter does not execute (ch. 3.2)");
         if (r.fixed() != null) return FixedStartPoint.periode(r.gran(), r.fixed(), d);
         switch (r.gran()) {
@@ -715,7 +725,7 @@ public final class CaseRunner {
                 LocalDate van = d.withDayOfMonth(1);
                 return new LocalDate[]{ van, van.plusMonths(1) };
             default:
-                throw new Excluded("bucketing is defined for month and year only (ch. 3.2)");
+                throw new Excluded(DroolsCode.BUCKET_GRANULARITY_UNSUPPORTED, "bucketing is defined for month and year only (ch. 3.2)");
         }
     }
 
@@ -725,11 +735,11 @@ public final class CaseRunner {
     private static void calendarGridForInput(Granulariteit gran, String site) {
         switch (gran) {
             case JAAR, MAAND -> { }
-            case DAG -> throw new Excluded(site + ": the declared grid is day, which every day boundary sits on, yet"
+            case DAG -> throw new Excluded(DroolsCode.DAY_GRID_CALENDAR_BUCKETING, site + ": the declared grid is day, which every day boundary sits on, yet"
                     + " this loader checks a timeline's grid through the calendar bucketing and v0 defines buckets"
                     + " for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit,"
                     + " not as a defect of the case");
-            default -> throw new Excluded(site + ": the declared grid is " + spelling(gran) + ", and v0 defines"
+            default -> throw new Excluded(DroolsCode.CALENDAR_GRID_UNSUPPORTED, site + ": the declared grid is " + spelling(gran) + ", and v0 defines"
                     + " calendar buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so"
                     + " this loader has no " + spelling(gran) + " grid to check the segment boundaries against:"
                     + " refused as a v0 limit, not as a defect of the case");
@@ -746,7 +756,7 @@ public final class CaseRunner {
     BigDecimal segmentValue(JsonNode w, String field) {
         Object v = valueToArg(w, field);
         if (v == null || v instanceof BigDecimal) return (BigDecimal) v;
-        throw new Excluded("non-numeric timeline value on '" + field + "' is not carried by the v0 backend — "
+        throw new Excluded(DroolsCode.TIMELINE_VALUE_NON_NUMERIC, "non-numeric timeline value on '" + field + "' is not carried by the v0 backend — "
                 + "the generated Segment holds a BigDecimal waarde");
     }
 
@@ -817,7 +827,7 @@ public final class CaseRunner {
             case "consistent" -> consistency(session, false, v);
             case "inconsistent" -> consistency(session, true, v);
             case "attributeTimeline" -> timeline(v);
-            default -> throw new Excluded("unknown expectation kind: " + kind);
+            default -> throw new Excluded(DroolsCode.EXPECTATION_KIND_UNKNOWN, "unknown expectation kind: " + kind);
         };
     }
 
@@ -827,12 +837,12 @@ public final class CaseRunner {
         Objecttype ot = typeOfLabel(v, label);
         ownField(ot, attr, false, "leest");
         if (dimensioned(ot, attr))
-            throw new Excluded("dimensioned attribute read-back '" + attr + "' (§3.6, a Map bean member) "
+            throw new Excluded(DroolsCode.DIMENSIONED_ATTRIBUTE_READBACK, "dimensioned attribute read-back '" + attr + "' (§3.6, a Map bean member) "
                     + "is not carried by the v0 backend");
         // a temporal attribute's bean member is the List<Segment> timeline itself: the scalar comparison below
         // would compare a list against a scalar. Its read-back form is the attributeTimeline expectation.
         if (temporal(ot, attr))
-            throw new Excluded("scalar read-back of temporal attribute '" + attr + "' is not carried by the v0 "
+            throw new Excluded(DroolsCode.SCALAR_READBACK_TEMPORAL_ATTRIBUTE, "scalar read-back of temporal attribute '" + attr + "' is not carried by the v0 "
                     + "backend — the bean holds a List<Segment>; use an attributeTimeline expectation");
         Object actual = invokeGetter(labelToBean.get(label), Namen.getter(attributeName(ot, attr)));
         if (emptyExpected)
@@ -1068,7 +1078,7 @@ public final class CaseRunner {
         if (w == null || w.isNull()) return null;
         if (w.has("number")) {
             String s = w.get("number").asText();
-            if (s.contains("/")) throw new Excluded("rational value on '" + field + "' is not carried by the v0 backend");
+            if (s.contains("/")) throw new Excluded(DroolsCode.RATIONAL_VALUE, "rational value on '" + field + "' is not carried by the v0 backend");
             return new BigDecimal(s);
         }
         if (w.has("date")) return caseWireDate(w.get("date").asText(), field);
@@ -1076,8 +1086,8 @@ public final class CaseRunner {
         if (w.has("boolean")) return w.get("boolean").asBoolean();
         if (w.has("text")) return w.get("text").asText();
         if (w.has("enumeration")) return w.get("enumeration").asText();
-        if (w.has("timeline")) throw new Excluded("timeline value on '" + field + "' is not carried by the v0 backend");
-        throw new Excluded("value form on '" + field + "' is not carried by the v0 backend: " + w);
+        if (w.has("timeline")) throw new Excluded(DroolsCode.TIMELINE_VALUE_SCALAR_POSITION, "timeline value on '" + field + "' is not carried by the v0 backend");
+        throw new Excluded(DroolsCode.VALUE_FORM_NOT_CARRIED, "value form on '" + field + "' is not carried by the v0 backend: " + w);
     }
 
     /* The uchar-case-v0 {@code date} lexeme, matched WHOLE: four-two-two digit fields, digits only, no sign

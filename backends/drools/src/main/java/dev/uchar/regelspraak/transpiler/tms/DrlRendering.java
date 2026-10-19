@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.ir.Validity;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
@@ -97,11 +98,15 @@ final class DrlRendering {
      *  compile until the rendering spells it ({@link Rule#consequence}). */
     static final class Refusal extends RuntimeException {
         private final String category;
+        private final DroolsCode code;
 
-        Refusal(String category) {
+        Refusal(DroolsCode code, String category) {
             super("de DRL-weergave draagt " + category + " nog niet");
             this.category = category;
+            this.code = code;
         }
+
+        DroolsCode code() { return code; }
 
         /** The kind refused, such as the simple name of a consequence. */
         String category() { return category; }
@@ -258,7 +263,7 @@ final class DrlRendering {
             return new Expr("java.time.LocalDateTime.parse(" + str(d.toString()) + ")", LocalDateTime.class);
         if (w instanceof Enum<?> e) return new Expr(enumlabel(e), e.getDeclaringClass());
         if (w instanceof Class<?> k) {
-            if (isBean(k)) throw new Refusal("een beanklasse als constante van een term");
+            if (isBean(k)) throw new Refusal(DroolsCode.DRL_BEAN_CLASS_CONSTANT, "een beanklasse als constante van een term");
             return new Expr(typeName(k) + ".class", Class.class);
         }
         if (w instanceof List<?> l) {
@@ -297,7 +302,7 @@ final class DrlRendering {
         String naam = d.naam();
         String global = "rsDagsoort_" + Namen.ident(naam, true);
         if (!global.codePoints().allMatch(Character::isJavaIdentifierPart))
-            throw new Refusal("de dagsoort '" + naam + "', waarvan de global geen Java-identifier is");
+            throw new Refusal(DroolsCode.DAY_KIND_GLOBAL_INVALID, "de dagsoort '" + naam + "', waarvan de global geen Java-identifier is");
         Term.DayKind earlier = dayKinds.putIfAbsent(global, d);
         if (earlier != null && !earlier.naam().equals(naam))
             throw new IllegalStateException("de dagsoorten '" + earlier.naam() + "' en '" + naam + "' delen de global "
@@ -540,7 +545,7 @@ final class DrlRendering {
         private String fieldName(Class<?> javaClass, String property, String naam) {
             if (!isBean(javaClass)) return property;
             String drl = Namen.lidnamen(property).drlProperty();
-            if (drl == null) throw new Refusal("het lid " + str(naam));
+            if (drl == null) throw new Refusal(DroolsCode.DRL_MEMBER_NO_PROPERTY, "het lid " + str(naam));
             return drl;
         }
 

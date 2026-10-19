@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.cases;
 
+import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.transpiler.tms.Cycles;
 
@@ -135,7 +136,8 @@ class TmsCycleWitnessTest {
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
                 + "\"dayKinds\":[]}";
         Path ir = TmsDocuments.document(model, rules);
-        return Cycles.refusal(IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(ir))));
+        Reason refusal = Cycles.refusal(IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(ir))));
+        return refusal == null ? null : refusal.text();
     }
 
     private static final String TWO = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";

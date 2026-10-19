@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.loader;
 
+import dev.uchar.regelspraak.refusal.Reason;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.engine.BeanCompiler;
@@ -63,7 +64,7 @@ class RoundTripWitnessTest {
         // the truth-maintenance back-end wholly lowers it (no marker/skip) — loader(emit(model)) round-trips.
         Map<String, String> sources = FactModelGenerator.generate(model);
         ClassLoader cl = BeanCompiler.compile(sources);
-        List<String> violations = ContractValidator.validate(model, cl);
+        List<Reason> violations = ContractValidator.validate(model, cl);
         assertTrue(violations.isEmpty(), golden + ": bean contract holds — " + violations);
 
         ClassLoader previous = Thread.currentThread().getContextClassLoader();

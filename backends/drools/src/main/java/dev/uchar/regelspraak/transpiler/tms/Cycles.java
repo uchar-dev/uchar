@@ -1,6 +1,8 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.graph.ProducerConsumer;
+import dev.uchar.regelspraak.refusal.DroolsCode;
+import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.ExceptionGroup;
@@ -89,25 +91,25 @@ public final class Cycles {
     /** The refusal of the cycles of {@code loaded}'s forms that WF-045 or WF-046 forbids, or null when there is none.
      *  A cycle names its nodes and the forms whose reads and writes close it, both sorted, so every order of the same
      *  forms gives the same sentence. */
-    public static String refusal(IrLoader.Loaded loaded) {
+    public static Reason refusal(IrLoader.Loaded loaded) {
         Graph g = new Graph(loaded.model(), loaded.prioritizedDefaults(), loaded.navigationBindings(),
                 loaded.roleBindings(), loaded.sourcePaths());
         List<Form> graphForms = g.graphForms();
         List<Edge> edges = edges(graphForms);
         List<String> cycles = cycles45(g, graphForms, edges);
         if (!cycles.isEmpty())
-            return "exec-model: " + (cycles.size() == 1 ? "kring in de afhankelijkheden " + cycles.get(0)
+            return new Reason(DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION, "exec-model: " + (cycles.size() == 1 ? "kring in de afhankelijkheden " + cycles.get(0)
                     : cycles.size() + " kringen in de afhankelijkheden: " + String.join("; ", cycles))
                     + " — een kring die niet door een creatielid van een recursieve regelgroep loopt, is onwelgevormd"
                     + " (WF-045), en truth maintenance geeft er geen eenduidig fixpunt voor: een positieve kring houdt"
                     + " zichzelf in stand nadat haar ingang vervalt, een even ontkenningskring beslist op de volgorde van"
-                    + " de regels in het model, en een oneven ontkenningskring wisselt tot het vuurplafond";
+                    + " de regels in het model, en een oneven ontkenningskring wisselt tot het vuurplafond");
         List<String> negations = negations46(g, graphForms, edges);
         if (negations.isEmpty()) return null;
-        return "exec-model: " + (negations.size() == 1 ? "een ontkennende afhankelijkheid op een kring: " + negations.get(0)
+        return new Reason(DroolsCode.NEGATION_ON_CYCLE, "exec-model: " + (negations.size() == 1 ? "een ontkennende afhankelijkheid op een kring: " + negations.get(0)
                 : negations.size() + " ontkennende afhankelijkheden op een kring: " + String.join("; ", negations))
                 + " — geen kring mag een ontkenning dragen, ook niet een kring door een creatielid van een recursieve"
-                + " regelgroep (WF-046): de creatie handelt dan op een afwezigheid die de kring daarna vult";
+                + " regelgroep (WF-046): de creatie handelt dan op een afwezigheid die de kring daarna vult");
     }
 
     /**

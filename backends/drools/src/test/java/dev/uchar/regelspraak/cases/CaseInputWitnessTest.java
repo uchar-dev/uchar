@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import dev.uchar.regelspraak.refusal.DroolsCode;
 
 import dev.uchar.regelspraak.engine.ScenarioResult;
 import dev.uchar.regelspraak.loader.IrLoader;
@@ -556,10 +557,10 @@ class CaseInputWitnessTest {
      *  and of a rational number. */
     private static Object parameterValue(String naam, JsonNode w) {
         if (w.has("timeline"))
-            throw new CaseRunner.Excluded("granular (timeline) parameter '" + naam + "' is not carried by the v0 backend");
+            throw new CaseRunner.Excluded(DroolsCode.GRANULAR_PARAMETER_TIMELINE, "granular (timeline) parameter '" + naam + "' is not carried by the v0 backend");
         if (w.has("number")) {
             if (w.get("number").asText().contains("/"))
-                throw new CaseRunner.Excluded("rational value on '" + naam + "' is not carried by the v0 backend");
+                throw new CaseRunner.Excluded(DroolsCode.RATIONAL_VALUE, "rational value on '" + naam + "' is not carried by the v0 backend");
             return new BigDecimal(w.get("number").asText());
         }
         if (w.has("date")) return LocalDate.parse(w.get("date").asText());
