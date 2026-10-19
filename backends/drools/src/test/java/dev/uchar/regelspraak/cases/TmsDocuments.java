@@ -507,7 +507,7 @@ final class TmsDocuments {
         List<String> out = new ArrayList<>();
         for (Object f : session.getObjects(o -> o.getClass().getSimpleName().equals("Inconsistentie"))) {
             try {
-                Object rule = f.getClass().getMethod("getRegel").invoke(f);
+                Object rule = f.getClass().getMethod("getRule").invoke(f);
                 Object subject = f.getClass().getMethod("getSubject").invoke(f);
                 out.add(rule + " @ " + labels.getOrDefault(subject, String.valueOf(subject)));
             } catch (ReflectiveOperationException e) {

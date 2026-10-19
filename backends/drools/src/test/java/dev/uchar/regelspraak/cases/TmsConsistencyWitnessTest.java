@@ -399,7 +399,7 @@ class TmsConsistencyWitnessTest {
         Map<Object, String> perIdentity = new IdentityHashMap<>(labels);
         List<String> out = new ArrayList<>();
         for (Object f : session.getObjects(o -> o.getClass().getName().equals(INCONSISTENCY)))
-            out.add(f.getClass().getMethod("getRegel").invoke(f) + " @ "
+            out.add(f.getClass().getMethod("getRule").invoke(f) + " @ "
                     + perIdentity.get(f.getClass().getMethod("getSubject").invoke(f)));
         out.sort(null);
         return out;

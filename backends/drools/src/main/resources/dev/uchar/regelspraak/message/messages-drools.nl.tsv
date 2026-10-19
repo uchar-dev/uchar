@@ -389,12 +389,12 @@ PART.desc.whole-period-comparison	een Comparison met wholePeriod ('{snippet}')
 PART.desc.whole-period-predicate	een Predicate met wholePeriod ('{snippet}')
 PART.desc.start-point	de startpuntbepaling van tijdlijn '{timeline}'
 PART.form-named.regel	regel '{name}'
-PART.form-named.objectcreatie	objectcreatie '{name}'
+PART.form-named.object-creation	objectcreatie '{name}'
 PART.form-named.allocation	verdeling '{name}'
-PART.form-named.consistentie	consistentie '{name}'
-PART.form-named.uniciteit	uniciteit '{name}'
-PART.form-named.feitcreatie	feitcreatie '{name}'
-PART.form-named.defaultsgroep	defaultsgroep '{name}'
+PART.form-named.consistency	consistentie '{name}'
+PART.form-named.uniqueness	uniciteit '{name}'
+PART.form-named.fact-creation	feitcreatie '{name}'
+PART.form-named.defaults-group	defaultsgroep '{name}'
 PART.origin.attribute	het attribuut '{name}' van {source}
 PART.origin.characteristic	het kenmerk '{name}' van {source}
 PART.origin.role	de rol '{name}'

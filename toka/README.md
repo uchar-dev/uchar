@@ -32,7 +32,8 @@ The same text stands in the root `README.md` and in `CLAUDE.md`.
 > of the fragments in their source snippets); the 29 case files
 > `toka/cases/scenario-*/case.json`, with situations and expected values
 > derived by hand; the parity manifest `toka/cases/parity.manifest`; the two
-> tests under `toka/src/test/java/`, which quote lines of the fragments; and
+> tests under `toka/src/test/java/`, which quote lines of the fragments and
+> whose identifiers follow every rename of the frontend; and
 > `toka/README.md`.
 
 ## What is here

@@ -157,7 +157,7 @@ class MixedUnionEdgeWitnessTest {
             Object subject = f.getClass().getMethod("getSubject").invoke(f);
             String label = "?";
             for (var e : after.input().entrySet()) if (e.getValue() == subject) label = e.getKey();
-            out.add(f.getClass().getMethod("getRegel").invoke(f) + " @ " + label);
+            out.add(f.getClass().getMethod("getRule").invoke(f) + " @ " + label);
         }
         return out;
     }

@@ -225,7 +225,7 @@ public final class DroolsBackend {
         Map<ProducerConsumer.ElementKey, Msg> use = new java.util.HashMap<>();
         for (ProducerConsumer.Form v : ProducerConsumer.forms(model, loaded.prioritizedDefaults(),
                 ProducerConsumer.wireNavigation(loaded))) {
-            Msg formName = Msg.drools("PART.form-named." + v.category().name().toLowerCase(java.util.Locale.ROOT), "name", v.name());
+            Msg formName = Msg.drools("PART.form-named." + v.category().name().toLowerCase(java.util.Locale.ROOT).replace('_', '-'), "name", v.name());
             for (ProducerConsumer.ElementKey e : v.writes()) use.putIfAbsent(e, formName);
             for (ProducerConsumer.ElementKey e : v.reads()) use.putIfAbsent(e, formName);
         }

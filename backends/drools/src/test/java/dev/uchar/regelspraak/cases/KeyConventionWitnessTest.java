@@ -289,7 +289,7 @@ class KeyConventionWitnessTest {
             Object subject = read(f, "getSubject");
             String label = "?";
             for (var e : after.input().entrySet()) if (e.getValue() == subject) label = e.getKey();
-            out.add(read(f, "getRegel") + " @ " + label);
+            out.add(read(f, "getRule") + " @ " + label);
         }
         return out;
     }

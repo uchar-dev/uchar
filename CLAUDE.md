@@ -115,7 +115,8 @@ Within that claim, per item:
   > of the fragments in their source snippets); the 29 case files
   > `toka/cases/scenario-*/case.json`, with situations and expected values
   > derived by hand; the parity manifest `toka/cases/parity.manifest`; the two
-  > tests under `toka/src/test/java/`, which quote lines of the fragments; and
+  > tests under `toka/src/test/java/`, which quote lines of the fragments and
+  > whose identifiers follow every rename of the frontend; and
   > `toka/README.md`.
 - Synthesized cases are admitted only when the full differential square
   agrees (Drools ≡ reference interpreter ≡ Clingo, to the extent those
@@ -580,24 +581,47 @@ A gate that gets no floor carries one sentence in its script saying why.
   and test names; so is every file and directory name.
 - Where the wire has a name for a concept, the code uses it
   (`emptyFallback`, not `leegwaarde`); otherwise the term of the English
-  spec text (`spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`). A few fixed
+  spec text (`spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`). This holds
+  for the classes of the resolved model that stand for a RegelSpraak
+  construct too (`ObjectType`, `FactType`, `Datatype.Numeric`; owner's
+  decision 2026-10-19): the language is what the RegelSpraak text spells,
+  not the model that holds it. A few fixed
   choices: `fout` is error for a parse, load or document error and fault
   for an evaluation fault; `voorwaarde` is condition; `soort` is kind;
   `terugzetten` is write back. The renaming programme of 2026-10-17/19 and
   its tool are in the git history (`backlog/done/20261017-engelse-namen-afspraak.md`
   and the cards after it).
-- Dutch, as authored: domain content (the Jutterswet, declared names,
-  RegelSpraak sources, case labels, the `jutterswet-*` names) and the
-  RegelSpraak keywords (the lexer's literals and the token names that
-  spell them); and the parser rules and labels of the RegelSpraak grammar,
-  which follow the Dutch RegelSpraak specification, with the names ANTLR
-  generates from them (`FeitTypeNaamContext`, `ctx.feitTypeNaam()`,
-  `visitFeitTypeNaam`) (maintainer decision 2026-10-18).
+- Dutch, as authored, and nothing else (a name outside this list is
+  English, also when it is spelled like one of them or was read by a
+  test; owner's decisions 2026-10-18 and 2026-10-19):
+  1. domain content: the Jutterswet, declared names, RegelSpraak sources,
+     case labels, the `jutterswet-*` names;
+  2. RegelSpraak keywords: the lexer's literals and the token names that
+     spell them (`NEGATIEF`, `GEEN`);
+  3. the parser rules and labels of the RegelSpraak grammar and what ANTLR
+     generates from them: `FeitTypeNaamContext`, `ctx.feitTypeNaam()`,
+     `visitFeitTypeNaam`. A plain Java field, record component, method
+     or variable that happens to be spelled like a rule (`tekst`,
+     `periode`, `naam`) is English;
+  4. enum constants that are the v0 spelling and reach `name()` in a
+     message, a dump or the wire: the families of `ir/Spelling.java` (the
+     section `waarden` of `spec/proposals/v1-naamtabel.json`, compared by
+     `SpellingTest`: functions, comparisons, rule kinds, `Number.sign`),
+     `ResolvedRule.Kind`, the predicate kinds, and the values of
+     `Designatable.Kind` and their mirrors in `backends/drools`
+     (`FactModelGenerator.Origin.Kind`, `TestItem.Role`), which the
+     distribution writes into its JSON;
+  5. what the production runtime reads (below).
 - Not renamed, each for its reason: the production runtime under
   `backends/drools/src/main/java/dev/uchar/regelspraak/runtime/` (gate 1
-  recognises a copy by its names), the `toka/` zone, v0 names where they
-  stand as v0 names (IR-SPEC "v0 name:", CONSTRUCTS, `spec/proposals/`),
-  git history and `backlog/done/`.
+  recognises a copy by its names) and the members of `backends/drools`
+  that it reads (`Namen`, `Namen.lidnamen`, the getters of `Period` it
+  looks up by reflection); the 47 TOKA fragments `toka/casus/toka-*.rgs`,
+  which stay verbatim (the two tests under `toka/src/test/java` are own
+  work and follow every rename mechanically); v0 names where they stand as
+  v0 names (IR-SPEC "v0 name:", CONSTRUCTS, `spec/proposals/`); git
+  history and `backlog/done/`. Messages and prose that quote a RegelSpraak
+  term, a v0 wire name or a Dutch diagnostic stay as written.
 - Working prose — cards, Results, commit messages, `spec/proposals/` — is
   Dutch or English; every identifier it names or introduces is English,
   also when a card prescribes a new class.

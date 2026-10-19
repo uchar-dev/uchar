@@ -327,7 +327,7 @@ class NameNormWitnessTest {
             String label = "?";
             for (Map.Entry<String, Object> e : after.input().entrySet())
                 if (e.getValue() == subject) label = e.getKey();
-            out.add(f.getClass().getMethod("getRegel").invoke(f) + " @ " + label);
+            out.add(f.getClass().getMethod("getRule").invoke(f) + " @ " + label);
         }
         return out;
     }

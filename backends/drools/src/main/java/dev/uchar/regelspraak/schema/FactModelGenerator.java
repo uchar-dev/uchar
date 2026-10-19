@@ -933,7 +933,7 @@ public final class FactModelGenerator {
                 public Inconsistentie(String rule, Object subject, java.util.List<String> codes) {
                     this.rule = rule; this.subject = subject; this.codes = java.util.List.copyOf(codes);
                 }
-                public String getRegel() { return rule; }
+                public String getRule() { return rule; }
                 public Object getSubject() { return subject; }
                 public java.util.List<String> getCodes() { return codes; }
                 @Override public String toString() { return "Inconsistentie[" + rule + " @ " + subject + "]"; }

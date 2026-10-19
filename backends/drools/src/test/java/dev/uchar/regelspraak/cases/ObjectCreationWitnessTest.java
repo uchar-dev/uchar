@@ -521,7 +521,7 @@ class ObjectCreationWitnessTest {
         after.input().forEach((l, bean) -> label.put(bean, l));
         List<String> out = new java.util.ArrayList<>();
         for (Object f : after.fixpoint().inconsistencies())
-            out.add(f.getClass().getMethod("getRegel").invoke(f) + " @ "
+            out.add(f.getClass().getMethod("getRule").invoke(f) + " @ "
                     + label.getOrDefault(f.getClass().getMethod("getSubject").invoke(f), "gemaakt"));
         out.sort(null);
         return out;

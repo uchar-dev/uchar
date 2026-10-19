@@ -389,12 +389,12 @@ PART.desc.whole-period-comparison	a Comparison with wholePeriod ('{snippet}')
 PART.desc.whole-period-predicate	a Predicate with wholePeriod ('{snippet}')
 PART.desc.start-point	the start point determination of timeline '{timeline}'
 PART.form-named.regel	rule '{name}'
-PART.form-named.objectcreatie	object creation '{name}'
+PART.form-named.object-creation	object creation '{name}'
 PART.form-named.allocation	allocation '{name}'
-PART.form-named.consistentie	consistency '{name}'
-PART.form-named.uniciteit	uniqueness '{name}'
-PART.form-named.feitcreatie	fact creation '{name}'
-PART.form-named.defaultsgroep	defaults group '{name}'
+PART.form-named.consistency	consistency '{name}'
+PART.form-named.uniqueness	uniqueness '{name}'
+PART.form-named.fact-creation	fact creation '{name}'
+PART.form-named.defaults-group	defaults group '{name}'
 PART.origin.attribute	the attribute '{name}' of {source}
 PART.origin.characteristic	the characteristic '{name}' of {source}
 PART.origin.role	the role '{name}'

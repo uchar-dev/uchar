@@ -948,7 +948,7 @@ public final class CaseRunner {
             return "verwacht inconsistent" + keyText(rule, label, code) + ", werkelijk consistent";
         if (rule == null && code == null) return null;   // presence-only expectation, satisfied by any fact
         for (Object f : facts) {
-            if (rule != null && !sameRule(rule, (String) invokeGetter(f, "getRegel"))) continue;
+            if (rule != null && !sameRule(rule, (String) invokeGetter(f, "getRule"))) continue;
             if (label != null && !label.equals(beanLabel(invokeGetter(f, "getSubject")))) continue;
             if (code == null || ((List<?>) invokeGetter(f, "getCodes")).contains(code)) return null;
         }
@@ -1009,7 +1009,7 @@ public final class CaseRunner {
     private String renderIncs(List<Object> facts, boolean withCodes) {
         List<String> out = new ArrayList<>();
         for (Object f : facts)
-            out.add(invokeGetter(f, "getRegel") + " @ " + beanLabel(invokeGetter(f, "getSubject"))
+            out.add(invokeGetter(f, "getRule") + " @ " + beanLabel(invokeGetter(f, "getSubject"))
                     + (withCodes ? " " + invokeGetter(f, "getCodes") : ""));
         out.sort(Comparator.naturalOrder());
         return String.join(", ", out);
