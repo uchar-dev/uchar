@@ -1,42 +1,27 @@
 # Commits that only rename identifiers or paths (the programme "Engelse namen", 2026-10-17/19); git blame skips them (GitHub reads this file, locally: git config blame.ignoreRevsFile .git-blame-ignore-revs).
-# flogic: inhoud hernoemd met rename.py
-0d1a6251dd145ef31440a209efb4d1128373ec62
-# lader-tests: inhoud hernoemd met rename.py
-de5c27632a33dfaa84b0efe1c36b7dd2583806f2
-# backends/drools: inhoud hernoemd met rename.py
-56948455e24a2adde987759ce4ef6b0f60e4b86d
-# backends/drools (drools-word-fixes): inhoud hernoemd met rename.py
-cf57789eae9eed1f9bff577e01466da614863ce3
-# backends/drools (drools-static-function): inhoud hernoemd met rename.py
-32e55bb71950bd7e5f5de6a38ec3b8d853ffd794
-# rename-frontend: inhoud hernoemd met rename.py
-80cfad5a4f05de007d3427f24148707633897b8a
-# rename-ocaml: inhoud hernoemd met rename.py
-3fc9e1c40507318969a4c2db628ff542aa45dd46
-# rename-ocaml: ASP-predicaten en vlag (handwerk volgens lijst in de kaart)
-a6184ed8e68ca1847aec340a792c67d418bd3f2e
-# rename-public-api: inhoud hernoemd met rename.py (tabel public-api)
-e0fced3fc2d6cb0ba8adb6025bfe526e3660dbd8
-# rename-public-api: pakketten kern en graaf (git mv en importregels, handwerk)
-ceb9aab333ceaba132a29752690cd77df83c4d3b
-# rename-public-api: inhoud hernoemd met rename.py (tabel public-api-visible)
-b092a30a7abfcb2e296d5c031dd10fa75d0b8fd1
-# rename-public-api: package- en importregels van graaf (handwerk)
-778bb7b2877fcfa1d3ad9596b8a04ed899e4f1d8
-# rename-paths: mappen en bestanden verhuisd (alleen git mv), verwijzingen met refs.py, restanten met de hand
-830cb7e740223dd3ecdf1967ccccfdb6131549c3
-86f325c7367bf7386d341fbe2c47fba640ee3b79
-dd5fa651131c8ee64272dbfe34c00302df284b2c
-# name-sync: oude namen in commentaar en documentatie, OCaml-testlabels Engels (apply_sync.py)
-f683e7e1c6c2d92e3025b2c48a87f681c0f2cfa0
-# unfreeze-model: de bevroren namen van het kernmodel en de Drools-feiten Engels (rename.py, tabel model)
-42cd398c32de5ffb4fc24e3ecf305aed28618325
-# review-fixes: category wordt kind, van(...) wordt of(...), gemiste namen
-d17df03981e2999fe7949791031e57213883e55b
-350519feb28e7861b02abc9fedf9e747a8713cd2
-1b7526f51d16b19707f355b352ccbc331a17a327
-77fac1ea97c331c0be55aafce45e3043e69a4359
+# hernoemgereedschap: gereedschap dat per hele naam hernoemt (later verwijderd); flogic en de lader-tests hernoemd
+be384f4d34f041d9d3581d3baeca6dd0564722ef
+# hernoem-drools-backend: backends/drools in het Engels, behalve wat de distributie leest (alleen namen)
+c17cc68edfa011d7ab158e6e8d171da6a9b72188
+# drools-word-fixes: de verkeerde woorden van de Drools-backend recht (alleen namen)
+8cc8cb0849aeed64316c800b8091ec6372aabee3
+# drools-static-function: de plan-enum Aggregation heet StaticFunction (alleen namen)
+128a4ef3987ae5f5d324a4a8c4613a52df81735c
+# rename-frontend: frontends/regelspraak en backends/drools in het Engels (alleen namen)
+a5a68e5ea8878adcd7d8972965c02a820180b282
+# rename-ocaml: ref, spec/verifier, backends/clingo, catala en flogic in het Engels, met de ASP-predicaten (alleen namen)
+90a9e5f8f1611c8c0d47147f415f6e50b922713b
+# rename-public-api: de namen die de distributie leest in het Engels, met de pakketten core en graph (alleen namen)
+f3e1b16334c874b10ffbc52f86344f76c2b8759b
+# rename-paths: de paden van corpus, bronbestanden en gatescripts in het Engels (alleen namen)
+3966f8332f2f085c852e25f88e967afc850eba6e
+# name-sync: documentatie en commentaar volgen de hernoemde code; OCaml-testlabels Engels (alleen namen)
+94dcb0629b79392f338a9d1ad623484dec95e248
+# unfreeze-model: de per spelling bevroren namen van kernmodel en Drools-feiten worden Engels (alleen namen)
+65750b9b9f673cf20bd4dc1a8e17b3e04c5b6165
+# review-fixes: category wordt kind, van(...) wordt of(...), gemiste namen Engels (alleen namen)
+5e7975619f690336e6d6827be095c17decbb936f
 # review2-fixes: gemiste identifiers en dumplabels Engels (alleen namen)
-7b39490b454e5d661768cfd72eb0bf33e09c6f82
-# review2-fixes: nog twee dumptests en de labels van DrlPropertyWitnessTest (alleen namen)
-75913ad976c4a247606da2e0d80cc2c2fd851eeb
+8e2a7212130ac9749e4fec1b37b3b9317b3a67fb
+# review2-fixes: twee tests en de labels van DrlPropertyWitnessTest volgen de dumplabels (alleen namen)
+51fd01ff951be77e4b7bf01db21ba67830f0fe18
