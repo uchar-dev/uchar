@@ -34,6 +34,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Timeline;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
 /**
  * The mirror emitter: a faithful, engine-neutral JSON dump of the complete resolved
@@ -91,7 +92,9 @@ public final class IrEmitter {
      *  token. {@link #emit} appends these after the model's own diagnostics; {@code Resolver --ir} prints them. */
     public static List<Diagnostic> unwrittenAllocations(RegelSpraakModel m) {
         return m.allocations.stream().filter(v -> v.method() == ResolvedAllocation.Method.COMPLEX)
-                .map(v -> new Diagnostic(RegelSpraakModel.Severity.WARNING, "verdeling '" + v.naam() + "' wordt niet "
+                .map(v -> new Diagnostic(RegelSpraakModel.Severity.WARNING,
+                        "RGS-001", params("name", v.naam()),
+                        "verdeling '" + v.naam() + "' wordt niet "
                         + "geschreven: de frontend bepaalde voor haar geen van de drie verdeelmethoden (in gelijke "
                         + "delen, naar rato, op volgorde), en een verdeling zonder methode heeft geen spelling in "
                         + "uchar-ir-v1", 0))

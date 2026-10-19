@@ -39,6 +39,7 @@ import java.util.function.Predicate;
 
 import static dev.uchar.regelspraak.emit.CaseEmitter.baseName;
 import static dev.uchar.regelspraak.emit.CaseEmitter.norm;
+import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
 /**
  * The resolver of the scenariotoetsen extension (grammar/DIVERGENCES.md, "Scenariotoetsen"): a documented extension
@@ -90,7 +91,7 @@ public final class ScenarioResolver {
         BaseErrorListener listener = new BaseErrorListener() {
             @Override public void syntaxError(Recognizer<?, ?> r, Object sym, int line, int col,
                                               String msg, RecognitionException e) {
-                syntax.add(new Diagnostic(Severity.ERROR, "syntaxfout: " + msg, line));
+                syntax.add(new Diagnostic(Severity.ERROR, "RGS-216", params("message", msg), "syntaxfout: " + msg, line));
             }
         };
         lexer.removeErrorListeners(); lexer.addErrorListener(listener);
@@ -148,7 +149,9 @@ public final class ScenarioResolver {
         for (int i = 1; i < scenarios.size(); i++) {
             List<String> first = carried(scenarios.get(0).scope()), current = carried(scenarios.get(i).scope());
             if (!new LinkedHashSet<>(first).equals(new LinkedHashSet<>(current))) {
-                error(contexts.get(i).getStart().getLine(), "de scenario's van één document lopen tegen één "
+                error(contexts.get(i).getStart().getLine(),
+                        "RGS-217", params("scenario", scenarios.get(i).naam(), "firstScenario", scenarios.get(0).naam()),
+                        "de scenario's van één document lopen tegen één "
                         + "IR-document, maar het scenario '" + scenarios.get(i).naam() + "' toetst andere regels dan het "
                         + "scenario '" + scenarios.get(0).naam() + "'; zet scenario's met een andere scope in een "
                         + "eigen document");
@@ -170,7 +173,9 @@ public final class ScenarioResolver {
         String naam = norm(written);
         BlockResult block = validateBlock(sd.situatieBlok());   // a duplicate's block is still checked
         if (situations.containsKey(naam)) {
-            error(sd.getStart().getLine(), "de situatie '" + written + "' is meer dan eens gedeclareerd");
+            error(sd.getStart().getLine(),
+                    "RGS-218", params("situation", written),
+                    "de situatie '" + written + "' is meer dan eens gedeclareerd");
             return;
         }
         situations.put(naam, sd);
@@ -190,14 +195,18 @@ public final class ScenarioResolver {
             String written = src(base.situatieNaam());
             String n = norm(written);
             if (!situations.containsKey(n)) {
-                error(base.getStart().getLine(), "de situatie '" + written + "' is nergens in het document gedeclareerd");
+                error(base.getStart().getLine(),
+                        "RGS-219", params("situation", written),
+                        "de situatie '" + written + "' is nergens in het document gedeclareerd");
                 continue;
             }
             if (here.contains(n)) {
                 List<String> cycle = new ArrayList<>();
                 for (String step : here.subList(here.indexOf(n), here.size())) cycle.add("'" + declared(step) + "'");
                 cycle.add("'" + declared(n) + "'");
-                error(base.getStart().getLine(), "de situaties vormen een kring via 'gebaseerd op': "
+                error(base.getStart().getLine(),
+                        "RGS-220", params("cycle", String.join(" → ", cycle)),
+                        "de situaties vormen een kring via 'gebaseerd op': "
                         + String.join(" → ", cycle));
                 continue;
             }
@@ -217,7 +226,9 @@ public final class ScenarioResolver {
         int line = sc.getStart().getLine();
         String naam = src(sc.scenarioNaam());
         if (dev.uchar.regelspraak.emit.CaseEmitter.slug(naam).isEmpty())
-            error(line, "de naam van het scenario '" + naam + "' geeft geen bestandsnaam: zij draagt geen letter of cijfer");
+            error(line,
+                    "RGS-221", params("name", naam),
+                    "de naam van het scenario '" + naam + "' geeft geen bestandsnaam: zij draagt geen letter of cijfer");
         Scope scope = sc.scenarioScope() == null ? null : resolveScope(sc.scenarioScope());
         LocalDate asOfDate = sc.scenarioPeildatum() == null ? null : readAsOfDate(sc.scenarioPeildatum());
         SetResult set = null;
@@ -226,7 +237,9 @@ public final class ScenarioResolver {
             setLine = sc.scenarioParameterset().getStart().getLine();
             String written = src(sc.scenarioParameterset().parametersetNaam());
             set = parameterSets.get(norm(written));
-            if (set == null) error(setLine, "de parameterset '" + written + "' is nergens in het document gedeclareerd");
+            if (set == null) error(setLine,
+                    "RGS-222", params("name", written),
+                    "de parameterset '" + written + "' is nergens in het document gedeclareerd");
         }
 
         List<BlockResult> sources = new ArrayList<>();
@@ -234,12 +247,16 @@ public final class ScenarioResolver {
             String written = src(base.situatieNaam());
             String n = norm(written);
             if (!situations.containsKey(n))
-                error(base.getStart().getLine(), "de situatie '" + written + "' is nergens in het document gedeclareerd");
+                error(base.getStart().getLine(),
+                        "RGS-219", params("situation", written),
+                        "de situatie '" + written + "' is nergens in het document gedeclareerd");
             else sources.addAll(foldOut(n, List.of()));
         }
         if (sc.inlineSituatie() != null) sources.add(validateBlock(sc.inlineSituatie().situatieBlok()));
         if (sc.scenarioBasis().isEmpty() && sc.inlineSituatie() == null)
-            error(line, "het scenario '" + naam + "' heeft geen situatie: het is nergens op gebaseerd en draagt geen "
+            error(line,
+                    "RGS-223", params("name", naam),
+                    "het scenario '" + naam + "' heeft geen situatie: het is nergens op gebaseerd en draagt geen "
                     + "'Gegeven is de volgende situatie:'");
 
         Situation situation = merge(sources);
@@ -258,12 +275,14 @@ public final class ScenarioResolver {
         String tekst = src(p.datumWaarde());
         int line = p.getStart().getLine();
         if (ExpressionBuilder.sourceDateTime(tekst) != null) {
-            error(line, "de peildatum '" + tekst + "' draagt een tijd, maar een casebestand draagt als peildatum "
+            error(line,
+                    "RGS-224", params("date", tekst),
+                    "de peildatum '" + tekst + "' draagt een tijd, maar een casebestand draagt als peildatum "
                     + "alleen een dag (asOfDate)");
             return null;
         }
         LocalDate d = ExpressionBuilder.sourceDate(tekst);
-        if (d == null) error(line, "de peildatum '" + tekst + "' is geen geldige datum");
+        if (d == null) error(line, "RGS-225", params("date", tekst), "de peildatum '" + tekst + "' is geen geldige datum");
         return d;
     }
 
@@ -324,7 +343,9 @@ public final class ScenarioResolver {
 
     private Scope resolveScope(ScenarioScopeContext scope) {
         if (!model.resolvedStartPointDeterminations.isEmpty())
-            error(scope.getStart().getLine(), "een scope in een document met een startpuntbepaling wordt geweigerd: "
+            error(scope.getStart().getLine(),
+                    "RGS-226", params(),
+                    "een scope in een document met een startpuntbepaling wordt geweigerd: "
                     + "de bepaling en de regel die haar anker schrijft horen bij elkaar, en een scope die er één van "
                     + "laat vallen legt de tijdlijn op een ander raster");
         if (scope instanceof ScopeEnkeleRegelContext s) {
@@ -345,7 +366,9 @@ public final class ScenarioResolver {
         String group = src(s.enkeleRegelReferentie());
         var g = model.ruleGroups.stream().filter(rg -> norm(rg.naam()).equals(norm(group))).findFirst().orElse(null);
         if (g == null) {
-            error(s.getStart().getLine(), "de regelgroep '" + group + "' uit de scope bestaat niet in het document");
+            error(s.getStart().getLine(),
+                    "RGS-227", params("group", group),
+                    "de regelgroep '" + group + "' uit de scope bestaat niet in het document");
             return gescoped(List.of());
         }
         LinkedHashSet<String> forms = new LinkedHashSet<>();
@@ -498,11 +521,15 @@ public final class ScenarioResolver {
             return result;
         }
         if (model.ruleGroups.stream().anyMatch(g -> norm(g.naam()).equals(n)))
-            error(line, "'" + naam + "' uit de scope is een regelgroep; schrijf 'toetst de regelgroep " + naam + "'");
+            error(line,
+                    "RGS-228", params("name", naam),
+                    "'" + naam + "' uit de scope is een regelgroep; schrijf 'toetst de regelgroep " + naam + "'");
         else if (exceptionNames().contains(n))
-            error(line, "de regel '" + naam + "' uit de scope is opgegaan in een defaultsgroep; de scope noemt die groep "
+            error(line,
+                    "RGS-229", params("name", naam),
+                    "de regel '" + naam + "' uit de scope is opgegaan in een defaultsgroep; de scope noemt die groep "
                     + "bij de naam van haar basisregel");
-        else error(line, "de regel '" + naam + "' uit de scope bestaat niet in het document");
+        else error(line, "RGS-230", params("name", naam), "de regel '" + naam + "' uit de scope bestaat niet in het document");
         return result;
     }
 
@@ -540,8 +567,12 @@ public final class ScenarioResolver {
             boolean uses = v.exprs().stream().anyMatch(e -> Expr.contains(e, Expr::isContextValue))
                     || v.conditions().stream().anyMatch(c -> Condition.containsOperand(c, Expr::isContextValue));
             if (window || uses) {
-                error(line, "de regel '" + v.naam() + "' " + (window ? "heeft een geldigheidsvenster" : "leest de rekendatum")
-                        + ", maar het scenario '" + scenario + "' heeft geen peildatum (voeg 'met peildatum <datum>' toe)");
+                String text = "de regel '" + v.naam() + "' " + (window ? "heeft een geldigheidsvenster" : "leest de rekendatum")
+                        + ", maar het scenario '" + scenario + "' heeft geen peildatum (voeg 'met peildatum <datum>' toe)";
+                if (window)
+                    error(line, "RGS-231", params("rule", v.naam(), "scenario", scenario), text);
+                else
+                    error(line, "RGS-232", params("rule", v.naam(), "scenario", scenario), text);
                 return;
             }
         }
@@ -564,7 +595,9 @@ public final class ScenarioResolver {
             v.conditions().forEach(c -> Condition.containsOperand(c, visitor));
             for (String p : read)
                 if (!assigned.contains(norm(p)) && reported.add(norm(p)))
-                    error(line, "de regel '" + v.naam() + "' leest de parameter '" + p + "', die " + where
+                    error(line,
+                            "RGS-233", params("rule", v.naam(), "parameter", p, "where", where),
+                            "de regel '" + v.naam() + "' leest de parameter '" + p + "', die " + where
                             + " geen waarde heeft");
         }
     }
@@ -598,10 +631,14 @@ public final class ScenarioResolver {
         String typeName = src(inst.objectTypeNaam());
         String label = inst.UPPER_ID().getText();
         Objecttype ot = model.objectTypeByName(typeName);
-        if (ot == null) error(line, "het objecttype '" + typeName + "' is niet gedeclareerd");
+        if (ot == null) error(line,
+                "RGS-234", params("objectType", typeName),
+                "het objecttype '" + typeName + "' is niet gedeclareerd");
         String collision = labelCollidesWithType(label);
         if (collision != null)
-            error(line, "het label '" + label + "' botst met (het eerste woord van) de objecttypenaam '" + collision + "'");
+            error(line,
+                    "RGS-235", params("label", label, "objectType", collision),
+                    "het label '" + label + "' botst met (het eerste woord van) de objecttypenaam '" + collision + "'");
 
         List<AttributeValue> attributen = new ArrayList<>();
         Map<String, List<Segment>> tijdlijnen = new LinkedHashMap<>();
@@ -629,11 +666,15 @@ public final class ScenarioResolver {
         if (ot == null) return;                                        // unknown type: reported at the opener
         String attr = ot.attributeName(written);
         if (attr == null) {
-            error(line, "het objecttype '" + ot.naam + "' kent geen attribuut '" + written + "'");
+            error(line,
+                    "RGS-236", params("objectType", ot.naam, "attribute", written),
+                    "het objecttype '" + ot.naam + "' kent geen attribuut '" + written + "'");
             return;
         }
         if (!ot.dimensionsOf(attr).isEmpty()) {
-            error(line, "het attribuut '" + attr + "' is gedimensioneerd, en een casebestand draagt geen "
+            error(line,
+                    "RGS-237", params("attribute", attr),
+                    "het attribuut '" + attr + "' is gedimensioneerd, en een casebestand draagt geen "
                     + "dimensiecoördinaten");
             return;
         }
@@ -641,7 +682,9 @@ public final class ScenarioResolver {
         ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, "het attribuut '" + attr + "'");
         if (a.periode() == null) {
             if (tijdlijnen.containsKey(norm(attr))) {
-                error(line, "het attribuut '" + attr + "' krijgt in dit blok zowel perioden als een vaste waarde");
+                error(line,
+                        "RGS-238", params("attribute", attr),
+                        "het attribuut '" + attr + "' krijgt in dit blok zowel perioden als een vaste waarde");
                 return;
             }
             fixed.add(norm(attr));
@@ -649,12 +692,16 @@ public final class ScenarioResolver {
             return;
         }
         if (ot.granularityOf(attr) == null) {
-            error(line, "het attribuut '" + attr + "' is niet tijdsafhankelijk; een periode ('van … tot …') hoort bij "
+            error(line,
+                    "RGS-239", params("attribute", attr),
+                    "het attribuut '" + attr + "' is niet tijdsafhankelijk; een periode ('van … tot …') hoort bij "
                     + "een attribuut met een tijdlijn");
             return;
         }
         if (fixed.contains(norm(attr))) {
-            error(line, "het attribuut '" + attr + "' krijgt in dit blok zowel een vaste waarde als perioden");
+            error(line,
+                    "RGS-240", params("attribute", attr),
+                    "het attribuut '" + attr + "' krijgt in dit blok zowel een vaste waarde als perioden");
             return;
         }
         TimeWindow p = readPeriod(a.periode());
@@ -676,14 +723,18 @@ public final class ScenarioResolver {
         if (ot == null) return;
         String characteristic = CharacteristicMatcher.find(ot, written);
         if (characteristic == null) {
-            error(line, "het objecttype '" + ot.naam + "' kent geen kenmerk '" + written + "'");
+            error(line,
+                    "RGS-241", params("objectType", ot.naam, "characteristic", written),
+                    "het objecttype '" + ot.naam + "' kent geen kenmerk '" + written + "'");
             return;
         }
         if (!verbFits(ot, characteristic, possessive, line)) return;
         boolean temporal = ot.characteristicGranularityOf(characteristic) != null;
         if (k.periode() == null) {
             if (temporal) {
-                error(line, "het kenmerk '" + characteristic + "' is tijdsafhankelijk; een casebestand levert het als perioden "
+                error(line,
+                        "RGS-242", params("characteristic", characteristic),
+                        "het kenmerk '" + characteristic + "' is tijdsafhankelijk; een casebestand levert het als perioden "
                         + "('is " + characteristic + " van <datum> tot <datum>'), niet als vaste waarde");
                 return;
             }
@@ -691,7 +742,9 @@ public final class ScenarioResolver {
             return;
         }
         if (!temporal) {
-            error(line, "het kenmerk '" + characteristic + "' is niet tijdsafhankelijk; een periode ('van … tot …') hoort bij "
+            error(line,
+                    "RGS-243", params("characteristic", characteristic),
+                    "het kenmerk '" + characteristic + "' is niet tijdsafhankelijk; een periode ('van … tot …') hoort bij "
                     + "een kenmerk met een tijdlijn");
             return;
         }
@@ -710,9 +763,12 @@ public final class ScenarioResolver {
     private boolean verbFits(Objecttype ot, String characteristic, boolean has, int line) {
         boolean possessive = ot.characteristicKind(characteristic) == Objecttype.CharacteristicKind.BEZITTELIJK;
         if (possessive == has) return true;
-        error(line, possessive
-                ? "het kenmerk '" + characteristic + "' is bezittelijk; schrijf 'heeft " + characteristic + "'"
-                : "het kenmerk '" + characteristic + "' is niet bezittelijk; schrijf 'is " + characteristic + "'");
+        if (possessive)
+            error(line, "RGS-244", params("characteristic", characteristic),
+                    "het kenmerk '" + characteristic + "' is bezittelijk; schrijf 'heeft " + characteristic + "'");
+        else
+            error(line, "RGS-245", params("characteristic", characteristic),
+                    "het kenmerk '" + characteristic + "' is niet bezittelijk; schrijf 'is " + characteristic + "'");
         return false;
     }
 
@@ -737,23 +793,31 @@ public final class ScenarioResolver {
             }
         }
         if (hits.isEmpty()) {
-            error(line, "het objecttype '" + ot.naam + "' kent geen rol '" + written + "'");
+            error(line,
+                    "RGS-246", params("objectType", ot.naam, "role", written),
+                    "het objecttype '" + ot.naam + "' kent geen rol '" + written + "'");
             return;
         }
         if (hits.size() > 1) {
-            error(line, "de rol '" + written + "' vanaf het objecttype '" + ot.naam + "' is niet eenduidig: meer dan "
+            error(line,
+                    "RGS-247", params("role", written, "objectType", ot.naam),
+                    "de rol '" + written + "' vanaf het objecttype '" + ot.naam + "' is niet eenduidig: meer dan "
                     + "één feittype kent haar");
             return;
         }
         Hit hit = hits.get(0);
         Role far = hit.role();
         if (far.meervoudig() && !listForm) {
-            error(line, "de rol '" + written + "' is een naar-veel-rol; schrijf de 'zijn'-lijstvorm ('de "
+            error(line,
+                    "RGS-248", params("role", written),
+                    "de rol '" + written + "' is een naar-veel-rol; schrijf de 'zijn'-lijstvorm ('de "
                     + written + " zijn …')");
             return;
         }
         if (!far.meervoudig() && listForm) {
-            error(line, "de rol '" + written + "' is een naar-één-rol; schrijf de 'is'-vorm ('de " + written
+            error(line,
+                    "RGS-249", params("role", written),
+                    "de rol '" + written + "' is een naar-één-rol; schrijf de 'is'-vorm ('de " + written
                     + " is …')");
             return;
         }
@@ -777,24 +841,30 @@ public final class ScenarioResolver {
         String written = src(pw.parameterNaam());
         Parameter p = parameterByName(withoutArticle(written));
         if (p == null) {
-            error(line, "de parameter '" + written + "' is niet gedeclareerd");
+            error(line, "RGS-250", params("parameter", written), "de parameter '" + written + "' is niet gedeclareerd");
             return null;
         }
         ScenarioValue w = readAndType(pw.situatieWaarde(), p.datatype(), line, "de parameter '" + p.naam() + "'");
         if (pw.periode() == null) {
             if (tijdlijnen.containsKey(norm(p.naam()))) {
-                error(line, "de parameter '" + p.naam() + "' krijgt in dit blok zowel perioden als een vaste waarde");
+                error(line,
+                        "RGS-251", params("parameter", p.naam()),
+                        "de parameter '" + p.naam() + "' krijgt in dit blok zowel perioden als een vaste waarde");
                 return null;
             }
             return w == null ? null : new ParameterValue(p.naam(), w, null, line);
         }
         if (p.granulariteit() == null) {
-            error(line, "de parameter '" + p.naam() + "' is niet tijdsafhankelijk; een periode ('van … tot …') hoort "
+            error(line,
+                    "RGS-252", params("parameter", p.naam()),
+                    "de parameter '" + p.naam() + "' is niet tijdsafhankelijk; een periode ('van … tot …') hoort "
                     + "bij een parameter met een tijdlijn");
             return null;
         }
         if (parameters.stream().anyMatch(x -> norm(x.parameter()).equals(norm(p.naam())) && x.value() != null)) {
-            error(line, "de parameter '" + p.naam() + "' krijgt in dit blok zowel een vaste waarde als perioden");
+            error(line,
+                    "RGS-253", params("parameter", p.naam()),
+                    "de parameter '" + p.naam() + "' krijgt in dit blok zowel een vaste waarde als perioden");
             return null;
         }
         TimeWindow per = readPeriod(pw.periode());
@@ -832,7 +902,9 @@ public final class ScenarioResolver {
         String written = src(pd.parametersetNaam());
         SetResult set = validateSet(written, pd.parameterWaarde());   // a duplicate's rows are still checked
         if (parameterSets.containsKey(norm(written))) {
-            error(pd.getStart().getLine(), "de parameterset '" + written + "' is meer dan eens gedeclareerd");
+            error(pd.getStart().getLine(),
+                    "RGS-254", params("name", written),
+                    "de parameterset '" + written + "' is meer dan eens gedeclareerd");
             return;
         }
         parameterSets.put(norm(written), set);
@@ -848,7 +920,9 @@ public final class ScenarioResolver {
         for (ParameterWaardeContext pw : regels) {
             String written = src(pw.parameterNaam());
             Parameter p = parameterByName(withoutArticle(written));
-            if (p == null) error(pw.getStart().getLine(), "de parameter '" + written + "' is niet gedeclareerd");
+            if (p == null) error(pw.getStart().getLine(),
+                    "RGS-250", params("parameter", written),
+                    "de parameter '" + written + "' is niet gedeclareerd");
             else if (!setLine(setName, pw, p, parameters)) incomplete.add(norm(p.naam()));
         }
         return new SetResult(setName, parameters, incomplete);
@@ -868,7 +942,9 @@ public final class ScenarioResolver {
             sp = new SetParameter(p.naam(), segment ? null : new ArrayList<>(), segment ? new ArrayList<>() : null, line);
             parameters.put(norm(p.naam()), sp);
         } else if ((sp.tijdlijn() != null) != segment) {
-            error(line, what + " krijgt in dit blok " + (segment ? "zowel een vaste waarde als perioden"
+            error(line,
+                    "RGS-255", params("what", what, "combination", (segment ? "zowel een vaste waarde als perioden" : "zowel perioden als een vaste waarde")),
+                    what + " krijgt in dit blok " + (segment ? "zowel een vaste waarde als perioden"
                     : "zowel perioden als een vaste waarde"));
             return false;
         }
@@ -883,7 +959,9 @@ public final class ScenarioResolver {
         Vintage fresh = new Vintage(per == null ? null : per.van(), per == null ? null : per.until(), w, line);
         Vintage collision = sp.vintages().stream().filter(j -> j.overlaps(fresh)).findFirst().orElse(null);
         if (collision != null) {
-            error(line, "de parameterset '" + setName + "' geeft de parameter '" + p.naam() + "' twee jaargangen die "
+            error(line,
+                    "RGS-256", params("parameterSet", setName, "parameter", p.naam(), "first", collision.show(), "second", fresh.show()),
+                    "de parameterset '" + setName + "' geeft de parameter '" + p.naam() + "' twee jaargangen die "
                     + "elkaar overlappen (" + collision.show() + " en " + fresh.show() + "); de peildatum van een scenario "
                     + "kiest precies één jaargang");
             return false;
@@ -905,7 +983,9 @@ public final class ScenarioResolver {
         boolean withoutAsOfDateReported = false;
         for (SetParameter sp : set.parameters().values()) {
             if (inSituation.contains(norm(sp.parameter()))) {
-                error(line, "de parameter '" + sp.parameter() + "' krijgt een waarde uit de parameterset '" + set.naam()
+                error(line,
+                        "RGS-257", params("parameter", sp.parameter(), "parameterSet", set.naam(), "scenario", scenario),
+                        "de parameter '" + sp.parameter() + "' krijgt een waarde uit de parameterset '" + set.naam()
                         + "' en uit de situatie van het scenario '" + scenario + "'; een parameter krijgt zijn waarde "
                         + "uit één van beide");
                 continue;
@@ -922,7 +1002,9 @@ public final class ScenarioResolver {
             else if (asOfDate == null) {
                 // a written peildatum that was refused has its own ERROR; one sentence names the defect for all
                 if (!asOfDateWritten && !withoutAsOfDateReported)
-                    error(line, "de parameter '" + sp.parameter() + "' heeft in de parameterset '" + set.naam()
+                    error(line,
+                            "RGS-258", params("parameter", sp.parameter(), "parameterSet", set.naam(), "scenario", scenario),
+                            "de parameter '" + sp.parameter() + "' heeft in de parameterset '" + set.naam()
                             + "' jaargangen, maar het scenario '" + scenario + "' heeft geen peildatum die er één kiest "
                             + "(voeg 'met peildatum <datum>' toe)");
                 withoutAsOfDateReported = true;
@@ -930,7 +1012,9 @@ public final class ScenarioResolver {
             } else {
                 for (Vintage j : vintages) if (j.contains(asOfDate)) { chosen = j; break; }
                 if (chosen == null) {
-                    error(line, "de parameterset '" + set.naam() + "' heeft voor de parameter '" + sp.parameter()
+                    error(line,
+                            "RGS-259", params("parameterSet", set.naam(), "parameter", sp.parameter(), "asOfDate", asOfDate, "scenario", scenario),
+                            "de parameterset '" + set.naam() + "' heeft voor de parameter '" + sp.parameter()
                             + "' geen jaargang die de peildatum " + asOfDate + " van het scenario '" + scenario
                             + "' bevat");
                     continue;
@@ -952,17 +1036,21 @@ public final class ScenarioResolver {
         for (int i = 0; i < 2; i++) {
             String tekst = p.DATE(i).getText().replaceAll("\\s+", " ").trim();
             if (ExpressionBuilder.sourceDateTime(tekst) != null) {
-                error(line, "de periodegrens '" + tekst + "' draagt een tijd, maar een periode telt in hele dagen");
+                error(line,
+                        "RGS-260", params("bound", tekst),
+                        "de periodegrens '" + tekst + "' draagt een tijd, maar een periode telt in hele dagen");
                 return null;
             }
             bounds[i] = ExpressionBuilder.sourceDate(tekst);
             if (bounds[i] == null) {
-                error(line, "de periodegrens '" + tekst + "' is geen geldige datum");
+                error(line, "RGS-261", params("bound", tekst), "de periodegrens '" + tekst + "' is geen geldige datum");
                 return null;
             }
         }
         if (!bounds[0].isBefore(bounds[1])) {
-            error(line, "de periode van " + bounds[0] + " tot " + bounds[1] + " is leeg of loopt terug");
+            error(line,
+                    "RGS-262", params("from", bounds[0], "until", bounds[1]),
+                    "de periode van " + bounds[0] + " tot " + bounds[1] + " is leeg of loopt terug");
             return null;
         }
         return new TimeWindow(bounds[0], bounds[1]);
@@ -972,7 +1060,9 @@ public final class ScenarioResolver {
      *  stand in order and do not overlap (a gap is allowed). */
     private boolean follows(LocalDate previousTo, TimeWindow p, int line) {
         if (previousTo == null || !p.van().isBefore(previousTo)) return true;
-        error(line, "de periode van " + p.van() + " tot " + p.until() + " begint vóór het einde van de vorige ("
+        error(line,
+                "RGS-263", params("from", p.van(), "until", p.until(), "previousUntil", previousTo),
+                "de periode van " + p.van() + " tot " + p.until() + " begint vóór het einde van de vorige ("
                 + previousTo + "); de perioden van één tijdlijn staan in volgorde en overlappen niet");
         return false;
     }
@@ -996,7 +1086,9 @@ public final class ScenarioResolver {
         boolean goed = true;
         for (LocalDate limit : List.of(p.van(), p.until()))
             if (Boolean.FALSE.equals(dev.uchar.regelspraak.core.FixedStartPoint.opWand(g, count, fixed, limit))) {
-                error(line, "de periodegrens " + limit + " van " + what + " ligt niet op het " + gridName(g, count)
+                error(line,
+                        "RGS-264", params("limit", limit, "what", what, "grid", gridName(g, count), "fixedStart", (fixed == null ? "" : " (vast startpunt " + fixed + ")")),
+                        "de periodegrens " + limit + " van " + what + " ligt niet op het " + gridName(g, count)
                         + " van de declaratie" + (fixed == null ? "" : " (vast startpunt " + fixed + ")")
                         + "; een casebestand levert een tijdlijn in de perioden van dat raster");
                 goed = false;
@@ -1030,7 +1122,9 @@ public final class ScenarioResolver {
                     builder = new InstanceBuilder(frag.label(), frag.objectType());
                     instances.put(frag.label(), builder);
                 } else if (frag.objectType() != null && builder.objectType != null && builder.objectType != frag.objectType()) {
-                    error(frag.line(), "het label '" + frag.label() + "' is eerder gedeclareerd als '"
+                    error(frag.line(),
+                            "RGS-265", params("label", frag.label(), "firstType", builder.objectType.naam, "secondType", frag.objectType().naam),
+                            "het label '" + frag.label() + "' is eerder gedeclareerd als '"
                             + builder.objectType.naam + "', hier als '" + frag.objectType().naam + "'");
                 }
                 frag.attributen().forEach(builder::setAttribute);
@@ -1053,10 +1147,14 @@ public final class ScenarioResolver {
                 for (String label : r.targetLabels()) {
                     Instance ref = situation.instantie(label);
                     if (ref == null)
-                        error(r.line(), "de rol '" + r.key() + "' verwijst naar het label '" + label + "', dat nergens "
+                        error(r.line(),
+                                "RGS-266", params("role", r.key(), "label", label),
+                                "de rol '" + r.key() + "' verwijst naar het label '" + label + "', dat nergens "
                                 + "in de samengestelde situatie gedeclareerd is");
                     else if (target != null && ref.objectType() != null && !ref.objectType().isA(target))
-                        error(r.line(), "de rol '" + r.key() + "' verwacht een " + target.naam + ", maar het label '"
+                        error(r.line(),
+                                "RGS-267", params("role", r.key(), "expectedType", target.naam, "label", label, "objectType", ref.objectType().naam),
+                                "de rol '" + r.key() + "' verwacht een " + target.naam + ", maar het label '"
                                 + label + "' is een " + ref.objectType().naam);
                 }
             }
@@ -1102,7 +1200,9 @@ public final class ScenarioResolver {
                 if (attr == null || !temporalAttribute(label, attr, situation, line)) continue;
                 String key = label + "|" + norm(attr);
                 if (tijdlijnen.containsKey(key)) {
-                    error(line, "de verwachting dat '" + attr + "' van " + label + " altijd leeg is, spreekt de "
+                    error(line,
+                            "RGS-268", params("attribute", attr, "label", label),
+                            "de verwachting dat '" + attr + "' van " + label + " altijd leeg is, spreekt de "
                             + "perioden ervoor tegen");
                     continue;
                 }
@@ -1129,7 +1229,9 @@ public final class ScenarioResolver {
                     continue;
                 String key = label + "|" + norm(attr);
                 if (Boolean.TRUE.equals(alwaysEmpty.get(key))) {
-                    error(line, "de periode voor '" + attr + "' van " + label + " spreekt de verwachting tegen dat het "
+                    error(line,
+                            "RGS-269", params("attribute", attr, "label", label),
+                            "de periode voor '" + attr + "' van " + label + " spreekt de verwachting tegen dat het "
                             + "attribuut altijd leeg is");
                     continue;
                 }
@@ -1156,14 +1258,18 @@ public final class ScenarioResolver {
                 if (s != null) {
                     regel = textContent(s.tekstWaarde(), line, "de regel van de inconsistentie");
                     if (regel != null && !knownInconsistencyRule(regel)) {
-                        error(line, "de regel '" + regel + "' van de inconsistentie bestaat niet in het document en is "
+                        error(line,
+                                "RGS-270", params("rule", regel),
+                                "de regel '" + regel + "' van de inconsistentie bestaat niet in het document en is "
                                 + "geen conflictkanaal ('<Objecttype>.<attribuut of kenmerk>', eventueel met '/<pad>')");
                         regel = null;
                     }
                     if (s.UPPER_ID() != null) {
                         label = s.UPPER_ID().getText();
                         if (situation.instantie(label) == null) {
-                            error(line, "het label '" + label + "' in de verwachting is nergens in de situatie gedeclareerd");
+                            error(line,
+                                    "RGS-271", params("label", label),
+                                    "het label '" + label + "' in de verwachting is nergens in de situatie gedeclareerd");
                             label = null;
                         }
                     }
@@ -1175,7 +1281,9 @@ public final class ScenarioResolver {
             } else if (!src(v).isBlank()) {
                 // error recovery leaves a bare VerwachtingContext; the syntax error is reported already, and a bare
                 // context without text is recovery's own and names nothing
-                error(line, "de verwachting '" + src(v) + "' is syntactisch niet herkend");
+                error(line,
+                        "RGS-272", params("expectation", src(v)),
+                        "de verwachting '" + src(v) + "' is syntactisch niet herkend");
             }
         }
         return result;
@@ -1185,17 +1293,23 @@ public final class ScenarioResolver {
     private String expectedAttribute(String label, String written, Situation situation, int line) {
         Instance i = situation.instantie(label);
         if (i == null) {
-            error(line, "het label '" + label + "' in de verwachting is nergens in de situatie gedeclareerd");
+            error(line,
+                    "RGS-271", params("label", label),
+                    "het label '" + label + "' in de verwachting is nergens in de situatie gedeclareerd");
             return null;
         }
         if (i.objectType() == null) return null;                      // unknown type: reported at the opener
         String attr = i.objectType().attributeName(written);
         if (attr == null) {
-            error(line, "het objecttype '" + i.objectType().naam + "' kent geen attribuut '" + written + "'");
+            error(line,
+                    "RGS-236", params("objectType", i.objectType().naam, "attribute", written),
+                    "het objecttype '" + i.objectType().naam + "' kent geen attribuut '" + written + "'");
             return null;
         }
         if (!i.objectType().dimensionsOf(attr).isEmpty()) {
-            error(line, "het attribuut '" + attr + "' is gedimensioneerd, en een casebestand draagt geen "
+            error(line,
+                    "RGS-237", params("attribute", attr),
+                    "het attribuut '" + attr + "' is gedimensioneerd, en een casebestand draagt geen "
                     + "dimensiecoördinaten");
             return null;
         }
@@ -1204,7 +1318,9 @@ public final class ScenarioResolver {
 
     private boolean temporalAttribute(String label, String attr, Situation situation, int line) {
         if (situation.instantie(label).objectType().granularityOf(attr) != null) return true;
-        error(line, "het attribuut '" + attr + "' is niet tijdsafhankelijk; een tijdlijnverwachting hoort bij een "
+        error(line,
+                "RGS-273", params("attribute", attr),
+                "het attribuut '" + attr + "' is niet tijdsafhankelijk; een tijdlijnverwachting hoort bij een "
                 + "attribuut met een tijdlijn");
         return false;
     }
@@ -1216,13 +1332,17 @@ public final class ScenarioResolver {
         String naam = absent ? written.substring(5).trim() : written;
         Instance i = situation.instantie(label);
         if (i == null) {
-            error(line, "het label '" + label + "' in de verwachting is nergens in de situatie gedeclareerd");
+            error(line,
+                    "RGS-271", params("label", label),
+                    "het label '" + label + "' in de verwachting is nergens in de situatie gedeclareerd");
             return null;
         }
         if (i.objectType() == null) return null;
         String characteristic = CharacteristicMatcher.find(i.objectType(), withoutArticle(naam));
         if (characteristic == null) {
-            error(line, "het objecttype '" + i.objectType().naam + "' kent geen kenmerk '" + naam + "'");
+            error(line,
+                    "RGS-241", params("objectType", i.objectType().naam, "characteristic", naam),
+                    "het objecttype '" + i.objectType().naam + "' kent geen kenmerk '" + naam + "'");
             return null;
         }
         if (!verbFits(i.objectType(), characteristic, has, line)) return null;
@@ -1251,7 +1371,9 @@ public final class ScenarioResolver {
             LocalDateTime dt = ExpressionBuilder.sourceDateTime(tekst);
             LocalDate dd = dt == null ? ExpressionBuilder.sourceDate(tekst) : null;
             if (dt == null && dd == null) {
-                error(line, what + ": de datum '" + tekst + "' is geen geldige datum");
+                error(line,
+                        "RGS-274", params("what", what, "date", tekst),
+                        what + ": de datum '" + tekst + "' is geen geldige datum");
                 return null;
             }
             Datatype raw = dt != null ? new Datatype.DateTime() : new Datatype.DatumInDagen();
@@ -1266,11 +1388,15 @@ public final class ScenarioResolver {
             String label = dev.uchar.regelspraak.core.Literals.enumLabel(e.ENUM_LITERAL().getText());
             if (!(target instanceof Datatype.Enumeratie enumDatatype)) {
                 if (target != null && !target.isUnknown())
-                    error(line, what + ": een enumeratiewaarde ('" + label + "') past niet op een " + target.naam());
+                    error(line,
+                            "RGS-275", params("what", what, "label", label, "targetType", target.naam()),
+                            what + ": een enumeratiewaarde ('" + label + "') past niet op een " + target.naam());
                 return null;
             }
             for (String w : enumDatatype.waarden()) if (w.equalsIgnoreCase(label)) return ScenarioValue.fromEnum(w);
-            error(line, what + ": '" + label + "' is geen waarde van de enumeratie " + enumDatatype.domain() + " ("
+            error(line,
+                    "RGS-276", params("what", what, "label", label, "domain", enumDatatype.domain(), "values", String.join(", ", enumDatatype.waarden())),
+                    what + ": '" + label + "' is geen waarde van de enumeratie " + enumDatatype.domain() + " ("
                     + String.join(", ", enumDatatype.waarden()) + ")");
             return null;
         }
@@ -1281,15 +1407,19 @@ public final class ScenarioResolver {
         }
         // a value the parse could not read ("de parameter de vondstdrempel is" and no value): the syntax error stands
         // beside this one, which names the position
-        error(line, what + (src(ctx).isBlank() ? ": er staat geen waarde" : ": de waarde '" + src(ctx) + "' is niet gelezen"));
+        if (src(ctx).isBlank())
+            error(line, "RGS-277", params("what", what), what + ": er staat geen waarde");
+        else
+            error(line, "RGS-278", params("what", what, "value", src(ctx)),
+                    what + ": de waarde '" + src(ctx) + "' is niet gelezen");
         return null;
     }
 
     private boolean assignable(Datatype target, Datatype raw, int line, String what) {
         if (target == null || target.isUnknown()) return true;
-        String f = Typing.assignment(target, raw);
+        Typing.Coded f = Typing.assignment(target, raw);
         if (f == null) return true;
-        error(line, what + ": " + f);
+        error(line, f.prefixed(what + ": "));
         return false;
     }
 
@@ -1397,7 +1527,9 @@ public final class ScenarioResolver {
         StringBuilder sb = new StringBuilder();
         for (TekstReeksDeelContext part : t.tekstReeksDeel()) {
             if (part.STRING_TEXT() == null) {
-                error(line, what + ": de tekstwaarde draagt een «expressie», en een waarde in een scenario is letterlijk");
+                error(line,
+                        "RGS-279", params("what", what),
+                        what + ": de tekstwaarde draagt een «expressie», en een waarde in een scenario is letterlijk");
                 return null;
             }
             sb.append(part.STRING_TEXT().getText());
@@ -1430,7 +1562,11 @@ public final class ScenarioResolver {
         return n;
     }
 
-    private void error(int line, String message) {
-        model.diagnostics.add(new Diagnostic(Severity.ERROR, "scenario: " + message, line));
+    private void error(int line, String code, java.util.Map<String, String> params, String message) {
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, code, params, "scenario: " + message, line));
+    }
+
+    private void error(int line, Typing.Coded refusal) {
+        model.diagnostics.add(refusal.prefixed("scenario: ").at(Severity.ERROR, line));
     }
 }

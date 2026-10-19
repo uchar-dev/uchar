@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
 /**
  * The vocabulary dialect extension (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"; IR-SPEC ch. 2.12): the
@@ -62,7 +63,9 @@ final class Designations {
             if (d.vocabulaireDefinition() != null) vocabulary(d.vocabulaireDefinition());
         List<Vocabulary> isDefault = model.vocabularies.stream().filter(Vocabulary::isDefault).toList();
         for (Vocabulary v : isDefault.subList(Math.min(1, isDefault.size()), isDefault.size()))
-            error("de vocabulaires '" + isDefault.get(0).naam() + "' en '" + v.naam() + "' zijn allebei het "
+            error(
+                    "RGS-038", params("vocabulary", isDefault.get(0).naam(), "otherVocabulary", v.naam()),
+                    "de vocabulaires '" + isDefault.get(0).naam() + "' en '" + v.naam() + "' zijn allebei het "
                     + "standaardvocabulaire; een document heeft er hooguit één (WF-116)", vocabularyLines.get(v.naam()));
         for (DefinitieContext d : doc.definitie()) {
             if (d.objectTypeDefinition() != null) objectType(d.objectTypeDefinition());
@@ -80,12 +83,16 @@ final class Designations {
             annotations(Designatable.ruleGroup(DefinitionResolver.src(g.kaleNaam())), g.benaming(), g);
         for (BeslistabelContext b : DefinitionResolver.allDecisionTables(doc))
             if (!b.benaming().isEmpty())
-                error("beslistabel '" + DefinitionResolver.src(b.beslistabelNaam()) + "' draagt een benaming, en een "
+                error(
+                        "RGS-039", params("name", DefinitionResolver.src(b.beslistabelNaam())),
+                        "beslistabel '" + DefinitionResolver.src(b.beslistabelNaam()) + "' draagt een benaming, en een "
                         + "beslistabel heeft er geen: zij staat voor de regels van haar rijen, die hun namen van de "
                         + "frontend krijgen; schrijf de benaming op een regel", b.getStart().getLine());
         for (UitzonderingRegelContext u : DefinitionResolver.allExceptions(doc))
             if (!u.benaming().isEmpty())
-                error("het blok '" + DefinitionResolver.src(u.regelNaam()) + "' draagt een benaming, en een "
+                error(
+                        "RGS-040", params("name", DefinitionResolver.src(u.regelNaam())),
+                        "het blok '" + DefinitionResolver.src(u.regelNaam()) + "' draagt een benaming, en een "
                         + "uitzonderings- of afwijkingsblok heeft er geen: het wordt een default in de groep van zijn "
                         + "basisregel, en een default heeft geen naam op de wire; schrijf de benaming op de basisregel",
                         u.getStart().getLine());
@@ -97,13 +104,15 @@ final class Designations {
         String naam = ctx.vocabulaireNaam().getText();
         int regel = ctx.getStart().getLine();
         if (naam.equalsIgnoreCase("mv")) {
-            error("vocabulaire 'mv': die naam is gereserveerd, want '(mv:' opent de meervoudsvorm van een naam, en een "
+            error(
+                    "RGS-041", params(),
+                    "vocabulaire 'mv': die naam is gereserveerd, want '(mv:' opent de meervoudsvorm van een naam, en een "
                     + "benaming in dit vocabulaire zou als meervoud gelezen worden", regel);
             return;
         }
         Vocabulary earlier = model.vocabulary(naam);
         if (earlier != null) {
-            error("vocabulaire '" + naam + "' is al gedeclareerd"
+            error("RGS-042", params("name", naam, "earlierName", earlier.naam()), "vocabulaire '" + naam + "' is al gedeclareerd"
                     + (earlier.naam().equals(naam) ? "" : " als '" + earlier.naam() + "'")
                     + "; de namen van de vocabulaires zijn uniek, hoofdletterongevoelig (WF-116)", regel);
             return;
@@ -114,7 +123,7 @@ final class Designations {
             if (!(ctx.getChild(i) instanceof org.antlr.v4.runtime.tree.TerminalNode t)
                     || t.getSymbol().getType() != dev.uchar.regelspraak.parser.RegelSpraakLexer.STANDAARD) continue;
             if (isDefault)
-                error("vocabulaire '" + naam + "' draagt '(standaard)' twee keer", regel);
+                error("RGS-043", params("vocabulary", naam), "vocabulaire '" + naam + "' draagt '(standaard)' twee keer", regel);
             isDefault = true;
         }
         boolean languageSeen = false;
@@ -122,18 +131,24 @@ final class Designations {
             String key = key(b);
             if (!closed(b, "vocabulaire '" + naam + "'")) continue;
             if (!key.equals("taal")) {
-                error("vocabulaire '" + naam + "': '(" + key + ": …)' is geen eigenschap van een vocabulaire; een "
+                error(
+                        "RGS-044", params("vocabulary", naam, "property", key),
+                        "vocabulaire '" + naam + "': '(" + key + ": …)' is geen eigenschap van een vocabulaire; een "
                         + "vocabulairekop kent '(standaard)' en '(taal: <code>)'", b.getStart().getLine());
                 continue;
             }
             if (languageSeen) {
-                error("vocabulaire '" + naam + "' draagt '(taal: …)' twee keer", b.getStart().getLine());
+                error(
+                        "RGS-045", params("vocabulary", naam),
+                        "vocabulaire '" + naam + "' draagt '(taal: …)' twee keer", b.getStart().getLine());
                 continue;
             }
             languageSeen = true;
             String code = tekst(b);
             if (code.isEmpty() || code.chars().anyMatch(Character::isWhitespace))
-                error("vocabulaire '" + naam + "': de taalcode '" + code + "' is leeg of bevat witruimte; een taalcode "
+                error(
+                        "RGS-046", params("vocabulary", naam, "code", code),
+                        "vocabulaire '" + naam + "': de taalcode '" + code + "' is leeg of bevat witruimte; een taalcode "
                         + "is één woord (WF-116)", b.getStart().getLine());
             else language = code;
         }
@@ -192,19 +207,25 @@ final class Designations {
             if (!closed(b, description(element))) continue;
             String tekst = tekst(b);
             if (tekst.isEmpty()) {
-                error("de benaming van " + description(element) + " in het vocabulaire '" + vocabulary + "' is leeg; "
+                error(
+                        "RGS-047", params("element", description(element), "vocabulary", vocabulary),
+                        "de benaming van " + description(element) + " in het vocabulaire '" + vocabulary + "' is leeg; "
                         + "een benaming is tekst tussen de dubbele punt en het sluithaakje (WF-117)", regel);
                 continue;
             }
             if (tekst.indexOf('(') >= 0) {
-                error("de benaming '" + tekst + "' van " + description(element) + " in het vocabulaire '" + vocabulary
+                error(
+                        "RGS-048", params("text", tekst, "element", description(element), "vocabulary", vocabulary),
+                        "de benaming '" + tekst + "' van " + description(element) + " in het vocabulaire '" + vocabulary
                         + "' bevat een haakje; een benaming is tekst zonder haakjes, want het sluithaakje sluit de "
                         + "annotatie (WF-117)", regel);
                 continue;
             }
             Vocabulary v = model.vocabulary(vocabulary);
             if (v == null) {
-                error("de benaming '" + tekst + "' van " + description(element) + " noemt het vocabulaire '"
+                error(
+                        "RGS-049", params("text", tekst, "element", description(element), "vocabulary", vocabulary),
+                        "de benaming '" + tekst + "' van " + description(element) + " noemt het vocabulaire '"
                         + vocabulary + "', dat het document niet declareert ('Vocabulaire " + vocabulary + "', "
                         + "WF-117)", regel);
                 continue;
@@ -213,7 +234,9 @@ final class Designations {
             Designation earlier = existing.stream().filter(x -> x.vocabulary().equalsIgnoreCase(v.naam()))
                     .findFirst().orElse(null);
             if (earlier != null) {
-                error(head(description(element)) + " draagt twee benamingen in het vocabulaire '" + v.naam() + "', '"
+                error(
+                        "RGS-050", params("element", head(description(element)), "vocabulary", v.naam(), "earlierText", earlier.tekst(), "text", tekst),
+                        head(description(element)) + " draagt twee benamingen in het vocabulaire '" + v.naam() + "', '"
                         + earlier.tekst() + "' en '" + tekst + "'; een declaratie heeft hooguit één benaming per "
                         + "vocabulaire (WF-117)", regel);
                 continue;
@@ -225,7 +248,9 @@ final class Designations {
     /** Whether an annotation is closed on its own line; an open one is refused by name. */
     private boolean closed(BenamingContext b, String which) {
         if (b.BENAMING_EINDE() != null) return true;
-        error("de annotatie '(" + key(b) + ":" + (b.BENAMING_TEKST() == null ? "" : b.BENAMING_TEKST().getText())
+        error(
+                "RGS-051", params("key", key(b), "text", b.BENAMING_TEKST() == null ? "" : b.BENAMING_TEKST().getText(), "element", which),
+                "de annotatie '(" + key(b) + ":" + (b.BENAMING_TEKST() == null ? "" : b.BENAMING_TEKST().getText())
                 + "' bij " + which + " is niet op haar regel gesloten; een benaming staat tussen haakjes op één regel",
                 b.getStart().getLine());
         return false;
@@ -347,7 +372,9 @@ final class Designations {
         // a designation on a rule that is no named form on the wire would be lost with the rule's form
         for (Designatable b : model.designations.keySet())
             if (b.category() == Designatable.Kind.VORM && all.stream().noneMatch(x -> x.equals(b)))
-                error("de regel '" + b.naam() + "' draagt een benaming, maar wordt op de wire geen benoemde vorm (een "
+                error(
+                        "RGS-052", params("name", b.naam()),
+                        "de regel '" + b.naam() + "' draagt een benaming, maar wordt op de wire geen benoemde vorm (een "
                         + "regel, creatie, verdeling, consistentie, uniciteit of defaultsgroep): een dagsoortdefinitie "
                         + "en een startpuntbepaling hebben geen naam, en een verdeling zonder methode wordt niet "
                         + "geschreven; zonder vorm heeft de benaming geen plaats", regels.getOrDefault(b, 0));
@@ -369,8 +396,18 @@ final class Designations {
                     + enumeration(sources.stream().map(Designations::description).toList())
                     + (sources.size() == 1 ? ", en dat draagt er geen" : ", en geen daarvan draagt er een")
                     : regel != null ? "" : "; de frontend schreef deze declaratie zelf, zonder plaats voor een annotatie";
-            error(head(description(b)) + " draagt geen benaming in het standaardvocabulaire '" + v.naam() + "', dat "
-                    + "elke declaratie noemt (WF-119)" + suffix, regel == null ? 0 : regel);
+            String text = head(description(b)) + " draagt geen benaming in het standaardvocabulaire '" + v.naam() + "', dat "
+                    + "elke declaratie noemt (WF-119)" + suffix;
+            if (sources != null)
+                error("RGS-053", params("element", head(description(b)),
+                        "vocabulary", v.naam(), "sources", enumeration(sources.stream().map(Designations::description).toList())),
+                        text, regel == null ? 0 : regel);
+            else if (regel != null)
+                error("RGS-054", params("element", head(description(b)), "vocabulary", v.naam()),
+                        text, regel);
+            else
+                error("RGS-055", params("element", head(description(b)),
+                        "vocabulary", v.naam()), text, 0);
         }
     }
 
@@ -380,7 +417,9 @@ final class Designations {
     private void redundant(Vocabulary v, List<Designatable> all) {
         for (Designatable b : all)
             model.benaming(v.naam(), b).filter(t -> t.equals(b.naam())).ifPresent(t ->
-                    model.diagnostics.add(new Diagnostic(Severity.WARNING, "de benaming '" + t + "' van "
+                    model.diagnostics.add(new Diagnostic(Severity.WARNING,
+                            "RGS-056", params("text", t, "element", description(b), "vocabulary", v.naam()),
+                            "de benaming '" + t + "' van "
                             + description(b) + " in het vocabulaire '" + v.naam() + "' spelt haar canonieke naam en "
                             + "is overbodig: de effectieve naam is dezelfde zonder haar (WF-120)",
                             regels.getOrDefault(b, 0))));
@@ -425,7 +464,9 @@ final class Designations {
                 // at the later declaration, and in a chain scope at the type's own member, where the collision
                 // arises: an inherited member was declared before the subtype that takes it in
                 Designatable place = own.isEmpty() || own.contains(b) ? b : a;
-                error(head(description(a)) + " en " + description(b) + " hebben in het vocabulaire '" + v.naam()
+                error(
+                        "RGS-057", params("element", head(description(a)), "otherElement", description(b), "vocabulary", v.naam(), "name", nb, "compounds", compound(v, a) + compound(v, b)),
+                        head(description(a)) + " en " + description(b) + " hebben in het vocabulaire '" + v.naam()
                         + "' dezelfde effectieve naam '" + nb + "'; binnen hun reikwijdte is die uniek, "
                         + "hoofdletterongevoelig, zodat de weg terug naar de declaratie één antwoord heeft (WF-118)"
                         + compound(v, a) + compound(v, b), regel(place));
@@ -456,7 +497,7 @@ final class Designations {
         return String.join(", ", parts.subList(0, parts.size() - 1)) + " en " + parts.get(parts.size() - 1);
     }
 
-    private void error(String message, Integer regel) {
-        model.diagnostics.add(new Diagnostic(Severity.ERROR, message, regel == null ? 0 : regel));
+    private void error(String code, java.util.Map<String, String> params, String message, Integer regel) {
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, code, params, message, regel == null ? 0 : regel));
     }
 }

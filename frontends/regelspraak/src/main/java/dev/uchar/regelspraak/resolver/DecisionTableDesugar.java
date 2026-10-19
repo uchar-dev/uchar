@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.resolver;
 
 import java.util.ArrayList;
 import java.util.List;
+import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
 /**
  * §12 BESLISTABEL desugar (the table-body gap, card 20260624-beslistabel-tabelbody-desugar): turn a captured §12
@@ -55,6 +56,12 @@ public final class DecisionTableDesugar {
      */
     public static List<String> desugar(String naam, String valid, List<String> headers, List<List<String>> rows,
                                         java.util.function.Consumer<String> warn) {
+        return desugarCoded(naam, valid, headers, rows, w -> warn.accept(w.text()));
+    }
+
+    /** As {@link #desugar(String, String, List, List, java.util.function.Consumer)}, the warnings with their templates. */
+    public static List<String> desugarCoded(String naam, String valid, List<String> headers, List<List<String>> rows,
+                                        java.util.function.Consumer<Typing.Coded> warn) {
         List<Integer> conclusionKol = new ArrayList<>(), conditionKol = new ArrayList<>();
         for (int c = 1; c < headers.size(); c++) {
             if (headers.get(c).trim().toLowerCase().startsWith("indien")) conditionKol.add(c);
@@ -65,7 +72,7 @@ public final class DecisionTableDesugar {
             String nr = row.isEmpty() ? "" : row.get(0).trim();
             for (int ci = 0; ci < conclusionKol.size(); ci++) {
                 int cc = conclusionKol.get(ci);
-                String resultClause = resultPart(headers.get(cc).trim(), cellAt(row, cc).trim(), nr, warn);
+                String resultClause = resultPart(naam, headers.get(cc).trim(), cellAt(row, cc).trim(), nr, warn);
                 if (resultClause == null) continue;   // a forbidden / un-renderable conclusie — resultaatdeel already warned
 
                 // each non-n.v.t. conditie cell -> a Voorwaarde (a predicate kop + its 0..n alternative values).
@@ -91,7 +98,7 @@ public final class DecisionTableDesugar {
                     }
                 }
 
-                String clause = conditionClause(conditions, nr, warn);
+                String clause = conditionClause(naam, conditions, nr, warn);
                 if (clause == null) continue;   // un-renderable (>1 disjunction in one EN-row) — warned + skipped
                 // name: "<naam> <rij>" (+ a conclusie-column suffix only when a row yields more than one regel).
                 String regelNaam = naam + (nr.isEmpty() ? "" : " " + nr) + (conclusionKol.size() > 1 ? " (" + (ci + 1) + ")" : "");
@@ -110,7 +117,7 @@ public final class DecisionTableDesugar {
     /** Build the "&nbsp;indien …" clause for a row's conditions (empty if none). One condition → inline (or a §13.4.14
      *  "tenminste één van de volgende voorwaarden" list for a §5.7 disjunction); several → an "alle volgende
      *  voorwaarden" AND-list, any disjunction reordered LAST and nested as a §13.4.14.2 sub-list. */
-    private static String conditionClause(List<Condition> conditions, String nr, java.util.function.Consumer<String> warn) {
+    private static String conditionClause(String table, List<Condition> conditions, String nr, java.util.function.Consumer<Typing.Coded> warn) {
         if (conditions.isEmpty()) return "";
         if (conditions.size() == 1) {
             Condition v = conditions.get(0);
@@ -123,8 +130,9 @@ public final class DecisionTableDesugar {
         // so a row with >1 disjunction cell is an honest skip rather than a silent collapse.
         long disjunctions = conditions.stream().filter(Condition::disjunction).count();
         if (disjunctions > 1) {
-            warn.accept("rij " + nr + ": meer dan één concatenatie-cel (OR-lijst) in één EN-rij wordt niet "
-                    + "ondersteund — rij overgeslagen");
+            warn.accept(new Typing.Coded("RGS-300", params("table", table, "row", nr),
+                    "rij " + nr + ": meer dan één concatenatie-cel (OR-lijst) in één EN-rij wordt niet "
+                    + "ondersteund — rij overgeslagen"));
             return null;
         }
         List<Condition> ordered = new ArrayList<>();
@@ -176,35 +184,40 @@ public final class DecisionTableDesugar {
      *  C-7 "(wordt) berekend als" (§12 mandates "moet gesteld worden op"); C-8 an empty conclusie cell; C-9 an inline
      *  "indien" in a value cell; "onwaar" (no RegelSpraak negatieve toekenning); and C-6 any other resultaatdeel
      *  (objectcreatie/feitcreatie/verdeling/consistentie/…). */
-    private static String resultPart(String header, String cell, String nr, java.util.function.Consumer<String> warn) {
+    private static String resultPart(String table, String header, String cell, String nr, java.util.function.Consumer<Typing.Coded> warn) {
         String h = header.toLowerCase();
         if (h.contains("moet gesteld worden op")) {   // §9.1 gelijkstelling
             if (cell.isEmpty()) {   // §12 C-8: n.v.t. is conditie-only, a resultaatdeel is mandatory
-                warn.accept("rij " + nr + ": lege conclusie-cel — een resultaatdeel is verplicht (§12)");
+                warn.accept(new Typing.Coded("RGS-301", params("table", table, "row", nr),
+                        "rij " + nr + ": lege conclusie-cel — een resultaatdeel is verplicht (§12)"));
                 return null;
             }
             // §12 C-9: voorwaarden horen in de conditie-kolommen — reject only a STANDALONE "indien" word OUTSIDE any
             // quoted span (so an attribute "het indienjaar" or a Tekst "indien nodig" value is NOT a false positive).
             if (STANDALONE_IF.matcher(maskerQuotes(cell)).find()) {
-                warn.accept("rij " + nr + ": 'indien' mag niet in een conclusie-cel staan (§12)");
+                warn.accept(new Typing.Coded("RGS-302", params("table", table, "row", nr),
+                        "rij " + nr + ": 'indien' mag niet in een conclusie-cel staan (§12)"));
                 return null;
             }
             return header + " " + cell;
         }
         if (h.contains("berekend als")) {   // §12 C-7 — only the forbidden connective (NOT an incidental substring of a gelijkstelling header)
-            warn.accept("rij " + nr + ": een beslistabel-conclusie moet 'moet gesteld worden op' gebruiken, "
-                    + "niet 'berekend als' (§12)");
+            warn.accept(new Typing.Coded("RGS-303", params("table", table, "row", nr),
+                    "rij " + nr + ": een beslistabel-conclusie moet 'moet gesteld worden op' gebruiken, "
+                    + "niet 'berekend als' (§12)"));
             return null;
         }
         // §9.2 kenmerktoekenning: the header IS the assertion ("een deelnemer is een deelnemer jonger dan 18 jaar").
         if (cell.equalsIgnoreCase("waar")) return header;
         if (cell.equalsIgnoreCase("onwaar")) {
-            warn.accept("rij " + nr + ": een kenmerk-conclusie 'onwaar' kan niet als negatieve toekenning "
-                    + "worden uitgedrukt — rij overgeslagen");
+            warn.accept(new Typing.Coded("RGS-304", params("table", table, "row", nr),
+                    "rij " + nr + ": een kenmerk-conclusie 'onwaar' kan niet als negatieve toekenning "
+                    + "worden uitgedrukt — rij overgeslagen"));
             return null;
         }
-        warn.accept("rij " + nr + ": alleen een gelijkstelling ('… moet gesteld worden op') of een "   // §12 C-6
-                + "kenmerktoekenning ('… is …' met cel 'waar') is toegestaan in een beslistabel-conclusie (§12)");
+        warn.accept(new Typing.Coded("RGS-305", params("table", table, "row", nr),
+                "rij " + nr + ": alleen een gelijkstelling ('… moet gesteld worden op') of een "   // §12 C-6
+                + "kenmerktoekenning ('… is …' met cel 'waar') is toegestaan in een beslistabel-conclusie (§12)"));
         return null;
     }
 

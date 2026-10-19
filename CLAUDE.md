@@ -272,7 +272,19 @@ reviewer's duty on a machine that has catala. Current gates:
     `bron.rgs` re-emits through `--ir` byte-identically to the
     committed `ir.json`; an empty rgs-golden set or a zero-test run
     is a failure, never silently green. Its CI leg is unconditional
-    and blocking (maintainer decision 2026-08-27).
+    and blocking (maintainer decision 2026-08-27). Since the card
+    `frontend-codes` (2026-10-19) the gate calls
+    `scripts/check-rgs-codes.sh` first: every message the frontend
+    raises, and the three the Drools backend raises itself, carries a code
+    `RGS-###` and named parameters beside its Dutch text
+    (`Diagnostic(severity, code, params, message, line)`; the code is not
+    on the wire, IR-SPEC ch. 2 is unchanged), from one register,
+    `frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/diagnostic-codes.tsv`.
+    The script holds register and sources together in both directions
+    (every code a site passes is registered, every registered code is
+    passed, the parameter names agree, no `new Diagnostic(` with three
+    arguments outside `IrLoader`) and carries `EXPECTED_MIN_RGS_CODES=347`
+    (measured 2026-10-19); an empty scan is a failure.
 
 11. `scripts/check-toka-parity.sh` — the `toka/` parity zone (maintainer
     decision 2026-08-27; a regular gate of the set since 2026-10-13, when

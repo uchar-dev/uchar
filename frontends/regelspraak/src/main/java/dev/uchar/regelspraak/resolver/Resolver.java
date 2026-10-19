@@ -9,6 +9,7 @@ import dev.uchar.regelspraak.parser.RegelSpraak;
 import dev.uchar.regelspraak.parser.RegelSpraak.RegelSpraakDocumentContext;
 import dev.uchar.regelspraak.parser.RegelSpraakLexer;
 import org.antlr.v4.runtime.*;
+import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
 /**
  * Front-end entry point: parse a RegelSpraak source, build the typed model
@@ -36,7 +37,7 @@ public final class Resolver {
         BaseErrorListener listener = new BaseErrorListener() {
             @Override public void syntaxError(Recognizer<?, ?> r, Object sym, int line, int col,
                                               String msg, RecognitionException e) {
-                syntax.add(new Diagnostic(Severity.ERROR, "syntaxfout: " + msg, line));
+                syntax.add(new Diagnostic(Severity.ERROR, "RGS-091", params("message", msg), "syntaxfout: " + msg, line));
             }
         };
         lexer.removeErrorListeners(); lexer.addErrorListener(listener);
@@ -92,7 +93,7 @@ public final class Resolver {
     private static void reportUnresolved(RegelSpraakModel m) {
         java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Source, String> report = (sourceText, reason) -> {
             if (reason == null) return;
-            m.diagnostics.add(new Diagnostic(Severity.WARNING,
+            m.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-092", params("reason", reason, "expression", sourceText),
                     "onopgelost: " + reason + " — '" + sourceText + "' blijft als marker op de wire staan",
                     sourceText == null ? 0 : sourceText.line()));
         };
@@ -157,11 +158,11 @@ public final class Resolver {
                 Token after = j + 1 < list.size() ? list.get(j + 1) : null;
                 if (after == null) break;
                 if (after.getType() == RegelSpraakLexer.UPPER_ID)
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR,
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-093", params("word", after.getText()),
                             "kopvorm: 'is " + after.getText() + "' mist het lidwoord — een supertype wordt "
                             + "geschreven als 'is een " + after.getText() + "'", t.getLine()));
                 else if (after.getType() == RegelSpraakLexer.EEN && afterPlural)
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR,
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-094", params(),
                             "kopvorm: de 'is een'-clausule staat achter de (mv: …)-groep — zij hoort direct "
                             + "na de objecttypenaam, vóór (mv: …) en (bezield)", t.getLine()));
                 break;                                  // the head carries at most one such clause
@@ -242,7 +243,9 @@ public final class Resolver {
         ScenarioResolver.ScenarioBundle b = ScenarioResolver.resolve(sourceText.toString());
         RegelSpraakModel m = b.model();
         if (b.scenarios().isEmpty())
-            m.diagnostics.add(new Diagnostic(Severity.ERROR, "scenario: het document draagt geen scenario, dus er valt "
+            m.diagnostics.add(new Diagnostic(Severity.ERROR,
+                    "RGS-095", params(),
+                    "scenario: het document draagt geen scenario, dus er valt "
                     + "geen casebestand te schrijven", 0));
         RegelSpraakModel irModel = b.scenarios().isEmpty() ? m
                 : dev.uchar.regelspraak.emit.CaseEmitter.withScope(m, b.scenarios().get(0).scope());

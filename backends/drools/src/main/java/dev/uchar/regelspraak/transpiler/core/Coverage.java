@@ -41,6 +41,8 @@ public record Coverage(String category, String naam, Verdict verdict, String rea
     public void report(RegelSpraakModel model) {
         if (lowered()) return;
         var w = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                "RGS-346", RegelSpraakModel.Diagnostic.params("category", category, "name", naam, "verdict", verdict,
+                        "reason", reason),
                 "dekking: " + category + " '" + naam + "' " + verdict
                 + (reason.isEmpty() ? "" : " — " + reason), 0);
         if (!model.diagnostics.contains(w)) model.diagnostics.add(w);

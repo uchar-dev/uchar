@@ -19,7 +19,7 @@ public final class RegelSpraakCompileException extends RuntimeException {
     public static RegelSpraakCompileException contract(List<String> violations) {
         return new RegelSpraakCompileException(violations.stream()
                 .map(s -> new Diagnostic(dev.uchar.regelspraak.model.RegelSpraakModel.Severity.ERROR,
-                        "feitmodel-contract: " + s, 0)).toList());
+                        "RGS-345", Diagnostic.params("violation", s), "feitmodel-contract: " + s, 0)).toList());
     }
 
     public List<Diagnostic> diagnostics() { return diagnostics; }

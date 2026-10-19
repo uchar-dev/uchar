@@ -2,7 +2,7 @@
 # Gate 10 — the RegelSpraak frontend conformance (frontends/regelspraak,
 # the toolchain's frontend half on the copy route).
 #
-# Three obligations, each loud:
+# Four obligations, each loud:
 #   1. the frontend builds jar-only (ANTLR-generated parser + resolver +
 #      IR emitter, JDK 21+) and its JUnit suite passes with a NON-ZERO
 #      test count — a suite that ran nothing is a silent greenlight;
@@ -12,7 +12,10 @@
 #      repo's pin, now self-hosted;
 #   3. an empty rgs-golden set is a FAILURE, never silently green, and a
 #      missing JDK fails loudly (a gate that skips when its tool is
-#      absent is a silent greenlight).
+#      absent is a silent greenlight);
+#   4. every message the frontend raises carries a code from one register,
+#      held in both directions by scripts/check-rgs-codes.sh (card
+#      frontend-codes, 2026-10-19), which carries its own floor.
 set -u
 cd "$(dirname "$0")/.."
 
@@ -41,6 +44,13 @@ command -v make  >/dev/null 2>&1 || fail "make not found"
 
 FE=frontends/regelspraak
 [ -d "$FE" ] || fail "$FE is missing"
+
+# --- the carrier check of the message register (card frontend-codes, 2026-10-19) ---------------------------------
+# Every message the frontend raises carries a code `RGS-###` and named parameters beside its text, from one register
+# (diagnostic-codes.tsv). The script checks register and sources in both directions (every code a site passes is
+# registered, every registered code is passed, the parameter names agree, no site without a code) and holds a floor on
+# the register's size. It runs first: it reads sources and needs no build.
+bash scripts/check-rgs-codes.sh || fail "the register of message codes does not hold (scripts/check-rgs-codes.sh)"
 
 # Build + run the JUnit suite via the standalone console launcher. The
 # launcher exits non-zero on any failing test; the count is verified

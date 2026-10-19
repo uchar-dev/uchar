@@ -1492,7 +1492,24 @@ public final class RegelSpraakModel {
     public record Rule(String naam, String category) {}
 
     public enum Severity { ERROR, WARNING, INFO }
-    public record Diagnostic(Severity severity, String message, int line) {
+    /** A message of the frontend: {@code code} (an {@code RGS-###} of the register) and {@code params} name its
+     *  template apart from the {@code message}, which stays the Dutch text. A diagnostic read off the wire carries
+     *  neither (IR-SPEC ch. 2 {@code diagnostics} has no code), so {@code code} is null there. */
+    public record Diagnostic(Severity severity, String code, Map<String, String> params, String message, int line) {
+        public Diagnostic {
+            params = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(params));
+        }
+        /** A message without a code: the wire's, and the form the tests build. */
+        public Diagnostic(Severity severity, String message, int line) {
+            this(severity, null, Map.of(), message, line);
+        }
+        /** The parameters of a template, in the order given; a value renders as the message renders it. */
+        public static Map<String, String> params(Object... namesAndValues) {
+            if (namesAndValues.length % 2 != 0) throw new IllegalArgumentException("params takes name/value pairs");
+            Map<String, String> m = new LinkedHashMap<>();
+            for (int i = 0; i < namesAndValues.length; i += 2) m.put((String) namesAndValues[i], String.valueOf(namesAndValues[i + 1]));
+            return m;
+        }
         public boolean isError() { return severity == Severity.ERROR; }
         @Override public String toString() { return severity + " (line " + line + "): " + message; }
     }

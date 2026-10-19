@@ -20,6 +20,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
 
 /**
  * Builds the typed {@link RegelSpraakModel} from a parsed GegevensSpraak document
@@ -190,7 +191,9 @@ public final class DefinitionResolver {
             for (String n : e.getValue())
                 if (parents.stream().noneMatch(o -> o.equalsIgnoreCase(n))) parents.add(n);
             if (parents.size() > 1) {
-                error("objecttype '" + ot.naam + "' declareert meer dan één supertype ("
+                error(
+                        "RGS-002", params("objectType", ot.naam, "names", String.join(", ", parents)),
+                        "objecttype '" + ot.naam + "' declareert meer dan één supertype ("
                         + String.join(", ", parents) + ") — WF-106: een objecttype declareert hoogstens één "
                         + "direct supertype. De twee bekende gevallen met twee directe ouders "
                         + "(RechtOpUitkeringWazo, RechtUitkeringZw) worden hier geweigerd en niet "
@@ -200,7 +203,9 @@ public final class DefinitionResolver {
             }
             String naam = parents.get(0);
             if (naam.equalsIgnoreCase(ot.naam)) {
-                error("objecttype '" + ot.naam + "' is zijn eigen supertype — WF-104: de supertypegraaf is "
+                error(
+                        "RGS-003", params("objectType", ot.naam),
+                        "objecttype '" + ot.naam + "' is zijn eigen supertype — WF-104: de supertypegraaf is "
                         + "acyclisch, zelfverwijzing inbegrepen (een keten zonder wortel laat ledenresolutie "
                         + "nergens stoppen)", regel);
                 continue;
@@ -208,10 +213,16 @@ public final class DefinitionResolver {
             Objecttype parent = model.objectTypeByName(naam);
             if (parent == null) {
                 String category = nameKind(naam);
-                error("objecttype '" + ot.naam + "': supertype '" + naam + "' is "
-                        + (category == null ? "nergens als objecttype gedeclareerd" : "een " + category + ", geen objecttype")
-                        + " — WF-103: een supertype noemt een gedeclareerd objecttype, want een keten die daar "
-                        + "niet op eindigt lost geen enkel lid op", regel);
+                String wf103 = " — WF-103: een supertype noemt een gedeclareerd objecttype, want een keten die daar "
+                        + "niet op eindigt lost geen enkel lid op";
+                if (category == null)
+                    error("RGS-004", params("objectType", ot.naam, "supertype", naam),
+                            "objecttype '" + ot.naam + "': supertype '" + naam + "' is nergens als objecttype gedeclareerd"
+                            + wf103, regel);
+                else
+                    error("RGS-005", params("objectType", ot.naam, "supertype", naam, "category", category),
+                            "objecttype '" + ot.naam + "': supertype '" + naam + "' is een " + category + ", geen objecttype"
+                            + wf103, regel);
                 continue;
             }
             ot.supertype = parent;
@@ -255,7 +266,9 @@ public final class DefinitionResolver {
             for (Objecttype x : path.subList(path.indexOf(t), path.size())) names.add(x.naam);
             names.add(t.naam);
             Objecttype back = path.get(path.size() - 1);
-            error("objecttype '" + back.naam + "': supertypecyclus " + String.join(" -> ", names)
+            error(
+                    "RGS-006", params("objectType", back.naam, "names", String.join(" -> ", names)),
+                    "objecttype '" + back.naam + "': supertypecyclus " + String.join(" -> ", names)
                     + " — WF-104: de supertypegraaf is acyclisch (een type zou zijn eigen voorouder zijn, "
                     + "dus ledenresolutie heeft geen wortel om bij te stoppen)",
                     supertypeLine.getOrDefault(back.naam, 0));   // the clause that closes the cycle
@@ -289,7 +302,9 @@ public final class DefinitionResolver {
             boolean collides = attribute ? containsName(v.attributen.keySet(), naam) : containsName(v.kenmerken, naam);
             if (!collides) continue;
             int regel = memberLine.getOrDefault(ot, java.util.Map.of()).getOrDefault(naam.toLowerCase(), 0);
-            error("objecttype '" + ot.naam + "': " + category + " '" + naam + "' (bronregel " + regel + ") is al "
+            error(
+                    "RGS-007", params("objectType", ot.naam, "category", category, "name", naam, "sourceLine", regel, "ancestor", v.naam, "ancestorLine", memberLine.getOrDefault(v, java.util.Map.of()).getOrDefault(naam.toLowerCase(), 0)),
+                    "objecttype '" + ot.naam + "': " + category + " '" + naam + "' (bronregel " + regel + ") is al "
                     + "gedeclareerd op '" + v.naam + "' (bronregel "
                     + memberLine.getOrDefault(v, java.util.Map.of()).getOrDefault(naam.toLowerCase(), 0)
                     + ") hogerop in de keten — WF-105: een subtype herdeclareert geen geërfde naam (één "
@@ -342,14 +357,16 @@ public final class DefinitionResolver {
             String[] first = earlier.putIfAbsent(category[1] + "\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(category[2]),
                     new String[] {category[2], String.valueOf(regel)});
             if (first == null) continue;
-            error(category[0] + " '" + category[2] + "' is al gedeclareerd (bronregel " + first[1] + "); een naam komt in "
+            error(
+                    "RGS-008", params("kind", category[0], "namespace", category[1], "name", category[2], "earlierName", first[0], "earlierLine", first[1]),
+                    category[0] + " '" + category[2] + "' is al gedeclareerd (bronregel " + first[1] + "); een naam komt in "
                     + "zijn soort declaratie één keer voor, hoofdletters niet meegeteld (WF-001): namespace '" + category[1]
                     + "': names '" + first[0] + "' and '" + category[2] + "' collide case-insensitively", regel);
         }
     }
 
-    private void error(String message, int regel) {
-        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, message, regel));
+    private void error(String code, java.util.Map<String, String> params, String message, int regel) {
+        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, code, params, message, regel));
     }
 
     // ---------------- a member an extension declares again ----------------
@@ -415,7 +432,9 @@ public final class DefinitionResolver {
         }
         repetitions.put(d.ctx(), reason == null);
         if (reason == null) return;
-        error("objecttype '" + d.type().naam + "': de extensie declareert " + (d.attribute() ? "het attribuut '"
+        error(
+                "RGS-009", params("kind", d.attribute() ? "attribuut" : "kenmerk", "name", d.naam(), "objectType", d.type().naam, "earlierLine", b.regel(), "sourceLine", d.regel(), "reason", reason),
+                "objecttype '" + d.type().naam + "': de extensie declareert " + (d.attribute() ? "het attribuut '"
                 : "het kenmerk '") + d.naam() + "' (bronregel " + d.regel() + "), dat " + d.type().naam + " al draagt "
                 + "(bronregel " + b.regel() + "), en " + reason + " — een extensie voegt leden toe en vervangt er geen: "
                 + "een lid dat het objecttype al draagt, herhaalt zij alleen letterlijk, en '(mag opgegeven worden)' "
@@ -467,7 +486,9 @@ public final class DefinitionResolver {
                 if (!r.naam().equalsIgnoreCase(d.naam())) continue;
                 repetitions.put(d.ctx(), false);
                 forgetAttribute(d.type(), d.naam());
-                error("objecttype '" + d.type().naam + "': de extensie declareert '" + d.naam() + "' met het "
+                error(
+                        "RGS-010", params("objectType", d.type().naam, "name", d.naam(), "fillerType", fillerType, "role", r.naam(), "factType", ft.naam, "roleLine", roleLines.getOrDefault(ft, java.util.Map.of()).getOrDefault(r.naam(), 0), "sourceLine", d.regel()),
+                        "objecttype '" + d.type().naam + "': de extensie declareert '" + d.naam() + "' met het "
                         + "objecttype '" + fillerType + "' (bronregel " + d.regel() + "), en dat is de rol '" + r.naam()
                         + "' van feittype '" + ft.naam + "' (bronregel "
                         + roleLines.getOrDefault(ft, java.util.Map.of()).getOrDefault(r.naam(), 0) + ") — een "
@@ -563,6 +584,7 @@ public final class DefinitionResolver {
         if (existing.contains(naam)) return; // exact duplicate of the same kind: not a case botsing
         if (existing.stream().anyMatch(k -> k.equalsIgnoreCase(naam)))
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                    "RGS-011", params("name", naam, "objectType", ot.naam),
                     "lid '" + naam + "' van objecttype '" + ot.naam + "' verschilt alleen in hoofdletters van een eerder lid; "
                             + "namen zijn niet hoofdletter-onderscheidend (§13.2.30), dus de verwijzing is dubbelzinnig", regel));
     }
@@ -620,6 +642,7 @@ public final class DefinitionResolver {
             reason = "een " + dt.naam() + " draagt geen eenheid";
         }
         model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                "RGS-012", params("name", naam, "unit", src(a.eenheidExpressie()), "reason", reason),
                 "attribuut '" + naam + "' met eenheid '" + src(a.eenheidExpressie()) + "': " + reason, a.getStart().getLine()));
         return dt;
     }
@@ -641,7 +664,7 @@ public final class DefinitionResolver {
             // its absence. Degrade to the least-restrictive reading — equal to a plain "getal" (onbeperkt
             // aantal decimalen, geen tekenbeperking) — and flag the spec-incomplete declaration.
             if (n.getalSpecificatie() == null)
-                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING, "RGS-013", params(),
                         "Numeriek datatype zonder verplichte getalspecificatie (§13.3.3); onbeperkte decimalen aangenomen",
                         n.getStart().getLine()));
             NumberInfo g = numberInfo(n.getalSpecificatie());
@@ -688,7 +711,7 @@ public final class DefinitionResolver {
         // (geheel=false, decimalen=0) unbounded sentinel, which would silently drop its §6.1.2 ceiling.
         if (!geheel && g.DECIMALEN() != null && decimalen == 0) {
             geheel = true;
-            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING, "RGS-014", params(),
                     "'getal met 0 decimalen' is geen geldige getalspecificatie (§13.3.3.7 vereist >= 1 decimaal);"
                     + " gelezen als 'geheel getal'", g.getStart().getLine()));
         }
@@ -763,6 +786,7 @@ public final class DefinitionResolver {
             UnitSystem.Factor f = entry.getValue();
             if (f.num().signum() > 0 && f.num().compareTo(limit) <= 0 && f.den().compareTo(limit) <= 0) continue;
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "RGS-015", params("unit", entry.getKey(), "unitSystem", stelsel.naam, "num", f.num(), "den", f.den()),
                     "eenheid '" + entry.getKey() + "' van eenheidstelsel '" + stelsel.naam + "': a conversion factor is an "
                             + "exact rational {num, den} whose two integers are at least 1 and at most "
                             + "4611686018427387903 (2^62 - 1), got " + "{\"num\":" + f.num() + ",\"den\":" + f.den() + "}",
@@ -781,6 +805,7 @@ public final class DefinitionResolver {
             if (earlier == null) continue;
             // the second declaration beside the first on the wire is what the verifier refuses, in these words
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "RGS-016", params("unitSystem", stelsel, "abbreviation", a, "earlierAbbreviation", earlier[0], "earlierUnit", earlier[1]),
                     "eenheidstelsel '" + stelsel + "', " + (a.equals(earlier[0]) ? "" : "als '" + earlier[0] + "' ")
                             + "al gedeclareerd voor de eenheid '" + earlier[1] + "': the unit '" + a
                             + "' is declared twice in the unit system '" + stelsel + "': one Unit per abbreviation",
@@ -805,6 +830,7 @@ public final class DefinitionResolver {
             return new java.math.BigDecimal(tekst.replace(',', '.'));
         } catch (RuntimeException e) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                    "RGS-017", params("value", tekst, "unit", eenheid),
                     "onleesbare omrekenfactor '" + tekst + "' bij eenheid '" + eenheid + "'", 0));
             return null;
         }
@@ -859,6 +885,7 @@ public final class DefinitionResolver {
             // parameter has no count to write — refused in WF-005's words rather than written as one period
             if (count != 1)
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                        "RGS-018", params("name", naam, "count", count),
                         "parameter '" + naam + "': " + "the timeline facet of parameter '" + naam + "' has count "
                                 + count + " > 1: a parameter's timeline is one period while multi-period grids are "
                                 + "open (RUNTIME-SEMANTICS ch. 3.12)", ctx.getStart().getLine()));
@@ -882,6 +909,7 @@ public final class DefinitionResolver {
         if (model.tijdlijnen.stream().anyMatch(tl -> normaliseTimelineName(tl.naam()).equals(normalised)
                 && (tl.granulariteit() != gran || tl.count() != count)))
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                    "RGS-019", params("name", naam),
                     "tijdlijn '" + naam + "' is meermaals met verschillende periodiciteit gedefinieerd; een 'voor "
                             + "elke <naam>' verwijzing neemt die van de eerste (§13.3.6.10)",
                     ctx.tijdlijnNaam().getStart().getLine()));
@@ -927,7 +955,9 @@ public final class DefinitionResolver {
         }
         if (month != null) {
             Integer day = geheel(month.NUMBER());
-            if (day == null || day < 1 || day > 31) return refuse("§13.3.6.4", month, "noemt geen dag van de maand");
+            if (day == null || day < 1 || day > 31) return refuse("§13.3.6.4", month,
+                    "RGS-020", params("section", "§13.3.6.4", "value", month),
+                    "noemt geen dag van de maand");
             return calendarEmpty(dev.uchar.regelspraak.core.FixedStartPoint.canoniek(g, 1, day));
         }
         if (quarter != null) {
@@ -935,17 +965,25 @@ public final class DefinitionResolver {
             Integer first = months.get(0);
             if (first == null || first < 1 || first > 3
                     || !months.equals(List.of(first, first + 3, first + 6, first + 9)))
-                return refuse("§13.3.6.5", quarter, "noemt geen reeks kwartaalmaanden: die is 1, 4, 7 en 10, "
+                return refuse("§13.3.6.5", quarter,
+                        "RGS-021", params("section", "§13.3.6.5", "value", quarter),
+                        "noemt geen reeks kwartaalmaanden: die is 1, 4, 7 en 10, "
                         + "2, 5, 8 en 11 of 3, 6, 9 en 12");
             Integer day = geheel(quarter.NUMBER());
-            if (day == null || day < 1 || day > 31) return refuse("§13.3.6.5", quarter, "noemt geen dag van de maand");
+            if (day == null || day < 1 || day > 31) return refuse("§13.3.6.5", quarter,
+                    "RGS-020", params("section", "§13.3.6.5", "value", quarter),
+                    "noemt geen dag van de maand");
             return calendarEmpty(dev.uchar.regelspraak.core.FixedStartPoint.canoniek(g, first, day));
         }
         if (year != null) {
             Integer day = geheel(year.NUMBER(0)), m = geheel(year.NUMBER(1));
-            if (m == null || m < 1 || m > 12) return refuse("§13.3.6.6", year, "noemt geen maand");
+            if (m == null || m < 1 || m > 12) return refuse("§13.3.6.6", year,
+                    "RGS-022", params("section", "§13.3.6.6", "value", year),
+                    "noemt geen maand");
             String c = day == null ? null : dev.uchar.regelspraak.core.FixedStartPoint.canoniek(g, m, day);
-            if (c == null) return refuse("§13.3.6.6", year, "noemt een dag die maand " + m + " niet heeft");
+            if (c == null) return refuse("§13.3.6.6", year,
+                    "RGS-023", params("section", "§13.3.6.6", "value", year, "month", m),
+                    "noemt een dag die maand " + m + " niet heeft");
             return calendarEmpty(c);
         }
         return null;
@@ -976,13 +1014,14 @@ public final class DefinitionResolver {
     }
 
     private java.time.LocalDate refuseDate(VastStartpuntDatumContext date, String reason) {
-        refuse("§13.3.6.3", date, reason);
+        refuse("§13.3.6.3", date, "RGS-024", params("section", "§13.3.6.3", "value", date, "reason", reason), reason);
         return null;
     }
 
     /** A source start point the wire cannot spell, refused by name with its section. */
-    private String refuse(String section, ParserRuleContext ctx, String reason) {
-        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+    private String refuse(String section, ParserRuleContext ctx, String code, java.util.Map<String, String> params,
+                          String reason) {
+        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, code, params,
                 "tijdlijn: het vaste startpunt '" + src(ctx) + "' (" + section + ") " + reason,
                 ctx.getStart().getLine()));
         return null;
@@ -1023,14 +1062,19 @@ public final class DefinitionResolver {
                     .map(Timeline::granulariteit).findFirst().orElse(null);
             if (g == null) {
                 String written = src(t.tijdlijnNaam()).trim().replaceAll("\\s+", " ");
-                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                        "tijdlijn 'voor elke " + written + "': " + (MULTIPLE_PERIOD.matcher(written).matches()
-                                ? "een tijdlijn van meer perioden noemt haar startdatum ('voor elke " + written
-                                        + " startend op <datum>', §13.3.6.7); zonder startdatum leest deze frontend '"
-                                        + written + "' als de naam van een tijdlijn, en die is niet gedeclareerd"
-                                : "de tijdlijn '" + written + "' is niet gedeclareerd ('Tijdlijn " + written
-                                        + " heeft tijdvakken van …', §13.3.6.10)"),
-                        t.getStart().getLine()));
+                boolean multiplePeriod = MULTIPLE_PERIOD.matcher(written).matches();
+                String text = "tijdlijn 'voor elke " + written + "': " + (multiplePeriod
+                        ? "een tijdlijn van meer perioden noemt haar startdatum ('voor elke " + written
+                                + " startend op <datum>', §13.3.6.7); zonder startdatum leest deze frontend '"
+                                + written + "' als de naam van een tijdlijn, en die is niet gedeclareerd"
+                        : "de tijdlijn '" + written + "' is niet gedeclareerd ('Tijdlijn " + written
+                                + " heeft tijdvakken van …', §13.3.6.10)");
+                if (multiplePeriod)
+                    model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                            "RGS-025", params("name", written), text, t.getStart().getLine()));
+                else
+                    model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                            "RGS-026", params("name", written), text, t.getStart().getLine()));
             }
             return g;
         }
@@ -1145,6 +1189,7 @@ public final class DefinitionResolver {
             // the role name runs on over the next line.
             if (articleAfterBareWord(rolNaam))
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                        "RGS-027", params("factType", ft.naam, "role", rolNaam),
                         "feittype '" + ft.naam + "': de rolnaam '" + rolNaam + "' bevat een lidwoord (de/het) na een"
                         + " zelfstandig woord — waarschijnlijk bevat de feittypenaam een 'de'/'het' die de naam"
                         + " afkapt en in de rol wordt geabsorbeerd (§13.3.9.3); hernoem het feittype zonder lidwoord",
@@ -1327,7 +1372,9 @@ public final class DefinitionResolver {
                 else if (onCharacteristic)
                     hint = " — hoort 'kenmerk' bij de naam, verbind het dan met een koppelteken aan het woord erna "
                             + "('kenmerk-" + word + "')";
-                error(carrier + ": " + memberSentence + " begint met '" + word + "' op de regel waar " + previousSentence
+                error(
+                        "RGS-028", params("carrier", carrier, "member", memberSentence, "word", word, "previousSentence", previousSentence, "preceding", preceding.getText(), "memberKind", role ? "een rol" : "een lid", "hint", hint),
+                        carrier + ": " + memberSentence + " begint met '" + word + "' op de regel waar " + previousSentence
                         + " eindigt, direct na '" + preceding.getText() + "'; " + (role ? "een rol" : "een lid")
                         + " begint op een eigen regel" + hint, begin.getLine());
                 refused.add(member);
@@ -1377,17 +1424,29 @@ public final class DefinitionResolver {
                     + " — WF-003: de vuller van een rol is een gedeclareerd objecttype";
             boolean misread = category != null;
             String[] words = v.fillerType().split(" ");
+            String typePart = null;
+            Objecttype suffixType = null;
             for (int i = 1; i < words.length; i++) {
                 String suffix = String.join(" ", java.util.Arrays.copyOfRange(words, i, words.length));
                 Objecttype ot = model.objectTypeByName(suffix);
                 if (ot == null) continue;
+                typePart = String.join(" ", java.util.Arrays.copyOfRange(words, 0, i));
+                suffixType = ot;
                 sentence += "; '" + ot.naam + "' is dat wel: een rolnaam eindigt bij het eerste woord met een hoofdletter, dus '"
-                        + String.join(" ", java.util.Arrays.copyOfRange(words, 0, i)) + "' is als deel van het objecttype gelezen";
+                        + typePart + "' is als deel van het objecttype gelezen";
                 misread = true;
                 break;
             }
-            if (misread) error(sentence, v.regel());
+            if (suffixType != null)
+                error("RGS-030",
+                        params("factType", v.factType(), "role", v.role(), "fillerType", v.fillerType(),
+                                "objectType", suffixType.naam, "prefix", typePart),
+                        sentence, v.regel());
+            else if (misread)
+                error("RGS-029", params("factType", v.factType(), "role", v.role(),
+                        "fillerType", v.fillerType(), "category", category), sentence, v.regel());
             else model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                    "RGS-031", params("factType", v.factType(), "role", v.role(), "fillerType", v.fillerType()),
                     sentence + "; staat het in een ander bestand van het model, lees de bestanden dan samen", v.regel()));
         }
     }
@@ -1410,6 +1469,7 @@ public final class DefinitionResolver {
             example.remove(left + 1);
         }
         model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                "RGS-032", params("carrier", carrier, "category", category, "name", naam, "word", words.get(error), "example", String.join(" ", example)),
                 carrier + ": regeltekst leest " + category + " '" + naam + "' niet als één naam, want '" + words.get(error)
                         + "' is daar geen woord van een naam; verbind het met een koppelteken aan een buurwoord ('"
                         + String.join(" ", example) + "')", regel));
@@ -1454,6 +1514,7 @@ public final class DefinitionResolver {
         // answer the grammar already gives for the unit names that are keywords.
         if (TimeCalculation.isCalendarSpelling(single.trim().toLowerCase())) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "RGS-033", params("name", single),
                     "dagsoort '" + single + "': day-kind '" + single + "' shadows a built-in calendar unit",
                     d.getStart().getLine()));
             return;
@@ -1484,6 +1545,7 @@ public final class DefinitionResolver {
         String k = spelling.trim().toLowerCase();
         if (TimeCalculation.isCalendarSpelling(k)) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                    "RGS-034", params("unit", spelling),
                     "dagsoort-eenheid '" + spelling + "' valt samen met een ingebouwde tijdseenheid en wordt niet als dagsoort-eenheid geregistreerd", regel));
             return;
         }
@@ -1509,9 +1571,22 @@ public final class DefinitionResolver {
                     : earlier[1] == null ? null
                     : "the plural '" + earlier[1] + "' of day kind '" + earlier[0] + "' is the name of day kind '"
                             + dayKind + "'";
-            if (sentence != null)
-                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                        "dagsoort '" + dayKind + "': " + sentence + ": one spelling names two day kinds", regel));
+            if (sentence != null) {
+                String text = "dagsoort '" + dayKind + "': " + sentence + ": one spelling names two day kinds";
+                if (plural && earlier[1] == null)
+                    model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                            "RGS-035",
+                            params("spelling", spelling, "dayKind", dayKind, "earlierDayKind", earlier[0]), text, regel));
+                else if (plural)
+                    model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                            "RGS-036",
+                            params("spelling", spelling, "dayKind", dayKind, "earlierDayKind", earlier[0],
+                                    "earlierPlural", earlier[1]), text, regel));
+                else
+                    model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                            "RGS-037",
+                            params("dayKind", dayKind, "earlierDayKind", earlier[0], "earlierPlural", earlier[1]), text, regel));
+            }
         }
     }
 
