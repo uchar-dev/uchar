@@ -17,5 +17,5 @@
     ],
     "parameters": {}
   },
-  "expected": [ { "kind": "inconsistent", "rule": "aanmelding niet voor de vondstdag", "label": "V1" } ]
+  "expected": [ { "kind": "inconsistent", "rule": "aanmelding niet voor de vondstdag", "label": "V1", "code": "EF-025" } ]
 }

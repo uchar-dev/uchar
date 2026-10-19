@@ -105,7 +105,7 @@ class ChannelPlanWitnessTest {
                 "    toets 0.0.1 SlotValue bron 'de vondstdag van de Vondst'",
                 "    toets 0.0.2 Const Operator",
                 "  gevolg Inconsistency [onderwerp=$onderwerp, form=aanmelding niet voor de vondstdag,"
-                        + " insertion=LOGICAL]",
+                        + " codes=[EF-025], insertion=LOGICAL]",
                 "regel eenmalig vondstnummer: sleutel van Vondst 1 | vorm eenmalig vondstnummer | groep null",
                 "  lezingen [0 INVOER $vondstnummer (eigen ElementKey[objectType=vondst, naam=vondstnummer,"
                         + " characteristic=false])]",
@@ -134,7 +134,7 @@ class ChannelPlanWitnessTest {
                 "  lezingen []",
                 "  patroon UniquenessViolation $schending alfa [schending_6: [[] uniqueness VALUE GELIJK eenmalig"
                         + " vondstnummer]] join [] beta [] bind [$subject = [] UniquenessViolation.element VALUE]",
-                "  gevolg Inconsistency [onderwerp=$subject, form=eenmalig vondstnummer, insertion=LOGICAL]"),
+                "  gevolg Inconsistency [onderwerp=$subject, form=eenmalig vondstnummer, codes=[EF-026], insertion=LOGICAL]"),
                 plans(golden("jutterswet-vondstnummer"), List.of("aanmelding niet voor de vondstdag",
                         "eenmalig vondstnummer")));
     }
@@ -170,7 +170,7 @@ class ChannelPlanWitnessTest {
                 "  lezingen []",
                 "  patroon UniquenessViolation $schending alfa [schending_10: [[] uniqueness VALUE GELIJK eenmalige"
                         + " staat]] join [] beta [] bind [$subject = [] UniquenessViolation.element VALUE]",
-                "  gevolg Inconsistency [onderwerp=$subject, form=eenmalige staat, insertion=LOGICAL]"),
+                "  gevolg Inconsistency [onderwerp=$subject, form=eenmalige staat, codes=[EF-026], insertion=LOGICAL]"),
                 plans(golden("jutterswet-keurspelling"), List.of("eenmalige staat")));
     }
 
@@ -189,7 +189,7 @@ class ChannelPlanWitnessTest {
                 "    toets 0.0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '0'",
                 "    toets 0.0.2 Const String",
-                "  gevolg Inconsistency [onderwerp=$onderwerp, form=controle saldo, insertion=LOGICAL]",
+                "  gevolg Inconsistency [onderwerp=$onderwerp, form=controle saldo, codes=[EF-025], insertion=LOGICAL]",
                 "regel kanaalstand controle saldo: inconsistent | vorm null | groep null",
                 "  lezingen []",
                 "  bestaat [Inconsistentie $inconsistentie alfa [kanaal_3: [[] regel VALUE GELIJK controle saldo]]"
@@ -237,7 +237,7 @@ class ChannelPlanWitnessTest {
                 "  lezingen []",
                 "  patroon UniquenessViolation $schending alfa [schending_10: [[] uniqueness VALUE GELIJK eenmalig"
                         + " kaveletiket]] join [] beta [] bind [$subject = [] UniquenessViolation.element VALUE]",
-                "  gevolg Inconsistency [onderwerp=$subject, form=eenmalig kaveletiket, insertion=LOGICAL]",
+                "  gevolg Inconsistency [onderwerp=$subject, form=eenmalig kaveletiket, codes=[EF-026], insertion=LOGICAL]",
                 "regel eenmalig vondstnummer: sleutel van Strandvondst 1 | vorm eenmalig vondstnummer | groep null",
                 "  lezingen [0 INVOER $vondstnummer (eigen ElementKey[objectType=strandvondst,"
                         + " naam=vondstnummer, characteristic=false])]",
@@ -281,7 +281,7 @@ class ChannelPlanWitnessTest {
                 "  lezingen []",
                 "  patroon UniquenessViolation $schending alfa [schending_23: [[] uniqueness VALUE GELIJK eenmalig"
                         + " vondstnummer]] join [] beta [] bind [$subject = [] UniquenessViolation.element VALUE]",
-                "  gevolg Inconsistency [onderwerp=$subject, form=eenmalig vondstnummer, insertion=LOGICAL]"),
+                "  gevolg Inconsistency [onderwerp=$subject, form=eenmalig vondstnummer, codes=[EF-026], insertion=LOGICAL]"),
                 plans(golden("anchor/jutterswet-kustregister"), List.of("eenmalig kaveletiket",
                         "eenmalig vondstnummer")));
     }
@@ -337,7 +337,7 @@ class ChannelPlanWitnessTest {
                 "  lezingen []",
                 "  patroon UniquenessViolation $schending alfa [schending_10: [[] uniqueness VALUE GELIJK eenmalig"
                         + " nummer]] join [] beta [] bind [$subject = [] UniquenessViolation.element VALUE]",
-                "  gevolg Inconsistency [onderwerp=$subject, form=eenmalig nummer, insertion=LOGICAL]"),
+                "  gevolg Inconsistency [onderwerp=$subject, form=eenmalig nummer, codes=[EF-026], insertion=LOGICAL]"),
                 plans(golden("anchor/jutterswet-strandregister"), List.of("eenmalig nummer")));
     }
 

@@ -812,7 +812,8 @@ final class DrlRendering {
                 if (v.depositCount() < 0)
                     throw new IllegalStateException("een vouwlezing met een sonde en zonder deponeringen in " + plan.naam());
                 b.append("    if (((Number) ").append(slot(v.depositCount(), c)).append(").longValue() > 0) {\n        ")
-                        .append(route(Route.REPORT)).append("(").append(depositFlag(v.depositFlag(), c).text()).append(");\n    }\n");
+                        .append(route(Route.REPORT)).append("(").append(depositFlag(v.depositFlag(), c).text()).append(", ")
+                        .append(list(texts(v.codes()))).append(");\n    }\n");
             }
             if (v.filterFault() >= 0) {
                 String f = slot(v.filterFault(), c);
@@ -886,7 +887,7 @@ final class DrlRendering {
                         + x.onderwerp() + ", " + str(x.fault().form()) + ", " + route(Route.COMPUTE_FAULT) + "("
                         + str(x.sentence()) + ", " + str(x.fault().regel()) + "))");
                 case Consequence.Inconsistency x -> insert(b, "    ", x.insertion(), route(Route.INCONSISTENCY) + "("
-                        + str(x.form()) + ", " + x.onderwerp() + ")");
+                        + str(x.form()) + ", " + x.onderwerp() + ", " + list(texts(x.codes())) + ")");
                 case Consequence.WritersConflict x -> insert(b, "    ", x.insertion(), route(Route.WRITERS_CONFLICT)
                         + "(" + x.onderwerp() + ", " + variable(x.waarden()) + ", " + str(x.attribute()) + ", "
                         + list(texts(x.documentOrder())) + ", " + list(texts(x.typeClasses())) + ", "
@@ -970,7 +971,7 @@ final class DrlRendering {
             if (d != null) {
                 b.append("        if (").append(route(Route.REPORTED)).append("(").append(DEPOSIT_FLAG).append(")) {\n");
                 insert(b, "            ", x.insertion(), route(Route.INCONSISTENCY) + "(" + str(d.form()) + ", "
-                        + x.onderwerp() + ")");
+                        + x.onderwerp() + ", " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + "))");
                 b.append("        }\n");
             }
             String fact = "new " + typeName(Value.class) + "(" + x.onderwerp() + ", " + key(x.target()) + ", v, "
@@ -1043,7 +1044,8 @@ final class DrlRendering {
                             + tryCatch("        waar = Boolean.valueOf(" + bool(l.matrix(), c) + ");\n",
                                     "        fout = " + route(Route.CAUGHT) + "(e);\n")
                             + "    return new " + typeName(MemberTest.class) + "(plaats, waar, fout, "
-                            + route(Route.REPORTED) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "));\n";
+                            + route(Route.REPORTED) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "), "
+                            + route(Route.DEPOSIT_CODES) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "));\n";
                     fill(place, l.matrix().source(), "Object " + naam + "(" + c.declaration() + ")", body);
                     insert(b, "    ", x.insertion(), fresh + naam + "(" + c.arguments() + "))");
                 }
@@ -1128,7 +1130,8 @@ final class DrlRendering {
                 case Consequence.StackFact.Outcome x -> "new " + typeName(Outcome.class) + "(" + onderwerp + ", "
                         + str(x.stack()) + ", " + x.chain() + ", " + x.position() + ", " + enumlabel(x.category()) + ", "
                         + (x.category() == Outcome.Kind.DECIDED ? "v, null" : "null, (String) v") + ")";
-                case Consequence.StackFact.Inconsistency x -> route(Route.INCONSISTENCY) + "((String) v, " + onderwerp + ")";
+                case Consequence.StackFact.Inconsistency x -> route(Route.INCONSISTENCY) + "((String) v, " + onderwerp + ", "
+                        + list(texts(Consequence.StackFact.Inconsistency.CODES)) + ")";
             };
         }
 

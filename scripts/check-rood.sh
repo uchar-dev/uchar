@@ -27,7 +27,12 @@
 #      2026-10-18);
 #   6. the fault-kind table of RUNTIME-SEMANTICS ch. 5.7b is read here,
 #      strictly: every row parses, every witness it names exists and pins
-#      the row's code, and every code a red case pins is a row.
+#      the row's code, and every code a red case pins is a row;
+#   7. every code a golden `inconsistent` expectation pins is a row whose
+#      channel is §9.5, the codes a channel fact carries beside its
+#      identity rule × subject (ch. 5.6; card channel-fact-codes,
+#      2026-10-19). Gates 5, 6 and 12 replay those expectations; this gate
+#      holds their codes to the table.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -71,7 +76,12 @@ EXPECTED_MIN_RED_CASES=26   # 2026-09-10: measured 26 (corpus/rood/**/case*.json
 # has none (below): each is a case with a `drools` fragment, held by that pin and by the name-carrying
 # exclusion list.
 EXPECTED_MIN_RED_CODES=93   # 2026-10-18: measured 93 (ref 50 + clingo 43)
-EXPECTED_MIN_EF_CODES=24    # 2026-10-18: measured 24 (RUNTIME-SEMANTICS ch. 5.7b)
+EXPECTED_MIN_EF_CODES=31    # 2026-10-19: measured 31 (RUNTIME-SEMANTICS ch. 5.7b; 24 at card meldingscodes, 2026-10-18,
+                            # raised with the seven §9.5 codes of card channel-fact-codes)
+# GOLDEN_CODES counts the golden `inconsistent` expectations that pin a code (card channel-fact-codes): the codes
+# gates 5, 6 and 12 hold the executors to on the §9.5 channel, so a count that quietly halved would halve that
+# comparison and no other gate counts it.
+EXPECTED_MIN_GOLDEN_CODES=73   # 2026-10-19: measured 73 (corpus/golden/**/case*.json)
 
 if ! command -v python3 >/dev/null 2>&1; then
     echo 'FAIL: need python3 — the code leg reads the fault-kind table of RUNTIME-SEMANTICS ch. 5.7b and decodes the golden witnesses it names' >&2
@@ -219,7 +229,9 @@ fi
 # `corpus/rood|golden/<dir>`, … |`; codes are unique and ascending. The python side checks what needs
 # decoding — a golden witness, whose `inconsistent` expectation must carry the code — and prints the
 # rows and the red witnesses; the shell side holds a red witness to the codes the runners decoded
-# above. So a stale row is a gate failure, never a spec lie.
+# above. So a stale row is a gate failure, never a spec lie. The python side also reads every golden case
+# (card channel-fact-codes, 2026-10-19): a code an `inconsistent` expectation pins names a §9.5 kind, so it must
+# be a row on the §9.5 channel, and their number is floored.
 table=$(mktemp) || exit 2
 if ! python3 - spec/RUNTIME-SEMANTICS.md > "$table" <<'PY'
 import glob, json, os, re, sys
@@ -234,7 +246,7 @@ end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## "
 WIT = r"`corpus/(?:rood|golden)/[a-z0-9][a-z0-9-]*`"
 ROW = re.compile(r"^\| (EF-[0-9]{3}) \| ([^|]+?) \| (case input|fault|declined|§9\.5)(; [^|]+?)? \| "
                  r"(—|`[a-z][A-Za-z]*`(?:, `[a-z][A-Za-z]*`)*) \| ([^|]+?) \| (" + WIT + r"(?:, " + WIT + r")*) \|$")
-bad, last, rows = 0, None, 0
+bad, last, rows, channel = 0, None, 0, {}
 for n, line in enumerate(lines, 1):
     if not line.startswith("| EF-"):
         continue
@@ -253,6 +265,7 @@ for n, line in enumerate(lines, 1):
         bad += 1
     last = code
     rows += 1
+    channel[code] = m.group(3)
     print("ROW %s" % code)
     for zone, d in re.findall(r"`corpus/(rood|golden)/([a-z0-9][a-z0-9-]*)`", m.group(7)):
         root = "corpus/%s/%s" % (zone, d)
@@ -271,6 +284,20 @@ for n, line in enumerate(lines, 1):
                 sys.stderr.write("FAIL: %s names the golden witness %s, but no case there carries an inconsistent expectation with that code\n" % (code, root))
                 bad += 1
 print("ROWS %d" % rows)
+golden_codes = 0
+for f in sorted(glob.glob("corpus/golden/**/case*.json", recursive=True)):
+    for e in json.load(open(f, encoding="utf-8")).get("expected", []):
+        if not (isinstance(e, dict) and e.get("kind") == "inconsistent" and "code" in e):
+            continue
+        golden_codes += 1
+        c = e["code"]
+        if c not in channel:
+            sys.stderr.write("FAIL: %s pins the code %s on an inconsistent expectation, which is no row of the fault-kind table (RUNTIME-SEMANTICS ch. 5.7b)\n" % (f, c))
+            bad += 1
+        elif channel[c] != "§9.5":
+            sys.stderr.write("FAIL: %s pins %s on an inconsistent expectation, but its row is on the channel '%s': a channel fact carries only the codes of §9.5 kinds (ch. 5.6)\n" % (f, c, channel[c]))
+            bad += 1
+print("GOLDEN-CODES %d" % golden_codes)
 sys.exit(1 if bad else 0)
 PY
 then
@@ -280,6 +307,12 @@ n_ef=$(awk '$1 == "ROWS" { print $2 }' "$table")
 n_ef=${n_ef:-0}
 if [ "$n_ef" -lt "$EXPECTED_MIN_EF_CODES" ]; then
     echo "FAIL: the fault-kind table of RUNTIME-SEMANTICS ch. 5.7b has $n_ef row(s), but EXPECTED_MIN_EF_CODES pins at least $EXPECTED_MIN_EF_CODES (a retired code keeps its row, marked retired)" >&2
+    status=1
+fi
+n_golden_codes=$(awk '$1 == "GOLDEN-CODES" { print $2 }' "$table")
+n_golden_codes=${n_golden_codes:-0}
+if [ "$n_golden_codes" -lt "$EXPECTED_MIN_GOLDEN_CODES" ]; then
+    echo "FAIL: $n_golden_codes golden inconsistent expectation(s) pin a code, but EXPECTED_MIN_GOLDEN_CODES pins at least $EXPECTED_MIN_GOLDEN_CODES — the §9.5 code pins shrank (a deliberate removal lowers the floor in the same commit)" >&2
     status=1
 fi
 # a red witness pins its row's code in at least one of its cases
@@ -795,6 +828,8 @@ done < "$divergence"
 rm -f "$divergence" "$div_used" "$pinned_map"
 
 if [ "$status" -eq 0 ]; then
+    printf 'check-rood: %s golden inconsistent expectations pin a §9.5 code, each a row on that channel, floor %s\n' \
+        "$n_golden_codes" "$EXPECTED_MIN_GOLDEN_CODES"
     printf 'check-rood: PASS (%s red cases fault observably in ref and clingo, floor %s; %s pinned fragments cite none of the %s listed bottom sentences; %s ref and clingo code checks report the case'"'"'s code, floor %s, %s listed as divergence; %s fault kinds in RUNTIME-SEMANTICS ch. 5.7b, floor %s)\n' \
         "$n_cases" "$EXPECTED_MIN_RED_CASES" "$n_frag" "$n_bottom" "$n_red_codes" "$EXPECTED_MIN_RED_CODES" "$n_div" "$n_ef" "$EXPECTED_MIN_EF_CODES"
 fi

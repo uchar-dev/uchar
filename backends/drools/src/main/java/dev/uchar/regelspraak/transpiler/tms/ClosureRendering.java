@@ -277,8 +277,9 @@ final class ClosureRendering {
     private static ValueFunction foldRead(Term.FoldRead v) {
         ValueFunction outcome = valueFunction(v.outcome());
         int depositCount = v.depositCount(), depositFlag = v.depositFlag(), filterFault = v.filterFault(), memberFault = v.memberFault();
+        List<String> codes = v.codes();
         return w -> {
-            if (depositFlag >= 0 && ((Number) w[depositCount]).longValue() > 0) ComputeHelpers.report(w[depositFlag]);
+            if (depositFlag >= 0 && ((Number) w[depositCount]).longValue() > 0) ComputeHelpers.report(w[depositFlag], codes);
             if (filterFault >= 0 && w[filterFault] != null) throw ((FilterFault) w[filterFault]).fault();
             // the reference interpreter reads the members' values once every member's filter is evaluated
             if (memberFault >= 0 && w[memberFault] != null) throw ((MemberFault) w[memberFault]).fault();

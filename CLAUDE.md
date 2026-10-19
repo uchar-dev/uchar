@@ -241,10 +241,15 @@ reviewer's duty on a machine that has catala. Current gates:
    — the runners print `CODE`/`CODE-PINNED`, Drools heads its status line with it — unless the executor stands in
    the script's reason-carrying divergence list (category REFUSAL or LIMIT, stale both ways); the gate parses the
    ch. 5.7b table strictly, holds every witness to its row's code and every pinned code to a row; floors
-   `EXPECTED_MIN_RED_CODES=93` and `EXPECTED_MIN_EF_CODES=24` (measured 2026-10-18). An `EXCLUDE` entry of the Drools list pins the
+   `EXPECTED_MIN_RED_CODES=93` (measured 2026-10-18) and `EXPECTED_MIN_EF_CODES=31` (24 measured 2026-10-18,
+   raised 2026-10-19 with the seven §9.5 codes). An `EXCLUDE` entry of the Drools list pins the
    register code of the refusal (`name|EXCLUDE DROOLS-###  <reason>`) and the leg compares it with the head of the
    status line, failing by case name with both codes; a `NOFAULT` entry carries none (card `drools-refusal-codes`,
-   floor `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=19`).
+   floor `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=19`). Since 2026-10-19 (card `channel-fact-codes`) a §9.5 channel fact carries the EF
+   codes of its kinds beside its identity rule × subject (RUNTIME-SEMANTICS ch. 5.6), and a golden `inconsistent`
+   expectation may pin one (`code`), which gates 5, 6 and 12 hold ref, clingo and both Drools branches to; this gate
+   holds every code a golden pins to a row of the ch. 5.7b table on the §9.5 channel, floor
+   `EXPECTED_MIN_GOLDEN_CODES=73` (measured 2026-10-19).
 
 9. `scripts/check-catala.sh` — the Catala frontend builds and its
    full test suite passes (E2E through verifier, ref and clingo plus

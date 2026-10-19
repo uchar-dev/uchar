@@ -38,12 +38,14 @@
     {
       "kind": "inconsistent",
       "rule": "heffing van een jutter",
-      "label": "J4"
+      "label": "J4",
+      "code": "EF-031"
     },
     {
       "kind": "inconsistent",
       "rule": "wikkelheffing van een jutter",
-      "label": "J4"
+      "label": "J4",
+      "code": "EF-031"
     }
   ]
 }

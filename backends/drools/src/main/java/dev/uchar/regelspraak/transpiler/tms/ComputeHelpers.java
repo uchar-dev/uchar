@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 
@@ -47,16 +48,19 @@ public final class ComputeHelpers {
 
     // ---------------- division and square root, with the probe of their deposit ----------------
 
+    /** The EF code (RUNTIME-SEMANTICS ch. 5.7b) of the §6.5 deposit: a filled dividend divided by a leeg divisor. */
+    private static final List<String> DIVISION_BY_EMPTY = List.of("EF-031");
+
     /** A division (RUNTIME-SEMANTICS ch. 1.2, 1.4, {@code rsGedeeld}): {@code depositFlag} hears the §6.5 deposit where a
      *  filled dividend meets a leeg divisor; a numeric zero divisor faults. */
     public static Object divided(Object left, Object right, Object depositFlag) {
-        if (left != null && right == null) DepositFlag.report(depositFlag);
+        if (left != null && right == null) DepositFlag.report(depositFlag, DIVISION_BY_EMPTY);
         return RegelSpraakRuntime.rsGedeeld(left, right);
     }
 
     /** As {@link #divided}, truncated toward zero at 5 decimals ({@code rsGedeeldAbs}). */
     public static Object dividedAbs(Object left, Object right, Object depositFlag) {
-        if (left != null && right == null) DepositFlag.report(depositFlag);
+        if (left != null && right == null) DepositFlag.report(depositFlag, DIVISION_BY_EMPTY);
         return RegelSpraakRuntime.rsGedeeldAbs(left, right);
     }
 
@@ -65,7 +69,8 @@ public final class ComputeHelpers {
      *  {@code depositFlag} (RUNTIME-SEMANTICS ch. 1.2). */
     public static Object squareRoot(Object radicand, Object depositFlag) {
         BigDecimal number = RegelSpraakRuntime.toBd(radicand);
-        if (number != null && number.signum() < 0) DepositFlag.report(depositFlag);
+        // the §6.6 deposit has no code: no golden can witness it while the ASP backend has no square root (ch. 5.7b)
+        if (number != null && number.signum() < 0) DepositFlag.report(depositFlag, List.of());
         return RegelSpraakRuntime.rsWortel(radicand);
     }
 
@@ -77,7 +82,7 @@ public final class ComputeHelpers {
         Breuk q = Breuk.van(radicand);
         if (q == null) return null;
         if (q.signum() < 0) {
-            DepositFlag.report(depositFlag);
+            DepositFlag.report(depositFlag, List.of());
             return null;
         }
         BigInteger counter = q.teller().sqrt(), denominator = q.noemer().sqrt();
@@ -419,7 +424,7 @@ public final class ComputeHelpers {
             Boolean fixed = established(kw, threshold, touch, k, n - k);
             if (fixed != null) return fixed;
             MemberTest member = members.get(k);
-            if (member.deposited()) DepositFlag.report(depositFlag);
+            if (member.deposited()) DepositFlag.report(depositFlag, member.codes());
             if (member.fault() != null) throw member.fault();
             if (member.holds()) touch++;
         }
@@ -534,14 +539,20 @@ public final class ComputeHelpers {
     }
 
     /** A place that deposits ran and reports to {@code depositFlag}, the probe its slot holds, or to nothing where the slot
-     *  holds none. */
-    public static void report(Object depositFlag) {
-        DepositFlag.report(depositFlag);
+     *  holds none, with {@code codes}, the EF codes of the kinds it deposits. */
+    public static void report(Object depositFlag, List<?> codes) {
+        DepositFlag.report(depositFlag, codes);
     }
 
     /** Whether {@code depositFlag}, a probe or nothing, heard a place. */
     public static boolean reported(Object depositFlag) {
         return depositFlag instanceof DepositFlag s && s.reported();
+    }
+
+    /** The EF codes {@code depositFlag}, a probe or nothing, heard, ascending: those a deposit of a consequence carries
+     *  (RUNTIME-SEMANTICS ch. 5.6). */
+    public static List<String> depositCodes(Object depositFlag) {
+        return depositFlag instanceof DepositFlag s ? s.codes() : List.of();
     }
 
     /** The evaluation fault of the fixed sentence {@code sentence} ({@link ComputeFault}), named in the rule {@code regel}: the
@@ -550,10 +561,20 @@ public final class ComputeHelpers {
         return new ComputeFault(sentence).inRule(regel);
     }
 
-    /** The §9.5 inconsistency of the form {@code form} on {@code onderwerp}: an instance of the class the fact model
-     *  generates for it ({@link TmsTranspiler#INCONSISTENCY}). */
-    public static Object inconsistency(String form, Object onderwerp) {
-        return RegelSpraakRuntime.newInconsistentie(TmsTranspiler.INCONSISTENCY, form, onderwerp);
+    /** The §9.5 inconsistency of the form {@code form} on {@code onderwerp} with {@code codes}, the EF codes of the kinds
+     *  it deposits (RUNTIME-SEMANTICS ch. 5.6, 5.7b): an instance of the class the fact model generates for it
+     *  ({@link TmsTranspiler#INCONSISTENCY}), found through the context class loader as the runtime finds it
+     *  ({@code RegelSpraakRuntime.newInconsistentie}). */
+    public static Object inconsistency(String form, Object onderwerp, List<?> codes) {
+        try {
+            ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+            Class<?> c = tccl != null ? Class.forName(TmsTranspiler.INCONSISTENCY, true, tccl)
+                    : Class.forName(TmsTranspiler.INCONSISTENCY);
+            return c.getConstructor(String.class, Object.class, List.class).newInstance(form, onderwerp,
+                    List.copyOf(codes));
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("kan geen " + TmsTranspiler.INCONSISTENCY + "(String, Object, List) construeren", e);
+        }
     }
 
     /** The input timeline {@code timeline}, a list of segments, as the asOfDate-bucket scalar the case gave
@@ -602,7 +623,8 @@ public final class ComputeHelpers {
         for (Object o : (List<?>) recipients) list.add((Recipient) o);
         Allocation.Result u = Allocation.bereken(method, pot, list, gewogen, capped, decimals, descending);
         List<Object> out = new ArrayList<>();
-        for (Object r : u.depositors()) out.add(inconsistency(form, r));
+        for (Map.Entry<Object, Set<String>> d : u.depositors().entrySet())
+            out.add(inconsistency(form, d.getKey(), List.copyOf(d.getValue())));
         for (Map.Entry<Object, BigDecimal> e : u.shares().entrySet())
             out.add(new Value(e.getKey(), aandeel, e.getValue(), writer));
         if (rest != null && u.rest() != null) out.add(new Value(source, rest, u.rest(), writer));

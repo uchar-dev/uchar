@@ -1,5 +1,8 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import java.util.List;
+import java.util.TreeSet;
+
 /**
  * The probe of the §6.5 and §6.6 deposit (RUNTIME-SEMANTICS ch. 1.2): a division of a filled dividend by a leeg
  * divisor, and a square root of a negative number, deposit a §9.5 inconsistency where the evaluation reaches them.
@@ -16,13 +19,24 @@ package dev.uchar.regelspraak.transpiler.tms;
  */
 final class DepositFlag {
     private boolean reported;
+    private final TreeSet<String> codes = new TreeSet<>();
 
-    /** A place ran and deposits to {@code depositFlag}, the probe its slot holds, or nothing where it holds none. */
-    static void report(Object depositFlag) {
-        if (depositFlag instanceof DepositFlag s) s.reported = true;
+    /** A place ran and deposits to {@code depositFlag}, the probe its slot holds, or nothing where it holds none, with
+     *  {@code codes}, the EF codes (RUNTIME-SEMANTICS ch. 5.7b) of the kinds it deposits: none for a kind without a code,
+     *  the square root of a negative number, which the probe hears all the same. */
+    static void report(Object depositFlag, List<?> codes) {
+        if (depositFlag instanceof DepositFlag s) {
+            s.reported = true;
+            for (Object c : codes) s.codes.add((String) c);
+        }
     }
 
     boolean reported() {
         return reported;
+    }
+
+    /** The codes the probe heard, ascending, each once. */
+    List<String> codes() {
+        return List.copyOf(codes);
     }
 }

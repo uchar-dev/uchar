@@ -3765,6 +3765,25 @@ surfaces beside the result. Operational clauses, mirrored:
   often re-evaluated) and **validity-gated**: a version whose window
   excludes the evaluation date raises nothing (the version simply does
   not apply — ch. 3.10's gate).
+- Every producer deposits with the **code** of its kind, a row of ch. 5.7b
+  on the channel `§9.5`. The identity of a fact stays rule × subject; the
+  codes deposited for that pair form a set beside it, each code once. A
+  deposit of another kind for the same pair adds its code to the one
+  fact, so the idempotency above is unchanged. A kind that has no code
+  yet (ch. 5.7b, "Kinds without a code") deposits the fact and adds no
+  code. The channel read below does not look at the set. A case's
+  `inconsistent` expectation may pin a code
+  (`spec/schema/uchar-case-v0.schema.json`): a fact that matches the
+  expectation's rule and label must carry that code among its codes.
+  Worked example (golden `jutterswet-rangmaximering` case 3, replayed by
+  gates 5, 6 and 12): an ordered allocation of a pot of 1000 over three
+  Wachters by wachtjaar, weighted by voorranggewicht, capped by
+  penningmaximum and floored to whole units. W1 (2010, weight 1, cap 300)
+  receives **300**. In the group 2020, W2 has neither a weight nor a cap
+  and receives a real **0**, and W3 (weight 1, cap 800) receives **700**;
+  the rest is **0**. One fact stands, (verdeel het penningbudget van een
+  penningkas × W2), and it carries **both** EF-029 (the empty tie-break
+  weight) and EF-030 (the empty cap); W1 and W3 have no fact.
 - The channel is **readable**: "regelversie X is inconsistent" is an
   existential test over the channel for X — it has no subject of its
   own, so one flag makes the reading rule applicable to every instance
@@ -3954,15 +3973,17 @@ parameters, the clause that defines it and its witnesses.
   a well-formed input (ch. 1.4 point 4, ch. 2.4, ch. 3.8, ch. 5.5, ch. 5.7,
   ch. 8). `declined`: a form this specification leaves without a meaning
   and every executor refuses by name (ch. 3.12). `§9.5`: a fact on the error
-  channel, without an abort (ch. 5.6); no kind of this table is on that
-  channel yet. A channel cell may add, after a semicolon, a decision that
-  moves the kind to another channel.
+  channel, without an abort (ch. 5.6); the fact keeps rule × subject as its
+  identity and carries the codes of its kinds beside it. A channel cell may
+  add, after a semicolon, a decision that moves the kind to another
+  channel.
 - **The report.** An executor carries the code beside the text of its
   message, never inside it, and renders it at the head of its report:
   `EF-005: division by numeric zero`. A report of several faults lists
   their codes in the order of the report: `EF-005, EF-016: …`. The text of
   a message is the executor's own and differs between executors; the code
-  does not.
+  does not. A kind on the `§9.5` channel has no report: its code travels on
+  the channel fact (ch. 5.6).
 - **Parameters.** The column names the parameters that identify the object
   of a fault; their values are declared names, labels and lexemes as they
   stand in the document and the case, untranslated. No executor emits them
@@ -3975,14 +3996,23 @@ parameters, the clause that defines it and its witnesses.
   kind on the §9.5 channel, a golden case (`corpus/golden/<dir>`) whose
   `inconsistent` expectation names it. Gate 8 (`scripts/check-rood.sh`)
   reads this table: every row parses, every witness exists and pins the
-  code of its row, and every code a red case pins is a row. An executor
+  code of its row, every code a red case pins is a row, and every code a
+  golden `inconsistent` expectation pins is a row on the `§9.5` channel. An executor
   that fails on a witness for a reason of its own — a form it does not
   carry, a limit of its representation — stands in that gate's
   reason-carrying divergence list.
 - **Kinds without a code.** A normative fault without a witness keeps its
   text and gets a code when a red case for it lands: today, among others,
   the pass budget of ch. 5.7 step 4 where no divergence by two writers is
-  named. A safeguard of one executor (a fire cap) is no fault kind.
+  named. A safeguard of one executor (a fire cap) is no fault kind. On the
+  `§9.5` channel three kinds have no witness and so no code; each deposits
+  its fact without a code (ch. 5.6): a negative radicand (ch. 1.2), which no
+  golden can witness while the ASP backend has no square root and gate 6
+  replays every golden through it; an anchor of a variable start that is
+  leeg at evaluation time (ch. 3.2), since no executor lays a grid per
+  object; and a negative weight in a proportional allocation, decided for
+  v1 in ch. 4.4 and executed by the Drools backend alone (`ref/` leaves the
+  weight unclamped, the ASP backend faults).
 
 | Code | Kind | Channel | Parameters | Spec home | Witnesses |
 |---|---|---|---|---|---|
@@ -4010,6 +4040,13 @@ parameters, the clause that defines it and its witnesses.
 | EF-022 | a nested day-kind test on a date other than the bound day | declined | — | ch. 3.8; ch. 3.12 | `corpus/rood/dagsoortverwijzing-andere-dag` |
 | EF-023 | a period condition on a temporal characteristic target | declined | `characteristic` | ch. 3.10; ch. 3.11 | `corpus/rood/periodevenster-tijdlijnkenmerk` |
 | EF-024 | a uniqueness key with more than one temporal component | declined | `key` | ch. 5.9 | `corpus/rood/uni-two-temporal-keys`, `corpus/rood/uu-two-temporal-keys` |
+| EF-025 | a consistency assertion does not hold for its subject | §9.5 | `rule`, `label` | ch. 5.6 | `corpus/golden/jutterswet-vondstnummer`, `corpus/golden/jutterswet-keurcriteria` |
+| EF-026 | a key of a uniqueness occurs more than once, within one source or across the sources of a union | §9.5 | `rule`, `label` | ch. 5.6; ch. 5.9 | `corpus/golden/jutterswet-vondstnummer`, `corpus/golden/jutterswet-uniciteit-drie-bronnen` |
+| EF-027 | the defaults groups of a declared-unordered group decide differently, at the root or in a nested exception group | §9.5 | `rule`, `label` | ch. 7.2; ch. 7.9 | `corpus/golden/jutterswet-wachtgeld`, `corpus/golden/synth3-nestkorting` |
+| EF-028 | a recipient of a proportional allocation has an empty weight | §9.5 | `rule`, `label` | ch. 4.4 | `corpus/golden/jutterswet-verdeling-dubbelbezet` |
+| EF-029 | a recipient of an ordered allocation has an empty tie-break weight | §9.5 | `rule`, `label` | ch. 4.2; ch. 4.4 | `corpus/golden/jutterswet-rangmaximering`, `corpus/golden/jutterswet-verdeling-dubbelbezet` |
+| EF-030 | a recipient of an allocation has an empty or negative cap | §9.5 | `rule`, `label` | ch. 4.3; ch. 4.4 | `corpus/golden/jutterswet-berging`, `corpus/golden/jutterswet-rangmaximering` |
+| EF-031 | a filled dividend is divided by an empty divisor | §9.5 | `rule`, `label` | ch. 1.2; ch. 1.4 point 4 | `corpus/golden/jutterswet-bergloon`, `corpus/golden/synth3-takhek`, `corpus/golden/synth3-operandvolgorde` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negatief`) or as a specified

@@ -39,7 +39,8 @@
     {
       "kind": "inconsistent",
       "rule": "geen wrakhout ter keuring",
-      "label": "V1"
+      "label": "V1",
+      "code": "EF-025"
     }
   ]
 }

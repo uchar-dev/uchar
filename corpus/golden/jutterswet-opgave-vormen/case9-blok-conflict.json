@@ -35,7 +35,8 @@
     {
       "kind": "inconsistent",
       "rule": "Jutter.berekende wachtgeld",
-      "label": "J"
+      "label": "J",
+      "code": "EF-027"
     }
   ]
 }

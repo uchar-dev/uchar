@@ -692,6 +692,25 @@ work is normative design.
 | 6 | **Catalogues NL/EN** of the frontend and the Drools backend, the renderer, the locale API, the catalogue gate; first the maintainer's decision on the Drools default language (§6) | 3, 4, 5 | ~248 frontend and ~260 Drools messages in two languages; the Drools tests' ~258 text assertions and the frontend's 211 either run under the Dutch catalogue or move to codes — a change to test files, which needs the maintainer's consent in the card | Haiku translates; Sonnet builds |
 | 7 | **§9.5 codes** (added by this design, §4.2): the code set on a channel fact, `inconsistent.code`, golden witnesses; executes EF-005's decided move to §9.5 (§4.1) | 1; serial with 5 (both change the case schema and gate 8's neighbourhood) | ten kinds plus EF-005; three executors' channel; schema; ~10 golden cases | Opus (normative) |
 
+*Card 7 done 2026-10-19 (card `channel-fact-codes`; a proposal until the
+maintainer merges it).* Seven codes on the §9.5 channel, EF-025..EF-031: a
+consistency that does not hold, a duplicate uniqueness key, differing
+defaults groups, an empty weight in a proportional and in an ordered
+allocation, an empty or negative cap, a division by an empty divisor. A
+channel fact keeps rule × subject; `ref` and clingo carry the code set beside
+it (clingo in `inconsistent_code/3`), the Drools backend one `Inconsistentie`
+per deposit with its codes, and it refuses a condition or a fold filter whose
+deposits mix a division and a square root (DROOLS-290), since its test hears
+both together. 73 golden `inconsistent` expectations pin a code, outside
+`anchor/` and outside goldens with `scenario.rgs`; two new cases witness the
+empty and negative cap and one fact with two codes. Three §9.5 kinds stay
+without a code for want of a witness: the negative radicand, the empty
+variable-start anchor, the negative weight in a proportional allocation.
+EF-005's decided move is not executed: it changes behaviour expectations in
+the test suites of all three executors, which the card's mandate does not
+cover, and two of its eight red witnesses are forms clingo refuses; the
+card's Result records what the move needs.
+
 **Order (revised after Fable's review, §2 (b)):** 1 → 2 ∥ (3 → 4) → 5 → 6;
 card 7 after 1, serial with 5. Card 2 runs beside the pair 3 → 4 (disjoint
 files: `spec/verifier/` with gate 3 and `corpus/negatief/`), and may as

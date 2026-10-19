@@ -223,7 +223,7 @@ class RulePlanWitnessTest {
                         + " eenheid=null] bron '0'",
                 "    toets 0.1.2 Const String",
                 "  gevolg Inconsistency [onderwerp=$onderwerp, form=bergingsaandeel van een jutter,"
-                        + " insertion=LOGICAL]"),
+                        + " codes=[EF-031], insertion=LOGICAL]"),
                 rules(golden("jutterswet-ploegaandeel")));
     }
 

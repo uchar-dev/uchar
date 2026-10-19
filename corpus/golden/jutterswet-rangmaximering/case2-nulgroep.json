@@ -185,7 +185,8 @@
     {
       "kind": "inconsistent",
       "rule": "verdeel het penningbudget van een penningkas",
-      "label": "W5"
+      "label": "W5",
+      "code": "EF-029"
     }
   ]
 }

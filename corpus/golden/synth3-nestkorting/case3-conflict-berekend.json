@@ -30,7 +30,8 @@
     {
       "kind": "inconsistent",
       "rule": "Jutter.korting/0",
-      "label": "M"
+      "label": "M",
+      "code": "EF-027"
     }
   ]
 }

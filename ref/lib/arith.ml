@@ -159,7 +159,7 @@ let div_gen ~err ~collapse l r =
       let lq, lu = num_exn "gedeeld door" l in
       match r with
       | Empty ->
-          err "division by empty divisor";
+          err { code = Some "EF-031"; text = "division by empty divisor" };
           Empty
       | _ ->
           let rq, ru = num_exn "gedeeld door" r in
@@ -228,7 +228,7 @@ let sqrt_ ~err = function
   | v -> (
       let q, _u = num_exn "squareRoot" v in
       if Q.sign q < 0 then (
-        err "negative radicand";
+        err { code = None; text = "negative radicand" };
         Empty)
       else
         match root_exact q 2 with
@@ -247,7 +247,7 @@ let sqrt_rounded ~err mode decimals = function
   | v ->
       let q, _u = num_exn "squareRoot" v in
       if Q.sign q < 0 then (
-        err "negative radicand";
+        err { code = None; text = "negative radicand" };
         Empty)
       else
         let s = Z.pow (Z.of_int 10) decimals in

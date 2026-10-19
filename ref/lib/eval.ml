@@ -2528,7 +2528,7 @@ let over_subjects ?(exact = false) ?(except = []) ?read env world ~otype ~rule b
       let w, ch = body w self err in
       let w =
         List.fold_left
-          (fun w (_ : string) -> World.insert_error w ~rule ~subject:self.label)
+          (fun w (d : Value.deposit) -> World.insert_error w ~rule ~subject:self.label ~code:d.code)
           w !pending
       in
       (w, changed || ch))
@@ -2913,14 +2913,16 @@ let run_allocation env world (v : resolved_allocation) =
               recipients
           in
           let alloc_errs = ref [] in
-          let err ~id (_ : string) = alloc_errs := id :: !alloc_errs in
+          let err ~id (d : Value.deposit) = alloc_errs := (id, d.code) :: !alloc_errs in
           let outcome =
             Alloc.allocate method_name
               ~descending:v.descending ~decimals:v.rounding_decimals
               ~pot:(World.attr src source_attr) ~err recs
           in
           let w =
-            List.fold_left (fun w id -> World.insert_error w ~rule:name ~subject:id) w !alloc_errs
+            List.fold_left
+              (fun w (id, code) -> World.insert_error w ~rule:name ~subject:id ~code)
+              w !alloc_errs
           in
           match outcome with
           | Alloc.Nothing -> (w, false)
@@ -3384,7 +3386,7 @@ let run_defaults_group env world ~world0 ~owner
       | Conflict rule ->
           (* over-determination (ch. 7.2/7.9): no write, one channel fact —
              bare-keyed at the root, path-keyed for a nested exception group *)
-          (World.insert_error w ~rule ~subject:self.label, false)
+          (World.insert_error w ~rule ~subject:self.label ~code:(Some "EF-027"), false)
       | Decided (Char_dec true) ->
           World.set_char w ~label:self.label ~char:(req "defaults characteristic" l0.pd_characteristic)
       | Decided (Char_dec false) -> (w, false)
@@ -3405,7 +3407,7 @@ let run_consistency env world (c : resolved_consistency) =
       over_subjects env world ~otype:(req "ConsistencyVersion.subject" c.cons_subject) ~rule:name
         (fun w self err ->
           if eval_cond env w self ~err (req "ConsistencyVersion.assertion" c.assertion) then (w, false)
-          else (World.insert_error w ~rule:name ~subject:self.label, false))
+          else (World.insert_error w ~rule:name ~subject:self.label ~code:(Some "EF-025"), false))
     in
     world
 
@@ -3511,7 +3513,8 @@ let run_uniqueness env world (u : resolved_uniqueness) =
     in
     let dup k = List.length (List.filter (fun (k', _) -> String.equal k k') keyed) > 1 in
     List.fold_left
-      (fun w (k, label) -> if dup k then World.insert_error w ~rule:name ~subject:label else w)
+      (fun w (k, label) ->
+        if dup k then World.insert_error w ~rule:name ~subject:label ~code:(Some "EF-026") else w)
       world keyed
   end
 
@@ -3546,7 +3549,8 @@ let run_uniqueness_union env world (u : resolved_uniqueness_union) =
     in
     let dup k = List.length (List.filter (fun (k', _) -> String.equal k k') keyed) > 1 in
     List.fold_left
-      (fun w (k, label) -> if dup k then World.insert_error w ~rule:name ~subject:label else w)
+      (fun w (k, label) ->
+        if dup k then World.insert_error w ~rule:name ~subject:label ~code:(Some "EF-026") else w)
       world keyed
   end
 

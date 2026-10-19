@@ -45,7 +45,8 @@
     {
       "kind": "inconsistent",
       "rule": "controle opgave stukprijs",
-      "label": "A"
+      "label": "A",
+      "code": "EF-025"
     }
   ]
 }

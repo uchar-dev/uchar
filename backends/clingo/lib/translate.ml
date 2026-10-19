@@ -505,6 +505,15 @@ let refuse_attr_timeline ctx ~otype ~attr =
 
 let emit ctx fmt = Printf.ksprintf (fun s -> Buffer.add_string ctx.buf (s ^ "\n")) fmt
 
+(* a §9.5 deposit (RUNTIME-SEMANTICS ch. 5.6) under [body]: the channel fact
+   inconsistent/2, whose identity is rule × subject, and beside it
+   inconsistent_code/3, the EF code (ch. 5.7b) of the kind deposited for that
+   pair. The channel read and the consistent check look at inconsistent/2
+   alone; the codes deposited for one pair form a set beside it *)
+let deposit ctx ~code ~rule ~subject body =
+  emit ctx "inconsistent(%s,%s) :- %s." rule subject body;
+  emit ctx "inconsistent_code(%s,%s,%s) :- %s." rule subject (quote code) body
+
 (* a bare division's non-exact viol/2: inside the write of the unbounded form
    it names that form, since the spec mandates no rounding there *)
 let non_exact_division ctx =
@@ -1659,8 +1668,8 @@ let map_predicates f s =
    predicates are not written again. Returns its atoms under those names *)
 let pre_clone ctx segment atoms =
   let model =
-    [ "val"; "has"; "role"; "isa"; "is_a"; "param"; "viol"; "inconsistent"; "tl"; "param_tl"; "ktl";
-      "inputval"; "inputtl"; "inputrole" ]
+    [ "val"; "has"; "role"; "isa"; "is_a"; "param"; "viol"; "inconsistent"; "inconsistent_code"; "tl";
+      "param_tl"; "ktl"; "inputval"; "inputtl"; "inputrole" ]
   in
   let is_id c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' in
   let head l =
@@ -6197,10 +6206,9 @@ and translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding
   emit ctx "%s_ldef(%s) :- %s." p subject lbody;
   emit ctx "%s_rdef(%s) :- %s." p subject rbody;
   emit ctx "%s(%s,0) :- %s, not %s_ldef(%s)." p subject base p subject;
-  emit ctx "inconsistent(%s,%s) :- %s, %s_ldef(%s), not %s_rdef(%s)."
-    (str ctx.rule_name) subject
-    (String.concat ", " (base :: guard))
-    p subject p subject;
+  deposit ctx ~code:"EF-031" ~rule:(str ctx.rule_name) ~subject
+    (Printf.sprintf "%s, %s_ldef(%s), not %s_rdef(%s)" (String.concat ", " (base :: guard)) p subject p
+       subject);
   emit ctx "viol(\"division by numeric zero\",%s) :- %s, (%s) == 0." subject full tr;
   (match rounding with
   | None ->
@@ -10382,9 +10390,8 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
      the deposit must not fire on the bare [diff] atom alone (root members do
      not displace each other, so the bare-keyed root deposit stays
      unguarded) *)
-  head_body ctx
-    (Printf.sprintf "inconsistent(%s,%s)" (str (path_key target_form group_path)) subject)
-    (Printf.sprintf "%s(%s)" diff subject :: outer_displaced);
+  deposit ctx ~code:"EF-027" ~rule:(str (path_key target_form group_path)) ~subject
+    (String.concat ", " (Printf.sprintf "%s(%s)" diff subject :: outer_displaced));
   (out, cfl, any)
 
 (* [owner] is the CONCRETE type whose effective stack these members are
@@ -10491,8 +10498,7 @@ let translate_defaults_group ctx gidx ~owner
             member_info)
         member_info;
       head_body ctx root_cfl [ root_diff ];
-      head_body ctx (Printf.sprintf "inconsistent(%s,%s)" (str target_form) subject)
-        [ root_diff ]
+      deposit ctx ~code:"EF-027" ~rule:(str target_form) ~subject root_diff
     end
   end;
   let conflict_guard = if conflict_possible then [ "not " ^ root_cfl ] else [] in
@@ -10764,8 +10770,9 @@ let translate_allocation ctx i (v : resolved_allocation) =
       else Printf.sprintf "C/%d" (pow10 (c - ddec))
     in
     emit ctx "%scapd(X,%s) :- %s, val(X,%s,C), C >= 0." p capd raw_pat (str cap);
-    emit ctx "inconsistent(%s,X) :- %s, val(X,%s,C), C < 0." (str name) raw_pat (str cap);
-    emit ctx "inconsistent(%s,X) :- %s, not %shas_cap(X)." (str name) raw_pat p;
+    deposit ctx ~code:"EF-030" ~rule:(str name) ~subject:"X"
+      (Printf.sprintf "%s, val(X,%s,C), C < 0" raw_pat (str cap));
+    deposit ctx ~code:"EF-030" ~rule:(str name) ~subject:"X" (Printf.sprintf "%s, not %shas_cap(X)" raw_pat p);
     emit ctx "%shas_cap(X) :- val(X,%s,C), C >= 0, %s." p (str cap) raw_pat
   in
   let exact_viol = "allocation: a share does not fit the target scale (an explicit rounding is mandated before precision is lost)" in
@@ -10784,8 +10791,8 @@ let translate_allocation ctx i (v : resolved_allocation) =
          and surface on the channel (ch. 4.4) *)
       emit ctx "%sweight(X,W) :- %s, %s, val(X,%s,W)." p recip src (str ratio);
       emit ctx "viol(\"allocation: negative weight\",X) :- %sweight(X,W), W < 0." p;
-      emit ctx "inconsistent(%s,X) :- %s, %s, not %shas_weight(X)." (str name)
-        recip src p;
+      deposit ctx ~code:"EF-028" ~rule:(str name) ~subject:"X"
+        (Printf.sprintf "%s, %s, not %shas_weight(X)" recip src p);
       emit ctx "%shas_weight(X) :- %sweight(X,_)." p p;
       emit ctx "%swsum(B,S) :- %s, S = #sum { W,X : %s, %sweight(X,W) }, S != 0." p
         src recip p;
@@ -10873,8 +10880,8 @@ let translate_allocation ctx i (v : resolved_allocation) =
           emit ctx "%stw(B,X,W) :- %smrank(B,X,_), val(X,%s,W), W >= 0." p p (str ratio);
           emit ctx "%stw(B,X,0) :- %smrank(B,X,_), val(X,%s,W), W < 0." p p (str ratio);
           emit ctx "%stw(B,X,0) :- %smrank(B,X,_), not %shasw(X)." p p p;
-          emit ctx "inconsistent(%s,X) :- %smrank(B,X,_), %shas_pot(B), not %shasw(X)."
-            (str name) p p p;
+          deposit ctx ~code:"EF-029" ~rule:(str name) ~subject:"X"
+            (Printf.sprintf "%smrank(B,X,_), %shas_pot(B), not %shasw(X)" p p p);
           emit ctx
             "%sgwsum(B,R,S) :- %spot(B,R,_), %smrank(B,_,R), S = #sum { W,X : %smrank(B,X,R), \
              %stw(B,X,W) }."
@@ -10937,7 +10944,8 @@ let translate_consistency ctx i (c : resolved_consistency) =
   let ok = Printf.sprintf "cons%d_ok(S)" i in
   let atoms = cond_atoms ctx ~subject:"S" ~subject_ot (req "ConsistencyVersion.assertion" c.assertion) in
   head_body ctx ok (Printf.sprintf "isa(S,%s)" (str subject_ot) :: atoms);
-  emit ctx "inconsistent(%s,S) :- isa(S,%s), not cons%d_ok(S)." (str name) (str subject_ot) i
+  deposit ctx ~code:"EF-025" ~rule:(str name) ~subject:"S"
+    (Printf.sprintf "isa(S,%s), not cons%d_ok(S)" (str subject_ot) i)
 
 (* ch. 5.9 ever-uniqueness, shared by BOTH uniqueness forms
    (compositionality: the same key, the same reading, either form).
@@ -11003,9 +11011,9 @@ let translate_uniqueness ctx (u : resolved_uniqueness) =
         [ Printf.sprintf "role(S1,%s,P)" (str (role_canonical role));
           Printf.sprintf "role(S2,%s,P)" (str (role_canonical role)) ]
   in
-  emit ctx "inconsistent(%s,S1) :- isa(S1,%s), isa(S2,%s), S1 != S2, %s." (str name)
-    (str subject_ot) (str subject_ot)
-    (String.concat ", " (joins "S1" @ joins "S2" @ scope_atoms))
+  deposit ctx ~code:"EF-026" ~rule:(str name) ~subject:"S1"
+    (Printf.sprintf "isa(S1,%s), isa(S2,%s), S1 != S2, %s" (str subject_ot) (str subject_ot)
+       (String.concat ", " (joins "S1" @ joins "S2" @ scope_atoms)))
 
 (* the uniqueness union (ch. 5.9): every source feeds one shared key
    predicate — a duplicate may arise across two different source types.
@@ -11075,8 +11083,9 @@ let translate_uniqueness_union ctx i (u : resolved_uniqueness_union) =
         (String.concat ", " body))
     u.source_list;
   let vars = List.init arity (fun p -> Printf.sprintf "V%d" p) in
-  emit ctx "inconsistent(%s,S) :- %s(S,_,%s), 2 <= #count { O,J : %s(O,J,%s) }." (str name)
-    pred (String.concat "," vars) pred (String.concat "," vars)
+  deposit ctx ~code:"EF-026" ~rule:(str name) ~subject:"S"
+    (Printf.sprintf "%s(S,_,%s), 2 <= #count { O,J : %s(O,J,%s) }" pred (String.concat "," vars) pred
+       (String.concat "," vars))
 
 (* reify a list VALUE as the indexed facts the fold family reads (S15):
    [lpres(L)] marks the list present (so a present-but-empty list still fires
@@ -11747,6 +11756,7 @@ let translate (doc : document) (case : Case.t) : string =
   emit ctx "%% generated by backends/clingo from uchar-ir-v1 + uchar-case-v0.";
   emit ctx "#defined val/3. #defined has/2. #defined role/3. #defined param/2.";
   emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4. #defined ktl/4.";
+  emit ctx "#defined inconsistent_code/3.";
   emit ctx "#defined inputval/3. #defined inputtl/5. #defined viol/2. #defined inputrole/3.";
   (* the fold family's reified lists (S15): declared so a case with an absent
      list source leaves lpres/lelem head-less without a grounding warning *)
@@ -11822,4 +11832,5 @@ let translate (doc : document) (case : Case.t) : string =
   emit_barriers ctx;
   translate_case ctx case;
   emit ctx "#show val/3. #show has/2. #show inconsistent/2. #show tl/5.";
+  emit ctx "#show inconsistent_code/3.";
   Buffer.contents ctx.buf

@@ -65,7 +65,8 @@
     {
       "kind": "inconsistent",
       "rule": "stukprijs van een zeil",
-      "label": "Z1"
+      "label": "Z1",
+      "code": "EF-031"
     }
   ]
 }

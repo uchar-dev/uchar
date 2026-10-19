@@ -77,12 +77,14 @@
     {
       "kind": "inconsistent",
       "rule": "controle opgave waarde",
-      "label": "V"
+      "label": "V",
+      "code": "EF-025"
     },
     {
       "kind": "inconsistent",
       "rule": "controle opgave bergloon",
-      "label": "V"
+      "label": "V",
+      "code": "EF-025"
     }
   ]
 }

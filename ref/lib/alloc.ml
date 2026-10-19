@@ -41,10 +41,10 @@ let cap_floor ~err ~decimals ~id raw cap =
     match cap with
     | None -> raw
     | Some Empty ->
-        err ~id "empty maximum degrades to uncapped";
+        err ~id { code = Some "EF-030"; text = "empty maximum degrades to uncapped" };
         raw
     | Some (Num (c, _)) when Q.sign c < 0 ->
-        err ~id "negative maximum degrades to uncapped";
+        err ~id { code = Some "EF-030"; text = "negative maximum degrades to uncapped" };
         raw
     | Some (Num (c, _)) -> Q.min raw c
     | Some v -> fault "maximum is not a number: %s" (to_string v)
@@ -85,7 +85,7 @@ let allocate (method_name : Ir_v0.Ast.method_name) ~descending ~decimals ~pot ~e
             let eligible, excluded =
               List.partition (fun r -> match r.weight with Some Empty | None -> false | Some _ -> true) recipients
             in
-            List.iter (fun r -> err ~id:r.id "empty weight: excluded from the split") excluded;
+            List.iter (fun r -> err ~id:r.id { code = Some "EF-028"; text = "empty weight: excluded from the split" }) excluded;
             let wsum = List.fold_left (fun acc r -> Q.add acc (weight_q r.weight)) Q.zero eligible in
             if Q.equal wsum Q.zero then Nothing (* nothing written, no division by zero *)
             else
@@ -140,7 +140,7 @@ let allocate (method_name : Ir_v0.Ast.method_name) ~descending ~decimals ~pot ~e
                 let w r =
                   match r.weight with
                   | Some Empty ->
-                      err ~id:r.id "empty tie-break weight counts as 0";
+                      err ~id:r.id { code = Some "EF-029"; text = "empty tie-break weight counts as 0" };
                       Q.zero
                   | Some (Num (q, _)) when Q.sign q < 0 -> Q.zero
                   | other -> weight_q other

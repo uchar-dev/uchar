@@ -82,8 +82,13 @@ public sealed interface Consequence {
      *  the object {@code onderwerp} binds. */
     record Fault(String onderwerp, String sentence, FaultName fault, Insertion insertion) implements Consequence {}
 
-    /** The §9.5 inconsistency of the form {@code form} on the object {@code onderwerp} binds. */
-    record Inconsistency(String onderwerp, String form, Insertion insertion) implements Consequence {}
+    /** The §9.5 inconsistency of the form {@code form} on the object {@code onderwerp} binds, with {@code codes}, the EF
+     *  codes of the kinds it deposits (RUNTIME-SEMANTICS ch. 5.6, 5.7b), known when the plan is made. */
+    record Inconsistency(String onderwerp, String form, List<String> codes, Insertion insertion) implements Consequence {
+        public Inconsistency {
+            codes = List.copyOf(codes);
+        }
+    }
 
     /**
      * The fault of two or more writers of attribute {@code doel} that stand on one object with different values
@@ -526,7 +531,11 @@ public sealed interface Consequence {
         record Outcome(String stack, int chain, int position, Kind category) implements StackFact {}
 
         /** The §9.5 inconsistency of the stack's conflict at its root, under the key of the conflict, through the
-         *  route {@link Route#INCONSISTENCY}. */
-        record Inconsistency() implements StackFact {}
+         *  route {@link Route#INCONSISTENCY}, with {@link #CODES}. */
+        record Inconsistency() implements StackFact {
+            /** EF-027: the defaults groups of a declared-unordered group decide differently (RUNTIME-SEMANTICS
+             *  ch. 7.2, 7.9, 5.7b). */
+            public static final List<String> CODES = List.of("EF-027");
+        }
     }
 }

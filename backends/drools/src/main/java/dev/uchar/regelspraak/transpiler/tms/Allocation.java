@@ -7,11 +7,11 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * The distribution of one allocation over the recipients of one source (RUNTIME-SEMANTICS ch. 4.2 to 4.4), as a
@@ -42,9 +42,10 @@ public final class Allocation {
      * What the distribution of one source gives: the share of every recipient that receives one, by identity; the rest,
      * the pot less every share, or null where nothing is distributed and nothing written (ch. 4.4: no recipients, an
      * empty pot, eligible weights that sum to 0); and the recipients on which a degradation surfaces the §9.5 deposit
-     * of the allocation (ch. 4.3, 4.4), each once.
+     * of the allocation (ch. 4.3, 4.4), each once, by identity, with the EF codes of its degradations (ch. 5.7b),
+     * ascending: none for a negative weight in the proportional method, a kind without a code.
      */
-    public record Result(Map<Object, BigDecimal> shares, BigDecimal rest, Set<Object> depositors) {}
+    public record Result(Map<Object, BigDecimal> shares, BigDecimal rest, Map<Object, Set<String>> depositors) {}
 
     /**
      * The distribution by {@code method} of {@code pot} over {@code ontvangers}, the recipients of one source:
@@ -56,7 +57,7 @@ public final class Allocation {
     public static Result bereken(ResolvedAllocation.Method method, Object pot, List<Recipient> recipients, boolean gewogen,
                            boolean capped, Integer decimals, boolean descending) {
         Map<Object, BigDecimal> shares = new IdentityHashMap<>();
-        Set<Object> depositors = Collections.newSetFromMap(new IdentityHashMap<>());
+        Map<Object, Set<String>> depositors = new IdentityHashMap<>();
         // ch. 4.4: zero recipients write nothing and raise nothing, whatever the pot
         if (recipients.isEmpty()) return new Result(shares, null, depositors);
         // ch. 4.4, decided for v1 and uniform across the methods: an empty pot is no distribution, so it writes no
@@ -74,7 +75,7 @@ public final class Allocation {
 
     /** One group, every recipient, unweighted (ch. 4.2); a cap is ill-formed here (WF-025) and refused before. */
     private static Result equalShares(Object pot, List<Recipient> recipients, Integer decimals,
-                                        Map<Object, BigDecimal> shares, Set<Object> depositors) {
+                                        Map<Object, BigDecimal> shares, Map<Object, Set<String>> depositors) {
         BigDecimal a = RegelSpraakRuntime.toBd(pot);
         BigDecimal n = BigDecimal.valueOf(recipients.size());
         BigDecimal sum = BigDecimal.ZERO;
@@ -94,19 +95,19 @@ public final class Allocation {
      * split that distributes, as the reference interpreter reads it (ch. 4.3).
      */
     private static Result proportional(Object pot, List<Recipient> recipients, boolean capped, Integer decimals,
-                                    Map<Object, BigDecimal> shares, Set<Object> depositors) {
+                                    Map<Object, BigDecimal> shares, Map<Object, Set<String>> depositors) {
         BigDecimal a = RegelSpraakRuntime.toBd(pot);
         List<Recipient> gerechtigd = new ArrayList<>();
         List<BigDecimal> gewichten = new ArrayList<>();
         BigDecimal weightSum = BigDecimal.ZERO;
         for (Recipient o : recipients) {
             if (o.weight() == null) {
-                depositors.add(o.recipient());
+                deposit(depositors, o.recipient(), "EF-028");
                 continue;
             }
             BigDecimal w = RegelSpraakRuntime.toBd(o.weight());
             if (w.signum() < 0) {
-                depositors.add(o.recipient());
+                deposit(depositors, o.recipient(), null);
                 w = BigDecimal.ZERO;
             }
             gerechtigd.add(o);
@@ -120,7 +121,7 @@ public final class Allocation {
             BigDecimal aandeel = a.multiply(gewichten.get(i)).divide(weightSum, MathContext.DECIMAL64);
             if (capped) {
                 BigDecimal max = RegelSpraakRuntime.toBd(o.maximum());
-                if (max == null || max.signum() < 0) depositors.add(o.recipient());
+                if (max == null || max.signum() < 0) deposit(depositors, o.recipient(), "EF-030");
                 aandeel = RegelSpraakRuntime.rsPlafond(aandeel, max);
             }
             aandeel = floor(aandeel, decimals);
@@ -139,7 +140,7 @@ public final class Allocation {
      */
     private static Result ordered(Object pot, List<Recipient> recipients, boolean gewogen, boolean capped,
                                       Integer decimals, boolean descending, Map<Object, BigDecimal> shares,
-                                      Set<Object> depositors) {
+                                      Map<Object, Set<String>> depositors) {
         BigDecimal a = RegelSpraakRuntime.toBd(pot);
         List<Object> facts = new ArrayList<>(), orderKeys = new ArrayList<>();
         List<Object> gewichten = gewogen ? new ArrayList<>() : null, maxima = capped ? new ArrayList<>() : null;
@@ -147,13 +148,13 @@ public final class Allocation {
             facts.add(o.recipient());
             orderKeys.add(o.key() instanceof BigDecimal d ? d.stripTrailingZeros() : o.key());
             if (gewogen) {
-                if (o.weight() == null) depositors.add(o.recipient());
+                if (o.weight() == null) deposit(depositors, o.recipient(), "EF-029");
                 // a weighted tie group always splits by weight, so an empty weight is the real 0 it counts as
                 gewichten.add(o.weight() == null ? BigDecimal.ZERO : RegelSpraakRuntime.toBd(o.weight()));
             }
             if (capped) {
                 BigDecimal max = RegelSpraakRuntime.toBd(o.maximum());
-                if (max == null || max.signum() < 0) depositors.add(o.recipient());
+                if (max == null || max.signum() < 0) deposit(depositors, o.recipient(), "EF-030");
                 maxima.add(max);
             }
         }
@@ -168,6 +169,13 @@ public final class Allocation {
             sum = sum.add(aandeel);
         }
         return new Result(shares, a.subtract(sum), depositors);
+    }
+
+    /** The §9.5 deposit of a degradation on {@code recipient}, with {@code code}, the EF code of its kind, or none (null)
+     *  for a negative weight in the proportional method, decided for v1 in ch. 4.4 and witnessed by no golden. */
+    private static void deposit(Map<Object, Set<String>> depositors, Object recipient, String code) {
+        Set<String> codes = depositors.computeIfAbsent(recipient, r -> new TreeSet<>());
+        if (code != null) codes.add(code);
     }
 
     /** The floor at {@code decimals} decimals (ch. 4.3), the identity without them. */

@@ -943,13 +943,19 @@ public final class FactModelGenerator {
     private static final String INCONSISTENCY_SOURCE = """
             package dev.uchar.regelspraak.facts;
 
-            /** The observable §13.4.8/§9.5 "inconsistent" result: the violated rule + subject (generated, the explicit fact-model contract). */
+            /** The observable §13.4.8/§9.5 "inconsistent" result: the violated rule + subject (generated, the explicit fact-model contract),
+             *  with the EF codes of the kinds deposited (RUNTIME-SEMANTICS ch. 5.6, 5.7b). */
             public class Inconsistentie {
                 private final String regel;
                 private final Object subject;
-                public Inconsistentie(String regel, Object subject) { this.regel = regel; this.subject = subject; }
+                private final java.util.List<String> codes;
+                public Inconsistentie(String regel, Object subject) { this(regel, subject, java.util.List.of()); }
+                public Inconsistentie(String regel, Object subject, java.util.List<String> codes) {
+                    this.regel = regel; this.subject = subject; this.codes = java.util.List.copyOf(codes);
+                }
                 public String getRegel() { return regel; }
                 public Object getSubject() { return subject; }
+                public java.util.List<String> getCodes() { return codes; }
                 @Override public String toString() { return "Inconsistentie[" + regel + " @ " + subject + "]"; }
             }
             """;

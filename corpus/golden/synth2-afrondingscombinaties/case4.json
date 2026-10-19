@@ -57,7 +57,8 @@
     {
       "kind": "inconsistent",
       "rule": "marge van een partij",
-      "label": "P1"
+      "label": "P1",
+      "code": "EF-031"
     }
   ]
 }

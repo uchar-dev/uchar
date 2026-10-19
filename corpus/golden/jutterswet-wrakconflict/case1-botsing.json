@@ -23,7 +23,7 @@
   "expected": [
     { "kind": "attributeEmpty", "label": "S1", "attribute": "uitkering" },
     { "kind": "attributeEmpty", "label": "W1", "attribute": "uitkering" },
-    { "kind": "inconsistent", "rule": "Strandrecht.uitkering", "label": "S1" },
-    { "kind": "inconsistent", "rule": "Strandrecht.uitkering", "label": "W1" }
+    { "kind": "inconsistent", "rule": "Strandrecht.uitkering", "label": "S1", "code": "EF-027" },
+    { "kind": "inconsistent", "rule": "Strandrecht.uitkering", "label": "W1", "code": "EF-027" }
   ]
 }

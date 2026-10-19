@@ -59,7 +59,8 @@
     {
       "kind": "inconsistent",
       "rule": "uitkomst van een meting",
-      "label": "M1"
+      "label": "M1",
+      "code": "EF-031"
     }
   ]
 }

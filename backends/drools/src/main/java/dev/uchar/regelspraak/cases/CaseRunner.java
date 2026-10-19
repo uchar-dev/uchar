@@ -921,21 +921,27 @@ public final class CaseRunner {
      *  (2026-09-23) the subject was checked only for a default-group conflict key and a rule-name key passed on any
      *  fact from its rule, wherever it landed. That masked one real divergence: both transpilers laid the §9.5
      *  allocation error on the source instead of each recipient ({@code jutterswet-rangmaximering}), fixed in the same
-     *  card. An expectation carrying no rule falls back to bare presence. */
+     *  card. An expectation carrying no rule and no code falls back to bare presence. A pinned {@code code} (card
+     *  channel-fact-codes, RUNTIME-SEMANTICS ch. 5.6, 5.7b) must be among the codes of a fact that matches rule and
+     *  label: ref keeps one fact per rule × subject with the codes deposited for it, this backend one fact per deposit
+     *  with its own codes, so a code on any of the matching facts is a code of ref's one fact. */
     private String consistency(KieSession session, boolean inconsistentExpected, JsonNode v) {
         List<Object> facts = inconsistencies(session);
         if (!inconsistentExpected)
-            return facts.isEmpty() ? null : "verwacht consistent, werkelijk inconsistent (" + renderIncs(facts) + ")";
+            return facts.isEmpty() ? null : "verwacht consistent, werkelijk inconsistent (" + renderIncs(facts, false) + ")";
         String rule = v.has("rule") && !v.get("rule").isNull() ? v.get("rule").asText() : null;
         String label = v.has("label") && !v.get("label").isNull() ? v.get("label").asText() : null;
+        String code = v.hasNonNull("code") ? v.get("code").asText() : null;
         if (facts.isEmpty())
-            return "verwacht inconsistent" + keyText(rule, label) + ", werkelijk consistent";
-        if (rule == null) return null;   // presence-only expectation, satisfied by any fact
+            return "verwacht inconsistent" + keyText(rule, label, code) + ", werkelijk consistent";
+        if (rule == null && code == null) return null;   // presence-only expectation, satisfied by any fact
         for (Object f : facts) {
-            if (!sameRule(rule, (String) invokeGetter(f, "getRegel"))) continue;
-            if (label == null || label.equals(beanLabel(invokeGetter(f, "getSubject")))) return null;
+            if (rule != null && !sameRule(rule, (String) invokeGetter(f, "getRegel"))) continue;
+            if (label != null && !label.equals(beanLabel(invokeGetter(f, "getSubject")))) continue;
+            if (code == null || ((List<?>) invokeGetter(f, "getCodes")).contains(code)) return null;
         }
-        return "verwacht inconsistent" + keyText(rule, label) + ", niet gevonden onder " + renderIncs(facts);
+        return "verwacht inconsistent" + keyText(rule, label, code) + ", niet gevonden onder "
+                + renderIncs(facts, code != null);
     }
 
     /** Every §9.5 Inconsistentie fact the session holds. */
@@ -972,6 +978,11 @@ public final class CaseRunner {
         return rule == null ? "" : " (" + rule + (label != null ? " @ " + label : "") + ")";
     }
 
+    /** {@link #keyText(String, String)} with the pinned code after it, where the expectation pins one. */
+    private static String keyText(String rule, String label, String code) {
+        return keyText(rule, label) + (code == null ? "" : " code " + code);
+    }
+
     /** The case label whose bean IS this fact's subject (identity) — the reverse of {@link #labelToBean},
      *  so the §9.5 fact's subject can be checked against the expectation's {@code label}. null if not an input bean. */
     private String beanLabel(Object bean) {
@@ -980,11 +991,14 @@ public final class CaseRunner {
         return null;
     }
 
-    /** The §9.5 facts as "regel @ label", sorted: the session gives them in the order of its working memory, which
-     *  differs between two renderings of one analysis, and a mismatch line must not. */
-    private String renderIncs(List<Object> facts) {
+    /** The §9.5 facts as "regel @ label", with their codes as "[EF-025]" after it where {@code withCodes}, sorted: the
+     *  session gives them in the order of its working memory, which differs between two renderings of one analysis,
+     *  and a mismatch line must not. */
+    private String renderIncs(List<Object> facts, boolean withCodes) {
         List<String> out = new ArrayList<>();
-        for (Object f : facts) out.add(invokeGetter(f, "getRegel") + " @ " + beanLabel(invokeGetter(f, "getSubject")));
+        for (Object f : facts)
+            out.add(invokeGetter(f, "getRegel") + " @ " + beanLabel(invokeGetter(f, "getSubject"))
+                    + (withCodes ? " " + invokeGetter(f, "getCodes") : ""));
         out.sort(Comparator.naturalOrder());
         return String.join(", ", out);
     }
@@ -996,7 +1010,8 @@ public final class CaseRunner {
         String kind = v.get("kind").asText();
         if (kind.equals("inconsistent"))
             return kind + keyText(v.hasNonNull("rule") ? v.get("rule").asText() : null,
-                    v.hasNonNull("label") ? v.get("label").asText() : null);
+                    v.hasNonNull("label") ? v.get("label").asText() : null,
+                    v.hasNonNull("code") ? v.get("code").asText() : null);
         StringBuilder b = new StringBuilder(kind);
         for (String field : new String[]{"label", "attribute", "characteristic"})
             if (v.hasNonNull(field)) b.append(' ').append(v.get(field).asText());
@@ -1019,7 +1034,8 @@ public final class CaseRunner {
             case "characteristicAbsent" -> "afwezig";
             case "consistent" -> "consistent";
             default -> "inconsistent" + keyText(v.hasNonNull("rule") ? v.get("rule").asText() : null,
-                    v.hasNonNull("label") ? v.get("label").asText() : null);
+                    v.hasNonNull("label") ? v.get("label").asText() : null,
+                    v.hasNonNull("code") ? v.get("code").asText() : null);
         };
     }
 
@@ -1041,7 +1057,7 @@ public final class CaseRunner {
                     invokeGetter(bean, Namen.getter(characteristicName(ot, v.get("characteristic").asText())))) ? "aanwezig" : "afwezig";
             default -> {
                 List<Object> facts = inconsistencies(session);
-                yield facts.isEmpty() ? "consistent" : "inconsistent (" + renderIncs(facts) + ")";
+                yield facts.isEmpty() ? "consistent" : "inconsistent (" + renderIncs(facts, v.hasNonNull("code")) + ")";
             }
         };
     }

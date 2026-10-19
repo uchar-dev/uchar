@@ -101,6 +101,8 @@ validator = CaseValidator(schema)
 DATE, DATETIME, NUMBER, FAULT_CODE = "date", "dateTime", "number", "faultCode"
 PATTERN_POSITIONS = {
     "/properties/expectedFault/properties/code": FAULT_CODE,
+    # the EF code on an `inconsistent` expectation, a §9.5 kind (card channel-fact-codes, 2026-10-19)
+    "/$defs/expectation/oneOf/6/properties/code": FAULT_CODE,
     "/properties/asOfDate/oneOf/0": DATE,
     "/$defs/instance/properties/characteristicTimelines/additionalProperties/items/properties/from": DATE,
     "/$defs/instance/properties/characteristicTimelines/additionalProperties/items/properties/to": DATE,

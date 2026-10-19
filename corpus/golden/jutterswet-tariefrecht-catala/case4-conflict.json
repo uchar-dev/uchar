@@ -19,6 +19,6 @@
   "expected": [
     { "kind": "attributeEmpty", "label": "J1", "attribute": "tarief" },
     { "kind": "attributeValue", "label": "J1", "attribute": "aanslag", "value": { "number": "0.00" } },
-    { "kind": "inconsistent", "rule": "Penningplichtige.tarief/0", "label": "J1" }
+    { "kind": "inconsistent", "rule": "Penningplichtige.tarief/0", "label": "J1", "code": "EF-027" }
   ]
 }

@@ -87,7 +87,7 @@ final class FormsPlan {
         rules.add(new RulePlan("inconsistentie", "proef", null, one, List.of(onderwerp,
                 new TestItem("voorwaarde", TestItem.Role.CONDITION, new Term.Call(StaticFunction.EMPTY_TEST, List.of(readOf(0),
                         new Term.Const(Boolean.TRUE, null, null)), "zijn uitkijkbonus leeg is"), -1, List.of(0), 1)),
-                new Consequence.Inconsistency(O, "proef", Consequence.Insertion.LOGICAL)));
+                new Consequence.Inconsistency(O, "proef", List.of(), Consequence.Insertion.LOGICAL)));
         FactPattern waarden = new FactPattern(Value.class, "$waarde", List.of(new Alpha("attribuut", List.of(
                 new Alpha.FieldTest("attribute", Alpha.Comparator.GELIJK, ElementKey.van("wachter", "uitkijkbonus", false))))),
                 List.of(new Join("onderwerp", "onderwerp", O)), List.of());
@@ -334,7 +334,7 @@ final class FormsPlan {
             "Object r4_conflict0() {\n    return \"proefstapel/0\";\n}",
             "insertLogical(new Outcome($onderwerp, \"proefstapel\", 0, 1,"
                     + " dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, null, (String) v));",
-            "insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp));");
+            "insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1(\"EF-027\")));");
 
     /**
      * A plan with every consequence of the rules of a defaults stack (step 4 of card drl-teksttak-op-truth-maintenance),
@@ -385,8 +385,8 @@ final class FormsPlan {
     /** Fragments of the text that show the forms of the fold plan ({@link #folds}), one per form. */
     static final List<String> FOLD_FORMS = List.of("new Contribution(\"proefvouw: telling\", $vouwonderwerp, $onderwerp, null)",
             "ComputeHelpers.contribution(\"proefvouw: som\"", "\"MAAND\", true)", "ComputeHelpers.verdict(", "_matrix",
-            "_lidtoets", "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(sonde))",
-            "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null))", "_plaats",
+            "_lidtoets", "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(sonde), ComputeHelpers.depositCodes(sonde))",
+            "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null))", "_plaats",
             "ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER",
             "java.util.Arrays.asList(\"kustvak\", \"wachter\")", "java.util.Arrays.asList()",
             "new FilterDeposit(", "RuntimeException f = ", "new FilterFault(", "new MemberFault(",
@@ -572,7 +572,7 @@ final class FormsPlan {
                         "de uitkijkbonus gedeeld door 2"), number("1"), text(">")), "de helft groter dan 1"),
                 new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.SquareRoot(StaticFunction.SQUARE_ROOT, readOf(0), 14,
                         "de wortel"), number("1"), text(">=")), "de wortel minstens 1"),
-                new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.FoldRead(readOf(9), 8, 14, 10, 11,
+                new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.FoldRead(readOf(9), 8, 14, List.of(), 10, 11,
                         "de som van de bijdragen"), number("0"), text("<")), "de som onder 0"),
                 new Term.QuantifierRead(StaticFunction.QUANTIFIER_READ, readOf(8), readOf(15), Condition.Quantifier.TEN_MINSTE, 1, 14,
                         "ten minste één bijdrage"),
@@ -615,7 +615,7 @@ final class FormsPlan {
                                         null),
                                 new Term.Choice(new Term.Const(Boolean.TRUE, null, null), readOf(17),
                                         new Term.Fail("nooit", null), null),
-                                new Term.FoldRead(readOf(9), 8, 14, 10, 11, null)), "de grootste"),
+                                new Term.FoldRead(readOf(9), 8, 14, List.of(), 10, 11, null)), "de grootste"),
                         false, "b is als a groter is dan de drempel"),
                 false, "a is de uitkijkbonus plus 1,50");
         List<LhsItem> lhs = List.of(onderwerp, parameter, evaluationDate, outcome, relationLink,

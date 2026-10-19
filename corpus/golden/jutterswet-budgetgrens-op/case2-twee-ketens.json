@@ -53,15 +53,18 @@
     },
     {
       "kind": "inconsistent",
-      "rule": "rangplafond"
+      "rule": "rangplafond",
+      "code": "EF-025"
     },
     {
       "kind": "inconsistent",
-      "rule": "eerste keten aan het plafond"
+      "rule": "eerste keten aan het plafond",
+      "code": "EF-025"
     },
     {
       "kind": "inconsistent",
-      "rule": "tweede keten aan het plafond"
+      "rule": "tweede keten aan het plafond",
+      "code": "EF-025"
     }
   ]
 }

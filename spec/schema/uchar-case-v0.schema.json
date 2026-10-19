@@ -255,6 +255,10 @@
             "label": {
               "description": "Optional further precision (requires rule): the flagged instance's label, exact. A created instance (no case label) never matches.",
               "type": "string", "minLength": 1
+            },
+            "code": {
+              "description": "Optional precision: the EF code of a fault kind on the §9.5 channel (RUNTIME-SEMANTICS ch. 5.6, ch. 5.7b). A channel fact is still identified by rule × subject; the codes of the kinds deposited for that pair form a set beside it, and the expectation is satisfied by a fact that matches rule and label as above and carries this code among its codes. Gate 8 holds every pinned code to a row of the ch. 5.7b table whose channel is §9.5.",
+              "type": "string", "pattern": "^EF-[0-9]{3}$"
             }
           },
           "dependentRequired": { "label": ["rule"] }

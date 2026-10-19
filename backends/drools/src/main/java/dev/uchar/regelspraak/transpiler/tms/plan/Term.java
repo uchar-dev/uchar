@@ -147,13 +147,18 @@ public sealed interface Term {
 
     /**
      * The evaluation of a fold in the rule that reads it (RUNTIME-SEMANTICS ch. 5.10, 5.11): where the number of the
-     * filter's deposits bound at slot {@code depositCount} is not 0, the probe in slot {@code depositFlag} hears the deposit;
+     * filter's deposits bound at slot {@code depositCount} is not 0, the probe in slot {@code depositFlag} hears the deposit,
+     * with {@code codes}, the EF codes of the kind the filter deposits (ch. 5.7b; none for the square root);
      * then, where the least filter fault bound at slot {@code filterFault} stands, its fault; then, where the least member
      * fault bound at slot {@code memberFault} stands, its fault; then the fold's value {@code uitkomst}. A slot of -1: the
      * fold has none of that kind. The analysis adds no node where the fold has none of the three.
      */
-    record FoldRead(Term outcome, int depositCount, int depositFlag, int filterFault, int memberFault, String source)
-            implements Term {}
+    record FoldRead(Term outcome, int depositCount, int depositFlag, List<String> codes, int filterFault, int memberFault,
+                    String source) implements Term {
+        public FoldRead {
+            codes = List.copyOf(codes);
+        }
+    }
 
     /**
      * A composite condition (RUNTIME-SEMANTICS ch. 5.10, IR-SPEC ch. 4.5): its members, truth values, read in the order

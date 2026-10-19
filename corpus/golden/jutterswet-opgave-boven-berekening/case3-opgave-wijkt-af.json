@@ -58,7 +58,8 @@
     {
       "kind": "inconsistent",
       "rule": "controle opgave waarde",
-      "label": "V"
+      "label": "V",
+      "code": "EF-025"
     }
   ]
 }

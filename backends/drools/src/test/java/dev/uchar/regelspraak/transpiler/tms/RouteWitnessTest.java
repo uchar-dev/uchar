@@ -64,11 +64,12 @@ class RouteWitnessTest {
                             + m.getName() + Arrays.stream(m.getParameterTypes()).map(Class::getSimpleName).toList());
         assertEquals(List.of(
                 "FRESH_DEPOSIT_FLAG: Object ComputeHelpers.depositFlag[]",
-                "REPORT: void ComputeHelpers.report[Object]",
+                "REPORT: void ComputeHelpers.report[Object, List]",
                 "REPORTED: boolean ComputeHelpers.reported[Object]",
+                "DEPOSIT_CODES: List ComputeHelpers.depositCodes[Object]",
                 "IS_EMPTY: boolean ComputeHelpers.isEmpty[Object]",
                 "COMPUTE_FAULT: ComputeFault ComputeHelpers.computeFault[String, String]",
-                "INCONSISTENCY: Object ComputeHelpers.inconsistency[String, Object]",
+                "INCONSISTENCY: Object ComputeHelpers.inconsistency[String, Object, List]",
                 "BUCKET_SCALAR: BucketScalar ComputeHelpers.bucketScalarOf[Object]",
                 "INPUT_FORM_FAULT: InputFormFault ComputeHelpers.inputFormFault[String, Object, String, String]",
                 "UNIQUENESS_KEYS: List ComputeHelpers.uniquenessKeys[String, int, Object, Object, List, int]",
@@ -119,10 +120,10 @@ class RouteWitnessTest {
     @Test void a_deposit_flag_is_raised_by_what_is_reported_to_it() {
         Object depositFlag = ComputeHelpers.depositFlag();
         assertFalse(ComputeHelpers.reported(depositFlag));
-        ComputeHelpers.report(depositFlag);
+        ComputeHelpers.report(depositFlag, List.of());
         assertTrue(ComputeHelpers.reported(depositFlag));
         assertFalse(ComputeHelpers.reported(ComputeHelpers.depositFlag()));
-        ComputeHelpers.report(null);
+        ComputeHelpers.report(null, List.of());
         assertFalse(ComputeHelpers.reported(null));
     }
 

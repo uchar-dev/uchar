@@ -1460,6 +1460,7 @@ public final class TmsTranspiler {
     private RulePlan depositRule(String form, String ruleName, Supplier<Reads> fresh, Condition c,
                                     Function<Reads, List<LhsItem>> blockade) {
         if (!deposits(c)) return null;
+        List<String> codes = depositCodes("'" + form + "'", List.of(c));
         Reads reads = fresh.get();
         Set<Integer> read = reads.follow();
         Term testTerm = conditionTerm(c, reads);
@@ -1470,7 +1471,7 @@ public final class TmsTranspiler {
         if (blockade != null) items.addAll(blockade.apply(reads));
         reads.recorder();
         return reads.rulePlan(ruleName + ": deponering in de voorwaarde", items,
-                new Consequence.Inconsistency(SUBJECT, form, Consequence.Insertion.LOGICAL));
+                new Consequence.Inconsistency(SUBJECT, form, codes, Consequence.Insertion.LOGICAL));
     }
 
     // ---------------- a consistency and the §9.5 channel ----------------
@@ -1503,8 +1504,9 @@ public final class TmsTranspiler {
         String naam = c.naam();
         reads.recorder();
         List<RulePlan> out = new ArrayList<>();
+        // EF-025: the consistency does not hold (RUNTIME-SEMANTICS ch. 5.6, 5.7b)
         out.add(reads.rulePlan(model.emittedRuleName(naam), items,
-                new Consequence.Inconsistency(SUBJECT, naam, Consequence.Insertion.LOGICAL)));
+                new Consequence.Inconsistency(SUBJECT, naam, List.of("EF-025"), Consequence.Insertion.LOGICAL)));
         if (canFail) out.add(conditionFaultRule(naam, model.emittedRuleName(naam), fresh, c.assertie(), null));
         RulePlan deposit = depositRule(naam, model.emittedRuleName(naam), fresh, c.assertie(), null);
         if (deposit != null) out.add(deposit);
@@ -1577,7 +1579,9 @@ public final class TmsTranspiler {
         FactPattern violation = new FactPattern(UniquenessViolation.class, "$schending", List.of(equal(id("schending"),
                 "uniqueness", naam)), List.of(), List.of(Binding.van("$subject", UniquenessViolation.class, "element")));
         out.add(new RulePlan(ruleName + ": kanaal", form, null, new ReadTable(List.of()),
-                List.of(violation), new Consequence.Inconsistency("$subject", naam, Consequence.Insertion.LOGICAL)));
+                // EF-026: a key of the uniqueness occurs more than once (RUNTIME-SEMANTICS ch. 5.6, 5.9, 5.7b)
+                List.of(violation), new Consequence.Inconsistency("$subject", naam, List.of("EF-026"),
+                        Consequence.Insertion.LOGICAL)));
         RulePlan withoutDate = validityFault(ruleName, naam, validity);
         if (withoutDate != null) out.add(withoutDate);
         return out;
@@ -1727,29 +1731,40 @@ public final class TmsTranspiler {
      *  ({@link #filterDepositRule}, {@link #readFold}). The argument of such a fold is a read of the member's
      *  attribute or the union, nothing else (WF-037, refused by the loader), so it holds no place of its own. */
     private boolean deposits(Expr e) {
+        return deposits(e, TmsTranspiler::depositSite);
+    }
+
+    /** {@link #deposits(Expr)} for the places {@code site} admits. */
+    private boolean deposits(Expr e, java.util.function.Predicate<Expr> site) {
         return switch (e) {
             case null -> false;
-            case Expr.Binary b -> depositSite(b) || deposits(b.left()) || deposits(b.right());
-            case Expr.FunctionCall f -> depositSite(f) || f.arguments().stream().anyMatch(this::deposits)
-                    || deposits(f.emptyFallback()) || deposits(f.filter());
-            case Expr.InstanceSetUnion u -> u.branches().stream().anyMatch(t -> deposits(t.filter()));
-            case Expr.Rounding a -> deposits(a.base());
-            case Expr.Clamp g -> deposits(g.base()) || deposits(g.minimum()) || deposits(g.maximum());
-            case Expr.Let l -> deposits(l.value()) || deposits(l.body());
-            case Expr.IfThenElse k -> deposits(k.condition()) || deposits(k.then()) || deposits(k.otherwise());
+            case Expr.Binary b -> site.test(b) || deposits(b.left(), site) || deposits(b.right(), site);
+            case Expr.FunctionCall f -> site.test(f) || f.arguments().stream().anyMatch(a -> deposits(a, site))
+                    || deposits(f.emptyFallback(), site) || deposits(f.filter(), site);
+            case Expr.InstanceSetUnion u -> u.branches().stream().anyMatch(t -> deposits(t.filter(), site));
+            case Expr.Rounding a -> deposits(a.base(), site);
+            case Expr.Clamp g -> deposits(g.base(), site) || deposits(g.minimum(), site) || deposits(g.maximum(), site);
+            case Expr.Let l -> deposits(l.value(), site) || deposits(l.body(), site);
+            case Expr.IfThenElse k -> deposits(k.condition(), site) || deposits(k.then(), site)
+                    || deposits(k.otherwise(), site);
             case Expr.TextComposition t -> t.parts().stream()
-                    .anyMatch(d -> d instanceof Expr.TextComposition.EmbeddedExpression i && deposits(i.expr()));
+                    .anyMatch(d -> d instanceof Expr.TextComposition.EmbeddedExpression i && deposits(i.expr(), site));
             default -> false;
         };
     }
 
     private boolean deposits(Condition c) {
+        return deposits(c, TmsTranspiler::depositSite);
+    }
+
+    /** {@link #deposits(Condition)} for the places {@code site} admits. */
+    private boolean deposits(Condition c, java.util.function.Predicate<Expr> site) {
         return switch (c) {
             case null -> false;
-            case Condition.Comparison v -> deposits(v.left()) || deposits(v.right());
-            case Condition.Predicate p -> deposits(p.operand());
-            case Condition.Compound s -> s.components().stream().anyMatch(this::deposits);
-            case Condition.QuantifierFold kv -> deposits(kv.filter()) || deposits(kv.test());
+            case Condition.Comparison v -> deposits(v.left(), site) || deposits(v.right(), site);
+            case Condition.Predicate p -> deposits(p.operand(), site);
+            case Condition.Compound s -> s.components().stream().anyMatch(d -> deposits(d, site));
+            case Condition.QuantifierFold kv -> deposits(kv.filter(), site) || deposits(kv.test(), site);
             default -> false;
         };
     }
@@ -1758,8 +1773,41 @@ public final class TmsTranspiler {
      *  as the reference interpreter deposits wherever it divides a filled dividend by a leeg divisor or takes the root of
      *  a negative number (RUNTIME-SEMANTICS ch. 1.2, 5.6). */
     private static boolean depositSite(Expr e) {
-        if (e instanceof Expr.Binary b) return b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS;
+        return divisionSite(e) || squareRootSite(e);
+    }
+
+    /** A division, whose deposit (§6.5) has the code {@link #DIVISION_BY_EMPTY}. */
+    private static boolean divisionSite(Expr e) {
+        return e instanceof Expr.Binary b && (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS);
+    }
+
+    /** A square root, whose deposit (§6.6) has no code (RUNTIME-SEMANTICS ch. 5.7b). */
+    private static boolean squareRootSite(Expr e) {
         return e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.WORTEL && f.arguments().size() == 1;
+    }
+
+    /** The EF code (RUNTIME-SEMANTICS ch. 5.7b) of the §6.5 deposit, a filled dividend divided by a leeg divisor. */
+    private static final String DIVISION_BY_EMPTY = "EF-031";
+
+    /**
+     * The EF codes (RUNTIME-SEMANTICS ch. 5.6, 5.7b) of the deposits of {@code conditions}, the condition of a form or
+     * the filters of a fold, where a test of deposits hears them, so that the plan and not the evaluation gives the fact
+     * its codes ({@link #depositRule}, {@link #readFold}): {@link #DIVISION_BY_EMPTY} where the places are divisions, none
+     * where they are square roots, whose deposit has no code. A test hears its places together, so where both kinds
+     * stand the fact could not say which kind deposited, and the form is refused; no golden has such a condition.
+     */
+    private List<String> depositCodes(String what, List<Condition> conditions) {
+        boolean division = false, squareRoot = false;
+        for (Condition c : conditions) {
+            division |= deposits(c, TmsTranspiler::divisionSite);
+            squareRoot |= deposits(c, TmsTranspiler::squareRootSite);
+        }
+        if (division && squareRoot)
+            throw new Refusal(DroolsCode.DEPOSIT_KINDS_MIXED, "een deling en een wortel die deponeren in één voorwaarde of"
+                    + " in de filters van één vouw (" + what + "): de toets van deze tak hoort hun §9.5-deponeringen samen,"
+                    + " en het feit kan niet zeggen welke soort deponeerde, terwijl een deling de code " + DIVISION_BY_EMPTY
+                    + " heeft en een wortel geen (RUNTIME-SEMANTICS ch. 5.7b)");
+        return division ? List.of(DIVISION_BY_EMPTY) : List.of();
     }
 
     /**
@@ -3517,21 +3565,24 @@ public final class TmsTranspiler {
      *  can deposit), the reads of those rules, registered when a form that reads the fold lowers
      *  ({@link Reads#recorder}), whether its filter can fault, in which case the rule that reads it binds its
      *  {@link FilterFault} facts as well, and whether its filter can deposit, in which case that rule counts its
-     *  {@link FilterDeposit} facts; for a quantifier fold, whether its matrix can fault and whether it can deposit,
+     *  {@link FilterDeposit} facts, whose EF codes are {@code depositCodes} ({@link #depositCodes}); for a quantifier
+     *  fold, whether its matrix can fault and whether it can deposit,
      *  in which case its contributions carry a {@link MemberTest} ({@link #quantifierFold}); and for a per-element fold over
      *  an attribute on a timeline, that a member's value can fault, in which case the rule that reads it binds its
      *  {@link MemberFault} facts as well ({@link #memberFaultRule}). */
     private record Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail,
-                        boolean deposits, boolean memberCanFail, boolean memberDeposits, boolean valueCanFail) {
+                        boolean deposits, List<String> depositCodes, boolean memberCanFail, boolean memberDeposits,
+                        boolean valueCanFail) {
         /** A fold over a set source or a union: no matrix per member. */
-        Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail, boolean deposits) {
-            this(key, rules, readings, canFail, deposits, false, false, false);
+        Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail, boolean deposits,
+             List<String> depositCodes) {
+            this(key, rules, readings, canFail, deposits, depositCodes, false, false, false);
         }
 
         /** A quantifier fold: a matrix per member, and no value per member. */
         Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail, boolean deposits,
-             boolean memberCanFail, boolean memberDeposits) {
-            this(key, rules, readings, canFail, deposits, memberCanFail, memberDeposits, false);
+             List<String> depositCodes, boolean memberCanFail, boolean memberDeposits) {
+            this(key, rules, readings, canFail, deposits, depositCodes, memberCanFail, memberDeposits, false);
         }
 
         /** Whether the rule that reads the fold replays its contributors in order: a quantifier fold whose matrix can
@@ -3833,8 +3884,8 @@ public final class TmsTranspiler {
             List<Reads> readings = new ArrayList<>();
             boolean canFail = contributionRules(key, naam, kind, reads.subject, elem, range(f, reads.subject, elem), 0,
                     f.filter(), member, rules, readings);
-            return new Fold(key, List.copyOf(rules), List.copyOf(readings), canFail, deposits(f.filter()), false,
-                    false, timelineMember);
+            return new Fold(key, List.copyOf(rules), List.copyOf(readings), canFail, deposits(f.filter()),
+                    depositCodes(naam, Collections.singletonList(f.filter())), false, false, timelineMember);
         });
         Accumulation.Kind function = switch (kind) {
             case SOM, TOTAAL -> Accumulation.Kind.SUM;
@@ -4123,8 +4174,8 @@ public final class TmsTranspiler {
         if (v.canFail() || v.valueCanFail()) reads.markFail();
         int depositFlag = v.deposits() ? reads.depositFlag() : -1;
         if (!v.canFail() && !v.valueCanFail() && depositFlag < 0) return outcome;
-        return new Term.FoldRead(outcome, depositFlag < 0 ? -1 : i[3], depositFlag, v.canFail() ? i[2] : -1,
-                v.valueCanFail() ? i[4] : -1, source);
+        return new Term.FoldRead(outcome, depositFlag < 0 ? -1 : i[3], depositFlag, v.depositCodes(),
+                v.canFail() ? i[2] : -1, v.valueCanFail() ? i[4] : -1, source);
     }
 
     /** The fold of {@code f}, an aggregation or a quantifier fold, on the subject of {@code reads}, the rule that reads
@@ -4168,6 +4219,7 @@ public final class TmsTranspiler {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
             boolean canFail = false, deposits = false;
+            List<Condition> filters = new ArrayList<>();
             for (int k = 0; k < u.branches().size(); k++) {
                 Expr.InstanceSetUnion.Branch t = u.branches().get(k);
                 if (t.elementType() == null)
@@ -4176,8 +4228,10 @@ public final class TmsTranspiler {
                         t.elementType(), oneStepRange(t.sourceRole(), subject, t.elementType(), snippet(t.source())), k,
                         t.filter(), null, rules, readings);
                 deposits |= deposits(t.filter());
+                filters.add(t.filter());
             }
-            return new Fold(key, List.copyOf(rules), List.copyOf(readings), canFail, deposits);
+            return new Fold(key, List.copyOf(rules), List.copyOf(readings), canFail, deposits,
+                    depositCodes(naam, filters));
         });
     }
 
@@ -4976,7 +5030,7 @@ public final class TmsTranspiler {
         if (filterDeposits) rules.add(filterDepositRule(key, formName + ": filterdeponering in " + naam,
                 subject, elem, range, kv.filter(), readings::add));
         return new Fold(key, List.copyOf(rules), List.copyOf(readings), filterCanFail, filterDeposits,
-                memberCanFail, memberDeposits);
+                depositCodes(naam, Collections.singletonList(kv.filter())), memberCanFail, memberDeposits);
     }
 
     /**
@@ -5888,7 +5942,8 @@ public final class TmsTranspiler {
             case Term.FoldRead v -> {
                 Term z = withoutDepositFlag(v.outcome());
                 return v.depositFlag() < 0 && z == v.outcome() ? v
-                        : new Term.FoldRead(z, v.depositCount(), -1, v.filterFault(), v.memberFault(), v.source());
+                        : new Term.FoldRead(z, v.depositCount(), -1, v.codes(), v.filterFault(), v.memberFault(),
+                                v.source());
             }
             case Term.Compound s -> {
                 List<Term> z = withoutDepositFlag(s.members());

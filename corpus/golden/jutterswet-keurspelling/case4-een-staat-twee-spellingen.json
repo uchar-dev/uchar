@@ -68,12 +68,14 @@
     {
       "kind": "inconsistent",
       "rule": "eenmalige staat",
-      "label": "V1"
+      "label": "V1",
+      "code": "EF-026"
     },
     {
       "kind": "inconsistent",
       "rule": "eenmalige staat",
-      "label": "V2"
+      "label": "V2",
+      "code": "EF-026"
     }
   ]
 }

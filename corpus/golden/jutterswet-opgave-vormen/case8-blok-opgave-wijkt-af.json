@@ -44,7 +44,8 @@
     {
       "kind": "inconsistent",
       "rule": "controle opgave wachtgeld",
-      "label": "J"
+      "label": "J",
+      "code": "EF-025"
     }
   ]
 }

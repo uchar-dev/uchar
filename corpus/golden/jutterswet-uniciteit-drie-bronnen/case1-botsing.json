@@ -52,12 +52,14 @@
     {
       "kind": "inconsistent",
       "rule": "eenmalige reekscode",
-      "label": "S1"
+      "label": "S1",
+      "code": "EF-026"
     },
     {
       "kind": "inconsistent",
       "rule": "eenmalige reekscode",
-      "label": "D1"
+      "label": "D1",
+      "code": "EF-026"
     }
   ]
 }

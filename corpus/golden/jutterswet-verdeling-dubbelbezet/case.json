@@ -118,10 +118,12 @@
   }, {
     "kind" : "inconsistent",
     "rule" : "verdeel de opbrengst naar rato",
-    "label" : "D2"
+    "label" : "D2",
+    "code" : "EF-028"
   }, {
     "kind" : "inconsistent",
     "rule" : "verdeel de opbrengst op jaar",
-    "label" : "D2"
+    "label" : "D2",
+    "code" : "EF-029"
   } ]
 }

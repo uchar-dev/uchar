@@ -30,6 +30,6 @@
   "expected": [
     { "kind": "attributeValue", "label": "V2", "attribute": "vangstsom", "value": { "number": "5" } },
     { "kind": "attributeValue", "label": "V3", "attribute": "vangstsom", "value": { "number": "7" } },
-    { "kind": "inconsistent", "rule": "vangstsom van een vangst", "label": "V2" }
+    { "kind": "inconsistent", "rule": "vangstsom van een vangst", "label": "V2", "code": "EF-031" }
   ]
 }

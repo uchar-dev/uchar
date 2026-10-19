@@ -53,7 +53,8 @@
     {
       "kind": "inconsistent",
       "rule": "helpersdeel van een berging",
-      "label": "B1"
+      "label": "B1",
+      "code": "EF-031"
     }
   ]
 }

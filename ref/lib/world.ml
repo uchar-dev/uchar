@@ -28,7 +28,10 @@ type instance = {
          does not hold there (the gedurende clip cuts it away, ch. 3.6) *)
 }
 
-type error_fact = { rule : string; subject : string }
+(* a §9.5 fact. Its identity is rule × subject (ch. 5.6); [codes] are the EF
+   codes (ch. 5.7b) of the kinds deposited for that pair, ascending and each
+   once, beside the identity: the channel read does not look at them *)
+type error_fact = { rule : string; subject : string; codes : string list }
 
 type t = {
   instances : instance SMap.t; (* by label *)
@@ -191,10 +194,20 @@ let add_link w ~label ~keys ~many ~target =
       (String.concat ", " existing)
   else (update w { i with left_side = SMap.add (norm key) (existing @ [ target ]) i.left_side }, true)
 
-(* §9.5: one error fact per rule × subject, however often re-evaluated *)
-let insert_error w ~rule ~subject =
-  let f = { rule; subject } in
-  if List.mem f w.channel then w else { w with channel = w.channel @ [ f ] }
+(* §9.5: one error fact per rule × subject, however often re-evaluated; a
+   deposit of another kind for the same pair adds its code to that fact *)
+let insert_error w ~rule ~subject ~code =
+  let same f = String.equal f.rule rule && String.equal f.subject subject in
+  let with_code codes =
+    match code with
+    | Some c when not (List.mem c codes) -> List.sort compare (c :: codes)
+    | _ -> codes
+  in
+  match List.find_opt same w.channel with
+  | None -> { w with channel = w.channel @ [ { rule; subject; codes = with_code [] } ] }
+  | Some f when with_code f.codes = f.codes -> w
+  | Some _ ->
+      { w with channel = List.map (fun f -> if same f then { f with codes = with_code f.codes } else f) w.channel }
 
 let channel_has w ~rule =
   let r = norm rule in

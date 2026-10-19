@@ -32,7 +32,9 @@ type expectation =
   | Char_present of { label : string; char : string }
   | Char_absent of { label : string; char : string }
   | Consistent
-  | Inconsistent of { rule : string option; label : string option }
+  | Inconsistent of { rule : string option; label : string option; code : string option }
+      (* [code]: the EF code (RUNTIME-SEMANTICS ch. 5.7b) a matching channel
+         fact must carry among the codes deposited for it *)
 
 (* the red-path case form (corpus/rood): LOADING OR evaluation MUST
    fail observably in every executor; each fragment is a substring the
@@ -837,8 +839,8 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
       | rule, (Some l as label) ->
           if SMap.find_opt l world.instances = None then
             fail "inconsistent expectation references unknown label %S" l
-          else Inconsistent { rule; label }
-      | rule, label -> Inconsistent { rule; label })
+          else Inconsistent { rule; label; code = opt_str "code" }
+      | rule, label -> Inconsistent { rule; label; code = opt_str "code" })
   | k -> fail "%s: unknown expectation kind %S" (child at "kind") k
 
 let expected_fault_of_kvs kvs =
@@ -999,7 +1001,7 @@ let check (case : t) (final : World.t) : string list =
                     (List.map
                        (fun (f : World.error_fact) -> f.rule ^ " × " ^ f.subject)
                        final.channel)))
-      | Inconsistent { rule; label } -> (
+      | Inconsistent { rule; label; code } -> (
           let matches (f : World.error_fact) =
             (match rule with
             | None -> true
@@ -1009,7 +1011,8 @@ let check (case : t) (final : World.t) : string list =
                    "X" matches a deposit from version "X #2" *)
                 norm (Ir_v0.Checks.strip_version f.rule)
                 = norm (Ir_v0.Checks.strip_version r))
-            && match label with None -> true | Some l -> String.equal f.subject l
+            && (match label with None -> true | Some l -> String.equal f.subject l)
+            && match code with None -> true | Some c -> List.mem c f.codes
           in
           match List.find_opt matches final.channel with
           | Some _ -> None
@@ -1020,12 +1023,18 @@ let check (case : t) (final : World.t) : string list =
                 | Some r, None -> Printf.sprintf "a channel fact from rule %S" r
                 | Some r, Some l -> Printf.sprintf "a channel fact from rule %S on %S" r l
               in
+              (* a pinned code shows the codes of every fact; without one the
+                 sentence stays as it was before facts carried codes *)
+              let because, shown =
+                match code with
+                | None -> (because, fun (f : World.error_fact) -> f.rule ^ " × " ^ f.subject)
+                | Some c ->
+                    ( Printf.sprintf "%s with code %s" because c,
+                      fun (f : World.error_fact) ->
+                        Printf.sprintf "%s × %s [%s]" f.rule f.subject (String.concat ", " f.codes) )
+              in
               Some
                 (Printf.sprintf "expected inconsistent (%s), but the channel carries: %s" because
                    (if final.channel = [] then "(empty)"
-                    else
-                      String.concat "; "
-                        (List.map
-                           (fun (f : World.error_fact) -> f.rule ^ " × " ^ f.subject)
-                           final.channel)))))
+                    else String.concat "; " (List.map shown final.channel)))))
     case.expected

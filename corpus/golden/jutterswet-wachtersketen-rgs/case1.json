@@ -15,6 +15,6 @@
   },
   "expected": [
     { "kind": "attributeValue", "label": "W1", "attribute": "opvolgerrang", "value": { "number": "2" } },
-    { "kind": "inconsistent", "rule": "rangdetector" }
+    { "kind": "inconsistent", "rule": "rangdetector", "code": "EF-025" }
   ]
 }

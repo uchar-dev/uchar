@@ -378,7 +378,14 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
               Some
                 (Printf.sprintf "expected consistent, but the model carries %d inconsistent fact(s)"
                    (List.length errs)))
-      | Inconsistent { rule; label } ->
+      | Inconsistent { rule; label; code } ->
+          (* a pinned code is one of the codes deposited for the fact's pair:
+             an inconsistent_code/3 atom over the same rule and subject *)
+          let coded a =
+            match code with
+            | None -> true
+            | Some c -> has model "inconsistent_code" (a.args @ [ A_str c ])
+          in
           let matches a =
             a.name = "inconsistent"
             && (match a.args with
@@ -395,6 +402,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                       | None -> true
                       | Some l -> ( match subj with A_str s -> String.equal s l | _ -> false))
                | _ -> false)
+            && coded a
           in
           if List.exists matches model then None
           else
@@ -404,12 +412,34 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
               | Some r, None -> Printf.sprintf "an inconsistent fact from rule %S" r
               | Some r, Some l -> Printf.sprintf "an inconsistent fact from rule %S on %S" r l
             in
+            (* a pinned code shows the codes of every fact; without one the
+               sentence stays as it was before facts carried codes *)
+            let because, codes =
+              match code with
+              | None -> (because, fun _ -> "")
+              | Some c ->
+                  ( Printf.sprintf "%s with code %s" because c,
+                    fun args ->
+                      let cs =
+                        List.filter_map
+                          (fun b ->
+                            match b with
+                            | { name = "inconsistent_code"; args = bargs } -> (
+                                match List.rev bargs with
+                                | A_str c :: rest when List.rev rest = args -> Some c
+                                | _ -> None)
+                            | _ -> None)
+                          model
+                      in
+                      " [" ^ String.concat ", " (List.sort_uniq compare cs) ^ "]" )
+            in
             let carried =
               List.filter_map
                 (fun a ->
                   match a with
-                  | { name = "inconsistent"; args = [ A_str r; A_str s ] } -> Some (r ^ " × " ^ s)
-                  | { name = "inconsistent"; args = [ A_str r; _ ] } -> Some (r ^ " × <created>")
+                  | { name = "inconsistent"; args = [ A_str r; A_str s ] } -> Some (r ^ " × " ^ s ^ codes a.args)
+                  | { name = "inconsistent"; args = [ A_str r; _ ] } ->
+                      Some (r ^ " × <created>" ^ codes a.args)
                   | _ -> None)
                 model
             in

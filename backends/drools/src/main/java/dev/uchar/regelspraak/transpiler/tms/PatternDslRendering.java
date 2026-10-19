@@ -172,7 +172,7 @@ final class PatternDslRendering {
                     insert(drools, x.insertion(), new Fault(a[0], x.fault().form(),
                             ComputeHelpers.computeFault(x.sentence(), x.fault().regel()))));
             case Consequence.Inconsistency x -> new VariadicConsequence(new Variable[]{known(x.onderwerp())}, (drools, a) ->
-                    insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), a[0])));
+                    insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), a[0], x.codes())));
             case Consequence.WritersConflict x ->
                     new VariadicConsequence(new Variable[]{known(x.onderwerp()), variable(x.waarden())}, (drools, a) ->
                             insert(drools, x.insertion(), ComputeHelpers.writersConflict(a[0], a[1], x.attribute(),
@@ -282,7 +282,8 @@ final class PatternDslRendering {
                         fault = e;
                     }
                     insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()],
-                            new MemberTest(place, holds, fault, ComputeHelpers.reported(s))));
+                            new MemberTest(place, holds, fault, ComputeHelpers.reported(s),
+                                    ComputeHelpers.depositCodes(s))));
                 });
             }
         };
@@ -362,7 +363,8 @@ final class PatternDslRendering {
                 return;
             }
             if (ComputeHelpers.reported(s))
-                insert(drools, g.insertion(), ComputeHelpers.inconsistency(deposit.form(), onderwerp));
+                insert(drools, g.insertion(), ComputeHelpers.inconsistency(deposit.form(), onderwerp,
+                        ComputeHelpers.depositCodes(s)));
             if (!ComputeHelpers.isEmpty(v) || g.writesEmpty())
                 insert(drools, g.insertion(), new Value(onderwerp, g.target(), v, g.writer()));
         });
@@ -450,7 +452,8 @@ final class PatternDslRendering {
                     ? new Outcome(onderwerp, x.stack(), x.chain(), x.position(), Outcome.Kind.DECIDED, v, null)
                     : new Outcome(onderwerp, x.stack(), x.chain(), x.position(), Outcome.Kind.CONFLICT, null,
                             (String) v);
-            case Consequence.StackFact.Inconsistency x -> ComputeHelpers.inconsistency((String) v, onderwerp);
+            case Consequence.StackFact.Inconsistency x -> ComputeHelpers.inconsistency((String) v, onderwerp,
+                    Consequence.StackFact.Inconsistency.CODES);
         };
     }
 

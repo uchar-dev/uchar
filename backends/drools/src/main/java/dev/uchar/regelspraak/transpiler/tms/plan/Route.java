@@ -16,19 +16,23 @@ public enum Route {
     /** A fresh probe of the §6.5 and §6.6 deposit, which a test of deposits ({@link TestItem.Role#DEPOSIT}) and a
      *  consequence with a deposit ({@link Consequence.Deposit}) put in the probe's slot before they evaluate. */
     FRESH_DEPOSIT_FLAG(ComputeHelpers.class, "depositFlag"),
-    /** A place that deposits reports to the probe in its slot: the evaluation of a fold whose filter deposited
-     *  ({@link Term.FoldRead}); a division and a square root report within their own function. */
+    /** A place that deposits reports to the probe in its slot, with the EF codes of what it deposits: the evaluation
+     *  of a fold whose filter deposited ({@link Term.FoldRead}); a division and a square root report within their own
+     *  function. */
     REPORT(ComputeHelpers.class, "report"),
     /** Whether the probe heard a place: the verdict of a test of deposits, and the deposit of a consequence. */
     REPORTED(ComputeHelpers.class, "reported"),
+    /** The EF codes the probe heard, which the deposit of a consequence and a member's test carry
+     *  (RUNTIME-SEMANTICS ch. 5.6, 5.7b). */
+    DEPOSIT_CODES(ComputeHelpers.class, "depositCodes"),
     /** Whether a computed value is leeg, null or a timeline without a segment: a {@link Consequence.Value} inserts it only
      *  where it is not, or where the plan writes leeg. */
     IS_EMPTY(ComputeHelpers.class, "isEmpty"),
     /** The evaluation fault of a fixed sentence, named in a rule, which {@link Consequence.Fault} inserts. */
     COMPUTE_FAULT(ComputeHelpers.class, "computeFault"),
-    /** The §9.5 inconsistency of a form on an object, which {@link Consequence.Inconsistency} and the deposit of a
-     *  {@link Consequence.Value} insert, and of the conflict of a defaults stack at its root under the conflict's key
-     *  ({@link Consequence.StackFact.Inconsistency}). */
+    /** The §9.5 inconsistency of a form on an object with the EF codes of its kinds, which
+     *  {@link Consequence.Inconsistency} and the deposit of a {@link Consequence.Value} insert, and of the conflict of a
+     *  defaults stack at its root under the conflict's key ({@link Consequence.StackFact.Inconsistency}). */
     INCONSISTENCY(ComputeHelpers.class, "inconsistency"),
     /** An input timeline as the asOfDate-bucket scalar the case gave, which {@link Consequence.State} carries where it says
      *  so. */

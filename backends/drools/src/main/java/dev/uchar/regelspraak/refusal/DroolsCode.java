@@ -304,7 +304,8 @@ public enum DroolsCode {
     DEFAULTS_BASE_WITH_VALIDITY("DROOLS-286", Kind.REFUSAL, "defaults-base-with-validity", "targetName,objectType,rule", null),
     DEFAULTS_BASE_WITHOUT_VALUE("DROOLS-287", Kind.REFUSAL, "defaults-base-without-value", "targetName,objectType,rule", null),
     DEFAULTS_TWO_WRITERS_OVER_STACK("DROOLS-288", Kind.REFUSAL, "defaults-two-writers-over-stack", "targetName,objectType,computationCount,initialisationCount", null),
-    PRO_RATA_FIXED_GRID("DROOLS-289", Kind.REFUSAL, "pro-rata-fixed-grid", "description", null);
+    PRO_RATA_FIXED_GRID("DROOLS-289", Kind.REFUSAL, "pro-rata-fixed-grid", "description", null),
+    DEPOSIT_KINDS_MIXED("DROOLS-290", Kind.REFUSAL, "deposit-kinds-mixed", "form", null);
 
     /** Why the backend refuses. */
     public enum Kind { REFUSAL, LIMIT, CONTRACT, FALLBACK }

@@ -8,7 +8,8 @@ import java.util.Objects;
  * where the matrix can fault or deposit (RUNTIME-SEMANTICS ch. 3.9a): whether it holds ({@code holds}), or the
  * evaluation fault it raised ({@code fault}, unnamed: the form that reads the fold names it), and whether its
  * evaluation reached a place that deposits ({@code deposited}: a division of a filled dividend by a leeg divisor or
- * the square root of a negative number). It is no outcome by itself. The reference interpreter reads the matrix in
+ * the square root of a negative number), with the EF codes of what it deposited ({@code codes}, RUNTIME-SEMANTICS
+ * ch. 5.7b; none for the square root). It is no outcome by itself. The reference interpreter reads the matrix in
  * the contributors' order and stops at the first contributor after which the verdict stands (ch. 5.10), so a
  * contributor it does not reach raises no fault and deposits nothing; the rule that reads the fold replays that order
  * over these values, and only a contributor the replay reaches has its fault or its deposit heard.
@@ -16,7 +17,7 @@ import java.util.Objects;
  * <p>{@code place} is the contributor's place in that order, as {@link FilterFault#place} gives it: 0 for the one
  * selection, then the place of the member in the list of the fold's subject ({@link ListPlace}), absent for a range
  * that reaches at most one member. Ordered by the place, compared element by element. Compared by value: the place,
- * the verdict, the fault by its kind and its sentence, and the deposit, so the {@link Contribution} that carries it merges
+ * the verdict, the fault by its kind and its sentence, and the deposit with its codes, so the {@link Contribution} that carries it merges
  * with an equal one as its other values do.
  */
 public final class MemberTest implements Comparable<MemberTest> {
@@ -25,8 +26,10 @@ public final class MemberTest implements Comparable<MemberTest> {
     private final Boolean holds;
     private final RuntimeException fault;
     private final boolean deposited;
+    private final List<String> codes;
 
-    public MemberTest(List<Integer> place, Boolean holds, RuntimeException fault, boolean deposited) {
+    public MemberTest(List<Integer> place, Boolean holds, RuntimeException fault, boolean deposited,
+                      List<String> codes) {
         this.place = List.copyOf(place);
         if (this.place.isEmpty()) throw new IllegalArgumentException("een plaats in de volgorde begint met de selectie");
         if ((holds == null) == (fault == null))
@@ -34,6 +37,7 @@ public final class MemberTest implements Comparable<MemberTest> {
         this.holds = holds;
         this.fault = fault;
         this.deposited = deposited;
+        this.codes = List.copyOf(codes);
     }
 
     public List<Integer> place() { return place; }
@@ -46,6 +50,9 @@ public final class MemberTest implements Comparable<MemberTest> {
 
     public boolean deposited() { return deposited; }
 
+    /** The EF codes of what the matrix deposited, ascending; empty where it deposited nothing or nothing with a code. */
+    public List<String> codes() { return codes; }
+
     @Override public int compareTo(MemberTest o) {
         for (int i = 0; i < Math.min(place.size(), o.place.size()); i++) {
             int c = Integer.compare(place.get(i), o.place.get(i));
@@ -56,13 +63,13 @@ public final class MemberTest implements Comparable<MemberTest> {
 
     @Override public boolean equals(Object o) {
         return o instanceof MemberTest t && t.place.equals(place) && Objects.equals(t.holds, holds)
-                && t.deposited == deposited && (fault == null ? t.fault == null
+                && t.deposited == deposited && t.codes.equals(codes) && (fault == null ? t.fault == null
                 : t.fault != null && t.fault.getClass() == fault.getClass()
                   && Objects.equals(t.fault.getMessage(), fault.getMessage()));
     }
 
     @Override public int hashCode() {
-        return Objects.hash(place, holds, deposited, fault == null ? null : fault.getClass().getName(),
+        return Objects.hash(place, holds, deposited, codes, fault == null ? null : fault.getClass().getName(),
                 fault == null ? null : fault.getMessage());
     }
 

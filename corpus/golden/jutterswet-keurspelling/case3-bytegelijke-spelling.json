@@ -39,7 +39,8 @@
     {
       "kind": "inconsistent",
       "rule": "herkeuring volgt de staat",
-      "label": "V1"
+      "label": "V1",
+      "code": "EF-025"
     }
   ]
 }

@@ -60,6 +60,13 @@ let faultc code fmt = Printf.ksprintf (fun s -> raise (Fault { code = Some code;
 (* the report of a fault: its code at the head, "EF-005: division by numeric zero" *)
 let report ~code text = match code with None -> text | Some c -> c ^ ": " ^ text
 
+(* A §9.5 deposit (RUNTIME-SEMANTICS ch. 5.6), which a producer hands to the
+   [err] of the rule × subject it evaluates: the EF code of its kind (ch. 5.7b)
+   beside its text, the way a fault carries one, and none for a kind that has
+   no code yet. The channel fact keeps the code; the text is the producer's own
+   and no report renders it yet. *)
+type deposit = { code : string option; text : string }
+
 (* --- civil-date conversion (proleptic Gregorian) ----------------------- *)
 
 let days_from_civil ~y ~m ~d =

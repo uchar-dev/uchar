@@ -56,7 +56,7 @@ let expect_num name v s =
 
 let expect_empty name v = check name (v = Value.Empty)
 
-let no_err = fun (_ : string) -> ()
+let no_err = fun (_ : Value.deposit) -> ()
 
 let with_errs f =
   let errs = ref [] in
@@ -594,7 +594,7 @@ let shares_of = function
         Some rest )
   | Alloc.Nothing -> ([], None)
 
-let no_alloc_err = fun ~id:_ (_ : string) -> ()
+let no_alloc_err = fun ~id:_ (_ : Value.deposit) -> ()
 
 let rest_is r because = match r with Some x -> Q.equal x (q because) | None -> false
 
