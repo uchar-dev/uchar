@@ -35,6 +35,124 @@ PART.designation.rule-group.head	De regelgroep '{name}'
 PART.designation.rule.head	De regel '{name}'
 PART.member-kind.attribute	attribuut
 PART.member-kind.characteristic-kind	kenmerk
+PART.row-of-table	 (een rij van beslistabel '{table}')
+PART.name-with-table	'{name}'{table}
+PART.defaults-group	defaults-groep
+PART.node-kind.exception	uitzondering
+PART.node-kind.deviation	afwijking
+PART.node-kind.member	groepslid
+PART.node-designation	{what} '{name}'
+PART.node-the	de {designation}
+PART.indefinite.exception	een uitzondering
+PART.indefinite.deviation	een afwijking
+PART.indefinite.member	een groepslid
+PART.carrier-kind.member	een lid van een 'Uitzonderingen ongeordend op'-blok
+PART.target-unknown	onbekend
+PART.target-text	{subject}.{name} ({kind})
+PART.base-reason-other-construct	 (regel '{name}' is een verdeling/consistentie/objectcreatie/uniciteit, geen platte regel)
+PART.base-reason-decision-table	 ('{name}' is een beslistabel, geen regel: haar regels zijn de rijen {rows}, die samen hetzelfde doel schrijven — een defaults-groep heeft één basisregel en geen andere schrijver op haar doel (WF-050))
+PART.dimension-cell	cel van het gedimensioneerde attribuut '{attribute}' (dimensie {dimension}, label '{label}')
+PART.against	 van {subject} tegenover {other}
+PART.under-root-base	de basisregel '{name}'
+PART.under-own-base	zijn eigen basisregel '{name}'
+PART.under-inherited-base	de basisregel '{name}' van {type}, die {subtype} erft
+PART.has-own-base	{subtype} heeft een eigen basisregel '{base}' voor '{target}'
+PART.has-inherited-base	{subtype} erft van {type} de basisregel '{base}' voor '{target}'
+PART.form-exception	'Uitzondering op {base}: {name}' als zij de voorwaarde van '{base}' erft, of 'Afwijking van {base}: {name}' met de volledige voorwaarde
+PART.form-block	het blok als 'Uitzonderingen ongeordend op {base}:'
+PART.input-head	attribuut '{attribute}' van {type}
+PART.form-rule	regel '{name}'
+PART.form-table-row	regel '{row}' van beslistabel '{table}'
+PART.generated-form.defaults-group	de defaults-groep
+PART.generated-form.rule	de regel
+PART.generated-form.consistency	de consistentie
+PART.form-kind.rule-form	regel
+PART.form-kind.allocations	verdeling
+PART.form-kind.consistencies	consistentieregel
+PART.form-kind.uniquenesses	uniciteitsregel
+PART.form-kind.object-creations	objectcreatie
+PART.form-kind.fact-creations	feitcreatie
+PART.form-kind.prioritized-defaults	defaults-groep
+PART.unresolved-name	de naam '{name}' is geen gedeclareerde parameter, geen variabele uit een 'Daarbij geldt:'-deel en geen attribuut van het onderwerp (§11/§13.3.8)
+PART.union-populations	de selecties tellen over verschillende populaties ('{first}' en '{second}'); één telling antwoordt een aantal over ÉÉN gedeclareerd type, en of twee selecties dan een instantie kunnen delen is een vraag over de subtypelattice die de deduplicatie zou moeten beantwoorden (WF-110 (d))
+PART.union-selection-path	selectie {n} ('{source}') is {path}
+PART.count-norm-selection	een selectie telt over één relatie vanaf het onderwerp (IR-SPEC ch. 4.3, WF-110 (e))
+PART.count-norm-frontend	deze frontend telt alleen over één relatie vanaf het onderwerp (IR-SPEC ch. 4.3, WF-102 (c))
+PART.union-relation	de relatie van selectie {n} ('{word}') is niet eenduidig af te leiden; elke selectie van een unie noemt haar eigen relatie, want ze delen alle één typenpaar en een afgeleide reikwijdte zou ze ononderscheidbaar maken (WF-110 (e))
+PART.union-subselection	de 'die/dat'-subselectie van selectie {n} ('{source}') lost niet op naar een kenmerk van '{element}'; een stilzwijgend weggelaten filter zou een te groot aantal tellen en de unie zou dat opslokken (§5.6)
+PART.count-path	een telling over een pad van {count} stappen ({steps}): {norm}; schrijf de telling op het bereikte object of noem één relatie
+PART.count-over-object-type	over het objecttype {type}
+PART.count-collision	waar '{name}' een gedeclareerd attribuut van {type} is
+PART.subselection-no-compound	zij bindt geen samengestelde voorwaarde van {element} (§13.4.13.4, IR-SPEC ch. 4.5)
+PART.subselection-no-predicate	zij bindt geen kenmerk of getalpredicaat van {element} (§5.6, IR-SPEC ch. 4.5)
+PART.subselection-time-dependent	een getalpredicaat over het gekwantificeerde attribuut '{attribute}' heeft hier geen lezing: dat attribuut is TIJDSAFHANKELIJK, en een tijdlijn in een scalaire sleuf heeft er geen (ch. 3.3) — de knoop draagt de vorm wel, over een niet-temporeel attribuut levert deze schrijfpositie hem ook
+PART.fold-bare-definite	de zin leest als een kwantificatie over '{members}' maar schrijft geen kwantor: de kale 'de' noemt één object en geen verzameling (§13.4.14.5 kent alle | geen van de | ten minste/ten hoogste/precies <telwoord> van de), dus er valt niets te vouwen
+PART.fold-multi-step	een meerstapsbereik: de zin stapelt nog een verzameling onder de gekwantificeerde, en een kwantorvouw noemt precies één relatie vanaf het regelonderwerp (IR-SPEC ch. 4.5) — de eerste stap vouwen zou een andere verzameling kwantificeren dan de zin noemt
+PART.fold-unknown-population	'{members}' is geen gedeclareerd objecttype en geen gedeclareerd meervoud daarvan, dus het bereik van de kwantor ligt niet vast — kwantificeren over een onbekende populatie zou een andere verzameling toetsen dan de zin noemt
+PART.range-not-at-subject	'{source}' begint bij '{anchor}' en niet bij het regelonderwerp {subject}
+PART.range-element-mismatch	'{source}' komt via haar stappen uit bij {holder}, maar de geschreven elementnaam is gelezen als {written}
+PART.step-refusal	in '{source}' bindt de stap '{step}' vanaf {holder} geen rol: {tail}
+PART.step-tail-ambiguous	'{step}' noemt er meer dan één ({roles})
+PART.step-tail-undeclared-filler	{roles} wordt gevuld door '{filler}', en dat is geen gedeclareerd objecttype
+PART.step-tail-derived-plural	'{step}' is geen gedeclareerde naam of gedeclareerd meervoud, alleen het afgeleide meervoud (+s/+en) van {roles}, en een afgeleid meervoud bindt geen stap
+PART.step-exit-one	declareer het meervoud op de rol: '{role} (mv: {step})'
+PART.step-exit-several	declareer het meervoud op de rol die bedoeld is: '(mv: {step})'
+PART.step-tail-reciprocal	'{step}' noemt {roles}, en over een wederkerig feittype schrijft deze frontend geen stap
+PART.step-tail-none	geen rol die vanaf {holder} te bereiken is, heet '{step}' of declareert dat als meervoud
+PART.role-of-fact-type	'{role}' van het feittype '{factType}'
+PART.role-of-reciprocal-fact-type	'{role}' van het wederkerige feittype '{factType}'
+PART.roles-one	de rol {part}
+PART.roles-several	de rollen {head} en {last}
+PART.fold-range-unbindable	{cause}, dus het bereik van de kwantor is niet te binden — een gegokte relatie zou een andere verzameling vouwen dan de zin noemt (IR-SPEC ch. 4.5)
+PART.rule-subject-unknown	het regelonderwerp is onbekend
+PART.fold-not-characteristic	'{name}' is geen kenmerk van {element} — een §8.1.7-rolcontrole van het element is een andere gekwantificeerde vraag, en een kenmerk van het regelonderwerp op het element lezen zou iets anders beantwoorden dan de zin vraagt (§8.1.7/§8.1.8)
+PART.fraction-literal	heeft een breuk
+PART.fraction-rounded	is afgerond op {decimals} decimalen
+PART.fraction-division	is een deling
+PART.fraction-percentage	is een percentage
+PART.fraction-power	is een macht
+PART.fraction-total	is een totaal over de tijd
+PART.fraction-pro-rata	is een tijdsevenredig deel
+PART.fraction-root	is een wortel
+PART.fraction-decimals	is een getal met {decimals} decimalen
+PART.fraction-unbounded	is een getal zonder vast aantal decimalen
+PART.fraction-conversion	wordt naar {target} omgerekend (een {from} is een breuk van een {target})
+PART.member-category.role	de rol
+PART.member-category.attribute	het attribuut
+PART.member-category.characteristic-kind	het kenmerk
+PART.previous-head	de kop
+PART.previous-head-text	de koptekst
+PART.previous-role	de vorige rol '{name}'
+PART.previous-member	het vorige lid '{name}'
+PART.hyphen-hint-before	 — hoort '{word}' bij de naam, verbind het dan met een koppelteken aan het woord ervoor ('{preceding}-{word}')
+PART.hyphen-hint-characteristic	 — hoort 'kenmerk' bij de naam, verbind het dan met een koppelteken aan het woord erna ('kenmerk-{word}')
+PART.member-phrase.role	de rol '{name}'
+PART.member-phrase.attribute	het attribuut '{name}'
+PART.member-phrase.characteristic-name	het kenmerk '{name}'
+PART.what.attribute	het attribuut '{name}'
+PART.what.declared-parameter	de parameter '{name}'
+PART.what.expectation	de verwachting voor '{name}'
+PART.what.inconsistency-rule	de regel van de inconsistentie
+PART.where-situation	in de situatie van het scenario '{scenario}'
+PART.where-situation-and-set	in de situatie van het scenario '{scenario}' en in de parameterset '{set}'
+PART.combination-fixed-periods	zowel een vaste waarde als perioden
+PART.combination-periods-fixed	zowel perioden als een vaste waarde
+PART.vintage-none	zonder periode
+PART.vintage-period	van {from} tot {until}
+PART.fixed-start-point	 (vast startpunt {start})
+PART.grid.day.one	dagraster
+PART.grid.day.many	raster van {count} dagen
+PART.grid.week.one	weekraster
+PART.grid.week.many	raster van {count} weken
+PART.grid.month.one	maandraster
+PART.grid.month.many	raster van {count} maanden
+PART.grid.quarter.one	kwartaalraster
+PART.grid.quarter.many	raster van {count} kwartalen
+PART.grid.year.one	jaarraster
+PART.grid.year.many	raster van {count} jaren
+PART.writer-defaults-group	de defaults-groep '{name}'
+PART.writer-allocation	de verdeling '{name}'
+PART.writer-object-creation	de objectcreatie '{name}'
 RGS-001	verdeling '{name}' wordt niet geschreven: de frontend bepaalde voor haar geen van de drie verdeelmethoden (in gelijke delen, naar rato, op volgorde), en een verdeling zonder methode heeft geen spelling in uchar-ir-v1
 RGS-002	objecttype '{objectType}' declareert meer dan één supertype ({names}) — WF-106: een objecttype declareert hoogstens één direct supertype. De twee bekende gevallen met twee directe ouders (RechtOpUitkeringWazo, RechtUitkeringZw) worden hier geweigerd en niet platgeslagen: kies één ouder, of til het gedeelde deel naar een gemeenschappelijk supertype
 RGS-003	objecttype '{objectType}' is zijn eigen supertype — WF-104: de supertypegraaf is acyclisch, zelfverwijzing inbegrepen (een keten zonder wortel laat ledenresolutie nergens stoppen)
@@ -177,6 +295,23 @@ RGS-089	rangtelwoord: de regel noemt geen {position} onderwerpen '{name}' (§5.5
 RGS-090	rangtelwoord: de regel bindt {bindings} onderwerpen '{name}'; §5.5.3 definieert geen bindings-/ordeningssemantiek voor zo'n verwijzing per vermelding — de verwijzing blijft een marker (wordt nog niet ondersteund) — '{expression}'
 RGS-091	syntaxfout: {message}
 RGS-092	onopgelost: {reason} — '{expression}' blijft als marker op de wire staan
+RGS-092.no-expression	er is geen expressie om te bouwen — de ontleding leverde op deze plaats geen boom op
+RGS-092.expression-form	deze expressievorm wordt niet naar IR omgezet — zij is geen som, product, macht, percentage, afronding, begrenzing of primaire expressie (§13.4.16/.17)
+RGS-092.no-primary	er is geen primaire expressie om te bouwen — de ontleding leverde op deze plaats geen boom op
+RGS-092.primary-form	deze primaire expressie bindt geen literal, geen parameter, geen variabele, geen attribuut van een onderwerp en geen functieaanroep (§13.4.17)
+RGS-092.attribute-reference	de attribuutverwijzing noemt geen attribuutnaam met lidwoord (§13.4.2.9)
+RGS-092.enum-without-domain	een enumeratiewaarde ontleent haar domein aan de context (§13.3.4.2), en deze plaats wijst er geen aan — geen schrijfdoel en geen vergelijkingszijde met een Enumeratie-datatype
+RGS-092.condition-form	het voorwaardendeel heeft geen van de §13.4.13-vormen — geen samengestelde voorwaarde, geen elementaire voorwaarde met operator, geen regelpredicaat en geen periodevergelijking
+RGS-092.bullets-inconsistent	de bullets van de samengestelde voorwaarde staan op verschillende kolommen of dragen verschillende tekens, dus welke bullet onder welke hoort ligt niet vast (§13.4.14.6)
+RGS-092.renested-bullet	deze bullet van de hernestte opsomming is geen geneste samengestelde voorwaarde en geen elementaire voorwaarde (§13.4.14)
+RGS-092.counting-deep-bullet	een tellende kwantor over een deelselectie waarvan een bullet zelf nog een diepere samengestelde voorwaarde draagt: de inspringblinde bullet-grammatica kan zusterbullets in die diepere laag getrokken hebben (§13.4.14.6), en dan telt de selectie een andere verzameling dan de zin noemt
+RGS-092.nested-criterion	dit geneste consistentiecriterium is geen samengesteld criterium en geen elementaire voorwaarde (§13.4.8)
+RGS-092.nested-bullet	deze bullet van de samengestelde voorwaarde is geen geneste samengestelde voorwaarde en geen elementaire voorwaarde (§13.4.14)
+RGS-092.elementary-form	de elementaire voorwaarde heeft geen van de §13.4.15-vormen — geen expressie met operator, geen periodevergelijking en geen regelpredicaat
+RGS-092.not-absorbed	de gulzige ontleding trok de ontkenning 'niet' in het onderwerp; een vergelijking of een leeg-/gevuld-controle kan haar daar niet uit terughalen, en de positieve vorm emitteren zou de vraag omkeren (§8.1)
+RGS-092.no-characteristic-no-role	de geschreven naam bindt geen kenmerk en geen rol van het onderwerp (§8.1.7/§8.1.8), dus er is geen lidmaatschap om te toetsen
+RGS-092.whole-period-role	de controle 'gedurende de/het gehele <periode>' hoort bij een kenmerkcontrole over een tijdsafhankelijk onderwerp; over deze lidmaatschapsvorm (een §8.1.7-rolcontrole) heeft zij geen omschreven betekenis (§8.2)
+RGS-092.negation-form	de vorm 'is niet een <naam>' bond geen kenmerk en geen rol van het onderwerp (§8.1.8.3), dus er is niets om te ontkennen
 RGS-093	kopvorm: 'is {word}' mist het lidwoord — een supertype wordt geschreven als 'is een {word}'
 RGS-094	kopvorm: de 'is een'-clausule staat achter de (mv: …)-groep — zij hoort direct na de objecttypenaam, vóór (mv: …) en (bezield)
 RGS-095	scenario: het document draagt geen scenario, dus er valt geen casebestand te schrijven
@@ -259,6 +394,8 @@ RGS-130	vouw '{expression}' zonder onderwerp om haar bereik vanaf te bepalen{ran
 RGS-131	vouw '{expression}' zonder bereik ({cause}){range}
 RGS-131.written-anchor	de geschreven bron '{source}' loopt via '{anchor}', een ander anker dan het onderwerp, en een bereik vanaf zo'n anker schrijft deze frontend niet
 RGS-132	periodevergelijking onder '{words}' ({place}): a time window under none or a counting quantifier: the window gates the RULE, and no reading is specified for a verdict that is counted or complemented
+RGS-132.place-compound	als lid van een samengestelde voorwaarde
+RGS-132.place-fold	in het filter of de toets van een kwantorvouw
 RGS-133	{head}: de basisregel is geen kenmerktoekenning of gelijkstelling (bv. een initialisatie) — daarover wordt geen defaults-groep gebouwd (§4)
 RGS-134	{head}: de drager '{carrier}' heeft ook {siblings} — de kinderen van één drager vormen óf één geordende keten ('Uitzondering op', 'Afwijking van') óf de leden van één ongeordend blok, want de voorrang daartussen ligt nergens vast. Schrijf ze allemaal geordend, of neem ze allemaal als lid op in één blok 'Uitzonderingen ongeordend op {carrier}:' (dialect §4)
 RGS-134.ordered	geordende uitzonderingen ({names})
@@ -268,7 +405,7 @@ RGS-136	{head}: {node} is geen kenmerktoekenning of gelijkstelling (bv. een init
 RGS-137	{head}: '{carrier}' is {carrierKind}, geen basisregel — een afwijking erft geen voorwaarde en staat daarom alleen direct boven een basisregel; midden in de boom zou zij beslissen waar de voorwaarde van haar drager niet geldt. Schrijf 'Uitzondering op {carrier}: {member}' als zij de voorwaarde van '{carrier}' erft, of 'Afwijking van {root}: {member}' met de volledige voorwaarde (dialect §4)
 RGS-138	{head}: '{carrier}' is {carrierKind} van {supertype}, en {designation} schrijft voor het subtype {subtype} — een subtype erft de uitzonderingen van zijn supertype met wat eronder genest is, en adresseert er geen (RUNTIME-SEMANTICS ch. 7.10). Schrijf haar als eigen uitzondering van {subtype} onder {under}: 'Afwijking van {name}: {member}', met de volledige voorwaarde van '{carrier}' en de eigen voorwaarde: de eigen uitzonderingen van {subtype} gaan vóór de geërfde, dus zij beslist precies waar beide gelden (dialect §4)
 RGS-139	{head}: {designation} draagt een ander geldigheidsvenster dan de basisregel — de defaults-groep draagt één venster; splits per venster of maak de vensters gelijk (§4)
-RGS-140	{head}: {designation} schrijft een ander doel ({ownTarget}) dan {carrierPart} ({baseTarget}) — een {what} moet hetzelfde onderwerp en kenmerk/attribuut betreffen (§4, WF-050)
+RGS-140	{head}: {designation} schrijft een ander doel ({ownTarget}) dan {carrierPart} ({baseTarget}) — {what} moet hetzelfde onderwerp en kenmerk/attribuut betreffen (§4, WF-050)
 RGS-140.base-rule	de basisregel
 RGS-140.her-carrier	haar drager '{carrier}'
 RGS-140.his-carrier	zijn drager '{carrier}'

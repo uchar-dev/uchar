@@ -62,6 +62,8 @@ public final class Messages {
             return String.join(", ", parts.subList(0, parts.size() - 1)) + " "
                     + render(e.component(), locale, "PART.and", Map.of()) + " " + parts.get(parts.size() - 1);
         }
+        if (value instanceof Msg.Joined j)
+            return j.items().stream().map(i -> valueText(i, locale)).collect(java.util.stream.Collectors.joining(j.separator()));
         if (value instanceof java.util.List<?> l)
             return l.stream().map(e -> valueText(e, locale)).collect(java.util.stream.Collectors.joining("; "));
         return String.valueOf(value);

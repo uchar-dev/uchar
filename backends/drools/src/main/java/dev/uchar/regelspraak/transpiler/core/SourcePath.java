@@ -147,7 +147,7 @@ public final class SourcePath {
             Objecttype carrier = toMany ? destination : van, target = toMany ? van : destination;
             String roleField = toMany ? opposite.naam() : bound.naam();
             if (!FactModelGenerator.hasReferenceField(model, carrier, roleField, target))
-                return refuse(DroolsCode.SOURCE_PATH_NO_JOIN.reason("step", i, "fromType", van.naam, "toType", destination.naam, "reason", FactModelGenerator.noJoinFieldReason(model, van, bound.naam(), destination).text()));
+                return refuse(DroolsCode.SOURCE_PATH_NO_JOIN.reason("step", i, "fromType", van.naam, "toType", destination.naam, "reason", FactModelGenerator.noJoinFieldReason(model, van, bound.naam(), destination).msg()));
             steps.add(new Step(toMany, Namen.ident(roleField, false)));
             nodes.add(destination);
         }

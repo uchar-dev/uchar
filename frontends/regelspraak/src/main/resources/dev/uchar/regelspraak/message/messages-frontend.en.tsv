@@ -35,6 +35,124 @@ PART.designation.rule-group.head	The rule group '{name}'
 PART.designation.rule.head	The rule '{name}'
 PART.member-kind.attribute	attribute
 PART.member-kind.characteristic-kind	characteristic
+PART.row-of-table	 (a row of decision table '{table}')
+PART.name-with-table	'{name}'{table}
+PART.defaults-group	defaults group
+PART.node-kind.exception	exception
+PART.node-kind.deviation	deviation
+PART.node-kind.member	group member
+PART.node-designation	{what} '{name}'
+PART.node-the	the {designation}
+PART.indefinite.exception	an exception
+PART.indefinite.deviation	a deviation
+PART.indefinite.member	a group member
+PART.carrier-kind.member	a member of an 'Uitzonderingen ongeordend op' block
+PART.target-unknown	unknown
+PART.target-text	{subject}.{name} ({kind})
+PART.base-reason-other-construct	 (rule '{name}' is an allocation/consistency/object creation/uniqueness, not a flat rule)
+PART.base-reason-decision-table	 ('{name}' is a decision table, not a rule: its rules are the rows {rows}, which together write the same target — a defaults group has one base rule and no other writer on its target (WF-050))
+PART.dimension-cell	cell of the dimensioned attribute '{attribute}' (dimension {dimension}, label '{label}')
+PART.against	 of {subject} against {other}
+PART.under-root-base	the base rule '{name}'
+PART.under-own-base	its own base rule '{name}'
+PART.under-inherited-base	the base rule '{name}' of {type}, which {subtype} inherits
+PART.has-own-base	{subtype} has a base rule of its own, '{base}', for '{target}'
+PART.has-inherited-base	{subtype} inherits the base rule '{base}' for '{target}' from {type}
+PART.form-exception	'Uitzondering op {base}: {name}' if it inherits the condition of '{base}', or 'Afwijking van {base}: {name}' with the full condition
+PART.form-block	the block as 'Uitzonderingen ongeordend op {base}:'
+PART.input-head	attribute '{attribute}' of {type}
+PART.form-rule	rule '{name}'
+PART.form-table-row	rule '{row}' of decision table '{table}'
+PART.generated-form.defaults-group	the defaults group
+PART.generated-form.rule	the rule
+PART.generated-form.consistency	the consistency
+PART.form-kind.rule-form	rule
+PART.form-kind.allocations	allocation
+PART.form-kind.consistencies	consistency rule
+PART.form-kind.uniquenesses	uniqueness rule
+PART.form-kind.object-creations	object creation
+PART.form-kind.fact-creations	fact creation
+PART.form-kind.prioritized-defaults	defaults group
+PART.unresolved-name	the name '{name}' is no declared parameter, no variable from a 'Daarbij geldt:' part and no attribute of the subject (§11/§13.3.8)
+PART.union-populations	the selections count over different populations ('{first}' and '{second}'); one count answers a number over ONE declared type, and whether two selections can then share an instance is a question about the subtype lattice that the deduplication would have to answer (WF-110 (d))
+PART.union-selection-path	selection {n} ('{source}') is {path}
+PART.count-norm-selection	a selection counts over one relation from the subject (IR-SPEC ch. 4.3, WF-110 (e))
+PART.count-norm-frontend	this frontend counts over one relation from the subject only (IR-SPEC ch. 4.3, WF-102 (c))
+PART.union-relation	the relation of selection {n} ('{word}') cannot be derived unambiguously; every selection of a union names its own relation, because they all share one type pair and a derived range would make them indistinguishable (WF-110 (e))
+PART.union-subselection	the 'die/dat' subselection of selection {n} ('{source}') does not resolve to a characteristic of '{element}'; a silently dropped filter would count too large a number and the union would swallow it (§5.6)
+PART.count-path	a count over a path of {count} steps ({steps}): {norm}; write the count on the object reached or name one relation
+PART.count-over-object-type	over the object type {type}
+PART.count-collision	where '{name}' is a declared attribute of {type}
+PART.subselection-no-compound	it binds no compound condition of {element} (§13.4.13.4, IR-SPEC ch. 4.5)
+PART.subselection-no-predicate	it binds no characteristic or number predicate of {element} (§5.6, IR-SPEC ch. 4.5)
+PART.subselection-time-dependent	a number predicate over the quantified attribute '{attribute}' has no reading here: that attribute is TIME-DEPENDENT, and a timeline in a scalar slot has none (ch. 3.3) — the node does carry the form, and over a non-temporal attribute this write position yields it too
+PART.fold-bare-definite	the sentence reads as a quantification over '{members}' but writes no quantifier: the bare 'de' names one object and no collection (§13.4.14.5 knows 'alle | geen van de | ten minste/ten hoogste/precies <numeral> van de'), so there is nothing to fold
+PART.fold-multi-step	a multi-step range: the sentence stacks another collection under the quantified one, and a quantifier fold names exactly one relation from the rule subject (IR-SPEC ch. 4.5) — folding the first step would quantify another collection than the sentence names
+PART.fold-unknown-population	'{members}' is no declared object type and no declared plural of one, so the range of the quantifier is not fixed — quantifying over an unknown population would test another collection than the sentence names
+PART.range-not-at-subject	'{source}' begins at '{anchor}' and not at the rule subject {subject}
+PART.range-element-mismatch	'{source}' arrives through its steps at {holder}, but the written element name was read as {written}
+PART.step-refusal	in '{source}' the step '{step}' binds no role from {holder}: {tail}
+PART.step-tail-ambiguous	'{step}' names more than one ({roles})
+PART.step-tail-undeclared-filler	{roles} is filled by '{filler}', and that is no declared object type
+PART.step-tail-derived-plural	'{step}' is no declared name or declared plural, only the derived plural ('+s/+en') of {roles}, and a derived plural binds no step
+PART.step-exit-one	declare the plural on the role: '{role} (mv: {step})'
+PART.step-exit-several	declare the plural on the role that is meant: '(mv: {step})'
+PART.step-tail-reciprocal	'{step}' names {roles}, and this frontend writes no step over a reciprocal fact type
+PART.step-tail-none	no role reachable from {holder} is called '{step}' or declares that as a plural
+PART.role-of-fact-type	'{role}' of the fact type '{factType}'
+PART.role-of-reciprocal-fact-type	'{role}' of the reciprocal fact type '{factType}'
+PART.roles-one	the role {part}
+PART.roles-several	the roles {head} and {last}
+PART.fold-range-unbindable	{cause}, so the range of the quantifier cannot be bound — a guessed relation would fold another collection than the sentence names (IR-SPEC ch. 4.5)
+PART.rule-subject-unknown	the rule subject is unknown
+PART.fold-not-characteristic	'{name}' is no characteristic of {element} — a §8.1.7 role check of the element is another quantified question, and reading a characteristic of the rule subject on the element would answer something other than what the sentence asks (§8.1.7/§8.1.8)
+PART.fraction-literal	has a fraction
+PART.fraction-rounded	is rounded to {decimals} decimals
+PART.fraction-division	is a division
+PART.fraction-percentage	is a percentage
+PART.fraction-power	is a power
+PART.fraction-total	is a total over time
+PART.fraction-pro-rata	is a pro rata part
+PART.fraction-root	is a root
+PART.fraction-decimals	is a number with {decimals} decimals
+PART.fraction-unbounded	is a number without a fixed number of decimals
+PART.fraction-conversion	is converted to {target} (one {from} is a fraction of one {target})
+PART.member-category.role	the role
+PART.member-category.attribute	the attribute
+PART.member-category.characteristic-kind	the characteristic
+PART.previous-head	the head
+PART.previous-head-text	the head text
+PART.previous-role	the previous role '{name}'
+PART.previous-member	the previous member '{name}'
+PART.hyphen-hint-before	 — if '{word}' belongs to the name, join it with a hyphen to the word before it ('{preceding}-{word}')
+PART.hyphen-hint-characteristic	 — if 'kenmerk' belongs to the name, join it with a hyphen to the word after it ('kenmerk-{word}')
+PART.member-phrase.role	the role '{name}'
+PART.member-phrase.attribute	the attribute '{name}'
+PART.member-phrase.characteristic-name	the characteristic '{name}'
+PART.what.attribute	the attribute '{name}'
+PART.what.declared-parameter	the parameter '{name}'
+PART.what.expectation	the expectation for '{name}'
+PART.what.inconsistency-rule	the rule of the inconsistency
+PART.where-situation	in the situation of the scenario '{scenario}'
+PART.where-situation-and-set	in the situation of the scenario '{scenario}' and in the parameter set '{set}'
+PART.combination-fixed-periods	both a fixed value and periods
+PART.combination-periods-fixed	both periods and a fixed value
+PART.vintage-none	without a period
+PART.vintage-period	from {from} to {until}
+PART.fixed-start-point	 (fixed start point {start})
+PART.grid.day.one	day grid
+PART.grid.day.many	grid of {count} days
+PART.grid.week.one	week grid
+PART.grid.week.many	grid of {count} weeks
+PART.grid.month.one	month grid
+PART.grid.month.many	grid of {count} months
+PART.grid.quarter.one	quarter grid
+PART.grid.quarter.many	grid of {count} quarters
+PART.grid.year.one	year grid
+PART.grid.year.many	grid of {count} years
+PART.writer-defaults-group	the defaults group '{name}'
+PART.writer-allocation	the allocation '{name}'
+PART.writer-object-creation	the object creation '{name}'
 RGS-001	allocation '{name}' is not written: the frontend determined none of the three allocation methods (in equal parts, in proportion, in order) for it, and an allocation without a method has no spelling in uchar-ir-v1
 RGS-002	objecttype '{objectType}' declares more than one supertype ({names}) — WF-106: an objecttype declares at most one direct supertype. The two known cases with two direct parents (RechtOpUitkeringWazo, RechtUitkeringZw) are refused here and not flattened: choose one parent, or lift the shared part to a common supertype
 RGS-003	objecttype '{objectType}' is its own supertype — WF-104: the supertype graph is acyclic, self-reference included (a chain without a root lets member resolution stop nowhere)
@@ -177,6 +295,23 @@ RGS-089	ordinal number: the rule names no {position} subjects '{name}' (§5.5.3)
 RGS-090	ordinal number: the rule binds {bindings} subjects '{name}'; §5.5.3 defines no binding/ordering semantics for such a reference per mention — the reference remains a marker (not yet supported) — '{expression}'
 RGS-091	syntax error: {message}
 RGS-092	unresolved: {reason} — '{expression}' remains as a marker on the wire
+RGS-092.no-expression	there is no expression to build — the parse yielded no tree at this place
+RGS-092.expression-form	this expression form is not converted to IR — it is no sum, product, power, percentage, rounding, clamp or primary expression (§13.4.16/.17)
+RGS-092.no-primary	there is no primary expression to build — the parse yielded no tree at this place
+RGS-092.primary-form	this primary expression binds no literal, no parameter, no variable, no attribute of a subject and no function call (§13.4.17)
+RGS-092.attribute-reference	the attribute reference names no attribute name with an article (§13.4.2.9)
+RGS-092.enum-without-domain	an enumeration value takes its domain from the context (§13.3.4.2), and this place names none — no write target and no comparison side with an Enumeration datatype
+RGS-092.condition-form	the condition part has none of the §13.4.13 forms — no compound condition, no elementary condition with an operator, no rule predicate and no period comparison
+RGS-092.bullets-inconsistent	the bullets of the compound condition stand in different columns or carry different signs, so which bullet belongs under which is not fixed (§13.4.14.6)
+RGS-092.renested-bullet	this bullet of the re-nested list is no nested compound condition and no elementary condition (§13.4.14)
+RGS-092.counting-deep-bullet	a counting quantifier over a sub-selection one of whose bullets itself carries a deeper compound condition: the indentation-blind bullet grammar may have pulled sister bullets into that deeper layer (§13.4.14.6), and then the selection counts another collection than the sentence names
+RGS-092.nested-criterion	this nested consistency criterion is no compound criterion and no elementary condition (§13.4.8)
+RGS-092.nested-bullet	this bullet of the compound condition is no nested compound condition and no elementary condition (§13.4.14)
+RGS-092.elementary-form	the elementary condition has none of the §13.4.15 forms — no expression with an operator, no period comparison and no rule predicate
+RGS-092.not-absorbed	the greedy parse pulled the negation 'niet' into the subject; a comparison or an empty/filled check cannot retrieve it from there, and emitting the positive form would invert the question (§8.1)
+RGS-092.no-characteristic-no-role	the written name binds no characteristic and no role of the subject (§8.1.7/§8.1.8), so there is no membership to test
+RGS-092.whole-period-role	the check 'gedurende de/het gehele <periode>' belongs to a characteristic check over a time-dependent subject; over this membership form (a §8.1.7 role check) it has no defined meaning (§8.2)
+RGS-092.negation-form	the form 'is niet een <naam>' bound no characteristic and no role of the subject (§8.1.8.3), so there is nothing to negate
 RGS-093	head form: 'is {word}' lacks the article — a supertype is written as 'is een {word}'
 RGS-094	head form: the 'is een' clause stands after the (mv: …) group — it belongs directly after the objecttype name, before (mv: …) and (bezield)
 RGS-095	scenario: the document carries no scenario, so no case file can be written
@@ -259,6 +394,8 @@ RGS-130	fold '{expression}' without a subject to determine its range from{range}
 RGS-131	fold '{expression}' without a range ({cause}){range}
 RGS-131.written-anchor	the written source '{source}' runs via '{anchor}', an anchor other than the subject, and this frontend does not write a range from such an anchor
 RGS-132	period comparison under '{words}' ({place}): a time window under none or a counting quantifier: the window gates the RULE, and no reading is specified for a verdict that is counted or complemented
+RGS-132.place-compound	as a member of a compound condition
+RGS-132.place-fold	in the filter or the test of a quantifier fold
 RGS-133	{head}: the base rule is not a characteristic assignment or an equation (e.g. an initialisation) — no defaults group is built over it (§4)
 RGS-134	{head}: the carrier '{carrier}' also has {siblings} — the children of one carrier form either one ordered chain ('Uitzondering op', 'Afwijking van') or the members of one unordered block, because the precedence between them is nowhere fixed. Write them all as ordered, or take them all as members in one block 'Uitzonderingen ongeordend op {carrier}:' (dialect §4)
 RGS-134.ordered	ordered exceptions ({names})
@@ -268,7 +405,7 @@ RGS-136	{head}: {node} is not a characteristic assignment or an equation (e.g. a
 RGS-137	{head}: '{carrier}' is {carrierKind}, not a base rule — a deviation inherits no condition and therefore stands only directly above a base rule; in the middle of the tree it would decide where the condition of its carrier does not hold. Write 'Uitzondering op {carrier}: {member}' if it inherits the condition of '{carrier}', or 'Afwijking van {root}: {member}' with the full condition (dialect §4)
 RGS-138	{head}: '{carrier}' is {carrierKind} of {supertype}, and {designation} prescribes for the subtype {subtype} — a subtype inherits the exceptions of its supertype with whatever is nested under them, and addresses none of them (RUNTIME-SEMANTICS ch. 7.10). Write it as its own exception of {subtype} under {under}: 'Afwijking van {name}: {member}', with the full condition of '{carrier}' and its own condition: the own exceptions of {subtype} precede the inherited ones, so it decides exactly where both hold (dialect §4)
 RGS-139	{head}: {designation} carries a different validity window than the base rule — the defaults group carries one window; split by window or make the windows equal (§4)
-RGS-140	{head}: {designation} writes a different target ({ownTarget}) than {carrierPart} ({baseTarget}) — a {what} must concern the same subject and characteristic/member (§4, WF-050)
+RGS-140	{head}: {designation} writes a different target ({ownTarget}) than {carrierPart} ({baseTarget}) — {what} must concern the same subject and characteristic/member (§4, WF-050)
 RGS-140.base-rule	the base rule
 RGS-140.her-carrier	its carrier '{carrier}'
 RGS-140.his-carrier	its carrier '{carrier}'

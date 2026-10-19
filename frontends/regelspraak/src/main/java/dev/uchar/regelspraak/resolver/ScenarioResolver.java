@@ -8,6 +8,7 @@ import dev.uchar.regelspraak.ir.Validity;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedScenario;
 import dev.uchar.regelspraak.ir.ResolvedScenario.*;
+import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Unit;
 import dev.uchar.regelspraak.model.RationalParser;
@@ -560,8 +561,8 @@ public final class ScenarioResolver {
         for (ParameterValue p : situation.parameters()) assigned.add(norm(p.parameter()));
         // a parameter of the set whose jaargang the peildatum could not choose has its own ERROR already
         if (set != null) assigned.addAll(set.parameters().keySet());
-        String where = "in de situatie van het scenario '" + scenario + "'"
-                + (set == null ? "" : " en in de parameterset '" + set.naam() + "'");
+        Msg where = set == null ? Msg.frontend("PART.where-situation", "scenario", scenario)
+                : Msg.frontend("PART.where-situation-and-set", "scenario", scenario, "set", set.naam());
         Set<String> reported = new java.util.HashSet<>();
         for (Form v : forms()) {
             if (!carries.test(v.naam())) continue;
@@ -648,7 +649,7 @@ public final class ScenarioResolver {
             return;
         }
         Datatype dt = ot.attribute(attr);
-        ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, "het attribuut '" + attr + "'");
+        ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, Msg.frontend("PART.what.attribute", "name", attr));
         if (a.periode() == null) {
             if (tijdlijnen.containsKey(norm(attr))) {
                 error(line,
@@ -670,7 +671,7 @@ public final class ScenarioResolver {
             return;
         }
         TimeWindow p = readPeriod(a.periode());
-        if (p == null || w == null || !onGrid(p, ot, attr, "het attribuut '" + attr + "'", line)) return;
+        if (p == null || w == null || !onGrid(p, ot, attr, Msg.frontend("PART.what.attribute", "name", attr), line)) return;
         List<Segment> tl = tijdlijnen.get(norm(attr));
         if (tl == null) {
             tl = new ArrayList<>();
@@ -795,7 +796,7 @@ public final class ScenarioResolver {
             error(line, "RGS-250", params("parameter", written));
             return null;
         }
-        ScenarioValue w = readAndType(pw.situatieWaarde(), p.datatype(), line, "de parameter '" + p.naam() + "'");
+        ScenarioValue w = readAndType(pw.situatieWaarde(), p.datatype(), line, Msg.frontend("PART.what.declared-parameter", "name", p.naam()));
         if (pw.periode() == null) {
             if (tijdlijnen.containsKey(norm(p.naam()))) {
                 error(line,
@@ -816,7 +817,7 @@ public final class ScenarioResolver {
         }
         TimeWindow per = readPeriod(pw.periode());
         if (per == null || w == null
-                || !onGrid(per, p.granulariteit(), 1, p.fixedStartPoint(), false, "de parameter '" + p.naam() + "'", line))
+                || !onGrid(per, p.granulariteit(), 1, p.fixedStartPoint(), false, Msg.frontend("PART.what.declared-parameter", "name", p.naam()), line))
             return null;
         List<Segment> tl = tijdlijnen.get(norm(p.naam()));
         boolean fresh = tl == null;
@@ -842,7 +843,9 @@ public final class ScenarioResolver {
     private record Vintage(LocalDate van, LocalDate until, ScenarioValue value, int line) {
         boolean contains(LocalDate d) { return van == null || !d.isBefore(van) && d.isBefore(until); }
         boolean overlaps(Vintage j) { return van == null || j.van == null || van.isBefore(j.until) && j.van.isBefore(until); }
-        String show() { return van == null ? "zonder periode" : "van " + van + " tot " + until; }
+        Msg show() {
+            return van == null ? Msg.frontend("PART.vintage-none") : Msg.frontend("PART.vintage-period", "from", van, "until", until);
+        }
     }
 
     private void registerParameterSet(ParametersetDefinitieContext pd) {
@@ -877,7 +880,7 @@ public final class ScenarioResolver {
      *  ERROR. */
     private boolean setLine(String setName, ParameterWaardeContext pw, Parameter p, Map<String, SetParameter> parameters) {
         int line = pw.getStart().getLine();
-        String what = "de parameter '" + p.naam() + "'";
+        Object what = Msg.frontend("PART.what.declared-parameter", "name", p.naam());
         ScenarioValue w = readAndType(pw.situatieWaarde(), p.datatype(), line, what);
         TimeWindow per = pw.periode() == null ? null : readPeriod(pw.periode());
         if (pw.periode() != null && per == null) return false;
@@ -888,7 +891,7 @@ public final class ScenarioResolver {
             parameters.put(norm(p.naam()), sp);
         } else if ((sp.tijdlijn() != null) != segment) {
             error(line,
-                    "RGS-255", params("what", what, "combination", (segment ? "zowel een vaste waarde als perioden" : "zowel perioden als een vaste waarde")));
+                    "RGS-255", params("what", what, "combination", Msg.frontend(segment ? "PART.combination-fixed-periods" : "PART.combination-periods-fixed")));
             return false;
         }
         if (w == null) return false;
@@ -996,7 +999,7 @@ public final class ScenarioResolver {
 
     /** Whether both bounds of {@code p} sit on the grid of attribute {@code attr} of {@code ot}: its granularity,
      *  count and fixed start point, as its facet declares them. */
-    private boolean onGrid(TimeWindow p, Objecttype ot, String attr, String what, int line) {
+    private boolean onGrid(TimeWindow p, Objecttype ot, String attr, Object what, int line) {
         Integer count = ot.timelineCountOf(attr);
         return onGrid(p, ot.granularityOf(attr), count == null ? 1 : count, ot.fixedStartPointOf(attr),
                 model.hasVariableStart(ot, attr), what, line);
@@ -1007,28 +1010,24 @@ public final class ScenarioResolver {
      *  refuse. A variable start lays its grid per object from an anchor a rule writes, and a grid that lays no wall
      *  a day can be held against ({@link dev.uchar.regelspraak.core.FixedStartPoint#opWand}) has nothing to hold a
      *  bound to: both are left to the readers. */
-    private boolean onGrid(TimeWindow p, RegelSpraakModel.Granulariteit g, int count, String fixed, boolean variable, String what,
+    private boolean onGrid(TimeWindow p, RegelSpraakModel.Granulariteit g, int count, String fixed, boolean variable, Object what,
                              int line) {
         if (variable) return true;
         boolean goed = true;
         for (LocalDate limit : List.of(p.van(), p.until()))
             if (Boolean.FALSE.equals(dev.uchar.regelspraak.core.FixedStartPoint.opWand(g, count, fixed, limit))) {
                 error(line,
-                        "RGS-264", params("limit", limit, "what", what, "grid", gridName(g, count), "fixedStart", (fixed == null ? "" : " (vast startpunt " + fixed + ")")));
+                        "RGS-264", params("limit", limit, "what", what, "grid", gridName(g, count), "fixedStart", (fixed == null ? "" : Msg.frontend("PART.fixed-start-point", "start", fixed))));
                 goed = false;
             }
         return goed;
     }
 
-    private static String gridName(RegelSpraakModel.Granulariteit g, int count) {
-        String[] word = switch (g) {
-            case DAG -> new String[]{"dag", "dagen"};
-            case WEEK -> new String[]{"week", "weken"};
-            case MAAND -> new String[]{"maand", "maanden"};
-            case KWARTAAL -> new String[]{"kwartaal", "kwartalen"};
-            case JAAR -> new String[]{"jaar", "jaren"};
+    private static Msg gridName(RegelSpraakModel.Granulariteit g, int count) {
+        String unit = switch (g) {
+            case DAG -> "day"; case WEEK -> "week"; case MAAND -> "month"; case KWARTAAL -> "quarter"; case JAAR -> "year";
         };
-        return count == 1 ? word[0] + "raster" : "raster van " + count + " " + word[1];
+        return Msg.frontend("PART.grid." + unit + (count == 1 ? ".one" : ".many"), "count", count);
     }
 
     // ---------------- the merge ----------------
@@ -1132,7 +1131,7 @@ public final class ScenarioResolver {
                 String attr = expectedAttribute(label, withoutArticle(src(a.verwachtingNaam())), situation, line);
                 if (attr == null) continue;
                 Datatype dt = situation.instantie(label).objectType().attribute(attr);
-                ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, "de verwachting voor '" + attr + "'");
+                ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, Msg.frontend("PART.what.expectation", "name", attr));
                 if (a.periode() == null) {
                     if (w != null)
                         result.add(new Expectation(ExpectationKind.ATTRIBUTE_VALUE, label, attr, null, w, null, null, line));
@@ -1141,7 +1140,7 @@ public final class ScenarioResolver {
                 if (!temporalAttribute(label, attr, situation, line)) continue;
                 TimeWindow p = readPeriod(a.periode());
                 if (p == null || w == null
-                        || !onGrid(p, situation.instantie(label).objectType(), attr, "de verwachting voor '" + attr + "'", line))
+                        || !onGrid(p, situation.instantie(label).objectType(), attr, Msg.frontend("PART.what.expectation", "name", attr), line))
                     continue;
                 String key = label + "|" + norm(attr);
                 if (Boolean.TRUE.equals(alwaysEmpty.get(key))) {
@@ -1170,7 +1169,7 @@ public final class ScenarioResolver {
                 String regel = null, label = null;
                 InconsistentieSleutelContext s = c.inconsistentieSleutel();
                 if (s != null) {
-                    regel = textContent(s.tekstWaarde(), line, "de regel van de inconsistentie");
+                    regel = textContent(s.tekstWaarde(), line, Msg.frontend("PART.what.inconsistency-rule"));
                     if (regel != null && !knownInconsistencyRule(regel)) {
                         error(line,
                                 "RGS-270", params("rule", regel));
@@ -1266,7 +1265,7 @@ public final class ScenarioResolver {
     // ---------------- values ----------------
 
     /** Read {@code ctx}, type it against {@code target} and normalise it to its case form; null after an ERROR. */
-    private ScenarioValue readAndType(SituatieWaardeContext ctx, Datatype target, int line, String what) {
+    private ScenarioValue readAndType(SituatieWaardeContext ctx, Datatype target, int line, Object what) {
         if (ctx instanceof GetalSituatieWaardeContext g) return number(g.getalWaarde(), target, line, what);
         if (ctx instanceof DatumSituatieWaardeContext d) {
             String tekst = src(d.datumWaarde());
@@ -1312,7 +1311,7 @@ public final class ScenarioResolver {
         return null;
     }
 
-    private boolean assignable(Datatype target, Datatype raw, int line, String what) {
+    private boolean assignable(Datatype target, Datatype raw, int line, Object what) {
         if (target == null || target.isUnknown()) return true;
         Typing.Coded f = Typing.assignment(target, raw);
         if (f == null) return true;
@@ -1325,7 +1324,7 @@ public final class ScenarioResolver {
      *  ({@link dev.uchar.regelspraak.emit.IrEmitter#numberLexeme}) — a decimal its written precision (2400,00 stays
      *  2400.00), a fraction reduced (6/8 is 3/4) and a whole number where it reduces to one (2_0/5 is 2); a restated
      *  value is a terminating decimal without trailing zeros, or else a reduced fraction. */
-    private ScenarioValue number(GetalWaardeContext g, Datatype target, int line, String what) {
+    private ScenarioValue number(GetalWaardeContext g, Datatype target, int line, Object what) {
         String tekst = g.NUMBER().getText();
         BigDecimal[] r = RationalParser.van(tekst);
         // the parse enters a number value on a NUMBER token only, and every NUMBER token is a number RationalParser reads
@@ -1420,7 +1419,7 @@ public final class ScenarioResolver {
     }
 
     /** The literal content of a text value; an interpolated «expressie» is refused, since a case value is literal. */
-    private String textContent(TekstWaardeContext t, int line, String what) {
+    private String textContent(TekstWaardeContext t, int line, Object what) {
         StringBuilder sb = new StringBuilder();
         for (TekstReeksDeelContext part : t.tekstReeksDeel()) {
             if (part.STRING_TEXT() == null) {

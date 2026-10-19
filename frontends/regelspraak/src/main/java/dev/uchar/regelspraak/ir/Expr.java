@@ -352,19 +352,19 @@ public sealed interface Expr {
 
     /** A reference or sub-expression the resolver could not bind to the model.
      *
-     *  <p>{@code reason} is the Dutch sentence the frontend raises as a WARNING over this marker when it
+     *  <p>{@code reason} is the sentence the frontend raises as a WARNING over this marker when it
      *  SURVIVES into the finished model — see {@link Condition.Unresolved#reason()} for why the reason
      *  travels on the node instead of being reported where the node is built, and why null means "the
      *  producing route already speaks for itself". Never serialised: the wire writes {@code node},
      *  {@code type} and {@code source}. */
-    record Unresolved(Datatype type, Source source, String reason) implements Expr {}
+    record Unresolved(Datatype type, Source source, Object reason) implements Expr {}
 
     /** Every {@link Unresolved} inside {@code e}, in structural order, handed to {@code result} as its
      *  {@code (bron, reden)} pair — the {@link Expr} half of the survivor traversal
      *  {@link Condition#collectUnresolved} drives. Walks every Expr-carrying component, and reaches a
      *  functie's filter and an if-then-else's guard back through the {@link Condition} half. Null-safe.
      *  EXHAUSTIVE over the sealed union, for the reason {@link #contains} states. */
-    static void collectUnresolved(Expr e, java.util.function.BiConsumer<Source, String> result) {
+    static void collectUnresolved(Expr e, java.util.function.BiConsumer<Source, Object> result) {
         if (e == null) return;
         switch (e) {
             case Unresolved o -> result.accept(o.source(), o.reason());

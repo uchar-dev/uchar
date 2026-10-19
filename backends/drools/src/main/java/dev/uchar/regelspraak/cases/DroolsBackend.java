@@ -222,24 +222,24 @@ public final class DroolsBackend {
         if (displacements.isEmpty()) return;
         Reason role = FactModelGenerator.roleCollision(displacements);
         if (role != null) throw new Excluded(role);
-        Map<ProducerConsumer.ElementKey, String> use = new java.util.HashMap<>();
+        Map<ProducerConsumer.ElementKey, Msg> use = new java.util.HashMap<>();
         for (ProducerConsumer.Form v : ProducerConsumer.forms(model, loaded.prioritizedDefaults(),
                 ProducerConsumer.wireNavigation(loaded))) {
-            String formName = v.category().name().toLowerCase(java.util.Locale.ROOT) + " '" + v.naam() + "'";
+            Msg formName = Msg.drools("PART.form-named." + v.category().name().toLowerCase(java.util.Locale.ROOT), "name", v.naam());
             for (ProducerConsumer.ElementKey e : v.writes()) use.putIfAbsent(e, formName);
             for (ProducerConsumer.ElementKey e : v.reads()) use.putIfAbsent(e, formName);
         }
         for (ResolvedStartPointDetermination sp : model.resolvedStartPointDeterminations)
             use.putIfAbsent(ProducerConsumer.elementOf(model.objectTypeByName(sp.objectType()), sp.member(), false),
-                    "de startpuntbepaling van tijdlijn '" + sp.tijdlijn() + "'");
+                    Msg.drools("PART.desc.start-point", "timeline", sp.tijdlijn()));
         for (FactModelGenerator.Displacement v : displacements) {
             FactModelGenerator.Origin h = v.displaced();
             // a role without a field of its own is refused where it is used, by the gate that asks the field's name
             // and type (FactModelGenerator.hasReferenceField); rolbotsing above took the one shape that gate passes
             if (h.category() == FactModelGenerator.Origin.Kind.ROL) continue;
-            String formName = use.get(ProducerConsumer.ElementKey.van(h.source(), h.naam(),
+            Msg formName = use.get(ProducerConsumer.ElementKey.van(h.source(), h.naam(),
                     h.category() == FactModelGenerator.Origin.Kind.KENMERK));
-            if (formName != null) throw new Excluded(DroolsCode.BEAN_NAME_COLLISION_USE.reason("reason", FactModelGenerator.displacementReason(v).text(), "form", formName));
+            if (formName != null) throw new Excluded(DroolsCode.BEAN_NAME_COLLISION_USE.reason("reason", FactModelGenerator.displacementReason(v).msg(), "form", formName));
         }
     }
 

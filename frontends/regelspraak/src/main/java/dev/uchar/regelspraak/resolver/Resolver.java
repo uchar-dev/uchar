@@ -91,7 +91,7 @@ public final class Resolver {
      * {@code IrEmitter} serialises: a marker unreachable from those never reaches a consumer either.
      */
     private static void reportUnresolved(RegelSpraakModel m) {
-        java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Source, String> report = (sourceText, reason) -> {
+        java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Source, Object> report = (sourceText, reason) -> {
             if (reason == null) return;
             m.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-092", params("reason", reason, "expression", sourceText),
                     sourceText == null ? 0 : sourceText.line()));
@@ -119,7 +119,7 @@ public final class Resolver {
      *  form 2), so a guard is walked with {@link Condition#eachConjunctOnce} and each node reported once: one
      *  marker in a base's condition is one WARNING, not one per exception above it. */
     private static void reportDefaults(java.util.List<dev.uchar.regelspraak.ir.Default> defaults,
-                                     java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Source, String> report,
+                                     java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Source, Object> report,
                                      java.util.Set<Condition> seen) {
         if (defaults == null) return;
         for (var d : defaults) {

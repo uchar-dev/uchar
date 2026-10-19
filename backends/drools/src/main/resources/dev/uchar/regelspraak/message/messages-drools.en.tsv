@@ -363,3 +363,63 @@ FRAME.with-snippet	{sentence}: {snippet}
 PART.and	and
 PART.member-kind.attribute	attribute
 PART.member-kind.characteristic-kind	characteristic
+PART.desc.time-dependent-target	a time-dependent target
+PART.desc.pro-rata-part	a pro rata part ('{snippet}')
+PART.desc.day-count	a day count ('{snippet}')
+PART.desc.unique-key	a uniqueness key '{key}' of {type} on a timeline
+PART.allocation-role.pot	the pot
+PART.allocation-role.share	the share
+PART.allocation-role.remainder	the remainder
+PART.allocation-role.weight	the weight
+PART.allocation-role.maximum	the maximum
+PART.desc.allocation	the allocation '{name}'
+PART.desc.fact-creation-path	the path of the fact creation '{name}'
+PART.desc.day-kind-duration	a duration in day kinds ('{snippet}')
+PART.desc.day-kind-spelling	a {spelling} in day kinds ('{snippet}')
+PART.desc.dimension-cell-read	a DimensionCellRead
+PART.desc.dimension-aggregation	an Aggregation over a dimension selection
+PART.desc.set-source-head	fold {kind} over the set source '{attribute}' of {element}: those members are of type {type}
+PART.desc.own-total	a total over its own timeline ('{snippet}')
+PART.desc.member-total	a total per member ('{snippet}')
+PART.desc.member-total-plain	a total per member
+PART.desc.read	the read '{snippet}'
+PART.desc.characteristic-check	the characteristic check '{snippet}'
+PART.desc.whole-period-characteristic-check	a CharacteristicCheck with wholePeriod ('{snippet}')
+PART.desc.whole-period-comparison	a Comparison with wholePeriod ('{snippet}')
+PART.desc.whole-period-predicate	a Predicate with wholePeriod ('{snippet}')
+PART.desc.start-point	the start point determination of timeline '{timeline}'
+PART.form-named.regel	rule '{name}'
+PART.form-named.objectcreatie	object creation '{name}'
+PART.form-named.verdeling	allocation '{name}'
+PART.form-named.consistentie	consistency '{name}'
+PART.form-named.uniciteit	uniqueness '{name}'
+PART.form-named.feitcreatie	fact creation '{name}'
+PART.form-named.defaultsgroep	defaults group '{name}'
+PART.origin.attribute	the attribute '{name}' of {source}
+PART.origin.characteristic	the characteristic '{name}' of {source}
+PART.origin.role	the role '{name}'
+PART.origin.role-of-fact-type	the role '{name}' (fact type '{source}')
+PART.helper-class.segment	the segments of a timeline
+PART.helper-class.inconsistency	an inconsistency
+PART.role-multi-valued	the role '{role}' on {carrier} is multi-valued, so its storage is the field on the far side
+PART.range-join-multi-valued	aggregation range: the wire binding points at the role '{role}', whose sister role '{sister}' is MULTI-VALUED — that name would be the reference field on {type}, but the storage of a multi-valued role lies on the far side, so that field does not exist (§13.3.9 storage direction)
+PART.none	none
+PART.membership-unresolved	role membership unresolved: the binding ({binding}) names no declared role
+PART.membership-both-multi-valued	role membership ({factType}, {role}): both roles are multi-valued, so no bean carries the link (§13.3.9 storage direction)
+PART.allocation-join-unresolved	connecting role unresolved: the binding ({factType}, {role}) names no declared role
+PART.cycle.item	across {nodes} via {forms}
+PART.cycle.negation	{consumer} reads {node} negatively of {producer}, which is reachable from {consumer}
+PART.cycle.form.rule	the rule "{name}"
+PART.cycle.form.object-creation	the object creation "{name}"
+PART.cycle.form.allocation	the allocation "{name}"
+PART.cycle.form.consistency	the consistency rule "{name}"
+PART.cycle.form.uniqueness	the uniqueness rule "{name}"
+PART.cycle.form.fact-creation	the fact creation "{name}"
+PART.cycle.form.defaults-group	the defaults group "{name}"
+PART.cycle.member	the member {name}
+PART.cycle.members	the members {names}
+PART.cycle.node	{name}
+PART.cycle.nodes	the nodes {names}
+PART.cycle.channel	the channel of "{rule}"
+PART.cycle.population	the population of {type}
+PART.cycle.relation	the relation {factType}

@@ -213,7 +213,7 @@ public sealed interface Condition {
      *  Membership and period tests have left this node for {@link CharacteristicCheck},
      *  {@link RoleMembership}, {@link FarRoleMembership} and {@link TimeWindow}.
      *
-     *  <p>{@code reason} is that reason in so many words — the Dutch sentence the frontend raises as a
+     *  <p>{@code reason} is that reason in so many words — the sentence the frontend raises as a
      *  WARNING over every marker that SURVIVES into the finished model (maintainer decision 2026-09-19:
      *  a marker keeps the document emittable, but the author is told what stayed unresolved and why).
      *  It travels ON the node rather than being reported where the node is built, because a marker is
@@ -221,8 +221,11 @@ public sealed interface Condition {
      *  serialised — the wire writes {@code node} plus {@code source} — so carrying it moves no byte.
      *
      *  <p>null means the producing route already raises its OWN diagnostic for this marker; the sweep
-     *  then stays quiet rather than saying it twice. */
-    record Unresolved(Source source, String reason) implements Condition {}
+     *  then stays quiet rather than saying it twice.
+     *
+     *  <p>The reason is a {@code Msg} of the frontend catalogue, so that the warning renders in either language;
+     *  it is typed {@code Object} because a test builds a marker with a plain string. */
+    record Unresolved(Source source, Object reason) implements Condition {}
 
     /** Every {@link Unresolved} inside {@code c}, in structural order, handed to {@code result} as its
      *  {@code (bron, reden)} pair — the traversal the frontend's survivor report runs over the finished
@@ -232,7 +235,7 @@ public sealed interface Condition {
      *  <p>The switch is EXHAUSTIVE over the sealed union — no {@code default} arm — for the reason
      *  {@link Expr#contains} spells out: a missing arm under-reports in silence, which is precisely the
      *  failure this traversal exists to end. */
-    static void collectUnresolved(Condition c, java.util.function.BiConsumer<Source, String> result) {
+    static void collectUnresolved(Condition c, java.util.function.BiConsumer<Source, Object> result) {
         if (c == null) return;
         switch (c) {
             case Unresolved o -> result.accept(o.source(), o.reason());

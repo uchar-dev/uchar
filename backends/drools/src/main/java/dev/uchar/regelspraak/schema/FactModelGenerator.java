@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.schema;
 
+import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.FactType;
@@ -47,11 +48,12 @@ public final class FactModelGenerator {
         public enum Kind { ATTRIBUUT, KENMERK, ROL }
 
         /** The declaration in the words of a refusal. */
-        public String description() {
+        public Msg description() {
             return switch (category) {
-                case ATTRIBUUT -> "het attribuut '" + naam + "' van " + source;
-                case KENMERK -> "het kenmerk '" + naam + "' van " + source;
-                case ROL -> "de rol '" + naam + "'" + (source == null ? "" : " (feittype '" + source + "')");
+                case ATTRIBUUT -> Msg.drools("PART.origin.attribute", "name", naam, "source", source);
+                case KENMERK -> Msg.drools("PART.origin.characteristic", "name", naam, "source", source);
+                case ROL -> source == null ? Msg.drools("PART.origin.role", "name", naam)
+                        : Msg.drools("PART.origin.role-of-fact-type", "name", naam, "source", source);
             };
         }
     }
@@ -292,8 +294,8 @@ public final class FactModelGenerator {
     }
 
     /** The classes the generator writes into {@link #PACKAGE} itself, with what each is for. */
-    private static final Map<String, String> HELPER_CLASSES =
-            Map.of("Segment", "de segmenten van een tijdlijn", "Inconsistentie", "een inconsistentie");
+    private static final Map<String, Msg> HELPER_CLASSES =
+            Map.of("Segment", Msg.drools("PART.helper-class.segment"), "Inconsistentie", Msg.drools("PART.helper-class.inconsistency"));
 
     /** Why the object types of {@code model} do not each get a fact class of their own, or null when they do:
      *  two types on one class name ({@code Namen.ident} is not injective, while WF-001 compares the names
@@ -482,13 +484,12 @@ public final class FactModelGenerator {
         Objecttype far = model.objectTypeByName(targetName.naam);
         String sister = model.connectingRoleViaElementName(carrier, role);
         boolean otherSideCarries = sister != null && far != null && hasReferenceField(model, far, sister, carrier);
-        String sentence = "de rol '" + role + "' op " + carrier.naam + " is meervoudig, dus haar opslag is het veld aan de"
-                + " overzijde";
+        Msg sentence = Msg.drools("PART.role-multi-valued", "role", role, "carrier", carrier.naam);
         if (otherSideCarries) return DroolsCode.ROLE_MULTI_FAR_SIDE.reason("sentence", sentence);
         // A TO-ONE sister whose field is missing is no cardinality defect: its field was taken, by a member or by
         // another role, and saying "both sides to-many" there names a cause the document does not have.
         if (sister != null && far != null && !model.toManyRole(far, carrier, sister))
-            return DroolsCode.SISTER_FIELD_MISSING.reason("sentence", sentence, "reason", noReferenceFieldReason(model, far, sister, carrier).text());
+            return DroolsCode.SISTER_FIELD_MISSING.reason("sentence", sentence, "reason", noReferenceFieldReason(model, far, sister, carrier).msg());
         return DroolsCode.BOTH_SIDES_MULTI_VALUED.reason("sentence", sentence);
     }
 
@@ -644,7 +645,7 @@ public final class FactModelGenerator {
     /** What {@link #rangeJoin} decided: the scalar join ROLE the wire binding yields, or the REASON it yields
      *  none. Exactly one of the two is non-null; both null means the wire named no range at all, and the caller's
      *  own generic refusal — the one it gave before there were bindings — stands unchanged. */
-    public record RangeJoin(String role, String refusal) {}
+    public record RangeJoin(String role, Msg refusal) {}
 
     /**
      * THE fold RANGE a ch. 4.3 wire binding yields — the one derivation both transpiler branches read at every
@@ -667,10 +668,8 @@ public final class FactModelGenerator {
         Role[] pair = boundRolePair(model, rb);
         if (pair == null) return new RangeJoin(null, null);        // no range on the wire -> the caller's own refusal
         if (!pair[1].meervoudig()) return new RangeJoin(pair[1].naam(), null);
-        return new RangeJoin(null, "aggregatie-bereik: de wire-binding wijst de rol '" + pair[0].naam()
-                + "' aan, wiens zusterrol '" + pair[1].naam() + "' MEERVOUDIG is — die naam zou het referentieveld"
-                + " op " + pair[0].objecttypeNaam() + " zijn, maar de opslag van een meervoudige rol ligt aan de"
-                + " overzijde, dus dat veld bestaat niet (§13.3.9 opslagrichting)");
+        return new RangeJoin(null, Msg.drools("PART.range-join-multi-valued", "role", pair[0].naam(), "sister", pair[1].naam(),
+                "type", pair[0].objecttypeNaam()));
     }
 
     /** The walk a navigated read's wire bindings name: per hop the reached role (hence the bean field on the type
@@ -777,7 +776,7 @@ public final class FactModelGenerator {
      *  ({@code opSubject}: the subject's field names the other end) or on the other end (its field names the
      *  subject), and the other role's declared filler {@code ander}; or the {@code refusal} when no field holds
      *  it. */
-    public record MembershipStorage(String beanField, boolean opSubject, Objecttype otherType, String refusal) {}
+    public record MembershipStorage(String beanField, boolean opSubject, Objecttype otherType, Msg refusal) {}
 
     /**
      * IR-SPEC ch. 4.5 {@code RoleMembership}: "a link of the fact type exists in which the subject plays the role".
@@ -790,18 +789,18 @@ public final class FactModelGenerator {
     public static MembershipStorage membershipStorage(RegelSpraakModel model, RegelSpraakModel.RoleBindingRef rb) {
         Role[] pair = boundRolePair(model, rb);
         if (pair == null)
-            return new MembershipStorage(null, false, null, "rollidmaatschap onopgelost: de binding ("
-                    + (rb == null ? "geen" : rb.factType() + ", " + rb.role()) + ") noemt geen gedeclareerde rol");
+            return new MembershipStorage(null, false, null, Msg.drools("PART.membership-unresolved", "binding",
+                    rb == null ? Msg.drools("PART.none") : rb.factType() + ", " + rb.role()));
         Objecttype otherType = model.objectTypeByName(pair[1].objecttypeNaam());
         if (!pair[1].meervoudig()) return new MembershipStorage(pair[1].naam(), true, otherType, null);
         if (!pair[0].meervoudig()) return new MembershipStorage(pair[0].naam(), false, otherType, null);
-        return new MembershipStorage(null, false, otherType, "rollidmaatschap (" + rb.factType() + ", " + rb.role()
-                + "): beide rollen zijn meervoudig, dus geen bean draagt de link (§13.3.9 opslagrichting)");
+        return new MembershipStorage(null, false, otherType, Msg.drools("PART.membership-both-multi-valued",
+                "factType", rb.factType(), "role", rb.role()));
     }
 
     /** What {@link #allocationJoin} decided: the join ROLE, or the REASON there is none. Both null means there is
      *  no binding to read, and the caller's own "onopgelost" refusal stands. */
-    public record AllocationJoin(String role, String refusal) {}
+    public record AllocationJoin(String role, Msg refusal) {}
 
     /**
      * THE recipient join of a §9.7 verdeling — the one derivation both transpiler branches decide it by. The wire's
@@ -817,8 +816,7 @@ public final class FactModelGenerator {
         if (source == null || targetName == null || rb == null) return new AllocationJoin(null, null);
         Role[] pair = boundRolePair(model, rb);
         if (pair == null)
-            return new AllocationJoin(null, "verbindende rol onopgelost: de binding (" + rb.factType() + ", "
-                    + rb.role() + ") noemt geen gedeclareerde rol");
+            return new AllocationJoin(null, Msg.drools("PART.allocation-join-unresolved", "factType", rb.factType(), "role", rb.role()));
         return new AllocationJoin(pair[1].naam(), null);
     }
 

@@ -243,8 +243,7 @@ final class ExpressionBuilder {
 
     // ---------------- §13.4.16/.17 expressie ----------------
     Expr build(ExpressieContext e) {
-        if (e == null) return unresolvedMarker(e,
-                "er is geen expressie om te bouwen — de ontleding leverde op deze plaats geen boom op");
+        if (e == null) return unresolvedMarker(e, Msg.frontend("RGS-092.no-expression"));
         Source source = source(e);
         if (e instanceof PrimaireExprContext p) return buildPrimary(p.primaireExpressie());
         if (e instanceof SomExprContext s) {
@@ -292,9 +291,7 @@ final class ExpressionBuilder {
         }
         // GEEN GETUIGE: expressie heeft zeven gelabelde takken en alle zeven staan hierboven, dus geen
         // enkele ontleding — ook geen herstelde — bereikt deze regel. Gemeten 2026-09-19.
-        return unresolvedMarker(e,
-                "deze expressievorm wordt niet naar IR omgezet — zij is geen som, product, macht, percentage, "
-                + "afronding, begrenzing of primaire expressie (§13.4.16/.17)");
+        return unresolvedMarker(e, Msg.frontend("RGS-092.expression-form"));
     }
 
     /** Arithmetic node whose result datatype is taken from the typeringen matrix
@@ -351,7 +348,7 @@ final class ExpressionBuilder {
 
     /** Where a count can take a fraction in, and why: {@code site} is the sub-expression that brings it, in the
      *  author's words. */
-    private record Rational(Expr site, String reason) {}
+    private record Rational(Expr site, Msg reason) {}
 
     /** Whether the value of {@code e} can carry a fraction, judged from its form alone (no case value): the first
      *  place that brings one in, or null when the value is whole by construction. The declared type is not enough
@@ -361,15 +358,15 @@ final class ExpressionBuilder {
     private Rational rational(Expr e) {
         if (e == null) return null;
         return switch (e) {
-            case Expr.Literal l -> hasRational(l) ? new Rational(l, "heeft een breuk") : null;
+            case Expr.Literal l -> hasRational(l) ? new Rational(l, Msg.frontend("PART.fraction-literal")) : null;
             case Expr.Rounding a -> a.decimalen() > 0
-                    ? new Rational(a, "is afgerond op " + a.decimalen() + " decimalen") : null;
+                    ? new Rational(a, Msg.frontend("PART.fraction-rounded", "decimals", a.decimalen())) : null;
             case Expr.Clamp b -> first(rational(b.base()), rational(b.minimum()), rational(b.maximum()),
                     conversion(b.minimum(), b.type()), conversion(b.maximum(), b.type()));
             case Expr.Binary b -> switch (b.op()) {
-                case GEDEELD_DOOR, GEDEELD_DOOR_ABS -> new Rational(b, "is een deling");
-                case PERCENTAGE_VAN -> new Rational(b, "is een percentage");
-                case TOT_DE_MACHT -> new Rational(b, "is een macht");
+                case GEDEELD_DOOR, GEDEELD_DOOR_ABS -> new Rational(b, Msg.frontend("PART.fraction-division"));
+                case PERCENTAGE_VAN -> new Rational(b, Msg.frontend("PART.fraction-percentage"));
+                case TOT_DE_MACHT -> new Rational(b, Msg.frontend("PART.fraction-power"));
                 case PLUS, MIN, VERMINDERD_MET -> first(rational(b.left()), rational(b.right()),
                         conversion(b.right(), b.type()));
                 case MAAL -> first(rational(b.left()), rational(b.right()), denominatorConversion(b));
@@ -378,9 +375,9 @@ final class ExpressionBuilder {
                 case AANTAL, AANTAL_GEVULDE, TIJDSDUUR, ABSOLUTE_TIJDSDUUR, AANTAL_DAGEN_IN, JAAR_UIT, MAAND_UIT,
                      DAG_UIT, UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT, EERSTE_PAASDAG, DATUM_MET,
                      DATUMTIJD_MET, CONCATENATIE -> null;
-                case TOTAAL -> new Rational(f, "is een totaal over de tijd");
-                case TIJDSEVENREDIG_DEEL -> new Rational(f, "is een tijdsevenredig deel");
-                case WORTEL -> new Rational(f, "is een wortel");
+                case TOTAAL -> new Rational(f, Msg.frontend("PART.fraction-total"));
+                case TIJDSEVENREDIG_DEEL -> new Rational(f, Msg.frontend("PART.fraction-pro-rata"));
+                case WORTEL -> new Rational(f, Msg.frontend("PART.fraction-root"));
                 case SOM, MINIMUM, MAXIMUM, EERSTE, LAATSTE, ABSOLUTE_WAARDE -> {
                     Rational result = null;
                     for (Expr a : f.arguments()) result = first(result, rational(a), conversion(a, f.type()));
@@ -413,8 +410,8 @@ final class ExpressionBuilder {
     /** A read takes the fraction its declared type admits: a number with decimals, or the unbounded "getal". */
     private static Rational typeRational(Expr e) {
         if (!(e.type() instanceof Datatype.Numeriek n) || n.geheel()) return null;
-        return new Rational(e, n.decimalen() > 0 ? "is een getal met " + n.decimalen() + " decimalen"
-                : "is een getal zonder vast aantal decimalen");
+        return new Rational(e, n.decimalen() > 0 ? Msg.frontend("PART.fraction-decimals", "decimals", n.decimalen())
+                : Msg.frontend("PART.fraction-unbounded"));
     }
 
     private static boolean hasRational(Expr.Literal l) {
@@ -445,8 +442,7 @@ final class ExpressionBuilder {
         // a literal's count is known, so its restatement is too: 12 mnd is exactly 1 jr
         java.math.BigDecimal[] r = sub instanceof Expr.Literal l ? dev.uchar.regelspraak.model.RationalParser.van(l.valueText()) : null;
         if (r != null && r[0].multiply(f[0]).remainder(r[1].multiply(f[1])).signum() == 0) return null;
-        return new Rational(sub, "wordt naar " + target.rendering() + " omgerekend (een " + van.rendering()
-                + " is een breuk van een " + target.rendering() + ")");
+        return new Rational(sub, Msg.frontend("PART.fraction-conversion", "target", target.rendering(), "from", van.rendering()));
     }
 
     /** A rate times a quantity restates the quantity into the rate's denominator (Typing's product arm). */
@@ -600,8 +596,7 @@ final class ExpressionBuilder {
         // GEEN GETUIGE: ANTLR kiest de primaireExpr-tak van `expressie` pas NA een geslaagde match, dus
         // een PrimaireExprContext zonder kind is niet te produceren. De zusterwacht in build(e) is wel
         // bereikbaar (zie SilentMarkerTest). Gemeten 2026-09-19.
-        if (p == null) return unresolvedMarker(p,
-                "er is geen primaire expressie om te bouwen — de ontleding leverde op deze plaats geen boom op");
+        if (p == null) return unresolvedMarker(p, Msg.frontend("RGS-092.no-primary"));
         Source source = source(p);
         if (p.getalWaarde() != null) {
             GetalWaardeContext g = p.getalWaarde();
@@ -726,9 +721,7 @@ final class ExpressionBuilder {
             return poss != null ? poss : nameRef(src(p.onderwerp()), false, source);
         }
         if (p.variabeleNaam() != null)  return nameRef(src(p.variabeleNaam()), true, source);
-        return unresolvedMarker(p,
-                "deze primaire expressie bindt geen literal, geen parameter, geen variabele, geen attribuut "
-                + "van een onderwerp en geen functieaanroep (§13.4.17)");
+        return unresolvedMarker(p, Msg.frontend("RGS-092.primary-form"));
     }
 
     /** §13.4.17.12 "het percentage P van ( Y )" without '%' (grammar/DIVERGENCES.md, "The percentage forms"): the
@@ -1112,7 +1105,7 @@ final class ExpressionBuilder {
             List<String> steps = countSourceSteps(cf.primaireExpressie(0));
             if (steps != null && steps.size() > 1) {
                 RegelSpraakModel.Diagnostic error = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                        "RGS-072", params("expression", source.snippet(), "reason", countPath(steps, "deze frontend telt alleen over één relatie vanaf het onderwerp (IR-SPEC ch. 4.3, WF-102 (c))")),
+                        "RGS-072", params("expression", source.snippet(), "reason", countPath(steps, Msg.frontend("PART.count-norm-frontend"))),
                         f.getStart().getLine());
                 if (!model.diagnostics.contains(error)) model.diagnostics.add(error);
             }
@@ -1758,7 +1751,7 @@ final class ExpressionBuilder {
     /** The outcome of resolving a §5.6 subselectie on the quantifier-fold position: exactly one of the
      *  two is non-null. {@code reason} is the sentence the caller's refusal quotes, so the refusal names
      *  the axis the subselectie was declined on rather than one generic text for every shape. */
-    record Subselection(Condition filter, String reason) {}
+    record Subselection(Condition filter, Msg reason) {}
 
     /**
      * Give a subselectie back to {@code checkPartSelections}. {@link #subselection} books the predicate as
@@ -1784,8 +1777,7 @@ final class ExpressionBuilder {
         if (p.samengesteldPredicaat() != null) {
             Condition c = compoundFilter != null ? compoundFilter.resolve(p.samengesteldPredicaat(), elem) : null;
             return c != null ? new Subselection(c, null)
-                    : new Subselection(null, "zij bindt geen samengestelde voorwaarde van " + elem.naam
-                            + " (§13.4.13.4, IR-SPEC ch. 4.5)");
+                    : new Subselection(null, Msg.frontend("PART.subselection-no-compound", "element", elem.naam));
         }
         Condition filter = elementCharacteristicCheckFilter(p, elem);
         if (filter != null) return new Subselection(filter, null);
@@ -1801,14 +1793,10 @@ final class ExpressionBuilder {
         // so there is no operand for a getalpredicaat to re-anchor on; it falls into the reason below.
         filter = elementComparison(p, elem, quantified == null ? List.of() : List.of(quantified));
         if (filter == null)
-            return new Subselection(null, "zij bindt geen kenmerk of getalpredicaat van " + elem.naam
-                    + " (§5.6, IR-SPEC ch. 4.5)");
+            return new Subselection(null, Msg.frontend("PART.subselection-no-predicate", "element", elem.naam));
         if (quantified instanceof Expr.AttributeReference q && q.objectType() != null
                 && q.objectType().granularityOf(q.attribute()) != null)
-            return new Subselection(null, "een getalpredicaat over het gekwantificeerde attribuut '"
-                    + q.attribute() + "' heeft hier geen lezing: dat attribuut is TIJDSAFHANKELIJK, en een "
-                    + "tijdlijn in een scalaire sleuf heeft er geen (ch. 3.3) — de knoop draagt de vorm wel, "
-                    + "over een niet-temporeel attribuut levert deze schrijfpositie hem ook");
+            return new Subselection(null, Msg.frontend("PART.subselection-time-dependent", "attribute", q.attribute()));
         return new Subselection(filter, null);
     }
 
@@ -1828,7 +1816,7 @@ final class ExpressionBuilder {
      *  operand list under a count, in the verifier's sentence) and why the form that WOULD have carried
      *  this sentence does not apply. Set by {@link #buildInstanceUnion} on every null return and read immediately
      *  after, the {@code aggregatieReden} contract the Drools backend uses on the same kind of question. */
-    private String unionRefusal;
+    private Msg unionRefusal;
 
     /** §5.7/§4.11 build the CONCATENATION of subject expressions under "het aantal" as an
      *  {@link Expr.InstanceSetUnion} — one selection per operand, each with its own population, its
@@ -1861,17 +1849,14 @@ final class ExpressionBuilder {
             if (el == null) return null;          // a VALUE operand: the arity refusal owns this sentence
             if (shared == null) shared = el;
             else if (shared != el) {
-                unionRefusal = "de selecties tellen over verschillende populaties ('" + shared.naam
-                        + "' en '" + el.naam + "'); één telling antwoordt een aantal over ÉÉN gedeclareerd"
-                        + " type, en of twee selecties dan een instantie kunnen delen is een vraag over de"
-                        + " subtypelattice die de deduplicatie zou moeten beantwoorden (WF-110 (d))";
+                unionRefusal = Msg.frontend("PART.union-populations", "first", shared.naam, "second", el.naam);
                 return null;
             }
             // a selection over a written path would take its range from the type pair below, dropping its steps
             List<String> steps = op instanceof PrimaireExpressieContext pe ? countSourceSteps(pe) : null;
             if (steps != null && steps.size() > 1) {
-                unionRefusal = "selectie " + (i + 1) + " ('" + src((ParserRuleContext) op) + "') is " + countPath(steps,
-                        "een selectie telt over één relatie vanaf het onderwerp (IR-SPEC ch. 4.3, WF-110 (e))");
+                unionRefusal = Msg.frontend("PART.union-selection-path", "n", i + 1, "source", src((ParserRuleContext) op),
+                        "path", countPath(steps, Msg.frontend("PART.count-norm-selection")));
                 return null;
             }
             String word = writtenElementWord(op);
@@ -1893,10 +1878,7 @@ final class ExpressionBuilder {
             // business, and it writes the result out explicitly either way.
             if (rb == null && huidigSubject != null) rb = model.connectingRoleBinding(huidigSubject, el);
             if (rb == null) {
-                unionRefusal = "de relatie van selectie " + (i + 1) + " ('" + word + "') is niet"
-                        + " eenduidig af te leiden; elke selectie van een unie noemt haar eigen relatie,"
-                        + " want ze delen alle één typenpaar en een afgeleide reikwijdte zou ze"
-                        + " ononderscheidbaar maken (WF-110 (e))";
+                unionRefusal = Msg.frontend("PART.union-relation", "n", i + 1, "word", word);
                 return null;
             }
             PredicaatContext p = findSubselectionPredicate(op);
@@ -1904,10 +1886,7 @@ final class ExpressionBuilder {
             if (p != null) {
                 filter = elementCharacteristicCheckFilter(p, el);
                 if (filter == null) {
-                    unionRefusal = "de 'die/dat'-subselectie van selectie " + (i + 1) + " ('" + src(p)
-                            + "') lost niet op naar een kenmerk van '" + el.naam + "'; een stilzwijgend"
-                            + " weggelaten filter zou een te groot aantal tellen en de unie zou dat"
-                            + " opslokken (§5.6)";
+                    unionRefusal = Msg.frontend("PART.union-subselection", "n", i + 1, "source", src(p), "element", el.naam);
                     return null;
                 }
                 seen.add(p);
@@ -1971,9 +1950,8 @@ final class ExpressionBuilder {
     }
 
     /** The refusal of a count over a written path, after "is": the steps, and {@code norm}, what counts and where. */
-    private static String countPath(List<String> steps, String norm) {
-        return "een telling over een pad van " + steps.size() + " stappen (" + String.join(", ", steps) + "): " + norm
-                + "; schrijf de telling op het bereikte object of noem één relatie";
+    private static Msg countPath(List<String> steps, Msg norm) {
+        return Msg.frontend("PART.count-path", "count", steps.size(), "steps", String.join(", ", steps), "norm", norm);
     }
 
     /** The first "die/dat &lt;predicaat&gt;" subselectie anywhere in an operand subtree. */
@@ -2195,7 +2173,7 @@ final class ExpressionBuilder {
     private Typing.Coded countSourceError(List<Expr> arguments, FunctieAanroepContext f) {
         // one wire defect, the count without an element type, in the verifier's sentence; the Dutch context names
         // what the operand turned out to be where that tells the author more
-        String context = countAttributeCollision(arguments, f);
+        Msg context = countAttributeCollision(arguments, f);
         if (context == null) context = countOverObjectType(arguments, f);
         return new Typing.Coded("RGS-078",
                 params("expression", arguments.isEmpty() ? "" : source(f).snippet(), "context", context == null ? "" : context,
@@ -2217,13 +2195,13 @@ final class ExpressionBuilder {
      *  operand that resolved to NOTHING declared qualifies — a bare name kept as a {@link Expr.VariableRef}, or an
      *  unresolved one — so a parameter, a "Daarbij geldt" variable or an attribute that shares a type's name is
      *  never re-read. Null when the operand names no type. */
-    private String countOverObjectType(List<Expr> arguments, FunctieAanroepContext f) {
+    private Msg countOverObjectType(List<Expr> arguments, FunctieAanroepContext f) {
         if (!(f instanceof AantalFuncContext cf) || arguments.size() != 1) return null;
         if (!(arguments.get(0) instanceof Expr.VariableRef || arguments.get(0) instanceof Expr.Unresolved)) return null;
         String operand = src(cf.primaireExpressie(0)).replaceAll("^\\((.*)\\)$", "$1").trim();
         String kern = operand.replaceFirst("(?i)^(de|het|een|alle)\\s+", "");
         Objecttype type = PluralMatcher.findObjectType(model.objecttypen.values(), kern);
-        return type == null ? null : "over het objecttype " + type.naam;
+        return type == null ? null : Msg.frontend("PART.count-over-object-type", "type", type.naam);
     }
 
     /** The source-less count whose words also spell a DECLARED attribute: "het aantal gewogen posten
@@ -2236,12 +2214,12 @@ final class ExpressionBuilder {
      *  "het aantal" — a second reading would widen the language rather than resolve it. The refusal is
      *  {@link #countSourceError}'s, in the verifier's sentence; this names the collision in its Dutch context,
      *  so the author sees why a declared name is refused. Null when there is no such attribute. */
-    private String countAttributeCollision(List<Expr> arguments, FunctieAanroepContext f) {
+    private Msg countAttributeCollision(List<Expr> arguments, FunctieAanroepContext f) {
         if (!(f instanceof AantalFuncContext cf) || arguments.size() != 1
                 || !(arguments.get(0) instanceof Expr.AttributeReference a) || a.objectType() == null) return null;
         String naam = "aantal " + a.attribute();
         if (a.objectType().attribute(naam) == null) return null;
-        return "waar '" + naam + "' een gedeclareerd attribuut van " + a.objectType().naam + " is";
+        return Msg.frontend("PART.count-collision", "name", naam, "type", a.objectType().naam);
     }
 
     /** §4.19 Tabel 29 (eerste paasdag van): the single operand is "een numerieke expressie zonder eenheid ... altijd een
@@ -2679,8 +2657,7 @@ final class ExpressionBuilder {
         // `lidwoord? kaleNaam` (de naam is er dus altijd), en de rangtelwoord-vorm is hierboven al
         // afgehandeld — er blijft geen invoer over die hier uitkomt. Gemeten 2026-09-19.
         if (a == null || a.attribuutMetLidwoord() == null || a.attribuutMetLidwoord().kaleNaam() == null)
-            return unresolvedMarker(a,
-                    "de attribuutverwijzing noemt geen attribuutnaam met lidwoord (§13.4.2.9)");
+            return unresolvedMarker(a, Msg.frontend("RGS-092.attribute-reference"));
         String attr = src(a.attribuutMetLidwoord().kaleNaam());
         // §13.4.17.12/§6.8 "het percentage P van V" WITHOUT the '%': our grammar requires '%' on percentageVanExpr to
         // disambiguate from a 'van' navigation (grammar/DIVERGENCES.md, "The percentage forms"), so the no-'%' form
@@ -2901,10 +2878,10 @@ final class ExpressionBuilder {
      *  walked a chain of three segments or more and declined it, why — a clause about the written source
      *  ({@code refusal}) — and the way out a declaration gives where there is one ({@code exit}). The element type
      *  and both texts are null for every shape the walk does not decide, the one-step range among them. */
-    private record RangeWalk(java.util.List<RegelSpraakModel.RoleBindingRef> path, String refusal,
-                                   String exit, Objecttype element) {
+    private record RangeWalk(java.util.List<RegelSpraakModel.RoleBindingRef> path, Msg refusal,
+                                   Msg exit, Objecttype element) {
         static final RangeWalk GEEN = new RangeWalk(java.util.List.of(), null, null, null);
-        static RangeWalk refused(String refusal, String exit) {
+        static RangeWalk refused(Msg refusal, Msg exit) {
             return new RangeWalk(java.util.List.of(), refusal, exit, null);
         }
     }
@@ -2928,8 +2905,8 @@ final class ExpressionBuilder {
         if (segments.size() < 3) return RangeWalk.GEEN;
         String anchor = segments.get(segments.size() - 1);
         if (!anchorsSubject(anchor))
-            return RangeWalk.refused("'" + src(onderwerp) + "' begint bij '" + anchor
-                    + "' en niet bij het regelonderwerp " + huidigSubject.naam, null);
+            return RangeWalk.refused(Msg.frontend("PART.range-not-at-subject", "source", src(onderwerp), "anchor", anchor,
+                    "subject", huidigSubject.naam), null);
         java.util.List<RegelSpraakModel.RoleBindingRef> path = new java.util.ArrayList<>();
         Objecttype houder = huidigSubject;
         for (int i = segments.size() - 2; i >= 0; i--) {
@@ -2947,8 +2924,8 @@ final class ExpressionBuilder {
         // fact types could refuse the walk (grammar/DIVERGENCES.md §13.4.1).
         Objecttype written = elementNameObjectType(segments.get(0));
         if (written != null && written != houder && !written.isA(houder))
-            return RangeWalk.refused("'" + src(onderwerp) + "' komt via haar stappen uit bij " + houder.naam
-                    + ", maar de geschreven elementnaam is gelezen als " + written.naam, null);
+            return RangeWalk.refused(Msg.frontend("PART.range-element-mismatch", "source", src(onderwerp), "holder", houder.naam,
+                    "written", written.naam), null);
         return new RangeWalk(java.util.List.copyOf(path), null, null, written == null ? houder : written);
     }
 
@@ -2966,38 +2943,36 @@ final class ExpressionBuilder {
      *  back on (WF-102). Only that cause has a way out a declaration gives, so only it carries one. */
     private RangeWalk stepRefusal(OnderwerpContext onderwerp, Objecttype houder, String step) {
         RegelSpraakModel.StepCandidates k = model.stepCandidates(houder, step);
-        String head = "in '" + src(onderwerp) + "' bindt de stap '" + step + "' vanaf " + houder.naam + " geen rol: ";
+        java.util.function.Function<Msg, Msg> head = tail -> Msg.frontend("PART.step-refusal", "source", src(onderwerp),
+                "step", step, "holder", houder.naam, "tail", tail);
         if (k.declared().size() > 1)
-            return RangeWalk.refused(head + "'" + step + "' noemt er meer dan één ("
-                    + rollen(k.declared(), "") + ")", null);
+            return RangeWalk.refused(head.apply(Msg.frontend("PART.step-tail-ambiguous", "step", step,
+                    "roles", rollen(k.declared(), false))), null);
         if (k.declared().size() == 1)
-            return RangeWalk.refused(head + rollen(k.declared(), "") + " wordt gevuld door '"
-                    + k.declared().get(0).role().objecttypeNaam() + "', en dat is geen gedeclareerd objecttype",
-                    null);
+            return RangeWalk.refused(head.apply(Msg.frontend("PART.step-tail-undeclared-filler",
+                    "roles", rollen(k.declared(), false), "filler", k.declared().get(0).role().objecttypeNaam())), null);
         if (!k.derived().isEmpty())
-            return RangeWalk.refused(head + "'" + step + "' is geen gedeclareerde naam of gedeclareerd "
-                    + "meervoud, alleen het afgeleide meervoud (+s/+en) van " + rollen(k.derived(), "")
-                    + ", en een afgeleid meervoud bindt geen stap",
+            return RangeWalk.refused(head.apply(Msg.frontend("PART.step-tail-derived-plural", "step", step,
+                    "roles", rollen(k.derived(), false))),
                     k.derived().size() == 1
-                            ? "declareer het meervoud op de rol: '" + k.derived().get(0).role().naam() + " (mv: " + step
-                                    + ")'"
-                            : "declareer het meervoud op de rol die bedoeld is: '(mv: " + step + ")'");
+                            ? Msg.frontend("PART.step-exit-one", "role", k.derived().get(0).role().naam(), "step", step)
+                            : Msg.frontend("PART.step-exit-several", "step", step));
         if (!k.reciprocal().isEmpty())
-            return RangeWalk.refused(head + "'" + step + "' noemt " + rollen(k.reciprocal(), "wederkerige ")
-                    + ", en over een wederkerig feittype schrijft deze frontend geen stap", null);
-        return RangeWalk.refused(head + "geen rol die vanaf " + houder.naam + " te bereiken is, heet '" + step
-                + "' of declareert dat als meervoud", null);
+            return RangeWalk.refused(head.apply(Msg.frontend("PART.step-tail-reciprocal", "step", step,
+                    "roles", rollen(k.reciprocal(), true))), null);
+        return RangeWalk.refused(head.apply(Msg.frontend("PART.step-tail-none", "holder", houder.naam, "step", step)), null);
     }
 
     /** The candidates a step refusal names, each once: "de rol 'x' van het feittype 'f'", or "de rollen 'x' van het
      *  feittype 'f' en 'y' van het feittype 'g'". */
-    private static String rollen(java.util.List<RegelSpraakModel.StepCandidate> candidates, String category) {
-        java.util.List<String> parts = candidates.stream().distinct()
-                .map(k -> "'" + k.role().naam() + "' van het " + category + "feittype '" + k.factType().naam + "'")
+    private static Msg rollen(java.util.List<RegelSpraakModel.StepCandidate> candidates, boolean reciprocal) {
+        java.util.List<Msg> parts = candidates.stream().distinct()
+                .map(k -> Msg.frontend(reciprocal ? "PART.role-of-reciprocal-fact-type" : "PART.role-of-fact-type",
+                        "role", k.role().naam(), "factType", k.factType().naam))
                 .toList();
-        return parts.size() == 1 ? "de rol " + parts.get(0)
-                : "de rollen " + String.join(", ", parts.subList(0, parts.size() - 1)) + " en "
-                        + parts.get(parts.size() - 1);
+        return parts.size() == 1 ? Msg.frontend("PART.roles-one", "part", parts.get(0))
+                : Msg.frontend("PART.roles-several", "head", new Msg.Joined(parts.subList(0, parts.size() - 1), ", "),
+                        "last", parts.get(parts.size() - 1));
     }
 
     /** Whether the written anchor segment denotes the RULE SUBJECT — literally by object-type name, or
@@ -3108,12 +3083,12 @@ final class ExpressionBuilder {
      *  names the axis it declined on — the {@link Subselection} idiom, for the same reason: one generic
      *  text for every shape tells the author nothing. The other fields are then empty. */
     record QuantifiedSubject(Condition.Quantifier quantifier, int threshold, Objecttype element,
-                                    String subjectSource, String reason) {
+                                    String subjectSource, Msg reason) {
         QuantifiedSubject(Condition.Quantifier quantifier, int threshold, Objecttype element, String subjectSource) {
             this(quantifier, threshold, element, subjectSource, null);
         }
         /** A declined member phrase: the written source and the axis it was declined on. */
-        static QuantifiedSubject refused(String subjectSource, String reason) {
+        static QuantifiedSubject refused(String subjectSource, Msg reason) {
             return new QuantifiedSubject(null, 0, null, subjectSource, reason);
         }
     }
@@ -3150,26 +3125,20 @@ final class ExpressionBuilder {
         String members = src(a.attribuutMetLidwoord().kaleNaam());
         if (q == null)
             return !isDeclaredPlural(members) ? null : QuantifiedSubject.refused(src(a),
-                    "de zin leest als een kwantificatie over '" + members + "' maar schrijft geen kwantor: "
-                    + "de kale 'de' noemt één object en geen verzameling (§13.4.14.5 kent alle | geen van de "
-                    + "| ten minste/ten hoogste/precies <telwoord> van de), dus er valt niets te vouwen");
+                    Msg.frontend("PART.fold-bare-definite", "members", members));
         // exactly ONE written hop: a chain quantifies a set this lowering cannot spell (see above). The
         // greedy kaleNaam swallows an inner to-one step, so a written "van" on EITHER side of the hop —
         // in the member phrase or in the anchor — is what tells the two apart (the quantifier's own "van
         // de" is not part of either, which is why this is not counted over the whole phrase).
         if (isSetSubject(a.onderwerp()) || hasStep(members) || hasStep(src(a.onderwerp())))
             return QuantifiedSubject.refused(src(a),
-                    "een meerstapsbereik: de zin stapelt nog een verzameling onder de gekwantificeerde, en een "
-                    + "kwantorvouw noemt precies één relatie vanaf het regelonderwerp (IR-SPEC ch. 4.5) — de "
-                    + "eerste stap vouwen zou een andere verzameling kwantificeren dan de zin noemt");
+                    Msg.frontend("PART.fold-multi-step"));
         Objecttype elem = model.resolveObjectType(members);
         if (elem == null) elem = typeViaPlural(members);
         return elem != null
                 ? new QuantifiedSubject(q, writtenThreshold(a.kwantificatie()), elem, src(a))
                 : QuantifiedSubject.refused(src(a),
-                    "'" + members + "' is geen gedeclareerd objecttype en geen gedeclareerd meervoud daarvan, dus "
-                    + "het bereik van de kwantor ligt niet vast — kwantificeren over een onbekende populatie "
-                    + "zou een andere verzameling toetsen dan de zin noemt");
+                    Msg.frontend("PART.fold-unknown-population", "members", members));
     }
 
     /**
@@ -3350,9 +3319,7 @@ final class ExpressionBuilder {
         if (p == null) p = model.parameters.get(naam);
         if (p != null) return new Expr.ParameterRef(p, source);
         if (isVariable) return new Expr.VariableRef(naam, unknown(), source);
-        return unresolvedMarker(source,
-                "de naam '" + naam + "' is geen gedeclareerde parameter, geen variabele uit een "
-                + "'Daarbij geldt:'-deel en geen attribuut van het onderwerp (§11/§13.3.8)");
+        return unresolvedMarker(source, Msg.frontend("PART.unresolved-name", "name", naam));
     }
 
     /**
@@ -3477,9 +3444,7 @@ final class ExpressionBuilder {
 
     /** The reason an enumeratiewaarde marker carries until a position types it. One constant, because
      *  {@link #enumAgainstContext} recognises the marker by it. */
-    static final String REASON_ENUM_WITHOUT_DOMAIN =
-            "een enumeratiewaarde ontleent haar domein aan de context (§13.3.4.2), en deze plaats wijst er "
-            + "geen aan — geen schrijfdoel en geen vergelijkingszijde met een Enumeratie-datatype";
+    static final Msg REASON_ENUM_WITHOUT_DOMAIN = Msg.frontend("RGS-092.enum-without-domain");
 
     /** §13.2.14 an enumeratiewaarde, built as a MARKER that the positions below promote to a typed
      *  {@link Expr.Literal}. Marker-first is the fail-fast half of uchar's V8 decision (2026-09-19): the
@@ -3575,6 +3540,6 @@ final class ExpressionBuilder {
     /** An unresolved expression marker carrying its {@code reason} — the Dutch sentence the frontend's
      *  survivor report raises over it when it reaches the finished model. {@code null} where the calling
      *  route already raises its own diagnostic (see {@link Expr.Unresolved#reason()}). */
-    private Expr unresolvedMarker(ParserRuleContext ctx, String reason) { return new Expr.Unresolved(unknown(), source(ctx), reason); }
-    private Expr unresolvedMarker(dev.uchar.regelspraak.ir.Source source, String reason) { return new Expr.Unresolved(unknown(), source, reason); }
+    private Expr unresolvedMarker(ParserRuleContext ctx, Object reason) { return new Expr.Unresolved(unknown(), source(ctx), reason); }
+    private Expr unresolvedMarker(dev.uchar.regelspraak.ir.Source source, Object reason) { return new Expr.Unresolved(unknown(), source, reason); }
 }

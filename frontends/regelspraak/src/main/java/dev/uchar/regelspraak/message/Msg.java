@@ -28,7 +28,7 @@ public record Msg(Component component, String key, Map<String, Object> args) {
         Map<String, Object> m = new java.util.LinkedHashMap<>();
         for (int i = 0; i < nameValues.length; i += 2) {
             Object v = nameValues[i + 1];
-            m.put((String) nameValues[i], v instanceof Msg || v instanceof java.util.List || v instanceof Enumeration ? v : String.valueOf(v));
+            m.put((String) nameValues[i], v instanceof Msg || v instanceof java.util.List || v instanceof Enumeration || v instanceof Joined ? v : String.valueOf(v));
         }
         return m;
     }
@@ -39,6 +39,10 @@ public record Msg(Component component, String key, Map<String, Object> args) {
         /** The text in the default language of the component, for a string that is still put together by hand. */
         @Override public String toString() { return Messages.valueText(this, Messages.defaultLocale(component)); }
     }
+
+    /** The parts of a list rendered each in the language of the message around it and joined by {@code separator},
+     *  for a list that a sentence writes with something other than the "; " of a plain list. */
+    public record Joined(java.util.List<?> items, String separator) {}
 
     /** The text in the component's current default language ({@link Messages#defaultLocale}). */
     public String text() { return Messages.render(component, key, args); }

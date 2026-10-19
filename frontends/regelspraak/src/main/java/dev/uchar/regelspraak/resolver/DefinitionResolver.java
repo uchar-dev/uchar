@@ -277,12 +277,12 @@ public final class DefinitionResolver {
         for (Objecttype ot : model.objecttypen.values()) {
             if (ot.supertype == null) continue;
             List<Objecttype> ancestors = ot.chain().subList(1, ot.chain().size());
-            for (String a : ot.attributen.keySet()) reportShadow(ot, ancestors, "attribuut", a, true);
-            for (String k : ot.kenmerken) reportShadow(ot, ancestors, "kenmerk", k, false);
+            for (String a : ot.attributen.keySet()) reportShadow(ot, ancestors, Msg.frontend("PART.member-kind.attribute"), a, true);
+            for (String k : ot.kenmerken) reportShadow(ot, ancestors, Msg.frontend("PART.member-kind.characteristic-kind"), k, false);
         }
     }
 
-    private void reportShadow(Objecttype ot, List<Objecttype> ancestors, String category, String naam, boolean attribute) {
+    private void reportShadow(Objecttype ot, List<Objecttype> ancestors, Msg category, String naam, boolean attribute) {
         for (Objecttype v : ancestors) {
             boolean collides = attribute ? containsName(v.attributen.keySet(), naam) : containsName(v.kenmerken, naam);
             if (!collides) continue;
@@ -1111,7 +1111,7 @@ public final class DefinitionResolver {
             String rolNaam = src(rs.rolNaam());
             String plural = rs.meervoudsvorm() != null ? src(rs.meervoudsvorm()) : null; // declared "(mv: …)"
             if (!hersteld && !onPreviousLine.contains(rs))
-                reportUnreadableName("feittype '" + ft.naam + "'", "de rol", rolNaam, rs.getStart().getLine());
+                reportUnreadableName("feittype '" + ft.naam + "'", Msg.frontend("PART.member-category.role"), rolNaam, rs.getStart().getLine());
             if (!hersteld && rs.objectTypeNaam() != null && rs.objectTypeNaam().getStart() != null)
                 roleFillers.add(new RoleFiller(ft.naam, rolNaam, src(rs.objectTypeNaam()),
                         rs.objectTypeNaam().getStart().getLine()));
@@ -1233,9 +1233,9 @@ public final class DefinitionResolver {
         for (ObjectTypeMemberContext m : members) {
             if (refused.contains(m)) continue;
             if (m.attribuutSpecificatie() != null)
-                reportUnreadableName(carrier, "het attribuut", naam(m.attribuutSpecificatie().lowerNaam()), m.getStart().getLine());
+                reportUnreadableName(carrier, Msg.frontend("PART.member-category.attribute"), naam(m.attribuutSpecificatie().lowerNaam()), m.getStart().getLine());
             else if (m.kenmerkSpecificatie() != null)
-                reportUnreadableName(carrier, "het kenmerk", characteristicName(m.kenmerkSpecificatie()), m.getStart().getLine());
+                reportUnreadableName(carrier, Msg.frontend("PART.member-category.characteristic-kind"), characteristicName(m.kenmerkSpecificatie()), m.getStart().getLine());
         }
     }
 
@@ -1292,30 +1292,28 @@ public final class DefinitionResolver {
         HeadEnd head = headEnd(definitie, memberKind);
         if (head == null) return refused;
         Token preceding = head.token();
-        String previousSentence = "de kop";
+        Object previousSentence = Msg.frontend("PART.previous-head");
         boolean onName = head.onName(), onCharacteristic = false;
         boolean role = memberKind == RolSpecificatieContext.class;
         for (ParserRuleContext member : members) {
             Token begin = member.getStart(), end = member.getStop();
             if (begin == null || end == null || end.getTokenIndex() < begin.getTokenIndex()) continue;
-            String memberSentence = memberSentence(member);
+            Msg memberSentence = memberSentence(member);
             if (memberSentence != null && begin.getLine() == preceding.getLine()) {
                 String word = begin.getText();
-                String hint = "";
+                Object hint = "";
                 if (onName && keyWord(begin))
-                    hint = " — hoort '" + word + "' bij de naam, verbind het dan met een koppelteken aan het woord "
-                            + "ervoor ('" + preceding.getText() + "-" + word + "')";
+                    hint = Msg.frontend("PART.hyphen-hint-before", "word", word, "preceding", preceding.getText());
                 else if (onCharacteristic)
-                    hint = " — hoort 'kenmerk' bij de naam, verbind het dan met een koppelteken aan het woord erna "
-                            + "('kenmerk-" + word + "')";
+                    hint = Msg.frontend("PART.hyphen-hint-characteristic", "word", word);
                 error(
                         "RGS-028", params("carrier", carrier, "member", memberSentence, "word", word, "previousSentence", previousSentence, "preceding", preceding.getText(), "memberKind", Msg.frontend(role ? "RGS-028.role" : "RGS-028.member"), "hint", hint),
                         begin.getLine());
                 refused.add(member);
             }
             preceding = end;
-            previousSentence = memberSentence == null ? "de koptekst"
-                    : (role ? "de vorige rol " : "het vorige lid ") + memberSentence.substring(memberSentence.indexOf('\''));
+            previousSentence = memberSentence == null ? Msg.frontend("PART.previous-head-text")
+                    : Msg.frontend(role ? "PART.previous-role" : "PART.previous-member", "name", memberName(member));
             onName = role;                                  // a role ends on its filler, an object-type name
             onCharacteristic = !role && end.getType() == RegelSpraak.KENMERK;
         }
@@ -1323,12 +1321,19 @@ public final class DefinitionResolver {
     }
 
     /** "het attribuut 'naam'", "het kenmerk 'naam'" or "de rol 'naam'"; null for a heading. */
-    private String memberSentence(ParserRuleContext member) {
-        if (member instanceof RolSpecificatieContext r) return "de rol '" + src(r.rolNaam()) + "'";
+    private Msg memberSentence(ParserRuleContext member) {
+        if (member instanceof RolSpecificatieContext) return Msg.frontend("PART.member-phrase.role", "name", memberName(member));
         ObjectTypeMemberContext m = (ObjectTypeMemberContext) member;
-        if (m.attribuutSpecificatie() != null) return "het attribuut '" + naam(m.attribuutSpecificatie().lowerNaam()) + "'";
-        if (m.kenmerkSpecificatie() != null) return "het kenmerk '" + characteristicName(m.kenmerkSpecificatie()) + "'";
+        if (m.attribuutSpecificatie() != null) return Msg.frontend("PART.member-phrase.attribute", "name", memberName(member));
+        if (m.kenmerkSpecificatie() != null) return Msg.frontend("PART.member-phrase.characteristic-name", "name", memberName(member));
         return null;
+    }
+
+    private String memberName(ParserRuleContext member) {
+        if (member instanceof RolSpecificatieContext r) return src(r.rolNaam());
+        ObjectTypeMemberContext m = (ObjectTypeMemberContext) member;
+        return m.attribuutSpecificatie() != null ? naam(m.attribuutSpecificatie().lowerNaam())
+                : m.kenmerkSpecificatie() != null ? characteristicName(m.kenmerkSpecificatie()) : null;
     }
 
     /** A token of the language rather than a word of the author: neither a name word of either case nor a number. */
@@ -1388,7 +1393,7 @@ public final class DefinitionResolver {
      *  it. A WARNING and no ERROR: the declaration itself is well-formed, a document that never reads the name in a
      *  rule is sound, and one source outside this repository carries such a name (grammar/DIVERGENCES.md, "Namen in
      *  declaratiekoppen"). */
-    private void reportUnreadableName(String carrier, String category, String naam, int regel) {
+    private void reportUnreadableName(String carrier, Msg category, String naam, int regel) {
         List<String> words = new ArrayList<>();
         int error = unreadableWord(naam, words);
         if (error < 0) return;

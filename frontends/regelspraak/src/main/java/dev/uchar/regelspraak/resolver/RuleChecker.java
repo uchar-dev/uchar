@@ -76,7 +76,7 @@ final class RuleChecker {
     /** Where each defaults group was written — the block's head line and the head's own words — so a refusal
      *  about the group can stand at the block that made it. */
     private final Map<PrioritizedDefaults, Origin> pdOrigin = new java.util.IdentityHashMap<>();
-    private record Origin(int line, String head) {}
+    private record Origin(int line, Object head) {}
     /** The groups {@link #subtypeGroup} made, each with the base rule it was made under and its subtype: the name, the
      *  base and the subtype's name. */
     private final List<String[]> subtypeGroups = new ArrayList<>();
@@ -293,9 +293,13 @@ final class RuleChecker {
     }
 
     /** What a form of the dependency graph is called in a refusal, by the list it comes from. */
-    private static final Map<String, String> FORM_KIND = Map.of("rules", "regel", "allocations", "verdeling",
-            "consistencies", "consistentieregel", "uniquenesses", "uniciteitsregel", "objectCreations", "objectcreatie",
-            "factCreations", "feitcreatie", "prioritizedDefaults", "defaults-groep");
+    private static final Map<String, Msg> FORM_KIND = Map.of("rules", Msg.frontend("PART.form-kind.rule-form"),
+            "allocations", Msg.frontend("PART.form-kind.allocations"),
+            "consistencies", Msg.frontend("PART.form-kind.consistencies"),
+            "uniquenesses", Msg.frontend("PART.form-kind.uniquenesses"),
+            "objectCreations", Msg.frontend("PART.form-kind.object-creations"),
+            "factCreations", Msg.frontend("PART.form-kind.fact-creations"),
+            "prioritizedDefaults", Msg.frontend("PART.form-kind.prioritized-defaults"));
 
     /**
      * WF-045 and WF-051, the verifier's two cycle rules, over the document the emitter writes, in the verifier's own
@@ -322,15 +326,15 @@ final class RuleChecker {
         } catch (IllegalStateException | UnsupportedOperationException e) {
             return;
         }
-        Map<String, String[]> sites = formSites(doc);
+        Map<String, Object[]> sites = formSites(doc);
         Set<String> reported = new java.util.HashSet<>();
         for (Dependencies.Cycle k : Dependencies.cycles(ir)) {
             if (!reported.add(k.wf() + " " + k.at() + " " + k.sentence())) continue;
             Dependencies.Form form = k.forms().get(0);
             String naam = Dependencies.withoutVersion(form.naam());
-            String[] site = sites.get(dev.uchar.regelspraak.emit.IrEmitter.norm(naam));
+            Object[] site = sites.get(dev.uchar.regelspraak.emit.IrEmitter.norm(naam));
             boolean wf045 = "WF-045".equals(k.wf());
-            int cycleLine = site == null ? 0 : Integer.parseInt(site[1]);
+            int cycleLine = site == null ? 0 : Integer.parseInt((String) site[1]);
             if (wf045)
                 error(cycleLine, "RGS-096",
                         params("kind", FORM_KIND.get(form.category()), "name", naam, "wf", k.wf(), "sentence", k.sentence(),
@@ -450,9 +454,9 @@ final class RuleChecker {
     private void helperRules(RegelSpraakDocumentContext doc) {
         List<ExpressionBuilder.HelperMember> members = builder.helperMembers();
         if (members.isEmpty()) return;
-        Map<String, String[]> forms = formSites(doc);
+        Map<String, Object[]> forms = formSites(doc);
         for (ExpressionBuilder.HelperMember h : members) {
-            String[] site = forms.get(dev.uchar.regelspraak.emit.IrEmitter.norm(h.naam()));
+            Object[] site = forms.get(dev.uchar.regelspraak.emit.IrEmitter.norm(h.naam()));
             if (site != null) {
                 error(h.targetSource().line(),
                         "RGS-100", params("rule", h.naam(), "objectType", h.element().naam, "occupiedBy", site[0], "sourceLine", site[1]));
@@ -650,7 +654,7 @@ final class RuleChecker {
             PrioritizedDefaults first = groups.get(0);
             if (otherCharacteristicWriter(model.objectTypeByName(first.onderwerp()), first.target())) continue;
             boolean more = groups.size() > 1;
-            Origin h = pdOrigin.getOrDefault(first, new Origin(0, "defaults-groep"));
+            Origin h = pdOrigin.getOrDefault(first, new Origin(0, Msg.frontend("PART.defaults-group")));
             // one template for one group and one for several: the verb and the nouns around it agree with the number
             model.diagnostics.add(new Typing.Coded("RGS-105",
                     params("head", h.head(), "groupNames", enumeration(groups.stream().map(PrioritizedDefaults::naam).toList()), "subject", first.onderwerp(), "target", first.target(), "plural", more))
@@ -708,24 +712,24 @@ final class RuleChecker {
             List<PrioritizedDefaults> groups = e.getValue();
             String targetText = groups.get(0).onderwerp() + "." + groups.get(0).target();
             Msg.Enumeration groupNames = enumeration(groups.stream().map(PrioritizedDefaults::naam).toList());
-            List<String> others = new ArrayList<>();
+            List<Object> others = new ArrayList<>();
             for (ResolvedRule r : model.resolvedRegels) {
                 if (refusedTargets.contains(r) || blockNames.contains(withoutVersion(r.naam()))) continue;
                 DefaultsTarget d = targetOf(r);
                 if (d != null && e.getKey().equals(targetKey(d.onderwerp().naam, d.characteristic(), d.naam())))
-                    others.add("'" + r.naam() + "'" + rowTable(r.naam()));
+                    others.add(Msg.frontend("PART.name-with-table", "name", r.naam(), "table", rowTable(r.naam())));
             }
             // both clauses in the verifier's WF-050 sentences, the groups and the other writers named before them
             if (!others.isEmpty()) {
-                Origin h = pdOrigin.getOrDefault(groups.get(0), new Origin(0, "defaults-groep"));
+                Origin h = pdOrigin.getOrDefault(groups.get(0), new Origin(0, Msg.frontend("PART.defaults-group")));
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                        "RGS-106", params("head", h.head(), "groupNames", groupNames, "others", String.join(", ", others), "target", targetText,
+                        "RGS-106", params("head", h.head(), "groupNames", groupNames, "others", new Msg.Joined(others, ", "), "target", targetText,
                                 "groupsLabel", Msg.frontend(groups.size() == 1 ? "RGS-106.group-label" : "RGS-106.groups-label"),
                                 "othersLabel", Msg.frontend(others.size() == 1 ? "RGS-106.rule-label" : "RGS-106.rules-label")),
                         h.line()));
             }
             if (groups.size() > 1 && !groups.stream().allMatch(PrioritizedDefaults::unordered)) {
-                Origin h = pdOrigin.getOrDefault(groups.get(groups.size() - 1), new Origin(0, "defaults-groep"));
+                Origin h = pdOrigin.getOrDefault(groups.get(groups.size() - 1), new Origin(0, Msg.frontend("PART.defaults-group")));
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
                         "RGS-107", params("head", h.head(), "groupNames", groupNames, "target", targetText), h.line()));
             }
@@ -737,9 +741,10 @@ final class RuleChecker {
     }
 
     /** " (een rij van beslistabel 'T')" when {@code regel} is a row of decision table T, else "". */
-    private String rowTable(String regel) {
+    private Object rowTable(String regel) {
         for (var e : rowRules.entrySet())
-            if (e.getValue().contains(regel)) return " (een rij van beslistabel '" + src(e.getKey().beslistabelNaam()) + "')";
+            if (e.getValue().contains(regel))
+                return Msg.frontend("PART.row-of-table", "table", src(e.getKey().beslistabelNaam()));
         return "";
     }
 
@@ -886,7 +891,7 @@ final class RuleChecker {
      *  a dimensioned attribute of {@code ot} with its preposition and one of its labels written behind it as one
      *  name ("premie in voorjaar"), else null. Single-dimension attributes, the suffix form — the shape
      *  {@code ExpressionBuilder.dimensionCell} reads. */
-    private String cellAsName(Objecttype ot, String naam) {
+    private Msg cellAsName(Objecttype ot, String naam) {
         for (var e : ot.dimensionedMembers().entrySet()) {
             if (e.getValue().size() != 1) continue;
             RegelSpraakModel.Dimension d = model.dimensionByName(e.getValue().get(0));
@@ -900,7 +905,7 @@ final class RuleChecker {
 
     /** The same cell written after the SUBJECT ("De premie van een Jutter in voorjaar"): the parse left the
      *  attribute bare and put the preposition and label into the subject text. Null when it is not. */
-    private String cellAfterSubject(Objecttype ot, String attribute, String subjectText) {
+    private Msg cellAfterSubject(Objecttype ot, String attribute, String subjectText) {
         if (subjectText == null) return null;
         for (String dn : ot.dimensionsOf(attribute)) {
             RegelSpraakModel.Dimension d = model.dimensionByName(dn);
@@ -913,9 +918,8 @@ final class RuleChecker {
         return null;
     }
 
-    private static String cellText(String attribute, RegelSpraakModel.Dimension d, String label) {
-        return "cel van het gedimensioneerde attribuut '" + attribute + "' (dimensie " + d.naam() + ", label '"
-                + label + "')";
+    private static Msg cellText(String attribute, RegelSpraakModel.Dimension d, String label) {
+        return Msg.frontend("PART.dimension-cell", "attribute", attribute, "dimension", d.naam(), "label", label);
     }
 
     /** WF-112 (maintainer decision 2026-09-23), producer side: a time window never sits under 'geen van de' or
@@ -961,12 +965,12 @@ final class RuleChecker {
         switch (c) {
             case Condition.Compound s -> {
                 if (countsOrNegates(s.quantifier()) && s.components().stream().anyMatch(Condition::containsTimeWindow))
-                    windowError(s.quantifier(), s.threshold(), s.source(), "als lid van een samengestelde voorwaarde");
+                    windowError(s.quantifier(), s.threshold(), s.source(), Msg.frontend("RGS-132.place-compound"));
                 s.components().forEach(this::windowPosition);
             }
             case Condition.QuantifierFold k -> {
                 if (countsOrNegates(k.quantifier()) && (Condition.containsTimeWindow(k.filter()) || Condition.containsTimeWindow(k.test())))
-                    windowError(k.quantifier(), k.threshold(), k.source(), "in het filter of de toets van een kwantorvouw");
+                    windowError(k.quantifier(), k.threshold(), k.source(), Msg.frontend("RGS-132.place-fold"));
                 windowPosition(k.filter());
                 windowPosition(k.test());
             }
@@ -1243,7 +1247,7 @@ final class RuleChecker {
         if (subject == null) return;
         int n = dev.uchar.regelspraak.emit.IrEmitter.roleCheckBindings(model, subject, c);
         if (n == 1 || !reported.add(c)) return;
-        String against = " van " + subject.naam + " tegenover " + (other == null ? "?" : other.naam);
+        Msg against = Msg.frontend("PART.against", "subject", subject.naam, "other", other == null ? "?" : other.naam);
         if (n == 0)
             model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-116",
                     params("expression", source, "roleName", roleName, "against", against), source == null ? 0 : source.line()));
@@ -1544,7 +1548,7 @@ final class RuleChecker {
                 "written", written);
     }
 
-    private void windowError(Condition.Quantifier k, int threshold, Source source, String place) {
+    private void windowError(Condition.Quantifier k, int threshold, Source source, Object place) {
         String words = switch (k) {
             case GEEN -> "geen van de";
             case TEN_MINSTE -> "ten minste " + threshold;
@@ -1671,7 +1675,7 @@ final class RuleChecker {
 
         // 3. per tree, in the order its first block was written: the base, then every node top-down
         java.util.Set<String> nodeNames = nodeNames(doc);
-        Map<String, String[]> forms = formSites(doc);
+        Map<String, Object[]> forms = formSites(doc);
         Map<String, List<Node>> perRoot = new LinkedHashMap<>();
         for (Node k : nodes) if (!k.error) perRoot.computeIfAbsent(k.root, w -> new ArrayList<>()).add(k);
         java.util.Set<ResolvedRule> gelift = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
@@ -1802,10 +1806,10 @@ final class RuleChecker {
     /** A generated group name another form already carries (WF-020: a defaults group and a rule share one namespace,
      *  case aside). Null when every name is free. */
     private Refusal subtypeNameError(String root, Map<Objecttype, List<Node>> perSubtype,
-                                      Map<String, String[]> forms) {
+                                      Map<String, Object[]> forms) {
         for (var s : perSubtype.entrySet()) {
             String naam = subtypeGroupName(root, s.getKey());
-            String[] site = forms.get(dev.uchar.regelspraak.emit.IrEmitter.norm(naam));
+            Object[] site = forms.get(dev.uchar.regelspraak.emit.IrEmitter.norm(naam));
             if (site == null) continue;
             Node k = s.getValue().get(0);
             return new Refusal(k.line, new Typing.Coded("RGS-311",
@@ -2009,9 +2013,9 @@ final class RuleChecker {
             // its line declares one of its own (ch. 7.10: an own base replaces the inherited one).
             Base b = ownBaseOnLine(own, rootType, nodeNames);
             String naam = b == null ? k.root : b.regel();
-            String under = b == null ? "de basisregel '" + k.root + "'"
-                    : b.type() == own.onderwerp() ? "zijn eigen basisregel '" + b.regel() + "'"
-                    : "de basisregel '" + b.regel() + "' van " + b.type().naam + ", die " + sub + " erft";
+            Msg under = b == null ? Msg.frontend("PART.under-root-base", "name", k.root)
+                    : b.type() == own.onderwerp() ? Msg.frontend("PART.under-own-base", "name", b.regel())
+                    : Msg.frontend("PART.under-inherited-base", "name", b.regel(), "type", b.type().naam, "subtype", sub);
             error(k.line,
                     "RGS-138", params("head", k.head, "carrier", carrier.naam, "carrierKind", kindText(carrier), "supertype", sup, "designation", designation(k), "subtype", sub, "under", under, "name", naam, "member", k.naam));
             return false;
@@ -2035,7 +2039,7 @@ final class RuleChecker {
             error(k.line,
                     "RGS-140", params("head", k.head, "designation", designation(k), "ownTarget", targetText(own), "carrierPart", carrier == null ? Msg.frontend("RGS-140.base-rule")
                             : Msg.frontend(k.category == Block.MEMBER ? "RGS-140.his-carrier" : "RGS-140.her-carrier", "carrier", carrierName),
-                            "baseTarget", targetText(targetName), "what", what(k)));
+                            "baseTarget", targetText(targetName), "what", indefinite(k)));
             return false;
         }
         k.regel = regel;
@@ -2070,16 +2074,13 @@ final class RuleChecker {
         String sub = own.onderwerp().naam;
         Base b = ownBaseOnLine(own, rootType, nodeNames);
         if (b != null) {
-            String has = b.type() == own.onderwerp()
-                    ? sub + " heeft een eigen basisregel '" + b.regel() + "' voor '" + own.naam() + "'"
-                    : sub + " erft van " + b.type().naam + " de basisregel '" + b.regel() + "' voor '" + own.naam()
-                      + "'";
-            String form = switch (k.category) {
+            Msg has = b.type() == own.onderwerp()
+                    ? Msg.frontend("PART.has-own-base", "subtype", sub, "base", b.regel(), "target", own.naam())
+                    : Msg.frontend("PART.has-inherited-base", "subtype", sub, "type", b.type().naam, "base", b.regel(), "target", own.naam());
+            Object form = switch (k.category) {
                 case DEVIATION -> "'Afwijking van " + b.regel() + ": " + k.naam + "'";
-                case EXCEPTION -> "'Uitzondering op " + b.regel() + ": " + k.naam + "' als zij de voorwaarde van '"
-                        + b.regel() + "' erft, of 'Afwijking van " + b.regel() + ": " + k.naam
-                        + "' met de volledige voorwaarde";
-                case MEMBER -> "het blok als 'Uitzonderingen ongeordend op " + b.regel() + ":'";
+                case EXCEPTION -> Msg.frontend("PART.form-exception", "base", b.regel(), "name", k.naam);
+                case MEMBER -> Msg.frontend("PART.form-block", "base", b.regel());
             };
             return new Typing.Coded("RGS-141",
                     params("head", k.head, "designation", designation(k), "subtype", sub, "has", has, "root", k.root,
@@ -2179,21 +2180,33 @@ final class RuleChecker {
         result.add(c);
     }
 
-    private static String what(Node k) {
-        return switch (k.category) { case EXCEPTION -> "uitzondering"; case DEVIATION -> "afwijking"; case MEMBER -> "groepslid"; };
+    private static Msg what(Node k) {
+        return Msg.frontend(switch (k.category) {
+            case EXCEPTION -> "PART.node-kind.exception"; case DEVIATION -> "PART.node-kind.deviation"; case MEMBER -> "PART.node-kind.member";
+        });
     }
 
-    private static String designation(Node k) { return what(k) + " '" + k.naam + "'"; }
+    private static Msg designation(Node k) { return Msg.frontend("PART.node-designation", "what", what(k), "name", k.naam); }
 
     /** The node as the first card's texts name it: "de uitzondering 'E'", "groepslid 'M'". */
-    private static String withArticle(Node k) { return (k.category == Block.MEMBER ? "" : "de ") + designation(k); }
+    private static Object withArticle(Node k) {
+        return k.category == Block.MEMBER ? designation(k) : Msg.frontend("PART.node-the", "designation", designation(k));
+    }
 
-    private static String kindText(Node k) {
-        return switch (k.category) {
-            case EXCEPTION -> "een uitzondering";
-            case DEVIATION -> "een afwijking";
-            case MEMBER -> "een lid van een 'Uitzonderingen ongeordend op'-blok";
-        };
+    private static Msg kindText(Node k) {
+        return Msg.frontend(switch (k.category) {
+            case EXCEPTION -> "PART.indefinite.exception";
+            case DEVIATION -> "PART.indefinite.deviation";
+            case MEMBER -> "PART.carrier-kind.member";
+        });
+    }
+
+    private static Msg indefinite(Node k) {
+        return Msg.frontend(switch (k.category) {
+            case EXCEPTION -> "PART.indefinite.exception";
+            case DEVIATION -> "PART.indefinite.deviation";
+            case MEMBER -> "PART.indefinite.member";
+        });
     }
 
     private Typing.Coded unknownCarrier(Node k) {
@@ -2238,7 +2251,7 @@ final class RuleChecker {
                     model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-143", params("member", naam), line));
                     error = true; break;
                 }
-                if (rr.size() > 1) { multiVersionError("groepslid", naam, line); error = true; break; }
+                if (rr.size() > 1) { multiVersionError(Msg.frontend("PART.node-kind.member"), naam, line); error = true; break; }
                 if (refusedTargets.contains(rr.get(0))) { error = true; break; }   // refused already, by name
                 DefaultsTarget d = targetOf(rr.get(0));
                 if (d == null || rr.get(0).category() == ResolvedRule.Kind.INITIALISATIE) {
@@ -2342,27 +2355,26 @@ final class RuleChecker {
         return new DefaultsTarget(d.objectType(), r.category() == ResolvedRule.Kind.KENMERKTOEKENNING, d.attribute());
     }
 
-    private static String targetText(DefaultsTarget d) {
-        return d == null ? "onbekend"
-                : d.onderwerp().naam + "." + d.naam() + (d.characteristic() ? " (kenmerk)" : " (attribuut)");
+    private static Msg targetText(DefaultsTarget d) {
+        return d == null ? Msg.frontend("PART.target-unknown")
+                : Msg.frontend("PART.target-text", "subject", d.onderwerp().naam, "name", d.naam(),
+                        "kind", Msg.frontend(d.characteristic() ? "PART.member-kind.characteristic-kind" : "PART.member-kind.attribute"));
     }
 
     /** A hint appended to the unknown-base ERROR when the name IS resolved, but as a construct no defaults
      *  group can be built over (a verdeling/consistentie/objectcreatie lives in its own model list, not
      *  resolvedRegels). */
-    private String baseReason(String naam) {
+    private Object baseReason(String naam) {
         boolean otherConstruct = model.allocations.stream().anyMatch(v -> v.naam().equals(naam))
                 || model.consistenties.stream().anyMatch(c -> c.naam().equals(naam))
                 || model.objectCreations.stream().anyMatch(o -> o.naam().equals(naam))
                 || model.uniquenesses.stream().anyMatch(u -> u.naam().equals(naam));
-        if (otherConstruct) return " (regel '" + naam + "' is een verdeling/consistentie/objectcreatie/uniciteit, geen platte regel)";
+        if (otherConstruct) return Msg.frontend("PART.base-reason-other-construct", "name", naam);
         // A decision table has no rule of its own name: its rules are its rows, and they all write the table's
         // one target, so none of them alone can be the base of a group that must be that target's only writer.
         for (var e : rowRules.entrySet())
             if (src(e.getKey().beslistabelNaam()).equals(naam) && !e.getValue().isEmpty())
-                return " ('" + naam + "' is een beslistabel, geen regel: haar regels zijn de rijen "
-                        + enumeration(e.getValue()) + ", die samen hetzelfde doel schrijven — een defaults-groep heeft "
-                        + "één basisregel en geen andere schrijver op haar doel (WF-050))";
+                return Msg.frontend("PART.base-reason-decision-table", "name", naam, "rows", enumeration(e.getValue()));
         return "";
     }
 
@@ -2371,7 +2383,7 @@ final class RuleChecker {
         return new Msg.Enumeration(Component.FRONTEND, names.stream().map(n -> "'" + n + "'").toList());
     }
 
-    private void multiVersionError(String roleName, String naam, int line) {
+    private void multiVersionError(Object roleName, String naam, int line) {
         model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-147", params("role", roleName, "name", naam), line));
     }
 
@@ -2402,7 +2414,7 @@ final class RuleChecker {
         String group() { return "opgave boven berekening " + attribute; }
         String regel() { return "afwijking opgave " + attribute; }
         String consistencyCheck() { return "controle opgave " + attribute; }
-        String head() { return "attribuut '" + attribute + "' van " + type.naam; }
+        Msg head() { return Msg.frontend("PART.input-head", "attribute", attribute, "type", type.naam); }
     }
 
     private static final String MARKING = "'(mag opgegeven worden)'";
@@ -2505,11 +2517,11 @@ final class RuleChecker {
                 && (n.hasUnit() ? oneUnit(n.eenheid()) : !memberUnit);
         if (!number && !(dt instanceof Datatype.DatumInDagen)) {
             NumeriekDatatypeContext nd = a.datatype() == null ? null : a.datatype().numeriekDatatype();
-            String named = dt instanceof Datatype.Numeriek n && n.hasUnit()
+            Object named = dt instanceof Datatype.Numeriek n && n.hasUnit()
                     ? "Numeriek met eenheid " + (nd != null && nd.eenheidExpressie() != null
                             ? src(nd.eenheidExpressie()) : n.eenheid().rendering())
                     : dt instanceof Datatype.Numeriek && memberUnit ? "Numeriek met eenheid " + src(a.eenheidExpressie())
-                    : dt == null ? "onbekend" : dt.naam();
+                    : dt == null ? Msg.frontend("PART.target-unknown") : dt.naam();
             return new Typing.Coded("RGS-149",
                     params("head", o.head(), "attribute", x, "datatype", named));
         }
@@ -2561,7 +2573,7 @@ final class RuleChecker {
      *  when a rule reads one of them, since the name would then read nothing. */
     private void inputLowering(RegelSpraakDocumentContext doc) {
         if (inputs.isEmpty()) return;
-        Map<String, String[]> forms = formSites(doc);
+        Map<String, Object[]> forms = formSites(doc);
         Map<String, Input> generated = new java.util.HashMap<>();
         for (Input o : inputs) {
             Objecttype t = o.type();
@@ -2709,12 +2721,12 @@ final class RuleChecker {
         // a generated member has one writer or none: the case supplies 'opgegeven X', the moved writers compute
         // 'berekende X', the generated rule attributes 'afwijkende opgave X'
         for (String g : List.of(o.opgegeven(), o.computed(), o.deviating())) {
-            String writer = null;
+            Msg writer = null;
             int regel = 0;
             for (ResolvedRule r : model.resolvedRegels) {
                 Objecttype u = ownTarget(r.target(), g);
                 if (u == null || !inLine(t, u)) continue;
-                writer = "regel '" + withoutVersion(r.naam()) + "'";
+                writer = Msg.frontend("PART.form-rule", "name", withoutVersion(r.naam()));
                 int table = tableLine(r.naam());
                 regel = table >= 0 ? table : r.target().source() == null ? 0 : r.target().source().line();
                 break;
@@ -2723,21 +2735,21 @@ final class RuleChecker {
                 for (PrioritizedDefaults pd : model.prioritizedDefaults) {
                     Objecttype u = model.objectTypeByName(pd.onderwerp());
                     if (!sameName(pd.target(), g) || u == null || !inLine(t, u)) continue;
-                    writer = "de defaults-groep '" + pd.naam() + "'";
+                    writer = Msg.frontend("PART.writer-defaults-group", "name", pd.naam());
                     regel = pdOrigin.getOrDefault(pd, new Origin(0, "")).line();
                     break;
                 }
             if (writer == null)
                 for (ResolvedAllocation v : model.allocations)
                     if (sameName(v.targetAttribute(), g) && inLine(t, v.targetType())) {
-                        writer = "de verdeling '" + withoutVersion(v.naam()) + "'";
+                        writer = Msg.frontend("PART.writer-allocation", "name", withoutVersion(v.naam()));
                         break;
                     }
             if (writer == null)
                 for (ResolvedObjectCreation oc : model.objectCreations)
                     if (inLine(t, oc.createdType())
                             && oc.initialisations().stream().anyMatch(k -> sameName(k.attribute(), g))) {
-                        writer = "de objectcreatie '" + withoutVersion(oc.naam()) + "'";
+                        writer = Msg.frontend("PART.writer-object-creation", "name", withoutVersion(oc.naam()));
                         break;
                     }
             if (writer != null)
@@ -2759,33 +2771,34 @@ final class RuleChecker {
      *  rule, a consistency, an allocation, a creation, a uniqueness; the members of a group or of an unordered block
      *  included), every 'Uitzondering op' and 'Afwijking van' head, and every rule a decision table desugars to —
      *  each with how a message names it and the line it was written on. */
-    private Map<String, String[]> formSites(RegelSpraakDocumentContext doc) {
-        Map<String, String[]> result = new java.util.HashMap<>();
+    private Map<String, Object[]> formSites(RegelSpraakDocumentContext doc) {
+        Map<String, Object[]> result = new java.util.HashMap<>();
         for (RegelContext r : DefinitionResolver.allRules(doc)) {
             String naam = src(r.regelNaam());
             result.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(naam),
-                    new String[] {"regel '" + naam + "'", String.valueOf(r.getStart().getLine())});
+                    new Object[] {Msg.frontend("PART.form-rule", "name", naam), String.valueOf(r.getStart().getLine())});
         }
         for (UitzonderingRegelContext u : DefinitionResolver.allExceptions(doc)) {
             String naam = src(u.regelNaam());
             result.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(naam),
-                    new String[] {"regel '" + naam + "'", String.valueOf(u.getStart().getLine())});
+                    new Object[] {Msg.frontend("PART.form-rule", "name", naam), String.valueOf(u.getStart().getLine())});
         }
         for (var e : rowRules.entrySet())
             for (String row : e.getValue())
                 result.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(row),
-                        new String[] {"regel '" + row + "' van beslistabel '" + src(e.getKey().beslistabelNaam()) + "'",
+                        new Object[] {Msg.frontend("PART.form-table-row", "row", row, "table", src(e.getKey().beslistabelNaam())),
                                 String.valueOf(e.getKey().getStart().getLine())});
         return result;
     }
 
     /** A generated form name another form already carries (WF-020): an authored one, or the one another marker
      *  generated. Null when all three are free. */
-    private Typing.Coded formNameError(Input o, Map<String, String[]> forms, Map<String, Input> generated) {
-        String[][] names = {{"de defaults-groep", o.group()}, {"de regel", o.regel()}, {"de consistentie", o.consistencyCheck()}};
-        for (String[] form : names) {
-            String key = dev.uchar.regelspraak.emit.IrEmitter.norm(form[1]);
-            String[] site = forms.get(key);
+    private Typing.Coded formNameError(Input o, Map<String, Object[]> forms, Map<String, Input> generated) {
+        Object[][] names = {{Msg.frontend("PART.generated-form.defaults-group"), o.group()}, {Msg.frontend("PART.generated-form.rule"), o.regel()},
+                {Msg.frontend("PART.generated-form.consistency"), o.consistencyCheck()}};
+        for (Object[] form : names) {
+            String key = dev.uchar.regelspraak.emit.IrEmitter.norm((String) form[1]);
+            Object[] site = forms.get(key);
             if (site != null)
                 return new Typing.Coded("RGS-156",
                         params("head", o.head(), "line", o.line(), "formKind", form[0], "name", form[1], "earlierForm", site[0],
@@ -4852,9 +4865,7 @@ final class RuleChecker {
                         v.getStart().getLine()));
             return buildTimeWindow(v.periodevergelijkingEnkelvoudig());
         }
-        return new Condition.Unresolved(source(v),
-                "het voorwaardendeel heeft geen van de §13.4.13-vormen — geen samengestelde voorwaarde, geen "
-                + "elementaire voorwaarde met operator, geen regelpredicaat en geen periodevergelijking");
+        return new Condition.Unresolved(source(v), Msg.frontend("RGS-092.condition-form"));
     }
 
     /** Whether the on-channel tokens right before {@code p} spell "het is de periode": the split measured in fix
@@ -5005,9 +5016,7 @@ final class RuleChecker {
         // reNestParts declined.
         if (herNest == null && (bulletsInconsistent(component)
                 || (quantifier != Condition.Quantifier.ALLE && quantifier != Condition.Quantifier.DE && ambiguousNestedBullets(components))))
-            return new Condition.Unresolved(source(whole),
-                    "de bullets van de samengestelde voorwaarde staan op verschillende kolommen of dragen "
-                    + "verschillende tekens, dus welke bullet onder welke hoort ligt niet vast (§13.4.14.6)");
+            return new Condition.Unresolved(source(whole), Msg.frontend("RGS-092.bullets-inconsistent"));
         return new Condition.Compound(quantifier, threshold, components, source(whole));
     }
 
@@ -5117,9 +5126,7 @@ final class RuleChecker {
                 // elementaireVoorwaarde) DOT?`, dus een knoop draagt er altijd één — en deze tak wordt
                 // pas bereikt NA een geslaagde kolom-hernesting, die een kapotte ontleding juist afwijst.
                 // De reden staat er voor het geval de grammatica een derde tak krijgt.
-                result.add(new Condition.Unresolved(source(k.ctx()),
-                        "deze bullet van de hernestte opsomming is geen geneste samengestelde voorwaarde en "
-                        + "geen elementaire voorwaarde (§13.4.14)"));
+                result.add(new Condition.Unresolved(source(k.ctx()), Msg.frontend("RGS-092.renested-bullet")));
         }
         return result;
     }
@@ -5212,11 +5219,7 @@ final class RuleChecker {
             if (kw != Condition.Quantifier.ALLE && kw != Condition.Quantifier.DE
                     && components.stream().anyMatch(c -> c instanceof Condition.Compound s
                             && s.components().stream().anyMatch(x -> x instanceof Condition.Compound)))
-                return new Condition.Unresolved(source(sp),
-                        "een tellende kwantor over een deelselectie waarvan een bullet zelf nog een diepere "
-                        + "samengestelde voorwaarde draagt: de inspringblinde bullet-grammatica kan zusterbullets "
-                        + "in die diepere laag getrokken hebben (§13.4.14.6), en dan telt de selectie een andere "
-                        + "verzameling dan de zin noemt");
+                return new Condition.Unresolved(source(sp), Msg.frontend("RGS-092.counting-deep-bullet"));
             return new Condition.Compound(kw,
                     sp.kwantificatie() == null ? 0 : numeralValue(sp.kwantificatie().telwoord()), components, source(sp));
         } finally {
@@ -5263,9 +5266,7 @@ final class RuleChecker {
         if (g.elementaireVoorwaarde() != null) return buildElementary(g.elementaireVoorwaarde());
         // GEEN GETUIGE: genestCriterium draagt altijd een van beide takken, en een consistentieregel met
         // een kapot criterium strandt eerder — op de syntaxfout, met haar eigen ERROR. Gemeten 2026-09-19.
-        return new Condition.Unresolved(source(g),
-                "dit geneste consistentiecriterium is geen samengesteld criterium en geen elementaire "
-                + "voorwaarde (§13.4.8)");
+        return new Condition.Unresolved(source(g), Msg.frontend("RGS-092.nested-criterion"));
     }
 
     /** §13.4.14.3 consistentie-kwantor; null (the single "het volgende criterium") is the trivial ALLE. */
@@ -5305,9 +5306,7 @@ final class RuleChecker {
             return buildCompound(c.voorwaardeKwantificatie(), c.samengesteldeVoorwaardeOnderdeel(), c);
         }
         if (g.elementaireVoorwaarde() != null) return buildElementary(g.elementaireVoorwaarde());
-        return new Condition.Unresolved(source(g),
-                "deze bullet van de samengestelde voorwaarde is geen geneste samengestelde voorwaarde en "
-                + "geen elementaire voorwaarde (§13.4.14)");
+        return new Condition.Unresolved(source(g), Msg.frontend("RGS-092.nested-bullet"));
     }
 
     /** An §13.4.15 elementaire voorwaarde / consistentie-criterium ("&lt;expressie&gt; &lt;operator&gt;") to a
@@ -5325,9 +5324,7 @@ final class RuleChecker {
         // GEEN GETUIGE: elementaireVoorwaarde heeft precies drie takken en alle drie staan hierboven, dus
         // een gevulde context bereikt deze regel niet; een kapotte bullet valt een niveau hoger uit
         // (buildNested, dat wel een getuige heeft). Gemeten 2026-09-19.
-        return new Condition.Unresolved(source(c),
-                "de elementaire voorwaarde heeft geen van de §13.4.15-vormen — geen expressie met operator, "
-                + "geen periodevergelijking en geen regelpredicaat");
+        return new Condition.Unresolved(source(c), Msg.frontend("RGS-092.elementary-form"));
     }
 
     /** §8.1.9 / §13.4.15.66/.18 regelpredicaat to a {@link Condition.RuleStatusCheck}. The reference may point
@@ -5393,13 +5390,8 @@ final class RuleChecker {
     /** The two reasons the verb-trailing and verb-leading registers share verbatim: the SAME refusal is
      *  written twice because the grammar spells the operator twice, and one text per axis keeps the
      *  author's two readings of one sentence identical. */
-    private static final String REASON_NOT_ABSORBED =
-            "de gulzige ontleding trok de ontkenning 'niet' in het onderwerp; een vergelijking of een "
-            + "leeg-/gevuld-controle kan haar daar niet uit terughalen, en de positieve vorm emitteren zou "
-            + "de vraag omkeren (§8.1)";
-    private static final String REASON_NO_CHARACTERISTIC_NO_ROLE =
-            "de geschreven naam bindt geen kenmerk en geen rol van het onderwerp (§8.1.7/§8.1.8), dus er is "
-            + "geen lidmaatschap om te toetsen";
+    private static final Msg REASON_NOT_ABSORBED = Msg.frontend("RGS-092.not-absorbed");
+    private static final Msg REASON_NO_CHARACTERISTIC_NO_ROLE = Msg.frontend("RGS-092.no-characteristic-no-role");
 
     /** {@code lhsCtx} is the parse subtree the left operand was built from: the §5.6 die/dat
      *  subselectie lives there, and {@link #quantifierFold} needs the tree, not the Expr. */
@@ -5667,11 +5659,9 @@ final class RuleChecker {
                 .replaceFirst("(?i)^geen\\s+van\\s+", "");
         RegelSpraakModel.RoleBindingRef sourceRole = model.foldSourceBinding(builder.subject(), g.element(), member);
         if (sourceRole == null) {                                 // unresolvable range — never a silent misbinding
-            reportFoldRefusal(g.subjectSource(), (builder.subject() == null
-                    ? "het regelonderwerp is onbekend"
-                    : pairReason(builder.subject(), g.element(), member)) + ", dus het bereik van de kwantor is niet te "
-                    + "binden — een gegokte relatie zou een andere verzameling vouwen dan de zin noemt (IR-SPEC ch. 4.5)",
-                    source);
+            reportFoldRefusal(g.subjectSource(), Msg.frontend("PART.fold-range-unbindable", "cause", builder.subject() == null
+                    ? Msg.frontend("PART.rule-subject-unknown")
+                    : pairReason(builder.subject(), g.element(), member)), source);
             return null;
         }
         // The anchor names the rule subject, and what the parse took after that name belongs to the predicate:
@@ -5683,10 +5673,8 @@ final class RuleChecker {
         Condition test = elementCharacteristicCheck(g.element(), naam, withIndefiniteArticle, hasVerb, source);
         if (test == null) {
             reportFoldRefusal(g.subjectSource(),
-                    "'" + naam.replaceFirst("^(?i)(niet|geen)\\s+", "") + "' is geen kenmerk van " + g.element().naam
-                    + " — een §8.1.7-rolcontrole van het element is een andere gekwantificeerde vraag, en een "
-                    + "kenmerk van het regelonderwerp op het element lezen zou iets anders beantwoorden dan de "
-                    + "zin vraagt (§8.1.7/§8.1.8)", source);
+                    Msg.frontend("PART.fold-not-characteristic", "name", naam.replaceFirst("^(?i)(niet|geen)\\s+", ""),
+                            "element", g.element().naam), source);
             return null;
         }
         ExpressionBuilder.Subselection ds = builder.subselection(lhsCtx, g.element(), null);
@@ -5736,7 +5724,7 @@ final class RuleChecker {
      *  the sentence gets instead. Raised only where the phrase IS a quantified member phrase — a sentence
      *  that writes no quantifier gets no word about folds — and always a WARNING: the caller's marker is
      *  the honest wire form and the document stays emittable. */
-    private void reportFoldRefusal(String subjectSource, String reason, Source source) {
+    private void reportFoldRefusal(String subjectSource, Msg reason, Source source) {
         model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-213", params("subject", subjectSource, "reason", reason), source.line()));
     }
 
@@ -5879,10 +5867,7 @@ final class RuleChecker {
                 // tijdsafhankelijk acht en hem dus vervangt door haar eigen marker MET ERROR. De reden
                 // staat er omdat zij de weigering van DEZE route beschrijft; dat checkWholePeriod
                 // vervolgens harder ingrijpt is haar besluit, niet dat van deze plek. Gemeten 2026-09-19.
-                : new Condition.Unresolved(source,
-                        "de controle 'gedurende de/het gehele <periode>' hoort bij een kenmerkcontrole over een "
-                        + "tijdsafhankelijk onderwerp; over deze lidmaatschapsvorm (een §8.1.7-rolcontrole) heeft "
-                        + "zij geen omschreven betekenis (§8.2)");
+                : new Condition.Unresolved(source, Msg.frontend("RGS-092.whole-period-role"));
     }
 
     /** Flip the negatie of a resolved kenmerk-/rolcheck (the §8.1.8.3 "is niet een &lt;k&gt;" negation). The positive
@@ -5895,9 +5880,7 @@ final class RuleChecker {
             return new Condition.RoleMembership(r.role(), r.otherToFiller(), r.source(), !r.negation());
         if (c instanceof Condition.FarRoleMembership vr)
             return new Condition.FarRoleMembership(vr.filler(), vr.backref(), !vr.negation(), vr.source());
-        return new Condition.Unresolved(source,
-                "de vorm 'is niet een <naam>' bond geen kenmerk en geen rol van het onderwerp (§8.1.8.3), dus "
-                + "er is niets om te ontkennen");
+        return new Condition.Unresolved(source, Msg.frontend("RGS-092.negation-form"));
     }
 
     /** §8.1.8 / Tabel 16: the kenmerkcheck NEGATION verb is keyed to the kenmerk SOORT — a bijvoeglijk and a

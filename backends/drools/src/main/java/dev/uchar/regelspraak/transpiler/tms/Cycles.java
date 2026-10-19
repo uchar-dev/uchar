@@ -17,6 +17,8 @@ import dev.uchar.regelspraak.ir.ResolvedUniqueness;
 import dev.uchar.regelspraak.ir.ResolvedUniquenessUnion;
 import dev.uchar.regelspraak.ir.ResolvedAllocation;
 import dev.uchar.regelspraak.loader.IrLoader;
+import dev.uchar.regelspraak.message.Messages;
+import dev.uchar.regelspraak.message.Msg;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
@@ -96,16 +98,22 @@ public final class Cycles {
                 loaded.roleBindings(), loaded.sourcePaths());
         List<Form> graphForms = g.graphForms();
         List<Edge> edges = edges(graphForms);
-        List<String> cycles = cycles45(g, graphForms, edges);
+        List<Msg> cycles = cycles45(g, graphForms, edges);
         if (!cycles.isEmpty())
             return DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.reason("sentence", cycles.size() == 1
                     ? DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.part("one", "cycle", cycles.get(0))
-                    : DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.part("several", "count", cycles.size(), "cycles", String.join("; ", cycles)));
-        List<String> negations = negations46(g, graphForms, edges);
+                    : DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.part("several", "count", cycles.size(), "cycles", new Msg.Joined(cycles, "; ")));
+        List<Msg> negations = negations46(g, graphForms, edges);
         if (negations.isEmpty()) return null;
         return DroolsCode.NEGATION_ON_CYCLE.reason("sentence", negations.size() == 1
                 ? DroolsCode.NEGATION_ON_CYCLE.part("one", "negation", negations.get(0))
-                : DroolsCode.NEGATION_ON_CYCLE.part("several", "count", negations.size(), "negations", String.join("; ", negations)));
+                : DroolsCode.NEGATION_ON_CYCLE.part("several", "count", negations.size(), "negations", new Msg.Joined(negations, "; ")));
+    }
+
+    /** The order of the cycles and negations of one refusal: by their Dutch text, whatever language the refusal is
+     *  written in, so that every order of the same forms gives the same sentence in either language. */
+    private static String sortKey(Msg m) {
+        return m.text(java.util.Locale.forLanguageTag("nl"));
     }
 
     /**
@@ -174,14 +182,14 @@ public final class Cycles {
 
     /** The cycles of the graph without the creation members of recursive rule groups (WF-045): every strongly connected
      *  component of two or more forms, or of one form that reads what it writes, as "over <nodes> via <forms>". */
-    private static List<String> cycles45(Graph g, List<Form> graphForms, List<Edge> edges) {
+    private static List<Msg> cycles45(Graph g, List<Form> graphForms, List<Edge> edges) {
         int n = graphForms.size();
         List<List<Edge>> out = new ArrayList<>();
         for (int i = 0; i < n; i++) out.add(new ArrayList<>());
         for (Edge r : edges)
             if (!graphForms.get(r.producer()).recursiveCreation() && !graphForms.get(r.consumer()).recursiveCreation())
                 out.get(r.producer()).add(r);
-        List<String> cycles = new ArrayList<>();
+        List<Msg> cycles = new ArrayList<>();
         for (Set<Integer> component : components(n, out)) {
             int first = component.iterator().next();
             boolean selfLoop = out.get(first).stream().anyMatch(r -> r.consumer() == first);
@@ -195,29 +203,29 @@ public final class Cycles {
                         through.add(graphForms.get(r.consumer()));
                         nodes.add(r.node());
                     }
-            List<String> forms = new ArrayList<>();
+            List<Msg> forms = new ArrayList<>();
             for (Form v : through) forms.add(form(v));
-            cycles.add("over " + g.nodes(nodes) + " via " + enumeration(forms));
+            cycles.add(Msg.drools("PART.cycle.item", "nodes", g.nodes(nodes), "forms", enumeration(forms)));
         }
-        cycles.sort(null);
+        cycles.sort(Comparator.comparing(Cycles::sortKey));
         return cycles;
     }
 
     /** The negative edges on a cycle of the whole graph (WF-046): an edge from producer p to consumer c on which p is
      *  reachable from c, as "<consumer> leest <node> van <producer>, dat vanuit <consumer> bereikbaar is". */
-    private static List<String> negations46(Graph g, List<Form> graphForms, List<Edge> edges) {
+    private static List<Msg> negations46(Graph g, List<Form> graphForms, List<Edge> edges) {
         int n = graphForms.size();
         List<List<Integer>> next = new ArrayList<>();
         for (int i = 0; i < n; i++) next.add(new ArrayList<>());
         for (Edge r : edges) next.get(r.producer()).add(r.consumer());
-        Set<String> out = new TreeSet<>();
+        Map<String, Msg> out = new java.util.TreeMap<>();
         for (Edge r : edges)
             if (r.negative() && reachable(next, r.consumer(), r.producer())) {
-                String c = form(graphForms.get(r.consumer())), p = form(graphForms.get(r.producer()));
-                out.add(c + " leest " + g.node(r.node()) + " ontkennend van " + p + ", dat vanuit " + c
-                        + " bereikbaar is");
+                Msg m = Msg.drools("PART.cycle.negation", "consumer", form(graphForms.get(r.consumer())), "node", g.node(r.node()),
+                        "producer", form(graphForms.get(r.producer())));
+                out.put(sortKey(m), m);
             }
-        return new ArrayList<>(out);
+        return new ArrayList<>(out.values());
     }
 
     private static boolean reachable(List<List<Integer>> next, int van, int destination) {
@@ -271,22 +279,21 @@ public final class Cycles {
         }
     }
 
-    private static String form(Form v) {
+    private static Msg form(Form v) {
         String category = switch (v.category()) {
-            case REGEL -> "de regel";
-            case OBJECTCREATIE -> "de objectcreatie";
-            case VERDELING -> "de verdeling";
-            case CONSISTENTIE -> "de consistentieregel";
-            case UNICITEIT -> "de uniciteitsregel";
-            case FEITCREATIE -> "de feitcreatie";
-            case DEFAULTSGROEP -> "de defaultsgroep";
+            case REGEL -> "rule";
+            case OBJECTCREATIE -> "object-creation";
+            case VERDELING -> "allocation";
+            case CONSISTENTIE -> "consistency";
+            case UNICITEIT -> "uniqueness";
+            case FEITCREATIE -> "fact-creation";
+            case DEFAULTSGROEP -> "defaults-group";
         };
-        return category + " \"" + v.naam() + "\"";
+        return Msg.drools("PART.cycle.form." + category, "name", v.naam());
     }
 
-    private static String enumeration(List<String> parts) {
-        if (parts.size() == 1) return parts.get(0);
-        return String.join(", ", parts.subList(0, parts.size() - 1)) + " en " + parts.get(parts.size() - 1);
+    private static Msg.Enumeration enumeration(List<?> parts) {
+        return new Msg.Enumeration(dev.uchar.regelspraak.message.Component.DROOLS, parts);
     }
 
     /** The verifier's {@code strip_version}: a trailing " #&lt;digits&gt;" comes off, with the space before it. */
@@ -308,7 +315,7 @@ public final class Cycles {
         private final Map<Object, List<RoleBindingRef>> sourcePaths;
         private final Stapels stapels;
         /** How a node is shown, by key: a member as "Type.naam", spelled as declared. */
-        private final Map<String, String> names = new HashMap<>();
+        private final Map<String, Object> names = new HashMap<>();
         /** The order nodes are listed in: the members first, by type and name, then the other nodes. */
         private final Map<String, String> order = new HashMap<>();
 
@@ -322,19 +329,20 @@ public final class Cycles {
             this.stapels = new Stapels(model, defaults);
         }
 
-        String node(String k) {
+        Object node(String k) {
             return names.getOrDefault(k, k);
         }
 
         /** {@code nodes} listed as the refusal lists them: "het lid X" or "de leden X en Y" where all are members, and
          *  otherwise the node itself or "de knopen X en Y". */
-        String nodes(Set<String> nodes) {
+        Msg nodes(Set<String> nodes) {
             List<String> sorted = new ArrayList<>(nodes);
             sorted.sort(Comparator.comparing((String k) -> order.getOrDefault(k, "~" + k)));
             boolean members = sorted.stream().allMatch(k -> k.startsWith("attr:") || k.startsWith("char:"));
-            List<String> shown = sorted.stream().map(this::node).toList();
-            if (shown.size() == 1) return (members ? "het lid " : "") + shown.get(0);
-            return (members ? "de leden " : "de knopen ") + enumeration(shown);
+            List<Object> shown = sorted.stream().map(this::node).toList();
+            if (shown.size() == 1)
+                return members ? Msg.drools("PART.cycle.member", "name", shown.get(0)) : Msg.drools("PART.cycle.node", "name", shown.get(0));
+            return Msg.drools(members ? "PART.cycle.members" : "PART.cycle.nodes", "names", enumeration(shown));
         }
 
         // ---------------- nodes ----------------
@@ -349,21 +357,21 @@ public final class Cycles {
 
         private String channel(String regel) {
             String key = "chan:" + Namen.norm(withoutVersion(regel));
-            names.putIfAbsent(key, "het kanaal van \"" + ProducerConsumer.baseName(regel) + "\"");
+            names.putIfAbsent(key, Msg.drools("PART.cycle.channel", "rule", ProducerConsumer.baseName(regel)));
             order.putIfAbsent(key, "1 " + key);
             return key;
         }
 
         private String population(Objecttype ot) {
             String key = "pop:" + Namen.norm(ot.naam);
-            names.putIfAbsent(key, "de populatie van " + ot.naam);
+            names.putIfAbsent(key, Msg.drools("PART.cycle.population", "type", ot.naam));
             order.putIfAbsent(key, "2 " + key);
             return key;
         }
 
         private String relation(String factType) {
             String key = "rel:" + Namen.norm(factType);
-            names.putIfAbsent(key, "de relatie " + factType);
+            names.putIfAbsent(key, Msg.drools("PART.cycle.relation", "factType", factType));
             order.putIfAbsent(key, "3 " + key);
             return key;
         }

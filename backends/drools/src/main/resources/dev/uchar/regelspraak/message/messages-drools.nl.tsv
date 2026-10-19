@@ -363,3 +363,63 @@ FRAME.with-snippet	{sentence}: {snippet}
 PART.and	en
 PART.member-kind.attribute	attribuut
 PART.member-kind.characteristic-kind	kenmerk
+PART.desc.time-dependent-target	een tijdsafhankelijk doel
+PART.desc.pro-rata-part	een tijdsevenredig deel ('{snippet}')
+PART.desc.day-count	een dagentelling ('{snippet}')
+PART.desc.unique-key	een uniciteitssleutel '{key}' van {type} op een tijdlijn
+PART.allocation-role.pot	de pot
+PART.allocation-role.share	het aandeel
+PART.allocation-role.remainder	het restant
+PART.allocation-role.weight	het gewicht
+PART.allocation-role.maximum	het maximum
+PART.desc.allocation	de verdeling '{name}'
+PART.desc.fact-creation-path	het pad van de feitcreatie '{name}'
+PART.desc.day-kind-duration	een duur in dagsoorten ('{snippet}')
+PART.desc.day-kind-spelling	een {spelling} in dagsoorten ('{snippet}')
+PART.desc.dimension-cell-read	een DimensionCellRead
+PART.desc.dimension-aggregation	een Aggregation over een dimensieselectie
+PART.desc.set-source-head	vouw {kind} over de setbron '{attribute}' van {element}: die leden zijn van type {type}
+PART.desc.own-total	een totaal over de eigen tijdlijn ('{snippet}')
+PART.desc.member-total	een totaal per lid ('{snippet}')
+PART.desc.member-total-plain	een totaal per lid
+PART.desc.read	de lezing '{snippet}'
+PART.desc.characteristic-check	de kenmerkcheck '{snippet}'
+PART.desc.whole-period-characteristic-check	een CharacteristicCheck met wholePeriod ('{snippet}')
+PART.desc.whole-period-comparison	een Comparison met wholePeriod ('{snippet}')
+PART.desc.whole-period-predicate	een Predicate met wholePeriod ('{snippet}')
+PART.desc.start-point	de startpuntbepaling van tijdlijn '{timeline}'
+PART.form-named.regel	regel '{name}'
+PART.form-named.objectcreatie	objectcreatie '{name}'
+PART.form-named.verdeling	verdeling '{name}'
+PART.form-named.consistentie	consistentie '{name}'
+PART.form-named.uniciteit	uniciteit '{name}'
+PART.form-named.feitcreatie	feitcreatie '{name}'
+PART.form-named.defaultsgroep	defaultsgroep '{name}'
+PART.origin.attribute	het attribuut '{name}' van {source}
+PART.origin.characteristic	het kenmerk '{name}' van {source}
+PART.origin.role	de rol '{name}'
+PART.origin.role-of-fact-type	de rol '{name}' (feittype '{source}')
+PART.helper-class.segment	de segmenten van een tijdlijn
+PART.helper-class.inconsistency	een inconsistentie
+PART.role-multi-valued	de rol '{role}' op {carrier} is meervoudig, dus haar opslag is het veld aan de overzijde
+PART.range-join-multi-valued	aggregatie-bereik: de wire-binding wijst de rol '{role}' aan, wiens zusterrol '{sister}' MEERVOUDIG is — die naam zou het referentieveld op {type} zijn, maar de opslag van een meervoudige rol ligt aan de overzijde, dus dat veld bestaat niet (§13.3.9 opslagrichting)
+PART.none	geen
+PART.membership-unresolved	rollidmaatschap onopgelost: de binding ({binding}) noemt geen gedeclareerde rol
+PART.membership-both-multi-valued	rollidmaatschap ({factType}, {role}): beide rollen zijn meervoudig, dus geen bean draagt de link (§13.3.9 opslagrichting)
+PART.allocation-join-unresolved	verbindende rol onopgelost: de binding ({factType}, {role}) noemt geen gedeclareerde rol
+PART.cycle.item	over {nodes} via {forms}
+PART.cycle.negation	{consumer} leest {node} ontkennend van {producer}, dat vanuit {consumer} bereikbaar is
+PART.cycle.form.rule	de regel "{name}"
+PART.cycle.form.object-creation	de objectcreatie "{name}"
+PART.cycle.form.allocation	de verdeling "{name}"
+PART.cycle.form.consistency	de consistentieregel "{name}"
+PART.cycle.form.uniqueness	de uniciteitsregel "{name}"
+PART.cycle.form.fact-creation	de feitcreatie "{name}"
+PART.cycle.form.defaults-group	de defaultsgroep "{name}"
+PART.cycle.member	het lid {name}
+PART.cycle.members	de leden {names}
+PART.cycle.node	{name}
+PART.cycle.nodes	de knopen {names}
+PART.cycle.channel	het kanaal van "{rule}"
+PART.cycle.population	de populatie van {type}
+PART.cycle.relation	de relatie {factType}
