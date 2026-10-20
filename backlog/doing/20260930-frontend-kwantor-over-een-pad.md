@@ -171,3 +171,44 @@ Open blijven, gemeten op de kop van de ronde (`126c71cd`):
 - Een vouw over een to-many stap NA de verzameling ("de inhoud van de
   kisten van de vondst van alle jutters"): de oude WARNING en marker
   (luid).
+
+## Besluit en acceptatie (2026-10-20, eigenaar; vervangt (b)–(d) hierboven)
+
+Gemeten op main `4f3d2a8e` (proeven en tabel: `uchar-dev/werk/kwantor-pad/meting.md`, buiten de repository): het IR
+draagt een kwantor over een pad al. `QuantifierFold` heeft sinds 2026-09-16 een `sourcePath` (IR-SPEC ch. 4.5,
+WF-108 (c)), de verifier toetst hem, en ref en clingo voeren hem uit als platte vereniging (RUNTIME-SEMANTICS ch.
+3.4b; golden `jutterswet-ketenkwantor`, handgeschreven). De frontend schrijft hem niet: een kenmerktoets over een pad
+geeft de WARNING meerstapsbereik plus een marker (EF-019 in alle uitvoerders), een vergelijking of leeg/gevuld-toets
+over een pad de ERROR "setlezing buiten een vouwbron". De Drools-loader weigert `sourcePath` op een `QuantifierFold`
+(DROOLS-026). Een waardevouw over een pad speelt al overal (`sourcePath`, in Drools via
+`transpiler/core/SourcePath.java`), ook to-many → to-many en over drie stappen. Het aantal over een pad weigert de
+frontend; het IR laat die grens bewust open (IR-SPEC ch. 4.3, "No `sourcePath` at a selection").
+
+De eigenaar koos 2026-10-20 de weg **pad op de draad**: de frontend schrijft `QuantifierFold.sourcePath`, de
+Drools-backend leert hem. Geen spec- of IR-wijziging, geen gegenereerde leden. Aanleiding nu: de v2-regelset van de
+werkbank omzeilt de grens met brug K6 (een kwantor to-one → to-many in de voorwaarde van een `Uitzondering op`) en
+met een regelset-intern feittype voor een gevuld-toets die in het CGM twee verzamelingen ver ligt.
+
+Acceptatie:
+- (a) Rood eerst: een JUnit-getuige met R1 die faalt op main.
+- (b) De frontend lowert een kwantor over een pad van twee of meer stappen naar `QuantifierFold` met `sourcePath`:
+  alle kwantoren (alle, geen, ten minste/ten hoogste/precies n, ook ten minste één), elke toets (kenmerk, ook een
+  kenmerk dat als "is een <naam>" gelezen wordt; vergelijking; leeg/gevuld), to-one en to-many stappen in elke
+  volgorde, en in de voorwaarde van een gewone regel en van een defaults-groep. Wat niet bindt, blijft luid.
+- (c) Drools: de loader laat `sourcePath` op een `QuantifierFold` toe en beide takken voeren hem uit via de
+  bestaande `SourcePath`-planning (één analyse, twee weergaven). Wat het beanmodel niet draagt, weigert luid met een
+  code uit het register.
+- (d) Golden `jutterswet-dringende-melding` met `source.rgs` en `scenario.rgs`, handgerekend in `NOTE.md` vóór een
+  uitvoerder draaide, met ten minste R1, de vorm van K6 (in een `Uitzondering op`), een gevuld-toets over drie stappen
+  (to-one, to-many, to-many), een kwantor over to-many → to-many en een tellende kwantor; ref ≡ clingo ≡ Drools (beide
+  takken).
+- (e) Het aantal over een pad blijft een benoemde weigering, ongewijzigd.
+- (f) DIVERGENCES: de sectie over het meerstapsbereik zegt wat nu gelowerd wordt. Alle zestien gates groen op de
+  eindstand. Pins en vloeren in beschermde scripts (onder meer de pin van `jutterswet-ketenkwantor` en
+  `EXPECTED_PLAYED` in `scripts/check-drools.sh`) als voorstel, met reden; de tekst voor `CLAUDE.md` en
+  `spec/CONSTRUCTS.md` in de Result.
+
+May touch: `frontends/regelspraak/**`, `backends/drools/**` (niet de productieruntime onder `runtime/`),
+`corpus/golden/jutterswet-dringende-melding/`, `scripts/check-*.sh` (pins en vloeren, voorstel), de kaart.
+Niet: `ref/`, `backends/clingo/`, `spec/`, andere goldens (behalve een pin die verandert omdat een golden gaat spelen).
+Landen na akkoord van de eigenaar.
