@@ -517,3 +517,12 @@ scenario-goldens, 106 cases).
     - (c) DIVERGENCES (§13.4.15.45 of de tabel van vorm 1 in §4); alle zestien gates groen.
 
     May touch: `frontends/regelspraak/**`.
+
+## Landing (2026-10-20, hoofdsessie)
+
+Een leesreview van de tak (copilot, GPT-6 Sol) vond de twee punten van de fixronde hierboven; de hoofdsessie mat ze na
+op main en op de tak (`uchar-dev/werk/kwantor-pad/review/`). Na de fixronde resolvet de v2-regelset van de werkbank (33
+bronnen, `fundament/rules` en `herleving-ww/rules`) met de frontend van de tak zonder melding, en het IR is bytegelijk
+aan dat van main: de nieuwe weigeringen raken v2 niet. Herbaseerd op main `b91185de` (alleen backlog). In de
+landingscommit: `CLAUDE.md` (gate 12: 46 `EXCLUDE`-pins, de registersoort `RETIRED`), rij 40 van `spec/CONSTRUCTS.md`
+en de kaart `backlog/new/20261020-nominal-negation-in-question-order.md`. Geland na akkoord van de eigenaar.

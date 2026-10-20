@@ -373,11 +373,14 @@ reviewer's duty on a machine that has catala. Current gates:
     refusal carries a code `DROOLS-###` from one register
     (`backends/drools/.../refusal/DroolsCode.java`), beside its sentence
     and at the head of its report (`EXCLUDE DROOLS-014: <sentence>`); the
-    gate compares the code, not only the channel: each of the 45 `EXCLUDE`
+    gate compares the code, not only the channel: each of the 46 `EXCLUDE`
     pins of `EXPECTED_CHANNEL` names its code, and a changed or missing
     code fails by golden name with both codes.
     `scripts/check-drools-codes.sh`, called first, holds the register to
-    the sources in both directions (every code raised, every raised code
+    the sources in both directions (every code raised but one of the
+    kind `RETIRED`, which no place may name and which keeps its number,
+    since the card `frontend-kwantor-over-een-pad` (2026-10-20)
+    DROOLS-026 and DROOLS-258; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`
