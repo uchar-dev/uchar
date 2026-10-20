@@ -60,7 +60,10 @@ class MarkerReportTest {
     static {
         CLASSIFICATION.put("RuleChecker.java#checkWholePeriod", "ERROR (§8.2 over een statisch onderwerp): geen document");
         CLASSIFICATION.put("RuleChecker.java#quantifierFold",
-                "ERROR (RGS-348, de toets van een kwantor over een pad leest het regelonderwerp): geen document");
+                "ERROR (RGS-348, de toets van een kwantor over een pad leest het regelonderwerp; RGS-349, het "
+                + "regelonderwerp heeft het type van het element): geen document");
+        CLASSIFICATION.put("RuleChecker.java#compoundElementFilter",
+                "ERROR (RGS-350, een deelselectie noemt een onderwerp van het type van het element): geen document");
         CLASSIFICATION.put("RuleChecker.java#dayKindOperandError", "ERROR (Tabel 57): geen document");
         CLASSIFICATION.put("ExpressionBuilder.java#buildFunction", "WARNING: aggregatie_over_een_ongedeclareerd_lid, "
                 + "dimensieselectie_of_gedurende_op_een_aggregatie; ERROR (WF-037, aantal gevulde): geen document");

@@ -1405,6 +1405,21 @@ longest type name along the subject's chain or declared name or plural of any
 role a type of that chain fills, since the relation of the first step is only
 known once the anchor is.
 
+**"niet een" under a quantifier (2026-10-20).** "ten minste één van de vondsten
+van de melder van de Melding niet een wrakstuk is" reached the binder of the
+nominal characteristic (the form with `een`) as the name `niet wrakstuk`, which
+binds nothing, and was refused with the reason "'wrakstuk' is geen kenmerk van
+Vondst" and a marker (EF-019 in every executor), over one step and over a path;
+the stellende order ("… is niet een wrakstuk", Tabel 16's `NIET EEN` branch)
+was kept out of the fold altogether, since that branch resolves the positive
+form and flips it. Under a quantifier both now read `niet` as the negation of a
+zelfstandig characteristic, the same test as "geen wrakstuk": the written name
+first, then the name after `niet`; the stellende branch passes its `NIET` to
+the fold. A name after `niet een` that is no zelfstandig characteristic of the
+element stays refused with its WARNING. Witness: `QuantifierOverPathTest`. The
+vragende "niet een" outside a quantifier ("indien de Vondst niet een wrakstuk
+is") is unchanged: a marker with its WARNING, and with "hij" a syntax error.
+
 ---
 
 ## A quantifier over a written path — the range is the path (2026-10-20)
@@ -1444,7 +1459,9 @@ subject (the melder of a Vondst has more Meldingen than the one the rule is
 about), and a binding from the element would read another object without a
 word. Such an operand is refused with an ERROR (RGS-348) that names the read;
 a literal, a parameter, and an own attribute of the element are read as
-before. A count over a path ("het aantal vondsten van de melder van de
+before. Where the element has the rule subject's own type, an own read of the
+subject is refused too, over a path and over one step (RGS-349, next section).
+A count over a path ("het aantal vondsten van de melder van de
 Melding") stays refused (§13.4.17.47, "A count over a written path"): it is a
 count, not a quantifier, and the wire has no range of more than one step under
 a count (WF-102 (c)).
@@ -1458,6 +1475,60 @@ answered as written by ref, clingo and both Drools branches; the frontend
 writes the two sentences of `jutterswet-ketenkwantor` byte-identically to its
 hand-written `ir.json`. Witnesses: `QuantifierOverPathTest`, the golden
 `jutterswet-dringende-melding`.
+
+---
+
+## A read of a rule subject of the element's own type in a fold — refused (2026-10-20)
+
+A narrowing: a sentence this frontend wrote and every executor answered
+wrongly. The test of a quantifier fold and the filter of a subselection ("die
+aan de volgende voorwaarde voldoen: …") are read per element, with the element
+as their subject (RUNTIME-SEMANTICS ch. 3.9a, IR-SPEC ch. 4.5), and the IR has
+no reference to the outer subject there. Where the elements have the rule
+subject's own type, a read of the subject and a read of the element are the
+same node. Two shapes are affected.
+
+- **The test of a quantifier.** "Een Jutter is kistplichtig indien de leeftijd
+  van ten minste één van de jutters van de ploeg van de Jutter groter is dan de
+  leeftijd van de Jutter": the operand beside the quantified one is built from
+  the rule subject, and in the test it read the element, so every element was
+  compared with itself (with P1 = {J1 40, J2 50} ref, clingo and both Drools
+  branches answered "J1 lacks kistplichtig"). RGS-348 did not fall, because the
+  read is an own attribute of the element type. Every read of the subject in
+  that operand ("de leeftijd van de Jutter", "zijn leeftijd", "de drempel van de
+  ploeg van de Jutter") is now refused with an ERROR (RGS-349) that names the
+  read, over a path and over one step ("de leeftijd van alle leerlingen van de
+  Jutter …", over a fact type whose two roles are Jutters). A literal and a
+  parameter are read as before.
+- **A subselection.** In a subselection "de <Type>" names the element ("zijn
+  vinddag is later dan de sluitdag van de jutter van de Vondst", element Vondst
+  on a Jutter; golden `jutterswet-late-vondst`); where the rule subject has that
+  type too, the name means either. The filter bound it to the element: "de som
+  van de leeftijd van alle jutters van de ploeg van de Jutter die aan de
+  volgende voorwaarde voldoen: zijn leeftijd is groter dan de leeftijd van de
+  Jutter" gave J1 leeg where 50 is right, in all four executors, and so did a sum
+  and a count over one step ("alle leerlingen van de Jutter"). A read whose
+  onderwerp ends in the type's name is now refused with an ERROR (RGS-350) that
+  names the read and the subselection, in the filter of a value fold and of a
+  quantifier, over a path and over one step; the WARNING of an unconverted
+  subselection (RGS-069) stands beside it on a value fold. "zijn leeftijd" in a
+  subselection is the element's and binds as before. A read that happened to give
+  the same value in both readings ("de drempel van de ploeg van de Jutter" in a
+  subselection of the jutters of that same ploeg) is refused as well: the name
+  is the same.
+
+Measured 2026-10-20 on the review probes and twelve forms of the fix round:
+before, five forms reached disk with `diagnostics: []` and were answered
+wrongly by ref, clingo and both Drools branches (the comparison and "zijn
+leeftijd" in the test of a quantifier over a path, the sum over a path, the sum
+and the count over one step), and two more (the comparison under "alle
+leerlingen", one step; a quantifier with a subselection over a path) passed only
+because their scenarios could not tell the readings apart; now each of them ends
+in RGS-349 or RGS-350, and the forms with
+"zijn" in a subselection, an element of another type, and a constant play as
+before. All 126 rgs goldens re-emit byte-identically, and none of the 179
+RegelSpraak sources of the repository raises either code. Witness:
+`QuantifierOverPathTest`.
 
 ---
 

@@ -347,3 +347,5 @@ RGS-345	fact-model-contract-violation	ERROR	violation
 RGS-346	coverage-verdict	WARNING	category,name,reason,reasonClause,verdict
 RGS-347	period-coverage-hole	WARNING	holes,parameter,period,rule
 RGS-348	quantifier-path-test-reads-subject	ERROR	element,expression,read,subject
+RGS-349	quantifier-test-reads-subject-of-element-type	ERROR	expression,read,type
+RGS-350	subselection-names-subject-of-element-type	ERROR	filter,read,type

@@ -5182,8 +5182,40 @@ final class RuleChecker {
      *  against the AGGREGATED ELEMENT type: each bullet binds to the element (not the rule subject), so the resulting
      *  {@link Condition.Compound} is a filter on the accumulate SOURCE pattern. The bouwer subject is saved and
      *  restored around the bullet walk — aggregationFilter runs DURING {@code builder.build}, nested inside the outer rule
-     *  resolution, so the rule subject must be put back (in a finally, even on a bullet-resolution throw). */
+     *  resolution, so the rule subject must be put back (in a finally, even on a bullet-resolution throw).
+     *
+     *  <p>Where the elements have the rule subject's own type, a read whose onderwerp names that type ("de leeftijd
+     *  van de Jutter" in a subselection of Jutters on a Jutter) names the element and the rule subject alike; it is
+     *  bound to the element, and the IR has no reference to the outer subject in a filter, so the frontend cannot
+     *  write the other reading. Such a filter is refused (RGS-350, review 2026-10-20) instead of being bound to the
+     *  element: "zijn leeftijd" is the element's and binds. */
     private Condition compoundElementFilter(SamengesteldPredicaatContext sp, ObjectType elem) {
+        boolean sameType = elem != null && builder.subject() == elem;
+        Condition filter = compoundElementFilterBare(sp, elem);
+        Source read = sameType ? readNamingType(filter, elem) : null;
+        if (read == null) return filter;
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-350",
+                params("filter", source(sp), "read", read, "type", elem.name), read.line()));
+        return new Condition.Unresolved(source(sp), null);   // the ERROR above is this marker's diagnosis
+    }
+
+    /** A read in {@code filter} whose written onderwerp ends in the name of {@code type} ("… van de Jutter"), or null;
+     *  a possessive ("zijn jutter") names the element and is no such read. */
+    private Source readNamingType(Condition filter, ObjectType type) {
+        Source[] found = new Source[1];
+        Condition.containsOperand(filter, x -> {
+            boolean named = false;
+            if (x instanceof Expr.AttributeReference a && a.subjectSource() != null) {
+                String[] parts = a.subjectSource().split("\\s+van\\s+");
+                named = model.objectTypeByName(stripArticle(parts[parts.length - 1])) == type;
+            }
+            if (named) found[0] = x.source();
+            return named;
+        });
+        return found[0];
+    }
+
+    private Condition compoundElementFilterBare(SamengesteldPredicaatContext sp, ObjectType elem) {
         if (sp == null || elem == null
                 || (sp.samengesteldeVoorwaardeOnderdeel() == null && sp.elementaireVoorwaarde() == null)) return null;
         ObjectType previous = builder.subject();          // SAVE the outer rule subject
@@ -5399,7 +5431,7 @@ final class RuleChecker {
         Condition plain = conditionFromToplevelBare(lhs, op, source);
         if (plain instanceof Condition.Unresolved && op.gehelePeriodevergelijking() == null) {
             Condition fold = quantifierCharacteristicCheck(lhs, lhsCtx, op.kaleNaam(), op.EEN() != null,
-                    op.HEEFT() != null || op.HEBBEN() != null, source);
+                    op.HEEFT() != null || op.HEBBEN() != null, false, source);
             if (fold != null) return fold;
         }
         return quantifierFold(checkWholePeriod(plain, wholePeriod(op.gehelePeriodevergelijking()), source),
@@ -5437,12 +5469,14 @@ final class RuleChecker {
 
     private Condition conditionFromNonToplevel(Expr lhs, ExpressieContext lhsCtx, NonToplevelOperatorContext op, Source source) {
         Condition plain = conditionFromNonToplevelBare(lhs, op, source);
-        // op.NIET() guards the §8.1.8.3 "is niet een <k>" branch above: it resolves the POSITIVE form and
-        // flips it, so a null binding there arrives as an Unresolved whose negation is not in the parse
-        // tree any more. Re-binding it here would emit the POSITIVE membership — silently inverted.
-        if (plain instanceof Condition.Unresolved && op.gehelePeriodevergelijking() == null && op.NIET() == null) {
+        // The §8.1.8.3 "is niet een <k>" branch below resolves the POSITIVE form and flips it, so a null binding
+        // there arrives as an Unresolved whose negation is not in the parse tree any more: the fold gets the NIET
+        // passed explicitly, or it would emit the POSITIVE membership — silently inverted. The other NIET forms
+        // (elfproef, numeriek) carry no name, so no fold reads them.
+        if (plain instanceof Condition.Unresolved && op.gehelePeriodevergelijking() == null
+                && (op.NIET() == null || op.EEN() != null)) {
             Condition fold = quantifierCharacteristicCheck(lhs, lhsCtx, op.kaleNaam(), op.EEN() != null,
-                    op.HEEFT() != null || op.HEBBEN() != null, source);
+                    op.HEEFT() != null || op.HEBBEN() != null, op.NIET() != null, source);
             if (fold != null) return fold;
         }
         return quantifierFold(checkWholePeriod(plain, wholePeriod(op.gehelePeriodevergelijking()), source),
@@ -5552,11 +5586,17 @@ final class RuleChecker {
                 set.type(), set.source(), false, List.of(), List.of(), null);
         Condition matrix = elementRead(withOperand(c, set, own), own, elem,
                 c instanceof Condition.Comparison v && v.left() == set ? rhsCtx : lhsCtx, source);
-        Source subjectRead = sourcePath.isEmpty() ? null : subjectRead(c, set, matrix, own, elem);
+        // Where the element has the rule subject's own type, an own read of the subject is a read of the element as
+        // well, and the matrix would take it from the element, over one step as over a path (review 2026-10-20).
+        boolean sameType = builder.subject() == elem;
+        Source subjectRead = sameType || !sourcePath.isEmpty() ? subjectRead(c, set, matrix, own, sameType ? null : elem) : null;
         if (subjectRead != null) {
-            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-348", params("expression", source,
-                    "read", subjectRead, "subject", builder.subject() == null ? "?" : builder.subject().name,
-                    "element", elem.name), source.line()));
+            model.diagnostics.add(sameType
+                    ? new Diagnostic(Severity.ERROR, "RGS-349", params("expression", source, "read", subjectRead,
+                            "type", elem.name), source.line())
+                    : new Diagnostic(Severity.ERROR, "RGS-348", params("expression", source,
+                            "read", subjectRead, "subject", builder.subject() == null ? "?" : builder.subject().name,
+                            "element", elem.name), source.line()));
             return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
         }
         return new Condition.QuantifierFold(q, threshold, elem, filter, matrix, sourceRole, sourcePath, source);
@@ -5570,7 +5610,9 @@ final class RuleChecker {
      * melder of a Vondst has more Meldingen than the one the rule is about), and a by-pair binding from the element
      * would read another object without a word. So such an operand is refused: one the matrix took over unchanged
      * ({@link #elementRead} built no other) that reads anything but an own attribute of the element, or folds
-     * instances. A literal, a parameter and arithmetic over them read no subject.
+     * instances. A literal, a parameter and arithmetic over them read no subject. With {@code elem} null every read
+     * counts, an own one too: the element has the rule subject's type, and "de leeftijd van de Jutter" or "zijn
+     * leeftijd" in the matrix of a fold over Jutters would read the element.
      */
     private static Source subjectRead(Condition c, Expr set, Condition matrix, Expr own, ObjectType elem) {
         if (!(c instanceof Condition.Comparison written) || !(matrix instanceof Condition.Comparison m)) return null;
@@ -5579,8 +5621,8 @@ final class RuleChecker {
         if (inMatrix != other) return null;
         Source[] found = new Source[1];
         Expr.contains(other, x -> {
-            boolean fromSubject = x instanceof Expr.AttributeReference a && !(a.objectType() == elem
-                    && a.navigationRole() == null && (a.navigationPath() == null || a.navigationPath().isEmpty()))
+            boolean fromSubject = x instanceof Expr.AttributeReference a && (elem == null || !(a.objectType() == elem
+                    && a.navigationRole() == null && (a.navigationPath() == null || a.navigationPath().isEmpty())))
                     || x instanceof Expr.FunctionCall f && f.elementObjectType() != null
                     || x instanceof Expr.InstanceSetUnion;
             if (fromSubject) found[0] = x.source();
@@ -5675,7 +5717,7 @@ final class RuleChecker {
      * axis the fold declined on, and the document stays emittable.
      */
     private Condition quantifierCharacteristicCheck(Expr lhs, ExpressieContext lhsCtx, KaleNaamContext nameCtx, boolean withIndefiniteArticle,
-                                    boolean hasVerb, Source source) {
+                                    boolean hasVerb, boolean negated, Source source) {
         if (nameCtx == null || lhsCtx == null) return null;
         ExpressionBuilder.QuantifiedSubject g = builder.quantifiedSubject(lhsCtx);
         if (g == null) return null;                            // no member phrase written — nothing to say
@@ -5709,7 +5751,9 @@ final class RuleChecker {
             suffix = builder.anchorTail(lhsCtx, anchorNames(builder.subject(), sourceRole));
             if (suffix == null) suffix = absorbedNegation(lhs);
         }
-        String name = (suffix.isEmpty() ? "" : suffix + " ") + stripArticle(src(nameCtx));
+        // the stellende "is niet een <k>" writes its NIET on the operator, where the vragende order leaves it in the
+        // anchor; both reach the name in front, where elementCharacteristicCheck reads it
+        String name = (negated ? "niet " : "") + (suffix.isEmpty() ? "" : suffix + " ") + stripArticle(src(nameCtx));
         Condition test = elementCharacteristicCheck(g.element(), name, withIndefiniteArticle, hasVerb, source);
         if (test == null) {
             reportFoldRefusal(g.subjectSource(),
@@ -5780,8 +5824,17 @@ final class RuleChecker {
      *  kenmerk), so the ordinary verbatim-first de-negation handles a "niet" or "geen" there and a kenmerk
      *  literally named "niet …" or "geen …" still binds positively. */
     private Condition elementCharacteristicCheck(ObjectType elem, String name, boolean withIndefiniteArticle, boolean hasVerb, Source source) {
-        if (withIndefiniteArticle)
-            return hasVerb ? possessiveCharacteristicCheck(elem, name, source) : nominalCharacteristicCheck(elem, name, source);
+        if (withIndefiniteArticle && hasVerb) return possessiveCharacteristicCheck(elem, name, source);
+        if (withIndefiniteArticle) {
+            Condition k = nominalCharacteristicCheck(elem, name, source);
+            // §8.1.8.3 "is niet een <k>" negates a nominal characteristic as "is geen <k>" does (review 2026-10-20);
+            // verbatim first, so a characteristic named "niet …" still binds positively
+            if (k == null && name.regionMatches(true, 0, "niet ", 0, 5)) {
+                Condition positive = nominalCharacteristicCheck(elem, name.substring(5).trim(), source);
+                if (positive != null) k = negate(positive, source);
+            }
+            return k;
+        }
         Condition kc = characteristicCheckCondition(elem, name, null, hasVerb, source);
         if (kc != null) checkNegationKind(elem, kc, hasVerb);
         return kc;

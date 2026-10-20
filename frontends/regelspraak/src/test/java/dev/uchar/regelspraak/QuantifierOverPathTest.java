@@ -209,6 +209,101 @@ class QuantifierOverPathTest {
         assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains("\"node\":\"Unresolved\""));
     }
 
+    /** A Jutter reaches Jutters of his own type twice: through his Ploeg (a path) and as begeleider (one step). */
+    static final String SAME_TYPE = """
+        Objecttype de Ploeg (mv: Ploegen)
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            de leeftijd Numeriek (geheel getal);
+            de ouderen Numeriek (geheel getal);
+            is kistplichtig kenmerk (bijvoeglijk);
+            het lid kenmerk;
+        Feittype PloegHeeftJutter
+            de ploeg Ploeg
+            de jutter (mv: jutters) Jutter
+        Eén ploeg heeft meerdere jutters
+        Feittype Begeleiding
+            de begeleider Jutter
+            de leerling (mv: leerlingen) Jutter
+        Eén begeleider heeft meerdere leerlingen
+        """;
+
+    /** Review finding 1 (2026-10-20): where element and rule subject have the same type, a read of the subject in the
+     *  test of a quantifier names the element as well, and the test is read per element with the element as its
+     *  subject — every executor compared each element with itself. Refused by name (RGS-349), over a path and over one
+     *  step, beside the read an operand of another type takes (RGS-348). */
+    @Test void a_test_that_reads_a_subject_of_the_element_type_is_refused() {
+        String[][] forms = {
+            {"de leeftijd van ten minste één van de jutters van de ploeg van de Jutter groter is dan de leeftijd van de Jutter",
+                    "'de leeftijd van de Jutter'"},
+            {"de leeftijd van ten minste één van de jutters van de ploeg van de Jutter groter is dan zijn leeftijd",
+                    "'zijn leeftijd'"},
+            {"de leeftijd van alle leerlingen van de Jutter groter is dan de leeftijd van de Jutter",
+                    "'de leeftijd van de Jutter'"},
+        };
+        for (String[] f : forms) {
+            RegelSpraakModel m = Resolver.resolve(SAME_TYPE + rule("Jutter is kistplichtig", f[0]));
+            assertTrue(m.diagnostics.stream().anyMatch(d -> d.isError() && "RGS-349".equals(d.code())
+                            && d.message().contains(f[1])),
+                    () -> f[0] + ": de lezing van het onderwerp van het elementtype hoort luid geweigerd te worden: "
+                            + m.diagnostics);
+        }
+    }
+
+    /** The same finding in a subselection ("die aan de volgende voorwaarde voldoen: …"), which is read with the element
+     *  as its subject: "de leeftijd van de Jutter" names the element as well as a rule subject of the same type. Refused
+     *  (RGS-350) in the filter of a value fold over a path and over one step, and in the filter of a quantifier; "zijn leeftijd"
+     *  there is the element's and binds. */
+    @Test void a_filter_that_names_a_subject_of_the_element_type_is_refused() {
+        String filter = " die aan de volgende voorwaarde voldoen: zijn leeftijd is groter dan de leeftijd van de Jutter";
+        String[] sentences = {
+            "De ouderen van een Jutter moet berekend worden als de som van de leeftijd van alle jutters van de ploeg van de "
+                    + "Jutter" + filter + ".",
+            "De ouderen van een Jutter moet berekend worden als de som van de leeftijd van alle leerlingen van de Jutter"
+                    + filter + ".",
+            "De ouderen van een Jutter moet berekend worden als het aantal leerlingen van de Jutter" + filter + ".",
+            "Een Jutter is kistplichtig\n        indien ten minste één van de jutters van de ploeg van de Jutter" + filter
+                    + " een lid is.",
+        };
+        for (String s : sentences) {
+            RegelSpraakModel m = Resolver.resolve(SAME_TYPE + "Regel t\n    geldig altijd\n        " + s + "\n");
+            assertTrue(m.diagnostics.stream().anyMatch(d -> d.isError() && "RGS-350".equals(d.code())
+                            && d.message().contains("'de leeftijd van de Jutter'")),
+                    () -> s + ": de lezing in het filter hoort luid geweigerd te worden: " + m.diagnostics);
+        }
+        RegelSpraakModel own = Resolver.resolve(SAME_TYPE + "Regel t\n    geldig altijd\n        De ouderen van een Jutter "
+                + "moet berekend worden als de som van de leeftijd van alle jutters van de ploeg van de Jutter die aan de "
+                + "volgende voorwaarde voldoen: zijn leeftijd is groter dan 45.\n");
+        assertTrue(own.diagnostics.isEmpty(), () -> "'zijn leeftijd' in het filter is die van het element: " + own.diagnostics);
+    }
+
+    /** Review finding 2 (2026-10-20): "niet een &lt;kenmerk&gt;" under a quantifier is the negated nominal
+     *  characteristic, the same test as "geen &lt;kenmerk&gt;" (§8.1.8.3), over a path and over one step, in the
+     *  vragende and the stellende order. It was refused with the reason that the characteristic is none of the
+     *  element. A name that is no nominal characteristic of the element stays refused. */
+    @Test void niet_een_under_a_quantifier_is_the_negated_characteristic() {
+        String[][] forms = {
+            {"Melding is dringend", "ten minste één van de vondsten van de melder van de Melding niet een wrakstuk is"},
+            {"Jutter is kistplichtig", "ten minste één van de vondsten van de Jutter niet een wrakstuk is"},
+            {"Melding is dringend", "alle vondsten van de melder van de Melding niet een wrakstuk zijn"},
+            {"Melding is dringend", "hij aan alle volgende voorwaarden voldoet:\n        - ten minste één van de vondsten "
+                    + "van de melder van de Melding is niet een wrakstuk\n        - zijn drempel is groter dan 0"},
+            {"Jutter is kistplichtig", "hij aan alle volgende voorwaarden voldoet:\n        - ten minste één van de vondsten "
+                    + "van de Jutter is niet een wrakstuk\n        - zijn leeftijd is groter dan 0"},
+        };
+        for (String[] f : forms) {
+            String ir = clean(rule(f[0], f[1]));
+            assertTrue(ir.contains("\"node\":\"QuantifierFold\""), () -> f[1] + ":\n" + ir);
+            assertTrue(ir.contains("\"test\":{\"node\":\"CharacteristicCheck\",\"characteristic\":\"wrakstuk\",\"negated\":true"),
+                    () -> f[1] + ":\n" + ir);
+            assertFalse(ir.contains("\"node\":\"Unresolved\""), () -> f[1] + ":\n" + ir);
+        }
+        RegelSpraakModel m = Resolver.resolve(MODEL + rule("Melding is dringend",
+                "ten minste één van de vondsten van de melder van de Melding niet een zwaar is"));
+        assertTrue(m.diagnostics.stream().anyMatch(d -> "RGS-213".equals(d.code())
+                        && d.message().contains("'zwaar' is geen kenmerk van Vondst")),
+                () -> "een bijvoeglijk kenmerk na 'niet een' blijft geweigerd: " + m.diagnostics);
+    }
+
     /** A count over a path is no quantifier and stays refused (acceptance (e)): here, with no relation between the
      *  Jutter and the Kist, as a fold without a range (RGS-131), as on main. */
     @Test void a_count_over_a_path_stays_refused() {
