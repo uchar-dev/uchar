@@ -1,0 +1,219 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "12"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J2"
+          ]
+        },
+        "characteristics": [
+          "wrakstuk"
+        ]
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J3"
+          ]
+        },
+        "characteristics": [
+          "wrakstuk"
+        ]
+      },
+      {
+        "label": "M1",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "melder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "melder": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M3",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "melder": [
+            "J3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M4",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "melder": [
+            "J4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M5",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "M1",
+      "characteristic": "dringend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "M2",
+      "characteristic": "dringend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "M3",
+      "characteristic": "dringend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "M4",
+      "characteristic": "dringend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "M5",
+      "characteristic": "dringend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "M1",
+      "characteristic": "voorrang"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "M2",
+      "characteristic": "voorrang"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "M3",
+      "characteristic": "voorrang"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "M4",
+      "characteristic": "voorrang"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "M5",
+      "characteristic": "voorrang"
+    }
+  ]
+}

@@ -1,0 +1,223 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P2",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P3",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P4",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P5",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "ploeg": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "ploeg": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "ploeg": [
+            "P2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "ploeg": [
+            "P2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "ploeg": [
+            "P3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J6",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "ploeg": [
+            "P5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "12"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "15"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "12"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J6"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "zwaarbeladen"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P2",
+      "characteristic": "zwaarbeladen"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P3",
+      "characteristic": "zwaarbeladen"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P4",
+      "characteristic": "zwaarbeladen"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P5",
+      "characteristic": "zwaarbeladen"
+    }
+  ]
+}

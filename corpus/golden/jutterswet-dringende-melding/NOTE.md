@@ -139,3 +139,14 @@ union gives 1 and 2, on opposite sides of the threshold, in one world.
 
 Every case carries an expectation a do-nothing executor fails (gate 7): M1
 dringend and with voorrang, M1 gewogen, P1 zwaarbeladen, J2 kistplichtig.
+
+## Executors
+
+Measured 2026-10-20 on the card branch, after the hand computation above was
+committed: the frontend writes `ir.json` and the four case files from
+`source.rgs` and `scenario.rgs` with no diagnostic (gate 16; `ir.json` is the
+same from `source.rgs` alone, gate 10), the verifier passes the document, and
+ref, clingo and both Drools branches answer every expectation as computed
+(ref and clingo PASS on 10, 5, 5 and 4 expectations; the exec-model and the
+DRL-text branch PLAYED 4). The reference runner's `--noop` mode fails every
+case, on M5's voorrang, M5's gewogen, P4's zwaarbeladen and J2's kistplichtig.

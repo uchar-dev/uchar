@@ -1,0 +1,188 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K1",
+        "objectType": "Kist",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "vol"
+        ]
+      },
+      {
+        "label": "K2",
+        "objectType": "Kist",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K3",
+        "objectType": "Kist",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "vol"
+        ]
+      },
+      {
+        "label": "K4",
+        "objectType": "Kist",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "vol"
+        ]
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J1"
+          ],
+          "kist": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J1"
+          ],
+          "kist": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J1"
+          ],
+          "kist": [
+            "K2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J2"
+          ],
+          "kist": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J2"
+          ],
+          "kist": [
+            "K3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J3"
+          ],
+          "kist": [
+            "K4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V7",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J3"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "kistplichtig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "kistplichtig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J3",
+      "characteristic": "kistplichtig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J4",
+      "characteristic": "kistplichtig"
+    }
+  ]
+}

@@ -1,0 +1,244 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Weging",
+        "attributes": {
+          "weegdatum": {
+            "date": "2026-05-03"
+          }
+        },
+        "roles": {
+          "gewogen vondst": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Weging",
+        "attributes": {},
+        "roles": {
+          "gewogen vondst": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W3",
+        "objectType": "Weging",
+        "attributes": {},
+        "roles": {
+          "gewogen vondst": [
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W4",
+        "objectType": "Weging",
+        "attributes": {
+          "weegdatum": {
+            "date": "2026-05-11"
+          }
+        },
+        "roles": {
+          "gewogen vondst": [
+            "V6"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M1",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "melder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "melder": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M3",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "melder": [
+            "J3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M4",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "melder": [
+            "J4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M5",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "melder": [
+            "J5"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "M1",
+      "characteristic": "gewogen"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "M2",
+      "characteristic": "gewogen"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "M3",
+      "characteristic": "gewogen"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "M4",
+      "characteristic": "gewogen"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "M5",
+      "characteristic": "gewogen"
+    }
+  ]
+}

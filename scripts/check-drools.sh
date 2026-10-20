@@ -304,7 +304,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-havenrooster|EXCLUDE DROOLS-179|transpiler SKIP: a duration in day kinds whose day kind 'havendag' reads the parameter 'openingsdatum' in its definition, which the branch does not read in a day-kind definition (WF-031 admits it). The destructive lowering refused the same rule until card tms-omschakeling (2026-10-10): its day-kind predicate compiler (kern.DayKinds) carries no PARAMETER operand. Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
   "jutterswet-kamerheffing-catala|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
   "jutterswet-kamerhuishouden-catala|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
-  "jutterswet-ketenkwantor|EXCLUDE DROOLS-026|loader Refusal: Kwantorvouw.bronPad — the multi-step range of a COUNTING quantifier (WF-108 (c)); the accumulate source carries one join role. Measured 2026-09-22 (card kwantortelling-pad-golden) in both branches, same sentence. What stands behind it is INFERRED, not measured, since nothing past the loader runs while it refuses: the golden's middle relation 'berging' is many-to-many — the shared element it exists for needs a to-many reverse role on the last step — and that is the relation anchor/jutterswet-bootberging and jutterswet-muntketen are refused on one layer deeper, so lifting the loader alone would most likely move this refusal rather than make the golden play. Its flat-count pins are a ref = clingo pair"
+  "jutterswet-ketenkwantor|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Vondst) has no bean field: the many-to-many 'berging' of anchor/jutterswet-bootberging and jutterswet-muntketen above. Measured 2026-10-20 (card frontend-kwantor-over-een-pad) in both branches, same sentence: since that card the loader carries a QuantifierFold's sourcePath and both branches plan it as a value fold's, so the refusal moved one layer deeper, as the pin of 2026-09-22 inferred; until then the loader refused the range itself (DROOLS-026, now retired). The quantifier over a path plays where the bean model carries the steps: jutterswet-dringende-melding. Its flat-count pins are a ref = clingo pair"
   "jutterswet-kinderdeler|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-kinderfoldheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-kinderkap|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
@@ -1368,7 +1368,12 @@ EXPECTED_CHANNEL=(
 # with `inconsistent` expectations that pin the code. Five play on both branches: division-by-numeric-zero,
 # division-abs-by-numeric-zero, filled-count-unguarded-division, at-most-reads-until-settled and
 # fold-filter-divides-by-zero; closed-runtime-division-by-zero folds over a list and stands in EXPECTED_CHANNEL.
-EXPECTED_PLAYED=260
+# 260 -> 261 (2026-10-20, card frontend-kwantor-over-een-pad): the golden jutterswet-dringende-melding, a quantifier
+# over a written path in five forms (to-one then to-many, three steps, to-many then to-many, to-many then to-one under
+# a counting quantifier, and the justification of an exception), written in RegelSpraak with hand-computed cases.
+# Since that card the loader carries a QuantifierFold's sourcePath and both branches plan it as a value fold's; the
+# golden plays on both with PLAYED 4. jutterswet-ketenkwantor stays in EXPECTED_CHANNEL, one layer deeper.
+EXPECTED_PLAYED=261
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
