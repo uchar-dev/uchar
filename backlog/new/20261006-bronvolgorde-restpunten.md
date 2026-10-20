@@ -23,8 +23,8 @@ een ERROR weigert. De punten zijn klein; het onderscheid dat telt, is dat (a),
 
 **(a) Welke vorm of declaratie een weigering als eerste noemt. Tekst.**
 De WF-045-wandeling noemt de eerste kring die zij tegenkomt, in de volgorde van
-de vormen (`Afhankelijkheden.diep`,
-`frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/Afhankelijkheden.java`
+de vormen (`Dependencies.deep`,
+`frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/Dependencies.java`
 regel 89; de verifier doet hetzelfde in `wf045_046`,
 `spec/verifier/lib/checks.ml` regel 7866–7887). Gemeten bij de bron
 `jutterkring`: de melding begint met "Jutter.uitgesloten -> …" of met
@@ -40,8 +40,8 @@ volgorde afhangt. Dat raakt de zin van de verifier (beschermd pad) en de
 **(b) De `source` van de regel van een gegenereerd lid. Tekst.**
 Een vouw over een verzameling met to-one stappen erna genereert een lid "<lid>
 via <rol 1>, … en <rol n>" en een regel die het zet (DIVERGENCES, "A fold over
-a set and to-one steps after it"). `ExpressieBouwer.hulplid`
-(`resolver/ExpressieBouwer.java` regel 888–922) geeft die regel de brontekst
+a set and to-one steps after it"). `ExpressionBuilder.helperMember`
+(`resolver/ExpressionBuilder.java` regel 888–922) geeft die regel de brontekst
 van de vouw die het lid als eerste genereert (regel 918–920); een tweede vouw
 over dezelfde stappen vindt het bestaande lid (regel 894) en verandert niets.
 Bij twee vouwen met een anders geschreven lezing verschilt tussen twee
@@ -56,16 +56,16 @@ Van twee `Uitzondering op`-blokken staat het later geschreven blok hoger
 hier de inhoud. Genoteerd zodat een volgende meting over permutaties dit niet
 als afwijking telt.
 
-**(d) `subjectVan` vóór `zetVariabelen`. Niet gemeten.**
+**(d) `ruleSubjectOf` vóór `setVariables`. Niet gemeten.**
 Bij elke regelversie zet `RuleChecker` eerst het onderwerp en daarna de
 variabelen (`resolver/RuleChecker.java` regel 3290–3291):
 
     bouwer.setSubject(subjectVan(rsr.resultaatDeel()));
     bouwer.zetVariabelen(rsr.variabeleDeel());
 
-Voor een enkelvoudige consistentieregel bepaalt `subjectVan` (regel 4643) het
+Voor een enkelvoudige consistentieregel bepaalt `ruleSubjectOf` (regel 4643) het
 onderwerp door de uitdrukking te bouwen (`bouwer.bouw(e.expressie())`, regel
-4658–4660). Dat gebeurt voordat `zetVariabelen` de variabelen van de vorige
+4658–4660). Dat gebeurt voordat `setVariables` de variabelen van de vorige
 regel wist en voordat het nieuwe onderwerp gezet is, dus met het onderwerp en
 de variabelen van de regel die in de bron ervoor staat. Het record vond geen
 geaccepteerde zin die daardoor een ander document krijgt, maar heeft dat niet
@@ -76,8 +76,8 @@ enkelvoudige consistentieregel die een naam leest die in de regel ervoor een
 variabele is ("Daarbij geldt"), en een die "zijn …" leest, telkens na een regel
 met een ander onderwerp, in beide volgordes; (3) of het teruggegeven objecttype
 kan verschillen. Als het iets uitmaakt: de variabelen wissen en het onderwerp
-leeg zetten vóór `subjectVan`, met een rood-eerst getuige in
-`BronvolgordeTest`.
+leeg zetten vóór `ruleSubjectOf`, met een rood-eerst getuige in
+`SourceOrderTest`.
 
 **(e) "de resolver-WARNING". Tekst.**
 De begrenzing op 100000 activaties noemt de WARNING van de frontend als bron
@@ -89,7 +89,7 @@ van een kring zonder fixpunt:
   tussen berekeningen (zie de resolver-WARNING)", en de javadoc op regel
   168–170 ("resolver-diagnosed as a WARNING");
 - regelspraak-toolchain
-  `service/src/main/java/dev/uchar/regelspraak/toolchain/service/Uitvoerder.java`
+  `service/src/main/java/dev/uchar/regelspraak/toolchain/service/Executor.java`
   regel 71–72, dezelfde zin;
 - in uchar het commentaar in
   `backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/model/ExecModelTranspiler.java`

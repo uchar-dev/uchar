@@ -6,7 +6,7 @@ besluiten 24, 27 en 28 van die kaart. Bestaand gedrag van de Drools-backend op b
 ## Aanleiding
 
 De beangenerator (`schema/FactModelGenerator`) maakt van de naam van een attribuut of kenmerk een Java-veld met
-`Namen.ident`. Sinds de kaart leidt één hulp in `transpiler/kern/Namen` (`lidnamen`) veld, getter, setter en
+`Namen.ident`. Sinds de kaart leidt één hulp in `transpiler/core/Namen` (`lidnamen`) veld, getter, setter en
 DRL-eigenschap af; de generator gebruikt haar ook. Drie grenzen zijn gemeten, geen ervan raakt een golden:
 
 - **Een naam met een cijfer vooraan of een teken dat geen Java-identifierteken is.** `Namen.ident` houdt alles van
@@ -25,12 +25,12 @@ DRL-eigenschap af; de generator gebruikt haar ook. Drie grenzen zijn gemeten, ge
 
 - (a) Meet welke van deze namen de IR toelaat (verifier, IR-SPEC §2.1) en wat ref en clingo ermee doen.
 - (b) Elke toegelaten naam wordt een geldig, deterministisch en injectief Java-veld, of wordt per vorm geweigerd met
-  een benoemde reden via het `Dekking`-manifest, op beide takken in dezelfde zin. Nooit een crash bij de bouw.
+  een benoemde reden via het `Coverage`-manifest, op beide takken in dezelfde zin. Nooit een crash bij de bouw.
 - (c) De DRL-weergave leest een lid met een van de achttien woorden via de getter, zodat beide takken het spelen.
 - (d) Eigen documenten met zulke namen, rood eerst, door ref, clingo en beide takken; klopt het vierkant, dan een golden
   (de pin van gate 12 als voorstel).
 
-May touch: `backends/drools/**` (`schema/`, `transpiler/kern/Namen`, `transpiler/tms/DrlWeergave`), `corpus/**`,
+May touch: `backends/drools/**` (`schema/`, `transpiler/core/Namen`, `transpiler/tms/DrlRendering`), `corpus/**`,
 `scripts/check-drools.sh` (**voorstel**, pin).
 
 Out of scope: `ref/`, `backends/clingo`, `spec/` (alleen meten; een spec-vraag wordt een eigen voorstel).

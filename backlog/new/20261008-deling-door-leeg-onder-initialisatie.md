@@ -91,7 +91,7 @@ truth-maintenance-proeftak.
 
 De kaart `20261007-drools-logische-afleiding` legt deze meting ook vast in
 haar `Result:`. Haar getuige
-`TmsInitialisatieWitnessTest.een_deling_door_leeg_deponeert_alleen_waar_de_initialisatie_geldt`
+`TmsInitialisationWitnessTest.a_division_by_empty_deposits_only_where_the_initialisation_applies`
 vraagt van de exec-modeltak alleen case 1; landt die kaart vóór deze, dan zet
 deze kaart daar ook case 2 aan. Geen andere kaart raakt
 `delingCompanions` of de deponeerregels van clingo.
@@ -108,6 +108,6 @@ initialisatie waarvan het doel in de invoer gevuld is: daar deponeren ref en cli
 ## Na `20261008-tms-omschakeling` (2026-10-11)
 
 Na `20261008-tms-omschakeling` (2026-10-10) leidt de exec-model-tak af met truth maintenance en speelt beide cases
-(getuige `TmsInitialisatieWitnessTest.een_deling_door_leeg_deponeert_alleen_waar_de_initialisatie_geldt`, beide op
+(getuige `TmsInitialisationWitnessTest.a_division_by_empty_deposits_only_where_the_initialisation_applies`, beide op
 `EXEC_MODEL`): (b) geldt nog voor clingo, (c) voor de DRL-teksttak, en `ExecModelTranspiler.java` in May touch bestaat
 niet meer.

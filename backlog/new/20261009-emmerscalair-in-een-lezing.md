@@ -20,8 +20,8 @@ lezen ze de emmerscalair als geen tijdlijn.
 | "gedurende het gehele jaar" over een emmerscalair langs een pad ("de havendagen van de werf van de Schuit") | de toets slaagt (werftoeslag 10) | fout: "the whole-period qualifier over "havendagen" needs the full timeline; the werf of "S1" supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)" |
 
 De oude Drools-takken antwoorden overal, omdat `CaseRunner` de emmerscalair als segment op de boon zet (bewust; zie de
-javadoc van `temporeleInvoer`); bij de pro rata geven ze 306. De documenten: `/tmp/lens-tms-k3/proef/lens2/invoer/`, en
-uitgeschreven in `TmsInvoervormWitnessTest` en `TmsGeheelPeriodeWitnessTest` (deel E).
+javadoc van `temporalInput`); bij de pro rata geven ze 306. De documenten: `/tmp/lens-tms-k3/proef/lens2/invoer/`, en
+uitgeschreven in `TmsInputFormWitnessTest` en `TmsWholePeriodWitnessTest` (deel E).
 
 ## Acceptatie (bij oppakken aanscherpen)
 

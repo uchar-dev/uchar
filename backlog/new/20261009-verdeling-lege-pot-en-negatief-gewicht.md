@@ -29,7 +29,7 @@ tabel van ch. 4.4 ("counts as 0: claims nothing"), ref en clingo deponeren niet;
 
 De documenten (verifier PASS) staan onder `/tmp/lens-tms-k3/stap1/metingen/documenten/` (`d-lege-pot-gelijk`,
 `d-lege-pot-naar-rato`, `d-lege-pot-op-volgorde`, `d-negatief-gewicht-naar-rato`) en zijn in de getuige
-`TmsVerdelingWitnessTest` (deel D) uitgeschreven; de meting in `/tmp/lens-tms-k3/proef/stap1-bijvangst.txt`.
+`TmsAllocationWitnessTest` (deel D) uitgeschreven; de meting in `/tmp/lens-tms-k3/proef/stap1-bijvangst.txt`.
 
 ## Acceptatie (bij oppakken aanscherpen)
 

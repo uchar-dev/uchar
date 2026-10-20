@@ -20,12 +20,12 @@ bereikbaar is (`spec/verifier/lib/checks.ml` regel 7888–7914, in `wf045_046`,
 regel 7854).
 
 `check` herhaalt WF-046 alleen binnen een kring die WF-045 weigert.
-`RuleChecker.keurAfhankelijkheidskringen`
+`RuleChecker.checkDependencyCycles`
 (`frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/RuleChecker.java`
-regel 155–180) meldt de kringen van `Afhankelijkheden.kringen` (regel 43), en
+regel 155–180) meldt de kringen van `Dependencies.cycles` (regel 43), en
 dat zijn alleen WF-045- en WF-051-schendingen. De WF-045-wandeling slaat een
-vorm van een recursieve creatie over (`Afhankelijkheden.java` regel 91), en
-`draagtNegatieveRand` (regel 67) kijkt alleen tussen de vormen van een
+vorm van een recursieve creatie over (`Dependencies.java` regel 91), en
+`carriesNegativeEdge` (regel 67) kijkt alleen tussen de vormen van een
 WF-045-kring. `grammar/DIVERGENCES.md` regel 3005–3006 legt de grens vast: "A
 negative edge on a cycle WF-045 admits, through a recursive creation, still
 passes `check`."
@@ -116,9 +116,9 @@ schrijft, is niet gemeten: naast die documenten staat geen bron.
 
 - (a) `check` weigert elke negatieve rand op een kring, ook op een kring die
   WF-045 toelaat, met een ERROR in de zin van de verifier (WF-046) op de kop
-  van de vorm die de verifier noemt. `Afhankelijkheden` krijgt de
+  van de vorm die de verifier noemt. `Dependencies` krijgt de
   bereikbaarheidstoets van `wf045_046` over de volledige graaf, zonder vormen
-  over te slaan; `keurAfhankelijkheidskringen` krijgt een arm per
+  over te slaan; `checkDependencyCycles` krijgt een arm per
   WF-046-regel. Een WF-045-kring houdt zijn melding met de bijzin over WF-046;
   een WF-046-regel die daarin al genoemd is, staat niet nog eens apart.
 - (b) Rood-eerst getuigen in de frontend: de bron van het negatief, en een
@@ -144,8 +144,8 @@ schrijft, is niet gemeten: naast die documenten staat geen bron.
 ## Omvang
 
 Klein tot middel. De wijziging in de frontend is één functie in
-`Afhankelijkheden` (de toets in de verifier is ongeveer 25 regels OCaml), één arm in
-`keurAfhankelijkheidskringen`, getuigen en een zin in DIVERGENCES. De meting
+`Dependencies` (de toets in de verifier is ongeveer 25 regels OCaml), één arm in
+`checkDependencyCycles`, getuigen en een zin in DIVERGENCES. De meting
 kost meer dan de wijziging; de meetopzet van
 `backlog/done/20261006-kringtoets-volgt-wf045.md` is te hergebruiken. Gevolgen
 voor bestaande bronnen: in de 1171 documenten van de meting van 2026-10-06
@@ -164,6 +164,6 @@ van de registertekst (hoofdsessie, serieel).
 ## Na `20261008-tms-omschakeling` (2026-10-11)
 
 Na `20261008-tms-omschakeling` (2026-10-10) bestaan `ExecModelTranspiler`, `kringWeigering` en `groepVolgorde` niet
-meer; de exec-model-tak weigert bij de bouw wat WF-045/046 weigeren (`Kringen`, 'exec-model: kring in de
+meer; de exec-model-tak weigert bij de bouw wat WF-045/046 weigeren (`Cycles`, 'exec-model: kring in de
 afhankelijkheden …'). De kolom 'exec-modeltak' van de tabel beschrijft de verwijderde verlaging; wat de huidige
 exec-model-tak op de vijf negatieven doet, is niet nagemeten.

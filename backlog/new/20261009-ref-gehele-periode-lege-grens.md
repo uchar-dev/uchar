@@ -10,7 +10,7 @@ RUNTIME-SEMANTICS ch. 3.9 (rond regel 2387): "A leeg comparison bound makes the 
 dat niet voor ongelijkheid: het leest "ongelijk aan" tegen een lege grens per dag met de regel van ch. 1.2 (precies één
 leeg is waar) en laat de kwalificatie slagen.
 
-Document (`TmsGeheelPeriodeWitnessTest`, deel A3; verifier PASS): een premie "indien zijn tijdlijn gedurende het gehele
+Document (`TmsWholePeriodWitnessTest`, deel A3; verifier PASS): een premie "indien zijn tijdlijn gedurende het gehele
 jaar ongelijk is aan zijn grens", met een lege grens.
 
 | Uitvoerder | J5.ongelijkpremie |

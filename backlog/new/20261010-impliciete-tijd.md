@@ -26,7 +26,7 @@ Rechten. De presentatie draagt geen licentie; ALEF is EUPL-1.2, uchar Apache-2.0
 voorstel beschrijven beide in eigen woorden en verwijzen naar dia, bestand en regel; er gaat geen tekst of code uit
 over naar uchar, en het corpus volgt de corpusregels van `CLAUDE.md`.
 
-Goal: een voorstel `spec/proposals/IMPLICIETE-TIJD.md` dat de lezing per periode voor uchar uitwerkt in genummerde
+Goal: een voorstel `spec/proposals/IMPLICIT-TIME.md` dat de lezing per periode voor uchar uitwerkt in genummerde
 besluitpunten, elk met een uitgewerkt voorbeeld met absolute waarden; met een meting van wat elke uitvoerder vandaag
 met de vormen uit de presentatie doet; en met de tekst van de bouwkaarten die erop volgen, in een volgorde die past bij
 de twee TMS-kaarten. Deze kaart verandert geen spec, corpus of uitvoerder.
@@ -232,10 +232,10 @@ Niet in `20261008-tms-omschakeling` en ook niet ervoor; fase 0 kan nu al.
 3. **Vóór de omschakeling** zou het Drools-deel drie keer gebouwd moeten worden: in de destructieve verlaging die
    verdwijnt, in de DRL-teksttak en in de tak met truth maintenance. Na `20261008-drl-teksttak-op-truth-maintenance`
    is het één ontwerp in twee weergaven (PLAN §9, 2026-10-08).
-4. **De vorm van de tak met truth maintenance past.** Een tijdlijn is daar een onveranderlijke `List<Tijdvak>` in een
-   standfeit, berekend door zuivere functies in de runtime (`Verdeling.bereken` is het precedent). Rekenen per periode
+4. **De vorm van de tak met truth maintenance past.** Een tijdlijn is daar een onveranderlijke `List<Period>` in een
+   standfeit, berekend door zuivere functies in de runtime (`Allocation.compute` is het precedent). Rekenen per periode
    is dan een zuivere functie over segmentlijsten, een voorwaarde per periode een knip op waar-perioden, en een
-   schrijversconflict per dag een logisch foutfeit zoals `Schrijversconflict`. De weigering in de README (r. 500),
+   schrijversconflict per dag een logisch foutfeit zoals `WritersConflict`. De weigering in de README (r. 500),
    "any value of a timeline target other than a pro-rata part or a day count", is precies de lijst die fase 2 inkort.
 5. **Volgorde van de bestanden.** Fase 1 voegt goldens toe, en gate 12 noemt elke niet-gespeelde golden bij naam in
    `scripts/check-drools.sh`, een bestand dat beide TMS-kaarten wijzigen. Fase 1 loopt daarom serieel na die kaarten,
@@ -262,7 +262,7 @@ Niet in `20261008-tms-omschakeling` en ook niet ervoor; fase 0 kan nu al.
 
 ## Acceptatie
 
-- (a) `spec/proposals/IMPLICIETE-TIJD.md` behandelt de besluitpunten 1–13, elk met de vraag, de lezingen (uchar nu,
+- (a) `spec/proposals/IMPLICIT-TIME.md` behandelt de besluitpunten 1–13, elk met de vraag, de lezingen (uchar nu,
   ALEF, en waar ze bestaat de RegelSpraak-specificatie bij paragraafnummer), een aanbeveling met reden, en ten minste
   één uitgewerkt voorbeeld met absolute waarden dat ref letterlijk als test kan overnemen.
 - (b) Een meting: de ankercasus in beide formuleringen als RegelSpraak-bron, buiten de repo, door de frontend
@@ -302,7 +302,7 @@ zin? Een lensvondst telt alleen met een concreet tegenvoorbeeld.
 Klein tot middel: een voorstel en een meting, geen bouw. De bouwfasen samen zijn groot; 1a is de kleinste (de
 functies staan in ref, het werk zit in de evaluator, clingo en de golden).
 
-May touch: `spec/proposals/IMPLICIETE-TIJD.md` (nieuw; onder het CODEOWNERS-net van `spec/` een voorstel),
+May touch: `spec/proposals/IMPLICIT-TIME.md` (nieuw; onder het CODEOWNERS-net van `spec/` een voorstel),
 kaartverplaatsing. De meting draait in een kladmap buiten de repo.
 
 Out of scope: `spec/RUNTIME-SEMANTICS.md`, `spec/IR-SPEC.md`, `spec/schema/`, `spec/verifier/`, `corpus/`, `ref/`,

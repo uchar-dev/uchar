@@ -28,7 +28,7 @@ tak met truth maintenance geen schrijfgrenscontrole; dat is niet nagemeten.
 - (a) Nagaan of ch. 2.4 punt 1 ("a static error") voor deze vorm statisch kan (de verifier), of dat het een
   evaluatiefout is zoals in ref; voor een regel en voor een verdeling.
 - (b) De tak met truth maintenance (na `20261008-tms-omschakeling` dé exec-model-tak) faalt zoals ref, als logisch
-  `Fout`-feit aan het fixpunt; rood eerst, in elke volgorde van de betrokken regels.
+  `Fault`-feit aan het fixpunt; rood eerst, in elke volgorde van de betrokken regels.
 - (c) Een rood geval in `corpus/red/` als het een evaluatiefout blijft (ref en clingo met hun zin).
 - (d) Alle gates groen; de pins van gate 12 bewegen niet.
 

@@ -1,9 +1,9 @@
 # clingo-let-binder-vergelijking-over-eenheden: clingo vergelijkt een Let-binder met een waarde in een andere eenheid zonder herrekening
 
 *Gevonden op 2026-10-10 door de bouwer van stap 2 van `20261008-tms-omschakeling` (bij de getuige
-`TmsZoalsRefWitnessTest`) en door de hoofdsessie vastgelegd volgens de afspraak dat een bestaande bug in ref, clingo of
+`TmsLikeRefWitnessTest`) en door de hoofdsessie vastgelegd volgens de afspraak dat een bestaande bug in ref, clingo of
 de spec een kaart krijgt. Gemeten in een kopie van de claim `331b1179` van die kaart, met de verifier, ref en clingo uit
-`_build` en de shaded jar van de claim. Het document en de case staan in de repository: `backends/drools/src/test/resources/zoals-ref/let-kruiseenheid/` (`ir.json`,
+`_build` en de shaded jar van de claim. Het document en de case staan in de repository: `backends/drools/src/test/resources/like-ref/let-cross-unit/` (`ir.json`,
 `case.json`).*
 
 ## Aanleiding
@@ -28,10 +28,10 @@ km. Case: B1 met aanloop 500; verwacht `uit` 2.00 en consistent, want 500 m is n
 | Drools, de destructieve exec-model-tak (op de claim) | `EXCLUDE transpiler SKIP: regel: uit van …` (de meting kapt de zin af) |
 | Drools, de tak met truth maintenance (sinds de omschakeling de exec-model-tak) | `PLAYED 1`: uit 2.00 |
 
-De DRL-teksttak is op dit document niet gemeten. `LetDragerWandelingWitnessTest.het_cross_unit_hek_herrekent_en_kiest_de_tak_van_ref`
+De DRL-teksttak is op dit document niet gemeten. `LetCarrierWalkWitnessTest.the_cross_unit_fence_recomputes_and_chooses_the_arm_of_ref`
 pint het antwoord van de exec-model-tak (2.00, consistent) op hetzelfde document.
 
-Ter vergelijking: het eenheiddocument van `TmsRekenvormWitnessTest` vergelijkt zonder binder een attribuut in m met
+Ter vergelijking: het eenheiddocument van `TmsComputeFormWitnessTest` vergelijkt zonder binder een attribuut in m met
 een literal in km ("Een Sleepbaan is lang indien zijn sleeplengte groter is dan 3 km"), en dat document weigert clingo
 met naam ("non-identical units under a comparison are not translated"; javadoc van die getuige, gemeten 2026-10-09).
 Gevolgtrekking, niet gemeten: die weigering mist de route via een `BinderRef`, waar clingo de getallen kaal vergelijkt.
@@ -61,8 +61,8 @@ kaartverplaatsing.
 
 ## Raakvlakken
 
-- De naam van deze kaart staat al in de javadoc van `TmsZoalsRefWitnessTest` (document `let-kruiseenheid`, sinds
-  `932229dc`) en van `LetDragerWandelingWitnessTest` (`het_cross_unit_hek_herrekent_en_kiest_de_tak_van_ref`); die
+- De naam van deze kaart staat al in de javadoc van `TmsLikeRefWitnessTest` (document `let-kruiseenheid`, sinds
+  `932229dc`) en van `LetCarrierWalkWitnessTest` (`the_cross_unit_fence_recomputes_and_chooses_the_arm_of_ref`); die
   verwijzingen kloppen zodra deze kaart onder deze naam in `backlog/new` staat, en hoeven bij de landing van de reparatie
   alleen te zeggen dat clingo nu 2.00 geeft.
 - `20261009-clingo-let-binder-tussen-onderwerpen`: dezelfde backend en dezelfde knoop (`Let`), een ander gebrek; de

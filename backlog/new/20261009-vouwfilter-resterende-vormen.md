@@ -134,7 +134,7 @@ Gevonden door de bouwer van stap 5a1 van `20261008-tms-omschakeling` (bijvangst 
 2026-10-10 met ref, clingo en de verifier uit `_build` van de worktree van die kaart. De twee cases zijn niet in de
 repository bewaard; de tabel geeft hun invoer.
 
-Het document is het vouwdocument van `TmsFilterfoutWitnessTest` (verifier PASS): Jutters met aangemelde Vondsten (feittype
+Het document is het vouwdocument van `TmsFilterFaultWitnessTest` (verifier PASS): Jutters met aangemelde Vondsten (feittype
 `aanmelding`, rollen `aanmelder` en `vondst`), en één regel "zware vondsten" voor een actieve Jutter: het aantal vondsten
 van de Jutter waarvoor "zijn gewicht gedeeld door zijn deelnemers is groter dan 2".
 
@@ -144,7 +144,7 @@ van de Jutter waarvoor "zijn gewicht gedeeld door zijn deelnemers is groter dan 
 | `b-vers-j1` | J1 actief zonder vondsten; J2 niet actief met V1 (9/0) en V2 (4/0) | `oracle: PASS (2 expectations)`: J1 0, consistent | `UNSATISFIABLE`, de guard op V1 en V2 |
 
 Drools: op de invoer van `a-eerst` bevat de lezing van de exec-model-tak alleen "J1.zware vondsten = 1" (de eerste
-lezing van `TmsHerhaaldVurenWitnessTest.een_relatie_die_ontstaat_tussen_twee_fires_weigert_vuur`, hetzelfde document en
+lezing van `TmsRepeatedFireWitnessTest.a_relation_that_arises_between_two_fires_refuses_fire`, hetzelfde document en
 dezelfde invoer). Op `b-vers-j1` is Drools niet gemeten.
 
 **De stand na de landing van `20261008-tms-omschakeling`:**

@@ -40,7 +40,7 @@ rato (pot 100, één ontvanger met gewicht 1) naast een andere schrijver van het
   = [5;100]`.
 - Naast een rekenende regel die 5 schrijft: ref faalt ("two writers of one target disagree: rule … writes 5 and
   allocation … writes 100", ch. 5.7); clingo `[100;5]`.
-De tak met truth maintenance weigert beide paren luid (getuige `TmsVerdelingWitnessTest` deel H); de oude Drools-takken
+De tak met truth maintenance weigert beide paren luid (getuige `TmsAllocationWitnessTest` deel H); de oude Drools-takken
 spelen 100 bij het paar met de regel.
 
 ## Acceptatie (bij oppakken aanscherpen)

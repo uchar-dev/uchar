@@ -7,7 +7,7 @@ weigering komt uit de valdoorarmen `dt_term` en `symbolic_term`, en
 dat zijn bodemzinnen: dezelfde zin voor elke vorm die de arm vangt,
 geen benoeming van het construct. Gate 8 verbiedt zo'n zin als pin,
 dus deze vormen kunnen geen rode getuige krijgen tot ze een eigen
-benoemde arm hebben. De `Datum_in_dagen`-vormen kregen die arm bij de
+benoemde arm hebben. De `Date_in_days`-vormen kregen die arm bij de
 datumvouw-kaart (`refuse_date_timeline_total`); dit kaartje trekt de
 zusters gelijk.
 

@@ -6,7 +6,7 @@ ene-kant, dus een feittype dat beide rollen meervoudig declareert
 krijgt aan geen van beide kanten een veld en elke consument weigert.
 Drie corpusgoldens delen exact deze vorm: `anchor/jutterswet-bootberging`
 en `jutterswet-muntketen` (hun middelste feittype `berging`, waardoor
-hun bronPad-wandeling op stap 1 strandt) en `anchor/jutterswet-erflijn`
+hun sourcePath-wandeling op stap 1 strandt) en `anchor/jutterswet-erflijn`
 (de oorspronkelijke getuige van de weigering). Twee verwante gevallen
 weigeren op de ándere, conservatieve arm — enkelvoudige elementrol met
 meervoudige zusterrol (`jutterswet-gemeenteberging`,
@@ -19,12 +19,12 @@ legacy-gat maar een uchar-eigen verbreding van het beanmodel.
 
 Gemeten straal (lens, 2026-09-18): een collectierepresentatie raakt
 `FactModelGenerator.leden()` (de enige beanrenderer), 18 echte
-aanroepplekken van `heeftReferentieVeld`, 22 van `naarVeelRol`,
+aanroepplekken van `hasReferenceField`, 22 van `toManyRole`,
 `ContractValidator`, de case-invoerkant van `CaseRunner` (die zo'n
 relatie nu bij het schrijven weigert), beide transpilers en de
-§9-creatie-idempotentiegarde (`subjectNaarVeelCreatie`). De javadoc van
-`zelfpaarRollen` verwerpt collectievelden expliciet omdat ze
-cardinaliteit aan elke `naarVeelRol`-consument zouden misrapporteren —
+§9-creatie-idempotentiegarde (`subjectToManyCreation`). De javadoc van
+`selfPairRoles` verwerpt collectievelden expliciet omdat ze
+cardinaliteit aan elke `toManyRole`-consument zouden misrapporteren —
 die afweging moet herzien, niet omzeild. Middel-tot-groot; eigen
 gate-12-kanaalbeweging.
 
@@ -34,7 +34,7 @@ gate-12-kanaalbeweging.
   weigering in beide takken.
 - (b) Een collectiedragende representatie voor relaties zonder
   ene-kant, gedragen door beide transpilers, de case-invoer en de
-  creatiepaden; de `naarVeelRol`/idempotentie-consumenten blijven
+  creatiepaden; de `toManyRole`/idempotentie-consumenten blijven
   correct (de herziene afweging gedocumenteerd).
 - (c) De drie goldens spelen in beide takken met ongewijzigde
   verwachtingen; kanaalregels en `EXPECTED_PLAYED` bewegen mee
@@ -56,6 +56,6 @@ ankerwaarden):
 - Zijn twee creaties maken `penningbezit`, en een gemaakte relatie leest de tak over koppelingsfeiten, niet over het
   gedeelde beanveld `Penning.houder`.
 - De §13.3.9-weigering van deze kaart geldt in de exec-model-tak dus alleen nog voor een invoerrelatie die geen vorm
-  maakt. De getuige daarvan is `ObjectCreatieWitnessTest.een_aantalassertie_over_een_gedeeld_veld_wordt_luid_geweigerd`,
+  maakt. De getuige daarvan is `ObjectCreationWitnessTest.a_count_assertion_over_a_shared_field_is_refused_loudly`,
   op de golden zonder haar creaties.
 - De DRL-teksttak weigert het anker nog.

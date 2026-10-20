@@ -5,7 +5,7 @@ demovideo (beat h04b08: de resolvermelding `gedeeld door: een eenheidloze teller
 omgekeerde eenheid (1/dg) die het Eenheid-model niet kan uitdrukken`). Gelezen op main `e2144945`; niets nagemeten
 met ref, clingo of Drools.*
 
-Goal: het Eenheid-model kan een omgekeerde eenheid uitdrukken, en de typering geeft een eenheidloze teller gedeeld door
+Goal: het `Unit`-model kan een omgekeerde eenheid uitdrukken, en de typering geeft een eenheidloze teller gedeeld door
 een eenheid E de eenheid E⁻¹ in plaats van een resolverfout. Daarmee zijn een frequentie (s⁻¹), een aantal per dag
 zonder teller-eenheid en het omgekeerde van een duur te declareren en uit te rekenen, op elke route gelijk.
 
@@ -14,18 +14,18 @@ zonder teller-eenheid en het omgekeerde van een duur te declareren en uit te rek
 - **Besluit 17b (2026-08-29)** maakte eenheidloos ÷ E een luide resolverfout. Het week daarmee bewust af van Tabel 14
   rij 4 van de arbiter, die eenheidloos ÷ E de eenheid E geeft; dat is dimensioneel onjuist. De reden voor de fout was
   dat het model 1/E niet kan spellen (`backlog/done/20260829-eenheid-identiteit-typerfix.md`, Result; CONSTRUCTS rij 26;
-  `frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/Typering.java` r. 106–111). Die fout was juist
+  `frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/Typing.java` r. 106–111). Die fout was juist
   zolang het model de eenheid niet kon uitdrukken. Deze kaart neemt de volgende stap: het model leert de eenheid
   uitdrukken.
 - **Maintainer (2026-10-11):** geen eenheid gedeeld door E betekent E⁻¹. Afwijken van Tabel 14 rij 4 blijft dus nodig,
   maar nu met het dimensioneel juiste type in plaats van een fout.
-- **Het model nu.** `Eenheid` heeft een afkorting, een stelsel, een canonieke eenheid, een factor en hoogstens één
+- **Het model nu.** `Unit` heeft een afkorting, een stelsel, een canonieke eenheid, een factor en hoogstens één
   `noemer` (een rate zoals `€/jr`). Daarnaast bestaat een opake producteenheid zonder ontbinding
-  (`frontends/regelspraak/src/main/java/dev/uchar/regelspraak/model/Eenheid.java` r. 25–55; IR-SPEC ch. 2.5;
+  (`frontends/regelspraak/src/main/java/dev/uchar/regelspraak/model/Unit.java` r. 25–55; IR-SPEC ch. 2.5;
   `spec/schema/uchar-ir-v1.schema.json`, `Unit.denominator`). Een teller zonder eenheid en exponenten bestaan niet.
   RUNTIME-SEMANTICS ch. 2.6 noemt exponenten en samengestelde eenheden van meer niveaus als v0-grens en open v1-vraag
   (CONSTRUCTS rij 26).
-- **Twee stille degradaties in dezelfde hoek**, in strijd met fail-fast. `DefinitionResolver.eenheidVan` (r. 700–712)
+- **Twee stille degradaties in dezelfde hoek**, in strijd met fail-fast. `DefinitionResolver.unitOf` (r. 700–712)
   leest de `exponent` van een `eenheidMacht` nooit, zodat `met eenheid m^2` als `m` getypeerd wordt. Bij meer dan twee
   machten houdt hij alleen de teller over, zodat `€/u/s` als `€` getypeerd wordt. De grammatica accepteert beide vormen
   (`frontends/regelspraak/grammar/RegelSpraak.g4` r. 518–520).
@@ -44,7 +44,7 @@ zonder teller-eenheid en het omgekeerde van een duur te declareren en uit te rek
   inclusief wat er met `Unit.denominator` op de wire gebeurt (schemawijziging of afbeelding).
 - (b) **Typering.** eenheidloos ÷ E → E⁻¹; E⁻¹ × E → dimensieloos; € ÷ dg → €/dg zoals nu; vergelijken en optellen
   vereisen dezelfde dimensie, met herrekening (`1/wk` tegen `1/dg`: factor 1/7). De rood-eerst-test in
-  `EenheidIdentiteitTest` die de luide fout pint, wordt een test op het type E⁻¹. Een eenheid die het model ook dan niet
+  `UnitIdentityTest` die de luide fout pint, wordt een test op het type E⁻¹. Een eenheid die het model ook dan niet
   kan uitdrukken, blijft een luide fout en wordt nooit een wire-type.
 - (c) **Declaratie.** `met eenheid` kan een omgekeerde eenheid spellen, in de vorm die de spec draagt (`1/dg`, of
   `dg^-1` als de normatieve tekst dat toelaat; de bouwer kiest tegen de bron en noteert de keuze in DIVERGENCES.md als
@@ -68,7 +68,7 @@ en Drools. Na `20261008-tms-omschakeling`, zodat alleen de tak met truth mainten
 met `20261008-drl-teksttak-op-truth-maintenance`. Raakt `20261010-clingo-let-binder-vergelijking-over-eenheden`
 (herrekening over eenheden in clingo): niet tegelijk bouwen.
 
-May touch: `frontends/regelspraak/**` (grammatica, `Eenheid`, `DefinitionResolver`, `Typering`, emitter, tests),
+May touch: `frontends/regelspraak/**` (grammatica, `Unit`, `DefinitionResolver`, `Typing`, emitter, tests),
 `spec/IR-SPEC.md` ch. 2.5, `spec/RUNTIME-SEMANTICS.md` ch. 2.6, `spec/schema/uchar-ir-v1.schema.json` (voorstel),
 `ref/lib/**`, `backends/clingo/**`, `backends/drools/**` (loader en de tak met truth maintenance),
 `corpus/golden/<nieuw golden>/`, `frontends/regelspraak/grammar/DIVERGENCES.md`, kaartverplaatsing.

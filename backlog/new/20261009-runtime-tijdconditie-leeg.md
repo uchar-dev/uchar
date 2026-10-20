@@ -27,7 +27,7 @@ Document: een Jutter met vergoeding 10 per maand van januari tot en met juni 202
 Clingo vertaalt gelijkheid in een knip niet ("equality in a per-segment clip comparison is not translated (no corpus
 case exercises it)"). De tak met truth maintenance weigert "gelijk aan" en "ongelijk aan" in een knip met naam tot de
 hulp klopt. De documenten zijn uitgeschreven in de rijen `knip-gelijk` en `knip-ongelijk` van
-`TmsTijdlijnWeigeringWitnessTest`.
+`TmsTimelineRefusalWitnessTest`.
 
 ## Acceptatie (bij oppakken aanscherpen)
 
