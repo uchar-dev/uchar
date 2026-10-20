@@ -47,3 +47,12 @@ kaartverplaatsing.
 Niet in deze kaart: de dialectvormen; de Drools-lowering (bestaat in de
 uchar-backend; de toolchain-vuurroute behoudt haar luide weigering tot haar
 eigen lowering er is, PRIORITIZED-DEFAULTS-EVOLUTIE §6.2).
+
+## Vervallen (2026-10-20, hoofdsessie)
+
+Gemeld door de werkbank-sessie (regelspraak-werkbank), doorgegeven door de eigenaar op 2026-10-20. Punt 1 is
+achterhaald: de scenariotoets van de distributie speelt `Uitzondering op` en `Afwijking van` al. De punten 2 en 3 (de
+uitleg zegt niets over een defaults-groep: welke variant besliste, op grond van welke voorwaarden, en welke werden
+verdrongen) gaan naar de kaart `backlog/new/20261020-explanation-defaults.md` van de distributie
+(uchar-dev/regelspraak-toolchain), die de toolchain-sessie maakt en bouwt; graaf en dekking horen daar ook. Deze kaart
+sluit daarmee zonder eigen werk in uchar.
