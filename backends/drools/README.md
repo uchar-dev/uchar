@@ -122,7 +122,15 @@ consumer does.
    beans, which carry the fixpoint only after `setDerivedValues`, and refuses a session that was not written back,
    one whose fixpoint carries evaluation faults, what `fixpointOf` refuses, a label given to two beans, an expectation on a
    member of a label no bean carries, and, as `CaseRunner.Excluded` in the replay's sentence, a form it does not
-   compare. The replay and the scenario report compare through it (witness `ComparisonWitnessTest`).
+   compare. The replay and the scenario report compare through it (witness `ComparisonWitnessTest`). A consumer that
+   reads an operand over a role path off the beans, as an explanation of the outcome does, reaches the object the read
+   stands on with `DroolsBackend.reached(model, subject, subjectType, read, walk)`: the subject itself for a read of
+   its own member, else the object the walk reaches over the reference fields, derived as the branch derives a
+   navigated read, and null where a link on it is absent; a walk the branch does not read is refused before anything
+   is read, as a `CaseRunner.Excluded` in the branch's sentence (DROOLS-280, 281, 282). The walk of a read of
+   `build.model()` is `build.execModelTranspiler().navigationBindings(read)`, since the model the loader reads carries
+   it beside the read and not on it; for a model the frontend resolved it is the walk its emitter writes,
+   `IrEmitter.navigationBindings(model, subjectType, read)` (witness `NavigatedReadOnBeansWitnessTest`).
 
 **One write-back per session.** The beans hold the input alone until the write-back.
 `fixpointOf` reads what stands at the fixpoint without writing anything, as a `Fixpoint` (`transpiler/tms`): per object the

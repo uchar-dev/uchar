@@ -377,6 +377,19 @@ public final class TmsTranspiler {
     }
 
     /**
+     * The walk of {@code read}, a read of the model this analysis was built from: the role bindings the loader read
+     * beside it (IR-SPEC ch. 4.1a, the wire's {@code path}), one per hop from the subject outward, the walk the
+     * branch reads it along. Empty for a read of the subject's own member. A read the loader of this model did not
+     * make has none either, since the table is keyed on the node: the walk of a read of a model the frontend
+     * resolved is the one its emitter writes, {@code IrEmitter.navigationBindings}. A consumer of the written-back
+     * beans reaches the object of the read with {@code DroolsBackend.reached}.
+     */
+    public List<RoleBindingRef> navigationBindings(Expr.AttributeReference read) {
+        Objects.requireNonNull(read, "read");
+        return navigationBindings.getOrDefault(read, List.of());
+    }
+
+    /**
      * The form of the document that rule {@code ruleName} of the model belongs to, by the name the manifest gives it
      * ({@link #coverage}): the form whose lowering built the rule, with every rule that lowering adds beside the form's
      * own (its fault and deposit rules, the keys of a uniqueness, the recipients of an allocation, the chains and

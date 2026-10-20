@@ -9,10 +9,12 @@ import dev.uchar.regelspraak.cases.CaseRunner.Excluded;
 import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.engine.ScenarioResult;
 import dev.uchar.regelspraak.graph.ProducerConsumer;
+import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.ResolvedStartPointDetermination;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
+import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
 import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.schema.ContractValidator;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
@@ -659,6 +661,64 @@ public final class DroolsBackend {
         Objects.requireNonNull(session, "session");
         Objects.requireNonNull(label, "label");
         build.execModelTranspiler().setDerivedValues(session, label);
+    }
+
+    /**
+     * The object read {@code read} reads its member on, from {@code subject}: a bean of a session that
+     * {@link #setDerivedValues} wrote back, or of its input, of type {@code subjectType}, the subject of the rule the read
+     * stands in. Over an empty {@code walk}, a read of the subject's own member, that is {@code subject}. Over a walk of
+     * one hop or more it is the object the walk reaches, hop by hop over the reference field of the role the hop reaches
+     * on the object the hop stands on, as the exec-model branch reads a navigated read: the hops are derived as the
+     * branch derives them ({@link FactModelGenerator#navigationWalk}, {@link FactModelGenerator#hasReferenceField}) and
+     * read by the getter of each field ({@link Accessors#leesEigenschap}). It is null where a link on the walk is
+     * absent; a read over it is leeg (RUNTIME-SEMANTICS ch. 5.8, rule 1). A link a creation laid is on the field after
+     * the write-back, which puts it on the reference field of every to-one end the bean model gives a field. The member
+     * itself is read off the object by its getter.
+     *
+     * <p>{@code walk} is the walk of the read (IR-SPEC ch. 4.1a). For a read of the model of a build it is
+     * {@link TmsTranspiler#navigationBindings} of {@code build.execModelTranspiler()}, with {@code build.model()} as
+     * {@code model}; the model the loader reads carries the walk beside the read, not on it. For a read of a model the
+     * frontend resolved it is the walk the emitter writes for it, {@code IrEmitter.navigationBindings(model,
+     * subjectType, read)}, with that model.
+     *
+     * @throws CaseRunner.Excluded a walk the branch does not read, before anything is read, in the sentence of the
+     *                             branch: one that does not resolve from {@code subjectType} or whose last hop does not
+     *                             reach the type of {@code read} (DROOLS-280), one over a to-many role (DROOLS-281), and
+     *                             one with a hop the bean model gives no reference field (DROOLS-282, §13.3.9)
+     */
+    public static Object reached(RegelSpraakModel model, Object subject, ObjectType subjectType,
+                                 Expr.AttributeReference read, List<RoleBindingRef> walk) {
+        Objects.requireNonNull(model, "model");
+        Objects.requireNonNull(subject, "subject");
+        Objects.requireNonNull(subjectType, "subjectType");
+        Objects.requireNonNull(read, "read");
+        Objects.requireNonNull(walk, "walk");
+        if (walk.isEmpty()) return subject;
+        Msg description = Msg.drools("PART.desc.read", "snippet",
+                read.source() != null && read.source().snippet() != null ? read.source().snippet() : read.attribute());
+        FactModelGenerator.NavigationWalk w = FactModelGenerator.navigationWalk(model, subjectType, walk, read.objectType());
+        if (w == null)
+            throw new Excluded(DroolsCode.NAVIGATION_DOES_NOT_RESOLVE.reason("description", description, "subject",
+                    subjectType.name));
+        if (w.toMany()) throw new Excluded(DroolsCode.NAVIGATION_TO_MANY_ROLE.reason("description", description));
+        // every hop is asked before the first is read, as the branch decides the whole path before it reads one
+        List<String> properties = new ArrayList<>();
+        ObjectType standsOn = subjectType;
+        for (int i = 0; i < w.roles().size(); i++) {
+            String role = w.roles().get(i);
+            ObjectType next = w.reaches().get(i);
+            if (!FactModelGenerator.hasReferenceField(model, standsOn, role, next))
+                throw new Excluded(DroolsCode.NAVIGATION_ROLE_NO_FIELD.reason("description", description, "objectType",
+                        standsOn.name, "role", role, "targetType", next.name));
+            properties.add(Namen.property(role));
+            standsOn = next;
+        }
+        Object object = subject;
+        for (String property : properties) {
+            object = Accessors.leesEigenschap(object, property);
+            if (object == null) return null;
+        }
+        return object;
     }
 
     /**
