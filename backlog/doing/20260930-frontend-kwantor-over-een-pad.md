@@ -349,7 +349,7 @@ scenario-goldens, 106 cases.
 - `scripts/check-drools.sh`: `EXPECTED_PLAYED` 260 → 261 (de nieuwe golden; reden en datum bij de constante);
   `jutterswet-ketenkwantor` `EXCLUDE DROOLS-026` → `EXCLUDE DROOLS-067` met reden. Het aantal EXCLUDE-pins blijft 46.
 - `scripts/check-drools-codes.sh`: de soort `RETIRED` (zie boven). Vloeren niet verhoogd: `EXPECTED_MIN_RGS_CODES=347`
-  (nu 348), `EXPECTED_MIN_RGS_MESSAGES=363` (364), `EXPECTED_MIN_DROOLS_CODES=289` (291), `EXPECTED_MIN_DROOLS_MESSAGES=325`
+  (nu 350, na de fixronde), `EXPECTED_MIN_RGS_MESSAGES=363` (366, idem), `EXPECTED_MIN_DROOLS_CODES=289` (291), `EXPECTED_MIN_DROOLS_MESSAGES=325`
   (326); het zijn ondergrenzen.
 
 ### Voorgestelde tekst voor `CLAUDE.md` (gate 12)
@@ -370,7 +370,9 @@ weigeren `Kwantorvouw.bronPad`" above:** the RegelSpraak frontend lowers a quant
 more from the subject to the fold with `sourcePath` — every quantifier, a characteristic (nominal ones included), a
 comparison or a leeg/gevuld test as the matrix, to-one and to-many steps in any order, in a rule's condition and in a
 default's justification — over the walk a value fold's range takes; an operand of the matrix built from the rule
-subject is refused over a path (RGS-348), and a count over a path stays refused. It writes the two sentences of
+subject is refused over a path (RGS-348); where the element has the rule subject's own type, a read of the subject in the
+matrix is refused over a path and over one step (RGS-349), and so is a read in a subselection whose onderwerp names that
+type (RGS-350, value folds included); and a count over a path stays refused. It writes the two sentences of
 `jutterswet-ketenkwantor` byte-identically to that golden's hand-written `ir.json`. Both Drools branches carry the
 path through the `SourcePath` planning of the value folds (a member reached along two routes counts once); a matrix
 that can fault or deposit over a path with more than one route per member is refused by name (DROOLS-291), and
@@ -393,3 +395,125 @@ that can fault or deposit over a path with more than one route per member is ref
 - `CLAUDE.md` noemt 45 `EXCLUDE`-pins voor gate 12; op main zijn het er 46 (zie boven).
 - In de werkmap: s02 heeft de tikfout "R2 is niet na een startperiode"; p08 en p11 verwachten 0 voor een som over
   niets, waar alle vier uitvoerders (terecht, ch. 1.2) leeg geven.
+
+## Fixronde na de review (2026-10-20)
+
+Een leesreview van de tak vond twee dingen; de hoofdsessie mat ze na (proeven `werk/kwantor-pad/review/`) en besloot.
+Eén commit op de tak, `bed92c3f` (frontend; de kaart in de commit erna). Geen golden, geen verwachting en geen
+bestaande bewering veranderd. Proeven vóór op `b120cd03`, na op `bed92c3f`, met `review/run.sh` door frontend,
+verifier, ref, clingo en beide Drools-takken; uitvoer `werk/kwantor-pad/review/before-fix.txt`,
+`werk/kwantor-pad/fixronde/before.txt`, `before-2.txt` en `after.txt`; eigen proeven in `werk/kwantor-pad/fixronde/`.
+
+### Punt 1 — stil fout antwoord bij een onderwerp van het elementtype
+
+Waar onderwerp en element hetzelfde type hebben, las de frontend in de toets van een kwantor (het operand naast het
+gekwantificeerde, gebouwd vanaf het regelonderwerp) en in het filter van een deelselectie ("die aan de volgende
+voorwaarde voldoen: …", per element gelezen) een lezing van het onderwerp als lezing van het element: het IR heeft
+daar geen verwijzing naar het buitenste onderwerp. RGS-348 viel niet, omdat de lezing een eigen attribuut van het
+elementtype is. Nu weigert de frontend met een ERROR die de lezing noemt en zegt waarom:
+
+- **RGS-349** (`quantifier-test-reads-subject-of-element-type`, `RuleChecker.quantifierFold`/`subjectRead`): elke
+  lezing van het onderwerp in dat operand ("de leeftijd van de Jutter", "zijn leeftijd", "de drempel van de ploeg van
+  de Jutter"), over een pad en over één stap. Bij verschillende typen blijft het zoals het was (RGS-348 over een pad,
+  terugbinding over één stap: p14 en q02 ongewijzigd).
+- **RGS-350** (`subselection-names-subject-of-element-type`, `RuleChecker.compoundElementFilter`): een lezing in een
+  deelselectie waarvan het geschreven onderwerp eindigt op de naam van het type ("… van de Jutter"), in het filter van
+  een waardevouw en van een kwantor, over een pad en over één stap. "zijn leeftijd" in een deelselectie is die van het
+  element en bindt. Op een waardevouw staat de bestaande WARNING RGS-069 (deelselectie niet omgezet) ernaast.
+
+De waardevouw met filter was de bestaande fout uit de review (op main al stil fout, zelfde oorzaak); de eenstapsvormen
+zijn gemeten en zaten in dezelfde code (de waardevouw over één stap in `compoundElementFilter`, de kwantor "alle" over
+één stap in `quantifierFold`), dus ze krijgen dezelfde weigering.
+
+| proef | vóór | na |
+|---|---|---|
+| f1-pad-zelfde-type (kwantor, pad, "de leeftijd van de Jutter") | exit 0 schoon; alle vier "J1 lacks kistplichtig" | ERROR RGS-349, geen document |
+| e5 (idem met "zijn leeftijd") | exit 0 schoon; alle vier fout | ERROR RGS-349 |
+| e11 (kwantor "alle", één stap over Begeleiding) | exit 0 schoon; PASS alleen omdat het scenario de lezingen niet scheidt | ERROR RGS-349 |
+| e12 (kwantor, pad, "de drempel van de ploeg van de Jutter") | ERROR RGS-348 | ERROR RGS-349 |
+| f1-een-stap-zelfde-type, e7 ("ten minste één", één stap) | ERROR setlezing buiten een vouwbron | ongewijzigd |
+| f3b-som (som over pad, filter) | exit 0 schoon; alle vier leeg waar 50 | ERROR RGS-350 + WARNING RGS-069 |
+| e1 (som over één stap, filter) | exit 0 schoon; alle vier leeg waar 50 | idem |
+| e2 (aantal over één stap, filter) | exit 0 schoon; alle vier 0 waar 1 | idem |
+| e8 (kwantor over pad met deelselectie) | exit 0 schoon; PASS, scenario scheidt niet | ERROR RGS-350 |
+| e10 (som over pad, filter "de drempel van de ploeg van de Jutter") | exit 0 schoon; PASS: beide lezingen geven hier dezelfde ploeg | ERROR RGS-350 + RGS-069 (dezelfde naam, dus ook geweigerd) |
+| f3-vouw-filter-zelfde-type (aantal over pad) | ERROR RGS-131 | RGS-131 plus RGS-350 en RGS-069 |
+| e3, e4 ("zijn leeftijd" in het filter, één stap en pad), e9 (element van een ander type), e6 | exit 0 schoon; PASS in alle vier | ongewijzigd |
+
+### Punt 2 — "niet een <kenmerk>" onder een kwantor
+
+In de vragende volgorde ("… niet een wrakstuk is") komt `niet` in het anker; de EEN-vorm zocht de naam "niet wrakstuk"
+en bond niets. In de stellende volgorde ("… is niet een wrakstuk", de `NIET EEN`-tak van de grammatica, regel 1004)
+hield `conditionFromNonToplevel` de vouw er helemaal buiten. Nu leest `elementCharacteristicCheck` een `niet` vóór de
+naam als ontkenning van het zelfstandige kenmerk (eerst de hele naam, dan de naam na `niet`), en geeft de stellende tak
+zijn `NIET` door aan de vouw. Het IR van f2-pad-niet-een is op de snippets na gelijk aan dat van f2-pad-geen. Een naam
+na "niet een" die geen zelfstandig kenmerk van het element is, blijft geweigerd (WARNING RGS-213, rij in de test).
+De verwachtingen van de f2-proeven nagerekend: M1 heeft melder J1, J1 heeft V1, V1 is geen wrakstuk (niet gezet), dus
+M1 dringend; J1 heeft V1, dus kistplichtig; J2 heeft geen vondsten, en "ten minste één" over niets is onwaar.
+
+| proef | vóór | na |
+|---|---|---|
+| f2-pad-niet-een, f2-een-stap-niet-een | exit 0, WARNING RGS-213 "'wrakstuk' is geen kenmerk van Vondst" + marker; EF-019 in ref en clingo, fout in beide Drools-takken | exit 0 schoon; PASS in alle vier |
+| n3 (alle, pad), n4 (geen van, pad) | idem | exit 0 schoon; PASS in alle vier |
+| n7, n8 (stellend in een opsomming, pad en één stap) | WARNING "de vorm 'is niet een <naam>' bond geen kenmerk" + marker; EF-019 | exit 0 schoon; PASS in alle vier |
+| f2-pad-geen | PASS in alle vier | ongewijzigd |
+| n6 ("indien de Vondst niet een wrakstuk is", geen kwantor), n1 (met "hij") | WARNING + marker; syntaxfout | ongewijzigd: kaarttekst hieronder |
+
+### Tests
+
+- Nieuw, rood op `b120cd03` (uitvoer `werk/kwantor-pad/fixronde/red-witness.txt`), groen op `bed92c3f`, in
+  `QuantifierOverPathTest`: `a_test_that_reads_a_subject_of_the_element_type_is_refused`,
+  `a_filter_that_names_a_subject_of_the_element_type_is_refused` (met een rij die bindt: "zijn leeftijd" in het
+  filter) en `niet_een_under_a_quantifier_is_the_negated_characteristic` (met een rij die blijft weigeren).
+- Bijgewerkt omdat deze ronde precies dat verandert: `MarkerReasonPinTest.SANCTIONED` en
+  `MarkerReportTest.CLASSIFICATION`. De plek `RuleChecker#quantifierFold` noemt nu RGS-348 of RGS-349 als diagnose
+  van haar marker (aantal blijft 1); nieuw is `RuleChecker#compoundElementFilter` (1), met RGS-350 als diagnose.
+- Alle 126 rgs-goldens bytegelijk; geen van de 179 RegelSpraak-bronnen in de repository geeft RGS-349 of RGS-350.
+
+### Register
+
+`diagnostic-codes.tsv` 348 → 350 codes, beide catalogi 364 → 366 entries; vloeren ongewijzigd (ondergrenzen).
+
+### Gates
+
+`bash werk/gates.sh … gates-2` op `bed92c3f`, `werk/kwantor-pad/gates-2.summary.txt`: **EXIT 0**, alle zestien
+`rc=0` (14:27–14:47). Verschil met gates-1: gate 10 JUnit 1221 (was 1218, de drie nieuwe tests) en 350 RGS-codes (was
+348); verder dezelfde aantallen (2 349 bestanden; 3 349 golden schoon, 511 negatief; 5 835 cases; 6 835 cases; 10 126
+rgs-goldens bytegelijk; 11 29 TOKA-cases; 12 261 gespeeld in beide takken, JUnit 1632; 15 273 van 310 goldens; 16 31
+scenario-goldens, 106 cases).
+
+### Niet gedaan, met reden
+
+- "niet een" buiten een kwantor (n6, n1): een andere route (`characteristicCheckPredicateBare`, en voor "hij" de
+  grammatica), luid, niet gevraagd. Kaarttekst hieronder.
+- Sub- en supertypen: de weigering geldt bij precies hetzelfde type, zoals besloten. Een eigen lezing van een onderwerp
+  van een supertype of subtype van het element valt over een pad volgens de code onder RGS-348 (haar type is niet het
+  elementtype); gemeten heb ik dat niet, en over één stap of in een deelselectie ook niet.
+
+### Kaarttekst voor `backlog/new/20261020-nominal-negation-in-question-order.md` (niet gebouwd)
+
+    # nominal-negation-in-question-order: "niet een <kenmerk>" in de vragende volgorde
+
+    *Gevonden in de fixronde na de review van frontend-kwantor-over-een-pad (2026-10-20), gemeten op `bed92c3f`;
+    proeven `uchar-dev/werk/kwantor-pad/fixronde/n1-subject-niet-een` en `n6-subject-de-niet-een` (alleen lezen).
+    Luid, geen fout antwoord.*
+
+    Tabel 16 (§8.1.8.3) ontkent een zelfstandig kenmerk met "is niet een <k>". In de stellende volgorde ("hij is niet
+    een wrakstuk") heeft de grammatica daar een tak voor (`nonToplevelOperator`, `NIET EEN kaleNaam`), en die speelt
+    (proef `n9-subject-stellend-niet-een`: PASS in ref, clingo en beide Drools-takken). In de vragende
+    volgorde van een voorwaarde niet: in "indien de Vondst niet een wrakstuk is" komt `niet` in het onderwerp, de
+    EEN-vorm zoekt de naam "niet wrakstuk", die bindt niets, en de voorwaarde blijft een marker met de WARNING
+    "onopgelost: de geschreven naam bindt geen kenmerk en geen rol van het onderwerp" (EF-019 in ref en clingo, een
+    evaluatiefout in beide Drools-takken). "indien hij niet een wrakstuk is" is een syntaxfout ("no viable alternative
+    at input 'nieteen'"). Onder een kwantor leest de frontend de vorm sinds de fixronde van 2026-10-20 wel
+    (`RuleChecker.elementCharacteristicCheck`); "geen wrakstuk" speelt in elke gemeten vorm (proeven n2, n7–n9,
+    f2-pad-geen).
+
+    Acceptatie:
+    - (a) Rood eerst: een JUnit-getuige met beide zinnen.
+    - (b) "indien <onderwerp> niet een <zelfstandig kenmerk> is" lowert naar de ontkende kenmerktoets, gelijk aan
+      "geen <k>", voor het onderwerp zelf, "hij" en een navigatie naar één; na "niet een" blijft een ander soort
+      kenmerk of een naam die niets bindt luid geweigerd.
+    - (c) DIVERGENCES (§13.4.15.45 of de tabel van vorm 1 in §4); alle zestien gates groen.
+
+    May touch: `frontends/regelspraak/**`.
