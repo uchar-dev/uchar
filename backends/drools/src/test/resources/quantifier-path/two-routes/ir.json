@@ -1,0 +1,226 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "kistplichtig",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Kist",
+        "animate": false,
+        "plural": "Kisten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "JutterHeeftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "KistBevatVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "kist",
+            "objectType": "Kist",
+            "plural": "kisten",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "ingepakte vondst",
+            "objectType": "Vondst",
+            "plural": "ingepakte vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "norm",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "deler",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "kistplicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kistplichtig",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is kistplichtig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Kist",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Kist",
+                  "source": {
+                    "snippet": "het gewicht van ten minste \u00e9\u00e9n van de kisten van de vondsten van de Jutter"
+                  }
+                },
+                "right": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "ParameterReference",
+                    "parameter": "norm",
+                    "source": {
+                      "snippet": "de norm"
+                    }
+                  },
+                  "right": {
+                    "node": "ParameterReference",
+                    "parameter": "deler",
+                    "source": {
+                      "snippet": "de deler"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "de norm gedeeld door de deler"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van ten minste \u00e9\u00e9n van de kisten van de vondsten van de Jutter groter is dan de norm gedeeld door de deler"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van ten minste \u00e9\u00e9n van de kisten van de vondsten van de Jutter groter is dan de norm gedeeld door de deler"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "KistBevatVondst",
+                  "role": "kist"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -325,6 +325,7 @@ DROOLS-287	the target {targetName} on {objectType} is written alongside an inher
 DROOLS-288	the target {targetName} on {objectType} is written alongside an inherited defaults stack by {computationCount} calculating rule(s) and {initialisationCount} initialisation(s): the v0 meaning of two writers on one target is the order on the agenda, which prioritized defaults replace (RUNTIME-SEMANTICS ch. 7.10)
 DROOLS-289	{description}: {reason}
 DROOLS-290	a division and a root that deposit in one condition or in the filters of one fold ({form}): the test of this branch puts their §9.5 deposits together, and the fact cannot say which kind deposited, while a division has the code EF-031 and a root has none (RUNTIME-SEMANTICS ch. 5.7b)
+DROOLS-291	a member condition that can fail or deposit in a QuantifierFold over a path along which a member can be reached by more than one route ('{description}'): the reference interpreter reads such a member once, at its first route (RUNTIME-SEMANTICS ch. 3.4b, 5.11), and this branch gives it a place in the order of the members per route; this branch does not carry this form yet
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-005.bare	rational division by 0

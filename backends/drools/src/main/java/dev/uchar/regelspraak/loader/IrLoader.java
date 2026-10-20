@@ -2138,21 +2138,16 @@ public final class IrLoader {
             // IR-SPEC ch. 4.5 / WF-108 the QUANTIFIER FOLD. Unlike Compound — whose quantifier ranges over the
             // BULLETS of one subject — this one ranges over INSTANCES, and its range fields are the instance fold's
             // (ch. 4.3) spelled unchanged. Both range fields are decoded INTO the record: QuantifierFold is not part
-            // of the vendored frontend slice the function/object-creation side-channel exists for, so its sourceRole
-            // needs no Loaded#roleBindings entry.
+            // of the vendored frontend slice the function/object-creation side-channel exists for, so its range
+            // needs no Loaded#roleBindings or sourcePaths entry.
             case "QuantifierFold" -> {
-                // WF-108 (c), the WF-102 discipline under this node's own rule. Refused for exactly the reason
-                // Aggregation.sourcePath is: the model cannot re-derive a multi-step range, and the by-pair fallback would
-                // bind a coincidental DIRECT subject-to-element relation and quantify over the WRONG set while the
-                // OCaml executors quantify over the right one. A named per-form Refusal puts the golden in gate 12's
-                // channel floor by reason instead.
-                // IR-SPEC ch. 4.5: the range is required, one field with two spellings
+                // IR-SPEC ch. 4.5: the range is required, one field with two spellings. A multi-step range (WF-108
+                // (c), RUNTIME-SEMANTICS ch. 3.4b) goes to the transpiler as it is written, which plans it as it plans
+                // an Aggregation's sourcePath (transpiler/core/SourcePath); until the card frontend-kwantor-over-een-pad
+                // (2026-10-20) this loader refused it (DROOLS-026, retired).
                 String p = pathOf(n);
                 rangeFields(n, p);
-                if (n.has("sourcePath")) {
-                    roleBindingList(n, p, "sourcePath");   // its shape first: a malformed path is no document
-                    throw new Refusal(DroolsCode.QUANTIFIER_MULTI_STEP_RANGE.reason(), "Kwantorvouw.bronPad");
-                }
+                List<RoleBindingRef> sourcePath = n.has("sourcePath") ? roleBindingList(n, p, "sourcePath") : List.of();
                 // WF-108 (a): all, none and the three COUNTING quantifiers are the admitted forms. The value the
                 // shares the one quantifier family with Compound, where it is admitted, and is refused here BY NAME,
                 // in the verifier's sentence, as the shared loader refuses it for an executor — the bare definite
@@ -2174,7 +2169,7 @@ public final class IrLoader {
                 yield new Condition.QuantifierFold(kw, counts ? intOf(n, "threshold") : 0,
                         ot(text(n, "elementType")),
                         condition(nodeField(n, "filter")), condition(nodeField(n, "test")),
-                        roleBinding(n, p, "sourceRole"), List.of(), source(n));
+                        sourcePath.isEmpty() ? roleBinding(n, p, "sourceRole") : null, sourcePath, source(n));
             }
             case "Regelversie" -> new Condition.RuleStatusCheck(text(n, "regel"), bool(n, "inconsistent"), source(n));
             case "Unresolved" -> {

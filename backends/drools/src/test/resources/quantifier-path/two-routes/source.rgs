@@ -1,0 +1,25 @@
+Parameter de norm : Numeriek (geheel getal)
+Parameter de deler : Numeriek (geheel getal)
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is kistplichtig kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+
+Objecttype de Kist (mv: Kisten)
+    het gewicht Numeriek (geheel getal);
+
+Feittype JutterHeeftVondst
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Feittype KistBevatVondst
+    de kist (mv: kisten) Kist
+    de ingepakte vondst (mv: ingepakte vondsten) Vondst
+Eén kist bevat meerdere ingepakte vondsten
+
+Regel kistplicht
+    geldig altijd
+        Een Jutter is kistplichtig
+        indien het gewicht van ten minste één van de kisten van de vondsten van de Jutter groter is dan de norm gedeeld door de deler.

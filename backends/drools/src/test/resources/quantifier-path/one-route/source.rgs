@@ -1,0 +1,25 @@
+Parameter de norm : Numeriek (geheel getal)
+Parameter de deler : Numeriek (geheel getal)
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+
+Objecttype de Melding (mv: Meldingen)
+    is dringend kenmerk (bijvoeglijk);
+
+Feittype JutterHeeftVondst
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Feittype MeldingVanJutter
+    de melder Jutter
+    de melding (mv: meldingen) Melding
+Eén melder doet meerdere meldingen
+
+Regel dringend
+    geldig altijd
+        Een Melding is dringend
+        indien het gewicht van ten minste één van de vondsten van de melder van de Melding groter is dan de norm gedeeld door de deler.

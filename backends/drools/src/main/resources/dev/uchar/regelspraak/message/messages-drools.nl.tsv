@@ -325,6 +325,7 @@ DROOLS-287	het doel {targetName} op {objectType} wordt naast een geërfde defaul
 DROOLS-288	het doel {targetName} op {objectType} wordt naast een geërfde defaultsstapel geschreven door {computationCount} rekenende regel(s) en {initialisationCount} initialisatie(s): de v0-betekenis van twee schrijvers op één doel is de volgorde op de agenda, die prioritized defaults vervangen (RUNTIME-SEMANTICS ch. 7.10)
 DROOLS-289	{description}: {reason}
 DROOLS-290	een deling en een wortel die deponeren in één voorwaarde of in de filters van één vouw ({form}): de toets van deze tak hoort hun §9.5-deponeringen samen, en het feit kan niet zeggen welke soort deponeerde, terwijl een deling de code EF-031 heeft en een wortel geen (RUNTIME-SEMANTICS ch. 5.7b)
+DROOLS-291	een lidvoorwaarde die kan falen of deponeren in een QuantifierFold over een pad waarlangs een lid via meer dan één route te bereiken is ('{description}'): de referentie-interpreter leest zo'n lid één keer, op zijn eerste route (RUNTIME-SEMANTICS ch. 3.4b, 5.11), en deze tak geeft het per route een plaats in de volgorde van de leden; deze tak draagt deze vorm nog niet
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-005.bare	Breuk deling door 0

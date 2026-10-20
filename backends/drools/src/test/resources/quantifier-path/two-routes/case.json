@@ -1,0 +1,69 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K1",
+        "objectType": "Kist",
+        "attributes": {
+          "gewicht": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J1"
+          ],
+          "kist": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "vinder": [
+            "J1"
+          ],
+          "kist": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "norm": {
+        "number": "10"
+      },
+      "deler": {
+        "number": "2"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "kistplichtig"
+    }
+  ]
+}

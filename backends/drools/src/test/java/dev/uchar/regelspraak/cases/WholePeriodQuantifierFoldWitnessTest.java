@@ -163,20 +163,36 @@ class WholePeriodQuantifierFoldWitnessTest {
                 "één lid dat de positieve matrix haalt breekt haar");
     }
 
-    // ---------------- the loader's two per-form refusals (WF-108) ----------------
+    // ---------------- the range as a path (WF-108 (c)) and the loader's per-form refusal ----------------
 
-    @Test void a_source_path_is_refused_per_form() throws Exception {
+    /**
+     * <b>De grens verschoof op 2026-10-20</b> (kaart frontend-kwantor-over-een-pad) en deze rij verschoof mee. Tot
+     * dan weigerde de lader een {@code sourcePath} op een kwantorvouw bij naam (DROOLS-026, sindsdien met pensioen);
+     * nu draagt hij het pad ongewijzigd naar het record, en beide takken plannen de wandeling zoals die van een
+     * waardevouw (transpiler/core/SourcePath). Een pad dat niet aansluit — hier twee keer dezelfde stap, waarvan de
+     * tweede vanaf de Schuit een rol vraagt die de Vloot vult — blijft een benoemde per-vorm-weigering, nu van die
+     * planning, in beide takken gelijk; nooit een genegeerd veld.
+     */
+    @Test void a_source_path_reaches_the_record_and_a_disconnected_walk_is_refused_per_form() throws Exception {
         String path = """
                 "sourcePath": [ { "node": "RoleBinding", "factType": "vlootindeling", "role": "schip" },
                              { "node": "RoleBinding", "factType": "vlootindeling", "role": "schip" } ]""";
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
-                () -> IrLoader.load(JSON.readTree(ir(foldNode("all", "null", path)))),
-                "een meerstaps bereik hoort een benoemde per-vorm-weigering te zijn, geen genegeerd veld");
-        assertEquals("Kwantorvouw.bronPad", r.form(),
-                "de weigering noemt de vorm, zodat gate 12 haar met reden in de kanaalvloer zet");
-        assertTrue(r.getMessage().contains("WF-108"),
-                "de reden verwijst naar de regel die de vorm definieert:\n" + r.getMessage());
+        String doc = ir(foldNode("all", "null", path));
+        var fold = (dev.uchar.regelspraak.ir.Condition.QuantifierFold)
+                IrLoader.load(JSON.readTree(doc)).resolvedRules.get(0).condition();
+        assertEquals(2, fold.sourcePath().size(), "het pad komt in zijn geheel in het record");
+        assertEquals(null, fold.sourceRole(), "een pad en een rol sluiten elkaar uit (WF-108 (c))");
+        Path irPath = write("ir-pad.json", doc);
+        Path casePath = write("case-pad.json", caseDoc(schepen(
+                schuit("S1", "12", "2025-01-01", "2026-01-01")), "characteristicPresent"));
+        CaseRunner.Result exec = CaseRunner.viaExecModel(irPath, List.of(casePath));
+        assertEquals("EXCLUDE", exec.status(), "een pad dat niet aansluit speelt niet: " + exec);
+        assertEquals("DROOLS-064", exec.code().id(), "de planning van het pad noemt de stap die niet aansluit: " + exec);
+        assertEquals(exec.toString(), CaseRunner.viaDrlText(irPath, List.of(casePath)).toString(),
+                "beide takken weigeren hetzelfde pad met dezelfde reden");
     }
+
+    // ---------------- the loader's per-form refusal (WF-108) ----------------
 
     /**
      * <b>De grens verschoof op 2026-09-16</b> (kaart tellende-kwantoren) en deze rij verschoof mee. Tot dan

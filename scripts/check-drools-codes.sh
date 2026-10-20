@@ -7,7 +7,10 @@
 # compiler already refuses a code that is not registered; what the compiler cannot see, this script checks in BOTH
 # directions:
 #   - every registered constant is named at least once in the backend's sources (a code nobody raises is dead text, and
-#     a gate that pins it would pin nothing);
+#     a gate that pins it would pin nothing), except a code of the kind RETIRED, which no place may name: a code that
+#     is no longer raised stays in the register, marked retired, so that its number is never reused
+#     (spec/proposals/MESSAGE-CODES.md §3.2; the first two, DROOLS-026 and DROOLS-258, card frontend-kwantor-over-een-pad,
+#     2026-10-20);
 #   - every `DroolsCode.NAME` the sources name is a registered constant (a second look at what the compiler enforces,
 #     so that a register read by this script and the one the compiler reads cannot drift apart);
 #   - the numbers run 001, 002, ... without a gap, a repeat or a reordering (a code is never reused or renumbered);
@@ -70,7 +73,7 @@ while IFS="$TAB" read -r name num kind key ef; do
   n=$((n + 1))
   want=$(printf '%03d' "$n")
   [ "$num" = "$want" ] || fail "$name is DROOLS-$num, but the register's ${n}th entry must be DROOLS-$want (numbers run without a gap, a repeat or a reordering)"
-  case "$kind" in REFUSAL|LIMIT|CONTRACT|FALLBACK) ;; *) fail "DROOLS-$num has the kind $kind (REFUSAL, LIMIT, CONTRACT or FALLBACK)" ;; esac
+  case "$kind" in REFUSAL|LIMIT|CONTRACT|FALLBACK|RETIRED) ;; *) fail "DROOLS-$num has the kind $kind (REFUSAL, LIMIT, CONTRACT, FALLBACK or RETIRED)" ;; esac
   expected_name=$(printf '%s' "$key" | tr 'a-z-' 'A-Z_')
   [ "$name" = "$expected_name" ] || fail "DROOLS-$num: the constant $name does not spell its key '$key' ($expected_name)"
   if [ "$ef" != null ]; then
@@ -91,8 +94,11 @@ named=$(find "$SOURCES" -name '*.java' ! -path "$REGISTER" -print0 \
 for name in $named; do
   cut -f1 "$tmp" | grep -qx "$name" || fail "the sources name DroolsCode.$name, which the register does not hold"
 done
-unraised=$(cut -f1 "$tmp" | sort | comm -23 - <(printf '%s\n' "$named") | tr '\n' ' ')
-[ -z "$unraised" ] || fail "registered but never named by a place that refuses: $unraised(a code nobody raises is dead text; remove it, and renumber what follows while no gate pins it)"
+retired=$(awk -F"$TAB" '$3 == "RETIRED" {print $1}' "$tmp" | sort)
+unraised=$(awk -F"$TAB" '$3 != "RETIRED" {print $1}' "$tmp" | sort | comm -23 - <(printf '%s\n' "$named") | tr '\n' ' ')
+[ -z "$unraised" ] || fail "registered but never named by a place that refuses: $unraised(a code nobody raises is dead text; mark it Kind.RETIRED, so that its number is never reused)"
+raisedretired=$(printf '%s\n' "$retired" | comm -12 - <(printf '%s\n' "$named") | tr '\n' ' ')
+[ -z "${raisedretired// /}" ] || fail "a place names a retired code: $raisedretired(a retired code is raised nowhere; give the refusal a code of its own)"
 
 python3 -I - "$REGISTER" "$SOURCES" "$TABLE" "$EXPECTED_MIN_DROOLS_MESSAGES" <<'PYEOF' || exit 1
 import os, re, sys
@@ -234,4 +240,4 @@ if faults:
     sys.exit(1)
 PYEOF
 
-echo "check-drools-codes: PASS — $entries codes, numbered 001..$(printf '%03d' "$entries"), every one raised in the sources, every raised code registered, keys unique, every ef a row of ch. 5.7b, both catalogues held to the register and the places to the catalogues (floor $EXPECTED_MIN_DROOLS_MESSAGES)"
+echo "check-drools-codes: PASS — $entries codes, numbered 001..$(printf '%03d' "$entries"), every one raised in the sources but the $(printf '%s\n' "$retired" | grep -c .) retired, which none names, every raised code registered, keys unique, every ef a row of ch. 5.7b, both catalogues held to the register and the places to the catalogues (floor $EXPECTED_MIN_DROOLS_MESSAGES)"

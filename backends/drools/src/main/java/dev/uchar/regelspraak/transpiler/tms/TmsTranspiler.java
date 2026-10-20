@@ -4758,8 +4758,8 @@ public final class TmsTranspiler {
      * deposits nothing. A contribution then carries the matrix's outcome and the member's place ({@link MemberTest}), the
      * accumulate collects them, and the evaluation replays that order ({@link Term.QuantifierRead}). The filter is settled
      * for every member before the matrix, as for any fold ({@link #readFold}). The range is one step,
-     * {@code sourceRole}: the loader refuses a multi-step one (WF-108 (c)), and so does this method where a hand-built
-     * model carries one.
+     * {@code sourceRole}, or a path, {@code sourcePath}, planned as a value fold's ({@link #pathRange}): a member that
+     * two routes reach contributes once (RUNTIME-SEMANTICS ch. 3.4b), which is what the counting quantifiers count.
      */
     private Term quantifierFold(Condition.QuantifierFold kv, Reads reads) {
         // WF-112, in the sentence of WindowPosition, on both branches: a window in the filter or the test under none
@@ -4772,8 +4772,6 @@ public final class TmsTranspiler {
             throw new Refusal(DroolsCode.QUANTIFIER_FOLD_WITHOUT_MATRIX.reason("snippet", snippet(kv)));
         if (kv.quantifier() == Condition.Quantifier.DE)
             throw new Refusal(DroolsCode.QUANTIFIER_DE_SINGLE_MEMBER.reason("snippet", snippet(kv)));
-        if (kv.sourceRole() == null || !kv.sourcePath().isEmpty())
-            throw new Refusal(DroolsCode.QUANTIFIER_FOLD_MULTI_STEP.reason("snippet", snippet(kv)));
         Condition.Quantifier kw = kv.quantifier();
         int threshold = kv.threshold();
         Fold v = foldFor(kv, reads, (key, name) -> quantifierContributions(kv, key, name, reads.subject, elem));
@@ -4799,12 +4797,18 @@ public final class TmsTranspiler {
      * ({@link Consequence.Input.MemberTest}), with the member's place bound as the filter fault rule binds it
      * ({@link Range#perRoute}) and the rule's probe. Beside it the filter fault rule and the filter deposit rule of a
      * filter that can fault or deposit, as for any fold ({@link #contributionRules}). A made link has no place in the order
-     * of the members, so a matrix that can fault or deposit over a relation a form creates is refused.
+     * of the members, so a matrix that can fault or deposit over a relation a form creates is refused. Over a path the
+     * range is {@link #pathRange}'s; where a member can be reached along more than one route, the contribution rule
+     * of a matrix that can fault or deposit would bind the member once per route, each at its own place, and the
+     * replay ({@link ComputeHelpers#quantifierRead}) would read it as often, where the reference interpreter reads it
+     * once, at its first route (RUNTIME-SEMANTICS ch. 3.4b, 5.11): that shape is refused.
      */
     private Fold quantifierContributions(Condition.QuantifierFold kv, String key, String name, ObjectType subject,
                                   ObjectType elem) {
         String description = snippet(kv);
-        Range range = oneStepRange(kv.sourceRole(), subject, elem, description);
+        boolean path = !kv.sourcePath().isEmpty();
+        Range range = path ? pathRange(kv.sourcePath(), subject, elem, description)
+                : oneStepRange(kv.sourceRole(), subject, elem, description);
         // the member's reads first and its join after: whether the matrix can fault or deposit decides whether the join
         // binds the member's place
         Reads reads = contributionReads(subject, elem, l -> { });
@@ -4822,7 +4826,10 @@ public final class TmsTranspiler {
         boolean ordered = memberCanFail || memberDeposits;
         List<Consequence.FoldPlace.Step> places = new ArrayList<>();
         if (ordered) {
-            if (kv.sourceRole().factType() != null && createdRelations.contains(Namen.norm(kv.sourceRole().factType())))
+            if (path && !SourcePath.parse(model, subject, kv.sourcePath(), elem).meets())
+                throw new Refusal(DroolsCode.QUANTIFIER_MEMBER_TWO_ROUTES.reason("description", description));
+            if (!path && kv.sourceRole().factType() != null
+                    && createdRelations.contains(Namen.norm(kv.sourceRole().factType())))
                 throw new Refusal(DroolsCode.QUANTIFIER_MEMBER_CREATED_RELATION.reason("factType", kv.sourceRole().factType(), "description", description));
             places.addAll(range.perRoute().apply(reads));
             for (Consequence.FoldPlace.Step p : places) {

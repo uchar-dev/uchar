@@ -1,0 +1,109 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "8"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M1",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "melder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "melder": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "norm": {
+        "number": "10"
+      },
+      "deler": {
+        "number": "2"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "M1",
+      "characteristic": "dringend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "M2",
+      "characteristic": "dringend"
+    }
+  ]
+}

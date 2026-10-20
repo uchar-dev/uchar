@@ -1,0 +1,225 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Melding",
+        "animate": false,
+        "plural": "Meldingen",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "dringend",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "JutterHeeftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "MeldingVanJutter",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "melder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "melding",
+            "objectType": "Melding",
+            "plural": "meldingen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "norm",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "deler",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "dringend",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "dringend",
+              "subjectType": "Melding",
+              "source": {
+                "snippet": "Een Melding is dringend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Vondst",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van ten minste \u00e9\u00e9n van de vondsten van de melder van de Melding"
+                  }
+                },
+                "right": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "ParameterReference",
+                    "parameter": "norm",
+                    "source": {
+                      "snippet": "de norm"
+                    }
+                  },
+                  "right": {
+                    "node": "ParameterReference",
+                    "parameter": "deler",
+                    "source": {
+                      "snippet": "de deler"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "de norm gedeeld door de deler"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van ten minste \u00e9\u00e9n van de vondsten van de melder van de Melding groter is dan de norm gedeeld door de deler"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van ten minste \u00e9\u00e9n van de vondsten van de melder van de Melding groter is dan de norm gedeeld door de deler"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "MeldingVanJutter",
+                  "role": "melder"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

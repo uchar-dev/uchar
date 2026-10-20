@@ -12,7 +12,8 @@ import dev.uchar.regelspraak.message.Msg;
  * <p>Numbered in order of arrival, never reused and never renumbered. The key names what is refused, in English,
  * and is unique; the kind says why ({@code refusal}: a form the backend does not carry; {@code limit}: a limit of its
  * own representation; {@code contract}: a document or case that breaks the contract the backend relies on;
- * {@code fallback}: the bottom arm of a dispatch). {@code ef} is the code of the normative table (RUNTIME-SEMANTICS
+ * {@code fallback}: the bottom arm of a dispatch; {@code retired}: a code no place raises any more, kept so that its
+ * number is never reused). {@code ef} is the code of the normative table (RUNTIME-SEMANTICS
  * ch. 5.7b) where the refusal is the backend's way of declining that fault kind, and null otherwise. {@code params}
  * names the parameters of the refusal, the places of its catalogue entry: the carrier check
  * ({@code scripts/check-drools-codes.sh}) holds every place that names a code, and the entries, to them.
@@ -46,7 +47,7 @@ public enum DroolsCode {
     EXPR_TEMPORAL_READ("DROOLS-023", Kind.REFUSAL, "expr-temporal-read", "node", null),
     AGGREGATE_PATH_ONE_STEP("DROOLS-024", Kind.CONTRACT, "aggregate-path-one-step", "pathLength", null),
     REQUIRED_FIELD_MISSING("DROOLS-025", Kind.CONTRACT, "required-field-missing", "form,field", null),
-    QUANTIFIER_MULTI_STEP_RANGE("DROOLS-026", Kind.REFUSAL, "quantifier-multi-step-range", "", null),
+    QUANTIFIER_MULTI_STEP_RANGE("DROOLS-026", Kind.RETIRED, "quantifier-multi-step-range", "", null),
     QUANTIFIER_THRESHOLD_MISMATCH("DROOLS-027", Kind.CONTRACT, "quantifier-threshold-mismatch", "quantifier,thresholdClause", null),
     PERIOD_TEST_ON_PARAMETER("DROOLS-028", Kind.REFUSAL, "period-test-on-parameter", "parameter", null),
     CHARACTERISTIC_FALSE_OUTSIDE_DEFAULTS("DROOLS-029", Kind.CONTRACT, "characteristic-false-outside-defaults", "rule,characteristic,value", null),
@@ -278,7 +279,7 @@ public enum DroolsCode {
     QUANTIFIER_FOLD_UNRESOLVED_ELEMENT("DROOLS-255", Kind.CONTRACT, "quantifier-fold-unresolved-element", "snippet", null),
     QUANTIFIER_FOLD_WITHOUT_MATRIX("DROOLS-256", Kind.CONTRACT, "quantifier-fold-without-matrix", "snippet", null),
     QUANTIFIER_DE_SINGLE_MEMBER("DROOLS-257", Kind.REFUSAL, "quantifier-de-single-member", "snippet", null),
-    QUANTIFIER_FOLD_MULTI_STEP("DROOLS-258", Kind.REFUSAL, "quantifier-fold-multi-step", "snippet", null),
+    QUANTIFIER_FOLD_MULTI_STEP("DROOLS-258", Kind.RETIRED, "quantifier-fold-multi-step", "snippet", null),
     QUANTIFIER_MEMBER_CREATED_RELATION("DROOLS-259", Kind.REFUSAL, "quantifier-member-created-relation", "factType,description", null),
     COMPARISON_DATE_WITH_DATETIME("DROOLS-260", Kind.REFUSAL, "comparison-date-with-datetime", "snippet", null),
     COMPARISON_INCOMPATIBLE_TYPES("DROOLS-261", Kind.REFUSAL, "comparison-incompatible-types", "spelling,leftType,rightType,snippet", null),
@@ -310,10 +311,12 @@ public enum DroolsCode {
     DEFAULTS_BASE_WITHOUT_VALUE("DROOLS-287", Kind.REFUSAL, "defaults-base-without-value", "targetName,objectType,rule", null),
     DEFAULTS_TWO_WRITERS_OVER_STACK("DROOLS-288", Kind.REFUSAL, "defaults-two-writers-over-stack", "targetName,objectType,computationCount,initialisationCount", null),
     PRO_RATA_FIXED_GRID("DROOLS-289", Kind.REFUSAL, "pro-rata-fixed-grid", "description,reason", null),
-    DEPOSIT_KINDS_MIXED("DROOLS-290", Kind.REFUSAL, "deposit-kinds-mixed", "form", null);
+    DEPOSIT_KINDS_MIXED("DROOLS-290", Kind.REFUSAL, "deposit-kinds-mixed", "form", null),
+    QUANTIFIER_MEMBER_TWO_ROUTES("DROOLS-291", Kind.LIMIT, "quantifier-member-two-routes", "description", null);
 
-    /** Why the backend refuses. */
-    public enum Kind { REFUSAL, LIMIT, CONTRACT, FALLBACK }
+    /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
+     *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */
+    public enum Kind { REFUSAL, LIMIT, CONTRACT, FALLBACK, RETIRED }
 
     private final String id;
     private final Kind kind;

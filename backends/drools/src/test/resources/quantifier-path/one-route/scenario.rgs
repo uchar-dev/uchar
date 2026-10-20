@@ -1,0 +1,22 @@
+Scenario deler twee
+Gegeven is de volgende situatie:
+de parameter de norm is 10
+de parameter de deler is 2
+een Jutter J1
+een Jutter J2
+een Vondst V1
+- het gewicht is 3
+- de vinder is J1
+een Vondst V2
+- het gewicht is 8
+- de vinder is J1
+een Vondst V3
+- het gewicht is 4
+- de vinder is J2
+een Melding M1
+- de melder is J1
+een Melding M2
+- de melder is J2
+Met als verwacht resultaat:
+- M1 is dringend
+- M2 is niet dringend
