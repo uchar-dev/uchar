@@ -1,0 +1,171 @@
+Scenario dringend en voorrang
+Gegeven is de volgende situatie:
+een Jutter J1
+een Jutter J2
+een Jutter J3
+een Jutter J4
+een Vondst V1
+- het gewicht is 12
+- de vinder is J1
+een Vondst V2
+- het gewicht is 5
+- de vinder is J1
+een Vondst V3
+- het gewicht is 3
+- de vinder is J2
+een Vondst V4
+- het gewicht is 20
+- is een wrakstuk
+- de vinder is J2
+een Vondst V5
+- het gewicht is 4
+- is een wrakstuk
+- de vinder is J3
+een Melding M1
+- de melder is J1
+een Melding M2
+- de melder is J2
+een Melding M3
+- de melder is J3
+een Melding M4
+- de melder is J4
+een Melding M5
+Met als verwacht resultaat:
+- M1 is dringend
+- M2 is dringend
+- M3 is niet dringend
+- M4 is niet dringend
+- M5 is niet dringend
+- M1 heeft voorrang
+- M2 heeft geen voorrang
+- M3 heeft geen voorrang
+- M4 heeft voorrang
+- M5 heeft voorrang
+
+Scenario gewogen over drie stappen
+Gegeven is de volgende situatie:
+een Jutter J1
+een Jutter J2
+een Jutter J3
+een Jutter J4
+een Jutter J5
+een Vondst V1
+- de vinder is J1
+een Vondst V2
+- de vinder is J1
+een Vondst V3
+- de vinder is J2
+een Vondst V4
+- de vinder is J3
+een Vondst V5
+- de vinder is J5
+een Vondst V6
+- de vinder is J5
+een Weging W1
+- de weegdatum is 03-05-2026
+- de gewogen vondst is V1
+een Weging W2
+- de gewogen vondst is V1
+een Weging W3
+- de gewogen vondst is V3
+een Weging W4
+- de weegdatum is 11-05-2026
+- de gewogen vondst is V6
+een Melding M1
+- de melder is J1
+een Melding M2
+- de melder is J2
+een Melding M3
+- de melder is J3
+een Melding M4
+- de melder is J4
+een Melding M5
+- de melder is J5
+Met als verwacht resultaat:
+- M1 is gewogen
+- M2 is niet gewogen
+- M3 is niet gewogen
+- M4 is niet gewogen
+- M5 is gewogen
+
+Scenario zwaarbeladen ploeg
+Gegeven is de volgende situatie:
+een Ploeg P1
+een Ploeg P2
+een Ploeg P3
+een Ploeg P4
+een Ploeg P5
+een Jutter J1
+- de ploeg is P1
+een Jutter J2
+- de ploeg is P1
+een Jutter J3
+- de ploeg is P2
+een Jutter J4
+- de ploeg is P2
+een Jutter J5
+- de ploeg is P3
+een Jutter J6
+- de ploeg is P5
+een Vondst V1
+- het gewicht is 12
+- de vinder is J1
+een Vondst V2
+- het gewicht is 15
+- de vinder is J1
+een Vondst V3
+- het gewicht is 20
+- de vinder is J2
+een Vondst V4
+- het gewicht is 12
+- de vinder is J3
+een Vondst V5
+- het gewicht is 4
+- de vinder is J4
+een Vondst V6
+- de vinder is J6
+Met als verwacht resultaat:
+- P1 is zwaarbeladen
+- P2 is niet zwaarbeladen
+- P3 is zwaarbeladen
+- P4 is zwaarbeladen
+- P5 is niet zwaarbeladen
+
+Scenario kistplicht telt elke kist eenmaal
+Gegeven is de volgende situatie:
+een Jutter J1
+een Jutter J2
+een Jutter J3
+een Jutter J4
+een Kist K1
+- is vol
+een Kist K2
+een Kist K3
+- is vol
+een Kist K4
+- is vol
+een Vondst V1
+- de vinder is J1
+- de kist is K1
+een Vondst V2
+- de vinder is J1
+- de kist is K1
+een Vondst V3
+- de vinder is J1
+- de kist is K2
+een Vondst V4
+- de vinder is J2
+- de kist is K1
+een Vondst V5
+- de vinder is J2
+- de kist is K3
+een Vondst V6
+- de vinder is J3
+- de kist is K4
+een Vondst V7
+- de vinder is J3
+Met als verwacht resultaat:
+- J1 is niet kistplichtig
+- J2 is kistplichtig
+- J3 is niet kistplichtig
+- J4 is niet kistplichtig
