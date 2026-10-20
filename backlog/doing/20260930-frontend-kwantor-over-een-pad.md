@@ -212,3 +212,184 @@ May touch: `frontends/regelspraak/**`, `backends/drools/**` (niet de productieru
 `corpus/golden/jutterswet-dringende-melding/`, `scripts/check-*.sh` (pins en vloeren, voorstel), de kaart.
 Niet: `ref/`, `backends/clingo/`, `spec/`, andere goldens (behalve een pin die verandert omdat een golden gaat spelen).
 Landen na akkoord van de eigenaar.
+
+## Result (2026-10-20)
+
+Pad op de draad, zoals besloten. Commits op `card/frontend-kwantor-over-een-pad` (op main `af10faf3`):
+
+- `756e6c34` frontend: de kwantor over een pad lowert naar `QuantifierFold.sourcePath`.
+- `1822bdce` golden `jutterswet-dringende-melding`: `source.rgs`, `scenario.rgs` en `NOTE.md` met de handberekening,
+  gecommit vóór een uitvoerder op de golden draaide.
+- `a942dbee` Drools: de lader draagt `sourcePath` op een `QuantifierFold`, de TMS-analyse plant het pad; register.
+- `8f39906a` golden: `ir.json` en de vier cases uit de frontend; gate-12-pins (voorstel).
+
+Geen wijziging van `spec/`, `ref/`, `backends/clingo/`, de productieruntime of andere goldens.
+
+### Wat er veranderde
+
+- **Frontend** (`ExpressionBuilder`, `RuleChecker`). Een ledenzin met meer dan één geschreven stap (de
+  kenmerkroute, `quantifiedSubject`) loopt dezelfde wandeling als het bereik van een waardevouw (`walkRange`, nu
+  gesplitst in `rangeSegments` en `walkSegments`): ledennaam en onderwerp worden segmenten, het anker wordt na de
+  langste naam van het regelonderwerp afgeknipt (typenaam in de keten, of naam/meervoud van een rol die de keten
+  vult) en de rest gaat als voorvoegsel terug naar het kenmerk. De vergelijkings- en leeg/gevuld-route
+  (`quantifierFold`) neemt de al opgeloste `rangePath` over als `sourcePath` in plaats van te weigeren. Een
+  wandeling die niet bindt houdt de WARNING `RGS-213`, nu met de reden van de wandeling (de stap die geen rol bindt,
+  een anker dat het onderwerp niet is); een pad dat helemaal niet te lezen is (bezittelijk anker "van zijn melder")
+  houdt `PART.fold-multi-step`, waarvan de tekst nu die restgroep beschrijft. Nieuw: ERROR **`RGS-348`** wanneer de
+  toets van een kwantor over een pad een operand heeft dat de frontend vanaf het regelonderwerp bouwde en dat iets
+  anders leest dan een eigen attribuut van het element (of een instantievouw): vanaf het element leidt over een pad
+  geen weg terug (p14). Over één stap blijft de terugbinding zoals zij was (q02). Een operand dat `elementRead`
+  opnieuw vanaf het element bouwde ("de leeftijd van de vinder van de Vondst") bindt. De emitter schreef
+  `sourcePath` op een kwantorvouw al; die bleef ongewijzigd. De telling over een pad blijft geweigerd (p10, `RGS-131`
+  in die vorm; `RGS-072` waar nog een bereik geschreven zou worden).
+- **Drools**. `IrLoader` laat `sourcePath` op een `QuantifierFold` door (vorm eerst, via `roleBindingList`).
+  `TmsTranspiler.quantifierContributions` kiest `pathRange` (de bestaande `SourcePath`-planning, met `Exists` over
+  tussenknopen zodat een lid één keer telt) of `oneStepRange`. Een lidtoets die kan falen of deponeren laat elk lid
+  zijn plaats dragen; waar het pad meer routes per lid toelaat (een stap naar veel gevolgd door een naar één) zou de
+  bijdrageregel het lid per route binden en de herhaling het dubbel lezen, dus die vorm weigert luid met de nieuwe
+  **`DROOLS-291`** (`quantifier-member-two-routes`, LIMIT). Waar het pad samenkomt (`plan.meets()`) speelt zij.
+  **`DROOLS-026`** (lader) en **`DROOLS-258`** (transpiler) vallen nergens meer; zij blijven in het register met de
+  nieuwe soort `Kind.RETIRED` (`spec/proposals/MESSAGE-CODES.md` §3.2: "a retired code stays in its registry marked
+  retired"). `scripts/check-drools-codes.sh` (voorstel) laat die soort toe, eist haar niet als gevallen code en
+  faalt als een plek een gepensioneerde code toch noemt; tot nu toe was er geen mechanisme om een code te laten
+  vervallen (nooit eerder gebeurd).
+- **DIVERGENCES**: nieuwe sectie "A quantifier over a written path — the range is the path (2026-10-20)", plus
+  verwijzingen in "§13.4.1 A navigated read binds its written role" (de matrix), "§13.4.15.45 …" (het afknippen van
+  het anker over een pad) en "A count over a written path — refused" (wat deze kaart wel en niet deed).
+
+### Rode getuige (acceptatie (a))
+
+`QuantifierOverPathTest.r1_lowers_to_a_quantifier_fold_over_the_path`, op de onveranderde frontend van `ef4189bb`
+(volledige uitvoer `uchar-dev/werk/kwantor-pad/bouwer/red-witness.txt`):
+
+    r1_lowers_to_a_quantifier_fold_over_the_path() ✘ onverwachte diagnostiek: [WARNING (line 24): de kwantorvouw
+    over 'ten minste één van de vondsten van de melder van de Melding' wordt NIET gelowerd: een meerstapsbereik: …,
+    WARNING (line 24): onopgelost: … blijft als marker op de wire staan] ==> expected: <true> but was: <false>
+    [ 1 tests failed ]
+
+Groen sinds `756e6c34`, met zeven rijen erbij (elke kwantor en toets, stappen in elke volgorde, de rechtvaardiging
+van een uitzondering, RGS-348, een lezing vanaf het element, een stap die niet bindt, de telling over een pad).
+Drools: `QuantifierPathWitnessTest` (samenkomend pad met deponerende toets speelt in beide takken; twee routes:
+DROOLS-291 in beide takken), documenten onder `backends/drools/src/test/resources/quantifier-path/`.
+
+### Proeftabel (`werk/kwantor-pad/probe/`, vóór op `af10faf3`-stand, na op `8f39906a`)
+
+s02 draagt in de werkmap de tikfout "R2 is niet na een startperiode"; gedraaid met "R2 is niet gestart". Uitvoer:
+`werk/kwantor-pad/bouwer/probes-before.txt` en `probes-after.txt`.
+
+| proef | vóór: frontend; ref/clingo; exec; drl | na |
+|---|---|---|
+| p01 ten minste één, kenmerk | exit 0 + 2 WARNINGs; EF-019 in alle vier | exit 0 schoon; PASS in alle vier |
+| p02 alle, kenmerk | idem | idem |
+| p03 geen, kenmerk | idem | idem |
+| p04 vergelijking | ERROR setlezing, exit 1 | exit 0 schoon; PASS in alle vier |
+| p05 leeg-toets | ERROR setlezing | idem |
+| p06a/p06b to-many → to-many | WARNINGs; EF-019 | exit 0 schoon; PASS in alle vier |
+| p07 drie stappen, vergelijking | ERROR setlezing | exit 0 schoon; PASS in alle vier |
+| p08 som / p11 som veel-veel | schoon; alle vier "leeg" waar de proef 0 verwacht | ongewijzigd (proefverwachting, geen uitvoerdersverschil) |
+| p09 maximum, p12 omweg R2, q01, q02, s01 | schoon; PASS in alle vier | ongewijzigd |
+| p10 aantal over pad | ERROR RGS-131, exit 1 | ongewijzigd (acceptatie (e)) |
+| p13 Uitzondering op (K6) | WARNINGs; EF-019 (Drools: regel "defaults K:Melding.dringend") | exit 0 schoon; PASS in alle vier |
+| p14 toets leest het onderwerp | ERROR setlezing | ERROR **RGS-348** die de lezing 'de drempel van de Melding' noemt; geen document |
+| q03 tellend over pad | WARNINGs; EF-019 | exit 0 schoon; PASS in alle vier |
+| s02 gevuld over drie stappen | ERROR setlezing | exit 0 schoon; PASS in alle vier |
+
+Daarnaast los gemeten (niet in de werkmap): meerwoordig kenmerk na het anker ("boven de norm"), nominaal kenmerk
+("een recht op grond-van-de-wia is"), "niet"/"geen" in het anker, die/dat-deelselectie over een pad (filter op het
+element, zoals bij een waardevouw), to-one → to-one ("alle ploegen van de vinder van de Vondst") en to-one → to-many →
+to-one met een gedeelde kist: alle schoon en PASS in de vier uitvoerders; "van zijn melder" en een stap die geen rol
+bindt: WARNING plus marker.
+
+### Golden `jutterswet-dringende-melding` (acceptatie (d))
+
+Vijf vormen (lid 2–6 van de eigen casustekst Art. 3l in `NOTE.md`): R1; K6 als `Uitzondering op voorrang` met
+"heeft geen voorrang" en het nominale kenmerk "een wrakstuk"; gevuld over drie stappen (melder, vondsten, wegingen);
+`alle` met vergelijking over jutters → vondsten; `ten minste twee` over vondsten → kist, waar een kist via twee
+vondsten bereikt wordt. Handberekening tegen uitkomst: alle 24 verwachtingen in vier cases zoals gerekend; ref en
+clingo PASS (10, 5, 5, 4), exec-model en DRL-tekst PLAYED 4. De scheidende cellen: M3 (bereik, niet populatie), M5 in
+case 2 (de tweede tussenvondst), P3/P4 (lege vereniging is waar onder `alle`), J1 in case 4 (vereniging telt K1 één
+keer: 1, voorkomens zouden 2 geven). `--noop` faalt op elke case. `ir.json` uit `source.rgs` alleen is bytegelijk
+aan dat uit bron plus scenario (gate 10 en 16).
+
+### `jutterswet-ketenkwantor` (meting, niets toegevoegd)
+
+- De frontend schrijft de twee zinnen van haar `NOTE.md` (met een eigen model van haar `ir.json`, bron in
+  `werk/kwantor-pad/bouwer/ketenkwantor-source.rgs`) **bytegelijk** naar het handgeschreven `ir.json`.
+- Drools: speelt niet; de weigering schoof een laag dieper, van `EXCLUDE DROOLS-026` (lader) naar `EXCLUDE
+  DROOLS-067` ("sourcePath step 1 (Boot -> Vondst) has no bean field": de many-to-many `berging`), in beide takken
+  dezelfde zin, zoals de pin van 2026-09-22 al vermoedde. Pin verplaatst met reden (voorstel).
+
+### Gates (acceptatie (f))
+
+`bash werk/gates.sh … gates-1` op `8f39906a`, `werk/kwantor-pad/gates-1.summary.txt`: **EXIT 0**, alle zestien
+`rc=0` (13:29–13:48). 1 PASS; 2 349 bestanden; 3 349 golden schoon, 511 negatief; 4 879 cases; 5 ref-suite 1304,
+835 cases; 6 clingo 2198 checks, 835 cases; 7 790 cases, 45 survivors; 8 44 rode cases; 9 241 checks; 10 JUnit 1218,
+126 rgs-goldens bytegelijk, 348 RGS-codes; 11 29 TOKA-cases; 12 261 gespeeld in beide takken, JUnit 1632, 291
+Drools-codes waarvan 2 gepensioneerd; 13 43 twists, 122 replays; 14 150 checks; 15 273 van 310 goldens vergeleken
+(was 271 van 309: de nieuwe golden en `jutterswet-ketenkwantor`, die de lader nu laadt), 126 op de bronroute; 16 31
+scenario-goldens, 106 cases.
+
+### Veranderde tests (gedrag dat deze kaart bewust verandert)
+
+- `SilentMarkerTest.a_multi_step_range_reports_the_stacked_set` → `…_reports_the_step_that_does_not_bind`: de zin
+  "alle wachten van alle ploegen van de Haven" lowert nu; de rij gebruikt "alle kades" (geen rol) en pint de
+  stapweigering in plaats van "meerstapsbereik".
+- `NonTemporalFoldTest.a_multi_step_range_on_the_characteristic_form_stays_a_marker` →
+  `…_lowers_to_its_path`: dezelfde zin, nu een `QuantifierFold` met `sourcePath` [havenindeling.ploeg,
+  schouwindeling.wacht] en zonder `sourceRole`.
+- `MarkerReasonPinTest.SANCTIONED` + `RuleChecker.java#quantifierFold` (1) en `MarkerReportTest.CLASSIFICATION`
+  + die familie als ERROR-route: de marker naast RGS-348 heeft reden null, de ERROR is haar diagnose (het patroon
+  van `checkWholePeriod`). Beide tests vragen precies dat bij een nieuwe null-plek.
+- Drools `WholePeriodQuantifierFoldWitnessTest.a_source_path_is_refused_per_form` →
+  `a_source_path_reaches_the_record_and_a_disconnected_walk_is_refused_per_form`: de lader draagt het pad in het
+  record; hetzelfde onsamenhangende pad weigert nu in de planning (DROOLS-064), in beide takken gelijk.
+
+### Pins en vloeren (voorstellen in beschermde scripts)
+
+- `scripts/check-drools.sh`: `EXPECTED_PLAYED` 260 → 261 (de nieuwe golden; reden en datum bij de constante);
+  `jutterswet-ketenkwantor` `EXCLUDE DROOLS-026` → `EXCLUDE DROOLS-067` met reden. Het aantal EXCLUDE-pins blijft 46.
+- `scripts/check-drools-codes.sh`: de soort `RETIRED` (zie boven). Vloeren niet verhoogd: `EXPECTED_MIN_RGS_CODES=347`
+  (nu 348), `EXPECTED_MIN_RGS_MESSAGES=363` (364), `EXPECTED_MIN_DROOLS_CODES=289` (291), `EXPECTED_MIN_DROOLS_MESSAGES=325`
+  (326); het zijn ondergrenzen.
+
+### Voorgestelde tekst voor `CLAUDE.md` (gate 12)
+
+In "`scripts/check-drools-codes.sh`, called first, holds the register to the sources in both directions (every code
+raised, every raised code registered, …)": vervang "every code raised" door "every code raised but one of the kind
+`RETIRED`, which no place may name (a code no place raises any more stays in the register so that its number is never
+reused; DROOLS-026 and DROOLS-258 since the card `frontend-kwantor-over-een-pad`, 2026-10-20)". En "each of the 45
+`EXCLUDE` pins" → "each of the 46 `EXCLUDE` pins": al op main `af10faf3` staan er 46 (gemeten met
+`awk '/^EXPECTED_CHANNEL=\(/,/^\)/' scripts/check-drools.sh | grep -c '|EXCLUDE DROOLS-'`); deze kaart verandert het
+aantal niet.
+
+### Voorgestelde rijtekst voor `spec/CONSTRUCTS.md` (rij 40, achteraan in de notitiekolom)
+
+**Landed (2026-10-20, card `frontend-kwantor-over-een-pad`) — the multi-step range has a producer route and a Drools
+lowering, and this NARROWS the words "handgeschreven — de producentroute bestaat niet" and "beide Drools-takken
+weigeren `Kwantorvouw.bronPad`" above:** the RegelSpraak frontend lowers a quantifier whose members lie two relations or
+more from the subject to the fold with `sourcePath` — every quantifier, a characteristic (nominal ones included), a
+comparison or a leeg/gevuld test as the matrix, to-one and to-many steps in any order, in a rule's condition and in a
+default's justification — over the walk a value fold's range takes; an operand of the matrix built from the rule
+subject is refused over a path (RGS-348), and a count over a path stays refused. It writes the two sentences of
+`jutterswet-ketenkwantor` byte-identically to that golden's hand-written `ir.json`. Both Drools branches carry the
+path through the `SourcePath` planning of the value folds (a member reached along two routes counts once); a matrix
+that can fault or deposit over a path with more than one route per member is refused by name (DROOLS-291), and
+`jutterswet-ketenkwantor` is refused one layer deeper, on its many-to-many `berging` (DROOLS-067). Witness
+`corpus/golden/jutterswet-dringende-melding`, played by all four executors (gate 12 `EXPECTED_PLAYED` 260 → 261).
+
+### Open, met reden
+
+- De toets die over een pad het regelonderwerp leest, weigert (RGS-348) in plaats van te binden. Binden kan alleen
+  waar elke stap terug naar één is (een pad van louter stappen naar veel); dat is een eigen keuze, niet gevraagd.
+- DROOLS-291: een deponerende of falende lidtoets over een pad met meer routes per lid. Ref en clingo spelen die vorm
+  (proef `two-routes`); Drools zou per lid de vroegste route moeten nemen, wat `MemberTest` zonder lididentiteit niet
+  kan. Geen golden heeft de vorm.
+- Een kwantor over een pad met een bezittelijk anker ("van zijn melder") blijft een WARNING met marker, zoals de
+  waardevouw over zo'n anker een ERROR blijft.
+- `PLAN.md` hoeft volgens mij niet te veranderen; de scope bleef binnen de kaart.
+
+### Vondsten buiten de kaart
+
+- `CLAUDE.md` noemt 45 `EXCLUDE`-pins voor gate 12; op main zijn het er 46 (zie boven).
+- In de werkmap: s02 heeft de tikfout "R2 is niet na een startperiode"; p08 en p11 verwachten 0 voor een som over
+  niets, waar alle vier uitvoerders (terecht, ch. 1.2) leeg geven.
