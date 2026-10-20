@@ -1274,7 +1274,9 @@ which the element is a to-many step, and refused as a read not laid as a
 navigation, where "de sluitdag van zijn jutter" bound. Its wire is that of the
 possessive form. Only an operand that left such a read unresolved is built
 again, so every operand that bound stays as it was. Witness:
-`QuantifierMatrixElementNameTest`.
+`QuantifierMatrixElementNameTest`. Over a range of two steps or more an operand
+the matrix takes over unchanged may read nothing from the rule subject: see
+"A quantifier over a written path" below.
 
 Measured before the change (2026-09-26): with two relations between Schuit and
 Haven, a read by type name, a read with no relation, and the noun of case 2
@@ -1397,7 +1399,65 @@ spellings (`er een vondst van de Jutter is die …`, `hij een vondst heeft die
 the anchor tails "" and `niet`; all 178 documents (every source alone, every
 scenario document with its source, the casus of the parity zone) emit the same
 IR, diagnostics, case files and exit code before and after. Witnesses:
-`NegatedQuantifierTest`, the golden `jutterswet-zinkende-jutter`.
+`NegatedQuantifierTest`, the golden `jutterswet-zinkende-jutter`. Over a range
+of two steps or more (next section) the anchor is cut the same way, after the
+longest type name along the subject's chain or declared name or plural of any
+role a type of that chain fills, since the relation of the first step is only
+known once the anchor is.
+
+---
+
+## A quantifier over a written path — the range is the path (2026-10-20)
+
+Not a dialect extension: the wire form IR-SPEC ch. 4.5 already carries
+(`QuantifierFold.sourcePath`, WF-108 (c), the flat union of RUNTIME-SEMANTICS
+ch. 3.4b that ch. 3.9a shares), which this frontend did not write. A
+quantifier whose members lie two relations or more from the rule subject —
+"ten minste één van de vondsten van de melder van de Melding zwaar is", "alle
+wachten van alle ploegen van de Haven gediplomeerd zijn" — lowers to a
+`QuantifierFold` whose range is the written walk, spelled `sourcePath`, one
+`RoleBinding` per step, subject-outward; the `elementType` is the type the walk
+lands on. The walk is the one a value fold's range takes ("A fold over a set
+and to-one steps after it" and §13.4.1 above, `ExpressionBuilder.walkRange`):
+every written step binds the role its name or declared plural names from the
+type before it, to-one and to-many alike, in any order, the anchor names the
+rule subject, and a step that binds no role declines the whole path. It holds
+for every quantifier (`alle`, `geen van de`, `ten minste`/`ten hoogste`/
+`precies` *n* `van de`), for every matrix (a characteristic, the nominal one
+read as "is een <naam>" among them; a comparison; a leeg or gevuld test), with
+a die/dat subselection on the element as in the one-step form, in the condition
+of a rule and in the justification of a defaults group ("Uitzondering op …").
+A counting quantifier counts the elements of the union, each once, however
+many intermediates reach it.
+
+**Refused, loudly.** A walk that does not bind keeps the marker with the
+WARNING that names where it stopped (the step that binds no role and why, an
+anchor that is not the rule subject, a landing on another type than the
+element type), and a member phrase whose path cannot be read at all — an
+anchor written as a possessive, "van zijn melder" — keeps the WARNING of a
+multi-step range. The matrix reads with the element as its subject, so an
+operand beside the quantified one that the frontend built from the rule
+subject ("… groter is dan de drempel van de Melding") would be written from
+the element: over one step the read reaches the subject back over the
+relation's other role, but over a path no walk from the element names the
+subject (the melder of a Vondst has more Meldingen than the one the rule is
+about), and a binding from the element would read another object without a
+word. Such an operand is refused with an ERROR (RGS-348) that names the read;
+a literal, a parameter, and an own attribute of the element are read as
+before. A count over a path ("het aantal vondsten van de melder van de
+Melding") stays refused (§13.4.17.47, "A count over a written path"): it is a
+count, not a quantifier, and the wire has no range of more than one step under
+a count (WF-102 (c)).
+
+Measured 2026-10-20 on twenty forms of the card frontend-kwantor-over-een-pad:
+until then a characteristic check over a path gave the WARNING of a multi-step
+range and a marker (EF-019 in every executor), and a comparison or a leeg or
+gevuld test over a path the ERROR of a set reading outside a fold source. Now
+every such form reaches disk with `diagnostics: []`, verifier-clean, and is
+answered as written by ref, clingo and both Drools branches; the frontend
+writes the two sentences of `jutterswet-ketenkwantor` byte-identically to its
+hand-written `ir.json`. Witnesses: `QuantifierOverPathTest`, the golden
+`jutterswet-dringende-melding`.
 
 ---
 
@@ -1605,8 +1665,10 @@ fences speak as before: a fold without a range, a written step on the source, th
 set reading, and "van alle …", a marker with its WARNING. A count over a path has
 no lowering: a member per element (the section "A fold over a set and to-one steps
 after it") does not count instances, and the flat union under `count` is not
-expressible on the wire (WF-102 (c)); the card `frontend-kwantor-over-een-pad`
-carries it. All 196 RegelSpraak sources of the repository, the 28 scenario goldens
+expressible on the wire (WF-102 (c)). The card `frontend-kwantor-over-een-pad`
+(2026-10-20) lowered the quantifier over a path ("A quantifier over a written path"
+above), whose counting forms count the elements of the union, and left this
+refusal as it stands. All 196 RegelSpraak sources of the repository, the 28 scenario goldens
 as test documents and the 108 sources of the distribution emit the same IR,
 diagnostics, case files and exit code before and after. Witness
 `CountOverPathTest`.

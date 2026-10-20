@@ -2891,27 +2891,39 @@ final class ExpressionBuilder {
     private RangeWalk walkRange(OnderwerpContext subjectType) {
         if (subjectType == null || currentSubject == null || !isSetSubject(subjectType))
             return RangeWalk.GEEN;
-        // The written segments, outside-in. Two shapes produce them, and both are walked: a nested
-        // set onderwerp is its own parse node, while an inner TO-ONE step is swallowed by the greedy
-        // bareName (§13.4.1, the same split the navigationPath block above performs).
         java.util.List<String> segments = new java.util.ArrayList<>();
-        for (OnderwerpContext rest = subjectType; rest != null; rest = rest.onderwerp()) {
+        if (!rangeSegments(subjectType, segments)) return RangeWalk.GEEN;
+        return walkSegments(segments, src(subjectType));
+    }
+
+    /** The written segments of {@code o}'s chain, outside-in, appended to {@code segments}; false where a link of the
+     *  chain has no name. Two shapes produce them, and both are walked: a nested set onderwerp is its own parse node,
+     *  while an inner TO-ONE step is swallowed by the greedy bareName (§13.4.1, the same split the navigationPath
+     *  block above performs). */
+    private boolean rangeSegments(OnderwerpContext o, java.util.List<String> segments) {
+        for (OnderwerpContext rest = o; rest != null; rest = rest.onderwerp()) {
             String kn = rest.kaleNaam() != null ? src(rest.kaleNaam()) : primaryName(rest);
-            if (kn == null) return RangeWalk.GEEN;
+            if (kn == null) return false;
             for (String part : kn.split("\\s+van\\s+")) segments.add(stripArticle(part).trim());
         }
+        return true;
+    }
+
+    /** The walk of written segments, outside-in, from the anchor (the last) to the element (the first); {@code source} is
+     *  the written range its refusals quote. */
+    private RangeWalk walkSegments(java.util.List<String> segments, String source) {
         // Two hops plus an anchor is the shortest thing this field exists for; anything shorter is the
         // one-step range and keeps its own spelling.
         if (segments.size() < 3) return RangeWalk.GEEN;
         String anchor = segments.get(segments.size() - 1);
         if (!anchorsSubject(anchor))
-            return RangeWalk.refused(Msg.frontend("PART.range-not-at-subject", "source", src(subjectType), "anchor", anchor,
+            return RangeWalk.refused(Msg.frontend("PART.range-not-at-subject", "source", source, "anchor", anchor,
                     "subject", currentSubject.name), null);
         java.util.List<RegelSpraakModel.RoleBindingRef> path = new java.util.ArrayList<>();
         ObjectType holder = currentSubject;
         for (int i = segments.size() - 2; i >= 0; i--) {
             RegelSpraakModel.RangeHop hop = model.rangeHop(holder, segments.get(i));
-            if (hop == null) return stepRefusal(subjectType, holder, segments.get(i));
+            if (hop == null) return stepRefusal(source, holder, segments.get(i));
             path.add(hop.binding());
             holder = hop.targetName();
         }
@@ -2924,7 +2936,7 @@ final class ExpressionBuilder {
         // fact types could refuse the walk (grammar/DIVERGENCES.md §13.4.1).
         ObjectType written = elementNameObjectType(segments.get(0));
         if (written != null && written != holder && !written.isA(holder))
-            return RangeWalk.refused(Msg.frontend("PART.range-element-mismatch", "source", src(subjectType), "holder", holder.name,
+            return RangeWalk.refused(Msg.frontend("PART.range-element-mismatch", "source", source, "holder", holder.name,
                     "written", written.name), null);
         return new RangeWalk(java.util.List.copyOf(path), null, null, written == null ? holder : written);
     }
@@ -2941,9 +2953,9 @@ final class ExpressionBuilder {
      *  model does not declare binds no step, also where the one-step range accepts it: the uchar wire has no
      *  best-effort plural (IR-SPEC ch. 2.6, decided 2026-08-25), and a path step has no type-pair derivation to fall
      *  back on (WF-102). Only that cause has a way out a declaration gives, so only it carries one. */
-    private RangeWalk stepRefusal(OnderwerpContext subjectType, ObjectType holder, String step) {
+    private RangeWalk stepRefusal(String source, ObjectType holder, String step) {
         RegelSpraakModel.StepCandidates k = model.stepCandidates(holder, step);
-        java.util.function.Function<Msg, Msg> head = tail -> Msg.frontend("PART.step-refusal", "source", src(subjectType),
+        java.util.function.Function<Msg, Msg> head = tail -> Msg.frontend("PART.step-refusal", "source", source,
                 "step", step, "holder", holder.name, "tail", tail);
         if (k.declared().size() > 1)
             return RangeWalk.refused(head.apply(Msg.frontend("PART.step-tail-ambiguous", "step", step,
@@ -3081,15 +3093,21 @@ final class ExpressionBuilder {
      *
      *  <p>{@code reason}, when non-null, means the phrase IS a member phrase but the fold declines it, and
      *  names the axis it declined on — the {@link Subselection} idiom, for the same reason: one generic
-     *  text for every shape tells the author nothing. The other fields are then empty. */
+     *  text for every shape tells the author nothing. The other fields are then empty.
+     *
+     *  <p>{@code path} is the range of a member phrase written over two relations or more, the {@code sourcePath}
+     *  of the walk ({@link #walkRange}'s, over the member name and the onderwerp); empty for the one-step range, which
+     *  the caller binds itself. {@code anchorTail} is, for such a phrase, what the parse took after the name of the
+     *  anchor (the words {@link #anchorTail} reads for the one-step range); null otherwise. */
     record QuantifiedSubject(Condition.Quantifier quantifier, int threshold, ObjectType element,
-                                    String subjectSource, Msg reason) {
+                                    String subjectSource, Msg reason,
+                                    List<RegelSpraakModel.RoleBindingRef> path, String anchorTail) {
         QuantifiedSubject(Condition.Quantifier quantifier, int threshold, ObjectType element, String subjectSource) {
-            this(quantifier, threshold, element, subjectSource, null);
+            this(quantifier, threshold, element, subjectSource, null, List.of(), null);
         }
         /** A declined member phrase: the written source and the axis it was declined on. */
         static QuantifiedSubject refused(String subjectSource, Msg reason) {
-            return new QuantifiedSubject(null, 0, null, subjectSource, reason);
+            return new QuantifiedSubject(null, 0, null, subjectSource, reason, List.of(), null);
         }
     }
 
@@ -3109,8 +3127,9 @@ final class ExpressionBuilder {
      * a DECLARED PLURAL (one object, no set, but written as a set), a member phrase whose element type
      * does not resolve — quantifying over an unresolved population is the silent-wrong-set failure a
      * marker is preferable to — and a MULTI-STEP written range ("alle wachten van alle ploegen van de
-     * Haven"), whose {@code sourcePath} spelling this lowering does not carry and whose first step is not
-     * the set the sentence names.
+     * Haven") that the walk of {@link #walkRange} does not bind, with the walk's own reason where it gave one.
+     * A multi-step range the walk binds comes back with its {@code path} (card frontend-kwantor-over-een-pad,
+     * 2026-10-20): the fold carries it as {@code sourcePath} (IR-SPEC ch. 4.5, WF-108 (c)).
      *
      * <p>The bare "de" declines QUIETLY (null, not geweigerd) unless the member name is a declared
      * plural: "de reis van de passagier" is an ordinary to-one navigation, and telling its author that a
@@ -3126,19 +3145,72 @@ final class ExpressionBuilder {
         if (q == null)
             return !isDeclaredPlural(members) ? null : QuantifiedSubject.refused(src(a),
                     Msg.frontend("PART.fold-bare-definite", "members", members));
-        // exactly ONE written hop: a chain quantifies a set this lowering cannot spell (see above). The
-        // greedy bareName swallows an inner to-one step, so a written "van" on EITHER side of the hop —
-        // in the member phrase or in the anchor — is what tells the two apart (the quantifier's own "van
-        // de" is not part of either, which is why this is not counted over the whole phrase).
+        // More than ONE written hop is a path. The greedy bareName swallows an inner to-one step, so a written
+        // "van" on EITHER side of the hop — in the member phrase or in the anchor — is what tells the two apart
+        // (the quantifier's own "van de" is not part of either, which is why this is not counted over the whole
+        // phrase).
         if (isSetSubject(a.onderwerp()) || hasStep(members) || hasStep(src(a.onderwerp())))
-            return QuantifiedSubject.refused(src(a),
-                    Msg.frontend("PART.fold-multi-step"));
+            return pathSubject(a, q, members);
         ObjectType elem = model.resolveObjectType(members);
         if (elem == null) elem = typeViaPlural(members);
         return elem != null
                 ? new QuantifiedSubject(q, writtenThreshold(a.kwantificatie()), elem, src(a))
                 : QuantifiedSubject.refused(src(a),
                     Msg.frontend("PART.fold-unknown-population", "members", members));
+    }
+
+    /**
+     * A member phrase written over two relations or more ("ten minste één van de vondsten van de melder van de
+     * Melding", "alle wachten van alle ploegen van de Haven"), walked as a value fold's range is ({@link #walkSegments}):
+     * the segments of the member name, then those of the onderwerp, the anchor last. The anchor's name runs on over
+     * the words of the predicate after it ("… van de Melding boven de drempel is" leaves the anchor "Melding boven de"),
+     * so the anchor is cut after the longest name it may call the rule subject by ({@link #subjectNames}) and the rest
+     * goes back to the predicate as {@code anchorTail}. A walk that declines refuses the phrase with its own reason; a
+     * shape it does not decide, with the reason {@code PART.fold-multi-step}.
+     */
+    private QuantifiedSubject pathSubject(AttribuutVanOnderwerpContext a, Condition.Quantifier q, String members) {
+        java.util.List<String> segments = new java.util.ArrayList<>();
+        for (String part : members.split("\\s+van\\s+")) segments.add(stripArticle(part).trim());
+        if (currentSubject == null || !rangeSegments(a.onderwerp(), segments))
+            return QuantifiedSubject.refused(src(a), Msg.frontend("PART.fold-multi-step"));
+        String anchor = segments.get(segments.size() - 1), tail = "";
+        String name = openingName(anchor, subjectNames());
+        if (name != null) {
+            tail = anchor.substring(name.length()).trim();
+            segments.set(segments.size() - 1, anchor.substring(0, name.length()));
+        }
+        RangeWalk walk = walkSegments(segments, src(a));
+        if (walk.refusal() != null) return QuantifiedSubject.refused(src(a), walk.refusal());
+        if (walk.path().isEmpty()) return QuantifiedSubject.refused(src(a), Msg.frontend("PART.fold-multi-step"));
+        return new QuantifiedSubject(q, writtenThreshold(a.kwantificatie()), walk.element(), src(a), null, walk.path(),
+                tail);
+    }
+
+    /** The names the anchor of a member phrase may call the rule subject by: the type names along its chain, and the
+     *  declared name and plural of every role a type of that chain fills. */
+    private List<String> subjectNames() {
+        List<String> names = new ArrayList<>();
+        List<ObjectType> chain = currentSubject.chain();
+        for (ObjectType t : chain) names.add(t.name);
+        for (RegelSpraakModel.FactType ft : model.factTypes.values())
+            for (RegelSpraakModel.Role r : ft.roles)
+                if (chain.contains(model.objectTypeByName(r.objectTypeName()))) {
+                    names.add(r.name());
+                    if (r.plural() != null) names.add(r.plural());
+                }
+        return names;
+    }
+
+    /** The longest of {@code names} that {@code text} opens with, as a whole word, or null. */
+    private static String openingName(String text, List<String> names) {
+        String chosen = null;
+        for (String n : names) {
+            if (n == null || n.isBlank()) continue;
+            String name = n.trim().replaceAll("\\s+", " ");
+            boolean opens = text.equalsIgnoreCase(name) || text.regionMatches(true, 0, name + " ", 0, name.length() + 1);
+            if (opens && (chosen == null || name.length() > chosen.length())) chosen = name;
+        }
+        return chosen;
     }
 
     /**
@@ -3159,13 +3231,7 @@ final class ExpressionBuilder {
         KaleNaamContext anchor = a == null ? null : anchorName(a.onderwerp());
         if (anchor == null) return null;
         String text = src(anchor);
-        String chosen = null;
-        for (String n : names) {
-            if (n == null || n.isBlank()) continue;
-            String name = n.trim().replaceAll("\\s+", " ");
-            boolean opens = text.equalsIgnoreCase(name) || text.regionMatches(true, 0, name + " ", 0, name.length() + 1);
-            if (opens && (chosen == null || name.length() > chosen.length())) chosen = name;
-        }
+        String chosen = openingName(text, names);
         return chosen == null ? null : text.substring(chosen.length()).trim();
     }
 

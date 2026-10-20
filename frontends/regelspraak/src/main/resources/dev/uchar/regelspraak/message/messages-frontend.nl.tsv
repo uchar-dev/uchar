@@ -87,7 +87,7 @@ PART.subselection-no-compound	zij bindt geen samengestelde voorwaarde van {eleme
 PART.subselection-no-predicate	zij bindt geen kenmerk of getalpredicaat van {element} (§5.6, IR-SPEC ch. 4.5)
 PART.subselection-time-dependent	een getalpredicaat over het gekwantificeerde attribuut '{attribute}' heeft hier geen lezing: dat attribuut is TIJDSAFHANKELIJK, en een tijdlijn in een scalaire sleuf heeft er geen (ch. 3.3) — de knoop draagt de vorm wel, over een niet-temporeel attribuut levert deze schrijfpositie hem ook
 PART.fold-bare-definite	de zin leest als een kwantificatie over '{members}' maar schrijft geen kwantor: de kale 'de' noemt één object en geen verzameling (§13.4.14.5 kent alle | geen van de | ten minste/ten hoogste/precies <telwoord> van de), dus er valt niets te vouwen
-PART.fold-multi-step	een meerstapsbereik: de zin stapelt nog een verzameling onder de gekwantificeerde, en een kwantorvouw noemt precies één relatie vanaf het regelonderwerp (IR-SPEC ch. 4.5) — de eerste stap vouwen zou een andere verzameling kwantificeren dan de zin noemt
+PART.fold-multi-step	een meerstapsbereik dat niet als pad vanaf het regelonderwerp te lezen is: een kwantorvouw over meer dan één relatie draagt haar bereik als pad (sourcePath, IR-SPEC ch. 4.5), en dat pad begint bij een anker dat het regelonderwerp noemt — de eerste stap vouwen zou een andere verzameling kwantificeren dan de zin noemt
 PART.fold-unknown-population	'{members}' is geen gedeclareerd objecttype en geen gedeclareerd meervoud daarvan, dus het bereik van de kwantor ligt niet vast — kwantificeren over een onbekende populatie zou een andere verzameling toetsen dan de zin noemt
 PART.range-not-at-subject	'{source}' begint bij '{anchor}' en niet bij het regelonderwerp {subject}
 PART.range-element-mismatch	'{source}' komt via haar stappen uit bij {holder}, maar de geschreven elementnaam is gelezen als {written}
@@ -650,3 +650,4 @@ RGS-345	feitmodel-contract: {violation}
 RGS-346	dekking: {category} '{name}' {verdict}{reasonClause}
 RGS-346.reason	 — {reason}
 RGS-347	periodedekking: regel '{rule}' (geldig {period}) verwijst naar parameter '{parameter}' zonder geldige waarde in {holes}
+RGS-348	de kwantorvouw over een pad in '{expression}' leest '{read}' vanaf het regelonderwerp {subject}: de toets van een kwantorvouw leest per lid, met het element {element} als onderwerp (RUNTIME-SEMANTICS ch. 3.9a), en over een pad van meer dan één stap leidt vanaf het element geen weg terug naar het onderwerp — een binding vanaf het element zou een ander object lezen dan de zin noemt; lees een waarde van het element zelf, of een vaste waarde

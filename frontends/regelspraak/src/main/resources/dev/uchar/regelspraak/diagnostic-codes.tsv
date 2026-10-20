@@ -346,3 +346,4 @@ RGS-344	ordering-fold-operands-refused	ERROR	fold,kinds,mixture,sentences
 RGS-345	fact-model-contract-violation	ERROR	violation
 RGS-346	coverage-verdict	WARNING	category,name,reason,reasonClause,verdict
 RGS-347	period-coverage-hole	WARNING	holes,parameter,period,rule
+RGS-348	quantifier-path-test-reads-subject	ERROR	element,expression,read,subject

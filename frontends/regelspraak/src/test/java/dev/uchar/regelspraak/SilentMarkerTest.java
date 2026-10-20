@@ -150,11 +150,12 @@ class SilentMarkerTest {
     }
 
     /**
-     * A MULTI-STEP written range: the fold spells one relation, so binding the first step would
-     * quantify a set the sentence does not name. The decline was silent; it now says which phrase
-     * stacked the second set.
+     * A MULTI-STEP written range whose walk does not bind: binding the first step would quantify a set the
+     * sentence does not name. The decline was silent; it then said which phrase stacked the second set, and since
+     * a range that binds is the fold's path (card frontend-kwantor-over-een-pad, 2026-10-20) it says which step
+     * bound no role. "kades" is no role of the Haven, so the walk stops there.
      */
-    @Test void a_multi_step_range_reports_the_stacked_set() {
+    @Test void a_multi_step_range_reports_the_step_that_does_not_bind() {
         RegelSpraakModel m = Resolver.resolve("""
             Objecttype de Haven (mv: Havens)
                 is veilig kenmerk (bijvoeglijk);
@@ -177,9 +178,9 @@ class SilentMarkerTest {
             Regel veilig bij diploma
                 geldig altijd
                     Een Haven is veilig
-                    indien alle wachten van alle ploegen van de Haven gediplomeerd zijn.
+                    indien alle wachten van alle kades van de Haven gediplomeerd zijn.
             """);
-        markerWithMessage(m, "meerstapsbereik");
+        markerWithMessage(m, "bindt de stap 'kades' vanaf Haven geen rol");
     }
 
     /**

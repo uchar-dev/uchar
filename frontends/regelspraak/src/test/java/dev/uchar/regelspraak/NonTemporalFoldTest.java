@@ -350,10 +350,11 @@ class NonTemporalFoldTest {
                 () -> "de gekwalificeerde kenmerkvorm hoort haar marker te houden:\n" + condition(m));
     }
 
-    /** A MULTI-STEP written range on the membership route declines, exactly as it does on the
-     *  comparison one: the fold spells one relation, and binding the first step of a chain would
-     *  quantify a set the sentence does not name. */
-    @Test void a_multi_step_range_on_the_characteristic_form_stays_a_marker() {
+    /** A MULTI-STEP written range on the membership route lowers to the fold's path, exactly as it does on the
+     *  comparison one (card frontend-kwantor-over-een-pad, 2026-10-20; until then both declined, because the fold
+     *  spelled one relation and binding the first step of a chain would quantify a set the sentence does not name).
+     *  The path is the two written relations, never the first step alone. */
+    @Test void a_multi_step_range_on_the_characteristic_form_lowers_to_its_path() {
         RegelSpraakModel m = Resolver.resolve("""
             Objecttype de Haven (mv: Havens)
                 is veilig kenmerk (bijvoeglijk);
@@ -378,7 +379,15 @@ class NonTemporalFoldTest {
                     Een Haven is veilig
                     indien alle wachten van alle ploegen van de Haven gediplomeerd zijn.
             """);
-        assertTrue(condition(m).contains("\"node\":\"Unresolved\""),
-                () -> "een meerstapsbereik hoort niet als eenstapsvouw te landen:\n" + condition(m));
+        clean(m);
+        assertTrue(condition(m).startsWith("\"condition\":{\"node\":\"QuantifierFold\",\"quantifier\":\"all\","
+                        + "\"elementType\":\"Strandwacht\",\"test\":{\"node\":\"CharacteristicCheck\","
+                        + "\"characteristic\":\"gediplomeerd\""),
+                () -> "een meerstapsbereik hoort een kwantorvouw over de wachten te worden:\n" + condition(m));
+        assertTrue(condition(m).contains("\"sourcePath\":[{\"node\":\"RoleBinding\",\"factType\":\"havenindeling\","
+                        + "\"role\":\"ploeg\"},{\"node\":\"RoleBinding\",\"factType\":\"schouwindeling\",\"role\":\"wacht\"}]"),
+                () -> "het bereik is het pad ploeg, wacht, nooit de eerste stap alleen:\n" + condition(m));
+        assertFalse(condition(m).contains("\"sourceRole\""),
+                () -> "een pad en een rol sluiten elkaar uit (WF-108 (c)):\n" + condition(m));
     }
 }

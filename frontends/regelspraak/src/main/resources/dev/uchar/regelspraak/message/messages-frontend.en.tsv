@@ -87,7 +87,7 @@ PART.subselection-no-compound	it binds no compound condition of {element} (§13.
 PART.subselection-no-predicate	it binds no characteristic or number predicate of {element} (§5.6, IR-SPEC ch. 4.5)
 PART.subselection-time-dependent	a number predicate over the quantified attribute '{attribute}' has no reading here: that attribute is TIME-DEPENDENT, and a timeline in a scalar slot has none (ch. 3.3) — the node does carry the form, and over a non-temporal attribute this write position yields it too
 PART.fold-bare-definite	the sentence reads as a quantification over '{members}' but writes no quantifier: the bare 'de' names one object and no collection (§13.4.14.5 knows 'alle | geen van de | ten minste/ten hoogste/precies <numeral> van de'), so there is nothing to fold
-PART.fold-multi-step	a multi-step range: the sentence stacks another collection under the quantified one, and a quantifier fold names exactly one relation from the rule subject (IR-SPEC ch. 4.5) — folding the first step would quantify another collection than the sentence names
+PART.fold-multi-step	a multi-step range that does not read as a path from the rule subject: a quantifier fold over more than one relation carries its range as a path (sourcePath, IR-SPEC ch. 4.5), and that path starts at an anchor that names the rule subject — folding the first step would quantify another collection than the sentence names
 PART.fold-unknown-population	'{members}' is no declared object type and no declared plural of one, so the range of the quantifier is not fixed — quantifying over an unknown population would test another collection than the sentence names
 PART.range-not-at-subject	'{source}' begins at '{anchor}' and not at the rule subject {subject}
 PART.range-element-mismatch	'{source}' arrives through its steps at {holder}, but the written element name was read as {written}
@@ -650,3 +650,4 @@ RGS-345	fact model contract: {violation}
 RGS-346	coverage: {category} '{name}' {verdict}{reasonClause}
 RGS-346.reason	 — {reason}
 RGS-347	period coverage: rule '{rule}' (valid {period}) refers to parameter '{parameter}' without a valid value in {holes}
+RGS-348	the quantifier fold over a path in '{expression}' reads '{read}' from the rule subject {subject}: the test of a quantifier fold reads per member, with the element {element} as its subject (RUNTIME-SEMANTICS ch. 3.9a), and over a path of more than one step no walk leads from the element back to the subject — a binding from the element would read another object than the sentence names; read a value of the element itself, or a constant

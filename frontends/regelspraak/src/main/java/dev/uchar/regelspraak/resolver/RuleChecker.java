@@ -5499,14 +5499,14 @@ final class RuleChecker {
      * forall or as nothing at all depending on which arm saw it, and WF-041 refuses the wire form, so
      * emitting it would only move the refusal downstream.
      *
-     * <p>Two further shapes decline and keep the fence's error rather than lowering, each because lowering
-     * would be a guess: a MULTI-STEP written range (the operand
-     * resolved a {@code rangePath}), whose {@code sourcePath} spelling is a separate card; and a range that
-     * does not resolve at all — a quantifier bound to no relation is the silent-wrong-set failure a required
-     * range prevents (WF-048 until L2; since L2 the quantifier fold carries its range by schema), and a loud
-     * refusal beats a fold over a set the sentence never named.
+     * <p>A MULTI-STEP written range (the operand resolved a {@code rangePath}) is the fold's {@code sourcePath}
+     * (IR-SPEC ch. 4.5, WF-108 (c); card frontend-kwantor-over-een-pad, 2026-10-20), and the matrix then reads
+     * nothing from the rule subject ({@link #subjectRead}). A range that does not resolve at all declines and keeps
+     * the fence's error rather than lowering, because lowering would be a guess — a quantifier bound to no relation
+     * is the silent-wrong-set failure a required range prevents (WF-048 until L2; since L2 the quantifier fold
+     * carries its range by schema), and a loud refusal beats a fold over a set the sentence never named.
      *
-     * <p>A FOURTH shape declines for the same reason the other three do, and it is the §5.6 die/dat
+     * <p>A THIRD shape declines for the same reason the other two do, and it is the §5.6 die/dat
      * SUBSELECTION: a subselectie this resolver cannot bind against the element type leaves the fence's
      * ERROR standing and draws a WARNING naming itself. Dropping it would be worse than refusing —
      * "alle vondsten DIE AANGEMELD ZIJN" would land as a fold over every vondst, a verifier-clean wire
@@ -5527,12 +5527,11 @@ final class RuleChecker {
         }
         ObjectType elem = set.objectType();
         if (elem == null) return c;
-        // a written multi-step range resolves into rangePath, which this lowering does not spell — decline
-        // the WHOLE thing rather than binding the first step, which would quantify over the wrong set
-        if (set.rangePath() != null && !set.rangePath().isEmpty()) return c;
-        RegelSpraakModel.RoleBindingRef sourceRole =
-                model.foldSourceBinding(builder.subject(), elem, set.subjectSource());
-        if (sourceRole == null) return c;                       // unresolvable range — never a silent misbinding
+        // a written multi-step range resolved into rangePath, the fold's sourcePath; a one-step range is bound here
+        List<RegelSpraakModel.RoleBindingRef> sourcePath = set.rangePath() == null ? List.of() : set.rangePath();
+        RegelSpraakModel.RoleBindingRef sourceRole = sourcePath.isEmpty()
+                ? model.foldSourceBinding(builder.subject(), elem, set.subjectSource()) : null;
+        if (sourcePath.isEmpty() && sourceRole == null) return c;   // unresolvable range — never a silent misbinding
         // §5.6 / ch. 4.5 the die/dat SUBSELECTION, looked for in the parse subtree of the QUANTIFIED
         // operand only: the bijzin trails the onderwerp ("… van alle vondsten van de Jutter die
         // aangemeld zijn") but selects the quantified MEMBERS, so a die on the other side of the
@@ -5553,7 +5552,41 @@ final class RuleChecker {
                 set.type(), set.source(), false, List.of(), List.of(), null);
         Condition matrix = elementRead(withOperand(c, set, own), own, elem,
                 c instanceof Condition.Comparison v && v.left() == set ? rhsCtx : lhsCtx, source);
-        return new Condition.QuantifierFold(q, threshold, elem, filter, matrix, sourceRole, List.of(), source);
+        Source subjectRead = sourcePath.isEmpty() ? null : subjectRead(c, set, matrix, own, elem);
+        if (subjectRead != null) {
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-348", params("expression", source,
+                    "read", subjectRead, "subject", builder.subject() == null ? "?" : builder.subject().name,
+                    "element", elem.name), source.line()));
+            return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
+        }
+        return new Condition.QuantifierFold(q, threshold, elem, filter, matrix, sourceRole, sourcePath, source);
+    }
+
+    /**
+     * The read the matrix of a quantifier over a path would take from the rule subject, or null. The matrix is
+     * evaluated per contributor with the element as its subject (RUNTIME-SEMANTICS ch. 3.9a), so the operand beside
+     * the quantified one, built from the rule subject, is written from the element. Over one step such a read reaches
+     * the subject back over the relation's other role; over a path no walk from the element names the subject (the
+     * melder of a Vondst has more Meldingen than the one the rule is about), and a by-pair binding from the element
+     * would read another object without a word. So such an operand is refused: one the matrix took over unchanged
+     * ({@link #elementRead} built no other) that reads anything but an own attribute of the element, or folds
+     * instances. A literal, a parameter and arithmetic over them read no subject.
+     */
+    private static Source subjectRead(Condition c, Expr set, Condition matrix, Expr own, ObjectType elem) {
+        if (!(c instanceof Condition.Comparison written) || !(matrix instanceof Condition.Comparison m)) return null;
+        Expr other = written.left() == set ? written.right() : written.left();
+        Expr inMatrix = m.left() == own ? m.right() : m.left();
+        if (inMatrix != other) return null;
+        Source[] found = new Source[1];
+        Expr.contains(other, x -> {
+            boolean fromSubject = x instanceof Expr.AttributeReference a && !(a.objectType() == elem
+                    && a.navigationRole() == null && (a.navigationPath() == null || a.navigationPath().isEmpty()))
+                    || x instanceof Expr.FunctionCall f && f.elementObjectType() != null
+                    || x instanceof Expr.InstanceSetUnion;
+            if (fromSubject) found[0] = x.source();
+            return fromSubject;
+        });
+        return found[0];
     }
 
     /**
@@ -5627,8 +5660,9 @@ final class RuleChecker {
      * the Schouwploeg).
      *
      * <p>Every decline of {@link #quantifierFold} holds verbatim, for the same reasons: a counting telwoord
-     * under 1 (WF-041), a multi-step written range (declined in {@code quantifiedSubject}), an
-     * unresolvable range, and a die/dat subselectie that does not bind. Each returns null, which leaves
+     * under 1 (WF-041), a multi-step written range the walk does not bind (declined in {@code quantifiedSubject};
+     * one it binds is the fold's {@code sourcePath}), an unresolvable range, and a die/dat subselectie that does
+     * not bind. Each returns null, which leaves
      * the caller's honest marker standing. Two shapes stay
      * out on top of those: a §8.2-QUALIFIED membership matrix (the caller gates on that — a whole-period
      * quantified kenmerkcheck has no worked semantics here and keeps its marker), and a §8.1.7 ROLCHECK
@@ -5653,22 +5687,28 @@ final class RuleChecker {
             model.diagnostics.add(new Diagnostic(Severity.WARNING, "RGS-211", params("source", g.subjectSource()), source.line()));
             return null;
         }
-        // the member phrase without its counting quantifier: "ten minste twee van de liggers van de Haven" names the
-        // role 'liggers', and the whole phrase would offer "ten minste twee" as the written name
-        String member = g.subjectSource().replaceFirst("(?i)^(ten minste|ten hoogste|precies)\\s+\\S+\\s+van\\s+", "")
-                .replaceFirst("(?i)^geen\\s+van\\s+", "");
-        RegelSpraakModel.RoleBindingRef sourceRole = model.foldSourceBinding(builder.subject(), g.element(), member);
-        if (sourceRole == null) {                                 // unresolvable range — never a silent misbinding
-            reportFoldRefusal(g.subjectSource(), Msg.frontend("PART.fold-range-unbindable", "cause", builder.subject() == null
-                    ? Msg.frontend("PART.rule-subject-unknown")
-                    : pairReason(builder.subject(), g.element(), member)), source);
-            return null;
+        // A range over two relations or more is the walk's path (sourcePath), and the walk cut the anchor's tail
+        // off already; a one-step range is bound here.
+        RegelSpraakModel.RoleBindingRef sourceRole = null;
+        String suffix = g.anchorTail();
+        if (g.path().isEmpty()) {
+            // the member phrase without its counting quantifier: "ten minste twee van de liggers van de Haven" names the
+            // role 'liggers', and the whole phrase would offer "ten minste twee" as the written name
+            String member = g.subjectSource().replaceFirst("(?i)^(ten minste|ten hoogste|precies)\\s+\\S+\\s+van\\s+", "")
+                    .replaceFirst("(?i)^geen\\s+van\\s+", "");
+            sourceRole = model.foldSourceBinding(builder.subject(), g.element(), member);
+            if (sourceRole == null) {                                 // unresolvable range — never a silent misbinding
+                reportFoldRefusal(g.subjectSource(), Msg.frontend("PART.fold-range-unbindable", "cause", builder.subject() == null
+                        ? Msg.frontend("PART.rule-subject-unknown")
+                        : pairReason(builder.subject(), g.element(), member)), source);
+                return null;
+            }
+            // The anchor names the rule subject, and what the parse took after that name belongs to the predicate:
+            // a negation, and the leading words of a multi-word name. From an anchor anchorTail cannot read, only a
+            // trailing negation word is taken back.
+            suffix = builder.anchorTail(lhsCtx, anchorNames(builder.subject(), sourceRole));
+            if (suffix == null) suffix = absorbedNegation(lhs);
         }
-        // The anchor names the rule subject, and what the parse took after that name belongs to the predicate:
-        // a negation, and the leading words of a multi-word name. From an anchor anchorTail cannot read, only a
-        // trailing negation word is taken back.
-        String suffix = builder.anchorTail(lhsCtx, anchorNames(builder.subject(), sourceRole));
-        if (suffix == null) suffix = absorbedNegation(lhs);
         String name = (suffix.isEmpty() ? "" : suffix + " ") + stripArticle(src(nameCtx));
         Condition test = elementCharacteristicCheck(g.element(), name, withIndefiniteArticle, hasVerb, source);
         if (test == null) {
@@ -5690,7 +5730,7 @@ final class RuleChecker {
             return null;
         }
         return new Condition.QuantifierFold(g.quantifier(), threshold, g.element(), ds == null ? null : ds.filter(),
-                test, sourceRole, List.of(), source);
+                test, sourceRole, g.path(), source);
     }
 
     /** The names the anchor of a quantified member phrase may call the rule subject by: the type names along

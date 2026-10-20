@@ -48,13 +48,16 @@ class MarkerReasonPinTest {
      *  {@code file}, with the reason that route needs no survivor report. */
     record Site(String file, String method, int count, String why) {}
 
-    /** The fourteen sanctioned null-constructions, measured 2026-09-19, grown by one 2026-09-20. Growth
+    /** The fourteen sanctioned null-constructions, measured 2026-09-19, grown by one 2026-09-20 and by one 2026-10-20. Growth
      *  is NOT free here (unlike
      *  a gate floor): a null is a promise that something else speaks, so every new one is listed with
      *  the diagnostic that keeps that promise. */
     static final List<Site> SANCTIONED = List.of(
             new Site("RuleChecker.java", "checkWholePeriod", 1,
                     "de §8.2-ERROR die de regel erboven opwerpt IS de diagnose van deze marker"),
+            new Site("RuleChecker.java", "quantifierFold", 1,
+                    "de RGS-348-ERROR die de regel erboven opwerpt (de toets van een kwantor over een pad leest "
+                    + "het regelonderwerp; 2026-10-20) IS de diagnose van deze marker"),
             new Site("RuleChecker.java", "dayKindOperandError", 1,
                     "meldPredicaat werpt de Tabel-57-ERROR op; die is de diagnose van deze marker"),
             new Site("ExpressionBuilder.java", "buildFunction", 3,
