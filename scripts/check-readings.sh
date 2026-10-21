@@ -439,7 +439,7 @@ names = {'goldens': 'EXPECTED_MIN_COMPARED_GOLDENS', 'cases': 'EXPECTED_MIN_COMP
          'unreached_contributors': 'EXPECTED_MIN_UNREACHED_CONTRIBUTORS'}
 for k, floor in floors.items():
     if counts[k] < floor:
-        problems.append('%d %s compared, but %s pins at least %d — the comparison shrank (a deliberate removal lowers the floor in the same commit)' % (counts[k], k, names[k], floor))
+        problems.append('%d %s compared, but %s pins at least %d — the comparison shrank (a deliberate removal lowers the floor in the same commit)' % (counts[k], k.replace('_', ' '), names[k], floor))
 
 print('  counted: ref traced %d golden case files; compared per branch: %d goldens, %d case files, %d readings, '
       '%d node lines, %d unreached, %d with contributors, %d with a timeline; %d contributors of ref not reached' % (
