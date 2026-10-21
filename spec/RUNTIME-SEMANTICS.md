@@ -4992,6 +4992,196 @@ what reaches the rows a barrier cannot, because a closed fold body
 | `dateWith` / `dateTimeWith` (datum met / datum-tijd met) | **none** — the reference interpreter declines the form, so there is nothing to run. The order is stated for the consumer that carries it first, and lands with it |
 | `TimeWindow` `from` before `to` | **none yet** — the form is carried since 2026-09-20 (ch. 3.10, golden `jutterswet-premievenster`), but the two bound shapes WF-111 admits are a literal and an own scalar attribute, and neither can fault. A witness lands with the general date expression, which is the first bound that can and an OPEN wire decision (ch. 3.12) |
 
+### 5.12 The reading of a condition at the fixpoint
+
+The **reading** of a form's condition on an object is the evaluation of
+that condition on the fixpoint world, recorded node by node. It is no rule
+of evaluation and it changes nothing the session computes: it records an
+evaluation that ch. 1–5 and 9–11 already define, once, at the end. A
+consumer that says why a characteristic holds or why a value stayed leeg —
+an explanation — reads it, instead of evaluating the condition again in a
+semantics of its own.
+
+**Which forms, which objects.** A form has a reading where it has a
+condition: a rule version's `condition`, a consistency's `assertion`, an
+allocation's, an object creation's and a fact creation's `condition`, and a
+default's `justification` (ch. 7). The form is named by the JSON pointer
+(RFC 6901) of its version or of its default:
+`/rules/rules/k/versions/v`, `/rules/consistencies/k/versions/v`,
+`/rules/allocations/k/versions/v`, `/rules/objectCreations/k/versions/v`,
+`/rules/factCreations/k/versions/v`, and
+`/rules/prioritizedDefaults/i/defaults/j`, with
+`/exceptions/members/m/defaults/l` for each level of an exception group
+(ch. 7.9). An ordinary rule that ch. 7.10 folds into a stack is read as a
+default of that stack, under its own version's pointer and with its own
+condition. The objects of a form are the objects it runs on at the
+fixpoint, the objects a creation made included: the instances of its
+subject type (ch. 2.2), for a rule on an attribute without the concrete
+types on which ch. 7.10 takes it into a stack; for a stack the instances
+of the concrete type it belongs to (ch. 7.10); for a fact creation its
+anchors. A fact creation whose condition is a check on its target has no
+reading: that condition filters the targets (ch. 5.5), so its verdict
+belongs to an (anchor, target) pair and not to one object. A form without a
+condition has none either.
+
+**The status.** Each (form, object) has one status:
+
+| status | when | nodes |
+|--------|------|-------|
+| `HOLDS` | the condition holds | the nodes of the condition, and of the value |
+| `FAILS` | the condition does not hold | the nodes of the condition |
+| `FAULTS` | the evaluation of the condition faults (ch. 5.7) | the nodes, the fault at those it reached |
+| `FAULTS` | the form has a dated validity and the session no evaluation date (ch. 8.1) | none |
+| `DISPLACED` | the form is not at its turn: a higher default of its chain decided, or an exception group of the default settled (ch. 7.1, 7.9); the target of an initialisation — a rule's, or a folded one's in a stack — holds a value of the input or of another writer (ch. 5.4, 7.3); the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
+| `OUTSIDE_VALIDITY` | the validity window of the form does not admit the evaluation date (ch. 8.2) | none |
+
+A form that is not at its turn, or outside its validity, is not evaluated,
+so it has no nodes. Every default below the one that decides is displaced,
+and with it every default inside its exception groups.
+
+**The evaluation.** The condition is evaluated with the object as its
+subject, on the fixpoint world, in the order of ch. 5.10 and 5.11. Where it
+holds and the form computes a value — a rule on an attribute, an attribute
+default's consequence — the value is evaluated after it. A characteristic
+attribution, a consistency, an allocation and a creation compute no value
+here: the member initialisations of a creation are evaluated at its making,
+not at the fixpoint. The status is the condition's; a value that faults
+leaves the reading `HOLDS` and carries its fault at its nodes.
+
+**A reading deposits nothing and writes nothing.** A §9.5 deposit the
+evaluation makes is dropped, a value it computes is written nowhere, and no
+outcome of the session reads a reading. Two consequences follow from the
+definition and are not rules of their own: a reading of a condition that
+the session evaluated has the session's verdict, since it is the same
+evaluation on the same world; and a member that the session's short circuit
+skipped is not reached in the reading either.
+
+**The nodes.** The nodes of a form are numbered in the pre-order of the
+document over the nodes of the condition union (IR-SPEC ch. 4.5) and of the
+expression union (IR-SPEC ch. 4): first those of the condition, its root 0,
+then those of the value; a node before its fields, the fields in the order
+the document writes them, a list in its order. A text part, a whole-period
+qualifier, a dimension selection, a type and a role binding are no nodes; a
+fold's inline function (`Lambda`) is one. Each node that has a reading of
+its own records one of:
+
+- **not reached** — after the stop of a composite or a quantifier fold
+  (ch. 5.10, 3.9a), in the branch of a choice that is not taken (ch. 10.2),
+  in the value of a `Let` whose binder no read forces (ch. 10.6), in the
+  value of a form whose condition does not hold, after a fault;
+- a condition's **verdict**, true or false;
+- an expression's **value**, a number with its unit (ch. 2.6); leeg is a
+  value. A read of a leeg binder that ends the evaluation at the node
+  (ch. 10.6, clause 2) reaches it and leaves it leeg;
+- a **fault**: the evaluation fault the node raised or passed on, by the
+  EF code of its kind (ch. 5.7b) and never by its sentence.
+
+A node that the evaluation reads as a timeline, instead of evaluating it to
+a value, has that timeline as its value, leeg where it is absent: the
+operand of a whole-period test (ch. 3.9) and the base of a temporal total
+(ch. 3.6) or of a time-proportional part (ch. 3.7). A condition that the
+evaluation reads over a timeline has the part of that timeline in which it
+holds: the clip of a temporal total (ch. 3.6) and the filter of a
+time-proportional part or a day count (ch. 3.7, 3.8) — the periods of a
+characteristic, the segments of a compared timeline — and a period window
+that cuts a timeline target (ch. 3.10), the window itself. The value of a
+rule on a timeline target is the timeline it writes.
+
+**Folds over a set.** A node that the evaluation reads once per member of
+a fold over a set — the source, the filter and the matrix of an
+aggregation with a range or over an instance-set union (ch. 3.4, 3.4a,
+3.4d) and of a quantifier fold (ch. 3.9a) — and a node read once per
+element of a list (ch. 10.2) has no reading of its own; it keeps its
+number. The node of a fold over a set carries its **contributors** instead,
+the members of its range that pass its filter: for a count each instance it
+counts; for a value fold each member with the value it contributes, where a
+member whose value is leeg contributes nothing (ch. 1.2e); for a quantifier
+fold each member with the verdict of the matrix on it, or its fault, and
+the members after the stop (ch. 5.10 over the contributors, ch. 3.9a) not
+reached.
+
+**The canonical text.** The readings of a case are written one line per
+reading, `<form> <object> <status>`, and one line per node with a reading
+of its own, `<form> <object> <number> <kind> <found>`, all lines sorted in
+code-unit order; the kind is the node's discriminator as the wire spells
+it. An object of the input is written as its case label, quoted; an object
+a creation made as `«"<creation>"»(<subject>)#<k>`, the name of its
+creation, the object it was made for and its number among the objects that
+creation made for it, which is 1, since a creation makes one object per
+subject (ch. 5.5). `<found>` is `unreached`; `true` or `false`; `fault`
+with the EF code, or `fault -` for a fault without one; or the value: a
+number as its exact decimal where it terminates and else as its quotient to
+16 significant digits rounded half to even (IEEE 754 decimal64), without
+trailing zeros; a date and a date-time as the case format writes them; a
+text and an enumeration value quoted, with `\`, `"` and the line breaks
+escaped; leeg as `empty`; a timeline as `[[<from> <to> <value>], …]`, with
+`empty` as the value of a period without one. After the value of an
+expression stands its unit, quoted, where it has one: of a number the unit
+it carries, of a leeg value or a fault the unit of the node's declaration
+or annotation. After the node of a fold over a set stand its contributors,
+`contributors [<object> <value> reached; …]`, sorted, a contributor after
+the stop as `<object> - unreached`. `runner --trace` prints this text for a
+golden case, each line after `reading `.
+
+**Worked example** (absolute; the `jutterswet-ploegaandeel` golden of
+ch. 5.10, verbatim in the `ref/` test `WV-5.12-ploegaandeel`). The rule
+
+```
+bergingsaandeel ← 1  indien  ALLE [
+    ploegomvang ongelijk aan 0 ;
+    ⌊vangstwaarde ÷ ploegomvang⌋ groter dan 0 ]
+```
+
+numbers its nodes 0 `Compound`, 1 `Comparison` (member 1), 2
+`AttributeReference` (ploegomvang), 3 `Literal` (0), 4 `Comparison`
+(member 2), 5 `Rounding`, 6 `Binary` (÷), 7 `AttributeReference`
+(vangstwaarde), 8 `AttributeReference` (ploegomvang), 9 `Literal` (0),
+and, after the condition, 10 `Literal` (the value 1). The version is
+`/rules/rules/0/versions/0`; its readings on the three Jutters of the case:
+
+| node | J1 (ploegomvang 0, vangstwaarde 100) | J2 (4, 100) | J3 (7, 3) |
+|------|----|----|----|
+| status | `FAILS` | `HOLDS` | `FAILS` |
+| 0 `Compound` | false | true | false |
+| 1 `Comparison` | false | true | true |
+| 2 `AttributeReference` | 0 | 4 | 7 |
+| 3 `Literal` | 0 | 0 | 0 |
+| 4 `Comparison` | *unreached* | true | false |
+| 5 `Rounding` | *unreached* | 25 | 0 |
+| 6 `Binary` | *unreached* | 25 | 3/7, written `0.4285714285714286` |
+| 7 `AttributeReference` | *unreached* | 100 | 3 |
+| 8 `AttributeReference` | *unreached* | 4 | 7 |
+| 9 `Literal` | *unreached* | 0 | 0 |
+| 10 `Literal` | *unreached* | 1 | *unreached* |
+
+On J1 the composite stops after member 1 (ch. 5.10, `all`, the first member
+that does not hold), so member 2 and the division in it are not reached,
+and neither is the value, since the condition fails. On J3 both members are
+read and member 2 decides; the value is not reached. In the canonical text
+J1 reads:
+
+```
+/rules/rules/0/versions/0 "J1" 0 Compound false
+/rules/rules/0/versions/0 "J1" 1 Comparison false
+/rules/rules/0/versions/0 "J1" 10 Literal unreached
+/rules/rules/0/versions/0 "J1" 2 AttributeReference 0
+/rules/rules/0/versions/0 "J1" 3 Literal 0
+/rules/rules/0/versions/0 "J1" 4 Comparison unreached
+/rules/rules/0/versions/0 "J1" 5 Rounding unreached
+/rules/rules/0/versions/0 "J1" 6 Binary unreached
+/rules/rules/0/versions/0 "J1" 7 AttributeReference unreached
+/rules/rules/0/versions/0 "J1" 8 AttributeReference unreached
+/rules/rules/0/versions/0 "J1" 9 Literal unreached
+/rules/rules/0/versions/0 "J1" FAILS
+```
+
+**The artifacts.** The `ref/` tests `WV-5.12-ploegaandeel` (the example
+above) and `WV-5.12-fout-in-een-lezing` (a member that faults: the fault's
+EF code at the member and at the composite, the status `FAULTS`, and the
+composite on the other object stopping before it). Gate 17
+(`scripts/check-readings.sh`) holds the readings of `runner --trace`, per
+golden case file, to those of the Drools backend on both its branches.
+
 ---
 
 ## 6. Stratification
