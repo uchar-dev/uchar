@@ -238,6 +238,19 @@
 # such rows on both branches; without it the leg is green. No survivor list: no reading of the
 # field is a legitimate one. A golden without an origin is not probed; no golden with one is a
 # failure.
+#
+# --- the name leg (IR-SPEC ch. 6.1) ----------------------------------------------------------
+# The same question for `Default.name`, the name the source gives the block a default comes from:
+# an extension field without semantics, like `source`. Every golden whose defaults carry a name
+# and that has case files is replayed once more, STRIPPED: every `name` taken out of every Default
+# node, at any depth of nesting, with the executors and the comparison of the origin leg. A reader
+# of the field in ref or clingo makes gates 5 and 6 red on the untouched golden; a reader in the
+# Drools loader or transpilers is caught here, by the line comparison. Measured 2026-10-21 (card
+# defaults-decider) by mutation: the Drools loader made to skip a root default whose name begins
+# with "melding", an executor that reads the field, turns the leg red on three goldens
+# (jutterswet-opgave-datum, -opgave-subtype, -premiestaffel) on both branches; without it the leg
+# is green. No survivor list: no reading of the field is a legitimate one. A golden without a named
+# default is not probed; no golden with one is a failure.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -311,12 +324,13 @@ JAR=$(ensure_drools_jar) || { echo 'check-reftype-derivation: FAIL (no fresh Dro
 TWISTER=$(mktemp) || exit 2
 VOCABULARY_TWISTER=$(mktemp) || exit 2
 HSTRIPPER=$(mktemp) || exit 2
+NSTRIPPER=$(mktemp) || exit 2
 WORK=$(mktemp -d) || exit 2
 LIST=$(mktemp) || exit 2
 CASES=$(mktemp) || exit 2
 UNCOVERED=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
 HITS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
-trap 'rm -rf "$TWISTER" "$VOCABULARY_TWISTER" "$HSTRIPPER" "$WORK" "$LIST" "$CASES" "$UNCOVERED" "$HITS"' EXIT
+trap 'rm -rf "$TWISTER" "$VOCABULARY_TWISTER" "$HSTRIPPER" "$NSTRIPPER" "$WORK" "$LIST" "$CASES" "$UNCOVERED" "$HITS"' EXIT
 
 cat > "$TWISTER" <<'PY'
 import json, os, sys
@@ -779,6 +793,55 @@ if stripped:
 print(stripped)
 PY
 
+cat > "$NSTRIPPER" <<'PY'
+import json, os, sys
+
+# The one copy of the name leg (see the script header): every `name` taken out of every Default node
+# (IR-SPEC ch. 6.1), the defaults of a group and those of its exception groups at any depth. Numbers
+# keep their lexemes, so the copy differs from the golden in the field and in nothing else.
+
+
+class RawNum:
+    __slots__ = ("raw",)
+
+    def __init__(self, s):
+        self.raw = s
+
+
+def write_json(o, path):
+    def piece(o):
+        if isinstance(o, RawNum):
+            return o.raw
+        if isinstance(o, dict):
+            return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + piece(v) for k, v in o.items()) + "}"
+        if isinstance(o, list):
+            return "[" + ",".join(piece(v) for v in o) + "]"
+        return json.dumps(o, ensure_ascii=False)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(piece(o))
+
+
+def defaults(chain):
+    for d in chain:
+        yield d
+        for member in d.get("exceptions", {}).get("members", []):
+            yield from defaults(member["defaults"])
+
+
+source, target = sys.argv[1], sys.argv[2]
+with open(source, encoding="utf-8") as fh:
+    doc = json.load(fh, parse_int=RawNum, parse_float=RawNum)
+stripped = 0
+for group in doc["rules"].get("prioritizedDefaults", []):
+    for d in defaults(group["defaults"]):
+        if d.pop("name", None) is not None:
+            stripped += 1
+if stripped:
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    write_json(doc, target)
+print(stripped)
+PY
+
 # Is <golden> x <executor> a pinned survivor? Read LINE by line, never word by word: a
 # reason carries spaces, so splitting $SURVIVORS on whitespace would shred every entry the
 # moment the list stops being empty.
@@ -824,6 +887,12 @@ EXPECTED_MIN_VOCABULARY_ROTATED=36  # 2026-09-27: measured 36 designations rotat
 # stripped copies lose, so a stripper that quietly takes out less fails too.
 EXPECTED_MIN_ORIGIN_GOLDENS=9        # 2026-10-15: measured 9 goldens with an origin and case files
 EXPECTED_MIN_ORIGIN_STRIPPED=71      # 2026-10-15: measured 71 origins stripped over those 9
+
+# The name leg's floors (see the script header), measured 2026-10-21 at the card defaults-decider: a golden
+# count, so a leg that stops finding the goldens it probes fails above zero, and the names the stripped
+# copies lose, so a stripper that quietly takes out less fails too.
+EXPECTED_MIN_NAME_GOLDENS=20         # 2026-10-21: measured 20 goldens with a named default and case files
+EXPECTED_MIN_NAME_STRIPPED=64        # 2026-10-21: measured 64 names stripped over those 20
 
 status=0
 n_goldens=0
@@ -1047,6 +1116,62 @@ if [ "$n_h_stripped" -lt "$EXPECTED_MIN_ORIGIN_STRIPPED" ]; then
     exit 1
 fi
 
+# --- the name leg (see the script header) ----------------------------------------------------------
+n_ngoldens=0
+n_n_stripped=0
+n_nreplays=0
+while IFS= read -r ir; do
+    dir=$(dirname "$ir")
+    ident=${dir#corpus/golden/}
+    nir="$WORK/naam/$ident/gestript.json"
+    stripped=$(python3 "$NSTRIPPER" "$ir" "$nir") || { echo "FAIL: the name stripper could not read $ir" >&2; exit 2; }
+    [ "$stripped" -gt 0 ] || continue          # no named default: nothing to probe here
+    find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
+    [ -s "$CASES" ] || continue                # no case file: not replayable
+    n_ngoldens=$((n_ngoldens + 1))
+    n_n_stripped=$((n_n_stripped + stripped))
+    while IFS= read -r case; do
+        n_nreplays=$((n_nreplays + 2))
+        if ! report_line=$("$RUNNER_REF" "$nir" "$case" 2>&1); then
+            printf 'FAIL: %s — ref answers differently on the stripped copy (name leg):\n%s\n' "$case" "$report_line" >&2
+            status=1
+        fi
+        if ! report_line=$("$RUNNER_CLINGO" "$nir" "$case" 2>&1); then
+            printf 'FAIL: %s — clingo answers differently on the stripped copy (name leg):\n%s\n' "$case" "$report_line" >&2
+            status=1
+        fi
+    done < "$CASES"
+    set --
+    while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
+    n_nreplays=$((n_nreplays + 2))
+    base_expr=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
+    nm=$(java -jar "$JAR" "$nir" "$@" 2>/dev/null | tail -1)
+    if [ "$nm" != "$base_expr" ]; then
+        printf 'FAIL: %s — Drools answers differently on the stripped copy (name leg):\n  untouched: %s\n  stripped:  %s\n' \
+            "$ident" "$base_expr" "$nm" >&2
+        status=1
+    fi
+    drl_baseline=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+    dn=$(java -jar "$JAR" --drl "$nir" "$@" 2>/dev/null | tail -1)
+    if [ "$dn" != "$drl_baseline" ]; then
+        printf 'FAIL: %s — the DRL-text branch answers differently on the stripped copy (name leg):\n  untouched: %s\n  stripped:  %s\n' \
+            "$ident" "$drl_baseline" "$dn" >&2
+        status=1
+    fi
+done < "$LIST"
+if [ "$n_ngoldens" -eq 0 ]; then
+    echo 'FAIL: no golden carries a named default — the name leg probed nothing (an empty set is never green)' >&2
+    exit 1
+fi
+if [ "$n_ngoldens" -lt "$EXPECTED_MIN_NAME_GOLDENS" ]; then
+    echo "FAIL: the name leg probed $n_ngoldens golden(s), but EXPECTED_MIN_NAME_GOLDENS pins at least $EXPECTED_MIN_NAME_GOLDENS — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    exit 1
+fi
+if [ "$n_n_stripped" -lt "$EXPECTED_MIN_NAME_STRIPPED" ]; then
+    echo "FAIL: the name leg stripped $n_n_stripped name(s), but EXPECTED_MIN_NAME_STRIPPED pins at least $EXPECTED_MIN_NAME_STRIPPED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    exit 1
+fi
+
 # The survivor list, BOTH halves (the check-noop pattern): an entry whose golden is gone is stale,
 # and so is an entry that no longer diverges — it then admits an exception nothing needs any more,
 # which is exactly how a list stops describing the system it pins.
@@ -1132,6 +1257,8 @@ if [ "$status" -eq 0 ]; then
         "$n_v_swapped" "$n_v_rotated" "$EXPECTED_MIN_VOCABULARY_ROTATED" "$n_vreplays"
     printf '  origin leg: %s golden(s) with origins, floor %s; %s origins stripped (floor %s); %s executor replays reproduce the untouched outcome\n' \
         "$n_hgoldens" "$EXPECTED_MIN_ORIGIN_GOLDENS" "$n_h_stripped" "$EXPECTED_MIN_ORIGIN_STRIPPED" "$n_hreplays"
+    printf '  name leg: %s golden(s) with named defaults, floor %s; %s names stripped (floor %s); %s executor replays reproduce the untouched outcome\n' \
+        "$n_ngoldens" "$EXPECTED_MIN_NAME_GOLDENS" "$n_n_stripped" "$EXPECTED_MIN_NAME_STRIPPED" "$n_nreplays"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
         "$n_unit" "$((n_unit - n_exempt - n_without_sister - n_uncovered))" \
         "$n_exempt" "$n_without_sister" "$n_fourth" "$n_unknown"
