@@ -152,3 +152,5 @@ Tijdens de bouw: de Drools-suite (`mvn -o -q package`, 1636 tests, 0 fouten, 0 o
   minstens één is.
 - Geen tekst voor `spec/CONSTRUCTS.md` of `CLAUDE.md`: rij 43 noemt `decisionsOf` alleen als de identiteit van een
   beslissende default (de pointer), en geen gate verandert.
+
+Geland 2026-10-21 door de hoofdsessie (fast-forward naar `5888b719`; gates op `977122f5` groen, daarna alleen de Result, gate 1 opnieuw groen). In dezelfde commit de vervolgkaarten `fixpoint-readings` (U2) en `ref-trace-and-readings-gate` (U3) in `backlog/new/`.
