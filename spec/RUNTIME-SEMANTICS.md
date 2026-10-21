@@ -4997,7 +4997,8 @@ what reaches the rows a barrier cannot, because a closed fold body
 The **reading** of a form's condition on an object is the evaluation of
 that condition on the fixpoint world, recorded node by node. It is no rule
 of evaluation and it changes nothing the session computes: it records an
-evaluation that ch. 1–5 and 9–11 already define, once, at the end. A
+evaluation that ch. 1–5 and 9–11 already define, once, at the end, and, for
+a quantifier fold, the table its definition in ch. 3.9a fixes. A
 consumer that says why a characteristic holds or why a value stayed leeg —
 an explanation — reads it, instead of evaluating the condition again in a
 semantics of its own.
@@ -5096,9 +5097,19 @@ number. The node of a fold over a set carries its **contributors** instead,
 the members of its range that pass its filter: for a count each instance it
 counts; for a value fold each member with the value it contributes, where a
 member whose value is leeg contributes nothing (ch. 1.2e); for a quantifier
-fold each member with the verdict of the matrix on it, or its fault, and
-the members after the stop (ch. 5.10 over the contributors, ch. 3.9a) not
-reached.
+fold each member with the verdict of the matrix on it, or its fault — the
+table of ch. 3.9a's `test(m)` over the contributors, evaluated on the
+fixpoint world as a reading evaluates, depositing nothing — and whether the
+evaluation reached it: the contributors after the stop (ch. 5.10 over the
+contributors) and after a fault are not reached. Their verdict or fault is
+the reading's, not the session's: the session raised that fault and made
+that deposit no more than it read the contributor, and the status of the
+reading does not change by it. Where the evaluation of a fold faults before
+its contributors are settled — its filter faults, or the value of one of
+its members — the node carries no contributors. An executor whose
+evaluation keeps no order among the contributors of a quantifier fold whose
+matrix can neither fault nor deposit (ch. 5.11: an invisible order) writes
+`unordered` in place of the position; it reports no position for that fold.
 
 **The canonical text.** The readings of a case are written one line per
 reading, `<form> <object> <status>`, and one line per node with a reading
@@ -5119,9 +5130,10 @@ escaped; leeg as `empty`; a timeline as `[[<from> <to> <value>], …]`, with
 expression stands its unit, quoted, where it has one: of a number the unit
 it carries, of a leeg value or a fault the unit of the node's declaration
 or annotation. After the node of a fold over a set stand its contributors,
-`contributors [<object> <value> reached; …]`, sorted, a contributor after
-the stop as `<object> - unreached`. `runner --trace` prints this text for a
-golden case, each line after `reading `.
+`contributors [<object> <value|verdict|fault> reached|unreached; …]`,
+sorted, each found written as at a node, and `unordered` in place of the
+position where the executor keeps no order. `runner --trace` prints this
+text for a golden case, each line after `reading `.
 
 **Worked example** (absolute; the `jutterswet-ploegaandeel` golden of
 ch. 5.10, verbatim in the `ref/` test `WV-5.12-ploegaandeel`). The rule
@@ -5175,12 +5187,74 @@ J1 reads:
 /rules/rules/0/versions/0 "J1" FAILS
 ```
 
-**The artifacts.** The `ref/` tests `WV-5.12-ploegaandeel` (the example
-above) and `WV-5.12-fout-in-een-lezing` (a member that faults: the fault's
-EF code at the member and at the composite, the status `FAULTS`, and the
-composite on the other object stopping before it). Gate 17
+**Worked example — a quantifier fold** (absolute; the
+`jutterswet-keurgemiddelde` golden, verbatim in the `ref/` test
+`WV-5.12-keurgemiddelde`). The rule
+
+```
+inzetbaar  indien  ALLE wachten van de Ploeg voldoen aan ALLE [
+    hij is gekeurd ;
+    ⌊keurpunten ÷ keuringen⌋ groter dan 6 ]
+```
+
+numbers its nodes 0 `QuantifierFold`, 1 `Compound`, 2
+`CharacteristicCheck`, 3 `Comparison`, 4 `Rounding`, 5 `Binary`, 6 and 7
+`AttributeReference`, 8 `Literal`; all but node 0 are the matrix, read per
+member, with no reading of their own. A member with 0 keuringen divides by
+a numeric zero, which deposits a fact of kind EF-005 where the evaluation
+reaches it (ch. 1.4 point 4). The readings of `/rules/rules/0/versions/0`
+on the Ploeg P1 of the four cases:
+
+| case | the wachten in order (gekeurd, keurpunten / keuringen) | status | contributors | channel |
+|------|----|----|----|----|
+| 1 | W1 (no, 70 / 10), W2 (yes, 30 / 0) | `FAILS` | `"W1" false reached; "W2" false unreached` | consistent |
+| 2 | W1 (yes, 70 / 10), W2 (yes, 80 / 10) | `HOLDS` | `"W1" true reached; "W2" true reached` | consistent |
+| 3 | W1 (yes, 70 / 10), W2 (yes, 50 / 10), W3 (yes, 30 / 0) | `FAILS` | `"W1" true reached; "W2" false reached; "W3" false unreached` | consistent |
+| 4 | W1 (yes, 70 / 10), W2 (yes, 30 / 0) | `FAILS` | `"W1" true reached; "W2" false reached` | EF-005 on P1 |
+
+In case 1 the fold stops after W1 (`all`, the first contributor that does
+not hold) and in case 3 after W2, so the session never divides by W2's and
+W3's zero and its channel stays consistent; the reading evaluates the
+matrix on them all the same, drops the deposit, and records the verdict
+false, not reached. In case 4 the session reaches W2 and deposits; the
+reading drops that deposit too and records W2 reached. In the canonical
+text case 3 reads:
+
+```
+/rules/rules/0/versions/0 "P1" 0 QuantifierFold false contributors ["W1" true reached; "W2" false reached; "W3" false unreached]
+/rules/rules/0/versions/0 "P1" FAILS
+```
+
+**The artifacts.** The `ref/` tests `WV-5.12-ploegaandeel` and
+`WV-5.12-keurgemiddelde` (the two examples above),
+`WV-5.12-fout-in-een-lezing` (a member that faults: the fault's EF code at
+the member and at the composite, the status `FAULTS`, and the composite on
+the other object stopping before it) and `WV-5.12-fout-in-een-kwantorvouw`
+(the fault arms of the table: a contributor after the stop whose matrix
+faults carries the fault, not reached, and the fold keeps its verdict; a
+contributor after a reached one that faults carries its verdict, not
+reached; a filter that faults leaves the node without contributors), the
+last one also the Drools backend's `ReadingsWitnessTest`. Gate 17
 (`scripts/check-readings.sh`) holds the readings of `runner --trace`, per
-golden case file, to those of the Drools backend on both its branches.
+golden case file, to those of the Drools backend on both its branches: per
+contributor the member and its verdict, value or fault verbatim, the
+position where both write one; and where the backend writes `unordered`, no
+contributor of the trace may carry a fault.
+
+Three boundaries, recorded rather than left implicit. The status `FAULTS`
+and a fault at a node stay outside that differential: a golden does not
+fault at its fixpoint, and `runner --trace` refuses a case that pins one.
+So does a fault of a contributor after the stop: measured 2026-10-21, no
+such golden passes gate 6, since the ASP backend raises the faults of an
+evaluation date the case does not carry (EF-011) and of an `Unresolved`
+node (EF-019) while it translates the document and that of a day-kind
+walk (EF-009) for every member of the range, read or not, and the Drools
+backend reads a parameter the case does not bind (EF-014) as leeg. Those
+arms are pinned by the executors' own tests above. And a verdict of a
+contributor the session did not reach may rest on a deposit the reading
+dropped, as W2 in case 1 and W3 in case 3 of the second example do: a
+consumer that reads the table reads a verdict the session would have
+accompanied by a channel fact, had it read the contributor.
 
 ---
 
