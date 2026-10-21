@@ -19,18 +19,27 @@
 #      must then exclude it;
 #   3. per case file of a golden both branches read, the lines of ref and of each branch are equal, by
 #      the comparison rule below; a case that differs fails unless DEVIATIONS lists it for that branch,
-#      and a listed case that agrees, or that is not compared, fails as stale;
-#   4. the comparison rule passes its own rows (a comparator that finds nothing is a silent green);
+#      and a listed case that agrees, or that is not compared, fails as stale. On every case file, listed
+#      or not, the tripwire below;
+#   4. the comparison rule and the tripwire pass their own rows (a comparator that finds nothing is a
+#      silent green);
 #   5. the counting floors below.
 #
-# THE COMPARISON RULE. Every line is compared verbatim, except the contributors of a quantifier fold. The
-# backend evaluates the matrix of such a fold for every member in a rule of its own and replays the stop
-# rule of ch. 5.10 over the verdicts, so its text gives a contributor after the stop a verdict as well,
-# where ch. 5.12 gives it none (`- unreached`); and where the matrix can neither fault nor deposit, no fault
-# and no deposit shows the order, its session keeps none, and it writes `unordered`. Per contributor the
-# comparison therefore reads: the member, always; `reached` or `unreached` where the backend writes one;
-# the verdict or value where the reference interpreter reached the member. A contributor is compared by
-# its member, never by its place in the sorted list.
+# THE COMPARISON RULE. Every line is compared verbatim, except the position of a contributor of a
+# quantifier fold. Since the card fold-contributor-verdicts (2026-10-21) ch. 5.12 records the table of
+# ch. 3.9a at the node of such a fold: per contributor the verdict of the matrix on it, or its fault, and
+# whether the evaluation reached it, the contributors after the stop and after a fault included. The
+# backend evaluates the matrix for every member in a rule of its own; where the matrix can fault or
+# deposit it replays the stop rule of ch. 5.10 over the contributors in their order, and where it can do
+# neither, no fault and no deposit shows the order, its session keeps none, and it writes `unordered` in
+# place of the position, which ch. 5.12 admits (ch. 5.11: an invisible order). Per contributor the
+# comparison therefore reads: the member and its verdict, value or fault, verbatim; the position where
+# both write one. A contributor is compared by its member, never by its place in the sorted list.
+#
+# THE TRIPWIRE. Where the backend writes `unordered` for a fold, no contributor of ref may carry a fault: a
+# matrix that faults on a member is one whose order shows, and a backend that keeps none for it has missed
+# that its matrix can fault, so it would fault on a member the reference interpreter's stop never reads.
+# The tripwire holds on a case in DEVIATIONS too.
 #
 # An empty comparison is a failure, never silently green. Report: goldens and cases traced, compared per
 # branch, excluded (per first word of the reason), and the counts the floors hold.
@@ -68,6 +77,7 @@ EXPECTED_MIN_NODE_LINES=13971        # 2026-10-21: measured 13971 (node lines)
 EXPECTED_MIN_UNREACHED=3118          # 2026-10-21: measured 3118 (node lines `unreached`)
 EXPECTED_MIN_CONTRIBUTOR_LINES=314   # 2026-10-21: measured 314 (node lines with contributors)
 EXPECTED_MIN_TIMELINE_LINES=76       # 2026-10-21: measured 76 (node lines with a timeline)
+EXPECTED_MIN_UNREACHED_CONTRIBUTORS=106 # 2026-10-21: measured 106 (contributors of ref not reached, each with its verdict)
 
 # --- tools ---------------------------------------------------------------------------------------------
 if ! command -v dune >/dev/null 2>&1 && command -v opam >/dev/null 2>&1; then
@@ -143,13 +153,13 @@ printf '%s\n' "${READINGS_ERROR_KNOWN[@]+"${READINGS_ERROR_KNOWN[@]}"}" > "$work
 # --- 3, 4 and 5: the comparison --------------------------------------------------------------------------
 python3 -I - "$work" "$EXPECTED_MIN_COMPARED_GOLDENS" "$EXPECTED_MIN_COMPARED_CASES" "$EXPECTED_MIN_READINGS" \
   "$EXPECTED_MIN_NODE_LINES" "$EXPECTED_MIN_UNREACHED" "$EXPECTED_MIN_CONTRIBUTOR_LINES" \
-  "$EXPECTED_MIN_TIMELINE_LINES" "$n_traced" "$elapsed" "$nocase" <<'PY'
+  "$EXPECTED_MIN_TIMELINE_LINES" "$EXPECTED_MIN_UNREACHED_CONTRIBUTORS" "$n_traced" "$elapsed" "$nocase" <<'PY'
 import os, sys
 
 work = sys.argv[1]
-floors = dict(zip(['goldens', 'cases', 'readings', 'nodes', 'unreached', 'contributors', 'timelines'],
-                  map(int, sys.argv[2:9])))
-n_traced, elapsed, nocase = int(sys.argv[9]), sys.argv[10], sys.argv[11].split()
+floors = dict(zip(['goldens', 'cases', 'readings', 'nodes', 'unreached', 'contributors', 'timelines',
+                   'unreached_contributors'], map(int, sys.argv[2:10])))
+n_traced, elapsed, nocase = int(sys.argv[10]), sys.argv[11], sys.argv[12].split()
 problems = []
 
 # --- the canonical text, read back (RUNTIME-SEMANTICS ch. 5.12) ---
@@ -209,13 +219,15 @@ def split(line):
     return line[:k], out
 
 def contributors_agree(ref, drools):
+    """the members, and per member its verdict, value or fault verbatim and its position where both write
+    one (the backend writes `unordered` where its session keeps no order)"""
     if set(ref) != set(drools):
         return False
     for m, (dv, dr) in drools.items():
         rv, rr = ref[m]
-        if dr != 'unordered' and rr != dr:
+        if rv != dv:
             return False
-        if rr == 'reached' and rv != dv:
+        if dr != 'unordered' and rr != dr:
             return False
     return True
 
@@ -239,6 +251,21 @@ def differences(ref_lines, drools_lines):
         only_d += [l for l, _ in ds]
     return only_r, only_d
 
+def unordered_faults(ref_lines, drools_lines):
+    """the tripwire: the lines of ref with a contributor that carries a fault, at a node for which the
+    backend writes `unordered`"""
+    unordered = set()
+    for l in drools_lines:
+        h, c = split(l)
+        if c is not None and any(r == 'unordered' for _, r in c.values()):
+            unordered.add(h)
+    out = []
+    for l in ref_lines:
+        h, c = split(l)
+        if h in unordered and any(v.startswith('fault ') for v, _ in c.values()):
+            out.append(l)
+    return out
+
 # --- 4: the comparison rule's own rows ---
 P = '/rules/rules/0/versions/0 "P1" '
 rows = [
@@ -246,17 +273,23 @@ rows = [
     ('a value apart differs', [P + '2 AttributeReference 4'], [P + '2 AttributeReference 5'], False),
     ('a line on one side differs', [P + 'HOLDS', P + '0 Compound true'], [P + 'HOLDS'], False),
     ('reached against unreached differs',
-     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" - unreached]'],
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" false unreached]'],
      [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" false reached]'], False),
-    ('the backend verdict after the stop is not read',
-     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" - unreached]'],
-     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" true unreached]'], True),
-    ('unordered reads the verdict of a reached member',
-     [P + '0 QuantifierFold false contributors ["W1" true reached; "W2" false reached]'],
+    ('a verdict after the stop apart differs',
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" false unreached]'],
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" true unreached]'], False),
+    ('a fault after the stop against a verdict differs',
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" fault EF-019 unreached]'],
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" false unreached]'], False),
+    ('an equal fault after the stop agrees',
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" fault EF-019 unreached]'],
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" fault EF-019 unreached]'], True),
+    ('unordered reads the verdict',
+     [P + '0 QuantifierFold false contributors ["W1" true reached; "W2" false unreached]'],
      [P + '0 QuantifierFold false contributors ["W1" true unordered; "W2" true unordered]'], False),
     ('unordered with equal verdicts agrees',
-     [P + '0 QuantifierFold false contributors ["W1" true reached; "W2" false reached]'],
-     [P + '0 QuantifierFold false contributors ["W1" true unordered; "W2" false unordered]'], True),
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" true unreached]'],
+     [P + '0 QuantifierFold false contributors ["W1" false unordered; "W2" true unordered]'], True),
     ('a member apart differs',
      [P + '1 Aggregation 1 contributors ["V1" empty reached]'],
      [P + '1 Aggregation 1 contributors ["V2" empty reached]'], False),
@@ -271,6 +304,20 @@ for name, ref, drools, agree in rows:
     o_r, o_d = differences(ref, drools)
     if (not o_r and not o_d) != agree:
         problems.append('the comparison rule fails its row "%s": it says %s' % (name, 'agree' if agree else 'differ'))
+tripwire_rows = [
+    ('a fault of ref under unordered trips, equal texts or not',
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" fault EF-019 unreached]'],
+     [P + '0 QuantifierFold false contributors ["W1" false unordered; "W2" fault EF-019 unordered]'], True),
+    ('verdicts under unordered do not trip',
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" true unreached]'],
+     [P + '0 QuantifierFold false contributors ["W1" false unordered; "W2" true unordered]'], False),
+    ('a fault of ref where the backend keeps the order does not trip',
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" fault EF-019 unreached]'],
+     [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" fault EF-019 unreached]'], False),
+]
+for name, ref, drools, trips in tripwire_rows:
+    if bool(unordered_faults(ref, drools)) != trips:
+        problems.append('the tripwire fails its row "%s": it says %s' % (name, 'trip' if trips else 'pass'))
 if problems:
     print('\n'.join('check-readings: FAIL — ' + p for p in problems), file=sys.stderr)
     sys.exit(1)
@@ -341,6 +388,11 @@ for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
             continue
         for case in sorted(drools):
             key = (name + '/' + case, branch)
+            tripped = unordered_faults(ref[case], drools[case])
+            if tripped:
+                problems.append('%s/%s (%s): the backend writes no order for a fold at which ref has a contributor with a '
+                                'fault — its session would fault on a member the stop of ch. 5.10 does not reach:\n%s' % (
+                                    name, case, branch, '\n'.join('      ref     ' + l for l in tripped[:6])))
             o_r, o_d = differences(ref[case], drools[case])
             if o_r or o_d:
                 if key in deviations:
@@ -355,6 +407,10 @@ for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
                 seen_deviations.add(key)
             if branch == 'exec':
                 counts['cases'] += 1
+                for l in ref[case]:
+                    _, c = split(l)
+                    if c is not None:
+                        counts['unreached_contributors'] += sum(1 for _, r in c.values() if r == 'unreached')
                 for l in drools[case]:
                     head, c = split(l)
                     parts = head.split(' ')
@@ -379,15 +435,16 @@ if counts['cases'] == 0:
     problems.append('no case file was compared — an empty comparison is a failure, never silently green')
 names = {'goldens': 'EXPECTED_MIN_COMPARED_GOLDENS', 'cases': 'EXPECTED_MIN_COMPARED_CASES', 'readings': 'EXPECTED_MIN_READINGS',
          'nodes': 'EXPECTED_MIN_NODE_LINES', 'unreached': 'EXPECTED_MIN_UNREACHED',
-         'contributors': 'EXPECTED_MIN_CONTRIBUTOR_LINES', 'timelines': 'EXPECTED_MIN_TIMELINE_LINES'}
+         'contributors': 'EXPECTED_MIN_CONTRIBUTOR_LINES', 'timelines': 'EXPECTED_MIN_TIMELINE_LINES',
+         'unreached_contributors': 'EXPECTED_MIN_UNREACHED_CONTRIBUTORS'}
 for k, floor in floors.items():
     if counts[k] < floor:
         problems.append('%d %s compared, but %s pins at least %d — the comparison shrank (a deliberate removal lowers the floor in the same commit)' % (counts[k], k, names[k], floor))
 
 print('  counted: ref traced %d golden case files; compared per branch: %d goldens, %d case files, %d readings, '
-      '%d node lines, %d unreached, %d with contributors, %d with a timeline' % (
+      '%d node lines, %d unreached, %d with contributors, %d with a timeline; %d contributors of ref not reached' % (
           n_traced, counts['goldens'], counts['cases'], counts['readings'], counts['nodes'], counts['unreached'],
-          counts['contributors'], counts['timelines']))
+          counts['contributors'], counts['timelines'], counts['unreached_contributors']))
 for k in sorted(excluded):
     print('  excluded by the backend: %3d golden(s) %s' % (excluded[k], k))
 for name in sorted(seen_errors):
@@ -398,8 +455,9 @@ if problems:
     print('\n'.join('check-readings: FAIL — ' + p for p in problems), file=sys.stderr)
     sys.exit(1)
 print('check-readings: PASS (ref traced %d golden case files; on both branches %d goldens and %d case files compared, '
-      '%d readings, %d node lines of which %d unreached, %d with contributors and %d with a timeline, all at or above '
-      'their floors; deviations %d; %d comparison rows; %s s)' % (
+      '%d readings, %d node lines of which %d unreached, %d with contributors and %d with a timeline, %d contributors '
+      'of ref not reached, all at or above their floors; deviations %d; %d comparison rows, %d tripwire rows; %s s)' % (
           n_traced, counts['goldens'], counts['cases'], counts['readings'], counts['nodes'], counts['unreached'],
-          counts['contributors'], counts['timelines'], len(deviations), len(rows), elapsed))
+          counts['contributors'], counts['timelines'], counts['unreached_contributors'], len(deviations), len(rows),
+          len(tripwire_rows), elapsed))
 PY
