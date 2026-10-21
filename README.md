@@ -90,7 +90,7 @@ IR. So: reference interpreter, then Clingo, then the extra source languages.
 | `ref/` | The reference interpreter (OCaml): the executable definition of the semantics |
 | `backends/` | `clingo/` (translation to ASP-Core-2) and `drools/` (an IR loader plus two transpiler branches — DRL text for fast development and testing, the executable model for compiling services — over a shared runtime) |
 | `frontends/` | `regelspraak/` (Java parser/resolver, emits the IR), `catala/` (a Catala plugin), `flogic/` (OCaml, a second independent source language) |
-| `scripts/` | The gate set: sixteen checks, run locally before every landing (`CLAUDE.md`, Gate set) |
+| `scripts/` | The gate set: seventeen checks, run locally before every landing (`CLAUDE.md`, Gate set) |
 | `toka/` | Parity fixtures on the TOKA casus of the Belastingdienst (third-party material), used to prove the RegelSpraak frontend byte-identical to the original toolchain (gate 11). Not covered by the licenses below; provenance and status under License and in `toka/README.md` |
 
 ## Naming
@@ -114,7 +114,7 @@ rules with conditions including quantified folds over linked instance sets
 subselection), aggregations, prioritized defaults, distribution rules, and
 temporal arithmetic.
 
-Sixteen gates guard it. Structural: self-containedness, schema validation
+Seventeen gates guard it. Structural: self-containedness, schema validation
 with byte-identical round-trip, the verifier over golden and negative
 corpora, case-file validation. Semantic: the reference interpreter replays
 every case exactly; Clingo and Drools must reproduce the same pinned
@@ -122,7 +122,9 @@ answers; a no-op guard proves an identity transpiler fails; the red corpus
 must fail in every executor. Per frontend: Catala, RegelSpraak and F-logic
 sources re-emit their committed IR byte-identically. Plus an
 annotation-indifference harness (consumers must derive units from
-declarations, not wire annotations) and the TOKA parity gate.
+declarations, not wire annotations), the TOKA parity gate, and the
+readings gate (the reference interpreter and Drools read every condition
+at the fixpoint the same, node by node).
 The gate set grows monotonically; a green subset is not green, an empty
 input set is a failure, and counts carry explicit floors so shrinkage
 cannot pass silently.

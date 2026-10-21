@@ -561,6 +561,39 @@ reviewer's duty on a machine that has catala. Current gates:
     the schema gate of those case files and gates 5, 6 and 12 their
     replay. CI leg unconditional and blocking (jar-only, like gate 10).
 
+17. `scripts/check-readings.sh` — the reading of a condition at the
+    fixpoint (RUNTIME-SEMANTICS ch. 5.12; card
+    `ref-trace-and-readings-gate`, 2026-10-21). The reference
+    interpreter's trace (`runner --trace`, `ref/lib/reading.ml`: per form
+    with a condition and object it runs on, the evaluation of the
+    condition on the fixpoint world through an observer on ref's own
+    evaluation, recorded per node) and the Drools backend's readings
+    (`DroolsBackendMain --readings`, card `fixpoint-readings`) are held
+    equal per golden case file, in the canonical text of ch. 5.12, on
+    both branches of the backend; the two share no code (gate 1). The
+    trace must read every golden case file, also of a golden the backend
+    does not carry; per golden both branches must end in `READINGS <n>`,
+    n its case files, or in the same `EXCLUDE` line the plain replay
+    prints, so no golden the square plays escapes the comparison; an
+    `ERROR` fails unless the golden stands in the reason-carrying
+    `READINGS_ERROR_KNOWN` (four since the gate began: the build with
+    readings refuses after a form the transpiler refused part-way).
+    Every line is compared verbatim except the contributors of a
+    quantifier fold, compared per member: the member always,
+    `reached`/`unreached` where the backend writes one (`unordered`
+    where its session keeps no order), the verdict where ref reached the
+    member. A difference fails unless the reason-carrying `DEVIATIONS`
+    names the case and the branch (empty since the gate began); both
+    lists fail when stale, in both directions, and the comparison rule
+    passes ten rows of its own. Floors `EXPECTED_MIN_TRACED_CASES=835`,
+    `EXPECTED_MIN_COMPARED_GOLDENS=261`, `EXPECTED_MIN_COMPARED_CASES=706`,
+    `EXPECTED_MIN_READINGS=3826`, `EXPECTED_MIN_NODE_LINES=13971`,
+    `EXPECTED_MIN_UNREACHED=3118`, `EXPECTED_MIN_CONTRIBUTOR_LINES=314`
+    and `EXPECTED_MIN_TIMELINE_LINES=76` (measured 2026-10-21). The jar
+    is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). An empty
+    comparison is a failure, never silently green. CI leg unconditional
+    and blocking.
+
 **Counting floors (maintainer decision 2026-09-09).** Beside the non-empty
 checks and the name-carrying lists, every gate whose count could shrink unseen
 carries an `EXPECTED_MIN_<name>` constant in its own script, with its reason
