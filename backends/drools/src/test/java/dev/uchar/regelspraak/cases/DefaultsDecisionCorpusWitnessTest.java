@@ -34,17 +34,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code DroolsBackend.decisionsOf} against {@code DroolsBackend.fixpointOf} over the corpus (card defaults-decider,
  * acceptance (b)), beside {@link BranchDumpsCorpusWitnessTest}: every case of every golden with a defaults group that
  * the exec-model branch plays, fired on both branches, and per case, effective stack and object of the stack's type,
- * the record the entry gives must agree with what the fixpoint holds:
+ * the input's beans and the objects the creations made, the entry gives exactly one record (card
+ * undecided-stack-record), which must agree with what the fixpoint holds:
  *
  * <ul>
  *   <li>an attribution with the characteristic derived, and a do-not-attribute decision with none;</li>
  *   <li>an attribute's decision with its derived value, a number compared by {@code compareTo};</li>
- *   <li>no record with nothing derived on the target, which keeps its input;</li>
+ *   <li>a record with neither a decider nor a conflict, no default deciding, with nothing derived on the target, which
+ *       keeps its input;</li>
  *   <li>a conflict with nothing derived and the §9.5 deposit of its key on the object; and every deposit of a defaults
  *       conflict (EF-027) with the conflict of a record.</li>
  * </ul>
  *
- * Every pointer of a record resolves in the golden's document to a node that writes the record's target: a
+ * Every pointer of a record, the root chains of a record on which no default decided included, resolves in the
+ * golden's document to a node that writes the record's target: a
  * {@code Default} of a group on that member, or the version of a rule whose target it is; and the decider lies on or
  * below a default of the root chains. The toolchain lays these pointers back on its model, so a pointer that drifts
  * fails here and not in its explanation.
@@ -52,20 +55,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * A record on an object and member that is no stack's fails too. The two branches render one analysis, so they must
  * check the same count.
  *
- * <p>Floor, measured 2026-10-21 at the card: {@value #EXPECTED_MIN_CHECKED} (case, stack, object) checked per branch,
- * over {@value #EXPECTED_MIN_GOLDENS} goldens; a smaller count is a corpus that lost defaults goldens or cases, or a
- * selection that silently stopped checking.
+ * <p>Floors, measured 2026-10-21: {@value #EXPECTED_MIN_CHECKED} (case, stack, object) checked per branch, over
+ * {@value #EXPECTED_MIN_GOLDENS} goldens, {@value #EXPECTED_MIN_UNDECIDED} of them on which no default decided, and
+ * {@value #EXPECTED_MIN_POINTERS} pointers resolved; a smaller count is a corpus that lost defaults goldens or cases, or
+ * a selection that silently stopped checking. Beside them at least one rule-version pointer and one (stack, object)
+ * on a made object.
  */
 class DefaultsDecisionCorpusWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
 
-    /** The (case, stack, object) checked per branch, measured 2026-10-21: 48 attributions, 19 do-not-attribute
-     *  decisions, 194 attribute decisions, 12 conflicts and 51 without a record. */
+    /** The (case, stack, object) checked per branch, measured 2026-10-21 at card defaults-decider and again at card
+     *  undecided-stack-record: 48 attributions, 19 do-not-attribute decisions, 194 attribute decisions, 12 conflicts
+     *  and 51 on which no default decided, which until the second card had no record; 4 of the 324 on an object a
+     *  creation made. */
     static final int EXPECTED_MIN_CHECKED = 324;
-    /** The goldens with a defaults group whose cases are checked, measured 2026-10-21. */
+    /** The goldens with a defaults group whose cases are checked, measured 2026-10-21 at both cards. */
     static final int EXPECTED_MIN_GOLDENS = 42;
+    /** The records on which no default decided, on the exec-model branch, measured 2026-10-21 at card
+     *  undecided-stack-record. */
+    static final int EXPECTED_MIN_UNDECIDED = 51;
+    /** The pointers resolved in the documents, on the exec-model branch, measured 2026-10-21 at card
+     *  undecided-stack-record: 996 to a {@code Default}, 21 to a rule version, the root chains of the records on which
+     *  no default decided among them. */
+    static final int EXPECTED_MIN_POINTERS = 1017;
 
     private static final Pattern GROUP = Pattern.compile("/rules/prioritizedDefaults/[0-9]+");
     private static final Pattern RULE_VERSION = Pattern.compile("/rules/rules/[0-9]+/versions/[0-9]+");
@@ -122,8 +136,17 @@ class DefaultsDecisionCorpusWitnessTest {
                 + " goldens, " + kinds + ", onder de vloer " + EXPECTED_MIN_CHECKED);
         assertTrue(goldenCount >= EXPECTED_MIN_GOLDENS, () -> "getoetste goldens " + goldenCount + ", onder de vloer "
                 + EXPECTED_MIN_GOLDENS);
+        int undecided = kinds.getOrDefault("niemand besliste", 0);
+        assertTrue(undecided >= EXPECTED_MIN_UNDECIDED, () -> "records waarop niemand besliste " + undecided + ", "
+                + kinds + ", onder de vloer " + EXPECTED_MIN_UNDECIDED);
+        int pointers = kinds.getOrDefault("defaultpointer", 0) + kinds.getOrDefault("regelpointer", 0);
+        assertTrue(pointers >= EXPECTED_MIN_POINTERS, () -> "opgeloste pointers " + pointers + ", " + kinds
+                + ", onder de vloer " + EXPECTED_MIN_POINTERS);
         // the corpus has goldens whose subtype stack takes in an ordinary rule (5 at the card): its pointer must be read
         assertTrue(kinds.getOrDefault("regelpointer", 0) > 0, () -> "geen pointer naar een regelversie opgelost: " + kinds);
+        // and goldens whose creations make an object with a stack of its type: a made object has its records too
+        assertTrue(kinds.getOrDefault("op een aangemaakt object", 0) > 0, () -> "geen (case, stapel, object) op een"
+                + " aangemaakt object getoetst: " + kinds);
     }
 
     /** The checks of one case: per object of the session and target of a group its type is an instance of. Returns the
@@ -159,6 +182,7 @@ class DefaultsDecisionCorpusWitnessTest {
                 unmatched.remove(r);
                 String kind = verify(where, t, o, r, fixpoint, differences);
                 kinds.merge(kind, 1, Integer::sum);
+                if (!label.containsKey(o)) kinds.merge("op een aangemaakt object", 1, Integer::sum);
             }
         }
         for (DefaultsDecision d : unmatched)
@@ -190,8 +214,12 @@ class DefaultsDecisionCorpusWitnessTest {
                 && Namen.norm(v.attribute()).equals(Namen.norm(t.member()))).findFirst().orElse(null);
         boolean derived = t.characteristic() ? derivedCharacteristic : derivedValue != null;
         if (r == null) {
-            if (derived) differences.add(where + ": geen record, en het fixpunt leidt het doel af");
-            return "geen";
+            differences.add(where + ": geen record, waar elk object per stapel van zijn type er één heeft");
+            return "geen record";
+        }
+        if (r.decider() == null && r.conflict() == null) {
+            if (derived) differences.add(where + ": niemand besliste, en het fixpunt leidt het doel af: " + r);
+            return "niemand besliste";
         }
         if (r.conflict() != null) {
             if (derived) differences.add(where + ": een conflict, en het fixpunt leidt het doel af: " + r);
