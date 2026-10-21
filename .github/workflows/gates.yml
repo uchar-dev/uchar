@@ -340,3 +340,28 @@ jobs:
           key: regelspraak-jars-antlr-4.13.2-junit-1.10.2
       - name: check-scenario
         run: bash scripts/check-scenario.sh
+
+  readings:
+    # Gate 17 — the reading of a condition at the fixpoint (RUNTIME-SEMANTICS
+    # ch. 5.12; card ref-trace-and-readings-gate, 2026-10-21): the reference
+    # interpreter's trace and the Drools backend's readings, on both of its
+    # branches, agree per golden case file. Needs OCaml for ref and the JDK
+    # with Maven for the backend jar, which the gate takes fresh or rebuilds.
+    name: "Gate 17: readings at the fixpoint (ref ≡ Drools, unconditional, blocking)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson + zarith
+        run: opam install -y yojson zarith
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: build the shaded Drools-runtime uber-jar
+        run: mvn -B -f backends/drools/pom.xml -DskipTests package
+      - name: check-readings
+        run: opam exec -- bash scripts/check-readings.sh
