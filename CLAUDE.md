@@ -196,7 +196,11 @@ reviewer's duty on a machine that has catala. Current gates:
    without a key in `checks.ml`; floors `EXPECTED_MIN_ARMS=213`,
    `EXPECTED_MIN_PARAM_LINES=572`, `EXPECTED_MIN_REPORT_KEYS=318` and
    `EXPECTED_MIN_ARM_SITES=421` (measured 2026-10-19), `EXPECTED_MIN_EXPECT`
-   raised to 354 and `EXPECTED_MIN_POINTERS` to 619.
+   raised to 354 and `EXPECTED_MIN_POINTERS` to 619. Since 2026-10-21 (card
+   `default-statute-annotations`) WF-082 judges the `statuteAnnotations` of a
+   Default too (IR-SPEC ch. 6.1); the verifier reads those lists beside the
+   document (`Loader.default_annotations`), and each of the three WF-082 keys
+   carries the parameter `kind` (`rule` or `default`).
 4. `scripts/check-case-schema.sh` — the case schema
    (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
    `corpus/golden/**/case*.json` and `corpus/red/**/case*.json`
@@ -499,8 +503,11 @@ reviewer's duty on a machine that has catala. Current gates:
     name STRIPPED, and ref, clingo and both Drools branches must reproduce
     the untouched outcome (no survivor list); floors
     `EXPECTED_MIN_NAME_GOLDENS=20` and `EXPECTED_MIN_NAME_STRIPPED=64`
-    (measured 2026-10-21). CI
-    leg unconditional and blocking.
+    (measured 2026-10-21). Since the card `default-statute-annotations`
+    (2026-10-21) the same stripped copy also loses every
+    `statuteAnnotations` of a Default (IR-SPEC ch. 6.1), with its own floor
+    `EXPECTED_MIN_ANNOTATIONS_STRIPPED=29` (measured 2026-10-21). CI leg
+    unconditional and blocking.
 
 14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`,
     plain OCaml in the workspace's dune build, so no fetched jars and no
