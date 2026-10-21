@@ -279,6 +279,12 @@ public final class TmsTranspiler {
     /** The rules of the model that belong to no form of the document ({@link #formOf}). */
     private final Set<String> rulesWithoutForm = new LinkedHashSet<>();
     private final List<DefaultsGroup> defaultsGroups = new ArrayList<>();
+    /** The knots of every effective stack the branch lowered, by its name, which {@link #decisionsOf} lays the control
+     *  facts of a session on. */
+    private final Map<String, StackLayout> layouts = new LinkedHashMap<>();
+    /** The JSON pointer of every default the document declares, by identity ({@link #pointerOf}); made at the first
+     *  call. */
+    private Map<Default, String> pointers;
     /** The manifest names that name no declaration, with the element each comes from ({@link #generated}). */
     private final Map<String, RegelSpraakModel.GeneratedFrom> generated = new LinkedHashMap<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
@@ -521,6 +527,213 @@ public final class TmsTranspiler {
     }
 
     /**
+     * What every effective defaults stack decided at the fixpoint of {@code session}, per object on which a default
+     * decided or a conflict stood, read off the control facts the stack left standing ({@link ControlFact}) and the
+     * analysis that placed them, without evaluating anything again. Under truth maintenance only the end state counts:
+     * a decision that a higher one displaced, or whose justification went, is not in the session any more.
+     *
+     * <p>The simple form leaves one {@link Decides} per object, of the highest default that decided; the decision is the
+     * default's own on a characteristic and the value the stack wrote on an attribute. The general form leaves an
+     * {@link Outcome} per chain, of its highest settling default, and the reading follows them from the root down to the
+     * default whose own content decided: at a default with exception groups, into the members where one of them
+     * settled, and else to the default itself, which fell back on its own decision (RUNTIME-SEMANTICS ch. 7.9). Members
+     * are read as the reconciliation reads them (ch. 7.2): the first conflict in member order passes on unchanged;
+     * deciding members that differ are a conflict; deciding members that agree decide, and the first of them in member
+     * order is named, the one whose decision the reconciliation takes.
+     *
+     * <p>It refuses the sessions {@link #readOf} refuses, with the same sentences. An evaluation fault that stands means
+     * the session has no answer ({@link Fixpoint#faults}); this gives what the control facts say all the same, and a
+     * consumer reads the faults first. The list is in no particular order.
+     */
+    public List<DefaultsDecision> decisionsOf(KieSession session) {
+        requireFixpoint(session);
+        Map<String, Map<Object, List<ControlFact>>> perStack = new LinkedHashMap<>();
+        for (Object f : session.getObjects(o -> o instanceof ControlFact)) {
+            ControlFact c = (ControlFact) f;
+            if (!layouts.containsKey(c.stack()))
+                throw new IllegalStateException(c + " in de sessie, maar dit model verlaagde geen stapel " + c.stack());
+            perStack.computeIfAbsent(c.stack(), k -> new IdentityHashMap<>())
+                    .computeIfAbsent(c.subject(), k -> new ArrayList<>()).add(c);
+        }
+        // the value an attribute stack in the simple form wrote, by stack and object: the decision of its default
+        Map<String, Map<Object, List<Value>>> written = new HashMap<>();
+        for (Object f : session.getObjects(o -> o instanceof Value w && layouts.containsKey(w.writer()))) {
+            Value w = (Value) f;
+            written.computeIfAbsent(w.writer(), k -> new IdentityHashMap<>())
+                    .computeIfAbsent(w.subject(), k -> new ArrayList<>()).add(w);
+        }
+        List<DefaultsDecision> out = new ArrayList<>();
+        perStack.forEach((name, perSubject) -> {
+            StackLayout s = layouts.get(name);
+            List<List<String>> rootChains = new ArrayList<>();
+            for (List<Node> chain : s.roots()) rootChains.add(chain.stream().map(k -> pointerOf(k.d())).toList());
+            perSubject.forEach((subject, facts) -> {
+                Settling settled = s.general() ? settledInGeneralForm(name, s, subject, facts)
+                        : settledInSimpleForm(name, s, subject, facts, written.getOrDefault(name, Map.of()));
+                if (settled != null)
+                    out.add(new DefaultsDecision(subject, s.member().name(), s.member().characteristic(), rootChains,
+                            settled.decider(), settled.conflict()));
+            });
+        });
+        return out;
+    }
+
+    /** The lowered form of one effective stack: its target, its bare conflict key (the target on the type that declares
+     *  it), whether it took the general form, and the knots of its chains at the root. */
+    private record StackLayout(Member member, String targetForm, boolean general, List<List<Node>> roots) {}
+
+    /** How a chain or a reconciliation came out: a default that decided, or a conflict. */
+    private record Settling(DefaultsDecision.Decider decider, DefaultsDecision.Conflict conflict) {}
+
+    /** The one {@link Decides} of the simple form, on the default it names. */
+    private Settling settledInSimpleForm(String name, StackLayout s, Object subject, List<ControlFact> facts,
+                                         Map<Object, List<Value>> written) {
+        if (facts.size() != 1 || !(facts.get(0) instanceof Decides d))
+            throw new IllegalStateException("de eenvoudige vorm van " + name + " laat per object één Beslist staan, en"
+                    + " op " + FactNames.object(subject) + " staan " + facts);
+        Node k = knot(s.roots().get(0), d.index(), name);
+        Object decision;
+        if (s.member().characteristic()) decision = k.d().decision();
+        else {
+            List<Value> values = written.getOrDefault(subject, List.of());
+            if (values.size() != 1)
+                throw new IllegalStateException(d + " in de sessie, en " + name + " schreef op "
+                        + FactNames.object(subject) + " " + values + " in plaats van één waarde");
+            decision = values.get(0).value();
+        }
+        return new Settling(new DefaultsDecision.Decider(pointerOf(k.d()), decision), null);
+    }
+
+    /** The {@link Outcome}s of the general form, reconciled at the root as the root reconciliation reads them. */
+    private Settling settledInGeneralForm(String name, StackLayout s, Object subject, List<ControlFact> facts) {
+        Map<Integer, Outcome> perChain = new HashMap<>();
+        for (ControlFact f : facts) {
+            if (!(f instanceof Outcome o))
+                throw new IllegalStateException("de algemene vorm van " + name + " zet alleen Uitkomst in, en op "
+                        + FactNames.object(subject) + " staat " + f);
+            Outcome other = perChain.put(o.chain(), o);
+            if (other != null)
+                throw new IllegalStateException("keten " + o.chain() + " van " + name + " laat per object één uitkomst"
+                        + " staan, die van haar hoogste default, en op " + FactNames.object(subject) + " staan " + other
+                        + " en " + o);
+        }
+        return reconciled(name, s.roots(), 0, perChain, null, s.targetForm());
+    }
+
+    /** The reconciliation of the member chains {@code chains}, numbered from {@code first}, as ch. 7.2 reads their
+     *  outcomes: the first conflict passes on, deciding members that differ conflict under {@code key} at the default
+     *  {@code at} (null at the root), and agreeing ones decide as the first of them. Null where no member settled. */
+    private Settling reconciled(String name, List<List<Node>> chains, int first, Map<Integer, Outcome> perChain,
+                                String at, String key) {
+        List<Outcome> decided = new ArrayList<>();
+        List<DefaultsDecision.Decider> deciders = new ArrayList<>();
+        for (int m = 0; m < chains.size(); m++) {
+            Outcome o = perChain.get(first + m);
+            if (o == null) continue;
+            Settling settled = descended(name, chains.get(m), o, perChain);
+            if (o.conflict()) return settled;
+            decided.add(o);
+            deciders.add(settled.decider());
+        }
+        if (decided.isEmpty()) return null;
+        for (Outcome o : decided)
+            if (!Outcome.equal(o.value(), decided.get(0).value()))
+                return new Settling(null, new DefaultsDecision.Conflict(at, key, deciders));
+        return new Settling(deciders.get(0), null);
+    }
+
+    /** The default of {@code chain} that settled as {@code o} says, followed down to the default whose own content
+     *  decided, or to the conflict among the exception groups of a default. */
+    private Settling descended(String name, List<Node> chain, Outcome o, Map<Integer, Outcome> perChain) {
+        Node k = knot(chain, o.position(), name);
+        if (k.chain() != o.chain())
+            throw new IllegalStateException(o + " ligt niet op keten " + k.chain() + " van " + name);
+        Settling settled = k.hasMembers()
+                ? reconciled(name, k.members(), k.firstMember(), perChain, pointerOf(k.d()), k.key()) : null;
+        if (settled == null) {
+            // no member settled, or none to settle: the default's own decision, its fall-back where it has members
+            if (o.conflict())
+                throw new IllegalStateException(o + " in de sessie, maar onder default " + k.label() + " van " + name
+                        + " staat geen conflict");
+            return new Settling(new DefaultsDecision.Decider(pointerOf(k.d()), o.value()), null);
+        }
+        boolean agrees = o.conflict()
+                ? settled.conflict() != null && settled.conflict().key().equals(o.key())
+                : settled.decider() != null && Outcome.equal(settled.decider().decision(), o.value());
+        if (!agrees)
+            throw new IllegalStateException(o + " in de sessie, en de leden van default " + k.label() + " van " + name
+                    + " geven " + settled);
+        return settled;
+    }
+
+    /** The knot at {@code position} of {@code chain}. */
+    private static Node knot(List<Node> chain, int position, String name) {
+        if (position < 0 || position >= chain.size() || chain.get(position).position() != position)
+            throw new IllegalStateException("een controlefeit van " + name + " noemt plaats " + position + ", en de keten"
+                    + " heeft er " + chain.size());
+        return chain.get(position);
+    }
+
+    /** The JSON pointer of default {@code d} into the document ({@link DefaultsDecision}): the {@code Default} node, or
+     *  for a default the fold of ch. 7.10 made of an ordinary rule the version of that rule. */
+    private String pointerOf(Default d) {
+        if (pointers == null) {
+            pointers = new IdentityHashMap<>();
+            for (int i = 0; i < defaults.size(); i++)
+                pointersOf(defaults.get(i).defaults(), "/rules/prioritizedDefaults/" + i);
+        }
+        String p = pointers.get(d);
+        if (p != null) return p;
+        ResolvedRule r = stacks.ruleOf(d);
+        if (r == null) throw new IllegalStateException("een default van een stapel die het document niet declareert en"
+                + " die geen regel van het document is: " + d);
+        return rulePointer(r);
+    }
+
+    private void pointersOf(List<Default> chain, String holder) {
+        for (int j = 0; j < chain.size(); j++) {
+            Default d = chain.get(j);
+            String p = holder + "/defaults/" + j;
+            pointers.put(d, p);
+            if (d.exceptions() != null)
+                for (int m = 0; m < d.exceptions().members().size(); m++)
+                    pointersOf(d.exceptions().members().get(m).defaults(), p + "/exceptions/members/" + m);
+        }
+    }
+
+    /** The version of rule {@code r} as a pointer, {@code /rules/rules/<form>/versions/<version>}. The model holds one
+     *  rule per version, in the order of the document, and a form with two or more versions names them "&lt;naam&gt;
+     *  #1" … "#n" in a row (the loader's naming, IR-SPEC ch. 3, Versioning), so a version continues a form where it
+     *  follows the version before it by name; a rule without a name says nothing of its form, and one before {@code r}
+     *  leaves the place of {@code r} open, which is refused. */
+    private String rulePointer(ResolvedRule r) {
+        int form = -1, version = 0;
+        String previous = null;
+        for (ResolvedRule x : model.resolvedRules) {
+            if (x.name() == null)
+                throw new IllegalStateException("de regel " + r.name() + " is de basis van een stapel, en een regel"
+                        + " zonder naam ervoor laat open bij welke vorm van het document hij hoort");
+            if (previous != null && nextVersion(previous, x.name())) version++;
+            else {
+                form++;
+                version = 0;
+            }
+            previous = x.name();
+            if (x == r) return "/rules/rules/" + form + "/versions/" + version;
+        }
+        throw new IllegalStateException("de regel " + r.name() + " is de basis van een stapel en staat niet in het model");
+    }
+
+    private static final java.util.regex.Pattern VERSION = java.util.regex.Pattern.compile("([\\s\\S]*) #([0-9]+)");
+
+    /** Whether {@code name} names the version after the one {@code previous} names, of one form. */
+    private static boolean nextVersion(String previous, String name) {
+        java.util.regex.Matcher a = VERSION.matcher(previous), b = VERSION.matcher(name);
+        return a.matches() && b.matches() && a.group(1).equals(b.group(1))
+                && Integer.parseInt(b.group(2)) == Integer.parseInt(a.group(2)) + 1;
+    }
+
+    /**
      * Writes what stands at the fixpoint of {@code session} onto the beans, exactly what {@link #readOf} gives, read by the
      * same code: {@code setX(true)} for each derived characteristic, the value of each derived attribute through the
      * setter of the declared attribute, a timeline as the bean model's segments, and each link a creation laid on the
@@ -587,7 +800,10 @@ public final class TmsTranspiler {
         return "vuur haar eerst opnieuw met DroolsBackend.fire";
     }
 
-    private Read readFixpoint(KieSession session, Function<Object, String> label) {
+    /** The session test of {@link #readOf}, {@link #setDerivedValues} and {@link #decisionsOf}: a session whose last run
+     *  through the driver reached its fixpoint and in which nothing happened since outside the driver; any other is
+     *  refused with the sentence {@link #readOf} describes. */
+    private void requireFixpoint(KieSession session) {
         // per class, as the driver asks for it: a filter of another kind walks every fact the session holds
         List<Object> marks = new ArrayList<>(session.getObjects(new ClassObjectFilter(Fired.class)));
         if (marks.isEmpty())
@@ -625,6 +841,10 @@ public final class TmsTranspiler {
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: " + relation + ", en het fixpunt"
                     + " hoort bij de oude relatie; DroolsBackend.fire weigert de sessie, dus open een verse sessie met"
                     + " alle beans in één Input");
+    }
+
+    private Read readFixpoint(KieSession session, Function<Object, String> label) {
+        requireFixpoint(session);
         List<Runnable> acts = new ArrayList<>();
         // a set: the fault of two writers that the rule of verschilregel stated and the one read off the values below
         // are one fault, equal as facts are
@@ -2491,6 +2711,7 @@ public final class TmsTranspiler {
         for (Reads reads : b.readings) reads.recorder();
         derived.put(member.key(), member);
         defaultsGroups.add(new DefaultsGroup(b.name, general, rules.size(), List.copyOf(b.controlFacts)));
+        layouts.put(b.name, new StackLayout(member, b.targetForm, general, squareRoot));
         return rules;
     }
 
@@ -2622,30 +2843,28 @@ public final class TmsTranspiler {
      * The simple form, variant M of A10 in the trial of card drools-logische-afleiding: one rule per default that
      * decides anything itself, with its reads bound, its justification as the test and {@code not Beslist} over every
      * higher index; the consequence computes the value from what the rule bound and, where it decides, inserts the
-     * write and, where a lower default has a rule, {@link Decides}. A leeg consequence inserts nothing, so the lower
-     * defaults decide (ch. 7.1); the initialisation default matches only where the target is empty on the bean, which
-     * holds the input (ch. 7.3). A do-not-attribute decision with no attribution below it has nothing to displace and
-     * gets no rule.
+     * write and {@link Decides}. A leeg consequence inserts nothing, so the lower defaults decide (ch. 7.1); the
+     * initialisation default matches only where the target is empty on the bean, which holds the input (ch. 7.3). Every
+     * decision stands as its {@code Decides}, the lowest one's and a do-not-attribute decision's at the bottom included,
+     * which displace nothing: the session says which default decided ({@link #decisionsOf}), where until card
+     * defaults-decider those two left nothing, and the do-not-attribute decision at the bottom had no rule at all.
      */
     private List<RulePlan> simpleForm(StackBuild b, List<Node> chain) {
-        List<Node> deciding = new ArrayList<>(chain.stream().filter(k -> decidesSelf(b, k.d())).toList());
-        while (b.characteristic && !deciding.isEmpty()
-                && Boolean.FALSE.equals(deciding.get(deciding.size() - 1).d().decision()))
-            deciding.remove(deciding.size() - 1);
+        List<Node> deciding = chain.stream().filter(k -> decidesSelf(b, k.d())).toList();
         String name = b.name;
         ElementKey key = b.member.key();
         List<RulePlan> out = new ArrayList<>();
+        if (!deciding.isEmpty()) b.controlFacts.add("Beslist");
         for (int j = 0; j < deciding.size(); j++) {
             Node k = deciding.get(j);
             int i = k.position();
-            boolean higher = j > 0, lower = j < deciding.size() - 1;
-            if (lower) b.controlFacts.add("Beslist");
+            boolean higher = j > 0;
             // the target: an attribute's value, or the attribution of a characteristic, whose decision the default
             // declares; a do-not-attribute decision writes nothing and only displaces the defaults below it
             List<Consequence.StackFact> facts = new ArrayList<>();
             if (!b.characteristic) facts.add(new Consequence.StackFact.Value(key, name));
             else if (Boolean.TRUE.equals(k.d().decision())) facts.add(new Consequence.StackFact.Characteristic(key));
-            if (lower) facts.add(new Consequence.StackFact.Decides(name, i));
+            facts.add(new Consequence.StackFact.Decides(name, i));
             out.addAll(ownRule(b, k, name + ": default " + k.label(),
                     () -> higher ? List.of(noDecides(name, i)) : List.of(), facts));
         }

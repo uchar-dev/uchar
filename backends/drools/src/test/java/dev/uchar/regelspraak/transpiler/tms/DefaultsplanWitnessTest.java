@@ -55,9 +55,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * <ul>
  *   <li>{@code anchor/jutterswet-vondstwaardering}: the simple form on an attribute, three defaults, each inserting the
- *       control fact {@code Decides} beside its value where a lower default has a rule, and each lower one waiting on
- *       the higher ones; the lowest an initialisation default, whose subject pattern tests the input on the target
- *       through the getter of the declaring type.</li>
+ *       control fact {@code Decides} beside its value, and each lower one waiting on the higher ones; the lowest an
+ *       initialisation default, whose subject pattern tests the input on the target through the getter of the
+ *       declaring type. Until card defaults-decider the lowest default inserted no {@code Decides}, having no lower
+ *       one to displace; since then every decision stands as one, so that the session names the default that
+ *       decided.</li>
  *   <li>{@link #exclusionDated}, since no golden has a dated group: {@code anchor/jutterswet-uitsluiting} with its
  *       group valid from 2026. The simple form on a characteristic, with a do-not-attribute decision between two
  *       attributions, which inserts only its control fact; every rule gated on the evaluation date, and beside them the
@@ -146,8 +148,8 @@ class DefaultsplanWitnessTest {
                 "  consequence Decision [subject=$onderwerp, value=Const 25, slots=[], size=0,"
                         + " collapse=true, fault=FaultName[form=defaults A:Jutter.waardering, rule=defaults"
                         + " A:Jutter.waardering], facts=[Value[target=ElementKey[objectType=jutter,"
-                        + " name=waardering, characteristic=false], writer=defaults A:Jutter.waardering]],"
-                        + " insertion=LOGICAL]",
+                        + " name=waardering, characteristic=false], writer=defaults A:Jutter.waardering],"
+                        + " Decides[stack=defaults A:Jutter.waardering, index=2]], insertion=LOGICAL]",
                 "    value 0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '25'"), plans(golden("anchor/jutterswet-vondstwaardering")));
     }
@@ -232,7 +234,8 @@ class DefaultsplanWitnessTest {
                 "    test 0.1 Const Boolean",
                 "  consequence Decision [subject=$onderwerp, value=Const true, slots=[], size=1,"
                         + " collapse=false, fault=null, facts=[Characteristic[characteristic=ElementKey[objectType=jutter,"
-                        + " name=uitgesloten, characteristic=true]]], insertion=LOGICAL]",
+                        + " name=uitgesloten, characteristic=true]], Decides[stack=defaults K:Jutter.uitgesloten,"
+                        + " index=2]], insertion=LOGICAL]",
                 "    value 0 Const Boolean",
                 "rule defaults K:Jutter.uitgesloten: geen rekendatum | form defaults"
                         + " K:Jutter.uitgesloten | group null",

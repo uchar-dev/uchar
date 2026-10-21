@@ -542,9 +542,9 @@ public sealed interface Consequence {
         record Characteristic(ElementKey characteristic) implements StackFact {}
 
         /** The control fact of the simple form: default {@code index} of the stack {@code stack} decided, a
-         *  {@code Decides}. The analysis plans it only where a lower default of the stack has a rule, which carries the
-         *  negation of it over the indices above its own: the condition under which this decision displaces a lower
-         *  one. */
+         *  {@code Decides}. The analysis plans it with every decision: a lower default of the stack carries the
+         *  negation of it over the indices above its own, the condition under which this decision displaces a lower
+         *  one, and the reading of the session names the default that decided by it. */
         record Decides(String stack, int index) implements StackFact {}
 
         /** The control fact of the general form: the default at {@code position} in chain {@code chain} of the stack

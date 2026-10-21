@@ -59,6 +59,8 @@ final class Stacks {
     /** The level each default was declared on, by identity: a default is read there (ch. 7.10). An exception group's
      *  defaults are read on the level of the default that carries them and are not in here. */
     private final Map<Default, ObjectType> origin = new IdentityHashMap<>();
+    /** The ordinary rule each default the fold made of one comes from, by identity ({@link #ruleOf}). */
+    private final Map<Default, ResolvedRule> madeFrom = new IdentityHashMap<>();
 
     Stacks(RegelSpraakModel model, List<PrioritizedDefaults> defaults) {
         this.model = model;
@@ -73,6 +75,12 @@ final class Stacks {
             for (List<PrioritizedDefaults> members : effectiveStacks(ot, chainGroupKeys(ot)).values())
                 out.add(new Stack(ot, members));
         return out;
+    }
+
+    /** The ordinary rule the fold made default {@code d} of ({@link #ruleMember}), or null for a default the document
+     *  declares. */
+    ResolvedRule ruleOf(Default d) {
+        return madeFrom.get(d);
     }
 
     /** The level default {@code d} of a stack owned by {@code owner} is read on. */
@@ -161,13 +169,17 @@ final class Stacks {
         String attr = null;
         for (ResolvedRule r : comps) {
             attr = ((Expr.AttributeReference) r.target()).attribute();
-            ds.add(new Default(null, r.condition() != null ? r.condition() : ALWAYS, r.value(), false, null, r.name()));
+            Default d = new Default(null, r.condition() != null ? r.condition() : ALWAYS, r.value(), false, null, r.name());
+            ds.add(d);
+            madeFrom.put(d, r);
         }
         // the initialisation keeps its condition: justified where the target is empty in the input and the condition
         // holds; folded without it, it wrote its value where the condition failed
         for (ResolvedRule r : inits) {
             attr = ((Expr.AttributeReference) r.target()).attribute();
-            ds.add(new Default(null, r.condition(), r.value(), true, null, r.name()));
+            Default d = new Default(null, r.condition(), r.value(), true, null, r.name());
+            ds.add(d);
+            madeFrom.put(d, r);
         }
         for (Default d : ds) origin.put(d, level);
         return new PrioritizedDefaults("regel als basis: " + attr + " van " + level.name, level.name, null, attr, false,

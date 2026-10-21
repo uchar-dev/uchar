@@ -24,6 +24,7 @@ import dev.uchar.regelspraak.transpiler.tms.Watch;
 import dev.uchar.regelspraak.transpiler.tms.CreationBudget;
 import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
 import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.DefaultsDecision;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.Fired;
@@ -615,6 +616,26 @@ public final class DroolsBackend {
     public static Fixpoint fixpointOf(Build build, KieSession session, Function<Object, String> label) {
         Objects.requireNonNull(label, "label");
         return readFixpoint(build, session, label);
+    }
+
+    /**
+     * Which default of each effective defaults stack decided in {@code session} after a {@link #fire} that reached its
+     * fixpoint (RUNTIME-SEMANTICS ch. 7): one {@link DefaultsDecision} per object and stack on which a default decided
+     * or a conflict stood, with the JSON pointer of the deciding default into the document of the build and its
+     * decision, a do-not-attribute decision included, or the conflict with the pointers and decisions that differed.
+     * An object and stack without a record is one on which no default decided: the target keeps its input. It reads the
+     * control facts the stacks left standing and evaluates nothing again; how it follows them is
+     * {@link TmsTranspiler#decisionsOf}. Read without writing anything, beside {@link #fixpointOf}, whose values and
+     * characteristics a decision agrees with: an attribution with the characteristic derived, a do-not-attribute
+     * decision with none, an attribute's decision with its derived value, and a conflict with the §9.5 deposit of its
+     * key. Where an evaluation fault stands the session has no answer, which {@link #fixpointOf} gives.
+     *
+     * @throws IllegalStateException the sessions {@link #fixpointOf} refuses, in its sentences
+     */
+    public static List<DefaultsDecision> decisionsOf(Build build, KieSession session) {
+        Objects.requireNonNull(build, "build");
+        Objects.requireNonNull(session, "session");
+        return build.execModelTranspiler().decisionsOf(session);
     }
 
     private static Fixpoint readFixpoint(Build build, KieSession session, Function<Object, String> label) {

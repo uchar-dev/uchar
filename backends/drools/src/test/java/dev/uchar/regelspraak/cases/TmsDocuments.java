@@ -358,6 +358,25 @@ final class TmsDocuments {
                 + ",\"exceptions\":" + exceptions(members) + "}";
     }
 
+    /** A form-a characteristic default: its justification, its decision and the members of its exception groups, as
+     *  {@link #withExceptions} gives them. */
+    static String decisionWithExceptions(String justification, boolean decision, List<List<String>> members) {
+        return "{\"node\":\"Default\",\"decision\":" + decision + ",\"justification\":" + justification
+                + ",\"exceptions\":" + exceptions(members) + "}";
+    }
+
+    /** The initialisation default of an attribute group, the lowest (RUNTIME-SEMANTICS ch. 7.3). */
+    static String initialisationEntry(String consequence) {
+        return "{\"node\":\"Default\",\"consequence\":" + consequence + ",\"initialisation\":true}";
+    }
+
+    /** {@code group}, a group of {@link #attributeGroup} or {@link #characteristicGroup}, declared unordered
+     *  (ch. 7.2). */
+    static String unordered(String group) {
+        return group.replaceFirst(java.util.regex.Pattern.quote(",\"defaults\":["),
+                java.util.regex.Matcher.quoteReplacement(",\"unordered\":true,\"defaults\":["));
+    }
+
     /** A group-default: exception groups and no content of its own. */
     static String groupDefault(List<List<String>> members) {
         return "{\"node\":\"Default\",\"exceptions\":" + exceptions(members) + "}";
