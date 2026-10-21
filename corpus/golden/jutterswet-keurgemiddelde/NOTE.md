@@ -60,8 +60,10 @@ The card asked for a member after the stop whose matrix faults (the
 evaluation year read in a session without an evaluation date, EF-011), so
 that the reading carries `fault EF-011 unreached`. No such golden passes the
 square today, measured 2026-10-21: the ASP backend raises EF-011 and EF-019
-(`Unresolved`) while it translates the document and EF-009 (the day-kind
-walk) for every member of the range, read or not, so the case fails gate 6;
+(`Unresolved`) while it translates the document, so the case fails gate 6
+(the day-kind walk, EF-009, fired for every member of the range until the
+card `clingo-day-kind-walk-after-fold-stop`, whose golden
+`jutterswet-keurtermijn` carries that fault after the stop);
 and an unbound parameter (EF-014), which the ASP backend guards lazily, the
 Drools backend reads as leeg (gate 8, `aanvoergeld-parameter-unbound`
 `NOFAULT`). The fault arms of the table are pinned by the executors' own
