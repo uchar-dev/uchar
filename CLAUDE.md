@@ -580,21 +580,28 @@ reviewer's duty on a machine that has catala. Current gates:
     2026-10-21: the four goldens it held, whose build with readings
     refused after a form the transpiler refused part-way, are compared
     as `EXCLUDE` since `meet` closes the reading of a refused form).
-    Every line is compared verbatim except the contributors of a
-    quantifier fold, compared per member: the member always,
-    `reached`/`unreached` where the backend writes one (`unordered`
-    where its session keeps no order), the verdict where ref reached the
-    member. A difference fails unless the reason-carrying `DEVIATIONS`
-    names the case and the branch (empty since the gate began); both
-    lists fail when stale, in both directions, and the comparison rule
-    passes ten rows of its own. Floors `EXPECTED_MIN_TRACED_CASES=835`,
+    Every line is compared verbatim except the position of a
+    contributor of a quantifier fold: since the card
+    `fold-contributor-verdicts` (2026-10-21) ch. 5.12 records the table
+    of ch. 3.9a at that node, so per contributor the member and its
+    verdict, value or fault are compared verbatim, and its position
+    (`reached`/`unreached`) where both write one (`unordered` where the
+    backend's session keeps no order). Where the backend writes
+    `unordered`, no contributor of the trace may carry a fault (a
+    tripwire, held on a listed case too). A difference fails unless the
+    reason-carrying `DEVIATIONS` names the case and the branch (empty
+    since the gate began); both lists fail when stale, in both
+    directions, and the comparison rule passes twelve rows of its own and
+    the tripwire three. Floors `EXPECTED_MIN_TRACED_CASES=835`,
     `EXPECTED_MIN_COMPARED_GOLDENS=261`, `EXPECTED_MIN_COMPARED_CASES=706`,
     `EXPECTED_MIN_READINGS=3826`, `EXPECTED_MIN_NODE_LINES=13971`,
     `EXPECTED_MIN_UNREACHED=3118`, `EXPECTED_MIN_CONTRIBUTOR_LINES=314`
-    and `EXPECTED_MIN_TIMELINE_LINES=76` (measured 2026-10-21). The jar
-    is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). An empty
-    comparison is a failure, never silently green. CI leg unconditional
-    and blocking.
+    and `EXPECTED_MIN_TIMELINE_LINES=76` (measured 2026-10-21), and
+    `EXPECTED_MIN_UNREACHED_CONTRIBUTORS=106` (contributors of the trace
+    not reached, measured 2026-10-21, card `fold-contributor-verdicts`).
+    The jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). An
+    empty comparison is a failure, never silently green. CI leg
+    unconditional and blocking.
 
 **Counting floors (maintainer decision 2026-09-09).** Beside the non-empty
 checks and the name-carrying lists, every gate whose count could shrink unseen
