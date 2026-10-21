@@ -253,6 +253,61 @@ class ReadingsWitnessTest {
                 "J3 " + R + "1/versions/0 FAILS | 0 CharacteristicCheck false | 1 Literal -"));
     }
 
+    // ---------------- the canonical text ----------------
+
+    /** The canonical text of the readings, which {@code DroolsBackendMain --readings} prints per case and the reference
+     *  interpreter's trace is held to (card ref-trace-and-readings-gate), on both branches alike: a composite that stops,
+     *  a restated comparison with the units of its operands, and the contributors of a count and of a quantifier
+     *  fold. */
+    @Test void the_flag_readings_prints_the_canonical_text() throws Exception {
+        Path ir = TmsDocuments.document(CONDITIONS_MODEL, List.of(CONDITIONS.get(0), CONDITIONS.get(5)));
+        Path c = java.nio.file.Files.createTempFile("lezing", ".json");
+        c.toFile().deleteOnExit();
+        java.nio.file.Files.writeString(c, TmsDocuments.caseOn(null, List.of(instanceWith("J1", "Jutter",
+                Map.of("afstand", numberValue("700")), List.of("ijverig", "erkend"))), List.of()).toString());
+        String name = c.getFileName().toString();
+        flag(ir, c, List.of("case " + name,
+                "reading " + R + "0/versions/0 \"J1\" 0 Compound false",
+                "reading " + R + "0/versions/0 \"J1\" 1 CharacteristicCheck true",
+                "reading " + R + "0/versions/0 \"J1\" 2 CharacteristicCheck false",
+                "reading " + R + "0/versions/0 \"J1\" 3 CharacteristicCheck unreached",
+                "reading " + R + "0/versions/0 \"J1\" FAILS",
+                "reading " + R + "1/versions/0 \"J1\" 0 Comparison true",
+                "reading " + R + "1/versions/0 \"J1\" 1 AttributeReference 700 \"m\"",
+                "reading " + R + "1/versions/0 \"J1\" 2 Literal 0.5 \"km\"",
+                "reading " + R + "1/versions/0 \"J1\" HOLDS",
+                "READINGS 1"));
+        Path folds = TmsDocuments.document(FOLDS_MODEL, List.of(FOLDS.get(0), FOLDS.get(1)));
+        java.nio.file.Files.writeString(c, TmsDocuments.caseOn(null, List.of(
+                instanceWithRoles("P1", "Ploeg", Map.of(), List.of(), Map.of("wachten", List.of("W1", "W2"))),
+                instanceWithRoles("W1", "Wacht", Map.of(), List.of("bevoegd"), Map.of()),
+                instanceWithRoles("W2", "Wacht", Map.of(), List.of(), Map.of())), List.of()).toString());
+        flag(folds, c, List.of("case " + name,
+                "reading " + R + "0/versions/0 \"P1\" 0 Comparison true",
+                "reading " + R + "0/versions/0 \"P1\" 1 Aggregation 1 contributors [\"W1\" empty reached]",
+                "reading " + R + "0/versions/0 \"P1\" 4 Literal 0",
+                "reading " + R + "0/versions/0 \"P1\" HOLDS",
+                "reading " + R + "1/versions/0 \"P1\" 0 QuantifierFold false contributors [\"W1\" true unordered;"
+                        + " \"W2\" false unordered]",
+                "reading " + R + "1/versions/0 \"P1\" FAILS",
+                "READINGS 1"));
+    }
+
+    /** The output of {@code --readings} on {@code ir} and the case {@code c}, on both branches, the expected lines. */
+    private static void flag(Path ir, Path c, List<String> expected) {
+        for (boolean drl : List.of(false, true)) {
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            List<String> arguments = new ArrayList<>(List.of("--readings"));
+            if (drl) arguments.add("--drl");
+            arguments.addAll(List.of(ir.toString(), c.toString()));
+            int code = DroolsBackendMain.run(arguments.toArray(String[]::new),
+                    new java.io.PrintStream(out, true, java.nio.charset.StandardCharsets.UTF_8));
+            assertEquals(expected, out.toString(java.nio.charset.StandardCharsets.UTF_8).lines().toList(),
+                    (drl ? "DRL_TEXT" : "EXEC_MODEL") + ": de canonieke tekst");
+            assertEquals(0, code);
+        }
+    }
+
     // ---------------- the reading ----------------
 
     /** The readings of {@code c} on both branches, each the expected list. */

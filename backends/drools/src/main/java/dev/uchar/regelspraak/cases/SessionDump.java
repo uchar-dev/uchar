@@ -3,7 +3,10 @@ package dev.uchar.regelspraak.cases;
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
+import dev.uchar.regelspraak.transpiler.tms.BucketScalar;
+import dev.uchar.regelspraak.transpiler.tms.ConditionReading;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
+import dev.uchar.regelspraak.transpiler.tms.Period;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
 import dev.uchar.regelspraak.transpiler.tms.InputFormFault;
@@ -53,7 +56,8 @@ import java.util.function.Predicate;
  * the exception the fire threw), {@code trace-count} (the firings per rule), {@code trace-order} (the rules in the
  * order they fired), {@code read} (everything {@link DroolsBackend#fixpointOf} gives) and {@code facts}/{@code fact}
  * (every object in working memory at the fixpoint, the beans with their fields among them, so that a write on a bean
- * during the fire shows).
+ * during the fire shows), and for a build with readings {@code reading} (what {@link DroolsBackend#readingsOf} gives, in
+ * the canonical text of {@link #readingLines}), beside the facts of the reading rules among the facts.
  * The order and the count of the firings depend on the order in which a rendering adds the rules, so a step reports
  * them and explains a difference; the other sections hold strictly, the outcome of the fire among them (round 5b of
  * card drl-teksttak-op-truth-maintenance: before, it stood only in the reported line {@code firings}).
@@ -206,6 +210,7 @@ final class SessionDump {
             read.add("fault " + n.nameOf(f.subject()) + " " + quote(f.rule()) + ": " + n.sentence(f.fault()));
         for (Object i : fp.inconsistencies()) read.add("inconsistency " + n.render(i));
         rules(out, "read", read);
+        if (build.readings()) rules(out, "reading", readingLines(build, session, labels));
         facts(out, n);
     }
 
@@ -251,6 +256,10 @@ final class SessionDump {
      *  creation takes no subject of its own phase. Within a phase a creation makes one object per subject, so the number
      *  of a made object counts the phases in which its creation made one for that subject. */
     private Naming naming(Map<String, Object> labels) {
+        return naming(session, labels);
+    }
+
+    private static Naming naming(KieSession session, Map<String, Object> labels) {
         List<CreationStamp> marks = new ArrayList<>();
         for (Object o : session.getObjects(o -> o instanceof CreationStamp)) marks.add((CreationStamp) o);
         marks.sort(Comparator.comparingInt(CreationStamp::phase));
@@ -470,6 +479,85 @@ final class SessionDump {
                 return javaClass.getSimpleName() + "(" + o + ")";
             return javaClass.getSimpleName() + "(" + quote(o.toString()) + ")";
         }
+    }
+
+    /**
+     * The readings of the conditions in {@code session} of a build with readings ({@link DroolsBackend#readingsOf}) in
+     * the canonical text of card fixpoint-readings, sorted, which {@code DroolsBackendMain --readings} prints per case
+     * and a dump of such a session holds in its section {@code reading}: per record one line with the form, the
+     * object and the status, and per node one line with the form, the object, the number and the kind of the node and
+     * what the evaluation found there. An object is named as in the dump, an input bean by its case label quoted and a
+     * made object as {@code «"creation"»(subject)#k}; a value without its Java class, as a case writes it: a number as
+     * its decimal without trailing zeros, a date and a date-time in the ISO form of the cases, a text quoted, a truth
+     * value as {@code true} or {@code false}, leeg as {@code empty}, a timeline as its periods {@code [from to value]};
+     * a unit by its rendering; a fault by the EF code of its kind (RUNTIME-SEMANTICS ch. 5.7b), {@code -} where it has
+     * none, and never by its sentence, which differs between executors; the contributors of a fold sorted by member,
+     * each with its value or the code of its fault and whether it was reached ({@code unordered} where its fold keeps
+     * no order). {@code labels} maps each case label to its input bean.
+     */
+    static List<String> readingLines(DroolsBackend.Build build, KieSession session, Map<String, Object> labels) {
+        Naming n = naming(session, labels);
+        List<String> lines = new ArrayList<>();
+        for (ConditionReading r : DroolsBackend.readingsOf(build, session)) {
+            String head = r.form() + " " + n.nameOf(r.object());
+            lines.add(head + " " + r.status());
+            for (ConditionReading.NodeReading x : r.nodes()) {
+                StringBuilder b = new StringBuilder(head).append(' ').append(x.node()).append(' ').append(x.kind());
+                if (!x.reached()) {
+                    lines.add(b.append(" unreached").toString());
+                    continue;
+                }
+                if (x.fault() != null) b.append(" fault ").append(code(x.fault()));
+                else b.append(' ').append(canonical(x.value()));
+                if (x.unit() != null) b.append(' ').append(quote(x.unit().rendering()));
+                if (!x.contributors().isEmpty()) {
+                    List<String> cs = new ArrayList<>();
+                    for (ConditionReading.Contributor c : x.contributors())
+                        cs.add(n.nameOf(c.member()) + " " + (c.fault() != null ? "fault " + code(c.fault())
+                                : canonical(c.value())) + " " + (c.reached() == null ? "unordered"
+                                : c.reached() ? "reached" : "unreached"));
+                    cs.sort(Comparator.naturalOrder());
+                    b.append(" contributors [").append(String.join("; ", cs)).append(']');
+                }
+                lines.add(b.toString());
+            }
+        }
+        lines.sort(Comparator.naturalOrder());
+        return lines;
+    }
+
+    /** The EF code of the kind of the evaluation fault {@code f}, or {@code -} where it names none. */
+    private static String code(RuntimeException f) {
+        List<CaseRunner.FaultKind> kinds = CaseRunner.faultKinds(f);
+        return kinds.isEmpty() ? "-" : kinds.get(0).code();
+    }
+
+    private static final java.time.format.DateTimeFormatter DATE_TIME =
+            java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss");
+
+    /** {@code v} as the canonical text writes a value ({@link #readingLines}); a value of any other kind is refused. */
+    private static String canonical(Object v) {
+        if (v == null) return "empty";
+        if (v instanceof Boolean b) return b.toString();
+        if (v instanceof BigDecimal d) return d.signum() == 0 ? "0" : d.stripTrailingZeros().toPlainString();
+        if (v instanceof java.time.LocalDate d) return d.toString();
+        if (v instanceof java.time.LocalDateTime d)
+            return DATE_TIME.format(d) + (d.getNano() == 0 ? "" : String.format(".%03d", d.getNano() / 1_000_000));
+        if (v instanceof String s) return quote(s);
+        if (v instanceof Period p) return "[" + p.from() + " " + p.to() + " " + canonical(p.value()) + "]";
+        if (v instanceof BucketScalar s) return "bucket" + canonical(s.bucket());
+        if (v instanceof List<?> l) {
+            List<String> r = new ArrayList<>();
+            for (Object x : l) r.add(canonical(x));
+            return "[" + String.join(", ", r) + "]";
+        }
+        if (v instanceof Map<?, ?> m) {
+            List<String> r = new ArrayList<>();
+            m.forEach((k, w) -> r.add(canonical(k) + "=" + canonical(w)));
+            r.sort(Comparator.naturalOrder());
+            return "{" + String.join(", ", r) + "}";
+        }
+        throw new IllegalStateException("de canonieke tekst van een lezing kent geen waarde van " + v.getClass().getName());
     }
 
     private static boolean isBean(Object o) {

@@ -19,6 +19,13 @@ import java.util.List;
  *   EXCLUDE DROOLS-###: &lt;reason&gt;  exit 2   (the register code of the refusal, beside its sentence) a form the v0 backend does not carry (loader refusal / marker / …)
  *   ERROR &lt;detail&gt;          exit 3   an unexpected fault
  * </pre>
+ *
+ * <p>With {@code --readings} (card fixpoint-readings) it builds the document with readings, plays every case and prints
+ * per case {@code case <file>} and the readings of the conditions at its fixpoint, one line per record and per node in
+ * the canonical text of {@code SessionDump.readingLines}, each after {@code reading }, and as its last line
+ * {@code READINGS <n>}, the cases it read, exit 0; a form it does not carry is the {@code EXCLUDE} line above, exit 2.
+ * It compares no expectation: the text is what the trace of the reference interpreter is held to (card
+ * ref-trace-and-readings-gate). {@code --readings --drl} reads the DRL-text branch.
  */
 public final class DroolsBackendMain {
     private DroolsBackendMain() {}
@@ -34,15 +41,18 @@ public final class DroolsBackendMain {
         // executable model. Since 2026-09-19 (card gate12-drl-takteller) this flag is ALSO a gate-12 path: the gate
         // sweeps every golden through it and, since card drl-teksttak-op-truth-maintenance, demands per golden the
         // status line of the flagless run, which reaches the exec-model branch and alone is the differential square.
+        boolean readings = args.length > 0 && args[0].equals("--readings");
+        if (readings) args = java.util.Arrays.copyOfRange(args, 1, args.length);
         boolean viaDrl = args.length > 0 && args[0].equals("--drl");
         if (viaDrl) args = java.util.Arrays.copyOfRange(args, 1, args.length);
         if (args.length < 2) {
-            System.err.println("usage: DroolsBackendMain [--drl] <ir.json> <case*.json>...");
+            System.err.println("usage: DroolsBackendMain [--readings] [--drl] <ir.json> <case*.json>...");
             return 3;
         }
         Path ir = Path.of(args[0]);
         List<Path> cases = new ArrayList<>();
         for (int i = 1; i < args.length; i++) cases.add(Path.of(args[i]));
+        if (readings) return readings(ir, cases, viaDrl, out);
         try {
             CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlText(ir, cases) : CaseRunner.runGolden(ir, cases);
             switch (r.status()) {
@@ -50,6 +60,29 @@ public final class DroolsBackendMain {
                 case "EXCLUDE" -> { out.println("EXCLUDE " + r.code().id() + ": " + r.reason()); return 2; }
                 default -> { out.println("FAIL " + String.join(" | ", r.caseFailures())); return 1; }
             }
+        } catch (RuntimeException e) {
+            out.println("ERROR " + e.getClass().getSimpleName() + ": " + message(e));
+            return 3;
+        }
+    }
+
+    /** The run of {@code --readings}: the readings of every case, then {@code READINGS <n>}. */
+    private static int readings(Path ir, List<Path> cases, boolean viaDrl, PrintStream out) {
+        try {
+            List<String> lines = CaseRunner.readings(ir, cases, viaDrl ? DroolsBackend.Branch.DRL_TEXT
+                    : DroolsBackend.Branch.EXEC_MODEL);
+            lines.forEach(out::println);
+            out.println("READINGS " + lines.stream().filter(l -> l.startsWith("case ")).count());
+            return 0;
+        } catch (CaseRunner.Excluded e) {
+            out.println("EXCLUDE " + e.code().id() + ": " + e.getMessage());
+            return 2;
+        } catch (dev.uchar.regelspraak.loader.IrLoader.Refusal e) {
+            out.println("EXCLUDE " + e.code().id() + ": " + e.reason().framed("loader").text());
+            return 2;
+        } catch (java.io.IOException e) {
+            out.println("ERROR IOException: " + message(new java.io.UncheckedIOException(e)));
+            return 3;
         } catch (RuntimeException e) {
             out.println("ERROR " + e.getClass().getSimpleName() + ": " + message(e));
             return 3;

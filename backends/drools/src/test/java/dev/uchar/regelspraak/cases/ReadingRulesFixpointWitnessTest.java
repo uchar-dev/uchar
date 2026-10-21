@@ -105,10 +105,10 @@ class ReadingRulesFixpointWitnessTest {
     }
 
     /** {@code dump} as the build without readings must give it: without the firings, without the facts of the reading
-     *  rules, and without the count of the facts, which counts those. */
+     *  rules and the section of their readings, and without the count of the facts, which counts those. */
     private static String production(String dump) {
         return Stream.of(dump.split("\n")).filter(r -> !r.startsWith("firings ") && !r.startsWith("trace-")
-                        && !r.startsWith("facts ") && !readingFact(r))
+                        && !r.startsWith("facts ") && !r.startsWith("reading ") && !readingFact(r))
                 .collect(Collectors.joining("\n"));
     }
 

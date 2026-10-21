@@ -185,6 +185,36 @@ public final class CaseRunner {
         }
     }
 
+    /**
+     * The readings of the cases {@code casePaths} on a build with readings of {@code irPath} on {@code branch}, in the
+     * canonical text of {@link SessionDump#readingLines}, each line after {@code reading }: per case a line
+     * {@code case <file>} and the readings at its fixpoint, or {@code nofixpoint <sentence>} where the fire reached none.
+     * A red-path case is skipped, as the replay skips it. The entry of {@code DroolsBackendMain --readings}, the text the
+     * trace of the reference interpreter is held to (card ref-trace-and-readings-gate). A form this backend does not
+     * carry is refused as the replay refuses it, an {@link Excluded} or an {@link IrLoader.Refusal}.
+     */
+    static List<String> readings(Path irPath, List<Path> casePaths, DroolsBackend.Branch branch)
+            throws java.io.IOException {
+        CaseRunner runner = build(irPath, branch, true);
+        List<String> out = new ArrayList<>();
+        for (Path cp : casePaths) {
+            JsonNode c = JSON.readTree(Files.readString(cp));
+            if (c.has("expectedFault")) continue;
+            out.add("case " + cp.getFileName());
+            out.addAll(runner.withSession(c, (build, session, labels) -> {
+                DroolsBackend.Firing firing;
+                try {
+                    firing = DroolsBackend.fire(build, session);
+                } catch (ConsequenceException e) {
+                    throw DroolsBackend.designate(e);
+                }
+                if (firing.noFixpoint() != null) return List.of("nofixpoint " + firing.noFixpoint());
+                return SessionDump.readingLines(build, session, labels).stream().map(l -> "reading " + l).toList();
+            }));
+        }
+        return out;
+    }
+
     /** The scenario report of a golden's replay: one {@link ScenarioResult} per case, from the same exec-model
      *  replay the gate plays, carrying beside the verdict what the source toolchain's scenario runner reported on top
      *  of a comparison — per expectation the expected and the actual value, the rules that fired with the labels
@@ -194,6 +224,31 @@ public final class CaseRunner {
      *  exception, is FAIL with that exception as its reason, and the report goes on with the next case. A red-path
      *  case is no scenario and is skipped, as the replay skips it. */
     public static List<ScenarioResult> report(Path irPath, List<Path> casePaths) {
+        return report(irPath, casePaths, null);
+    }
+
+    /** What a consumer of the scenario report takes of the session of one case ({@link #report(Path, List, Handoff)}):
+     *  the session right after its fire, before the write-back, of a build with readings, with the case labels of its
+     *  input beans and what the fire did. */
+    @FunctionalInterface
+    public interface Handoff {
+        void take(String caseFile, DroolsBackend.Build build, KieSession session, Map<String, Object> labels,
+                  DroolsBackend.Firing firing);
+    }
+
+    /**
+     * The scenario report of {@link #report(Path, List)}, which plays every case on a build with readings and hands
+     * {@code handoff} each session it fired, right after the fire and before the write-back, so that a consumer reads
+     * the fixpoint, the decisions of the defaults stacks and the readings of the conditions of the very session the
+     * report judged ({@link DroolsBackend#fixpointOf}, {@link DroolsBackend#decisionsOf},
+     * {@link DroolsBackend#readingsOf}) instead of playing the case a second time; the input beans it is given carry
+     * the derived values once the report wrote them back, where no evaluation fault stands. A case whose input or fire
+     * raises is handed nothing, as it has no session to read. A consumer reads the session and changes nothing in it:
+     * the report writes it back and compares it after the handoff. The reports are those of the build without readings: the
+     * reading rules leave the fixpoint, the observer and the coverage alone ({@code ReadingRulesFixpointWitnessTest},
+     * {@code ReadingRulesObserverWitnessTest}). A null {@code handoff} is {@link #report(Path, List)}.
+     */
+    public static List<ScenarioResult> report(Path irPath, List<Path> casePaths, Handoff handoff) {
         List<Path> paths = new ArrayList<>();
         List<JsonNode> cases = new ArrayList<>();
         for (Path cp : casePaths) {
@@ -207,7 +262,7 @@ public final class CaseRunner {
         List<ScenarioResult> out = new ArrayList<>();
         CaseRunner runner;
         try {
-            runner = build(irPath);
+            runner = handoff == null ? build(irPath) : build(irPath, DroolsBackend.Branch.EXEC_MODEL, true);
         } catch (Excluded e) {
             for (Path p : paths) out.add(marker(p, e.getMessage()));
             return out;
@@ -219,7 +274,7 @@ public final class CaseRunner {
         }
         for (int i = 0; i < paths.size(); i++) {
             String name = paths.get(i).getFileName().toString();
-            Observation w = new Observation(new DroolsBackend.Observer(runner::beanLabel));
+            Observation w = new Observation(new DroolsBackend.Observer(runner::beanLabel), handoff);
             String failure;
             try {
                 failure = runner.runCase(name, cases.get(i), w);
@@ -258,10 +313,13 @@ public final class CaseRunner {
      *  consumer records it, with the case labels of this runner, and per expectation its verdict. */
     private static final class Observation {
         final DroolsBackend.Observer fireObserver;
+        /** The consumer the session goes to after its fire, null for none. */
+        final Handoff handoff;
         final List<ScenarioResult.ExpectationResult> expectations = new ArrayList<>();
 
-        Observation(DroolsBackend.Observer fireObserver) {
+        Observation(DroolsBackend.Observer fireObserver, Handoff handoff) {
             this.fireObserver = fireObserver;
+            this.handoff = handoff;
         }
     }
 
@@ -495,7 +553,7 @@ public final class CaseRunner {
             CaseInput input = readInput(c);
             setGlobals(session, c);
             DroolsBackend.insert(backendBuild, session, input.inputData());
-            return fireToFixpointFiring(session, null);
+            return fireToFixpointFiring(session, null, null);
         } finally {
             session.dispose();
             Thread.currentThread().setContextClassLoader(previous);
@@ -581,7 +639,11 @@ public final class CaseRunner {
             CaseInput input = readInput(c);
             setGlobals(session, c);
             DroolsBackend.insert(backendBuild, session, input.inputData());
-            String noFixpoint = fireToFixpoint(session, w == null ? null : w.fireObserver);
+            Handoff handoff = w == null ? null : w.handoff;
+            String noFixpoint = fireToFixpointFiring(session, w == null ? null : w.fireObserver, handoff == null ? null
+                    : firing -> handoff.take(name, backendBuild, session,
+                            java.util.Collections.unmodifiableMap(new LinkedHashMap<>(labelToBean)), firing))
+                    .noFixpoint();
             if (noFixpoint != null) return name + ": " + noFixpoint;
             DroolsBackend.Comparison comparison =
                     DroolsBackend.compare(backendBuild, session, this::beanLabel, c.get("expected"));
@@ -609,12 +671,14 @@ public final class CaseRunner {
     /** As above, with {@code observer} recording what the session fires ({@link DroolsBackend.Observer}); null
      *  records nothing. */
     private String fireToFixpoint(KieSession session, DroolsBackend.Observer observer) {
-        return fireToFixpointFiring(session, observer).noFixpoint();
+        return fireToFixpointFiring(session, observer, null).noFixpoint();
     }
 
     /** As {@link #fireToFixpoint(KieSession, DroolsBackend.Observer)}, returning the {@link DroolsBackend.Firing} itself,
-     *  so that the red path reads the code of a run without a fixpoint beside its sentence. */
-    private DroolsBackend.Firing fireToFixpointFiring(KieSession session, DroolsBackend.Observer observer) {
+     *  so that the red path reads the code of a run without a fixpoint beside its sentence; {@code afterFire}, where it is
+     *  not null, gets the firing right after the fire and before the write-back ({@link Handoff}). */
+    private DroolsBackend.Firing fireToFixpointFiring(KieSession session, DroolsBackend.Observer observer,
+                                                      java.util.function.Consumer<DroolsBackend.Firing> afterFire) {
         SessionDump trace = documenthash == null ? null : SessionDump.op(session, labelToBean);
         DroolsBackend.Firing firing;
         try {
@@ -625,6 +689,7 @@ public final class CaseRunner {
             throw e;
         }
         if (trace != null) trace.seam(documenthash, backendBuild, firing, labelToBean);
+        if (afterFire != null) afterFire.accept(firing);
         if (firing.noFixpoint() == null) DroolsBackend.setDerivedValues(backendBuild, session, this::beanLabel);
         return firing;
     }

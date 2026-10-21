@@ -30,6 +30,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * them, so that one that arrives shows by name. A golden the exec-model branch does not play is gate 12's channel, and
  * this witness skips it.
  *
+ * <p>Since card fixpoint-readings every such case is fired as well on both branches of the build with readings, and
+ * those two dumps must be equal too, the facts of the reading rules and the readings of the conditions at the fixpoint
+ * ({@code DroolsBackend.readingsOf}, the section {@code reading} of the dump) included: the two renderings of the
+ * reading rules bind the same values, and the recording rendering reads them alike. Floor
+ * {@value #EXPECTED_MIN_READING_LINES} lines of readings compared, measured 2026-10-21.
+ *
  * <p>Every case under {@code corpus/red} is played through the red path of both branches
  * ({@link CaseRunner#runRed(Path, Path, DroolsBackend.Branch)}), which must give the same {@code RedResult}: the same
  * status and the same text. Gate 8's Drools leg plays the exec-model branch alone, so without this row no gate would
@@ -61,6 +67,8 @@ class BranchDumpsCorpusWitnessTest {
     /** The case files under {@code corpus/red}, measured 2026-10-14: the 49 of before step 6b and its one; 44 since the
      *  card zero-division-channel (2026-10-19) moved six witnesses of a division by a numeric zero to the golden corpus. */
     static final int EXPECTED_MIN_RED_CASES = 44;
+    /** The lines of the section {@code reading} compared over the builds with readings, measured 2026-10-21. */
+    static final int EXPECTED_MIN_READING_LINES = 17797;
     /** The cases of played goldens whose fire reaches no fixpoint, measured 2026-10-14: none. */
     static final List<String> WITHOUT_FIXPOINT = List.of();
 
@@ -72,6 +80,7 @@ class BranchDumpsCorpusWitnessTest {
         }
         List<String> differences = new ArrayList<>(), withoutFixpoint = new ArrayList<>();
         int compared = 0, cases = 0;
+        long readingLines = 0;
         for (Path g : goldens) {
             List<Path> casePaths = new ArrayList<>();
             for (Path casePath : casePaths(g))
@@ -81,8 +90,10 @@ class BranchDumpsCorpusWitnessTest {
             Path ir = g.resolve("ir.json");
             if (!CaseRunner.viaExecModel(ir, casePaths).status().equals("PLAYED")) continue;
             CaseRunner exec = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL), drl;
+            CaseRunner execReading = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL, true), drlReading;
             try {
                 drl = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.DRL_TEXT);
+                drlReading = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.DRL_TEXT, true);
             } catch (RuntimeException e) {
                 differences.add(name + ": de DRL-teksttak bouwt het document niet: " + e);
                 continue;
@@ -95,6 +106,10 @@ class BranchDumpsCorpusWitnessTest {
                 if (a.lines().noneMatch(r -> r.equals("fixpoint yes"))) withoutFixpoint.add(which);
                 String difference = firstDifference(comparable(a), comparable(b));
                 if (difference != null) differences.add(which + ": " + difference);
+                String x = BranchDumps.dump(execReading, c), y = BranchDumps.dump(drlReading, c);
+                readingLines += x.lines().filter(r -> r.startsWith("reading ")).count();
+                difference = firstDifference(comparable(x), comparable(y));
+                if (difference != null) differences.add(which + " met lezingen: " + difference);
                 cases++;
             }
         }
@@ -105,6 +120,10 @@ class BranchDumpsCorpusWitnessTest {
                 + EXPECTED_MIN_GOLDENS);
         assertTrue(m >= EXPECTED_MIN_CASES, () -> "vergeleken cases " + m + " (in " + n + " goldens), onder de vloer "
                 + EXPECTED_MIN_CASES);
+        long r = readingLines;
+        System.out.println("BranchDumpsCorpusWitnessTest: " + n + " goldens, " + m + " cases, " + r + " regels lezing");
+        assertTrue(r >= EXPECTED_MIN_READING_LINES, () -> "vergeleken regels lezing " + r + ", onder de vloer "
+                + EXPECTED_MIN_READING_LINES);
     }
 
     @Test void every_red_case_gives_the_same_red_result_on_both_branches() throws Exception {
