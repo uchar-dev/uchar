@@ -160,6 +160,13 @@ if [ "$FAST" -eq 0 ]; then
     grep -q "<testcase name=\"$table_row\"" "$branch_dumps" \
       || fail "BranchDumpsCorpusWitnessTest ran without its row '$table_row' — the comparison of the two branches per case is required whole"
   done
+  # card fixpoint-readings: the build with readings leaves the fixpoint, the observer and the coverage alone, and its
+  # readings agree with the fixpoint, over every played golden; this build must have run those witnesses, by name
+  for witness in ReadingRulesFixpointWitnessTest ReadingsCorpusWitnessTest ReadingRulesObserverWitnessTest; do
+    report=backends/drools/target/surefire-reports/TEST-dev.uchar.regelspraak.cases.$witness.xml
+    [ -f "$report" ] && [ "$report" -nt "$suite_begin" ] \
+      || fail "$witness did not run in this build (no surefire report newer than its start: $report) — the witnesses of the build with readings are required"
+  done
 fi
 
 JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
