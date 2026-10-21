@@ -1,0 +1,334 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Ploeg",
+        "animate": false,
+        "plural": "Ploegen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "wachttal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "inzetbaar",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Strandwacht",
+        "animate": true,
+        "plural": "Strandwachten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "keurdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "keurtermijn",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "keurdagen",
+                "canonical": "keurdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gekeurd",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "ploegindeling",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "ploeg",
+            "objectType": "Ploeg",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "wacht",
+            "objectType": "Strandwacht",
+            "plural": "wachten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [
+      {
+        "node": "DayKind",
+        "name": "keurdag",
+        "plural": "keurdagen"
+      }
+    ]
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "inzetbaar bij keurtermijn",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "inzetbaar",
+              "subjectType": "Ploeg",
+              "source": {
+                "snippet": "Een Ploeg is inzetbaar"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Strandwacht",
+              "test": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "gekeurd",
+                    "negated": false,
+                    "source": {
+                      "snippet": "hij is gekeurd"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "Binary",
+                      "op": "plus",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "keurdatum",
+                        "subjectType": "Strandwacht",
+                        "source": {
+                          "snippet": "zijn keurdatum"
+                        }
+                      },
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "keurtermijn",
+                        "subjectType": "Strandwacht",
+                        "source": {
+                          "snippet": "zijn keurtermijn"
+                        }
+                      },
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "zijn keurdatum plus zijn keurtermijn"
+                      }
+                    },
+                    "right": {
+                      "node": "ContextValue",
+                      "name": "evaluationDate",
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "de rekendatum"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn keurdatum plus zijn keurtermijn ligt na de rekendatum"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "hij aan alle volgende voorwaarden voldoet"
+                }
+              },
+              "source": {
+                "snippet": "alle wachten van de Ploeg aan alle volgende voorwaarden voldoen"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "ploegindeling",
+                "role": "wacht"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wachttal van een ploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachttal",
+              "subjectType": "Ploeg",
+              "source": {
+                "snippet": "Het wachttal van een Ploeg"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "wachten",
+                  "subjectType": "Ploeg",
+                  "source": {
+                    "snippet": "wachten van de Ploeg"
+                  }
+                }
+              ],
+              "elementType": "Strandwacht",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "ploegindeling",
+                "role": "wacht"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal wachten van de Ploeg"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [
+      {
+        "node": "DayKindDefinition",
+        "dayKind": "keurdag",
+        "condition": {
+          "node": "Comparison",
+          "op": "equal",
+          "left": {
+            "node": "BuiltinCall",
+            "kind": "yearOf",
+            "arguments": [
+              {
+                "node": "BoundDay",
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "de dag"
+                }
+              }
+            ],
+            "type": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            },
+            "source": {
+              "snippet": "het jaar uit de dag"
+            }
+          },
+          "right": {
+            "node": "Literal",
+            "value": {
+              "number": "2026"
+            },
+            "type": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "source": {
+              "snippet": "2026"
+            }
+          },
+          "source": {
+            "snippet": "het jaar uit de dag gelijk is aan 2026"
+          }
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

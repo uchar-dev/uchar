@@ -1,0 +1,69 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-06-01",
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {
+          "wachten": [
+            "W1",
+            "W2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Strandwacht",
+        "attributes": {
+          "keurdatum": {
+            "date": "2026-03-01"
+          },
+          "keurtermijn": {
+            "number": "100"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Strandwacht",
+        "attributes": {
+          "keurdatum": {
+            "date": "2027-03-01"
+          },
+          "keurtermijn": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "P1",
+      "characteristic": "inzetbaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "wachttal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

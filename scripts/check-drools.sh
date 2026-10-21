@@ -1383,7 +1383,11 @@ EXPECTED_CHANNEL=(
 # 261 -> 262 (2026-10-21, card fold-contributor-verdicts): the golden jutterswet-keurgemiddelde, a quantifier fold
 # whose matrix divides by a numeric zero on a member after the stop (consistent) and on a member it reaches (EF-005),
 # hand-written with hand-computed cases. No source file of the replay changed; it plays on both with PLAYED 4.
-EXPECTED_PLAYED=262
+# 262 -> 263 (2026-10-21, card clingo-day-kind-walk-after-fold-stop): the golden jutterswet-keurtermijn, a quantifier
+# fold whose matrix walks a day kind beyond the reach fence (EF-009) on a member after the stop and on a member of no
+# ploeg (consistent), hand-written with hand-computed cases; the reached member is the red case
+# jutterswet-keurtermijn-bereikt. No source file of this backend changed; it plays on both with PLAYED 4.
+EXPECTED_PLAYED=263
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
