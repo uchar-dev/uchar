@@ -1,0 +1,286 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Ploeg",
+        "animate": false,
+        "plural": "Ploegen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "wachttal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "inzetbaar",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Strandwacht",
+        "animate": true,
+        "plural": "Strandwachten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "keurpunten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "keuringen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gekeurd",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "ploegindeling",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "ploeg",
+            "objectType": "Ploeg",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "wacht",
+            "objectType": "Strandwacht",
+            "plural": "wachten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "inzetbaar bij keurgemiddelde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "inzetbaar",
+              "subjectType": "Ploeg",
+              "source": {
+                "snippet": "Een Ploeg is inzetbaar"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Strandwacht",
+              "test": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "gekeurd",
+                    "negated": false,
+                    "source": {
+                      "snippet": "hij is gekeurd"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Rounding",
+                      "base": {
+                        "node": "Binary",
+                        "op": "dividedBy",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "keurpunten",
+                          "subjectType": "Strandwacht",
+                          "source": {
+                            "snippet": "zijn keurpunten"
+                          }
+                        },
+                        "right": {
+                          "node": "AttributeReference",
+                          "attribute": "keuringen",
+                          "subjectType": "Strandwacht",
+                          "source": {
+                            "snippet": "zijn keuringen"
+                          }
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "zijn keurpunten gedeeld door zijn keuringen"
+                        }
+                      },
+                      "mode": "floor",
+                      "decimals": 0,
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "zijn keurpunten gedeeld door zijn keuringen naar beneden afgerond op 0 decimalen"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "6"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "6"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn keurpunten gedeeld door zijn keuringen naar beneden afgerond op 0 decimalen is groter dan 6"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "hij aan alle volgende voorwaarden voldoet"
+                }
+              },
+              "source": {
+                "snippet": "alle wachten van de Ploeg aan alle volgende voorwaarden voldoen"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "ploegindeling",
+                "role": "wacht"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wachttal van een ploeg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachttal",
+              "subjectType": "Ploeg",
+              "source": {
+                "snippet": "Het wachttal van een Ploeg"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "wachten",
+                  "subjectType": "Ploeg",
+                  "source": {
+                    "snippet": "wachten van de Ploeg"
+                  }
+                }
+              ],
+              "elementType": "Strandwacht",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "ploegindeling",
+                "role": "wacht"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal wachten van de Ploeg"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

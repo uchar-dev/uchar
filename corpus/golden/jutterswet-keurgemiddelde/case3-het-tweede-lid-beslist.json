@@ -1,0 +1,88 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {
+          "wachten": [
+            "W1",
+            "W2",
+            "W3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Strandwacht",
+        "attributes": {
+          "keurpunten": {
+            "number": "70"
+          },
+          "keuringen": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "W2",
+        "objectType": "Strandwacht",
+        "attributes": {
+          "keurpunten": {
+            "number": "50"
+          },
+          "keuringen": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "W3",
+        "objectType": "Strandwacht",
+        "attributes": {
+          "keurpunten": {
+            "number": "30"
+          },
+          "keuringen": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "P1",
+      "characteristic": "inzetbaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "wachttal",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

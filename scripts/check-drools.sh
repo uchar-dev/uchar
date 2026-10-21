@@ -1380,7 +1380,10 @@ EXPECTED_CHANNEL=(
 # a counting quantifier, and the justification of an exception), written in RegelSpraak with hand-computed cases.
 # Since that card the loader carries a QuantifierFold's sourcePath and both branches plan it as a value fold's; the
 # golden plays on both with PLAYED 4. jutterswet-ketenkwantor stays in EXPECTED_CHANNEL, one layer deeper.
-EXPECTED_PLAYED=261
+# 261 -> 262 (2026-10-21, card fold-contributor-verdicts): the golden jutterswet-keurgemiddelde, a quantifier fold
+# whose matrix divides by a numeric zero on a member after the stop (consistent) and on a member it reaches (EF-005),
+# hand-written with hand-computed cases. No source file of the replay changed; it plays on both with PLAYED 4.
+EXPECTED_PLAYED=262
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
