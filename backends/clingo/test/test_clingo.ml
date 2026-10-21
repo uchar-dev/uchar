@@ -11539,6 +11539,111 @@ let () =
   pinned_loud ~entry:"L1" ~name:"the day-kind table behind a condition that fails (dk-cond)" ~ir ~case_text
     ~needle:(pf_reason "grensdatum")
 
+(* ch. 3.9a, "a member never reached produces no fault", for the reach fence
+   of a day-kind step (EF-009) in a quantifier fold's matrix: the fences carry
+   the fold's stop (card clingo-day-kind-walk-after-fold-stop, 2026-10-21;
+   golden jutterswet-keurtermijn). `ALLE wachten [gekeurd ; keurdatum plus
+   keurtermijn ligt na de rekendatum]`, keurdag every day of 2026; W1 is not
+   gekeurd, so the fold stops before W2, whose step from 2027-03-01 finds no
+   keurdag. The same document with an object creation that adds nothing to the
+   range is README [V5]: the order of created members is not normed, so the
+   fences keep firing for every member there *)
+let keurtermijn_doc ~creation =
+  replace ~tok:"@CREATION@"
+    ~by:
+      (if creation then
+         {|{ "node": "ObjectCreation", "name": "maak een keurrapport bij elke ploeg", "versions": [
+             { "createdType": "Keurrapport", "subject": "Ploeg", "initialisations": [],
+               "validity": { "node": "Validity" },
+               "connectingRole": { "node": "RoleBinding", "factType": "keurrapportage", "role": "rapport" } } ] }|}
+       else "")
+    (replace ~tok:"@RAPPORT@"
+       ~by:
+         (if creation then
+            {|, { "node": "ObjectType", "name": "Keurrapport", "animate": false, "plural": "Keurrapporten",
+                "attributes": [], "characteristics": [] }|}
+          else "")
+       (replace ~tok:"@RAPPORTAGE@"
+          ~by:
+            (if creation then
+               {|, { "node": "FactType", "name": "keurrapportage", "reciprocal": false, "roles": [
+                   { "node": "Role", "name": "keurploeg", "objectType": "Ploeg", "many": false },
+                   { "node": "Role", "name": "rapport", "objectType": "Keurrapport", "many": false } ] }|}
+             else "")
+          {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Ploeg", "animate": false, "plural": "Ploegen",
+        "attributes": [ { "node": "Attribute", "name": "wachttal",
+          "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" } } ],
+        "characteristics": [ { "node": "Characteristic", "name": "inzetbaar", "kind": "adjectival" } ] },
+      { "node": "ObjectType", "name": "Strandwacht", "animate": true, "plural": "Strandwachten",
+        "attributes": [
+          { "node": "Attribute", "name": "keurdatum", "datatype": { "node": "Date", "precision": "day" } },
+          { "node": "Attribute", "name": "keurtermijn",
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified",
+              "unit": { "node": "Unit", "abbreviation": "keurdagen", "canonical": "keurdagen",
+                "factorToCanonical": { "num": 1, "den": 1 } } } } ],
+        "characteristics": [ { "node": "Characteristic", "name": "gekeurd", "kind": "adjectival" } ] }@RAPPORT@ ],
+    "factTypes": [
+      { "node": "FactType", "name": "ploegindeling", "reciprocal": false, "roles": [
+          { "node": "Role", "name": "ploeg", "objectType": "Ploeg", "many": false },
+          { "node": "Role", "name": "wacht", "objectType": "Strandwacht", "plural": "wachten", "many": true } ] }@RAPPORTAGE@ ],
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [ { "node": "DayKind", "name": "keurdag", "plural": "keurdagen" } ] },
+  "rules": {
+    "rules": [
+      { "node": "Rule", "name": "inzetbaar bij keurtermijn", "versions": [ {
+          "validity": { "node": "Validity" },
+          "target": { "node": "AttributeReference", "attribute": "inzetbaar", "subjectType": "Ploeg" },
+          "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Boolean" } },
+          "condition": { "node": "QuantifierFold", "quantifier": "all", "elementType": "Strandwacht",
+            "test": { "node": "Compound", "quantifier": "all", "threshold": 0, "parts": [
+              { "node": "CharacteristicCheck", "characteristic": "gekeurd", "negated": false },
+              { "node": "Comparison", "op": "later",
+                "left": { "node": "Binary", "op": "plus",
+                  "left": { "node": "AttributeReference", "attribute": "keurdatum", "subjectType": "Strandwacht" },
+                  "right": { "node": "AttributeReference", "attribute": "keurtermijn", "subjectType": "Strandwacht" },
+                  "type": { "node": "Date", "precision": "day" } },
+                "right": { "node": "ContextValue", "name": "evaluationDate",
+                  "type": { "node": "Date", "precision": "day" } } } ] },
+            "sourceRole": { "node": "RoleBinding", "factType": "ploegindeling", "role": "wacht" } },
+          "initialisation": false } ] } ],
+    "dayKindDefinitions": [
+      { "node": "DayKindDefinition", "dayKind": "keurdag",
+        "condition": { "node": "Comparison", "op": "equal",
+          "left": { "node": "BuiltinCall", "kind": "yearOf",
+            "arguments": [ { "node": "BoundDay", "type": { "node": "Date", "precision": "day" } } ],
+            "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative" } },
+          "right": { "node": "Literal", "value": { "number": "2026" },
+            "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" } } },
+        "validity": { "node": "Validity" } } ],
+    "objectCreations": [ @CREATION@ ], "allocations": [], "consistencies": [], "uniquenesses": [],
+    "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
+  "diagnostics": [] }|}))
+
+let keurtermijn_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": "2026-06-01",
+  "input": { "instances": [
+      { "label": "P1", "objectType": "Ploeg", "attributes": {}, "roles": { "wachten": [ "W1", "W2" ] },
+        "characteristics": [] },
+      { "label": "W1", "objectType": "Strandwacht",
+        "attributes": { "keurdatum": { "date": "2026-03-01" }, "keurtermijn": { "number": "100" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "W2", "objectType": "Strandwacht",
+        "attributes": { "keurdatum": { "date": "2027-03-01" }, "keurtermijn": { "number": "1" } },
+        "roles": {}, "characteristics": [ "gekeurd" ] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "characteristicAbsent", "label": "P1", "characteristic": "inzetbaar" },
+    { "kind": "consistent" } ] }|}
+
+let () =
+  both_answer ~name:"a quantifier fold stops before a member whose day-kind walk faults (control)"
+    ~ir:(keurtermijn_doc ~creation:false) ~case_text:keurtermijn_case;
+  pinned_loud ~entry:"V5" ~name:"the same fold in a document with an object creation (kv-dk-creation)"
+    ~ir:(keurtermijn_doc ~creation:true) ~case_text:keurtermijn_case
+    ~needle:"day-kind walk: no day of the kind within"
+
 (* WF-053's own read names the subject type itself (IR-SPEC ch. 4.1a), in
    ref's words ([own_read]): a Jutter ⊑ Persoon reads the inherited leeftijd
    through its own type and answers 40; the same read written on the

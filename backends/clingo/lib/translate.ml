@@ -5472,7 +5472,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (match day_kind_unit_of ctx (static_type ctx dur_e) with
       | Some k -> (
           if datetime then scalar_slot ();
-          let atoms, day, _ = dk_date_plus ctx ~subject ~subject_ot ~kind:k ~minus ~datetime:false date_e dur_e in
+          let atoms, day, _ =
+            dk_date_plus ctx ~subject ~subject_ot ~kind:k ~minus ~datetime:false ~node:e date_e dur_e
+          in
           (atoms, day, 1))
       | None ->
       date_step_unit ~datetime (static_type ctx dur_e);
@@ -6073,7 +6075,7 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
       (match day_kind_unit_of ctx (static_type ctx dur_e) with
       | Some k -> (
           if not datetime then pair_slot ();
-          match dk_date_plus ctx ~subject ~subject_ot ~kind:k ~minus ~datetime:true date_e dur_e with
+          match dk_date_plus ctx ~subject ~subject_ot ~kind:k ~minus ~datetime:true ~node:e date_e dur_e with
           | atoms, day, Some ms -> (atoms, day, ms)
           | _, _, None -> assert false)
       | None ->
@@ -6949,8 +6951,22 @@ and dk_duration ctx ~subject ~subject_ot ~kind ~absolute a b =
    lookup over the extension. On a datum-tijd operand (maintainer decision
    2026-09-19) the day kind is judged on the civil day part and the original
    clock time rides through unchanged, so the pair term is rebuilt around the
-   stepped day. *)
-and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime date_e dur_e =
+   stepped day.
+
+   Every fence of the step carries the reach of [node] ([param_reach]) beside
+   [rule_guard], as the §9.5 deposits do. ch. 3.9a: "a member never reached
+   produces no fault", the quantifier fold's form of ch. 5.10's prefix guard.
+   Inside a quantifier fold's matrix the reach is the fold's stop
+   ([emit_kv_reach]); inside a fold member it is the subject and its range;
+   inside a default, the higher defaults of its chain that did not settle.
+   The value rules do not wait for it: the stop is read off the matrix's own
+   atoms, so a value behind it would close a loop through the fold's count.
+   At rule level the reach is [], and a step there translates as before.
+   Where a creation can add a member, the stop hangs on an order the spec
+   does not norm (the atom says "in every allowed order"), and the fences keep
+   firing for every member, reached or not: loud, never silent (README
+   [V5]). *)
+and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) date_e dur_e =
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   let bd, td, ms =
     if datetime then
@@ -6977,7 +6993,8 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime date_e dur_e =
   and res = Printf.sprintf "dkp%d" id in
   let gbody = (base :: ctx.rule_guard) @ bd @ bn in
   let g = String.concat ", " gbody in
-  dk_window_guard ctx ~subject ~body:gbody ~win td;
+  let reach = if doc_dynamic ctx.doc then [] else ctx.param_reach node in
+  dk_window_guard ctx ~subject ~body:(gbody @ reach) ~win td;
   emit ctx "%s(%s,%s) :- %s, %s == 0." zero subject td g n_term;
   emit ctx "%s(%s,%s,%s) :- %s, %s > 0." fwd subject td n_term g n_term;
   emit ctx "%s(%s,%s,0-(%s)) :- %s, %s < 0." bwd subject td n_term g n_term;
@@ -6997,12 +7014,14 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime date_e dur_e =
      statement below. Outside it the window guard has already spoken, and one
      cause gets one sentence: without this, a start past the window's edge
      drew BOTH a window refusal and a reach refusal, the second of them
-     untrue and the first of them the only one that explains anything. *)
+     untrue and the first of them the only one that explains anything. The
+     reach of the step rides the same precondition, so it reaches every fence
+     below. *)
   let lo, hi = win in
   let inwin = Printf.sprintf "dki%d" id in
   emit ctx "%s(%s) :- %s(%s,DKD,_), DKD >= %d, DKD <= %d." inwin subject fwd subject lo hi;
   emit ctx "%s(%s) :- %s(%s,DKD,_), DKD >= %d, DKD <= %d." inwin subject bwd subject lo hi;
-  let ia = Printf.sprintf "%s(%s)" inwin subject in
+  let ia = String.concat ", " (Printf.sprintf "%s(%s)" inwin subject :: reach) in
   (* the REACH fence, read off the table. Three ways it fires, and they are
      the three ways ref's walk hits it: no match within the reach of the
      start; a gap wider than the reach along the way; and — the one a table

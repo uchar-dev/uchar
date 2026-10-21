@@ -132,7 +132,7 @@ spec bug.
     and a rule's condition are read at the fixpoint.
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2],
-  [V3], [V4]),
+  [V3], [V4], [V5]),
   has a frame in the suite, named `README [tag]`, that pins it and
   goes red when the entry no longer holds.
 - Exact arithmetic by declared-decimals integer scaling: a value of an
@@ -463,6 +463,18 @@ Recorded limitations:
   zero in a closed body yields leeg …", _)` → UNSAT, where ref answers:
   `Let m = grondslag ÷ x in (als x ≥ 4 dan acc + 1,00 anders acc + m)`
   over [0] is leeg with the deposit in ref.
+- [V5] The fences of a day-kind step (the reach fence, EF-009, and the
+  window limits) carry the reach of the place beside the condition, as
+  the §9.5 deposits do: in a quantifier fold's matrix the fold's stop,
+  in a fold member or a default its range or its chain, so a member
+  never reached walks no fence (ch. 3.9a; golden
+  `jutterswet-keurtermijn`). In a document with an object creation or a
+  fact creation the stop hangs on an order the spec does not norm, and
+  the fences keep firing for every member, reached or not: `ALLE
+  wachten [gekeurd ; keurdatum plus keurtermijn ligt na de rekendatum]`
+  with W1 not gekeurd and W2 stepping from 2027-03-01 over keurdagen of
+  2026 only, beside a creation of a Keurrapport for each Ploeg, refuses
+  with the reach fence where ref answers.
 - Negative or empty allocation operands make the generated program
   UNSATISFIABLE — clingo then fails exactly where `ref/` faults
   (ch. 4.4), instead of silently diverging by the truncation/floor
