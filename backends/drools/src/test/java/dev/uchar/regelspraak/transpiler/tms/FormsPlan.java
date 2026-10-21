@@ -41,7 +41,7 @@ import java.util.List;
  * card drl-teksttak-op-truth-maintenance ({@link #plan}), those of the rules of a fold of step 3a ({@link #folds}), and
  * those of a uniqueness and of the §9.5 channel of step 3b ({@link #channel}), those of a defaults stack of step 4
  * ({@link #defaults}), and those of a creation and a link ({@link #creations}) and of an allocation
- * ({@link #allocations}) of step 5. They decide nothing of a document's
+ * ({@link #allocations}) of step 5, and in {@link #plan} the reading rule of card fixpoint-readings. They decide nothing of a document's
  * meaning, and no rule of them is meant to fire. The rules are named after what they hold.
  */
 final class FormsPlan {
@@ -62,7 +62,8 @@ final class FormsPlan {
             "java.time.LocalDateTime.parse(", "java.math.RoundingMode.HALF_UP", "Period.class",
             "dev.uchar.regelspraak.ir.Condition.Operator.LATER", "ComputeHelpers.contractBreach(", "ComputeHelpers.computeFault(",
             "ComputeHelpers.inconsistency(", "ComputeHelpers.writersConflict(", "new ParameterState(", "new EvaluationDate(",
-            "new CharacteristicState(", "ComputeHelpers.bucketScalarOf(", "new PathState(");
+            "new CharacteristicState(", "ComputeHelpers.bucketScalarOf(", "new PathState(", "new Reading($onderwerp, ",
+            "_lezing");
 
     private static final String O = "$onderwerp";
 
@@ -122,6 +123,12 @@ final class FormsPlan {
                 Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("padstand", null, null, one, List.of(subject), new Consequence.InsertPathState(O,
                 "Wachter:post", ElementKey.of("post", "hoogte", false), Consequence.StateSource.REACHED, 0,
+                Consequence.Insertion.LOGICAL)));
+        // the reading rule of a build with readings (card fixpoint-readings): the bound slot and a probe slot, which no
+        // pattern binds and the reading carries as null
+        rules.add(new RulePlan("lezing", null, null, new ReadTable(List.of(
+                new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus"), new Read(1, ReadKind.DEPOSIT_FLAG, null, null))),
+                List.of(subject), new Consequence.Reading(O, "/rules/rules/0/versions/0", List.of(0), 2,
                 Consequence.Insertion.LOGICAL)));
         return new Modelplan(List.of(new Modelplan.Global("drempel", BigDecimal.class),
                 new Modelplan.Global("rekendatum", LocalDate.class)), rules);

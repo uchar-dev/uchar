@@ -150,6 +150,11 @@ public final class DroolsBackend {
         return build(JSON.readTree(Files.readString(irPath)), branch);
     }
 
+    /** {@link #build(JsonNode, Branch, boolean)} on the document read from {@code irPath}. */
+    public static Build build(Path irPath, Branch branch, boolean readings) throws IOException {
+        return build(JSON.readTree(Files.readString(irPath)), branch, readings);
+    }
+
     /** Load {@code document}, refuse the forms the backend does not carry, generate and contract-check the fact
      *  beans, analyse every construct with every side table the loader returns, render the analysis as
      *  {@code branch} has it, and build the {@link KieBase}.
@@ -164,8 +169,25 @@ public final class DroolsBackend {
      *  @throws IllegalStateException on the DRL-text branch a DRL text the Drools compiler rejects: a fault of the
      *      rendering, never a form the branch does not carry */
     public static Build build(JsonNode document, Branch branch) {
+        return build(document, branch, false);
+    }
+
+    /**
+     * As {@link #build(JsonNode, Branch)}, and where {@code readings}, a build with readings (card fixpoint-readings):
+     * beside the rule of every form with a condition a reading rule, with the left-hand side of the form's own rule
+     * without its test, which inserts the values that rule binds as a logical fact, so that {@code readingsOf} reads
+     * per form and object how the condition came out at the fixpoint and what each of its nodes found. The reading
+     * rules read what the other rules derive and nothing reads what they insert, so the facts the other rules derive
+     * at the fixpoint are those of the build without them. They belong to no form: {@link Observer} and
+     * {@link #coverage} do not see them, and they count among the rules of the fire cap ({@link #fire}). Without
+     * {@code readings} the build is {@link #build(JsonNode, Branch)}'s, the one an answer is given from.
+     */
+    public static Build build(JsonNode document, Branch branch, boolean readings) {
         Objects.requireNonNull(branch, "branch");
-        IrLoader.Loaded loaded = IrLoader.loadAll(document);   // the model plus the ch. 7 prioritized-defaults extension beside it
+        // the model plus the ch. 7 prioritized-defaults extension beside it, and for a build with readings the positions
+        // of the document's nodes
+        IrLoader.Positioned positioned = readings ? IrLoader.loadWithPositions(document) : null;
+        IrLoader.Loaded loaded = readings ? positioned.loaded() : IrLoader.loadAll(document);
         RegelSpraakModel model = loaded.model();
         refuseBeanNameCollision(loaded);
 
@@ -201,8 +223,8 @@ public final class DroolsBackend {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             return switch (branch) {
-                case EXEC_MODEL -> execModelBranch(loaded, cl);
-                case DRL_TEXT -> drlBranch(loaded, cl);
+                case EXEC_MODEL -> execModelBranch(loaded, cl, positioned);
+                case DRL_TEXT -> drlBranch(loaded, cl, positioned);
             };
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
@@ -267,8 +289,8 @@ public final class DroolsBackend {
      *  A form the transpiler does not lower is refused from its manifest, in the {@code transpiler SKIP:} sentence the
      *  toolchain reads; a cycle of the dependency graph that WF-045 or WF-046 forbids is refused before the KieBase is
      *  built, since truth maintenance gives such a cycle no single fixpoint ({@code Cycles}). */
-    private static Build execModelBranch(IrLoader.Loaded loaded, ClassLoader cl) {
-        TmsTranspiler t = analyse(loaded, cl);
+    private static Build execModelBranch(IrLoader.Loaded loaded, ClassLoader cl, IrLoader.Positioned positioned) {
+        TmsTranspiler t = analyse(loaded, cl, positioned);
         KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(t.model(), EqualityBehaviorOption.EQUALITY);
         return new Build(loaded.model(), cl, t, null, List.copyOf(t.coverage()), kieBase);
     }
@@ -277,9 +299,10 @@ public final class DroolsBackend {
      *  sentence each: a form the transpiler does not lower, from its manifest, in the {@code transpiler SKIP:}
      *  sentence the toolchain reads; a cycle of the dependency graph that WF-045 or WF-046 forbids; and two rules of one
      *  name, after the label {@code exec-model:}, the name of the analysis. */
-    private static TmsTranspiler analyse(IrLoader.Loaded loaded, ClassLoader cl) {
-        TmsTranspiler t = TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.roleBindings(),
-                loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings());
+    private static TmsTranspiler analyse(IrLoader.Loaded loaded, ClassLoader cl, IrLoader.Positioned positioned) {
+        TmsTranspiler t = positioned != null ? TmsTranspiler.withReadings(positioned, cl)
+                : TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.roleBindings(),
+                        loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings());
         for (Coverage d : t.coverage())
             if (!d.lowered()) throw new Excluded(new Reason(d.code(), Msg.drools("FRAME.transpiler-verdict",
                     "verdict", d.verdict(), "key", d.key(), "reasonClause", d.reason().isEmpty() ? ""
@@ -301,8 +324,8 @@ public final class DroolsBackend {
      *  which {@link Build#dayKindGlobals} gives from the analysis. A text the Drools compiler rejects is a fault of the
      *  rendering, not a form the branch does not carry: it fails with an {@link IllegalStateException}, which a caller
      *  that knows the document names. */
-    private static Build drlBranch(IrLoader.Loaded loaded, ClassLoader cl) {
-        TmsTranspiler t = analyse(loaded, cl);
+    private static Build drlBranch(IrLoader.Loaded loaded, ClassLoader cl, IrLoader.Positioned positioned) {
+        TmsTranspiler t = analyse(loaded, cl, positioned);
         String drl;
         try {
             drl = t.drl();

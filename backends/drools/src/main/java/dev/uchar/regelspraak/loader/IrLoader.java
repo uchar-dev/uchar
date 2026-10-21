@@ -219,6 +219,11 @@ public final class IrLoader {
     /** The JSON pointer of every AttributeReference, fold and role check read, by identity: the node kinds
      *  {@link #checkSubjects} refuses after the whole document is read, at the place they were written. */
     private final Map<Object, String> sites = new java.util.IdentityHashMap<>();
+    /** The place of every object of the document in its pre-order, by identity: the order {@link #positions} keeps. */
+    private final Map<JsonNode, Integer> order = new java.util.IdentityHashMap<>();
+    /** Where every condition and expression node and every form version this loader read stands on the wire; see
+     *  {@link Positioned}. */
+    private final NodePositions positions = new NodePositions();
 
     private IrLoader() {}
 
@@ -276,6 +281,12 @@ public final class IrLoader {
                          Map<Object, List<RoleBindingRef>> sourcePaths,
                          Map<Object, List<RoleBindingRef>> navigationBindings) {}
 
+    /** A loaded document with the positions of its nodes on the wire ({@link NodePositions}): the JSON pointer, the
+     *  place in the document's pre-order and the wire kind of every node of the condition and the expression union this
+     *  loader read, and the pointer of every form version, by identity of the record. No side table of the lowering:
+     *  only a build with readings reads it, which numbers the nodes of a form by it ({@code TmsTranspiler#withReadings}). */
+    public record Positioned(Loaded loaded, NodePositions positions) {}
+
     /** Parse a {@code uchar-ir-v1} tree into a resolved model, or throw {@link Refusal} for a form
      *  the v0 backend does not carry. What rides beside the model — the prioritized-defaults extension and, since
      *  L2 of the v1 wire migration, every binding a read, a fold, a role check or a verdeling walks — is parsed but
@@ -293,6 +304,14 @@ public final class IrLoader {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
         return new Loaded(model, l.prioritizedDefaults, l.roleBindings, l.lets, l.sourcePaths, l.navigationBindings);
+    }
+
+    /** As {@link #loadAll}, with the positions of the document's nodes beside what it returns. */
+    public static Positioned loadWithPositions(JsonNode root) {
+        IrLoader l = new IrLoader();
+        RegelSpraakModel model = l.model(root);
+        return new Positioned(new Loaded(model, l.prioritizedDefaults, l.roleBindings, l.lets, l.sourcePaths,
+                l.navigationBindings), l.positions);
     }
 
     /** The IR-SPEC ch. 4.5 other-end narrowing of a loaded {@code RoleMembership}: the type the filler of the other
@@ -584,6 +603,7 @@ public final class IrLoader {
         if (n == null) return;
         if (n.isObject()) {
             paths.put(n, path);
+            order.put(n, order.size());
             for (Map.Entry<String, JsonNode> e : n.properties())
                 assignPaths(e.getValue(), path + "/" + e.getKey().replace("~", "~0").replace("/", "~1"));
         } else if (n.isArray()) {
@@ -1446,7 +1466,7 @@ public final class IrLoader {
     private Expr expr(JsonNode n) {
         if (n == null || n.isNull()) return null;
         String node = nodeKind(n, EXPRESSION, "expression");
-        return switch (node) {
+        Expr e = switch (node) {
             case "Literal" -> literal(n);
             case "TextComposition" -> {
                 derivedType(n);
@@ -1589,6 +1609,8 @@ public final class IrLoader {
             // node of the v0 shape that L4 replaced or L5 renamed, a node of another union, or no node at all
             default -> throw new DocumentError(pathOf(n) + "/node", "unknown expr node \"" + node + "\"");
         };
+        positions.node(e, pathOf(n), order.get(n), node);
+        return e;
     }
 
     // --- the expression layer of L4 (B21, B22, B23) -----------------------------------------------------
@@ -2068,7 +2090,7 @@ public final class IrLoader {
     private Condition condition(JsonNode n) {
         if (n == null || n.isNull()) return null;
         String node = nodeKind(n, CONDITION, "condition");
-        return switch (node) {
+        Condition c = switch (node) {
             // a whole-period qualifier is written whole or not at all: absent is none, the record's null
             case "Comparison" -> {
                 String p = pathOf(n);
@@ -2183,6 +2205,8 @@ public final class IrLoader {
             // union, or no node at all
             default -> throw new DocumentError(pathOf(n) + "/node", "unknown condition node \"" + node + "\"");
         };
+        positions.node(c, pathOf(n), order.get(n), node);
+        return c;
     }
 
     /** A negated leeg/gevuld test is lowered HERE to its sister soort, unnegated: pointwise "niet leeg" IS "gevuld"
@@ -2356,6 +2380,7 @@ public final class IrLoader {
         checkMembersKind(target, text(t, "subjectType"), ruleKind, path + "/target");
         ResolvedRule r = new ResolvedRule(version.name(), ruleKind, target, expr(jsonNode(n, path, "value")),
                 condition(nodeField(n, "condition")), validity(n, path), annotations);
+        positions.version(r, path);
         // WF-022's value clause: a characteristic attribution writes the boolean constant true. Neither branch
         // reads the value — the exec-model one writes true whatever it says, the DRL-text one writes what it
         // says — so on a false (measured 2026-09-23 on the negative wf022-characteristic-false, verifier bypassed)
@@ -2429,6 +2454,7 @@ public final class IrLoader {
             // derivation, and it is the only route for a self-typed pair), so it rides BESIDE the model.
             RoleBindingRef vr = roleBinding(k, p, "connectingRole");
             if (vr != null) roleBindings.put(oc, vr);
+            positions.version(oc, p);
             m.objectCreations.add(oc);
         }
     }
@@ -2457,6 +2483,7 @@ public final class IrLoader {
             RoleBindingRef vr = roleBinding(k, p, "connectingRole");
             if (vr == null) throw new DocumentError(p + "/connectingRole", "expected a RoleBinding, got null");
             roleBindings.put(vd, vr);
+            positions.version(vd, p);
             m.allocations.add(vd);
         }
     }
@@ -2468,8 +2495,10 @@ public final class IrLoader {
             JsonNode k = v.jsonNode();
             String p = v.path();
             versionFields(k, p, "ConsistencyVersion", List.of("subject", "assertion", "validity"), List.of("source"));
-            m.consistencies.add(new ResolvedConsistency(v.name(), ot(textOrNull(k, p, "subject")),
-                    condition(jsonNode(k, p, "assertion")), source(k), sourceLine(k), validity(k, p)));
+            ResolvedConsistency c = new ResolvedConsistency(v.name(), ot(textOrNull(k, p, "subject")),
+                    condition(jsonNode(k, p, "assertion")), source(k), sourceLine(k), validity(k, p));
+            positions.version(c, p);
+            m.consistencies.add(c);
         }
     }
 
@@ -2545,9 +2574,11 @@ public final class IrLoader {
                 ts.add(new ResolvedFactCreation.PathStep(null, null, false, rb));
             String factType = textAt(k, p, "factType"), anchorRole = textAt(k, p, "anchorRole"),
                     targetRole = textAt(k, p, "targetRole");
-            m.factCreations.add(new ResolvedFactCreation(v.name(), ot(textOrNull(k, p, "anchor")),
+            ResolvedFactCreation fc = new ResolvedFactCreation(v.name(), ot(textOrNull(k, p, "anchor")),
                     targetKind(p, factType, anchorRole, targetRole), null, null, ts, condition(nodeField(k, "condition")),
-                    validity(k, p), factType, anchorRole, targetRole, hops.get(hops.size() - 1)));
+                    validity(k, p), factType, anchorRole, targetRole, hops.get(hops.size() - 1));
+            positions.version(fc, p);
+            m.factCreations.add(fc);
         }
     }
 

@@ -26,7 +26,8 @@ import java.util.List;
  * object before it inserts anything ({@link Creation}); and those of the rules of a defaults stack (step 1c-C2): the
  * decision of a default or of a reconciliation ({@link Decision}) and the conflict of a reconciliation ({@link Conflict}),
  * each with the facts it inserts as a kind of their own ({@link StackFact}): the target, and the control facts by
- * which the rules of the stack displace one another.
+ * which the rules of the stack displace one another; and, in a build with readings only, the reading of a form's
+ * condition ({@link Reading}, card fixpoint-readings).
  */
 public sealed interface Consequence {
 
@@ -527,6 +528,20 @@ public sealed interface Consequence {
             if (!(fact instanceof StackFact.Inconsistency
                     || fact instanceof StackFact.Outcome u && u.kind() == Kind.CONFLICT))
                 throw new IllegalArgumentException("een conflict voegt zijn uitkomst of de inconsistentie in, niet " + fact);
+        }
+    }
+
+    /**
+     * The reading of the condition of the form {@code form}, named by its JSON pointer into the document, on the object
+     * {@code subject} binds: a {@code Reading} with the bound values at {@code slots} of a value array of {@code size}
+     * slots, null at every other slot, inserted as {@code insertion} says. The consequence of the reading rule of a form
+     * in a build with readings, whose left-hand side is that of the form's own rule without its test
+     * ({@code TmsTranspiler#readingsOf}); {@code slots} are the slots that left-hand side binds. It computes nothing,
+     * and no rule reads what it inserts.
+     */
+    record Reading(String subject, String form, List<Integer> slots, int size, Insertion insertion) implements Consequence {
+        public Reading {
+            slots = List.copyOf(slots);
         }
     }
 

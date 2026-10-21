@@ -341,6 +341,14 @@ public final class CaseRunner {
         return build(irPath, branch);
     }
 
+    /** The measuring seam on a build with readings where {@code readings} ({@link DroolsBackend#build(Path,
+     *  DroolsBackend.Branch, boolean)}): the witnesses of card fixpoint-readings fire one case on the build with and the
+     *  build without and read the readings of the first. Package-private, no production caller. */
+    static CaseRunner forMeasurement(Path irPath, DroolsBackend.Branch branch, boolean readings)
+            throws java.io.IOException {
+        return build(irPath, branch, readings);
+    }
+
     /** What a measuring harness does with one session that {@link #withSession} set up: fire it and measure it as it
      *  chooses. {@code labels} maps each case label to its input bean. */
     @FunctionalInterface
@@ -384,7 +392,13 @@ public final class CaseRunner {
      *  {@link DroolsBackend#build(Path, DroolsBackend.Branch)}, the backend's public entry, so the green replay,
      *  the red probe and every witness seam build exactly as a consumer of the backend does. */
     private static CaseRunner build(Path irPath, DroolsBackend.Branch branch) throws java.io.IOException {
-        DroolsBackend.Build b = DroolsBackend.build(irPath, branch);
+        return build(irPath, branch, false);
+    }
+
+    /** As above, on a build with readings where {@code readings}. */
+    private static CaseRunner build(Path irPath, DroolsBackend.Branch branch, boolean readings)
+            throws java.io.IOException {
+        DroolsBackend.Build b = DroolsBackend.build(irPath, branch, readings);
         CaseRunner runner = new CaseRunner(b.model(), b.kieBase(), b.beanLoader(), b.dayKindGlobals());
         runner.backendBuild = b;
         if (SessionDump.SEAM_DIRECTORY != null) runner.documenthash = SessionDump.hash(irPath);

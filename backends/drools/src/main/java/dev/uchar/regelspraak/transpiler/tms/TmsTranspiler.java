@@ -71,6 +71,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -330,10 +331,26 @@ public final class TmsTranspiler {
      *  steps or counts in its day kind ({@link #dayKindPredicate}). A definition reads nothing of working memory
      *  (WF-031), so its predicate is a constant of the document and no rule binds anything for it. */
     private final DayKinds dayKinds;
+    /** Where the nodes of the document stand on the wire, in a build with readings (card fixpoint-readings), which
+     *  plans a reading rule beside the rule of every form with a condition ({@code readingsOf}); null in a build
+     *  without, whose plan is that of a build before the card. */
+    private final dev.uchar.regelspraak.loader.NodePositions positions;
+    /** While the condition and the value of a form's own rule compile in a build with readings: the term the analysis
+     *  plans for each node of the IR it compiles there, by identity ({@link #note}); null at every other moment. */
+    private Map<Object, Term> noted;
+    /** Beside {@link #noted}: the unit of each expression node, by the effective-type law (RUNTIME-SEMANTICS ch. 2.10). */
+    private Map<Object, Unit> notedUnits;
+    /** Above zero while the rules of a fold are built ({@link #foldFor}): a node compiled there is evaluated per member
+     *  in those rules, not in the rule that reads the fold, so it is not noted. */
+    private int memberwise;
+    /** The reading rules of a build with readings, in the order their forms lowered. */
+    private final List<ReadingRule> readingRules = new ArrayList<>();
 
     private TmsTranspiler(RegelSpraakModel model, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
                           Map<Object, List<RoleBindingRef>> navigationBindings, Map<Object, RoleBindingRef> roleBindings,
-                          Map<Object, List<RoleBindingRef>> sourcePaths, EffectiveUnit eff) {
+                          Map<Object, List<RoleBindingRef>> sourcePaths, EffectiveUnit eff,
+                          dev.uchar.regelspraak.loader.NodePositions positions) {
+        this.positions = positions;
         this.model = model;
         this.beanLoader = beanLoader != null ? beanLoader : TmsTranspiler.class.getClassLoader();
         this.defaults = defaults;
@@ -352,6 +369,26 @@ public final class TmsTranspiler {
             Map<Object, RoleBindingRef> roleBindings, List<Expr.Let> lets,
             Map<Object, List<RoleBindingRef>> sourcePaths,
             Map<Object, List<RoleBindingRef>> navigationBindings) {
+        return build(m, beanLoader, defaults, roleBindings, lets, sourcePaths, navigationBindings, null);
+    }
+
+    /** A build with readings (card fixpoint-readings) of the loaded {@code document}: the build of
+     *  {@link #build(RegelSpraakModel, ClassLoader, List, Map, List, Map, Map)}, and beside the rule of every form with a
+     *  condition a reading rule, whose facts {@code readingsOf} reads, numbering the nodes of a form by the positions the
+     *  loader gives with the document. It takes the loaded document whole, so it leaves no side table out. */
+    public static TmsTranspiler withReadings(dev.uchar.regelspraak.loader.IrLoader.Positioned document,
+                                             ClassLoader beanLoader) {
+        Objects.requireNonNull(document, "document");
+        dev.uchar.regelspraak.loader.IrLoader.Loaded l = document.loaded();
+        return build(l.model(), beanLoader, l.prioritizedDefaults(), l.roleBindings(), l.lets(), l.sourcePaths(),
+                l.navigationBindings(), Objects.requireNonNull(document.positions(), "positions"));
+    }
+
+    /** The build, with {@code positions} for a build with readings and null for one without. */
+    private static TmsTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
+            Map<Object, RoleBindingRef> roleBindings, List<Expr.Let> lets,
+            Map<Object, List<RoleBindingRef>> sourcePaths,
+            Map<Object, List<RoleBindingRef>> navigationBindings, dev.uchar.regelspraak.loader.NodePositions positions) {
         Objects.requireNonNull(defaults, "side table 'defaults' is null — pass an empty list for a document without one");
         Objects.requireNonNull(roleBindings, "side table 'roleBindings' is null — pass an empty map for a document without one");
         Objects.requireNonNull(lets, "side table 'lets' is null — pass an empty list for a document without one");
@@ -360,7 +397,7 @@ public final class TmsTranspiler {
         // copied by identity: the loader keys its tables on the nodes, which are records with value equality
         Map<Object, List<RoleBindingRef>> nav = new IdentityHashMap<>(navigationBindings);
         TmsTranspiler t = new TmsTranspiler(m, beanLoader, defaults, nav, new IdentityHashMap<>(roleBindings),
-                new IdentityHashMap<>(sourcePaths), new EffectiveUnit(lets));
+                new IdentityHashMap<>(sourcePaths), new EffectiveUnit(lets), positions);
         t.modelplan = t.run();
         t.model0 = PatternDslRendering.model(t.modelplan);
         return t;
@@ -1067,6 +1104,8 @@ public final class TmsTranspiler {
         // the contributions of the folds the lowered forms read; a fold of a refused form left none here
         for (List<RulePlan> rs : contributionRules.values()) rules.addAll(rs);
         for (String relation : createdRelations) rules.addAll(linkRules(relation));
+        // the reading rules of a build with readings belong to no form, so the observer and the coverage pass them by
+        for (ReadingRule r : readingRules) rules.add(r.plan());
         // a standing is built once per member, for every rule that reads it, and only for one a lowered rule reads: a
         // standing nothing reads would only add firings
         List<RulePlan> states = new ArrayList<>();
@@ -1205,7 +1244,9 @@ public final class TmsTranspiler {
         Supplier<Reads> fresh = () -> new Reads(target.objectType()).valid(r.validity());
         Reads reads = fresh.get();
         Set<Integer> read = reads.follow();
+        beginReading();
         Term testTerm = r.condition() == null ? null : conditionTerm(r.condition(), reads);
+        Noted noted = endReading();
         boolean canFail = reads.canFail();
         reads.stop();
         List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read, r.condition());
@@ -1216,6 +1257,9 @@ public final class TmsTranspiler {
         List<RulePlan> out = new ArrayList<>();
         out.add(reads.rulePlan(ruleName, items,
                 new Consequence.Characteristic(SUBJECT, key, Consequence.Insertion.LOGICAL)));
+        if (noted != null && testTerm != null)
+            readingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false), testTerm, null,
+                    r.condition(), null, noted, r.validity(), false);
         if (canFail) out.add(conditionFaultRule(r.name(), ruleName, fresh, r.condition(), null));
         RulePlan deposit = depositRule(r.name(), ruleName, fresh, r.condition(), null);
         if (deposit != null) out.add(deposit);
@@ -1328,6 +1372,7 @@ public final class TmsTranspiler {
             // computed from
             LocalDate anchor = model.fixedStartPointAnchor(target.declarant(), target.name());
             Term periods = new Term.SlotValue(condition, source(f.filter().source()));
+            note(f.filter(), periods);
             Term days = anchor == null
                     ? new Term.Call(StaticFunction.RS_DAY_COUNT, List.of(periods, constant(gran),
                             constant(Period.class)), null)
@@ -1351,10 +1396,12 @@ public final class TmsTranspiler {
         int subjectType = reads.member();
         reads.markFail();
         String baseName = base.name();
-        Term proportional = new Term.Call(StaticFunction.RS_TIME_PROPORTIONAL, List.of(
-                new Term.SlotValue(condition, source(f.filter().source())),
-                complete(baseValue, "the pro-rata base \"" + baseName + "\" needs the full timeline; ", subjectType,
-                        " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", source(b.source())),
+        Term periods = new Term.SlotValue(condition, source(f.filter().source()));
+        note(f.filter(), periods);
+        Term whole = complete(baseValue, "the pro-rata base \"" + baseName + "\" needs the full timeline; ", subjectType,
+                " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", source(b.source()));
+        note(b, whole);
+        Term proportional = new Term.Call(StaticFunction.RS_TIME_PROPORTIONAL, List.of(periods, whole,
                 constant(gran), constant(Period.class)), null);
         return new Term.Call(StaticFunction.PERIOD_LIST, List.of(proportional), source(f.source()));
     }
@@ -1533,6 +1580,7 @@ public final class TmsTranspiler {
         Supplier<Reads> fresh = () -> readings(subject, absorbed).valid(r.validity());
         Reads reads = fresh.get();
         Set<Integer> read = reads.follow();
+        beginReading();
         Term testTerm = r.condition() == null ? null : conditionTerm(r.condition(), reads);
         boolean canFail = reads.canFail();
         reads.stop();
@@ -1543,10 +1591,13 @@ public final class TmsTranspiler {
                 ? timelineValue((Expr.FunctionCall) r.value(), member, subject, reads)
                 : restated(value(r.value(), reads), eff.unitOf(r.value()), member.datatype().unitOf(),
                         "een §4 schrijfgrens naar het doel");
+        if (member.time() != null) note(r.value(), value);
+        Noted noted = endReading();
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
         List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read, r.condition());
-        if (blockade != null) items.addAll(blockade.apply(reads));
+        List<LhsItem> blockadeItems = blockade == null ? List.of() : blockade.apply(reads);
+        items.addAll(blockadeItems);
         String name = r.name();
         String ruleName = model.emittedRuleName(name);
         Consequence consequence = new Consequence.Value(SUBJECT, key, name, value, List.copyOf(use), reads.size(), true,
@@ -1556,6 +1607,14 @@ public final class TmsTranspiler {
         reads.recorder();
         List<RulePlan> out = new ArrayList<>();
         out.add(reads.rulePlan(ruleName, items, consequence));
+        if (noted != null && testTerm != null) {
+            // an initialisation's guard stays: where another writer's value or the input fills the target, the form is
+            // not at its turn (RUNTIME-SEMANTICS ch. 5.4)
+            List<LhsItem> readingItems = reads.readingPlan(List.of(), false);
+            readingItems.addAll(blockadeItems);
+            readingRule(ruleName, positions.versionOf(r), reads, readingItems, testTerm, value, r.condition(), r.value(),
+                    noted, r.validity(), blockade != null);
+        }
         if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, r.condition(), blockade));
         RulePlan deposit = depositRule(name, ruleName, fresh, r.condition(), blockade);
         if (deposit != null) out.add(deposit);
@@ -1707,7 +1766,9 @@ public final class TmsTranspiler {
         Supplier<Reads> fresh = () -> new Reads(c.subject()).valid(c.validity());
         Reads reads = fresh.get();
         Set<Integer> read = reads.follow();
+        beginReading();
         Term holds = conditionTerm(c.assertion(), reads);
+        Noted noted = endReading();
         boolean canFail = reads.canFail();
         reads.stop();
         Term violated = new Term.Call(StaticFunction.NIET, List.of(holds), source(c.assertion().source()));
@@ -1718,6 +1779,10 @@ public final class TmsTranspiler {
         // EF-025: the consistency does not hold (RUNTIME-SEMANTICS ch. 5.6, 5.7b)
         out.add(reads.rulePlan(model.emittedRuleName(name), items,
                 new Consequence.Inconsistency(SUBJECT, name, List.of("EF-025"), Consequence.Insertion.LOGICAL)));
+        // the reading is of the assertion, which the rule's test negates
+        if (noted != null)
+            readingRule(model.emittedRuleName(name), positions.versionOf(c), reads, reads.readingPlan(List.of(), false),
+                    holds, null, c.assertion(), null, noted, c.validity(), false);
         if (canFail) out.add(conditionFaultRule(name, model.emittedRuleName(name), fresh, c.assertion(), null));
         RulePlan deposit = depositRule(name, model.emittedRuleName(name), fresh, c.assertion(), null);
         if (deposit != null) out.add(deposit);
@@ -2113,7 +2178,9 @@ public final class TmsTranspiler {
         Supplier<Reads> fresh = () -> new Reads(source).valid(v.validity());
         Reads reads = fresh.get();
         Set<Integer> read = reads.follow();
+        beginReading();
         Term testTerm = v.condition() == null ? null : conditionTerm(v.condition(), reads);
+        Noted noted = endReading();
         boolean canFail = reads.canFail();
         reads.stop();
         int p = reads.own(pot);
@@ -2124,6 +2191,9 @@ public final class TmsTranspiler {
         out.add(reads.rulePlan(ruleName, items, new Consequence.Payout(SUBJECT, name, method, p, list,
                 weight != null, maximum != null, v.descending(), v.roundingDecimals(), shareKey, restKey,
                 name, Consequence.Insertion.LOGICAL)));
+        if (noted != null && testTerm != null)
+            readingRule(ruleName, positions.versionOf(v), reads, reads.readingPlan(List.of(), false), testTerm, null,
+                    v.condition(), null, noted, v.validity(), false);
         derived.put(shareKey, share);
         if (rest != null) derived.put(restKey, rest);
         if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, v.condition(), null));
@@ -2276,7 +2346,9 @@ public final class TmsTranspiler {
         Supplier<Reads> newReads = () -> new Reads(subject).valid(oc.validity());
         Reads reads = newReads.get();
         Set<Integer> read = reads.follow();
+        beginReading();
         Term testTerm = oc.condition() == null ? null : conditionTerm(oc.condition(), reads);
+        Noted noted = endReading();
         boolean canFail = reads.canFail();
         reads.stop();
         Set<Integer> use = reads.follow();
@@ -2344,6 +2416,12 @@ public final class TmsTranspiler {
         creationStrata.add(stratum);
         List<RulePlan> out = new ArrayList<>();
         out.add(reads.rulePlan(ruleName, OBJECT_CREATION, items, creation));
+        // the condition on every subject at the end world, in the main group: without the creation's guard, its phase
+        // and its own fault, which keep it from making twice; the guard of the 1:1 shape stays, under which a subject
+        // linked in the input is not the creation's to make for (RUNTIME-SEMANTICS ch. 5.5)
+        if (noted != null && testTerm != null)
+            readingRule(ruleName, positions.versionOf(oc), reads, reads.readingPlan(List.of(), true), testTerm, null,
+                    oc.condition(), null, noted, oc.validity(), k.oneToOne());
         if (canFail) out.add(conditionFaultRule(name, ruleName, newReads, oc.condition(), null));
         RulePlan deposit = depositRule(name, ruleName, newReads, oc.condition(), null);
         if (deposit != null) out.add(deposit);
@@ -2456,7 +2534,9 @@ public final class TmsTranspiler {
         Supplier<Reads> fresh = () -> new Reads(anchor).valid(fc.validity());
         Reads reads = fresh.get();
         Set<Integer> read = reads.follow();
+        beginReading();
         Term testTerm = anchorGuard == null ? null : conditionTerm(anchorGuard, reads);
+        Noted noted = endReading();
         boolean canFail = reads.canFail();
         reads.stop();
         int stratum = stratum(fc, fc.name());
@@ -2495,6 +2575,11 @@ public final class TmsTranspiler {
         creationStrata.add(stratum);
         List<RulePlan> out = new ArrayList<>();
         out.add(reads.rulePlan(ruleName, FACT_CREATION, items, relationLink));
+        // the guard on the anchor at the end world, in the main group, without the creation's phase and the path to
+        // its targets, so one reading per anchor
+        if (noted != null && testTerm != null)
+            readingRule(ruleName, positions.versionOf(fc), reads, reads.readingPlan(List.of(), true), testTerm, null,
+                    anchorGuard, null, noted, fc.validity(), false);
         if (canFail) out.add(conditionFaultRule(fc.name(), ruleName, fresh, anchorGuard, null));
         RulePlan deposit = depositRule(fc.name(), ruleName, fresh, anchorGuard, null);
         if (deposit != null) out.add(deposit);
@@ -3110,29 +3195,169 @@ public final class TmsTranspiler {
         };
         Reads reads = fresh.get();
         Set<Integer> read = reads.follow();
+        beginReading();
         Term testTerm = d.condition() == null ? null : conditionTerm(d.condition(), reads);
         boolean canFail = reads.canFail();
         reads.stop();
         String name = b.name;
-        List<LhsItem> items;
+        List<LhsItem> items, control;
         Consequence decision;
+        Term value = null;
+        Noted noted;
         if (b.characteristic) {
-            items = reads.plan(conditionRole(canFail), testTerm, read, d.condition(), guard.get());
+            noted = endReading();
+            control = guard.get();
+            items = reads.plan(conditionRole(canFail), testTerm, read, d.condition(), control);
             decision = new Consequence.Decision(SUBJECT, constant(d.decision()), List.of(), reads.size(), false, null, facts,
                     Consequence.Insertion.LOGICAL);
         } else {
             Set<Integer> use = reads.follow();
-            Term value = restated(value(d.consequence(), reads), eff.unitOf(d.consequence()),
+            value = restated(value(d.consequence(), reads), eff.unitOf(d.consequence()),
                     b.member.datatype().unitOf(), "een §4 schrijfgrens naar het doel");
             reads.stop();
-            items = reads.plan(conditionRole(canFail), testTerm, read, d.condition(), guard.get());
+            noted = endReading();
+            control = guard.get();
+            items = reads.plan(conditionRole(canFail), testTerm, read, d.condition(), control);
             decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), true,
                     new Consequence.FaultName(name, name), facts, Consequence.Insertion.LOGICAL);
         }
         b.readings.add(reads);
         List<RulePlan> out = new ArrayList<>();
         out.add(reads.rulePlan(ruleName, items, decision));
+        // the control facts stay: a default a higher one displaced is not at its turn (RUNTIME-SEMANTICS ch. 7.1, 7.9);
+        // an ordinary rule without a condition that the fold of ch. 7.10 took in has no condition to read
+        ResolvedRule madeFrom = stacks.ruleOf(d);
+        if (noted != null && testTerm != null && (madeFrom == null || madeFrom.condition() != null))
+            readingRule(ruleName, pointerOf(d), reads, reads.readingPlan(control, false), testTerm, value, d.condition(),
+                    b.characteristic ? null : d.consequence(), noted, k.validity(), !control.isEmpty() || d.initialisation());
         if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, d.condition(), l -> guard.get()));
+        return out;
+    }
+
+    // ---------------- the readings of a build with readings ----------------
+
+    /** What the analysis noted while the condition and the value of one form's own rule compiled ({@link #note}): the
+     *  term of each node and the unit of each expression node, by identity of the node. */
+    private record Noted(Map<Object, Term> terms, Map<Object, Unit> units) {}
+
+    /** Starts noting the terms of the nodes the condition and the value of a form's own rule compile, in a build with
+     *  readings; nothing in a build without. */
+    private void beginReading() {
+        if (positions == null) return;
+        if (noted != null) throw new IllegalStateException("de lezing van een vorm begint terwijl die van een andere loopt");
+        noted = new IdentityHashMap<>();
+        notedUnits = new IdentityHashMap<>();
+    }
+
+    /** What {@link #beginReading} noted since it started, and the end of it; null in a build without readings. */
+    private Noted endReading() {
+        if (positions == null) return null;
+        Noted n = new Noted(noted, notedUnits);
+        noted = null;
+        notedUnits = null;
+        return n;
+    }
+
+    /** One node of a form's reading: its number, its kind as the wire spells it, the term that computes it in the
+     *  form's own rule, its unit, and for the node of a fold over a set the fold, whose contributions are its
+     *  contributors, with the quantifier fold the node is where it is one. */
+    private record Site(int node, String kind, Term term, Unit unit, Fold fold, Condition.QuantifierFold quantifier) {}
+
+    /**
+     * The reading rule of one form in a build with readings, with what {@code readingsOf} needs to read its facts:
+     * the form's pointer, its validity, whether the form has a guard of its turn (control facts of a defaults stack,
+     * the guard of an initialisation, the 1:1 guard of an object creation), the planned condition and value of the
+     * form's own rule, the very terms its test and its consequence evaluate, and the nodes of the reading in their
+     * order, a node evaluated per member of a fold left out.
+     */
+    private record ReadingRule(RulePlan plan, String pointer, Validity validity, boolean guarded, Term condition,
+                               Term value, List<Site> sites) {
+
+        /** The subject pattern of the reading rule. */
+        Subject subject() {
+            for (LhsItem i : plan.leftSide()) if (i instanceof Subject o) return o;
+            throw new IllegalStateException("de leesregel " + plan.name() + " heeft geen onderwerppatroon");
+        }
+
+        /** Whether the form runs on {@code o}: an instance of its subject's bean class that the class constraints of
+         *  the subject pattern admit, the concrete type of a stack and the types a stack takes a rule from. Every other
+         *  constraint of that pattern is a guard of the form's turn. */
+        boolean inRange(Object o) {
+            Subject s = subject();
+            if (!s.beanClass().isInstance(o)) return false;
+            for (Alpha a : s.alpha())
+                for (Alpha.FieldTest t : a.tests()) {
+                    if (t.field() != null || !t.path().isEmpty()) continue;
+                    if (t.op() == Alpha.Comparator.CLASS_IS && o.getClass() != t.value()) return false;
+                    if (t.op() == Alpha.Comparator.CLASS_NOT_IN && ((Collection<?>) t.value()).contains(o.getClass()))
+                        return false;
+                }
+            return true;
+        }
+    }
+
+    /**
+     * Plans the reading rule of the form {@code pointer}, whose own rule is {@code ruleName} and reads through
+     * {@code reads} (card fixpoint-readings): its left-hand side is that rule's with the planned items {@code items}
+     * after the subject pattern, the rule's own without its test, and its consequence inserts the {@link Reading} of
+     * the subject; beside it the terms {@code condition} and {@code value} of the rule's test and consequence, and the
+     * nodes of {@code irCondition} and {@code irValue} numbered in the pre-order of the document, each with the term the
+     * analysis noted for it ({@code noted}). A node without a term below the node of a fold over a set is evaluated per
+     * member of the fold; any other node without one is a place of the analysis that does not note its node, a fault
+     * of this class, refused loudly.
+     */
+    private void readingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items, Term condition,
+                             Term value, Condition irCondition, Expr irValue, Noted noted, Validity validity,
+                             boolean guarded) {
+        if (pointer == null)
+            throw new IllegalStateException("de vorm van de regel " + ruleName + " staat niet in het document dat de lader"
+                    + " las: een lezing noemt haar vorm naar haar plaats");
+        RulePlan plan = reads.readingRulePlan(ruleName + ": lezing", pointer, items);
+        List<Object> nodes = new ArrayList<>(positions.subtree(irCondition));
+        if (irValue != null) nodes.addAll(positions.subtree(irValue));
+        List<String> foldsAt = new ArrayList<>();
+        for (Object n : nodes)
+            if (folds.containsKey(n) && noted.terms().containsKey(n)) foldsAt.add(positions.of(n).pointer() + "/");
+        List<Site> sites = new ArrayList<>();
+        for (int i = 0; i < nodes.size(); i++) {
+            Object n = nodes.get(i);
+            dev.uchar.regelspraak.loader.NodePositions.Position at = positions.of(n);
+            Term t = noted.terms().get(n);
+            if (t == null) {
+                if (foldsAt.stream().noneMatch(at.pointer()::startsWith))
+                    throw new IllegalStateException("de lezing van " + pointer + ": de analyse noteerde geen term voor"
+                            + " knoop " + i + " (" + at.kind() + " op " + at.pointer() + ")");
+                continue;
+            }
+            Map<ObjectType, Fold> fold = folds.get(n);
+            sites.add(new Site(i, at.kind(), t, noted.units().get(n), fold == null ? null : fold.get(reads.subject),
+                    n instanceof Condition.QuantifierFold q ? q : null));
+        }
+        readingRules.add(new ReadingRule(plan, pointer, validity, guarded, condition, value, sites));
+    }
+
+    /** The variables the top level of {@code lhs} declares, which a consequence can name: the variable of each pattern
+     *  and those its bindings bind, and the results of each accumulate; not those a negation or an existence
+     *  declares, which live only inside it. */
+    private static Set<String> declaredVariables(List<LhsItem> lhs) {
+        Set<String> out = new HashSet<>();
+        for (LhsItem item : lhs)
+            switch (item) {
+                case Subject o -> {
+                    out.add(o.name());
+                    for (Binding b : o.bindings()) out.add(b.target());
+                }
+                case FactPattern p -> {
+                    out.add(p.name());
+                    for (Binding b : p.bindings()) out.add(b.target());
+                }
+                case Accumulation a -> {
+                    for (Accumulation.Aggregation f : a.aggregations()) out.add(f.target());
+                }
+                case Not n -> { }
+                case Exists e -> { }
+                case TestItem t -> { }
+            }
         return out;
     }
 
@@ -3143,7 +3368,7 @@ public final class TmsTranspiler {
      *  calls. Every expression node is named here, so a node the IR records gain later fails to compile until it is
      *  decided whether this branch computes it. */
     private Term value(Expr e, Reads reads) {
-        return switch (e) {
+        Term planned = switch (e) {
             case Expr.Literal l -> literal(l);
             case Expr.AttributeReference a -> new Term.SlotValue(attributeRead(a, reads), source(a.source()));
             case Expr.ParameterRef p -> new Term.SlotValue(reads.parameter(p.parameter()), source(p.source()));
@@ -3170,6 +3395,18 @@ public final class TmsTranspiler {
                 yield new Term.Fail(ComputeFault.UNRESOLVED, source(o.source()));
             }
         };
+        note(e, planned);
+        return planned;
+    }
+
+    /** Notes that {@code t} computes the node {@code node} of the IR, a condition or an expression, where the condition
+     *  and the value of a form's own rule compile in a build with readings ({@link #noted}); nothing at any other moment.
+     *  The term is the one the evaluation of the rule reaches for the node, before a restatement or a normalisation
+     *  that the analysis puts around it at its use. */
+    private void note(Object node, Term t) {
+        if (noted == null || memberwise > 0) return;
+        noted.put(node, t);
+        if (node instanceof Expr e) notedUnits.put(node, eff.unitOf(e));
     }
 
     /** A constant of the analysis, which an argument of a function of the plan takes ({@link Term.Const}). */
@@ -3282,7 +3519,9 @@ public final class TmsTranspiler {
         if (n == null)
             throw new Refusal(DroolsCode.POWER_NON_INTEGER_EXPONENT.reason("snippet", snippet(b.source())));
         Term base = value(b.left(), reads);
-        return new Term.Call(StaticFunction.RS_POWER, List.of(base, constant(n)), source(b.source()));
+        Term exponent = constant(n);
+        note(b.right(), exponent);
+        return new Term.Call(StaticFunction.RS_POWER, List.of(base, exponent), source(b.source()));
     }
 
     /** The whole exponent of at least 0 the lexeme writes, or null. */
@@ -3427,8 +3666,11 @@ public final class TmsTranspiler {
     private Term rounding(Expr.Rounding a, Reads reads) {
         java.math.RoundingMode mode = roundingMode(a.mode());
         int decimals = a.decimals();
-        Term base = a.base() instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.WORTEL
-                ? squareRootValue(f, reads) : value(a.base(), reads);
+        Term base;
+        if (a.base() instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.WORTEL) {
+            base = squareRootValue(f, reads);
+            note(f, base);
+        } else base = value(a.base(), reads);
         return new Term.Call(StaticFunction.RS_ROUNDING, List.of(base, constant(decimals), constant(mode)),
                 source(a.source()));
     }
@@ -3503,8 +3745,9 @@ public final class TmsTranspiler {
             throw new Refusal(DroolsCode.DIMENSION_CELL_MULTI_DIMENSION.reason("dimensionCount", c.labels() == null ? 0 : c.labels().size(), "snippet", snippet(c.source())));
         int i = dimensionRead(c.attribute(), reads, Msg.drools("PART.desc.dimension-cell-read"));
         String label = c.labels().get(0);
-        return new Term.Call(StaticFunction.CELL, List.of(new Term.SlotValue(i, source(c.attribute().source())), constant(label)),
-                source(c.source()));
+        Term map = new Term.SlotValue(i, source(c.attribute().source()));
+        note(c.attribute(), map);
+        return new Term.Call(StaticFunction.CELL, List.of(map, constant(label)), source(c.source()));
     }
 
     /** A sum, minimum or maximum over a dimension selection (§5.8.5): the attribute's cells at the selected labels, a
@@ -3530,8 +3773,10 @@ public final class TmsTranspiler {
             default -> StaticFunction.RS_DIM_MAX;
         };
         String source = source(f.source());
-        Term cells = new Term.Call(fold, List.of(new Term.Call(StaticFunction.MAP,
-                List.of(new Term.SlotValue(i, source(a.source()))), null), constant(labels)), source);
+        Term map = new Term.SlotValue(i, source(a.source()));
+        note(a, map);
+        Term cells = new Term.Call(fold, List.of(new Term.Call(StaticFunction.MAP, List.of(map), null), constant(labels)),
+                source);
         // only a sum has a fallback, evaluated after the cells
         return fallback == null ? cells : new Term.Call(StaticFunction.FALLBACK, List.of(cells, fallback), source);
     }
@@ -4085,11 +4330,15 @@ public final class TmsTranspiler {
         String source = source(f.source());
         if (f.filter() == null) {
             int date = reads.evaluationDate();
-            return new Term.Call(StaticFunction.OWN_TOTAL, List.of(new Term.SlotValue(timeline, source(a.source())),
-                    new Term.SlotValue(subjectType, null), new Term.SlotValue(date, null), constant(name), constant(gran)), source);
+            Term input = new Term.SlotValue(timeline, source(a.source()));
+            note(a, input);
+            return new Term.Call(StaticFunction.OWN_TOTAL, List.of(input, new Term.SlotValue(subjectType, null),
+                    new Term.SlotValue(date, null), constant(name), constant(gran)), source);
         }
-        Term cut = clip(f.filter(), reads, description, name, complete(timeline, "the gedurende clip of \"" + name
-                + "\" needs the full timeline; ", subjectType, " supplies only the asOfDate-bucket scalar", source(a.source())));
+        Term whole = complete(timeline, "the gedurende clip of \"" + name + "\" needs the full timeline; ", subjectType,
+                " supplies only the asOfDate-bucket scalar", source(a.source()));
+        note(a, whole);
+        Term cut = clip(f.filter(), reads, description, name, whole);
         return new Term.Call(StaticFunction.RS_TIME_TOTAL, List.of(cut, constant(gran)), source);
     }
 
@@ -4129,8 +4378,10 @@ public final class TmsTranspiler {
             if (k.navigation() != null || navigationBindings.containsKey(k))
                 throw new Refusal(DroolsCode.CLIP_NAVIGATED_CHARACTERISTIC.reason("description", description, "snippet", snippet(k)));
             int periods = reads.timeline(timeMember(reads.subject, k.characteristic(), true, description));
-            return new Term.Call(k.negation() ? StaticFunction.RS_TIME_CLIP_NOT : StaticFunction.RS_TIME_CLIP,
+            Term clipped = new Term.Call(k.negation() ? StaticFunction.RS_TIME_CLIP_NOT : StaticFunction.RS_TIME_CLIP,
                     List.of(timeline, new Term.SlotValue(periods, null), constant(Period.class)), source(k.source()));
+            note(k, clipped);
+            return clipped;
         }
         if (c instanceof Condition.Compound s && s.quantifier() == Condition.Quantifier.ALLE && !s.components().isEmpty()) {
             // each check clips what the one before it left
@@ -4140,9 +4391,14 @@ public final class TmsTranspiler {
                     throw new Refusal(DroolsCode.CLIP_COMPOSITE_NON_CHARACTERISTIC.reason("description", description, "snippet", snippet(part)));
                 out = clip(part, reads, description, cut, out);
             }
+            note(s, out);
             return out;
         }
-        if (c instanceof Condition.Comparison v) return comparisonClip(v, reads, description, cut, timeline);
+        if (c instanceof Condition.Comparison v) {
+            Term clipped = comparisonClip(v, reads, description, cut, timeline);
+            note(v, clipped);
+            return clipped;
+        }
         throw new Refusal(DroolsCode.CLIP_UNSUPPORTED_CUT_FORM.reason("description", description, "snippet", snippet(c)));
     }
 
@@ -4171,10 +4427,11 @@ public final class TmsTranspiler {
         reads.markFail();
         Term bound = value(v.right(), reads);
         String compared = tested.name();
-        Term periods = new Term.Call(StaticFunction.RS_TIME_CONDITION, List.of(
-                complete(testedTimeline, "the gedurende clip of \"" + cut + "\" compares \"" + compared
-                        + "\" per segment and needs its full timeline; ", subjectType,
-                        " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", source(a.source())),
+        Term whole = complete(testedTimeline, "the gedurende clip of \"" + cut + "\" compares \"" + compared
+                + "\" per segment and needs its full timeline; ", subjectType,
+                " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", source(a.source()));
+        note(a, whole);
+        Term periods = new Term.Call(StaticFunction.RS_TIME_CONDITION, List.of(whole,
                 constant(testCode), new Term.Call(StaticFunction.COLLAPSE, List.of(bound), bound.source()),
                 constant(Period.class)), null);
         return new Term.Call(StaticFunction.RS_TIME_CLIP, List.of(timeline, periods, constant(Period.class)),
@@ -4275,9 +4532,11 @@ public final class TmsTranspiler {
             String name = "vouw " + foldCounter++;
             Set<String> outside = foldBinders;
             foldBinders = reads.binderRange();
+            memberwise++;
             try {
                 v = build.apply(form + ": " + name, name);
             } finally {
+                memberwise--;
                 foldBinders = outside;
             }
             perSubject.put(reads.subject, v);
@@ -4704,7 +4963,7 @@ public final class TmsTranspiler {
      *  {@code reads}. Every condition node is named here, so a node the IR records gain later fails to compile until it
      *  is decided whether this branch reads it. */
     private Term conditionTerm(Condition c, Reads reads) {
-        return switch (c) {
+        Term t = switch (c) {
             case Condition.CharacteristicCheck k -> characteristicCheck(k, reads);
             case Condition.Compound s -> compound(s, reads);
             case Condition.Comparison v -> comparison(v, reads);
@@ -4723,6 +4982,8 @@ public final class TmsTranspiler {
                 yield new Term.Fail(ComputeFault.UNRESOLVED_CONDITION, source(o.source()));
             }
         };
+        note(c, t);
+        return t;
     }
 
     /**
@@ -4833,8 +5094,10 @@ public final class TmsTranspiler {
         int timeline = reads.timeline(member);
         Term bound = restated(value(boundExpr, reads), eff.unitOf(boundExpr), eff.unitOf(time),
                 "een §8.2 tijdlijngrens");
-        return wholePeriod(v.period(), fullTimeline(timeline, member, null, reads, source(time.source())), testCode, bound,
-                source(v.source()));
+        // after the bound, where it always stood: it takes the slot of the subject, and the slots keep their numbers
+        Term whole = fullTimeline(timeline, member, null, reads, source(time.source()));
+        note(time, whole);
+        return wholePeriod(v.period(), whole, testCode, bound, source(v.source()));
     }
 
     /**
@@ -4861,13 +5124,15 @@ public final class TmsTranspiler {
             if (a.objectType() != reads.subject)
                 throw new Refusal(DroolsCode.PERIOD_PREDICATE_FOREIGN_READ.reason("description", description, "objectType", a.objectType().name, "subject", reads.subject.name));
             Member member = timeMember(reads.subject, a.attribute(), false, description);
-            return wholePeriod(p.period(), fullTimeline(reads.timeline(member), member, null, reads, source(a.source())),
-                    testCode, null, source(p.source()));
+            Term whole = fullTimeline(reads.timeline(member), member, null, reads, source(a.source()));
+            note(a, whole);
+            return wholePeriod(p.period(), whole, testCode, null, source(p.source()));
         }
         Path q = path(reads.subject, path, a.objectType(), description);
         Member member = timeMember(q.reaches(), a.attribute(), false, description);
-        return wholePeriod(p.period(), fullTimeline(reads.navigated(q, member), member, q, reads, source(a.source())),
-                testCode, null, source(p.source()));
+        Term whole = fullTimeline(reads.navigated(q, member), member, q, reads, source(a.source()));
+        note(a, whole);
+        return wholePeriod(p.period(), whole, testCode, null, source(p.source()));
     }
 
     /**
@@ -5325,6 +5590,37 @@ public final class TmsTranspiler {
             lhs.addAll(items);
             return new RulePlan(name, form, agendaGroup, new ReadTable(slots), withoutUnfilledDepositFlag(lhs),
                     withoutUnfilledDepositFlag(consequence));
+        }
+
+        /** The left-hand side of the reading rule after its subject pattern ({@link TmsTranspiler#readingRule}): the
+         *  parameter items, the standing items and {@code control}, as {@link #plan} lists them, without the test; and
+         *  where {@code withoutPhase}, without the {@link CreationPhase} of a creation, whose condition reads no phase,
+         *  so that the reading rule runs in the main group. */
+        List<LhsItem> readingPlan(List<LhsItem> control, boolean withoutPhase) {
+            List<LhsItem> out = new ArrayList<>();
+            for (LhsItem p : parameters)
+                if (!(withoutPhase && p instanceof FactPattern f && f.factClass() == CreationPhase.class)) out.add(p);
+            out.addAll(states);
+            out.addAll(control);
+            return out;
+        }
+
+        /** The reading rule {@code name} of the form {@code pointer}: the planned items before the subject pattern, the
+         *  subject pattern as it stands now, the planned items right after it and {@code items}, as {@link #rulePlan}
+         *  assembles them, in the main group and of no form, and a consequence that inserts the {@link Reading} of the
+         *  subject with every slot this left-hand side binds. */
+        RulePlan readingRulePlan(String name, String pointer, List<LhsItem> items) {
+            List<LhsItem> lhs = new ArrayList<>(headPlan);
+            lhs.add(new Subject(beanClass(subject), SUBJECT, subjectAlpha, subjectJoins, subjectBetaTests,
+                    subjectBindings));
+            lhs.addAll(rangePlan);
+            lhs.addAll(items);
+            Set<String> declared = declaredVariables(lhs);
+            List<Integer> bound = new ArrayList<>();
+            for (dev.uchar.regelspraak.transpiler.tms.plan.Read l : slots)
+                if (l.name() != null && declared.contains(l.name())) bound.add(l.slot());
+            return new RulePlan(name, null, null, new ReadTable(slots), withoutUnfilledDepositFlag(lhs),
+                    new Consequence.Reading(SUBJECT, pointer, bound, slots.size(), Consequence.Insertion.LOGICAL));
         }
 
         /** The name of the variable that binds slot {@code slot}, which an item of the plan names to read it. */

@@ -941,8 +941,25 @@ final class DrlRendering {
                         + str(x.allocation()) + ", " + x.subject() + ", " + variable(x.recipient()) + ", "
                         + slotOfNull(x.weight()) + ", " + slotOfNull(x.key()) + ", " + slotOfNull(x.maximum()) + ")");
                 case Consequence.Payout x -> payout(x, b);
+                case Consequence.Reading x -> reading(x, b);
             }
             return b.toString();
+        }
+
+        /** The reading of {@link Consequence.Reading}: a function of the rule gives the value array as a list, the bound
+         *  value at each slot the plan names and null at every other, which the Java dialect builds because MVEL builds no
+         *  array; the rule inserts the reading of its subject with it. */
+        private void reading(Consequence.Reading x, StringBuilder b) {
+            int place = reserveer();
+            String name = name("lezing", place);
+            Context c = context(x.slots(), -1, null);
+            StringBuilder body = new StringBuilder("    java.util.List waarden = new java.util.ArrayList();\n");
+            for (int s = 0; s < x.size(); s++)
+                body.append("    waarden.add(").append(c.slots.containsKey(s) ? c.slots.get(s) : "null").append(");\n");
+            body.append("    return waarden;\n");
+            fill(place, null, "java.util.List " + name + "(" + c.declaration() + ")", body.toString());
+            insert(b, "    ", x.insertion(), "new " + typeName(Reading.class) + "(" + x.subject() + ", " + str(x.form())
+                    + ", " + name + "(" + c.arguments() + "))");
         }
 
         private List<String> texts(List<String> values) {
