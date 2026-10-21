@@ -576,8 +576,10 @@ reviewer's duty on a machine that has catala. Current gates:
     n its case files, or in the same `EXCLUDE` line the plain replay
     prints, so no golden the square plays escapes the comparison; an
     `ERROR` fails unless the golden stands in the reason-carrying
-    `READINGS_ERROR_KNOWN` (four since the gate began: the build with
-    readings refuses after a form the transpiler refused part-way).
+    `READINGS_ERROR_KNOWN` (empty since card `reading-after-refusal`,
+    2026-10-21: the four goldens it held, whose build with readings
+    refused after a form the transpiler refused part-way, are compared
+    as `EXCLUDE` since `meet` closes the reading of a refused form).
     Every line is compared verbatim except the contributors of a
     quantifier fold, compared per member: the member always,
     `reached`/`unreached` where the backend writes one (`unordered`
