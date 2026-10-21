@@ -102,6 +102,44 @@ let rec filter_in_order p = function
       let rest = filter_in_order p xs in
       if keep then x :: rest else rest
 
+(* --- the observer of a reading (RUNTIME-SEMANTICS ch. 5.12) -------------
+   A reading is the evaluation of a form's condition on the fixpoint world,
+   recorded per node ([Reading]). The evaluation below is the one the session
+   runs; the observer only watches it: [expr] and [cond] are handed every
+   node this evaluation enters, with the evaluation of that node as a
+   closure they must call exactly once; [member] is told what a fold over a
+   set found per contributor, in the order the fold reads them; and
+   [timeline] and [periods] are told what a node is where the evaluation
+   reads it as a timeline instead of evaluating it to a value — the operand
+   of a whole-period test, the base of a temporal total or of a
+   time-proportional part, which the evaluation reads whole ([timeline],
+   None for an absent one), and a condition it reads over a timeline, the
+   part of that timeline in which the condition holds ([periods]). With no
+   observer, as in every session, the evaluation is the one it always was. *)
+type contribution =
+  | Member_value of Value.t (* a value fold: what the member contributes; Empty for a count *)
+  | Member_verdict of bool (* a quantifier fold: the matrix's verdict on the member *)
+  | Member_fault of string option (* the matrix faulted on the member, with the EF code *)
+  | Member_unreached (* a quantifier fold stopped before the member (ch. 5.10) *)
+
+type observer = {
+  expr : expr -> (unit -> Value.t) -> Value.t;
+  cond : condition_expr -> (unit -> bool) -> bool;
+  member : string -> contribution -> unit;
+  timeline : expr -> Timeline.t option -> unit;
+  periods : condition_expr -> Timeline.t -> unit;
+}
+
+let observer : observer option ref = ref None
+let contribute label c = match !observer with None -> () | Some o -> o.member label c
+let read_whole e tl = match !observer with None -> () | Some o -> o.timeline e tl
+let held_over c tl = match !observer with None -> () | Some o -> o.periods c tl
+
+(* a set of half-open day intervals as the timeline that marks them, each
+   period without a value *)
+let as_periods (ps : (int * int) list) : Timeline.t =
+  List.map (fun (a, b) -> { Timeline.s_from = a; s_to = b; s_value = Value.Empty }) ps
+
 (* --- validity gate (ch. 3.10 / 5.6): a version whose window excludes the
    evaluation date simply does not apply --------------------------------- *)
 
@@ -694,19 +732,23 @@ let nav_target env world (self : World.instance) ~(bindings : role_binding list)
 let whole_period_operand env world (self : World.instance) (e : expr) : Timeline.t =
   match e with
   | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings; _ }
-    when Ir_v0.Checks.attr_temporal (object_type env otn) a -> (
-      match navigation_bindings with
-      | None ->
-          if not (own_read env self otn) then
-            Value.fault
-              "a read of %S on %S without navigation bindings is the subject's own read, but the \
-               subject is %S"
-              a otn self.otype;
-          Option.value (World.timeline self a) ~default:[]
-      | Some bindings -> (
-          match nav_target env world self ~bindings ~endpoint:otn with
-          | None -> []
-          | Some target -> Option.value (World.timeline target a) ~default:[]))
+    when Ir_v0.Checks.attr_temporal (object_type env otn) a ->
+      let tl =
+        match navigation_bindings with
+        | None ->
+            if not (own_read env self otn) then
+              Value.fault
+                "a read of %S on %S without navigation bindings is the subject's own read, but the \
+                 subject is %S"
+                a otn self.otype;
+            World.timeline self a
+        | Some bindings -> (
+            match nav_target env world self ~bindings ~endpoint:otn with
+            | None -> None
+            | Some target -> World.timeline target a)
+      in
+      read_whole e tl;
+      Option.value tl ~default:[]
   | Parameter_ref { parameter; _ } ->
       Value.fault
         "a whole-period leeg/gevuld test over the parameter '%s' is not executed: the fold reads the \
@@ -845,6 +887,11 @@ let reversed : Ir_v0.Ast.compare_op -> Ir_v0.Ast.compare_op = function
   | (Equal | Not_equal) as op -> op
 
 let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
+  match !observer with
+  | None -> eval_expr_node env world self ~err e
+  | Some o -> o.expr e (fun () -> eval_expr_node env world self ~err e)
+
+and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
   match e with
   | Literal { variant; typ; _ } -> literal_value variant typ
   | Parameter_ref { parameter; _ } -> (
@@ -1533,7 +1580,8 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
   | _ -> ());
   match (kind, call_arguments) with
   | ( Total,
-      [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ] )
+      [ (Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ }
+         as base) ] )
     when source_role = None && source_path = None
          && own_read env self aot
          && Ir_v0.Checks.attr_temporal (object_type env aot) a -> (
@@ -1570,6 +1618,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                      the asOfDate-bucket scalar"
                     a
           in
+          read_whole base (World.timeline self a);
           let span = List.map (fun (s : Timeline.segment) -> (s.s_from, s.s_to)) tl in
           let rec true_periods_of_cond (c : condition_expr) =
             match c with
@@ -1580,21 +1629,28 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                 let periods =
                   Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
                 in
-                if negation then Timeline.complement periods ~span else periods
+                let periods = if negation then Timeline.complement periods ~span else periods in
+                held_over c (as_periods periods);
+                periods
             | Comparison
                 { op; left_side = Some (Attribute_reference
-                    { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ });
+                    { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ }
+                    as left);
                   right_side = Some boundary; time_period = None; _ }
               when own_read env self botn
                    && Ir_v0.Checks.attr_temporal ot_decl b ->
                 (* the compared timeline is evaluated PER SEGMENT against
                    the scalar bound (piecewise-constant, never per day) *)
+                read_whole left (World.timeline self b);
                 let tested =
                   match World.timeline self b with Some t -> t | None -> []
                 in
                 let bound = eval_expr env world self ~err boundary in
-                Timeline.true_periods_of tested ~span (fun v ->
-                    Arith.compare_op op v bound)
+                let periods =
+                  Timeline.true_periods_of tested ~span (fun v -> Arith.compare_op op v bound)
+                in
+                held_over c (Timeline.clip tested periods);
+                periods
             | Compound { quantifier_kind = All; components = (_ :: _ as components); _ } ->
                 (* ch. 3.6, the FLAT composite `all` clip: the
                    intersection of the members' true periods — v0 nests
@@ -1616,10 +1672,14 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                         "a composite gedurende member is an own temporal characteristic \
                          check (the static-guard and nested forms are recorded flanks)"
                 in
-                List.fold_left
-                  (fun acc part -> Timeline.intersect_periods acc (member_periods part))
-                  (member_periods (List.hd components))
-                  (List.tl components)
+                let periods =
+                  List.fold_left
+                    (fun acc part -> Timeline.intersect_periods acc (member_periods part))
+                    (member_periods (List.hd components))
+                    (List.tl components)
+                in
+                held_over c (as_periods periods);
+                periods
             | _ ->
                 Value.faultc "REF-004"
                   "unsupported gedurende condition shape (an own temporal \
@@ -1643,18 +1703,34 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
             a
       | Some d -> (
           match World.attr self a with
-          | Value.Empty -> Value.Empty (* absent timeline totals to leeg (ch. 3.6) *)
+          | Value.Empty ->
+              read_whole base None;
+              Value.Empty (* absent timeline totals to leeg (ch. 3.6) *)
           | v ->
               let day = match Value.date_of_iso d with Value.Date z -> z | _ -> assert false in
               (* the period of the member's own grid that holds the evaluation
                  date: the calendar bucket, or the fixed start point's (ch. 3.2) *)
               let van, up_to = Timeline.grid_bucket (Timeline.attr_grid env.doc ot_decl a) day in
-              Timeline.grand_total ~grid_unit:grid gran
-                [ { Timeline.s_from = van; s_to = up_to; s_value = v } ]))))
+              let bucket = [ { Timeline.s_from = van; s_to = up_to; s_value = v } ] in
+              read_whole base (Some bucket);
+              Timeline.grand_total ~grid_unit:grid gran bucket))))
   | _ ->
   (* non-temporal aggregation *)
   (* contributors: an instance fold over a role (element_object_type set),
      or listed operand expressions *)
+  (* what a fold over a set hands its observer per contributor, in fold
+     order: an instance a count counts, and the value a member contributes;
+     a member whose value is leeg contributes nothing (ch. 1.2e) *)
+  let contributing (is : World.instance list) =
+    List.iter (fun (i : World.instance) -> contribute i.label (Member_value Value.Empty)) is;
+    is
+  in
+  let contributing_values (is : World.instance list) vs =
+    List.iter2
+      (fun (i : World.instance) v -> if v <> Value.Empty then contribute i.label (Member_value v))
+      is vs;
+    vs
+  in
   let contributors () =
     (* the die/dat subselection (§13.4.2): the filter condition evaluates
        PER CONTRIBUTOR — the element instance is the condition's subject,
@@ -1676,8 +1752,9 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
         (* a source that names a member of the element type was refused at
            the head of this function (WF-093 (b)), so this one names a role *)
         `Instances
-          (filter_in_order keep
-             (fold_members ?binding:source_role ?path:source_path env world self ~element:el))
+          (contributing
+             (filter_in_order keep
+                (fold_members ?binding:source_role ?path:source_path env world self ~element:el)))
     | Some el, [ Attribute_reference { attribute_ref; navigation_bindings = None; _ } ] when ranged ->
         let name = req "fold attribute" attribute_ref in
         let el_decl = object_type env el in
@@ -1721,7 +1798,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
            has no defined moment to rank, so it is refused rather than
            reading a value the timeline does not have at one instant. *)
         if not (Ir_v0.Checks.attr_temporal el_decl name) then
-          `Values (List.map (fun i -> World.attr i name) members)
+          `Values (contributing_values members (List.map (fun i -> World.attr i name) members))
         else begin
           (match kind with
           | Sum_function | Total -> ()
@@ -1766,7 +1843,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
              the asOfDate bucket carries that total — and the asymmetry is
              deliberate: there the session date IS the horizon. *)
           `Values
-            (map_in_order
+            (contributing_values members @@ map_in_order
                (fun (i : World.instance) ->
                  match World.timeline i name with
                  | Some tl -> Timeline.grand_total ~grid_unit:grid gran tl
@@ -1847,7 +1924,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
               rest);
         let seen = Hashtbl.create 16 in
         `Instances
-          (filter_in_order
+          (contributing @@ filter_in_order
              (fun (i : World.instance) ->
                if Hashtbl.mem seen i.label then false
                else (
@@ -2059,6 +2136,11 @@ and window_bounds env world (self : World.instance) ~err starting_at up_to =
   (dv, dt)
 
 and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool =
+  match !observer with
+  | None -> eval_cond_node env world self ~err c
+  | Some o -> o.cond c (fun () -> eval_cond_node env world self ~err c)
+
+and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) : bool =
   match c with
   | Comparison { op; left_side; right_side; time_period = None; _ } ->
       let le = req "Comparison.left" left_side and re = req "Comparison.right" right_side in
@@ -2086,10 +2168,10 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
             Some a
         | _ -> None
       in
-      let attr, bound_e, op =
+      let attr, bound_e, op, tested_e =
         match (temporal_side le, temporal_side re) with
-        | Some a, None -> (a, re, op)
-        | None, Some a -> (a, le, reversed op)
+        | Some a, None -> (a, re, op, le)
+        | None, Some a -> (a, le, reversed op, re)
         | Some _, Some _ ->
             Value.fault
               "whole-period comparison between TWO time-dependent operands has no ch. 3.9 \
@@ -2100,6 +2182,7 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
                attribute of %S and a scalar bound"
               self.otype
       in
+      read_whole tested_e (World.timeline self attr);
       let tested = Option.value (World.timeline self attr) ~default:[] in
       let boundary = eval_expr env world self ~err bound_e in
       let g : Ir_v0.Ast.grain = if gp.gp_granularity then Year else Month in
@@ -2403,14 +2486,22 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
             else None
         | Exactly -> if hits > cutoff || hits + left < cutoff then Some false else None
       in
-      let rec read hits left parts =
+      let rec read hits left (parts : World.instance list) =
         match settled ~hits ~left with
-        | Some v -> v
+        | Some v ->
+            List.iter (fun (m : World.instance) -> contribute m.label Member_unreached) parts;
+            v
         | None -> (
             match parts with
             | [] -> verdict hits
             | m :: rest ->
-                let hit = eval_cond { env with subj = Some el } world m ~err test in
+                let hit =
+                  try eval_cond { env with subj = Some el } world m ~err test
+                  with Value.Fault { code; _ } as fault ->
+                    contribute m.label (Member_fault code);
+                    raise fault
+                in
+                contribute m.label (Member_verdict hit);
                 read (if hit then hits + 1 else hits) (left - 1) rest)
       in
       read 0 n members
@@ -2605,8 +2696,13 @@ let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
               "unsupported pro-rata condition shape (an own temporal characteristic; no corpus \
                case for more)"
       in
+      (match value_node with
+      | Function_call { call_arguments = [ base ]; _ } -> read_whole base (World.timeline self b)
+      | _ -> ());
+      held_over c (as_periods true_periods);
       let base_expr = Option.value (World.timeline self b) ~default:[] in
       let result = clip_window window (Timeline.pro_rata g base_expr true_periods) in
+      read_whole value_node (Some result);
       (* ch. 7.8, the timeline arm: on a standing temporal target the
          fold decides only when its result is gevuld — an empty result
          (the temporal leeg) writes nothing and a case-supplied input
@@ -2647,10 +2743,12 @@ let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
       in
       (* the target's periods: the calendar's, or its fixed start point's
          (ch. 3.2) *)
+      held_over c (as_periods true_periods);
       let result =
         clip_window window
           (Timeline.count_days_in_grid (Timeline.attr_grid env.doc ot_decl attr) true_periods)
       in
+      read_whole value_node (Some result);
       (* the ch. 7.8 timeline arm, as for pro-rata *)
       if
         result = []
@@ -3054,6 +3152,31 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
    hops. *)
 let creation_budget = 100
 
+(* the connecting relation of an object creation, as (fact type, the role
+   the made object fills, the role the subject fills) *)
+let creation_pair env (oc : resolved_object_creation) =
+  let created = req "ObjectCreationVersion.createdType" oc.created_type in
+  let subject = req "ObjectCreationVersion.subject" oc.oc_subject in
+  (* the explicit back-link binding (extension, IR-SPEC ch. 3.3)
+     wins over the type-pair derivation — the only route for a
+     self-typed pair, whose derivation mirrors v0's null *)
+  match oc.oc_connecting_role with
+  | Some rb -> (
+      match Ir_v0.Checks.resolve_binding { doc = env.doc } rb with
+      | Ok (_, bound, other) -> Some (rb.rb_fact_type, bound, other)
+      | Error e -> Value.fault "%s" e)
+  | None -> connecting_pair env ~from_type:subject ~to_type:created
+
+(* the 1:1 guard of an object creation: the made object's role is to-one
+   and the subject is linked over it in the input world *)
+let creation_blocked ~world0 pair (self : World.instance) =
+  match pair with
+  | Some (_, new_role, _) when not new_role.role_many -> (
+      match SMap.find_opt self.label world0.World.instances with
+      | Some i0 -> role_linked_instances world0 i0 new_role <> []
+      | None -> false)
+  | _ -> false
+
 let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_object_creation) =
   if not (applies env oc.oc_validity) then (world, false)
   else begin
@@ -3061,17 +3184,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
     let created = req "ObjectCreationVersion.createdType" oc.created_type in
     let subject = req "ObjectCreationVersion.subject" oc.oc_subject in
     let env = { env with subj = Some subject } in
-    let pair =
-      (* the explicit back-link binding (extension, IR-SPEC ch. 3.3)
-         wins over the type-pair derivation — the only route for a
-         self-typed pair, whose derivation mirrors v0's null *)
-      match oc.oc_connecting_role with
-      | Some rb -> (
-          match Ir_v0.Checks.resolve_binding { doc = env.doc } rb with
-          | Ok (_, bound, other) -> Some (rb.rb_fact_type, bound, other)
-          | Error e -> Value.fault "%s" e)
-      | None -> connecting_pair env ~from_type:subject ~to_type:created
-    in
+    let pair = creation_pair env oc in
     over_subjects ~read env world ~otype:subject ~rule:name (fun w self err ->
         (* A subject that a higher stratum minted cannot occur: a creation
            reads its subject's population strictly (ch. 6.1), so it sits at
@@ -3100,14 +3213,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
              two name-less creations can never collide into one label;
              the case loader reserves the "::" namespace for mints *)
           let label = Printf.sprintf "oc%d::%s" idx self.label in
-          let blocked =
-            match pair with
-            | Some (_, new_role, _) when not new_role.role_many -> (
-                match SMap.find_opt self.label world0.World.instances with
-                | Some i0 -> role_linked_instances world0 i0 new_role <> []
-                | None -> false)
-            | _ -> false
-          in
+          let blocked = creation_blocked ~world0 pair self in
           if blocked || SMap.mem label w.World.instances then (w, false)
           else begin
             let depth = subject_depth + 1 in

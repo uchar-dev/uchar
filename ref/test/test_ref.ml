@@ -8844,6 +8844,97 @@ let () =
         date_duration_operand_refusal Text_type );
       ("WV-3.8-datumvorm-dag-plus-uur-in-ms", m, bin m day_number (extent ~u:"uur" "26"), sub_day_unit_on_day_date) ]
 
+(* --- ch. 5.12: the reading of a condition at the fixpoint ------------------ *)
+
+(* The readings of a case at its fixpoint in the canonical text, as
+   [runner --trace] prints them without the "reading " before each line. *)
+let readings_of ?(evaluate = true) irf casef =
+  let d = Ir_v0.Loader.load_file irf in
+  let c = Case.load_file d casef in
+  let env =
+    { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+      locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+  in
+  let final = if evaluate then Eval.evaluate env c.world else c.world in
+  Reading.lines env ~world:final
+    (Reading.readings (Yojson.Safe.from_file irf) env ~world0:c.world ~world:final)
+
+(* a file of the corpus, from the workspace root (gate 5 runs the suite there)
+   or from the test's own build directory (dune runtest) *)
+let corpus_file rel = if Sys.file_exists rel then rel else Filename.concat "../.." rel
+
+(* WV-5.12-ploegaandeel: the chapter's worked example verbatim, the golden of
+   ch. 5.10's first example. The composite stops after member 1 on J1, reads
+   both members on J2 and J3, and the value 1 is reached where it holds. *)
+let () =
+  let golden = "corpus/golden/jutterswet-ploegaandeel/" in
+  let got = readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ "case.json")) in
+  let p = "/rules/rules/0/versions/0" in
+  let row subject cells = List.map (fun c -> Printf.sprintf "%s \"%s\" %s" p subject c) cells in
+  let expected =
+    List.sort compare
+      (row "J1"
+         [ "FAILS"; "0 Compound false"; "1 Comparison false"; "2 AttributeReference 0"; "3 Literal 0";
+           "4 Comparison unreached"; "5 Rounding unreached"; "6 Binary unreached";
+           "7 AttributeReference unreached"; "8 AttributeReference unreached"; "9 Literal unreached";
+           "10 Literal unreached" ]
+      @ row "J2"
+          [ "HOLDS"; "0 Compound true"; "1 Comparison true"; "2 AttributeReference 4"; "3 Literal 0";
+            "4 Comparison true"; "5 Rounding 25"; "6 Binary 25"; "7 AttributeReference 100";
+            "8 AttributeReference 4"; "9 Literal 0"; "10 Literal 1" ]
+      @ row "J3"
+          [ "FAILS"; "0 Compound false"; "1 Comparison true"; "2 AttributeReference 7"; "3 Literal 0";
+            "4 Comparison false"; "5 Rounding 0"; "6 Binary 0.4285714285714286"; "7 AttributeReference 3";
+            "8 AttributeReference 7"; "9 Literal 0"; "10 Literal unreached" ])
+  in
+  check "WV-5.12-ploegaandeel" (got = expected);
+  if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+
+(* WV-5.12-fout-in-een-lezing: a node that faults carries the EF code of its
+   fault, and so does every node the fault passes on its way out; the status
+   is FAULTS. No golden reaches it — at a fixpoint the reference interpreter
+   reached, the forms it read did not fault — so the readings are taken on
+   the input world of a document whose second member is an Unresolved
+   condition (EF-019): on J1 member 1 holds and member 2 faults, on J2 the
+   composite stops before it. *)
+let () =
+  let doc =
+    {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"ploegomvang","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"bergingsaandeel","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"bergingsaandeel van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"bergingsaandeel","subjectType":"Jutter","source":{"snippet":"Het bergingsaandeel van een Jutter"}},"value":{"node":"Literal","value":{"number":"1"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"1"}},"condition":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"Comparison","op":"notEqual","left":{"node":"AttributeReference","attribute":"ploegomvang","subjectType":"Jutter","source":{"snippet":"zijn ploegomvang"}},"right":{"node":"Literal","value":{"number":"0"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"0"}},"source":{"snippet":"zijn ploegomvang is ongelijk aan 0"}},{"node":"Unresolved","source":{"snippet":"hij is onvindbaar"}}],"source":{"snippet":"hij aan alle volgende voorwaarden voldoet"}},"initialisation":false,"presentation":"equation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+  in
+  let case_data =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": { "ploegomvang": { "number": "4" } }, "roles": {}, "characteristics": [] },
+    { "label": "J2", "objectType": "Jutter", "attributes": { "ploegomvang": { "number": "0" } }, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+  in
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-wv512" suffix in
+    let oc = open_out f in
+    output_string oc body_text;
+    close_out oc;
+    f
+  in
+  let irf = write ".ir.json" doc and casef = write ".case.json" case_data in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      let got = readings_of ~evaluate:false irf casef in
+      let p = "/rules/rules/0/versions/0" in
+      let row subject cells = List.map (fun c -> Printf.sprintf "%s \"%s\" %s" p subject c) cells in
+      let expected =
+        List.sort compare
+          (row "J1"
+             [ "FAULTS"; "0 Compound fault EF-019"; "1 Comparison true"; "2 AttributeReference 4";
+               "3 Literal 0"; "4 Unresolved fault EF-019"; "5 Literal unreached" ]
+          @ row "J2"
+              [ "FAILS"; "0 Compound false"; "1 Comparison false"; "2 AttributeReference 0";
+                "3 Literal 0"; "4 Unresolved unreached"; "5 Literal unreached" ])
+      in
+      check "WV-5.12-fout-in-een-lezing" (got = expected);
+      if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

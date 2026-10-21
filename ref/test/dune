@@ -1,3 +1,7 @@
 (test
  (name test_ref)
- (libraries uchar_ref uchar-ir-v0 zarith))
+ (deps
+  ; the worked example of RUNTIME-SEMANTICS ch. 5.12 is a corpus golden
+  ../../corpus/golden/jutterswet-ploegaandeel/ir.json
+  ../../corpus/golden/jutterswet-ploegaandeel/case.json)
+ (libraries uchar_ref uchar-ir-v0 zarith yojson))

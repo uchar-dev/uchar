@@ -21,6 +21,10 @@ normalisation.
   boundary (ch. 2.4) with idempotent writes (ch. 5.1).
 - `lib/eval.ml` — expressions, conditions, rule forms, and the fixpoint
   session (ch. 5).
+- `lib/reading.ml` — the reading of a condition at the fixpoint
+  (ch. 5.12): per form with a condition and object it runs on, the
+  evaluation of `lib/eval.ml` on the fixpoint world, watched through its
+  observer, recorded per node and written in the canonical text.
 - `lib/case.ml` — loader for `uchar-case-v0` files, owning the
   cross-checks the case schema assigns to this loader (label uniqueness,
   declared names, value variants, role targets).
@@ -32,8 +36,13 @@ normalisation.
   fault it observed and `CODE-PINNED <code> <params>` for the case's pin, and
   exits 0 only if the observed code is the pinned one with the pinned
   parameters among its own; gate 8 compares the two lines.
+  `runner --trace <ir.json> <case.json>` prints the readings of a golden
+  case at its fixpoint (ch. 5.12), one line per reading and per node,
+  each after `reading `; gate 17 (`scripts/check-readings.sh`) holds them
+  to the Drools backend's.
 - `test/test_ref.ml` — the worked examples of ch. 1–2 verbatim, plus the
-  ch. 4.6 allocation examples (`dune build @ref/runtest`).
+  ch. 4.6 allocation examples and the ch. 5.12 reading
+  (`dune build @ref/runtest`).
 
 Gate 5 (`scripts/check-oracle.sh`) replays every
 `corpus/golden/**/case*.json` and lists goldens that have no case file.
