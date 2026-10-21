@@ -115,3 +115,211 @@ case-bestanden van de goldens met blokken (opnieuw uitgegeven, niet met de hand)
 
 Out of scope: de uitleg zelf (toolchain-kaart `explanation-defaults`); graaf en dekking; een beslisser in ref of clingo;
 een WF-regel op de naam; elke wijziging aan de semantiek van ch. 7.
+
+## Result (voorstel, 2026-10-21)
+
+Tak `card/defaults-decider`, vanaf `d9c0b9a5`, ongemerged en ongepusht: de kaart raakt beschermde paden (IR-SPEC
+ch. 6.1, het schema, `spec/verifier/lib/loader.ml`, `scripts/check-reftype-derivation.sh`). De kaart blijft in
+`doing/` tot de eigenaar het voorstel keurt.
+
+- `8fbfe052` de ingang (T1–T3; acceptatie (a), (b), (d)).
+- `3b94de40` `Default.name` (T4; acceptatie (c)): frontend, schema, IR-SPEC, beide laders, twintig goldens.
+- `5d7a0d0a` de naamleg van gate 13 (T4).
+- het commit met dit Result.
+
+### De ingang
+
+`DroolsBackend.decisionsOf(Build, KieSession)` → `List<DefaultsDecision>`, naast `fixpointOf`, met dezelfde toets op de
+sessie: de controle van `TmsTranspiler.readFixpoint` staat nu in `requireFixpoint`, die `readOf`,
+`setDerivedValues` en `decisionsOf` delen, met dezelfde zinnen. `Fixpoint`, `fixpointOf`, `setDerivedValues` en
+`reached` zijn ongewijzigd.
+
+```java
+public record DefaultsDecision(Object object, String member, boolean characteristic, List<List<String>> rootChains,
+                               Decider decider, Conflict conflict) {
+    public record Decider(String pointer, Object decision) {}
+    public record Conflict(String pointer, String key, List<Decider> deciders) {}
+}
+```
+
+Precies één van `decider` en `conflict`; geen record voor (object, stapel) betekent: geen default besliste.
+`member` zoals het model het lid declareert (als `Fixpoint`). `decision` is bij een kenmerk een `Boolean` en bij een
+attribuut de waarde die de stapel schreef (de vorm van `Fixpoint.DerivedValue`). `Conflict.pointer` is de default
+wiens uitzonderingsgroepen conflicteerden, null aan de wortel; `key` de regel van het §9.5-feit; `deciders` elk
+beslissend lid in ledenvolgorde, elk tot zijn eigen default gevolgd. `rootChains` geeft per groep aan de wortel van de
+effectieve stapel de pointers in evaluatievolgorde: bij overerving (ch. 7.10) is dat geen van beide declaraties, en
+daarmee kan de Verbalisator de varianten vóór en na de beslisser noemen; onder de wortel volgt dat uit de pointer
+zelf, want een uitzonderingsgroep wordt nooit herschikt.
+
+Pointers (T1): naar de `Default`-knoop, `/rules/prioritizedDefaults/i/defaults/j(/exceptions/members/m/defaults/l)*`.
+Afwijking van T1, nodig: een gewone regel die de stapel van een subtype als basis of initialisatie opneemt (ch. 7.10,
+SUBTYPING §4.1; in het corpus `jutterswet-diepwrakbasis`, `-opgave-subtype`, `-wrakbasis`, `-wrakerfbasis`,
+`-wrakinitialisatie`) heeft geen `Default`-knoop; die default heet naar zijn regelversie,
+`/rules/rules/k/versions/v`. De backend leidt k en v af uit de modelvolgorde en de versienaamgeving van de lader
+("<naam> #i"); een naamloze regel vóór de opgenomen regel maakt dat onbepaald en wordt luid geweigerd (WF-107 laat
+zo'n document niet door de verifier).
+
+Voorbeelden uit `DefaultsDecisionWitnessTest` (P = `/rules/prioritizedDefaults/`):
+
+- genest besluit, twee uitzonderingslagen diep (ch. 7.9):
+  `P1 penninggerechtigd: P0/defaults/0/exceptions/members/0/defaults/0/exceptions/members/0/defaults/0 true`;
+- terugval van een vorm-a-variant één laag diep, met een onwaar-besluit:
+  `P2 penninggerechtigd: P0/defaults/0/exceptions/members/0/defaults/0 false`;
+- onwaar-besluit in het midden en onderaan van de eenvoudige vorm: `J2 vrijgesteld: P0/defaults/1 false`,
+  `J4 vrijgesteld: P0/defaults/3 false`;
+- genest conflict: `P4 penninggerechtigd: conflict at P0/defaults/1 under Jutter.penninggerechtigd/1:
+  P0/defaults/1/exceptions/members/0/defaults/0 true, P0/defaults/1/exceptions/members/1/defaults/0 false`;
+- conflict van een ongeordende wortel: `P8 wachtgeld: conflict at the root under Jutter.wachtgeld: P1/defaults/0 30,
+  P2/defaults/0 45`; stemmen de leden overeen, dan het eerste: `P9 wachtgeld: P1/defaults/0 30`;
+- overerving: op een Wrakrecht de geërfde uitzondering op plaats twee, `W2 uitkering: P0/defaults/0 99`, met
+  `rootChains` `[[P1/defaults/0, P0/defaults/0, P1/defaults/1]]`; de opgenomen regel van een Diepwrak,
+  `D1 uitkering: /rules/rules/0/versions/0 200`.
+
+Hoe de ingang leest (T3): de eenvoudige vorm laat per object één `Decides` staan, op de default die besliste; de
+algemene vorm per keten één `Outcome`, van haar hoogste default die afrondde. De ingang volgt de `Outcome`s van de
+wortel omlaag: bij een default met uitzonderingsgroepen de leden als één ervan afrondde, anders de default zelf (de
+terugval), en leest de leden zoals de verzoening ze leest (eerste conflict gaat door, verschillende besluiten zijn
+een conflict, gelijke besluiten beslissen als het eerste lid). Hij rekent geen voorwaarde na. Waar een
+evaluatiefout staat, geeft hij wat de controlefeiten zeggen; de javadoc zegt dat een afnemer eerst de fouten van
+`fixpointOf` leest.
+
+### De lowering
+
+Alleen `TmsTranspiler.simpleForm` veranderde, in de ene analyse, dus in beide renderingen: elke default die beslist
+zet zijn `Decides` in, ook de onderste, en een onwaar-besluit onderaan krijgt weer een regel (die alleen zijn
+`Decides` inzet). De algemene vorm liet al bij elk besluit een `Outcome` staan. Gemeten vóór de wijziging, met de
+ingang al gebouwd: de getuige gaf voor de eenvoudige vorm 8 van de 15 records (de onderste beslissers en `J4
+vrijgesteld` ontbraken), voor de overerving 4 van de 7, en de algemene vorm was al groen.
+
+Wat het verschoof:
+
+- `DefaultsplanWitnessTest` (twee pins): de onderste default van `anchor/jutterswet-vondstwaardering` en van de
+  gedateerde `anchor/jutterswet-uitsluiting` draagt nu `Decides[..., index=2]` in zijn feiten; de klasse-doc zegt
+  waarom. Geen andere test pinde DRL-tekst of tellingen die verschoven: de volledige suite had na de wijziging
+  precies deze twee rood (1635 tests).
+- `TmsTranspiler.DefaultsGroup`: `controlFacts` noemt `Beslist` nu bij elke eenvoudige stapel met een beslissende
+  default; `rules` groeit met één regel waar een kenmerkgroep op een onwaar-besluit eindigt, in het corpus alleen
+  `jutterswet-penningrecht-catala`. Geen test pint die getallen.
+- Gate 12: `EXPECTED_PLAYED` 261 en alle lijsten ongewijzigd, gate 12 `--fast` groen na deel 1 en deel 2.
+
+### (b) over het corpus
+
+`DefaultsDecisionCorpusWitnessTest`, naast `BranchDumpsCorpusWitnessTest`: per case, stapel en object van het type
+van de stapel, op beide takken, tegen `fixpointOf`, en elk §9.5-feit met EF-027 tegen het conflict van een record.
+Gemeten 2026-10-21: 324 (case, stapel, object) per tak in 42 goldens — 48 toekennen, 19 niet toekennen, 194
+attribuutbesluiten, 12 conflicten, 51 zonder record. Vloeren `EXPECTED_MIN_CHECKED=324`, `EXPECTED_MIN_GOLDENS=42`.
+
+### De rode getuige (a)
+
+`DefaultsDecisionWitnessTest` op `d9c0b9a5` plus alleen de test (`mvn -o -q test-compile`):
+
+```
+[ERROR] .../DefaultsDecisionWitnessTest.java:[5,44] cannot find symbol
+  symbol:   class DefaultsDecision
+  location: package dev.uchar.regelspraak.transpiler.tms
+[ERROR] .../DefaultsDecisionWitnessTest.java:[271,56] cannot find symbol
+  symbol:   method decisionsOf(dev.uchar.regelspraak.cases.DroolsBackend.Build,org.kie.api.runtime.KieSession)
+  location: class dev.uchar.regelspraak.cases.DroolsBackend
+```
+
+En met de ingang maar vóór de lowering (EXEC_MODEL, eenvoudige vorm), verwacht 15 records, gekregen:
+
+```
+[J1 toeslag: P2/defaults/0 7, J1 vergoeding: P1/defaults/0 40, J1 vrijgesteld: P0/defaults/0 true,
+ J2 vergoeding: P1/defaults/1 10, J2 vrijgesteld: P0/defaults/1 false, J3 vergoeding: P1/defaults/1 10,
+ J6 toeslag: P2/defaults/0 7, J6 vrijgesteld: P0/defaults/0 true]
+```
+
+Groen sinds `8fbfe052`, op beide takken.
+
+### Default.name
+
+Een optioneel extensieveld `name` op `Default`, in het schema direct na `node` (gate 2 houdt de canonieke volgorde),
+zonder semantiek zoals `source`, geen WF-regel. De frontend schrijft (`RuleChecker.defaultOf`) de naam van de regel
+waaruit een default komt: de basisregel, het blok na de dubbele punt van `Uitzondering op X:` en `Afwijking van X:`,
+een lid van `Uitzonderingen ongeordend` (met en zonder `op`), en een geschreven initialisatie die de opgavemarkering in
+haar groep opneemt. Een groep-default uit een kop en de twee gegenereerde opgavedefaults krijgen er geen.
+
+Uitgezocht: een lid van `Uitzonderingen ongeordend op` draagt altijd een eigen naam. De grammatica:
+`uitzonderingGroep : UITZONDERINGEN ONGEORDEND ( OP uitzonderingBasisNaam )? COLON regel+` en
+`regel : REGEL regelNaam benaming* regelVersie+`; in `jutterswet-nestkenmerk-rgs` heten de leden "vrijstelling
+vervalt bij ny" en "vrijstelling bij nz".
+
+- `ir/Default`: component `name` (laatste, naast `source`); `RuleChecker` op zeven plaatsen; `IrEmitter.dflt`; de
+  javadoc bij WF-020 (`checkFormNames`) zegt nu dat de bloknaam geen vorm op de draad noemt.
+- Drools-lader: `name` in de veldlijst, gelezen met `optText`. `Stacks.ruleMember` geeft een opgenomen regel zijn
+  naam ook.
+- Verifier-lader: `name` in de `ext`-lijst, gelezen als string en niet bewaard (het AST-record `default` is
+  ongewijzigd). ref en clingo lezen het document via diezelfde bibliotheek (`uchar-ir-v0`) en hebben geen eigen
+  veldlijst; de Catala- en F-logic-frontend bouwen dat record en hoefden niet te veranderen.
+- IR-SPEC ch. 6.1: de alinea **Default** noemt het veld, en een nieuwe alinea **Default.name has no semantics** met
+  een uitgewerkt voorbeeld (`jutterswet-meldingsketen`). `grammar/DIVERGENCES.md` §4, "Emission": waar de naam
+  vandaan komt.
+- Twintig goldens opnieuw uitgegeven door de frontend (`--ir`, en `--ir --cases` bij een `scenario.rgs`): de 17 met
+  blokken en `jutterswet-opgave-bedrag`, `-opgave-boven-berekening`, `-opgave-datum`, waar de geschreven
+  initialisatie van de opgavegroep haar naam krijgt. Alleen `name`-velden kwamen erbij (64), nagerekend door elk
+  document zonder de namen met het oude te vergelijken; geen case-bestand veranderde; de andere 106 rgs-goldens zijn
+  bytegelijk.
+- `InputMarkingTest` (twee pins): de initialisatiedefault van de opgavegroep draagt nu `"name"`; de test zegt
+  bovendien dat de twee gegenereerde defaults er geen dragen.
+- Getuige van de twee routes: `backends/drools/src/source-route/.../loader/DefaultNameSourceRouteTest` (gate 15):
+  per rgs-golden geeft de lader op elke pointer de naam die de resolver de default daar gaf; 20 goldens, 64 namen.
+
+### De naamleg van gate 13
+
+Naar het voorbeeld van de herkomstleg: elke golden met een benoemde default en case-bestanden opnieuw gespeeld met
+elke `name` weggehaald, ref, clingo en beide Drools-takken moeten de onaangeraakte uitkomst geven; geen
+overlevendenlijst. Vloeren `EXPECTED_MIN_NAME_GOLDENS=20` en `EXPECTED_MIN_NAME_STRIPPED=64`, gemeten 2026-10-21.
+Groen: "name leg: 20 golden(s) with named defaults, floor 20; 64 names stripped (floor 64); 256 executor replays
+reproduce the untouched outcome" (182 s voor de hele gate). Rood met een mutatie, niet gecommit: de Drools-lader die
+een default aan de wortel overslaat waarvan de naam met "melding" begint, rood op `jutterswet-opgave-datum`,
+`-opgave-subtype` en `-premiestaffel`, op beide takken.
+
+### Voorgestelde tekst voor `spec/CONSTRUCTS.md` (een nieuwe rij)
+
+```
+| 43 | Name of a default — the block it comes from | an explanation of a defaults decision names the default that decided; the RegelSpraak frontend lifts each `Regel`, `Uitzondering op X: <naam>`, `Afwijking van X: <naam>` and `Uitzonderingen ongeordend` member into a default, and until then its name reached neither the wire nor the model (only the ch. 7.9 index path, which leaves out the member index) | core (metadata) | neither: an extension field without semantics | v0 has none. **Landed (2026-10-21, card `defaults-decider`):** optional `name` on `Default`, written just after `node` (IR-SPEC ch. 6.1, "Default.name has no semantics"); no WF rule, no namespace (WF-020 holds form names only). The frontend writes the name of the block a default comes from, an authored initialisation in the opgave group included; a group-default a head makes and the two generated opgave defaults carry none; Catala, F-logic and the hand-written anchors write none. The Drools loader keeps it, the shared OCaml loader reads it as a string and keeps it nowhere. Witnesses: 20 rgs goldens with 64 names, `DefaultNameSourceRouteTest` (the two routes give every default the same name); gate 13's name leg holds the executors indifferent to the field stripped | out: names of exception groups (they keep the head's text in `source`); the Drools backend's identity of a deciding default is its JSON pointer (`DroolsBackend.decisionsOf`), not its name |
+```
+
+### Voorgestelde tekst voor `CLAUDE.md` (gate 13, na de zin over de ORIGIN-leg)
+
+```
+    Since 2026-10-21 (card `defaults-decider`) a NAME leg beside it:
+    every golden whose defaults carry a `name` (IR-SPEC ch. 6.1,
+    `Default.name`) and that has case files is replayed with every name
+    STRIPPED, and ref, clingo and both Drools branches must reproduce the
+    untouched outcome (no survivor list); floors
+    `EXPECTED_MIN_NAME_GOLDENS=20` and `EXPECTED_MIN_NAME_STRIPPED=64`
+    (measured 2026-10-21).
+```
+
+### Niet gedaan of open, met reden
+
+- De Verbalisator bouwt niets van dit; de toolchain-kaart `explanation-defaults` volgt met een pin-bump. Voor die
+  kaart: een pointer `/rules/rules/k/versions/v` (een opgenomen regel) wijst naar een regelversie, niet naar een
+  `Default`; de emitter groepeert versies van één vorm, dus k is de index van de vorm op de draad, niet die in
+  `model.resolvedRules`.
+- Voor de pin-bump: een kenmerkstapel die op een onwaar-besluit eindigt, heeft nu één regel meer, die ook vuurt; een
+  scenario-trace of dekking van de toolchain die het vuren per vorm telt, kan daar één vuring meer tonen. In het
+  uchar-corpus raakt dat alleen `jutterswet-penningrecht-catala`, en geen uchar-test pint die telling.
+- `decisionsOf` weigert niet waar een evaluatiefout staat; het geeft dan wat de controlefeiten zeggen, zoals
+  `fixpointOf` de fouten als gegevens geeft. Bewust: de ingang staat naast `fixpointOf`, en de javadoc zegt dat een
+  afnemer de fouten eerst leest.
+- De lijst van `decisionsOf` heeft geen vaste volgorde, zoals de lijsten van `Fixpoint`.
+- Geen mutatieproef op getuige (b); wel op de naamleg (hierboven), zoals de kaart vraagt.
+
+### Vondsten buiten de kaart
+
+- Een fout in de rechtvaardiging van een onwaar-besluit onderaan een eenvoudige kenmerkstapel (een datumstap buiten
+  bereik, een contextwaarde zonder rekendatum) gaf in Drools geen fout, want die default had geen regel en dus geen
+  foutregel; ref evalueert de rechtvaardiging van elke default die aan de beurt komt (`own_decision` in
+  `ref/lib/eval.ml`) en faalt daar. Met de regel van deze kaart krijgt zo'n default ook zijn foutregel
+  (`TmsTranspiler.ownRule`), zodat Drools nu ook faalt. Afgeleid uit de code, niet met een geval gemeten; geen
+  corpusgeval raakt het (gates 5, 6, 8 en 12 ongewijzigd groen).
+
+### Gates
+
+De volledige set op `5d7a0d0a`, `bash werk/gates.sh … gates-1`: alle zestien `rc=0`, `EXIT 0` (gate 12 649 s, played
+261 en de DRL-teksttak 261; gate 13 193 s, met de naamleg). Tijdens de bouw: de Drools-suite (1635 tests na deel 1,
+groen na de twee pins), de frontendsuite (1221 tests), gate 12 `--fast` na deel 1 en deel 2, gates 2, 3, 4, 10, 13,
+15 en 16 los.
