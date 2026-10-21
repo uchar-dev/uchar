@@ -527,10 +527,13 @@ public final class TmsTranspiler {
     }
 
     /**
-     * What every effective defaults stack decided at the fixpoint of {@code session}, per object on which a default
-     * decided or a conflict stood, read off the control facts the stack left standing ({@link ControlFact}) and the
-     * analysis that placed them, without evaluating anything again. Under truth maintenance only the end state counts:
-     * a decision that a higher one displaced, or whose justification went, is not in the session any more.
+     * What every effective defaults stack decided at the fixpoint of {@code session}: one record per object of the
+     * session and effective stack of its concrete type, the objects being the beans of the input and the objects the
+     * creations made ({@link Fixpoint#objects}), read off the control facts the stack left standing
+     * ({@link ControlFact}) and the analysis that placed them, without evaluating anything again. A record with neither
+     * a decider nor a conflict is one on which no default decided, and the target keeps its input; like every record it
+     * carries the root chains of its stack. Under truth maintenance only the end state counts: a decision that a higher
+     * one displaced, or whose justification went, is not in the session any more.
      *
      * <p>The simple form leaves one {@link Decides} per object, of the highest default that decided; the decision is the
      * default's own on a characteristic and the value the stack wrote on an attribute. The general form leaves an
@@ -547,6 +550,9 @@ public final class TmsTranspiler {
      */
     public List<DefaultsDecision> decisionsOf(KieSession session) {
         requireFixpoint(session);
+        // a stack runs on instances of exactly its owner (ch. 7.10), so the stacks of an object are those of its class
+        Map<Class<?>, List<String>> stacksOf = new HashMap<>();
+        layouts.forEach((name, s) -> stacksOf.computeIfAbsent(s.javaClass(), k -> new ArrayList<>()).add(name));
         Map<String, Map<Object, List<ControlFact>>> perStack = new LinkedHashMap<>();
         for (Object f : session.getObjects(o -> o instanceof ControlFact)) {
             ControlFact c = (ControlFact) f;
@@ -563,24 +569,34 @@ public final class TmsTranspiler {
                     .computeIfAbsent(w.subject(), k -> new ArrayList<>()).add(w);
         }
         List<DefaultsDecision> out = new ArrayList<>();
-        perStack.forEach((name, perSubject) -> {
-            StackLayout s = layouts.get(name);
-            List<List<String>> rootChains = new ArrayList<>();
-            for (List<Node> chain : s.roots()) rootChains.add(chain.stream().map(k -> pointerOf(k.d())).toList());
-            perSubject.forEach((subject, facts) -> {
-                Settling settled = s.general() ? settledInGeneralForm(name, s, subject, facts)
+        Map<String, List<List<String>>> rootChains = new HashMap<>();
+        // the beans of the input and the objects the creations made: the session holds no other object of a type
+        for (Object subject : session.getObjects(o -> stacksOf.containsKey(o.getClass())))
+            for (String name : stacksOf.get(subject.getClass())) {
+                StackLayout s = layouts.get(name);
+                Map<Object, List<ControlFact>> perSubject = perStack.get(name);
+                List<ControlFact> facts = perSubject == null ? null : perSubject.remove(subject);
+                Settling settled = facts == null ? null : s.general() ? settledInGeneralForm(name, s, subject, facts)
                         : settledInSimpleForm(name, s, subject, facts, written.getOrDefault(name, Map.of()));
-                if (settled != null)
-                    out.add(new DefaultsDecision(subject, s.member().name(), s.member().characteristic(), rootChains,
-                            settled.decider(), settled.conflict()));
-            });
+                List<List<String>> chains = rootChains.computeIfAbsent(name, n -> s.roots().stream()
+                        .map(chain -> chain.stream().map(k -> pointerOf(k.d())).toList()).toList());
+                out.add(new DefaultsDecision(subject, s.member().name(), s.member().characteristic(), chains,
+                        settled == null ? null : settled.decider(), settled == null ? null : settled.conflict()));
+            }
+        perStack.forEach((name, rest) -> {
+            if (!rest.isEmpty())
+                throw new IllegalStateException("controlefeiten van " + name + " op "
+                        + rest.keySet().stream().map(FactNames::object).toList() + ", en dat is in de sessie geen"
+                        + " object van het type waarop de stapel loopt: " + rest.values());
         });
         return out;
     }
 
     /** The lowered form of one effective stack: its target, its bare conflict key (the target on the type that declares
-     *  it), whether it took the general form, and the knots of its chains at the root. */
-    private record StackLayout(Member member, String targetForm, boolean general, List<List<Node>> roots) {}
+     *  it), whether it took the general form, the knots of its chains at the root, and the bean class of its owner, the
+     *  type it runs on ({@link StackBuild#javaClass}). */
+    private record StackLayout(Member member, String targetForm, boolean general, List<List<Node>> roots,
+                               Class<?> javaClass) {}
 
     /** How a chain or a reconciliation came out: a default that decided, or a conflict. */
     private record Settling(DefaultsDecision.Decider decider, DefaultsDecision.Conflict conflict) {}
@@ -2711,7 +2727,7 @@ public final class TmsTranspiler {
         for (Reads reads : b.readings) reads.recorder();
         derived.put(member.key(), member);
         defaultsGroups.add(new DefaultsGroup(b.name, general, rules.size(), List.copyOf(b.controlFacts)));
-        layouts.put(b.name, new StackLayout(member, b.targetForm, general, squareRoot));
+        layouts.put(b.name, new StackLayout(member, b.targetForm, general, squareRoot, b.javaClass));
         return rules;
     }
 

@@ -37,9 +37,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * {@code DroolsBackend.decisionsOf}, the entry that says per object and effective defaults stack which default decided
  * (card defaults-decider): the pointer of the deciding default with its decision, a do-not-attribute decision
- * included, the conflict that stood, or no record where no default decided. Three small documents of Jutterswet
- * material, each case with its expected records written by hand from RUNTIME-SEMANTICS ch. 7, on both branches, which
- * render one analysis and must give the same records.
+ * included, the conflict that stood, or, since card undecided-stack-record, a record with neither where no default
+ * decided, so that every object has a record per stack of its type and every record the root chains of its stack.
+ * Three small documents of Jutterswet material, each case with its expected records and the root chains of each stack
+ * written by hand from RUNTIME-SEMANTICS ch. 7, on both branches, which render one analysis and must give the same
+ * records.
  *
  * <ul>
  *   <li>The simple form (one chain, no exception groups): the highest, a middle and the lowest default deciding; a
@@ -60,6 +62,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <p><b>Red</b> on {@code d9c0b9a5}, before the entry: this class did not compile, since {@code DroolsBackend} had no
  * {@code decisionsOf} and the backend no {@code DefaultsDecision}; the simple form left no control fact for its lowest
  * deciding default, nor for a do-not-attribute decision at the bottom, which got no rule at all.
+ *
+ * <p><b>Red</b> on {@code b7186f78}, before card undecided-stack-record: all three tests failed, since the entry gave
+ * no record where no default decided, on a simple stack ({@code J5}), in the general form ({@code P6}, {@code P7}) and
+ * on the stack a {@code Wrakrecht} composes from two declarations ({@code W4}), whose order of evaluation only the root
+ * chains of a record give.
  */
 class DefaultsDecisionWitnessTest {
 
@@ -111,7 +118,10 @@ class DefaultsDecisionWitnessTest {
                 "J4 toeslag: " + P + "2/defaults/1 3",
                 "J4 vergoeding: " + P + "1/defaults/2 20",
                 "J4 vrijgesteld: " + P + "0/defaults/3 false",
-                // J5: no default decides, the initialisation not either, since toeslag holds 9 in the input
+                // no default decides, the initialisation not either, since toeslag holds 9 in the input
+                "J5 toeslag: no default decided",
+                "J5 vergoeding: no default decided",
+                "J5 vrijgesteld: no default decided",
                 // the highest vergoeding default is justified, its consequence leeg, and it falls through
                 "J6 toeslag: " + P + "2/defaults/0 7",
                 "J6 vergoeding: " + P + "1/defaults/2 20",
@@ -190,7 +200,10 @@ class DefaultsDecisionWitnessTest {
                 "P5 penninggerechtigd: " + w0 + " true",
                 "P5 wachtgeld: " + P + "1/defaults/0 30",
                 "P6 penninggerechtigd: " + P + "0/defaults/2 true",
-                // P7: nothing decides
+                "P6 wachtgeld: no default decided",
+                // nothing decides, at the root of the penningrecht nor in any of the three wachtgeld groups
+                "P7 penninggerechtigd: no default decided",
+                "P7 wachtgeld: no default decided",
                 "P8 penninggerechtigd: " + w0 + " true",
                 // two groups at the root decide differently: a conflict under the bare key
                 "P8 wachtgeld: conflict at the root under Jutter.wachtgeld: " + P + "1/defaults/0 30, " + P
@@ -244,8 +257,10 @@ class DefaultsDecisionWitnessTest {
                 // the inherited exception, second in the effective stack and first in its declaration
                 "W2 uitkering: " + P + "0/defaults/0 99",
                 // the own base, which replaces the inherited one
-                "W3 uitkering: " + P + "1/defaults/1 80");
-                // W4: the inherited base is not in the stack of a Wrakrecht, and nothing decides
+                "W3 uitkering: " + P + "1/defaults/1 80",
+                // the inherited base is not in the stack of a Wrakrecht, and nothing decides: the record carries the
+                // composed order all the same, the root chains of the Wrakrecht stack below
+                "W4 uitkering: no default decided");
         Map<String, List<List<String>>> chains = new TreeMap<>(Map.of(
                 "Diepwrak uitkering", List.of(List.of(P + "1/defaults/0", P + "0/defaults/0", "/rules/rules/0/versions/0")),
                 "Strandrecht uitkering", List.of(List.of(P + "0/defaults/0", P + "0/defaults/1")),
@@ -256,8 +271,8 @@ class DefaultsDecisionWitnessTest {
 
     // ---------------- the reading ----------------
 
-    /** The records of {@code c} on both branches, each the expected list, and the root chains of each stack that
-     *  decided something, by the type of its objects and its member. */
+    /** The records of {@code c} on both branches, each the expected list, and the root chains of every record, by the
+     *  type of its object and its member: every record of a stack carries the root chains of that stack. */
     private static void bothBranches(Path ir, JsonNode c, Map<String, String> types, List<String> expected,
                                      Map<String, List<List<String>>> chains) throws Exception {
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
@@ -271,7 +286,10 @@ class DefaultsDecisionWitnessTest {
                 for (DefaultsDecision d : DroolsBackend.decisionsOf(build, session)) {
                     String l = label.get(d.object());
                     out.add(line(l, d));
-                    seen.put(types.get(l) + " " + d.member(), d.rootChains());
+                    List<List<String>> before = seen.put(types.get(l) + " " + d.member(), d.rootChains());
+                    if (before != null)
+                        assertEquals(before, d.rootChains(), branch + ": de wortelketens van " + l + " " + d.member()
+                                + " zijn die van zijn stapel");
                 }
                 return out.stream().sorted().toList();
             });
@@ -280,8 +298,10 @@ class DefaultsDecisionWitnessTest {
         }
     }
 
-    /** A record as one line: the label, the member, and the decider with its decision or the conflict. */
+    /** A record as one line: the label, the member, and the decider with its decision, the conflict, or that no
+     *  default decided. */
     private static String line(String label, DefaultsDecision d) {
+        if (d.decider() == null && d.conflict() == null) return label + " " + d.member() + ": no default decided";
         if (d.decider() != null)
             return label + " " + d.member() + ": " + d.decider().pointer() + " " + text(d.decider().decision());
         List<String> deciders = new ArrayList<>();

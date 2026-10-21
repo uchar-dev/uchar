@@ -6,8 +6,10 @@ import java.util.Objects;
 /**
  * What one effective defaults stack decided for one object at the fixpoint of a session, read off the control facts
  * the stack left standing ({@link ControlFact}), never computed again ({@code DroolsBackend.decisionsOf}): which default
- * decided, with its decision, or which conflict stood. A stack on which no default decided has no such record; its
- * target keeps its input (RUNTIME-SEMANTICS ch. 7.1).
+ * decided, with its decision, which conflict stood, or that no default decided. Every object of the session, the beans
+ * of the input and the objects the creations made ({@link Fixpoint#objects}), has one record per effective stack of its
+ * concrete type. A record with neither a decider nor a conflict is one on which no default decided: its target keeps
+ * its input (RUNTIME-SEMANTICS ch. 7.1), and its {@link #rootChains} still name the defaults of the stack in their order.
  *
  * <p>A default is named by a JSON pointer (RFC 6901) into the IR document the build was made from: the {@code Default}
  * node, {@code /rules/prioritizedDefaults/3/defaults/1/exceptions/members/0/defaults/0}, on any depth of nesting
@@ -27,8 +29,8 @@ import java.util.Objects;
  * @param member         the stack's target, named as the model declares it, as {@link Fixpoint} names a member
  * @param characteristic whether the target is a characteristic (true) or an attribute (false)
  * @param rootChains     the pointers of the defaults at the root of the effective stack, per group, highest first
- * @param decider        the default that decided, or null where a conflict stood
- * @param conflict       the conflict that stood, or null where a default decided
+ * @param decider        the default that decided, or null where a conflict stood or no default decided
+ * @param conflict       the conflict that stood, or null where a default decided or no default decided
  */
 public record DefaultsDecision(Object object, String member, boolean characteristic, List<List<String>> rootChains,
                                Decider decider, Conflict conflict) {
@@ -37,9 +39,9 @@ public record DefaultsDecision(Object object, String member, boolean characteris
         Objects.requireNonNull(object, "object");
         Objects.requireNonNull(member, "member");
         rootChains = rootChains.stream().map(List::copyOf).toList();
-        if ((decider == null) == (conflict == null))
-            throw new IllegalArgumentException("een beslissing van een stapel noemt de beslisser of het conflict, niet "
-                    + (decider == null ? "geen van beide" : "beide"));
+        if (decider != null && conflict != null)
+            throw new IllegalArgumentException("een beslissing van een stapel noemt hoogstens één van beslisser en"
+                    + " conflict, niet beide");
     }
 
     /**

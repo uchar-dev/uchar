@@ -620,15 +620,18 @@ public final class DroolsBackend {
 
     /**
      * Which default of each effective defaults stack decided in {@code session} after a {@link #fire} that reached its
-     * fixpoint (RUNTIME-SEMANTICS ch. 7): one {@link DefaultsDecision} per object and stack on which a default decided
-     * or a conflict stood, with the JSON pointer of the deciding default into the document of the build and its
-     * decision, a do-not-attribute decision included, or the conflict with the pointers and decisions that differed.
-     * An object and stack without a record is one on which no default decided: the target keeps its input. It reads the
-     * control facts the stacks left standing and evaluates nothing again; how it follows them is
+     * fixpoint (RUNTIME-SEMANTICS ch. 7): one {@link DefaultsDecision} per object and effective stack of its concrete
+     * type, the objects being the beans of the input and the objects the creations made ({@link Fixpoint#objects}).
+     * A record gives the JSON pointer of the deciding default into the document of the build and its decision, a
+     * do-not-attribute decision included, or the conflict with the pointers and decisions that differed, or neither:
+     * a record without a decider and a conflict is one on which no default decided, and the target keeps its input.
+     * Every record carries the root chains of its stack, the order in which the stack evaluates its defaults. It reads
+     * the control facts the stacks left standing and evaluates nothing again; how it follows them is
      * {@link TmsTranspiler#decisionsOf}. Read without writing anything, beside {@link #fixpointOf}, whose values and
      * characteristics a decision agrees with: an attribution with the characteristic derived, a do-not-attribute
-     * decision with none, an attribute's decision with its derived value, and a conflict with the §9.5 deposit of its
-     * key. Where an evaluation fault stands the session has no answer, which {@link #fixpointOf} gives.
+     * decision with none, an attribute's decision with its derived value, a conflict with the §9.5 deposit of its
+     * key, and a record without either with nothing derived on the target. Where an evaluation fault stands the
+     * session has no answer, which {@link #fixpointOf} gives.
      *
      * @throws IllegalStateException the sessions {@link #fixpointOf} refuses, in its sentences
      */
