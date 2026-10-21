@@ -293,6 +293,55 @@ class ReadingsWitnessTest {
                 "READINGS 1"));
     }
 
+    // ---------------- the table of a quantifier fold ----------------
+
+    private static final String UNRESOLVED = "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"zijn keuring is onleesbaar\"}}";
+
+    private static final String TABLE_MODEL = TmsDocuments.model(List.of(
+            objectType("Ploeg", List.of(), List.of("inzetbaar", "bemand")),
+            objectType("Wacht", List.of(), List.of("gekeurd"))),
+            List.of(factTypeOneToMany("ploegindeling", "ploeg", "Ploeg", "wacht", "Wacht", "wachten")));
+
+    /** The fault arms of the table of ch. 3.9a that the reading of a quantifier fold records (RUNTIME-SEMANTICS
+     *  ch. 5.12; card fold-contributor-verdicts), which no golden reaches: a matrix that ends in an {@code Unresolved}
+     *  condition (EF-019), and a filter that reaches one on a member that is not gekeurd. On P1 the fold stops at W1,
+     *  and the matrix faults on W2, which the stop did not reach: the fold has its verdict, the reading its status, and
+     *  W2 carries the fault, not reached. On P2 the matrix faults on W3, which the stop reached: the fold faults, and W4
+     *  after it carries its verdict, not reached. The filter of the second rule faults on W1 and on W4: the
+     *  contributors are not settled, and the node carries none, where before the card it carried the member whose
+     *  filter held (W2, W3), in no order. The same document is the reference interpreter's
+     *  {@code WV-5.12-fout-in-een-kwantorvouw}. */
+    @Test void the_table_of_a_quantifier_fold_with_its_faults() throws Exception {
+        Path ir = TmsDocuments.document(TABLE_MODEL, List.of(
+                characteristicRule("keuring", "Ploeg", "inzetbaar", TmsQuantifierFoldWitnessTest.quantifierFold("all", 0, null,
+                        compound("all", 0, List.of(check("gekeurd", false), UNRESOLVED)),
+                        "alle wachten van de Ploeg aan alle volgende voorwaarden voldoen")),
+                characteristicRule("bemanning", "Ploeg", "bemand", TmsQuantifierFoldWitnessTest.quantifierFold("all", 0,
+                        compound("atLeast", 1, List.of(check("gekeurd", false), UNRESOLVED)), check("gekeurd", false),
+                        "alle wachten van de Ploeg die gekeurd of onleesbaar zijn gekeurd zijn"))));
+        Path c = java.nio.file.Files.createTempFile("tabel", ".json");
+        c.toFile().deleteOnExit();
+        java.nio.file.Files.writeString(c, TmsDocuments.caseOn(null, List.of(
+                instanceWithRoles("P1", "Ploeg", Map.of(), List.of(), Map.of("wachten", List.of("W1", "W2"))),
+                instanceWithRoles("P2", "Ploeg", Map.of(), List.of(), Map.of("wachten", List.of("W3", "W4"))),
+                instanceWithRoles("W1", "Wacht", Map.of(), List.of(), Map.of()),
+                instanceWithRoles("W2", "Wacht", Map.of(), List.of("gekeurd"), Map.of()),
+                instanceWithRoles("W3", "Wacht", Map.of(), List.of("gekeurd"), Map.of()),
+                instanceWithRoles("W4", "Wacht", Map.of(), List.of(), Map.of())), List.of()).toString());
+        flag(ir, c, List.of("case " + c.getFileName(),
+                "reading " + R + "0/versions/0 \"P1\" 0 QuantifierFold false contributors [\"W1\" false reached;"
+                        + " \"W2\" fault EF-019 unreached]",
+                "reading " + R + "0/versions/0 \"P1\" FAILS",
+                "reading " + R + "0/versions/0 \"P2\" 0 QuantifierFold fault EF-019 contributors [\"W3\" fault EF-019"
+                        + " reached; \"W4\" false unreached]",
+                "reading " + R + "0/versions/0 \"P2\" FAULTS",
+                "reading " + R + "1/versions/0 \"P1\" 0 QuantifierFold fault EF-019",
+                "reading " + R + "1/versions/0 \"P1\" FAULTS",
+                "reading " + R + "1/versions/0 \"P2\" 0 QuantifierFold fault EF-019",
+                "reading " + R + "1/versions/0 \"P2\" FAULTS",
+                "READINGS 1"));
+    }
+
     /** The output of {@code --readings} on {@code ir} and the case {@code c}, on both branches, the expected lines. */
     private static void flag(Path ir, Path c, List<String> expected) {
         for (boolean drl : List.of(false, true)) {

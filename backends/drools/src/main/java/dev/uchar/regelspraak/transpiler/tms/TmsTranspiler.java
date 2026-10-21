@@ -3554,6 +3554,9 @@ public final class TmsTranspiler {
     private static List<ConditionReading.Contributor> contributors(Site s, List<Contribution> contributions,
                                                                    RecordingRendering rec) {
         List<ConditionReading.Contributor> out = new ArrayList<>();
+        // a fault of the fold's filter, or of a member's value, comes before the fold's value: its contributors are
+        // not settled, and the node carries none (RUNTIME-SEMANTICS ch. 3.9a, 5.12)
+        if (s.term() instanceof Term.FoldRead f && rec.outcome(f.outcome()) == null) return out;
         if (s.quantifier() == null) {
             for (Contribution b : contributions)
                 out.add(new ConditionReading.Contributor(b.element(), RecordingRendering.given(b.value()), null, true));
@@ -3564,14 +3567,13 @@ public final class TmsTranspiler {
                 out.add(new ConditionReading.Contributor(b.element(), ((BigDecimal) b.value()).signum() > 0, null, null));
             return out;
         }
-        // the stop rule over the contributors in their order, as ComputeHelpers.quantifierRead replays it; a fault of the
-        // fold's filter or of a member's value comes before it, and then it reads no contributor
+        // the stop rule over the contributors in their order, as ComputeHelpers.quantifierRead replays it; every
+        // contributor keeps the verdict or the fault of its matrix, the position says whether the stop reached it
         List<Contribution> ordered = new ArrayList<>(contributions);
         ordered.sort(Comparator.comparing(b -> (MemberTest) b.value()));
         Condition.QuantifierFold q = s.quantifier();
-        Term.QuantifierRead read = (Term.QuantifierRead) (s.term() instanceof Term.FoldRead f ? f.outcome() : s.term());
         int n = ordered.size(), touch = 0;
-        boolean stopped = rec.outcome(read.contributions()) == null;
+        boolean stopped = false;
         for (int k = 0; k < n; k++) {
             MemberTest m = (MemberTest) ordered.get(k).value();
             if (!stopped && ComputeHelpers.established(q.quantifier(), q.threshold(), touch, k, n - k) != null)

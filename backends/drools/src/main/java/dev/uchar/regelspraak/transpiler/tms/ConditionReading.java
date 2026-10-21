@@ -97,16 +97,20 @@ public record ConditionReading(Object object, String form, Status status, List<N
 
     /**
      * One contributor of a fold over a set on the object: a member of its range that passes its filter
-     * (RUNTIME-SEMANTICS ch. 3.4, 3.9a). For a quantifier fold whose matrix can fault or deposit the contributors are in
-     * their order (ch. 5.11), and {@code reached} says whether the stop rule of ch. 5.10 reached the contributor; where
-     * the matrix can do neither, no fault and no deposit shows the order, the session keeps none, and {@code reached} is
-     * null, the contributors in no particular order. For a value fold every contributor is reached.
+     * (RUNTIME-SEMANTICS ch. 3.4, 3.9a). For a quantifier fold every contributor carries the verdict of the matrix on it,
+     * or its fault, after the stop and after a fault as well: the table of ch. 3.9a over the contributors, which
+     * ch. 5.12 records, read off the rule that evaluates the matrix per member and deposits nothing here. Its position is
+     * {@code reached}. Where the matrix can fault or deposit, the contributors are in their order (ch. 5.11) and
+     * {@code reached} says whether the stop rule of ch. 5.10 reached the contributor; a verdict or a fault of a
+     * contributor it did not reach is the reading's, not the session's. Where the matrix can do neither, no fault and no
+     * deposit shows the order, the session keeps none, and the fold has no position: {@code reached} is null. For a
+     * value fold every contributor is reached. A fold whose filter faults has no contributors.
      *
      * @param member  the member, a bean of the build's bean model
      * @param value   for a quantifier fold the verdict of its matrix on the member, a {@code Boolean}, null where it
      *                faulted; for a value fold the value the member contributes, null for a count
      * @param fault   the evaluation fault the matrix raised for the member, unnamed, null where it raised none
-     * @param reached whether the evaluation reached the member, null where the order of the members does not show
+     * @param reached the position: whether the evaluation reached the member, null where the fold has none
      */
     public record Contributor(Object member, Object value, RuntimeException fault, Boolean reached) {
         public Contributor {
