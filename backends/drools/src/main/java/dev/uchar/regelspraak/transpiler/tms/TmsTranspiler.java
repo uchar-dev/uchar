@@ -332,7 +332,7 @@ public final class TmsTranspiler {
      *  (WF-031), so its predicate is a constant of the document and no rule binds anything for it. */
     private final DayKinds dayKinds;
     /** Where the nodes of the document stand on the wire, in a build with readings (card fixpoint-readings), which
-     *  plans a reading rule beside the rule of every form with a condition ({@code readingsOf}); null in a build
+     *  plans a reading rule beside the rule of every form with a condition ({@link #readingsOf}); null in a build
      *  without, whose plan is that of a build before the card. */
     private final dev.uchar.regelspraak.loader.NodePositions positions;
     /** While the condition and the value of a form's own rule compile in a build with readings: the term the analysis
@@ -374,7 +374,7 @@ public final class TmsTranspiler {
 
     /** A build with readings (card fixpoint-readings) of the loaded {@code document}: the build of
      *  {@link #build(RegelSpraakModel, ClassLoader, List, Map, List, Map, Map)}, and beside the rule of every form with a
-     *  condition a reading rule, whose facts {@code readingsOf} reads, numbering the nodes of a form by the positions the
+     *  condition a reading rule, whose facts {@link #readingsOf} reads, numbering the nodes of a form by the positions the
      *  loader gives with the document. It takes the loaded document whole, so it leaves no side table out. */
     public static TmsTranspiler withReadings(dev.uchar.regelspraak.loader.IrLoader.Positioned document,
                                              ClassLoader beanLoader) {
@@ -404,6 +404,9 @@ public final class TmsTranspiler {
     }
 
     public Model model() { return model0; }
+
+    /** Whether this is a build with readings ({@link #withReadings}), whose sessions {@link #readingsOf} reads. */
+    public boolean readings() { return positions != null; }
 
     /** The coverage manifest: one verdict per form, the rules in document order, then every other family. */
     public List<Coverage> coverage() { return coverage; }
@@ -3264,7 +3267,7 @@ public final class TmsTranspiler {
     private record Site(int node, String kind, Term term, Unit unit, Fold fold, Condition.QuantifierFold quantifier) {}
 
     /**
-     * The reading rule of one form in a build with readings, with what {@code readingsOf} needs to read its facts:
+     * The reading rule of one form in a build with readings, with what {@link #readingsOf} needs to read its facts:
      * the form's pointer, its validity, whether the form has a guard of its turn (control facts of a defaults stack,
      * the guard of an initialisation, the 1:1 guard of an object creation), the planned condition and value of the
      * form's own rule, the very terms its test and its consequence evaluate, and the nodes of the reading in their
@@ -3358,6 +3361,164 @@ public final class TmsTranspiler {
                 case Exists e -> { }
                 case TestItem t -> { }
             }
+        return out;
+    }
+
+    /**
+     * The readings of the conditions at the fixpoint of {@code session}, a session of a build with readings: for every
+     * form with a condition and every object of the session the form runs on, one record. Where the form's reading rule
+     * stood at the fixpoint, its {@link Reading} carries the values the form's own rule bound there, and the record is
+     * the evaluation of the rule's condition over them, and of its value where the condition holds, by the recording
+     * rendering ({@link RecordingRendering}), which deposits nothing; else the form was not at its turn there,
+     * {@link ConditionReading.Status#DISPLACED}, or its validity does not admit the session's evaluation date,
+     * {@link ConditionReading.Status#OUTSIDE_VALIDITY}, or the session has no date and the form a dated validity,
+     * {@link ConditionReading.Status#FAULTS}, each without nodes. A form without a guard of its turn inside its
+     * validity has a reading on every object it runs on, and an object without one is a broken contract, refused
+     * loudly; so is a reading on an object no form runs on.
+     *
+     * <p>A contributor of a fold is read off its {@link Contribution} facts on the object: of a quantifier fold whose
+     * matrix can fault or deposit, in their order with the stop rule of RUNTIME-SEMANTICS ch. 5.10 replayed over their
+     * verdicts; of a quantifier fold whose matrix can do neither, with its verdict and without an order; of a value
+     * fold, with what it contributes. It refuses the sessions {@link #readOf} refuses, with the same sentences. An
+     * evaluation fault that stands means the session has no answer ({@link Fixpoint#faults}); this gives what the
+     * readings say all the same, and a consumer reads the faults first. The list is in no particular order.
+     */
+    public List<ConditionReading> readingsOf(KieSession session) {
+        if (positions == null)
+            throw new IllegalStateException("deze build heeft geen leesregels: bouw met lezingen"
+                    + " (DroolsBackend.build met readings) om de lezingen van de voorwaarden te lezen");
+        requireFixpoint(session);
+        Map<String, Map<Object, Reading>> facts = new HashMap<>();
+        for (Object f : session.getObjects(new ClassObjectFilter(Reading.class))) {
+            Reading r = (Reading) f;
+            Reading other = facts.computeIfAbsent(r.form(), k -> new IdentityHashMap<>()).put(r.subject(), r);
+            if (other != null)
+                throw new IllegalStateException("twee lezingen van " + r.form() + " op " + FactNames.object(r.subject())
+                        + ": " + other.values() + " en " + r.values());
+        }
+        LocalDate date = null;
+        for (Object f : session.getObjects(new ClassObjectFilter(EvaluationDate.class))) date = ((EvaluationDate) f).date();
+        Map<String, Map<Object, List<Contribution>>> contributions = null;
+        List<ConditionReading> out = new ArrayList<>();
+        for (ReadingRule r : readingRules) {
+            Map<Object, Reading> ofForm = facts.getOrDefault(r.pointer(), Map.of());
+            for (Object o : session.getObjects(new ClassObjectFilter(r.subject().beanClass()))) {
+                if (!r.inRange(o)) continue;
+                Reading reading = ofForm.isEmpty() ? null : ofForm.remove(o);
+                if (reading == null) {
+                    out.add(new ConditionReading(o, r.pointer(), withoutReading(r, o, date), List.of()));
+                    continue;
+                }
+                if (contributions == null && r.sites().stream().anyMatch(x -> x.fold() != null))
+                    contributions = contributions(session);
+                out.add(reading(r, o, reading, contributions));
+            }
+        }
+        facts.forEach((form, rest) -> {
+            if (!rest.isEmpty())
+                throw new IllegalStateException("lezingen van " + form + " op "
+                        + rest.keySet().stream().map(FactNames::object).toList() + ", en daar loopt geen vorm van deze"
+                        + " build");
+        });
+        return out;
+    }
+
+    /** Why the form of {@code r} has no reading on {@code o}, which it runs on: its validity does not admit the session's
+     *  date {@code date}, or there is none; else the guard of its turn. A form without a guard is a broken contract. */
+    private static ConditionReading.Status withoutReading(ReadingRule r, Object o, LocalDate date) {
+        if (r.validity() != null && !r.validity().always())
+            return date == null ? ConditionReading.Status.FAULTS : r.validity().contains(date)
+                    ? guardedOrRefused(r, o) : ConditionReading.Status.OUTSIDE_VALIDITY;
+        return guardedOrRefused(r, o);
+    }
+
+    private static ConditionReading.Status guardedOrRefused(ReadingRule r, Object o) {
+        if (r.guarded()) return ConditionReading.Status.DISPLACED;
+        throw new IllegalStateException("de leesregel van " + r.pointer() + " stond aan het fixpunt niet op "
+                + FactNames.object(o) + ", waarop de vorm loopt zonder wacht op haar beurt en binnen haar geldigheid");
+    }
+
+    /** The contributions of the session, by fold and subject. */
+    private static Map<String, Map<Object, List<Contribution>>> contributions(KieSession session) {
+        Map<String, Map<Object, List<Contribution>>> out = new HashMap<>();
+        for (Object f : session.getObjects(new ClassObjectFilter(Contribution.class))) {
+            Contribution b = (Contribution) f;
+            out.computeIfAbsent(b.fold(), k -> new HashMap<>()).computeIfAbsent(b.subject(), k -> new ArrayList<>()).add(b);
+        }
+        return out;
+    }
+
+    /** The reading of {@code r} on {@code o} over the values of {@code reading}. */
+    private ConditionReading reading(ReadingRule r, Object o, Reading reading,
+                                     Map<String, Map<Object, List<Contribution>>> contributions) {
+        Object[] w = reading.values().toArray();
+        List<dev.uchar.regelspraak.transpiler.tms.plan.Read> slots = r.plan().readings().slots();
+        if (w.length != slots.size())
+            throw new IllegalStateException("de lezing van " + r.pointer() + " draagt " + w.length + " waarden, en de regel"
+                    + " heeft " + slots.size() + " slots");
+        // a fresh probe in every probe slot, which nobody reads: a reading deposits nothing
+        for (dev.uchar.regelspraak.transpiler.tms.plan.Read l : slots)
+            if (l.kind() == ReadKind.DEPOSIT_FLAG) w[l.slot()] = ComputeHelpers.depositFlag();
+        RecordingRendering rec = new RecordingRendering();
+        ConditionReading.Status status;
+        try {
+            status = rec.test(r.condition(), w) ? ConditionReading.Status.HOLDS : ConditionReading.Status.FAILS;
+        } catch (RuntimeException e) {
+            if (!ComputeHelpers.isEvaluationFault(e)) throw e;
+            status = ConditionReading.Status.FAULTS;
+        }
+        if (status == ConditionReading.Status.HOLDS && r.value() != null) {
+            try {
+                rec.value(r.value(), w);
+            } catch (RuntimeException e) {
+                // the form's consequence inserts this fault in place of the value; the node carries it
+                if (!ComputeHelpers.isEvaluationFault(e)) throw e;
+            }
+        }
+        List<ConditionReading.NodeReading> nodes = new ArrayList<>();
+        for (Site s : r.sites()) {
+            RecordingRendering.Outcome oc = rec.outcome(s.term());
+            List<ConditionReading.Contributor> contributors = oc == null || s.fold() == null ? List.of()
+                    : contributors(s, contributions.getOrDefault(s.fold().key(), Map.of()).getOrDefault(o, List.of()),
+                            rec);
+            nodes.add(new ConditionReading.NodeReading(s.node(), s.kind(), oc != null,
+                    oc == null ? null : RecordingRendering.given(oc.value()), s.unit(),
+                    oc == null ? null : oc.fault(), contributors));
+        }
+        return new ConditionReading(o, r.pointer(), status, nodes);
+    }
+
+    /** The contributors of the fold of {@code s}, from its {@code contributions} on the object, as the evaluation
+     *  {@code rec} reached them. */
+    private static List<ConditionReading.Contributor> contributors(Site s, List<Contribution> contributions,
+                                                                   RecordingRendering rec) {
+        List<ConditionReading.Contributor> out = new ArrayList<>();
+        if (s.quantifier() == null) {
+            for (Contribution b : contributions)
+                out.add(new ConditionReading.Contributor(b.element(), RecordingRendering.given(b.value()), null, true));
+            return out;
+        }
+        if (!s.fold().ordered()) {
+            for (Contribution b : contributions)
+                out.add(new ConditionReading.Contributor(b.element(), ((BigDecimal) b.value()).signum() > 0, null, null));
+            return out;
+        }
+        // the stop rule over the contributors in their order, as ComputeHelpers.quantifierRead replays it; a fault of the
+        // fold's filter or of a member's value comes before it, and then it reads no contributor
+        List<Contribution> ordered = new ArrayList<>(contributions);
+        ordered.sort(Comparator.comparing(b -> (MemberTest) b.value()));
+        Condition.QuantifierFold q = s.quantifier();
+        Term.QuantifierRead read = (Term.QuantifierRead) (s.term() instanceof Term.FoldRead f ? f.outcome() : s.term());
+        int n = ordered.size(), touch = 0;
+        boolean stopped = rec.outcome(read.contributions()) == null;
+        for (int k = 0; k < n; k++) {
+            MemberTest m = (MemberTest) ordered.get(k).value();
+            if (!stopped && ComputeHelpers.established(q.quantifier(), q.threshold(), touch, k, n - k) != null)
+                stopped = true;
+            out.add(new ConditionReading.Contributor(ordered.get(k).element(), m.holds(), m.fault(), !stopped));
+            if (!stopped && m.fault() != null) stopped = true;
+            else if (!stopped && m.holds()) touch++;
+        }
         return out;
     }
 

@@ -45,6 +45,13 @@ public final class NodePositions {
         return nodes.get(node);
     }
 
+    /** The node this loader read at {@code pointer}, a JSON pointer into the document; null where it read none there. */
+    public Object at(String pointer) {
+        for (Map.Entry<Object, Position> e : nodes.entrySet())
+            if (e.getValue().pointer().equals(pointer)) return e.getKey();
+        return null;
+    }
+
     /** The pointer of the version {@code form} stands for, a record of a rule, a consistency, an allocation or a creation
      *  this loader read; null for any other. */
     public String versionOf(Object form) {

@@ -302,16 +302,17 @@ final class ClosureRendering {
         };
     }
 
-    /** A function of the plan as a call on evaluated arguments. */
+    /** A function of the plan as a call on evaluated arguments; the recording rendering calls the same
+     *  ({@link RecordingRendering}). */
     @FunctionalInterface
-    private interface Implementation {
+    interface Implementation {
         Object of(Object[] x);
     }
 
     /** The call of {@code function}: the method its constant names, with the arguments cast as its parameters take
      *  them. */
     @SuppressWarnings("unchecked")
-    private static Implementation implementation(StaticFunction function) {
+    static Implementation implementation(StaticFunction function) {
         return switch (function) {
             case RS_PLUS -> x -> RegelSpraakRuntime.rsPlus(x[0], x[1]);
             case RS_MIN -> x -> RegelSpraakRuntime.rsMin(x[0], x[1]);

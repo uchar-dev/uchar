@@ -24,6 +24,7 @@ import dev.uchar.regelspraak.transpiler.tms.Watch;
 import dev.uchar.regelspraak.transpiler.tms.CreationBudget;
 import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
 import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ConditionReading;
 import dev.uchar.regelspraak.transpiler.tms.DefaultsDecision;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
@@ -136,6 +137,12 @@ public final class DroolsBackend {
             return drl != null ? Branch.DRL_TEXT : Branch.EXEC_MODEL;
         }
 
+        /** Whether this is a build with readings ({@link #build(JsonNode, Branch, boolean)}), whose sessions
+         *  {@link #readingsOf} reads. */
+        public boolean readings() {
+            return execModelTranspiler.readings();
+        }
+
         /** The §9.8 day-kind predicates the DRL text declares as globals (name -> predicate); a session must have
          *  each set before it fires. Empty on the exec-model branch, which wires them into its lambdas; on the
          *  DRL-text branch those of the analysis, whose rendering names their globals
@@ -175,7 +182,7 @@ public final class DroolsBackend {
     /**
      * As {@link #build(JsonNode, Branch)}, and where {@code readings}, a build with readings (card fixpoint-readings):
      * beside the rule of every form with a condition a reading rule, with the left-hand side of the form's own rule
-     * without its test, which inserts the values that rule binds as a logical fact, so that {@code readingsOf} reads
+     * without its test, which inserts the values that rule binds as a logical fact, so that {@link #readingsOf} reads
      * per form and object how the condition came out at the fixpoint and what each of its nodes found. The reading
      * rules read what the other rules derive and nothing reads what they insert, so the facts the other rules derive
      * at the fixpoint are those of the build without them. They belong to no form: {@link Observer} and
@@ -662,6 +669,26 @@ public final class DroolsBackend {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(session, "session");
         return build.execModelTranspiler().decisionsOf(session);
+    }
+
+    /**
+     * The readings of the conditions in {@code session} of a build with readings ({@link #build(JsonNode, Branch,
+     * boolean)}), after a {@link #fire} that reached its fixpoint: per form with a condition and object the form runs on,
+     * one {@link ConditionReading}, how the condition came out there and per node of it what the evaluation reached and
+     * found, the contributors of a fold among it, with the values, the functions, the stop rule and the order of the
+     * form's own rule; or that the form was not at its turn there, or outside its validity. It reads the facts of the
+     * reading rules and evaluates nothing of the session again: no value is read off a bean, nothing is deposited and
+     * nothing written, and it reads alike before and after {@link #setDerivedValues}. Where an evaluation fault stands
+     * the session has no answer, which {@link #fixpointOf} gives; a consumer reads the faults first. How the records
+     * are made is {@link TmsTranspiler#readingsOf}.
+     *
+     * @throws IllegalStateException a build without readings, and the sessions {@link #fixpointOf} refuses, in its
+     *                               sentences
+     */
+    public static List<ConditionReading> readingsOf(Build build, KieSession session) {
+        Objects.requireNonNull(build, "build");
+        Objects.requireNonNull(session, "session");
+        return build.execModelTranspiler().readingsOf(session);
     }
 
     private static Fixpoint readFixpoint(Build build, KieSession session, Function<Object, String> label) {
