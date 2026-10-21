@@ -419,7 +419,26 @@ reviewer's duty on a machine that has catala. Current gates:
     otherwise-green gate pays its cost (measured 2026-10-14 on a copy:
     220 s of 635 s). The gate also fails when the backend's suite did
     not run `BranchDumpsCorpusWitnessTest`, the case-by-case comparison of
-    the two branches over every golden and red case. An empty played
+    the two branches over every golden and red case.
+    Since 2026-10-21 (card `fixpoint-readings`) the backend has a build
+    with readings (`DroolsBackend.build(…, readings)`): beside the rule of
+    every form with a condition a reading rule, with the left-hand side of
+    the form's rule without its test, whose facts `readingsOf` reads per
+    form, object and node; the production build is byte-equal to the one
+    before. The suite holds it: `ReadingRulesFixpointWitnessTest` (with and
+    without readings the facts at the fixpoint are equal, per case, on both
+    branches), `ReadingsCorpusWitnessTest` (the readings agree with the
+    fixpoint: a reading holds where its form fired, an operand has the
+    value of the fixpoint, a composite stops where its members say),
+    `ReadingRulesObserverWitnessTest` (the observer, the coverage and the
+    firings per form are those of the build without), and the dump of
+    `BranchDumpsCorpusWitnessTest` carries a section `reading`, so the two
+    branches agree on the readings as well; floors in those classes,
+    measured 2026-10-21. The gate fails when the suite did not run one of
+    those three witnesses, by name, as for `BranchDumpsCorpusWitnessTest`.
+    `DroolsBackendMain --readings` prints the readings per case in the
+    canonical text the reference interpreter's trace is held to (card
+    `ref-trace-and-readings-gate`). An empty played
     set is a failure. For a builder who changes a pin or a list,
     `scripts/check-drools.sh --fast` rebuilds the jar without the JUnit
     suite, runs the exec-model replay with every pin and list, and
