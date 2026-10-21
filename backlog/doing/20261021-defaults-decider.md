@@ -125,7 +125,9 @@ ch. 6.1, het schema, `spec/verifier/lib/loader.ml`, `scripts/check-reftype-deriv
 - `8fbfe052` de ingang (T1–T3; acceptatie (a), (b), (d)).
 - `3b94de40` `Default.name` (T4; acceptatie (c)): frontend, schema, IR-SPEC, beide laders, twintig goldens.
 - `5d7a0d0a` de naamleg van gate 13 (T4).
-- het commit met dit Result.
+- `1b28549e` dit Result.
+- `bf4642bc` (hoofdsessie) de corpustoets legt elke pointer op het document.
+- `87b48426` (hoofdsessie) de rode case `defaults-negation-at-bottom-without-evaluation-date`.
 
 ### De ingang
 
@@ -208,6 +210,14 @@ Wat het verschoof:
 van de stapel, op beide takken, tegen `fixpointOf`, en elk §9.5-feit met EF-027 tegen het conflict van een record.
 Gemeten 2026-10-21: 324 (case, stapel, object) per tak in 42 goldens — 48 toekennen, 19 niet toekennen, 194
 attribuutbesluiten, 12 conflicten, 51 zonder record. Vloeren `EXPECTED_MIN_CHECKED=324`, `EXPECTED_MIN_GOLDENS=42`.
+
+Aangevuld door de hoofdsessie (`bf4642bc`): elke pointer van een record (de wortelketens, de beslisser, het conflict
+en zijn beslissers) moet in het document van de golden een knooppunt opleveren dat het doel van het record schrijft:
+een `Default` van een groep op dat lid, of de versie van een regel met dat doel; en de beslisser ligt op of onder een
+default van de wortelketens. De toolchain legt deze pointers op zijn model terug, dus een verschoven pointer moet hier
+falen. Er moet minstens één pointer naar een regelversie zijn opgelost. Rood met een mutant, niet gecommit:
+`rulePointer` met `form + 1` faalt op 68 records (onder meer `jutterswet-diepwrakbasis`, `-wrakbasis`,
+`-opgave-subtype`).
 
 ### De rode getuige (a)
 
@@ -306,7 +316,7 @@ een default aan de wortel overslaat waarvan de naam met "melding" begint, rood o
   `fixpointOf` de fouten als gegevens geeft. Bewust: de ingang staat naast `fixpointOf`, en de javadoc zegt dat een
   afnemer de fouten eerst leest.
 - De lijst van `decisionsOf` heeft geen vaste volgorde, zoals de lijsten van `Fixpoint`.
-- Geen mutatieproef op getuige (b); wel op de naamleg (hierboven), zoals de kaart vraagt.
+- Op getuige (b) alleen de mutatieproef van de pointers (hierboven); op de naamleg die van de bouwer.
 
 ### Vondsten buiten de kaart
 
@@ -314,8 +324,12 @@ een default aan de wortel overslaat waarvan de naam met "melding" begint, rood o
   bereik, een contextwaarde zonder rekendatum) gaf in Drools geen fout, want die default had geen regel en dus geen
   foutregel; ref evalueert de rechtvaardiging van elke default die aan de beurt komt (`own_decision` in
   `ref/lib/eval.ml`) en faalt daar. Met de regel van deze kaart krijgt zo'n default ook zijn foutregel
-  (`TmsTranspiler.ownRule`), zodat Drools nu ook faalt. Afgeleid uit de code, niet met een geval gemeten; geen
-  corpusgeval raakt het (gates 5, 6, 8 en 12 ongewijzigd groen).
+  (`TmsTranspiler.ownRule`), zodat Drools nu ook faalt. Nagemeten door de hoofdsessie met een contextwaarde zonder
+  rekendatum (EF-011): ref en clingo falen; de Drools-jar op `d9c0b9a5` geeft `NOFAULT ran to a model without
+  faulting`, die van deze tak `FAULT EF-011 {}`. Vastgelegd als rode case
+  `corpus/red/defaults-negation-at-bottom-without-evaluation-date/` (`87b48426`), die gate 8 in de drie uitvoerders
+  houdt. Met een niet-gebonden parameter (EF-014) is het verschil er niet: Drools faalt daar op geen enkele vorm, de
+  bekende `NOFAULT`-regel van `aanvoergeld-parameter-unbound` in `scripts/check-red.sh`.
 
 ### Gates
 
