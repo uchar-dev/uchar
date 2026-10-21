@@ -256,7 +256,10 @@
 # block the default comes from: an extension field without semantics like `name`, on the same
 # nodes, so it rides this leg rather than a leg of its own, with its own count and floor. Every
 # annotated default the frontend writes also carries the name of its block, so the probed set is
-# the same.
+# the same. Measured 2026-10-21 by mutation: the Drools loader made to drop a root default by the
+# text of one of its annotations, an executor that reads the field, turns the leg red on the two
+# goldens that carry that text (jutterswet-schorsing, -tweeledige-grondslag) on both branches;
+# without it the leg is green.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
