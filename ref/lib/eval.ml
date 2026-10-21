@@ -115,12 +115,17 @@ let rec filter_in_order p = function
    time-proportional part, which the evaluation reads whole ([timeline],
    None for an absent one), and a condition it reads over a timeline, the
    part of that timeline in which the condition holds ([periods]). With no
-   observer, as in every session, the evaluation is the one it always was. *)
-type contribution =
+   observer, as in every session, the evaluation is the one it always was;
+   with one, a quantifier fold also evaluates its matrix on the contributors
+   the evaluation does not reach, for the observer alone (ch. 5.12). *)
+type member_found =
   | Member_value of Value.t (* a value fold: what the member contributes; Empty for a count *)
   | Member_verdict of bool (* a quantifier fold: the matrix's verdict on the member *)
   | Member_fault of string option (* the matrix faulted on the member, with the EF code *)
-  | Member_unreached (* a quantifier fold stopped before the member (ch. 5.10) *)
+
+(* [reached] is false for a member of a quantifier fold after its stop or
+   after a fault (ch. 5.10 over the contributors, ch. 3.9a) *)
+type contribution = { found : member_found; reached : bool }
 
 type observer = {
   expr : expr -> (unit -> Value.t) -> Value.t;
@@ -131,7 +136,8 @@ type observer = {
 }
 
 let observer : observer option ref = ref None
-let contribute label c = match !observer with None -> () | Some o -> o.member label c
+let contribute ?(reached = true) label found =
+  match !observer with None -> () | Some o -> o.member label { found; reached }
 let read_whole e tl = match !observer with None -> () | Some o -> o.timeline e tl
 let held_over c tl = match !observer with None -> () | Some o -> o.periods c tl
 
@@ -2486,10 +2492,49 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
             else None
         | Exactly -> if hits > cutoff || hits + left < cutoff then Some false else None
       in
+      (* ch. 5.12: the reading records the table of ch. 3.9a over every
+         contributor, so under an observer each contributor the evaluation
+         does not reach — after the stop, after a fault — is evaluated too,
+         its deposits dropped, and recorded as not reached; the verdict and
+         the fault are the reading's, never the session's. Without an
+         observer nothing past the stop runs. A binder of an enclosing Let is
+         not forced for such a member: that would evaluate a value the
+         session did not, and record its nodes as reached, so the reading
+         refuses the shape by name. *)
+      let unreached (parts : World.instance list) =
+        match !observer with
+        | None -> ()
+        | Some _ ->
+            let locals =
+              SMap.mapi
+                (fun name -> function
+                  | Later _ ->
+                      Later
+                        (fun () ->
+                          failwith
+                            (Printf.sprintf
+                               "ref/lib/eval.ml: the reading of a quantifier fold evaluates a \
+                                member the evaluation did not reach, and its matrix reads %S, a \
+                                binder of an enclosing Let (ch. 10.6), which the evaluation has \
+                                not forced there: not carried"
+                               name))
+                  | b -> b)
+                env.locals
+            in
+            List.iter
+              (fun (m : World.instance) ->
+                let found =
+                  match eval_cond { env with subj = Some el; locals } world m ~err:ignore test with
+                  | hit -> Member_verdict hit
+                  | exception Value.Fault { code; _ } -> Member_fault code
+                in
+                contribute ~reached:false m.label found)
+              parts
+      in
       let rec read hits left (parts : World.instance list) =
         match settled ~hits ~left with
         | Some v ->
-            List.iter (fun (m : World.instance) -> contribute m.label Member_unreached) parts;
+            unreached parts;
             v
         | None -> (
             match parts with
@@ -2499,6 +2544,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
                   try eval_cond { env with subj = Some el } world m ~err test
                   with Value.Fault { code; _ } as fault ->
                     contribute m.label (Member_fault code);
+                    unreached rest;
                     raise fault
                 in
                 contribute m.label (Member_verdict hit);

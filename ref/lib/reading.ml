@@ -759,8 +759,8 @@ let fault_text = function Some c -> "fault " ^ c | None -> "fault -"
    one line with the number and the kind of the node and what the
    evaluation found there — [unreached]; a verdict; a value, with the unit of
    a number; [fault] with the EF code of the fault (ch. 5.7b) or [-]; and the
-   contributors of a fold over a set, sorted, each with its value or verdict
-   or fault and [reached], or [-] and [unreached] after the stop. An
+   contributors of a fold over a set, sorted, each with its value, verdict
+   or fault and [reached] or [unreached]. An
    expression whose value is leeg, which a read of a leeg binder ended or
    which faulted carries the unit of its declaration or its annotation. *)
 let lines env ~world (rs : reading list) =
@@ -789,12 +789,11 @@ let lines env ~world (rs : reading list) =
     else
       let contributor (label, (c : Eval.contribution)) =
         name label ^ " "
-        ^
-        match c with
-        | Member_value v -> canonical v ^ " reached"
-        | Member_verdict v -> string_of_bool v ^ " reached"
-        | Member_fault code -> fault_text code ^ " reached"
-        | Member_unreached -> "- unreached"
+        ^ (match c.found with
+          | Member_value v -> canonical v
+          | Member_verdict v -> string_of_bool v
+          | Member_fault code -> fault_text code)
+        ^ if c.reached then " reached" else " unreached"
       in
       found ^ " contributors [" ^ String.concat "; " (List.sort compare (List.map contributor n.members)) ^ "]"
   in

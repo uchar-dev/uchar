@@ -1,7 +1,13 @@
 (test
  (name test_ref)
  (deps
-  ; the worked example of RUNTIME-SEMANTICS ch. 5.12 is a corpus golden
+  ; the first worked example of RUNTIME-SEMANTICS ch. 5.12 is a corpus golden
   ../../corpus/golden/jutterswet-ploegaandeel/ir.json
-  ../../corpus/golden/jutterswet-ploegaandeel/case.json)
+  ../../corpus/golden/jutterswet-ploegaandeel/case.json
+  ; and so is its second, the table of a quantifier fold
+  ../../corpus/golden/jutterswet-keurgemiddelde/ir.json
+  ../../corpus/golden/jutterswet-keurgemiddelde/case1-stop-voor-de-deling.json
+  ../../corpus/golden/jutterswet-keurgemiddelde/case2-beide-leden-gelezen.json
+  ../../corpus/golden/jutterswet-keurgemiddelde/case3-het-tweede-lid-beslist.json
+  ../../corpus/golden/jutterswet-keurgemiddelde/case4-de-deling-bereikt.json)
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

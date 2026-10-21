@@ -8935,6 +8935,93 @@ let () =
       check "WV-5.12-fout-in-een-lezing" (got = expected);
       if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
 
+(* WV-5.12-keurgemiddelde: the chapter's second worked example verbatim, the
+   golden jutterswet-keurgemiddelde. The node of a quantifier fold carries the
+   table of ch. 3.9a over its contributors — the matrix's verdict on each, on
+   the fixpoint world, depositing nothing — and the position: the members
+   after the stop are not reached, and have their verdict all the same. On
+   case 1 and case 3 the member after the stop divides by zero; the session
+   never read it, so its channel is consistent, and the reading's verdict
+   rests on the deposit it dropped. On case 4 the member is reached and the
+   session deposits (the golden pins EF-005); the reading drops that deposit
+   too. *)
+let () =
+  let golden = "corpus/golden/jutterswet-keurgemiddelde/" in
+  let p = "/rules/rules/0/versions/0 \"P1\" " in
+  List.iter
+    (fun (file, status, contributors) ->
+      let got = readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ file)) in
+      let expected =
+        List.sort compare
+          [ p ^ status;
+            p ^ "0 QuantifierFold " ^ string_of_bool (status = "HOLDS")
+            ^ " contributors [" ^ contributors ^ "]" ]
+      in
+      check ("WV-5.12-keurgemiddelde " ^ file) (got = expected);
+      if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
+    [ ("case1-stop-voor-de-deling.json", "FAILS", {|"W1" false reached; "W2" false unreached|});
+      ("case2-beide-leden-gelezen.json", "HOLDS", {|"W1" true reached; "W2" true reached|});
+      ( "case3-het-tweede-lid-beslist.json", "FAILS",
+        {|"W1" true reached; "W2" false reached; "W3" false unreached|} );
+      ("case4-de-deling-bereikt.json", "FAILS", {|"W1" true reached; "W2" false reached|}) ]
+
+(* WV-5.12-fout-in-een-kwantorvouw: the fault arms of the table, which no
+   golden reaches (a member after the stop that would fault is a fault the
+   ASP backend raises while it translates the document, or not at all where
+   only its parameter guard is lazy, and the Drools backend reads an unbound
+   parameter as leeg), so the readings are taken on the input world of a
+   document whose matrix ends in an Unresolved condition (EF-019). On P1 the
+   fold stops at W1 and the matrix faults on W2, which the session did not
+   reach: the fold has its verdict, the reading its status, and W2 carries
+   the fault, not reached. On P2 the matrix faults on W3, which the session
+   reached: the fold faults, and W4 after it has its verdict, not reached.
+   The second rule's filter reaches the Unresolved on a member that is not
+   gekeurd (W1, W4) and faults: its contributors are not settled, and the
+   node carries none. *)
+let () =
+  let doc =
+    {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Ploeg","animate":false,"plural":"Ploegen","attributes":[],"characteristics":[{"node":"Characteristic","name":"inzetbaar","kind":"adjectival"},{"node":"Characteristic","name":"bemand","kind":"adjectival"}]},{"node":"ObjectType","name":"Strandwacht","animate":true,"plural":"Strandwachten","attributes":[],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"adjectival"}]}],"factTypes":[{"node":"FactType","name":"ploegindeling","reciprocal":false,"roles":[{"node":"Role","name":"ploeg","objectType":"Ploeg","many":false},{"node":"Role","name":"wacht","objectType":"Strandwacht","plural":"wachten","many":true}]}],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"inzetbaar","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"inzetbaar","subjectType":"Ploeg","source":{"snippet":"Een Ploeg is inzetbaar"}},"value":{"node":"Literal","value":{"boolean":true},"type":{"node":"Boolean"},"source":{"snippet":"waar"}},"condition":{"node":"QuantifierFold","quantifier":"all","elementType":"Strandwacht","test":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"CharacteristicCheck","characteristic":"gekeurd","negated":false,"source":{"snippet":"hij is gekeurd"}},{"node":"Unresolved","source":{"snippet":"zijn keuring is onleesbaar"}}],"source":{"snippet":"hij aan alle volgende voorwaarden voldoet"}},"source":{"snippet":"alle wachten van de Ploeg aan alle volgende voorwaarden voldoen"},"sourceRole":{"node":"RoleBinding","factType":"ploegindeling","role":"wacht"}},"initialisation":false}]},{"node":"Rule","name":"bemand","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"bemand","subjectType":"Ploeg","source":{"snippet":"Een Ploeg is bemand"}},"value":{"node":"Literal","value":{"boolean":true},"type":{"node":"Boolean"},"source":{"snippet":"waar"}},"condition":{"node":"QuantifierFold","quantifier":"all","elementType":"Strandwacht","filter":{"node":"Compound","quantifier":"atLeast","threshold":1,"parts":[{"node":"CharacteristicCheck","characteristic":"gekeurd","negated":false,"source":{"snippet":"die gekeurd zijn"}},{"node":"Unresolved","source":{"snippet":"wier keuring onleesbaar is"}}],"source":{"snippet":"die aan ten minste 1 van de volgende voorwaarden voldoen"}},"test":{"node":"CharacteristicCheck","characteristic":"gekeurd","negated":false,"source":{"snippet":"gekeurd zijn"}},"source":{"snippet":"alle wachten van de Ploeg die gekeurd of onleesbaar zijn gekeurd zijn"},"sourceRole":{"node":"RoleBinding","factType":"ploegindeling","role":"wacht"}},"initialisation":false}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+  in
+  let case_data =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "P1", "objectType": "Ploeg", "attributes": {}, "roles": { "wachten": [ "W1", "W2" ] }, "characteristics": [] },
+    { "label": "P2", "objectType": "Ploeg", "attributes": {}, "roles": { "wachten": [ "W3", "W4" ] }, "characteristics": [] },
+    { "label": "W1", "objectType": "Strandwacht", "attributes": {}, "roles": {}, "characteristics": [] },
+    { "label": "W2", "objectType": "Strandwacht", "attributes": {}, "roles": {}, "characteristics": [ "gekeurd" ] },
+    { "label": "W3", "objectType": "Strandwacht", "attributes": {}, "roles": {}, "characteristics": [ "gekeurd" ] },
+    { "label": "W4", "objectType": "Strandwacht", "attributes": {}, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+  in
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-wv512" suffix in
+    let oc = open_out f in
+    output_string oc body_text;
+    close_out oc;
+    f
+  in
+  let irf = write ".ir.json" doc and casef = write ".case.json" case_data in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      let got = readings_of ~evaluate:false irf casef in
+      let line form subject cell = Printf.sprintf "/rules/rules/%d/versions/0 \"%s\" %s" form subject cell in
+      let expected =
+        List.sort compare
+          [ line 0 "P1" "FAILS";
+            line 0 "P1" {|0 QuantifierFold false contributors ["W1" false reached; "W2" fault EF-019 unreached]|};
+            line 0 "P2" "FAULTS";
+            line 0 "P2"
+              {|0 QuantifierFold fault EF-019 contributors ["W3" fault EF-019 reached; "W4" false unreached]|};
+            line 1 "P1" "FAULTS";
+            line 1 "P1" "0 QuantifierFold fault EF-019";
+            line 1 "P2" "FAULTS";
+            line 1 "P2" "0 QuantifierFold fault EF-019" ]
+      in
+      check "WV-5.12-fout-in-een-kwantorvouw" (got = expected);
+      if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
