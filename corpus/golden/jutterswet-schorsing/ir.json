@@ -60,6 +60,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "schorsing art 4bis",
             "decision": false,
             "justification": {
               "node": "Compound",
@@ -115,6 +116,7 @@
           },
           {
             "node": "Default",
+            "name": "penningrecht art 3",
             "decision": true,
             "justification": {
               "node": "Comparison",

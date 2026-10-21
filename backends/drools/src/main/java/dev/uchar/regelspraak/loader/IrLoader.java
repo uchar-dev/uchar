@@ -822,12 +822,13 @@ public final class IrLoader {
 
     private Default dflt(JsonNode n) {
         fields(n, pathOf(n), "Default", List.of("node"),
-                List.of("decision", "justification", "consequence", "initialisation", "exceptions", "source"));
+                List.of("name", "decision", "justification", "consequence", "initialisation", "exceptions", "source"));
         // an absent decision or justification is what the v0 null was; a null there velden has refused
         JsonNode b = n.get("decision");
         Boolean decision = b == null ? null : b.asBoolean();
         return new Default(decision, condition(nodeField(n, "justification")), expr(nodeField(n, "consequence")),
-                bool(n, "initialisation"), exceptions(nodeField(n, "exceptions")), sourceText(n));
+                bool(n, "initialisation"), exceptions(nodeField(n, "exceptions")), sourceText(n),
+                optText(n, pathOf(n), "name"));
     }
 
     private Default.Exceptions exceptions(JsonNode n) {

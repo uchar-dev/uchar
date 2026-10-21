@@ -904,6 +904,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "lage taxatie",
             "justification": {
               "node": "Comparison",
               "op": "less",
@@ -957,6 +958,7 @@
                   "defaults": [
                     {
                       "node": "Default",
+                      "name": "museale vondst",
                       "justification": {
                         "node": "Compound",
                         "quantifier": "all",
@@ -1037,6 +1039,7 @@
           },
           {
             "node": "Default",
+            "name": "waardering",
             "justification": {
               "node": "Compound",
               "quantifier": "all",
@@ -1102,6 +1105,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "wachtgeld voor kustwachters",
             "justification": {
               "node": "CharacteristicCheck",
               "characteristic": "kustwacht",
@@ -1146,6 +1150,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "wachtgeld voor havenmeesters",
             "justification": {
               "node": "CharacteristicCheck",
               "characteristic": "havenmeester",

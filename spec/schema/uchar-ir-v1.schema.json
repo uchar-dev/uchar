@@ -2855,6 +2855,10 @@
         "node": {
           "const": "Default"
         },
+        "name": {
+          "type": "string",
+          "description": "Extension field without semantics, like source: the name the source gives the block this default comes from; absent where it gives none (IR-SPEC ch. 6.1). No consumer may read a decision from it."
+        },
         "decision": {
           "type": "boolean",
           "description": "Characteristic defaults only: attribute (true) or do-not-attribute (false); absent on attribute defaults."

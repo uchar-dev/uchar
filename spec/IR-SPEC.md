@@ -9136,8 +9136,32 @@ is empty in the input facts; lowest only, **root-only**; an absent
 `initialisation` is `false`: the default is not the initialisation default),
 `exceptions` (v0
 `excepties`, the optional nested exception groups — the **Default.exceptions and
-ExceptionGroup** paragraph below), `source` (v0 `bron`). Until L5 an absent
-`decision` or `justification` was a `null`. Semantics:
+ExceptionGroup** paragraph below), `source` (v0 `bron`), and `name` (string? —
+an extension field, written just after `node`: the name the source gives the
+block the default comes from; absent where the source gives none). Until L5 an absent
+`decision` or `justification` was a `null`. v0 has no `name`.
+
+**Default.name has no semantics**, as `source` has none: it resolves
+nothing, it is in no namespace (WF-020 holds the names of forms, and a
+default is none), and no executor reads it for evaluation, so a document
+whose `name` fields are removed gives every executor the same answer
+(gate 13 holds ref, clingo and both Drools branches to that). It is there
+for a consumer that shows a decision — an explanation that names the
+default that decided — and that otherwise has only the index path of
+ch. 7.9 to go by. The RegelSpraak frontend writes the name of the block
+(`grammar/DIVERGENCES.md` §4): the base rule's on the base default, the
+name after the colon of an `Uitzondering op X:` or `Afwijking van X:` block
+on its default, a member's own rule name in an `Uitzonderingen ongeordend`
+block, and an authored initialisation's on the initialisation default of
+the opgave group (§7); a group-default a head makes and the two defaults
+the opgave marker generates carry none. Worked example: in the golden
+`jutterswet-meldingsketen` the default of the block `Uitzondering op
+erkende meldingsdatum: herstelde melding` carries `"name": "herstelde
+melding"`, and the base default the name of its rule, `erkende
+meldingsdatum`. The Catala and F-logic frontends and the hand-written
+anchors write no name.
+
+Semantics:
 `RUNTIME-SEMANTICS.md` ch. 7.1 —
 per subject the highest default that **decides** wins: on a
 characteristic every justified default decides (a false decision derives

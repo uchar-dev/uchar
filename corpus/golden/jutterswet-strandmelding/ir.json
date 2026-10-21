@@ -188,6 +188,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "uitkering van een groot wrakrecht",
             "justification": {
               "node": "Comparison",
               "op": "greater",
@@ -236,6 +237,7 @@
           },
           {
             "node": "Default",
+            "name": "uitkering van een wrakrecht",
             "justification": {
               "node": "Compound",
               "quantifier": "all",

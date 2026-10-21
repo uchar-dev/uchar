@@ -132,6 +132,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "meldtermijn",
             "justification": {
               "node": "Predicate",
               "kind": "filled",
@@ -221,6 +222,7 @@
                   "defaults": [
                     {
                       "node": "Default",
+                      "name": "meldtermijn tot het vergunningseinde",
                       "justification": {
                         "node": "Predicate",
                         "kind": "filled",

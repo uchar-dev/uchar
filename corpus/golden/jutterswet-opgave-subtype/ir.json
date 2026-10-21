@@ -479,6 +479,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "melding bij schade",
             "justification": {
               "node": "CharacteristicCheck",
               "characteristic": "beschadigd",
@@ -501,6 +502,7 @@
           },
           {
             "node": "Default",
+            "name": "melding na het aanspoelen",
             "justification": {
               "node": "Compound",
               "quantifier": "all",
@@ -619,6 +621,7 @@
           },
           {
             "node": "Default",
+            "name": "melding bij onbekende dag",
             "consequence": {
               "node": "Literal",
               "value": {

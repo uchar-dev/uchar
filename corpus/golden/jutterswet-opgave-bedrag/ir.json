@@ -606,6 +606,7 @@
           },
           {
             "node": "Default",
+            "name": "waarde bij onbekende taxatie",
             "consequence": {
               "node": "Literal",
               "value": {

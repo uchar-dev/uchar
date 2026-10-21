@@ -105,6 +105,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "herroepen weigering",
             "decision": false,
             "justification": {
               "node": "Compound",
@@ -140,6 +141,7 @@
                   "defaults": [
                     {
                       "node": "Default",
+                      "name": "vervallen herroeping",
                       "decision": true,
                       "justification": {
                         "node": "Compound",
@@ -192,6 +194,7 @@
           },
           {
             "node": "Default",
+            "name": "uitsluiting van het penningrecht",
             "decision": true,
             "justification": {
               "node": "CharacteristicCheck",

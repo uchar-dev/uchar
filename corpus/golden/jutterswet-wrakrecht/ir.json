@@ -297,6 +297,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "uitkering van een betwist strandrecht",
             "justification": {
               "node": "CharacteristicCheck",
               "characteristic": "betwist",
@@ -323,6 +324,7 @@
           },
           {
             "node": "Default",
+            "name": "uitkering van een strandrecht",
             "justification": {
               "node": "Compound",
               "quantifier": "all",
@@ -354,6 +356,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "uitkering van een diep wrakrecht",
             "justification": {
               "node": "Comparison",
               "op": "greater",
@@ -402,6 +405,7 @@
           },
           {
             "node": "Default",
+            "name": "uitkering van een wrakrecht",
             "justification": {
               "node": "Compound",
               "quantifier": "all",

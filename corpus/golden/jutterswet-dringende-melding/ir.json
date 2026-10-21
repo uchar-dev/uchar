@@ -602,6 +602,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "wrakstuk",
             "decision": false,
             "justification": {
               "node": "QuantifierFold",
@@ -638,6 +639,7 @@
           },
           {
             "node": "Default",
+            "name": "voorrang",
             "decision": true,
             "justification": {
               "node": "Compound",

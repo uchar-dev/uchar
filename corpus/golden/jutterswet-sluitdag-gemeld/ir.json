@@ -609,6 +609,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "gemelde sluitdag gaat voor",
             "justification": {
               "node": "Predicate",
               "kind": "filled",
@@ -637,6 +638,7 @@
           },
           {
             "node": "Default",
+            "name": "sluitdag",
             "justification": {
               "node": "Compound",
               "quantifier": "all",
@@ -687,6 +689,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "vroege sluiting bij veel vondsten",
             "justification": {
               "node": "Comparison",
               "op": "greater",
@@ -749,6 +752,7 @@
           },
           {
             "node": "Default",
+            "name": "uiterste meldingsdag",
             "justification": {
               "node": "Compound",
               "quantifier": "all",
@@ -834,6 +838,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "gewogen vracht",
             "justification": {
               "node": "Predicate",
               "kind": "empty",
@@ -883,6 +888,7 @@
           },
           {
             "node": "Default",
+            "name": "vrachtgewicht",
             "justification": {
               "node": "Compound",
               "quantifier": "all",
@@ -914,6 +920,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "gemelde sluitdag van een kustwacht gaat voor",
             "justification": {
               "node": "Predicate",
               "kind": "filled",
@@ -942,6 +949,7 @@
           },
           {
             "node": "Default",
+            "name": "sluitdag van een kustwacht",
             "justification": {
               "node": "Compound",
               "quantifier": "all",
@@ -1110,6 +1118,7 @@
           },
           {
             "node": "Default",
+            "name": "eerste afrekendag",
             "consequence": {
               "node": "Aggregation",
               "kind": "last",

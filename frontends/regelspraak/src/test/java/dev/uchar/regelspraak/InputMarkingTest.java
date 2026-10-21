@@ -277,6 +277,10 @@ class InputMarkingTest {
         assertNull(init.condition(), "een initialisatiedefault draagt geen geschreven rechtvaardiging");
         assertEquals("25,00", ((Expr.Literal) init.consequence()).valueText());
         assertEquals("standaardwaarde", init.source(), "de statuutannotatie van de initialisatieregel");
+        // card defaults-decider: the authored initialisation keeps its rule name, the generated defaults have none
+        assertEquals("standaardwaarde", init.name(), "de naam van de initialisatieregel");
+        assertNull(g.defaults().get(0).name(), "de opgave-default is gegenereerd en draagt geen naam");
+        assertNull(g.defaults().get(1).name(), "de rekendefault is gegenereerd en draagt geen naam");
         assertFalse(g.defaults().get(0).initialisation());
         assertFalse(g.defaults().get(1).initialisation());
         assertEquals(List.of("waardering", "afwijking opgave waarde"),
@@ -284,7 +288,7 @@ class InputMarkingTest {
                 "de initialisatieregel is opgenomen in de groep en staat niet meer als regel");
         String c = compact(IrEmitter.emit(m));
         assertTrue(c.contains(compact("""
-            {"node": "Default",
+            {"node": "Default", "name": "standaardwaarde",
              "consequence": {"node": "Literal", "value": {"number": "25.00"},
                              "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"},
                              "source": {"snippet": "25,00"}},
@@ -352,7 +356,7 @@ class InputMarkingTest {
              "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "meldingsdatum"}}}""")),
                 () -> "de gegenereerde attributen dragen het datumtype niet:\n" + ir);
         assertTrue(c.contains(compact("""
-            {"node": "Default",
+            {"node": "Default", "name": "melding bij onbekende vinddag",
              "consequence": {"node": "Literal", "value": {"date": "2026-03-01"},
                              "type": {"node": "Date", "precision": "day"}, "source": {"snippet": "01-03-2026"}},
              "initialisation": true, "source": {"snippet": "seizoensopening"}}],""")),

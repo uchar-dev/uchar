@@ -684,6 +684,19 @@ so the v0-mirror byte-identity of every flat golden holds. Within the list,
 `attribuut` is emitted only on attribute defaults and `ongeordend` only when
 true, matching the schema and the hand-written prioritized-defaults anchors.
 
+The name of a block reaches the wire on the default the block becomes, as
+`Default.name` (IR-SPEC ch. 6.1, card `defaults-decider`, 2026-10-21): the
+base rule's `Regel <naam>` on the base default, the `<naam>` after the colon
+of an `Uitzondering op X:` or `Afwijking van X:` block on its default, and a
+member's own `Regel <naam>` in an `Uitzonderingen ongeordend` block, with or
+without `op`; an authored initialisation that the opgave marker (§7) takes
+into its group keeps its name there. A group-default that a head makes and
+the two defaults the opgave marker generates have no written name and carry
+none. Until that card the name of a lifted block reached neither the wire
+nor the model, and an explanation could name the deciding default only by
+its index path. The name has no semantics and names no form on the wire, so
+WF-020 does not judge it there.
+
 ### Scope / limitations of the first card
 
 - The first card exercised the ordered shape on a characteristic only. Since

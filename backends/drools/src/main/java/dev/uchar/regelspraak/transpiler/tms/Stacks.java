@@ -169,7 +169,8 @@ final class Stacks {
         String attr = null;
         for (ResolvedRule r : comps) {
             attr = ((Expr.AttributeReference) r.target()).attribute();
-            Default d = new Default(null, r.condition() != null ? r.condition() : ALWAYS, r.value(), false, null, r.name());
+            Default d = new Default(null, r.condition() != null ? r.condition() : ALWAYS, r.value(), false, null, r.name(),
+                    r.name());
             ds.add(d);
             madeFrom.put(d, r);
         }
@@ -177,7 +178,7 @@ final class Stacks {
         // holds; folded without it, it wrote its value where the condition failed
         for (ResolvedRule r : inits) {
             attr = ((Expr.AttributeReference) r.target()).attribute();
-            Default d = new Default(null, r.condition(), r.value(), true, null, r.name());
+            Default d = new Default(null, r.condition(), r.value(), true, null, r.name(), r.name());
             ds.add(d);
             madeFrom.put(d, r);
         }

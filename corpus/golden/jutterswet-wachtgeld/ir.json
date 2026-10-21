@@ -65,6 +65,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "wachtgeld voor kustwachters",
             "justification": {
               "node": "CharacteristicCheck",
               "characteristic": "kustwacht",
@@ -103,6 +104,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "wachtgeld voor havenmeesters",
             "justification": {
               "node": "CharacteristicCheck",
               "characteristic": "havenmeester",
@@ -141,6 +143,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "wachtgeld voor strandvoogden",
             "justification": {
               "node": "CharacteristicCheck",
               "characteristic": "strandvoogd",

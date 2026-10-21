@@ -320,6 +320,8 @@ public final class IrEmitter {
     private void dflt(Default d) {
         w.beginObject();
         w.key("node").value("Default");
+        // the name of the block the default comes from, without semantics; absent where the source gives none
+        if (d.name() != null) w.key("name").value(d.name());
         // absent on an attribute default
         if (d.decision() != null) w.key("decision").value(d.decision().booleanValue());
         // absent on the initialisation default and on a group default (IR-SPEC ch. 6.1)

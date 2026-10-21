@@ -579,6 +579,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "herstelde melding",
             "justification": {
               "node": "Predicate",
               "kind": "filled",
@@ -607,6 +608,7 @@
           },
           {
             "node": "Default",
+            "name": "erkende meldingsdatum",
             "justification": {
               "node": "Compound",
               "quantifier": "all",

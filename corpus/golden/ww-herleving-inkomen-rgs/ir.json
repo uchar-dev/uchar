@@ -332,6 +332,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "einde art 20 lid 1 c",
             "decision": false,
             "justification": {
               "node": "Compound",
@@ -382,6 +383,7 @@
                   "defaults": [
                     {
                       "node": "Default",
+                      "name": "herleving art 21 lid 1",
                       "decision": true,
                       "justification": {
                         "node": "Compound",
@@ -440,6 +442,7 @@
                             "defaults": [
                               {
                                 "node": "Default",
+                                "name": "blokkade art 21 lid 2 a",
                                 "decision": false,
                                 "justification": {
                                   "node": "Compound",
@@ -549,6 +552,7 @@
           },
           {
             "node": "Default",
+            "name": "toekenning art 15",
             "decision": true,
             "justification": {
               "node": "CharacteristicCheck",

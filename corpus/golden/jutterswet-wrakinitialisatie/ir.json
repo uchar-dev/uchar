@@ -155,6 +155,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "zwaar wrakbergloon",
             "justification": {
               "node": "Compound",
               "quantifier": "all",
@@ -243,6 +244,7 @@
           },
           {
             "node": "Default",
+            "name": "wrakbergloon",
             "justification": {
               "node": "Comparison",
               "op": "greater",

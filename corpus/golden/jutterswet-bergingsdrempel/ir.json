@@ -60,6 +60,7 @@
         "defaults": [
           {
             "node": "Default",
+            "name": "bergingsbevoegd bij noodweer",
             "decision": true,
             "justification": {
               "node": "Compound",
@@ -112,6 +113,7 @@
           },
           {
             "node": "Default",
+            "name": "bergingsbevoegd bij quotum",
             "decision": true,
             "justification": {
               "node": "Comparison",

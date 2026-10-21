@@ -22,9 +22,14 @@ import java.util.List;
  *                      on the opgave and the computation default the opgave marker generates, the name of the
  *                      attribute the default reads ({@code opgegeven X}, {@code berekende X}), so an explanation
  *                      can name the deciding block
+ * @param name           the name the source gives the block the default comes from, or null where it gives none: a
+ *                      {@code Regel}, an {@code Uitzondering op X:} or {@code Afwijking van X:} block, a member of an
+ *                      {@code Uitzonderingen ongeordend} block; none on a group-default a head makes or on the two
+ *                      defaults the opgave marker generates. An extension field without semantics, like
+ *                      {@code source} (IR-SPEC ch. 6.1)
  */
 public record Default(Boolean decision, Condition condition, Expr consequence,
-                      boolean initialisation, Exceptions exceptions, String source) {
+                      boolean initialisation, Exceptions exceptions, String source, String name) {
 
     /** A default's nested exception groups: one or more {@link ExceptionGroup} members that reconcile as a
      *  declared-{@link #unordered} group at this default's level (WF-075). */

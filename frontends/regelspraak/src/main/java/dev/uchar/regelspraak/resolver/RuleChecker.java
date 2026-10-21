@@ -353,8 +353,9 @@ final class RuleChecker {
     /**
      * WF-020: two named forms with one name, compared as the verifier compares them ({@link
      * dev.uchar.regelspraak.emit.IrEmitter#norm}). The forms are read off the model after the lift, as the emitter writes
-     * them, so a name that does not reach the wire is not judged: the name of an 'Uitzondering op' or 'Afwijking van'
-     * block, whose default joins the group of its base, and a declaration that lowers to nothing. A form with versions is
+     * them, so a name that names no form on the wire is not judged: the name of an 'Uitzondering op' or 'Afwijking van'
+     * block, whose default joins the group of its base and carries the name as its own (IR-SPEC ch. 6.1), and a
+     * declaration that lowers to nothing. A form with versions is
      * one form, its entries named "&lt;naam&gt; #1" … "#n" in a row, so a second "#1" begins a second form. The refusal
      * stands on the second of the 'Regel' heads and decision-table rows that carry the name and names the line of the
      * first, in the verifier's sentence; a collision with a generated form is refused where that form is generated.
@@ -1717,7 +1718,7 @@ final class RuleChecker {
             if (!ownChildren.isEmpty() && ownChildren.get(0).category == Block.MEMBER)   // one unordered block: a group-default directly above the base
                 chain.add(new Default(null, null, null, false,
                         exceptionsOf(ownChildren, baseConjuncts, targetName.characteristic()),
-                        headText(ownChildren.get(0).block)));
+                        headText(ownChildren.get(0).block), null));
             else
                 for (Node k : ownChildren) chain.add(0, defaultOf(k, baseConjuncts, targetName.characteristic()));
             chain.add(defaultOf(baseRule, targetName.characteristic()));
@@ -1833,7 +1834,7 @@ final class RuleChecker {
         List<String> heads = children.stream().map(k -> headText(k.block)).distinct().toList();
         String head = String.join(" en ", heads);
         Default groupDefault = new Default(null, null, null, false,
-                new Default.Exceptions(false, List.of(new ExceptionGroup(chain, head))), head);
+                new Default.Exceptions(false, List.of(new ExceptionGroup(chain, head))), head, null);
         return defaultsOf(subtypeGroupName(root, sub), new DefaultsTarget(sub, targetName.characteristic(), targetName.name()), false,
                 List.of(groupDefault), base.validity(), "eigen uitzonderingen van " + sub.name + "; de basis '"
                         + root + "' is geërfd van " + targetName.subjectType().name);
@@ -2304,8 +2305,8 @@ final class RuleChecker {
     private Default defaultOf(ResolvedRule r, boolean characteristic, Condition justification, Default.Exceptions exceptions) {
         String source = annotationText(r.statuteAnnotations());
         return characteristic
-                ? new Default(!isNegated(r), justification, null, false, exceptions, source)
-                : new Default(null, justification, r.value(), false, exceptions, source);
+                ? new Default(!isNegated(r), justification, null, false, exceptions, source, r.name())
+                : new Default(null, justification, r.value(), false, exceptions, source, r.name());
     }
 
     /** The annotations of one block as the single string a {@code source} field holds: the non-blank entries in
@@ -2638,11 +2639,12 @@ final class RuleChecker {
             //    justification is "X is empty in the input", which on 'berekende X' (never input) would always hold
             Datatype dt = t.attributes.get(o.attribute());
             List<Default> defaults = new ArrayList<>();
-            defaults.add(new Default(null, ALTIJD, attributeRead(o, o.supplied(), dt), false, null, o.supplied()));
-            defaults.add(new Default(null, ALTIJD, attributeRead(o, o.computed(), dt), false, null, o.computed()));
+            defaults.add(new Default(null, ALTIJD, attributeRead(o, o.supplied(), dt), false, null, o.supplied(), null));
+            defaults.add(new Default(null, ALTIJD, attributeRead(o, o.computed(), dt), false, null, o.computed(), null));
             if (!init.isEmpty()) {
                 ResolvedRule r = init.get(0);
-                defaults.add(new Default(null, null, r.value(), true, null, annotationText(r.statuteAnnotations())));
+                defaults.add(new Default(null, null, r.value(), true, null, annotationText(r.statuteAnnotations()),
+                        r.name()));
                 model.resolvedRules.removeIf(x -> x == r);
             }
             model.prioritizedDefaults.add(new PrioritizedDefaults(o.group(), t.name, null, o.attribute(), false,

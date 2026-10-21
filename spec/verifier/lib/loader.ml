@@ -1592,8 +1592,11 @@ let rec default path j : default =
   let kvs = obj path j in
   expect_node path kvs "Default";
   check_keys path kvs
-    ~ext:[ "decision"; "justification"; "consequence"; "initialisation"; "exceptions"; "source" ]
+    ~ext:[ "name"; "decision"; "justification"; "consequence"; "initialisation"; "exceptions"; "source" ]
     [ "node" ];
+  (* the block's name carries no semantics (IR-SPEC ch. 6.1): read as the
+     string it must be, and kept by no reader here *)
+  ignore (ext_field path kvs "name" str : string option);
   {
     default_decision = ext_field path kvs "decision" bool_;
     default_justification = ext_field path kvs "justification" condition_expr;
