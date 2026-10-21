@@ -1,0 +1,48 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal aangemelde vondsten": {
+            "number": "14"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "vergunning geschorst"
+        ]
+      },
+      {
+        "label": "K",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal aangemelde vondsten": {
+            "number": "14"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "J",
+      "characteristic": "recht op de penning"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "K",
+      "characteristic": "recht op de penning"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

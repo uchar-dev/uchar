@@ -672,7 +672,8 @@ class ExceptionOnExceptionTest {
                 + "\n// Bron: art. 4, derde laag"
                 + op("herroeping", "verval", UIT, "hij vervallen is")));
         ExceptionGroup group = g.defaults().get(0).exceptions().members().get(0);
-        assertEquals("art. 4, derde laag", group.defaults().get(0).source());
+        assertEquals(List.of("art. 4, derde laag"), group.defaults().get(0).statuteAnnotations());
+        assertNull(group.defaults().get(0).source(), "de annotatie is geen brontekst van de default");
         assertEquals("Uitzondering op herroeping", group.source(),
                 "een kop maakt de uitzonderingsgroep: zij draagt de tekst van de kop, de annotatie staat op de default");
     }

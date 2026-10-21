@@ -1387,7 +1387,10 @@ EXPECTED_CHANNEL=(
 # fold whose matrix walks a day kind beyond the reach fence (EF-009) on a member after the stop and on a member of no
 # ploeg (consistent), hand-written with hand-computed cases; the reached member is the red case
 # jutterswet-keurtermijn-bereikt. No source file of this backend changed; it plays on both with PLAYED 4.
-EXPECTED_PLAYED=263
+# 263 -> 264 (2026-10-21, card default-statute-annotations): the golden jutterswet-tweeledige-grondslag, a defaults
+# group whose base default carries two statute annotations, written in RegelSpraak with hand-computed cases. The
+# loader carries Default.statuteAnnotations and no executor reads it; it plays on both with PLAYED 4.
+EXPECTED_PLAYED=264
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

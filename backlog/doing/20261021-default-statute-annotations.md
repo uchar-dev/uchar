@@ -39,3 +39,17 @@ en welke brontekst, stelt de kaart vast.
 May touch: `spec/IR-SPEC.md`, `spec/schema/`, `spec/verifier/` (voorstellen; beschermde paden), `frontends/regelspraak`,
 `backends/drools` (de lader en het model), de goldens en `toka/`-slices die de heruitgifte raakt, gate-scripts als
 voorstel, deze kaart. CONSTRUCTS-rij als tekst in de Result.
+
+## Voorlopige besluiten van de bouwer (2026-10-21)
+
+- **De groep houdt zijn samengevoegde `source`.** Een defaults-groep die naar een basisregel heet, schrijft de
+  annotaties van die regel als `PrioritizedDefaults.source`, samengevoegd met "; " (9 groepen in 8 goldens, gemeten).
+  De kaart noemt alleen de default; `grammar/DIVERGENCES.md` legt de plaatsing op de groep met een eigen reden vast
+  (de handankers dragen op elke groep een bronrecord). Ongewijzigd gelaten; de basisdefault draagt dezelfde annotaties
+  als lijst. Een vervolgkaart kan de groep dezelfde lijst geven of zijn `source` laten vallen.
+- **De verifier leest de lijst naast het document**, zoals de vocabulairetabel (`Loader.default_annotations`,
+  `Checks.default_annotations`): het OCaml-record van een default wordt door de Catala- en F-logic-frontends heel
+  gebouwd, dus een veld erbij had die twee frontends en hun suites geraakt.
+- **De WF-082-arm draagt de parameter `kind`** (`rule` of `default`); de drie sleutels blijven, met één sjabloon elk.
+- **Gate 13 neemt de annotaties mee in de naamleg**: dezelfde gestripte kopie verliest `name` en `statuteAnnotations`,
+  met een eigen telling en vloer (`EXPECTED_MIN_ANNOTATIONS_STRIPPED=29`).

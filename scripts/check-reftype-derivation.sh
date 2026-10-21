@@ -251,6 +251,12 @@
 # (jutterswet-opgave-datum, -opgave-subtype, -premiestaffel) on both branches; without it the leg
 # is green. No survivor list: no reading of the field is a legitimate one. A golden without a named
 # default is not probed; no golden with one is a failure.
+# Since 2026-10-21 (card default-statute-annotations) the same stripped copy also loses every
+# `statuteAnnotations` of a Default (IR-SPEC ch. 6.1, WF-082), the `// Bron:` annotations of the
+# block the default comes from: an extension field without semantics like `name`, on the same
+# nodes, so it rides this leg rather than a leg of its own, with its own count and floor. Every
+# annotated default the frontend writes also carries the name of its block, so the probed set is
+# the same.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -796,9 +802,10 @@ PY
 cat > "$NSTRIPPER" <<'PY'
 import json, os, sys
 
-# The one copy of the name leg (see the script header): every `name` taken out of every Default node
-# (IR-SPEC ch. 6.1), the defaults of a group and those of its exception groups at any depth. Numbers
-# keep their lexemes, so the copy differs from the golden in the field and in nothing else.
+# The one copy of the name leg (see the script header): every `name` and every `statuteAnnotations`
+# taken out of every Default node (IR-SPEC ch. 6.1), the defaults of a group and those of its exception
+# groups at any depth. Numbers keep their lexemes, so the copy differs from the golden in those two
+# fields and in nothing else. Prints the names and the annotation lists it took out.
 
 
 class RawNum:
@@ -832,14 +839,17 @@ source, target = sys.argv[1], sys.argv[2]
 with open(source, encoding="utf-8") as fh:
     doc = json.load(fh, parse_int=RawNum, parse_float=RawNum)
 stripped = 0
+annotations = 0
 for group in doc["rules"].get("prioritizedDefaults", []):
     for d in defaults(group["defaults"]):
         if d.pop("name", None) is not None:
             stripped += 1
-if stripped:
+        if d.pop("statuteAnnotations", None) is not None:
+            annotations += 1
+if stripped or annotations:
     os.makedirs(os.path.dirname(target), exist_ok=True)
     write_json(doc, target)
-print(stripped)
+print(stripped, annotations)
 PY
 
 # Is <golden> x <executor> a pinned survivor? Read LINE by line, never word by word: a
@@ -893,6 +903,10 @@ EXPECTED_MIN_ORIGIN_STRIPPED=71      # 2026-10-15: measured 71 origins stripped 
 # copies lose, so a stripper that quietly takes out less fails too.
 EXPECTED_MIN_NAME_GOLDENS=20         # 2026-10-21: measured 20 goldens with a named default and case files
 EXPECTED_MIN_NAME_STRIPPED=64        # 2026-10-21: measured 64 names stripped over those 20
+# The annotation lists the same copies lose (card default-statute-annotations, measured 2026-10-21): 29
+# lists over 12 goldens, the 27 the frontend wrote into Default.source until then and the two of the
+# golden jutterswet-tweeledige-grondslag.
+EXPECTED_MIN_ANNOTATIONS_STRIPPED=29 # 2026-10-21: measured 29 statuteAnnotations lists stripped
 
 status=0
 n_goldens=0
@@ -1119,17 +1133,21 @@ fi
 # --- the name leg (see the script header) ----------------------------------------------------------
 n_ngoldens=0
 n_n_stripped=0
+n_a_stripped=0
 n_nreplays=0
 while IFS= read -r ir; do
     dir=$(dirname "$ir")
     ident=${dir#corpus/golden/}
     nir="$WORK/naam/$ident/gestript.json"
-    stripped=$(python3 "$NSTRIPPER" "$ir" "$nir") || { echo "FAIL: the name stripper could not read $ir" >&2; exit 2; }
-    [ "$stripped" -gt 0 ] || continue          # no named default: nothing to probe here
+    counts=$(python3 "$NSTRIPPER" "$ir" "$nir") || { echo "FAIL: the name stripper could not read $ir" >&2; exit 2; }
+    stripped=${counts% *}
+    annotations=${counts#* }
+    [ $((stripped + annotations)) -gt 0 ] || continue   # no named or annotated default: nothing to probe here
     find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
     [ -s "$CASES" ] || continue                # no case file: not replayable
     n_ngoldens=$((n_ngoldens + 1))
     n_n_stripped=$((n_n_stripped + stripped))
+    n_a_stripped=$((n_a_stripped + annotations))
     while IFS= read -r case; do
         n_nreplays=$((n_nreplays + 2))
         if ! report_line=$("$RUNNER_REF" "$nir" "$case" 2>&1); then
@@ -1169,6 +1187,10 @@ if [ "$n_ngoldens" -lt "$EXPECTED_MIN_NAME_GOLDENS" ]; then
 fi
 if [ "$n_n_stripped" -lt "$EXPECTED_MIN_NAME_STRIPPED" ]; then
     echo "FAIL: the name leg stripped $n_n_stripped name(s), but EXPECTED_MIN_NAME_STRIPPED pins at least $EXPECTED_MIN_NAME_STRIPPED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    exit 1
+fi
+if [ "$n_a_stripped" -lt "$EXPECTED_MIN_ANNOTATIONS_STRIPPED" ]; then
+    echo "FAIL: the name leg stripped $n_a_stripped statuteAnnotations list(s) of defaults, but EXPECTED_MIN_ANNOTATIONS_STRIPPED pins at least $EXPECTED_MIN_ANNOTATIONS_STRIPPED — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
 fi
 
@@ -1257,8 +1279,9 @@ if [ "$status" -eq 0 ]; then
         "$n_v_swapped" "$n_v_rotated" "$EXPECTED_MIN_VOCABULARY_ROTATED" "$n_vreplays"
     printf '  origin leg: %s golden(s) with origins, floor %s; %s origins stripped (floor %s); %s executor replays reproduce the untouched outcome\n' \
         "$n_hgoldens" "$EXPECTED_MIN_ORIGIN_GOLDENS" "$n_h_stripped" "$EXPECTED_MIN_ORIGIN_STRIPPED" "$n_hreplays"
-    printf '  name leg: %s golden(s) with named defaults, floor %s; %s names stripped (floor %s); %s executor replays reproduce the untouched outcome\n' \
-        "$n_ngoldens" "$EXPECTED_MIN_NAME_GOLDENS" "$n_n_stripped" "$EXPECTED_MIN_NAME_STRIPPED" "$n_nreplays"
+    printf '  name leg: %s golden(s) with named or annotated defaults, floor %s; %s names stripped (floor %s), %s statuteAnnotations lists (floor %s); %s executor replays reproduce the untouched outcome\n' \
+        "$n_ngoldens" "$EXPECTED_MIN_NAME_GOLDENS" "$n_n_stripped" "$EXPECTED_MIN_NAME_STRIPPED" \
+        "$n_a_stripped" "$EXPECTED_MIN_ANNOTATIONS_STRIPPED" "$n_nreplays"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
         "$n_unit" "$((n_unit - n_exempt - n_without_sister - n_uncovered))" \
         "$n_exempt" "$n_without_sister" "$n_fourth" "$n_unknown"

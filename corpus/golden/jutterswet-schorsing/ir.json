@@ -110,9 +110,9 @@
                 "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12 en hij vergunning geschorst is"
               }
             },
-            "source": {
-              "snippet": "Jutterswet art. 4bis"
-            }
+            "statuteAnnotations": [
+              "Jutterswet art. 4bis"
+            ]
           },
           {
             "node": "Default",
@@ -148,9 +148,9 @@
                 "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
               }
             },
-            "source": {
-              "snippet": "Jutterswet art. 3"
-            }
+            "statuteAnnotations": [
+              "Jutterswet art. 3"
+            ]
           }
         ],
         "source": {

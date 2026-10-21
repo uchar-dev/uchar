@@ -771,9 +771,9 @@
               }
             },
             "initialisation": true,
-            "source": {
-              "snippet": "art. 3d lid 3"
-            }
+            "statuteAnnotations": [
+              "art. 3d lid 3"
+            ]
           }
         ],
         "validity": {

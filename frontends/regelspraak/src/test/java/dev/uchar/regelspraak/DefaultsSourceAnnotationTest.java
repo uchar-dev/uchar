@@ -23,10 +23,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * its annotated {@code Uitzondering op} — emitted an IR in which neither annotation text occurred anywhere, with
  * {@code diagnostics: []} and a verifier PASS.
  *
- * <p>The placement, with no new wire field: a lifted rule's annotation lands in the {@code Default.source} of the
- * default it becomes; the base rule's lands in {@code PrioritizedDefaults.source} as well — the group is named after
- * the base, and in every hand-written defaults anchor each default, the lowest included, carries its own
- * provenance beside the group's. Several annotations on one block are joined with {@code "; "}.
+ * <p>The placement: a lifted rule's annotations land in the {@code statuteAnnotations} of the default it becomes, a
+ * list as on a rule (IR-SPEC ch. 6.1, WF-082; card default-statute-annotations, which replaced the single
+ * {@code Default.source} string joined with {@code "; "}); the base rule's land in {@code PrioritizedDefaults.source}
+ * as well, joined — the group is named after the base, and in every hand-written defaults anchor each default, the
+ * lowest included, carries its own provenance beside the group's.
  */
 class DefaultsSourceAnnotationTest {
 
@@ -78,25 +79,52 @@ class DefaultsSourceAnnotationTest {
         return result;
     }
 
+    /** Every {@code statuteAnnotations} list on the wire, in emission order, each entry as written. */
+    private static List<List<String>> annotationLists(String ir) {
+        Matcher k = Pattern.compile("\"statuteAnnotations\": \\[([^\\]]*)\\]").matcher(ir);
+        List<List<String>> result = new ArrayList<>();
+        while (k.find()) {
+            Matcher e = Pattern.compile("\"([^\"]*)\"").matcher(k.group(1));
+            List<String> entries = new ArrayList<>();
+            while (e.find()) entries.add(e.group(1));
+            result.add(entries);
+        }
+        return result;
+    }
+
     // -------------------------------------------------------------------- the placement
 
     @Test void m6_base_and_exception_carry_their_annotation_on_wire() {
         RegelSpraakModel m = Resolver.resolve(M6);
         PrioritizedDefaults g = onlyGroup(m);
-        assertEquals("art. 4 lid 2 Jutterswet", g.defaults().get(0).source(), "de uitzonderingsdefault (hoogste) draagt haar eigen annotatie");
-        assertEquals("art. 4 lid 1 Jutterswet", g.defaults().get(1).source(), "de basisdefault (laagste) draagt de annotatie van de basisregel");
+        assertEquals(List.of("art. 4 lid 2 Jutterswet"), g.defaults().get(0).statuteAnnotations(), "de uitzonderingsdefault (hoogste) draagt haar eigen annotatie");
+        assertEquals(List.of("art. 4 lid 1 Jutterswet"), g.defaults().get(1).statuteAnnotations(), "de basisdefault (laagste) draagt de annotatie van de basisregel");
+        g.defaults().forEach(d -> assertNull(d.source(), "een annotatie is geen brontekst van de default"));
         assertEquals("art. 4 lid 1 Jutterswet", g.source(), "de groep, genoemd naar de basis, draagt de annotatie van de basisregel");
-        // On the wire, in emission order: the defaults (highest first), then the group's own source after the array.
-        assertEquals(List.of("art. 4 lid 2 Jutterswet", "art. 4 lid 1 Jutterswet", "art. 4 lid 1 Jutterswet"),
-                articleSources(IrEmitter.emit(m)));
+        // On the wire, in emission order: the lists of the defaults (highest first); the group's own source after
+        // the array is the one snippet with a citation.
+        String ir = IrEmitter.emit(m);
+        assertEquals(List.of(List.of("art. 4 lid 2 Jutterswet"), List.of("art. 4 lid 1 Jutterswet")), annotationLists(ir));
+        assertEquals(List.of("art. 4 lid 1 Jutterswet"), articleSources(ir));
     }
 
-    @Test void multiple_annotations_on_a_block_are_merged() {
+    @Test void multiple_annotations_on_a_block_stay_a_list() {
         String src = MODEL + "// Bron: art. 3 Jutterswet\n// Bron: art. 5 Jutterswet\n" + BASE + EXCEPTION;
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(src));
-        assertEquals("art. 3 Jutterswet; art. 5 Jutterswet", g.defaults().get(1).source());
+        assertEquals(List.of("art. 3 Jutterswet", "art. 5 Jutterswet"), g.defaults().get(1).statuteAnnotations());
         assertEquals("art. 3 Jutterswet; art. 5 Jutterswet", g.source());
-        assertNull(g.defaults().get(0).source(), "een uitzondering zonder annotatie erft die van de basis niet");
+        assertEquals(List.of(), g.defaults().get(0).statuteAnnotations(), "een uitzondering zonder annotatie erft die van de basis niet");
+    }
+
+    @Test void an_annotation_line_is_one_opaque_entry() {
+        // Two annotation lines are two entries, each kept whole whatever its text holds (IR-SPEC ch. 3.1: opaque).
+        String src = MODEL + "// Bron: art. 3 Jutterswet\n// Bron: art. 3b Jutterswet; een stormvloedvondst telt tweemaal\n"
+                + BASE + EXCEPTION;
+        RegelSpraakModel m = Resolver.resolve(src);
+        PrioritizedDefaults g = onlyGroup(m);
+        List<String> expected = List.of("art. 3 Jutterswet", "art. 3b Jutterswet; een stormvloedvondst telt tweemaal");
+        assertEquals(expected, g.defaults().get(1).statuteAnnotations());
+        assertEquals(List.of(expected), annotationLists(IrEmitter.emit(m)));
     }
 
     @Test void unordered_member_carries_its_annotation_on_group_and_default() {
@@ -118,9 +146,9 @@ class DefaultsSourceAnnotationTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
         assertEquals(2, m.prioritizedDefaults.size());
         assertEquals("art. 9 lid 1 Jutterswet", m.prioritizedDefaults.get(0).source());
-        assertEquals("art. 9 lid 1 Jutterswet", m.prioritizedDefaults.get(0).defaults().get(0).source());
+        assertEquals(List.of("art. 9 lid 1 Jutterswet"), m.prioritizedDefaults.get(0).defaults().get(0).statuteAnnotations());
         assertEquals("art. 9 lid 2 Jutterswet", m.prioritizedDefaults.get(1).source());
-        assertEquals("art. 9 lid 2 Jutterswet", m.prioritizedDefaults.get(1).defaults().get(0).source());
+        assertEquals(List.of("art. 9 lid 2 Jutterswet"), m.prioritizedDefaults.get(1).defaults().get(0).statuteAnnotations());
     }
 
     @Test void an_annotation_above_the_unordered_head_belongs_to_no_rule_and_is_reported() {
@@ -142,6 +170,8 @@ class DefaultsSourceAnnotationTest {
         assertTrue(d.message().contains("art. 9 Jutterswet") && d.message().contains("Uitzonderingen ongeordend"),
                 () -> "de melding noemt de annotatie of de kop niet: " + d);
         assertNull(m.prioritizedDefaults.get(0).source(), "de kopannotatie wordt niet stil aan een lid gehangen");
+        assertEquals(List.of(), m.prioritizedDefaults.get(0).defaults().get(0).statuteAnnotations(),
+                "de kopannotatie wordt niet stil aan een default gehangen");
     }
 
     // -------------------------------------------------------------------- what stays as it was
@@ -151,6 +181,7 @@ class DefaultsSourceAnnotationTest {
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL + BASE + EXCEPTION));
         assertNull(g.source());
         g.defaults().forEach(d -> assertNull(d.source()));
+        g.defaults().forEach(d -> assertEquals(List.of(), d.statuteAnnotations()));
     }
 
     @Test void the_rule_stub_is_not_on_the_wire() {

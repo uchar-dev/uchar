@@ -524,9 +524,9 @@
                                     "snippet": "hij werkloos is en zijn maandinkomen groter is dan zijn inkomensgrens en hij omstandigheid vervallen is en hij is nieuw recht ontstaan en zijn nieuw maandloon is groter dan zijn inkomensgrens"
                                   }
                                 },
-                                "source": {
-                                  "snippet": "WW art. 21 lid 2 onderdeel a"
-                                }
+                                "statuteAnnotations": [
+                                  "WW art. 21 lid 2 onderdeel a"
+                                ]
                               }
                             ],
                             "source": {
@@ -535,9 +535,9 @@
                           }
                         ]
                       },
-                      "source": {
-                        "snippet": "WW art. 21 lid 1"
-                      }
+                      "statuteAnnotations": [
+                        "WW art. 21 lid 1"
+                      ]
                     }
                   ],
                   "source": {
@@ -546,9 +546,9 @@
                 }
               ]
             },
-            "source": {
-              "snippet": "WW art. 20 lid 1 onderdeel c"
-            }
+            "statuteAnnotations": [
+              "WW art. 20 lid 1 onderdeel c"
+            ]
           },
           {
             "node": "Default",
@@ -562,9 +562,9 @@
                 "snippet": "hij werkloos is"
               }
             },
-            "source": {
-              "snippet": "WW art. 15"
-            }
+            "statuteAnnotations": [
+              "WW art. 15"
+            ]
           }
         ],
         "source": {

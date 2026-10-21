@@ -1022,9 +1022,9 @@
                           "snippet": "100,00"
                         }
                       },
-                      "source": {
-                        "snippet": "art. 3e lid 3"
-                      }
+                      "statuteAnnotations": [
+                        "art. 3e lid 3"
+                      ]
                     }
                   ],
                   "source": {
@@ -1033,9 +1033,9 @@
                 }
               ]
             },
-            "source": {
-              "snippet": "art. 3e lid 2"
-            }
+            "statuteAnnotations": [
+              "art. 3e lid 2"
+            ]
           },
           {
             "node": "Default",
@@ -1085,9 +1085,9 @@
                 "snippet": "de taxatie van de Vondst verminderd met 5,00"
               }
             },
-            "source": {
-              "snippet": "art. 3e lid 1"
-            }
+            "statuteAnnotations": [
+              "art. 3e lid 1"
+            ]
           }
         ],
         "source": {
@@ -1129,9 +1129,9 @@
                 "snippet": "30"
               }
             },
-            "source": {
-              "snippet": "art. 3e lid 5"
-            }
+            "statuteAnnotations": [
+              "art. 3e lid 5"
+            ]
           }
         ],
         "unordered": true,
@@ -1174,9 +1174,9 @@
                 "snippet": "45"
               }
             },
-            "source": {
-              "snippet": "art. 3e lid 5"
-            }
+            "statuteAnnotations": [
+              "art. 3e lid 5"
+            ]
           }
         ],
         "unordered": true,

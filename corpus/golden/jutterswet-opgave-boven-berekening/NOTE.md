@@ -51,7 +51,7 @@ needs no condition: without a taxatie `berekende waarde` stays empty.
 |---|---|
 | 1 | attribute `opgegeven X` on Vondst, X's datatype, right after X; no writer, the case supplies it |
 | 2 | attribute `berekende X` on Vondst, right after `opgegeven X`; the authored computing rule of X (`waardering`, `bergloon naar gewicht`) keeps its name, condition and statute annotation and now targets `berekende X` |
-| 3 | `PrioritizedDefaults` `opgave boven berekening X` on X, validity always, from the top: the opgave default (justification the empty `all`, source `altijd`; consequence `opgegeven X`; source `opgegeven X`), the computation default (the same with `berekende X`), and for `bergloon` the initialisation default (`initialisation: true`, consequence 25,00, source the statute annotation `art. 3d lid 3`) — the initialisation stays on X and leaves `rules` |
+| 3 | `PrioritizedDefaults` `opgave boven berekening X` on X, validity always, from the top: the opgave default (justification the empty `all`, source `altijd`; consequence `opgegeven X`; source `opgegeven X`), the computation default (the same with `berekende X`), and for `bergloon` the initialisation default (`initialisation: true`, consequence 25,00, statute annotations `[art. 3d lid 3]`, no source) — the initialisation stays on X and leaves `rules` |
 | 4 | possessive characteristic `afwijkende opgave X`, attributed by the rule `afwijking opgave X` under an `all` of: `opgegeven X` filled, `berekende X` filled, `opgegeven X` notEqual `berekende X` — spelled as the frontend emits the same rule written by hand |
 | 5 | consistency `controle opgave X`, assertion the characteristic check of `afwijkende opgave X`, negated; its source is the marked declaration and its line |
 

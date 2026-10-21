@@ -276,7 +276,8 @@ class InputMarkingTest {
         assertTrue(init.initialisation(), "de initialisatie is de laagste default");
         assertNull(init.condition(), "een initialisatiedefault draagt geen geschreven rechtvaardiging");
         assertEquals("25,00", ((Expr.Literal) init.consequence()).valueText());
-        assertEquals("standaardwaarde", init.source(), "de statuutannotatie van de initialisatieregel");
+        assertEquals(List.of("standaardwaarde"), init.statuteAnnotations(), "de statuutannotatie van de initialisatieregel");
+        assertNull(init.source(), "de statuutannotatie is geen brontekst van de default");
         // card defaults-decider: the authored initialisation keeps its rule name, the generated defaults have none
         assertEquals("standaardwaarde", init.name(), "de naam van de initialisatieregel");
         assertNull(g.defaults().get(0).name(), "de opgave-default is gegenereerd en draagt geen naam");
@@ -292,7 +293,7 @@ class InputMarkingTest {
              "consequence": {"node": "Literal", "value": {"number": "25.00"},
                              "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"},
                              "source": {"snippet": "25,00"}},
-             "initialisation": true, "source": {"snippet": "standaardwaarde"}}],""")), c);
+             "initialisation": true, "statuteAnnotations": ["standaardwaarde"]}],""")), c);
     }
 
     @Test void on_a_date_the_marking_builds_the_same_five_pieces() {
@@ -324,7 +325,8 @@ class InputMarkingTest {
         Expr.Literal date = assertInstanceOf(Expr.Literal.class, init.consequence());
         assertEquals("2026-03-01", date.valueText(), "de datum zoals de wire haar schrijft; de bron houdt 01-03-2026");
         assertEquals(new Datatype.DateInDays(), date.type());
-        assertEquals("seizoensopening", init.source(), "de statuutannotatie van de initialisatieregel");
+        assertEquals(List.of("seizoensopening"), init.statuteAnnotations(), "de statuutannotatie van de initialisatieregel");
+        assertNull(init.source(), "de statuutannotatie is geen brontekst van de default");
 
         // 4 and 5: the characteristic compares the two dates, the consistency asserts it absent
         assertEquals(List.of("afwijkende opgave meldingsdatum"), v.characteristics);
@@ -359,7 +361,7 @@ class InputMarkingTest {
             {"node": "Default", "name": "melding bij onbekende vinddag",
              "consequence": {"node": "Literal", "value": {"date": "2026-03-01"},
                              "type": {"node": "Date", "precision": "day"}, "source": {"snippet": "01-03-2026"}},
-             "initialisation": true, "source": {"snippet": "seizoensopening"}}],""")),
+             "initialisation": true, "statuteAnnotations": ["seizoensopening"]}],""")),
                 () -> "de initialisatiedefault draagt de datumliteral niet zo:\n" + ir);
     }
 

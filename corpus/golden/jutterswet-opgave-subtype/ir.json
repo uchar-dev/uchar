@@ -496,9 +496,9 @@
                 "snippet": "zijn aanspoeldag"
               }
             },
-            "source": {
-              "snippet": "art. 3g lid 2"
-            }
+            "statuteAnnotations": [
+              "art. 3g lid 2"
+            ]
           },
           {
             "node": "Default",
@@ -555,9 +555,9 @@
                 "snippet": "de aanspoeldag van de Strandvondst plus 2 dagen"
               }
             },
-            "source": {
-              "snippet": "art. 3g lid 1"
-            }
+            "statuteAnnotations": [
+              "art. 3g lid 1"
+            ]
           }
         ],
         "source": {
@@ -636,9 +636,9 @@
               }
             },
             "initialisation": true,
-            "source": {
-              "snippet": "art. 3g lid 4"
-            }
+            "statuteAnnotations": [
+              "art. 3g lid 4"
+            ]
           }
         ],
         "validity": {

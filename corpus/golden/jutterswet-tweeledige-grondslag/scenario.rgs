@@ -1,0 +1,42 @@
+Scenario boven de drempel
+Gegeven is de volgende situatie:
+een Jutter K
+- het aantal aangemelde vondsten is 14
+Met als verwacht resultaat:
+- K heeft recht op de penning
+- de gegevens zijn consistent
+
+Scenario geschorst
+Gegeven is de volgende situatie:
+een Jutter J
+- het aantal aangemelde vondsten is 14
+- is vergunning geschorst
+een Jutter K
+- het aantal aangemelde vondsten is 14
+Met als verwacht resultaat:
+- J heeft geen recht op de penning
+- K heeft recht op de penning
+- de gegevens zijn consistent
+
+Scenario geweigerd
+Gegeven is de volgende situatie:
+een Jutter L
+- het aantal aangemelde vondsten is 14
+- is vergunning geweigerd
+een Jutter K
+- het aantal aangemelde vondsten is 14
+Met als verwacht resultaat:
+- L heeft geen recht op de penning
+- K heeft recht op de penning
+- de gegevens zijn consistent
+
+Scenario onder de drempel
+Gegeven is de volgende situatie:
+een Jutter M
+- het aantal aangemelde vondsten is 5
+een Jutter K
+- het aantal aangemelde vondsten is 14
+Met als verwacht resultaat:
+- M heeft geen recht op de penning
+- K heeft recht op de penning
+- de gegevens zijn consistent

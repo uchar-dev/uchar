@@ -633,9 +633,9 @@
                 }
               ]
             },
-            "source": {
-              "snippet": "art. 3l lid 3"
-            }
+            "statuteAnnotations": [
+              "art. 3l lid 3"
+            ]
           },
           {
             "node": "Default",
@@ -650,9 +650,9 @@
                 "snippet": "altijd"
               }
             },
-            "source": {
-              "snippet": "art. 3l lid 3"
-            }
+            "statuteAnnotations": [
+              "art. 3l lid 3"
+            ]
           }
         ],
         "source": {

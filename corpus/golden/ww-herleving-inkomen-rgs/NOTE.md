@@ -65,7 +65,8 @@ Default 1  (besluit waar,   als: W)                        -- toekenning art 15
 
 ## De structurele diff tegen het anker
 
-Gemeten op beide `ir.json` met elk `source`-record recursief weggelaten en
+Gemeten op beide `ir.json` met elk `source`-record en elke
+`statuteAnnotations`-lijst van een default recursief weggelaten en
 de sleutels gesorteerd (de methode van `spec/proposals/PHASE5D-DIFF.md`
 §2–3): 140 regels van de genormaliseerde diff (`diff`, de regels met `<` of
 `>`), in elf blokken. Het objecttype, de rekenregels, de besluiten en de
@@ -125,7 +126,8 @@ De `source`-records vallen buiten deze diff. Het anker draagt
 omschrijvingen met artikelnummers op de groep, op elke default, op elke
 rechtvaardiging en op elke uitzonderingsgroep. De tweeling draagt op elke
 default de `// Bron:`-annotatie van haar blok (`WW art. 20 lid 1 onderdeel
-c` enzovoort), op de groep die van de basisregel (`WW art. 15`), op elke
+c` enzovoort; sinds 2026-10-21 als `statuteAnnotations`-lijst, daarvoor als
+`source`), op de groep die van de basisregel (`WW art. 15`), op elke
 samengestelde rechtvaardiging de teksten van haar conjuncten met " en "
 ertussen, en op de twee geneste uitzonderingsgroepen de kop die ze maakt
 (`Uitzondering op einde art 20 lid 1 c`, `Uitzondering op herleving art 21

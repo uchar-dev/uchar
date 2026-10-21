@@ -633,9 +633,9 @@
               }
             },
             "initialisation": true,
-            "source": {
-              "snippet": "art. 3k lid 2"
-            }
+            "statuteAnnotations": [
+              "art. 3k lid 2"
+            ]
           }
         ],
         "validity": {

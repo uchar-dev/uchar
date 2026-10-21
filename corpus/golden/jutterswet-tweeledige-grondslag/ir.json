@@ -1,0 +1,225 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aantal aangemelde vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "recht op de penning",
+            "kind": "possessive"
+          },
+          {
+            "node": "Characteristic",
+            "name": "vergunning geschorst",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "vergunning geweigerd",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "penningrecht art 3",
+        "subject": "Jutter",
+        "characteristic": "recht op de penning",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "weigering art 4",
+            "decision": false,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "greaterOrEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal aangemelde vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn aantal aangemelde vondsten"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "12"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "12"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
+                  }
+                },
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "vergunning geweigerd",
+                  "negated": false,
+                  "source": {
+                    "snippet": "hij vergunning geweigerd is"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12 en hij vergunning geweigerd is"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "name": "schorsing art 4bis",
+            "decision": false,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "greaterOrEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal aangemelde vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn aantal aangemelde vondsten"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "12"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "12"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
+                  }
+                },
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "vergunning geschorst",
+                  "negated": false,
+                  "source": {
+                    "snippet": "hij vergunning geschorst is"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12 en hij vergunning geschorst is"
+              }
+            },
+            "statuteAnnotations": [
+              "Jutterswet art. 4bis"
+            ]
+          },
+          {
+            "node": "Default",
+            "name": "penningrecht art 3",
+            "decision": true,
+            "justification": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aantal aangemelde vondsten",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn aantal aangemelde vondsten"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "12"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "12"
+                }
+              },
+              "source": {
+                "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
+              }
+            },
+            "statuteAnnotations": [
+              "Jutterswet art. 3",
+              "Jutterswet art. 3b; een vondst op een stormvloeddag telt tweemaal"
+            ]
+          }
+        ],
+        "source": {
+          "snippet": "Jutterswet art. 3; Jutterswet art. 3b; een vondst op een stormvloeddag telt tweemaal"
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

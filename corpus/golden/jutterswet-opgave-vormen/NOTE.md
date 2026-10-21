@@ -48,7 +48,7 @@ without a unit only (DIVERGENCES.md §7).
 
 | Authored form | On the wire |
 |---|---|
-| the tree on `waarde` | one `PrioritizedDefaults` `waardering` on `berekende waarde`, validity always, chain from the top: lage taxatie, whose `exceptions` hold one ordered `ExceptionGroup` (source `Uitzondering op lage taxatie`) with museale vondst, justified by the `all` of the carrier's comparison and its own characteristic check; then waardering under the empty `all`; the statute annotations `art. 3e lid 1`–`3` on the three defaults |
+| the tree on `waarde` | one `PrioritizedDefaults` `waardering` on `berekende waarde`, validity always, chain from the top: lage taxatie, whose `exceptions` hold one ordered `ExceptionGroup` (source `Uitzondering op lage taxatie`) with museale vondst, justified by the `all` of the carrier's comparison and its own characteristic check; then waardering under the empty `all`; the statute annotations `art. 3e lid 1`–`3` on the three defaults, each as its `statuteAnnotations` list |
 | the unordered block on `wachtgeld` | two `PrioritizedDefaults`, `wachtgeld voor kustwachters` and `wachtgeld voor havenmeesters`, both on `berekende wachtgeld` and both `unordered: true` — the set moved as a set |
 | the decision table on `stukprijs` | the two row rules `stukprijs van een aanspoelsel 1` and `2`, each on `berekende stukprijs`, conditions and statute annotation `art. 3e lid 6` kept |
 | per marked attribute X | the attributes `opgegeven X` and `berekende X` right after X; the group `opgave boven berekening X` on X (the opgave default above the computation default); the possessive characteristic `afwijkende opgave X` with its rule `afwijking opgave X`; the consistency `controle opgave X` |

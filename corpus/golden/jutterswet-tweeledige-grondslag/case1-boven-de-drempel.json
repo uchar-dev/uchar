@@ -1,0 +1,30 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal aangemelde vondsten": {
+            "number": "14"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "K",
+      "characteristic": "recht op de penning"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

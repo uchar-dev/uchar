@@ -1,0 +1,2 @@
+WF-082.annotations-empty
+kind=default

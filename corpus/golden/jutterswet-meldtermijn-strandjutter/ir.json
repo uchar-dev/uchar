@@ -194,9 +194,9 @@
                 "snippet": "zijn vinddag plus 6 mnd"
               }
             },
-            "source": {
-              "snippet": "art. 3h lid 1"
-            }
+            "statuteAnnotations": [
+              "art. 3h lid 1"
+            ]
           }
         ],
         "source": {
@@ -248,9 +248,9 @@
                           "snippet": "zijn vergunningseinde"
                         }
                       },
-                      "source": {
-                        "snippet": "art. 3h lid 2"
-                      }
+                      "statuteAnnotations": [
+                        "art. 3h lid 2"
+                      ]
                     }
                   ],
                   "source": {

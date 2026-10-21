@@ -35,7 +35,8 @@ the right holds iff the count reaches 12 and the vergunning is not geschorst.
   geschorst is.`
 
 Each block carries a `// Bron:` annotation; the lowering places each on the
-default the block becomes, and the base's also on the group.
+default the block becomes, as its `statuteAnnotations`, and the base's also
+on the group, as its `source`.
 
 ## Lowering
 
@@ -44,9 +45,13 @@ One `PrioritizedDefaults` (kenmerk `recht op de penning`, onderwerp
 
 1. **exception default** — `decision false`, justified by one flat `all`
    of `aantal aangemelde vondsten >= 12` and `vergunning geschorst`, the
-   base's condition first; `source` "Jutterswet art. 4bis".
+   base's condition first; `statuteAnnotations` ["Jutterswet art. 4bis"].
 2. **base default** — `decision true`, justified by `aantal aangemelde
-   vondsten >= 12`; `source` "Jutterswet art. 3".
+   vondsten >= 12`; `statuteAnnotations` ["Jutterswet art. 3"].
+
+Until the card default-statute-annotations (2026-10-21) each default carried
+its annotation as its `source` snippet; the `ir.json` was re-emitted, and
+that is its only change.
 
 The target is the declared characteristic `recht op de penning`: the
 frontend reads `geen recht op de penning` verbatim first, finds no

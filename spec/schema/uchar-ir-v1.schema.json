@@ -2899,6 +2899,15 @@
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
+        },
+        "statuteAnnotations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Extension field without semantics, like source and name (IR-SPEC ch. 6.1): the statute annotations written directly above the block this default comes from, one opaque string per annotation line, in source order — the field a Rule carries (ch. 3.1). When present a non-empty list of non-empty strings, absent otherwise; that no entry carries leading or trailing whitespace is WF-082's. No reader parses an entry."
         }
       }
     },

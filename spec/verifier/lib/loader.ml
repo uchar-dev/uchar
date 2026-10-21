@@ -1584,6 +1584,11 @@ let diagnostic path j : diagnostic =
 
 (* --- the document ------------------------------------------------------- *)
 
+(* A list of statute annotations as the wire writes it (WF-082): strings,
+   whatever their content — an empty list or a blank or padded entry loads,
+   for WF-082 to name. *)
+let annotation_list p j = List.mapi (fun i x -> str (p / string_of_int i) x) (list_ p j)
+
 (* Extension form (Phase 4 first cut): one default of the characteristic
    defaults. Every field but the node is written whole or not at all: an
    absent decision or justification is the v0 null, an absent
@@ -1592,11 +1597,17 @@ let rec default path j : default =
   let kvs = obj path j in
   expect_node path kvs "Default";
   check_keys path kvs
-    ~ext:[ "name"; "decision"; "justification"; "consequence"; "initialisation"; "exceptions"; "source" ]
+    ~ext:
+      [ "name"; "decision"; "justification"; "consequence"; "initialisation"; "exceptions"; "source";
+        "statuteAnnotations" ]
     [ "node" ];
   (* the block's name carries no semantics (IR-SPEC ch. 6.1): read as the
      string it must be, and kept by no reader here *)
   ignore (ext_field path kvs "name" str : string option);
+  (* nor do the block's statute annotations: read as the list of strings
+     they must be, kept by no reader here, and judged by WF-082 beside the
+     document ([default_annotations]) *)
+  ignore (ext_field path kvs "statuteAnnotations" annotation_list : string list option);
   {
     default_decision = ext_field path kvs "decision" bool_;
     default_justification = ext_field path kvs "justification" condition_expr;
@@ -1752,6 +1763,44 @@ let origin path kvs : origin option =
         hk_name = str (fp / "name") (field fp fkvs "name");
         hk_at = op;
       })
+
+(* The statute annotations of the defaults (IR-SPEC ch. 6.1, WF-082), read
+   from the document as written: the pointer of every `statuteAnnotations`
+   field of a Default, the defaults of a group and those of its exception
+   groups at any depth, with its entries, in document order. Like the
+   vocabulary table below it is no field of [document], on purpose: the
+   Catala and F-logic frontends build the default record whole, and no
+   reader but the verifier keeps the list ([default] reads the field for its
+   structure, for every reader). Read after [document], so the shapes it
+   walks are the ones that load. *)
+let default_annotations (j : json) : (string * string list) list =
+  let kvs = obj "" j in
+  let rules = obj "/rules" (field "" kvs "rules") in
+  let items p pkvs key =
+    match List.assoc_opt key pkvs with
+    | None -> []
+    | Some x -> List.mapi (fun i y -> (p / key / string_of_int i, y)) (list_ (p / key) x)
+  in
+  let rec chain p ckvs =
+    List.concat_map
+      (fun (dp, d) ->
+        let dkvs = obj dp d in
+        let own =
+          match List.assoc_opt "statuteAnnotations" dkvs with
+          | None -> []
+          | Some a -> [ (dp / "statuteAnnotations", annotation_list (dp / "statuteAnnotations") a) ]
+        in
+        let nested =
+          match List.assoc_opt "exceptions" dkvs with
+          | None -> []
+          | Some e ->
+              let ep = dp / "exceptions" in
+              List.concat_map (fun (gp, g) -> chain gp (obj gp g)) (items ep (obj ep e) "members")
+        in
+        own @ nested)
+      (items p ckvs "defaults")
+  in
+  List.concat_map (fun (gp, g) -> chain gp (obj gp g)) (items "/rules" rules "prioritizedDefaults")
 
 (* The vocabulary side table, read from the document as written: the
    vocabularies of the root list, and every designatable declaration with

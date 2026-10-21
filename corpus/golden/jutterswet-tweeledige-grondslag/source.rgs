@@ -1,0 +1,23 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het recht op de penning kenmerk (bezittelijk);
+    is vergunning geschorst kenmerk (bijvoeglijk);
+    is vergunning geweigerd kenmerk (bijvoeglijk);
+    het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal);
+
+// Bron: Jutterswet art. 3
+// Bron: Jutterswet art. 3b; een vondst op een stormvloeddag telt tweemaal
+Regel penningrecht art 3
+    geldig altijd
+        Een Jutter heeft recht op de penning
+        indien zijn aantal aangemelde vondsten groter of gelijk is aan 12.
+
+// Bron: Jutterswet art. 4bis
+Uitzondering op penningrecht art 3: schorsing art 4bis
+    geldig altijd
+        Een Jutter heeft geen recht op de penning
+        indien hij vergunning geschorst is.
+
+Uitzondering op penningrecht art 3: weigering art 4
+    geldig altijd
+        Een Jutter heeft geen recht op de penning
+        indien hij vergunning geweigerd is.

@@ -429,11 +429,17 @@ each annotation on an extension block vanished. Measured on the frontend before
 the change (the M6 document of `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md`
 §9.2: an annotated base and its annotated exception): neither annotation text
 occurred anywhere in the IR, with `diagnostics: []` and a verifier PASS. The
-placement since, with no new wire field (card `frontend-bron-annotatie-in-defaults`):
+placement since (card `frontend-bron-annotatie-in-defaults`; the list on the
+default since card `default-statute-annotations`, 2026-10-21):
 
-- a lifted rule's annotation lands in the `Default.bron` of the default it
-  becomes: the exception's on the exception default, the base's on the base
-  default, an unordered member's on its sibling group's single default;
+- a lifted rule's annotations land in the `statuteAnnotations` of the default
+  it becomes (IR-SPEC ch. 6.1, WF-082), the list a rule carries on the wire:
+  the exception's on the exception default, the base's on the base default,
+  an unordered member's on its sibling group's single default. The default
+  then carries no `source`: the frontend has no source text for a block as a
+  whole. Until 2026-10-21 the annotations stood in the default's `bron` (on
+  the wire its `source` snippet), joined with `"; "` as the group's still are
+  (below);
 - the group's `PrioritizedDefaults.bron` carries the annotation of the rule the
   group is named after: the base of an ordered family, the member itself for an
   unordered sibling. The base's text therefore stands twice, on the group and
@@ -446,22 +452,26 @@ placement since, with no new wire field (card `frontend-bron-annotatie-in-defaul
   anchors' group-level citation is an umbrella the frontend cannot write
   without inventing text ("art. 3 en 5"), so the group takes the text of the
   block it is named after;
-- several annotations on one block are joined with `"; "` in source order, and a
-  blank one is dropped, as the emitter drops it from `bronAnnotaties`. The join
-  loses a distinction and cannot be undone: one annotation that itself contains
-  `"; "` reads exactly like two, and the wire already carries such a text (the
-  group citation of the golden `jutterswet-samenloop`), so a reader cannot
-  recover the list from a joined snippet. Recorded, not repaired: `Default.bron`
-  and `PrioritizedDefaults.bron` are single strings (on the wire the `source`
-  snippet), and keeping the list would take a new wire field (option (b) of
-  the proposal's §9.2, not taken). Where the separate annotations matter, write
-  one per block;
-- an unannotated block writes no `source` (its `bron` stays null): the three
-  extension goldens carry no annotation and re-emit byte-identically;
+- on a default the annotations of one block stay a list, trimmed, in source
+  order, a blank one dropped as the emitter drops it from a rule's list. Each
+  entry is one `// Bron:` line, opaque to uchar (IR-SPEC ch. 3.1): the frontend
+  trims it and reads nothing inside it. On the
+  group they are joined with `"; "` in source order. That join loses a
+  distinction and cannot be undone: one annotation that itself contains `"; "`
+  reads exactly like two (the golden `jutterswet-tweeledige-grondslag` carries
+  such an annotation, and the wire already carried such a text in the group
+  citation of the golden `jutterswet-samenloop`), so a reader cannot recover
+  the list from the group's snippet. The defaults carry the list, so a reader
+  that needs the separate annotations reads the base default, which holds the
+  same annotations as the group. The group's `bron` stays a single string (on
+  the wire the `source` snippet): option (b) of the proposal's §9.2 was taken
+  for the default only;
+- an unannotated block writes no `statuteAnnotations` and no `source`: the
+  three extension goldens carry no annotation and re-emit byte-identically;
 - the `Regel` stubs carry no annotation either: since M1 of the v1 wire (delta
   B3) the emitter writes no `regels` list, so a lifted rule's annotation reaches
   the wire through its default alone;
-- nesting (form 2): a nested block's annotation lands on its own default inside
+- nesting (form 2): a nested block's annotations land on its own default inside
   the `ExceptionGroup`. Every lifted rule becomes a default in one place
   (`RuleChecker.defaultOf`), so the nested lowering inherits the placement. The
   `ExceptionGroup` itself and a group-default carry the text of the head that

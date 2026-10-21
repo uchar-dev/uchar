@@ -493,9 +493,9 @@
               }
             },
             "initialisation": true,
-            "source": {
-              "snippet": "art. 3f lid 2"
-            }
+            "statuteAnnotations": [
+              "art. 3f lid 2"
+            ]
           }
         ],
         "validity": {

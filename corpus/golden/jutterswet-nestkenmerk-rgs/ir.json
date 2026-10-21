@@ -95,9 +95,9 @@
                           "snippet": "hij nx is en hij ny is"
                         }
                       },
-                      "source": {
-                        "snippet": "ny"
-                      }
+                      "statuteAnnotations": [
+                        "ny"
+                      ]
                     }
                   ],
                   "source": {
@@ -137,9 +137,9 @@
                           "snippet": "hij nx is en hij nz is"
                         }
                       },
-                      "source": {
-                        "snippet": "nz"
-                      }
+                      "statuteAnnotations": [
+                        "nz"
+                      ]
                     }
                   ],
                   "source": {
@@ -164,9 +164,9 @@
                 "snippet": "hij nx is"
               }
             },
-            "source": {
-              "snippet": "nx: vrijgesteld, tenzij een uitzondering geldt"
-            }
+            "statuteAnnotations": [
+              "nx: vrijgesteld, tenzij een uitzondering geldt"
+            ]
           }
         ],
         "source": {

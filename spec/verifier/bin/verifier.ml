@@ -3,11 +3,16 @@ let () =
   | [| _; file |] -> (
       try
         (* the verifier loads what its rules judge (Loader.reader), and the
-           vocabulary side table beside the document, which does not keep it *)
+           vocabulary side table and the statute annotations of the defaults
+           beside the document, which keeps neither *)
         let j = Yojson.Safe.from_file file in
         let doc = Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier j in
         let grid = Ir_v0.Loader.vocabularies j in
-        match Ir_v0.Checks.all doc @ Ir_v0.Checks.vocabularies doc grid with
+        let annotations = Ir_v0.Loader.default_annotations j in
+        match
+          Ir_v0.Checks.all doc @ Ir_v0.Checks.vocabularies doc grid
+          @ Ir_v0.Checks.default_annotations annotations
+        with
         | [] ->
             print_endline "verifier: PASS"
         | violations ->
@@ -32,12 +37,14 @@ let () =
         let j = Yojson.Safe.from_file file in
         let doc = Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier j in
         let grid = Ir_v0.Loader.vocabularies j in
+        let annotations = Ir_v0.Loader.default_annotations j in
         List.iter
           (fun (x : Ir_v0.Checks.violation) ->
             Printf.printf "%s\t%s\t%s\n" x.key x.at
               (Yojson.Safe.to_string
                  (`Assoc (List.map (fun (n, value) -> (n, `String value)) x.params))))
-          (Ir_v0.Checks.all doc @ Ir_v0.Checks.vocabularies doc grid)
+          (Ir_v0.Checks.all doc @ Ir_v0.Checks.vocabularies doc grid
+           @ Ir_v0.Checks.default_annotations annotations)
       with
       | Ir_v0.Loader.Error (path, msg) ->
           Printf.eprintf "LOAD ERROR at %s: %s\n"

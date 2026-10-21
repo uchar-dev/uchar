@@ -337,6 +337,8 @@ public final class IrEmitter {
             w.endObject();
         }
         sourceReference(d.source());
+        // the block's statute annotations, as on a rule (WF-082): written whole or not at all
+        if (!d.statuteAnnotations().isEmpty()) { w.key("statuteAnnotations"); stringList(d.statuteAnnotations()); }
         w.endObject();
     }
 

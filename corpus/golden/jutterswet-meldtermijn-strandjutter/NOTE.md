@@ -35,7 +35,7 @@ Jutter, `vergunningseinde` on the Strandjutter.
 | Group | Subject | Defaults, highest first | Source |
 |---|---|---|---|
 | `meldtermijn` | Jutter | the base (lid 1) | `art. 3h lid 1` |
-| `meldtermijn voor Strandjutter` | Strandjutter | one group-default (no justification, no consequence, source `Afwijking van meldtermijn`) holding one ordered exception group (source `Afwijking van meldtermijn`) with lid 2 (source `art. 3h lid 2`) | `eigen uitzonderingen van Strandjutter; de basis 'meldtermijn' is geërfd van Jutter` |
+| `meldtermijn voor Strandjutter` | Strandjutter | one group-default (no justification, no consequence, source `Afwijking van meldtermijn`) holding one ordered exception group (source `Afwijking van meldtermijn`) with lid 2 (statute annotations `[art. 3h lid 2]`) | `eigen uitzonderingen van Strandjutter; de basis 'meldtermijn' is geërfd van Jutter` |
 
 Both groups carry the validity of the base (always). No rule stays in
 `rules`.

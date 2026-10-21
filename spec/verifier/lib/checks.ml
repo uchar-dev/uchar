@@ -8840,13 +8840,33 @@ let wf023 ctx =
         | _ -> [])
       (List.mapi (fun i l -> (i, l)) ctx.doc.prioritized_defaults)
 
-(* WF-082: the statuteAnnotations extension field (IR-SPEC ch. 3.1) — the
-   `// Bron:` statute annotations on a rule. When present it is a non-empty
-   list of non-empty entries that carry no surrounding whitespace (the
-   emitter trims and omits blanks; an empty or blank form would be a trace of
-   absence, and absence leaves no trace). The field sits on the form since
-   L4, one list for all its versions ([Ast]), so it is read once per form, on
-   its first version. *)
+(* WF-082: the statuteAnnotations extension field (IR-SPEC ch. 3.1 and 6.1)
+   — the `// Bron:` statute annotations on a rule or a default. When present
+   it is a non-empty list of non-empty entries that carry no surrounding
+   whitespace (the emitter trims and omits blanks; an empty or blank form
+   would be a trace of absence, and absence leaves no trace). [kind] names
+   the node that carries the list, the one parameter that tells the two
+   apart. *)
+let wf082_list ~kind at entries =
+  match entries with
+  | [] ->
+      [ v ~params:[ ("kind", kind) ] "WF-082.annotations-empty" at
+          (Printf.sprintf "statuteAnnotations is empty — an annotation-free %s omits the field entirely" kind) ]
+  | _ ->
+      List.concat
+        (List.mapi
+           (fun j e ->
+             if e = "" then
+               [ v ~params:[ ("kind", kind) ] "WF-082.annotation-blank" (Printf.sprintf "%s/%d" at j)
+                   "blank statute annotation — every entry carries text" ]
+             else if String.trim e <> e then
+               [ v ~params:[ ("kind", kind) ] "WF-082.annotation-whitespace" (Printf.sprintf "%s/%d" at j)
+                   "statute annotation carries leading/trailing whitespace — entries are trimmed" ]
+             else [])
+           entries)
+
+(* The rule's list sits on the form since L4, one list for all its versions
+   ([Ast]), so it is read once per form, on its first version. *)
 let wf082 ctx =
   List.concat_map
     (fun (r : resolved_rule) ->
@@ -8855,22 +8875,13 @@ let wf082 ctx =
       match r.rr_source_annotations with
       | _ when not first_version -> []
       | None -> []
-      | Some [] ->
-          [ v "WF-082.annotations-empty" at
-              "statuteAnnotations is empty — an annotation-free rule omits the field entirely" ]
-      | Some entries ->
-          List.concat
-            (List.mapi
-               (fun j e ->
-                 if e = "" then
-                   [ v "WF-082.annotation-blank" (Printf.sprintf "%s/%d" at j)
-                       "blank statute annotation — every entry carries text" ]
-                 else if String.trim e <> e then
-                   [ v "WF-082.annotation-whitespace" (Printf.sprintf "%s/%d" at j)
-                       "statute annotation carries leading/trailing whitespace — entries are trimmed" ]
-                 else [])
-               entries))
+      | Some entries -> wf082_list ~kind:"rule" at entries)
     ctx.doc.resolved_rules
+
+(* The default's list is read beside the document ([Loader.default_annotations]):
+   the document record does not keep it. *)
+let default_annotations (annotations : (string * string list) list) : violation list =
+  List.concat_map (fun (at, entries) -> wf082_list ~kind:"default" at entries) annotations
 
 (* WF-051: no dependency cycle may pass through prioritized defaults — their
    displacement edges are negative (dep_forms above), so any such cycle

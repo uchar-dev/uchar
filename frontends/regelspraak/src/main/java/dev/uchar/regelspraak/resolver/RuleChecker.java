@@ -1718,7 +1718,7 @@ final class RuleChecker {
             if (!ownChildren.isEmpty() && ownChildren.get(0).category == Block.MEMBER)   // one unordered block: a group-default directly above the base
                 chain.add(new Default(null, null, null, false,
                         exceptionsOf(ownChildren, baseConjuncts, targetName.characteristic()),
-                        headText(ownChildren.get(0).block), null));
+                        headText(ownChildren.get(0).block), null, List.of()));
             else
                 for (Node k : ownChildren) chain.add(0, defaultOf(k, baseConjuncts, targetName.characteristic()));
             chain.add(defaultOf(baseRule, targetName.characteristic()));
@@ -1834,7 +1834,7 @@ final class RuleChecker {
         List<String> heads = children.stream().map(k -> headText(k.block)).distinct().toList();
         String head = String.join(" en ", heads);
         Default groupDefault = new Default(null, null, null, false,
-                new Default.Exceptions(false, List.of(new ExceptionGroup(chain, head))), head, null);
+                new Default.Exceptions(false, List.of(new ExceptionGroup(chain, head))), head, null, List.of());
         return defaultsOf(subtypeGroupName(root, sub), new DefaultsTarget(sub, targetName.characteristic(), targetName.name()), false,
                 List.of(groupDefault), base.validity(), "eigen uitzonderingen van " + sub.name + "; de basis '"
                         + root + "' is geërfd van " + targetName.subjectType().name);
@@ -2292,10 +2292,11 @@ final class RuleChecker {
      *  and a negated one (dialect §4, form 1: {@link #NEGATED}) decides {@code false} — which writes nothing, so
      *  §9.2's monotone writes and ch. 5.3 hold; on attribute defaults the default's value is the rule's resolved
      *  value expression. The justification is the rule's condition.
-     *  The rule's {@code // Bron:} annotation becomes the default's {@code source}: lifting takes the rule out of
-     *  resolvedRules, and its {@code statuteAnnotations} with it, so this is the one place the citation can
-     *  survive — and since every lifted rule becomes a default HERE, a nested exception inherits the placement
-     *  by construction. */
+     *  The rule's {@code // Bron:} annotations become the default's {@code statuteAnnotations}, the list a rule
+     *  carries on the wire (IR-SPEC ch. 6.1, WF-082): lifting takes the rule out of resolvedRules, and its
+     *  annotations with it, so this is the one place the citation can survive — and since every lifted rule
+     *  becomes a default HERE, a nested exception inherits the placement by construction. The default carries
+     *  no {@code source}: the frontend has no source text for the block as a whole. */
     private Default defaultOf(ResolvedRule r, boolean characteristic) {
         return defaultOf(r, characteristic, r.condition() != null ? r.condition() : ALTIJD, null);
     }
@@ -2303,18 +2304,24 @@ final class RuleChecker {
     /** The same with a given justification and nested exception groups: the default a node of a defaults tree
      *  becomes. */
     private Default defaultOf(ResolvedRule r, boolean characteristic, Condition justification, Default.Exceptions exceptions) {
-        String source = annotationText(r.statuteAnnotations());
+        List<String> annotations = annotations(r.statuteAnnotations());
         return characteristic
-                ? new Default(!isNegated(r), justification, null, false, exceptions, source, r.name())
-                : new Default(null, justification, r.value(), false, exceptions, source, r.name());
+                ? new Default(!isNegated(r), justification, null, false, exceptions, null, r.name(), annotations)
+                : new Default(null, justification, r.value(), false, exceptions, null, r.name(), annotations);
     }
 
-    /** The annotations of one block as the single string a {@code source} field holds: the non-blank entries in
-     *  source order joined with "; ", or null when there are none — so an unannotated block writes no
-     *  {@code source}, as no defaults golden without annotations has one. A blank entry is dropped as the
-     *  emitter drops it from {@code statuteAnnotations}: it cites nothing. */
+    /** The annotations of one block as a default carries them: the non-blank entries, trimmed, in source order,
+     *  and empty when there are none — so an unannotated block writes no {@code statuteAnnotations}. A blank
+     *  entry is dropped as the emitter drops it from a rule's list: it cites nothing. */
+    private static List<String> annotations(List<String> annotations) {
+        return annotations.stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
+    }
+
+    /** The annotations of one block as the single string a {@code source} field holds: {@link #annotations}
+     *  joined with "; ", or null when there are none. A defaults group named after a rule carries it as its
+     *  source ({@code grammar/DIVERGENCES.md} §4, the {@code // Bron:} annotations of lifted rules). */
     private static String annotationText(List<String> annotations) {
-        List<String> filled = annotations.stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
+        List<String> filled = annotations(annotations);
         return filled.isEmpty() ? null : String.join("; ", filled);
     }
 
@@ -2639,12 +2646,14 @@ final class RuleChecker {
             //    justification is "X is empty in the input", which on 'berekende X' (never input) would always hold
             Datatype dt = t.attributes.get(o.attribute());
             List<Default> defaults = new ArrayList<>();
-            defaults.add(new Default(null, ALTIJD, attributeRead(o, o.supplied(), dt), false, null, o.supplied(), null));
-            defaults.add(new Default(null, ALTIJD, attributeRead(o, o.computed(), dt), false, null, o.computed(), null));
+            defaults.add(new Default(null, ALTIJD, attributeRead(o, o.supplied(), dt), false, null, o.supplied(), null,
+                    List.of()));
+            defaults.add(new Default(null, ALTIJD, attributeRead(o, o.computed(), dt), false, null, o.computed(), null,
+                    List.of()));
             if (!init.isEmpty()) {
                 ResolvedRule r = init.get(0);
-                defaults.add(new Default(null, null, r.value(), true, null, annotationText(r.statuteAnnotations()),
-                        r.name()));
+                defaults.add(new Default(null, null, r.value(), true, null, null, r.name(),
+                        annotations(r.statuteAnnotations())));
                 model.resolvedRules.removeIf(x -> x == r);
             }
             model.prioritizedDefaults.add(new PrioritizedDefaults(o.group(), t.name, null, o.attribute(), false,

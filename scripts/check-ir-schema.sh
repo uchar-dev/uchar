@@ -1804,6 +1804,20 @@ L5_SHAPE_ROWS = [
     ("Regelversie carries rule instead of regel",
      lambda d: _RSC(d).update(rule=_RSC(d).pop("regel")), False,
      "B25: the v0 fields regel and inconsistent stay until the v1 form lands"),
+    # --- the statute annotations of a default (IR-SPEC ch. 6.1, WF-082) ---------------------------
+    ("Default.statuteAnnotations with two entries",
+     _set(_DEF, "statuteAnnotations", ["art. 3 Jutterswet", "art. 3b Jutterswet; toelichting"]), True,
+     "a default carries the annotations of its block as a list, the field a rule carries"),
+    ("Default.statuteAnnotations = []", _set(_DEF, "statuteAnnotations", []), False,
+     "absent is the one spelling of a default without annotations (IR-SPEC ch. 6.1)"),
+    ("Default.statuteAnnotations = ['']", _set(_DEF, "statuteAnnotations", [""]), False,
+     "an annotation is a non-empty string"),
+    ("Default.statuteAnnotations with a padded entry",
+     _set(_DEF, "statuteAnnotations", [" art. 3 Jutterswet "]), True,
+     "the trimming is WF-082's, a verifier rule with its own witness"),
+    ("Default.statuteAnnotations as one string",
+     _set(_DEF, "statuteAnnotations", "art. 3 Jutterswet"), False,
+     "the annotations are a list, never one text a reader has to split"),
 ]
 
 

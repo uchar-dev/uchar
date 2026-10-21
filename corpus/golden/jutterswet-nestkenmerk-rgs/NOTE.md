@@ -45,7 +45,8 @@ Default 1  (besluit waar, als: nx)                           -- de basis
 
 ## De structurele diff tegen het anker
 
-Gemeten op beide `ir.json` met elk `source`-record recursief weggelaten en
+Gemeten op beide `ir.json` met elk `source`-record en elke
+`statuteAnnotations`-lijst van een default recursief weggelaten en
 de sleutels gesorteerd (de methode van `spec/proposals/PHASE5D-DIFF.md`
 §2–3). Het model, de groepsnaam, de uitzonderingsgroepen met hun
 rechtvaardigingen en besluiten, en het geldigheidsvenster zijn gelijk. Er
@@ -71,7 +72,9 @@ defaults-laag draagt er in beide documenten een. Het anker draagt
 omschrijvingen: `art. 7: de vrijstelling met een geneste uitzondering` op
 de groep, `uitzondering ny: niet vrijgesteld` en `uitzondering nz:
 vrijgesteld` op de uitzonderingsgroepen. De tweeling draagt op elke default
-de `// Bron:`-annotatie van zijn blok, op de groep die van de basisregel,
+de `// Bron:`-annotatie van zijn blok (sinds 2026-10-21 als
+`statuteAnnotations`-lijst, daarvoor als `source`), op de groep die van de
+basisregel,
 en op de groepsdefault en beide uitzonderingsgroepen de kop die ze maakt,
 `Uitzonderingen ongeordend op vrijstelling van een jutter`: een kop en geen
 regel maakt die knopen, dus er staat geen annotatie boven.

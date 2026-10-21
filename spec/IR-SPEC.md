@@ -63,7 +63,8 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   fields (ch. 3.4), `path` on the attribute reference and `navigation` on
   the characteristic check (ch. 4.1a — the navigation hops), `scope` on the
   scoped uniqueness (ch. 3.6, WF-054), `statuteAnnotations` on the rule
-  (ch. 3.1, WF-082 — the statute annotations), `vocabularies` on the
+  and on the default (ch. 3.1 and 6.1, WF-082 — the statute annotations),
+  `vocabularies` on the
   document with `designations` on the designatable declarations and
   `valueDesignations` on an enumeration's declaration (ch. 2.12, WF-116 to
   WF-120 — the vocabulary side table, which the RegelSpraak frontend
@@ -2431,7 +2432,7 @@ One node covers computing an attribute and attributing a characteristic
 |---|---|---|
 | `name` | string | rule identity |
 | `versions` | list of RuleVersion, ≥ 1 | in declaration order |
-| `statuteAnnotations` | list of string? | **extension field** (v0 wire `bronAnnotaties`): the `// Bron:` statute annotations written directly above the rule header, the text after `Bron:` trimmed, in source order — the PLAN §4 traceability thread from a rule back to its wetsartikel. Provenance only, never evaluation-relevant: executors ignore it. When present the list is non-empty with non-empty trimmed entries; a rule without annotations omits the field — written whole or not at all (WF-082). It sits on the form, one list for all its versions (landed at L4, delta B19). *History:* v0 flattened versions into separate `ResolvedRegel` entries, so the v0 wire carried the field per flattened entry, stamped from the one comment block above the shared rule header |
+| `statuteAnnotations` | list of string? | **extension field** (v0 wire `bronAnnotaties`): the `// Bron:` statute annotations written directly above the rule header, the text after `Bron:` trimmed, in source order — the PLAN §4 traceability thread from a rule back to its wetsartikel. Provenance only, never evaluation-relevant: executors ignore it. When present the list is non-empty with non-empty trimmed entries; a rule without annotations omits the field — written whole or not at all (WF-082). It sits on the form, one list for all its versions (landed at L4, delta B19). A Default carries the same field for the block it comes from (ch. 6.1). **Each entry is opaque:** one string per `// Bron:` line, trimmed, in source order, and nothing more — provenance, which no executor and no verifier reads or parses beyond the two form rules of WF-082 (non-empty, trimmed). What a rule set writes inside it, and any convention it keeps there, is the rule set's own business and not uchar's: uchar splits no entry and knows no structure in one. *History:* v0 flattened versions into separate `ResolvedRegel` entries, so the v0 wire carried the field per flattened entry, stamped from the one comment block above the shared rule header |
 | `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the rule's names in the vocabularies (ch. 2.12), on the form |
 
@@ -2690,15 +2691,24 @@ literal `{"boolean": true}` since L4.)
   pair is not reported; an initialisation beside a defaults group of its own
   level is WF-050's. **Delta (promotion).**
 - **WF-082** The `statuteAnnotations` extension field of a Rule (v0 wire
-  `bronAnnotaties`), when present, MUST be
+  `bronAnnotaties`) and of a Default (ch. 6.1), when present, MUST be
   a non-empty list whose entries are non-empty and carry no leading or
-  trailing whitespace; a rule without annotations MUST omit the field
-  (absence leaves no trace — an empty or blank form is ill-formed). The
-  emitter satisfies this by trimming the text after `// Bron:` and
-  dropping blank annotations. *v0 mirror note:* upstream builds the
+  trailing whitespace; a rule or a default without annotations MUST omit
+  the field (absence leaves no trace — an empty or blank form is
+  ill-formed). These two form rules are all the verifier checks: the
+  content of an entry is opaque, one string per `// Bron:` line, which
+  no executor and no verifier reads or parses (ch. 3.1). The emitter
+  satisfies the rule by trimming the text after `// Bron:` and dropping
+  blank annotations. The verifier reports a violation with the parameter
+  `kind` (`rule` or `default`), the node the list stands on. *v0 mirror
+  note:* upstream builds the
   annotation list in Phase 0 but the pinned v0 emitter did not put it on
   the wire; the field enters as an extension (Method) with the
-  2026-08-25 pin bump.
+  2026-08-25 pin bump. The field on a Default entered on 2026-10-21 (card
+  `default-statute-annotations`); until then the RegelSpraak frontend
+  joined the annotations of a block into one `source` snippet of the
+  default, from which a reader could not recover the strings one by
+  one.
 
 The corpus case `corpus/golden/jutterswet-penningdrempel/` instantiates
 this node: one rule with one version that carries neither a `presentation`
@@ -9136,10 +9146,15 @@ is empty in the input facts; lowest only, **root-only**; an absent
 `initialisation` is `false`: the default is not the initialisation default),
 `exceptions` (v0
 `excepties`, the optional nested exception groups — the **Default.exceptions and
-ExceptionGroup** paragraph below), `source` (v0 `bron`), and `name` (string? —
+ExceptionGroup** paragraph below), `source` (v0 `bron`), `name` (string? —
 an extension field, written just after `node`: the name the source gives the
-block the default comes from; absent where the source gives none). Until L5 an absent
-`decision` or `justification` was a `null`. v0 has no `name`.
+block the default comes from; absent where the source gives none), and
+`statuteAnnotations` (list of string? — an extension field, written last:
+the statute annotations written directly above the block the default comes
+from, in source order, the field a Rule carries, ch. 3.1, under the same
+WF-082). Until L5 an absent
+`decision` or `justification` was a `null`. v0 has neither `name` nor
+`statuteAnnotations`.
 
 **Default.name has no semantics**, as `source` has none: it resolves
 nothing, it is in no namespace (WF-020 holds the names of forms, and a
@@ -9160,6 +9175,34 @@ erkende meldingsdatum: herstelde melding` carries `"name": "herstelde
 melding"`, and the base default the name of its rule, `erkende
 meldingsdatum`. The Catala and F-logic frontends and the hand-written
 anchors write no name.
+
+**Default.statuteAnnotations has no semantics either**, as on a Rule: no
+executor reads it for evaluation, so a document whose `statuteAnnotations`
+on the defaults are removed gives every executor the same answer (gate 13
+strips them in the copy that loses the names). Each entry is opaque, as on
+a Rule (ch. 3.1): one string per `// Bron:` line, trimmed, in source order —
+provenance, which no executor and no verifier reads or parses beyond the
+form rules of WF-082. It is there for a consumer outside uchar that shows
+where a deciding default comes from; what that consumer finds inside an
+entry is its own reading, not uchar's. The RegelSpraak
+frontend writes the `// Bron:` annotations of the block a default comes
+from (`grammar/DIVERGENCES.md`, the annotations of lifted rules): the base
+rule's on the base default, an `Uitzondering op X:` or `Afwijking van X:`
+block's on its own default at any depth, an `Uitzonderingen ongeordend`
+member's on its sibling group's default, and an authored initialisation's
+on the initialisation default of the opgave group; a group-default a head
+makes and the two defaults the opgave marker generates carry none, as no
+annotation stands above them. The default then carries no `source`: the
+frontend has no source text for a block as a whole. The defaults group a
+base names keeps that base's annotations in its own `source` snippet, joined
+with `"; "` (a single source record, unchanged by the field). Worked
+example: in the golden `jutterswet-tweeledige-grondslag` the base default of
+`penningrecht art 3` carries `"statuteAnnotations": ["Jutterswet art. 3",
+"Jutterswet art. 3b; een vondst op een stormvloeddag telt tweemaal"]` — two
+`// Bron:` lines, two entries, each kept whole whatever it contains — the
+default of `schorsing art 4bis` carries `["Jutterswet art. 4bis"]`, and the
+default of the unannotated `weigering art 4` omits the field. The Catala and F-logic frontends and the
+hand-written anchors write no `statuteAnnotations`.
 
 Semantics:
 `RUNTIME-SEMANTICS.md` ch. 7.1 —
@@ -9433,7 +9476,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-079 | no two unconditional computing versions (tagged `presentation` `equation` or `calculation`, without `condition`) of different forms with overlapping validity on one (type, attribute) target without defaults — the single-writer discipline of WF-026/WF-050/WF-052 for bare attribute writers (ch. 7.7); characteristic attributions (neither tag nor flag) exempt (monotone), guarded case splits outside, and the versions of one form never paired (their overlap is WF-021's); the PHASE5D-DIFF §8.2 un-pinnable form refused ahead of the square; through a type chain the rule is read per concrete type — outside the gate of `RUNTIME-SEMANTICS.md` ch. 7.10 (no defaults group on the target in the lower type's chain) a version on a type and one on its ancestor pair as well, reported at the lower type's version, and there the priority the report names is a defaults group alone (`unordered` across a chain is a composition ch. 7.10 refuses); the initialisation arm: no two initialisation versions of different forms with overlapping validity on such a target, conditional or not (their guard turns an overlap into an order, `RUNTIME-SEMANTICS.md` ch. 5.4), read per concrete type through the chain as the computing pair is | gate 3 | `anchor/jutterswet-rekenkamer-overzee` (a guarded gewone/overzeese case split on one target — the fence does not over-fire on conditional writers) + `jutterswet-diepwrakbasis` (bare rules on the highest and the lowest type of a three-level chain and a defaults group on the middle type: the pair lies inside the gate and is not reported — the gate half of the chain arm, which a mutant without the gate condition refuses on this golden and on no other document of the four zones) + `anchor/jutterswet-strandrechtketen` (a defaults group on each of two levels), `jutterswet-wrakbasis` (a group on the supertype, a bare rule on the subtype) and `jutterswet-wrakerfbasis` (a bare rule on the supertype, a group on the subtype), whose chains carry at most one bare writer on the target, so the chain arm forms no pair there; for the initialisation arm `jutterswet-initialisatievolgorde` (two initialisations of one type on two targets: not paired) and `jutterswet-wrakinitialisatie` (one initialisation, folded into a subtype's stack) | `wf079-two-unconditional-writers` + `wf079-chain-unconditional-writers` + `wf079-two-initialisations` + `wf079-chain-two-initialisations` |
 | WF-080 | a value-position `AttributeReference` resolves to an attribute, not a characteristic (a characteristic is read through a characteristic check, ch. 4.5) — closes the tolerated `has_attr||has_kenmerk` leak in both the generic value walk and the aggregation-source path (a value-yielding fold's source; a count's role source is out of its scope: since L2 its written name is WF-047's, which requires it to denote the bound role, and a count source that names a member of the element type is WF-093's; until L2 it stayed in scope of WF-034); the rule TARGET lvalue is out of scope (WF-022) | gate 3 | `jutterswet-vondsttelling` + `anchor/jutterswet-penninguitgifte` (a `sum` folding an attribute source; gate 3 witnesses none over-rejects) | `wf080-value-position-characteristic` + `wf080-aggregation-source-characteristic` |
 | WF-081 | the string of a literal's `number` variant is the number pattern of the case format, the grammar the executors share (ch. 4.1): `'-'? digits`, `'-'? digits '.' digits`, or `'-'? digits '/' [1-9][0-9]*`; unit or currency tokens, whitespace, `+`, exponents, grouping, a decimal comma and a fraction without a leading digit are ill-formed (the unit belongs in the datatype's `unit`) — closes the gate blind spot where a unit written into the lexeme passed the verifier while both executors fault on it; keyed on the variant, the `date` and `dateTime` variants and `text` out of scope. **Narrowed at L4** (2026-09-24, delta B22): until then the rule mapped `,` to `.` and admitted `.5` and a denominator with a leading zero; no literal carried those forms after the migration, which writes the point and keeps the comma in `source` | gate 3 | `anchor/jutterswet-tariefstelling` (integer and decimal lexemes through the fence; gate 3 witnesses none over-rejects) | `wf081-unit-in-lexeme` + `wf081-decimal-comma` (the decimal comma, since L4) |
-| WF-082 | the `statuteAnnotations` extension field of a Rule (ch. 3.1; `bronAnnotaties` on each flattened entry until L4): when present a non-empty list of non-empty trimmed statute annotations; a rule without annotations omits the field — absence leaves no trace | gate 3 | `jutterswet-hardheidsoverschot` (two annotated rules on the wire; replayed by gates 5–6 — until 2026-09-24 this row named `jutterswet-hardheid`, which carries no annotations: measured, the one golden that does is this one) | `wf082-empty-source-annotations` + `wf082-blank-entry` + `wf082-padded-entry` |
+| WF-082 | the `statuteAnnotations` extension field of a Rule (ch. 3.1; `bronAnnotaties` on each flattened entry until L4) and, since 2026-10-21, of a Default (ch. 6.1): when present a non-empty list of non-empty trimmed statute annotations; a rule or a default without annotations omits the field — absence leaves no trace | gate 3 | `jutterswet-hardheidsoverschot` (two annotated rules on the wire; replayed by gates 5–6 — until 2026-09-24 this row named `jutterswet-hardheid`, which carries no annotations: measured, the one golden that does is this one); `jutterswet-tweeledige-grondslag` (a default with two annotations, one containing `"; "`, and one without; replayed by gates 5, 6 and 12, re-emitted by gates 10 and 16) | `wf082-empty-source-annotations` + `wf082-blank-entry` + `wf082-padded-entry` (on a rule); `wf082-default-empty-annotations` + `wf082-default-blank-entry` + `wf082-default-padded-entry` (on a default, the last one nested in an exception group; each pins `kind=default`) |
 | WF-083 | a SINGLE-argument aggregation's fold source is anchored and never navigates (ch. 4.3; a fold with two or more arguments is the listed value fold, whose operands are ordinary reads governed by WF-053): (c) the source's `subjectType` names the fold's anchor per position (ch. 4.3, the reading of the source; since L2 2026-09-24) — the `elementType` for a value fold's set source, the fold subject for the count source and for the subject's own read (a `total` without a range) — and, since the L2 fix round, a `total` without a range names the fold subject as its own `elementType` as well (equality, WF-001 form: without a range the fold is the subject's own read); navigation bindings on a fold source are WF-053's. (a) a written path and (b) a written role on a fold source left the wire with L2 (B11, history) | gate 3 | `jutterswet-aanmeldertelling` (the self-denoting count "het aantal vondsten van de aanmelder" through both executors, since L2 a plain count source); `jutterswet-tempototaal` (the set anchor and the subject anchor side by side); `jutterswet-sluitsom` (the SCOPE: a listed value fold whose operand navigates, played by ref, the ASP backend and both Drools branches) | `wf083-fold-source-foreign-element-type` (a set source anchored on the subject), `wf083-fold-source-anchor-by-operand` (a count source anchored on the element type, rewritten at L2), `wf083-fold-source-foreign-object-type` (an own read anchored elsewhere), `wf083-fold-source-anchor-by-intermediate-type` (an intermediate path type), `wf083-total-foreign-element-type` (a `total` without a range whose `elementType` names another type than the subject, added in the L2 fix round); `wf083-fold-source-navigates-away` and `wf083-vouwbron-navigatierol-buiten-de-wrat` were removed with reason at L2 |
 | WF-084 | the string of a literal's `date` variant (keyed on the variant since L4; a day-precision `Date` names it, WF-114) is the strict ISO form `yyyy-mm-dd` the executors parse (ch. 4.1) — fixed field widths (four-two-two digits), single `-` separators, month 1–12, day 1..days-in-month (leap-aware); the Dutch day-first source snippet is ill-formed, whether the bare `31-01-2024` (silently misread as year 31 → `0036-07-16`, a differential-blind wrong answer both executors agreed on) or the `dd. `-prefixed form (both executors fault) — closes that blind spot, the emitter now writing the bare ISO lexeme and keeping the snippet in `source` (`bron` until L5); datetime lexemes out of scope | gate 3 | `jutterswet-vondstverjaring` (an ISO date literal through the fence, replayed by gates 5–6) | `wf084-source-snippet` + `wf084-bare-non-iso` |
 | WF-085 | the day-kind reference graph is acyclic (ch. 5.4 / ch. 3.7): a day-kind condition may reference other day kinds (a `Predicate` of kind `dayKind`), but mutually recursive definitions have no fixpoint — a loud refusal where the v0 toolchain resolves a cycle to a silent false (the §9.10 recursion prohibition unenforced for day kinds); diverge-from-v0 (v0 neither checks nor documents it) | gate 3 | `jutterswet-schouwkalender` (an acyclic `hoogschouwdag -> schouwdag` reference, verifier-clean, replayed by gates 5–6 over its ordinary rule) | `wf085-day-kind-reference-cycle` (two mutually referencing day kinds) |

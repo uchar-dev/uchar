@@ -177,9 +177,9 @@
                           "snippet": "hij vergunning geweigerd is en hij weigering herroepen is en hij herroeping vervallen is"
                         }
                       },
-                      "source": {
-                        "snippet": "art. 4, derde laag"
-                      }
+                      "statuteAnnotations": [
+                        "art. 4, derde laag"
+                      ]
                     }
                   ],
                   "source": {
@@ -188,9 +188,9 @@
                 }
               ]
             },
-            "source": {
-              "snippet": "art. 4, tweede laag"
-            }
+            "statuteAnnotations": [
+              "art. 4, tweede laag"
+            ]
           },
           {
             "node": "Default",
@@ -204,9 +204,9 @@
                 "snippet": "hij vergunning geweigerd is"
               }
             },
-            "source": {
-              "snippet": "art. 4, eerste laag"
-            }
+            "statuteAnnotations": [
+              "art. 4, eerste laag"
+            ]
           }
         ],
         "source": {

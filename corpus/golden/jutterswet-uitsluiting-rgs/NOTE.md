@@ -52,7 +52,8 @@ Default 1  (besluit waar,   als: vergunning geweigerd)                          
 
 ## De structurele diff tegen het anker
 
-Gemeten op beide `ir.json` met elk `source`-record recursief weggelaten en
+Gemeten op beide `ir.json` met elk `source`-record en elke
+`statuteAnnotations`-lijst van een default recursief weggelaten en
 de sleutels gesorteerd (de methode van `spec/proposals/PHASE5D-DIFF.md`
 §2–3). Het model, de gewone regel, de groepsnaam en het geldigheidsvenster
 zijn gelijk. Er is één verschil, de vorm van de defaults-groep (56 regels
@@ -81,7 +82,8 @@ conjunct en in dezelfde volgorde. Geen verschil van klasse (ii) of (iii).
 De `source`-records vallen buiten deze diff. Het anker draagt citaten:
 `art. 4` op de groep en `art. 4, eerste laag` tot `derde laag` op de
 defaults. De tweeling draagt op elke default de `// Bron:`-annotatie van
-haar blok, op de groep die van de basisregel, en op haar geneste
+haar blok (sinds 2026-10-21 als `statuteAnnotations`-lijst, daarvoor als
+`source`), op de groep die van de basisregel, en op haar geneste
 uitzonderingsgroep de kop die de groep maakt, `Uitzondering op herroepen
 weigering`: een kop en geen regel maakt een uitzonderingsgroep, dus er
 staat geen annotatie boven. Het anker heeft geen uitzonderingsgroep.
