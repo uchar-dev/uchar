@@ -46,16 +46,12 @@ fail() { echo "check-readings: FAIL — $*" >&2; exit 1; }
 DEVIATIONS=(
 )
 # A golden whose `--readings` ends in ERROR on both branches, with the reason; its plain replay must exclude
-# it. The four below: the build with readings opens the reading of a form before it lowers it and closes
-# it after, and a form the transpiler refuses part-way (`meet` catches the Refusal) leaves the reading
-# open, so the next form's `beginReading` refuses the build ("de lezing van een vorm begint terwijl die van
-# een andere loopt") where the replay excludes the golden. A fault of the backend's build with readings,
-# outside this gate's executors (measured 2026-10-21, card ref-trace-and-readings-gate, Result).
+# it. Empty since card reading-after-refusal (2026-10-21). Until then four goldens stood here,
+# anchor/jutterswet-bootberging, jutterswet-ketenkwantor and jutterswet-muntketen after a DROOLS-067 refusal
+# and jutterswet-havenrooster after a DROOLS-179 one: a form the transpiler refused part-way left its
+# reading open, and the next form's `beginReading` refused the build with readings. `meet` closes that
+# reading now, and the four are compared as `EXCLUDE`, like every golden the replay excludes.
 READINGS_ERROR_KNOWN=(
-  "anchor/jutterswet-bootberging|the build with readings refuses after the DROOLS-067 refusal of a rule (the reading of the refused form stays open)"
-  "jutterswet-havenrooster|the build with readings refuses after the DROOLS-179 refusal of a rule (the reading of the refused form stays open)"
-  "jutterswet-ketenkwantor|the build with readings refuses after the DROOLS-067 refusal of a rule (the reading of the refused form stays open)"
-  "jutterswet-muntketen|the build with readings refuses after the DROOLS-067 refusal of a rule (the reading of the refused form stays open)"
 )
 
 # --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------------

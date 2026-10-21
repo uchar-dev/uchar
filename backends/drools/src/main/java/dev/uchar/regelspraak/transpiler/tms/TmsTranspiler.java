@@ -1148,12 +1148,15 @@ public final class TmsTranspiler {
         if (!own.equals(name))
             generated.put(name, new RegelSpraakModel.GeneratedFrom(RegelSpraakModel.Designatable.form(own),
                     RegelSpraakModel.OriginForm.VERSION));
+        int readingRulesBefore = readingRules.size();
         try {
             List<RulePlan> rules = build.get();
             coverage.add(Coverage.lowered(category, name));
             for (RulePlan r : rules) formOfRule.put(r.name(), name);
             return rules;
         } catch (Refusal w) {
+            // a refusal part-way through the form leaves its reading open, and the next form would open its own on it
+            abandonReading(readingRulesBefore);
             refuse(w.reason(), category, name);
             return List.of();
         }
@@ -3259,6 +3262,15 @@ public final class TmsTranspiler {
         noted = null;
         notedUnits = null;
         return n;
+    }
+
+    /** Ends the reading {@link #beginReading} started for a form whose lowering {@link #meet} refused part-way, without
+     *  reading what it noted, and drops the reading rules past the first {@code keep}, those the form planned before
+     *  the refusal (a stack plans one per default): the refused form has no rule, and so no reading rule. */
+    private void abandonReading(int keep) {
+        noted = null;
+        notedUnits = null;
+        readingRules.subList(keep, readingRules.size()).clear();
     }
 
     /** One node of a form's reading: its number, its kind as the wire spells it, the term that computes it in the
