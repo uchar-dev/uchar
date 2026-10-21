@@ -782,7 +782,16 @@ and this backend); declared factors and stelsel never enter.
   and §6.11 a rank lookup, since "the Nth day of the kind after A" IS "the
   day whose rank is rank(A) + N". The reach fence is read off the same
   table (no match within the reach of the start, or a gap wider than the
-  reach along the way) and fires as `viol/2`. One limit is this backend's
+  reach along the way) and fires as `viol/2`. Every fence of a step
+  carries, beside the condition, the reach of its place, as the §9.5
+  deposits do: in a quantifier fold's matrix the fold's stop, so a member
+  never reached walks no fence (RUNTIME-SEMANTICS ch. 3.9a; since
+  2026-10-21, golden `jutterswet-keurtermijn`), in a fold member its
+  range, in a default the defaults above it that did not settle. In a
+  document with an object or fact creation the fences keep firing for
+  every member, reached or not (loud; `backends/clingo/README.md` [V5]).
+  The step's value does not wait for the reach: the stop is read off the
+  matrix's own atoms. One limit is this backend's
   alone and loud, the S6a pattern: the window covers the case's dates
   extended by the reach on both sides, and a query that leaves it is
   refused here where ref computes it — never answered from a table that

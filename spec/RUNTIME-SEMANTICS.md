@@ -5244,13 +5244,18 @@ contributor of the trace may carry a fault.
 Three boundaries, recorded rather than left implicit. The status `FAULTS`
 and a fault at a node stay outside that differential: a golden does not
 fault at its fixpoint, and `runner --trace` refuses a case that pins one.
-So does a fault of a contributor after the stop: measured 2026-10-21, no
-such golden passes gate 6, since the ASP backend raises the faults of an
-evaluation date the case does not carry (EF-011) and of an `Unresolved`
-node (EF-019) while it translates the document and that of a day-kind
-walk (EF-009) for every member of the range, read or not, and the Drools
-backend reads a parameter the case does not bind (EF-014) as leeg. Those
-arms are pinned by the executors' own tests above. And a verdict of a
+A fault of a contributor after the stop is inside it for one kind: the
+golden `jutterswet-keurtermijn` (card
+`clingo-day-kind-walk-after-fold-stop`, 2026-10-21) reads `"W2" fault
+EF-009 unreached` and `"W3" fault EF-009 unreached` on both sides, the
+day-kind walk of a member after the stop. The other kinds stay outside
+it: measured 2026-10-21, no golden with such a fault passes gates 6 and
+17, since the ASP backend raises the faults of an evaluation date the case
+does not carry (EF-011) and of an `Unresolved` node (EF-019) while it
+translates the document, and the Drools backend reads a parameter the
+case does not bind (EF-014) as leeg, so its reading would carry a verdict
+where ref's carries the fault. Those arms are pinned by the executors' own
+tests above. And a verdict of a
 contributor the session did not reach may rest on a deposit the reading
 dropped, as W2 in case 1 and W3 in case 3 of the second example do: a
 consumer that reads the table reads a verdict the session would have
