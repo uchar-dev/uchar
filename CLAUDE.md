@@ -474,7 +474,13 @@ reviewer's duty on a machine that has catala. Current gates:
     STRIPPED, and ref, clingo and both Drools branches must reproduce the
     untouched outcome (no survivor list); floors
     `EXPECTED_MIN_ORIGIN_GOLDENS=9` and `EXPECTED_MIN_ORIGIN_STRIPPED=71`
-    (measured 2026-10-15). CI
+    (measured 2026-10-15). Since 2026-10-21 (card `defaults-decider`) a
+    NAME leg beside it: every golden whose defaults carry a `name` (IR-SPEC
+    ch. 6.1, `Default.name`) and that has case files is replayed with every
+    name STRIPPED, and ref, clingo and both Drools branches must reproduce
+    the untouched outcome (no survivor list); floors
+    `EXPECTED_MIN_NAME_GOLDENS=20` and `EXPECTED_MIN_NAME_STRIPPED=64`
+    (measured 2026-10-21). CI
     leg unconditional and blocking.
 
 14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`,

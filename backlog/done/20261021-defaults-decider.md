@@ -337,3 +337,8 @@ De volledige set op `5d7a0d0a`, `bash werk/gates.sh … gates-1`: alle zestien `
 261 en de DRL-teksttak 261; gate 13 193 s, met de naamleg). Tijdens de bouw: de Drools-suite (1635 tests na deel 1,
 groen na de twee pins), de frontendsuite (1221 tests), gate 12 `--fast` na deel 1 en deel 2, gates 2, 3, 4, 10, 13,
 15 en 16 los.
+
+Op de eindstand `072e9def`, na de toevoegingen van de hoofdsessie, opnieuw de volledige set (`gates-2`): alle zestien
+`rc=0`, `EXIT 0` (gate 8 telt 45 rode cases en in de Drools-leg 22 met een gepinde fout; gate 12 682 s; gate 13
+227 s). Geland 2026-10-21 na akkoord van de eigenaar: fast-forward naar `072e9def`, daarna deze commit met rij 43 in
+`spec/CONSTRUCTS.md` en de naamleg bij gate 13 in `CLAUDE.md`.
