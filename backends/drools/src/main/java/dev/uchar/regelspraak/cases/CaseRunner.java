@@ -1035,7 +1035,8 @@ public final class CaseRunner {
                 + renderIncs(facts, code != null);
     }
 
-    /** Every §9.5 Inconsistency fact the session holds. */
+    /** Every §9.5 Inconsistency fact the session holds, in the order of its working memory: {@link #consistency} looks
+     *  for a fact that matches and {@link #renderIncs} sorts what it shows, so no verdict and no line depends on it. */
     private List<Object> inconsistencies(KieSession session) {
         List<Object> facts = new ArrayList<>();
         try {

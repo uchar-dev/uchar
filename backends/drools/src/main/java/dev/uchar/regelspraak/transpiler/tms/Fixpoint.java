@@ -11,20 +11,28 @@ import java.util.Objects;
  * an initialisation of that member would not fire again. {@link TmsTranspiler#setDerivedValues} writes exactly this
  * onto the beans, from the same reading, once at the end of a session.
  *
- * <p>Every list is in no particular order. The reader takes the facts in the order of the working memory and groups
- * the derived values per object by identity, so the order can differ from one run to the next, and a consumer that
- * shows a list sorts it itself. Only {@code faults} is sorted, as its description below says. An object is a bean of
- * the build's bean model, compared by identity; a member is named as the model declares it.
+ * <p>{@code objects}, {@code links}, {@code faults} and {@code inconsistencies} are sorted, as their descriptions below
+ * say, so that two sessions of one input give them in one order whatever the order in which the input went in (card
+ * fixpoint-inconsistency-order): the reader takes the facts in the order of the working memory, an order of identities
+ * that differs from one session to the next. They order an object by a name: an object a creation made as the dump of
+ * a session names it, {@code «"creation"»(subject)#k}, k counting the phases in which that creation made an object for
+ * that subject; an object of the input by its case label, quoted, in the read with labels
+ * ({@code DroolsBackend.fixpointOf(build, session, label)}), and by its type and identity in the read without, where
+ * the order of two objects of the input thus differs between sessions as the sentence of a fault does. {@code values}
+ * and {@code characteristics} are in no particular order: the reader groups the derived values per object by
+ * identity, and a consumer reads them per object. An object is a bean of the build's bean model, compared by identity;
+ * a member is named as the model declares it.
  *
  * @param values         the derived value of every attribute a rule, a default or an allocation derived
  * @param characteristics       every characteristic derived to hold; a characteristic the input sets is on the bean already,
  *                        and nothing derives a characteristic not to hold
- * @param objects        every object a creation made
- * @param links     every link a creation laid, an object creation's link to its new object among them
+ * @param objects        every object a creation made, by its name
+ * @param links     every link a creation laid, an object creation's link to its new object among them, by its fact
+ *                        type, its first role, the name of the object in it, its second role and the name of that object
  * @param faults          the evaluation faults that stand, as data, in the order {@link TmsTranspiler#setDerivedValues}
  *                        reports them: by the name of the form, then by the sentence
  * @param inconsistencies the §9.5 deposits, the beans of the generated class {@code Inconsistentie}, each with its rule
- *                        and its subject
+ *                        and its subject, by the rule, then by the name of the subject, then by the EF codes
  */
 public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> characteristics, List<MadeObject> objects,
                       List<MadeLink> links, List<Fault> faults, List<Object> inconsistencies) {

@@ -952,19 +952,68 @@ public final class TmsTranspiler {
                         Namen.property(member.name()));
                 acts.add(() -> setter.accept(earliest.subject(), v));
             }
+        List<CreationStamp> marks = new ArrayList<>();
+        for (Object f : session.getObjects(o -> o instanceof CreationStamp)) marks.add((CreationStamp) f);
+        // the working memory gives its facts in an order of identities, which differs between two sessions of one input,
+        // so the lists a consumer writes out as they come are sorted on names of their objects, which do not
+        Function<Object, String> name = orderNames(marks, label);
         List<Fixpoint.MadeObject> objects = new ArrayList<>();
-        for (Object f : session.getObjects(o -> o instanceof CreationStamp)) {
-            CreationStamp g = (CreationStamp) f;
-            objects.add(new Fixpoint.MadeObject(g.object(), g.rule(), g.subject()));
-        }
+        for (CreationStamp g : marks) objects.add(new Fixpoint.MadeObject(g.object(), g.rule(), g.subject()));
+        objects.sort(Comparator.comparing(m -> name.apply(m.object())));
         List<Fixpoint.MadeLink> links = new ArrayList<>();
         // a link of the input carries phase 0 and is in the bean fields already
         for (Object f : session.getObjects(o -> o instanceof RelationLink k && k.phase() > 0))
             links.add(madeLink((RelationLink) f, acts));
+        links.sort(Comparator.comparing(Fixpoint.MadeLink::factType).thenComparing(Fixpoint.MadeLink::firstRole)
+                .thenComparing(k -> name.apply(k.first())).thenComparing(Fixpoint.MadeLink::secondRole)
+                .thenComparing(k -> name.apply(k.second())));
         List<Fault> ordered = new ArrayList<>(faults);
         ordered.sort(Comparator.comparing(Fault::rule).thenComparing(Fault::message));
         List<Object> inconsistencies = new ArrayList<>(session.getObjects(o -> o.getClass().getName().equals(INCONSISTENCY)));
+        Comparator<String> emptyFirst = Comparator.nullsFirst(Comparator.naturalOrder());
+        inconsistencies.sort(Comparator.comparing((Object i) -> (String) RegelSpraakRuntime.get(i, "rule"), emptyFirst)
+                .thenComparing(i -> name.apply(RegelSpraakRuntime.get(i, "subject")), emptyFirst)
+                .thenComparing(i -> String.valueOf(RegelSpraakRuntime.get(i, "codes"))));
         return new Read(new Fixpoint(values, characteristics, objects, links, ordered, inconsistencies), acts);
+    }
+
+    /**
+     * The names on which {@link #readFixpoint} sorts the made objects, the links and the deposits of a session: the same
+     * in every session of one input, whatever the order in which the input went in (card fixpoint-inconsistency-order).
+     * An object a creation made is named as the dump names it ({@code SessionDump}), {@code «"creation"»(subject)#k},
+     * with k counting the phases in which that creation made an object for that subject; an object of the input by the
+     * case label {@code label} gives it, quoted; without a label, in the read without labels, by its type and identity,
+     * which differ from one session to the next, as the sentence of a fault names it there. Null for no object.
+     */
+    private static Function<Object, String> orderNames(List<CreationStamp> marks, Function<Object, String> label) {
+        Map<Object, CreationStamp> markOf = new IdentityHashMap<>();
+        for (CreationStamp g : marks) markOf.put(g.object(), g);
+        Map<Object, String> made = new IdentityHashMap<>();
+        Function<Object, String> nameOf = o -> {
+            if (markOf.containsKey(o)) return made.get(o);
+            String l = label == null ? null : label.apply(o);
+            return l != null ? quoted(l) : FactNames.object(o);
+        };
+        List<CreationStamp> byPhase = new ArrayList<>(marks);
+        byPhase.sort(Comparator.comparingInt(CreationStamp::phase));
+        Map<String, Integer> count = new HashMap<>();
+        for (CreationStamp g : byPhase) {
+            // a creation takes no subject made in its own phase, so an earlier phase named a made subject already
+            String subject = nameOf.apply(g.subject());
+            if (subject == null)
+                throw new IllegalStateException(g + " in de sessie, maar haar onderwerp is in dezelfde of een latere fase"
+                        + " gemaakt");
+            String key = "«" + quoted(g.rule()) + "»(" + subject + ")";
+            made.put(g.object(), key + "#" + count.merge(key, 1, Integer::sum));
+        }
+        return o -> o == null ? null : nameOf.apply(o);
+    }
+
+    /** {@code s} between double quotes, with a quote, a backslash and a line break escaped, as the dump quotes a name, so
+     *  that no name of {@link #orderNames} reads as another. */
+    private static String quoted(String s) {
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
+                + "\"";
     }
 
     /** The created link {@code k} as {@link Fixpoint} gives it, with into {@code acts} the write of each of its to-one
