@@ -10,6 +10,7 @@ import dev.uchar.regelspraak.transpiler.tms.Period;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
 import dev.uchar.regelspraak.transpiler.tms.InputFormFault;
+import dev.uchar.regelspraak.transpiler.tms.MemberTest;
 import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
 
 import org.kie.api.definition.KiePackage;
@@ -422,8 +423,13 @@ final class SessionDump {
                 return quote(k.objectType()) + "." + quote(k.name()) + (k.characteristic() ? " (characteristic)" : "");
             if (o instanceof Throwable e) return fault(e);
             if (o instanceof List<?> l) {
+                // a list of member tests is what an accumulate collected over the contributions of a quantifier fold, in
+                // the order of the agenda, which differs between the two branches; the rule that reads it sorts it by the
+                // members' places (ComputeHelpers.quantifierRead), and so does the dump
+                List<?> in = !l.isEmpty() && l.stream().allMatch(x -> x instanceof MemberTest)
+                        ? l.stream().map(x -> (MemberTest) x).sorted().toList() : l;
                 List<String> r = new ArrayList<>();
-                for (Object x : l) r.add(render(x));
+                for (Object x : in) r.add(render(x));
                 return "[" + String.join(", ", r) + "]";
             }
             if (o instanceof Collection<?> c) {
