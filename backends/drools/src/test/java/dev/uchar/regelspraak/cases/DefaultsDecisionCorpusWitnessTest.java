@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,6 +44,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       conflict (EF-027) with the conflict of a record.</li>
  * </ul>
  *
+ * Every pointer of a record resolves in the golden's document to a node that writes the record's target: a
+ * {@code Default} of a group on that member, or the version of a rule whose target it is; and the decider lies on or
+ * below a default of the root chains. The toolchain lays these pointers back on its model, so a pointer that drifts
+ * fails here and not in its explanation.
+ *
  * A record on an object and member that is no stack's fails too. The two branches render one analysis, so they must
  * check the same count.
  *
@@ -59,6 +66,9 @@ class DefaultsDecisionCorpusWitnessTest {
     static final int EXPECTED_MIN_CHECKED = 324;
     /** The goldens with a defaults group whose cases are checked, measured 2026-10-21. */
     static final int EXPECTED_MIN_GOLDENS = 42;
+
+    private static final Pattern GROUP = Pattern.compile("/rules/prioritizedDefaults/[0-9]+");
+    private static final Pattern RULE_VERSION = Pattern.compile("/rules/rules/[0-9]+/versions/[0-9]+");
 
     /** One target of a defaults group as the document declares it: the group's subject, the member and its kind. */
     private record Target(String subject, String member, boolean characteristic) {}
@@ -96,7 +106,7 @@ class DefaultsDecisionCorpusWitnessTest {
                     JsonNode c = TmsDocuments.JSON.readTree(casePath.toFile());
                     int n = runner.withSession(c, (build, session, labels) -> {
                         DroolsBackend.fire(build, session);
-                        return check(which, build, targets, labels, DroolsBackend.fixpointOf(build, session),
+                        return check(which, ir, build, targets, labels, DroolsBackend.fixpointOf(build, session),
                                 DroolsBackend.decisionsOf(build, session), differences,
                                 branch == DroolsBackend.Branch.EXEC_MODEL ? kinds : new TreeMap<>());
                     });
@@ -112,11 +122,14 @@ class DefaultsDecisionCorpusWitnessTest {
                 + " goldens, " + kinds + ", onder de vloer " + EXPECTED_MIN_CHECKED);
         assertTrue(goldenCount >= EXPECTED_MIN_GOLDENS, () -> "getoetste goldens " + goldenCount + ", onder de vloer "
                 + EXPECTED_MIN_GOLDENS);
+        // the corpus has goldens whose subtype stack takes in an ordinary rule (5 at the card): its pointer must be read
+        assertTrue(kinds.getOrDefault("regelpointer", 0) > 0, () -> "geen pointer naar een regelversie opgelost: " + kinds);
     }
 
     /** The checks of one case: per object of the session and target of a group its type is an instance of. Returns the
      *  number of (stack, object) checked. */
-    private static int check(String which, DroolsBackend.Build build, List<Target> targets, Map<String, Object> labels,
+    private static int check(String which, JsonNode ir, DroolsBackend.Build build, List<Target> targets,
+                             Map<String, Object> labels,
                              Fixpoint fixpoint, List<DefaultsDecision> decisions, List<String> differences,
                              Map<String, Integer> kinds) {
         RegelSpraakModel model = build.model();
@@ -150,6 +163,8 @@ class DefaultsDecisionCorpusWitnessTest {
         }
         for (DefaultsDecision d : unmatched)
             if (d != null) differences.add(which + ": een record op geen stapel: " + d);
+        for (DefaultsDecision d : decisions) resolve(which + " " + name(label, d.object()) + " " + d.member(), ir, d,
+                differences, kinds);
         // every deposit of a defaults conflict is the conflict of a record
         for (Object i : fixpoint.inconsistencies()) {
             @SuppressWarnings("unchecked")
@@ -200,6 +215,47 @@ class DefaultsDecisionCorpusWitnessTest {
         else if (!sameValue(decision, derivedValue.value()))
             differences.add(where + ": besluit " + decision + ", en het fixpunt leidt " + derivedValue.value() + " af");
         return "waarde";
+    }
+
+    /** Every pointer of {@code d} names a node of {@code ir} that writes the target of {@code d}, and its decider lies on
+     *  or below a default of its root chains. */
+    private static void resolve(String where, JsonNode ir, DefaultsDecision d, List<String> differences,
+                                Map<String, Integer> kinds) {
+        List<String> roots = d.rootChains().stream().flatMap(List::stream).toList();
+        List<String> pointers = new ArrayList<>(roots);
+        if (d.decider() != null) pointers.add(d.decider().pointer());
+        if (d.conflict() != null) {
+            if (d.conflict().pointer() != null) pointers.add(d.conflict().pointer());
+            for (DefaultsDecision.Decider x : d.conflict().deciders()) pointers.add(x.pointer());
+        }
+        for (String p : pointers) {
+            JsonNode node = ir.at(p);
+            Matcher group = GROUP.matcher(p);
+            String target;
+            if (group.lookingAt()) {
+                if (!node.path("node").asText().equals("Default")) {
+                    differences.add(where + ": pointer " + p + " noemt geen Default maar " + node);
+                    continue;
+                }
+                target = ir.at(group.group()).path(d.characteristic() ? "characteristic" : "attribute").asText(null);
+                kinds.merge("defaultpointer", 1, Integer::sum);
+            } else if (RULE_VERSION.matcher(p).matches()) {
+                target = node.path("target").path("attribute").asText(null);
+                kinds.merge("regelpointer", 1, Integer::sum);
+            } else {
+                differences.add(where + ": een pointer van onbekende vorm: " + p);
+                continue;
+            }
+            if (target == null || !Namen.norm(target).equals(Namen.norm(d.member())))
+                differences.add(where + ": pointer " + p + " noemt een knooppunt met doel " + target + ", niet "
+                        + d.member());
+        }
+        List<String> deciders = new ArrayList<>();
+        if (d.decider() != null) deciders.add(d.decider().pointer());
+        if (d.conflict() != null) d.conflict().deciders().forEach(x -> deciders.add(x.pointer()));
+        for (String p : deciders)
+            if (roots.stream().noneMatch(r -> p.equals(r) || p.startsWith(r + "/")))
+                differences.add(where + ": beslisser " + p + " ligt op of onder geen default van " + d.rootChains());
     }
 
     private static boolean sameValue(Object a, Object b) {
