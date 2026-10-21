@@ -284,9 +284,8 @@ let fresh numbered =
     (fun (number, site, kind, own) -> { number; kind; site; own; outcome = None; members = [] })
     numbered
 
-(* The reading of [condition] on [self], and of [value] where it holds. *)
 (* The reading of [condition] on [self], and of the value where it holds:
-   [value] evaluates it, by default as an expression. *)
+   [compute] evaluates it, by default [value] as an expression. *)
 let read_on ?compute ~form ~numbered env world (self : World.instance) ~condition ~value =
   let nodes = fresh numbered in
   let compute =
@@ -543,7 +542,8 @@ let defaults json env ~world0 ~world =
                     l.defaults
               | Some true ->
                   let is_char = l.pd_characteristic <> None in
-                  (* the default's own decision, its reading emitted *)
+                  (* whether the default's own justification and consequence decide,
+                     its reading emitted *)
                   let own env (d : default) =
                     let input_filled =
                       d.default_initialisation
@@ -555,77 +555,58 @@ let defaults json env ~world0 ~world =
                     match reading_of l d with
                     | Some (form, _, _, _) when input_filled ->
                         emit (without ~form Displaced self);
-                        None
+                        false
                     | Some (form, condition, value, numbered) ->
                         let r = read_on ~form ~numbered env world self ~condition ~value in
                         emit r;
-                        if r.status <> Holds then None
-                        else if is_char then Some (Eval.Char_dec (Eval.req "default decision" d.default_decision))
-                        else (
-                          match
-                            List.find_opt
-                              (fun n -> match value with Some v -> same n.site (S_expr v) | None -> false)
-                              r.nodes
-                          with
-                          | Some { outcome = Some (Got v); _ } when v <> Value.Empty -> Some (Eval.Attr_dec v)
-                          | _ -> None)
+                        r.status = Holds
+                        && (is_char
+                           || List.exists
+                                (fun n ->
+                                  (match value with Some v -> same n.site (S_expr v) | None -> false)
+                                  && match n.outcome with Some (Got v) -> v <> Value.Empty | _ -> false)
+                                r.nodes)
                     | None -> (
                         (* no reading: the decision without one, as the session takes it *)
-                        let justified =
-                          (not input_filled)
-                          &&
-                          match d.default_justification with
-                          | Some c -> Eval.eval_cond env world self ~err:drop c
-                          | None -> true
-                        in
-                        if not justified then None
-                        else if is_char then Option.map (fun b -> Eval.Char_dec b) d.default_decision
+                        (not input_filled)
+                        && (match d.default_justification with
+                           | Some c -> Eval.eval_cond env world self ~err:drop c
+                           | None -> true)
+                        &&
+                        if is_char then d.default_decision <> None
                         else
                           match d.default_consequence with
-                          | Some v -> (
-                              match Eval.eval_expr env world self ~err:drop v with
-                              | Value.Empty -> None
-                              | v -> Some (Eval.Attr_dec v))
-                          | None -> None)
+                          | Some v -> Eval.eval_expr env world self ~err:drop v <> Value.Empty
+                          | None -> false)
                   in
-                  let rec decide ~env_at (ds : default list) : Eval.chain_result =
+                  (* whether the chain [ds] decides; a conflict of exception
+                     groups settles them as a decision does (ch. 7.9) *)
+                  let rec decide ~env_at (ds : default list) =
                     let rec go i = function
-                      | [] -> Eval.Undecided
-                      | (d : default) :: rest -> (
+                      | [] -> false
+                      | (d : default) :: rest ->
                           let env = env_at i in
-                          let fall_through () =
-                            if d.default_decision <> None || d.default_consequence <> None then
-                              match own env d with
-                              | Some x ->
-                                  displace rest;
-                                  Eval.Decided x
-                              | None -> go (i + 1) rest
-                            else go (i + 1) rest
+                          let has_content = d.default_decision <> None || d.default_consequence <> None in
+                          let settled =
+                            match d.default_exceptions with
+                            | None -> false
+                            | Some egs ->
+                                (* every exception group is walked: they reconcile as equals *)
+                                List.fold_left
+                                  (fun acc (eg : exception_group) ->
+                                    decide ~env_at:(fun _ -> env) eg.eg_defaults || acc)
+                                  false egs.egs_members
                           in
-                          match d.default_exceptions with
-                          | Some egs -> (
-                              let results =
-                                List.map
-                                  (fun (eg : exception_group) ->
-                                    decide ~env_at:(fun _ -> env) eg.eg_defaults)
-                                  egs.egs_members
-                              in
-                              let settled =
-                                List.exists (function Eval.Undecided -> false | _ -> true) results
-                              in
-                              if settled then (
-                                (match reading_of l d with
-                                | Some (form, _, _, _) -> emit (without ~form Displaced self)
-                                | None -> ());
-                                displace rest;
-                                Eval.Decided (Eval.Char_dec true))
-                              else fall_through ())
-                          | None -> (
-                              match own env d with
-                              | Some x ->
-                                  displace rest;
-                                  Eval.Decided x
-                              | None -> go (i + 1) rest))
+                          if settled then (
+                            (match reading_of l d with
+                            | Some (form, _, _, _) -> emit (without ~form Displaced self)
+                            | None -> ());
+                            displace rest;
+                            true)
+                          else if has_content && own env d then (
+                            displace rest;
+                            true)
+                          else go (i + 1) rest
                     in
                     go 0 ds
                   in
