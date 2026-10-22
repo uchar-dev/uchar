@@ -5084,17 +5084,27 @@ of the concrete type it belongs to (ch. 7.10); for a fact creation its
 anchors. A fact creation whose condition is a check on its target has no
 reading: that condition filters the targets (ch. 5.5), so its verdict
 belongs to an (anchor, target) pair and not to one object. A form without a
-condition has none either.
+condition has a reading where it computes a value (card
+`readings-of-unconditional-forms`, 2026-10-22): a rule version without a
+`condition` that computes, equates or initialises an attribute, an
+attribute default without a `justification` — the initialisation default
+(ch. 7.3) — and an ordinary rule without a condition that ch. 7.10 folds
+into a stack, whose justification there is the fold's vacuous one, which
+stands nowhere in the document. It is the reading of its value (**A form
+without a condition**, below). A form without a condition that computes no
+value here — a characteristic attribution, a characteristic default, an
+allocation, a creation — has none: there is nothing to read.
 
 **The status.** Each (form, object) has one status:
 
 | status | when | nodes |
 |--------|------|-------|
 | `HOLDS` | the condition holds | the nodes of the condition, and of the value |
+| `HOLDS` | the form has no condition and is at its turn | the nodes of the value |
 | `FAILS` | the condition does not hold | the nodes of the condition |
 | `FAULTS` | the evaluation of the condition faults (ch. 5.7) | the nodes, the fault at those it reached |
 | `FAULTS` | the form has a dated validity and the session no evaluation date (ch. 8.1) | none |
-| `DISPLACED` | the form is not at its turn: a higher default of its chain decided, or an exception group of the default settled (ch. 7.1, 7.9); the target of an initialisation — a rule's, or a folded one's in a stack — holds a value of the input or of another writer (ch. 5.4, 7.3); the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
+| `DISPLACED` | the form is not at its turn: a higher default of its chain decided, or an exception group of the default settled (ch. 7.1, 7.9); the target of an initialisation — a rule's, a folded one's in a stack, or the initialisation default's — holds a value of the input or of another writer (ch. 5.4, 7.3); the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
 | `OUTSIDE_VALIDITY` | the validity window of the form does not admit the evaluation date (ch. 8.2) | none |
 
 A form that is not at its turn, or outside its validity, is not evaluated,
@@ -5110,6 +5120,23 @@ here: the member initialisations of a creation are evaluated at its making,
 not at the fixpoint. The status is the condition's; a value that faults
 leaves the reading `HOLDS` and carries its fault at its nodes.
 
+**A form without a condition** (card `readings-of-unconditional-forms`,
+2026-10-22) has no verdict to record. Where it is at its turn on the
+object, its value is evaluated with the object as its subject, on the
+fixpoint world, in the order of ch. 5.11, and its status is `HOLDS`, also
+where the value is leeg or faults; where it is not at its turn, or the
+window of its validity does not admit the evaluation date, its status is
+`DISPLACED`, `OUTSIDE_VALIDITY` or `FAULTS` as a form with a condition has
+it, without nodes. An initialisation without a condition — a rule's, a
+folded one's in a stack, or the initialisation default (ch. 7.3) — is not
+at its turn where its target holds a value of the input or of another
+writer (ch. 5.4, 7.3). An attribute default without a justification, and an
+ordinary rule without a condition that ch. 7.10 folds into a stack, is not
+at its turn where a default above it decided or an exception group of it
+settled (ch. 7.1, 7.9). Elsewhere the form is at its turn; a computation or
+an equation without a condition outside a stack is at its turn on every
+object it runs on.
+
 **A reading deposits nothing and writes nothing.** A §9.5 deposit the
 evaluation makes is dropped, a value it computes is written nowhere, and no
 outcome of the session reads a reading. Two consequences follow from the
@@ -5122,7 +5149,8 @@ skipped is not reached in the reading either.
 document over the nodes of the condition union (IR-SPEC ch. 4.5) and of the
 expression union (IR-SPEC ch. 4): first those of the condition, its root 0,
 then those of the value; a node before its fields, the fields in the order
-the document writes them, a list in its order. A text part, a whole-period
+the document writes them, a list in its order. A form without a condition
+has the nodes of its value only, its root 0. A text part, a whole-period
 qualifier, a dimension selection, a type and a role binding are no nodes; a
 fold's inline function (`Lambda`) is one. Each node that has a reading of
 its own records one of:
@@ -5141,13 +5169,21 @@ its own records one of:
 A node that the evaluation reads as a timeline, instead of evaluating it to
 a value, has that timeline as its value, leeg where it is absent: the
 operand of a whole-period test (ch. 3.9) and the base of a temporal total
-(ch. 3.6) or of a time-proportional part (ch. 3.7). A condition that the
+(ch. 3.6) or of a time-proportional part (ch. 3.7); an asOfDate-bucket
+scalar (ch. 8.4) is the timeline of its one period. A condition that the
 evaluation reads over a timeline has the part of that timeline in which it
 holds: the clip of a temporal total (ch. 3.6) and the filter of a
 time-proportional part or a day count (ch. 3.7, 3.8) — the periods of a
 characteristic, the segments of a compared timeline — and a period window
 that cuts a timeline target (ch. 3.10), the window itself. The value of a
-rule on a timeline target is the timeline it writes.
+rule on a timeline target is the timeline it writes. Of the clip of a
+temporal total, a check of a characteristic has its true periods, a negated
+check the periods outside them within each segment of the totalled
+timeline, and a composite the intersection of its members' periods, each
+member read on its own — each a period without a value; a comparison has
+the segments of the compared timeline where it holds, with their values,
+cut where the segments of the totalled timeline are cut (the `ref/` test
+`WV-5.12-gedurende-clip`).
 
 **Folds over a set.** A node that the evaluation reads once per member of
 a fold over a set — the source, the filter and the matrix of an
@@ -5156,7 +5192,8 @@ aggregation with a range or over an instance-set union (ch. 3.4, 3.4a,
 element of a list (ch. 10.2) has no reading of its own; it keeps its
 number. The node of a fold over a set carries its **contributors** instead,
 the members of its range that pass its filter: for a count each instance it
-counts; for a value fold each member with the value it contributes, where a
+counts, for the filled count (ch. 3.4c) each member whose value is filled;
+for a value fold each member with the value it contributes, where a
 member whose value is leeg contributes nothing (ch. 1.2e); for a quantifier
 fold each member with the verdict of the matrix on it, or its fault — the
 table of ch. 3.9a's `test(m)` over the contributors, evaluated on the
@@ -5195,8 +5232,16 @@ text and an enumeration value quoted, with `\`, `"` and the line breaks
 escaped; leeg as `empty`; a timeline as `[[<from> <to> <value>], …]`, with
 `empty` as the value of a period without one. After the value of an
 expression stands its unit, quoted, where it has one: of a number the unit
-it carries, of a leeg value or a fault the unit of the node's declaration
-or annotation. After the node of a fold over a set stand its contributors,
+of the node's effective type (ch. 2.10), the number restated into it where
+the evaluation computed it in another unit or in none — a leeg coalesced to
+0, a fold's 0 over no contributor, a sum whose left operand was leeg
+(ch. 2.6) —, of a leeg value or a fault the unit of the node's declaration
+or annotation (*provisional decision of the builder of card
+readings-of-unconditional-forms, 2026-10-22*: until then the text said
+"the unit it carries", and `ref` wrote the unit a value carried in its own
+evaluation, where the Drools backend, which computes in the effective unit,
+wrote that one; the two first met on the values of forms without a
+condition). After the node of a fold over a set stand its contributors,
 `contributors [<object> <value|verdict|fault> reached|unreached; …]`,
 sorted, each found written as at a node, and `unordered` in place of the
 position where the executor keeps no order. `runner --trace` prints this
@@ -5290,18 +5335,67 @@ text case 3 reads:
 ```
 /rules/rules/0/versions/0 "P1" 0 QuantifierFold false contributors ["W1" true reached; "W2" false reached; "W3" false unreached]
 /rules/rules/0/versions/0 "P1" FAILS
+/rules/rules/1/versions/0 "P1" 0 Aggregation 3 contributors ["W1" empty reached; "W2" empty reached; "W3" empty reached]
+/rules/rules/1/versions/0 "P1" HOLDS
 ```
 
-**The artifacts.** The `ref/` tests `WV-5.12-ploegaandeel` and
-`WV-5.12-keurgemiddelde` (the two examples above),
+The golden's second rule, `wachttal van een ploeg`, the count of the
+wachten, has no condition: it holds, and the count carries each wacht it
+counts (**A form without a condition**, above).
+
+**Worked example — a form without a condition** (absolute; the
+`jutterswet-opgave-bedrag` golden, verbatim in the `ref/` test
+`WV-5.12-opgave-bedrag`). The rule
+
+```
+verzekerde waarde ← waarde plus 2,50 €
+```
+
+has no condition and numbers the nodes of its value from 0: 0 `Binary`
+(plus), 1 `AttributeReference` (waarde), 2 `Literal` (2,50 €). Its version
+is `/rules/rules/2/versions/0`. The waarde carries the opgave marker, so one
+defaults group decides it: from the top the opgave, the computation of the
+waarde from the taxatie and the bergingskosten, and the initialisation
+default 25,00 € without a justification,
+`/rules/prioritizedDefaults/0/defaults/2`, whose one node, 0, is its
+`Literal`. The readings of the two forms on the Vondst V of three cases:
+
+| case | input | waarde | `…/defaults/2` | `/rules/rules/2/versions/0`: nodes 0, 1, 2 |
+|------|----|----|----|----|
+| `case1-geen-opgave` | taxatie 100,00 €, bergingskosten 10,00 € | 110,00 € (the computation) | `DISPLACED` | `HOLDS`: 112,50 €, 110,00 €, 2,50 € |
+| `case5-niets` | — | 25,00 € (the initialisation default) | `HOLDS`: 25,00 € | `HOLDS`: 27,50 €, 25,00 €, 2,50 € |
+| `case7-doel-zelf-zonder-feiten` | waarde 80,00 € | 80,00 € (the input) | `DISPLACED` | `HOLDS`: 82,50 €, 80,00 €, 2,50 € |
+
+In case 1 the computation above the initialisation default decided
+(ch. 7.1); in case 7 the input fills the target (ch. 7.3). In the canonical
+text the two forms read in case 5:
+
+```
+/rules/prioritizedDefaults/0/defaults/2 "V" 0 Literal 25 "EUR"
+/rules/prioritizedDefaults/0/defaults/2 "V" HOLDS
+/rules/rules/2/versions/0 "V" 0 Binary 27.5 "EUR"
+/rules/rules/2/versions/0 "V" 1 AttributeReference 25 "EUR"
+/rules/rules/2/versions/0 "V" 2 Literal 2.5 "EUR"
+/rules/rules/2/versions/0 "V" HOLDS
+```
+
+**The artifacts.** The `ref/` tests `WV-5.12-ploegaandeel`,
+`WV-5.12-keurgemiddelde` and `WV-5.12-opgave-bedrag` (the three examples
+above),
 `WV-5.12-fout-in-een-lezing` (a member that faults: the fault's EF code at
 the member and at the composite, the status `FAULTS`, and the composite on
 the other object stopping before it) and `WV-5.12-fout-in-een-kwantorvouw`
 (the fault arms of the table: a contributor after the stop whose matrix
 faults carries the fault, not reached, and the fold keeps its verdict; a
 contributor after a reached one that faults carries its verdict, not
-reached; a filter that faults leaves the node without contributors), the
-last one also the Drools backend's `ReadingsWitnessTest`. Gate 17
+reached; a filter that faults leaves the node without contributors) and
+`WV-5.12-gedurende-clip` (the clip of a temporal total: a check, a negated
+check, a composite and a comparison of another timeline), the last two
+also the Drools backend's `ReadingsWitnessTest`, beside its record of forms
+without a condition (a sum over a role with its contributors and an empty
+one, a `gesteld worden op` one role away, an initialisation at its turn and
+displaced, an initialisation default at its turn and displaced by a higher
+default and by the input). Gate 17
 (`scripts/check-readings.sh`) holds the readings of `runner --trace`, per
 golden case file, to those of the Drools backend on both its branches: per
 contributor the member and its verdict, value or fault verbatim, the
