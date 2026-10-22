@@ -32,3 +32,22 @@ ref (`--trace`) en de Drools-backend (beide takken, de build met lezingen) lever
 
 May touch: `backends/drools/**` buiten de productieruntime, `ref/lib/reading.ml`, `ref/test/`, een golden; `spec/` en
 `scripts/` als voorstel; deze kaart. Start na de landing van `cycle-across-instances` (beide raken Drools, ref en spec).
+
+## Voorlopige besluiten (bouwer, 2026-10-22)
+
+*Gemarkeerd voorlopig; de eigenaar kan elk besluit omdraaien. Elk staat ook in ch. 5.12 (voorstel).*
+
+- **V1 Aan de beurt.** Een vorm zonder voorwaarde is `HOLDS` waar zij aan de beurt is, ook waar haar waarde leeg is of
+  faalt; een initialisatie zonder voorwaarde (die van een regel, een gevouwen regel in een stapel, of de
+  initialisatiedefault van ch. 7.3) is `DISPLACED` waar de invoer of een andere schrijver het doel vult; een
+  attribuutdefault zonder rechtvaardiging en een gevouwen regel zonder voorwaarde zijn `DISPLACED` waar een hogere
+  default besliste. De rij `DISPLACED` van de statustabel noemt daarom ook de initialisatiedefault. Een vorm zonder
+  voorwaarde die hier geen waarde berekent (kenmerktoekenning, kenmerkdefault, groepsdefault, verdeling, creatie) houdt
+  geen lezing.
+- **V2 De eenheid achter een getal** in de canonieke tekst is die van het effectieve type van de knoop (ch. 2.10), het
+  getal daarin herschreven; tot nu toe stond er "the unit it carries", en `ref` schreef de eenheid die zijn evaluatie
+  meedroeg (een leeg die tot 0 coalesceert: geen; `leeg kg plus 1 t`: `1 "t"`), Drools de effectieve (`0 "kg"`,
+  `1000 "kg"`). Gemeten op `jutterswet-stelselweging`, `-keurlast`, `-muntbewaring`, `-munttelling`, `-tempototaal`,
+  `-tempovouw`, `-vondstrecht`, `-vondsttelling`.
+- **V3 De gevulde telling is een telling** (ch. 3.4c zegt het): haar bijdragers zijn de leden die zij telt, zonder hun
+  waarde (`"V1" empty reached`), zoals bij `count`; `ref` schreef de waarde van elk lid, Drools niets.
