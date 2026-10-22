@@ -1246,6 +1246,23 @@ and ref accept and play the document) and
 `uitvoerdernotities-na-truth-maintenance` (IR-SPEC ch. 5.5 and javadoc in the
 backend's tests still describe the destructive lowerings as current).
 
+**A fold in a filter has no reading of its own (2026-10-22, cards
+`fold-in-element-condition`, `rule-variable-in-subselection`,
+`subselection-per-chain`):** since these cards the frontend writes a fold over
+a relation of the rule subject, read in the filter or the test of another
+fold, as a `sourcePath` from the element back to the rule subject (route (i)
+of the Fable advice of 2026-10-22, a provisional decision). Such a fold is
+evaluated per member and has no reading of its own (ch. 5.12): an explanation
+shows which members pass, not the value of the inner fold and its
+contributors. A refinement — reading a filter node that reads nothing of the
+element once per subject — is a spec question of its own; until then the
+limit holds. Route (ii), a `Let` on the rule, would give that reading, but
+waits on open point 6 of the Drools truth-maintenance lowering and on the
+clingo binder leak (`20261009-clingo-let-binder-tussen-onderwerpen`), and
+changes the meaning on an empty value (IR-SPEC ch. 4.10 (c), ch. 10.6). Where
+the way back from the element is not to-one at every step, the frontend
+refuses the read (RGS-352) instead of writing a marker.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
