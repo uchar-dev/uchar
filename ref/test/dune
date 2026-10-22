@@ -9,5 +9,10 @@
   ../../corpus/golden/jutterswet-keurgemiddelde/case1-stop-voor-de-deling.json
   ../../corpus/golden/jutterswet-keurgemiddelde/case2-beide-leden-gelezen.json
   ../../corpus/golden/jutterswet-keurgemiddelde/case3-het-tweede-lid-beslist.json
-  ../../corpus/golden/jutterswet-keurgemiddelde/case4-de-deling-bereikt.json)
+  ../../corpus/golden/jutterswet-keurgemiddelde/case4-de-deling-bereikt.json
+  ; and so is its third, a form without a condition
+  ../../corpus/golden/jutterswet-opgave-bedrag/ir.json
+  ../../corpus/golden/jutterswet-opgave-bedrag/case1-geen-opgave.json
+  ../../corpus/golden/jutterswet-opgave-bedrag/case5-niets.json
+  ../../corpus/golden/jutterswet-opgave-bedrag/case7-doel-zelf-zonder-feiten.json)
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

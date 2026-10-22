@@ -9021,26 +9021,31 @@ let () =
    never read it, so its channel is consistent, and the reading's verdict
    rests on the deposit it dropped. On case 4 the member is reached and the
    session deposits (the golden pins EF-005); the reading drops that deposit
-   too. *)
+   too. The golden's second rule, the wachttal, a count without a condition,
+   reads its value: it holds, and the count carries each Strandwacht it
+   counts (card readings-of-unconditional-forms). *)
 let () =
   let golden = "corpus/golden/jutterswet-keurgemiddelde/" in
-  let p = "/rules/rules/0/versions/0 \"P1\" " in
+  let p = "/rules/rules/0/versions/0 \"P1\" " and q = "/rules/rules/1/versions/0 \"P1\" " in
   List.iter
-    (fun (file, status, contributors) ->
+    (fun (file, status, contributors, counted) ->
       let got = readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ file)) in
       let expected =
         List.sort compare
           [ p ^ status;
             p ^ "0 QuantifierFold " ^ string_of_bool (status = "HOLDS")
-            ^ " contributors [" ^ contributors ^ "]" ]
+            ^ " contributors [" ^ contributors ^ "]";
+            q ^ "HOLDS";
+            q ^ "0 Aggregation " ^ string_of_int (List.length counted) ^ " contributors ["
+            ^ String.concat "; " (List.map (fun w -> "\"" ^ w ^ "\" empty reached") counted) ^ "]" ]
       in
       check ("WV-5.12-keurgemiddelde " ^ file) (got = expected);
       if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
-    [ ("case1-stop-voor-de-deling.json", "FAILS", {|"W1" false reached; "W2" false unreached|});
-      ("case2-beide-leden-gelezen.json", "HOLDS", {|"W1" true reached; "W2" true reached|});
+    [ ("case1-stop-voor-de-deling.json", "FAILS", {|"W1" false reached; "W2" false unreached|}, [ "W1"; "W2" ]);
+      ("case2-beide-leden-gelezen.json", "HOLDS", {|"W1" true reached; "W2" true reached|}, [ "W1"; "W2" ]);
       ( "case3-het-tweede-lid-beslist.json", "FAILS",
-        {|"W1" true reached; "W2" false reached; "W3" false unreached|} );
-      ("case4-de-deling-bereikt.json", "FAILS", {|"W1" true reached; "W2" false reached|}) ]
+        {|"W1" true reached; "W2" false reached; "W3" false unreached|}, [ "W1"; "W2"; "W3" ] );
+      ("case4-de-deling-bereikt.json", "FAILS", {|"W1" true reached; "W2" false reached|}, [ "W1"; "W2" ]) ]
 
 (* WV-5.12-fout-in-een-kwantorvouw: the fault arms of the table, which no
    golden reaches (a member after the stop that would fault is a fault the
@@ -9097,6 +9102,100 @@ let () =
             line 1 "P2" "0 QuantifierFold fault EF-019" ]
       in
       check "WV-5.12-fout-in-een-kwantorvouw" (got = expected);
+      if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
+
+(* WV-5.12-opgave-bedrag: the chapter's worked example of a form without a
+   condition, verbatim, the golden jutterswet-opgave-bedrag. The rule
+   verzekerde waarde has no condition: it holds on every Vondst, with the
+   nodes of its value from 0. The initialisation default of the opgave group
+   holds where it is at its turn (case 5: nothing above it decides, the input
+   leaves the waarde empty) and is displaced where a higher default decided
+   (case 1) or the input fills the target (case 7). The lines of the two forms
+   in each case's canonical text (card readings-of-unconditional-forms). *)
+let () =
+  let golden = "corpus/golden/jutterswet-opgave-bedrag/" in
+  let rule = "/rules/rules/2/versions/0 \"V\" " and init = "/rules/prioritizedDefaults/0/defaults/2 \"V\" " in
+  let of_forms lines =
+    List.filter
+      (fun l -> String.starts_with ~prefix:rule l || String.starts_with ~prefix:init l)
+      lines
+  in
+  List.iter
+    (fun (file, default_lines, insured, waarde) ->
+      let got = of_forms (readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ file))) in
+      let expected =
+        List.sort compare
+          (List.map (fun c -> init ^ c) default_lines
+          @ List.map (fun c -> rule ^ c)
+              [ "HOLDS"; "0 Binary " ^ insured ^ " \"EUR\""; "1 AttributeReference " ^ waarde ^ " \"EUR\"";
+                "2 Literal 2.5 \"EUR\"" ])
+      in
+      check ("WV-5.12-opgave-bedrag " ^ file) (got = expected);
+      if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
+    [ ("case1-geen-opgave.json", [ "DISPLACED" ], "112.5", "110");
+      ("case5-niets.json", [ "HOLDS"; "0 Literal 25 \"EUR\"" ], "27.5", "25");
+      ("case7-doel-zelf-zonder-feiten.json", [ "DISPLACED" ], "82.5", "80") ]
+
+(* WV-5.12-gedurende-clip: the gedurende clause of a temporal total (ch. 3.6)
+   is read as the part of the timeline in which it holds: the true periods of
+   a characteristic, also beyond the totalled timeline; negated, the periods
+   outside them within each segment of that timeline; a composite, the
+   intersection of its members' periods, each member read on its own; each a
+   period without a value; and a comparison of another timeline, the
+   segments of that timeline where it holds, with their values, cut where the
+   totalled timeline's segments are cut. Four rules without a condition on two
+   Jutters, J2 without a wachtvergoeding. The same document is the Drools
+   backend's ReadingsWitnessTest
+   (src/test/resources/readings/temporal-total-clip), each line written by
+   hand from ch. 3.6. *)
+let () =
+  let doc =
+    {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"wachtvergoeding per maand","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"timeline":{"node":"TimelineFacet","granularity":"month","count":1}},{"node":"Attribute","name":"borgvergoeding per maand","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"timeline":{"node":"TimelineFacet","granularity":"month","count":1}},{"node":"Attribute","name":"wachtsom","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"stilsom","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"tegensom","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"borgsom","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"wachtplichtig","kind":"adjectival","timeline":{"node":"TimelineFacet","granularity":"month","count":1}},{"node":"Characteristic","name":"aangesteld","kind":"adjectival","timeline":{"node":"TimelineFacet","granularity":"month","count":1}}]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"wachtsom van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"wachtsom","subjectType":"Jutter","source":{"snippet":"De wachtsom van een Jutter"}},"value":{"node":"Aggregation","kind":"total","arguments":[{"node":"AttributeReference","attribute":"wachtvergoeding per maand","subjectType":"Jutter","source":{"snippet":"zijn wachtvergoeding per maand"}}],"elementType":"Jutter","filter":{"node":"CharacteristicCheck","characteristic":"wachtplichtig","negated":false,"source":{"snippet":"gedurende de tijd dat hij wachtplichtig is"}},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is"}},"initialisation":false,"presentation":"equation"}]},{"node":"Rule","name":"stilsom van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"stilsom","subjectType":"Jutter","source":{"snippet":"De stilsom van een Jutter"}},"value":{"node":"Aggregation","kind":"total","arguments":[{"node":"AttributeReference","attribute":"wachtvergoeding per maand","subjectType":"Jutter","source":{"snippet":"zijn wachtvergoeding per maand"}}],"elementType":"Jutter","filter":{"node":"CharacteristicCheck","characteristic":"aangesteld","negated":true,"source":{"snippet":"gedurende de tijd dat hij niet aangesteld is"}},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is"}},"initialisation":false,"presentation":"equation"}]},{"node":"Rule","name":"tegensom van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"tegensom","subjectType":"Jutter","source":{"snippet":"De tegensom van een Jutter"}},"value":{"node":"Aggregation","kind":"total","arguments":[{"node":"AttributeReference","attribute":"wachtvergoeding per maand","subjectType":"Jutter","source":{"snippet":"zijn wachtvergoeding per maand"}}],"elementType":"Jutter","filter":{"node":"Compound","quantifier":"all","threshold":1,"parts":[{"node":"CharacteristicCheck","characteristic":"wachtplichtig","negated":false,"source":{"snippet":"hij wachtplichtig is"}},{"node":"CharacteristicCheck","characteristic":"aangesteld","negated":true,"source":{"snippet":"hij niet aangesteld is"}}],"source":{"snippet":"gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij wachtplichtig is - hij niet aangesteld is"}},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij wachtplichtig is - hij niet aangesteld is"}},"initialisation":false,"presentation":"equation"}]},{"node":"Rule","name":"borgsom van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"borgsom","subjectType":"Jutter","source":{"snippet":"De borgsom van een Jutter"}},"value":{"node":"Aggregation","kind":"total","arguments":[{"node":"AttributeReference","attribute":"wachtvergoeding per maand","subjectType":"Jutter","source":{"snippet":"zijn wachtvergoeding per maand"}}],"elementType":"Jutter","filter":{"node":"Comparison","op":"greater","left":{"node":"AttributeReference","attribute":"borgvergoeding per maand","subjectType":"Jutter","source":{"snippet":"zijn borgvergoeding per maand"}},"right":{"node":"Literal","value":{"number":"10"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"10"}},"source":{"snippet":"gedurende de tijd dat zijn borgvergoeding per maand groter is dan 10"}},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn borgvergoeding per maand groter is dan 10"}},"initialisation":false,"presentation":"equation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+  in
+  let case_data =
+    {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"J1","objectType":"Jutter","attributes":{"wachtvergoeding per maand":{"timeline":[{"from":"2024-01-01","to":"2024-07-01","value":{"number":"10"}},{"from":"2024-07-01","to":"2025-01-01","value":{"number":"20"}}]},"borgvergoeding per maand":{"timeline":[{"from":"2023-07-01","to":"2024-04-01","value":{"number":"15"}},{"from":"2024-04-01","to":"2025-03-01","value":{"number":"5"}}]}},"roles":{},"characteristics":[],"characteristicTimelines":{"wachtplichtig":[{"from":"2024-03-01","to":"2025-03-01"}],"aangesteld":[{"from":"2024-05-01","to":"2025-01-01"}]}},{"label":"J2","objectType":"Jutter","attributes":{"borgvergoeding per maand":{"timeline":[{"from":"2024-01-01","to":"2024-07-01","value":{"number":"12"}}]}},"roles":{},"characteristics":[],"characteristicTimelines":{"wachtplichtig":[{"from":"2024-01-01","to":"2024-04-01"}]}}],"parameters":{}},"expected":[{"kind":"consistent"}]}|}
+  in
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-wv512" suffix in
+    let oc = open_out f in
+    output_string oc body_text;
+    close_out oc;
+    f
+  in
+  let irf = write ".ir.json" doc and casef = write ".case.json" case_data in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      let got = readings_of irf casef in
+      let line form subject cell = Printf.sprintf "/rules/rules/%d/versions/0 \"%s\" %s" form subject cell in
+      let whole = "1 AttributeReference [[2024-01-01 2024-07-01 10], [2024-07-01 2025-01-01 20]]" in
+      let expected =
+        List.sort compare
+          [ line 0 "J1" "0 Aggregation 160"; line 0 "J1" whole;
+            line 0 "J1" "2 CharacteristicCheck [[2024-03-01 2025-03-01 empty]]"; line 0 "J1" "HOLDS";
+            line 0 "J2" "0 Aggregation 0"; line 0 "J2" "1 AttributeReference empty";
+            line 0 "J2" "2 CharacteristicCheck [[2024-01-01 2024-04-01 empty]]"; line 0 "J2" "HOLDS";
+            line 1 "J1" "0 Aggregation 40"; line 1 "J1" whole;
+            line 1 "J1" "2 CharacteristicCheck [[2024-01-01 2024-05-01 empty]]"; line 1 "J1" "HOLDS";
+            line 1 "J2" "0 Aggregation 0"; line 1 "J2" "1 AttributeReference empty";
+            line 1 "J2" "2 CharacteristicCheck []"; line 1 "J2" "HOLDS";
+            line 2 "J1" "0 Aggregation 20"; line 2 "J1" whole;
+            line 2 "J1" "2 Compound [[2024-03-01 2024-05-01 empty]]";
+            line 2 "J1" "3 CharacteristicCheck [[2024-03-01 2025-03-01 empty]]";
+            line 2 "J1" "4 CharacteristicCheck [[2024-01-01 2024-05-01 empty]]"; line 2 "J1" "HOLDS";
+            line 2 "J2" "0 Aggregation 0"; line 2 "J2" "1 AttributeReference empty"; line 2 "J2" "2 Compound []";
+            line 2 "J2" "3 CharacteristicCheck [[2024-01-01 2024-04-01 empty]]";
+            line 2 "J2" "4 CharacteristicCheck []"; line 2 "J2" "HOLDS";
+            line 3 "J1" "0 Aggregation 30"; line 3 "J1" whole;
+            line 3 "J1" "2 Comparison [[2023-07-01 2024-01-01 15], [2024-01-01 2024-04-01 15]]";
+            line 3 "J1" "3 AttributeReference [[2023-07-01 2024-04-01 15], [2024-04-01 2025-03-01 5]]";
+            line 3 "J1" "4 Literal 10"; line 3 "J1" "HOLDS";
+            line 3 "J2" "0 Aggregation 0"; line 3 "J2" "1 AttributeReference empty";
+            line 3 "J2" "2 Comparison [[2024-01-01 2024-07-01 12]]";
+            line 3 "J2" "3 AttributeReference [[2024-01-01 2024-07-01 12]]"; line 3 "J2" "4 Literal 10";
+            line 3 "J2" "HOLDS" ]
+      in
+      check "WV-5.12-gedurende-clip" (got = expected);
       if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
 
 (* --- ch. 6.2/6.4: the instance-ordered cycle -------------------------------- *)

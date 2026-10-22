@@ -4,6 +4,8 @@
    the form's value where the condition holds and the form computes one — in
    the order of ch. 5.10 and 5.11, recorded per node: whether the evaluation
    reached it, and the verdict, the value or the fault it found there. A form
+   without a condition that computes a value has the reading of its value,
+   which holds where the form is at its turn. A form
    outside its validity and a form not at its turn (a displaced default, an
    initialisation whose target holds a value of the input or of another
    writer, a 1:1 creation whose subject the input links) have no nodes. A
@@ -71,10 +73,13 @@ let set_fold (e : expr) =
   | _ -> false
 
 (* The nodes under [e] / [c] in pre-order, each with its kind as the wire
-   spells it and whether it has a reading of its own ([own]). *)
-let rec walk_expr ~own acc (e : expr) =
-  let acc = (S_expr e, Ir_v0.Spelling.expr_node e, own) :: acc in
-  let sub ?(own = own) acc x = walk_expr ~own acc x in
+   spells it, whether it has a reading of its own ([own]), and the binders of
+   the enclosing Lets in [scope], outermost first, each with the value it
+   binds: a binder read takes the type of that value (ch. 2.10). *)
+let rec walk_expr ~own ?(scope = []) acc (e : expr) =
+  let acc = (S_expr e, Ir_v0.Spelling.expr_node e, own, scope) :: acc in
+  let sub ?(own = own) ?(scope = scope) acc x = walk_expr ~own ~scope acc x in
+  let walk_cond ~own acc c = walk_cond ~own ~scope acc c and walk_fn acc f = walk_fn ~scope acc f in
   let opt f acc = function Some x -> f acc x | None -> acc in
   match e with
   | Literal _ | Attribute_reference _ | Parameter_ref _ | Variable_reference _ | Context_value _
@@ -115,26 +120,26 @@ let rec walk_expr ~own acc (e : expr) =
   | Map_list { list; function_name; _ } -> walk_fn (sub acc list) function_name
   | Filter_list { list; condition; _ } -> walk_cond ~own:false (sub acc list) condition
   | List_length { list; _ } -> sub acc list
-  | Let { value; body; _ } -> sub (sub acc value) body
+  | Let { binder; value; body; _ } -> sub ~scope:(scope @ [ (binder, value) ]) (sub acc value) body
 
 (* a fold's function is applied per element *)
-and walk_fn acc (f : fold_fn) =
+and walk_fn ?(scope = []) acc (f : fold_fn) =
   match f with
-  | Fn_lambda { body; _ } -> walk_expr ~own:false ((S_lambda f, "Lambda", false) :: acc) body
+  | Fn_lambda { body; _ } -> walk_expr ~own:false ~scope ((S_lambda f, "Lambda", false, scope) :: acc) body
   | Fn_name _ -> acc
 
-and walk_cond ~own acc (c : condition_expr) =
-  let acc = (S_cond c, cond_kind c, own) :: acc in
-  let sube acc x = walk_expr ~own acc x in
+and walk_cond ~own ?(scope = []) acc (c : condition_expr) =
+  let acc = (S_cond c, cond_kind c, own, scope) :: acc in
+  let sube acc x = walk_expr ~own ~scope acc x in
   let opt f acc = function Some x -> f acc x | None -> acc in
   match c with
   | Comparison { left_side; right_side; _ } -> opt sube (opt sube acc left_side) right_side
   | Predicate { operand; _ } -> opt sube acc operand
   | Characteristic_check _ | Role_membership _ | Rule_status_check _ | Condition_unresolved _ -> acc
   | Time_window { starting_at; up_to; _ } -> opt sube (opt sube acc starting_at) up_to
-  | Compound { components; _ } -> List.fold_left (walk_cond ~own) acc components
+  | Compound { components; _ } -> List.fold_left (walk_cond ~own ~scope) acc components
   | Quantifier_fold { kv_filter; kv_test; _ } ->
-      opt (walk_cond ~own:false) (opt (walk_cond ~own:false) acc kv_filter) kv_test
+      opt (walk_cond ~own:false ~scope) (opt (walk_cond ~own:false ~scope) acc kv_filter) kv_test
 
 (* the node kinds of the two unions, as the wire's discriminator spells them *)
 let union_kinds =
@@ -171,30 +176,30 @@ let rec json_kinds acc (j : Yojson.Safe.t) =
   | `List l -> List.fold_left json_kinds acc l
   | _ -> acc
 
-(* The numbered nodes of one form: [condition] at the document pointer
-   [cond_at], then [value] at [value_at]. The walk's kinds must be the
-   document's, number for number. *)
-let number_nodes json ~form ~condition ~cond_at ~value =
+(* The numbered nodes of one form: its condition at its document pointer,
+   then its value at its own; a form without a condition numbers its value
+   from 0. The walk's kinds must be the document's, number for number. *)
+let number_nodes json ~form ~condition ~value =
   let walked =
-    List.rev
-      (match value with
-      | Some (v, _) -> walk_expr ~own:true (walk_cond ~own:true [] condition) v
-      | None -> walk_cond ~own:true [] condition)
+    let conditioned = match condition with Some (c, _) -> walk_cond ~own:true [] c | None -> [] in
+    List.rev (match value with Some (v, _) -> walk_expr ~own:true conditioned v | None -> conditioned)
   in
-  let subtree pointer =
-    match at json pointer with
-    | Some j -> List.rev (json_kinds [] j)
-    | None -> failwith (Printf.sprintf "ref/lib/reading.ml: the form %s has no node at %s" form pointer)
+  let subtree = function
+    | None -> []
+    | Some (_, pointer) -> (
+        match at json pointer with
+        | Some j -> List.rev (json_kinds [] j)
+        | None -> failwith (Printf.sprintf "ref/lib/reading.ml: the form %s has no node at %s" form pointer))
   in
-  let written = subtree cond_at @ match value with Some (_, p) -> subtree p | None -> [] in
-  let kinds = List.map (fun (_, k, _) -> k) walked in
+  let written = subtree condition @ subtree value in
+  let kinds = List.map (fun (_, k, _, _) -> k) walked in
   if kinds <> written then
     failwith
       (Printf.sprintf
          "ref/lib/reading.ml: the numbering of %s does not follow the document: the walk gives [%s], \
           the document [%s]"
          form (String.concat " " kinds) (String.concat " " written));
-  List.mapi (fun i (site, kind, own) -> (i, site, kind, own)) walked
+  List.mapi (fun i (site, kind, own, scope) -> (i, site, kind, own, scope)) walked
 
 (* --- the recording -------------------------------------------------------- *)
 
@@ -211,6 +216,7 @@ type node = {
   kind : string;
   site : site;
   own : bool;
+  scope : (string * expr) list; (* the binders of the enclosing Lets, outermost first *)
   mutable outcome : outcome option; (* None: not reached *)
   mutable members : (string * Eval.contribution) list; (* in reverse fold order *)
 }
@@ -281,11 +287,12 @@ let drop (_ : Value.deposit) = ()
 (* A form's numbered nodes, fresh for one reading. *)
 let fresh numbered =
   List.map
-    (fun (number, site, kind, own) -> { number; kind; site; own; outcome = None; members = [] })
+    (fun (number, site, kind, own, scope) -> { number; kind; site; own; scope; outcome = None; members = [] })
     numbered
 
 (* The reading of [condition] on [self], and of the value where it holds:
-   [compute] evaluates it, by default [value] as an expression. *)
+   [compute] evaluates it, by default [value] as an expression. A form
+   without a condition, read where it is at its turn, holds. *)
 let read_on ?compute ~form ~numbered env world (self : World.instance) ~condition ~value =
   let nodes = fresh numbered in
   let compute =
@@ -294,15 +301,21 @@ let read_on ?compute ~form ~numbered env world (self : World.instance) ~conditio
     | None, Some v -> Some (fun () -> ignore (Eval.eval_expr env world self ~err:drop v))
     | None, None -> None
   in
+  (* the value's fault stands at its nodes; the status is the condition's *)
+  let evaluate () = match compute with Some f -> ( try f () with Value.Fault _ -> ()) | None -> () in
   let status =
     observing nodes (fun () ->
-        match Eval.eval_cond env world self ~err:drop condition with
-        | true ->
-            (* the value's fault stands at its nodes; the status is the condition's *)
-            (match compute with Some f -> ( try f () with Value.Fault _ -> ()) | None -> ());
+        match condition with
+        | None ->
+            evaluate ();
             Holds
-        | false -> Fails
-        | exception Value.Fault _ -> Faults)
+        | Some condition -> (
+            match Eval.eval_cond env world self ~err:drop condition with
+            | true ->
+                evaluate ();
+                Holds
+            | false -> Fails
+            | exception Value.Fault _ -> Faults))
   in
   { form; subject = self.label; status; nodes }
 
@@ -345,12 +358,16 @@ let of_type env world ?(except = []) otype =
 
 (* --- the forms ------------------------------------------------------------ *)
 
+(* A rule on an attribute has a reading where it has a condition or computes
+   a value: a characteristic attribution without a condition has nothing to
+   read. *)
 let rules json env ~world =
   List.concat_map
     (fun (r : resolved_rule) ->
-      match (r.rr_condition, r.objective) with
-      | Some condition, Some (Attribute_reference { attribute_ref = Some attr; object_type = Some ot; _ })
-        ->
+      match r.objective with
+      | Some (Attribute_reference { attribute_ref = Some attr; object_type = Some ot; _ })
+        when r.rr_condition <> None || r.rr_presentation <> Some Characteristic_attribution ->
+          let condition = r.rr_condition in
           let form = r.rr_pointer in
           let env = { env with Eval.subj = Some ot } in
           let computes, except =
@@ -360,7 +377,8 @@ let rules json env ~world =
           in
           let value = if computes then r.value_node else None in
           let numbered =
-            number_nodes json ~form ~condition ~cond_at:(form ^ "/condition")
+            number_nodes json ~form
+              ~condition:(Option.map (fun c -> (c, form ^ "/condition")) condition)
               ~value:(Option.map (fun v -> (v, form ^ "/value")) value)
           in
           (* a rule on a timeline target writes the timeline its builtin folds
@@ -376,7 +394,7 @@ let rules json env ~world =
                 let v = Eval.req "RuleVersion.value" r.value_node in
                 let write ?window () = ignore (Eval.run_pro_rata ?window env world self ~ot ~attr v) in
                 match condition with
-                | Time_window { starting_at; up_to; to_inclusive; _ } ->
+                | Some (Time_window { starting_at; up_to; to_inclusive; _ } as condition) ->
                     [ read_clip ~form ~numbered env world self ~condition
                         ~bounds:(starting_at, up_to, to_inclusive)
                         ~compute:(fun window -> write ~window ()) ]
@@ -391,9 +409,11 @@ let consistencies json env ~world =
       | Some condition, Some ot ->
           let form = c.cons_pointer in
           let env = { env with Eval.subj = Some ot } in
-          let numbered = number_nodes json ~form ~condition ~cond_at:(form ^ "/assertion") ~value:None in
+          let numbered =
+            number_nodes json ~form ~condition:(Some (condition, form ^ "/assertion")) ~value:None
+          in
           in_window env c.cons_validity ~form (of_type env world ot) (fun self ->
-              [ read_on ~form ~numbered env world self ~condition ~value:None ])
+              [ read_on ~form ~numbered env world self ~condition:(Some condition) ~value:None ])
       | _ -> [])
     env.Eval.doc.consistencies
 
@@ -404,9 +424,11 @@ let allocations json env ~world =
       | Some condition, Some ot ->
           let form = v.vd_pointer in
           let env = { env with Eval.subj = Some ot } in
-          let numbered = number_nodes json ~form ~condition ~cond_at:(form ^ "/condition") ~value:None in
+          let numbered =
+            number_nodes json ~form ~condition:(Some (condition, form ^ "/condition")) ~value:None
+          in
           in_window env v.vd_validity ~form (of_type env world ot) (fun self ->
-              [ read_on ~form ~numbered env world self ~condition ~value:None ])
+              [ read_on ~form ~numbered env world self ~condition:(Some condition) ~value:None ])
       | _ -> [])
     env.Eval.doc.allocations
 
@@ -417,11 +439,13 @@ let object_creations json env ~world0 ~world =
       | Some condition, Some ot ->
           let form = oc.oc_pointer in
           let env = { env with Eval.subj = Some ot } in
-          let numbered = number_nodes json ~form ~condition ~cond_at:(form ^ "/condition") ~value:None in
+          let numbered =
+            number_nodes json ~form ~condition:(Some (condition, form ^ "/condition")) ~value:None
+          in
           in_window env oc.oc_validity ~form (of_type env world ot) (fun self ->
               if Eval.creation_blocked ~world0 (Eval.creation_pair env oc) self then
                 [ without ~form Displaced self ]
-              else [ read_on ~form ~numbered env world self ~condition ~value:None ])
+              else [ read_on ~form ~numbered env world self ~condition:(Some condition) ~value:None ])
       | _ -> [])
     env.Eval.doc.object_creations
 
@@ -434,9 +458,11 @@ let fact_creations json env ~world =
       | Some condition, Some ot when not (Eval.guard_on_target env.Eval.doc fc) ->
           let form = fc.fc_pointer in
           let env = { env with Eval.subj = Some ot } in
-          let numbered = number_nodes json ~form ~condition ~cond_at:(form ^ "/condition") ~value:None in
+          let numbered =
+            number_nodes json ~form ~condition:(Some (condition, form ^ "/condition")) ~value:None
+          in
           in_window env fc.fc_validity ~form (of_type env world ot) (fun self ->
-              [ read_on ~form ~numbered env world self ~condition ~value:None ])
+              [ read_on ~form ~numbered env world self ~condition:(Some condition) ~value:None ])
       | _ -> [])
     env.Eval.doc.fact_creations
 
@@ -471,11 +497,13 @@ let default_pointers (doc : document) =
    ([Eval.run_defaults_group]). A default the walk reaches has the reading of
    its justification, and of its consequence where that holds; a default
    below the one that decided, and every default within it, is displaced,
-   and so is a default whose exception groups settled. A default without a
-   justification has no reading; neither has an initialisation default, but
-   the ordinary initialisation rule folded into a stack as its tail keeps
-   its condition, and its turn is that of an initialisation: a target the
-   input fills displaces it. *)
+   and so is a default whose exception groups settled. An attribute default
+   without a justification — the initialisation default, an ordinary rule
+   without a condition folded into the stack — has the reading of its
+   consequence, which holds where the default is at its turn; a
+   characteristic default without one has nothing to read. An
+   initialisation's turn, a default's or a folded rule's, is that of an
+   initialisation: a target the input fills displaces it. *)
 let defaults json env ~world0 ~world =
   let doc = env.Eval.doc in
   let pointers = default_pointers doc in
@@ -496,20 +524,26 @@ let defaults json env ~world0 ~world =
         | None -> None)
   in
   let reading_of (l : prioritized_defaults) (d : default) =
-    match d.default_justification with
-    | None -> None
-    (* an ordinary rule without a condition folded into a stack: it has none *)
-    | Some c when c == Ir_v0.Desugar.always_true -> None
-    | Some condition -> (
+    (* an ordinary rule without a condition folded into a stack carries the
+       fold's vacuous justification, which stands nowhere in the document *)
+    let condition =
+      match d.default_justification with
+      | Some c when c == Ir_v0.Desugar.always_true -> None
+      | c -> c
+    in
+    let value = match (l.pd_attribute, d.default_consequence) with Some _, Some v -> Some v | _ -> None in
+    match (condition, value) with
+    | None, None -> None
+    | _ -> (
         match place d with
         | None -> failwith "ref/lib/reading.ml: a default of a stack stands at no place of the document"
         | Some (form, cond_at, value_at) ->
-            let value =
-              match (l.pd_attribute, d.default_consequence) with
-              | Some _, Some v -> Some (v, value_at)
-              | _ -> None
+            let numbered =
+              number_nodes json ~form
+                ~condition:(Option.map (fun c -> (c, cond_at)) condition)
+                ~value:(Option.map (fun v -> (v, value_at)) value)
             in
-            Some (form, condition, Option.map fst value, number_nodes json ~form ~condition ~cond_at ~value))
+            Some (form, condition, value, numbered))
   in
   List.concat_map
     (fun (owner, _, members, _) ->
@@ -768,16 +802,38 @@ let lines env ~world (rs : reading list) =
   let with_unit s = function Some u -> s ^ " " ^ quote u | None -> s in
   let node_line head n =
     let b = Printf.sprintf "%s %d %s" head n.number n.kind in
-    let static_unit () =
+    let effective () =
       match n.site with
-      | S_expr e -> unit_text (Eval.unit_of_datatype (Eval.static_type env e))
-      | S_cond _ | S_lambda _ -> None
+      | S_expr e ->
+          (* a binder read has the type of the value its Let binds there *)
+          let btypes =
+            List.fold_left
+              (fun bt (binder, value) ->
+                SMap.add (norm binder) (Eval.static_type { env with Eval.btypes = bt } value) bt)
+              SMap.empty n.scope
+          in
+          Eval.unit_of_datatype (Eval.static_type { env with Eval.btypes } e)
+      | S_cond _ | S_lambda _ -> Value.Unitless
+    in
+    let static_unit () = unit_text (effective ()) in
+    (* a number in the unit of its node's effective type (ch. 2.10), which a
+       value the evaluation computed in another unit is restated into: a leeg
+       coalesced to 0, a fold's 0 over no contributor, an addition whose left
+       operand was leeg (ch. 2.6) *)
+    let in_effective_unit q u =
+      match (u, effective ()) with
+      | _, su when su = u -> (q, u)
+      | _, Value.Unitless -> (q, u)
+      | Value.Unitless, su -> (q, su)
+      | _, su -> (Arith.restate_into su q u, su)
     in
     let found =
       match n.outcome with
       | None -> b ^ " unreached"
       | Some (Held v) -> b ^ " " ^ string_of_bool v
-      | Some (Got (Value.Num (_, u) as v)) -> with_unit (b ^ " " ^ canonical v) (unit_text u)
+      | Some (Got (Value.Num (q, u))) ->
+          let q, u = in_effective_unit q u in
+          with_unit (b ^ " " ^ canonical (Value.Num (q, u))) (unit_text u)
       | Some (Got Value.Empty) | Some Ended -> with_unit (b ^ " empty") (static_unit ())
       | Some (Got v) -> b ^ " " ^ canonical v
       | Some (Faulted code) -> with_unit (b ^ " " ^ fault_text code) (static_unit ())
@@ -785,11 +841,17 @@ let lines env ~world (rs : reading list) =
       | Some (Whole (Some tl)) -> with_unit (b ^ " " ^ timeline_text tl) (static_unit ())
       | Some (Over tl) -> b ^ " " ^ timeline_text tl
     in
+    (* the filled count is a count (ch. 3.4c): its contributor is the member
+       it counts, the one whose value is filled, and not that value *)
+    let counts =
+      match n.site with S_expr (Function_call { kind = Filled_count; _ }) -> true | _ -> false
+    in
     if n.outcome = None || n.members = [] then found
     else
       let contributor (label, (c : Eval.contribution)) =
         name label ^ " "
         ^ (match c.found with
+          | Member_value _ when counts -> canonical Value.Empty
           | Member_value v -> canonical v
           | Member_verdict v -> string_of_bool v
           | Member_fault code -> fault_text code)
