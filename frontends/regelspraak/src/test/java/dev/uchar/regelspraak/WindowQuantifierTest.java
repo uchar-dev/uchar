@@ -70,8 +70,8 @@ class WindowQuantifierTest {
                     indien hij aan alle volgende voorwaarden voldoet:
                     - hij is gemeld
                     - er wordt voldaan aan geen van de volgende voorwaarden:
-                        • het is de periode vanaf dd. 01-01-2024
-                        • zijn peildatum is gevuld.
+                        .. het is de periode vanaf dd. 01-01-2024
+                        .. zijn peildatum is gevuld.
             """;
         Diagnostic d = onlyError(Resolver.resolve(src));
         assertTrue(d.message().contains("a time window under none or a counting quantifier")

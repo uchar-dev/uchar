@@ -351,3 +351,7 @@ RGS-349	quantifier-test-reads-subject-of-element-type	ERROR	expression,read,type
 RGS-350	subselection-names-subject-of-element-type	ERROR	filter,read,type
 RGS-351	second-subselection-on-one-chain	ERROR	expression,word
 RGS-352	rule-subject-read-in-filter-without-spelling	ERROR	element,expression,filter,reason,subject
+RGS-353	group-header-without-deeper-bullet	ERROR	header,next
+RGS-354	deeper-bullet-without-group-header	ERROR	bullet,previous
+RGS-355	bullet-returns-to-no-open-level	ERROR	bullet,reason
+RGS-356	two-bullet-sign-families	ERROR	other,sign

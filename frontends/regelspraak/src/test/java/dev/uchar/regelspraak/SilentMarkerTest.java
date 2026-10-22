@@ -264,14 +264,16 @@ class SilentMarkerTest {
                 () -> "precies één sweep-melding over de overgebleven marker: " + m.diagnostics);
     }
 
-    // ---------------- the remaining reason-carrying routes ----------------
+    // ---------------- two former marker routes, now ERRORs ----------------
 
     /**
-     * §13.4.14.6: the indentation-blind bullet grammar can absorb a dedented sibling into a deeper
-     * list, so a list whose direct bullets differ in COLUMN or in GLYPH did not nest the way it reads.
-     * One '-' beside one '..' is the smallest such sentence.
+     * §13.4.14.6–7: one '-' beside one '..' after it, and the '-' opens no group. Until card
+     * third-condition-level this list was a marker with a WARNING (its bullets stood on different
+     * columns or carried different signs, so the nesting was unclear). The depth of a bullet now
+     * follows from its sign, and a deeper bullet without a group header before it is an ERROR
+     * (RGS-354), so no marker reaches the wire.
      */
-    @Test void inconsistent_bullets_report_the_unclear_nesting() {
+    @Test void a_deeper_bullet_without_a_group_header_is_an_error() {
         RegelSpraakModel m = resolve("""
             Regel bevoegde ploeg
                 geldig altijd
@@ -280,17 +282,17 @@ class SilentMarkerTest {
                     - het wachttal van de Schouwploeg is groter dan 0
                     .. hij is gekeurd.
             """);
-        markerWithMessage(m, "staan op verschillende kolommen of dragen verschillende tekens");
+        onlyBulletError(m, "RGS-354", "'.. hij is gekeurd.' staat dieper dan de bullet ervoor");
     }
 
     /**
-     * §13.4.14.6 again, one level in: a die/dat subselectie under a COUNTING quantifier whose own
-     * bullets carry a further compound. The same flattening changes WHAT is counted, so the selection
-     * declines. Note the aggregation route ALSO warns here (its caller names the set-aside aggregation);
-     * the two say different things — that one the aggregation is dropped, this one why the selection
-     * could not be structured — and only this one reaches the fold route, where nothing else speaks.
+     * §13.4.14.6–7 again, one level in: a die/dat subselectie under a COUNTING quantifier whose own
+     * bullets carry a further compound, every bullet '..' on one column. Until card
+     * third-condition-level the selection declined with a marker and a WARNING, because the grammar
+     * may have pulled sister bullets into the deeper group. A group header followed by a bullet that
+     * is not deeper is now an ERROR under every quantifier (RGS-353): this sentence names no depth.
      */
-    @Test void a_counting_quantifier_over_deeper_nesting_is_reported() {
+    @Test void a_group_header_without_a_deeper_bullet_is_an_error() {
         RegelSpraakModel m = resolve("""
             Regel wachttal van een ploeg
                 geldig altijd
@@ -301,8 +303,20 @@ class SilentMarkerTest {
                     .. hij voldoet aan alle volgende voorwaarden:
                     .. zijn dienstjaren zijn groter dan 3.
             """);
-        markerWithMessage(m, "een tellende kwantor over een deelselectie");
+        onlyBulletError(m, "RGS-353", "'.. hij voldoet aan alle volgende voorwaarden:' opent een groep");
     }
+
+    /** One ERROR of {@code code} whose sentence holds {@code fragment}; the other diagnostics are WARNINGs (the
+     *  aggregation route speaks about the set-aside aggregation), and none is the survivor sweep's. */
+    private static void onlyBulletError(RegelSpraakModel m, String code, String fragment) {
+        List<Diagnostic> errors = m.diagnostics.stream().filter(Diagnostic::isError).toList();
+        assertEquals(1, errors.size(), () -> "één ERROR verwacht: " + m.diagnostics);
+        assertEquals(code, errors.get(0).code(), () -> "verwachtte " + code + ": " + errors.get(0));
+        assertTrue(errors.get(0).message().contains(fragment), () -> errors.get(0).message());
+        assertTrue(sweepMeldingen(m).isEmpty(), () -> "de ERROR is de diagnose; geen sweep-melding: " + m.diagnostics);
+    }
+
+    // ---------------- the remaining reason-carrying routes ----------------
 
     /**
      * §8.1: the greedy onderwerp parse pulls a trailing "niet" INTO the operand, and a comparison
@@ -348,7 +362,7 @@ class SilentMarkerTest {
      * instead of a successful emission: that pairing IS the statement about the route.
      *
      * <p>Their siblings that no input reaches at all carry a GEEN GETUIGE comment at the production
-     * site instead ({@code buildFromNodes}, {@code buildCriterion}, {@code buildElementary},
+     * site instead ({@code conditionsOf}'s criterion arm, {@code buildElementary},
      * {@code characteristicCheckPredicate}'s §8.2 arm, {@code build}'s fall-through, {@code buildPrimary(null)} and
      * {@code buildAttribute}'s guard).
      */
@@ -372,7 +386,7 @@ class SilentMarkerTest {
         messageAtSyntaxError(m, "het voorwaardendeel heeft geen van de §13.4.13-vormen");
     }
 
-    /** {@code buildNested}: a bullet whose §13.4.14 alternative never completed. */
+    /** {@code conditionsOf}: a bullet whose §13.4.14 alternative never completed. */
     @Test void a_bullet_without_form_is_reported() {
         RegelSpraakModel m = resolve("""
             Regel bevoegde ploeg
@@ -394,9 +408,11 @@ class SilentMarkerTest {
                     Het wachttal van een Schouwploeg moet berekend worden als het aantal wachten van de Schouwploeg die aan ten minste 2 van de volgende voorwaarden voldoen:
                     .. hij is gediplomeerd
                     .. hij voldoet aan alle volgende voorwaarden:
-                    ... hij is gediplomeerd
-                    ... zijn dienstjaren zijn groter dan 3.
+                    .. . hij is gediplomeerd
+                    .. . zijn dienstjaren zijn groter dan 3.
             """);
+        // '.. .' is the token pair '...' lexed to until card third-condition-level, when a run of dots became one
+        // bullet token: the same recovery, with the same messages (measured on both lexers)
         messageAtSyntaxError(m, "er is geen expressie om te bouwen");
         messageAtSyntaxError(m, "deze primaire expressie bindt geen literal");
     }

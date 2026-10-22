@@ -1311,6 +1311,76 @@ before. Witnesses: `NavigationChoiceTest`, `CountRangeTest`, `SubtypeDialectTest
 
 ---
 
+## §13.4.14.6–7 The depth of a bullet — read from the sign (2026-10-22)
+
+A reconstruction (card `third-condition-level`). The grammar reads a bullet
+without its depth, `bullet : ( DASH | DOTDOT | BULLET )+` with whitespace
+skipped, and the list of a nested group, `genesteVoorwaarde+`, takes every
+bullet after it. v2.3.0 §13.4.14.7 writes the depth as the number of bullets
+(`("•")+`). Until this card the resolver repaired the parse afterwards: it
+re-nested a list by column where the columns differed, turned a list with
+different signs or columns into a marker (RGS-092), and under a counting
+quantifier also turned every list whose nested group held a nested group into a
+marker, in a condition and in a subselection alike. A third level therefore had
+no spelling under 'ten minste', 'ten hoogste' or 'precies', `...` was a syntax
+error (it lexed as `..` and `.`), and under 'alle' a list read silently wrong:
+"indien hij aan alle volgende voorwaarden voldoet: - zijn leeftijd is groter
+dan 65 - hij voldoet aan ten minste één van de volgende voorwaarden: - zijn
+soort is gelijk aan 'Touw' - zijn soort is gelijk aan 'Glas' - zijn leeftijd
+is kleiner dan 80", every bullet '-' on one column, reached disk with
+`diagnostics: []` and the last bullet, written as a member of the 'alle' list,
+inside the or-group.
+
+**The depth.** The lexer reads a run of two dots or more as one token
+(`DOTDOT : '..' '.'*`). The depth of a bullet is the pair (number of sign
+characters, column), compared on the sign first: `-` and `•` are level 1, `..`
+and `••` level 2, `...` and `•••` level 3, `....` level 4, and `▪` counts as
+`•`. The column decides only between bullets with the same number of signs: the
+corpus and the rule sets outside it write `-` and `..` on one column
+(`jutterswet-keurcriteria`), so the column cannot come first, and a sign and a
+column that disagree have one reading, the sign's. A bullet on the line of the
+sentence that opens the list has the column of its place in that line.
+
+**The tree.** One builder (`RuleChecker.bulletTree`) makes the tree from the
+flat list of bullets in source order, for a compound condition, a compound
+subselection and compound consistency criteria alike. A bullet deeper than the
+one before it is its child, and the one before it must open a group; "deeper"
+is strictly greater, not exactly one more, so `-`, `..`, `....` reads as three
+levels as well as `-`, `..`, `...`. An equal bullet is a sister; a shallower
+one returns to the open level of exactly its depth. The source snippet of a
+nested group runs from its header to the last bullet under it in the tree. Four
+ERRORs, each at the line of the bullet it quotes:
+
+- RGS-353, a group header without a deeper bullet after it, or with none at
+  all. That is also the same sign on the same column after a header, under
+  every quantifier, 'alle' included: the silent reading above is this case.
+- RGS-354, a deeper bullet without a group header before it ('-' and then '..'
+  after a plain condition).
+- RGS-355, a return to a depth that is no open level.
+- RGS-356, two sign families, `-` and dots beside `•`, in one list.
+
+**A bulleted subselection in a bullet of an outer list.** Its bullets stand
+deeper than that bullet (RGS-353 when the first does not). The grammar gives
+such a subselection every bullet after it, so a bullet of the outer list after
+it lands in the subselection's list, inside the expression of the outer bullet;
+the tree of the subselection cannot hand it back to the outer list. It is
+refused (RGS-355, with the advice to put the bullet with the subselection last
+in its list, or the subselection in parentheses). Before this card such a
+bullet silently became a member of the filter, read on the element. A
+subselection whose list is closed by an operator ("… die aan ten minste één
+van de volgende voorwaarden voldoen: .. … .. … is groter dan 0") is not
+affected.
+
+**Measured.** The corpus, the parity zone and the scenario goldens re-emit
+byte-identically (gates 10, 11 and 16), and the rule set herleving-WW v2
+(fundament and herleving-ww) gives the same IR without a diagnostic: no list in
+any of them reads otherwise or meets one of the four ERRORs. The decision-table
+desugaring writes `•` and `••` on deeper columns, which reads as before.
+Witnesses: `BulletDepthTest`, `SilentMarkerTest` (the two former marker routes),
+the golden `jutterswet-vrijstelling-drie-niveaus`.
+
+---
+
 ## One subselection per chain — narrowed (2026-10-22)
 
 A narrowing of the grammar (card `subselection-per-chain`). `onderwerpKeten`
@@ -1341,9 +1411,9 @@ requirements on one set stand in one list "die aan alle volgende voorwaarden
 voldoen:", one bullet per requirement (`Resolver.subselectionHints`).
 
 A bulleted inner subselection in a bullet of an outer list hangs on its own set
-too. Which of the following bullets are its own is the depth question of the
-card `third-condition-level` (the grammar does not see indentation); until that
-card lands they are read as before. Witness: `SubselectionPerChainTest`.
+too. Which of the following bullets are its own follows from their depth
+("§13.4.14.6–7 The depth of a bullet", above). Witness:
+`SubselectionPerChainTest`.
 
 ---
 

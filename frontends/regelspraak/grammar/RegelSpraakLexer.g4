@@ -30,7 +30,9 @@
 //     Atomic words let the parser compose every form without prefix clashes.
 //
 //  4. BULLETS ARE '-' (top level) AND '..' (nested), as real casus source
-//     writes them; the EBNF's '•' glyph is honoured too.
+//     writes them; the EBNF's '•' glyph is honoured too. A bullet's depth is its
+//     number of sign characters ('-' 1, '..' 2, '...' 3; '•' 1, '••' 2), so a run
+//     of dots is one token (DOTDOT); the resolver builds the tree from it.
 //
 //  5. SENTENCE-INITIAL ARTICLES are case-folded (de/De, het/Het, een/Een) since
 //     every rule sentence opens with a capitalised article ("De leeftijd …").
@@ -439,7 +441,7 @@ HELE         : 'hele'         ; // §13.4.17.32 'in hele <eenheid>' (when not fu
 // ============================================================================
 KOPTEKST   : '---' ~[\r\n]* ; // §13.3.1.5 koptekst — a heading line; consumes to end-of-line
                               // so the free-text heading cannot run into the next member once WS is skipped
-DOTDOT     : '..'  ; // nested bullet
+DOTDOT     : '..' '.'* ; // nested bullet: two dots or more, one token; each dot is a level (grammar/DIVERGENCES.md, §13.4.14.6–7)
 BULLET     : '•' | '▪' ; // EBNF/spec bullet glyphs (• and ▪)
 LPAREN     : '('   ;
 RPAREN     : ')'   ;

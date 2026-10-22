@@ -950,7 +950,7 @@ samengesteldeVoorwaardeOnderdeel : genesteVoorwaarde+ ; // §13.4.14.6 (bullet-d
 // next bullet — so the trailing '.' is consumed HERE, not left for the rule's own
 // terminating DOT (which would otherwise close the rule before a following bullet).
 genesteVoorwaarde : bullet ( genesteSamengesteldeVoorwaarde | elementaireVoorwaarde ) DOT? ; // §13.4.14.7
-bullet : ( DASH | DOTDOT | BULLET )+ ; // '-' top level, '..' nested; EBNF glyph '•' also honoured
+bullet : ( DASH | DOTDOT | BULLET )+ ; // the depth is the number of sign characters ('-' 1, '..' 2, '...' 3; '•' 1, '••' 2): RuleChecker builds the tree
 
 // ====================================================================
 // §13.4.15 Elementaire voorwaarde + comparison operators.

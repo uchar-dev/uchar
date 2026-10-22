@@ -3856,6 +3856,7 @@ final class RuleChecker {
         }
         if (crit != null) {
             Condition assertion = buildCriteria(kw, crit, source(cr));
+            if (assertion instanceof Condition.Unresolved) return;   // a bullet ERROR is the rule's one message
             ObjectType subject = subjectAssertion(assertion);
             // All criteria must be about the SAME subject: the rule lowers to one subject pattern, so a
             // criterion over a different object type would emit that type's attribute on the wrong fact
@@ -4995,19 +4996,7 @@ final class RuleChecker {
 
     private Condition buildCompound(VoorwaardeKwantificatieContext k,
                                       SamengesteldeVoorwaardeOnderdeelContext component, ParserRuleContext whole) {
-        // §13.4.14.6: when the indentation-blind grammar ABSORBED a dedented sibling bullet into a deeper compound but
-        // the bullet COLUMNS re-nest cleanly, rebuild the correct sibling tree so the compound FIRES (depth-aware
-        // re-nesting). reNestParts returns null when there is no column-absorption (the common case — a
-        // byte-identical no-op) OR the columns do not disambiguate (the existing inconsistency-marker path then applies).
-        List<Condition> herNest = reNestParts(component);
-        List<Condition> components;
-        if (herNest != null) {
-            components = herNest;
-        } else {
-            components = new ArrayList<>();
-            if (component != null)
-                for (GenesteVoorwaardeContext g : component.genesteVoorwaarde()) components.add(buildNested(g));
-        }
+        List<Condition> components = bulletConditions(component, null);
         Condition.Quantifier quantifier = quantifierOf(k);
         int threshold = thresholdOf(k);
         // A counting quantifier's telwoord is a positive whole number (§13.4.14.4 /
@@ -5016,30 +5005,14 @@ final class RuleChecker {
         // the rule to always-true (minstens(0) is vacuously true). An over-size N is fine —
         // it is a faithfully unsatisfiable "false", so it is not an error.
         checkThreshold(quantifier, k, (k != null ? k : whole).getStart().getLine());
-        // §13.4.14.6 the indentation-blind bullet grammar (bullet : (DASH|DOTDOT|BULLET)+, WS skipped) can ABSORB a
-        // dedented sibling bullet (a leaf OR another nested compound) into a preceding nested compound's list, so a
-        // COUNTING quantifier AND-merges what the spec OR-s/counts -> a fired-WRONG result (the DRL oracle computed a
-        // wrong kenmerk/SOM). The grammar discards depth, but ANTLR retains each bullet token's COLUMN and GLYPH: a list
-        // whose direct bullets sit at different columns OR carry different glyphs (e.g. a top-level '-' absorbed into a
-        // nested '..' list) absorbed an outer-level sibling. Marker such a list (Unresolved) so BOTH back-ends decline
-        // rather than fire a mis-parsed compound — for ANY quantifier (a well-formatted compound is column- AND
-        // glyph-consistent, so only a genuinely-ambiguous input trips; the ALLE/DE merge is AND-idempotent but markering
-        // it is still safe). A structural depth-2 fallback covers the residual fully-ambiguous case (same glyph AND same
-        // column), scoped to COUNTING (a legitimately deep ALLE/DE nesting would otherwise be over-markered). A faithful
-        // depth-aware re-nesting (fire correctly) is carded.
-        // A re-nested list (herNest != null) has its absorption RESOLVED, so the inconsistency markers below no
-        // longer apply; they guard only the un-disambiguatable residual (glyph-only / same-column-same-glyph) that
-        // reNestParts declined.
-        if (herNest == null && (bulletsInconsistent(component)
-                || (quantifier != Condition.Quantifier.ALLE && quantifier != Condition.Quantifier.DE && ambiguousNestedBullets(components))))
-            return new Condition.Unresolved(source(whole), Msg.frontend("RGS-092.bullets-inconsistent"));
+        if (components == null) return new Condition.Unresolved(source(whole), null);   // the bullet ERROR is the diagnosis
         return new Condition.Compound(quantifier, threshold, components, source(whole));
     }
 
     /** §13.4.14.4/.5 a counting quantifier's telwoord must be a positive whole number (>= 1): a 0 / negative / decimal /
      *  unparseable value reaches {@link #thresholdOf} as &lt; 1 and would collapse a ten-minste/ten-hoogste/precies to
-     *  vacuously-true (minstens(0) always holds), so flag it. Shared by {@link #buildCompound} and the depth-aware
-     *  re-nesting {@link #buildFromNodes} (which builds inner compounds directly, bypassing buildCompound). */
+     *  vacuously-true (minstens(0) always holds), so flag it. Shared by {@link #buildCompound} and the bullet tree's
+     *  {@link #conditionsOf}, which builds the nested compounds. */
     private void checkThreshold(Condition.Quantifier quantifier, VoorwaardeKwantificatieContext k, int sourceLine) {
         int threshold = thresholdOf(k);
         if ((quantifier == Condition.Quantifier.TEN_MINSTE || quantifier == Condition.Quantifier.TEN_HOOGSTE
@@ -5060,133 +5033,221 @@ final class RuleChecker {
         catch (NumberFormatException e) { return false; }
     }
 
-    // ---- §13.4.14.6 depth-aware bullet re-nesting (column-driven) ----------------------------------------------
-    // The bullet grammar is indentation-blind (`bullet : (DASH|DOTDOT|BULLET)+`, WS skipped), so a dedented sibling
-    // bullet is ABSORBED as a child of the preceding nested compound. ANTLR retains the discarded indentation on each
-    // bullet token (getCharPositionInLine()); when that absorption re-nests cleanly by column, rebuild the intended
-    // sibling tree so BOTH back-ends fire the spec-correct OR/count instead of markering an AND-merged mis-parse.
+    // ---- §13.4.14.6–7 the depth of a bullet ---------------------------------------------------------------------
+    // The grammar reads a bullet without its depth (`bullet : (DASH | DOTDOT | BULLET)+`, WS skipped), and a nested
+    // group takes every bullet after it. The depth stands in the sign, one character per level ('-' and '•' level 1,
+    // '..' and '••' level 2, '...' and '•••' level 3, '▪' as '•'), and only between bullets with the same sign in the
+    // column: the corpus writes '-' and '..' on one column, so the column cannot come first. One builder makes the tree
+    // from the flat list, for a condition, a subselection and consistency criteria alike (grammar/DIVERGENCES.md,
+    // "§13.4.14.6–7 The depth of a bullet").
 
-    /** A flattened bullet: its indentation column and the parse node, captured in source order. */
-    private record RawBullet(int column, GenesteVoorwaardeContext ctx) {}
-    /** A re-nested logical node: a leaf or a compound (its {@code genesteVoorwaarde} ctx) with rebuilt children. */
-    private record LogicalNode(GenesteVoorwaardeContext ctx, List<LogicalNode> children) {}
+    /** A bullet of a flattened list: its depth (the number of sign characters, then the column), whether its sign is
+     *  of the '•' family, and the item it opens (a {@code GenesteVoorwaardeContext} or a {@code GenestCriteriumContext}). */
+    private record FlatBullet(int signs, int column, Boolean glyphFamily, ParserRuleContext item, BulletContext bullet) {
+        /** Deeper is greater: the sign first, the column only between equal signs. */
+        int compareDepth(FlatBullet other) {
+            return signs != other.signs ? Integer.compare(signs, other.signs) : Integer.compare(column, other.column);
+        }
 
-    /** Depth-first (= source-order) flatten of every {@code genesteVoorwaarde} in the subtree, with its bullet column. */
-    private static void flattenBullets(SamengesteldeVoorwaardeOnderdeelContext component, List<RawBullet> result) {
-        for (GenesteVoorwaardeContext g : component.genesteVoorwaarde()) {
-            result.add(new RawBullet(g.bullet().getStart().getCharPositionInLine(), g));
-            if (g.genesteSamengesteldeVoorwaarde() != null)
-                flattenBullets(g.genesteSamengesteldeVoorwaarde().samengesteldeVoorwaardeOnderdeel(), result);
+        /** Whether the item opens a group: a nested compound condition or nested criteria. */
+        boolean header() {
+            if (item instanceof GenesteVoorwaardeContext g) return g.genesteSamengesteldeVoorwaarde() != null;
+            return item instanceof GenestCriteriumContext c && c.samengesteldCriterium() != null;
         }
     }
 
-    /** True iff some onderdeel in the subtree has direct bullets at non-uniform COLUMNS — the reliable signature of the
-     *  indentation-blind grammar absorbing a dedented sibling from an outer level into a deeper list. */
-    private static boolean columnsInconsistentDeep(SamengesteldeVoorwaardeOnderdeelContext component) {
-        // a nested header without a bullet list, or a childless one (malformed parse, ANTLR error-recovery) -> no absorption
-        List<GenesteVoorwaardeContext> gs = component == null ? null : component.genesteVoorwaarde();
-        if (gs == null || gs.isEmpty()) return false;
-        int kol0 = gs.get(0).bullet().getStart().getCharPositionInLine();
-        for (GenesteVoorwaardeContext g : gs) {
-            if (g.bullet().getStart().getCharPositionInLine() != kol0) return true;
-            if (g.genesteSamengesteldeVoorwaarde() != null
-                    && columnsInconsistentDeep(g.genesteSamengesteldeVoorwaarde().samengesteldeVoorwaardeOnderdeel()))
-                return true;
-        }
-        return false;
+    /** A node of the bullet tree: a flat bullet and the bullets under it (none for a leaf). */
+    private record BulletNode(FlatBullet bullet, List<BulletNode> children) {}
+
+    private static FlatBullet flatBullet(ParserRuleContext item, BulletContext bullet) {
+        String sign = bullet == null ? "" : bullet.getText();
+        Boolean glyphs = null;   // a sign of both families stays null: the family check refuses it on its own
+        if (!sign.isEmpty() && sign.chars().allMatch(ch -> ch == '-' || ch == '.')) glyphs = false;
+        else if (!sign.isEmpty() && sign.chars().allMatch(ch -> ch == '•' || ch == '▪')) glyphs = true;
+        Token start = bullet != null && bullet.getStart() != null ? bullet.getStart() : item.getStart();
+        return new FlatBullet(sign.length(), start.getCharPositionInLine(), glyphs, item, bullet);
     }
 
-    /** Re-nest a flat bullet list by indentation column into a logical sibling tree: a bullet at a deeper column is a
-     *  child of the most recent compound header, a dedent returns to the matching ancestor level. Returns null when the
-     *  columns do NOT form a clean indentation tree (a column that lines up with no open level, or a compound header
-     *  whose next bullet is not deeper) — i.e. genuinely un-disambiguatable, so the caller keeps the marker path. */
-    private static List<LogicalNode> reNestColumns(List<RawBullet> flatten) {
-        List<LogicalNode> root = new ArrayList<>();
-        List<Integer> kindColumn = new ArrayList<>();                 // the child-column of each open frame
-        List<List<LogicalNode>> kindList = new ArrayList<>();     // the children list of each open frame
-        kindColumn.add(flatten.get(0).column());
-        kindList.add(root);
-        for (int i = 0; i < flatten.size(); i++) {
-            RawBullet r = flatten.get(i);
-            while (kindColumn.size() > 1 && r.column() < kindColumn.get(kindColumn.size() - 1)) {
-                kindColumn.remove(kindColumn.size() - 1);
-                kindList.remove(kindList.size() - 1);
+    /** Depth-first (= source-order) flatten of the bullets of a condition list or a criteria list, a nested group's
+     *  bullets after its header. A list ANTLR's recovery left without bullets adds nothing: its syntax error is reported. */
+    private static void flattenBullets(ParserRuleContext list, List<FlatBullet> result) {
+        if (list instanceof SamengesteldeVoorwaardeOnderdeelContext o)
+            for (GenesteVoorwaardeContext g : o.genesteVoorwaarde()) {
+                result.add(flatBullet(g, g.bullet()));
+                if (g.genesteSamengesteldeVoorwaarde() != null)
+                    flattenBullets(g.genesteSamengesteldeVoorwaarde().samengesteldeVoorwaardeOnderdeel(), result);
             }
-            if (r.column() != kindColumn.get(kindColumn.size() - 1)) return null;   // column lines up with no open level
-            LogicalNode node = new LogicalNode(r.ctx(), new ArrayList<>());
-            kindList.get(kindList.size() - 1).add(node);
-            if (r.ctx().genesteSamengesteldeVoorwaarde() != null) {              // a compound header: open a child frame
-                if (i + 1 >= flatten.size() || flatten.get(i + 1).column() <= r.column()) return null;   // no deeper children
-                kindColumn.add(flatten.get(i + 1).column());
-                kindList.add(node.children());
+        else if (list instanceof SamengesteldCriteriumOnderdeelContext o)
+            for (GenestCriteriumContext g : o.genestCriterium()) {
+                result.add(flatBullet(g, g.bullet()));
+                if (g.samengesteldCriterium() != null)
+                    flattenBullets(g.samengesteldCriterium().samengesteldCriteriumOnderdeel(), result);
             }
+    }
+
+    /** The conditions of a bullet list, built from its tree; null after one of the four bullet ERRORs. {@code opener}
+     *  is the bullet whose subselection the list belongs to (its bullets stand deeper than it), else null. */
+    private List<Condition> bulletConditions(ParserRuleContext list, FlatBullet opener) {
+        List<FlatBullet> flat = new ArrayList<>();
+        flattenBullets(list, flat);
+        List<BulletNode> tree = bulletTree(flat, opener);
+        if (tree != null) return conditionsOf(tree);
+        // Refused, but every bullet is still built, as the old marker path did: a subselection inside one is then
+        // consumed (RGS-099 stays quiet), and an ill-formed bullet keeps its own message.
+        for (FlatBullet b : flat) {
+            if (b.item() instanceof GenesteVoorwaardeContext g && g.genesteSamengesteldeVoorwaarde() != null) {
+                VoorwaardeKwantificatieContext k = g.genesteSamengesteldeVoorwaarde().voorwaardeKwantificatie();
+                checkThreshold(quantifierOf(k), k, (k != null ? k : g).getStart().getLine());
+            } else if (b.item() instanceof GenesteVoorwaardeContext g && g.elementaireVoorwaarde() != null)
+                buildElementary(g.elementaireVoorwaarde());
+            else if (b.item() instanceof GenestCriteriumContext g && g.elementaireVoorwaarde() != null)
+                buildElementary(g.elementaireVoorwaarde());
+        }
+        return null;
+    }
+
+    /**
+     * The tree of a flat bullet list: a bullet deeper than the one before it is its child, and that one must open a
+     * group; an equal one is its sister; a shallower one returns to the open level of exactly its depth. Null after an
+     * ERROR, reported once at the line of the bullet it names: a group header without a deeper bullet after it
+     * (RGS-353), a deeper bullet without a group header before it (RGS-354), a return to a depth that is no open level
+     * (RGS-355), or two sign families in one list (RGS-356). "Deeper" is strictly greater, not exactly one more, so '-',
+     * '..', '....' reads as three levels too.
+     */
+    private List<BulletNode> bulletTree(List<FlatBullet> flat, FlatBullet opener) {
+        if (flat.isEmpty()) return List.of();
+        // a bullet ANTLR's recovery left without a sign has no family: its syntax error is reported
+        List<FlatBullet> all = new ArrayList<>();
+        if (opener != null) all.add(opener);
+        all.addAll(flat);
+        FlatBullet first = null;
+        for (FlatBullet b : all) {
+            if (b.signs() == 0) continue;
+            if (first == null) first = b;
+            if (b.glyphFamily() == null || first.glyphFamily() == null || !b.glyphFamily().equals(first.glyphFamily())) {
+                FlatBullet other = first.glyphFamily() == null ? first : b;
+                reportOnce(new Diagnostic(Severity.ERROR, "RGS-356", params("sign", first.bullet().getText(),
+                        "other", other.bullet().getText()), line(other)));
+                return null;
+            }
+        }
+        if (opener != null && flat.get(0).compareDepth(opener) <= 0) {
+            reportOnce(new Diagnostic(Severity.ERROR, "RGS-353", params("header", bulletLine(opener),
+                    "next", Msg.frontend("RGS-353.next", "bullet", bulletLine(flat.get(0)))), line(opener)));
+            return null;
+        }
+        List<BulletNode> root = new ArrayList<>();
+        List<FlatBullet> levelDepth = new ArrayList<>(List.of(flat.get(0)));   // the depth of each open level
+        List<List<BulletNode>> levelNodes = new ArrayList<>(List.of(root));     // the nodes of each open level
+        BulletNode previous = null;
+        for (FlatBullet b : flat) {
+            if (previous != null && previous.bullet().header()) {
+                if (b.compareDepth(previous.bullet()) <= 0) {
+                    reportOnce(new Diagnostic(Severity.ERROR, "RGS-353", params("header", bulletLine(previous.bullet()),
+                            "next", Msg.frontend("RGS-353.next", "bullet", bulletLine(b))), line(previous.bullet())));
+                    return null;
+                }
+                levelDepth.add(b);
+                levelNodes.add(previous.children());
+            } else {
+                int toLevel = b.compareDepth(levelDepth.get(levelDepth.size() - 1));
+                if (toLevel > 0) {
+                    reportOnce(new Diagnostic(Severity.ERROR, "RGS-354", params("bullet", bulletLine(b),
+                            "previous", bulletLine(previous.bullet())), line(b)));
+                    return null;
+                }
+                while (levelDepth.size() > 1 && b.compareDepth(levelDepth.get(levelDepth.size() - 1)) < 0) {
+                    levelDepth.remove(levelDepth.size() - 1);
+                    levelNodes.remove(levelNodes.size() - 1);
+                }
+                if (b.compareDepth(levelDepth.get(levelDepth.size() - 1)) != 0) {
+                    Msg reason = opener != null && b.compareDepth(opener) <= 0
+                            ? Msg.frontend("RGS-355.after-subselection", "outer", bulletLine(opener))
+                            : Msg.frontend("RGS-355.no-open-level");
+                    reportOnce(new Diagnostic(Severity.ERROR, "RGS-355", params("bullet", bulletLine(b), "reason", reason),
+                            line(b)));
+                    return null;
+                }
+            }
+            BulletNode node = new BulletNode(b, new ArrayList<>());
+            levelNodes.get(levelNodes.size() - 1).add(node);
+            previous = node;
+        }
+        if (previous.bullet().header()) {
+            reportOnce(new Diagnostic(Severity.ERROR, "RGS-353", params("header", bulletLine(previous.bullet()),
+                    "next", Msg.frontend("RGS-353.last")), line(previous.bullet())));
+            return null;
         }
         return root;
     }
 
-    /** Build the onderdelen list from a re-nested logical tree, within the current {@code builder} subject (the leaves'
-     *  expressies resolve against whichever subject the caller set). A compound knoop reads its own quantifier. */
-    private List<Condition> buildFromNodes(List<LogicalNode> nodes) {
+    /** The conditions of the nodes of a bullet tree: a group is a compound of its children's conditions. */
+    private List<Condition> conditionsOf(List<BulletNode> nodes) {
         List<Condition> result = new ArrayList<>();
-        for (LogicalNode k : nodes) {
-            GenesteSamengesteldeVoorwaardeContext c = k.ctx().genesteSamengesteldeVoorwaarde();
-            if (c != null) {
-                Condition.Quantifier kw = quantifierOf(c.voorwaardeKwantificatie());
-                int threshold = thresholdOf(c.voorwaardeKwantificatie());
-                checkThreshold(kw, c.voorwaardeKwantificatie(), c.getStart().getLine());   // a degenerate inner telwoord must still be flagged
-                result.add(new Condition.Compound(kw, threshold, buildFromNodes(k.children()), source(c)));
+        for (BulletNode node : nodes) {
+            if (node.bullet().item() instanceof GenesteVoorwaardeContext g) {
+                if (g.genesteSamengesteldeVoorwaarde() != null) {
+                    GenesteSamengesteldeVoorwaardeContext c = g.genesteSamengesteldeVoorwaarde();
+                    List<Condition> parts = conditionsOf(node.children());
+                    Condition.Quantifier quantifier = quantifierOf(c.voorwaardeKwantificatie());
+                    VoorwaardeKwantificatieContext k = c.voorwaardeKwantificatie();
+                    checkThreshold(quantifier, k, (k != null ? k : c).getStart().getLine());
+                    result.add(new Condition.Compound(quantifier, thresholdOf(k), parts, groupSource(c, node)));
+                } else if (g.elementaireVoorwaarde() != null) result.add(buildElementary(g.elementaireVoorwaarde()));
+                else result.add(new Condition.Unresolved(source(g), Msg.frontend("RGS-092.nested-bullet")));
+            } else if (node.bullet().item() instanceof GenestCriteriumContext g) {
+                if (g.samengesteldCriterium() != null) {
+                    SamengesteldCriteriumContext c = g.samengesteldCriterium();
+                    ConsistentieKwantificatieContext k = c.consistentieKwantificatie();
+                    result.add(new Condition.Compound(quantifierConsistency(k), k == null ? 0 : numeralValue(k.telwoord()),
+                            conditionsOf(node.children()), groupSource(c, node)));
+                } else if (g.elementaireVoorwaarde() != null) result.add(buildElementary(g.elementaireVoorwaarde()));
+                // GEEN GETUIGE: genestCriterium draagt altijd een van beide takken, en een consistentieregel met
+                // een kapot criterium strandt eerder — op de syntaxfout, met haar eigen ERROR. Gemeten 2026-09-19.
+                else result.add(new Condition.Unresolved(source(g), Msg.frontend("RGS-092.nested-criterion")));
             }
-            else if (k.ctx().elementaireVoorwaarde() != null)
-                result.add(buildElementary(k.ctx().elementaireVoorwaarde()));
-            else
-                // GEEN GETUIGE: genesteVoorwaarde is `bullet (genesteSamengesteldeVoorwaarde |
-                // elementaireVoorwaarde) DOT?`, dus een knoop draagt er altijd één — en deze tak wordt
-                // pas bereikt NA een geslaagde kolom-hernesting, die een kapotte ontleding juist afwijst.
-                // De reden staat er voor het geval de grammatica een derde tak krijgt.
-                result.add(new Condition.Unresolved(source(k.ctx()), Msg.frontend("RGS-092.renested-bullet")));
         }
         return result;
     }
 
-    /** §13.4.14.6: if a bullet list carries a column-disambiguatable absorption, return the correctly re-nested
-     *  onderdelen; else null (the caller keeps its existing per-bullet build + inconsistency-marker path). Returns null
-     *  for the common no-absorption case (a structural no-op, so well-formatted lists are byte-identical) and for the
-     *  un-disambiguatable residual (glyph-only or same-column-same-glyph, which the marker path then declines). */
-    private List<Condition> reNestParts(SamengesteldeVoorwaardeOnderdeelContext component) {
-        if (component == null || component.genesteVoorwaarde().isEmpty()) return null;
-        if (!columnsInconsistentDeep(component)) return null;       // no absorption -> existing path (no-op)
-        List<RawBullet> flatten = new ArrayList<>();
-        flattenBullets(component, flatten);
-        List<LogicalNode> root = reNestColumns(flatten);
-        if (root == null) return null;                             // columns don't disambiguate -> marker path
-        return buildFromNodes(root);
+    /** The source of a group: from its header to the last bullet under it in the tree. The parse lets a group run to
+     *  the end of the list, so its own context would also cover the bullets that return to an outer level. */
+    private static Source groupSource(ParserRuleContext group, BulletNode node) {
+        BulletNode last = node;
+        while (!last.children().isEmpty()) last = last.children().get(last.children().size() - 1);
+        Token stop = last.bullet().item().getStop();
+        if (group.getStart() == null || stop == null || stop.getStopIndex() < group.getStart().getStartIndex())
+            return source(group);
+        String text = group.getStart().getInputStream()
+                .getText(org.antlr.v4.runtime.misc.Interval.of(group.getStart().getStartIndex(), stop.getStopIndex()));
+        return Source.of(group, text.replaceAll("\\s+", " ").trim());
     }
 
-    /** §13.4.14.6 whether a bullet list's direct bullets are inconsistent — different indentation COLUMNS or different
-     *  bullet GLYPHS — the reliable signature of the indentation-blind grammar absorbing a sibling bullet from an outer
-     *  level into this list. The lexer skips WS but ANTLR retains each bullet token's column and text, so a well-formatted
-     *  compound (siblings at one column with one glyph, e.g. the '-' top / '..' nested convention) reads false; only
-     *  a genuinely-ambiguous / mis-nested input reads true. The glyph check catches the un-indented mixed-glyph absorption
-     *  the column check cannot (a '-' leaf folded into a '..' list); the residual same-glyph-same-column case is the
-     *  ambiguousNestedBullets fallback's job. */
-    private static boolean bulletsInconsistent(SamengesteldeVoorwaardeOnderdeelContext component) {
-        if (component == null) return false;
-        List<GenesteVoorwaardeContext> gs = component.genesteVoorwaarde();
-        if (gs == null || gs.size() < 2) return false;
-        int col0 = gs.get(0).bullet().getStart().getCharPositionInLine();
-        String glyph0 = gs.get(0).bullet().getText();
-        for (GenesteVoorwaardeContext g : gs)
-            if (g.bullet().getStart().getCharPositionInLine() != col0 || !g.bullet().getText().equals(glyph0)) return true;
-        return false;
+    /** The line of a bullet, as written from its sign to the end of that line: what an ERROR quotes. */
+    private static String bulletLine(FlatBullet b) {
+        Token start = b.bullet() != null && b.bullet().getStart() != null ? b.bullet().getStart() : b.item().getStart();
+        org.antlr.v4.runtime.CharStream input = start.getInputStream();
+        int end = start.getStartIndex();
+        while (end + 1 < input.size()) {
+            String next = input.getText(org.antlr.v4.runtime.misc.Interval.of(end + 1, end + 1));
+            if (next.equals("\n") || next.equals("\r")) break;
+            end++;
+        }
+        return input.getText(org.antlr.v4.runtime.misc.Interval.of(start.getStartIndex(), end)).replaceAll("\\s+", " ").trim();
     }
 
-    /** §13.4.14.6 structural fallback for the residual fully-ambiguous input the column+glyph check cannot see (same
-     *  glyph AND same column): a bullet list carrying the flatten signature of 2+ sibling NESTED compounds — a nested
-     *  compound bullet that itself contains a DEEPER compound. A single level of nesting (a nested compound of leaves) is
-     *  fine. Scoped to COUNTING by the caller (a deep ALLE/DE merge is AND-idempotent). */
-    private static boolean ambiguousNestedBullets(List<Condition> components) {
-        return components.stream().anyMatch(o -> o instanceof Condition.Compound inner
-                && inner.components().stream().anyMatch(x -> x instanceof Condition.Compound));
+    private static int line(FlatBullet b) {
+        return (b.bullet() != null && b.bullet().getStart() != null ? b.bullet().getStart() : b.item().getStart()).getLine();
+    }
+
+    /** The bullet whose condition holds the subselection {@code sp}, or null when the subselection stands in no bullet
+     *  (in a rule's value, or in a variable of a "Daarbij geldt:" part). */
+    private static FlatBullet enclosingBullet(ParserRuleContext sp) {
+        for (ParserRuleContext p = sp.getParent(); p != null; p = p.getParent()) {
+            if (p instanceof GenesteVoorwaardeContext g) return flatBullet(g, g.bullet());
+            if (p instanceof GenestCriteriumContext g) return flatBullet(g, g.bullet());
+        }
+        return null;
     }
 
     /** The threshold count N of a ten-minste/ten-hoogste/precies quantifier (§13.4.14.4),
@@ -5246,29 +5307,12 @@ final class RuleChecker {
                 return new Condition.Compound(quantifierQuantification(sp.kwantificatie()),
                         sp.kwantificatie() == null ? 0 : numeralValue(sp.kwantificatie().telwoord()),
                         List.of(buildElementary(sp.elementaireVoorwaarde())), source(sp));
-            // §13.4.14.6 re-nest a column-absorbed bullet list (the SAME depth-aware machinery as a voorwaarde compound)
-            List<Condition> herNest = reNestParts(sp.samengesteldeVoorwaardeOnderdeel());
-            List<Condition> components;
-            if (herNest != null) {
-                components = herNest;
-            } else {
-                components = new ArrayList<>();
-                for (GenesteVoorwaardeContext g : sp.samengesteldeVoorwaardeOnderdeel().genesteVoorwaarde())
-                    components.add(buildNested(g));     // the SAME bullet machinery as a voorwaarde compound
-            }
+            // §13.4.14.6–7 the SAME bullet tree as a voorwaarde compound. In a bullet of an outer list the
+            // subselection's bullets stand deeper than that bullet: the grammar gives the subselection every bullet
+            // after it, and one that is not deeper belongs to the outer list, which this tree cannot hand it back to.
+            List<Condition> components = bulletConditions(sp.samengesteldeVoorwaardeOnderdeel(), enclosingBullet(sp));
+            if (components == null) return new Condition.Unresolved(source(sp), null);   // the bullet ERROR is the diagnosis
             Condition.Quantifier kw = quantifierQuantification(sp.kwantificatie());
-            // §13.4.14.6 IR-integrity guard: a nested-compound bullet with a DEEPER compound child under a
-            // COUNTING quantifier stays Unresolved — the indentation-blind bullet grammar can flatten sibling
-            // bullets into a depth-2 child in ways the column re-nesting cannot always rebuild, and a
-            // mis-merged bullet under a COUNT changes what is counted (AND-merging what the spec OR-s): a
-            // fired-wrong shared value. Under ALLE/DE the merge is semantics-preserving (every bullet must
-            // hold anyway), so no guard applies. This is a statement about the PARSE, not about what a
-            // back-end can lower (back-end-agnostic resolver): capability verdicts live in the back-ends and are reconciled
-            // by the manifest-parity test.
-            if (kw != Condition.Quantifier.ALLE && kw != Condition.Quantifier.DE
-                    && components.stream().anyMatch(c -> c instanceof Condition.Compound s
-                            && s.components().stream().anyMatch(x -> x instanceof Condition.Compound)))
-                return new Condition.Unresolved(source(sp), Msg.frontend("RGS-092.counting-deep-bullet"));
             return new Condition.Compound(kw,
                     sp.kwantificatie() == null ? 0 : numeralValue(sp.kwantificatie().telwoord()), components, source(sp));
         } finally {
@@ -5300,24 +5344,13 @@ final class RuleChecker {
         return 0;
     }
 
-    /** §13.4.8 samengestelde consistentie-criteria → a {@link Condition.Compound} over the criteria. */
+    /** §13.4.8 samengestelde consistentie-criteria → a {@link Condition.Compound} over the criteria, built from the
+     *  bullet tree; an {@link Condition.Unresolved} after a bullet ERROR, which is then the rule's diagnosis. A criteria
+     *  header ANTLR's recovery left without its bullet list has no criteria: the syntax error is reported. */
     private Condition buildCriteria(ConsistentieKwantificatieContext k, SamengesteldCriteriumOnderdeelContext component, Source source) {
-        List<Condition> components = new ArrayList<>();
-        // a criteria header ANTLR's recovery left without its bullet list has no criteria: the syntax error is reported
-        if (component != null)
-            for (GenestCriteriumContext g : component.genestCriterium()) components.add(buildCriterion(g));
+        List<Condition> components = bulletConditions(component, null);
+        if (components == null) return new Condition.Unresolved(source, null);
         return new Condition.Compound(quantifierConsistency(k), k == null ? 0 : numeralValue(k.telwoord()), components, source);
-    }
-
-    private Condition buildCriterion(GenestCriteriumContext g) {
-        if (g.samengesteldCriterium() != null) {
-            SamengesteldCriteriumContext c = g.samengesteldCriterium();
-            return buildCriteria(c.consistentieKwantificatie(), c.samengesteldCriteriumOnderdeel(), source(c));
-        }
-        if (g.elementaireVoorwaarde() != null) return buildElementary(g.elementaireVoorwaarde());
-        // GEEN GETUIGE: genestCriterium draagt altijd een van beide takken, en een consistentieregel met
-        // een kapot criterium strandt eerder — op de syntaxfout, met haar eigen ERROR. Gemeten 2026-09-19.
-        return new Condition.Unresolved(source(g), Msg.frontend("RGS-092.nested-criterion"));
     }
 
     /** §13.4.14.3 consistentie-kwantor; null (the single "het volgende criterium") is the trivial ALLE. */
@@ -5351,15 +5384,6 @@ final class RuleChecker {
         return null;
     }
 
-    private Condition buildNested(GenesteVoorwaardeContext g) {
-        if (g.genesteSamengesteldeVoorwaarde() != null) {
-            GenesteSamengesteldeVoorwaardeContext c = g.genesteSamengesteldeVoorwaarde();
-            return buildCompound(c.voorwaardeKwantificatie(), c.samengesteldeVoorwaardeOnderdeel(), c);
-        }
-        if (g.elementaireVoorwaarde() != null) return buildElementary(g.elementaireVoorwaarde());
-        return new Condition.Unresolved(source(g), Msg.frontend("RGS-092.nested-bullet"));
-    }
-
     /** An §13.4.15 elementaire voorwaarde / consistentie-criterium ("&lt;expressie&gt; &lt;operator&gt;") to a
      *  {@link Condition}; shared by the samengestelde voorwaarde and the samengestelde consistentieregel. */
     private Condition buildElementary(ElementaireVoorwaardeContext c) {
@@ -5374,7 +5398,7 @@ final class RuleChecker {
         if (c.consistentieVoorwaarde() != null) return buildRuleStatusCheck(c.consistentieVoorwaarde());
         // GEEN GETUIGE: elementaireVoorwaarde heeft precies drie takken en alle drie staan hierboven, dus
         // een gevulde context bereikt deze regel niet; een kapotte bullet valt een niveau hoger uit
-        // (buildNested, dat wel een getuige heeft). Gemeten 2026-09-19.
+        // (conditionsOf, dat wel een getuige heeft). Gemeten 2026-09-19.
         return new Condition.Unresolved(source(c), Msg.frontend("RGS-092.elementary-form"));
     }
 

@@ -49,7 +49,7 @@ class MarkerReasonPinTest {
     record Site(String file, String method, int count, String why) {}
 
     /** The fourteen sanctioned null-constructions, measured 2026-09-19, grown by one 2026-09-20, by two 2026-10-20 and
-     *  by two 2026-10-22. Growth
+     *  by two and by three 2026-10-22. Growth
      *  is NOT free here (unlike
      *  a gate floor): a null is a promise that something else speaks, so every new one is listed with
      *  the diagnostic that keeps that promise. */
@@ -63,6 +63,15 @@ class MarkerReasonPinTest {
             new Site("RuleChecker.java", "compoundElementFilter", 1,
                     "de RGS-350-ERROR die de regel erboven opwerpt (een deelselectie noemt een onderwerp van het "
                     + "type van het element; 2026-10-20) IS de diagnose van deze marker"),
+            new Site("RuleChecker.java", "buildCompound", 1,
+                    "de bullet-ERROR (RGS-353 tot en met RGS-356) die bulletTree opwerpt (de diepte van een bullet; "
+                    + "2026-10-22) IS de diagnose van deze marker"),
+            new Site("RuleChecker.java", "buildCriteria", 1,
+                    "de bullet-ERROR (RGS-353 tot en met RGS-356) die bulletTree opwerpt IS de diagnose van deze "
+                    + "marker; de consistentieregel stopt erna, zonder RGS-180"),
+            new Site("RuleChecker.java", "compoundElementFilterBare", 1,
+                    "de bullet-ERROR (RGS-353 tot en met RGS-356) die bulletTree opwerpt over de bullets van de "
+                    + "deelselectie IS de diagnose van deze marker"),
             new Site("RuleChecker.java", "dayKindOperandError", 1,
                     "meldPredicaat werpt de Tabel-57-ERROR op; die is de diagnose van deze marker"),
             new Site("ExpressionBuilder.java", "buildFunction", 3,

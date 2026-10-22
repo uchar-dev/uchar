@@ -6,6 +6,7 @@ import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -65,6 +66,9 @@ class MarkerReportTest {
         CLASSIFICATION.put("RuleChecker.java#compoundElementFilter",
                 "ERROR (RGS-350, een deelselectie noemt een onderwerp van het type van het element): geen document");
         CLASSIFICATION.put("RuleChecker.java#dayKindOperandError", "ERROR (Tabel 57): geen document");
+        for (String site : List.of("buildCompound", "buildCriteria", "compoundElementFilterBare"))
+            CLASSIFICATION.put("RuleChecker.java#" + site,
+                    "ERROR (RGS-353 tot en met RGS-356, de diepte van een bullet): geen document");
         CLASSIFICATION.put("ExpressionBuilder.java#refuseInFilter",
                 "ERROR (RGS-352, een lezing van het regelonderwerp in een filter zonder spelling vanaf het element): "
                 + "geen document");
