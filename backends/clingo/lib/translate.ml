@@ -1917,6 +1917,116 @@ let source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x =
       in
       atoms @ scope
 
+(* AN AGGREGATE IN THE CONDITION OF AN ELEMENT (card
+   clingo-nested-aggregate-in-fold-filter). The condition of a fold's or a
+   quantifier's element is translated with the element variable [x] as its
+   subject, and its atoms go into the element of the fold's own aggregate.
+   A value inside that condition that is itself an aggregate — a listed
+   eerste/laatste, an instance fold — returns an assignment `V = #agg { … }`,
+   and clingo admits no aggregate inside an aggregate element: it stopped
+   with a parse error. Each such atom moves into a helper predicate per
+   element, `aghN(X,…,V) :- isa(X,T), …, V = #agg { … }.`, and the condition
+   reads the helper atom instead; outside an aggregate element the two say
+   the same.
+
+   The helper keeps the aggregate's value only if every variable it shares
+   with the rest of the rule is in its head. The condition's own variables
+   are: [x], kept in the head; those an earlier atom of the same condition
+   binds, kept in the head with those earlier atoms copied into the helper's
+   body; and anything of the enclosing rule — its subject, its guard, a Let
+   binder — which the helper cannot see. An aggregate that shares one of the
+   latter is refused by name (CLINGO-028) rather than hoisted into a helper
+   that would read a variable of its own in its place; so is an aggregate
+   that is not an assignment, or an earlier atom the helper would need that
+   itself reads the enclosing rule. *)
+
+(* the variables of an ASP text: the identifiers that start with a capital,
+   outside string literals, an aggregate's local ones included *)
+let asp_variables (s : string) =
+  let n = String.length s in
+  let ident c =
+    (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' || c = '\''
+  in
+  let rec go i acc =
+    if i >= n then List.sort_uniq compare acc
+    else if s.[i] = '"' then
+      let rec close j = if j >= n then n else if s.[j] = '\\' then close (j + 2) else if s.[j] = '"' then j + 1 else close (j + 1) in
+      go (close (i + 1)) acc
+    else if s.[i] >= 'A' && s.[i] <= 'Z' && (i = 0 || not (ident s.[i - 1])) then
+      let rec stop j = if j < n && ident s.[j] then stop (j + 1) else j in
+      let j = stop i in
+      go j (String.sub s i (j - i) :: acc)
+    else go (i + 1) acc
+  in
+  go 0 []
+
+let aggregate_keywords = [ "#min"; "#max"; "#sum"; "#count" ]
+
+let mentions_aggregate a =
+  List.exists (fun k -> Uchar_ref.Case.contains ~needle:k a) aggregate_keywords
+
+(* `V = #agg { … }`: the assigned variable *)
+let aggregate_assignment a =
+  match String.index_opt a '=' with
+  | None -> None
+  | Some k ->
+      let lhs = String.trim (String.sub a 0 k)
+      and rhs = String.trim (String.sub a (k + 1) (String.length a - k - 1)) in
+      if asp_variables lhs = [ lhs ]
+         && List.exists (fun kw -> String.length rhs >= String.length kw && String.sub rhs 0 (String.length kw) = kw) aggregate_keywords
+      then Some lhs
+      else None
+
+(* per atom of an element condition: kept, or hoisted with the variables of
+   its helper's head besides [x] and the result, and the earlier atoms its
+   body copies. [outside] is the text of the enclosing rule the helper cannot
+   see (its subject, its guard, the binders). *)
+let element_aggregate_plan ~x ~outside atoms =
+  let refuse a =
+    faultc "CLINGO-028"
+      "an aggregate in the condition of a fold's element reads a variable of the enclosing rule, \
+       which a helper predicate per element cannot carry (or is no assignment): %s"
+      a
+  in
+  let outside_vars = List.filter (fun w -> w <> x) (List.concat_map asp_variables outside) in
+  let rec go earlier = function
+    | [] -> []
+    | a :: rest ->
+        let item =
+          match aggregate_assignment a with
+          | Some v ->
+              let inner = List.filter (fun w -> w <> v && w <> x) (asp_variables a) in
+              if List.exists (fun w -> List.mem w outside_vars) inner then refuse a;
+              let earlier_vars = List.concat_map asp_variables earlier in
+              let shared = List.filter (fun w -> List.mem w earlier_vars) inner in
+              if shared = [] then `Hoist (a, v, [], [])
+              else begin
+                let body = List.rev earlier in
+                if List.exists (fun w -> List.mem w outside_vars) (List.concat_map asp_variables body)
+                then refuse a;
+                `Hoist (a, v, shared, body)
+              end
+          | None when mentions_aggregate a -> refuse a
+          | None -> `Keep a
+        in
+        item :: go (a :: earlier) rest
+  in
+  go [] atoms
+
+let hoist_element_aggregates ctx ~x ~el ~outside atoms =
+  let binders = List.concat_map (fun (_, (atoms, term, _, _)) -> term :: atoms) ctx.binders in
+  List.map
+    (function
+      | `Keep a -> a
+      | `Hoist (a, v, shared, body) ->
+          ctx.fresh <- ctx.fresh + 1;
+          let p = Printf.sprintf "agh%d" ctx.fresh in
+          let head = String.concat "," ((x :: shared) @ [ v ]) in
+          emit ctx "%s(%s) :- %s." p head
+            (String.concat ", " ((Printf.sprintf "isa(%s,%s)" x (str el) :: body) @ [ a ]));
+          Printf.sprintf "%s(%s)" p head)
+    (element_aggregate_plan ~x ~outside:(outside @ ctx.rule_guard @ binders) atoms)
+
 (* A fold member or quantifier element [x] is read only for a subject whose
    range holds it, so its reach adds that subject and the range join to what
    the enclosing context already requires ([param_reach]). Without them the
@@ -4100,7 +4210,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               ~part:
                 (new_part ctx
                    (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path:None ~x ~join))
-              (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
+              (fun () ->
+                hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
+                  (cond_atoms ctx ~subject:x ~subject_ot:el c))
       in
       let join = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path:None ~x in
       ( [ Printf.sprintf "%s = #count { %s : %s }" v x (String.concat ", " (join @ fatoms)) ],
@@ -4221,7 +4333,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             let join () = join in
             with_member_reach ctx ~subject ~subject_ot ~join
               ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
-              (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
+              (fun () ->
+                hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
+                  (cond_atoms ctx ~subject:x ~subject_ot:el c))
       in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let contrib_body, sum_shape =
@@ -4651,7 +4765,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             let join () = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x in
             with_member_reach ctx ~subject ~subject_ot ~join
               ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
-              (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
+              (fun () ->
+                hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
+                  (cond_atoms ctx ~subject:x ~subject_ot:el c))
       in
       let contrib_body =
         source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x
@@ -4718,7 +4834,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             let join () = source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x in
             with_member_reach ctx ~subject ~subject_ot ~join
               ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
-              (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
+              (fun () ->
+                hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
+                  (cond_atoms ctx ~subject:x ~subject_ot:el c))
       in
       let contrib_body =
         source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x
@@ -6005,6 +6123,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          #sum over an instance source, and a listed fold has none; and where it carries a \
          ch. 5.11 emptyFallback, the addition chain that would carry it must evaluate that stand-in \
          unconditionally. No corpus case pins a value for the form"
+  | Function_call { kind = Date_with; call_arguments; filter; _ } -> (
+      if filter <> None then fault "a filter on dateWith has no v0 form";
+      match date_construction ctx ~subject ~subject_ot ~time:false call_arguments with
+      | atoms, day, None -> (atoms, day, 1)
+      | _, _, Some _ -> assert false)
   | _ -> faultc "CLINGO-008" "expression kind not translated (no corpus case exercises it)"
 
 (* gedeeld-door (§6.5, arith.div_gen) — three edges plus the value:
@@ -6145,20 +6268,25 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
       sourceless_fold kind el ~list_literal:false
   | Function_call { kind; call_arguments = [ a ]; element_object_type = Some el; _ } when non_source kind a ->
       non_source_fold kind el a
+  | Function_call { kind = Date_time_with; call_arguments; filter; _ } -> (
+      if filter <> None then fault "a filter on dateTimeWith has no v0 form";
+      match date_construction ctx ~subject ~subject_ot ~time:true call_arguments with
+      | atoms, day, Some ms -> (atoms, day, ms)
+      | _, _, None -> assert false)
   | _ ->
       (* The reason names BOTH sides, because a reader of this line needs to
          know what it may write as well as what it may not. Carried: the
-         literal, an own-subject read, datetime ± duration, and the
-         eerste/laatste fold over listed operands. Every flank below is a
+         literal, an own-subject read, datetime ± duration, the
+         eerste/laatste fold over listed operands and dateTimeWith. Every flank below is a
          SHAPE with no corpus case, each measured verifier-clean and replayed
          by ref (2026-09-06) — so the refusal here is this backend declining a
          form the wire admits, never a claim the form is ill-formed. *)
       faultc "CLINGO-009"
         "datum-tijd here is not the pair term's arithmetic. Carried: a datum-tijd literal, an \
-         own-subject read, datetime \xc2\xb1 duration, and first/last over listed operands. \
-         A loud flank, no corpus case: a datum-tijd PARAMETER read, a Let/BinderRef-bound \
-         datum-tijd (and the residual VariableReference), a set-typed fold, a dateWith or \
-         dateTimeWith constructor, and a navigated datum-tijd read"
+         own-subject read, datetime \xc2\xb1 duration, first/last over listed operands, and \
+         the dateTimeWith constructor. A loud flank, no corpus case: a datum-tijd PARAMETER \
+         read, a Let/BinderRef-bound datum-tijd (and the residual VariableReference), a \
+         set-typed fold, and a navigated datum-tijd read"
 
 (* datetime + n sub-day units: linear on the ms value with the carry across
    the day boundary. The absolute ms value never forms — the step rides the
@@ -6214,6 +6342,95 @@ and datetime_plus_calendar ctx ~subject ~subject_ot ~tu ~date_atoms ~dd ~dm ~dur
         assert false
   in
   (date_atoms @ step_atoms, nd, dm)
+
+(* the date construction (RUNTIME-SEMANTICS ch. 3.8): datum met jaar/maand/dag
+   and, with [~time], datumtijd met jaar/…/milliseconde. Returns the atoms,
+   the civil day number term and, for a datum-tijd, the ms-of-day term — the
+   pair term's two components. Each part is a whole unitless number (ref
+   faults a fraction or a unit at evaluation; a part this encoding cannot see
+   as one is refused here). A leeg part leaves its term unbound, and every
+   witness below joins ALL parts, so leeg propagates before any fence fires,
+   as in ref. Parts that name no calendar day or no clock time derive a
+   viol/2 witness, never a rolled-over or clamped date; the year is fenced
+   to 1..5 000 000, the range in which the March-shifted chain keeps every
+   intermediate non-negative (gringo's truncation is then the floor) and the
+   day number inside clingo's integers. A datum-tijd that far out is still
+   inside the representable millisecond range, so no fence of its own. *)
+and date_construction ctx ~subject ~subject_ot ~time (args : expr list) =
+  let name = if time then "dateTimeWith" else "dateWith" in
+  let arity = if time then 7 else 3 in
+  if List.length args <> arity then
+    fault "%s expects %d parts, got %d" name arity (List.length args);
+  let parts =
+    List.map
+      (fun a ->
+        (match static_type ctx a with
+        | Some (Number { whole_part = true; measure_unit = None; _ }) -> ()
+        | _ -> fault "%s: a part is not statically a whole unitless number" name);
+        let b, t, s = expr_term ctx ~subject ~subject_ot a in
+        if s <> 1 then fault "%s: a part must be an unscaled whole term" name;
+        (b, Printf.sprintf "(%s)" t))
+      args
+  in
+  let atoms = List.concat_map fst parts in
+  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+  let witness text test =
+    emit ctx "viol(\"%s\",%s) :- %s, %s." text subject
+      (String.concat ", " ((base :: ctx.rule_guard) @ atoms))
+      test
+  in
+  let y, m, d, clock =
+    match List.map snd parts with
+    | y :: m :: d :: clock -> (y, m, d, clock)
+    | _ -> assert false (* the arity test above *)
+  in
+  witness
+    (name ^ " of a year before 1 is not translated (the civil chain needs non-negative \
+              intermediates)")
+    (y ^ " < 1");
+  witness
+    (name ^ " of a year after 5000000 is not translated (the civil day number would leave \
+              clingo's integers)")
+    (y ^ " > 5000000");
+  let no_day = name ^ ": the parts name no calendar day" in
+  witness no_day (m ^ " < 1");
+  witness no_day (m ^ " > 12");
+  witness no_day (d ^ " < 1");
+  (* the month length: 30 + ((m + m/8) mod 2) outside February, 28 + the
+     leap indicator in it (the rule pair of [translate_date_plus_months]) *)
+  witness no_day
+    (Printf.sprintf "%s != 2, %s >= 1, %s <= 12, %s > 30+((%s+(%s/8)) \\ 2)" m m m d m m);
+  witness no_day
+    (Printf.sprintf
+       "%s = 2, %s > 28+((((4-(%s \\ 4))/4)-((100-(%s \\ 100))/100))+((400-(%s \\ 400))/400))" m d
+       y y y);
+  let y2 = fresh ctx "Y2" and e2 = fresh ctx "E2" and yoe2 = fresh ctx "YOE" in
+  let mp2 = fresh ctx "MP" and doy2 = fresh ctx "DOY" and doe2 = fresh ctx "DOE" in
+  let zt = fresh ctx "ZT" in
+  let chain =
+    [ Printf.sprintf "%s = %s-((14-%s)/12)" y2 y m;
+      Printf.sprintf "%s = %s/400" e2 y2;
+      Printf.sprintf "%s = %s-(%s*400)" yoe2 y2 e2;
+      Printf.sprintf "%s = (%s+9) \\ 12" mp2 m;
+      Printf.sprintf "%s = ((((153*%s)+2)/5)+%s)-1" doy2 mp2 d;
+      Printf.sprintf "%s = (((%s*365)+(%s/4))-(%s/100))+%s" doe2 yoe2 yoe2 yoe2 doy2;
+      Printf.sprintf "%s = ((%s*146097)+%s)-719468" zt e2 doe2 ]
+  in
+  match clock with
+  | [] -> (atoms @ chain, zt, None)
+  | [ hh; mi; ss; ms ] ->
+      let no_time = name ^ ": the parts name no clock time" in
+      List.iter
+        (fun (t, hi) ->
+          witness no_time (t ^ " < 0");
+          witness no_time (Printf.sprintf "%s > %d" t hi))
+        [ (hh, 23); (mi, 59); (ss, 59); (ms, 999) ];
+      let msv = fresh ctx "MS" in
+      ( atoms @ chain
+        @ [ Printf.sprintf "%s = (((((%s*60)+%s)*60)+%s)*1000)+%s" msv hh mi ss ms ],
+        zt,
+        Some msv )
+  | _ -> assert false (* the arity test above *)
 
 and translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding =
   let left_side = req "Binary.left" left_side and right_side = req "Binary.right" right_side in
@@ -7711,7 +7928,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
         | None -> []
         | Some c ->
             member (fun () ->
-                let a, pre = with_pre ctx c (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c) in
+                let a, pre =
+                  with_pre ctx c (fun () ->
+                      hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
+                        (cond_atoms ctx ~subject:x ~subject_ot:el c))
+                in
                 fpre := pre;
                 a)
       in
@@ -7766,7 +7987,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
           ~join:(fun () -> join @ [ Printf.sprintf "%s(%s,%s)" (reached ()) subject x ])
           ~part:(new_part ctx ro)
           (fun () ->
-            let a, pre = with_pre ctx test (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el test) in
+            let a, pre =
+              with_pre ctx test (fun () ->
+                  hoist_element_aggregates ctx ~x ~el ~outside:[ subject ]
+                    (cond_atoms ctx ~subject:x ~subject_ot:el test))
+            in
             mpre := pre;
             a)
       in

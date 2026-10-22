@@ -15748,6 +15748,116 @@ let () =
       | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
       | _, _ -> check (label ^ " (clingo killed)") false)
 
+(* THE DATE CONSTRUCTION (RUNTIME-SEMANTICS ch. 3.8, card
+   date-with-in-ref-and-clingo): parts that name no calendar day or no clock
+   time derive a viol/2 witness, never a rolled-over or clamped date. The
+   corpus carries the form only in a golden (date-with-parts); the fault has
+   no red case yet (its kind has no code, ch. 5.7b), so the witnesses are
+   pinned here. One document: a Schuit's ligdatum is the date of its ligjaar,
+   ligmaand and ligdag, its ligtijdstip the datum-tijd of those plus its
+   liguur, ligminuut, ligseconde and ligmilliseconde. *)
+let date_with_ir =
+  {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Schuit","animate":false,"plural":"Schuiten","attributes":[{"node":"Attribute","name":"ligjaar","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"ligmaand","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"ligdag","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"liguur","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"ligminuut","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"ligseconde","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"ligmilliseconde","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"ligdatum","datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"ligtijdstip","datatype":{"node":"Date","precision":"millisecond"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"ligdatum","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"ligdatum","subjectType":"Schuit","source":{"snippet":"De ligdatum van een Schuit"}},"value":{"node":"BuiltinCall","kind":"dateWith","arguments":[{"node":"AttributeReference","attribute":"ligjaar","subjectType":"Schuit","source":{"snippet":"zijn ligjaar"}},{"node":"AttributeReference","attribute":"ligmaand","subjectType":"Schuit","source":{"snippet":"zijn ligmaand"}},{"node":"AttributeReference","attribute":"ligdag","subjectType":"Schuit","source":{"snippet":"zijn ligdag"}}],"type":{"node":"Date","precision":"day"},"source":{"snippet":"de datum met jaar: zijn ligjaar, maand: zijn ligmaand en dag: zijn ligdag"}},"initialisation":false,"presentation":"equation"}]},{"node":"Rule","name":"ligtijdstip","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"ligtijdstip","subjectType":"Schuit","source":{"snippet":"Het ligtijdstip van een Schuit"}},"value":{"node":"BuiltinCall","kind":"dateTimeWith","arguments":[{"node":"AttributeReference","attribute":"ligjaar","subjectType":"Schuit","source":{"snippet":"zijn ligjaar"}},{"node":"AttributeReference","attribute":"ligmaand","subjectType":"Schuit","source":{"snippet":"zijn ligmaand"}},{"node":"AttributeReference","attribute":"ligdag","subjectType":"Schuit","source":{"snippet":"zijn ligdag"}},{"node":"AttributeReference","attribute":"liguur","subjectType":"Schuit","source":{"snippet":"zijn liguur"}},{"node":"AttributeReference","attribute":"ligminuut","subjectType":"Schuit","source":{"snippet":"zijn ligminuut"}},{"node":"AttributeReference","attribute":"ligseconde","subjectType":"Schuit","source":{"snippet":"zijn ligseconde"}},{"node":"AttributeReference","attribute":"ligmilliseconde","subjectType":"Schuit","source":{"snippet":"zijn ligmilliseconde"}}],"type":{"node":"Date","precision":"millisecond"},"source":{"snippet":"de datumtijd met jaar: zijn ligjaar, maand: zijn ligmaand, dag: zijn ligdag, uur: zijn liguur, minuut: zijn ligminuut, seconde: zijn ligseconde en milliseconde: zijn ligmilliseconde"}},"initialisation":false,"presentation":"equation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+
+let date_with_case ?(expected = "") parts =
+  let names =
+    [ "ligjaar"; "ligmaand"; "ligdag"; "liguur"; "ligminuut"; "ligseconde"; "ligmilliseconde" ]
+  in
+  let attrs =
+    String.concat ", "
+      (List.filter_map
+         (fun (nm, v) -> Option.map (Printf.sprintf "%S: { \"number\": %S }" nm) v)
+         (List.combine names parts))
+  in
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "S1", "objectType": "Schuit", "attributes": { %s },
+    "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ %s{ "kind": "consistent" } ] }|}
+    attrs expected
+
+let () =
+  let some = List.map Option.some in
+  let fires ~name parts ~needle =
+    let doc, case = load_pair ~ir:date_with_ir ~case_text:(date_with_case parts) in
+    let label = name ^ ": clingo's witness fires" in
+    match translate doc case with
+    | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
+    | program -> (
+        match Solve.run_clingo program with
+        | _, Unix.WEXITED 20 ->
+            let ws = Solve.diagnostic program in
+            check (label ^ " (" ^ String.concat "; " ws ^ ")")
+              (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
+        | _, Unix.WEXITED (10 | 30) -> check (label ^ " (clingo found a model)") false
+        | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
+        | _, _ -> check (label ^ " (clingo killed)") false)
+  in
+  let no_day = "dateWith: the parts name no calendar day"
+  and no_time = "dateTimeWith: the parts name no clock time" in
+  fires ~name:"ch3.8 dateWith, 31 April" (some [ "2026"; "4"; "31"; "0"; "0"; "0"; "0" ]) ~needle:no_day;
+  fires ~name:"ch3.8 dateWith, 29 February 2026" (some [ "2026"; "2"; "29"; "0"; "0"; "0"; "0" ])
+    ~needle:no_day;
+  fires ~name:"ch3.8 dateWith, 29 February 1900" (some [ "1900"; "2"; "29"; "0"; "0"; "0"; "0" ])
+    ~needle:no_day;
+  fires ~name:"ch3.8 dateWith, month 13" (some [ "2026"; "13"; "1"; "0"; "0"; "0"; "0" ]) ~needle:no_day;
+  fires ~name:"ch3.8 dateWith, month 0" (some [ "2026"; "0"; "1"; "0"; "0"; "0"; "0" ]) ~needle:no_day;
+  fires ~name:"ch3.8 dateWith, day 0" (some [ "2026"; "3"; "0"; "0"; "0"; "0"; "0" ]) ~needle:no_day;
+  fires ~name:"ch3.8 dateTimeWith, hour 24" (some [ "2026"; "3"; "1"; "24"; "0"; "0"; "0" ])
+    ~needle:no_time;
+  fires ~name:"ch3.8 dateTimeWith, second 60" (some [ "2026"; "3"; "1"; "0"; "0"; "60"; "0" ])
+    ~needle:no_time;
+  fires ~name:"ch3.8 dateTimeWith, millisecond 1000" (some [ "2026"; "3"; "1"; "0"; "0"; "0"; "1000" ])
+    ~needle:no_time;
+  fires ~name:"ch3.8 dateWith, year 0" (some [ "0"; "3"; "1"; "0"; "0"; "0"; "0" ])
+    ~needle:"dateWith of a year before 1 is not translated";
+  (* a day that exists, in both executors; a leeg part leaves the value leeg
+     and no witness fires, also beside a month that names none *)
+  let both ~name parts expected =
+    let case_text = date_with_case ~expected parts in
+    ref_matches ~name ~ir:date_with_ir ~case_text;
+    clingo_matches ~name ~ir:date_with_ir ~case_text
+  in
+  both ~name:"ch3.8 dateWith, 29 February 2024" (some [ "2024"; "2"; "29"; "23"; "59"; "59"; "999" ])
+    {|{ "kind": "attributeValue", "label": "S1", "attribute": "ligdatum", "value": { "date": "2024-02-29" } },
+      { "kind": "attributeValue", "label": "S1", "attribute": "ligtijdstip",
+        "value": { "dateTime": "2024-02-29T23:59:59.999" } }, |};
+  both ~name:"ch3.8 dateWith, a leeg day beside month 13"
+    [ Some "2026"; Some "13"; None; Some "0"; Some "0"; Some "0"; Some "0" ]
+    {|{ "kind": "attributeEmpty", "label": "S1", "attribute": "ligdatum" },
+      { "kind": "attributeEmpty", "label": "S1", "attribute": "ligtijdstip" }, |}
+
+(* THE HOIST OF AN AGGREGATE IN AN ELEMENT CONDITION (card
+   clingo-nested-aggregate-in-fold-filter). The goldens fold-filter-nested-
+   aggregate and fold-filter-inner-fold-via-element-role carry the hoist
+   through gate 6; what no corpus case reaches is the plan's two other arms:
+   an aggregate that shares a variable with an earlier atom of the condition
+   (the datum-tijd listed fold writes two, the second reading the first's
+   result), and the refusal. *)
+let () =
+  check "hoist: the variables of an ASP text skip a string"
+    (Translate.asp_variables "val(X3,\"Maand X\",A4), fl7_def(X3)" = [ "A4"; "X3" ]);
+  let refuses name ~outside atoms =
+    match Translate.element_aggregate_plan ~x:"X3" ~outside atoms with
+    | exception Uchar_ref.Value.Fault { code = Some "CLINGO-028"; _ } -> check name true
+    | exception Uchar_ref.Value.Fault { text; _ } -> check (name ^ " (another fault: " ^ text ^ ")") false
+    | _ -> check (name ^ " (hoisted)") false
+  in
+  refuses "hoist: an aggregate that reads the subject of the rule" ~outside:[ "S" ]
+    [ "F1 = #max { G : role(S,\"klachten\",Y), val(Y,\"einddag\",G) }" ];
+  refuses "hoist: an aggregate that is no assignment" ~outside:[ "S" ]
+    [ "2 <= #count { Y : role(X3,\"klachten\",Y) }" ];
+  refuses "hoist: an earlier atom the helper needs reads the subject of the rule" ~outside:[ "S" ]
+    [ "role(S,\"x\",N1)"; "F1 = #max { G : role(N1,\"klachten\",Y), val(Y,\"einddag\",G) }" ];
+  match
+    Translate.element_aggregate_plan ~x:"X3" ~outside:[ "S" ]
+      [ "dtf9_def(X3)"; "D1 = #max { L : dtf9(X3,L,_) }"; "D2 = #max { M : dtf9(X3,D1,M) }"; "D2 > 5" ]
+  with
+  | [ `Keep "dtf9_def(X3)"; `Hoist (_, "D1", [], []); `Hoist (_, "D2", [ "D1" ], body); `Keep "D2 > 5" ] ->
+      check "hoist: a variable an earlier atom binds stays in the head, the atom in the body"
+        (body = [ "dtf9_def(X3)"; "D1 = #max { L : dtf9(X3,L,_) }" ])
+  | _ -> check "hoist: a variable an earlier atom binds stays in the head (another plan)" false
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

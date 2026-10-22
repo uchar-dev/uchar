@@ -26,3 +26,4 @@ CLINGO-024	fallback	temporal-target-shape		translate_rule
 CLINGO-025	fallback	rule-kind-shape		translate_rule
 CLINGO-026	fallback	rule-target-shape		translate_rule
 CLINGO-027	fallback	characteristic-init-expression-shape		bool_atoms
+CLINGO-028	refusal	aggregate-in-element-condition-outer-variable		element_aggregate_plan
