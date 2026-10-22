@@ -2065,17 +2065,36 @@ let hoist_element_aggregates ctx ~x ~el ~outside atoms =
    no range among them, and the enclosing [rule_guard] — which speaks of the
    subject, not of [x] — had nothing to bind it. [join] is a thunk: it is
    recomputed only when a parameter is in fact unbound. [part] marks a part
-   that runs member by member, for the Let barriers inside it. *)
-let with_member_reach ctx ~subject ~subject_ot ~join ?part f =
-  let saved = ctx.param_reach and saved_p = ctx.parts and saved_s = ctx.deposit_subject in
+   that runs member by member, for the Let barriers inside it.
+
+   The same holds for every other fence over the member: a range fence, a viol
+   or a helper inside the member's condition carries [rule_guard], which reads
+   the subject (the rule's condition, a composite's prefix, a Let's needs).
+   With the member's own is_a as the only other atom the subject was unbound
+   there, and clingo stopped grounding ("unsafe variables"; measured on a fold
+   with a date comparison in its filter under "indien hij niet geschorst is").
+   So inside the member the guard carries the subject and the range join
+   before it, as the rule's own body binds the subject. [range] is that join
+   where [join] adds more to the reach (the quantifier's matrix waits for its
+   open prefix), [join] otherwise. An empty guard reads no subject and stays
+   empty, so a document whose rule has no condition translates as before. *)
+let with_member_reach ctx ~subject ~subject_ot ~join ?range ?part f =
+  let saved = ctx.param_reach and saved_p = ctx.parts and saved_s = ctx.deposit_subject
+  and saved_g = ctx.rule_guard in
   ctx.param_reach <-
     (fun name -> (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join ()) @ saved name);
   if ctx.deposit_subject = None then ctx.deposit_subject <- Some subject;
   (match part with Some pt -> ctx.parts <- pt :: ctx.parts | None -> ());
+  if saved_g <> [] then
+    ctx.rule_guard <-
+      (Printf.sprintf "isa(%s,%s)" subject (str subject_ot)
+      :: (match range with Some r -> r | None -> join ()))
+      @ saved_g;
   let r = f () in
   ctx.param_reach <- saved;
   ctx.parts <- saved_p;
   ctx.deposit_subject <- saved_s;
+  ctx.rule_guard <- saved_g;
   r
 
 (* the range order of a fold over [el] from [subject] ([use_ro]), and a part
@@ -8032,7 +8051,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let atoms =
         with_member_reach ctx ~subject ~subject_ot
           ~join:(fun () -> join @ [ Printf.sprintf "%s(%s,%s)" (reached ()) subject x ])
-          ~part:(new_part ctx ro)
+          ~range:join ~part:(new_part ctx ro)
           (fun () ->
             let a, pre =
               with_pre ctx test (fun () ->

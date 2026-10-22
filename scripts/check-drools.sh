@@ -1412,7 +1412,11 @@ EXPECTED_CHANNEL=(
 # household of an object on the instance-ordered cycle (folds and a quantifier over the own to-many satellites, the hop
 # to a satellite and back, a fold over the satellites of the predecessor), hand-written IR with hand-computed cases.
 # Cycles classifies the reads as the verifier does; it plays on both with PLAYED 3.
-EXPECTED_PLAYED=272
+# 272 -> 273 (2026-10-22, card-less fix clingo-filter-guard-binding): the golden
+# jutterswet-vroege-vondsten-zonder-schorsing, a date comparison in the filter of a fold read under a denied
+# characteristic of the fold's subject, written in RegelSpraak with hand-computed cases. No source file of this
+# backend changed; it plays on both with PLAYED 3.
+EXPECTED_PLAYED=273
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

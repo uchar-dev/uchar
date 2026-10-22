@@ -1,0 +1,125 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "peildag": {
+            "date": "2026-03-01"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "geschorst"
+        ]
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "peildag": {
+            "date": "2026-03-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-02-10"
+          },
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-01-05"
+          },
+          "gewicht": {
+            "number": "9"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-02-27"
+          },
+          "gewicht": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "vroege vondstgewicht"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "vroeg actief"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "vroeg klaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "vroege vondstgewicht",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "vroeg actief"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "vroeg klaar"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,450 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "peildag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vroege vondstgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "geschorst",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "vroeg actief",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "vroeg klaar",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "JutterHeeftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vroege vondstgewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vroege vondstgewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het vroege vondstgewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "earlier",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "vinddag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn vinddag"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "peildag",
+                      "subjectType": "Jutter",
+                      "source": {
+                        "snippet": "de peildag van de jutter van de Vondst"
+                      },
+                      "path": [
+                        {
+                          "node": "RoleBinding",
+                          "factType": "JutterHeeftVondst",
+                          "role": "jutter"
+                        }
+                      ]
+                    },
+                    "source": {
+                      "snippet": "zijn vinddag is eerder dan de peildag van de jutter van de Vondst"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "JutterHeeftVondst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "geschorst",
+              "negated": true,
+              "source": {
+                "snippet": "hij niet geschorst is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vroeg actief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vroeg actief",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is vroeg actief"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "geschorst",
+                  "negated": true,
+                  "source": {
+                    "snippet": "hij is niet geschorst"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Aggregation",
+                    "kind": "count",
+                    "arguments": [
+                      {
+                        "node": "AttributeReference",
+                        "attribute": "vondsten",
+                        "subjectType": "Jutter",
+                        "source": {
+                          "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst"
+                        }
+                      }
+                    ],
+                    "elementType": "Vondst",
+                    "filter": {
+                      "node": "Compound",
+                      "quantifier": "the",
+                      "threshold": 0,
+                      "parts": [
+                        {
+                          "node": "Comparison",
+                          "op": "earlier",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "vinddag",
+                            "subjectType": "Vondst",
+                            "source": {
+                              "snippet": "zijn vinddag"
+                            }
+                          },
+                          "right": {
+                            "node": "AttributeReference",
+                            "attribute": "peildag",
+                            "subjectType": "Jutter",
+                            "source": {
+                              "snippet": "de peildag van de jutter van de Vondst"
+                            },
+                            "path": [
+                              {
+                                "node": "RoleBinding",
+                                "factType": "JutterHeeftVondst",
+                                "role": "jutter"
+                              }
+                            ]
+                          },
+                          "source": {
+                            "snippet": "zijn vinddag is eerder dan de peildag van de jutter van de Vondst"
+                          }
+                        }
+                      ],
+                      "source": {
+                        "snippet": "aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst"
+                      }
+                    },
+                    "sourceRole": {
+                      "node": "RoleBinding",
+                      "factType": "JutterHeeftVondst",
+                      "role": "vondst"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative"
+                    },
+                    "source": {
+                      "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "0"
+                    }
+                  },
+                  "source": {
+                    "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst is groter dan 0"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - hij is niet geschorst - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is eerder dan de peildag van de jutter van de Vondst is groter dan 0."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vroeg klaar",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vroeg klaar",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is vroeg klaar"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "geschorst",
+                  "negated": true,
+                  "source": {
+                    "snippet": "hij is niet geschorst"
+                  }
+                },
+                {
+                  "node": "QuantifierFold",
+                  "quantifier": "all",
+                  "elementType": "Vondst",
+                  "test": {
+                    "node": "Comparison",
+                    "op": "earlier",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "vinddag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "de vinddag van alle vondsten van de Jutter"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "peildag",
+                      "subjectType": "Jutter",
+                      "source": {
+                        "snippet": "de peildag van de jutter van de Vondst"
+                      },
+                      "path": [
+                        {
+                          "node": "RoleBinding",
+                          "factType": "JutterHeeftVondst",
+                          "role": "jutter"
+                        }
+                      ]
+                    },
+                    "source": {
+                      "snippet": "de vinddag van alle vondsten van de Jutter is eerder dan de peildag van de jutter van de Vondst"
+                    }
+                  },
+                  "source": {
+                    "snippet": "de vinddag van alle vondsten van de Jutter is eerder dan de peildag van de jutter van de Vondst"
+                  },
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "vondst"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - hij is niet geschorst - de vinddag van alle vondsten van de Jutter is eerder dan de peildag van de jutter van de Vondst."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
