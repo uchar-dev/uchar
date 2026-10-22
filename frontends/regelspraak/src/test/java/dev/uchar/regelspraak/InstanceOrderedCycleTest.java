@@ -202,4 +202,50 @@ class InstanceOrderedCycleTest {
         assertEquals(35, read.line(), "de kop van de regel die leest");
         assertFalse(m.isOk());
     }
+
+    /** A part whose reads are all shifted or local but whose other edges still close a cycle is no instance-ordered
+     *  part (IR-SPEC ch. 5.3: acyclic without its shifted edges), so its shifted edge stays in the walk and the cycle
+     *  through it is named too. The source of corpus/negative/wf045-instance-cycle-positive-remainder: the einddag and
+     *  the peildag read each other on the own object, and the einddag reads the restant of the predecessor. Red before
+     *  the fix (measured 2026-10-22 on the frontend of {@code 0866c03f}): only "einddag -> peildag -> einddag", since a
+     *  cycle of positive edges raises no level and the part passed as ordered. */
+    @Test void a_part_its_own_reads_leave_cyclic_is_not_instance_ordered() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Eenheidsysteem Tijd
+                de dag dg
+
+            Objecttype de Vergunning (mv: Vergunningen)
+                de stopdag Datum in dagen;
+                de basiseinddag Datum in dagen;
+                de einddag Datum in dagen;
+                het restant Numeriek (geheel getal) met eenheid dg;
+                de peildag Datum in dagen;
+
+            Feittype vorige vergunning
+                de vergunning Vergunning
+                de vorige vergunning Vergunning
+            Eén vergunning heeft één vorige vergunning
+
+            Regel restant
+                geldig altijd
+                    Het restant van een Vergunning moet berekend worden als de tijdsduur van zijn stopdag tot zijn einddag in hele dagen.
+
+            Regel einddag
+                geldig altijd
+                    De einddag van een Vergunning moet berekend worden als zijn peildag plus het restant van de vorige vergunning van de Vergunning.
+
+            Regel peildag
+                geldig altijd
+                    De peildag van een Vergunning moet gesteld worden op zijn einddag.
+            """);
+        List<Diagnostic> faults = faults(m);
+        assertEquals(List.of("RGS-096", "RGS-096"), faults.stream().map(Diagnostic::code).toList(), () -> "kreeg: " + faults);
+        assertEquals(List.of(
+                "regel 'einddag' hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een "
+                        + "recursieve creatie (WF-045): dependency cycle through no recursive creation: einddag -> peildag -> einddag",
+                "regel 'restant' hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een "
+                        + "recursieve creatie (WF-045): dependency cycle through no recursive creation: restant -> einddag -> restant"),
+                faults.stream().map(Diagnostic::message).sorted().toList());
+        assertFalse(m.isOk());
+    }
 }

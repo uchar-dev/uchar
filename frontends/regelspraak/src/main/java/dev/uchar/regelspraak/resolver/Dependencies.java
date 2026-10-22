@@ -254,7 +254,7 @@ final class Dependencies {
      * keep a part over a switch relation from being one. A strongly connected part is instance-ordered when it holds no
      * creation of a recursive group and only rules and defaults groups, its shifted reads all walk one switch relation
      * to one role, every read behind an internal edge is shifted or local, every satellite type it reads is reached
-     * through one satellite relation, at least one edge is shifted, and the levels over the edges that remain settle.
+     * through one satellite relation, at least one edge is shifted, and the edges that remain close no cycle.
      * Its shifted edges then leave the graph that WF-045 and WF-051 walk. Where a part walks a switch relation and a
      * read falls on a clause of ch. 5.3, that read comes back with the clause, as the verifier names it under
      * {@code WF-045.instance-read-outside}: the cycle names the forms, this names the read the author has to change.
@@ -382,7 +382,7 @@ final class Dependencies {
                 if (e.getValue().stream().allMatch(c -> "shifted".equals(c.kind()))) shiftedReads.add(e.getKey());
             List<Edge> remaining = new ArrayList<>();
             for (Edge e : internal) if (!shiftedReads.contains(new Reader(e.consumer(), e.graphNode()))) remaining.add(e);
-            if (shiftedReads.isEmpty() || !settles(part, remaining)) return;
+            if (shiftedReads.isEmpty() || !acyclic(forms.size(), remaining) || !settles(part, remaining)) return;
             for (Edge e : internal)
                 if (shiftedReads.contains(new Reader(e.consumer(), e.graphNode())))
                     shifted.add(new EdgeKey(e.producer(), e.consumer(), e.graphNode()));
@@ -422,6 +422,18 @@ final class Dependencies {
             List<List<Hop>> result = new ArrayList<>();
             for (NodeRead l : forms.get(r.consumer()).uses()) if (l.graphNode().equals(r.graphNode())) result.add(l.path());
             return result;
+        }
+
+        /** Whether the edges that remain close no cycle (the verifier's {@code acyclic}): a part they leave cyclic is no
+         *  instance-ordered part (IR-SPEC ch. 5.3), and the levels do not see every such cycle, since a cycle of
+         *  positive edges raises no level. */
+        private static boolean acyclic(int n, List<Edge> remaining) {
+            List<List<Integer>> rest = new ArrayList<>();
+            for (int i = 0; i < n; i++) rest.add(new ArrayList<>());
+            for (Edge e : remaining) rest.get(e.producer()).add(e.consumer());
+            for (List<Integer> c : components(n, rest))
+                if (c.size() > 1 || rest.get(c.get(0)).contains(c.get(0))) return false;
+            return true;
         }
 
         /** The levels over the edges that remain, a strict or negative edge counting one: whether they settle within as

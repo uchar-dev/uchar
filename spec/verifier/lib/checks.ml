@@ -8249,8 +8249,15 @@ let instance_ordering ctx (forms : dep_form array) edges =
                 let remaining =
                   List.filter (fun (_, ci, node, _) -> not (List.mem (ci, node) shifted_reads)) internal
                 in
-                (* the levels over the remaining internal edges; a part they
-                   leave cyclic is no instance-ordered part *)
+                (* a part the remaining internal edges leave cyclic is no
+                   instance-ordered part (ch. 5.3). The levels below do not see
+                   every such cycle: a cycle of positive edges raises no level *)
+                let acyclic =
+                  let rest = Array.make n [] in
+                  List.iter (fun (pi, ci, _, _) -> rest.(pi) <- ci :: rest.(pi)) remaining;
+                  List.for_all (function [ k ] -> not (List.mem k rest.(k)) | _ -> false) (components n rest)
+                in
+                (* the levels over the remaining internal edges *)
                 let level = Hashtbl.create 8 in
                 List.iter (fun i -> Hashtbl.replace level i 0) part;
                 let rec settle round =
@@ -8265,7 +8272,7 @@ let instance_ordering ctx (forms : dep_form array) edges =
                     remaining;
                   if not !changed then true else if round > List.length part then false else settle (round + 1)
                 in
-                if shifted_reads = [] || not (settle 0) then None
+                if shifted_reads = [] || (not acyclic) || not (settle 0) then None
                 else
                   Some
                     ( Some

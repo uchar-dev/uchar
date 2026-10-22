@@ -74,8 +74,9 @@ class TmsCycleVerifierWitnessTest {
         // 22 until 2026-10-22; the card cycle-across-instances added the eight witnesses of the instance-ordered cycle
         // (wf045-instance-cycle-*), each a WF-045 cycle that is no instance-ordered part, which this branch refuses
         // as the verifier does; the card instance-cycle-household-reads removed one of them (a fold over the
-        // satellites of the predecessor is a shifted read since) and added two (the hub, the satellite of a satellite)
-        assertEquals(31, n);
+        // satellites of the predecessor is a shifted read since) and added two (the hub, the satellite of a satellite);
+        // the fix of the verifier's test "acyclic without its shifted edges" added one (positive-remainder)
+        assertEquals(32, n);
     }
 
     /** A negative whose pin is the verifier's arm WF-045.instance-read-outside (IR-SPEC ch. 5.3) is refused here with
