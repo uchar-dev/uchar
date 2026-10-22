@@ -253,6 +253,71 @@ class ReadingsWitnessTest {
                 "J3 " + R + "1/versions/0 FAILS | 0 CharacteristicCheck false | 1 Literal -"));
     }
 
+    // ---------------- forms without a condition ----------------
+
+    private static final String UNCONDITIONAL_MODEL = TmsDocuments.model(List.of(
+            objectType("Ploeg", List.of(attribute("opbrengst", WHOLE), attribute("toeslag", WHOLE)), List.of("bemand")),
+            objectType("Wacht", List.of(attribute("vangst", WHOLE), attribute("ploegopbrengst", WHOLE),
+                    attribute("premie", WHOLE)), List.of())),
+            List.of(factTypeOneToMany("ploegindeling", "ploeg", "Ploeg", "wacht", "Wacht", "wachten")));
+
+    private static final List<String> UNCONDITIONAL = List.of(
+            computingRule("opbrengst van een ploeg", "BEREKENING", "Ploeg", "opbrengst", aggregation("sum",
+                    ownRead("vangst", "Wacht"), "Wacht", sourceRole("ploegindeling", "wacht"), "null", "null", WHOLE,
+                    "de som van de vangst van alle wachten van de Ploeg"), "null"),
+            computingRule("ploegopbrengst van een wacht", "GELIJKSTELLING", "Wacht", "ploegopbrengst",
+                    TmsDocuments.pathRead("opbrengst", "Ploeg", "ploegindeling", "ploeg"), "null"),
+            computingRule("premie van een wacht", "INITIALISATIE", "Wacht", "premie", number("5"), "null"));
+
+    private static final List<String> UNCONDITIONAL_GROUPS = List.of(
+            attributeGroup("toeslag van een ploeg", "Ploeg", "toeslag", List.of(
+                    defaultEntry(check("bemand", false), number("10")),
+                    TmsDocuments.initialisationEntry(number("3")))));
+
+    /** A form without a condition reads its value (RUNTIME-SEMANTICS ch. 5.12; card readings-of-unconditional-forms):
+     *  where it is at its turn its status is {@code HOLDS} and its nodes are those of its value, the root 0; where it is
+     *  not, {@code DISPLACED}, without nodes. A sum over a role with its contributors, an empty sum without any; a
+     *  {@code gesteld worden op} of a value one role away; an initialisation without a condition, at its turn where the
+     *  target is empty and displaced where the input fills it; and an initialisation default, below a default that
+     *  decides on P1, at its turn on P2 and displaced by the input on P3.
+     *
+     *  <p><b>Red</b> on the code before the card: a form without a condition had no reading rule, so its records were
+     *  missing and the list held only the readings of the conditional default. */
+    @Test void forms_without_a_condition() throws Exception {
+        Path ir = TmsDocuments.document(UNCONDITIONAL_MODEL, UNCONDITIONAL, List.of(), UNCONDITIONAL_GROUPS);
+        JsonNode c = TmsDocuments.caseOn(null, List.of(
+                instanceWithRoles("P1", "Ploeg", Map.of(), List.of("bemand"), Map.of("wachten", List.of("W1", "W2"))),
+                instanceWithRoles("P2", "Ploeg", Map.of(), List.of(), Map.of("wachten", List.of("W3"))),
+                instanceWithRoles("P3", "Ploeg", Map.of("toeslag", "9"), List.of(), Map.of()),
+                instanceWithRoles("W1", "Wacht", Map.of("vangst", "4"), List.of(), Map.of()),
+                instanceWithRoles("W2", "Wacht", Map.of("vangst", "6", "premie", "7"), List.of(), Map.of()),
+                instanceWithRoles("W3", "Wacht", Map.of(), List.of(), Map.of())), List.of());
+        bothBranches(ir, c, List.of(
+                "P1 " + P + "0/defaults/0 HOLDS | 0 CharacteristicCheck true | 1 Literal 10",
+                // a higher default decided: the initialisation default is not at its turn (ch. 7.1)
+                "P1 " + P + "0/defaults/1 DISPLACED",
+                // the sum over both Wachten: each contributes its vangst
+                "P1 " + R + "0/versions/0 HOLDS | 0 Aggregation 10 [W1 4 reached, W2 6 reached]",
+                "P2 " + P + "0/defaults/0 FAILS | 0 CharacteristicCheck false | 1 Literal -",
+                // the target is empty in the input: the initialisation default is at its turn
+                "P2 " + P + "0/defaults/1 HOLDS | 0 Literal 3",
+                // W3's vangst is leeg and contributes nothing, so the sum without a fallback is leeg (ch. 1.2e)
+                "P2 " + R + "0/versions/0 HOLDS | 0 Aggregation leeg []",
+                "P3 " + P + "0/defaults/0 FAILS | 0 CharacteristicCheck false | 1 Literal -",
+                // the input fills the target: not the initialisation default's turn (ch. 7.3)
+                "P3 " + P + "0/defaults/1 DISPLACED",
+                // no Wachten: no contributors, and the sum is leeg
+                "P3 " + R + "0/versions/0 HOLDS | 0 Aggregation leeg []",
+                // gesteld worden op: the opbrengst of the Ploeg one role away
+                "W1 " + R + "1/versions/0 HOLDS | 0 AttributeReference 10",
+                "W1 " + R + "2/versions/0 HOLDS | 0 Literal 5",
+                "W2 " + R + "1/versions/0 HOLDS | 0 AttributeReference 10",
+                // the input fills the target: not the initialisation's turn (ch. 5.4)
+                "W2 " + R + "2/versions/0 DISPLACED",
+                "W3 " + R + "1/versions/0 HOLDS | 0 AttributeReference leeg",
+                "W3 " + R + "2/versions/0 HOLDS | 0 Literal 5"));
+    }
+
     // ---------------- the canonical text ----------------
 
     /** The canonical text of the readings, which {@code DroolsBackendMain --readings} prints per case and the reference
@@ -339,6 +404,74 @@ class ReadingsWitnessTest {
                 "reading " + R + "1/versions/0 \"P1\" FAULTS",
                 "reading " + R + "1/versions/0 \"P2\" 0 QuantifierFold fault EF-019",
                 "reading " + R + "1/versions/0 \"P2\" FAULTS",
+                "READINGS 1"));
+    }
+
+    // ---------------- the clip of a temporal total ----------------
+
+    /** The gedurende clause of a temporal total (RUNTIME-SEMANTICS ch. 3.6) is read as the part of the timeline in which
+     *  it holds (ch. 5.12): the true periods of a characteristic, also beyond the totalled timeline; negated, the
+     *  periods outside them within each segment of that timeline; a composite, the intersection of its members'
+     *  periods, each member read on its own; each a period without a value; and a comparison of another timeline, the
+     *  segments of that timeline where it holds, with their values, cut where the totalled timeline's segments are
+     *  cut. Four rules without a condition on two Jutters, J2 without a wachtvergoeding, so that its totals are 0 and
+     *  the negated check holds nowhere within its segments. The document, from the RegelSpraak frontend with its
+     *  {@code source.rgs} beside it, is under {@code src/test/resources/readings/temporal-total-clip}, and is the
+     *  reference interpreter's {@code WV-5.12-gedurende-clip}; each line was written by hand from ch. 3.6.
+     *
+     *  <p><b>Red</b> before the card readings-of-unconditional-forms gave the readings of the clause: each node of the
+     *  clause read the timeline the clip leaves, the wachtvergoeding with its values cut to the clause, on both
+     *  branches, J1's check {@code [[2024-03-01 2024-07-01 10], [2024-07-01 2025-01-01 20]]} and its comparison
+     *  {@code [[2024-01-01 2024-04-01 10]]}. */
+    @Test void the_clip_of_a_temporal_total_reads_the_periods_in_which_it_holds() {
+        Path dir = Path.of("src", "test", "resources", "readings", "temporal-total-clip");
+        String w = R + "0/versions/0 ", n = R + "1/versions/0 ", t = R + "2/versions/0 ", b = R + "3/versions/0 ";
+        String whole = "1 AttributeReference [[2024-01-01 2024-07-01 10], [2024-07-01 2025-01-01 20]]";
+        flag(dir.resolve("ir.json"), dir.resolve("case.json"), List.of("case case.json",
+                // wachtplichtig from March 2024 to March 2025: 4 months of 10 and 6 of 20
+                "reading " + w + "\"J1\" 0 Aggregation 160",
+                "reading " + w + "\"J1\" " + whole,
+                "reading " + w + "\"J1\" 2 CharacteristicCheck [[2024-03-01 2025-03-01 empty]]",
+                "reading " + w + "\"J1\" HOLDS",
+                "reading " + w + "\"J2\" 0 Aggregation 0",
+                "reading " + w + "\"J2\" 1 AttributeReference empty",
+                "reading " + w + "\"J2\" 2 CharacteristicCheck [[2024-01-01 2024-04-01 empty]]",
+                "reading " + w + "\"J2\" HOLDS",
+                // not aangesteld: before May in the first segment, nowhere in the second
+                "reading " + n + "\"J1\" 0 Aggregation 40",
+                "reading " + n + "\"J1\" " + whole,
+                "reading " + n + "\"J1\" 2 CharacteristicCheck [[2024-01-01 2024-05-01 empty]]",
+                "reading " + n + "\"J1\" HOLDS",
+                "reading " + n + "\"J2\" 0 Aggregation 0",
+                "reading " + n + "\"J2\" 1 AttributeReference empty",
+                "reading " + n + "\"J2\" 2 CharacteristicCheck []",
+                "reading " + n + "\"J2\" HOLDS",
+                // both: March and April, 2 months of 10
+                "reading " + t + "\"J1\" 0 Aggregation 20",
+                "reading " + t + "\"J1\" " + whole,
+                "reading " + t + "\"J1\" 2 Compound [[2024-03-01 2024-05-01 empty]]",
+                "reading " + t + "\"J1\" 3 CharacteristicCheck [[2024-03-01 2025-03-01 empty]]",
+                "reading " + t + "\"J1\" 4 CharacteristicCheck [[2024-01-01 2024-05-01 empty]]",
+                "reading " + t + "\"J1\" HOLDS",
+                "reading " + t + "\"J2\" 0 Aggregation 0",
+                "reading " + t + "\"J2\" 1 AttributeReference empty",
+                "reading " + t + "\"J2\" 2 Compound []",
+                "reading " + t + "\"J2\" 3 CharacteristicCheck [[2024-01-01 2024-04-01 empty]]",
+                "reading " + t + "\"J2\" 4 CharacteristicCheck []",
+                "reading " + t + "\"J2\" HOLDS",
+                // borgvergoeding 15 until April 2024, cut at 2024-01-01; January to March of 10
+                "reading " + b + "\"J1\" 0 Aggregation 30",
+                "reading " + b + "\"J1\" " + whole,
+                "reading " + b + "\"J1\" 2 Comparison [[2023-07-01 2024-01-01 15], [2024-01-01 2024-04-01 15]]",
+                "reading " + b + "\"J1\" 3 AttributeReference [[2023-07-01 2024-04-01 15], [2024-04-01 2025-03-01 5]]",
+                "reading " + b + "\"J1\" 4 Literal 10",
+                "reading " + b + "\"J1\" HOLDS",
+                "reading " + b + "\"J2\" 0 Aggregation 0",
+                "reading " + b + "\"J2\" 1 AttributeReference empty",
+                "reading " + b + "\"J2\" 2 Comparison [[2024-01-01 2024-07-01 12]]",
+                "reading " + b + "\"J2\" 3 AttributeReference [[2024-01-01 2024-07-01 12]]",
+                "reading " + b + "\"J2\" 4 Literal 10",
+                "reading " + b + "\"J2\" HOLDS",
                 "READINGS 1"));
     }
 

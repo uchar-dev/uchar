@@ -44,7 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>the reading holds where the form fired: a characteristic attribution that holds stands derived on its object,
  *       and every derived characteristic has a reading of an attribution that holds, a deciding default or a creation
  *       that made its object; a rule on an attribute whose condition holds and whose value is filled stands as a
- *       {@code Value} of that rule on its object, and one whose condition fails or faults does not; a consistency
+ *       {@code Value} of that rule on its object, and one whose condition fails or faults does not, where a rule without
+ *       a condition holds wherever it is at its turn (card readings-of-unconditional-forms); a consistency
  *       holds where its object has no violation of it (EF-025); an object creation holds where it made an object for
  *       its subject; the default that decided ({@code DroolsBackend.decisionsOf}) holds, and where no default decided
  *       none holds with a decision;</li>
@@ -226,6 +227,9 @@ class ReadingsCorpusWitnessTest {
             for (ConditionReading.NodeReading x : r.nodes()) {
                 if (!x.reached() || x.fault() != null || x.node() >= form.nodes().size()) continue;
                 if (!(form.nodes().get(x.node()) instanceof Condition.Compound s)) continue;
+                // a composite the evaluation reads over a timeline, the clip of a temporal total, has the periods in
+                // which it holds and no verdict: it reads every member over the timeline (ch. 3.6), and has no stop
+                if (!(x.value() instanceof Boolean)) continue;
                 String difference = stop(s, x, form.nodes(), byNumber);
                 if (difference != null) differences.add(at + ": samenstelling " + x.node() + " " + difference);
                 n.compounds++;
@@ -305,11 +309,14 @@ class ReadingsCorpusWitnessTest {
         } else throw new AssertionError("geen vorm met een voorwaarde op " + pointer);
         NodePositions positions = p.positions();
         Object root = positions.at(pointer + "/" + conditionField);
-        if (root == null) throw new AssertionError("geen voorwaarde op " + pointer + "/" + conditionField);
-        List<Object> nodes = new ArrayList<>(positions.subtree(root));
+        Object value = valueField == null ? null : positions.at(pointer + "/" + valueField);
+        // a form without a condition is read where it computes a value, its nodes those of the value from 0 (card
+        // readings-of-unconditional-forms)
+        if (root == null && value == null)
+            throw new AssertionError("geen voorwaarde op " + pointer + "/" + conditionField + ", en geen waarde");
+        List<Object> nodes = new ArrayList<>(root == null ? List.of() : positions.subtree(root));
         int conditionNodes = nodes.size();
-        if (valueField != null && positions.at(pointer + "/" + valueField) != null)
-            nodes.addAll(positions.subtree(positions.at(pointer + "/" + valueField)));
+        if (value != null) nodes.addAll(positions.subtree(value));
         return new Form(kind, writer, target, nodes, conditionNodes);
     }
 

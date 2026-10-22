@@ -20,7 +20,10 @@ import java.util.Objects;
  * rule that the fold of RUNTIME-SEMANTICS ch. 7.10 took into a stack, as {@link DefaultsDecision} names a default. A form
  * has a reading where it has a condition: a rule's or a creation's {@code condition}, a consistency's
  * {@code assertion}, a default's {@code justification}. A fact creation whose condition is a check on its target, which
- * filters the targets, has none.
+ * filters the targets, has none. A form without a condition that computes a value — a rule on an attribute, an
+ * attribute default without a justification, an ordinary rule without a condition that the fold took into a stack —
+ * has the reading of its value (card readings-of-unconditional-forms): {@link Status#HOLDS} where it is at its turn,
+ * its nodes those of the value, the root 0.
  *
  * <p>The nodes are numbered in the pre-order of the document over the nodes of the condition union (IR-SPEC ch. 4.5) and
  * the expression union (IR-SPEC ch. 4): first those of the condition, its root 0, then those of the form's value where it
@@ -48,7 +51,7 @@ public record ConditionReading(Object object, String form, Status status, List<N
 
     /** How the condition came out on the object, or why the form has no reading there. */
     public enum Status {
-        /** The condition holds. */
+        /** The condition holds; or the form has none, computes a value and is at its turn. */
         HOLDS,
         /** The condition does not hold. */
         FAILS,

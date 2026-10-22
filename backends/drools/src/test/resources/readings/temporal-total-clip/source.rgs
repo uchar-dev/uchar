@@ -1,0 +1,27 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
+    de borgvergoeding per maand Numeriek (geheel getal) voor elke maand;
+    is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+    is aangesteld kenmerk (bijvoeglijk) voor elke maand;
+    de wachtsom Numeriek (geheel getal);
+    de stilsom Numeriek (geheel getal);
+    de tegensom Numeriek (geheel getal);
+    de borgsom Numeriek (geheel getal);
+
+Regel wachtsom van een jutter
+    geldig altijd
+        De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is).
+
+Regel stilsom van een jutter
+    geldig altijd
+        De stilsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is).
+
+Regel tegensom van een jutter
+    geldig altijd
+        De tegensom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet:
+        - hij wachtplichtig is
+        - hij niet aangesteld is).
+
+Regel borgsom van een jutter
+    geldig altijd
+        De borgsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn borgvergoeding per maand groter is dan 10).

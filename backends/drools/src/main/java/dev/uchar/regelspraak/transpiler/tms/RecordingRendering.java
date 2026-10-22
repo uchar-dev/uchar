@@ -185,8 +185,11 @@ final class RecordingRendering {
     }
 
     /** {@code v} as a reading gives a value: an exact rational collapsed to its decimal at the write boundary
-     *  ({@link ComputeHelpers#collapse}), and a whole number of the analysis's own counting as a {@code BigDecimal}. */
+     *  ({@link ComputeHelpers#collapse}), a whole number of the analysis's own counting as a {@code BigDecimal}, and the
+     *  asOfDate-bucket scalar of a timeline as the timeline of its one period, which the evaluation reads
+     *  (RUNTIME-SEMANTICS ch. 5.12, 8.4). */
     static Object given(Object v) {
+        if (v instanceof BucketScalar s) return s.timeline();
         if (v instanceof Integer i) return BigDecimal.valueOf(i);
         if (v instanceof Long l) return BigDecimal.valueOf(l);
         return ComputeHelpers.collapse(v);

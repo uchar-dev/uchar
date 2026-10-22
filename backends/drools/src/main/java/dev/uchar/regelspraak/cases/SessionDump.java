@@ -3,7 +3,6 @@ package dev.uchar.regelspraak.cases;
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
-import dev.uchar.regelspraak.transpiler.tms.BucketScalar;
 import dev.uchar.regelspraak.transpiler.tms.ConditionReading;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
 import dev.uchar.regelspraak.transpiler.tms.Period;
@@ -551,7 +550,6 @@ final class SessionDump {
             return DATE_TIME.format(d) + (d.getNano() == 0 ? "" : String.format(".%03d", d.getNano() / 1_000_000));
         if (v instanceof String s) return quote(s);
         if (v instanceof Period p) return "[" + p.from() + " " + p.to() + " " + canonical(p.value()) + "]";
-        if (v instanceof BucketScalar s) return "bucket" + canonical(s.bucket());
         if (v instanceof List<?> l) {
             List<String> r = new ArrayList<>();
             for (Object x : l) r.add(canonical(x));

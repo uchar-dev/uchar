@@ -1,0 +1,379 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "wachtvergoeding per maand",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "borgvergoeding per maand",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtsom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "stilsom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tegensom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "borgsom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "wachtplichtig",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Characteristic",
+            "name": "aangesteld",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "wachtsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachtsom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De wachtsom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "wachtvergoeding per maand",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn wachtvergoeding per maand"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "wachtplichtig",
+                "negated": false,
+                "source": {
+                  "snippet": "gedurende de tijd dat hij wachtplichtig is"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "stilsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "stilsom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De stilsom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "wachtvergoeding per maand",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn wachtvergoeding per maand"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "aangesteld",
+                "negated": true,
+                "source": {
+                  "snippet": "gedurende de tijd dat hij niet aangesteld is"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "tegensom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "tegensom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De tegensom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "wachtvergoeding per maand",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn wachtvergoeding per maand"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 1,
+                "parts": [
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "wachtplichtig",
+                    "negated": false,
+                    "source": {
+                      "snippet": "hij wachtplichtig is"
+                    }
+                  },
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "aangesteld",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij niet aangesteld is"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij wachtplichtig is - hij niet aangesteld is"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij wachtplichtig is - hij niet aangesteld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "borgsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "borgsom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De borgsom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "wachtvergoeding per maand",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn wachtvergoeding per maand"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "borgvergoeding per maand",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn borgvergoeding per maand"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "source": {
+                  "snippet": "gedurende de tijd dat zijn borgvergoeding per maand groter is dan 10"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn borgvergoeding per maand groter is dan 10"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

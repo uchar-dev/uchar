@@ -334,14 +334,18 @@ public final class TmsTranspiler {
      *  (WF-031), so its predicate is a constant of the document and no rule binds anything for it. */
     private final DayKinds dayKinds;
     /** Where the nodes of the document stand on the wire, in a build with readings (card fixpoint-readings), which
-     *  plans a reading rule beside the rule of every form with a condition ({@link #readingsOf}); null in a build
-     *  without, whose plan is that of a build before the card. */
+     *  plans a reading rule beside the rule of every form with a condition, and of every form without one that computes
+     *  a value (card readings-of-unconditional-forms) ({@link #readingsOf}); null in a build without, whose plan is that
+     *  of a build before the card. */
     private final dev.uchar.regelspraak.loader.NodePositions positions;
     /** While the condition and the value of a form's own rule compile in a build with readings: the term the analysis
      *  plans for each node of the IR it compiles there, by identity ({@link #note}); null at every other moment. */
     private Map<Object, Term> noted;
     /** Beside {@link #noted}: the unit of each expression node, by the effective-type law (RUNTIME-SEMANTICS ch. 2.10). */
     private Map<Object, Unit> notedUnits;
+    /** Beside {@link #noted}: the nodes whose reading follows from the outcomes of terms of the rule ({@link Derived},
+     *  {@link #noteDerived}), by identity. */
+    private Map<Object, Derived> notedDerived;
     /** Above zero while the rules of a fold are built ({@link #foldFor}): a node compiled there is evaluated per member
      *  in those rules, not in the rule that reads the fold, so it is not noted. */
     private int memberwise;
@@ -385,8 +389,9 @@ public final class TmsTranspiler {
 
     /** A build with readings (card fixpoint-readings) of the loaded {@code document}: the build of
      *  {@link #build(RegelSpraakModel, ClassLoader, List, Map, List, Map, Map)}, and beside the rule of every form with a
-     *  condition a reading rule, whose facts {@link #readingsOf} reads, numbering the nodes of a form by the positions the
-     *  loader gives with the document. It takes the loaded document whole, so it leaves no side table out. */
+     *  condition, or without one that computes a value, a reading rule, whose facts {@link #readingsOf} reads, numbering
+     *  the nodes of a form by the positions the loader gives with the document. It takes the loaded document whole, so it
+     *  leaves no side table out. */
     public static TmsTranspiler withReadings(dev.uchar.regelspraak.loader.IrLoader.Positioned document,
                                              ClassLoader beanLoader) {
         Objects.requireNonNull(document, "document");
@@ -1438,7 +1443,8 @@ public final class TmsTranspiler {
             // computed from
             LocalDate anchor = model.fixedStartPointAnchor(target.declarant(), target.name());
             Term periods = new Term.SlotValue(condition, source(f.filter().source()));
-            note(f.filter(), periods);
+            // the reading of the clause is its true periods, none where the characteristic has no timeline
+            noteDerived(f.filter(), List.of(periods), x -> periodsOf(x.get(0)));
             Term days = anchor == null
                     ? new Term.Call(StaticFunction.RS_DAY_COUNT, List.of(periods, constant(gran),
                             constant(Period.class)), null)
@@ -1463,7 +1469,8 @@ public final class TmsTranspiler {
         reads.markFail();
         String baseName = base.name();
         Term periods = new Term.SlotValue(condition, source(f.filter().source()));
-        note(f.filter(), periods);
+        // the reading of the clause is its true periods, none where the characteristic has no timeline
+        noteDerived(f.filter(), List.of(periods), x -> periodsOf(x.get(0)));
         Term whole = complete(baseValue, "the pro-rata base \"" + baseName + "\" needs the full timeline; ", subjectType,
                 " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", source(b.source()));
         note(b, whole);
@@ -1673,7 +1680,9 @@ public final class TmsTranspiler {
         reads.recorder();
         List<RulePlan> out = new ArrayList<>();
         out.add(reads.rulePlan(ruleName, items, consequence));
-        if (noted != null && testTerm != null) {
+        // every form this writes computes a value, so it has a reading also without a condition (RUNTIME-SEMANTICS
+        // ch. 5.12): the reading of its value, where it is at its turn
+        if (noted != null) {
             // an initialisation's guard stays: where another writer's value or the input fills the target, the form is
             // not at its turn (RUNTIME-SEMANTICS ch. 5.4)
             List<LhsItem> readingItems = reads.readingPlan(List.of(), false);
@@ -3290,12 +3299,17 @@ public final class TmsTranspiler {
         b.readings.add(reads);
         List<RulePlan> out = new ArrayList<>();
         out.add(reads.rulePlan(ruleName, items, decision));
-        // the control facts stay: a default a higher one displaced is not at its turn (RUNTIME-SEMANTICS ch. 7.1, 7.9);
-        // an ordinary rule without a condition that the fold of ch. 7.10 took in has no condition to read
+        // the control facts stay: a default a higher one displaced is not at its turn (RUNTIME-SEMANTICS ch. 7.1, 7.9).
+        // A default without a justification, and an ordinary rule without a condition that the fold of ch. 7.10 took in
+        // (its justification the fold's vacuous one, which stands nowhere in the document), has no condition to read:
+        // on an attribute it has the reading of its consequence, which holds where it is at its turn; a characteristic
+        // default without one has nothing to read
         ResolvedRule madeFrom = stacks.ruleOf(d);
-        if (noted != null && testTerm != null && (madeFrom == null || madeFrom.condition() != null))
-            readingRule(ruleName, pointerOf(d), reads, reads.readingPlan(control, false), testTerm, value, d.condition(),
-                    b.characteristic ? null : d.consequence(), noted, k.validity(), !control.isEmpty() || d.initialisation());
+        boolean unconditional = testTerm == null || (madeFrom != null && madeFrom.condition() == null);
+        if (noted != null && !(unconditional && b.characteristic))
+            readingRule(ruleName, pointerOf(d), reads, reads.readingPlan(control, false), unconditional ? null : testTerm,
+                    value, unconditional ? null : d.condition(), b.characteristic ? null : d.consequence(), noted,
+                    k.validity(), !control.isEmpty() || d.initialisation());
         if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, d.condition(), l -> guard.get()));
         return out;
     }
@@ -3304,7 +3318,15 @@ public final class TmsTranspiler {
 
     /** What the analysis noted while the condition and the value of one form's own rule compiled ({@link #note}): the
      *  term of each node and the unit of each expression node, by identity of the node. */
-    private record Noted(Map<Object, Term> terms, Map<Object, Unit> units) {}
+    private record Noted(Map<Object, Term> terms, Map<Object, Unit> units, Map<Object, Derived> derived) {}
+
+    /**
+     * The reading of a node that no term of the rule computes, and that follows from the outcomes of {@code inputs},
+     * terms the rule evaluates, by {@code compute}: the part of a timeline in which a gedurende clause of a temporal
+     * total holds (RUNTIME-SEMANTICS ch. 3.6, 5.12), where the clip computes only the timeline it leaves. The node is
+     * reached where every input is reached without a fault; it evaluates nothing of the session again.
+     */
+    private record Derived(List<Term> inputs, Function<List<Object>, Object> compute) {}
 
     /** Starts noting the terms of the nodes the condition and the value of a form's own rule compile, in a build with
      *  readings; nothing in a build without. */
@@ -3313,14 +3335,16 @@ public final class TmsTranspiler {
         if (noted != null) throw new IllegalStateException("de lezing van een vorm begint terwijl die van een andere loopt");
         noted = new IdentityHashMap<>();
         notedUnits = new IdentityHashMap<>();
+        notedDerived = new IdentityHashMap<>();
     }
 
     /** What {@link #beginReading} noted since it started, and the end of it; null in a build without readings. */
     private Noted endReading() {
         if (positions == null) return null;
-        Noted n = new Noted(noted, notedUnits);
+        Noted n = new Noted(noted, notedUnits, notedDerived);
         noted = null;
         notedUnits = null;
+        notedDerived = null;
         return n;
     }
 
@@ -3330,20 +3354,22 @@ public final class TmsTranspiler {
     private void abandonReading(int keep) {
         noted = null;
         notedUnits = null;
+        notedDerived = null;
         readingRules.subList(keep, readingRules.size()).clear();
     }
 
     /** One node of a form's reading: its number, its kind as the wire spells it, the term that computes it in the
      *  form's own rule, its unit, and for the node of a fold over a set the fold, whose contributions are its
      *  contributors, with the quantifier fold the node is where it is one. */
-    private record Site(int node, String kind, Term term, Unit unit, Fold fold, Condition.QuantifierFold quantifier) {}
+    private record Site(int node, String kind, Term term, Unit unit, Fold fold, Condition.QuantifierFold quantifier,
+                        Derived derived) {}
 
     /**
      * The reading rule of one form in a build with readings, with what {@link #readingsOf} needs to read its facts:
      * the form's pointer, its validity, whether the form has a guard of its turn (control facts of a defaults stack,
      * the guard of an initialisation, the 1:1 guard of an object creation), the planned condition and value of the
-     * form's own rule, the very terms its test and its consequence evaluate, and the nodes of the reading in their
-     * order, a node evaluated per member of a fold left out.
+     * form's own rule, the very terms its test and its consequence evaluate, the condition null for a form without
+     * one, and the nodes of the reading in their order, a node evaluated per member of a fold left out.
      */
     private record ReadingRule(RulePlan plan, String pointer, Validity validity, boolean guarded, Term condition,
                                Term value, List<Site> sites) {
@@ -3377,7 +3403,8 @@ public final class TmsTranspiler {
      * after the subject pattern, the rule's own without its test, and its consequence inserts the {@link Reading} of
      * the subject; beside it the terms {@code condition} and {@code value} of the rule's test and consequence, and the
      * nodes of {@code irCondition} and {@code irValue} numbered in the pre-order of the document, each with the term the
-     * analysis noted for it ({@code noted}). A node without a term below the node of a fold over a set is evaluated per
+     * analysis noted for it ({@code noted}). A form without a condition, {@code condition} and {@code irCondition} null,
+     * numbers the nodes of its value from 0. A node without a term below the node of a fold over a set is evaluated per
      * member of the fold; any other node without one is a place of the analysis that does not note its node, a fault
      * of this class, refused loudly.
      */
@@ -3388,7 +3415,10 @@ public final class TmsTranspiler {
             throw new IllegalStateException("de vorm van de regel " + ruleName + " staat niet in het document dat de lader"
                     + " las: een lezing noemt haar vorm naar haar plaats");
         RulePlan plan = reads.readingRulePlan(ruleName + ": lezing", pointer, items);
-        List<Object> nodes = new ArrayList<>(positions.subtree(irCondition));
+        if ((condition == null) != (irCondition == null))
+            throw new IllegalStateException("de leesregel van " + pointer + " heeft een voorwaarde zonder haar knopen, of"
+                    + " knopen zonder haar voorwaarde");
+        List<Object> nodes = new ArrayList<>(irCondition == null ? List.of() : positions.subtree(irCondition));
         if (irValue != null) nodes.addAll(positions.subtree(irValue));
         List<String> foldsAt = new ArrayList<>();
         for (Object n : nodes)
@@ -3398,7 +3428,11 @@ public final class TmsTranspiler {
             Object n = nodes.get(i);
             dev.uchar.regelspraak.loader.NodePositions.Position at = positions.of(n);
             Term t = noted.terms().get(n);
-            if (t == null) {
+            Derived derived = noted.derived().get(n);
+            if (t != null && derived != null)
+                throw new IllegalStateException("de lezing van " + pointer + ": knoop " + i + " (" + at.kind() + " op "
+                        + at.pointer() + ") heeft een term en een afgeleide lezing");
+            if (t == null && derived == null) {
                 if (foldsAt.stream().noneMatch(at.pointer()::startsWith))
                     throw new IllegalStateException("de lezing van " + pointer + ": de analyse noteerde geen term voor"
                             + " knoop " + i + " (" + at.kind() + " op " + at.pointer() + ")");
@@ -3406,7 +3440,7 @@ public final class TmsTranspiler {
             }
             Map<ObjectType, Fold> fold = folds.get(n);
             sites.add(new Site(i, at.kind(), t, noted.units().get(n), fold == null ? null : fold.get(reads.subject),
-                    n instanceof Condition.QuantifierFold q ? q : null));
+                    n instanceof Condition.QuantifierFold q ? q : null, derived));
         }
         readingRules.add(new ReadingRule(plan, pointer, validity, guarded, condition, value, sites));
     }
@@ -3438,10 +3472,11 @@ public final class TmsTranspiler {
 
     /**
      * The readings of the conditions at the fixpoint of {@code session}, a session of a build with readings: for every
-     * form with a condition and every object of the session the form runs on, one record. Where the form's reading rule
-     * stood at the fixpoint, its {@link Reading} carries the values the form's own rule bound there, and the record is
-     * the evaluation of the rule's condition over them, and of its value where the condition holds, by the recording
-     * rendering ({@link RecordingRendering}), which deposits nothing; else the form was not at its turn there,
+     * form with a condition, or without one that computes a value, and every object of the session the form runs on, one
+     * record. Where the form's reading rule stood at the fixpoint, its {@link Reading} carries the values the form's own
+     * rule bound there, and the record is the evaluation of the rule's condition over them, and of its value where the
+     * condition holds, by the recording rendering ({@link RecordingRendering}), which deposits nothing; a form without a
+     * condition holds there, and its record is the evaluation of its value; else the form was not at its turn there,
      * {@link ConditionReading.Status#DISPLACED}, or its validity does not admit the session's evaluation date,
      * {@link ConditionReading.Status#OUTSIDE_VALIDITY}, or the session has no date and the form a dated validity,
      * {@link ConditionReading.Status#FAULTS}, each without nodes. A form without a guard of its turn inside its
@@ -3533,7 +3568,9 @@ public final class TmsTranspiler {
             if (l.kind() == ReadKind.DEPOSIT_FLAG) w[l.slot()] = ComputeHelpers.depositFlag();
         RecordingRendering rec = new RecordingRendering();
         ConditionReading.Status status;
-        try {
+        // a form without a condition whose reading rule stood is at its turn, and holds there
+        if (r.condition() == null) status = ConditionReading.Status.HOLDS;
+        else try {
             status = rec.test(r.condition(), w) ? ConditionReading.Status.HOLDS : ConditionReading.Status.FAILS;
         } catch (RuntimeException e) {
             if (!ComputeHelpers.isEvaluationFault(e)) throw e;
@@ -3549,6 +3586,10 @@ public final class TmsTranspiler {
         }
         List<ConditionReading.NodeReading> nodes = new ArrayList<>();
         for (Site s : r.sites()) {
+            if (s.derived() != null) {
+                nodes.add(derivedReading(s, rec));
+                continue;
+            }
             RecordingRendering.Outcome oc = rec.outcome(s.term());
             List<ConditionReading.Contributor> contributors = oc == null || s.fold() == null ? List.of()
                     : contributors(s, contributions.getOrDefault(s.fold().key(), Map.of()).getOrDefault(o, List.of()),
@@ -3558,6 +3599,20 @@ public final class TmsTranspiler {
                     oc == null ? null : oc.fault(), contributors));
         }
         return new ConditionReading(o, r.pointer(), status, nodes);
+    }
+
+    /** The reading of the node of {@code s}, whose reading follows from the outcomes of its inputs in the evaluation
+     *  {@code rec} ({@link Derived}): reached where every input was reached without a fault. */
+    private static ConditionReading.NodeReading derivedReading(Site s, RecordingRendering rec) {
+        List<Object> values = new ArrayList<>();
+        for (Term t : s.derived().inputs()) {
+            RecordingRendering.Outcome o = rec.outcome(t);
+            if (o == null || o.fault() != null)
+                return new ConditionReading.NodeReading(s.node(), s.kind(), false, null, s.unit(), null, List.of());
+            values.add(o.value());
+        }
+        return new ConditionReading.NodeReading(s.node(), s.kind(), true,
+                RecordingRendering.given(s.derived().compute().apply(values)), s.unit(), null, List.of());
     }
 
     /** The contributors of the fold of {@code s}, from its {@code contributions} on the object, as the evaluation
@@ -3642,6 +3697,13 @@ public final class TmsTranspiler {
         if (noted == null || memberwise > 0) return;
         noted.put(node, t);
         if (node instanceof Expr e) notedUnits.put(node, eff.unitOf(e));
+    }
+
+    /** Notes that the reading of {@code node}, a condition, follows from the outcomes of {@code inputs} by
+     *  {@code compute} ({@link Derived}), as {@link #note} notes a term; nothing outside a build with readings. */
+    private void noteDerived(Object node, List<Term> inputs, Function<List<Object>, Object> compute) {
+        if (noted == null || memberwise > 0) return;
+        notedDerived.put(node, new Derived(List.copyOf(inputs), compute));
     }
 
     /** A constant of the analysis, which an argument of a function of the plan takes ({@link Term.Const}). */
@@ -4573,7 +4635,7 @@ public final class TmsTranspiler {
         Term whole = complete(timeline, "the gedurende clip of \"" + name + "\" needs the full timeline; ", subjectType,
                 " supplies only the asOfDate-bucket scalar", source(a.source()));
         note(a, whole);
-        Term cut = clip(f.filter(), reads, description, name, whole);
+        Term cut = clip(f.filter(), reads, description, name, whole, whole);
         return new Term.Call(StaticFunction.RS_TIME_TOTAL, List.of(cut, constant(gran)), source);
     }
 
@@ -4596,7 +4658,16 @@ public final class TmsTranspiler {
      * apart, never coalesced, so a clip that splits one whole unit loses it. Every characteristic's true periods are
      * bound off the bean ({@link Reads#timeline}), the compared timeline through its standing, read whole
      * ({@link #comparisonClip}), and the bound like any value of the rule. {@code cut} names the attribute whose
-     * timeline is clipped, and {@code timeline} computes that timeline, which the clip takes first.
+     * timeline is clipped, and {@code timeline} computes that timeline, which the clip takes first; {@code base} computes
+     * the whole timeline of {@code cut}, which a member of a composite clip reads its periods within.
+     *
+     * <p>In a build with readings the reading of the clause is the part of the timeline in which it holds (ch. 5.12),
+     * not the timeline the clip leaves: the true periods of a characteristic, or, negated, the periods outside them
+     * within the segments of {@code base}; for a composite the intersection of its members' periods, each member read
+     * on its own, each a period without a value; for a comparison the segments of the compared timeline where it
+     * holds, with their values, cut where the segments of {@code base} are cut. The clip computes none of these, so the
+     * reading follows from terms it does compute ({@link #noteDerived}), and the rule's terms stay those of a build
+     * without readings.
      *
      * <p>Refused by name: any other clause, a compound other than {@code all}, a check navigated or with an owner or a
      * whole-period qualifier (WF-097), a comparison whose left side is not an own attribute on a timeline, a date
@@ -4606,35 +4677,50 @@ public final class TmsTranspiler {
      * sides are equal and exactly one leeg side is unequal (ch. 3.6, the worked example of 500,00); no golden has
      * either.
      */
-    private Term clip(Condition c, Reads reads, Object description, String cut, Term timeline) {
-        if (c instanceof Condition.CharacteristicCheck k) {
-            if (k.owner() != null || k.period() != null)
-                throw new Refusal(DroolsCode.CLIP_OWNED_WHOLE_PERIOD.reason("description", description, "snippet", snippet(k)));
-            if (k.navigation() != null || navigationBindings.containsKey(k))
-                throw new Refusal(DroolsCode.CLIP_NAVIGATED_CHARACTERISTIC.reason("description", description, "snippet", snippet(k)));
-            int periods = reads.timeline(timeMember(reads.subject, k.characteristic(), true, description));
-            Term clipped = new Term.Call(k.negation() ? StaticFunction.RS_TIME_CLIP_NOT : StaticFunction.RS_TIME_CLIP,
-                    List.of(timeline, new Term.SlotValue(periods, null), constant(Period.class)), source(k.source()));
-            note(k, clipped);
-            return clipped;
-        }
+    private Term clip(Condition c, Reads reads, Object description, String cut, Term timeline, Term base) {
+        if (c instanceof Condition.CharacteristicCheck k) return checkClip(k, reads, description, timeline, base, null);
         if (c instanceof Condition.Compound s && s.quantifier() == Condition.Quantifier.ALLE && !s.components().isEmpty()) {
             // each check clips what the one before it left
             Term out = timeline;
+            List<Term> inputs = new ArrayList<>(List.of(base));
+            List<Boolean> negated = new ArrayList<>();
             for (Condition part : s.components()) {
-                if (!(part instanceof Condition.CharacteristicCheck))
+                if (!(part instanceof Condition.CharacteristicCheck k))
                     throw new Refusal(DroolsCode.CLIP_COMPOSITE_NON_CHARACTERISTIC.reason("description", description, "snippet", snippet(part)));
-                out = clip(part, reads, description, cut, out);
+                out = checkClip(k, reads, description, out, base, inputs);
+                negated.add(k.negation());
             }
-            note(s, out);
+            // the intersection of the members' periods, each member read within the segments of the whole timeline
+            noteDerived(s, inputs, x -> {
+                List<Period> held = null;
+                for (int i = 0; i < negated.size(); i++) {
+                    List<Period> member = negated.get(i) ? outside(x.get(0), x.get(i + 1)) : periodsOf(x.get(i + 1));
+                    held = held == null ? member : intersection(held, member);
+                }
+                return held;
+            });
             return out;
         }
-        if (c instanceof Condition.Comparison v) {
-            Term clipped = comparisonClip(v, reads, description, cut, timeline);
-            note(v, clipped);
-            return clipped;
-        }
+        if (c instanceof Condition.Comparison v) return comparisonClip(v, reads, description, cut, timeline);
         throw new Refusal(DroolsCode.CLIP_UNSUPPORTED_CUT_FORM.reason("description", description, "snippet", snippet(c)));
+    }
+
+    /** The clip of {@code timeline} by the check {@code k} of a characteristic of the subject on a timeline, or outside it
+     *  where the check is negated ({@link #clip}); the term of the characteristic's true periods goes into
+     *  {@code truePeriods} where it is not null, for the reading of the composite the check is a member of. */
+    private Term checkClip(Condition.CharacteristicCheck k, Reads reads, Object description, Term timeline, Term base,
+                           List<Term> truePeriods) {
+        if (k.owner() != null || k.period() != null)
+            throw new Refusal(DroolsCode.CLIP_OWNED_WHOLE_PERIOD.reason("description", description, "snippet", snippet(k)));
+        if (k.navigation() != null || navigationBindings.containsKey(k))
+            throw new Refusal(DroolsCode.CLIP_NAVIGATED_CHARACTERISTIC.reason("description", description, "snippet", snippet(k)));
+        int periods = reads.timeline(timeMember(reads.subject, k.characteristic(), true, description));
+        Term held = new Term.SlotValue(periods, null);
+        if (truePeriods != null) truePeriods.add(held);
+        if (k.negation()) noteDerived(k, List.of(base, held), x -> outside(x.get(0), x.get(1)));
+        else noteDerived(k, List.of(held), x -> periodsOf(x.get(0)));
+        return new Term.Call(k.negation() ? StaticFunction.RS_TIME_CLIP_NOT : StaticFunction.RS_TIME_CLIP,
+                List.of(timeline, held, constant(Period.class)), source(k.source()));
     }
 
     /** The comparison clip of {@link #clip} of the timeline of {@code cut}: the left side an own attribute on a
@@ -4669,9 +4755,83 @@ public final class TmsTranspiler {
         Term periods = new Term.Call(StaticFunction.RS_TIME_CONDITION, List.of(whole,
                 constant(testCode), new Term.Call(StaticFunction.COLLAPSE, List.of(bound), bound.source()),
                 constant(Period.class)), null);
+        // the segments of the compared timeline where the comparison holds, cut where the clipped timeline's segments
+        // are cut (ch. 3.6: the comparison is read per period of their common cuts)
+        noteDerived(v, List.of(periods, timeline), x -> cutAt(x.get(0), x.get(1)));
         return new Term.Call(StaticFunction.RS_TIME_CLIP, List.of(timeline, periods, constant(Period.class)),
                 source(v.source()));
     }
+
+    /** The segments of {@code timeline} as true periods, each without a value; none for an absent timeline. */
+    private static List<Period> periodsOf(Object timeline) {
+        List<Period> out = new ArrayList<>();
+        if (timeline != null) for (Object o : (List<?>) timeline) {
+            Period p = (Period) o;
+            out.add(new Period(p.from(), p.to(), null));
+        }
+        return out;
+    }
+
+    /** The periods outside the true periods {@code truePeriods} within each segment of {@code timeline}, each without a
+     *  value, per segment and never joined across two: where a negated check of a characteristic holds over that
+     *  timeline (RUNTIME-SEMANTICS ch. 3.6). */
+    private static List<Period> outside(Object timeline, Object truePeriods) {
+        List<Period> out = new ArrayList<>();
+        List<Period> held = periodsOf(truePeriods);
+        for (Period segment : periodsOf(timeline)) {
+            List<Period> inside = new ArrayList<>();
+            for (Period p : held) {
+                LocalDate from = later(p.from(), segment.from()), to = earlier(p.to(), segment.to());
+                if (from.isBefore(to)) inside.add(new Period(from, to, null));
+            }
+            inside.sort(Comparator.comparing(Period::from).thenComparing(Period::to));
+            LocalDate at = segment.from();
+            for (Period p : inside) {
+                if (p.from().isAfter(at)) out.add(new Period(at, p.from(), null));
+                at = p.to();
+            }
+            if (segment.to().isAfter(at)) out.add(new Period(at, segment.to(), null));
+        }
+        return out;
+    }
+
+    /** The overlaps of every period of {@code a} with every period of {@code b}, in the order of their days: where both
+     *  members of a composite clip hold (RUNTIME-SEMANTICS ch. 3.6). */
+    private static List<Period> intersection(List<Period> a, List<Period> b) {
+        List<Period> out = new ArrayList<>();
+        for (Period p : a)
+            for (Period q : b) {
+                LocalDate from = later(p.from(), q.from()), to = earlier(p.to(), q.to());
+                if (from.isBefore(to)) out.add(new Period(from, to, null));
+            }
+        out.sort(Comparator.comparing(Period::from).thenComparing(Period::to));
+        return out;
+    }
+
+    /** The segments of {@code segments} cut at every day inside them where a segment of {@code timeline} begins or
+     *  ends, each piece with the value of its segment. */
+    private static List<Period> cutAt(Object segments, Object timeline) {
+        java.util.TreeSet<LocalDate> cuts = new java.util.TreeSet<>();
+        for (Period p : periodsOf(timeline)) {
+            cuts.add(p.from());
+            cuts.add(p.to());
+        }
+        List<Period> out = new ArrayList<>();
+        if (segments != null) for (Object o : (List<?>) segments) {
+            Period p = (Period) o;
+            LocalDate at = p.from();
+            for (LocalDate c : cuts.subSet(p.from(), false, p.to(), false)) {
+                out.add(new Period(at, c, p.value()));
+                at = c;
+            }
+            out.add(new Period(at, p.to(), p.value()));
+        }
+        return out;
+    }
+
+    private static LocalDate later(LocalDate a, LocalDate b) { return a.isAfter(b) ? a : b; }
+
+    private static LocalDate earlier(LocalDate a, LocalDate b) { return a.isBefore(b) ? a : b; }
 
     /**
      * {@code member}, a member on a timeline whose total over time is taken, where that total is the bare value times the
