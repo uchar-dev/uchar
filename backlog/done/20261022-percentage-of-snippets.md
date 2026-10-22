@@ -92,3 +92,9 @@ rgs-goldens bytegelijk), gate 2 PASS (364 bestanden), gate 16 PASS (35 scenario-
 PASS (29 TOKA-cases in ref, clingo en Drools). De volledige set (`werk/gates.sh`, `gates-1`, op `a0a3875e`): `EXIT 0`,
 alle zeventien groen; gate 12 speelt 271 goldens op beide takken (`EXPECTED_PLAYED` ongewijzigd), gate 17 vergelijkt 271
 goldens en 743 casebestanden.
+
+### Landing (hoofdsessie, 2026-10-22)
+
+`gates-1` op `a0a3875e` (de Result-commit erna raakt alleen deze kaart): alle zeventien groen, EXIT 0. Review: de
+bijvangst (een verworpen lezing laat haar diagnose niet meer achter, RGS-089 niet meer dubbel) is een bug met getuige
+en gaat mee. Geen CONSTRUCTS-rij: alleen de snippets veranderen, niet de wire-vorm.
