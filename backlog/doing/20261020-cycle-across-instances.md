@@ -149,3 +149,156 @@ ch. 5.3 met reden en getuige.*
    rekent een deel binnen zijn stratum per diepte en per diepte per niveau (de langste weg over de niet-verschoven
    interne randen, een strikte of negatieve rand telt één); Drools ordent niet en laat truth maintenance terugnemen
    (gemeten, zie Result).
+
+## Result (2026-10-22)
+
+Tak `card/cycle-across-instances`, vanaf `f4a55f8a`. Geraakt: `spec/verifier/lib/checks.ml`, `ref/lib/{case,eval}.ml`,
+`ref/test/test_ref.ml`, `backends/drools/` (`Cycles`, `TmsTranspiler`, `CaseInput`, `CaseRunner`, beide catalogi,
+`TmsCycleVerifierWitnessTest`), `scripts/check-drools.sh` (alleen `EXPECTED_PLAYED`), als voorstel `spec/IR-SPEC.md` en
+`spec/RUNTIME-SEMANTICS.md`, het corpus (één golden, acht negatieven, één rood geval) en deze kaart. Niet geraakt:
+`frontends/`, het IR-schema, `backends/clingo/` (de vertaling niet en de runner niet: de toets zit in de case-lezer die
+clingo met ref deelt), `CLAUDE.md`, `spec/PLAN.md`, `spec/CONSTRUCTS.md`, `toka/`.
+
+- `1fc679b3b` de kaart naar `doing/`.
+- `4a7d8c4e4` verifier: het pad per lezing, `instance_ordering`, WF-045/046/051 zonder verschoven randen; de golden en
+  de vijf negatieven van het advies.
+- `ae5093047` ref: de dieptevolgorde in `evaluate`, EF-033 in de gedeelde case-lezer, WV-6.4-i/j/k; het rode geval.
+- `051d4b2d3` Drools: `Cycles.orders`, EF-033 in `CaseInput`, de catalogi, `EXPECTED_PLAYED` 268, de witnesstest.
+- `2cf11ed01` spec-voorstel: IR-SPEC ch. 4.6, 5.2, 5.3 en de index; RUNTIME-SEMANTICS ch. 5.2, 5.7b, 6.1–6.4.
+- `e437b74a1` WV-6.4-l (defaults-groep op de kring), de indexrijen van WF-046/051, de alinea van ch. 5.5, de voorlopige
+  besluiten in deze kaart.
+- `420c44981` drie negatieven voor de clausules die ik aan het advies toevoegde (na gates-1, als fix).
+
+### Wat er is
+
+**Afbakening zoals gebouwd** (IR-SPEC ch. 5.3; de voorlopige besluiten hierboven). Een *schakelrelatie* R: twee rollen
+met vergelijkbare vullers, de rol die een stap bereikt (de voorganger) to-one, geen vorm die haar schakels schrijft,
+niet reciprook. Een *satellietrelatie* van T: een ander feittype met twee rollen, zonder schrijver, eigenaarsrol to-one
+en gevuld door een type vergelijkbaar met T, de andere rol door een type dat dat niet is. Het *pad* van een lezing: de
+bereiken van de vouwen waar zij in staat, dan haar eigen stappen. *Verschoven*: één stap over R naar de voorganger, dan
+hooguit één stap naar de satelliet, elke stap naar een to-one rol. *Lokaal*: geen stap, of één stap over een
+satellietrelatie heen of terug, naar een to-one rol. Een *instantiegeordend deel*: een sterk samenhangend deel van de
+hele graaf, zonder creatie van een recursieve groep, alleen regels en defaults-groepen, met ten minste één verschoven
+rand, alle verschoven lezingen over één R naar één rol, elke lezing achter een interne rand verschoven of lokaal, één
+satellietrelatie per satelliettype, en kringvrij zonder zijn verschoven randen. Die randen laten WF-045, WF-046 en
+WF-051 weg; `--dependency-edges` (gate 15) is ongewijzigd.
+
+**De acht negatieven**, elk WF-045 met `expect.txt` (`WF-045.dependency-cycle` plus `cycle=`). De vijf uit het advies
+zijn (op de vierde na) schoon met alleen die clausule versoepeld in het eigen document; de drie voor de eigen clausules
+(voorlopige besluiten 2–4) zijn schoon met alleen die clausule versoepeld in de verifier (alles gemeten):
+
+| negatief | clausule | schoon met |
+|---|---|---|
+| `wf045-instance-cycle-to-many-predecessor` | de rol naar de voorganger to-one (een som over alle vorige vergunningen) | `many: false` op de rol |
+| `wf045-instance-cycle-created-relation` | geen schrijver van R (een feitcreatie legt de schakels) | de feitcreatie weg |
+| `wf045-instance-cycle-shared-satellite` | eigenaarsrol to-one (een Termijn met meer houders) | `houder` to-one |
+| `wf045-instance-cycle-direct-and-shifted-read` | elke lezing van de knoop verschoven (de einddag leest ook het eigen restant) | — (de rand verschoven nemen laat een kring op één object door) |
+| `wf045-instance-cycle-to-many-satellite-step` | de stap na R to-one (een som over de termijnen van de voorganger) | `termijn` to-one |
+| `wf045-instance-cycle-non-local-read` | elke lezing achter een interne rand verschoven of lokaal (een som over alle Vergunningen van hetzelfde register) | die lezing als lokaal geteld |
+| `wf045-instance-cycle-predecessor-and-successor` | één rol (het saldo leest de voorganger, het overschot de opvolger) | elke stap over R verschoven, welke rol ook |
+| `wf045-instance-cycle-two-satellite-relations` | één satellietrelatie per satelliettype (een Termijn als lopende termijn van de een en reserve van de ander) | de toets uit |
+
+**De golden** `jutterswet-vergunningketen` (handgeschreven IR, gemaakt met de frontend via hulpattributen; `NOTE.md`
+met de bron en de handberekening): de einddag met de leeg-toets (R1) en de verlengde einddag in de positieve vorm over
+een satelliet Termijn; drie casussen, zonder voorganger, keten van twee (de casus van de kaart: einddag V2 03-03-2027),
+keten van drie in een volgorde die noch die van het bestand noch de alfabetische is (einddag derde 01-12-2027; de
+tweede zonder termijn, dus verlengde einddag derde 01-06-2027). Gate 3 rood ervoor (`g3-red.log`: WF-045 en WF-046 op
+de golden), groen erna.
+
+**ref.** De leden van een deel delen een stratum (randen op een kring tellen positief, zoals al); binnen dat stratum
+rekent ref per diepte d = 0, 1, … en per diepte per niveau l, de leden van niveau ≤ l op de objecten van diepte d en
+alle leden op de lagere dieptes, ieder tot hun fixpunt, en daarna het hele stratum nog eens. Diepte: 0 zonder
+voorganger, 1 + die van de voorganger, een satelliet op die van haar eigenaar, een gemaakt object 0; uit de
+invoerwereld. Zonder die volgorde gaf ref op een kenmerk op de kring ("zonder verlenging indien het restant van de
+vorige leeg is") EF-016 (gemeten met de volgorde uitgezet); met haar het antwoord van clingo. Ref-tests WV-6.4-i (het
+gewerkte voorbeeld van ch. 6.4, vier volgordes van regels en objecten, en zonder voorganger), -j (het kenmerk, twee
+volgordes), -k (EF-033 bij het laden), -l (een defaults-groep op de kring: "mag opgegeven worden").
+
+**clingo.** De vertaling verandert niet: de golden, -j en -l spelen ongewijzigd. De toets op de schakels zit in de
+case-lezer die ref en clingo delen (`Case.check_link_cycles`), dus vóór het gronden; gemeten zonder die toets: clingo na
+30 s nog aan het gronden, 2,2 GB, met de hand gestopt.
+
+**Drools.** `Cycles` draagt per lezing het pad en vindt de delen zoals de verifier (`orders`); de verschoven randen
+tellen niet mee in `cycles45` en `negations46`; de strata (alleen voor creaties) veranderen niet. Geen dieptevolgorde:
+truth maintenance trekt een waarde op een lege voorganger in zodra de voorganger staat. `CaseInput.of` weigert een
+kring in de schakels met `LinkCycleFault` (EF-033, `factType` en `cycle`), na de rollen, vóór de sessie; de red-run
+geeft `FAULT EF-033 {...}`; de catalogi hebben `EF-033` in beide talen. De golden speelt op beide takken PLAYED 3.
+
+**Volgorde in Drools, gemeten.** Alle 120 volgordes van de vijf regels van de golden en alle 24 van de vier regels van
+de kenmerk-probe (WV-6.4-j): beide takken PLAYED, ref en clingo PASS (`werk/bruggen/k12/order.log`); de probe ook met de
+objecten omgekeerd. `BranchDumpsCorpusWitnessTest` groen (beide rijen, met de golden en het rode geval). Geen vorm
+bleef volgordeafhankelijk, dus geen weigering bij naam nodig.
+
+**EF-033** in ch. 5.7b: kanaal `case input`, parameters `factType`, `cycle`, getuige `corpus/red/instance-order-link-cycle`
+(drie casussen: twee vergunningen, drie in een ongesorteerde kring, een eigen voorganger), in ref, clingo en Drools.
+
+### Gates
+
+De volledige set (`werk/gates.sh`), twee keer: `gates-1` op `e437b74a1`, EXIT 0; na de fix (drie negatieven) `gates-2`
+op `420c44981`, **EXIT 0** (2026-10-22 12:52–13:27), alle zeventien rc=0. Uit `gates-2`: gate 3 361 goldens en rode
+documenten schoon, 522 negatieven geweigerd op hun regel, 365 op hun arm; gate 5 1361 gewerkte voorbeelden (was 1343,
+plus WV-6.4-i/j/k/l), 859 casussen exact; gate 6 859 casussen ref ≡ clingo; gate 8 57 rode gevallen in ref en clingo, 34
+op de Drools-poot met hun code (EF-033 erbij); gate 12 PLAYED 268 op beide takken, de suite groen; gate 15 de randen
+ongewijzigd; gate 17 268 goldens op beide takken, 0 afwijkingen. Tussendoor los: gate 3 rood vóór de verifierwijziging
+(`g3-red.log`), `BranchDumpsCorpusWitnessTest` en `TmsCycleVerifierWitnessTest` alleen.
+
+### Meting 5 (geen bestand in de repository)
+
+De v2-regelset herleving-WW (fundament plus regels, 40 regels en 19 defaults-groepen), geëmitteerd met de frontend van
+deze tak: verifier PASS. Met de verlenging in de maxdatum van het recht (de berekende maxdatum plus de duurverlenging,
+de regel en het lid `verlengde maxdatum` weg, IR met de hand) weigert de verifier: WF-045 en WF-046. De kring is één
+deel van 17 vormen (maxdatum, beëindigingsdatum, herleving, herlevingstermijn, duurverlenging, resterende
+uitkeringsduur en hun groepen), de schakelrelatie `eerdere recht` wordt herkend en vier lezingen van de duurverlenging
+over het eerdere recht zijn verschoven, maar vier lezingen achter interne randen zijn noch verschoven noch lokaal:
+
+1. de herlevingsdatum en `vrijstelling op grond-van-leeftijd` van de eindigingsgronden van het recht (een vouw over een
+   to-many satellietstap, in "herlevingsdatum van het recht", "herleving" en "herlevingstermijn buiten toepassing");
+2. de beëindigingsdatum van het recht gelezen vanaf een inkomen in een kalendermaand (twee stappen: naar het inkomen en
+   terug naar het recht, in "eerste kalendermaand zonder overschrijding …");
+3. de beëindigingsdatum van een ander recht via de samenloop (twee stappen naar een ander object van hetzelfde type, in
+   "herleving").
+
+ref komt er dus niet aan toe (het herhaalt WF-045 bij het laden). Stap 6 van het advies (K12 en N13 vervallen) kan na
+deze kaart nog niet: daarvoor moet de afbakening ten minste vouwen over to-many satellieten (1) en de stap heen en terug
+naar dezelfde eigenaar (2) als lokaal tellen, en voor (3) is een normkeuze nodig (een lezing over de samenloop leest een
+object van een andere keten, dat de diepte niet ordent). Diagnose in `werk/bruggen/k12/m5/diag.txt`.
+
+### Vondsten
+
+1. **Drie gaten in de afbakening van het advies**, gedicht in deze kaart (voorlopige besluiten 2–4), elk met een
+   negatief: zonder de eis dat elke interne lezing verschoven of lokaal is laat de statische toets een echte kring per
+   object door (`wf045-instance-cycle-non-local-read`: een som over het register, dat ook de opvolger bevat); zonder
+   "één rol" ook (`…-predecessor-and-successor`); zonder "één satellietrelatie per satelliettype" kan een satelliet twee
+   eigenaars van verschillende diepte hebben (`…-two-satellite-relations`). Eerst na gates-1 gezien; daarom gates-2.
+2. **Bestaande test gewijzigd, met reden:** `TmsCycleVerifierWitnessTest.each_negative_document_of_wf045_wf046_and_wf051_is_refused`
+   telde 22 negatieven met een gelijkheid; het zijn er nu 30 (de acht nieuwe, alle geweigerd). Een test erbij:
+   `the_instance_ordered_cycle_is_admitted`.
+3. Geen bug buiten de kaart gevonden in spec, verifier, ref, clingo of Drools.
+
+### Wat niet gedaan, met reden
+
+- De frontend (`check` laat de kring toe, de golden een `source.rgs`): de kaart `check-admits-instance-cycle`.
+- Een golden voor WF-051 op de kring: de opdracht vraagt één golden; de defaults-groep staat als ref-test WV-6.4-l en
+  is in alle vier uitvoerders gemeten.
+- Een verzameling voorgangers, vouwen over satellieten, meer satellietstappen achter elkaar: latere uitbreidingen
+  (ch. 5.3), nodig voor meting 5 (zie boven).
+- Drools ordent niet naar diepte; truth maintenance volstaat op alle gemeten volgordes.
+
+### Voorgestelde CONSTRUCTS-rij (voor de hoofdsessie)
+
+| 45 | A value of an object that reads the same value of its predecessor — the instance-ordered cycle | statute rules that extend a right by what remains of the earlier one (art. 42b WW: the duration of a new right is extended by the remaining duration of the ended right); in RegelSpraak a rule over a fact type with two roles on one type, "het restant van de vorige vergunning van de Vergunning" | core | kernel: a second controlled exception to WF-045, beside recursive creation | v0 warns on a circular reference at build time and fires up to a cap; until this row v1 refused every such cycle (WF-045, and WF-046 where a leeg-test closes it). **Landed (2026-10-22, card `cycle-across-instances`; voorlopig besluit):** IR-SPEC ch. 5.3 defines the switch relation (two roles on comparable types, the predecessor's role to-one, no writer), the satellite relation, the path of a read, shifted and local reads and the instance-ordered part; WF-045, WF-046 and WF-051 walk the graph without its shifted edges, `--dependency-edges` unchanged. RUNTIME-SEMANTICS ch. 6.2: the members evaluate per object by depth in the chain and per depth by level; a cycle in the links is EF-033 at case input, in ref, clingo and Drools. Witnesses: golden `jutterswet-vergunningketen` (gates 3, 5, 6, 12, 17), eight `wf045-instance-cycle-*` negatives, red `instance-order-link-cycle`, `ref/` tests WV-6.4-i to -l | out: a set of predecessors, folds over satellites, two-step local reads and reads over another relation inside the cycle; the RegelSpraak frontend still refuses the form (card `check-admits-instance-cycle`) |
+
+### Voor de kaart `check-admits-instance-cycle`
+
+- De afbakening staat op één plek per uitvoerder: `instance_ordering` in `spec/verifier/lib/checks.ml` en `Cycles.orders`
+  in de Drools-backend. `Dependencies.java` moet precies dezelfde set toelaten: het pad per lezing (vouwbereik plus eigen
+  stappen), de klassen verschoven en lokaal, de zeven voorwaarden van een deel. De acht negatieven zijn de toets dat
+  `check` niets meer toelaat.
+- De golden is geëmitteerd met deze frontend en daarna met de hand gepatcht (hulpattributen weg, snippets aangepast,
+  `NOTE.md`); haar bron in `NOTE.md` hoort bytegelijk te emitteren zodra `check` de kring toelaat, maar gemeten is dat
+  niet.
+- Acceptatie (c) van die kaart (de v2-regelset met de verlenging in de maxdatum geeft `check` exit 0) haalt de
+  frontend niet zolang de verifier dat document weigert: meting 5 hierboven. Eerst een kaart die de afbakening
+  verruimt (punten 1 en 2), en een normkeuze voor 3.
+- De melding buiten de afbakening kan de reden noemen die de verifier nu niet noemt: welke lezing achter een interne
+  rand noch verschoven noch lokaal is (de diagnose van meting 5 laat zien dat dat de bruikbare informatie is).
