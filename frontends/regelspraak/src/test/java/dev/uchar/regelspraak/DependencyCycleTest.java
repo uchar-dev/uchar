@@ -27,6 +27,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * a recursive group is refused too since that day ({@code CreationRoleTest}); until then it passed, because a fact
  * creation wrote the population of its target type in the graph and so made a cycle that does not exist with an object
  * creation that counts members of that type (the last row, and {@code resolver.FactCreationEdgesTest}).
+ *
+ * <p>Since 2026-10-22 (card {@code check-admits-instance-cycle}) a cycle that only reads of the predecessor over a
+ * switch relation close is instance-ordered (IR-SPEC ch. 5.3): the verifier admits the restgewicht document and the
+ * meldtermijn document as they were written here (measured that day: {@code verifier: PASS} on the IR of both), and
+ * {@code check} admits them too. The first two tests pinned their refusal; they now pin the admission, and the
+ * refusal under WF-045 and WF-051 through a deviation stands on the same forms with the restermijn read on the own
+ * subject. A read that falls outside the instance-ordered cycle is refused with the read beside the cycle
+ * ({@code InstanceOrderedCycleTest}).
  */
 class DependencyCycleTest {
 
@@ -46,7 +54,7 @@ class DependencyCycleTest {
         Eén vondst heeft één vorige vondst
         """;
 
-    @Test void a_cycle_over_a_role_between_objects_of_a_type_is_refused() {
+    @Test void a_cycle_over_a_switch_relation_is_admitted_as_the_verifier_admits_it() {
         RegelSpraakModel m = Resolver.resolve(VONDST_WITH_PREVIOUS + """
 
             Regel restgewicht
@@ -58,17 +66,21 @@ class DependencyCycleTest {
                     Het bergingsgewicht van een Vondst moet gesteld worden op het restgewicht van de vorige vondst van de Vondst
                     indien het restgewicht van de vorige vondst van de Vondst groter is dan 0.
             """);
-        assertEquals(1, m.diagnostics.size(), () -> "verwachtte één diagnose, kreeg: " + m.diagnostics);
-        Diagnostic d = faults(m).get(0);
-        assertEquals("regel 'restgewicht' hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten "
-                + "een recursieve creatie (WF-045): dependency cycle through no recursive creation: restgewicht -> "
-                + "bergingsgewicht -> restgewicht", d.message());
-        assertEquals(11, d.line(), "de kop van de regel waar de kring sluit");
-        assertFalse(m.isOk());
+        // the bergingsgewicht reads the restgewicht of the predecessor only: a shifted read, so the cycle
+        // restgewicht -> bergingsgewicht -> restgewicht is ordered per object by its depth in the chain
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertTrue(m.isOk());
     }
 
-    @Test void a_cycle_through_a_deviation_refuses_under_wf045_and_wf051() {
-        RegelSpraakModel m = Resolver.resolve("""
+    @Test void a_cycle_through_a_deviation_over_a_switch_relation_is_admitted() {
+        RegelSpraakModel m = Resolver.resolve(MELDTERMIJN.replace("$verlenging",
+                "de restermijn van de vorige vondst van de Vondst"));
+        assertTrue(faults(m).isEmpty(), () -> "onverwachte fouten: " + m.diagnostics);
+    }
+
+    /** A deviation of the meldtermijn by the verlenging; the verlenging reads the restermijn named by
+     *  {@code $verlenging}. */
+    private static final String MELDTERMIJN = """
             Objecttype de Vondst (mv: Vondsten)
                 de meldtermijn Numeriek (geheel getal);
                 de restermijn Numeriek (geheel getal);
@@ -94,8 +106,12 @@ class DependencyCycleTest {
 
             Regel verlenging
                 geldig altijd
-                    De verlenging van een Vondst moet gesteld worden op de restermijn van de vorige vondst van de Vondst.
-            """);
+                    De verlenging van een Vondst moet gesteld worden op $verlenging.
+            """;
+
+    @Test void a_cycle_through_a_deviation_refuses_under_wf045_and_wf051() {
+        // the verlenging reads the restermijn of its own subject: no switch relation orders the cycle
+        RegelSpraakModel m = Resolver.resolve(MELDTERMIJN.replace("$verlenging", "zijn restermijn"));
         assertEquals(List.of(
                 "regel 'restermijn' hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een "
                         + "recursieve creatie (WF-045), en een kring draagt geen negatieve rand, zoals een ontkenning "

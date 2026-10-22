@@ -314,7 +314,11 @@ final class RuleChecker {
      * through an object creation outside a recursive group is refused like any other since 2026-10-06; until then it was
      * let through, because a fact creation wrote the population of its target type in the graph and so closed a cycle
      * that does not exist with an object creation that counts members of that type (the casus of the parity zone). One
-     * violation is refused once, where the verifier reports it twice over two edges of one pair. Runs last, on a model
+     * violation is refused once, where the verifier reports it twice over two edges of one pair. A cycle that only reads
+     * of the predecessor over a switch relation close is instance-ordered and admitted, as the verifier admits it
+     * (IR-SPEC ch. 5.3); where a read inside a cycle over a switch relation falls outside that scope, the refusal of the
+     * cycle gets a second one beside it that names the read, the clause and the switch relation, as the verifier's
+     * {@code WF-045.instance-read-outside} names the read: the author changes the read, not the forms. Runs last, on a model
      * without an ERROR: a model the emitter refuses has no document to judge, and that refusal is reported where the
      * document is written.
      */
@@ -328,7 +332,8 @@ final class RuleChecker {
         }
         Map<String, Object[]> sites = formSites(doc);
         Set<String> reported = new java.util.HashSet<>();
-        for (Dependencies.Cycle k : Dependencies.cycles(ir)) {
+        Dependencies.Findings found = Dependencies.find(ir);
+        for (Dependencies.Cycle k : found.cycles()) {
             if (!reported.add(k.wf() + " " + k.at() + " " + k.sentence())) continue;
             Dependencies.Form form = k.forms().get(0);
             String name = Dependencies.withoutVersion(form.name());
@@ -343,6 +348,14 @@ final class RuleChecker {
             else
                 error(cycleLine, "RGS-097",
                         params("kind", FORM_KIND.get(form.category()), "name", name, "wf", k.wf(), "sentence", k.sentence()));
+        }
+        // beside the cycle, the read that keeps a cycle over a switch relation from being instance-ordered: the cycle
+        // names the forms, this names the read the author has to change and the relation the cycle runs over
+        for (Dependencies.ReadOutside r : found.readsOutside()) {
+            Object[] site = sites.get(dev.uchar.regelspraak.emit.IrEmitter.norm(Dependencies.withoutVersion(r.form().name())));
+            error(site == null ? 0 : Integer.parseInt((String) site[1]), "RGS-357",
+                    params("clause", r.clause(), "factType", r.factType(), "form", r.form().name(), "node", r.node(),
+                            "path", r.path()));
         }
     }
 

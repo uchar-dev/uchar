@@ -3399,6 +3399,21 @@ documents of the corpus zones and the parity zone, five of them with a negative 
 on a cycle WF-045 admits, through a recursive creation, still passes `check`. Witnesses: `DependencyCycleTest`,
 `SelfReadCycleTest`, and the negative `wf046-characteristics-read-each-other-negation`.
 
+Since 2026-10-22 (card `check-admits-instance-cycle`) `Dependencies` keeps the path of every read of a rule and a
+defaults group, as the verifier's `dep_expr_at` does, and finds the instance-ordered parts of IR-SPEC ch. 5.3 as its
+`instance_ordering` finds them. A cycle that only reads of the predecessor over a switch relation close, with the
+reads inside it in the household of the object or of its predecessor, is admitted, and its shifted edges leave the
+walks of WF-045 and WF-051. Until then `check` refused such a cycle where the verifier admitted it: the source of the
+golden `jutterswet-vergunningketen` gave three ERRORs under WF-045, that of `jutterswet-vergunningtermijnen` five.
+Where a part over a switch relation falls on a clause of ch. 5.3, the refusal of the cycle gets RGS-357 beside it, at
+the head of the form that reads, with the parameters of the verifier's `WF-045.instance-read-outside` and the switch
+relation: "'blokkade' leest char:vergunning:openstand over [registratie/register; registratie/geregistreerde
+vergunning], en die lezing valt buiten de afbakening van de per object geordende kring over het feittype 'vorige
+vergunning' (clausule hub): …". Measured 2026-10-22 on 396 documents (the negatives of WF-045, WF-046 and WF-051, the
+goldens and the red cases): the WF-045 and WF-051 lines and the reads outside equal the verifier's. Witnesses:
+`InstanceOrderedCycleTest`, `resolver/InstanceOrderingWitnessTest` (the two goldens and the nine negatives
+`wf045-instance-cycle-*`), and the two goldens' `source.rgs` through gate 10.
+
 
 ## Bronvolgorde: what one rule reads of another does not depend on the order
 

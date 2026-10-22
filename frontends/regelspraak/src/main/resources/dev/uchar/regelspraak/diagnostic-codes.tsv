@@ -354,3 +354,4 @@ RGS-353	group-header-without-deeper-bullet	ERROR	header,next
 RGS-354	deeper-bullet-without-group-header	ERROR	bullet,previous
 RGS-355	bullet-returns-to-no-open-level	ERROR	bullet,reason
 RGS-356	two-bullet-sign-families	ERROR	other,sign
+RGS-357	instance-read-outside	ERROR	clause,factType,form,node,path
