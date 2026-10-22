@@ -3033,13 +3033,16 @@ final class ExpressionBuilder {
         // <onderwerp>", which walks a chain of to-one steps as any read does ("het taxatiebedrag van de taxatie van
         // de Vondst"); with no inner 'van' (one deel) V is the onderwerp built as a value, or a "Daarbij geldt"
         // variable it names. Until 2026-10-02 a V of more than one remaining deel stayed a marker.
+        // Each operand carries the text that writes it, so that a sentence naming the operands with their values
+        // names each once: P its name part without the sign (the sign is the function's, as in the '%' form), V
+        // the remaining delen with the onderwerp. Until 2026-10-22 both carried the sentence of the function.
         java.util.List<KaleNaamDeelContext> parts = a.attribuutMetLidwoord().kaleNaam().kaleNaamDeel();
         Parameter pct = percentageParameter(src(parts.get(0)));
         if (pct != null) {
             Expr v = parts.size() == 1 ? percentageBase(a.onderwerp())
                    : attributeRef(stripArticle(String.join(" van ",
                            parts.subList(1, parts.size()).stream().map(ExpressionBuilder::src).toList())),
-                           a.onderwerp(), source);
+                           a.onderwerp(), tailSource(parts.get(1), a));
             // §4.8 Tabel 18 requires a NUMERIEK right operand: only reinterpret as the percentage function when V is
             // a getalachtig value. This guards the name collision where the leftmost name is BOTH a Percentage
             // parameter AND a real attribute reachable through the onderwerp ("de korting van zijn bestelling", korting
@@ -3050,7 +3053,8 @@ final class ExpressionBuilder {
                 // declared decimal count (the same typing the '%' form uses, lines above).
                 Datatype t = v.type() instanceof Datatype.Numeric n
                         ? new Datatype.Numeric(false, 0, Datatype.Sign.ONBEPAALD, n.unit()) : unknown();
-                return new Expr.Binary(Expr.BinOp.PERCENTAGE_VAN, new Expr.ParameterRef(pct, source), v, t, source);
+                Source name = Source.of(parts.get(0), withoutPercentSign(src(parts.get(0))));
+                return new Expr.Binary(Expr.BinOp.PERCENTAGE_VAN, new Expr.ParameterRef(pct, name), v, t, source);
             }
         }
         return attributeRef(attr, a.onderwerp(), source);
@@ -3363,11 +3367,25 @@ final class ExpressionBuilder {
      *  "het percentage P van V" left operand. Null otherwise. §13.4.17.12 lets a '%' follow P, and the name parts
      *  take it as a word of their own ("percentage havengeld %"), so a trailing '%' is no part of the name. */
     private Parameter percentageParameter(String name) {
-        String withoutSign = name.replaceFirst("\\s*%$", "");
+        String withoutSign = withoutPercentSign(name);
         String stripped = stripArticle(withoutSign);
         Parameter p = model.parameters.get(stripped);
         if (p == null) p = model.parameters.get(withoutSign);
         return p != null && p.datatype() != null && p.datatype().isPercentage() ? p : null;
+    }
+
+    private static String withoutPercentSign(String name) {
+        return name.replaceFirst("\\s*%$", "");
+    }
+
+    /** The source of {@code ctx} from the start of {@code from}, a context inside it, to its end, whitespace collapsed
+     *  as {@link #src} collapses it, and empty where {@link #src} is empty: for an empty match. */
+    private static Source tailSource(ParserRuleContext from, ParserRuleContext ctx) {
+        org.antlr.v4.runtime.Token start = from.getStart(), stop = ctx.getStop();
+        if (start == null || stop == null || stop.getStopIndex() < start.getStartIndex()) return Source.of(from, "");
+        String text = start.getInputStream().getText(
+                org.antlr.v4.runtime.misc.Interval.of(start.getStartIndex(), stop.getStopIndex()));
+        return Source.of(from, text.replaceAll("\\s+", " ").trim());
     }
 
     /** The V of "het percentage P van V" when no name part follows P: the onderwerp built as a value, or a §11

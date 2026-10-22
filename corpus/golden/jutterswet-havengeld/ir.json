@@ -197,7 +197,7 @@
                   "node": "ParameterReference",
                   "parameter": "percentage havengeld",
                   "source": {
-                    "snippet": "het percentage havengeld van het taxatiebedrag van de taxatie van de Vondst"
+                    "snippet": "percentage havengeld"
                   }
                 },
                 "right": {
@@ -205,7 +205,7 @@
                   "attribute": "taxatiebedrag",
                   "subjectType": "Taxatie",
                   "source": {
-                    "snippet": "het percentage havengeld van het taxatiebedrag van de taxatie van de Vondst"
+                    "snippet": "het taxatiebedrag van de taxatie van de Vondst"
                   },
                   "path": [
                     {
@@ -415,7 +415,7 @@
                     "node": "ParameterReference",
                     "parameter": "percentage toeslag",
                     "source": {
-                      "snippet": "het percentage toeslag van het meerbedrag"
+                      "snippet": "percentage toeslag"
                     }
                   },
                   "right": {

@@ -123,6 +123,41 @@ class PercentageReadTest {
         assertEquals("Vondst", a.objectType().name);
     }
 
+    // ---- the source of each operand
+
+    /** P and Y carry the text that writes them, the percentage function the whole sentence. Until 2026-10-22 both
+     *  operands of the re-reading carried the sentence of the function, so a sentence that names the operands with
+     *  their values named the whole phrase twice; the '%' form and the parenthesised form already gave each operand
+     *  its own text. */
+    @Test void k_each_operand_carries_its_own_source() {
+        String navigated = "het taxatiebedrag van de taxatie van de Vondst";
+        List<String[]> rows = List.of(
+                new String[] {"het percentage havengeld van " + navigated, navigated},
+                new String[] {"het percentage havengeld % van " + navigated, navigated},
+                new String[] {"het percentage havengeld van zijn getaxeerde waarde", "zijn getaxeerde waarde"},
+                new String[] {"het percentage havengeld van de getaxeerde waarde van de Vondst",
+                        "de getaxeerde waarde van de Vondst"},
+                new String[] {"het percentage havengeld van (" + navigated + ")", navigated});
+        List<String> faults = new java.util.ArrayList<>();
+        for (String[] row : rows) {
+            Expr.Binary b = percentageOf(value(clean(havengeld(row[0]))));
+            List<String> got = List.of(b.source().snippet(), b.left().source().snippet(), b.right().source().snippet());
+            List<String> want = List.of(row[0], "percentage havengeld", row[1]);
+            if (!got.equals(want)) faults.add(row[0] + ": " + got + ", verwacht " + want);
+        }
+        Expr.Binary local = percentageOf(value(clean(MODEL + """
+            Regel havengeld
+                geldig altijd
+                    Het havengeld van een Vondst moet berekend worden als (het percentage havengeld van het getaxeerde bedrag) naar beneden afgerond op 2 decimalen.
+                    Daarbij geldt:
+                        het getaxeerde bedrag is het taxatiebedrag van de taxatie van de Vondst.
+            """)));
+        List<String> got = List.of(local.left().source().snippet(), local.right().source().snippet());
+        if (!got.equals(List.of("percentage havengeld", "het getaxeerde bedrag")))
+            faults.add("Daarbij geldt: " + got);
+        assertEquals(List.of(), faults);
+    }
+
     // ---- the forms that already resolved, unchanged
 
     @Test void e_an_own_member_stays_the_base() {
