@@ -4083,7 +4083,8 @@ final class RuleChecker {
         // so capture them whenever a meervoudigCriterium is present; only the bare-method `z` is branch-specific.
         if (z == null && mc != null) {
             if (mc.verdelenOverGroepen() == null) z = mc.verdelenZonderGroepen();
-            if (mc.verdeelAfronding() != null)
+            // a rounding ANTLR's recovery left without its number rounds nothing: the syntax error is reported
+            if (mc.verdeelAfronding() != null && mc.verdeelAfronding().NUMBER() != null)
                 try { roundDec = Integer.valueOf(mc.verdeelAfronding().NUMBER().getText()); }
                 catch (NumberFormatException ignore) {}
             if (mc.maximumAanspraak() != null && mc.maximumAanspraak().attribuutMetLidwoord() != null
@@ -4486,7 +4487,8 @@ final class RuleChecker {
     private void startPointAnchors(RegelSpraakDocumentContext doc) {
         for (ResultaatDeelContext rd : resultParts(doc)) {
             StartpuntBepalingContext sb = rd.startpuntBepaling();
-            if (sb == null) continue;
+            // a determination ANTLR's recovery left without its subject declares nothing: the syntax error is reported
+            if (sb == null || sb.universeelOnderwerp() == null) continue;
             String timelineName = RegelSpraakModel.normaliseTimelineName(src(sb.tijdlijnNaam()));
             ObjectType subject = model.resolveObjectType(src(sb.universeelOnderwerp().kaleNaam()));
             if (model.timelineByName(timelineName) == null || subject == null) continue;
@@ -4667,6 +4669,8 @@ final class RuleChecker {
      *  Datum in dagen (ERROR otherwise; Onbekend makes no claim), and a leeg value is a fout — the
      *  back-ends raise the §9.5 Inconsistentie for it (the write itself degrades to leeg). */
     private void startPointDetermination(String name, StartpuntBepalingContext sb, Condition condition, Validity validity) {
+        // a determination ANTLR's recovery left without its subject determines nothing: the syntax error is reported
+        if (sb.universeelOnderwerp() == null) return;
         int line = sb.getStart().getLine();
         String timelineName = RegelSpraakModel.normaliseTimelineName(src(sb.tijdlijnNaam()));
         RegelSpraakModel.Timeline timeline = model.timelineByName(timelineName);
@@ -4730,7 +4734,8 @@ final class RuleChecker {
         else if (rd.objectCreatie() != null) return builder.chainObjectType(rd.objectCreatie().onderwerpKeten());
         else if (rd.feitCreatie() != null) return builder.resolveSubject(rd.feitCreatie().onderwerp(0)); // the anker — so its voorwaarde (incl. a kenmerk) resolves
         else if (rd.startpuntBepaling() != null) // §13.4.12 — so "zijn <attribuut>" in the anchor + voorwaarde resolves
-            return model.resolveObjectType(src(rd.startpuntBepaling().universeelOnderwerp().kaleNaam()));
+            return rd.startpuntBepaling().universeelOnderwerp() == null ? null   // recovery left it without a subject
+                    : model.resolveObjectType(src(rd.startpuntBepaling().universeelOnderwerp().kaleNaam()));
         else if (rd.consistentieRegel() != null) {
             // §13.4.8 the subject-led samengestelde consistentieregel names its onderwerp ("Een Vondst moet
             // voldoen aan …"), so "zijn …" in its criteria resolves against it
@@ -5078,8 +5083,9 @@ final class RuleChecker {
     /** True iff some onderdeel in the subtree has direct bullets at non-uniform COLUMNS — the reliable signature of the
      *  indentation-blind grammar absorbing a dedented sibling from an outer level into a deeper list. */
     private static boolean columnsInconsistentDeep(SamengesteldeVoorwaardeOnderdeelContext component) {
-        List<GenesteVoorwaardeContext> gs = component.genesteVoorwaarde();
-        if (gs == null || gs.isEmpty()) return false;   // a childless nested header (malformed parse, ANTLR error-recovery) -> no absorption
+        // a nested header without a bullet list, or a childless one (malformed parse, ANTLR error-recovery) -> no absorption
+        List<GenesteVoorwaardeContext> gs = component == null ? null : component.genesteVoorwaarde();
+        if (gs == null || gs.isEmpty()) return false;
         int kol0 = gs.get(0).bullet().getStart().getCharPositionInLine();
         for (GenesteVoorwaardeContext g : gs) {
             if (g.bullet().getStart().getCharPositionInLine() != kol0) return true;
@@ -5297,7 +5303,9 @@ final class RuleChecker {
     /** §13.4.8 samengestelde consistentie-criteria → a {@link Condition.Compound} over the criteria. */
     private Condition buildCriteria(ConsistentieKwantificatieContext k, SamengesteldCriteriumOnderdeelContext component, Source source) {
         List<Condition> components = new ArrayList<>();
-        for (GenestCriteriumContext g : component.genestCriterium()) components.add(buildCriterion(g));
+        // a criteria header ANTLR's recovery left without its bullet list has no criteria: the syntax error is reported
+        if (component != null)
+            for (GenestCriteriumContext g : component.genestCriterium()) components.add(buildCriterion(g));
         return new Condition.Compound(quantifierConsistency(k), k == null ? 0 : numeralValue(k.telwoord()), components, source);
     }
 

@@ -720,7 +720,9 @@ public final class DefinitionResolver {
             // and the first declaration stands
             if (refuseRepeatedAbbreviation(system.name, abbr.isEmpty() ? List.of(primary) : abbr, written, u)) continue;
             java.math.BigDecimal n = null; UnitSystem.Factor exact = null; String to = null;
-            if (u.omrekenSpecificatie() != null) {                       // "= 12 mnd" or "= 1/1000 m"
+            // a conversion ANTLR's recovery left without its number has none: the syntax error is reported, and reading
+            // the missing token crashed the resolution before it was
+            if (u.omrekenSpecificatie() != null && u.omrekenSpecificatie().NUMBER() != null) {  // "= 12 mnd" or "= 1/1000 m"
                 String number = u.omrekenSpecificatie().NUMBER().getText();
                 n = rational(number, primary);
                 if (n != null) exact = exactFactor(number);
@@ -913,6 +915,7 @@ public final class DefinitionResolver {
             return calendarEmpty(dev.uchar.regelspraak.core.FixedStartPoint.canonical(g, 1, day));
         }
         if (quarter != null) {
+            if (quarter.kwartaalGroep() == null) return null;   // ANTLR's recovery left no months: the syntax error is reported
             List<Integer> months = quarter.kwartaalGroep().NUMBER().stream().map(n -> wholeNumber(n)).toList();
             Integer first = months.get(0);
             if (first == null || first < 1 || first > 3
@@ -947,6 +950,7 @@ public final class DefinitionResolver {
     /** The day of a §13.3.6.3 "startend op &lt;datum&gt;", or null after refusing a source that names none: a periode
      *  starts on a day, so a time of day has no place in it, and a bare number or an impossible date names no day. */
     private java.time.LocalDate startDate(VastStartpuntDatumContext date) {
+        if (date.datumWaarde() == null) return null;   // ANTLR's recovery left no date: the syntax error is reported
         TerminalNode d = date.datumWaarde().DATE();
         java.util.regex.Matcher m = d == null ? null : START_DATE.matcher(d.getText());
         if (m != null && !m.matches() && d.getText().contains(":"))

@@ -15,11 +15,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * The properties of the semantic-token output that hold for every input (grammar/DIVERGENCES.md, "Semantic tokens"),
  * checked from the outside: the text of each span is the source text at its position, counted in UTF-16 code units;
- * spans do not overlap and carry no whitespace at their edges; every character outside whitespace lies in a span; every
- * token of the lexer lies in exactly one span; and every reference points at a span that is a declaration of the same
- * kind. The tokens are lexed here again, over the same chain of files the frontend reads, so the check does not share
- * the frontend's own reading of them. A decision-table row is one token of the lexer that the frontend splits into its
- * cells; for such a row the character check is the one that holds.
+ * spans do not overlap and carry no whitespace at their edges; every
+ * token of the lexer lies in exactly one span, each of its characters outside whitespace in a span; and every
+ * reference points at a span that is a declaration of the same kind. The tokens are lexed here again, over the same
+ * chain of files the frontend reads, so the check does not share the frontend's own reading of them. A decision-table
+ * row is one token of the lexer that the frontend splits into its cells; for such a row the character check is the one
+ * that holds. A character the lexer cannot read is no token (a syntax error says so) and lies in no span.
  */
 final class SemanticTokensCheck {
 
@@ -49,13 +50,15 @@ final class SemanticTokensCheck {
                 previousEnd = end;
                 for (int k = start; k < end; k++) owner[k] = i;
             }
-            for (int k = 0; k < text.length(); k++) {
-                if (Character.isWhitespace(text.charAt(k)) || owner[k] >= 0) continue;
-                int line = line(lineStart, k);
-                fail("character '" + text.charAt(k) + "' at " + fs.file() + ":" + line + ":" + (k - lineStart[line - 1])
-                        + " lies in no span");
-            }
-            for (int[] token : tokens(files, f)) {
+            List<int[]> tokens = tokens(files, f);
+            for (int[] token : tokens)
+                for (int k = token[0]; k < token[1]; k++) {
+                    if (Character.isWhitespace(text.charAt(k)) || owner[k] >= 0) continue;
+                    int line = line(lineStart, k);
+                    fail("character '" + text.charAt(k) + "' at " + fs.file() + ":" + line + ":" + (k - lineStart[line - 1])
+                            + " lies in no span");
+                }
+            for (int[] token : tokens) {
                 if (token[2] == RegelSpraakLexer.TABEL_RIJ) continue;
                 int span = owner[token[0]];
                 for (int k = token[0]; k < token[1]; k++)
