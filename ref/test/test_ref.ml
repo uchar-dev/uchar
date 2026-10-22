@@ -9540,6 +9540,105 @@ let () =
           check tag (Case.check c (evaluate c) = [])))
     [ [ 0; 1; 2 ]; [ 2; 1; 0 ] ]
 
+(* WV-6.4-m: a fold over the own satellites on the instance-ordered cycle (IR-SPEC
+   ch. 5.3, the household of an object). A Vergunning has several termijnen; the
+   overschot of a Termijn is the days from the verlengde einddag of its houder to
+   its einddag when that is later, the restant of a Vergunning is the sum of the
+   overschotten of its termijnen (a local read: every termijn stands at the depth
+   of its houder, however many there are), and the verlengde einddag is the
+   basiseinddag plus the restant of the vorige vergunning (a shifted read). V1
+   (basiseinddag 01-06-2026, termijnen T1 to 11-06-2026 and T2 to 21-06-2026, no
+   predecessor) and V2 (basiseinddag 01-12-2026, vorige vergunning V1, termijn T3
+   to 10-01-2027): verlengde einddag V1 01-06-2026, overschot T1 10 and T2 20,
+   restant V1 30, verlengde einddag V2 31-12-2026, overschot T3 10, restant V2
+   10, in every order of the three rules tried and of the objects in the case.
+   Until the card instance-cycle-household-reads the verifier refused the
+   document: the fold reached a to-many role. *)
+let wv64_household =
+  {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vergunning",
+"animate":false,"plural":"Vergunningen","attributes":[{"node":"Attribute","name":"basiseinddag",
+"datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"verlengde einddag",
+"datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"restant",
+"datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}}],
+"characteristics":[]},{"node":"ObjectType","name":"Termijn","animate":false,"plural":"Termijnen",
+"attributes":[{"node":"Attribute","name":"einddag","datatype":{"node":"Date","precision":"day"}},
+{"node":"Attribute","name":"overschot","datatype":{"node":"Number","whole":true,"decimals":0,
+"sign":"unspecified","unit":{"node":"Unit","abbreviation":"dg","system":"Tijd","canonical":"dg",
+"factorToCanonical":{"num":1,"den":1}}},"plural":"overschotten"}],"characteristics":[]}],
+"factTypes":[{"node":"FactType","name":"vorige vergunning","reciprocal":false,
+"roles":[{"node":"Role","name":"vergunning","objectType":"Vergunning","many":false},{"node":"Role",
+"name":"vorige vergunning","objectType":"Vergunning","many":false}]},{"node":"FactType",
+"name":"vergunningstermijn","reciprocal":false,"roles":[{"node":"Role","name":"houder",
+"objectType":"Vergunning","many":false},{"node":"Role","name":"termijn","objectType":"Termijn",
+"plural":"termijnen","many":true}]}],"parameters":[],"domains":[],
+"unitSystems":[{"node":"UnitSystem","name":"Tijd","units":[{"node":"Unit","abbreviation":"dg",
+"system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1},"spellings":["dag"]}]}],
+"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"overschot",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"overschot","subjectType":"Termijn"},"value":{"node":"BuiltinCall","kind":"duration",
+"arguments":[{"node":"AttributeReference","attribute":"verlengde einddag","subjectType":"Vergunning",
+"path":[{"node":"RoleBinding","factType":"vergunningstermijn","role":"houder"}]},
+{"node":"AttributeReference","attribute":"einddag","subjectType":"Termijn"}],"type":{"node":"Number",
+"whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit","abbreviation":"dg",
+"system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}},
+"condition":{"node":"Comparison","op":"earlier","left":{"node":"AttributeReference",
+"attribute":"verlengde einddag","subjectType":"Vergunning","path":[{"node":"RoleBinding",
+"factType":"vergunningstermijn","role":"houder"}]},"right":{"node":"AttributeReference",
+"attribute":"einddag","subjectType":"Termijn"}},"initialisation":false,
+"presentation":"calculation"}]},{"node":"Rule","name":"restant",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"restant","subjectType":"Vergunning"},"value":{"node":"Aggregation","kind":"sum",
+"arguments":[{"node":"AttributeReference","attribute":"overschot","subjectType":"Termijn"}],
+"elementType":"Termijn","sourceRole":{"node":"RoleBinding","factType":"vergunningstermijn",
+"role":"termijn"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified",
+"unit":{"node":"Unit","abbreviation":"dg","system":"Tijd","canonical":"dg",
+"factorToCanonical":{"num":1,"den":1}}}},"initialisation":false,"presentation":"calculation"}]},
+{"node":"Rule","name":"verlengde einddag","versions":[{"validity":{"node":"Validity"},
+"target":{"node":"AttributeReference","attribute":"verlengde einddag","subjectType":"Vergunning"},
+"value":{"node":"Binary","op":"plus","left":{"node":"AttributeReference","attribute":"basiseinddag",
+"subjectType":"Vergunning"},"right":{"node":"AttributeReference","attribute":"restant",
+"subjectType":"Vergunning","path":[{"node":"RoleBinding","factType":"vorige vergunning",
+"role":"vorige vergunning"}]},"type":{"node":"Date","precision":"day"}},"initialisation":false,
+"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],
+"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],
+"ruleGroups":[]},"diagnostics":[]}|}
+
+let () =
+  let case_data ~reversed =
+    let instances =
+      [
+        {|{"label": "V1", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-06-01"}}, "roles": {}, "characteristics": []}|};
+        {|{"label": "T1", "objectType": "Termijn", "attributes": {"einddag": {"date": "2026-06-11"}}, "roles": {"houder": ["V1"]}, "characteristics": []}|};
+        {|{"label": "T2", "objectType": "Termijn", "attributes": {"einddag": {"date": "2026-06-21"}}, "roles": {"houder": ["V1"]}, "characteristics": []}|};
+        {|{"label": "V2", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-12-01"}}, "roles": {"vorige vergunning": ["V1"]}, "characteristics": []}|};
+        {|{"label": "T3", "objectType": "Termijn", "attributes": {"einddag": {"date": "2027-01-10"}}, "roles": {"houder": ["V2"]}, "characteristics": []}|};
+      ]
+    in
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s], "parameters": {}}, "expected": [
+         {"kind": "attributeValue", "label": "V1", "attribute": "verlengde einddag", "value": {"date": "2026-06-01"}},
+         {"kind": "attributeValue", "label": "T1", "attribute": "overschot", "value": {"number": "10"}},
+         {"kind": "attributeValue", "label": "T2", "attribute": "overschot", "value": {"number": "20"}},
+         {"kind": "attributeValue", "label": "V1", "attribute": "restant", "value": {"number": "30"}},
+         {"kind": "attributeValue", "label": "V2", "attribute": "verlengde einddag", "value": {"date": "2026-12-31"}},
+         {"kind": "attributeValue", "label": "T3", "attribute": "overschot", "value": {"number": "10"}},
+         {"kind": "attributeValue", "label": "V2", "attribute": "restant", "value": {"number": "10"}},
+         {"kind": "consistent"}]}|}
+      (String.concat ", " (if reversed then List.rev instances else instances))
+  in
+  List.iter
+    (fun (order, reversed) ->
+      with_instance_case wv64_household ~order (case_data ~reversed) (fun violations load evaluate ->
+          let tag =
+            Printf.sprintf "WV-6.4-m-%s%s" (String.concat "" (List.map string_of_int order))
+              (if reversed then "-reversed" else "")
+          in
+          check (tag ^ "-verifier-clean") (violations = []);
+          let c = load () in
+          check tag (Case.check c (evaluate c) = [])))
+    [ ([ 0; 1; 2 ], false); ([ 2; 1; 0 ], false); ([ 1; 2; 0 ], true); ([ 2; 0; 1 ], true) ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

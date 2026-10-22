@@ -8912,18 +8912,26 @@ the next case. The definitions, all read off the document:
   whose roles is filled by a type comparable with T and is to-one (the
   owner's role: a satellite belongs to at most one object of T), and whose
   other role is filled by a type not comparable with T (the satellite).
+- The **household** of an object X of T is X with its satellites over the
+  satellite relations of T *(since 2026-10-22, voorlopig besluit B2.1, card
+  `instance-cycle-household-reads`)*. Every member stands at the depth of X
+  (`RUNTIME-SEMANTICS.md` ch. 6.2): a satellite has one owner, by the owner's
+  to-one role and by the clause "one satellite relation per satellite type"
+  below. A **household hop** is a hop over a satellite relation of T: to the
+  satellite, to-one or to-many (a to-many hop stands only as the range of a
+  fold or a quantifier; WF-053 refuses it in a scalar read), or back to the
+  owner (to-one by definition).
 - The **path** of a read is the list of role bindings from the subject of
   the form to the object the read lands on: the ranges (`sourceRole`,
   `sourcePath`) of the folds it sits in, then its own hops (`path` of an
   attribute reference, `navigation` of a characteristic check). An own read
   has the empty path.
-- A read is **shifted** when its path is one hop over a switch relation to
-  the predecessor's role, followed by at most one hop over a satellite
-  relation of T to the satellite, every hop reaching a to-one role: it
-  lands on the predecessor or on its one satellite. A read is **local**
-  when its path is empty or one hop over a satellite relation of T, in
-  either direction, reaching a to-one role: it lands on the object, its
-  satellite or its owner.
+- A read is **local** when its path is zero or more household hops from the
+  subject, an object of T or a satellite: it lands in the household of the
+  subject. A read is **shifted** when its path is at most one hop to the
+  owner (where the subject is a satellite), then one hop over a switch
+  relation to the predecessor's role, then zero or more household hops: it
+  lands in the household of the predecessor.
 - A **shifted edge** is an edge p → c whose node c reads only in shifted
   reads. Where c reads the node shifted and also otherwise (directly, or
   over another relation), the edge is an ordinary one.
@@ -8947,9 +8955,7 @@ relation). Without the owner's to-one role a satellite is shared, and the
 depth of one object does not order what another object's restant feeds into
 it: `wf045-instance-cycle-shared-satellite`. Without "only shifted" a direct
 read rides along on an edge the walk leaves out, and the object reads itself:
-`wf045-instance-cycle-direct-and-shifted-read`. Without the to-one hops of a
-shifted read the read lands on a set: `wf045-instance-cycle-to-many-satellite-step`
-(a fold over the termijnen of the predecessor). Each of these witnesses but
+`wf045-instance-cycle-direct-and-shifted-read`. Each of these witnesses but
 the fourth is verifier-clean with that one clause relaxed in its document
 (measured 2026-10-22); the fourth closes a cycle on one object, which no order
 of the objects breaks. Three clauses go beyond the review that proposed the
@@ -8962,15 +8968,91 @@ read the saldo of its own successor). Without "one role" the reads walk to the
 predecessor and to the successor: `wf045-instance-cycle-predecessor-and-successor`.
 Without "one satellite relation per satellite type" a satellite has two
 owners: `wf045-instance-cycle-two-satellite-relations` (a Termijn that is the
-lopende termijn of one Vergunning and the reserve of another). A set of
-predecessors (depth one more than the deepest) and a set of satellites of the
-predecessor are sound and left to a later decision; "local" is narrowed in the
-same way: a fold over the satellites of the object itself, or a hop to a
-satellite and back to its owner, is no local read yet. The clean witness is the golden
+lopende termijn of one Vergunning and the reserve of another).
+
+**The household** *(voorlopig besluit 2026-10-22, B2.1 and B2.2, card
+`instance-cycle-household-reads`)*. Until that card every hop of a shifted
+or local read had to reach a to-one role, and a local read took at most one
+hop. The cardinality on the satellite's side does not matter for the order:
+every satellite of an object stands at its depth, so a fold or a quantifier
+over the satellites of the object or of its predecessor, and a hop to a
+satellite and back to its owner, land in a household whose depth is the
+object's or the predecessor's. Within a depth the levels order the rest: a
+fold over the own satellites is an internal edge that is not shifted, so the
+satellites' members stand a level lower and are settled before the owner's
+member reads them. The witness of the old clause,
+`wf045-instance-cycle-to-many-satellite-step` (a fold over the termijnen of
+the predecessor), is removed with reason (`corpus/negative/README.md`).
+Outside stay, each with its reason:
+
+- **a hub**: a relation whose role on the side of T is to-many (a Register
+  of Vergunningen, a Samenloop of rights; a satellite shared by several
+  owners is one). A read over a hub reaches other objects of T, the
+  successor of the subject among them, which the depth does not order.
+  Measured 2026-10-22 on `wf045-instance-cycle-hub-negation` (the blokkade of
+  a Vergunning holds when a Vergunning of its register has the openstand,
+  which holds when its einddag is leeg, which holds when its vorige
+  vergunning has the blokkade): on a chain of two in one register the ASP
+  backend's program has two stable models, one with the blokkade and a leeg
+  einddag and one without. Witnesses beside it:
+  `wf045-instance-cycle-non-local-read` and
+  `wf045-instance-cycle-shared-satellite`. No test per case on the links of
+  the hub replaces the clause: such a test reads the conditions blind and
+  refuses cases whose model is unique as well.
+- **a satellite of a satellite**: its depth would be derivable (that of the
+  owner of its owner), but the order reads the depth of a satellite over the
+  one hop to its owner, and "one satellite relation per satellite type" is a
+  clause over the relations of T:
+  `wf045-instance-cycle-satellite-of-satellite`, verifier-clean with such a
+  hop counted as a household hop (measured 2026-10-22).
+- **two steps over the switch relation**: the read lands at depth d − 2,
+  which is sound and which no statute rule needs yet.
+- **a set of predecessors**: depth one more than the deepest, sound and left
+  to a later decision (`wf045-instance-cycle-to-many-predecessor`).
+
+**The refusal names the read** *(voorlopig besluit 2026-10-22, B2.3)*. A
+strongly connected part of rules and defaults groups without a creation of a
+recursive group, whose reads behind its internal edges walk a switch
+relation (a path that starts with a hop over one, or with a hop to the owner
+and then one), and that is no instance-ordered part because of a read, gets
+beside its WF-045 cycle one violation per read that is neither shifted nor
+local: `WF-045.instance-read-outside`, at the form that reads, with the
+parameters `form` (the name of the form), `node` (the node of ch. 5.1),
+`path` (the hops of the path as `factType/role`, joined by `; `) and
+`clause`, the first clause the path falls on:
+
+| clause | the read |
+|---|---|
+| `hub` | crosses a relation whose role on the side of T is to-many |
+| `satellite-of-satellite` | hops from a satellite to a type not comparable with T |
+| `two-switch-steps` | hops over a switch relation after its step to the predecessor |
+| `set-of-predecessors` | hops to a to-many role filled by a type comparable with T |
+| `one-walk` | the part's reads walk more than one switch relation or role; every read that walks one is named |
+| `one-satellite-relation` | walks a satellite relation whose satellite type the part reaches over another relation as well |
+| `shifted-or-local` | any other hop: a relation that a form writes, a reciprocal relation, a hop over the switch relation after a household hop other than the one hop to the owner, a read without a written path |
+
+The clauses of the part as a whole (at least one shifted edge, acyclic
+without the shifted edges, only rules and defaults groups, no recursive
+creation) name no read and give no such violation, and neither does a part
+whose reads walk no switch relation (`wf045-instance-cycle-to-many-predecessor`,
+`wf045-instance-cycle-created-relation`). The witnesses that pin the arm:
+`wf045-instance-cycle-hub-negation`, `-non-local-read` and
+`-shared-satellite` (`hub`), `-satellite-of-satellite`,
+`-predecessor-and-successor` (`one-walk`) and `-two-satellite-relations`
+(`one-satellite-relation`). The Drools backend, which does not run the verifier,
+refuses the same documents and names the same reads, paths and clauses.
+
+The clean witnesses are the goldens
 `corpus/golden/jutterswet-vergunningketen`: the einddag with a leeg-test on
 the predecessor's restant, and the verlengde einddag in the positive form,
-over a satellite Termijn, in a chain of one, two and three Vergunningen;
-`ref/`, the ASP backend and both Drools branches answer its pinned values.
+over a satellite Termijn, in a chain of one, two and three Vergunningen; and
+`corpus/golden/jutterswet-vergunningtermijnen`: the restant as a sum over the
+own to-many termijnen with a filter that reads the verlengde einddag of the
+houder of the termijn, a quantifier `all` over the own termijnen that reads
+the same, and the verlengde einddag as the basiseinddag plus the sum over the
+termijnen of the vorige vergunning, in chains of one, two and three with zero
+to three termijnen. `ref/`, the ASP backend and both Drools branches answer
+their pinned values.
 
 *Cost:* none. Measured 2026-10-22 over every corpus and parity-zone document,
 the verifier's reports and its `--dependency-edges` (gate 15) are byte-equal
@@ -9550,7 +9632,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-042 | time window: ≥ 1 bound; bounds are dates, either precision | gate 3 | `jutterswet-vormenkabinet` (the vanaf window) | `wf042-empty-window` |
 | WF-043 | whole-period qualifier only on a time-dependent operand | gate 3 | `jutterswet-keurploeg` (whole-year over the `month`-granular keurvergoeding) + `jutterswet-sleepvloot` (the negated one) | `wf043-wholeperiod-nontemporal` |
 | WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural — gate 8 (`scripts/check-red.sh`): the two mandatory executors must both fault, pinned by `expectedFault {code, params}`: the fault kind EF-019 and its parameters, never a fragment of text. The Drools leg (decision V3-b) holds a Drools fault to the same pin only where the v0 backend carries the red-path form; where it does not, the gate lists the case with a reason (a reason-carrying exclusion list, stale-guarded) | `corpus/red/wf044-unresolved-reached` (the red witness: ref faults the evaluation, the ASP backend the translation; the Drools leg holds it to the same pin) | n/a (the marker is legal wire content; the fence is behavioural, not well-formedness) |
-| WF-045 | dependency graph acyclic (creation recursion excepted; since *2026-10-22* the instance-ordered cycle as well, ch. 5.3: a value of an object that reads the same value of its predecessor over a switch relation whose links are the case's, evaluated per object by its depth in the chain, a cycle in the chain refused at load as EF-033) — over the CHAIN-CLOSED node identity of ch. 5.1 since *2026-09-12*, and the three write positions do NOT close alike: a population write closes upward, a member write by a form that ITERATES a type closes over the ⊑-comparable types in both directions, a member write by an OBJECT CREATION closes upward only (it fills the one instance it mints, and creation is not polymorphic), and reads stay literal. Until then both keyed on the written type name alone, which made the rule's promise false of every model with a supertype: the two witnesses below were verifier-clean and diverged in the reference interpreter, which is the last line of defence and reports `no fixpoint within 100 passes` — loud, but naming neither the rule nor the type. The boundary is measured and narrow: a subtype creation is not itself refused (the mirror creation, from subtype subject to supertype, and a creation sideways into a chain both stay clean, as does either inside a guarded recursive group), and two INCOMPARABLE subtypes stay two nodes. Cost: none, and not vacuously so — counted 2026-09-12, the closure widens a write in **9** corpus documents and not one of them gains a cycle, and a tenth — `jutterswet-wrakboeking` — exists precisely because the closure must NOT widen there (gate 3: 209 verifier-clean documents before, 210 after, the one arrival being that witness; gate 11's parity zone unchanged) | gate 3 | `jutterswet-vondsttelling`; the chain-closed reading's own clean witnesses are `anchor/jutterswet-strandrechtketen` and `golden/jutterswet-wrakrecht`, which write ONE inherited attribute from BOTH spellings (a rule at the ancestor, defaults groups at each), `golden/jutterswet-hoofdberging`, whose allocation writes an inherited target attribute from the subtype, `golden/jutterswet-zustervondst`, where a write at the parent reaches TWO incomparable children and they still do not reach each other, and `golden/jutterswet-wrakboeking`, the creation arm's own witness — a creation that mints its own SUPERTYPE and fills an inherited attribute, which the both-directions reading turns into a WF-045 refusal on a model with no cycle in it (measured 2026-09-12, both readings, with ref declining and clingo answering under the wrong one), replayed by gates 5, 6 and 12; the instance-ordered cycle's is `golden/jutterswet-vergunningketen` (a leeg-test on the predecessor and the positive form over a satellite, chains of one, two and three), replayed by gates 5, 6, 12 and 17 | `wf045-cyclic-attribute-dependency` (one type, one spelling) + `wf045-subtype-creation-cycle` (the population arm) + `wf045-inherited-attribute-spelling-cycle` (the member arm) — the three fall independently: a graph keyed on the written name catches only the first; for the instance-ordered cycle one per clause, `wf045-instance-cycle-to-many-predecessor`, `wf045-instance-cycle-created-relation`, `wf045-instance-cycle-shared-satellite`, `wf045-instance-cycle-direct-and-shifted-read`, `wf045-instance-cycle-to-many-satellite-step`, `wf045-instance-cycle-non-local-read`, `wf045-instance-cycle-predecessor-and-successor` and `wf045-instance-cycle-two-satellite-relations` (ch. 5.3) |
+| WF-045 | dependency graph acyclic (creation recursion excepted; since *2026-10-22* the instance-ordered cycle as well, ch. 5.3: a value of an object that reads the same value of its predecessor over a switch relation whose links are the case's, evaluated per object by its depth in the chain, a cycle in the chain refused at load as EF-033) — over the CHAIN-CLOSED node identity of ch. 5.1 since *2026-09-12*, and the three write positions do NOT close alike: a population write closes upward, a member write by a form that ITERATES a type closes over the ⊑-comparable types in both directions, a member write by an OBJECT CREATION closes upward only (it fills the one instance it mints, and creation is not polymorphic), and reads stay literal. Until then both keyed on the written type name alone, which made the rule's promise false of every model with a supertype: the two witnesses below were verifier-clean and diverged in the reference interpreter, which is the last line of defence and reports `no fixpoint within 100 passes` — loud, but naming neither the rule nor the type. The boundary is measured and narrow: a subtype creation is not itself refused (the mirror creation, from subtype subject to supertype, and a creation sideways into a chain both stay clean, as does either inside a guarded recursive group), and two INCOMPARABLE subtypes stay two nodes. Cost: none, and not vacuously so — counted 2026-09-12, the closure widens a write in **9** corpus documents and not one of them gains a cycle, and a tenth — `jutterswet-wrakboeking` — exists precisely because the closure must NOT widen there (gate 3: 209 verifier-clean documents before, 210 after, the one arrival being that witness; gate 11's parity zone unchanged) | gate 3 | `jutterswet-vondsttelling`; the chain-closed reading's own clean witnesses are `anchor/jutterswet-strandrechtketen` and `golden/jutterswet-wrakrecht`, which write ONE inherited attribute from BOTH spellings (a rule at the ancestor, defaults groups at each), `golden/jutterswet-hoofdberging`, whose allocation writes an inherited target attribute from the subtype, `golden/jutterswet-zustervondst`, where a write at the parent reaches TWO incomparable children and they still do not reach each other, and `golden/jutterswet-wrakboeking`, the creation arm's own witness — a creation that mints its own SUPERTYPE and fills an inherited attribute, which the both-directions reading turns into a WF-045 refusal on a model with no cycle in it (measured 2026-09-12, both readings, with ref declining and clingo answering under the wrong one), replayed by gates 5, 6 and 12; the instance-ordered cycle's are `golden/jutterswet-vergunningketen` (a leeg-test on the predecessor and the positive form over a satellite, chains of one, two and three) and, since *2026-10-22* (card `instance-cycle-household-reads`, the household of ch. 5.3), `golden/jutterswet-vergunningtermijnen` (folds and a quantifier over the own to-many termijnen, the hop to a termijn and back to its houder, a fold over the termijnen of the predecessor), replayed by gates 5, 6, 12 and 17 | `wf045-cyclic-attribute-dependency` (one type, one spelling) + `wf045-subtype-creation-cycle` (the population arm) + `wf045-inherited-attribute-spelling-cycle` (the member arm) — the three fall independently: a graph keyed on the written name catches only the first; for the instance-ordered cycle one per clause, `wf045-instance-cycle-to-many-predecessor`, `wf045-instance-cycle-created-relation`, `wf045-instance-cycle-shared-satellite`, `wf045-instance-cycle-direct-and-shifted-read`, `wf045-instance-cycle-non-local-read`, `wf045-instance-cycle-predecessor-and-successor`, `wf045-instance-cycle-two-satellite-relations`, `wf045-instance-cycle-hub-negation` and `wf045-instance-cycle-satellite-of-satellite` (ch. 5.3; `wf045-instance-cycle-to-many-satellite-step` was removed with reason at the household, `corpus/negative/README.md`); since *2026-10-22* the arm `WF-045.instance-read-outside` (`form`, `node`, `path`, `clause`) names beside the cycle each read that keeps a part over a switch relation from being instance-ordered, pinned by six of them (ch. 5.3, the table of clauses) |
 | WF-046 | no negative edge on a dependency cycle (strata exist); since *2026-09-23* every read under a leeg/gevuld test is a negative edge, in both polarities, and so is every read in a quantifier fold's range under `all`/`none`/`atMost`/`exactly` and in its matrix under `none`/`atMost`/`exactly` (ch. 5.2); since *2026-10-06* a role check reads its relation, and a negated one negatively; since *2026-10-22* the shifted edges of an instance-ordered part are not edges of the walk, so a leeg-test on the predecessor is admitted on such a cycle (ch. 5.3; golden `jutterswet-vergunningketen`) | gate 3 | `jutterswet-penningjaar` (the negated aanmeldplichtig reading — a negative edge, verifier-clean, oracle-replayed); `jutterswet-opvolgerquorum` (the monotone parts of the quantifier fold — an `atLeast` range and matrix and an `all` matrix — on a recursive creation cycle, verifier-clean, replayed by gates 5, 6 and 12); the leeg/gevuld reading has no golden whose test reads a written node (counted 2026-09-23: none of 31), so its clean witness is the reference interpreter's WV-6.4-f (a leeg test in an attribute rule on a derived attribute, off any cycle, answering alike in both rule orders); `jutterswet-premiepot` (a role check on a relation a fact creation lays, read stratum-strict since 2026-10-06, off any cycle, replayed by gates 5, 6 and 12) | `wf046-negated-read-in-recursive-cycle` + `wf046-empty-test-recursive-creation` (`negated: false`) + `wf046-empty-test-negated-recursive-creation` (`negated: true`) + `wf046-empty-test-presence-recursive-creation` (a presence-true test alone: the both-polarities clause) + `wf046-empty-test-quantifier-fold-recursive-creation` (the test as a quantifier fold's matrix) + `wf046-quantifier-fold-all-range` (the `all` range) + `wf046-quantifier-fold-none-comparison` (`none`, range and matrix) + `wf046-quantifier-fold-none-matrix` (the `none` matrix alone) + `wf046-quantifier-fold-at-most-range` + `wf046-quantifier-fold-exactly-range` (the `atMost` and `exactly` ranges) + `wf046-quantifier-fold-at-most-matrix` + `wf046-quantifier-fold-exactly-matrix` (the `atMost` and `exactly` matrices) + `wf046-quantifier-fold-under-none` (the enclosing negation) + `wf046-quantifier-fold-range-other-type` (the `all` range over the relation a creation of ANOTHER type writes through its back-link, Wachter → Post; rewritten at L2 from `wf046-kwantorvouw-bindingloos-bereik`, whose derived range the migration wrote) + `wf046-negated-role-check-recursive-creation` (a negated role check on the relation the recursive creation lays, since 2026-10-06) |
 | WF-047 | role binding resolves; fillers agree with the use site; the count source's written name denotes the bound role (declared name or plural; since L2 the migration and the emitter write the declared role name where the written one denoted neither) | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) + `anchor/jutterswet-maatschap` (the reciprocal binding: bound = opposite) + `anchor/jutterswet-wachtersketen` (the creation back-link binding) + `jutterswet-kaveltelling`, `jutterswet-muntpeiling` (the count sources whose written name the L2 migration replaced by the declared role name) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) + `wf047-reciprocal-wrong-filler` (the single-role filler clause) + `wf047-creation-binding-wrong-filler` (the creation site) + `wf047-source-path-step-unresolved-role` (a path step); `wf047-bereik-op-builtin` (a range on a builtin; at L2 from `wf034-sentinel-builtin-operand`) was removed with reason at L4, where a `BuiltinCall` can carry no range, and since the L4 fix round `wf047-range-by-enumerated-fold` (a range on a listed value fold) pins the arm on the node that keeps it |
 | WF-048 | removed at L2 (2026-09-24): the binding is required on the nodes this rule governed — an allocation's recipient role, a quantifier fold's range, a union selection's relation, and the range of a single-argument fold with an `elementType` under every kind but `total` (B12) — so no reader derives their relation from a type pair; the object creation's back-link role, which this rule never governed, stays optional and is still derived when absent (ch. 3.3; ch. 2.6, history) | — | — | `wf048-ambiguous-connecting-relation` and `wf048-telling-meerduidig` were removed with reason (`corpus/negative/README.md`, L2) |

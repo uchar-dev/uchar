@@ -5705,10 +5705,11 @@ per object:
   the members of level ≤ l evaluate on the objects of depth d, and every
   member on the objects of a lower depth, to their fixpoint, beside the
   other forms of the stratum; after the deepest depth the stratum settles
-  once more as a whole. A shifted read on an object of depth d lands on its
-  predecessor, of depth d − 1, which is settled; a local read lands on the
-  object, its satellite or its owner, of depth d, whose members of a lower
-  level are settled. So a negative shifted edge — a leeg/gevuld test on the
+  once more as a whole. A shifted read on an object of depth d lands in the
+  household of its predecessor (`IR-SPEC.md` ch. 5.3: the predecessor and its
+  satellites), of depth d − 1, which is settled; a local read lands in the
+  household of the object, of depth d, whose members of a lower level are
+  settled. So a negative shifted edge — a leeg/gevuld test on the
   predecessor's value — reads the predecessor at rest, as a negative edge
   between strata reads its producer at rest.
 
@@ -5923,6 +5924,27 @@ the level of the member (ch. 6.2): stratum k, then depth d, then level l.
   consistency of a given value that differs from the computed one holds for
   V2. The ASP backend and both Drools branches answer the same (measured
   2026-10-22).
+- A fold over the own satellites (`ref/` test WV-6.4-m, absolute, in four
+  orders of the rules and of the objects; `IR-SPEC.md` ch. 5.3, the household
+  of an object): a Vergunning has several termijnen; the overschot of a
+  Termijn is the number of days from the verlengde einddag of its houder to
+  its einddag when that is later, the restant of a Vergunning is the sum of
+  the overschotten of its termijnen, and the verlengde einddag is the
+  basiseinddag plus the restant of the vorige vergunning. The restant reads
+  the overschotten over a to-many hop to the satellites, a local read: every
+  termijn stands at the depth of its houder. V1 (basiseinddag 01-06-2026, no
+  predecessor) with T1 (einddag 11-06-2026) and T2 (einddag 21-06-2026), V2
+  (basiseinddag 01-12-2026, vorige vergunning V1) with T3 (einddag
+  10-01-2027). At depth 0: the restant of V1's predecessor is leeg, so
+  **verlengde einddag V1 = 01-06-2026**; **overschot T1 = 10** and **T2 =
+  20** dagen; **restant V1 = 30**. At depth 1: **verlengde einddag V2 =
+  01-12-2026 + 30 dagen = 31-12-2026**; **overschot T3 = 10**, **restant V2
+  = 10**. The ASP backend and both Drools branches answer the same (measured
+  2026-10-22). Until 2026-10-22 the verifier refused the document, since the
+  fold reached a to-many role. The golden `jutterswet-vergunningtermijnen`
+  carries the household further: a filter and a quantifier `all` over the
+  own termijnen that read the verlengde einddag of the houder of the termijn,
+  and a sum over the termijnen of the vorige vergunning.
 - A cycle in the links (`ref/` test WV-6.4-k, red case
   `corpus/red/instance-order-link-cycle`): V1's vorige vergunning is V2 and
   V2's is V1. The case is refused while it is read, **EF-033** with
@@ -5936,13 +5958,20 @@ the level of the member (ch. 6.2): stratum k, then depth d, then level l.
   (`wf045-instance-cycle-created-relation`); a Termijn shared by several
   houders (`wf045-instance-cycle-shared-satellite`); the einddag reading the
   restant of the predecessor and its own restant
-  (`wf045-instance-cycle-direct-and-shifted-read`); a sum over the termijnen
-  of the predecessor (`wf045-instance-cycle-to-many-satellite-step`); a sum
-  over every Vergunning of the same register
-  (`wf045-instance-cycle-non-local-read`); a read of the predecessor and one
-  of the successor (`wf045-instance-cycle-predecessor-and-successor`); a
-  Termijn reached through two satellite relations
-  (`wf045-instance-cycle-two-satellite-relations`).
+  (`wf045-instance-cycle-direct-and-shifted-read`); a sum over every
+  Vergunning of the same register (`wf045-instance-cycle-non-local-read`); a
+  read of the predecessor and one of the successor
+  (`wf045-instance-cycle-predecessor-and-successor`); a Termijn reached
+  through two satellite relations
+  (`wf045-instance-cycle-two-satellite-relations`); a blokkade that reads the
+  openstand of the Vergunningen of the same register, over a hub, with two
+  stable models (`wf045-instance-cycle-hub-negation`); a read of a satellite
+  of a satellite (`wf045-instance-cycle-satellite-of-satellite`). All but
+  the first, the second and the fourth are named by the arm
+  `WF-045.instance-read-outside` with the read and its clause (`IR-SPEC.md`
+  ch. 5.3). A sum over the termijnen of the
+  predecessor was ill-formed until 2026-10-22 and is a shifted read since
+  (`wf045-instance-cycle-to-many-satellite-step`, removed with reason).
 
 ---
 
