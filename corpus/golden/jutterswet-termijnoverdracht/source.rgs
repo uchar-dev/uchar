@@ -1,0 +1,44 @@
+Eenheidsysteem Tijd
+    de dag dg
+
+Objecttype de Vergunning (mv: Vergunningen)
+    de stopdag Datum in dagen;
+    de basiseinddag Datum in dagen;
+    de verlengde einddag Datum in dagen;
+    is verlengd kenmerk (bijvoeglijk);
+
+Objecttype de Termijn (mv: Termijnen)
+    het overschot Numeriek (geheel getal) met eenheid dg;
+    is overdraagbaar kenmerk (bijvoeglijk);
+
+Feittype vorige vergunning
+    de vergunning Vergunning
+    de vorige vergunning Vergunning
+Eén vergunning heeft één vorige vergunning
+
+Feittype vergunningstermijn
+    de houder Vergunning
+    de termijn Termijn
+Eén houder heeft één termijn
+
+Regel verlengd
+    geldig altijd
+        Een Vergunning is verlengd
+        indien het overschot van de termijn van de vorige vergunning van de Vergunning gevuld is.
+
+Regel overdraagbaar
+    geldig altijd
+        Een Termijn is overdraagbaar
+        indien zijn houder niet verlengd is.
+
+Regel overschot
+    geldig altijd
+        Het overschot van een Termijn moet berekend worden als de tijdsduur van de stopdag van zijn houder tot de basiseinddag van zijn houder in hele dagen
+        indien hij aan alle volgende voorwaarden voldoet:
+        - hij is overdraagbaar
+        - de stopdag van zijn houder is gevuld
+        - de stopdag van zijn houder is eerder dan de basiseinddag van zijn houder.
+
+Regel verlengde einddag
+    geldig altijd
+        De verlengde einddag van een Vergunning moet berekend worden als zijn basiseinddag plus het overschot van de termijn van de vorige vergunning van de Vergunning.

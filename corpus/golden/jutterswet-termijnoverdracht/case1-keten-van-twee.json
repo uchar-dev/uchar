@@ -1,0 +1,116 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2026-03-01"
+          },
+          "basiseinddag": {
+            "date": "2026-06-01"
+          }
+        },
+        "roles": {
+          "termijn": [
+            "T1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "T1",
+        "objectType": "Termijn",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2026-09-01"
+          },
+          "basiseinddag": {
+            "date": "2026-12-01"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "V1"
+          ],
+          "termijn": [
+            "T2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "T2",
+        "objectType": "Termijn",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "verlengd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2026-06-01"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "T1",
+      "characteristic": "overdraagbaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "T1",
+      "attribute": "overschot",
+      "value": {
+        "number": "92"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "verlengd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2027-03-03"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "T2",
+      "characteristic": "overdraagbaar"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "T2",
+      "attribute": "overschot"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

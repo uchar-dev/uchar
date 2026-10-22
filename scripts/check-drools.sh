@@ -1416,7 +1416,11 @@ EXPECTED_CHANNEL=(
 # jutterswet-vroege-vondsten-zonder-schorsing, a date comparison in the filter of a fold read under a denied
 # characteristic of the fold's subject, written in RegelSpraak with hand-computed cases. No source file of this
 # backend changed; it plays on both with PLAYED 3.
-EXPECTED_PLAYED=273
+# 273 -> 274 (2026-10-22, card-less fix instance-order-open-points): the golden jutterswet-termijnoverdracht, a
+# characteristic of a satellite that reads its owner negated on the instance-ordered cycle (the depth of a satellite is
+# its owner's, RUNTIME-SEMANTICS ch. 6.2), written in RegelSpraak with hand-computed cases. No source file of this
+# backend changed; it plays on both with PLAYED 3.
+EXPECTED_PLAYED=274
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

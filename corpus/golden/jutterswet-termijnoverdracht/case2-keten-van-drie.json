@@ -1,0 +1,170 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "tweede",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2026-09-01"
+          },
+          "basiseinddag": {
+            "date": "2026-12-01"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "eerste"
+          ],
+          "termijn": [
+            "termijn tweede"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "termijn tweede",
+        "objectType": "Termijn",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "derde",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2027-04-01"
+          },
+          "basiseinddag": {
+            "date": "2027-06-01"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "tweede"
+          ],
+          "termijn": [
+            "termijn derde"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "termijn derde",
+        "objectType": "Termijn",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "eerste",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2026-03-01"
+          },
+          "basiseinddag": {
+            "date": "2026-06-01"
+          }
+        },
+        "roles": {
+          "termijn": [
+            "termijn eerste"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "termijn eerste",
+        "objectType": "Termijn",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "eerste",
+      "characteristic": "verlengd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "eerste",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2026-06-01"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "termijn eerste",
+      "characteristic": "overdraagbaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "termijn eerste",
+      "attribute": "overschot",
+      "value": {
+        "number": "92"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "tweede",
+      "characteristic": "verlengd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "tweede",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2027-03-03"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "termijn tweede",
+      "characteristic": "overdraagbaar"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "termijn tweede",
+      "attribute": "overschot"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "derde",
+      "characteristic": "verlengd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "derde",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2027-06-01"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "termijn derde",
+      "characteristic": "overdraagbaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "termijn derde",
+      "attribute": "overschot",
+      "value": {
+        "number": "61"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
