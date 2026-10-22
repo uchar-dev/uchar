@@ -1,0 +1,256 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vergunning",
+        "animate": false,
+        "plural": "Vergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "stopdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "basiseinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "einddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "restant",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "dg",
+                "system": "Tijd",
+                "canonical": "dg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vorige vergunning",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vorige vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "restant",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "restant",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Het restant van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "duration",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "stopdag",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "zijn stopdag"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "einddag",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "zijn einddag"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "de tijdsduur van zijn stopdag tot zijn einddag in hele dagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "einddag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "einddag",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De einddag van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "basiseinddag",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "zijn basiseinddag"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "restant",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het restant van de vorige vergunning van de Vergunning"
+                  },
+                  "path": [
+                    {
+                      "node": "RoleBinding",
+                      "factType": "vorige vergunning",
+                      "role": "vorige vergunning"
+                    }
+                  ]
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "zijn basiseinddag plus het restant van de vorige vergunning van de Vergunning"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "restant",
+                "subjectType": "Vergunning",
+                "source": {
+                  "snippet": "zijn restant"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "zijn basiseinddag plus het restant van de vorige vergunning van de Vergunning plus zijn restant"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

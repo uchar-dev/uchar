@@ -1,0 +1,312 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vergunning",
+        "animate": false,
+        "plural": "Vergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "stopdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "basiseinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verlengde einddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Termijn",
+        "animate": false,
+        "plural": "Termijnen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "overschot",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "dg",
+                "system": "Tijd",
+                "canonical": "dg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            },
+            "plural": "overschotten"
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vorige vergunning",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vorige vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vergunningstermijn",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "houder",
+            "objectType": "Vergunning",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "termijn",
+            "objectType": "Termijn",
+            "plural": "termijnen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "overschot",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "overschot",
+              "subjectType": "Termijn",
+              "source": {
+                "snippet": "Het overschot van een Termijn"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "duration",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "stopdag",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "de stopdag van de houder van de Termijn"
+                  },
+                  "path": [
+                    {
+                      "node": "RoleBinding",
+                      "factType": "vergunningstermijn",
+                      "role": "houder"
+                    }
+                  ]
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "verlengde einddag",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "de verlengde einddag van de houder van de Termijn"
+                  },
+                  "path": [
+                    {
+                      "node": "RoleBinding",
+                      "factType": "vergunningstermijn",
+                      "role": "houder"
+                    }
+                  ]
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "de tijdsduur van de stopdag van de houder van de Termijn tot de verlengde einddag van de houder van de Termijn in hele dagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "verlengde einddag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verlengde einddag",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De verlengde einddag van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "basiseinddag",
+                "subjectType": "Vergunning",
+                "source": {
+                  "snippet": "zijn basiseinddag"
+                }
+              },
+              "right": {
+                "node": "Aggregation",
+                "kind": "sum",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "overschot",
+                    "subjectType": "Termijn",
+                    "source": {
+                      "snippet": "de overschotten van alle termijnen van de vorige vergunning van de Vergunning"
+                    }
+                  }
+                ],
+                "elementType": "Termijn",
+                "sourcePath": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "vorige vergunning",
+                    "role": "vorige vergunning"
+                  },
+                  {
+                    "node": "RoleBinding",
+                    "factType": "vergunningstermijn",
+                    "role": "termijn"
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "de som van de overschotten van alle termijnen van de vorige vergunning van de Vergunning"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "zijn basiseinddag plus de som van de overschotten van alle termijnen van de vorige vergunning van de Vergunning"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -7327,17 +7327,32 @@ let n_rel ft = "rel:" ^ norm ft
    (stratum-strict AND forbidden on any cycle, WF-046). *)
 type dep_edge = Dep_pos | Dep_strict | Dep_neg
 
+(* [df_paths] runs beside [df_reads], one entry per read: the node and the
+   path of the read (below, [dep_expr_at]). [df_per_subject] marks the forms
+   that write per subject of their own type, a rule or a defaults group: the
+   only forms an instance-ordered cycle may hold (ch. 5.3). *)
 type dep_form = {
   df_at : string;
   df_name : string;
   df_recursive_creation : bool;
   df_writes : string list;
   df_reads : (string * dep_edge) list;
+  df_paths : (string * role_binding list option) list;
+  df_per_subject : bool;
 }
 
 (* [subject] resolves owner-less characteristic reads; [ctx] resolves the
-   navigated shapes' hop relations *)
-let rec dep_expr ctx ~subject acc (e : expr) =
+   navigated shapes' hop relations.
+
+   [at] is the path of the object the expression is read on: the role
+   bindings from the form's subject to it, Some [] on the subject itself, or
+   None where no written path reaches it. Every read comes back with the node,
+   the edge kind and, for an attribute or characteristic, the path of the
+   object it lands on: [at] followed by its own hops, or the range of the fold
+   it sits in. A read of another node carries None. The instance-ordered
+   cycle (IR-SPEC ch. 5.3) reads the path; the walks of WF-045 and WF-046 read
+   node and kind as before. *)
+let rec dep_expr_at ctx ~subject ~at acc (e : expr) =
   match e with
   | Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings; _ } ->
       (* a navigated read consumes the link set of every hop relation
@@ -7346,10 +7361,11 @@ let rec dep_expr ctx ~subject acc (e : expr) =
          walks none *)
       let rel_edges =
         match navigation_bindings with
-        | Some hops -> List.map (fun (rb : role_binding) -> (n_rel rb.rb_fact_type, Dep_pos)) hops
+        | Some hops -> List.map (fun (rb : role_binding) -> (n_rel rb.rb_fact_type, Dep_pos, None)) hops
         | None -> []
       in
-      rel_edges @ ((n_attr ot a, Dep_pos) :: acc)
+      let path = Option.map (fun p -> p @ Option.value navigation_bindings ~default:[]) at in
+      rel_edges @ ((n_attr ot a, Dep_pos, path) :: acc)
   | Attribute_reference _ | Literal _ | Parameter_ref _ | Variable_reference _ | Context_value _
   | Bound_day _ | Expr_unresolved _ ->
       acc
@@ -7357,13 +7373,14 @@ let rec dep_expr ctx ~subject acc (e : expr) =
       List.fold_left
         (fun acc -> function
           | Literal_chunk _ -> acc
-          | Embedded_expression { expr = Some e } -> dep_expr ctx ~subject acc e
+          | Embedded_expression { expr = Some e } -> dep_expr_at ctx ~subject ~at acc e
           | Embedded_expression { expr = None } -> acc)
         acc pieces
-  | Binary { left_side; right_side; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc left_side) right_side
+  | Binary { left_side; right_side; _ } ->
+      dep_opt_at ctx ~subject ~at (dep_opt_at ctx ~subject ~at acc left_side) right_side
   | Function_call { kind; call_arguments; element_object_type; empty_fallback; filter; source_role; source_path; _ } ->
       let acc =
-        match element_object_type with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
+        match element_object_type with Some el -> (n_pop el, Dep_pos, None) :: acc | None -> acc
       in
       let acc =
         (* WF-102: a multi-step range reads EVERY step's link set — the
@@ -7373,7 +7390,7 @@ let rec dep_expr ctx ~subject acc (e : expr) =
         match source_path with
         | Some trail ->
             List.fold_left
-              (fun acc (rb : role_binding) -> (n_rel rb.rb_fact_type, Dep_pos) :: acc)
+              (fun acc (rb : role_binding) -> (n_rel rb.rb_fact_type, Dep_pos, None) :: acc)
               acc trail
         | None -> acc
       in
@@ -7381,8 +7398,17 @@ let rec dep_expr ctx ~subject acc (e : expr) =
         (* a bound fold reads the named relation's link set — the edge a
            fact creation's write reaches, from either end (ch. 6.1) *)
         match source_role with
-        | Some (rb : role_binding) -> (n_rel rb.rb_fact_type, Dep_pos) :: acc
+        | Some (rb : role_binding) -> (n_rel rb.rb_fact_type, Dep_pos, None) :: acc
         | None -> acc
+      in
+      (* the argument and the filter of an instance fold are read on its
+         elements, at the end of its range; without a range (a builtin, a
+         total over the subject's own value) on the object [at] names *)
+      let el_at =
+        match (source_role, source_path) with
+        | Some rb, _ -> Option.map (fun p -> p @ [ rb ]) at
+        | None, Some trail -> Option.map (fun p -> p @ trail) at
+        | None, None -> at
       in
       (* the count source names the relation's role, not an attribute: it
          reads the link set drawn above and the population, never a member *)
@@ -7396,14 +7422,14 @@ let rec dep_expr ctx ~subject acc (e : expr) =
         | _ -> false
       in
       let acc =
-        if count_source then acc else List.fold_left (dep_expr ctx ~subject) acc call_arguments
+        if count_source then acc else List.fold_left (dep_expr_at ctx ~subject ~at:el_at) acc call_arguments
       in
-      let acc = dep_opt ctx ~subject acc empty_fallback in
+      let acc = dep_opt_at ctx ~subject ~at acc empty_fallback in
       (* the filter's reads are the ELEMENT's (ch. 6.1): a filter over a
          derived characteristic of the contributor type must sit above
          that characteristic's writer *)
       let fsubject = match element_object_type with Some el -> Some el | None -> subject in
-      (match filter with Some c -> dep_cond ctx ~subject:fsubject ~neg:false acc c | None -> acc)
+      (match filter with Some c -> dep_cond_at ctx ~subject:fsubject ~at:el_at ~neg:false acc c | None -> acc)
   | Instance_set_union { branches; _ } ->
       (* every branch is a fold source of its own and draws a fold source's
          edges: the population it ranges over, the relation it walks, and
@@ -7413,69 +7439,72 @@ let rec dep_expr ctx ~subject acc (e : expr) =
       List.fold_left
         (fun acc (b : instance_set_branch) ->
           let acc =
-            match b.isb_element_type with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
+            match b.isb_element_type with Some el -> (n_pop el, Dep_pos, None) :: acc | None -> acc
           in
-          let acc = (n_rel b.isb_source_role.rb_fact_type, Dep_pos) :: acc in
+          let acc = (n_rel b.isb_source_role.rb_fact_type, Dep_pos, None) :: acc in
           match b.isb_filter with
-          | Some c -> dep_cond ctx ~subject:b.isb_element_type ~neg:false acc c
+          | Some c ->
+              dep_cond_at ctx ~subject:b.isb_element_type
+                ~at:(Option.map (fun p -> p @ [ b.isb_source_role ]) at)
+                ~neg:false acc c
           | None -> acc)
         acc branches
-  | Rounding { base_expr; _ } -> dep_opt ctx ~subject acc base_expr
+  | Rounding { base_expr; _ } -> dep_opt_at ctx ~subject ~at acc base_expr
   | Clamp { base_expr; minimum; maximum; _ } ->
-      dep_opt ctx ~subject (dep_opt ctx ~subject (dep_opt ctx ~subject acc base_expr) minimum) maximum
-  | Dimension_cell_read { attribute_ref; _ } -> dep_opt ctx ~subject acc attribute_ref
+      dep_opt_at ctx ~subject ~at (dep_opt_at ctx ~subject ~at (dep_opt_at ctx ~subject ~at acc base_expr) minimum) maximum
+  | Dimension_cell_read { attribute_ref; _ } -> dep_opt_at ctx ~subject ~at acc attribute_ref
   | Temporal_read { base_expr; date_value; _ } ->
       (* the read consumes its timeline reference and its date operand;
          the base is an attribute/parameter reference whose own case
          adds the right edge *)
-      dep_expr ctx ~subject (dep_expr ctx ~subject acc base_expr) date_value
-  | Construct { argument; _ } -> dep_opt ctx ~subject acc argument
+      dep_expr_at ctx ~subject ~at (dep_expr_at ctx ~subject ~at acc base_expr) date_value
+  | Construct { argument; _ } -> dep_opt_at ctx ~subject ~at acc argument
   | Match { scrutinee; arms; _ } ->
       (* the reads are the scrutinee's and every arm body's; a binder is
          lexical, contributing no attribute/parameter edge of its own *)
       List.fold_left
-        (fun acc (_, _, arm_body) -> dep_expr ctx ~subject acc arm_body)
-        (dep_expr ctx ~subject acc scrutinee)
+        (fun acc (_, _, arm_body) -> dep_expr_at ctx ~subject ~at acc arm_body)
+        (dep_expr_at ctx ~subject ~at acc scrutinee)
         arms
   | Binder_ref _ -> acc
   (* the record forms (Phase 5c): the reads live in the field values and the
      accessed base *)
   | Struct_literal { field_list; _ } ->
-      List.fold_left (fun acc (_, value) -> dep_expr ctx ~subject acc value) acc field_list
-  | Field_access { base; _ } -> dep_expr ctx ~subject acc base
+      List.fold_left (fun acc (_, value) -> dep_expr_at ctx ~subject ~at acc value) acc field_list
+  | Field_access { base; _ } -> dep_expr_at ctx ~subject ~at acc base
   (* the Let binding (Phase 5c): its reads live in the value and the body; the
      binder is lexical, contributing no attribute/parameter edge of its own.
      Call-by-need does not narrow this: a read that never happens still needs
      its producer stratified below (ch. 6.1 is a static over-approximation) *)
   | Let { value; body = lbody; _ } ->
-      dep_expr ctx ~subject (dep_expr ctx ~subject acc value) lbody
+      dep_expr_at ctx ~subject ~at (dep_expr_at ctx ~subject ~at acc value) lbody
   (* the fold family (row 10): the reads live in the list source, the init and
      the filter condition; a closed lambda/function body reads no attributes,
      so it contributes no edges — but the walk is harmless and total *)
-  | List_literal { elements; _ } -> List.fold_left (dep_expr ctx ~subject) acc elements
-  | Lambda { body = lbody; _ } -> dep_expr ctx ~subject acc lbody
+  | List_literal { elements; _ } -> List.fold_left (dep_expr_at ctx ~subject ~at) acc elements
+  | Lambda { body = lbody; _ } -> dep_expr_at ctx ~subject ~at acc lbody
   | If_then_else { condition; then_; else_; _ } ->
-      let acc = dep_cond ctx ~subject ~neg:false acc condition in
-      dep_expr ctx ~subject (dep_expr ctx ~subject acc then_) else_
-  | Invoke { arguments; _ } -> List.fold_left (dep_expr ctx ~subject) acc arguments
+      let acc = dep_cond_at ctx ~subject ~at ~neg:false acc condition in
+      dep_expr_at ctx ~subject ~at (dep_expr_at ctx ~subject ~at acc then_) else_
+  | Invoke { arguments; _ } -> List.fold_left (dep_expr_at ctx ~subject ~at) acc arguments
   | Fold { list; function_name; init; _ } ->
-      dep_fold_fn ctx ~subject (dep_expr ctx ~subject (dep_expr ctx ~subject acc list) init) function_name
+      dep_fold_fn_at ctx ~subject ~at (dep_expr_at ctx ~subject ~at (dep_expr_at ctx ~subject ~at acc list) init) function_name
   | Map_list { list; function_name; _ } ->
-      dep_fold_fn ctx ~subject (dep_expr ctx ~subject acc list) function_name
+      dep_fold_fn_at ctx ~subject ~at (dep_expr_at ctx ~subject ~at acc list) function_name
   | Filter_list { list; condition; _ } ->
-      dep_cond ctx ~subject ~neg:false (dep_expr ctx ~subject acc list) condition
-  | List_length { list; _ } -> dep_expr ctx ~subject acc list
+      dep_cond_at ctx ~subject ~at ~neg:false (dep_expr_at ctx ~subject ~at acc list) condition
+  | List_length { list; _ } -> dep_expr_at ctx ~subject ~at acc list
 
-and dep_fold_fn ctx ~subject acc = function
-  | Fn_lambda { body = lbody; _ } -> dep_expr ctx ~subject acc lbody
+and dep_fold_fn_at ctx ~subject ~at acc = function
+  | Fn_lambda { body = lbody; _ } -> dep_expr_at ctx ~subject ~at acc lbody
   | Fn_name _ -> acc
 
-and dep_opt ctx ~subject acc = function Some e -> dep_expr ctx ~subject acc e | None -> acc
+and dep_opt_at ctx ~subject ~at acc = function Some e -> dep_expr_at ctx ~subject ~at acc e | None -> acc
 
-and dep_cond ctx ~subject ~neg acc (c : condition_expr) =
+and dep_cond_at ctx ~subject ~at ~neg acc (c : condition_expr) =
   match c with
   | Comparison { left_side; right_side; _ } ->
-      dep_opt ctx ~subject (dep_opt ctx ~subject acc left_side) right_side
+      dep_opt_at ctx ~subject ~at (dep_opt_at ctx ~subject ~at acc left_side) right_side
   (* WF-046, the leeg/gevuld test (maintainer decision 2026-09-23): every
      read under the test is a NEGATIVE edge, in BOTH polarities. The test
      depends on absence whether it carries `negated: false` or `true`, so
@@ -7508,8 +7537,8 @@ and dep_cond ctx ~subject ~neg acc (c : condition_expr) =
      here. They were measured on the same cycle shape and are recorded as
      open, not decided. *)
   | Predicate { variety = Empty_predicate | Filled; operand; _ } ->
-      List.map (fun (node, _) -> (node, Dep_neg)) (dep_opt ctx ~subject [] operand) @ acc
-  | Predicate { operand; _ } -> dep_opt ctx ~subject acc operand
+      List.map (fun (node, _, path) -> (node, Dep_neg, path)) (dep_opt_at ctx ~subject ~at [] operand) @ acc
+  | Predicate { operand; _ } -> dep_opt_at ctx ~subject ~at acc operand
   | Characteristic_check { characteristic = Some k; negation; navigation_binding = Some rb; _ } -> (
       (* the navigated check: the characteristic lives on the REACHED
          type, and the hop relation itself is read positively (only the
@@ -7519,16 +7548,24 @@ and dep_cond ctx ~subject ~neg acc (c : condition_expr) =
       let kind = if neg || negation then Dep_neg else Dep_pos in
       match resolve_binding ctx rb with
       | Ok (_, r, _) ->
-          (n_rel rb.rb_fact_type, Dep_pos)
-          :: (n_char (Option.value r.role_object_type_name ~default:"") k, kind)
+          (n_rel rb.rb_fact_type, Dep_pos, None)
+          :: (n_char (Option.value r.role_object_type_name ~default:"") k, kind, Option.map (fun p -> p @ [ rb ]) at)
           :: acc
       | Error _ -> acc)
   | Characteristic_check { characteristic = Some k; holder; negation; navigation_binding = None; _ } -> (
       (* once negative, conservatively negative — double negation does
          not cancel (ch. 6.1) *)
       let kind = if neg || negation then Dep_neg else Dep_pos in
+      (* a holder other than the subject is the other object in scope of a
+         fact creation (ch. 5.8b), which no written path reaches *)
+      let path =
+        match (holder, subject) with
+        | None, _ -> at
+        | Some h, Some s when norm h = norm s -> at
+        | Some _, _ -> None
+      in
       match (match holder with Some _ as e -> e | None -> subject) with
-      | Some ot -> (n_char ot k, kind) :: acc
+      | Some ot -> (n_char ot k, kind, path) :: acc
       | None -> acc)
   | Characteristic_check _ -> acc
   | Role_membership { fact_type; negated; _ } ->
@@ -7537,15 +7574,15 @@ and dep_cond ctx ~subject ~neg acc (c : condition_expr) =
          2026-10-06 it read nothing and its relation was input to the
          analysis. Negated, it holds on absence, and a later link can make
          it false: a negative edge, as a negated characteristic is *)
-      (n_rel fact_type, if neg || negated then Dep_neg else Dep_pos) :: acc
-  | Time_window { starting_at; up_to; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc starting_at) up_to
+      (n_rel fact_type, (if neg || negated then Dep_neg else Dep_pos), None) :: acc
+  | Time_window { starting_at; up_to; _ } -> dep_opt_at ctx ~subject ~at (dep_opt_at ctx ~subject ~at acc starting_at) up_to
   | Compound { quantifier_kind; components; _ } ->
       let neg' =
         match quantifier_kind with
         | None_of | At_most | Exactly -> true (* negation-like: conservative, ch. 6.1 *)
         | The | All | At_least -> neg
       in
-      List.fold_left (fun acc c -> dep_cond ctx ~subject ~neg:neg' acc c) acc components
+      List.fold_left (fun acc c -> dep_cond_at ctx ~subject ~at ~neg:neg' acc c) acc components
   (* the quantifier fold (ch. 3.9a), maintainer decision 2026-09-23: the
      RANGE is a negative edge under all, none, atMost and exactly,
      because the verdict can be lost when the range grows; under atLeast
@@ -7584,19 +7621,33 @@ and dep_cond ctx ~subject ~neg acc (c : condition_expr) =
           ((match kv_source_role with Some rb -> [ rb ] | None -> [])
           @ Option.value kv_source_path ~default:[])
       in
+      (* filter and matrix are read on the members, at the end of the range *)
+      let member_at =
+        Option.map
+          (fun p ->
+            p @ (match kv_source_role with Some rb -> [ rb ] | None -> []) @ Option.value kv_source_path ~default:[])
+          at
+      in
       let part ~negative = function
         | Some c ->
-            let reads = dep_cond ctx ~subject:kv_element_object_type ~neg:negative [] c in
-            if negative then List.map (fun (node, _) -> (node, Dep_neg)) reads else reads
+            let reads = dep_cond_at ctx ~subject:kv_element_object_type ~at:member_at ~neg:negative [] c in
+            if negative then List.map (fun (node, _, path) -> (node, Dep_neg, path)) reads else reads
         | None -> []
       in
-      List.map (fun node -> (node, if range_neg then Dep_neg else Dep_pos)) reach
+      List.map (fun node -> (node, (if range_neg then Dep_neg else Dep_pos), None)) reach
       @ part ~negative:range_neg kv_filter
       @ part ~negative:matrix_neg kv_test
       @ acc
-  | Rule_status_check { rule_def = Some r; _ } -> (n_chan r, Dep_neg) :: acc
+  | Rule_status_check { rule_def = Some r; _ } -> (n_chan r, Dep_neg, None) :: acc
   | Rule_status_check _ -> acc
   | Condition_unresolved _ -> acc
+
+(* the reads without their paths, prepended to [acc] as the walk prepends *)
+let without_paths reads acc = List.map (fun (node, kind, _) -> (node, kind)) reads @ acc
+
+let dep_expr ctx ~subject acc e = without_paths (dep_expr_at ctx ~subject ~at:(Some []) [] e) acc
+let dep_opt ctx ~subject acc e = without_paths (dep_opt_at ctx ~subject ~at:(Some []) [] e) acc
+let dep_cond ctx ~subject ~neg acc c = without_paths (dep_cond_at ctx ~subject ~at:(Some []) ~neg [] c) acc
 
 (* A form of the six named forms (IR-SPEC ch. 3, Versioning) is recorded
    at the wire pointer of its version, which the loader sets
@@ -7623,6 +7674,22 @@ let dep_forms ctx : dep_form list =
         else (node, kind))
       reads
   in
+  (* the same for reads with their paths ([dep_expr_at]), kept for the forms
+     that write per subject, a rule and a defaults group *)
+  let cond_at ~subject c =
+    match c with Some c -> dep_cond_at ctx ~subject ~at:(Some []) ~neg:false [] c | None -> []
+  in
+  let strict_unless_char_at reads =
+    List.map
+      (fun (node, kind, path) ->
+        if kind = Dep_pos && not (String.length node >= 5 && String.sub node 0 5 = "char:") then
+          (node, Dep_strict, path)
+        else (node, kind, path))
+      reads
+  in
+  let reads_of reads = List.map (fun (node, kind, _) -> (node, kind)) reads in
+  let paths_of reads = List.map (fun (node, _, path) -> (node, path)) reads in
+  let pathless reads = List.map (fun (node, _) -> (node, None)) reads in
   let rule_defs =
     List.map
       (fun (r : resolved_rule) ->
@@ -7636,9 +7703,9 @@ let dep_forms ctx : dep_form list =
                 ot a
             in
             let subject = Some ot in
-            let reads = dep_opt ctx ~subject (cond ~subject r.rr_condition) r.value_node in
+            let reads = dep_opt_at ctx ~subject ~at:(Some []) (cond_at ~subject r.rr_condition) r.value_node in
             let reads =
-              if r.rr_presentation = Some Characteristic_attribution then strict_unless_char reads
+              if r.rr_presentation = Some Characteristic_attribution then strict_unless_char_at reads
               else if absorbing_types ctx.doc ~otype:ot ~attr:a <> [] then
                 (* a rule the ch. 7.10 fold takes into a stack reads there as
                    the default it becomes: its condition and value reads are
@@ -7646,10 +7713,19 @@ let dep_forms ctx : dep_form list =
                    its folded rules read. Positive, they left the stack free to
                    decide on a transient that a later pass no longer supports
                    and nothing in the stack overwrote *)
-                List.map (fun (node, _) -> (node, Dep_neg)) reads
+                List.map (fun (node, _, path) -> (node, Dep_neg, path)) reads
               else reads
             in
-            Some { df_at = at; df_name = name; df_recursive_creation = false; df_writes = writes; df_reads = reads }
+            Some
+              {
+                df_at = at;
+                df_name = name;
+                df_recursive_creation = false;
+                df_writes = writes;
+                df_reads = reads_of reads;
+                df_paths = paths_of reads;
+                df_per_subject = true;
+              }
         | _ -> None)
       ctx.doc.resolved_rules
     |> List.filter_map (fun x -> x)
@@ -7679,7 +7755,15 @@ let dep_forms ctx : dep_form list =
               [ v.ratio_attribute; v.maximum_attribute; v.ordering_attribute ]
           @ cond ~subject:v.source_type v.vd_condition
         in
-        { df_at = at; df_name = name; df_recursive_creation = false; df_writes = writes; df_reads = reads })
+        {
+          df_at = at;
+          df_name = name;
+          df_recursive_creation = false;
+          df_writes = writes;
+          df_reads = reads;
+          df_paths = pathless reads;
+          df_per_subject = false;
+        })
       ctx.doc.allocations
   in
   let consistencies =
@@ -7693,6 +7777,8 @@ let dep_forms ctx : dep_form list =
           df_recursive_creation = false;
           df_writes = [ n_chan name ];
           df_reads = strict_unless_char (cond ~subject:c.cons_subject c.assertion);
+          df_paths = pathless (cond ~subject:c.cons_subject c.assertion);
+          df_per_subject = false;
         })
       ctx.doc.consistencies
   in
@@ -7709,16 +7795,18 @@ let dep_forms ctx : dep_form list =
           | Some rb -> [ (n_rel rb.rb_fact_type, Dep_strict) ]
           | None -> []
         in
+        let reads =
+          scope_read
+          @ List.map (fun k -> (n_attr subj (Option.value k ~default:""), Dep_strict)) u.key_list
+        in
         {
           df_at = at;
           df_name = name;
           df_recursive_creation = false;
           df_writes = [ n_chan name ];
-          df_reads =
-            scope_read
-            @ List.map
-                (fun k -> (n_attr subj (Option.value k ~default:""), Dep_strict))
-                u.key_list;
+          df_reads = reads;
+          df_paths = pathless reads;
+          df_per_subject = false;
         })
       ctx.doc.uniquenesses
   in
@@ -7727,21 +7815,22 @@ let dep_forms ctx : dep_form list =
       (fun (u : resolved_uniqueness_union) ->
         let at = u.uu_pointer in
         let name = Option.value u.uu_name ~default:at in
+        let reads =
+          List.concat_map
+            (fun (b : uniqueness_union_source) ->
+              match b.uub_type with
+              | Some t -> List.map (fun k -> (n_attr t (Option.value k ~default:""), Dep_strict)) b.uub_keys
+              | None -> [])
+            u.source_list
+        in
         {
           df_at = at;
           df_name = name;
           df_recursive_creation = false;
           df_writes = [ n_chan name ];
-          df_reads =
-            List.concat_map
-              (fun (b : uniqueness_union_source) ->
-                match b.uub_type with
-                | Some t ->
-                    List.map
-                      (fun k -> (n_attr t (Option.value k ~default:""), Dep_strict))
-                      b.uub_keys
-                | None -> [])
-              u.source_list;
+          df_reads = reads;
+          df_paths = pathless reads;
+          df_per_subject = false;
         })
       ctx.doc.uniqueness_unions
   in
@@ -7807,6 +7896,8 @@ let dep_forms ctx : dep_form list =
           df_recursive_creation = List.mem (norm (strip_version name)) recursive_members;
           df_writes = writes;
           df_reads = reads;
+          df_paths = pathless reads;
+          df_per_subject = false;
         })
       ctx.doc.object_creations
   in
@@ -7837,8 +7928,9 @@ let dep_forms ctx : dep_form list =
              recursive-group creation members of either kind *)
           df_recursive_creation = List.mem (norm (strip_version name)) recursive_members;
           df_writes = rel_writes;
-          df_reads =
-            strict_unless_char (hop_reads @ cond ~subject:f.anchor_point f.fc_condition);
+          df_reads = strict_unless_char (hop_reads @ cond ~subject:f.anchor_point f.fc_condition);
+          df_paths = pathless (hop_reads @ cond ~subject:f.anchor_point f.fc_condition);
+          df_per_subject = false;
         })
       ctx.doc.fact_creations
   in
@@ -7857,10 +7949,10 @@ let dep_forms ctx : dep_form list =
         let name = Option.value l.pd_name ~default:at in
         let rec default_reads (r : default) =
           (match r.default_justification with
-          | Some c -> dep_cond ctx ~subject:(Some l.pd_subject) ~neg:false [] c
+          | Some c -> dep_cond_at ctx ~subject:(Some l.pd_subject) ~at:(Some []) ~neg:false [] c
           | None -> [])
           @ (match r.default_consequence with
-            | Some e -> dep_expr ctx ~subject:(Some l.pd_subject) [] e
+            | Some e -> dep_expr_at ctx ~subject:(Some l.pd_subject) ~at:(Some []) [] e
             | None -> [])
           @ (match r.default_exceptions with
             | Some egs ->
@@ -7884,7 +7976,9 @@ let dep_forms ctx : dep_form list =
           df_name = name;
           df_recursive_creation = false;
           df_writes = writes;
-          df_reads = List.map (fun (node, _) -> (node, Dep_neg)) reads;
+          df_reads = List.map (fun (node, _, _) -> (node, Dep_neg)) reads;
+          df_paths = paths_of reads;
+          df_per_subject = true;
         })
       ctx.doc.prioritized_defaults
   in
@@ -7908,6 +8002,237 @@ let dep_edges (forms : dep_form array) =
           List.map (fun pi -> (pi, ci, node, kind)) (Hashtbl.find_all writers node))
         f.df_reads)
     (List.mapi (fun ci f -> (ci, f)) (Array.to_list forms))
+
+(* The instance-ordered cycle (IR-SPEC ch. 5.3, RUNTIME-SEMANTICS ch. 6.2):
+   the second controlled exception to acyclicity, beside the recursive
+   creation. A value of an object that reads the same value of its
+   predecessor, an object of the same type, closes a cycle of the graph,
+   which keys a node per type; per object the reads form a chain, and the
+   chain is finite where the links are. The forms of such a cycle evaluate
+   per object, in the order of its depth in the chain.
+
+   A switch relation R: a fact type with two roles whose fillers are
+   comparable types, the role a hop over it reaches (the predecessor's role)
+   to-one, and no form writing its link set, so its links are the case's.
+   A satellite relation F of a type T: a fact type other than R with two
+   roles, one filled by a type comparable with T and to-one (the owner role:
+   a satellite belongs to at most one object of T), the other by a type not
+   comparable with T (the satellite). Its links are the case's too.
+
+   The path of a read ([dep_expr_at]) decides its class within a cycle over
+   R and T. Shifted: one hop over R reaching the predecessor's role, then at
+   most one hop over a satellite relation of T to its satellite, every hop
+   reaching a to-one role, so a shifted read lands on the predecessor or its
+   one satellite. Local: no hop, or one hop over a satellite relation of T
+   in either direction, reaching a to-one role, so it lands on the object
+   itself, its satellite or its owner. A shifted edge is an edge whose every
+   read of its node in the consumer is shifted; an edge whose consumer reads
+   the node shifted and also otherwise is an ordinary edge.
+
+   A strongly connected part of the graph is instance-ordered when it holds
+   no creation of a recursive group (the two exceptions are disjoint) and
+   only rules and defaults groups, its internal edges carry at least one
+   shifted edge, all its shifted reads walk one R to one role, every read
+   behind an internal edge is shifted or local, every satellite type it
+   reads is reached through one satellite relation, and without its shifted
+   edges it is acyclic. Its shifted edges then leave the graph that WF-045,
+   WF-046 and WF-051 walk. The level of a member is its longest path over
+   the internal edges that remain, a strict or negative edge counting one:
+   per object the members evaluate level by level, after the predecessor
+   is settled. *)
+type instance_order = {
+  io_relation : string;  (* R, spelled as its first shifted hop names it *)
+  io_role : string;  (* the role an R-hop reaches: the predecessor's *)
+  io_owners : role_binding list;  (* per satellite relation, the hop from a satellite to its owner *)
+  io_members : (string * int) list;  (* each member's pointer ([df_at]) and level *)
+}
+
+(* the strongly connected components over [n] forms with successor lists
+   [succ] (Tarjan), each with its forms in ascending order *)
+let components n (succ : int list array) =
+  let index = Array.make n (-1) and low = Array.make n 0 and on_stack = Array.make n false in
+  let stack = ref [] and counter = ref 0 and out = ref [] in
+  let rec visit k =
+    index.(k) <- !counter;
+    low.(k) <- !counter;
+    incr counter;
+    stack := k :: !stack;
+    on_stack.(k) <- true;
+    List.iter
+      (fun m ->
+        if index.(m) < 0 then begin
+          visit m;
+          low.(k) <- min low.(k) low.(m)
+        end
+        else if on_stack.(m) then low.(k) <- min low.(k) index.(m))
+      succ.(k);
+    if low.(k) = index.(k) then begin
+      let rec pop acc =
+        match !stack with
+        | m :: rest ->
+            stack := rest;
+            on_stack.(m) <- false;
+            if m = k then m :: acc else pop (m :: acc)
+        | [] -> acc
+      in
+      out := List.sort compare (pop []) :: !out
+    end
+  in
+  for k = 0 to n - 1 do
+    if index.(k) < 0 then visit k
+  done;
+  List.rev !out
+
+(* The instance-ordered parts of the graph over [forms] and [edges]
+   ([dep_edges]), and the test that names a shifted edge of one of them:
+   [shifted (producer, consumer, node)]. *)
+let instance_ordering ctx (forms : dep_form array) edges =
+  let n = Array.length forms in
+  let written = Hashtbl.create 16 in
+  Array.iter (fun f -> List.iter (fun node -> Hashtbl.replace written node ()) f.df_writes) forms;
+  let input_only ft = not (Hashtbl.mem written (n_rel ft)) in
+  let filler (r : role_ref) = r.role_object_type_name in
+  (* a hop over a switch relation: (R, the role it reaches, that role's filler) *)
+  let switch_hop (rb : role_binding) =
+    match resolve_binding ctx rb with
+    | Ok (ft, bound, other) when (not ft.reciprocal) && (not bound.role_many) && input_only rb.rb_fact_type -> (
+        match (filler bound, filler other) with
+        | Some b, Some o when type_compatible ctx b o -> Some (norm rb.rb_fact_type, norm rb.rb_role, b)
+        | _ -> None)
+    | _ -> None
+  in
+  (* a hop over a satellite relation of [t] other than [r]: the relation, the
+     satellite type, and the hop from the satellite to its owner *)
+  let satellite_hop ~r ~t (rb : role_binding) =
+    match resolve_binding ctx rb with
+    | Ok (ft, bound, other)
+      when (not ft.reciprocal) && norm rb.rb_fact_type <> r && input_only rb.rb_fact_type
+           && not bound.role_many -> (
+        match (filler bound, filler other, other.role_identifier) with
+        | Some b, Some o, Some owner_role
+          when type_compatible ctx o t && (not (type_compatible ctx b t)) && not other.role_many ->
+            (* to the satellite: the role it leaves is the owner's *)
+            Some (norm rb.rb_fact_type, b, { rb_fact_type = rb.rb_fact_type; rb_role = owner_role })
+        | Some b, Some o, _ when type_compatible ctx b t && not (type_compatible ctx o t) ->
+            (* to the owner, whose role is the one reached *)
+            Some (norm rb.rb_fact_type, o, rb)
+        | _ -> None)
+    | _ -> None
+  in
+  let to_satellite ~t (rb : role_binding) =
+    match resolve_binding ctx rb with
+    | Ok (_, bound, _) -> ( match filler bound with Some b -> not (type_compatible ctx b t) | None -> false)
+    | Error _ -> false
+  in
+  (* the class of a read path within a part over (r, role, t): `Shifted or
+     `Local with the satellite hop it takes, if any *)
+  let classify ~r ~role ~t = function
+    | Some (h :: rest) when (match switch_hop h with Some (r', role', _) -> r' = r && role' = role | None -> false)
+      -> (
+        match rest with
+        | [] -> Some (`Shifted, None)
+        | [ s ] when to_satellite ~t s -> (
+            match satellite_hop ~r ~t s with Some sat -> Some (`Shifted, Some sat) | None -> None)
+        | _ -> None)
+    | Some [] -> Some (`Local, None)
+    | Some [ s ] -> ( match satellite_hop ~r ~t s with Some sat -> Some (`Local, Some sat) | None -> None)
+    | _ -> None
+  in
+  let succ = Array.make n [] in
+  List.iter (fun (pi, ci, _, _) -> if not (List.mem ci succ.(pi)) then succ.(pi) <- ci :: succ.(pi)) edges;
+  let positions ci node =
+    List.filter_map (fun (node', path) -> if node' = node then Some path else None) forms.(ci).df_paths
+  in
+  let parts =
+    List.filter_map
+      (fun part ->
+        let inside i = List.mem i part in
+        let internal = List.filter (fun (pi, ci, _, _) -> inside pi && inside ci) edges in
+        if internal = [] then None
+        else if List.exists (fun i -> forms.(i).df_recursive_creation || not forms.(i).df_per_subject) part then None
+        else
+          (* the reads behind the internal edges, one entry per consumer and node *)
+          let reads = List.sort_uniq compare (List.map (fun (_, ci, node, _) -> (ci, node)) internal) in
+          let all_paths = List.concat_map (fun (ci, node) -> positions ci node) reads in
+          let walks =
+            List.sort_uniq compare
+              (List.filter_map
+                 (function Some (h :: _) -> Option.map (fun (r, role, t) -> (r, role, t, h)) (switch_hop h) | _ -> None)
+                 all_paths)
+          in
+          match List.sort_uniq compare (List.map (fun (r, role, _, _) -> (r, role)) walks) with
+          | [ (r, role) ] -> (
+              let t, first_hop = match walks with (_, _, t, h) :: _ -> (t, h) | [] -> assert false in
+              let classes =
+                List.map (fun (ci, node) -> ((ci, node), List.map (classify ~r ~role ~t) (positions ci node))) reads
+              in
+              if List.exists (fun (_, cs) -> List.mem None cs) classes then None
+              else
+                let shifted_reads =
+                  List.filter_map
+                    (fun (k, cs) ->
+                      if List.for_all (function Some (`Shifted, _) -> true | _ -> false) cs then Some k else None)
+                    classes
+                in
+                let sats =
+                  List.sort_uniq compare
+                    (List.concat_map
+                       (fun (_, cs) -> List.filter_map (function Some (_, Some sat) -> Some sat | _ -> None) cs)
+                       classes)
+                in
+                (* one satellite relation per satellite type: two would give a
+                   satellite two owners, and the order two depths *)
+                let shared =
+                  List.exists
+                    (fun (f, s, _) ->
+                      List.exists (fun (f', s', _) -> f <> f' && type_compatible ctx s s') sats)
+                    sats
+                in
+                let remaining =
+                  List.filter (fun (_, ci, node, _) -> not (List.mem (ci, node) shifted_reads)) internal
+                in
+                (* the levels over the remaining internal edges; a part they
+                   leave cyclic is no instance-ordered part *)
+                let level = Hashtbl.create 8 in
+                List.iter (fun i -> Hashtbl.replace level i 0) part;
+                let rec settle round =
+                  let changed = ref false in
+                  List.iter
+                    (fun (pi, ci, _, kind) ->
+                      let need = Hashtbl.find level pi + if kind = Dep_pos then 0 else 1 in
+                      if Hashtbl.find level ci < need then begin
+                        Hashtbl.replace level ci need;
+                        changed := true
+                      end)
+                    remaining;
+                  if not !changed then true else if round > List.length part then false else settle (round + 1)
+                in
+                if shifted_reads = [] || shared || not (settle 0) then None
+                else
+                  Some
+                    ( {
+                        io_relation = first_hop.rb_fact_type;
+                        io_role = first_hop.rb_role;
+                        io_owners =
+                          List.sort_uniq compare (List.map (fun (_, _, owner) -> owner) sats);
+                        io_members = List.map (fun i -> (forms.(i).df_at, Hashtbl.find level i)) part;
+                      },
+                      List.filter_map
+                        (fun (pi, ci, node, _) ->
+                          if List.mem (ci, node) shifted_reads then Some (pi, ci, node) else None)
+                        internal ))
+          | _ -> None)
+      (components n succ)
+  in
+  let removed = List.concat_map snd parts in
+  (List.map fst parts, fun (pi, ci, node) -> List.mem (pi, ci, node) removed)
+
+(* the instance-ordered parts of a document, for the executors: ref orders
+   their members by depth and level, and the case reader refuses a cycle in
+   the links of their switch relation (EF-033) *)
+let instance_orders ctx =
+  let forms = Array.of_list (dep_forms ctx) in
+  fst (instance_ordering ctx forms (dep_edges forms))
 
 (* The verifier's --dependency-edges report: every edge of the graph
    WF-045 and WF-046 walk, one tab-separated line each, sorted and without
@@ -7943,11 +8268,18 @@ let wf045_046 ctx =
   let forms = Array.of_list (dep_forms ctx) in
   let nforms = Array.length forms in
   let succ = Array.make nforms [] in
+  let edges = dep_edges forms in
+  (* the shifted edges of an instance-ordered part leave both walks: such a
+     cycle is admitted, and a negative shifted edge on it reads the
+     predecessor, which is settled before the object reads it (ch. 5.3) *)
+  let _, shifted = instance_ordering ctx forms edges in
   List.iter
-    (fun (pi, ci, _, kind) ->
-      if not (List.mem (ci, kind) succ.(pi)) then succ.(pi) <- (ci, kind) :: succ.(pi))
-    (dep_edges forms);
-  (* WF-045: the graph minus recursive-creation forms must be acyclic *)
+    (fun (pi, ci, node, kind) ->
+      if (not (shifted (pi, ci, node))) && not (List.mem (ci, kind) succ.(pi)) then
+        succ.(pi) <- (ci, kind) :: succ.(pi))
+    edges;
+  (* WF-045: the graph minus recursive-creation forms and minus the shifted
+     edges of instance-ordered parts must be acyclic *)
   let skip i = forms.(i).df_recursive_creation in
   let color = Array.make nforms 0 in
   let viol45 = ref [] in
@@ -8891,11 +9223,17 @@ let wf051 ctx =
   let nf = Array.length forms in
   let writers = Hashtbl.create 16 in
   Array.iteri (fun i (f : dep_form) -> List.iter (fun n -> Hashtbl.add writers n i) f.df_writes) forms;
+  (* the graph without the shifted edges of instance-ordered parts, as
+     WF-045 and WF-046 walk it *)
+  let _, shifted = instance_ordering ctx forms (dep_edges forms) in
   let succ = Array.make nf [] in
   Array.iteri
     (fun ci (f : dep_form) ->
       List.iter
-        (fun (node, _) -> List.iter (fun pi -> succ.(pi) <- ci :: succ.(pi)) (Hashtbl.find_all writers node))
+        (fun (node, _) ->
+          List.iter
+            (fun pi -> if not (shifted (pi, ci, node)) then succ.(pi) <- ci :: succ.(pi))
+            (Hashtbl.find_all writers node))
         f.df_reads)
     forms;
   let reaches src dst =
