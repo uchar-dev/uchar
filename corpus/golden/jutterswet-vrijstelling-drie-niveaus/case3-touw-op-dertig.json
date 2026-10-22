@@ -1,0 +1,49 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "30"
+          },
+          "soort": {
+            "enumeration": "Touw"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "70"
+          },
+          "soort": {
+            "enumeration": "Touw"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "vrijstelling"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "vrijstelling"
+    }
+  ]
+}

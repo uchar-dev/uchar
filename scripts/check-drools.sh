@@ -1402,7 +1402,10 @@ EXPECTED_CHANNEL=(
 # reads the same value of its predecessor (the instance-ordered cycle, IR-SPEC ch. 5.3), hand-written IR with
 # hand-computed cases. The cycle analysis of this backend (Cycles) leaves the shifted edges out of its walk as the
 # verifier does, and truth maintenance settles the chain; it plays on both with PLAYED 3.
-EXPECTED_PLAYED=269
+# 269 -> 270 (2026-10-22, card third-condition-level): the golden jutterswet-vrijstelling-drie-niveaus, three levels of
+# nested conditions under a counting quantifier (the depth of a bullet follows from its sign), written in RegelSpraak
+# with hand-computed cases. No source file of this backend changed; it plays on both with PLAYED 4.
+EXPECTED_PLAYED=270
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

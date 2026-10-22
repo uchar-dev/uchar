@@ -1,0 +1,23 @@
+Domein Vondstsoort is van het type Enumeratie
+    'Touw'
+    'Glas'
+    'Kurk'
+    'Hout'
+    'Blik'
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de leeftijd Numeriek (geheel getal);
+    de soort Vondstsoort;
+    de vrijstelling kenmerk (bezittelijk);
+
+Regel vrijstelling
+    geldig altijd
+        Een Jutter heeft de vrijstelling
+        indien hij aan ten minste één van de volgende voorwaarden voldoet:
+        - zijn soort is gelijk aan 'Blik'
+        - hij voldoet aan alle volgende voorwaarden:
+        .. zijn leeftijd is groter dan 65
+        .. hij voldoet aan ten minste één van de volgende voorwaarden:
+        .... zijn soort is gelijk aan 'Touw'
+        .... zijn soort is gelijk aan 'Glas'
+        .... zijn soort is gelijk aan 'Kurk'.

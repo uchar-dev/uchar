@@ -1,0 +1,43 @@
+Scenario blik op dertig
+Gegeven is de volgende situatie:
+een Jutter J1
+- de leeftijd is 30
+- de soort is 'Blik'
+Met als verwacht resultaat:
+- J1 heeft de vrijstelling
+
+Scenario touw op zeventig
+Gegeven is de volgende situatie:
+een Jutter J1
+- de leeftijd is 70
+- de soort is 'Touw'
+een Jutter J2
+- de leeftijd is 70
+- de soort is 'Kurk'
+Met als verwacht resultaat:
+- J1 heeft de vrijstelling
+- J2 heeft de vrijstelling
+
+Scenario touw op dertig
+Gegeven is de volgende situatie:
+een Jutter J1
+- de leeftijd is 30
+- de soort is 'Touw'
+een Jutter J2
+- de leeftijd is 70
+- de soort is 'Touw'
+Met als verwacht resultaat:
+- J1 heeft geen vrijstelling
+- J2 heeft de vrijstelling
+
+Scenario hout op zeventig
+Gegeven is de volgende situatie:
+een Jutter J1
+- de leeftijd is 70
+- de soort is 'Hout'
+een Jutter J2
+- de leeftijd is 70
+- de soort is 'Glas'
+Met als verwacht resultaat:
+- J1 heeft geen vrijstelling
+- J2 heeft de vrijstelling

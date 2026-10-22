@@ -1,0 +1,314 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "leeftijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "soort",
+            "datatype": {
+              "node": "Enumeration",
+              "domain": "Vondstsoort",
+              "values": [
+                "Touw",
+                "Glas",
+                "Kurk",
+                "Hout",
+                "Blik"
+              ]
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "vrijstelling",
+            "kind": "possessive"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "Vondstsoort",
+        "datatype": {
+          "node": "Enumeration",
+          "values": [
+            "Touw",
+            "Glas",
+            "Kurk",
+            "Hout",
+            "Blik"
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vrijstelling",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vrijstelling",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter heeft de vrijstelling"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn soort"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "enumeration": "Blik"
+                    },
+                    "type": {
+                      "node": "Enumeration",
+                      "domain": "Vondstsoort",
+                      "values": [
+                        "Touw",
+                        "Glas",
+                        "Kurk",
+                        "Hout",
+                        "Blik"
+                      ]
+                    },
+                    "source": {
+                      "snippet": "'Blik'"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn soort is gelijk aan 'Blik'"
+                  }
+                },
+                {
+                  "node": "Compound",
+                  "quantifier": "all",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "leeftijd",
+                        "subjectType": "Jutter",
+                        "source": {
+                          "snippet": "zijn leeftijd"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "65"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "65"
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn leeftijd is groter dan 65"
+                      }
+                    },
+                    {
+                      "node": "Compound",
+                      "quantifier": "atLeast",
+                      "threshold": 1,
+                      "parts": [
+                        {
+                          "node": "Comparison",
+                          "op": "equal",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "soort",
+                            "subjectType": "Jutter",
+                            "source": {
+                              "snippet": "zijn soort"
+                            }
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "enumeration": "Touw"
+                            },
+                            "type": {
+                              "node": "Enumeration",
+                              "domain": "Vondstsoort",
+                              "values": [
+                                "Touw",
+                                "Glas",
+                                "Kurk",
+                                "Hout",
+                                "Blik"
+                              ]
+                            },
+                            "source": {
+                              "snippet": "'Touw'"
+                            }
+                          },
+                          "source": {
+                            "snippet": "zijn soort is gelijk aan 'Touw'"
+                          }
+                        },
+                        {
+                          "node": "Comparison",
+                          "op": "equal",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "soort",
+                            "subjectType": "Jutter",
+                            "source": {
+                              "snippet": "zijn soort"
+                            }
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "enumeration": "Glas"
+                            },
+                            "type": {
+                              "node": "Enumeration",
+                              "domain": "Vondstsoort",
+                              "values": [
+                                "Touw",
+                                "Glas",
+                                "Kurk",
+                                "Hout",
+                                "Blik"
+                              ]
+                            },
+                            "source": {
+                              "snippet": "'Glas'"
+                            }
+                          },
+                          "source": {
+                            "snippet": "zijn soort is gelijk aan 'Glas'"
+                          }
+                        },
+                        {
+                          "node": "Comparison",
+                          "op": "equal",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "soort",
+                            "subjectType": "Jutter",
+                            "source": {
+                              "snippet": "zijn soort"
+                            }
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "enumeration": "Kurk"
+                            },
+                            "type": {
+                              "node": "Enumeration",
+                              "domain": "Vondstsoort",
+                              "values": [
+                                "Touw",
+                                "Glas",
+                                "Kurk",
+                                "Hout",
+                                "Blik"
+                              ]
+                            },
+                            "source": {
+                              "snippet": "'Kurk'"
+                            }
+                          },
+                          "source": {
+                            "snippet": "zijn soort is gelijk aan 'Kurk'"
+                          }
+                        }
+                      ],
+                      "source": {
+                        "snippet": "hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'."
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "hij voldoet aan alle volgende voorwaarden: .. zijn leeftijd is groter dan 65 .. hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'."
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan ten minste \u00e9\u00e9n van de volgende voorwaarden voldoet: - zijn soort is gelijk aan 'Blik' - hij voldoet aan alle volgende voorwaarden: .. zijn leeftijd is groter dan 65 .. hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
