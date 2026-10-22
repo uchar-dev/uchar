@@ -3386,8 +3386,13 @@ fixpoint is unique — rule order, activation order, and fact-insertion
 order do not matter. *v0 mirror note:* v0 warns on a circular reference
 at build time and bounds execution with a fire cap (ch. 5.5); **delta
 (promoted):** WF-045 (ch. 6.2) makes acyclicity of the dependency graph
-well-formedness — with the deliberate exception of creation recursion
-(ch. 5.5). The mirrored **exceptions** to
+well-formedness — with two deliberate exceptions, each with an order of its
+own: creation recursion (ch. 5.5), settled generation by generation, and
+since 2026-10-22 the instance-ordered cycle (ch. 6.2), a value of an object
+that reads the same value of its predecessor, settled object by object
+along the chain the case input lays. The promise holds per case the loading
+admits: a cycle in that chain is a fault of the case input (EF-033), never
+an evaluation with two outcomes. The mirrored **exceptions** to
 order-independence, each recorded:
 
 - the ~1-ULP order dependence in mixed-unit chained arithmetic (a
@@ -4077,8 +4082,8 @@ parameters, the clause that defines it and its witnesses.
   `values` (EF-016) and `filler` (EF-017). The Drools backend emits only `field` and
   `lexeme` (EF-003), `count` (EF-008), `from` and `reach` (EF-009), `creation`,
   `stratum` and `depth` (EF-015), `rules`, `values`, `attribute`, `label`
-  and `objectType` (EF-016), and the parts of EF-032 (since 2026-10-22, as ref
-  and the ASP backend), and no other.
+  and `objectType` (EF-016), the parts of EF-032 (since 2026-10-22, as ref
+  and the ASP backend), and `factType` and `cycle` (EF-033), and no other.
   Gate 8 holds each executor's emitted keys to this column: a key outside the
   column of its code fails with the code, the executor and the key.
 - **Witnesses.** A code enters the table together with its witness: a red
@@ -4139,6 +4144,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-030 | a recipient of an allocation has an empty or negative cap | §9.5 | `rule`, `label` | ch. 4.3; ch. 4.4 | `corpus/golden/jutterswet-berging`, `corpus/golden/jutterswet-rangmaximering` |
 | EF-031 | a filled dividend is divided by an empty divisor | §9.5 | `rule`, `label` | ch. 1.2; ch. 1.4 point 4 | `corpus/golden/jutterswet-bergloon`, `corpus/golden/synth3-takhek`, `corpus/golden/synth3-operandvolgorde` |
 | EF-032 | the parts of a date construction name no calendar day or no clock time | fault | `year`, `month`, `day`, `hour`, `minute`, `second`, `millisecond` | ch. 3.8 | `corpus/red/date-with-no-calendar-day` |
+| EF-033 | the links of the switch relation of an instance-ordered cycle form a cycle | case input | `factType`, `cycle` | ch. 6.2; IR-SPEC ch. 5.3 | `corpus/red/instance-order-link-cycle` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified
@@ -5445,6 +5451,13 @@ carried no symbolic hops and stayed on the bare population write,
 recorded with WF-028's uncheckable clause (since L2 the symbolic block
 is required, B7).
 
+*The path of a read* (since 2026-10-22). Beside its node and its kind, the
+walk records for an attribute or characteristic read the role bindings from
+the form's subject to the object it lands on: the ranges of the folds it sits
+in, then its own hops. The path decides nothing about the edge kind; it
+decides whether the read is shifted, local or neither within an
+instance-ordered cycle (IR-SPEC ch. 5.3, ch. 6.2 below).
+
 *Navigated reads (ch. 5.8)* consume relation(each hop), named by the
 hop's binding — since L2 every hop carries one (B11); until L2 a
 bindingless hop was resolved by the WF-053 unique derivation, and an
@@ -5553,15 +5566,69 @@ that cycle), and the reference interpreter refuses it under WF-045
 **WF-045.** The dependency graph MUST be acyclic after removing every
 creation form — object creation, or relation creation (ch. 5.5's
 idempotent, guard-free member) — that is a member of a recursive rule
-group (`IR-SPEC.md` ch. 3.9): a dependency cycle is admissible **only**
-when it passes through such a form. That is ch. 5.5's one controlled
-exception — recursive creation advances exactly one generation per
-instance; WF-033 guards the author's termination obligation and the
-runtime's bounded budget makes divergence a fault — promoted from the
-ch. 5.2 delta to well-formedness. With WF-045 (and the single-writer
-allocation discipline of WF-026) the fixpoint of the positive part is
-unique: rule order, activation order and insertion order do not matter
+group (`IR-SPEC.md` ch. 3.9), and every shifted edge of an
+instance-ordered part (`IR-SPEC.md` ch. 5.3): a dependency cycle is
+admissible **only** when it passes through such a form or is closed by
+such edges. The first is ch. 5.5's controlled exception — recursive
+creation advances exactly one generation per instance; WF-033 guards the
+author's termination obligation and the runtime's bounded budget makes
+divergence a fault — promoted from the ch. 5.2 delta to well-formedness.
+The second, since 2026-10-22, is the instance-ordered cycle below. With
+WF-045 (and the single-writer allocation discipline of WF-026) the
+fixpoint of the positive part is unique for every case the loading
+admits: rule order, activation order and insertion order do not matter
 (ch. 5.2).
+
+**The instance-ordered cycle** *(voorlopig besluit 2026-10-22, card
+`cycle-across-instances`; the definitions are `IR-SPEC.md` ch. 5.3)*. A
+value of an object that reads the same value of its predecessor over a
+switch relation closes a cycle of the graph, which has a node per type and
+member, while per object the reads form a chain. The members of such a part
+— rules and defaults groups — share a stratum, since every edge of a cycle
+counts positive in the assignment of ch. 6.3, and within it they evaluate
+per object:
+
+- **Depth.** An object without a link of the switch relation to a
+  predecessor stands at depth 0, an object whose predecessor stands at depth
+  d at d + 1, and a satellite at the depth of its owner (over its satellite
+  relation); an object with neither stands at 0. No form writes these
+  links, so the depths are a property of the case input; an instance a
+  creation makes has no link and stands at 0.
+- **The chain ends.** The links of the switch relation, over the role the
+  hop reaches, MUST form no cycle in the case input. A cycle is refused
+  while the case is read, before any rule fires: EF-033 (ch. 5.7b), with
+  the declared name of the fact type and the labels of the cycle, listed from
+  its smallest label (labels compared byte by byte) along the role the hop
+  reaches, joined by `, `; where the links hold several cycles, the one with
+  the smallest label is reported. It is never an evaluation with two
+  outcomes and never a budget: without the test the ASP backend grounds
+  without bound (measured 2026-10-22: on two Vergunningen that are each
+  other's vorige vergunning, still grounding after 30 s at 2.2 GB, stopped by
+  hand), and the reference interpreter has no depth to order by.
+- **The order.** For d = 0, 1, … up to the deepest object, and per depth for
+  each level l of the part (`IR-SPEC.md` ch. 5.3: the longest path over the
+  part's edges that are not shifted, a strict or negative edge counting one),
+  the members of level ≤ l evaluate on the objects of depth d, and every
+  member on the objects of a lower depth, to their fixpoint, beside the
+  other forms of the stratum; after the deepest depth the stratum settles
+  once more as a whole. A shifted read on an object of depth d lands on its
+  predecessor, of depth d − 1, which is settled; a local read lands on the
+  object, its satellite or its owner, of depth d, whose members of a lower
+  level are settled. So a negative shifted edge — a leeg/gevuld test on the
+  predecessor's value — reads the predecessor at rest, as a negative edge
+  between strata reads its producer at rest.
+
+The order is an order of evaluation, not of meaning: the fixpoint does not
+depend on it where the part is evaluated by a model rather than by passes.
+The ASP backend translates the part unchanged; its program, grounded on a
+case whose chain ends, is stratified per object and has the one stable
+model (measured 2026-10-22: the three cases of
+`corpus/golden/jutterswet-vergunningketen` and the case of WV-6.4-j PASS
+without a change to the translation). The Drools backend fires the members
+under truth maintenance, which withdraws a value justified by a leeg
+predecessor once the predecessor's value arrives (ch. 6.4, WV-6.4-j). The
+reading of a condition at the fixpoint (ch. 5.12) does not change: the
+order of the objects is not visible at the fixpoint.
 
 *v0 mirror note:* v0 warns on a circular reference at build time and
 bounds execution with a fire cap; WF-045 makes the refusal structural.
@@ -5591,7 +5658,9 @@ producer — and the producers' own input chains — have quiesced, so a
 monotone write cannot contradict it later; a channel
 test reads a complete channel for the named rule. v0's single boundary
 is the two-stratum special case; nested and chained negation get as
-many strata as the chain is deep.
+many strata as the chain is deep. Within the stratum of an
+instance-ordered part the order gains two keys, the depth of the object and
+the level of the member (ch. 6.2): stratum k, then depth d, then level l.
 
 ### 6.4 Worked examples (ref/ tests verbatim)
 
@@ -5718,6 +5787,52 @@ many strata as the chain is deep.
   merk(W3) = 2. With no links at all (W1 of rang 1, W2 of rang 4)
   nothing is minted: merk 0 and 0, the counter-witness to reading the
   matrix negatively under every quantifier.
+- The instance-ordered cycle (ch. 6.2; `ref/` tests WV-6.4-i, absolute, in
+  four orders of the rules and of the objects): the einddag of a Vergunning
+  is its basiseinddag plus the restant of its vorige vergunning when that
+  is gevuld, and its basiseinddag when that is leeg; its restant is the
+  number of days from its stopdag to its einddag when both are gevuld and
+  the stopdag is earlier. The restant reads the einddag of its own object
+  (a local edge, negative under the gevuld test, so the restant has level 1),
+  and the einddag reads the restant of the predecessor (shifted edges, one
+  of them negative). V1 (stopdag 01-03-2026, basiseinddag 01-06-2026, no
+  predecessor) stands at depth 0 and V2 (basiseinddag 01-12-2026, vorige
+  vergunning V1) at depth 1. At depth 0, level 0: the restant of V1's
+  predecessor is leeg (there is none, ch. 5.8), so **einddag V1 =
+  01-06-2026**, the basiseinddag; level 1: **restant V1 = 92** dagen. At
+  depth 1, level 0: the restant of V1 is 92, so **einddag V2 =
+  01-12-2026 + 92 dagen = 03-03-2027**; level 1: V2 has no stopdag, its
+  restant stays leeg. A Vergunning alone gets its basiseinddag. The golden
+  `jutterswet-vergunningketen` carries this case as its case 2, a chain of
+  three as its case 3 (einddag of the third 01-06-2027 + 183 dagen =
+  01-12-2027), and the same chain in the positive form over a satellite
+  Termijn.
+- What the order buys (`ref/` test WV-6.4-j, absolute, in two orders of the
+  rules): add "een Vergunning is zonder verlenging indien het restant van
+  de vorige vergunning leeg is" and let "einddag zonder restant" write the
+  basiseinddag on a Vergunning zonder verlenging. The characteristic is a
+  member of the cycle, and it is never withdrawn (ch. 5.3). Evaluated on V2
+  before the restant of V1 exists, it would hold for V2 for good, and the
+  two writers of the einddag of V2 would disagree: measured 2026-10-22 with
+  the depth order switched off, the reference interpreter faulted EF-016
+  ("einddag zonder restant" writes 01-12-2026, "einddag" 03-03-2027). In
+  depth order: **V1 zonder verlenging, V2 not, einddag V2 03-03-2027**,
+  which is the ASP backend's stable model as well.
+- A cycle in the links (`ref/` test WV-6.4-k, red case
+  `corpus/red/instance-order-link-cycle`): V1's vorige vergunning is V2 and
+  V2's is V1. The case is refused while it is read, **EF-033** with
+  `factType` "vorige vergunning" and `cycle` "V1, V2"; three Vergunningen
+  eerste → tweede → derde → eerste give `cycle` "derde, eerste, tweede", one
+  that is its own predecessor "V1".
+- Ill-formed, each a WF-045 cycle that is no instance-ordered part
+  (`IR-SPEC.md` ch. 5.3): the einddag summed over a set of vorige
+  vergunningen (`wf045-instance-cycle-to-many-predecessor`); a fact
+  creation that links the switch relation
+  (`wf045-instance-cycle-created-relation`); a Termijn shared by several
+  houders (`wf045-instance-cycle-shared-satellite`); the einddag reading the
+  restant of the predecessor and its own restant
+  (`wf045-instance-cycle-direct-and-shifted-read`); a sum over the termijnen
+  of the predecessor (`wf045-instance-cycle-to-many-satellite-step`).
 
 ---
 
