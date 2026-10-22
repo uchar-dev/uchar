@@ -16001,6 +16001,19 @@ let () =
     ~rules:[ unique_model_rule ~name:"open" ~unless:"open" ]
     ~models:"0"
 
+(* THE DIAGNOSIS FAILS LOUDLY (review of the main session, 2026-10-22). A
+   diagnosis run that clingo ends in an error — exit 65 on a syntax error, 33
+   on memory — or whose answer cannot be read came back as no witness at all,
+   and the runner reported an UNSAT whose guard it could not name. A program
+   the parser refuses is the smallest such run. *)
+let () =
+  let label = "diagnostic: a clingo run that ends in an error faults with its exit" in
+  match Solve.diagnostic "a(." with
+  | ws -> check (label ^ " (diagnosed as [" ^ String.concat "; " ws ^ "])") false
+  | exception Uchar_ref.Value.Fault { code; text; _ } ->
+      check (label ^ " (" ^ text ^ ")")
+        (code = None && Uchar_ref.Case.contains ~needle:"the diagnosis run of clingo exited 65" text)
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

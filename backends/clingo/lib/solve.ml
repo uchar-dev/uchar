@@ -53,27 +53,31 @@ let diagnostic program =
          (String.split_on_char '\n' program))
     ^ "\n#show viol/2.\n"
   in
+  (* the start of clingo's output, so a fault shows what came back *)
+  let head out = if String.length out <= 300 then out else String.sub out 0 300 ^ " ..." in
+  (* A run this function cannot read faults, never answers with no witness:
+     the runner would report an UNSAT whose guard it cannot name, and a
+     caller that pins a reason would see none instead of the failure. *)
   match run_clingo relaxed with
   | out, Unix.WEXITED (10 | 30) -> (
+      let unreadable () =
+        Uchar_ref.Value.fault "the diagnosis run of clingo gave unreadable JSON: %s" (head out)
+      in
       (* the witnesses of the relaxed program's ONE model: read off the first
          of two, the diagnosis would name the guards of one model and keep
          quiet about the other's *)
       let witnesses =
-        try
-          match Yojson.Safe.from_string out with
-          | `Assoc kvs -> (
-              match List.assoc_opt "Call" kvs with
-              | Some (`List (call :: _)) -> (
-                  match call with
-                  | `Assoc ckvs -> (
-                      match List.assoc_opt "Witnesses" ckvs with Some (`List ws) -> Some ws | _ -> None)
-                  | _ -> None)
-              | _ -> None)
-          | _ -> None
-        with _ -> None
+        match Yojson.Safe.from_string out with
+        | `Assoc kvs -> (
+            match List.assoc_opt "Call" kvs with
+            | Some (`List (`Assoc ckvs :: _)) -> (
+                match List.assoc_opt "Witnesses" ckvs with Some (`List ws) -> ws | _ -> unreadable ())
+            | _ -> unreadable ())
+        | _ -> unreadable ()
+        | exception Yojson.Json_error _ -> unreadable ()
       in
-      match Option.map Model.one_model witnesses with
-      | Some (`Assoc wkvs) -> (
+      match Model.one_model witnesses with
+      | `Assoc wkvs -> (
           match List.assoc_opt "Value" wkvs with
           | Some (`List atoms) ->
               List.filter_map
@@ -82,11 +86,13 @@ let diagnostic program =
                       Some (Model.unescape_str s)
                   | _ -> None)
                 atoms
-          | _ -> [])
-      | _ -> [])
+          | _ -> unreadable ())
+      | _ -> unreadable ())
   | _, Unix.WEXITED 20 ->
       (* no model even without the guard constraint, so no guard fired: the
          program itself has none (an odd cycle through a negation), refused
          as a program without exactly one stable model *)
       Model.one_model []
-  | _ -> []
+  | out, Unix.WEXITED c -> Uchar_ref.Value.fault "the diagnosis run of clingo exited %d: %s" c (head out)
+  | out, (Unix.WSIGNALED n | Unix.WSTOPPED n) ->
+      Uchar_ref.Value.fault "the diagnosis run of clingo was ended by signal %d: %s" n (head out)

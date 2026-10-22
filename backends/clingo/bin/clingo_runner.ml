@@ -39,11 +39,10 @@ let solve program =
         exit 2
     | _, Unix.WEXITED 20 ->
         let witnesses = diagnostic program in
-        let reason =
-          match witnesses with
-          | [] -> "no viol/2 witness (the diagnosis run gave no model to read)"
-          | vs -> String.concat "; " vs
-        in
+        (* never empty: the program is UNSAT and the relaxed one, which lacks
+           only the guard constraint, has exactly one model (or [diagnostic]
+           faults), so that model holds a guard's witness *)
+        let reason = String.concat "; " witnesses in
         let codes =
           List.fold_left
             (fun acc w ->
