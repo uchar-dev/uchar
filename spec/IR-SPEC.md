@@ -8979,8 +8979,10 @@ over the satellites of the object or of its predecessor, and a hop to a
 satellite and back to its owner, land in a household whose depth is the
 object's or the predecessor's. Within a depth the levels order the rest: a
 fold over the own satellites is an internal edge that is not shifted, so the
-satellites' members stand a level lower and are settled before the owner's
-member reads them. The witness of the old clause,
+satellites' member stands at a level no higher than that of the owner's
+member that reads it, one lower where the read is strict or negative (a
+characteristic attributed over the satellites, the range of a quantifier
+`all`, a leeg-test). The witness of the old clause,
 `wf045-instance-cycle-to-many-satellite-step` (a fold over the termijnen of
 the predecessor), is removed with reason (`corpus/negative/README.md`).
 Outside stay, each with its reason:
@@ -9019,7 +9021,9 @@ beside its WF-045 cycle one violation per read that is neither shifted nor
 local: `WF-045.instance-read-outside`, at the form that reads, with the
 parameters `form` (the name of the form), `node` (the node of ch. 5.1),
 `path` (the hops of the path as `factType/role`, joined by `; `) and
-`clause`, the first clause the path falls on:
+`clause`: the clause of the first hop of the path that is neither the step
+to the predecessor nor a household hop, or one of the two clauses over the
+reads of the part (`one-walk`, `one-satellite-relation`):
 
 | clause | the read |
 |---|---|
@@ -9037,9 +9041,9 @@ creation) name no read and give no such violation, and neither does a part
 whose reads walk no switch relation (`wf045-instance-cycle-to-many-predecessor`,
 `wf045-instance-cycle-created-relation`). The witnesses that pin the arm:
 `wf045-instance-cycle-hub-negation`, `-non-local-read` and
-`-shared-satellite` (`hub`), `-satellite-of-satellite`,
-`-predecessor-and-successor` (`one-walk`) and `-two-satellite-relations`
-(`one-satellite-relation`). The Drools backend, which does not run the verifier,
+`-shared-satellite` (`hub`), `-satellite-of-satellite`
+(`satellite-of-satellite`), `-predecessor-and-successor` (`one-walk`) and
+`-two-satellite-relations` (`one-satellite-relation`). The Drools backend, which does not run the verifier,
 refuses the same documents and names the same reads, paths and clauses.
 
 The clean witnesses are the goldens

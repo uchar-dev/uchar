@@ -123,3 +123,170 @@ nieuwe recht niet wordt herkend aan een afgeleide beëindigingsdatum. Er zijn tw
 - (c1) de opvolger over `eerdere recht`.
 
 Daarna vervallen K12, N13 en afwijking 21 in v2.
+
+## Result (2026-10-22)
+
+Tak `card/instance-cycle-household-reads`, vanaf main `018be1df`, gerebased op main `4970cceb` (third-condition-level
+geland; het enige conflict was `EXPECTED_PLAYED`, 271 + 1 = 272) en na de gates-run op main `c98b690d`
+(percentage-of-snippets: `ExpressionBuilder` en de snippets van één golden, geen conflict, geen gedeeld bestand; daarop
+gates 2 en 3 opnieuw groen, de volledige set niet opnieuw). Geraakt: `spec/verifier/lib/checks.ml`,
+`backends/drools/` (`Cycles`, `DroolsCode`, beide catalogi, `TmsCycleVerifierWitnessTest`), `scripts/check-drools.sh`
+(alleen `EXPECTED_PLAYED`), `ref/test/test_ref.ml` (WV-6.4-m), als voorstel `spec/IR-SPEC.md` en
+`spec/RUNTIME-SEMANTICS.md`, het corpus (één golden, twee negatieven erbij, één weg met reden, vier `expect.txt` naar de
+nieuwe arm, `corpus/negative/README.md`) en deze kaart. Niet geraakt: `ref/lib/`, `backends/clingo/`, `frontends/`, het
+IR-schema, `CLAUDE.md`, `spec/PLAN.md`, `spec/CONSTRUCTS.md`, `toka/`.
+
+- `1430e999c` de kaart naar `doing/`.
+- `9b67734fd` verifier: het huishouden en de arm; de golden, de twee negatieven, het negatief weg met reden.
+- `3d3d4c88a` Drools: `Cycles` spiegelt de verifier, DROOLS-292, de catalogi, `EXPECTED_PLAYED`, de witnesstest.
+- `013f7fc9e` spec-voorstel: IR-SPEC ch. 5.3 en de index, RUNTIME-SEMANTICS ch. 6.2 en 6.4; ref-test WV-6.4-m.
+- `8edd1f683` spec-voorstel: de kosten gemeten.
+- de commit van deze Result: twee zinnen van ch. 5.3 nagelezen, de Result.
+
+### Wat er is
+
+**Verifier** (`instance_ordering`). `satellite_hop` geeft de richting mee en eist to-one alleen nog voor de
+eigenaarsrol; de stap naar de satelliet mag een verzameling bereiken. `classify` is een loop over het pad met vier
+toestanden (onderwerp; na één eigenaarsstap als eerste stap; in het huishouden; na de R-stap): lokaal is nul of meer
+huishoudstappen, verschoven is hooguit één eigenaarsstap, één R-stap naar de rol van de voorganger en dan
+huishoudstappen. Een pad daarbuiten geeft de clausule van de eerste stap die er niet in past (`clause_of_hop`). De
+schakelstap van een deel is de eerste stap van een pad, of de tweede na een stap die er geen is (de eigenaarsstap). Elke
+gebruikte satellietrelatie gaat in `sats`, dus in `io_owners` en in de ene-relatie-clausule. `instance_ordering` geeft
+naast de delen en de verschoven randen de lezingen buiten de afbakening terug; `wf045_046` maakt er per lezing de arm
+van, na de kringen.
+
+**De arm** `WF-045.instance-read-outside` (voorlopig besluit 1 hierboven), aan de vorm die leest, met `form` (de naam
+van de vorm), `node` (de knoop van ch. 5.1, bv. `attr:vergunning:verlengde einddag`), `path` (`factType/role`,
+gescheiden door `; `) en `clause`. Melding: `read outside the instance-ordered cycle (ch. 5.3): <form> reads <node>
+over [<path>], which falls on the clause <clause>`. De clausulesleutels staan in de tabel van IR-SPEC ch. 5.3: `hub`,
+`satellite-of-satellite`, `two-switch-steps`, `set-of-predecessors`, `one-walk`, `one-satellite-relation`,
+`shifted-or-local`.
+
+**Drools** (`Cycles`). `satelliteHop`, `clauseOfHop`, `walkOf` en `classify` spiegelen de verifier; `orders` geeft een
+`Ordering` met de delen en de lezingen buiten. `refusal` weigert een deel met zulke lezingen met de nieuwe code
+DROOLS-292 (`instance-read-outside`, CONTRACT, parameters `cycles` en `reads`): de kring (de delen van DROOLS-092) en
+elke lezing als `PART.cycle.read-outside`, bv. `exec-model: cycle in the dependencies across the members
+Vergunning.blokkade, Vergunning.einddag and Vergunning.openstand via …, and outside the scope of the instance-ordered
+cycle: the rule "blokkade" reads Vergunning.openstand over [registratie/register; registratie/geregistreerde
+vergunning] (clause hub) — …`. Zonder lezing buiten blijft het DROOLS-092. Beide catalogi; `check-drools-codes.sh`
+groen met 292 codes. `TmsCycleVerifierWitnessTest` houdt de genoemde lezing (pad en clausule) tegen de `expect.txt` van
+elk `wf045-instance-cycle-*`-negatief en laat de golden toe.
+
+**ref** blijft ongewijzigd in `ref/lib/` (gemeten, `werk/bruggen/household/ref-no-depth.txt`): de golden en
+WV-6.4-m spelen met de gedeelde `instance_orders`. Met de dieptevolgorde tijdelijk uit faalt case 2 van de golden
+(`T3.overschot = 40` en `V2.restant = 40`, verwacht leeg: de verlengde einddag van V2 werd eerst als basiseinddag
+gelezen); met haar PASS. Zonder `io_owners` (een termijn op diepte 0) speelt alles nog: in deze golden beslist de
+diepte van de eigenaars, niet die van de satellieten, omdat de leden van een lagere diepte in elke latere fase
+opnieuw rekenen (zie vondst 4).
+
+**clingo** blijft ongewijzigd: de golden en WV-6.4-m spelen. Zie vondst 1.
+
+**De golden** `jutterswet-vergunningtermijnen` (handgeschreven IR, met de frontend van de tak geëmitteerd met één
+hulpattribuut en teruggezet; `NOTE.md` met de bron en de handberekening). Vijf regels: overschot (Termijn, leest de
+verlengde einddag van zijn houder); restant (som over de eigen termijnen, met in het filter de verlengde einddag van de
+houder van de termijn); afgewikkeld (kwantor `alle` over de eigen termijnen, de toets leest hetzelfde); verlengde
+einddag (basiseinddag plus de som over de termijnen van de vorige vergunning, indien het restant van de vorige gevuld
+is en de vorige niet afgewikkeld is); verlengde einddag zonder restant. Drie casussen: één vergunning met één termijn;
+een keten van twee met twee en één termijnen (V2 wordt afgewikkeld dankzij de verlenging); een keten van drie met drie,
+nul en één termijnen, in een bestandsvolgorde die noch die van de keten noch de alfabetische is. Rood vóór
+(`werk/bruggen/household/g3-red.log`: vijf WF-045- en drie WF-046-regels op de golden), groen erna.
+
+**Negatieven** (gate 3: 523 geweigerd op hun regel, 366 op hun arm).
+- Weg met reden: `wf045-instance-cycle-to-many-satellite-step`, in de nieuwe sectie "Vervallen bij een normwijziging"
+  van `corpus/negative/README.md`, in de rijvorm van de v1-migratie; gemeten schoon op de verifier van de tak.
+- Erbij: `wf045-instance-cycle-hub-negation` (de miniatuur; `NOTE.md` met de twee stabiele modellen, opnieuw gemeten met
+  de clingo-runner van de tak en `clingo -n 0`; schoon met de rol `geregistreerde vergunning` to-one) en
+  `wf045-instance-cycle-satellite-of-satellite` (Vergunning → Termijn → Deeltermijn; schoon met zo'n stap in de verifier
+  als huishoudstap geteld).
+- De arm per negatief:
+
+| negatief | `expect.txt` | keuze |
+|---|---|---|
+| `…-to-many-predecessor` | `WF-045.dependency-cycle` | de arm vuurt niet: geen schakelrelatie in het deel (de rol naar de voorganger is to-many) |
+| `…-created-relation` | `WF-045.dependency-cycle` | de arm vuurt niet: de relatie heeft een schrijver, dus geen schakelrelatie |
+| `…-direct-and-shifted-read` | `WF-045.dependency-cycle` | de arm vuurt niet: elke lezing is verschoven of lokaal, het deel valt op "kringvrij zonder de verschoven randen" |
+| `…-shared-satellite` | `instance-read-outside`, `hub`, form `verlengde einddag` | twee lezingen genoemd; de pin is die naast de voorganger, die de NOTE als gedeeld object noemt |
+| `…-non-local-read` | `instance-read-outside`, `hub`, form `overschot` | de enige lezing buiten |
+| `…-predecessor-and-successor` | `instance-read-outside`, `one-walk`, form `overschot` | beide lezingen genoemd; de pin is de lezing van de opvolger |
+| `…-two-satellite-relations` | `instance-read-outside`, `one-satellite-relation`, form `saldo` | beide genoemd; de pin is de lezing naast de voorganger |
+| `…-hub-negation` (nieuw) | `instance-read-outside`, `hub`, form `blokkade` | de enige lezing buiten |
+| `…-satellite-of-satellite` (nieuw) | `instance-read-outside`, `satellite-of-satellite`, form `verlengde einddag` | beide genoemd; de pin is de lezing naast de voorganger |
+
+**Volgordes**, gemeten met `werk/bruggen/household/scripts/order_run.sh` (naar dat van de vorige bouwer;
+`werk/bruggen/household/order.log`): alle 120 volgordes van de vijf regels van de golden, elk met de casussen zoals ze
+zijn en met de objecten van elke casus omgekeerd, 240 runs: exec-model en DRL-tekst elk PLAYED 3, ref PASS, clingo PASS,
+in alle 240. Geen vorm bleef volgordeafhankelijk. WV-6.4-m speelt in ref, clingo en beide Drools-takken
+(`werk/bruggen/household/wv/wv-m-four.txt`).
+
+**Kosten** (`werk/bruggen/household/verifier-{before,after}.txt`): over de 916 documenten van het corpus en de
+pariteitszone zijn de randen (`--dependency-edges`) gelijk aan die van main; de rapporten verschillen in zeven
+documenten, de golden en de zes negatieven met de nieuwe arm.
+
+### Gates
+
+De volledige set (`werk/gates.sh`), één keer: `gates-1` op `271368ffb` (de tak op main `4970cceb`), **EXIT 0**
+(2026-10-22 15:00–15:38), alle zeventien rc=0. Uit `gates-1`: gate 3 365 goldens en rode documenten schoon, 523
+negatieven geweigerd op hun regel, 366 op hun arm, 215 arm-sleutels; gate 5 1369 gewerkte voorbeelden (was 1361, plus
+WV-6.4-m), 875 casussen exact; gate 6 875 casussen ref ≡ clingo; gate 12 PLAYED 272 op beide takken, de suite 1652
+tests groen; gate 13 44 eenheidsannotaties getwist over 25 goldens; gate 15 groen; gate 17 272 goldens en 746
+casussen op beide takken, 0 afwijkingen. Na de run veranderden alleen twee zinnen van IR-SPEC ch. 5.3 (de niveaus
+binnen een diepte, de groepering van de getuigen van de arm) en deze kaart; gate 1 daarop opnieuw groen.
+Tussendoor los op de tak vóór de rebase: gates 3, 5, 6, 12 `--fast` en 17 groen (`werk/bruggen/household/build-gates-2.txt`),
+gate 15 groen (`g15-1.log`), gate 3 rood vóór de verifierwijziging (`g3-red.log`).
+
+### Meting 6 (geen bestand in de repository)
+
+Het m5-document van de vorige bouwer (`werk/bruggen/k12/m5/v2-k12.ir.json`, de v2-regelset met de verlenging in de
+maxdatum) door de verifier van de tak (`werk/bruggen/household/meting6.txt`): tien `WF-045.dependency-cycle`, 29
+WF-046, tien WF-051 en precies één `WF-045.instance-read-outside`:
+
+    WF-045.instance-read-outside	/rules/prioritizedDefaults/4	{"form":"herleving art. 21 lid 1","node":"attr:rechtopuitkering:beëindigingsdatum","path":"SamenloopRechtenOpUitkeringBetreftRechtOpUitkering/samenloop; SamenloopRechtenOpUitkeringBetreftRechtOpUitkering/recht","clause":"hub"}
+
+Dat is de samenlooplezing (lezing 4). De vier andere van meting 5 (de vouwen over de eindigingsgronden in
+"herlevingsdatum van het recht", "herleving" en "herlevingstermijn buiten toepassing", en de stap naar het inkomen en
+terug in "eerste kalendermaand zonder overschrijding …") zijn lokaal: vóór de wijziging gaf een tijdelijk
+geïnstrumenteerde verifier van main er vijf (`werk/bruggen/household/m0-reads.txt`, gelijk aan
+`werk/bruggen/k12/m5/diag.txt`), erna één. Het document zonder de K12-wijziging (`v2.ir.json`) blijft verifier-schoon.
+
+### Vondsten
+
+1. **clingo, buiten mijn paden: een vouw met een datumvergelijking in het filter grondt niet onder een ontkende
+   kenmerkvoorwaarde.** De bereikbewaking van een vergelijking in het filter (`translate.ml`, de `viol("arithmetic
+   range exceeded …")`-regels) neemt de voorwaarde van de regel over, `not has(S,"afgewikkeld")`, zonder `S` te binden:
+   `error: unsafe variables … 'S' is unsafe`, grounding stopt. Getuige zonder kring en verifier-schoon:
+   `werk/bruggen/household/clingo-guard/hulp-v1.ir.json` (de eerste vorm van de golden, met een hulpattribuut) met
+   `corpus/golden/jutterswet-vergunningtermijnen/case1-een-vergunning.json`; ref rekent het. De golden heeft daarom de
+   kenmerkvoorwaarde op de verlengde einddag (verschoven, op de voorganger) in plaats van op het restant.
+2. **Gate 3 laat een slug van ten hoogste drie woorden toe**, dus heet de arm `WF-045.instance-read-outside` in plaats
+   van `instance-cycle-read-outside` (voorlopig besluit 1). De kaart `backlog/new/20261022-check-admits-instance-cycle.md`
+   noemt nog de oude naam; die kaart valt buiten mijn paden.
+3. **Bestaande test gewijzigd, met reden:** `TmsCycleVerifierWitnessTest.each_negative_document_of_wf045_wf046_and_wf051_is_refused`
+   telde 30 negatieven met een gelijkheid; het zijn er nu 31 (één weg, twee erbij, alle geweigerd). Erbij:
+   `the_refusal_names_the_read_the_verifier_names` en `the_reads_in_the_household_are_admitted`.
+4. **Geen getuige maakt de diepte van een satelliet beslissend.** Met `io_owners` leeg spelen de golden en WV-6.4-m in
+   ref nog: een satelliet op diepte 0 rekent opnieuw zodra de diepte van haar eigenaar aan de beurt is. Een vorm waarin
+   het verschil zichtbaar wordt, is een kenmerk op een satelliet dat haar eigenaar ontkennend leest; de kaart vroeg er
+   niet om.
+5. Zonder negatief zijn de clausules `two-switch-steps`, `set-of-predecessors` (met een schakelrelatie in hetzelfde
+   deel) en `shifted-or-local`; ze staan in de tabel en in de code van beide uitvoerders.
+6. Geen bug gevonden in de verifier of in Drools `Cycles` buiten de kaart.
+
+### Voorgestelde CONSTRUCTS-rij (voor de hoofdsessie)
+
+| 45 | A value of an object that reads the same value of its predecessor — the instance-ordered cycle | statute rules that extend a right by what remains of the earlier one (art. 42b WW: the duration of a new right is extended by the remaining duration of the ended right); in RegelSpraak a rule over a fact type with two roles on one type, "het restant van de vorige vergunning van de Vergunning" | core | kernel: a second controlled exception to WF-045, beside recursive creation | v0 warns on a circular reference at build time and fires up to a cap; until this row v1 refused every such cycle (WF-045, and WF-046 where a leeg-test closes it). **Landed (2026-10-22, card `cycle-across-instances`; voorlopig besluit):** IR-SPEC ch. 5.3 defines the switch relation (two roles on comparable types, the predecessor's role to-one, no writer), the satellite relation, the path of a read, shifted and local reads and the instance-ordered part; WF-045, WF-046 and WF-051 walk the graph without its shifted edges, `--dependency-edges` unchanged. RUNTIME-SEMANTICS ch. 6.2: the members evaluate per object by depth in the chain and per depth by level; a cycle in the links is EF-033 at case input, in ref, clingo and Drools. **Widened (2026-10-22, card `instance-cycle-household-reads`; voorlopig besluit B2.1–B2.3):** a read counts as local or shifted within the household of an object (the object and its satellites, all at its depth): folds and quantifiers over to-many satellites of the object or of its predecessor, and the hop to a satellite and back; the owner's role stays to-one. A part over a switch relation that falls on a clause gets beside its cycle `WF-045.instance-read-outside` (`form`, `node`, `path`, `clause`), and the Drools backend refuses it with the same reads (DROOLS-292); ref and clingo unchanged. Witnesses: goldens `jutterswet-vergunningketen` and `jutterswet-vergunningtermijnen` (gates 3, 5, 6, 12, 17), nine `wf045-instance-cycle-*` negatives (`to-many-satellite-step` removed with reason, `hub-negation` and `satellite-of-satellite` added), red `instance-order-link-cycle`, `ref/` tests WV-6.4-i to -m | out, each with its reason in IR-SPEC ch. 5.3: a read over a hub (a relation whose role on the side of the cycle's type is to-many; refused statically, a miniature gives two stable models), a satellite of a satellite, two switch steps, a set of predecessors; the RegelSpraak frontend still refuses the form (card `check-admits-instance-cycle`) |
+
+### Voor de kaart `check-admits-instance-cycle`
+
+- De afbakening staat op één plek per uitvoerder: `instance_ordering` in `spec/verifier/lib/checks.ml` en `Cycles.orders`
+  in de Drools-backend. `Dependencies.java` moet dezelfde set toelaten: de huishoudstap (`satellite_hop`: eigenaarsrol
+  to-one, de stap naar de satelliet mag een verzameling bereiken), de loop over het pad met vier toestanden (`classify`),
+  de schakelstap op de eerste of de tweede stap van een pad (`walk_of`), en per lezing buiten de clausule
+  (`clause_of_hop`, plus `one-walk` voor elke lezing over een schakelrelatie als het deel er meer dan één paar heeft, en
+  `one-satellite-relation` per lezing over een gedeeld satelliettype).
+- De melding naast de kring: arm `WF-045.instance-read-outside`, parameters `form`, `node` (`attr:<type>:<lid>`
+  genormaliseerd), `path` (`factType/role; …`, gespeld zoals in het document) en `clause`, een van de zeven sleutels van
+  IR-SPEC ch. 5.3. Drools zegt hetzelfde als DROOLS-292 (`<vorm> leest <Type.lid> over [<pad>] (clausule <sleutel>)`).
+- De negatieven `wf045-instance-cycle-*` zijn de toets: negen, zes met de arm in `expect.txt`. Meting 6: het m5-document
+  geeft precies één lezing buiten, de samenlooplezing (`hub`). Acceptatie (c) van die kaart (de v2-regelset met de
+  verlenging in de maxdatum geeft `check` exit 0) haalt de frontend dus pas na de herschrijving van hww-06 in de
+  werkbank (B2.5).
