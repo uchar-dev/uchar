@@ -705,7 +705,7 @@ and this backend); declared factors and stelsel never enter.
     `agg_eerste`/`agg_laatste` over `scalar_cmp`). A non-datum-tijd or
     mixed-granularity operand faults loudly (ref faults the unordered
     comparison); a set-typed datum-tijd fold, a navigated datum-tijd read,
-    the `dateWith`/`dateTimeWith` constructor, a datum-tijd **parameter**
+    a datum-tijd **parameter**
     read and a **`Let`/`BinderRef`-bound** datum-tijd (with the residual
     `VariableReference`) stay the dt_term catch-all's loud flank. The last two
     were measured on 2026-09-06 and are each a live shape, not a
@@ -799,8 +799,24 @@ and this backend); declared factors and stelsel never enter.
   judged on the civil day part of the pair term and the ms-of-day rides
   through unchanged); the datum-tijd `duration` stays refused, naming the
   same form `ref` names and giving the same reason for it.
-- **Loud flanks**: the
-  `dateWith`/`dateTimeWith` constructors, the sub-day part extractors
+- **The date construction** (`dateWith`/`dateTimeWith`, RUNTIME-SEMANTICS
+  ch. 3.8; since 2026-10-22, golden `date-with-parts`): each part is an
+  unscaled whole term (a part that is not statically a whole unitless
+  number is refused at translation), and the civil day number is
+  `days_from_civil` with the March shift, the Easter chain's re-encode;
+  `dateTimeWith` adds the ms-of-day ((h·60 + min)·60 + s)·1000 + ms as the
+  pair term's second component. Parts that name no calendar day (a month
+  outside 1..12, a day below 1 or beyond the month's length by the
+  February/non-February rule pair of the month step) or no clock time
+  derive a `viol/2` witness, never a rolled-over or clamped date; every
+  witness joins all parts, so a leeg part leaves the value leeg and fires
+  none, as in ref. The year is fenced to 1..5 000 000 by two further
+  witnesses that refuse loudly: below 1 the shifted year turns negative
+  and gringo's truncation stops being the floor, beyond 5 000 000 the day
+  number leaves clingo's integers. A datum-tijd that far out is still
+  inside the representable millisecond range, so that range needs no
+  fence here.
+- **Loud flanks**: the sub-day part extractors
   (`uur/minuut/seconde/milliseconde-uit`), and datum-tijd
   **(on)gelijk-aan** still fault at translation — outside the arithmetic,
   the fold ordering and (since 2026-09-06) the scalar ordering the pair
@@ -1049,7 +1065,23 @@ against the declared roles (name or plural, ci) or fell back to the
 unique connecting fact type. The `die/dat` filter is lowered by
 `cond_atoms` over the element variable. An element the filter's body
 cannot derive contributes no tuple: the contributor skip is the join,
-for free.
+for free. A value in the filter that is itself an aggregate — a listed
+eerste/laatste, an instance fold — is an assignment `V = #agg { … }`, and
+clingo admits no aggregate inside an aggregate element; since 2026-10-22
+(card `clingo-nested-aggregate-in-fold-filter`, goldens
+`fold-filter-nested-aggregate` and
+`fold-filter-inner-fold-via-element-role`) each such atom moves into a
+helper predicate per element, `aghN(X,…,V) :- isa(X,T), …, V = #agg { …
+}.`, in the filter of every set fold and in a quantifier fold's filter and
+matrix alike. The helper's head carries the element variable, the
+variables the aggregate shares with an earlier atom of the condition (that
+atom copied into the helper's body) and the result. An aggregate that
+reads a variable of the enclosing rule — its subject, its guard, a `Let`
+binder — or that is no assignment is refused by name (CLINGO-028), never
+hoisted into a helper that would read a variable of its own in its place.
+The hoist reads the atoms the condition's translation returns; a form a
+node registers for the pass before a creation (`register_pre`) does not
+pass through it.
 The **self-denoting** source (WF-083, RS ch. 3.4a) is, since L2, a
 plain count source: the count carries its `sourceRole` and translates as
 every other count. *Until L2* the written role stood in the argument's
@@ -2524,8 +2556,7 @@ square, ref ≡ clingo) and, since 2026-09-19, the day-kind (dagsoort)
 durations and tijdsduren (the extension table above, goldens
 `jutterswet-bergingsklok` and `jutterswet-getijklok`, the latter over
 datum-tijd operands); what stays loud in the date family is the day-kind
-`duration` over DATUM-TIJD operands,
-`dateWith`/`dateTimeWith`, the sub-day part extractors
+`duration` over DATUM-TIJD operands, the sub-day part extractors
 (uur/minuut/seconde/milliseconde-uit, still under the catch-all;
 outside ref too — the extractor slice is not the ms layer's
 arithmetic), and a datum-tijd operand in an EQUALITY comparison

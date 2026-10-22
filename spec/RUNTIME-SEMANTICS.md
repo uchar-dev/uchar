@@ -74,7 +74,7 @@ recorded as such.
 | Context | Empty behaviour | Worked examples |
 |---|---|---|
 | date ± duration | empty *date* propagates; empty *duration* coalesces to 0 — **Executed** (2026-08-25, both executors; ch. 3.8) | leeg + 5 dagen = leeg; datum + leeg dagen = datum |
-| date construction / part extraction | any empty part or date propagates — day-precision extraction and the Easter builtin **Executed** (2026-08-25, both executors; ch. 3.8) | jaar uit leeg = leeg; eerste paasdag van leeg = leeg |
+| date construction / part extraction | any empty part or date propagates — day-precision extraction and the Easter builtin **Executed** (2026-08-25, both executors; ch. 3.8); date construction **Executed** (2026-10-22, both executors; ch. 3.8) | jaar uit leeg = leeg; eerste paasdag van leeg = leeg; de datum met jaar: leeg, maand: 3 en dag: 1 = leeg |
 | tijdsduur van A tot B | any empty operand propagates (never 0) — **Executed** (2026-08-25, both executors; ch. 3.8) | tijdsduur van leeg tot d = leeg |
 
 **Text, booleans, enumerations**
@@ -2375,8 +2375,52 @@ both executors; WF-038):** the day-precision extractors and the Easter
 builtin run in ref and clingo — golden `jutterswet-paasvondst`
 (a maand-uit disjunction, an eerste-paasdag∘jaar-uit date equality, a
 jaar-uit/dag-uit Gelijkstelling pair, the leeg corner) carries the
-class differentially. Datum-tijd operands, the sub-day extractors and
-date construction (datum-met/datumtijd-met) stay unexecuted, loud.
+class differentially. Datum-tijd operands and the sub-day extractors
+stay unexecuted, loud.
+
+**Date construction (proposal 2026-10-22, card
+`date-with-in-ref-and-clingo`; the rule for parts that name no day is a
+provisional decision of that card's builder).** "De datum met jaar: …,
+maand: … en dag: …" (`dateWith`) takes three parts, year, month and day,
+in that order; "de datumtijd met jaar: …, maand: …, dag: …, uur: …,
+minuut: …, seconde: … en milliseconde: …" (`dateTimeWith`) takes seven,
+the hour, minute, second and millisecond after them. Every part is
+evaluated, in argument order (ch. 5.11), before a leeg part makes the
+result **leeg** (ch. 1.2). Each part is a **whole, unitless** number: a
+non-whole or unit-carrying part is a fault, never a truncation, as for the
+Easter year. The result is the civil date (year, month, day) of the
+proleptic Gregorian calendar in zoneless civil time — the triple the part
+extractors above read — when the parts name one: the month 1..12 and the
+day 1..the month's length (28, 29 in a leap year, 30 or 31); for
+`dateTimeWith` also the hour 0..23, the minute 0..59, the second 0..59 (no
+leap second) and the millisecond 0..999, and the instant, that day's
+midnight plus the clock time, lies in the representable millisecond range
+above. **Parts that name no calendar day or no clock time are a fault**:
+never a roll-over into the next month (31 April is not 1 May), never a
+clamp to the month's end (31 April is not 30 April either — the month-end
+clamp belongs to date ± duration, a step, not to the construction), and
+never leeg. A whole year outside the executor's machine-integer range is a
+fault, never a wrap-around, as for the Easter year. The fault has no code
+yet (ch. 5.7b, "Kinds without a code"). Worked examples (absolute,
+pinned; each a `ref/` test verbatim): datum met jaar 2026, maand 3, dag 1
+= **2026-03-01**; 2024, 2, 29 = **2024-02-29**; 2000, 2, 29 =
+**2000-02-29**; 2026, 2, 29 = **fault** (2026 is no leap year); 1900, 2,
+29 = **fault** (1900 is divisible by 100 and not by 400); 2026, 4, 31 =
+**fault**; 2026, 13, 1 = **fault**; 2026, 0, 1 = **fault**; 2026, 3, 0 =
+**fault**; maand 2,5 = **fault**; jaar 2026 jr = **fault**; jaar leeg =
+**leeg**; 2026, 13, leeg = **leeg** (the leeg test comes before the
+calendar); datumtijd met 2026, 3, 1, 6, 30, 0, 0 =
+**2026-03-01T06:30:00**; 2026, 12, 31, 23, 59, 59, 999 =
+**2026-12-31T23:59:59.999**; uur 24, seconde 60 or milliseconde 1000 =
+**fault**; jaar 146140482, maand 1, dag 1, 0:00 = **146140482-01-01T00:00:00**
+and jaar 200000000 = **fault** (outside the millisecond range). **Executed
+(2026-10-22, both executors):** golden `date-with-parts` (the witness
+15-03-2026 → 01-03-2026, a datum-tijd, two leap years and the leeg
+corner). The ASP backend carries years 1 to 5 000 000 and refuses the rest
+loudly (`spec/ASP-TRANSLATION.md` S6a). The Drools backend faults on every
+part that names no day or clock time, without the code; it answers a
+datum-tijd beyond the millisecond range (jaar 200000000 →
++200000000-03-01T00:00, measured 2026-10-22).
 
 ### 3.9 The whole-period qualifier (§8.2)
 
@@ -4041,7 +4085,12 @@ parameters, the clause that defines it and its witnesses.
 - **Kinds without a code.** A normative fault without a witness keeps its
   text and gets a code when a red case for it lands: today, among others,
   the pass budget of ch. 5.7 step 4 where no divergence by two writers is
-  named. A safeguard of one executor (a fire cap) is no fault kind. On the
+  named; and the date construction whose parts name no calendar day or no
+  clock time (ch. 3.8), whose red case waits until the Drools backend
+  reports a code beside its fault (until then gate 8's Drools leg cannot
+  replay it: it demands the pinned code of a case it does not exclude, and
+  an exclusion of a case that faults is stale). A safeguard of one
+  executor (a fire cap) is no fault kind. On the
   `§9.5` channel three kinds have no witness and so no code; each deposits
   its fact without a code (ch. 5.6): a negative radicand (ch. 1.2), which no
   golden can witness while the ASP backend has no square root and gate 6
@@ -4795,7 +4844,7 @@ name its kinds the same way.
 | `TimeWindow` (the period condition) | `from`, `to` | **visible** | `from`, then `to`; an absent bound evaluates nothing, and BOTH bounds are read before the evaluation date decides. *Carried by both OCaml executors since 2026-09-20 (ch. 3.10); the order is stated and not yet witnessed by a case, because the two bound shapes WF-111 admits — a literal and an own attribute — have no fault position to order* |
 | `Clamp` | `base`, `minimum`, `maximum` | **visible** | `base`, then `minimum`, then `maximum`; an absent bound evaluates nothing |
 | `duration` / `absoluteDuration` (tijdsduur / absolute tijdsduur) | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
-| `dateWith` / `dateTimeWith` (datum met / datum-tijd met) | the `arguments` list (WF-037 leaves its arity open) | **visible** | argument order. *ref declines the form; the order is stated, not yet exercised* |
+| `dateWith` / `dateTimeWith` (datum met / datum-tijd met) | the `arguments` list: year, month, day, and for `dateTimeWith` hour, minute, second, millisecond (WF-037 leaves its arity open; ch. 3.8 fixes it) | **visible** | argument order; every part runs before the leeg test, so a leeg part costs its successors nothing |
 | aggregation (`sum` (som), `total` (totaal), `count` (aantal), `minimum`, `maximum`, `first` (eerste), `last` (laatste), `filledCount`) | the contributors — the listed `arguments`, or the instance fold's members each gated by the `filter` — then the `emptyFallback` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `emptyFallback` (WF-037 confines it to `sum`) |
 | aggregation over a `dimensionSelection` (the third contributor source; WF-037 admits it on `sum`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells in the selection's own label order, then the `emptyFallback`. *ref declines the form; the order is stated, not yet exercised* |
 | `concatenation` (concatenatie), `TextComposition` | the inserted parts | **visible** | part order |
@@ -4989,7 +5038,7 @@ what reaches the rows a barrier cannot, because a closed fold body
 | `Fold` `list` before `init` | `ref/` `WV-5.11-fold-…` (pair) |
 | `MapList` element order | `ref/` `WV-5.11-maplist-…` (pair) |
 | `FilterList` element order | `ref/` `WV-5.11-filterlist-…` (pair) |
-| `dateWith` / `dateTimeWith` (datum met / datum-tijd met) | **none** — the reference interpreter declines the form, so there is nothing to run. The order is stated for the consumer that carries it first, and lands with it |
+| `dateWith` / `dateTimeWith` (datum met / datum-tijd met) part order | `ref/` `WV-5.11-datummet-…` (pair) |
 | `TimeWindow` `from` before `to` | **none yet** — the form is carried since 2026-09-20 (ch. 3.10, golden `jutterswet-premievenster`), but the two bound shapes WF-111 admits are a literal and an own scalar attribute, and neither can fault. A witness lands with the general date expression, which is the first bound that can and an OPEN wire decision (ch. 3.12) |
 
 ### 5.12 The reading of a condition at the fixpoint
