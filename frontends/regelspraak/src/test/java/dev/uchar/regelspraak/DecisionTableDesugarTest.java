@@ -116,8 +116,8 @@ class DecisionTableDesugarTest {
     }
 
     @Test void multi_value_cell_under_equality_becomes_an_or_list_nested_last_inside_an_and() {
-        // A §5.7 disjunction cell combined with another (AND) condition: the disjunction is reordered LAST and nested
-        // as a §13.4.14.2 "er voldoet aan tenminste één …" sub-list (so its greedy bullet capture is harmless).
+        // A §5.7 disjunction cell combined with another (AND) condition: the disjunction comes after the other
+        // conditions and nests as a §13.4.14.2 "er voldoet aan tenminste één …" sub-list, its values one level deeper.
         List<String> headers = List.of("",
                 "de korting van een Klant moet gesteld worden op",
                 "indien zijn leeftijd groter is dan",
@@ -162,7 +162,9 @@ class DecisionTableDesugarTest {
                 rules.get(0));
     }
 
-    @Test void more_than_one_disjunction_in_one_and_row_is_skipped_with_a_warning() {
+    /** Until card third-condition-level (fix round) such a row was skipped with RGS-300: the bullet grammar read no
+     *  depth, so the second group took the first one's values. Now each disjunction is a '•' group with '••' values. */
+    @Test void more_than_one_disjunction_in_one_and_row_becomes_sister_groups() {
         List<String> headers = List.of("",
                 "de regiofactor van een Klant moet gesteld worden op",
                 "indien zijn regio gelijk is aan",
@@ -171,9 +173,15 @@ class DecisionTableDesugarTest {
                 "\"Noord\" of \"Oost\"", "\"Fries\" of \"Nedersaksisch\""));
         List<String> warns = new ArrayList<>();
         List<String> rules = DecisionTableDesugar.desugar("W", "altijd", headers, rows, warns::add);
-        assertTrue(rules.isEmpty(), () -> "verwacht geen regel (niet stil renderen): " + rules);
-        assertEquals(1, warns.size(), () -> "" + warns);
-        assertTrue(warns.get(0).contains("meer dan één concatenatie-cel"), warns.get(0));
+        assertTrue(warns.isEmpty(), () -> "" + warns);
+        assertEquals(List.of("Regel W 1\n  geldig altijd\n    "
+                + "de regiofactor van een Klant moet gesteld worden op 1 indien hij aan alle volgende voorwaarden voldoet:\n"
+                + "      • er voldoet aan tenminste één van de volgende voorwaarden:\n"
+                + "        •• zijn regio gelijk is aan \"Noord\"\n"
+                + "        •• zijn regio gelijk is aan \"Oost\"\n"
+                + "      • er voldoet aan tenminste één van de volgende voorwaarden:\n"
+                + "        •• zijn taal gelijk is aan \"Fries\"\n"
+                + "        •• zijn taal gelijk is aan \"Nedersaksisch\".\n"), rules);
     }
 
     @Test void characteristic_conclusion_false_is_skipped_with_a_warning_not_silently() {
@@ -227,6 +235,29 @@ class DecisionTableDesugarTest {
         assertEquals(1, conclusion.apply("\"indien nodig\"").size(), () -> "quoted indien afgewezen: " + warns);
         assertTrue(conclusion.apply("10 indien iets").isEmpty());   // a genuine standalone inline indien -> rejected
         assertTrue(warns.stream().anyMatch(w -> w.contains("indien")));
+    }
+
+    /** A row with two or-cells (card third-condition-level, fix round): each cell is its own 'ten minste één' group,
+     *  a sister on level 1 of the row's 'alle' list, its values on level 2. The bullet tree reads the two groups apart,
+     *  so the row is no longer skipped (RGS-300 until this round). */
+    @Test void a_row_with_two_disjunctions_reads_as_two_groups() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Vondst (mv: Vondsten)
+                de soort Tekst;
+                de strook Tekst;
+                de vondstpremie Numeriek (geheel getal);
+
+            Beslistabel vondstpremie
+                geldig altijd
+            | | de vondstpremie van een Vondst moet gesteld worden op | indien zijn soort gelijk is aan | indien zijn strook gelijk is aan |
+            |---|---|---|---|
+            | 1 | 10 | "touw" of "glas" | "noord" of "zuid" |
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "geen diagnostic verwacht: " + m.diagnostics);
+        assertEquals(1, m.resolvedRules.size(), () -> "de rij levert één regel: " + m.resolvedRules);
+        assertEquals("all0[atLeast1[zijn soort gelijk is aan \"touw\", zijn soort gelijk is aan \"glas\"], "
+                + "atLeast1[zijn strook gelijk is aan \"noord\", zijn strook gelijk is aan \"zuid\"]]",
+                BulletDepthTest.tree(m.resolvedRules.get(0).condition()));
     }
 
     @Test void desugared_rows_resolve_through_the_existing_pipeline() {

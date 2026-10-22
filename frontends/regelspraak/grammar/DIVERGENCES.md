@@ -1379,6 +1379,17 @@ desugaring writes `•` and `••` on deeper columns, which reads as before.
 Witnesses: `BulletDepthTest`, `SilentMarkerTest` (the two former marker routes),
 the golden `jutterswet-vrijstelling-drie-niveaus`.
 
+**A decision-table row with several or-cells** (fix round of the same card).
+The desugaring writes a row with more than one condition as an 'alle' list and
+each or-cell ("touw" of "glas") as a nested 'ten minste één' group: a `•` header
+with `••` values, after the row's other conditions. Without the depth two such
+groups would have read as one, the second header and its values inside the
+first group, so the desugaring skipped such a row with a WARNING (RGS-300).
+With the depth a `•` after a `••` returns to the row's list, the groups are
+sisters, and the row is written; RGS-300 is gone. A row with at most one or-cell
+desugars byte-identically as before. Witnesses: `DecisionTableDesugarTest`, the
+golden `jutterswet-premietabel-twee-ofcellen`.
+
 ---
 
 ## One subselection per chain — narrowed (2026-10-22)

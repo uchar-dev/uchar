@@ -149,7 +149,6 @@ DUTCH_EXCEPTIONS = {
     ("RGS-208", "de"): "quotes the RegelSpraak phrase 'gedurende de/het gehele jaar/maand'",
     ("RGS-208", "het"): "quotes the RegelSpraak phrase 'gedurende de/het gehele jaar/maand'",
     ("RGS-291", "met"): "the RegelSpraak keyword 'numeriek met exact' names the predicate",
-    ("RGS-300", "en"): "'EN' is the RegelSpraak keyword of a decision-table row",
 }
 
 def dutch_words(template):

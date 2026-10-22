@@ -26,7 +26,9 @@ import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
  * resolver's existing compound-condition support) rather than a verbatim value-series (which the resolver does not
  * lower). Net
  * row shape: AND across conditie-kolommen, OR within a multi-value cell; a disjunction inside an AND nests as a
- * §13.4.14.2 "er voldoet aan tenminste één …" sub-list and is reordered LAST so its greedy bullet capture is harmless.
+ * §13.4.14.2 "er voldoet aan tenminste één …" sub-list, its header a '•' bullet and its values '••' bullets, after the
+ * row's other conditions. Several disjunctions are several such sister groups: the depth of a bullet follows from its
+ * sign (grammar/DIVERGENCES.md, "§13.4.14.6–7 The depth of a bullet"), so a '•' after a '••' returns to the row's list.
  *
  * <p><b>Cell value syntax</b>: cells hold native RegelSpraak rule-fragment text — text literals are DOUBLE-quoted
  * ("Friesland"), as a hand-written regel would write them. (The spec's printed tables use single quotes purely as a
@@ -50,9 +52,8 @@ public final class DecisionTableDesugar {
     /**
      * As {@link #desugar(String, String, List, List)} but reporting any row it cannot faithfully render to the
      * {@code warn} sink (the caller surfaces these as diagnostics) — so an un-renderable row is an HONEST skip,
-     * never a silent mis-render. Reported: a kenmerk "onwaar" conclusie (RegelSpraak has no negatieve toekenning),
-     * and more than one §5.7 disjunction cell in a single EN-row (the nested OR-lists cannot coexist in the bullet
-     * grammar — see {@link #conditionClause}).
+     * never a silent mis-render. Reported, among others: a kenmerk "onwaar" conclusie (RegelSpraak has no negatieve
+     * toekenning).
      */
     public static List<String> desugar(String name, String valid, List<String> headers, List<List<String>> rows,
                                         java.util.function.Consumer<String> warn) {
@@ -98,8 +99,7 @@ public final class DecisionTableDesugar {
                     }
                 }
 
-                String clause = conditionClause(name, conditions, nr, warn);
-                if (clause == null) continue;   // un-renderable (>1 disjunction in one EN-row) — warned + skipped
+                String clause = conditionClause(conditions);
                 // name: "<naam> <rij>" (+ a conclusie-column suffix only when a row yields more than one regel).
                 String ruleName = name + (nr.isEmpty() ? "" : " " + nr) + (conclusionKol.size() > 1 ? " (" + (ci + 1) + ")" : "");
                 result.add("Regel " + ruleName + "\n  geldig " + valid + "\n    " + resultClause + clause + ".\n");
@@ -116,8 +116,8 @@ public final class DecisionTableDesugar {
 
     /** Build the "&nbsp;indien …" clause for a row's conditions (empty if none). One condition → inline (or a §13.4.14
      *  "tenminste één van de volgende voorwaarden" list for a §5.7 disjunction); several → an "alle volgende
-     *  voorwaarden" AND-list, any disjunction reordered LAST and nested as a §13.4.14.2 sub-list. */
-    private static String conditionClause(String table, List<Condition> conditions, String nr, java.util.function.Consumer<Typing.Coded> warn) {
+     *  voorwaarden" AND-list, each disjunction after the other conditions and nested as a §13.4.14.2 sub-list. */
+    private static String conditionClause(List<Condition> conditions) {
         if (conditions.isEmpty()) return "";
         if (conditions.size() == 1) {
             Condition v = conditions.get(0);
@@ -125,14 +125,9 @@ public final class DecisionTableDesugar {
                     ? " indien " + disjunctionList(v, "      • ", "er aan tenminste één van de volgende voorwaarden wordt voldaan")
                     : " indien " + elementary(v);
         }
-        // AND of several. At most ONE disjunction can be nested (reordered last so its greedy bullet capture is
-        // harmless); two nested OR-lists would silently swallow each other's bullets in the §13.4.14 bullet grammar,
-        // so a row with >1 disjunction cell is an honest skip rather than a silent collapse.
-        long disjunctions = conditions.stream().filter(Condition::disjunction).count();
-        if (disjunctions > 1) {
-            warn.accept(new Typing.Coded("RGS-300", params("table", table, "row", nr)));
-            return null;
-        }
+        // AND of several. The disjunctions come last, in column order, as the desugaring has always written them: a
+        // '•' group header with '••' values, and a following '•' group a sister of the one before (the depth of a
+        // bullet follows from its sign), so two disjunction cells in one row are two groups.
         List<Condition> ordered = new ArrayList<>();
         for (Condition v : conditions) if (!v.disjunction()) ordered.add(v);
         for (Condition v : conditions) if (v.disjunction()) ordered.add(v);

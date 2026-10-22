@@ -298,7 +298,6 @@ RGS-296	duration-minus-date-ill-formed	ERROR	-
 RGS-297	duration-plus-date-ill-formed	ERROR	-
 RGS-298	date-duration-operand-not-number	ERROR	kind,operation
 RGS-299	date-duration-operand-without-unit	ERROR	operation
-RGS-300	table-row-with-several-disjunctions	WARNING	row,table
 RGS-301	table-row-empty-conclusion-cell	WARNING	row,table
 RGS-302	table-row-condition-in-conclusion-cell	WARNING	row,table
 RGS-303	table-row-conclusion-computed-as	WARNING	row,table

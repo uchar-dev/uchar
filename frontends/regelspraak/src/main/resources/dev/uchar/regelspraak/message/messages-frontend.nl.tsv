@@ -588,7 +588,6 @@ RGS-296	duration − date is ill-formed (subtraction admits the date on the left
 RGS-297	duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)
 RGS-298	date ± duration: the duration operand is {kind}, must be a number carrying a time unit
 RGS-299	date ± duration: the duration operand carries no time unit
-RGS-300	rij {row}: meer dan één concatenatie-cel (OR-lijst) in één EN-rij wordt niet ondersteund — rij overgeslagen
 RGS-301	rij {row}: lege conclusie-cel — een resultaatdeel is verplicht (§12)
 RGS-302	rij {row}: 'indien' mag niet in een conclusie-cel staan (§12)
 RGS-303	rij {row}: een beslistabel-conclusie moet 'moet gesteld worden op' gebruiken, niet 'berekend als' (§12)
