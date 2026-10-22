@@ -31,10 +31,10 @@ The same text stands in the root `README.md` and in `CLAUDE.md`.
 > `toka/cases/scenario-*/ir.json` (the dump and 22 of the slices carry text
 > of the fragments in their source snippets); the 29 case files
 > `toka/cases/scenario-*/case.json`, with situations and expected values
-> derived by hand; the parity manifest `toka/cases/parity.manifest`; the two
-> tests under `toka/src/test/java/`, which quote lines of the fragments and
-> whose identifiers follow every rename of the frontend; and
-> `toka/README.md`.
+> derived by hand; the parity manifest `toka/cases/parity.manifest`; the three
+> tests under `toka/src/test/java/`, which quote lines of the fragments or
+> names written in them and whose identifiers follow every rename of the
+> frontend; and `toka/README.md`.
 
 ## What is here
 
@@ -60,7 +60,14 @@ The same text stands in the root `README.md` and in `CLAUDE.md`.
   fixture path and, where needed, the package were adjusted). They exercise
   the frontend end-to-end on the TOKA shapes. RuleCheckTest stayed behind:
   it imports the Drools transpiler, which is out of this zone's scope — it
-  returns with a Drools-backend card.
+  returns with a Drools-backend card. Beside them stands one own test,
+  SemanticTokensCasusTest (2026-10-22, after the card `semantic-tokens`): the
+  semantic tokens of the 47 fragments read as one document — full coverage,
+  the text of every span, every reference linked to a declaration of its
+  kind, and the spans `unresolved` pinned per name the fragments declare
+  nowhere (six names, 24 spans), with floors. The frontend's own corpus
+  witness cannot read the fragments, because gate 1 keeps `frontends/` free
+  of TOKA material.
 
 ## The holdout
 
