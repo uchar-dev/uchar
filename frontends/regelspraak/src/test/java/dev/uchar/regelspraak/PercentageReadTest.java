@@ -158,6 +158,19 @@ class PercentageReadTest {
         assertEquals(List.of(), faults);
     }
 
+    /** A reading of the sentence as the percentage function that is not taken leaves no diagnostic behind: the
+     *  navigation the sentence then stays raises its own. Until 2026-10-22 an ordinal the rule cannot place was
+     *  reported twice, once from the attempt to build Y and once from the navigation. */
+    @Test void l_a_rejected_reading_reports_nothing_of_its_own() {
+        for (String value : List.of(
+                "het percentage havengeld van het taxatiebedrag van de taxatie van de als tweede genoemde Vondst",
+                "het percentage havengeld van de getaxeerde waarde van de als tweede genoemde Vondst")) {
+            RegelSpraakModel m = Resolver.resolve(havengeld(value));
+            assertEquals(List.of("rangtelwoord: de regel noemt geen 2 onderwerpen 'Vondst' (§5.5.3)"),
+                    m.diagnostics.stream().map(RegelSpraakModel.Diagnostic::message).toList(), value);
+        }
+    }
+
     // ---- the forms that already resolved, unchanged
 
     @Test void e_an_own_member_stays_the_base() {

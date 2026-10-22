@@ -3039,6 +3039,7 @@ final class ExpressionBuilder {
         java.util.List<KaleNaamDeelContext> parts = a.attribuutMetLidwoord().kaleNaam().kaleNaamDeel();
         Parameter pct = percentageParameter(src(parts.get(0)));
         if (pct != null) {
+            int before = model.diagnostics.size();
             Expr v = parts.size() == 1 ? percentageBase(a.onderwerp())
                    : attributeRef(stripArticle(String.join(" van ",
                            parts.subList(1, parts.size()).stream().map(ExpressionBuilder::src).toList())),
@@ -3056,6 +3057,9 @@ final class ExpressionBuilder {
                 Source name = Source.of(parts.get(0), withoutPercentSign(src(parts.get(0))));
                 return new Expr.Binary(Expr.BinOp.PERCENTAGE_VAN, new Expr.ParameterRef(pct, name), v, t, source);
             }
+            // The reading is not taken, so what building V raised is not the sentence's: the navigation below reads
+            // the same onderwerp and raises its own (an ordinal it cannot place was otherwise reported twice).
+            model.diagnostics.subList(before, model.diagnostics.size()).clear();
         }
         return attributeRef(attr, a.onderwerp(), source);
     }
