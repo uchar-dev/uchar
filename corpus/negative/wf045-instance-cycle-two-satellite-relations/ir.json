@@ -1,0 +1,231 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vergunning",
+        "animate": false,
+        "plural": "Vergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "inleg",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "saldo",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Termijn",
+        "animate": false,
+        "plural": "Termijnen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "overschot",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vorige vergunning",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vorige vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vergunningstermijn",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "houder",
+            "objectType": "Vergunning",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "lopende termijn",
+            "objectType": "Termijn",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "reservetermijn",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "reservehouder",
+            "objectType": "Vergunning",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "reserve",
+            "objectType": "Termijn",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "saldo",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "saldo",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Het saldo van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "inleg",
+                "subjectType": "Vergunning",
+                "source": {
+                  "snippet": "zijn inleg"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "overschot",
+                "subjectType": "Termijn",
+                "source": {
+                  "snippet": "het overschot van de lopende termijn van de vorige vergunning van de Vergunning"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "vorige vergunning",
+                    "role": "vorige vergunning"
+                  },
+                  {
+                    "node": "RoleBinding",
+                    "factType": "vergunningstermijn",
+                    "role": "lopende termijn"
+                  }
+                ]
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn inleg plus het overschot van de lopende termijn van de vorige vergunning van de Vergunning"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "overschot",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "overschot",
+              "subjectType": "Termijn",
+              "source": {
+                "snippet": "Het overschot van een Termijn"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "saldo",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "het saldo van de reservehouder van de Termijn"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "reservetermijn",
+                  "role": "reservehouder"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

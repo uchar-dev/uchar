@@ -5843,7 +5843,12 @@ the level of the member (ch. 6.2): stratum k, then depth d, then level l.
   houders (`wf045-instance-cycle-shared-satellite`); the einddag reading the
   restant of the predecessor and its own restant
   (`wf045-instance-cycle-direct-and-shifted-read`); a sum over the termijnen
-  of the predecessor (`wf045-instance-cycle-to-many-satellite-step`).
+  of the predecessor (`wf045-instance-cycle-to-many-satellite-step`); a sum
+  over every Vergunning of the same register
+  (`wf045-instance-cycle-non-local-read`); a read of the predecessor and one
+  of the successor (`wf045-instance-cycle-predecessor-and-successor`); a
+  Termijn reached through two satellite relations
+  (`wf045-instance-cycle-two-satellite-relations`).
 
 ---
 

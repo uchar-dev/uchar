@@ -71,10 +71,10 @@ class TmsCycleVerifierWitnessTest {
             n++;
         }
         assertEquals(List.of(), admitted);
-        // 22 until 2026-10-22; the card cycle-across-instances added the five witnesses of the instance-ordered cycle
+        // 22 until 2026-10-22; the card cycle-across-instances added the eight witnesses of the instance-ordered cycle
         // (wf045-instance-cycle-*), each a WF-045 cycle that is no instance-ordered part, which this branch refuses
         // as the verifier does
-        assertEquals(27, n);
+        assertEquals(30, n);
     }
 
     /** The instance-ordered cycle (IR-SPEC ch. 5.3): the golden whose einddag reads the restant of the vorige

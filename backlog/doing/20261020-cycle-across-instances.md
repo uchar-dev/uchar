@@ -131,12 +131,13 @@ ch. 5.3 met reden en getuige.*
    (een vouw over de populatie) sluit per object een echte kring (restant(x) ← einddag(y) ← restant(x) met x de vorige
    van y) die de statische toets dan niet ziet. Daarom moet elke lezing achter een interne rand verschoven of lokaal
    zijn: lokaal is geen stap, of één stap over een satellietrelatie, heen of terug. Twee stappen (naar een satelliet en
-   terug), een vouw over de eigen satellieten en elke andere relatie maken het deel ongeordend.
+   terug), een vouw over de eigen satellieten en elke andere relatie maken het deel ongeordend. Getuige
+   `wf045-instance-cycle-non-local-read`.
 3. **Eén schakelrelatie, één rol per deel.** Alle verschoven lezingen van een deel lopen over dezelfde relatie naar
    dezelfde rol. Een deel dat de voorganger én de opvolger leest (dezelfde relatie, de andere rol) sluit per object een
-   echte kring; het advies sluit dat niet uit.
+   echte kring; het advies sluit dat niet uit. Getuige `wf045-instance-cycle-predecessor-and-successor`.
 4. **Eén satellietrelatie per satelliettype in een deel**, anders kan een satelliet twee eigenaars van verschillende
-   diepte hebben.
+   diepte hebben. Getuige `wf045-instance-cycle-two-satellite-relations`.
 5. **Alleen regels en defaults-groepen**, en geen deel met een creatie van een recursieve groep (de twee uitzonderingen
    disjunct, zoals het advies schrijft). Een reciprook feittype is geen schakelrelatie (zijn schakels lopen beide kanten
    op).
