@@ -1289,7 +1289,9 @@ and the hop to a satellite and back, are local or shifted; a part that falls on
 a clause names each read outside it (`WF-045.instance-read-outside`, with the
 clause key of IR-SPEC ch. 5.3; DROOLS-292). On the v2 document with the
 extension in the maximum date, the read over the concurrence is the only one
-left outside.
+left outside. The frontend followed the same evening (card
+`check-admits-instance-cycle`): `check` admits these parts and names a read
+outside them (RGS-357), so the two goldens are written in RegelSpraak.
 
 **A form without a condition has a reading of its value (2026-10-22, card
 `readings-of-unconditional-forms`):** RUNTIME-SEMANTICS ch. 5.12 gives a form

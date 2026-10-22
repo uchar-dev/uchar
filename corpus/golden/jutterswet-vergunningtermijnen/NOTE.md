@@ -85,72 +85,14 @@ afgewikkeld, restant **30**.
 
 Elke case pint ook dat het kanaal leeg is.
 
-## Waarom er geen `source.rgs` bij staat
+## De bron
 
-Het document is in RegelSpraak geschreven:
-
-```
-Eenheidsysteem Tijd
-    de dag dg
-
-Objecttype de Vergunning (mv: Vergunningen)
-    de basiseinddag Datum in dagen;
-    de verlengde einddag Datum in dagen;
-    het restant Numeriek (geheel getal) met eenheid dg;
-    is afgewikkeld kenmerk (bijvoeglijk);
-
-Objecttype de Termijn (mv: Termijnen)
-    de begindag Datum in dagen;
-    de einddag Datum in dagen;
-    het overschot (mv: overschotten) Numeriek (geheel getal) met eenheid dg;
-
-Feittype vorige vergunning
-    de vergunning Vergunning
-    de vorige vergunning Vergunning
-Eén vergunning heeft één vorige vergunning
-
-Feittype vergunningstermijn
-    de houder Vergunning
-    de termijn (mv: termijnen) Termijn
-Eén houder heeft meerdere termijnen
-
-Regel overschot
-    geldig altijd
-        Het overschot van een Termijn moet berekend worden als de tijdsduur van de verlengde einddag van zijn houder tot zijn einddag in hele dagen
-        indien hij aan alle volgende voorwaarden voldoet:
-        - zijn begindag is eerder dan de verlengde einddag van zijn houder
-        - de verlengde einddag van zijn houder is eerder dan zijn einddag.
-
-Regel restant
-    geldig altijd
-        Het restant van een Vergunning moet berekend worden als de som van de overschotten van alle termijnen van de Vergunning die aan de volgende voorwaarde voldoen: zijn begindag is eerder dan de verlengde einddag van de Vergunning.
-
-Regel afgewikkeld
-    geldig altijd
-        Een Vergunning is afgewikkeld
-        indien de einddag van alle termijnen van de Vergunning eerder is dan de verlengde einddag van de Vergunning.
-
-Regel verlengde einddag
-    geldig altijd
-        De verlengde einddag van een Vergunning moet berekend worden als zijn basiseinddag plus de som van de overschotten van alle termijnen van de vorige vergunning van de Vergunning
-        indien hij aan alle volgende voorwaarden voldoet:
-        - het restant van de vorige vergunning van de Vergunning is gevuld
-        - de vorige vergunning van de Vergunning is niet afgewikkeld.
-
-Regel verlengde einddag zonder restant
-    geldig altijd
-        De verlengde einddag van een Vergunning moet gesteld worden op zijn basiseinddag
-        indien het restant van de vorige vergunning van de Vergunning leeg is.
-```
-
-De frontend weigert de kring nog in `check` (WF-045 in zijn eigen
-afhankelijkheidsanalyse; de kaart `check-admits-instance-cycle`). Het IR is
-gemaakt door de bron met één hulpattribuut te laten emitteren (het overschot,
-het restant en het kenmerk lazen een `hulpeinddag`), en daarna in de JSON die
-lezingen terug te zetten op de verlengde einddag en het hulpattribuut weg te
-laten. Tot de frontend de vorm toelaat, is de golden handgeschreven, zoals
-een golden voor een vorm die geen frontend nog maakt
-(`corpus/golden/README.md`).
+De bron staat in `source.rgs`. Sinds de kaart `check-admits-instance-cycle`
+(2026-10-22) laat `check` de kring toe en geeft de frontend dit `ir.json`
+byte-identiek uit (gate 10). Tot dan was de golden handgeschreven: de
+frontend weigerde de kring, en het IR is gemaakt door de bron met
+hulpattributen te laten emitteren en die lezingen daarna in de JSON terug te
+zetten.
 
 ## Herkomst
 

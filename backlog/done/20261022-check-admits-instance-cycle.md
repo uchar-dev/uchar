@@ -182,3 +182,12 @@ snippets (`snippet-diff-3.txt`). De scenarioroute (gate 16) gaf dezelfde `ir.jso
    in beide gevallen. Afgeleid, niet gemeten: welke kring de melding noemt, kan verschillen. `Dependencies` volgt de
    verifier.
 6. Geen bug gevonden in `Dependencies` of `RuleChecker` buiten de kaart, behalve vondst 2.
+
+### Landing (hoofdsessie, 2026-10-22)
+
+`gates-2` op `1b5c9e49` (gerebased op main `0cedb232`; de Result-commits erna raken alleen deze kaart): alle zeventien
+groen, EXIT 0 (17:48–18:20). Review: de snippetfix (vondst 2) is een reviewvondst van T1 en gaat mee, met de zes
+regels in twee Drools-getuigen die de slotpunt pinden; vondst 3 uitgevoerd in deze landing (de sectie "De bron" in de
+`NOTE.md` van beide goldens); CONSTRUCTS-rij 45 en PLAN §9 noemen de frontend. Vondst 5 (welke kring de melding noemt
+als een rest van alleen positieve randen blijft; beide weigeren met WF-045) staat open, niet gemeten en zonder fout
+antwoord.

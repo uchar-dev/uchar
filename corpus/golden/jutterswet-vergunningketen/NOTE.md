@@ -57,73 +57,14 @@ dat noch de volgorde in het bestand (tweede, derde, eerste) noch de
 alfabetische (derde, eerste, tweede) de volgorde van de keten is. Elke case
 pint ook dat het kanaal leeg is.
 
-## Waarom er geen `source.rgs` bij staat
+## De bron
 
-Het document is in RegelSpraak geschreven:
-
-```
-Eenheidsysteem Tijd
-    de dag dg
-
-Objecttype de Vergunning (mv: Vergunningen)
-    de stopdag Datum in dagen;
-    de basiseinddag Datum in dagen;
-    de einddag Datum in dagen;
-    het restant Numeriek (geheel getal) met eenheid dg;
-    de verlengde einddag Datum in dagen;
-
-Objecttype de Termijn (mv: Termijnen)
-    het overschot Numeriek (geheel getal) met eenheid dg;
-
-Feittype vorige vergunning
-    de vergunning Vergunning
-    de vorige vergunning Vergunning
-Eén vergunning heeft één vorige vergunning
-
-Feittype vergunningstermijn
-    de houder Vergunning
-    de termijn Termijn
-Eén houder heeft één termijn
-
-Regel restant
-    geldig altijd
-        Het restant van een Vergunning moet berekend worden als de tijdsduur van zijn stopdag tot zijn einddag in hele dagen
-        indien hij aan alle volgende voorwaarden voldoet:
-        - zijn stopdag is gevuld
-        - zijn einddag is gevuld
-        - zijn stopdag is eerder dan zijn einddag.
-
-Regel einddag
-    geldig altijd
-        De einddag van een Vergunning moet berekend worden als zijn basiseinddag plus het restant van de vorige vergunning van de Vergunning
-        indien het restant van de vorige vergunning van de Vergunning gevuld is.
-
-Regel einddag zonder restant
-    geldig altijd
-        De einddag van een Vergunning moet gesteld worden op zijn basiseinddag
-        indien het restant van de vorige vergunning van de Vergunning leeg is.
-
-Regel overschot
-    geldig altijd
-        Het overschot van een Termijn moet berekend worden als de tijdsduur van de stopdag van de houder van de Termijn tot de verlengde einddag van de houder van de Termijn in hele dagen
-        indien hij aan alle volgende voorwaarden voldoet:
-        - de stopdag van de houder van de Termijn is gevuld
-        - de verlengde einddag van de houder van de Termijn is gevuld
-        - de stopdag van de houder van de Termijn is eerder dan de verlengde einddag van de houder van de Termijn.
-
-Regel verlengde einddag
-    geldig altijd
-        De verlengde einddag van een Vergunning moet berekend worden als zijn basiseinddag plus het overschot van de termijn van de vorige vergunning van de Vergunning.
-```
-
-De frontend weigert de kring nog in `check` (WF-045 in zijn eigen
-afhankelijkheidsanalyse) en emitteert dan niets. Het IR is gemaakt door de
-bron met twee hulpattributen te laten emitteren (de restant-regel las een
-`hulpeinddag`, de overschot-regel een `hulpverlenging`), en daarna in de
-JSON die lezingen terug te zetten op `einddag` en `verlengde einddag` en de
-hulpattributen weg te laten. Tot de frontend de vorm toelaat, is de golden
-handgeschreven, zoals een golden voor een vorm die geen frontend nog maakt
-(`corpus/golden/README.md`).
+De bron staat in `source.rgs`. Sinds de kaart `check-admits-instance-cycle`
+(2026-10-22) laat `check` de kring toe en geeft de frontend dit `ir.json`
+byte-identiek uit (gate 10). Tot dan was de golden handgeschreven: de
+frontend weigerde de kring, en het IR is gemaakt door de bron met
+hulpattributen te laten emitteren en die lezingen daarna in de JSON terug te
+zetten.
 
 ## Herkomst
 
