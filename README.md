@@ -188,7 +188,7 @@ to one body of literature.
 > `toka/cases/scenario-*/ir.json` (the dump and 22 of the slices carry text
 > of the fragments in their source snippets); the 29 case files
 > `toka/cases/scenario-*/case.json`, with situations and expected values
-> derived by hand; the parity manifest `toka/cases/parity.manifest`; the two
-> tests under `toka/src/test/java/`, which quote lines of the fragments and
-> whose identifiers follow every rename of the frontend; and
-> `toka/README.md`.
+> derived by hand; the parity manifest `toka/cases/parity.manifest`; the three
+> tests under `toka/src/test/java/`, which quote lines of the fragments or
+> names written in them and whose identifiers follow every rename of the
+> frontend; and `toka/README.md`.

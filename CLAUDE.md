@@ -114,10 +114,10 @@ Within that claim, per item:
   > `toka/cases/scenario-*/ir.json` (the dump and 22 of the slices carry text
   > of the fragments in their source snippets); the 29 case files
   > `toka/cases/scenario-*/case.json`, with situations and expected values
-  > derived by hand; the parity manifest `toka/cases/parity.manifest`; the two
-  > tests under `toka/src/test/java/`, which quote lines of the fragments and
-  > whose identifiers follow every rename of the frontend; and
-  > `toka/README.md`.
+  > derived by hand; the parity manifest `toka/cases/parity.manifest`; the three
+  > tests under `toka/src/test/java/`, which quote lines of the fragments or
+  > names written in them and whose identifiers follow every rename of the
+  > frontend; and `toka/README.md`.
 - Synthesized cases are admitted only when the full differential square
   agrees (Drools ≡ reference interpreter ≡ Clingo, to the extent those
   exist); disagreement routes to adversarial triage, never to admission.
@@ -321,8 +321,9 @@ reviewer's duty on a machine that has catala. Current gates:
 11. `scripts/check-toka-parity.sh` — the `toka/` parity zone (maintainer
     decision 2026-08-27; a regular gate of the set since 2026-10-13, when
     the maintainer decided that the zone stays). The frontend builds and
-    the TOKA integration tests under `toka/` (excluded at the frontend
-    takeover, brought here in original form) compile + pass against it with a
+    the TOKA tests under `toka/` (two integration tests excluded at the
+    frontend takeover, brought here in original form, and since 2026-10-22
+    the semantic-token witness of the casus) compile + pass against it with a
     non-zero test count; every toolchain-pinned `toka/**/ir.json` re-emits
     through uchar's own frontend byte-identically (frontend ≡ toolchain on
     the TOKA casus, which the corpus does not carry — since L1 of the v1
@@ -707,7 +708,7 @@ A gate that gets no floor carries one sentence in its script saying why.
   looks up by reflection); the generated fact-model classes `Inconsistentie`
   and `Segment(van, tot, waarde)` (`schema/FactModelGenerator.java`), which
   the runtime builds and reads by name; the 47 TOKA fragments
-  `toka/casus/toka-*.rgs`, which stay verbatim (the two tests under
+  `toka/casus/toka-*.rgs`, which stay verbatim (the three tests under
   `toka/src/test/java` are own work and follow every rename
   mechanically); v0 names where they stand as
   v0 names (IR-SPEC "v0 name:", CONSTRUCTS, `spec/proposals/`); git

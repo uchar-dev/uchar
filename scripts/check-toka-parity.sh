@@ -90,7 +90,7 @@ TOKA=toka
 # The three counts are unseen elsewhere: this zone is outside corpus/, so no other gate reads a
 # single file of it. The casus-dump count is deliberately NOT floored — it is 1, and the existing
 # "-gt 0" is already that floor.
-EXPECTED_MIN_TESTS=27       # 2026-09-10: measured 27 (the zone's own JUnit suite)
+EXPECTED_MIN_TESTS=28       # 2026-10-22: measured 28 (the zone's own JUnit suite; 27 until the semantic-token witness of the casus)
 EXPECTED_MIN_FRAGMENTS=45   # 2026-09-10: measured 45 (.rgs fragments re-emitted byte-identical)
 EXPECTED_MIN_CASES=29       # 2026-09-10: measured 29 (manifest-pinned replay cases)
 EXPECTED_MIN_CLEAN=28       # 2026-09-25: measured 28 (verifier-clean replay slices; the verifier holdouts not counted)
