@@ -228,7 +228,7 @@
               "node": "Validity"
             },
             "source": {
-              "snippet": "De etiket van alle Kavel van de gemeente moeten uniek zijn."
+              "snippet": "De etiket van alle Kavel van de gemeente moeten uniek zijn"
             }
           }
         ]
@@ -256,7 +256,7 @@
               "node": "Validity"
             },
             "source": {
-              "snippet": "De sectiecode van alle Kavel van de gemeente moeten uniek zijn."
+              "snippet": "De sectiecode van alle Kavel van de gemeente moeten uniek zijn"
             }
           }
         ]
@@ -286,7 +286,7 @@
               "node": "Validity"
             },
             "source": {
-              "snippet": "Strandvondst verenigd met Wrakvondst moeten uniek zijn."
+              "snippet": "Strandvondst verenigd met Wrakvondst moeten uniek zijn"
             }
           }
         ]
@@ -316,7 +316,7 @@
               "node": "Validity"
             },
             "source": {
-              "snippet": "Baken verenigd met Baken moeten uniek zijn."
+              "snippet": "Baken verenigd met Baken moeten uniek zijn"
             }
           }
         ]
