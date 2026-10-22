@@ -77,6 +77,7 @@ attributen, één regel `dateWith` en één `dateTimeWith`):
 | uur 24, minuut 60, seconde 60, milliseconde 1000 | FAULT, `Invalid value for HourOfDay (valid values 0 - 23): 24` enz. |
 | jaar 0, jaar −5, jaar 10000 | 0000-03-01, -0005-03-01, +10000-03-01 |
 | jaar 1 000 000 000 | FAULT, `Invalid value for Year (valid values -999999999 - 999999999)` |
+| jaar 200 000 000 | +200000000-03-01 en +200000000-03-01T00:00 (de datum-tijd ligt buiten het millisecondebereik) |
 
 Drools volgt de regel dus op elke dag die niet bestaat (een fout, geen doorrol of klem); het wijkt alleen af in de vorm:
 zijn fout draagt geen EF-code (`FAULT EvaluationFaults: …` of `FAULT ComputeFault: …`), en een datum-tijd boven het

@@ -1390,7 +1390,11 @@ EXPECTED_CHANNEL=(
 # 263 -> 264 (2026-10-21, card default-statute-annotations): the golden jutterswet-tweeledige-grondslag, a defaults
 # group whose base default carries two statute annotations, written in RegelSpraak with hand-computed cases. The
 # loader carries Default.statuteAnnotations and no executor reads it; it plays on both with PLAYED 4.
-EXPECTED_PLAYED=264
+# 264 -> 267 (2026-10-22, cards date-with-in-ref-and-clingo and clingo-nested-aggregate-in-fold-filter): the goldens
+# date-with-parts (dateWith and dateTimeWith), fold-filter-nested-aggregate (a listed fold in the filter of five folds)
+# and fold-filter-inner-fold-via-element-role (an instance fold in the filter of another), written in RegelSpraak with
+# hand-computed cases. No source file of this backend changed; each plays on both with PLAYED 3.
+EXPECTED_PLAYED=267
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

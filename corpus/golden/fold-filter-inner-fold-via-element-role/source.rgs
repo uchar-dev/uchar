@@ -1,0 +1,35 @@
+Eenheidsysteem Tijd
+    de dag dg
+    de maand mnd
+
+Objecttype de Schuit (mv: Schuiten)
+    de eerste schone maand vanaf-de-eindmaand Datum in dagen;
+
+Objecttype de Lading in-een-maand (mv: Ladingen in-een-maand)
+    de maand Datum in dagen;
+    het gewicht Numeriek (geheel getal);
+    de overlading kenmerk (bezittelijk);
+
+Objecttype de Klacht (mv: Klachten)
+    de einddag Datum in dagen;
+
+Feittype lading in-een-maand
+    de schuit Schuit
+    de lading (mv: ladingen) Lading in-een-maand
+Eén schuit heeft meerdere ladingen
+
+Feittype schuitklacht
+    de beklaagde schuit Schuit
+    de klacht (mv: klachten) Klacht
+Eén beklaagde schuit heeft meerdere klachten
+
+Regel overlading
+    geldig altijd
+        Een Lading in-een-maand heeft de overlading
+        indien zijn gewicht groter is dan 100.
+
+Regel eerste schone maand vanaf de eindmaand
+    geldig altijd
+        De eerste schone maand vanaf-de-eindmaand van een Schuit moet berekend worden als de eerste van de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen:
+        - hij heeft geen overlading
+        - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand.

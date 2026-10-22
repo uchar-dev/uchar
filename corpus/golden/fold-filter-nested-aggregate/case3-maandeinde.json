@@ -1,0 +1,110 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "afmeerdag": {
+            "date": "2026-03-31"
+          }
+        },
+        "roles": {
+          "ladingen": [
+            "L1",
+            "L2",
+            "L3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L1",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-03-01"
+          },
+          "gewicht": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "L2",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-04-01"
+          },
+          "gewicht": {
+            "number": "150"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "L3",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-05-01"
+          },
+          "gewicht": {
+            "number": "80"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "eerste maand na de afmeerdag",
+      "value": {
+        "date": "2026-03-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "aantal late ladingen",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "late gewicht",
+      "value": {
+        "number": "280"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "zwaarste late gewicht",
+      "value": {
+        "number": "150"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "laat beladen"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

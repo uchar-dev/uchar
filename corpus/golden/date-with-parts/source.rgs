@@ -1,0 +1,19 @@
+Objecttype de Schuit (mv: Schuiten)
+    de gewenste dag Datum in dagen;
+    de gewenste maand Datum in dagen;
+    het aanleguur Numeriek (geheel getal);
+    het aanlegtijdstip Datum en tijd in millisecondes;
+    het schrikkeljaar Numeriek (geheel getal);
+    de schrikkeldag Datum in dagen;
+
+Regel gewenste maand
+    geldig altijd
+        De gewenste maand van een Schuit moet gesteld worden op de datum met jaar: het jaar uit zijn gewenste dag, maand: de maand uit zijn gewenste dag en dag: 1.
+
+Regel aanlegtijdstip
+    geldig altijd
+        Het aanlegtijdstip van een Schuit moet gesteld worden op de datumtijd met jaar: het jaar uit zijn gewenste dag, maand: de maand uit zijn gewenste dag, dag: de dag uit zijn gewenste dag, uur: zijn aanleguur, minuut: 30, seconde: 0 en milliseconde: 0.
+
+Regel schrikkeldag
+    geldig altijd
+        De schrikkeldag van een Schuit moet gesteld worden op de datum met jaar: zijn schrikkeljaar, maand: 2 en dag: 29.

@@ -1,0 +1,41 @@
+Eenheidsysteem Tijd
+    de dag dg
+    de maand mnd
+
+Objecttype de Schuit (mv: Schuiten)
+    de afmeerdag Datum in dagen;
+    de eerste maand na de afmeerdag Datum in dagen;
+    het aantal late ladingen Numeriek (geheel getal);
+    het late gewicht Numeriek (geheel getal);
+    het zwaarste late gewicht Numeriek (geheel getal);
+    is laat beladen kenmerk (bijvoeglijk);
+
+Objecttype de Lading in-een-maand (mv: Ladingen in-een-maand)
+    de maand Datum in dagen;
+    het gewicht Numeriek (geheel getal);
+
+Feittype lading in-een-maand
+    de schuit Schuit
+    de lading (mv: ladingen) Lading in-een-maand
+Eén schuit heeft meerdere ladingen
+
+Regel eerste maand na de afmeerdag
+    geldig altijd
+        De eerste maand na de afmeerdag van een Schuit moet berekend worden als de eerste van de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd).
+
+Regel aantal late ladingen
+    geldig altijd
+        Het aantal late ladingen van een Schuit moet berekend worden als het aantal ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd).
+
+Regel late gewicht
+    geldig altijd
+        Het late gewicht van een Schuit moet berekend worden als de som van het gewicht van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd).
+
+Regel zwaarste late gewicht
+    geldig altijd
+        Het zwaarste late gewicht van een Schuit moet berekend worden als de maximale waarde van het gewicht van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd).
+
+Regel laat beladen
+    geldig altijd
+        Een Schuit is laat beladen
+        indien het gewicht van ten minste één van de ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd) groter is dan 100.

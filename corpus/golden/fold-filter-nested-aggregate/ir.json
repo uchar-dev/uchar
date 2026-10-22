@@ -1,0 +1,1143 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Schuit",
+        "animate": false,
+        "plural": "Schuiten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "afmeerdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "eerste maand na de afmeerdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal late ladingen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "late gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zwaarste late gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "laat beladen",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Lading in-een-maand",
+        "animate": false,
+        "plural": "Ladingen in-een-maand",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "maand",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "lading in-een-maand",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "schuit",
+            "objectType": "Schuit",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "lading",
+            "objectType": "Lading in-een-maand",
+            "plural": "ladingen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "maand"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "eerste maand na de afmeerdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eerste maand na de afmeerdag",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "De eerste maand na de afmeerdag van een Schuit"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "maand",
+                  "subjectType": "Lading in-een-maand",
+                  "source": {
+                    "snippet": "de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                  }
+                }
+              ],
+              "elementType": "Lading in-een-maand",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "maand",
+                      "subjectType": "Lading in-een-maand",
+                      "source": {
+                        "snippet": "zijn maand"
+                      }
+                    },
+                    "right": {
+                      "node": "Aggregation",
+                      "kind": "last",
+                      "arguments": [
+                        {
+                          "node": "Binary",
+                          "op": "minus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "afmeerdag",
+                            "subjectType": "Schuit",
+                            "source": {
+                              "snippet": "de afmeerdag van de Schuit"
+                            },
+                            "path": [
+                              {
+                                "node": "RoleBinding",
+                                "factType": "lading in-een-maand",
+                                "role": "schuit"
+                              }
+                            ]
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "1"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": true,
+                              "decimals": 0,
+                              "sign": "unspecified",
+                              "unit": {
+                                "node": "Unit",
+                                "abbreviation": "mnd",
+                                "system": "Tijd",
+                                "canonical": "mnd",
+                                "factorToCanonical": {
+                                  "num": 1,
+                                  "den": 1
+                                }
+                              }
+                            },
+                            "source": {
+                              "snippet": "1 mnd"
+                            }
+                          },
+                          "type": {
+                            "node": "Date",
+                            "precision": "day"
+                          },
+                          "source": {
+                            "snippet": "de afmeerdag van de Schuit min 1 mnd"
+                          }
+                        },
+                        {
+                          "node": "Binary",
+                          "op": "minus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "afmeerdag",
+                            "subjectType": "Schuit",
+                            "source": {
+                              "snippet": "de afmeerdag van de Schuit"
+                            },
+                            "path": [
+                              {
+                                "node": "RoleBinding",
+                                "factType": "lading in-een-maand",
+                                "role": "schuit"
+                              }
+                            ]
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "2"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": true,
+                              "decimals": 0,
+                              "sign": "unspecified",
+                              "unit": {
+                                "node": "Unit",
+                                "abbreviation": "mnd",
+                                "system": "Tijd",
+                                "canonical": "mnd",
+                                "factorToCanonical": {
+                                  "num": 1,
+                                  "den": 1
+                                }
+                              }
+                            },
+                            "source": {
+                              "snippet": "2 mnd"
+                            }
+                          },
+                          "type": {
+                            "node": "Date",
+                            "precision": "day"
+                          },
+                          "source": {
+                            "snippet": "de afmeerdag van de Schuit min 2 mnd"
+                          }
+                        }
+                      ],
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "lading in-een-maand",
+                "role": "lading"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de eerste van de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal late ladingen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal late ladingen",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "Het aantal late ladingen van een Schuit"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "ladingen",
+                  "subjectType": "Schuit",
+                  "source": {
+                    "snippet": "ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                  }
+                }
+              ],
+              "elementType": "Lading in-een-maand",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "maand",
+                      "subjectType": "Lading in-een-maand",
+                      "source": {
+                        "snippet": "zijn maand"
+                      }
+                    },
+                    "right": {
+                      "node": "Aggregation",
+                      "kind": "last",
+                      "arguments": [
+                        {
+                          "node": "Binary",
+                          "op": "minus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "afmeerdag",
+                            "subjectType": "Schuit",
+                            "source": {
+                              "snippet": "de afmeerdag van de Schuit"
+                            },
+                            "path": [
+                              {
+                                "node": "RoleBinding",
+                                "factType": "lading in-een-maand",
+                                "role": "schuit"
+                              }
+                            ]
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "1"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": true,
+                              "decimals": 0,
+                              "sign": "unspecified",
+                              "unit": {
+                                "node": "Unit",
+                                "abbreviation": "mnd",
+                                "system": "Tijd",
+                                "canonical": "mnd",
+                                "factorToCanonical": {
+                                  "num": 1,
+                                  "den": 1
+                                }
+                              }
+                            },
+                            "source": {
+                              "snippet": "1 mnd"
+                            }
+                          },
+                          "type": {
+                            "node": "Date",
+                            "precision": "day"
+                          },
+                          "source": {
+                            "snippet": "de afmeerdag van de Schuit min 1 mnd"
+                          }
+                        },
+                        {
+                          "node": "Binary",
+                          "op": "minus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "afmeerdag",
+                            "subjectType": "Schuit",
+                            "source": {
+                              "snippet": "de afmeerdag van de Schuit"
+                            },
+                            "path": [
+                              {
+                                "node": "RoleBinding",
+                                "factType": "lading in-een-maand",
+                                "role": "schuit"
+                              }
+                            ]
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "2"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": true,
+                              "decimals": 0,
+                              "sign": "unspecified",
+                              "unit": {
+                                "node": "Unit",
+                                "abbreviation": "mnd",
+                                "system": "Tijd",
+                                "canonical": "mnd",
+                                "factorToCanonical": {
+                                  "num": 1,
+                                  "den": 1
+                                }
+                              }
+                            },
+                            "source": {
+                              "snippet": "2 mnd"
+                            }
+                          },
+                          "type": {
+                            "node": "Date",
+                            "precision": "day"
+                          },
+                          "source": {
+                            "snippet": "de afmeerdag van de Schuit min 2 mnd"
+                          }
+                        }
+                      ],
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "lading in-een-maand",
+                "role": "lading"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "late gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "late gewicht",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "Het late gewicht van een Schuit"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Lading in-een-maand",
+                  "source": {
+                    "snippet": "het gewicht van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                  }
+                }
+              ],
+              "elementType": "Lading in-een-maand",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "maand",
+                      "subjectType": "Lading in-een-maand",
+                      "source": {
+                        "snippet": "zijn maand"
+                      }
+                    },
+                    "right": {
+                      "node": "Aggregation",
+                      "kind": "last",
+                      "arguments": [
+                        {
+                          "node": "Binary",
+                          "op": "minus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "afmeerdag",
+                            "subjectType": "Schuit",
+                            "source": {
+                              "snippet": "de afmeerdag van de Schuit"
+                            },
+                            "path": [
+                              {
+                                "node": "RoleBinding",
+                                "factType": "lading in-een-maand",
+                                "role": "schuit"
+                              }
+                            ]
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "1"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": true,
+                              "decimals": 0,
+                              "sign": "unspecified",
+                              "unit": {
+                                "node": "Unit",
+                                "abbreviation": "mnd",
+                                "system": "Tijd",
+                                "canonical": "mnd",
+                                "factorToCanonical": {
+                                  "num": 1,
+                                  "den": 1
+                                }
+                              }
+                            },
+                            "source": {
+                              "snippet": "1 mnd"
+                            }
+                          },
+                          "type": {
+                            "node": "Date",
+                            "precision": "day"
+                          },
+                          "source": {
+                            "snippet": "de afmeerdag van de Schuit min 1 mnd"
+                          }
+                        },
+                        {
+                          "node": "Binary",
+                          "op": "minus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "afmeerdag",
+                            "subjectType": "Schuit",
+                            "source": {
+                              "snippet": "de afmeerdag van de Schuit"
+                            },
+                            "path": [
+                              {
+                                "node": "RoleBinding",
+                                "factType": "lading in-een-maand",
+                                "role": "schuit"
+                              }
+                            ]
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "2"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": true,
+                              "decimals": 0,
+                              "sign": "unspecified",
+                              "unit": {
+                                "node": "Unit",
+                                "abbreviation": "mnd",
+                                "system": "Tijd",
+                                "canonical": "mnd",
+                                "factorToCanonical": {
+                                  "num": 1,
+                                  "den": 1
+                                }
+                              }
+                            },
+                            "source": {
+                              "snippet": "2 mnd"
+                            }
+                          },
+                          "type": {
+                            "node": "Date",
+                            "precision": "day"
+                          },
+                          "source": {
+                            "snippet": "de afmeerdag van de Schuit min 2 mnd"
+                          }
+                        }
+                      ],
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "lading in-een-maand",
+                "role": "lading"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zwaarste late gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zwaarste late gewicht",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "Het zwaarste late gewicht van een Schuit"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Lading in-een-maand",
+                  "source": {
+                    "snippet": "het gewicht van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                  }
+                }
+              ],
+              "elementType": "Lading in-een-maand",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "maand",
+                      "subjectType": "Lading in-een-maand",
+                      "source": {
+                        "snippet": "zijn maand"
+                      }
+                    },
+                    "right": {
+                      "node": "Aggregation",
+                      "kind": "last",
+                      "arguments": [
+                        {
+                          "node": "Binary",
+                          "op": "minus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "afmeerdag",
+                            "subjectType": "Schuit",
+                            "source": {
+                              "snippet": "de afmeerdag van de Schuit"
+                            },
+                            "path": [
+                              {
+                                "node": "RoleBinding",
+                                "factType": "lading in-een-maand",
+                                "role": "schuit"
+                              }
+                            ]
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "1"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": true,
+                              "decimals": 0,
+                              "sign": "unspecified",
+                              "unit": {
+                                "node": "Unit",
+                                "abbreviation": "mnd",
+                                "system": "Tijd",
+                                "canonical": "mnd",
+                                "factorToCanonical": {
+                                  "num": 1,
+                                  "den": 1
+                                }
+                              }
+                            },
+                            "source": {
+                              "snippet": "1 mnd"
+                            }
+                          },
+                          "type": {
+                            "node": "Date",
+                            "precision": "day"
+                          },
+                          "source": {
+                            "snippet": "de afmeerdag van de Schuit min 1 mnd"
+                          }
+                        },
+                        {
+                          "node": "Binary",
+                          "op": "minus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "afmeerdag",
+                            "subjectType": "Schuit",
+                            "source": {
+                              "snippet": "de afmeerdag van de Schuit"
+                            },
+                            "path": [
+                              {
+                                "node": "RoleBinding",
+                                "factType": "lading in-een-maand",
+                                "role": "schuit"
+                              }
+                            ]
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "2"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": true,
+                              "decimals": 0,
+                              "sign": "unspecified",
+                              "unit": {
+                                "node": "Unit",
+                                "abbreviation": "mnd",
+                                "system": "Tijd",
+                                "canonical": "mnd",
+                                "factorToCanonical": {
+                                  "num": 1,
+                                  "den": 1
+                                }
+                              }
+                            },
+                            "source": {
+                              "snippet": "2 mnd"
+                            }
+                          },
+                          "type": {
+                            "node": "Date",
+                            "precision": "day"
+                          },
+                          "source": {
+                            "snippet": "de afmeerdag van de Schuit min 2 mnd"
+                          }
+                        }
+                      ],
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "lading in-een-maand",
+                "role": "lading"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het gewicht van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "laat beladen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "laat beladen",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "Een Schuit is laat beladen"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Lading in-een-maand",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "maand",
+                      "subjectType": "Lading in-een-maand",
+                      "source": {
+                        "snippet": "zijn maand"
+                      }
+                    },
+                    "right": {
+                      "node": "Aggregation",
+                      "kind": "last",
+                      "arguments": [
+                        {
+                          "node": "Binary",
+                          "op": "minus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "afmeerdag",
+                            "subjectType": "Schuit",
+                            "source": {
+                              "snippet": "de afmeerdag van de Schuit"
+                            },
+                            "path": [
+                              {
+                                "node": "RoleBinding",
+                                "factType": "lading in-een-maand",
+                                "role": "schuit"
+                              }
+                            ]
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "1"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": true,
+                              "decimals": 0,
+                              "sign": "unspecified",
+                              "unit": {
+                                "node": "Unit",
+                                "abbreviation": "mnd",
+                                "system": "Tijd",
+                                "canonical": "mnd",
+                                "factorToCanonical": {
+                                  "num": 1,
+                                  "den": 1
+                                }
+                              }
+                            },
+                            "source": {
+                              "snippet": "1 mnd"
+                            }
+                          },
+                          "type": {
+                            "node": "Date",
+                            "precision": "day"
+                          },
+                          "source": {
+                            "snippet": "de afmeerdag van de Schuit min 1 mnd"
+                          }
+                        },
+                        {
+                          "node": "Binary",
+                          "op": "minus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "afmeerdag",
+                            "subjectType": "Schuit",
+                            "source": {
+                              "snippet": "de afmeerdag van de Schuit"
+                            },
+                            "path": [
+                              {
+                                "node": "RoleBinding",
+                                "factType": "lading in-een-maand",
+                                "role": "schuit"
+                              }
+                            ]
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "2"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": true,
+                              "decimals": 0,
+                              "sign": "unspecified",
+                              "unit": {
+                                "node": "Unit",
+                                "abbreviation": "mnd",
+                                "system": "Tijd",
+                                "canonical": "mnd",
+                                "factorToCanonical": {
+                                  "num": 1,
+                                  "den": 1
+                                }
+                              }
+                            },
+                            "source": {
+                              "snippet": "2 mnd"
+                            }
+                          },
+                          "type": {
+                            "node": "Date",
+                            "precision": "day"
+                          },
+                          "source": {
+                            "snippet": "de afmeerdag van de Schuit min 2 mnd"
+                          }
+                        }
+                      ],
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Lading in-een-maand",
+                  "source": {
+                    "snippet": "het gewicht van ten minste \u00e9\u00e9n van de ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd)"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "100"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "100"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van ten minste \u00e9\u00e9n van de ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd) groter is dan 100"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van ten minste \u00e9\u00e9n van de ladingen van de Schuit die aan de volgende voorwaarde voldoen: zijn maand is later dan de laatste van (de afmeerdag van de Schuit min 1 mnd) en (de afmeerdag van de Schuit min 2 mnd) groter is dan 100"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "lading in-een-maand",
+                "role": "lading"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

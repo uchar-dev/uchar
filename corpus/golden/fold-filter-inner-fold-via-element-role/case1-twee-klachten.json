@@ -1,0 +1,118 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {},
+        "roles": {
+          "ladingen": [
+            "L1",
+            "L2",
+            "L3"
+          ],
+          "klachten": [
+            "K1",
+            "K2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L1",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-02-01"
+          },
+          "gewicht": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "L2",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-03-01"
+          },
+          "gewicht": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "L3",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-04-01"
+          },
+          "gewicht": {
+            "number": "150"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K1",
+        "objectType": "Klacht",
+        "attributes": {
+          "einddag": {
+            "date": "2026-03-15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Klacht",
+        "attributes": {
+          "einddag": {
+            "date": "2026-02-10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "eerste schone maand vanaf-de-eindmaand",
+      "value": {
+        "date": "2026-03-01"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "L1",
+      "characteristic": "overlading"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "L2",
+      "characteristic": "overlading"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "L3",
+      "characteristic": "overlading"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

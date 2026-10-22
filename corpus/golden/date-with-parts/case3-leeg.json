@@ -1,0 +1,75 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "gewenste dag": {
+            "date": "2024-01-31"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Schuit",
+        "attributes": {
+          "aanleguur": {
+            "number": "6"
+          },
+          "schrikkeljaar": {
+            "number": "2028"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "gewenste maand",
+      "value": {
+        "date": "2024-01-01"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "aanlegtijdstip"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "schrikkeldag"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "gewenste maand"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "aanlegtijdstip"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "schrikkeldag",
+      "value": {
+        "date": "2028-02-29"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
