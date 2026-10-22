@@ -1,0 +1,52 @@
+Eenheidsysteem Tijd
+    de dag dg
+
+Objecttype de Vergunning (mv: Vergunningen)
+    de stopdag Datum in dagen;
+    de basiseinddag Datum in dagen;
+    de einddag Datum in dagen;
+    het restant Numeriek (geheel getal) met eenheid dg;
+    de verlengde einddag Datum in dagen;
+
+Objecttype de Termijn (mv: Termijnen)
+    het overschot Numeriek (geheel getal) met eenheid dg;
+
+Feittype vorige vergunning
+    de vergunning Vergunning
+    de vorige vergunning Vergunning
+Eén vergunning heeft één vorige vergunning
+
+Feittype vergunningstermijn
+    de houder Vergunning
+    de termijn Termijn
+Eén houder heeft één termijn
+
+Regel restant
+    geldig altijd
+        Het restant van een Vergunning moet berekend worden als de tijdsduur van zijn stopdag tot zijn einddag in hele dagen
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn stopdag is gevuld
+        - zijn einddag is gevuld
+        - zijn stopdag is eerder dan zijn einddag.
+
+Regel einddag
+    geldig altijd
+        De einddag van een Vergunning moet berekend worden als zijn basiseinddag plus het restant van de vorige vergunning van de Vergunning
+        indien het restant van de vorige vergunning van de Vergunning gevuld is.
+
+Regel einddag zonder restant
+    geldig altijd
+        De einddag van een Vergunning moet gesteld worden op zijn basiseinddag
+        indien het restant van de vorige vergunning van de Vergunning leeg is.
+
+Regel overschot
+    geldig altijd
+        Het overschot van een Termijn moet berekend worden als de tijdsduur van de stopdag van de houder van de Termijn tot de verlengde einddag van de houder van de Termijn in hele dagen
+        indien hij aan alle volgende voorwaarden voldoet:
+        - de stopdag van de houder van de Termijn is gevuld
+        - de verlengde einddag van de houder van de Termijn is gevuld
+        - de stopdag van de houder van de Termijn is eerder dan de verlengde einddag van de houder van de Termijn.
+
+Regel verlengde einddag
+    geldig altijd
+        De verlengde einddag van een Vergunning moet berekend worden als zijn basiseinddag plus het overschot van de termijn van de vorige vergunning van de Vergunning.
