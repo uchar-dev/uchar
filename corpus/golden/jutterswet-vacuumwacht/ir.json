@@ -195,7 +195,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan ten hoogste twee van de volgende voorwaarden voldoet: - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0."
+                "snippet": "hij aan ten hoogste twee van de volgende voorwaarden voldoet: - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0"
               }
             },
             "initialisation": false,
@@ -396,7 +396,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - zijn vangstwaarde is groter dan 100000 - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0."
+                "snippet": "hij aan ten hoogste twee van de volgende voorwaarden voldoet: - zijn ploegomvang is groter dan 100 - zijn vangstwaarde is groter dan 100000 - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0"
               }
             },
             "initialisation": false,

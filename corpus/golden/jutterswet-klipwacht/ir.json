@@ -221,7 +221,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10) is groter dan 0."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10) is groter dan 0"
               }
             },
             "initialisation": false,
@@ -366,7 +366,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag) is groter dan 0."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag) is groter dan 0"
               }
             },
             "initialisation": false,

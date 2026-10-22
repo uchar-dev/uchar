@@ -404,7 +404,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven uiterste meldingsdag is gevuld - zijn berekende uiterste meldingsdag is gevuld - zijn opgegeven uiterste meldingsdag is ongelijk aan zijn berekende uiterste meldingsdag."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven uiterste meldingsdag is gevuld - zijn berekende uiterste meldingsdag is gevuld - zijn opgegeven uiterste meldingsdag is ongelijk aan zijn berekende uiterste meldingsdag"
               }
             },
             "initialisation": false
@@ -511,7 +511,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven afrekendag is gevuld - zijn berekende afrekendag is gevuld - zijn opgegeven afrekendag is ongelijk aan zijn berekende afrekendag."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven afrekendag is gevuld - zijn berekende afrekendag is gevuld - zijn opgegeven afrekendag is ongelijk aan zijn berekende afrekendag"
               }
             },
             "initialisation": false

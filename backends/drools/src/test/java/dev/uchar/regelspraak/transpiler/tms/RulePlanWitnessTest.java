@@ -115,7 +115,7 @@ class RulePlanWitnessTest {
                         + " 0(RS_AGG_COMPARE(Read 0, Const 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Division"
                         + " DIVIDED probe -1 (Read 1, Read 0), Const 0, Const FLOOR), Const 0, Const >))",
                 "    test 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
-                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
+                        + " ongelijk aan 0 - het aandeel is groter dan 0'",
                 "    test 0.0 Call source 'zijn ploegomvang is ongelijk aan 0'",
                 "    test 0.0.0 SlotValue source 'zijn ploegomvang'",
                 "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
@@ -151,7 +151,7 @@ class RulePlanWitnessTest {
                         + " 0(RS_AGG_COMPARE(Read 0, Const 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Division"
                         + " DIVIDED probe -1 (Read 1, Read 0), Const 0, Const FLOOR), Const 0, Const >))",
                 "    test 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
-                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
+                        + " ongelijk aan 0 - het aandeel is groter dan 0'",
                 "    test 0.0 Call source 'zijn ploegomvang is ongelijk aan 0'",
                 "    test 0.0.0 SlotValue source 'zijn ploegomvang'",
                 "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
@@ -175,7 +175,7 @@ class RulePlanWitnessTest {
                         + " fault=FaultName[form=bergingsaandeel van een jutter, rule=bergingsaandeel van een"
                         + " jutter], insertion=LOGICAL]",
                 "    test 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
-                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
+                        + " ongelijk aan 0 - het aandeel is groter dan 0'",
                 "    test 0.0 Call source 'zijn ploegomvang is ongelijk aan 0'",
                 "    test 0.0.0 SlotValue source 'zijn ploegomvang'",
                 "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
@@ -204,7 +204,7 @@ class RulePlanWitnessTest {
                         + " 0(RS_AGG_COMPARE(Read 0, Const 0, Const !=), RS_AGG_COMPARE(RS_ROUNDING(Division DIVIDED"
                         + " probe 2 (Read 1, Read 0), Const 0, Const FLOOR), Const 0, Const >))",
                 "    test 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
-                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
+                        + " ongelijk aan 0 - het aandeel is groter dan 0'",
                 "    test 0.0 Call source 'zijn ploegomvang is ongelijk aan 0'",
                 "    test 0.0.0 SlotValue source 'zijn ploegomvang'",
                 "    test 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
@@ -227,7 +227,7 @@ class RulePlanWitnessTest {
                         + " RS_AGG_COMPARE(RS_ROUNDING(Division DIVIDED probe 2 (Read 1, Read 0), Const 0, Const FLOOR),"
                         + " Const 0, Const >)), depositFlag=2, slots=[0, 1], size=3, insertion=LOGICAL]",
                 "    condition 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
-                        + " ongelijk aan 0 - het aandeel is groter dan 0.'",
+                        + " ongelijk aan 0 - het aandeel is groter dan 0'",
                 "    condition 0.0 Call source 'zijn ploegomvang is ongelijk aan 0'",
                 "    condition 0.0.0 SlotValue source 'zijn ploegomvang'",
                 "    condition 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"

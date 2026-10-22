@@ -333,6 +333,19 @@ stays honest about where it no longer proves toolchain agreement.
   reads the field (gate 13), so the replays print what they printed before.
   The original toolchain writes no origin, so for these nodes the comparison
   proves "frontend == the recorded state".
+- **2026-10-22 — a snippet stops before the period that closes the
+  sentence.** A review finding of the distribution, fixed without a card on
+  the branch of `20261022-check-admits-instance-cycle.md` in `backlog/`. The
+  grammar lets the last bullet of a list take the sentence's period, so a
+  compound condition ending in a bullet list carried it in its snippet. In
+  `casus/ir.json` nine snippets lost their final `.` and nothing else changed:
+  the day kind's condition and its nested group, the conditions of six rules,
+  and a nested group in one of them. The slices moved with the same nine strings wherever they carry them:
+  13 snippets in six slices (`scenario-toka-26-hoogseizoen`,
+  `-41-duurzaamheidskorting-alternatief`, `-42-passagier-18-24` and the three
+  `-46-woonregio-factor-*`). No executor computes with a snippet, so the replays
+  print what they printed before. The original toolchain still writes the period, so
+  for these snippets the comparison proves "frontend == the recorded state".
 - The precedent runs the other way: `toka-45` (decision 16Y, 2026-08-29) is held
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by

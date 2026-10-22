@@ -207,12 +207,12 @@
                     }
                   ],
                   "source": {
-                    "snippet": "er voldoet aan tenminste \u00e9\u00e9n van de volgende voorwaarden: \u2022\u2022 zijn strook gelijk is aan \"noord\" \u2022\u2022 zijn strook gelijk is aan \"zuid\"."
+                    "snippet": "er voldoet aan tenminste \u00e9\u00e9n van de volgende voorwaarden: \u2022\u2022 zijn strook gelijk is aan \"noord\" \u2022\u2022 zijn strook gelijk is aan \"zuid\""
                   }
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: \u2022 er voldoet aan tenminste \u00e9\u00e9n van de volgende voorwaarden: \u2022\u2022 zijn soort gelijk is aan \"touw\" \u2022\u2022 zijn soort gelijk is aan \"glas\" \u2022 er voldoet aan tenminste \u00e9\u00e9n van de volgende voorwaarden: \u2022\u2022 zijn strook gelijk is aan \"noord\" \u2022\u2022 zijn strook gelijk is aan \"zuid\"."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: \u2022 er voldoet aan tenminste \u00e9\u00e9n van de volgende voorwaarden: \u2022\u2022 zijn soort gelijk is aan \"touw\" \u2022\u2022 zijn soort gelijk is aan \"glas\" \u2022 er voldoet aan tenminste \u00e9\u00e9n van de volgende voorwaarden: \u2022\u2022 zijn strook gelijk is aan \"noord\" \u2022\u2022 zijn strook gelijk is aan \"zuid\""
               }
             },
             "initialisation": false,
@@ -319,7 +319,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: \u2022 zijn soort gelijk is aan \"hout\" \u2022 zijn strook gelijk is aan \"noord\"."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: \u2022 zijn soort gelijk is aan \"hout\" \u2022 zijn strook gelijk is aan \"noord\""
               }
             },
             "initialisation": false,

@@ -3382,14 +3382,10 @@ final class ExpressionBuilder {
         return name.replaceFirst("\\s*%$", "");
     }
 
-    /** The source of {@code ctx} from the start of {@code from}, a context inside it, to its end, whitespace collapsed
-     *  as {@link #src} collapses it, and empty where {@link #src} is empty: for an empty match. */
+    /** The source of {@code ctx} from the start of {@code from}, a context inside it, to its end, as
+     *  {@link DefinitionResolver#snippet} writes it: without a closing period, and empty for an empty match. */
     private static Source tailSource(ParserRuleContext from, ParserRuleContext ctx) {
-        org.antlr.v4.runtime.Token start = from.getStart(), stop = ctx.getStop();
-        if (start == null || stop == null || stop.getStopIndex() < start.getStartIndex()) return Source.of(from, "");
-        String text = start.getInputStream().getText(
-                org.antlr.v4.runtime.misc.Interval.of(start.getStartIndex(), stop.getStopIndex()));
-        return Source.of(from, text.replaceAll("\\s+", " ").trim());
+        return Source.of(from, DefinitionResolver.snippet(from.getStart(), ctx.getStop()));
     }
 
     /** The V of "het percentage P van V" when no name part follows P: the onderwerp built as a value, or a §11

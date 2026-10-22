@@ -245,7 +245,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan ten hoogste \u00e9\u00e9n van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn vangstwaarde is groter dan 0 - het aandeel is groter dan 0."
+                "snippet": "hij aan ten hoogste \u00e9\u00e9n van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn vangstwaarde is groter dan 0 - het aandeel is groter dan 0"
               }
             },
             "initialisation": false,
@@ -416,7 +416,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan precies \u00e9\u00e9n van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn vangstwaarde is groter dan 0 - het aandeel is groter dan 0."
+                "snippet": "hij aan precies \u00e9\u00e9n van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn vangstwaarde is groter dan 0 - het aandeel is groter dan 0"
               }
             },
             "initialisation": false,
@@ -557,7 +557,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan ten minste drie van de volgende voorwaarden voldoet: - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0."
+                "snippet": "hij aan ten minste drie van de volgende voorwaarden voldoet: - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0"
               }
             },
             "initialisation": false,
@@ -698,7 +698,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan precies drie van de volgende voorwaarden voldoet: - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0."
+                "snippet": "hij aan precies drie van de volgende voorwaarden voldoet: - het aandeel is groter dan 0 - zijn ploegomvang is gelijk aan 0"
               }
             },
             "initialisation": false,

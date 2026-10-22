@@ -93,7 +93,7 @@ class ConditionTermWitnessTest {
                 "zware vondsten CONDITION 0.1 Const Boolean",
                 "drukte WITHOUT_FAULT 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - hij is actief "
                         + "- het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht "
-                        + "gedeeld door zijn deelnemers is groter dan 2 is groter dan 0.'",
+                        + "gedeeld door zijn deelnemers is groter dan 2 is groter dan 0'",
                 "drukte WITHOUT_FAULT 0.0 Call source 'hij is actief'",
                 "drukte WITHOUT_FAULT 0.0.0 SlotValue",
                 "drukte WITHOUT_FAULT 0.0.1 Const Boolean",

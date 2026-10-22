@@ -237,7 +237,7 @@ class InputMarkingTest {
                     "right": {"node": "AttributeReference", "attribute": "berekende waarde", "subjectType": "Vondst",
                               "source": {"snippet": "zijn berekende waarde"}},
                     "source": {"snippet": "zijn opgegeven waarde is ongelijk aan zijn berekende waarde"}}],
-                 "source": {"snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven waarde is gevuld - zijn berekende waarde is gevuld - zijn opgegeven waarde is ongelijk aan zijn berekende waarde."}},
+                 "source": {"snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven waarde is gevuld - zijn berekende waarde is gevuld - zijn opgegeven waarde is ongelijk aan zijn berekende waarde"}},
                "initialisation": false}],
              "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Vondst", "name": "waarde"}}}""");
         assertTrue(c.contains(rule), () -> "de afwijkingsregel staat niet zo op de wire:\n" + ir);

@@ -1525,12 +1525,24 @@ public final class DefinitionResolver {
         return t.replaceAll("\\s+", " ").trim();
     }
 
-    /** The structured source anchor of {@code ctx}: {@link #src} as the snippet, plus file/line/column
+    /** The structured source anchor of {@code ctx}: {@link #snippet} of its tokens, plus file/line/column
      *  from the start token (the file being the char stream's source name, set at the front end). A null
      *  ctx yields a synthetic empty anchor, mirroring {@link #src}'s null handling. */
     static dev.uchar.regelspraak.ir.Source source(ParserRuleContext ctx) {
         return ctx == null ? dev.uchar.regelspraak.ir.Source.synthetic("")
-                           : dev.uchar.regelspraak.ir.Source.of(ctx, src(ctx));
+                           : dev.uchar.regelspraak.ir.Source.of(ctx, snippet(ctx.getStart(), ctx.getStop()));
+    }
+
+    /** The source from {@code start} to {@code stop}, whitespace collapsed as {@link #src} collapses it, without the
+     *  period that closes the sentence: the grammar lets the last bullet of a list, a 'Daarbij geldt' part and a
+     *  uniqueness check take that period, so every node whose context ends there would carry it, and an explanation
+     *  that puts a value after the snippet would read "… hij is gemeld. (12)". Empty for an empty match. */
+    static String snippet(org.antlr.v4.runtime.Token start, org.antlr.v4.runtime.Token stop) {
+        if (start == null || stop == null) return "";
+        int end = stop.getType() == dev.uchar.regelspraak.parser.RegelSpraakLexer.DOT ? stop.getStartIndex() - 1
+                : stop.getStopIndex();
+        if (end < start.getStartIndex()) return "";
+        return start.getInputStream().getText(Interval.of(start.getStartIndex(), end)).replaceAll("\\s+", " ").trim();
     }
 
     private static String unquote(String s) {

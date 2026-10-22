@@ -163,7 +163,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is gelijk aan zijn bedrag."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is gelijk aan zijn bedrag"
               }
             },
             "initialisation": false,
@@ -262,7 +262,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is groter dan zijn bedrag."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is groter dan zijn bedrag"
               }
             },
             "initialisation": false,

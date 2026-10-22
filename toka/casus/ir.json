@@ -1770,7 +1770,7 @@
                 }
               ],
               "source": {
-                "snippet": "er aan ten minste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8."
+                "snippet": "er aan ten minste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 6 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 7 - de maand uit (de vluchtdatum van de Vlucht) is gelijk aan 8"
               }
             },
             "initialisation": false
@@ -2156,12 +2156,12 @@
                     }
                   ],
                   "source": {
-                    "snippet": "hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
+                    "snippet": "hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar"
                   }
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn reis is duurzaam - de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand - hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn reis is duurzaam - de afstand tot bestemming in kilometers van zijn reis is groter of gelijk aan de duurzaamheidskorting minimale afstand - hij voldoet aan geen van de volgende voorwaarden: .. hij is een passagier jonger dan 18 jaar .. hij is een passagier van 18 tot en met 24 jaar .. hij is een passagier van 25 tot en met 64 jaar"
               }
             },
             "initialisation": false
@@ -2274,7 +2274,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn leeftijd is groter of gelijk aan de volwassenleeftijd - zijn leeftijd is kleiner of gelijk aan 24 jr - hij is een passagier."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn leeftijd is groter of gelijk aan de volwassenleeftijd - zijn leeftijd is kleiner of gelijk aan 24 jr - hij is een passagier"
               }
             },
             "initialisation": false
@@ -2527,7 +2527,7 @@
                 }
               ],
               "source": {
-                "snippet": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Friesland\" \u2022 zijn woonprovincie gelijk is aan \"Groningen\" \u2022 zijn woonprovincie gelijk is aan \"Drenthe\" \u2022 zijn woonprovincie gelijk is aan \"Zeeland\" \u2022 zijn woonprovincie gelijk is aan \"Limburg\"."
+                "snippet": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Friesland\" \u2022 zijn woonprovincie gelijk is aan \"Groningen\" \u2022 zijn woonprovincie gelijk is aan \"Drenthe\" \u2022 zijn woonprovincie gelijk is aan \"Zeeland\" \u2022 zijn woonprovincie gelijk is aan \"Limburg\""
               }
             },
             "initialisation": false,
@@ -2688,7 +2688,7 @@
                 }
               ],
               "source": {
-                "snippet": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Brabant\" \u2022 zijn woonprovincie gelijk is aan \"Gelderland\" \u2022 zijn woonprovincie gelijk is aan \"Overijssel\" \u2022 zijn woonprovincie gelijk is aan \"Flevoland\"."
+                "snippet": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Brabant\" \u2022 zijn woonprovincie gelijk is aan \"Gelderland\" \u2022 zijn woonprovincie gelijk is aan \"Overijssel\" \u2022 zijn woonprovincie gelijk is aan \"Flevoland\""
               }
             },
             "initialisation": false,
@@ -2822,7 +2822,7 @@
                 }
               ],
               "source": {
-                "snippet": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Zuid-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Utrecht\"."
+                "snippet": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn woonprovincie gelijk is aan \"Noord-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Zuid-Holland\" \u2022 zijn woonprovincie gelijk is aan \"Utrecht\""
               }
             },
             "initialisation": false,
@@ -2995,12 +2995,12 @@
                 }
               ],
               "source": {
-                "snippet": "de dag voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .. de dag uit (de dag) is gelijk aan 25 .. de dag uit (de dag) is gelijk aan 26."
+                "snippet": "de dag voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .. de dag uit (de dag) is gelijk aan 25 .. de dag uit (de dag) is gelijk aan 26"
               }
             }
           ],
           "source": {
-            "snippet": "de dag aan alle volgende voorwaarden voldoet: - de maand uit (de dag) is gelijk aan 12 - de dag voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .. de dag uit (de dag) is gelijk aan 25 .. de dag uit (de dag) is gelijk aan 26."
+            "snippet": "de dag aan alle volgende voorwaarden voldoet: - de maand uit (de dag) is gelijk aan 12 - de dag voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .. de dag uit (de dag) is gelijk aan 25 .. de dag uit (de dag) is gelijk aan 26"
           }
         },
         "validity": {

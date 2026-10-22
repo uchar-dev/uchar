@@ -366,7 +366,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven meldingsdatum is gevuld - zijn berekende meldingsdatum is gevuld - zijn opgegeven meldingsdatum is ongelijk aan zijn berekende meldingsdatum."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven meldingsdatum is gevuld - zijn berekende meldingsdatum is gevuld - zijn opgegeven meldingsdatum is ongelijk aan zijn berekende meldingsdatum"
               }
             },
             "initialisation": false

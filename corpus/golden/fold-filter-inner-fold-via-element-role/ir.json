@@ -241,7 +241,7 @@
                   "attribute": "maand",
                   "subjectType": "Lading in-een-maand",
                   "source": {
-                    "snippet": "de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand."
+                    "snippet": "de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand"
                   }
                 }
               ],
@@ -346,7 +346,7 @@
                   }
                 ],
                 "source": {
-                  "snippet": "aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand."
+                  "snippet": "aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand"
                 }
               },
               "sourceRole": {
@@ -359,7 +359,7 @@
                 "precision": "day"
               },
               "source": {
-                "snippet": "de eerste van de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand."
+                "snippet": "de eerste van de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand"
               }
             },
             "initialisation": false,

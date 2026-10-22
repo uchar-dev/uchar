@@ -265,7 +265,7 @@
                   "attribute": "maand",
                   "subjectType": "Lading in-een-maand",
                   "source": {
-                    "snippet": "de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'."
+                    "snippet": "de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'"
                   }
                 }
               ],
@@ -412,7 +412,7 @@
                   }
                 ],
                 "source": {
-                  "snippet": "aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'."
+                  "snippet": "aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'"
                 }
               },
               "sourceRole": {
@@ -425,7 +425,7 @@
                 "precision": "day"
               },
               "source": {
-                "snippet": "de eerste van de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'."
+                "snippet": "de eerste van de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'"
               }
             },
             "initialisation": false,

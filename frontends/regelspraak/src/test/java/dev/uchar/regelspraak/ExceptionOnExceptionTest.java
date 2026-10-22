@@ -264,15 +264,16 @@ class ExceptionOnExceptionTest {
     }
 
     @Test void the_merged_source_keeps_no_period_in_the_middle_of_the_sentence() {
-        // A compound conjunct's text runs to the period that closes its bullet list; joined with " en " that period
-        // would stand in the middle of the sentence. The last conjunct ends the sentence and keeps its text.
+        // A compound conjunct's text ran to the period that closes its bullet list; joined with " en " that period
+        // would stand in the middle of the sentence. Since 2026-10-22 no snippet carries that period
+        // (SentencePeriodSnippetTest), and the last conjunct keeps its text without it.
         PrioritizedDefaults g = onlyGroup(Resolver.resolve(MODEL + BASE
                 + op("uitsluiting", "herroeping", NOT_EXCLUDED, "hij aan ten minste één van de volgende voorwaarden "
                         + "voldoet:\n        - hij is herroepen\n        - hij is betwist")
                 + op("herroeping", "verval", UIT, "hij vervallen is")));
         Default herroeping = g.defaults().get(0);
         assertEquals("hij geweigerd is en hij aan ten minste één van de volgende voorwaarden voldoet: - hij is "
-                + "herroepen - hij is betwist.", herroeping.condition().source().snippet());
+                + "herroepen - hij is betwist", herroeping.condition().source().snippet());
         assertEquals("hij geweigerd is en hij aan ten minste één van de volgende voorwaarden voldoet: - hij is "
                 + "herroepen - hij is betwist en hij vervallen is",
                 ordered(herroeping).get(0).condition().source().snippet());
@@ -293,7 +294,7 @@ class ExceptionOnExceptionTest {
         assertEquals(List.of("hij is noodweer verklaard", "zijn aantal geborgen wrakken is groter of gelijk aan 8"),
                 conjuncts(deviation), "geen conjunct van de basis");
         assertEquals("hij aan alle volgende voorwaarden voldoet: - hij is noodweer verklaard - zijn aantal geborgen "
-                + "wrakken is groter of gelijk aan 8.", deviation.condition().source().snippet(),
+                + "wrakken is groter of gelijk aan 8", deviation.condition().source().snippet(),
                 "de voorwaarde zoals geschreven, niet opnieuw samengesteld");
     }
 

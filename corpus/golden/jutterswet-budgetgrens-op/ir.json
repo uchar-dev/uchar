@@ -338,14 +338,14 @@
                 }
               ],
               "source": {
-                "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 1."
+                "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 1"
               }
             },
             "validity": {
               "node": "Validity"
             },
             "source": {
-              "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 1.",
+              "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 1",
               "line": 21
             }
           }
@@ -424,14 +424,14 @@
                 }
               ],
               "source": {
-                "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 2."
+                "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 2"
               }
             },
             "validity": {
               "node": "Validity"
             },
             "source": {
-              "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 2.",
+              "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 2",
               "line": 27
             }
           }

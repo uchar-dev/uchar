@@ -255,12 +255,12 @@
                     }
                   ],
                   "source": {
-                    "snippet": "hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860."
+                    "snippet": "hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860"
                   }
                 }
               ],
               "source": {
-                "snippet": "hij aan precies \u00e9\u00e9n van de volgende voorwaarden voldoet: - zijn lengte is groter dan 20 - hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860."
+                "snippet": "hij aan precies \u00e9\u00e9n van de volgende voorwaarden voldoet: - zijn lengte is groter dan 20 - hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860"
               }
             },
             "initialisation": false
@@ -375,14 +375,14 @@
                 }
               ],
               "source": {
-                "snippet": "Een Vondst moet voldoen aan ten minste twee van de volgende criteria: - zijn gewicht is groter dan 0 - zijn lengte is groter dan 10 - zijn jaartal is kleiner dan 1900."
+                "snippet": "Een Vondst moet voldoen aan ten minste twee van de volgende criteria: - zijn gewicht is groter dan 0 - zijn lengte is groter dan 10 - zijn jaartal is kleiner dan 1900"
               }
             },
             "validity": {
               "node": "Validity"
             },
             "source": {
-              "snippet": "Een Vondst moet voldoen aan ten minste twee van de volgende criteria: - zijn gewicht is groter dan 0 - zijn lengte is groter dan 10 - zijn jaartal is kleiner dan 1900.",
+              "snippet": "Een Vondst moet voldoen aan ten minste twee van de volgende criteria: - zijn gewicht is groter dan 0 - zijn lengte is groter dan 10 - zijn jaartal is kleiner dan 1900",
               "line": 24
             }
           }
@@ -491,14 +491,14 @@
                 }
               ],
               "source": {
-                "snippet": "Een Vondst moet voldoen aan ten hoogste \u00e9\u00e9n van de volgende criteria: - zijn gewicht is groter dan 50 - zijn lengte is groter dan 50 - zijn jaartal is kleiner dan 1500."
+                "snippet": "Een Vondst moet voldoen aan ten hoogste \u00e9\u00e9n van de volgende criteria: - zijn gewicht is groter dan 50 - zijn lengte is groter dan 50 - zijn jaartal is kleiner dan 1500"
               }
             },
             "validity": {
               "node": "Validity"
             },
             "source": {
-              "snippet": "Een Vondst moet voldoen aan ten hoogste \u00e9\u00e9n van de volgende criteria: - zijn gewicht is groter dan 50 - zijn lengte is groter dan 50 - zijn jaartal is kleiner dan 1500.",
+              "snippet": "Een Vondst moet voldoen aan ten hoogste \u00e9\u00e9n van de volgende criteria: - zijn gewicht is groter dan 50 - zijn lengte is groter dan 50 - zijn jaartal is kleiner dan 1500",
               "line": 31
             }
           }
@@ -577,14 +577,14 @@
                 }
               ],
               "source": {
-                "snippet": "Een Vondst moet voldoen aan precies \u00e9\u00e9n van de volgende criteria: - zijn gewicht is groter dan 1 - zijn lengte is groter dan 20."
+                "snippet": "Een Vondst moet voldoen aan precies \u00e9\u00e9n van de volgende criteria: - zijn gewicht is groter dan 1 - zijn lengte is groter dan 20"
               }
             },
             "validity": {
               "node": "Validity"
             },
             "source": {
-              "snippet": "Een Vondst moet voldoen aan precies \u00e9\u00e9n van de volgende criteria: - zijn gewicht is groter dan 1 - zijn lengte is groter dan 20.",
+              "snippet": "Een Vondst moet voldoen aan precies \u00e9\u00e9n van de volgende criteria: - zijn gewicht is groter dan 1 - zijn lengte is groter dan 20",
               "line": 38
             }
           }
@@ -663,14 +663,14 @@
                 }
               ],
               "source": {
-                "snippet": "Een Vondst moet voldoen aan geen van de volgende criteria: - zijn gewicht is kleiner dan 0 - zijn lengte is kleiner dan 0."
+                "snippet": "Een Vondst moet voldoen aan geen van de volgende criteria: - zijn gewicht is kleiner dan 0 - zijn lengte is kleiner dan 0"
               }
             },
             "validity": {
               "node": "Validity"
             },
             "source": {
-              "snippet": "Een Vondst moet voldoen aan geen van de volgende criteria: - zijn gewicht is kleiner dan 0 - zijn lengte is kleiner dan 0.",
+              "snippet": "Een Vondst moet voldoen aan geen van de volgende criteria: - zijn gewicht is kleiner dan 0 - zijn lengte is kleiner dan 0",
               "line": 44
             }
           }
@@ -784,19 +784,19 @@
                     }
                   ],
                   "source": {
-                    "snippet": "er wordt voldaan aan ten minste \u00e9\u00e9n van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860."
+                    "snippet": "er wordt voldaan aan ten minste \u00e9\u00e9n van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860"
                   }
                 }
               ],
               "source": {
-                "snippet": "Een Vondst moet voldoen aan precies \u00e9\u00e9n van de volgende criteria: - zijn lengte is groter dan 20 - er wordt voldaan aan ten minste \u00e9\u00e9n van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860."
+                "snippet": "Een Vondst moet voldoen aan precies \u00e9\u00e9n van de volgende criteria: - zijn lengte is groter dan 20 - er wordt voldaan aan ten minste \u00e9\u00e9n van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860"
               }
             },
             "validity": {
               "node": "Validity"
             },
             "source": {
-              "snippet": "Een Vondst moet voldoen aan precies \u00e9\u00e9n van de volgende criteria: - zijn lengte is groter dan 20 - er wordt voldaan aan ten minste \u00e9\u00e9n van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860.",
+              "snippet": "Een Vondst moet voldoen aan precies \u00e9\u00e9n van de volgende criteria: - zijn lengte is groter dan 20 - er wordt voldaan aan ten minste \u00e9\u00e9n van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860",
               "line": 50
             }
           }

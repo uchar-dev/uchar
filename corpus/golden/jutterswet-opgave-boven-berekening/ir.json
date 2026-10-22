@@ -438,7 +438,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven waarde is gevuld - zijn berekende waarde is gevuld - zijn opgegeven waarde is ongelijk aan zijn berekende waarde."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven waarde is gevuld - zijn berekende waarde is gevuld - zijn opgegeven waarde is ongelijk aan zijn berekende waarde"
               }
             },
             "initialisation": false
@@ -545,7 +545,7 @@
                 }
               ],
               "source": {
-                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven bergloon is gevuld - zijn berekende bergloon is gevuld - zijn opgegeven bergloon is ongelijk aan zijn berekende bergloon."
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven bergloon is gevuld - zijn berekende bergloon is gevuld - zijn opgegeven bergloon is ongelijk aan zijn berekende bergloon"
               }
             },
             "initialisation": false

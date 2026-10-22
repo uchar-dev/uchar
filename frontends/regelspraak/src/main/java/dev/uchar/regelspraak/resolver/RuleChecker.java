@@ -2681,7 +2681,7 @@ final class RuleChecker {
                     new Condition.Predicate(Condition.PredicateKind.GEVULD, attributeRead(o, o.computed(), dt), Source.of(a, p1)),
                     new Condition.Comparison(Condition.Operator.ONGELIJK, attributeRead(o, o.supplied(), dt),
                             attributeRead(o, o.computed(), dt), Source.of(a, p2))),
-                    Source.of(a, "hij aan alle volgende voorwaarden voldoet: - " + p0 + " - " + p1 + " - " + p2 + "."));
+                    Source.of(a, "hij aan alle volgende voorwaarden voldoet: - " + p0 + " - " + p1 + " - " + p2));
             String subjectType = "Een " + t.name;
             model.resolvedRules.add(new ResolvedRule(o.ruleName(), ResolvedRule.Kind.KENMERKTOEKENNING,
                     new Expr.AttributeReference(o.deviating(), t, subjectType, null, new Datatype.BooleanType(),
@@ -5231,9 +5231,7 @@ final class RuleChecker {
         Token stop = last.bullet().item().getStop();
         if (group.getStart() == null || stop == null || stop.getStopIndex() < group.getStart().getStartIndex())
             return source(group);
-        String text = group.getStart().getInputStream()
-                .getText(org.antlr.v4.runtime.misc.Interval.of(group.getStart().getStartIndex(), stop.getStopIndex()));
-        return Source.of(group, text.replaceAll("\\s+", " ").trim());
+        return Source.of(group, DefinitionResolver.snippet(group.getStart(), stop));
     }
 
     /** The line of a bullet, as written from its sign to the end of that line: what an ERROR quotes. */

@@ -283,17 +283,17 @@
                         }
                       ],
                       "source": {
-                        "snippet": "hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'."
+                        "snippet": "hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'"
                       }
                     }
                   ],
                   "source": {
-                    "snippet": "hij voldoet aan alle volgende voorwaarden: .. zijn leeftijd is groter dan 65 .. hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'."
+                    "snippet": "hij voldoet aan alle volgende voorwaarden: .. zijn leeftijd is groter dan 65 .. hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'"
                   }
                 }
               ],
               "source": {
-                "snippet": "hij aan ten minste \u00e9\u00e9n van de volgende voorwaarden voldoet: - zijn soort is gelijk aan 'Blik' - hij voldoet aan alle volgende voorwaarden: .. zijn leeftijd is groter dan 65 .. hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'."
+                "snippet": "hij aan ten minste \u00e9\u00e9n van de volgende voorwaarden voldoet: - zijn soort is gelijk aan 'Blik' - hij voldoet aan alle volgende voorwaarden: .. zijn leeftijd is groter dan 65 .. hij voldoet aan ten minste \u00e9\u00e9n van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'"
               }
             },
             "initialisation": false
