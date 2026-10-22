@@ -29,6 +29,14 @@ public final class Resolver {
      *  {@link dev.uchar.regelspraak.ir.Source} anchors back to {@code fileName} (uitleg can then
      *  cite the file/regel); otherwise identical. */
     public static RegelSpraakModel resolve(String source, String fileName) {
+        Parsed p = parse(source, fileName);
+        return build(p.doc(), p.tokens(), p.syntax());
+    }
+
+    /** A parsed document: the tree, the token stream it was parsed from, and the syntax diagnostics the parse raised. */
+    private record Parsed(RegelSpraakDocumentContext doc, CommonTokenStream tokens, java.util.List<Diagnostic> syntax) {}
+
+    private static Parsed parse(String source, String fileName) {
         RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source, fileName));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         RegelSpraak parser = new RegelSpraak(tokens);
@@ -44,7 +52,28 @@ public final class Resolver {
         parser.removeErrorListeners(); parser.addErrorListener(listener);
 
         RegelSpraakDocumentContext doc = parser.regelSpraakDocument();
-        return build(doc, tokens, syntax);
+        return new Parsed(doc, tokens, syntax);
+    }
+
+    /** The semantic tokens of one or more source files (grammar/DIVERGENCES.md, "Semantic tokens"): the files are
+     *  read as one chain, each text followed by a line end, exactly as {@code --ir} reads them, and resolved once; the
+     *  result holds per file the spans that cover its text, each with a kind and a position in that file, and the
+     *  diagnostics of the resolution with the file and line they stand on. The IR is not touched: this is an output
+     *  beside it. A syntax error or an ERROR does not stop it; that is where the output helps most. */
+    public static SemanticTokens.Document tokens(java.util.List<SemanticTokens.SourceFile> files) {
+        if (files.isEmpty()) throw new IllegalArgumentException("semantic tokens: geen bronbestand opgegeven");
+        StringBuilder chain = new StringBuilder();
+        int[] firstLines = new int[files.size()];
+        int lineNumber = 1;
+        for (int i = 0; i < files.size(); i++) {
+            String text = files.get(i).text();
+            firstLines[i] = lineNumber;
+            chain.append(text).append('\n');
+            lineNumber += (int) (text + '\n').chars().filter(c -> c == '\n').count();
+        }
+        Parsed p = parse(chain.toString(), IntStream.UNKNOWN_SOURCE_NAME);
+        RegelSpraakModel m = build(p.doc(), p.tokens(), p.syntax());
+        return SemanticTokens.of(files, chain.toString(), firstLines, p.tokens(), p.doc(), m, !p.syntax().isEmpty());
     }
 
     /** The model of a parsed document: definitions, the syntax diagnostics the parse raised, the rule
@@ -290,12 +319,39 @@ public final class Resolver {
         return 0;
     }
 
+    /** The --tokens mode body: {@code rest} = [out.json, file.rgs...]; writes the semantic tokens of the files
+     *  ({@link #tokens}) to {@code out.json}, also when the model carries an ERROR or a syntax error, and prints the
+     *  diagnostics as {@code --cases} does, each with its file and line. Returns 0 when the file is written, 2 on wrong
+     *  usage. */
+    public static int tokensMode(java.util.List<String> rest) throws java.io.IOException {
+        if (rest.size() < 2) { System.err.println("usage: Resolver --tokens <out.json> <file.rgs...>"); return 2; }
+        java.nio.file.Path out = java.nio.file.Path.of(rest.get(0));
+        java.util.List<SemanticTokens.SourceFile> files = new java.util.ArrayList<>();
+        for (String f : rest.subList(1, rest.size()))
+            files.add(new SemanticTokens.SourceFile(f, java.nio.file.Files.readString(java.nio.file.Path.of(f))));
+        SemanticTokens.Document d = tokens(files);
+        for (SemanticTokens.FileDiagnostic diagnostic : d.diagnostics())
+            System.err.println("  " + diagnostic.severity() + (diagnostic.file() == null ? ""
+                    : " (" + diagnostic.file() + ":" + diagnostic.line() + ")") + ": " + diagnostic.message());
+        java.nio.file.Files.writeString(out, d.toJson(), java.nio.charset.StandardCharsets.UTF_8);
+        System.out.printf("tokens: %d bestand(en), %d diagnose(s) geschreven naar %s%n",
+                d.files().size(), d.diagnostics().size(), out);
+        return 0;
+    }
+
     /** CLI: with --ir &lt;out.json&gt; over one-or-more source files, emit a FAITHFUL {@code uchar-ir-v1} JSON dump of the
      *  complete resolved model (the uchar "mirror" artifact); with --cases &lt;map&gt; beside it, the sources are read
      *  as one test document and its scenarios are lowered to case files as well ({@link #casesMode}). The IR is the
      *  product; a bare invocation prints usage and exits 2. */
     public static void main(String[] args) throws java.io.IOException {
         var rest = new java.util.ArrayList<>(java.util.List.of(args));
+        if (rest.remove("--tokens")) {
+            if (rest.contains("--ir") || rest.contains("--cases")) {
+                System.err.println("usage: Resolver --tokens <out.json> <file.rgs...> (zonder --ir of --cases)");
+                System.exit(2);
+            }
+            System.exit(tokensMode(rest));
+        }
         boolean ir = rest.remove("--ir");
         int c = rest.indexOf("--cases");
         java.nio.file.Path map = null;
@@ -305,7 +361,10 @@ public final class Resolver {
             rest.remove(c + 1);
             rest.remove(c);
         }
-        if (!ir) { System.err.println("usage: Resolver --ir <out.json> [--cases <map>] <file.rgs...>"); System.exit(2); }
+        if (!ir) {
+            System.err.println("usage: Resolver --ir <out.json> [--cases <map>] <file.rgs...> | --tokens <out.json> <file.rgs...>");
+            System.exit(2);
+        }
         System.exit(map == null ? irMode(rest) : casesMode(rest, map));
     }
 
