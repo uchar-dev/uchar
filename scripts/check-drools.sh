@@ -1405,7 +1405,10 @@ EXPECTED_CHANNEL=(
 # 269 -> 270 (2026-10-22, card third-condition-level): the golden jutterswet-vrijstelling-drie-niveaus, three levels of
 # nested conditions under a counting quantifier (the depth of a bullet follows from its sign), written in RegelSpraak
 # with hand-computed cases. No source file of this backend changed; it plays on both with PLAYED 4.
-EXPECTED_PLAYED=270
+# 270 -> 271 (2026-10-22, fix round of card third-condition-level): the golden jutterswet-premietabel-twee-ofcellen, a
+# decision-table row with two or-cells, desugared to two sister groups, written in RegelSpraak with hand-computed cases.
+# No source file of this backend changed; it plays on both with PLAYED 5.
+EXPECTED_PLAYED=271
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

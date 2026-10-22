@@ -1,0 +1,52 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "soort": {
+            "text": "kurk"
+          },
+          "strook": {
+            "text": "west"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "soort": {
+            "text": "touw"
+          },
+          "strook": {
+            "text": "noord"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "vondstpremie"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vondstpremie",
+      "value": {
+        "number": "10"
+      }
+    }
+  ]
+}

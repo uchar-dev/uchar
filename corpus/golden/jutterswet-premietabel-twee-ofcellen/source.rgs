@@ -1,0 +1,11 @@
+Objecttype de Vondst (mv: Vondsten)
+    de soort Tekst;
+    de strook Tekst;
+    de vondstpremie Numeriek (geheel getal);
+
+Beslistabel vondstpremie
+    geldig altijd
+| | de vondstpremie van een Vondst moet gesteld worden op | indien zijn soort gelijk is aan | indien zijn strook gelijk is aan |
+|---|---|---|---|
+| 1 | 10 | "touw" of "glas" | "noord" of "zuid" |
+| 2 | 3 | "hout" | "noord" |

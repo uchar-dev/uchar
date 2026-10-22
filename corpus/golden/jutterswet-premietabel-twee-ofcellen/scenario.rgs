@@ -1,0 +1,59 @@
+Scenario touw noord
+Gegeven is de volgende situatie:
+een Vondst V1
+- de soort is "touw"
+- de strook is "noord"
+een Vondst V2
+- de soort is "glas"
+- de strook is "zuid"
+Met als verwacht resultaat:
+- de vondstpremie van V1 is 10
+- de vondstpremie van V2 is 10
+
+Scenario glas noord
+Gegeven is de volgende situatie:
+een Vondst V1
+- de soort is "glas"
+- de strook is "noord"
+een Vondst V2
+- de soort is "touw"
+- de strook is "zuid"
+Met als verwacht resultaat:
+- de vondstpremie van V1 is 10
+- de vondstpremie van V2 is 10
+
+Scenario touw west
+Gegeven is de volgende situatie:
+een Vondst V1
+- de soort is "touw"
+- de strook is "west"
+een Vondst V2
+- de soort is "hout"
+- de strook is "noord"
+Met als verwacht resultaat:
+- de vondstpremie van V1 is leeg
+- de vondstpremie van V2 is 3
+
+Scenario kurk zuid
+Gegeven is de volgende situatie:
+een Vondst V1
+- de soort is "kurk"
+- de strook is "zuid"
+een Vondst V2
+- de soort is "glas"
+- de strook is "zuid"
+Met als verwacht resultaat:
+- de vondstpremie van V1 is leeg
+- de vondstpremie van V2 is 10
+
+Scenario kurk west
+Gegeven is de volgende situatie:
+een Vondst V1
+- de soort is "kurk"
+- de strook is "west"
+een Vondst V2
+- de soort is "touw"
+- de strook is "noord"
+Met als verwacht resultaat:
+- de vondstpremie van V1 is leeg
+- de vondstpremie van V2 is 10

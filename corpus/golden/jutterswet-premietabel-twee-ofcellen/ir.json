@@ -1,0 +1,348 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "soort",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "strook",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vondstpremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vondstpremie 1",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vondstpremie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "de vondstpremie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "10"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "10"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Compound",
+                  "quantifier": "atLeast",
+                  "threshold": 1,
+                  "parts": [
+                    {
+                      "node": "Comparison",
+                      "op": "equal",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "soort",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn soort"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "text": "touw"
+                        },
+                        "type": {
+                          "node": "Text"
+                        },
+                        "source": {
+                          "snippet": "\"touw\""
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn soort gelijk is aan \"touw\""
+                      }
+                    },
+                    {
+                      "node": "Comparison",
+                      "op": "equal",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "soort",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn soort"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "text": "glas"
+                        },
+                        "type": {
+                          "node": "Text"
+                        },
+                        "source": {
+                          "snippet": "\"glas\""
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn soort gelijk is aan \"glas\""
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "er voldoet aan tenminste \u00e9\u00e9n van de volgende voorwaarden: \u2022\u2022 zijn soort gelijk is aan \"touw\" \u2022\u2022 zijn soort gelijk is aan \"glas\""
+                  }
+                },
+                {
+                  "node": "Compound",
+                  "quantifier": "atLeast",
+                  "threshold": 1,
+                  "parts": [
+                    {
+                      "node": "Comparison",
+                      "op": "equal",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "strook",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn strook"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "text": "noord"
+                        },
+                        "type": {
+                          "node": "Text"
+                        },
+                        "source": {
+                          "snippet": "\"noord\""
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn strook gelijk is aan \"noord\""
+                      }
+                    },
+                    {
+                      "node": "Comparison",
+                      "op": "equal",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "strook",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn strook"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "text": "zuid"
+                        },
+                        "type": {
+                          "node": "Text"
+                        },
+                        "source": {
+                          "snippet": "\"zuid\""
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn strook gelijk is aan \"zuid\""
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "er voldoet aan tenminste \u00e9\u00e9n van de volgende voorwaarden: \u2022\u2022 zijn strook gelijk is aan \"noord\" \u2022\u2022 zijn strook gelijk is aan \"zuid\"."
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: \u2022 er voldoet aan tenminste \u00e9\u00e9n van de volgende voorwaarden: \u2022\u2022 zijn soort gelijk is aan \"touw\" \u2022\u2022 zijn soort gelijk is aan \"glas\" \u2022 er voldoet aan tenminste \u00e9\u00e9n van de volgende voorwaarden: \u2022\u2022 zijn strook gelijk is aan \"noord\" \u2022\u2022 zijn strook gelijk is aan \"zuid\"."
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "vondstpremie"
+          }
+        }
+      },
+      {
+        "node": "Rule",
+        "name": "vondstpremie 2",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vondstpremie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "de vondstpremie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "3"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "3"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn soort"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "hout"
+                    },
+                    "type": {
+                      "node": "Text"
+                    },
+                    "source": {
+                      "snippet": "\"hout\""
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn soort gelijk is aan \"hout\""
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "strook",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn strook"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "noord"
+                    },
+                    "type": {
+                      "node": "Text"
+                    },
+                    "source": {
+                      "snippet": "\"noord\""
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn strook gelijk is aan \"noord\""
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: \u2022 zijn soort gelijk is aan \"hout\" \u2022 zijn strook gelijk is aan \"noord\"."
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "origin": {
+          "form": "decisionTableRow",
+          "from": {
+            "kind": "decisionTable",
+            "name": "vondstpremie"
+          }
+        }
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
