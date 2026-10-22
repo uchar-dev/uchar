@@ -81,6 +81,13 @@ Jutter that is not actief beside one that is, nor a vondst outside every
 range; `backends/drools`' `FilterFaultWitnessTest` carries both shapes for
 the Drools branches.
 
+*No longer so (measured 2026-10-22):* since `zero-division-channel`
+(2026-10-19) a division by a numeric zero is a channel kind, and a session
+with a Jutter that is not actief beside one that is replays in clingo as in
+`ref`; since `fix/clingo-filter-guard-binding` (2026-10-22) a guard inside a
+fold member also joins the member to the subject of the rule. The two cases
+stay as they are.
+
 ## The differential square
 
 `ref` ≡ clingo over all eleven expectations (gates 5 and 6), anchored to the
