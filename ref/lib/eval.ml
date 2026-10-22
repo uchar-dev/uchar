@@ -2075,6 +2075,10 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
       match call_arguments with
       | [ a ] -> Arith.easter_sunday (eval_expr env world self ~err a)
       | _ -> Value.fault "easterSunday expects one argument")
+  | Date_with | Date_time_with ->
+      (* ch. 3.8; ch. 5.11: every part in wire order, the leeg test after *)
+      Arith.date_construction ~time:(kind = Date_time_with)
+        (map_in_order (eval_expr env world self ~err) call_arguments)
   | Duration | Absolute_duration ->
       (* unreachable: eval_expr routes both variants on the node-type unit *)
       assert false

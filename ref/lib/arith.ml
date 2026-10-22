@@ -536,6 +536,53 @@ let easter_sunday = function
       Date (days_from_civil ~y:j ~m:month_kind ~d:day_number)
   | v -> fault "easterSunday: expected a whole unitless year, got %s" (to_string v)
 
+(* the date construction (ch. 3.8): datum met jaar/maand/dag and datumtijd
+   met jaar/…/milliseconde. The caller hands the parts evaluated in wire
+   order (ch. 5.11), so a leeg part costs its successors nothing; leeg is
+   tested after all of them (ch. 1.2). A part is a whole unitless number, as
+   the Easter year is: a fraction or a unit faults, never truncates. Parts
+   that name no calendar day or no clock time fault — never a roll-over into
+   the next month, never the month-end clamp of date + duration, which is a
+   rule of the step and not of the construction. The year is bounded where
+   [days_from_civil] could leave the machine integer (its era term is about
+   365.25 · year), and the instant of a datum-tijd by the representable
+   millisecond range, checked in Zarith so that the check cannot wrap. *)
+let date_construction ~time parts =
+  let name = if time then "dateTimeWith" else "dateWith" in
+  let arity = if time then 7 else 3 in
+  if List.length parts <> arity then
+    fault "%s expects %d parts, got %d" name arity (List.length parts);
+  if List.mem Empty parts then Empty
+  else
+    let part = function
+      | Num (q, Unitless) when Z.equal (Q.den q) Z.one -> (
+          match Z.to_int (Q.num q) with
+          | n -> n
+          | exception Z.Overflow -> fault "%s: the part %s is out of range" name (Q.to_string q))
+      | v -> fault "%s: a part must be a whole unitless number, got %s" name (to_string v)
+    in
+    match List.map part parts with
+    | y :: m :: d :: clock ->
+        if y > max_int / 400 || y < -(max_int / 400) then
+          fault "%s: the year %d is out of range" name y;
+        if m < 1 || m > 12 || d < 1 || d > days_in_month ~y ~m then
+          fault "%s: year %d, month %d and day %d name no calendar day" name y m d;
+        let z = days_from_civil ~y ~m ~d in
+        (match clock with
+        | [] -> Date z
+        | [ hh; mi; ss; ms ] ->
+            if hh < 0 || hh > 23 || mi < 0 || mi > 59 || ss < 0 || ss > 59 || ms < 0 || ms > 999
+            then
+              fault "%s: hour %d, minute %d, second %d and millisecond %d name no clock time" name
+                hh mi ss ms;
+            let msod = (((((hh * 60) + mi) * 60) + ss) * 1000) + ms in
+            let t = Z.add (Z.mul (Z.of_int z) (Z.of_int ms_per_day)) (Z.of_int msod) in
+            if Z.lt t (Z.of_int min_int) || Z.gt t (Z.of_int max_int) then
+              fault "%s: the instant lies outside the representable millisecond range" name;
+            Date_time (Z.to_int t)
+        | _ -> assert false (* the arity test above *))
+    | _ -> assert false (* the arity test above *)
+
 (* --- the calendar kernel (ch. 3.8): proleptic Gregorian, zoneless civil
    time, built on the civil helpers of Value (days_from_civil /
    civil_from_days). The counted unit arrives resolved through the shared

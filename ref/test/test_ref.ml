@@ -4015,6 +4015,54 @@ let () =
   expect_fault "WV-3.8-paasdag-eenheid" (fun () -> Arith.easter_sunday (num_with_unit jr "2024"));
   expect_fault "WV-3.8-maand-uit-tekst" (fun () -> Arith.month_of (Value.Text "x"))
 
+(* --- ch. 3.8: the date construction (worked examples verbatim) ---------- *)
+
+let () =
+  let d = Value.date_of_iso in
+  let date_with parts = Arith.date_construction ~time:false (List.map n parts) in
+  let date_time_with parts = Arith.date_construction ~time:true (List.map n parts) in
+  check "WV-3.8-datummet" (date_with [ "2026"; "3"; "1" ] = d "2026-03-01");
+  check "WV-3.8-datummet-schrikkeldag" (date_with [ "2024"; "2"; "29" ] = d "2024-02-29");
+  check "WV-3.8-datummet-eeuwjaar" (date_with [ "2000"; "2"; "29" ] = d "2000-02-29");
+  (* parts that name no calendar day fault: never a roll-over into the next
+     month, never the month-end clamp of date + duration *)
+  expect_fault "WV-3.8-datummet-geen-schrikkeljaar" (fun () -> date_with [ "2026"; "2"; "29" ]);
+  expect_fault "WV-3.8-datummet-eeuw-geen-schrikkeljaar" (fun () -> date_with [ "1900"; "2"; "29" ]);
+  expect_fault "WV-3.8-datummet-31-april" (fun () -> date_with [ "2026"; "4"; "31" ]);
+  expect_fault "WV-3.8-datummet-maand-13" (fun () -> date_with [ "2026"; "13"; "1" ]);
+  expect_fault "WV-3.8-datummet-maand-0" (fun () -> date_with [ "2026"; "0"; "1" ]);
+  expect_fault "WV-3.8-datummet-dag-0" (fun () -> date_with [ "2026"; "3"; "0" ]);
+  (* a part is a whole unitless number, as the Easter year is *)
+  expect_fault "WV-3.8-datummet-breuk" (fun () -> date_with [ "2026"; "2.5"; "1" ]);
+  expect_fault "WV-3.8-datummet-eenheid" (fun () ->
+      Arith.date_construction ~time:false [ num_with_unit jr "2026"; n "3"; n "1" ]);
+  (* a leeg part makes the date leeg, also beside a part that names no day *)
+  expect_empty "WV-3.8-datummet-leeg"
+    (Arith.date_construction ~time:false [ empty_value; n "3"; n "1" ]);
+  expect_empty "WV-3.8-datummet-leeg-voor-de-geldigheid"
+    (Arith.date_construction ~time:false [ n "2026"; n "13"; empty_value ]);
+  check "WV-3.8-datumtijdmet"
+    (date_time_with [ "2026"; "3"; "1"; "6"; "30"; "0"; "0" ]
+     = Value.Date_time (Result.get_ok (Value.read_iso_datetime "2026-03-01T06:30:00")));
+  check "WV-3.8-datumtijdmet-laatste-milliseconde"
+    (date_time_with [ "2026"; "12"; "31"; "23"; "59"; "59"; "999" ]
+     = Value.Date_time (Result.get_ok (Value.read_iso_datetime "2026-12-31T23:59:59.999")));
+  expect_fault "WV-3.8-datumtijdmet-uur-24" (fun () ->
+      date_time_with [ "2026"; "3"; "1"; "24"; "0"; "0"; "0" ]);
+  expect_fault "WV-3.8-datumtijdmet-seconde-60" (fun () ->
+      date_time_with [ "2026"; "3"; "1"; "0"; "0"; "60"; "0" ]);
+  expect_fault "WV-3.8-datumtijdmet-milliseconde-1000" (fun () ->
+      date_time_with [ "2026"; "3"; "1"; "0"; "0"; "0"; "1000" ]);
+  expect_fault "WV-3.8-datumtijdmet-31-april" (fun () ->
+      date_time_with [ "2026"; "4"; "31"; "0"; "0"; "0"; "0" ]);
+  (* the instant lies in the representable millisecond range: year
+     146140482 begins inside it, year 200000000 lies beyond it *)
+  check "WV-3.8-datumtijdmet-bereik"
+    (date_time_with [ "146140482"; "1"; "1"; "0"; "0"; "0"; "0" ]
+     = Value.Date_time (Value.days_from_civil ~y:146140482 ~m:1 ~d:1 * Value.ms_per_day));
+  expect_fault "WV-3.8-datumtijdmet-buiten-bereik" (fun () ->
+      date_time_with [ "200000000"; "3"; "1"; "0"; "0"; "0"; "0" ])
+
 (* --- ch. 3.8: the datum-tijd millisecond layer (worked examples
    verbatim) --------------------------------------------------------------- *)
 
@@ -6499,6 +6547,15 @@ let () =
   in
   expect_msg "WV-5.11-tekstreeks-deel0-eerst" (run_v (sequence tree pit)) bm;
   expect_msg "WV-5.11-tekstreeks-deel1-later" (run_v (sequence pit tree)) pm;
+  (* row: dateWith / dateTimeWith — the parts in argument order *)
+  let date_with args : Ir_v0.Ast.expr =
+    Function_call
+      { kind = Date_with; call_arguments = args @ [ litv "1" num0 ]; element_object_type = None;
+        empty_fallback = None; filter = None; dimension_selection = None; typ = Some Date_in_days;
+        source_name = None; grain = None; source_role = None; source_path = None }
+  in
+  expect_msg "WV-5.11-datummet-deel0-eerst" (run_v (date_with [ tree; pit ])) bm;
+  expect_msg "WV-5.11-datummet-deel1-later" (run_v (date_with [ pit; tree ])) pm;
   (* row: ListLiteral — element order *)
   let list_lit a b : Ir_v0.Ast.expr =
     List_literal { typ = Some element_list; elements = [ a; b ]; source_name = None }
