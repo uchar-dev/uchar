@@ -65,6 +65,12 @@ class MarkerReportTest {
         CLASSIFICATION.put("RuleChecker.java#compoundElementFilter",
                 "ERROR (RGS-350, een deelselectie noemt een onderwerp van het type van het element): geen document");
         CLASSIFICATION.put("RuleChecker.java#dayKindOperandError", "ERROR (Tabel 57): geen document");
+        CLASSIFICATION.put("ExpressionBuilder.java#refuseInFilter",
+                "ERROR (RGS-352, een lezing van het regelonderwerp in een filter zonder spelling vanaf het element): "
+                + "geen document");
+        CLASSIFICATION.put("ExpressionBuilder.java#variableInFilter",
+                "ERROR (RGS-350, een variabele van de regel in een deelselectie over elementen van het type van het "
+                + "regelonderwerp): geen document");
         CLASSIFICATION.put("ExpressionBuilder.java#buildFunction", "WARNING: aggregatie_over_een_ongedeclareerd_lid, "
                 + "dimensieselectie_of_gedurende_op_een_aggregatie; ERROR (WF-037, aantal gevulde): geen document");
         CLASSIFICATION.put("ExpressionBuilder.java#checkFoldSource", "WARNING: vouwbron_geneste_verzamelingsstap, "

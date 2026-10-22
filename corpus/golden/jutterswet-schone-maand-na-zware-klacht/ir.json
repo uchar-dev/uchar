@@ -1,0 +1,447 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Schuit",
+        "animate": false,
+        "plural": "Schuiten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "eerste schone maand vanaf-de-eindmaand",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Lading in-een-maand",
+        "animate": false,
+        "plural": "Ladingen in-een-maand",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "maand",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "overlading",
+            "kind": "possessive"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Klacht",
+        "animate": false,
+        "plural": "Klachten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "einddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "soort",
+            "datatype": {
+              "node": "Enumeration",
+              "domain": "Klachtsoort",
+              "values": [
+                "Zwaar",
+                "Licht"
+              ]
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "lading in-een-maand",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "schuit",
+            "objectType": "Schuit",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "lading",
+            "objectType": "Lading in-een-maand",
+            "plural": "ladingen",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "schuitklacht",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "beklaagde schuit",
+            "objectType": "Schuit",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "klacht",
+            "objectType": "Klacht",
+            "plural": "klachten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "Klachtsoort",
+        "datatype": {
+          "node": "Enumeration",
+          "values": [
+            "Zwaar",
+            "Licht"
+          ]
+        }
+      }
+    ],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "maand"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "overlading",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "overlading",
+              "subjectType": "Lading in-een-maand",
+              "source": {
+                "snippet": "Een Lading in-een-maand heeft de overlading"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Lading in-een-maand",
+                "source": {
+                  "snippet": "zijn gewicht"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "100"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "100"
+                }
+              },
+              "source": {
+                "snippet": "zijn gewicht groter is dan 100"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "eerste schone maand vanaf de eindmaand",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eerste schone maand vanaf-de-eindmaand",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "De eerste schone maand vanaf-de-eindmaand van een Schuit"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "maand",
+                  "subjectType": "Lading in-een-maand",
+                  "source": {
+                    "snippet": "de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'."
+                  }
+                }
+              ],
+              "elementType": "Lading in-een-maand",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "overlading",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij heeft geen overlading"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "Binary",
+                      "op": "plus",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "maand",
+                        "subjectType": "Lading in-een-maand",
+                        "source": {
+                          "snippet": "zijn maand"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "1"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified",
+                          "unit": {
+                            "node": "Unit",
+                            "abbreviation": "mnd",
+                            "system": "Tijd",
+                            "canonical": "mnd",
+                            "factorToCanonical": {
+                              "num": 1,
+                              "den": 1
+                            }
+                          }
+                        },
+                        "source": {
+                          "snippet": "1 mnd"
+                        }
+                      },
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "zijn maand plus 1 mnd"
+                      }
+                    },
+                    "right": {
+                      "node": "Aggregation",
+                      "kind": "last",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "einddag",
+                          "subjectType": "Klacht",
+                          "source": {
+                            "snippet": "de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'"
+                          }
+                        }
+                      ],
+                      "elementType": "Klacht",
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "the",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "equal",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "soort",
+                              "subjectType": "Klacht",
+                              "source": {
+                                "snippet": "zijn soort"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "enumeration": "Zwaar"
+                              },
+                              "type": {
+                                "node": "Enumeration",
+                                "domain": "Klachtsoort",
+                                "values": [
+                                  "Zwaar",
+                                  "Licht"
+                                ]
+                              },
+                              "source": {
+                                "snippet": "'Zwaar'"
+                              }
+                            },
+                            "source": {
+                              "snippet": "zijn soort is gelijk aan 'Zwaar'"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'"
+                        }
+                      },
+                      "sourcePath": [
+                        {
+                          "node": "RoleBinding",
+                          "factType": "lading in-een-maand",
+                          "role": "schuit"
+                        },
+                        {
+                          "node": "RoleBinding",
+                          "factType": "schuitklacht",
+                          "role": "klacht"
+                        }
+                      ],
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'."
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "lading in-een-maand",
+                "role": "lading"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de eerste van de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'."
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

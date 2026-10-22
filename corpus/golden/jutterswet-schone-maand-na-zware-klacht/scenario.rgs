@@ -1,0 +1,107 @@
+Scenario twee zware klachten en een lichte
+Gegeven is de volgende situatie:
+een Schuit S1
+een Klacht K1
+- de einddag is 15-03-2026
+- de soort is 'Zwaar'
+- de beklaagde schuit is S1
+een Klacht K2
+- de einddag is 10-02-2026
+- de soort is 'Zwaar'
+- de beklaagde schuit is S1
+een Klacht K3
+- de einddag is 20-05-2026
+- de soort is 'Licht'
+- de beklaagde schuit is S1
+een Lading in-een-maand L1
+- de maand is 01-02-2026
+- het gewicht is 50
+- de schuit is S1
+een Lading in-een-maand L2
+- de maand is 01-03-2026
+- het gewicht is 50
+- de schuit is S1
+een Lading in-een-maand L3
+- de maand is 01-04-2026
+- het gewicht is 150
+- de schuit is S1
+Met als verwacht resultaat:
+- de eerste schone maand vanaf-de-eindmaand van S1 is 01-03-2026
+- L1 heeft geen overlading
+- L2 heeft geen overlading
+- L3 heeft de overlading
+
+Scenario overlading in maart
+Gegeven is de volgende situatie:
+een Schuit S1
+een Klacht K1
+- de einddag is 15-03-2026
+- de soort is 'Zwaar'
+- de beklaagde schuit is S1
+een Lading in-een-maand L1
+- de maand is 01-02-2026
+- het gewicht is 50
+- de schuit is S1
+een Lading in-een-maand L2
+- de maand is 01-03-2026
+- het gewicht is 150
+- de schuit is S1
+een Lading in-een-maand L3
+- de maand is 01-04-2026
+- het gewicht is 50
+- de schuit is S1
+Met als verwacht resultaat:
+- de eerste schone maand vanaf-de-eindmaand van S1 is 01-04-2026
+- L2 heeft de overlading
+
+Scenario elke schuit haar eigen klachten
+Gegeven is de volgende situatie:
+een Schuit S1
+een Schuit S2
+een Klacht K1
+- de einddag is 15-03-2026
+- de soort is 'Zwaar'
+- de beklaagde schuit is S1
+een Klacht K2
+- de einddag is 20-05-2026
+- de soort is 'Zwaar'
+- de beklaagde schuit is S2
+een Lading in-een-maand L1
+- de maand is 01-02-2026
+- het gewicht is 50
+- de schuit is S1
+een Lading in-een-maand L2
+- de maand is 01-03-2026
+- het gewicht is 50
+- de schuit is S1
+een Lading in-een-maand L3
+- de maand is 01-03-2026
+- het gewicht is 50
+- de schuit is S2
+een Lading in-een-maand L4
+- de maand is 01-05-2026
+- het gewicht is 50
+- de schuit is S2
+Met als verwacht resultaat:
+- de eerste schone maand vanaf-de-eindmaand van S1 is 01-03-2026
+- de eerste schone maand vanaf-de-eindmaand van S2 is 01-05-2026
+
+Scenario alleen een lichte klacht
+Gegeven is de volgende situatie:
+een Schuit S1
+een Klacht K1
+- de einddag is 20-01-2026
+- de soort is 'Licht'
+- de beklaagde schuit is S1
+een Lading in-een-maand L1
+- de maand is 01-02-2026
+- het gewicht is 50
+- de schuit is S1
+een Lading in-een-maand L2
+- de maand is 01-03-2026
+- het gewicht is 150
+- de schuit is S1
+Met als verwacht resultaat:
+- de eerste schone maand vanaf-de-eindmaand van S1 is leeg
+- L1 heeft geen overlading
+- L2 heeft de overlading

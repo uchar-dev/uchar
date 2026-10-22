@@ -5590,7 +5590,8 @@ final class RuleChecker {
         // aangemeld zijn") but selects the quantified MEMBERS, so a die on the other side of the
         // comparison belongs to that operand's own navigation and is none of this fold's business.
         ExpressionBuilder.Subselection ds = builder.subselection(
-                c instanceof Condition.Comparison v && v.right() == set ? rhsCtx : lhsCtx, elem, set);
+                c instanceof Condition.Comparison v && v.right() == set ? rhsCtx : lhsCtx, elem, set,
+                sourcePath.isEmpty() ? List.of(sourceRole) : sourcePath);
         if (ds != null && ds.filter() == null) {
             model.diagnostics.add(new Diagnostic(Severity.WARNING,
                     "RGS-210", params("source", set.source(), "reason", ds.reason()), set.source().line()));
@@ -5608,6 +5609,7 @@ final class RuleChecker {
         // Where the element has the rule subject's own type, an own read of the subject is a read of the element as
         // well, and the matrix would take it from the element, over one step as over a path (review 2026-10-20).
         boolean sameType = builder.subject() == elem;
+        if (!sameType && sourcePath.isEmpty()) matrix = matrixFromElement(c, set, matrix, own, elem, sourceRole);
         Source subjectRead = sameType || !sourcePath.isEmpty() ? subjectRead(c, set, matrix, own, sameType ? null : elem) : null;
         if (subjectRead != null) {
             model.diagnostics.add(sameType
@@ -5619,6 +5621,27 @@ final class RuleChecker {
             return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
         }
         return new Condition.QuantifierFold(q, threshold, elem, filter, matrix, sourceRole, sourcePath, source);
+    }
+
+    /**
+     * The operand beside the quantified one in the matrix of a quantifier over one relation, built with the rule subject
+     * and read per element: written from the element over the way back to the rule subject, the relation's other role,
+     * where that role is to-one (grammar/DIVERGENCES.md, "A read of the rule subject in a filter"). A read of the rule
+     * subject's own attribute bound by the type pair before, and the same binding is now written; a navigated read and
+     * a fold over a relation of the rule subject had no spelling from the element. Where the way back is to-many, or a
+     * part of the operand has no spelling from the element, the operand stays as built and its own refusals speak; an
+     * operand {@link #elementRead} built with the element as subject stays as well.
+     */
+    private Condition matrixFromElement(Condition c, Expr set, Condition matrix, Expr own, ObjectType elem,
+                                        RegelSpraakModel.RoleBindingRef sourceRole) {
+        if (!(c instanceof Condition.Comparison written) || !(matrix instanceof Condition.Comparison m)) return matrix;
+        Expr other = written.left() == set ? written.right() : written.left();
+        Expr inMatrix = m.left() == own ? m.right() : m.left();
+        if (inMatrix != other || sourceRole == null) return matrix;
+        ExpressionBuilder.Frame frame = builder.frame(builder.subject(), elem, List.of(sourceRole), null);
+        if (frame == null || frame.back() == null) return matrix;
+        ExpressionBuilder.Reanchored r = builder.reanchor(other, frame.back(), builder.subject(), elem);
+        return r.refusal() != null || r.expr() == other ? matrix : withOperand(matrix, other, r.expr());
     }
 
     /**
@@ -5780,7 +5803,8 @@ final class RuleChecker {
                             "element", g.element().name), source);
             return null;
         }
-        ExpressionBuilder.Subselection ds = builder.subselection(lhsCtx, g.element(), null);
+        ExpressionBuilder.Subselection ds = builder.subselection(lhsCtx, g.element(), null,
+                g.path().isEmpty() ? List.of(sourceRole) : g.path());
         if (ds != null && ds.filter() == null) {
             // The comparison route can stop at a WARNING here because the set reading it leaves standing
             // raises the fence's ERROR that blocks the document. This route has no set reading, so the
@@ -6345,6 +6369,11 @@ final class RuleChecker {
     // ---- §5 condition type-checking (comparisons + predicates) ----
     private void conditions(ParseTree t) {
         if (t == null) return;
+        // a subselection is read per element: its conditions are typed with the subject its filter was built with
+        if (t instanceof PredicaatContext p) {
+            builder.inFilterScope(p, () -> { for (int i = 0; i < p.getChildCount(); i++) conditions(p.getChild(i)); });
+            return;
+        }
         if (t instanceof ToplevelElementaireVoorwaardeContext c) checkTopCondition(c);
         else if (t instanceof ElementaireVoorwaardeContext c) checkElemCondition(c);
         else if (t instanceof EnkelvoudigeConsistentieRegelContext c) checkConsistencyCriterion(c);

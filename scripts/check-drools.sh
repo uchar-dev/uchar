@@ -1394,7 +1394,11 @@ EXPECTED_CHANNEL=(
 # date-with-parts (dateWith and dateTimeWith), fold-filter-nested-aggregate (a listed fold in the filter of five folds)
 # and fold-filter-inner-fold-via-element-role (an instance fold in the filter of another), written in RegelSpraak with
 # hand-computed cases. No source file of this backend changed; each plays on both with PLAYED 3.
-EXPECTED_PLAYED=267
+# 267 -> 268 (2026-10-22, cards fold-in-element-condition and rule-variable-in-subselection): the golden
+# jutterswet-schone-maand-na-zware-klacht, a fold over a relation of the rule subject in the filter of another fold,
+# written in RegelSpraak with hand-computed cases. No source file of this backend changed; it plays on both with
+# PLAYED 4.
+EXPECTED_PLAYED=268
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

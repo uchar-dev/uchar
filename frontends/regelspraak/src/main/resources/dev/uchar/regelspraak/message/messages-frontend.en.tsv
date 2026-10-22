@@ -153,6 +153,12 @@ PART.grid.year.many	grid of {count} years
 PART.writer-defaults-group	the defaults group '{name}'
 PART.writer-allocation	the allocation '{name}'
 PART.writer-object-creation	the object creation '{name}'
+PART.way-back-many	in the fact type '{factType}' a {holder} has more than one '{role}', so the way back does not point at one object
+PART.way-back-reciprocal	the fact type '{factType}' is reciprocal, and the way back names the same role as the way there
+PART.reanchor-count	a count counts over one relation from its subject (IR-SPEC ch. 4.3, WF-102 (c)), and with the way back its range becomes a path
+PART.reanchor-form	'{expression}' has no spelling from the element
+PART.reanchor-names	the roles {roles} do not name one relation step by step from {element}
+PART.variable-read	the variable '{name}' ({definition})
 RGS-001	allocation '{name}' is not written: the frontend determined none of the three allocation methods (in equal parts, in proportion, in order) for it, and an allocation without a method has no spelling in uchar-ir-v1
 RGS-002	objecttype '{objectType}' declares more than one supertype ({names}) — WF-106: an objecttype declares at most one direct supertype. The two known cases with two direct parents (RechtOpUitkeringWazo, RechtUitkeringZw) are refused here and not flattened: choose one parent, or lift the shared part to a common supertype
 RGS-003	objecttype '{objectType}' is its own supertype — WF-104: the supertype graph is acyclic, self-reference included (a chain without a root lets member resolution stop nowhere)
@@ -654,3 +660,4 @@ RGS-348	the quantifier fold over a path in '{expression}' reads '{read}' from th
 RGS-349	the quantifier fold in '{expression}' reads '{read}' from the rule subject, but the rule subject and the elements of the fold are both a {type}: the test of a quantifier fold is read per element, with the element as its subject (RUNTIME-SEMANTICS ch. 3.9a), and the IR has no reference to the outer subject in that test — the read would be taken from the element instead of from the subject the sentence names; compare with a constant or a parameter
 RGS-350	'{read}' in the subselection '{filter}' names a {type}, and the rule subject and the elements of the subselection are both a {type}, so the name can mean the element and the rule subject: a subselection is read per element, with the element as its subject, and the IR has no reference to the outer subject there — the read would always read the element; write 'zijn …' for a value of the element (a subselection over elements of the rule subject's own type does not read a value of the rule subject)
 RGS-351	a second '{word}' right after the subselection '{expression}': a chain carries at most one 'die/dat' subselection, and it belongs to the set right before it (grammar/DIVERGENCES.md, 'One subselection per chain') — two requirements on one set stand together in one list 'die aan alle volgende voorwaarden voldoen:', one bullet per requirement
+RGS-352	'{expression}' belongs to the rule subject {subject}, and the subselection '{filter}' is read per {element}, with the element as its subject: the IR reads there from the element and has no reference to the outer subject, so the read reaches its subject only over a way back from {element} to {subject}, and this frontend does not write one here: {reason}. Write the value as an own member of {subject}, with a rule that sets it, and read that member in the subselection

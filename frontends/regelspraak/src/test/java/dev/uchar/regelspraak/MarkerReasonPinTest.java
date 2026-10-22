@@ -48,7 +48,8 @@ class MarkerReasonPinTest {
      *  {@code file}, with the reason that route needs no survivor report. */
     record Site(String file, String method, int count, String why) {}
 
-    /** The fourteen sanctioned null-constructions, measured 2026-09-19, grown by one 2026-09-20 and by two 2026-10-20. Growth
+    /** The fourteen sanctioned null-constructions, measured 2026-09-19, grown by one 2026-09-20, by two 2026-10-20 and
+     *  by two 2026-10-22. Growth
      *  is NOT free here (unlike
      *  a gate floor): a null is a promise that something else speaks, so every new one is listed with
      *  the diagnostic that keeps that promise. */
@@ -75,7 +76,13 @@ class MarkerReasonPinTest {
                     "de enige aanroeper (bouwFunctie) toetst het resultaat op Onopgelost en waarschuwt; "
                     + "de sweep zou dat herhalen"),
             new Site("ExpressionBuilder.java", "checkOrdinal", 2,
-                    "de §5.5.3-ERROR respectievelijk -WARNING staat vlak boven de marker"));
+                    "de §5.5.3-ERROR respectievelijk -WARNING staat vlak boven de marker"),
+            new Site("ExpressionBuilder.java", "refuseInFilter", 1,
+                    "de RGS-352-ERROR die de regel erboven opwerpt (een lezing van het regelonderwerp in een filter "
+                    + "zonder spelling vanaf het element; 2026-10-22) IS de diagnose van deze marker"),
+            new Site("ExpressionBuilder.java", "variableInFilter", 1,
+                    "de RGS-350-ERROR die de regel erboven opwerpt (een variabele van de regel in een deelselectie over "
+                    + "elementen van het type van het regelonderwerp; 2026-10-22) IS de diagnose van deze marker"));
 
     /** A marker construction: the two record constructors and the two {@code unresolvedMarker(…)} helpers. */
     private static final Pattern BUILD =

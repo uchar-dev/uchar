@@ -1574,7 +1574,9 @@ same node. Two shapes are affected.
   subselection is the element's and binds as before. A read that happened to give
   the same value in both readings ("de drempel van de ploeg van de Jutter" in a
   subselection of the jutters of that same ploeg) is refused as well: the name
-  is the same.
+  is the same. A variable of the rule read in such a subselection is refused with
+RGS-350 too (2026-10-22): its definition belongs to the rule subject, and the
+filter would read the element (next section).
 
 Measured 2026-10-20 on the review probes and twelve forms of the fix round:
 before, five forms reached disk with `diagnostics: []` and were answered
@@ -1588,6 +1590,85 @@ in RGS-349 or RGS-350, and the forms with
 before. All 126 rgs goldens re-emit byte-identically, and none of the 179
 RegelSpraak sources of the repository raises either code. Witness:
 `QuantifierOverPathTest`.
+
+---
+
+## A read of the rule subject in a filter — written over the way back (2026-10-22)
+
+Not a dialect extension: the wire form IR-SPEC ch. 4.3 already carries
+(`sourcePath`, WF-102, a navigation `path`), which this frontend did not write
+here (cards `fold-in-element-condition` and `rule-variable-in-subselection`).
+The filter of a fold ("die aan alle volgende voorwaarden voldoen: …") and the
+test of a quantifier fold are read per element, with the element as their
+subject (RUNTIME-SEMANTICS ch. 3.9a, IR-SPEC ch. 4.5), and the IR has no
+reference to the outer subject there. Three reads there belong to the rule
+subject all the same:
+
+- a fold whose written range is anchored at the rule subject: "zijn maand plus
+  1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit
+  die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'" in
+  the filter of a fold over the ladingen of the Schuit;
+- a variable of the rule ("Daarbij geldt:", §13.4.2.10) read in a filter: its
+  definition is built at the rule subject, a read of one step, of two, or a
+  fold with a filter;
+- the operand beside the quantified one in the test of a quantifier over one
+  relation, which the frontend builds at the rule subject.
+
+Until now the fold in a filter kept a marker with a WARNING (RGS-075), or with
+a subselection on it was refused (RGS-131); a variable of two steps and a fold
+as a variable were refused (RGS-131, an unbound read), a variable of one step
+bound by the type pair; in the test of a quantifier a fold and a read of two
+steps were refused the same way. **Lowering.** The expression is built at the
+rule subject as written, and every read and every fold range that starts at
+the rule subject gets the way back from the element in front of it: per step
+of the outer fold's range, from its end, the other role of the step's fact
+type (`ExpressionBuilder.frame`, `reanchor`). A read becomes a navigation over
+those roles and its own; a fold's range becomes a `sourcePath` of the way back
+and its own range, which WF-102 (d) judges from the filter's subject. The
+definition is not built again with the element as its subject: "zijn X" would
+then read the element. The fold of the example above is written with
+`sourcePath [lading in-een-maand.schuit, schuitklacht.klacht]`, the IR the
+element-role spelling "alle klachten van de schuit van de Lading in-een-maand"
+already got. The anchor is the rule subject where it is that type's own name
+("de Schuit"); a role of the element ("de schuit"), a possessive ("zijn
+schuit") and a name that only matches with a leading word dropped keep the
+walk from the element.
+
+**Refused, loudly.** Where a step back is to-many (a lading of several
+schuiten) or the fact type is reciprocal, the element does not point at one
+rule subject: an ERROR (RGS-352) that names the read, the subject, the element,
+the subselection and the step, with the way out: an own member on the rule
+subject, set by a rule, read in the subselection. RGS-352 also refuses a count
+(its range is one relation, WF-102 (c)) and a form that has no spelling from
+the element (a choice, a union, a fold over a dimension). A variable read in a
+subselection over elements of the rule subject's own type is refused with
+RGS-350, as a read that names the type already is (previous section): the
+filter would read the element. In the test of a quantifier the operand stays
+as built where there is no way back or a part has no spelling from the
+element, and the refusals it had speak (RGS-348 over a path, an unbound read,
+RGS-131).
+
+The type check of the conditions of a subselection reads them with the element
+as subject and the filters around it, as the filter itself does. It built them
+at the rule subject, which typed most operands unknown, so a type error in a
+subselection passed, and which raised a stale WARNING on the element-role
+spelling above ("keten zonder sourcePath in een vouwbron … blijft onopgelost",
+RGS-073) while the IR carried the fold with its path.
+
+**A known limit for the explanation.** A fold in a filter is evaluated per
+member and has no reading of its own (RUNTIME-SEMANTICS ch. 5.12: a node read
+once per member keeps its number): the explanation shows which ladingen pass,
+not the last einddag with its contributors.
+
+Measured 2026-10-22 on the forms of the two cards: the direct sentence R1, the
+same with the inner fold in parentheses, without the soort filter, the
+element-role spelling, the variable of two steps, the fold as a variable, and
+the fold and the variable in the test of a quantifier over one relation reach
+disk with `diagnostics: []` and verifier-clean; the golden
+`jutterswet-schone-maand-na-zware-klacht` plays in ref, clingo and both Drools
+branches. All 127 rgs goldens, the parity zone and the scenario goldens re-emit
+byte-identically. Witnesses: `FoldInElementConditionTest`,
+`RuleVariableInSubselectionTest`.
 
 ---
 

@@ -1699,13 +1699,20 @@ public final class IrEmitter {
      *  neither yields one relation. */
     private static RegelSpraakModel.RoleBindingRef rangeRole(RegelSpraakModel m, ObjectType subject, Expr.FunctionCall f,
                                                             Expr.AttributeReference arg) {
+        return rangeRole(m, subject, f.elementObjectType(), arg);
+    }
+
+    /** As above, over the element type of the fold: the resolver writes a fold's range from another subject with
+     *  this search, so the two cannot bind one written range differently. */
+    public static RegelSpraakModel.RoleBindingRef rangeRole(RegelSpraakModel m, ObjectType subject, ObjectType elementType,
+                                                           Expr.AttributeReference arg) {
         if (arg.type() instanceof Datatype.Unknown) {
             RegelSpraakModel.RoleBindingRef rb = m.elementRoleBinding(subject, arg.attribute());
-            return rb != null ? rb : m.connectingRoleBinding(subject, f.elementObjectType());
+            return rb != null ? rb : m.connectingRoleBinding(subject, elementType);
         }
         // the by-pair-then-written-name search lives in the model: the §8.2 quantifier fold's range is
         // derived at resolve time and must classify a written range exactly as this does
-        return m.foldSourceBinding(subject, f.elementObjectType(), arg.subjectSource());
+        return m.foldSourceBinding(subject, elementType, arg.subjectSource());
     }
 
     /** Whether {@code f} is an instance fold over one source, whose single argument the wire reads through the

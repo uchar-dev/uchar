@@ -1,0 +1,149 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Schuit",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K1",
+        "objectType": "Klacht",
+        "attributes": {
+          "einddag": {
+            "date": "2026-03-15"
+          },
+          "soort": {
+            "enumeration": "Zwaar"
+          }
+        },
+        "roles": {
+          "beklaagde schuit": [
+            "S1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Klacht",
+        "attributes": {
+          "einddag": {
+            "date": "2026-05-20"
+          },
+          "soort": {
+            "enumeration": "Zwaar"
+          }
+        },
+        "roles": {
+          "beklaagde schuit": [
+            "S2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L1",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-02-01"
+          },
+          "gewicht": {
+            "number": "50"
+          }
+        },
+        "roles": {
+          "schuit": [
+            "S1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L2",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-03-01"
+          },
+          "gewicht": {
+            "number": "50"
+          }
+        },
+        "roles": {
+          "schuit": [
+            "S1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L3",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-03-01"
+          },
+          "gewicht": {
+            "number": "50"
+          }
+        },
+        "roles": {
+          "schuit": [
+            "S2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L4",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-05-01"
+          },
+          "gewicht": {
+            "number": "50"
+          }
+        },
+        "roles": {
+          "schuit": [
+            "S2"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "eerste schone maand vanaf-de-eindmaand",
+      "value": {
+        "date": "2026-03-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "eerste schone maand vanaf-de-eindmaand",
+      "value": {
+        "date": "2026-05-01"
+      }
+    }
+  ]
+}
