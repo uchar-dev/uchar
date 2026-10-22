@@ -9058,6 +9058,12 @@ their pinned values.
 the verifier's reports and its `--dependency-edges` (gate 15) are byte-equal
 to the main line's for every document but the new golden: the edge list does
 not change, only the walk of WF-045, WF-046 and WF-051 leaves edges out.
+Measured again for the household (card `instance-cycle-household-reads`,
+2026-10-22) over the 916 documents of the corpus and the parity zone: the
+edges are byte-equal to the main line's everywhere, and the reports differ
+in seven documents only, the new golden (verifier-clean, where the main line
+reports five cycles and three negative edges) and six negatives, each of
+which gains `WF-045.instance-read-outside` beside the cycle it had.
 
 *v0 mirror note:* v0 warns on a circular reference at build time and bounds
 execution with a fire cap; WF-045/046 make the refusal structural.
