@@ -93,9 +93,8 @@ Op `eca8a497` stopte clingo op alle zes gevallen van de twee goldens met `error:
 
 ### Wat ik niet deed, met reden
 
-1. De vorm die een knoop registreert voor de ronde vóór een creatie (`register_pre`, alleen in een document met een
-   creatie) gaat niet door de hoist. Geen golden heeft daar een aggregaat in een elementvoorwaarde; de hoist leest de
-   atomen die de vertaling van de voorwaarde teruggeeft. ASP-TRANSLATION S8 zegt het.
+1. *(Opgelost in de fixronde, zie hieronder.)* De vorm die een knoop registreert voor de ronde vóór een creatie
+   (`register_pre`) ging niet door de hoist.
 2. Geen CONSTRUCTS-rij: de semantiek verandert niet, alleen de vertaling (ASP-TRANSLATION S8, voorstel).
 
 ### Vondsten
@@ -104,3 +103,23 @@ Op `eca8a497` stopte clingo op alle zes gevallen van de twee goldens met `error:
    aggregatie blijft onopgelost"), terwijl het IR de vouw met haar `sourcePath` draagt; de golden
    `fold-filter-inner-fold-via-element-role` draagt die diagnostic. Het is punt (3) van de kaart
    `fold-in-element-condition`; landt die, dan verdwijnt de diagnostic uit het `ir.json` van deze golden (gate 10).
+
+### Fixronde (2026-10-22, op aanwijzing van de eigenaar)
+
+`7fdfec5d`: de vorm voor de ronde vóór een creatie gaat nu ook door het hulppredicaat. In een document met een creatie
+krijgt een voorwaarde die een rol leest een kloon van haar eigen atomen voor die ronde (`pre_clone`), genomen vóór de
+hoist; de kwantorvouw telt haar leden in die ronde met een `#count` over de klonen van filter en matrix
+(`register_pre`, de `kvp`-regel). Stond er een aggregaat in, dan stond het daar in een aggregaatelement. Nu gaan die
+klonen door `hoist_element_aggregates` op de plaats waar ze het element van die `#count` ingaan; op de gewone atomen,
+die al gehoist zijn, verandert dat niets.
+
+Getuige in de clingo-suite: `tr-kv-listed` en `tr-kv-listed-both`, de opzet van `tr-kv-1` met als matrix van de vouw over
+de schuiten "lengte > de laatste van (de bonus van de werf van de schuit) en (5)" (een lijstvouw die een rol leest), in
+een document met de creatie van een schuit per werf. Rood gemeten vóór de fix: beide FAIL, `clingo exited 65` (de
+ontleedfout); daarna groen: de benoemde weigering van de ongebonden parameter p in de eerste, ref ≡ clingo in de
+controle. ASP-TRANSLATION S8 zegt het (voorstel).
+
+In `a17b4b8a` kreeg clingo verder de code `CLINGO-029` (zie het Result van `date-with-in-ref-and-clingo`);
+`CLINGO-028` is ongewijzigd.
+
+**Gates na de fixronde:** zie het Result van `date-with-in-ref-and-clingo`.

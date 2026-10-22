@@ -63,6 +63,9 @@ clingo geven haar met een eigen zin; de ref-voorbeelden van ch. 3.8 pinnen haar.
 (`corpus/red/date-with-no-calendar-day`, voorgestelde code EF-032, parameters `year`, `month`, `day`) ligt klaar als
 vervolg, samen met de regel in ch. 5.7b, voor de kaart die de Drools-backend de code laat geven.
 
+*Bijgewerkt in de fixronde van 2026-10-22 (mandaat verbreed met `backends/drools/**`): de soort heeft nu de code
+EF-032, in alle drie de executors, en het rode geval staat in `corpus/red/`. Zie "Fixronde" in het Result.*
+
 **Meting Drools** (shaded jar van `d6015ecf`, `DroolsRedMain` en de gewone replay, 2026-10-22; model met de delen als
 attributen, één regel `dateWith` en één `dateTimeWith`):
 
@@ -191,3 +194,60 @@ Rij "— `FunctionKind` (date/time)" (ch. 2.1), achteraan in de kolom met de lan
    klaargelegde rode geval.
 5. **Opmerking in de clingo-suite** (meegenomen in `5d774f2d`): het naamtabelblok zei dat `dateWith` en
    `dateTimeWith` in geen document staan; sinds `date-with-parts` wel.
+
+### Fixronde (2026-10-22, op aanwijzing van de eigenaar; mandaat verbreed met `backends/drools/**`, `corpus/red/` en de registers en catalogi)
+
+- `a17b4b8a` EF-032 en EF-007 voor de datumconstructie in ref, clingo en Drools.
+- `7fdfec5d` (kaart `clingo-nested-aggregate-in-fold-filter`) de vorm voor de ronde vóór een creatie.
+- dit bijgewerkte Result.
+
+**De nieuwe code EF-032** — "the parts of a date construction name no calendar day or no clock time", kanaal `fault`,
+parameters `year`, `month`, `day`, `hour`, `minute`, `second`, `millisecond`, spec home ch. 3.8, getuige
+`corpus/red/date-with-no-calendar-day`. De soort stond eerst onder "Kinds without a code" in ch. 5.7b; die zin is weg en
+de soort is een rij van de tabel. Alle drie de executors geven haar met de delen als parameters:
+
+- ref: `faultc ~params:[…] "EF-032"` op de twee plaatsen in `Arith.date_construction`.
+- clingo: de viol-getuige draagt de delen, `viol(("dateWith: the parts name no calendar day",2026,4,31),"S1")`, en
+  `viol_code` leest er EF-032 en de parameters uit.
+- Drools: `RegelSpraakRuntime.rsDatumMet`/`rsDatumtijdMet` toetsen de delen zelf (maand, dag met schrikkeljaar, uur,
+  minuut, seconde, milliseconde) in de zin van ref uit de catalogi (`EF-032.day`, `EF-032.time`, Nederlands en Engels
+  gelijk, zoals de andere EF-regels), en nemen de delen met `intValueExact()` in plaats van `intValue()`;
+  `ComputeHelpers.dateConstruction` maakt er een `ComputeFault` van, en `ComputeFault.code()`/`params()` lezen EF-032
+  en de delen uit de zin. Beide takken, want beide roepen dezelfde helper; `BranchDumpsCorpusWitnessTest` vergelijkt
+  ze op de rode gevallen. `FilterFaultWitnessTest` pint sindsdien ook de fout van "de datum met … maand 13" (ref gaf
+  daar REF-007).
+
+Het rode geval `corpus/red/date-with-no-calendar-day`: vijf gevallen (31 april, 29 februari 2026, maand 13, dag 0, uur
+24), elk met de vastgepinde parameters; groen in ref, clingo en Drools (gate 8: 31 Drools-gevallen met hun code).
+
+**EF-007 voor een datum-tijd buiten het bereik.** De soort heet nu "a datum-tijd step or construction leaves the
+representable millisecond range"; ch. 3.8 zegt het in de alinea over het bereik. ref geeft EF-007 (eerst zonder code),
+Drools EF-007 (eerst `+200000000-03-01T00:00`), via de bestaande `milliseconden`-toets van de runtime. Getuige: het
+rode geval `corpus/red/date-time-with-outside-range`, drie gevallen: jaar 200 000 000, één milliseconde na de bovengrens
+(146140482-04-24T15:36:27.904) en één vóór de ondergrens (−146136543-09-08T08:23:32.095); de grenzen zelf zijn
+ref-voorbeelden (`WV-3.8-datumtijdmet-bovengrens`, `-ondergrens`) en spelen in Drools zonder fout. clingo weigert alle
+drie eerder, op zijn jaarhek, nu met een eigen code `CLINGO-029` (limit, `date-construction-year-range`,
+`backends/clingo/codes.tsv`); **gatescript**: `scripts/check-red.sh` krijgt drie regels in zijn divergentielijst
+(`date-time-with-outside-range/case…|clingo|CLINGO-029|LIMIT …`), want die lijst eist een regel voor een executor die
+een geval om een eigen reden laat vallen.
+
+**Vondst in de spec, gefixt:** ch. 3.8 noemde de ondergrens van het bereik −146136543-09-**09**T08:23:32.096; −2⁶² ms
+valt op −146136543-09-**08** (java.time en ref zijn het eens; gevonden met het derde rode geval).
+
+**CONSTRUCTS-tekst, bijgewerkt:** in de voorgestelde zin hierboven "the kind has no EF code yet, its red case waits on
+the Drools backend reporting one" vervangen door "the fault kind is EF-032 (red case `date-with-no-calendar-day`), an
+instant outside the millisecond range EF-007 (red case `date-time-with-outside-range`), in all three executors; v0's
+runtime took the parts with `intValue()` and let java.time throw".
+
+**Punt 5 van de fixronde, `dateWith` in een dagsoortvoorwaarde in clingo: niet gedaan, de benoemde weigering blijft.**
+De ASP-backend rekent een dagsoortvoorwaarde bij de vertaling uit, over een venster van dagen rond de datums van de casus
+plus de reikwijdte aan beide kanten (ASP-TRANSLATION S6a), en ref leest alleen de dagen die zijn stap bereikt.
+`dateWith` is de eerste operand daar die per dag kan falen (29 februari van een jaar uit de dag): uitrekenen in het
+venster zou clingo laten falen op dagen die ref nooit leest. Goed doen vraagt een fout per dag in de tabel in plaats
+van bij de vertaling, plus een golden die Drools ook draagt; dat is geen kleine wijziging. De weigering blijft "a
+day-kind condition carries an expression this backend does not evaluate".
+
+**Gates na de fixronde:** `gates-3` op `7fdfec5d`: EXIT 0, alle 17 groen
+(`werk/bruggen/date-with/gates-3.summary.txt`): gate 8 54 rode gevallen en 32 foutsoorten, het Drools-been 31 gevallen
+met hun code en 49 parametercontroles; gate 12 de JUnit-suite 1649 tests, played 267; gate 17 0 afwijkingen. Na
+`7fdfec5d` veranderde alleen dit Result.
