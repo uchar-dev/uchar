@@ -377,12 +377,5 @@
     "startPointDeterminations": [],
     "ruleGroups": []
   },
-  "diagnostics": [
-    {
-      "node": "Diagnostic",
-      "severity": "warning",
-      "message": "keten zonder sourcePath in een vouwbron: 'alle klachten van de schuit van de Lading in-een-maand' begint bij 'Lading in-een-maand' en niet bij het regelonderwerp Schuit \u2014 een sourcePath loopt van het regelonderwerp naar de elementen en bindt elke stap aan precies \u00e9\u00e9n rol (IR-SPEC ch. 4.3/WF-102), dus de aggregatie blijft onopgelost (\u00a713.4.17) \u2014 'de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand'",
-      "line": 35
-    }
-  ]
+  "diagnostics": []
 }

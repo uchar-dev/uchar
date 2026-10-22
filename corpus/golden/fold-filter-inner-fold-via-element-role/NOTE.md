@@ -9,11 +9,13 @@ The second condition holds an instance fold whose range starts at the
 element and runs over its schuit to the klachten (a `sourcePath` of two
 steps, IR-SPEC ch. 4.3): form R4 of the card fold-in-element-condition.
 
-The RegelSpraak frontend writes this IR with a WARNING in `diagnostics`
+The RegelSpraak frontend wrote this IR with a WARNING in `diagnostics`
 ("keten zonder sourcePath in een vouwbron: … dus de aggregatie blijft
-onopgelost"), while the IR carries the fold with its `sourcePath`; that
-diagnostic is the subject of that card, point (3), and this golden pins
-what the four executors do with the IR as written. The ASP backend moves
+onopgelost"), while the IR carried the fold with its `sourcePath`; since
+that card (point (3), 2026-10-22) the type check reads the subselection on
+the element and the IR carries no diagnostic. The direct spelling "… alle
+klachten van de Schuit …" is written with the same `sourcePath` (golden
+`jutterswet-schone-maand-na-zware-klacht`, with a filter on the soort). The ASP backend moves
 the inner fold into a helper predicate per lading, since clingo admits no
 aggregate inside an aggregate element (card
 clingo-nested-aggregate-in-fold-filter; until then a parse error).
