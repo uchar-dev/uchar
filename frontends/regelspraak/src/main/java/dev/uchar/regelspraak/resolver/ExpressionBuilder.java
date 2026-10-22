@@ -1945,8 +1945,7 @@ final class ExpressionBuilder {
     /** Whether an onderwerp chain is the possessive "zijn &lt;naam&gt;", under a subselection or not. */
     private static boolean possessive(OnderwerpKetenContext k) {
         if (k == null) return false;
-        if (k.ZIJN() != null) return true;
-        return k.onderwerpKeten() != null && possessive(k.onderwerpKeten());
+        return k.ZIJN() != null;
     }
 
     /** The refusal of a count over a written path, after "is": the steps, and {@code norm}, what counts and where. */
@@ -2591,7 +2590,7 @@ final class ExpressionBuilder {
         if (k == null) return null;
         if (k.onderwerpVerwijzing() != null)
             return k.onderwerpVerwijzing().rangtelwoord() != null ? k.onderwerpVerwijzing() : null;
-        return referenceWithOrdinal(k.onderwerpKeten());
+        return null;
     }
 
     /** §5.5.3: how many universele onderwerpen ("een &lt;naam&gt;") the enclosing rule binds under {@code name} —
@@ -3028,7 +3027,9 @@ final class ExpressionBuilder {
      *  "zijn &lt;attr&gt;", and a bare subject-own "de &lt;attr&gt;"; otherwise null (the caller keeps the marker). */
     private Expr subjectAsValue(OnderwerpContext o) {
         if (o == null) return null;
-        OnderwerpKetenContext k = o.onderwerpKeten();
+        // a chain that carries a subselection is no plain navigation or subject-own read
+        OnderwerpKetenContext k = o.onderwerpKeten() != null && o.onderwerpKeten().predicaat() == null
+                ? o.onderwerpKeten() : null;
         if (k != null && k.selector() != null && k.selector().kaleNaam() != null && k.onderwerp() != null)
             return attributeRef(src(k.selector().kaleNaam()), k.onderwerp(), source(o));   // "de <attr> van <subject>"
         Expr poss = subjectPossessive(o, source(o));
@@ -3243,7 +3244,7 @@ final class ExpressionBuilder {
             return o.kwantificatie().getChildCount() == 1 && o.kwantificatie().DE() != null && o.onderwerp() == null
                     ? o.kaleNaam() : null;
         OnderwerpKetenContext k = o.onderwerpKeten();
-        if (k == null) return null;
+        if (k == null || k.predicaat() != null) return null;     // a subselection is no plain anchor
         if (k.onderwerpVerwijzing() != null)
             return k.onderwerpVerwijzing().rangtelwoord() == null ? k.onderwerpVerwijzing().kaleNaam() : null;
         return k.universeelOnderwerp() != null ? k.universeelOnderwerp().kaleNaam() : null;
@@ -3275,7 +3276,7 @@ final class ExpressionBuilder {
     private Expr subjectPossessive(OnderwerpContext o, Source source) {
         if (currentSubject == null || o.onderwerpKeten() == null) return null;
         OnderwerpKetenContext k = o.onderwerpKeten();
-        if (k.ZIJN() == null || k.kaleNaam() == null) return null;
+        if (k.ZIJN() == null || k.kaleNaam() == null || k.predicaat() != null) return null;
         String attr = src(k.kaleNaam());
         Datatype dt = currentSubject.attribute(attr);
         // a subject-own attribute — no role navigation
@@ -3456,7 +3457,6 @@ final class ExpressionBuilder {
         if (k == null) return null;
         if (k.onderwerpVerwijzing() != null) return src(k.onderwerpVerwijzing().kaleNaam()); // "de reis"
         if (k.ZIJN() != null && k.kaleNaam() != null) return src(k.kaleNaam());              // "zijn partner"
-        if (k.onderwerpKeten() != null) return navigationNoun(k.onderwerpKeten());            // … die/dat predicaat
         return null; // universeelOnderwerp ("een <X>" = subject) / selector-van: not a single role navigation
     }
 
@@ -3475,7 +3475,6 @@ final class ExpressionBuilder {
         if (k.universeelOnderwerp() != null) return src(k.universeelOnderwerp().kaleNaam());
         if (k.onderwerpVerwijzing() != null) return src(k.onderwerpVerwijzing().kaleNaam());
         if (k.ZIJN() != null && k.kaleNaam() != null) return src(k.kaleNaam()); // "zijn reis"
-        if (k.onderwerpKeten() != null) return primaryNameChain(k.onderwerpKeten());
         return null; // selector-van / other navigation: leave to the deep-scan fallback
     }
 

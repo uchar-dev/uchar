@@ -1311,6 +1311,42 @@ before. Witnesses: `NavigationChoiceTest`, `CountRangeTest`, `SubtypeDialectTest
 
 ---
 
+## One subselection per chain — narrowed (2026-10-22)
+
+A narrowing of the grammar (card `subselection-per-chain`). `onderwerpKeten`
+took its die/dat subselection by direct left recursion
+(`onderwerpKeten ( DIE | DAT ) predicaat`), so one chain could carry two
+predicates. In "… de eerste van de maand van alle ladingen van de Schuit die
+aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand
+plus 1 mnd is later dan de laatste van de einddag van alle klachten van de
+Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan
+'Zwaar'." both `die` hung on the outer anchor "de Schuit": the fold over the
+ladingen took the inner predicate as its filter, the outer one stayed
+unconsumed (RGS-099), and 'zijn soort' was read on a Lading. The rule is now
+`( selector VAN onderwerp | universeelOnderwerp | onderwerpVerwijzing | ZIJN
+kaleNaam ) ( ( DIE | DAT ) predicaat )?`: a chain carries at most one
+subselection, and it belongs to the set right before it. The sentence above
+parses as the same sentence with the inner fold in parentheses, which stays
+admitted. No source of the corpus, the parity zone or the scenario goldens
+wrote two predicates on one chain: gates 10, 11 and 16 re-emit byte-identically.
+
+A second `die` or `dat` right after a subselection is a second requirement on
+the same set. Where no chain stands around the set — the quantified set of a
+condition, "indien alle ladingen van de Schuit die … die … de overlading
+hebben" — it does not parse (RGS-091). In a fold operand a chain stands around
+the set ("de maand van alle ladingen van de Schuit die …"); the second
+predicate lands on that chain, and no fold consumes it (RGS-099). Both shapes
+get the hint RGS-351 at the second word, naming the first subselection: two
+requirements on one set stand in one list "die aan alle volgende voorwaarden
+voldoen:", one bullet per requirement (`Resolver.subselectionHints`).
+
+A bulleted inner subselection in a bullet of an outer list hangs on its own set
+too. Which of the following bullets are its own is the depth question of the
+card `third-condition-level` (the grammar does not see indentation); until that
+card lands they are read as before. Witness: `SubselectionPerChainTest`.
+
+---
+
 ## A fold over a set and to-one steps after it — a generated member
 
 A dialect lowering, not an extension of the wire: "de maximale waarde van het

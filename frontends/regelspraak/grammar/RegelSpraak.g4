@@ -693,13 +693,14 @@ rangtelwoord // §13.2.12
 // ====================================================================
 // §13.4.1 Onderwerpketen + §13.4.2.7-9 selector / subselectie / attribuut-van-onderwerp
 // ====================================================================
-onderwerpKeten // §13.4.1.1 — source EBNF has an unbalanced '('; flat choice per the diagram,
-               // with subselectie inlined as direct left recursion (ANTLR4 has no indirect LR)
-    : selector VAN onderwerp
-    | universeelOnderwerp
-    | onderwerpVerwijzing
-    | ZIJN kaleNaam
-    | onderwerpKeten ( DIE | DAT ) predicaat
+onderwerpKeten // §13.4.1.1 — source EBNF has an unbalanced '('; flat choice per the diagram, with at most ONE
+               // subselectie per chain, which belongs to the set right before it (grammar/DIVERGENCES.md, "One
+               // subselection per chain"): a second die/dat on one chain is a syntax error
+    : ( selector VAN onderwerp
+      | universeelOnderwerp
+      | onderwerpVerwijzing
+      | ZIJN kaleNaam
+      ) ( ( DIE | DAT ) predicaat )?
     ;
 universeelOnderwerp : onbepaaldLidwoord kaleNaam ;             // §13.4.1.2
 onderwerpVerwijzing : bepaaldLidwoord rangtelwoord? kaleNaam ; // §13.4.1.3

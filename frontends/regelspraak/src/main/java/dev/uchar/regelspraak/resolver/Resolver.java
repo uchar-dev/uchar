@@ -86,6 +86,7 @@ public final class Resolver {
         RegelSpraakModel model = definitions.build(doc);
         model.diagnostics.addAll(syntax);
         if (!syntax.isEmpty()) headFormHints(tokens, model);
+        subselectionHints(doc, tokens, model, !syntax.isEmpty());
 
         // the vocabulary side table (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"): read after the
         // declarations; composed for the generated elements once the rule check has recorded where they come from,
@@ -192,6 +193,65 @@ public final class Resolver {
                 break;                                  // the head carries at most one such clause
             }
         }
+    }
+
+    /** One subselection per chain (grammar/DIVERGENCES.md, "One subselection per chain"): a 'die' or 'dat' after a
+     *  subselection on the same set is a second one. The grammar has no place for it on that chain, so it lands on the
+     *  chain around it ("de maand van alle ladingen …"), where no fold consumes it, or it is a syntax error. Either
+     *  way the author wrote two requirements on one set, and the hint says where the second one goes. Two shapes are
+     *  recognised: the word right after a parsed subselection, and, where the parse failed, a word no parsed
+     *  subselection opens that follows another 'die' or 'dat' in the same sentence. */
+    private static void subselectionHints(RegelSpraakDocumentContext doc, CommonTokenStream tokens,
+                                          RegelSpraakModel model, boolean syntaxError) {
+        java.util.Map<Integer, String> after = new java.util.HashMap<>();   // token index -> the subselection before it
+        java.util.Set<Integer> openers = new java.util.HashSet<>();
+        subselections(doc, tokens, after, openers);
+        java.util.List<Token> list = tokens.getTokens().stream().filter(t -> t.getChannel() == Token.DEFAULT_CHANNEL).toList();
+        for (int i = 0; i < list.size(); i++) {
+            Token t = list.get(i);
+            if (!subselectionWord(list, i)) continue;
+            String before = after.get(t.getTokenIndex());
+            if (before == null && syntaxError && !openers.contains(t.getTokenIndex()))
+                for (int j = i - 1; j >= 0 && before == null; j--) {
+                    int type = list.get(j).getType();
+                    if (type == RegelSpraakLexer.DOT || type == RegelSpraakLexer.GELDIG || type == RegelSpraakLexer.REGEL) break;
+                    if (subselectionWord(list, j)) before = textBetween(list.get(j + 1), list.get(i - 1));
+                }
+            if (before != null)
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-351",
+                        params("word", t.getText(), "expression", before), t.getLine()));
+        }
+    }
+
+    /** Every parsed subselection: the token after it, mapped to its text, and the 'die' or 'dat' that opens it. */
+    private static void subselections(org.antlr.v4.runtime.tree.ParseTree t, CommonTokenStream tokens,
+                                      java.util.Map<Integer, String> after, java.util.Set<Integer> openers) {
+        if (t instanceof RegelSpraak.OnderwerpKetenContext k && k.predicaat() != null && k.predicaat().getStop() != null) {
+            for (int i = k.predicaat().getStop().getTokenIndex() + 1; i < tokens.size(); i++)
+                if (tokens.get(i).getChannel() == Token.DEFAULT_CHANNEL) {
+                    after.put(i, DefinitionResolver.src(k.predicaat()));
+                    break;
+                }
+            var opener = k.DIE() != null ? k.DIE() : k.DAT();
+            if (opener != null) openers.add(opener.getSymbol().getTokenIndex());
+        }
+        for (int i = 0; i < t.getChildCount(); i++) subselections(t.getChild(i), tokens, after, openers);
+    }
+
+    /** Whether the word at {@code i} is a 'die' or 'dat' that can open a subselection: not the 'dat' of "het aantal
+     *  dagen in de maand dat …". */
+    private static boolean subselectionWord(java.util.List<Token> list, int i) {
+        int type = list.get(i).getType();
+        if (type == RegelSpraakLexer.DIE) return true;
+        if (type != RegelSpraakLexer.DAT) return false;
+        int previous = i > 0 ? list.get(i - 1).getType() : -1;
+        return previous != RegelSpraakLexer.MAAND && previous != RegelSpraakLexer.JAAR;
+    }
+
+    private static String textBetween(Token first, Token last) {
+        if (last.getStopIndex() < first.getStartIndex()) return "";
+        return first.getInputStream().getText(org.antlr.v4.runtime.misc.Interval.of(first.getStartIndex(), last.getStopIndex()))
+                .replaceAll("\\s+", " ").trim();
     }
 
     /** The token types an object-type HEAD can consist of: its articles and name words, the mv-group, the
