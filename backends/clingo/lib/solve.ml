@@ -19,14 +19,19 @@ let read_all ic =
   Buffer.contents b
 
 (* one clingo invocation on [text]; the raw outf2 payload and exit.
-   Exit codes the callers read: 10/30 SAT (30 = SAT with shown atoms),
-   20 UNSAT, 127 clingo not on PATH — never silently swallowed. *)
+   clingo is asked for two models (-n 2): by default it stops at the first,
+   and a program with a second one — a document that is not stratified — was
+   answered with whichever came first. With two asked for, the second arrives
+   as a second witness and [Model.one_model] refuses it.
+   Exit codes the callers read: 10/30 SAT (30 = the search space is
+   exhausted, so the witnesses are every model there is), 20 UNSAT, 127
+   clingo not on PATH — never silently swallowed. *)
 let run_clingo text =
   let tmp = Filename.temp_file "uchar-clingo" ".lp" in
   let oc = open_out tmp in
   output_string oc text;
   close_out oc;
-  let ic = Unix.open_process_in (Printf.sprintf "clingo --outf=2 %s" (Filename.quote tmp)) in
+  let ic = Unix.open_process_in (Printf.sprintf "clingo --outf=2 -n 2 %s" (Filename.quote tmp)) in
   let out = read_all ic in
   let status = Unix.close_process_in ic in
   Sys.remove tmp;
@@ -50,28 +55,38 @@ let diagnostic program =
   in
   match run_clingo relaxed with
   | out, Unix.WEXITED (10 | 30) -> (
-      try
-        match Yojson.Safe.from_string out with
-        | `Assoc kvs -> (
-            match List.assoc_opt "Call" kvs with
-            | Some (`List (call :: _)) -> (
-                match call with
-                | `Assoc ckvs -> (
-                    match List.assoc_opt "Witnesses" ckvs with
-                    | Some (`List (`Assoc wkvs :: _)) -> (
-                        match List.assoc_opt "Value" wkvs with
-                        | Some (`List atoms) ->
-                            List.filter_map
-                              (function
-                                | `String s
-                                  when String.length s >= 5 && String.sub s 0 5 = "viol(" ->
-                                    Some (Model.unescape_str s)
-                                | _ -> None)
-                              atoms
-                        | _ -> [])
-                    | _ -> [])
-                | _ -> [])
-            | _ -> [])
-        | _ -> []
-      with _ -> [])
+      (* the witnesses of the relaxed program's ONE model: read off the first
+         of two, the diagnosis would name the guards of one model and keep
+         quiet about the other's *)
+      let witnesses =
+        try
+          match Yojson.Safe.from_string out with
+          | `Assoc kvs -> (
+              match List.assoc_opt "Call" kvs with
+              | Some (`List (call :: _)) -> (
+                  match call with
+                  | `Assoc ckvs -> (
+                      match List.assoc_opt "Witnesses" ckvs with Some (`List ws) -> Some ws | _ -> None)
+                  | _ -> None)
+              | _ -> None)
+          | _ -> None
+        with _ -> None
+      in
+      match Option.map Model.one_model witnesses with
+      | Some (`Assoc wkvs) -> (
+          match List.assoc_opt "Value" wkvs with
+          | Some (`List atoms) ->
+              List.filter_map
+                (function
+                  | `String s when String.length s >= 5 && String.sub s 0 5 = "viol(" ->
+                      Some (Model.unescape_str s)
+                  | _ -> None)
+                atoms
+          | _ -> [])
+      | _ -> [])
+  | _, Unix.WEXITED 20 ->
+      (* no model even without the guard constraint, so no guard fired: the
+         program itself has none (an odd cycle through a negation), refused
+         as a program without exactly one stable model *)
+      Model.one_model []
   | _ -> []

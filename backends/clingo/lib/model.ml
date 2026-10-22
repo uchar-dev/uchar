@@ -104,18 +104,34 @@ let parse_atom (s : string) : atom =
       let body = String.sub s (i + 1) (String.length s - i - 2) in
       { name; args = List.map (fun a -> arg_of_term (parse_term a)) (split_top_commas body) }
 
+(* the one stable model among clingo's [witnesses]. A stratified program has
+   exactly one (WF-045/046; RUNTIME-SEMANTICS ch. 5, one fixpoint), and
+   [Solve.run_clingo] asks clingo for two, so a second model arrives here as a
+   second witness instead of being cut off behind the first; [Solve.diagnostic]
+   hands over none when the program has no model even without its guard
+   constraint. Either way the program is not stratified, and taking the first
+   of two models would answer whichever the solver's search order put first —
+   so both are refused, by one code with the count as its parameter (two reads
+   "two or more": clingo stops searching there). *)
+let one_model witnesses =
+  match witnesses with
+  | [ w ] -> w
+  | ws ->
+      Value.faultc ~params:[ ("models", string_of_int (List.length ws)) ] "CLINGO-030"
+        "the translated program has %s, where a stratified program has exactly one: the \
+         document is not stratified (a cycle through a negation), and the verifier rejects \
+         such a document (WF-045/046); no model is chosen"
+        (match ws with [] -> "no stable model" | _ -> "more than one stable model")
+
 let model_of_outf2 (j : Yojson.Safe.t) : atom list =
   let open Yojson.Safe.Util in
   (match j |> member "Result" |> to_string with
   | "SATISFIABLE" -> ()
   | r -> fault "clingo result %S (expected SATISFIABLE — the corpus subset is stratified)" r);
   match j |> member "Call" |> to_list with
-  | [ call ] -> (
-      match call |> member "Witnesses" |> to_list with
-      | [ w ] -> w |> member "Value" |> to_list |> List.map to_string |> List.map parse_atom
-      | ws ->
-          fault "expected exactly one stable model, got %d (stratified programs have one)"
-            (List.length ws))
+  | [ call ] ->
+      call |> member "Witnesses" |> to_list |> one_model |> member "Value" |> to_list
+      |> List.map to_string |> List.map parse_atom
   | _ -> fault "unexpected clingo Call structure"
 
 (* --- expectation checking ------------------------------------------------ *)

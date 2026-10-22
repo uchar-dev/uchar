@@ -15924,6 +15924,83 @@ let () =
       | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
       | _, _ -> check (label ^ " (clingo killed)") false)
 
+(* CLINGO-030: A PROGRAM WITHOUT EXACTLY ONE STABLE MODEL (found by Fable,
+   2026-10-22, on a document the verifier rejects with WF-045). clingo was
+   called without -n, stopped at the first model and the runner checked that
+   one: two stable models came back as a MISMATCH or a PASS, whichever the
+   search order put first, and the guard of [Model.model_of_outf2] never saw a
+   second witness. A program with no model at all came back as an UNSAT
+   without a code. The verifier stands before every gate, so no golden or red
+   case can carry such a document; the runner meets it when it is run on its
+   own, and the refusal is pinned here. The frame takes the runner's two
+   roads: a SAT answer read through [Model.model_of_outf2], an UNSAT one
+   diagnosed through [Solve.diagnostic]. Two characteristics that each hold
+   where the other does not give two stable models; one that holds where it
+   does not gives none, with or without the guard constraint. *)
+let unique_model_rule ~name ~unless =
+  {|{ "node": "Rule", "name": "|} ^ name ^ {|", "versions": [ { "initialisation": false,
+        "target": { "node": "AttributeReference", "attribute": "|} ^ name
+  ^ {|", "subjectType": "Wachtpost", "source": { "snippet": "Een Wachtpost is |} ^ name ^ {|" } },
+        "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Boolean" }, "source": { "snippet": "waar" } },
+        "condition": { "node": "CharacteristicCheck", "characteristic": "|} ^ unless
+  ^ {|", "negated": true, "source": { "snippet": "hij niet |} ^ unless ^ {| is" } },
+        "validity": { "node": "Validity" } } ] }|}
+
+let unique_model_doc rules =
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Wachtpost", "animate": false, "plural": "Wachtposten",
+        "attributes": [],
+        "characteristics": [ { "node": "Characteristic", "name": "open", "kind": "adjectival" },
+                             { "node": "Characteristic", "name": "gesloten", "kind": "adjectival" } ] } ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [] },
+  "rules": {
+    "rules": [ |} ^ String.concat ", " rules ^ {| ],
+    "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+    "uniquenesses": [], "factCreations": [], "startPointDeterminations": [],
+    "ruleGroups": [] },
+  "diagnostics": []
+}
+|}
+
+let unique_model_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "W1", "objectType": "Wachtpost", "attributes": {}, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "characteristicPresent", "label": "W1", "characteristic": "open" } ] }|}
+
+let refuses_without_one_model ~name ~rules ~models =
+  let label = Printf.sprintf "%s: clingo refuses with CLINGO-030, models=%s" name models in
+  let doc, case = load_pair ~ir:(unique_model_doc rules) ~case_text:unique_model_case in
+  match
+    let program = translate doc case in
+    match Solve.run_clingo program with
+    | out, Unix.WEXITED (10 | 30) ->
+        let model = Model.model_of_outf2 (Yojson.Safe.from_string out) in
+        Printf.sprintf "clingo answered with a model of %d atoms" (List.length model)
+    | _, Unix.WEXITED 20 ->
+        Printf.sprintf "UNSATISFIABLE, diagnosed as [%s]" (String.concat "; " (Solve.diagnostic program))
+    | _, Unix.WEXITED c -> Printf.sprintf "clingo exited %d" c
+    | _, _ -> "clingo killed"
+  with
+  | answer -> check (label ^ " (" ^ answer ^ ")") false
+  | exception Uchar_ref.Value.Fault { code; params; text } ->
+      check
+        (label ^ " (" ^ Uchar_ref.Value.report ~code text ^ ")")
+        (code = Some "CLINGO-030" && params = [ ("models", models) ])
+
+let () =
+  refuses_without_one_model ~name:"two characteristics that deny each other (two stable models)"
+    ~rules:
+      [ unique_model_rule ~name:"open" ~unless:"gesloten"; unique_model_rule ~name:"gesloten" ~unless:"open" ]
+    ~models:"2";
+  refuses_without_one_model ~name:"a characteristic that denies itself (no stable model)"
+    ~rules:[ unique_model_rule ~name:"open" ~unless:"open" ]
+    ~models:"0"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

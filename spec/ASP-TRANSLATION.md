@@ -38,7 +38,11 @@ ASP-Core-2 program; WF-045/046 make every admissible document
 stratifiable, so the program has exactly one stable model and the
 model checker (`backends/clingo/lib/model.ml`) *faults* on anything
 else — zero models and multiple witnesses are both translation bugs,
-never answers. The document is desugared first (`Ir_v0.Desugar`, the
+never answers. The runner asks clingo for two models (`-n 2`), so a
+second one is seen instead of cut off behind the first, and a program
+with none or with more than one is refused with CLINGO-030: the form a
+document the verifier rejects takes when the runner is used on its own.
+The document is desugared first (`Ir_v0.Desugar`, the
 ch. 7.7 init+berekening → defaults rewrite): this translator evaluates
 the desugared kernel while the reference interpreter replays the v0
 forms natively, so gate 6's differential witnesses the desugaring

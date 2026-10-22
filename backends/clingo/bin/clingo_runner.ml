@@ -21,38 +21,46 @@ let run_clingo = Clingo_backend.Solve.run_clingo
    backend's suite reads the very witnesses this report prints *)
 let diagnostic = Clingo_backend.Solve.diagnostic
 
-(* run clingo on [program]; [`Sat json] with the outf2 payload, or
-   [`Unsat (msg, codes)] with the diagnosed report and the fault kinds of its
-   witnesses with their parameters, in report order, each pair once
-   ([Translate.viol_code]) *)
+(* run clingo on [program]; [`Sat model] with its one stable model, or
+   [`Fails (msg, codes)] with the report and its codes with their parameters,
+   in report order, each pair once: an UNSAT diagnosed through the fault kinds
+   of its guards' witnesses ([Translate.viol_code]), or a program without
+   exactly one stable model (CLINGO-030, raised where clingo's answer is read,
+   [Model.one_model]). The model is read here, in both paths, so a red case
+   whose program has two models is not reported as "clingo found a model", and
+   the refusal is reported as clingo's, not as a translation fault. *)
 let solve program =
-  match run_clingo program with
-  | out, Unix.WEXITED (10 | 30) -> `Sat out (* clingo: SAT / SAT+shown *)
-  | _, Unix.WEXITED 127 ->
-      prerr_endline "CLINGO NOT FOUND on PATH";
-      exit 2
-  | _, Unix.WEXITED 20 ->
-      let witnesses = diagnostic program in
-      let reason =
-        match witnesses with
-        | [] -> "no viol/2 witness (the input is not stratified?)"
-        | vs -> String.concat "; " vs
-      in
-      let codes =
-        List.fold_left
-          (fun acc w ->
-            match Clingo_backend.Translate.viol_code w with
-            | Some c when not (List.mem c acc) -> acc @ [ c ]
-            | _ -> acc)
-          [] witnesses
-      in
-      `Unsat (Printf.sprintf "clingo: UNSATISFIABLE — a fail-fast guard fired: %s" reason, codes)
-  | out, Unix.WEXITED c ->
-      Printf.eprintf "clingo exited %d:\n%s\n" c out;
-      exit 1
-  | _, _ ->
-      prerr_endline "clingo killed";
-      exit 2
+  try
+    match run_clingo program with
+    | out, Unix.WEXITED (10 | 30) ->
+        `Sat (Clingo_backend.Model.model_of_outf2 (Yojson.Safe.from_string out))
+    | _, Unix.WEXITED 127 ->
+        prerr_endline "CLINGO NOT FOUND on PATH";
+        exit 2
+    | _, Unix.WEXITED 20 ->
+        let witnesses = diagnostic program in
+        let reason =
+          match witnesses with
+          | [] -> "no viol/2 witness (the diagnosis run gave no model to read)"
+          | vs -> String.concat "; " vs
+        in
+        let codes =
+          List.fold_left
+            (fun acc w ->
+              match Clingo_backend.Translate.viol_code w with
+              | Some c when not (List.mem c acc) -> acc @ [ c ]
+              | _ -> acc)
+            [] witnesses
+        in
+        `Fails (Printf.sprintf "clingo: UNSATISFIABLE — a fail-fast guard fired: %s" reason, codes)
+    | out, Unix.WEXITED c ->
+        Printf.eprintf "clingo exited %d:\n%s\n" c out;
+        exit 1
+    | _, _ ->
+        prerr_endline "clingo killed";
+        exit 2
+  with Uchar_ref.Value.Fault { code; params; text } ->
+    `Fails ("clingo: " ^ text, match code with Some c -> [ (c, params) ] | None -> [])
 
 (* the report with its codes at the head, "EF-005: clingo: UNSATISFIABLE — …" *)
 let with_codes codes msg =
@@ -117,7 +125,7 @@ let () =
                 solve program
               with
               | `Sat _ -> None
-              | `Unsat (msg, codes) -> Some (with_codes codes msg, codes)
+              | `Fails (msg, codes) -> Some (with_codes codes msg, codes)
               | exception Uchar_ref.Value.Fault { code; params; text } ->
                   Some
                     ( "TRANSLATION FAULT: " ^ Uchar_ref.Value.report ~code text,
@@ -130,14 +138,13 @@ let () =
             | Some (msg, codes) -> verdict ~pinned ~observed:codes ~what:"" msg)
         | None -> (
             let program = Clingo_backend.Translate.translate doc case in
-            let out =
+            let model =
               match solve program with
-              | `Sat out -> out
-              | `Unsat (msg, codes) ->
+              | `Sat model -> model
+              | `Fails (msg, codes) ->
                   prerr_endline (with_codes codes msg);
                   exit 1
             in
-            let model = Clingo_backend.Model.model_of_outf2 (Yojson.Safe.from_string out) in
             match Clingo_backend.Model.check doc case model with
             | [] ->
                 Printf.printf "clingo: PASS (%d expectations)\n" (List.length case.expected)
