@@ -82,3 +82,31 @@ Rood-eerst met R1 en R4; alle gates groen.
 De eerste weg: de frontend schrijft het pad van het element naar het regelonderwerp vóór de keten van de variabele, als
 padprefix op de bij declaratie gebouwde `Expr` (`uchar-dev/research/bruggen-2026-10-22/fable-advies.md`, vraag 2a,
 B2.1). Deze kaart wordt samen met `fold-in-element-condition` gebouwd; de besluiten staan daar.
+
+## Result (2026-10-22)
+
+Gebouwd op de tak `card/fold-in-element-condition`, samen met die kaart: hetzelfde mechanisme, de commits en de gates
+staan in haar Result. De eerste weg van het voorlopige besluit: een variabele van de regel, gelezen in een filter,
+krijgt haar bij declaratie gebouwde `Expr` terug met de weg van het element naar het regelonderwerp vóór elke lezing en
+elk bereik dat bij het regelonderwerp begint (`ExpressionBuilder.variableInFilter`, in `nameRef`; het onderwerp waarop
+de variabelen gebouwd zijn, onthoudt `setVariables`). Een `Let` op de regel is er niet bij gekomen.
+
+- R1 (de gewenste dag van het verzoek van de Schuit, als variabele in de deelselectie): exit 0, geen diagnostic, en
+  dezelfde lezing als de inline vorm R2: `path [lading in-een-maand.schuit, schuitverzoek.verzoek]`.
+- R4 (de laatste einddag van de zware klachten als variabele): exit 0, en hetzelfde filter als de inline vorm R1 van
+  `fold-in-element-condition`, op de bronnen na; daarmee speelt ze in ref, clingo en Drools zoals de golden van die
+  kaart.
+- R3 (de variabele buiten de deelselectie) en een variabele van één stap of van literalen: als voorheen; een variabele
+  van één stap schrijft nu de rol terug (`lading in-een-maand.schuit`) waar de emitter die tot nu per typepaar afleidde,
+  met hetzelfde IR.
+- Een variabele in het filter van een vouw die een andere variabele definieert: elk filter vanaf zijn eigen element
+  (de keurdatum vanaf de klacht over haar beklaagde schuit, de vouw vanaf de lading over haar schuit).
+- Een variabele in de toets van een kwantor over één relatie: over de weg terug
+  (`RuleChecker.matrixFromElement`).
+- Zonder weg terug (een to-many stap terug, een wederkerig feittype): RGS-352 met de variabele, haar definitie en de
+  uitweg van een eigen lid; in een deelselectie over het type van het regelonderwerp: RGS-350 (vondst 1 van
+  `fold-in-element-condition`: dat las tot nu stil het element).
+
+Getuige: `RuleVariableInSubselectionTest` (9 tests, R1 en R4 rood eerst gemeten). DIVERGENCES: "A read of the rule
+subject in a filter — written over the way back". De bekende grens voor de uitleg en het voorstel voor PLAN §9 staan
+in de Result van `fold-in-element-condition`.
