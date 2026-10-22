@@ -69,3 +69,33 @@ eigenaar te kiezen: de diepte volgt uit het teken (`-`/`•` niveau 1, `..`/`•
 geneste lijst hetzelfde teken op dezelfde kolom draagt als de lijst erboven. `...` krijgt een lezing of een benoemde
 ERROR in plaats van de ANTLR-syntaxfout. Rood-eerst met R1–R3: check exit 0 zonder WARNING en de vier casussen in ref ≡
 clingo ≡ Drools; R4, R5 en de goldens ongewijzigd; DIVERGENCES noemt de schrijfwijze; alle gates groen.
+
+## Voorlopige besluiten (2026-10-22, naar het Fable-advies)
+
+Bron: `uchar-dev/research/bruggen-2026-10-22/fable-advies.md`, vraag 3 (B3.1–B3.3). De eigenaar kan de besluiten
+omdraaien.
+
+**Een stil fout antwoord hoort bij deze kaart** (gemeten in het advies, `proef/q3/`): een alle-lijst met een geneste
+ten-minste-één-groep, elke bullet `-` op één kolom, geeft `diagnostics: []` en `Compound all (2) [leeftijd > 65,
+Compound atLeast (3) [Touw, Glas, leeftijd < 80]]`. De laatste bullet, bedoeld als lid van de alle-lijst, staat stil in
+de of-groep. De aanname in `RuleChecker` ±5021–5023 en ±5258 ("under ALLE/DE the merge is semantics-preserving") geldt
+alleen als de geneste groep zelf een alle-groep is.
+
+- **B3.1 Het teken wint.** De diepte van een bullet is het paar (tekendiepte, kolom), lexicografisch: eerst het
+  teken, de kolom alleen tussen bullets met hetzelfde teken. In het corpus, `toka/` en v2 staan `-` en `..` op één
+  kolom (`jutterswet-keurcriteria` r. 17 en 51), dus de kolom kan geen primaire sleutel zijn.
+- **B3.2 Eén punt per niveau.** `-` = 1, `..` = 2, `...` = 3, `....` = 4; `•` = 1, `••` = 2, `•••` = 3; `▪` als `•`. In
+  de lexer `DOTDOT : '..' '.'*`, zodat `...` geen syntaxfout meer is. "Dieper" is strikt groter, dus `-`, `..`, `....`
+  (de vorm van deze kaart) speelt ook. Dit wijkt af van het voorstel hierboven (`....` = 3, `...` een ERROR).
+- **B3.3** Eén functie bouwt de boom uit de platte bulletlijst, voor voorwaarden, deelselecties en
+  consistentiecriteria gelijk: een diepere bullet is kind van de vorige, die dan een groepskop moet zijn; gelijke
+  diepte is een zuster; minder diep keert terug naar het open niveau met precies die diepte. Vier benoemde ERRORs
+  (nieuwe RGS-codes): een groepskop zonder diepere bullet erachter (dus ook hetzelfde teken op dezelfde kolom na een
+  groepskop, onder **elke** kwantor, ook onder alle: het stille geval hierboven); een diepere bullet zonder groepskop
+  ervoor; een terugkeer naar een diepte die geen open niveau is; twee tekenfamilies (`-`/`..` naast `•`) in één
+  samengestelde voorwaarde. `bulletsInconsistent`, `ambiguousNestedBullets`, `reNestColumns` en
+  `RGS-092.counting-deep-bullet` vervallen.
+- `SilentMarkerTest` r. ±274–284 en ±293–305 pinnen de oude zinnen; de Result noemt hoe ze veranderen.
+- Rood eerst: R1, R2 (`•`-vorm en ingesprongen vorm), R3 (`...`) en de alle/of-zin hierboven als frontendtests; één
+  golden op de Jutterswet-getuige van deze kaart (vier casussen) in gates 5, 6, 12 en 17. Als meting, zonder bestand in
+  deze repository: of een lijst in de v2-regelset herleving-WW het stille geval draagt.

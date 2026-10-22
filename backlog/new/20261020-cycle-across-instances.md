@@ -75,3 +75,43 @@ De eigenaar kiest één van twee wegen.
   is een benoemde fout bij het laden of de evaluatie. Eerst een spec-voorstel (ch. 6.1–6.3, de verifier), dan ref, clingo
   en beide Drools-takken. Rood-eerst met R1: `check` exit 0 en einddag V2 03-03-2027 in ref ≡ clingo ≡ Drools; de casus met
   een kring in de schakels geeft in alle drie dezelfde benoemde fout; alle gates groen.
+
+## Voorlopig besluit (2026-10-22, naar het Fable-advies): weg (b), scherp afgebakend
+
+Bron: `uchar-dev/research/bruggen-2026-10-22/fable-advies.md`, vraag 1 (B1.1–B1.5), met metingen in `proef/k12/`. De
+eigenaar kan het besluit omdraaien; het is een normwijziging van ch. 5.2 en ch. 6.
+
+- **Afbakening.** Een *schakelrelatie* R is een feittype waarvan beide rollen door vergelijkbare typen gevuld worden,
+  waarvan de gelezen rol to-one is en dat geen feitcreatie schrijft. Een *satellietstap* gaat over een feittype waarvan
+  de rol terug naar het type van de kring to-one is. Een *verschoven lezing* is een genavigeerde lezing (attribuut,
+  kenmerk, of het bereik van een vouw) waarvan het pad begint met precies één R-stap en verder alleen satellietstappen
+  draagt. Een *verschoven rand* p → c is een rand waarvan elke leespositie in c van de knoop die p schrijft een
+  verschoven lezing is.
+- **WF-045′/046′/051′.** De graaf is kringvrij na het weglaten van de creatievormen van recursieve groepen en van de
+  verschoven randen; negatieve verschoven randen (een leeg-toets, een ontkende kenmerkcheck op de voorganger) zijn op zo'n
+  kring toegelaten; hetzelfde voor de defaults-vouw (WF-051).
+- **Dynamisch:** de schakelgraaf van R over de casusinstanties is kringvrij; een kring daarin is een fout bij het laden,
+  vóór elke evaluatie: nieuw EF-032 (of het volgende vrije nummer, als een eerdere landing het nam), parameters
+  `factType` en `cycle`, in ref, clingo en Drools. Clingo rekent de keten zonder wijziging aan de vertaling (gemeten
+  PASS, met en zonder leeg-toets), maar het gronden van een schakelkring eindigt niet: de runner toetst de schakelgraaf
+  vóór het gronden.
+- **Evaluatie:** de vormen van zo'n kring rekenen per object in dieptevolgorde (ref: substrata (k, d); Drools: een
+  verschoven rand telt in `Cycles.strata` als positieve kringrand, zoals een creatiekring, en truth maintenance trekt een
+  voorlopige waarde in zodra de voorganger staat; blijft een vorm volgordeafhankelijk, dan weigert de backend haar bij
+  naam). De lezingen van ch. 5.12 en gate 17 veranderen niet.
+- **Geen nieuw wire-veld** (gate 2); alle bestaande WF-045/046/051-getuigen blijven rood (gate 3); de goldens spelen
+  byte-identiek; de randen van gate 15 veranderen niet. Ch. 5.2 en ch. 6.2 noemen twee gecontroleerde uitzonderingen in
+  plaats van één.
+
+**Snede van de hoofdsessie (afwijkend van het advies, dat vijf kaarten noemt):** deze kaart draagt spec, verifier, ref,
+clingo en Drools op één tak en landt in één keer, omdat een golden bij zijn landing in gate 5, 6 en 12 moet spelen. De
+frontend (`check` laat de vorm toe, en de betere weigering voor wat buiten de afbakening valt) is de kaart
+`check-admits-instance-cycle`, na deze. Tot die landt, is de golden handgeschreven (geen `source.rgs`), zoals het IR in
+`proef/k12/` van het advies.
+
+Rood eerst: golden `jutterswet-vergunningketen` (getuige R1, drie casussen: zonder voorganger, keten van twee, keten van
+drie; met de leeg-toets en in de positieve vorm), gate 3 rood vóór en groen erna; de vijf negatieven uit het advies (R-stap
+to-many, R door een feitcreatie geschreven, gedeelde satelliet, dezelfde knoop ook rechtstreeks gelezen, R-stap gevolgd
+door een to-many stap); een rood geval met een schakelkring (`expectedFault` EF-032) in ref, clingo en Drools; het
+gewerkte voorbeeld van ch. 6.4 als ref-test; `EXPECTED_PLAYED` plus één. De CONSTRUCTS-rij als tekst in de Result.
+Start pas als `date-with-in-ref-and-clingo` geland is (beide raken `spec/RUNTIME-SEMANTICS.md`, ref en clingo).

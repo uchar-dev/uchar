@@ -76,3 +76,9 @@ weg is het pad van het element terug alleen het regelonderwerp als de vouw over 
 tweede weg raakt open punt 6 van `done/20261008-tms-expressievormen-en-rekendatum.md` ("Een binder van een omsluitende
 `Let` in het filter of de matrix van een vouw draagt de tak niet") en `new/20261009-clingo-let-binder-tussen-onderwerpen.md`.
 Rood-eerst met R1 en R4; alle gates groen.
+
+## Voorlopig besluit (2026-10-22, naar het Fable-advies)
+
+De eerste weg: de frontend schrijft het pad van het element naar het regelonderwerp vóór de keten van de variabele, als
+padprefix op de bij declaratie gebouwde `Expr` (`uchar-dev/research/bruggen-2026-10-22/fable-advies.md`, vraag 2a,
+B2.1). Deze kaart wordt samen met `fold-in-element-condition` gebouwd; de besluiten staan daar.

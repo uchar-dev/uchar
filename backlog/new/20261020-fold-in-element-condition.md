@@ -87,3 +87,28 @@ een relatie van het regelonderwerp in een filter krijgt een bereik vanaf het reg
 naar het onderwerp, zoals R4 al krijgt, of via een `Let` op de regel; zie `rule-variable-in-subselection` voor de
 afweging); (3) geen diagnostic zegt "blijft onopgelost" waar het IR de vouw gelowerd draagt (R4). Rood-eerst met R1, R3 en
 R4; alle gates groen.
+
+## Voorlopige besluiten (2026-10-22, naar het Fable-advies)
+
+Bron: `uchar-dev/research/bruggen-2026-10-22/fable-advies.md`, vraag 2a (B2.1, B2.2, B2.4). Deze kaart wordt samen met
+`rule-variable-in-subselection` gebouwd, na `semantic-tokens` en `subselection-per-chain`. De eigenaar kan de besluiten
+omdraaien.
+
+- **Route (i): herankering door een padprefix.** Een lezing die bij het regelonderwerp hoort en onder een ander
+  onderwerp gelezen wordt (filter of matrix van een vouw; inline of als variabele van `Daarbij geldt:`, ook een vouw
+  met filter), krijgt haar bij declaratie gebouwde `Expr` terug met vóór elke verwijzing die aan het regelonderwerp
+  verankerd is het pad element → regelonderwerp; een vouw met `sourceRole` vanaf het onderwerp wordt zo een
+  `sourcePath`. De definitietekst wordt niet opnieuw gebouwd met het element als onderwerp ("zijn X" zou dan het
+  element lezen). Het bestaande mechanisme is de éénstapsherankering van 2026-10-20 (`roleTargetTypeToSubject` met
+  `toManyRole`, `ExpressionBuilder` ±2806–2820). Route (ii), een `Let` op de regel, niet nu: een `Let` overspant geen
+  voorwaarde (IR-SPEC ch. 4.10 (a)), zou de betekenis bij een lege waarde veranderen (ch. 4.10 (c), ch. 10.6), en raakt
+  twee open gaten (Drools open punt 6, `20261009-clingo-let-binder-tussen-onderwerpen`).
+- **Een weg terug bestaat alleen** als de buitenste vouw over een relatie van het regelonderwerp loopt en elke stap vanaf
+  het element terug to-one is. Anders een ERROR die de vouw, het element en de ontbrekende weg terug noemt, met de uitweg
+  (een eigen lid op het onderwerp); nooit een WARNING met een marker.
+- **Element van het type van het regelonderwerp:** weigeren als RGS-350 (de naam is dubbelzinnig).
+- **Geen verouderde WARNING:** RGS-073/075 uit de eerste bouw vervallen zodra de herbouw bindt (doel (3)).
+- **Bekende grens voor de uitleg:** een vouw in een filter wordt per lid geëvalueerd en heeft geen eigen lezing (ch.
+  5.12); de Result noemt dat, en de hoofdsessie zet het in PLAN §9. Ch. 5.12 verandert niet.
+- Rood eerst: R1, R3, R4 van deze kaart en R1, R4 van `rule-variable-in-subselection`; één golden op de
+  Jutterswet-casus van deze kaart (01-03-2026 en 01-04-2026), gespeeld in gates 5, 6, 12 en 17.
