@@ -1263,6 +1263,26 @@ changes the meaning on an empty value (IR-SPEC ch. 4.10 (c), ch. 10.6). Where
 the way back from the element is not to-one at every step, the frontend
 refuses the read (RGS-352) instead of writing a marker.
 
+**A cycle over a switch relation is ordered by depth (2026-10-22, card
+`cycle-across-instances`):** since this card a value of an object may read the
+same value of its predecessor over a switch relation (IR-SPEC ch. 5.3; a
+provisional decision after the Fable advice of 2026-10-22, route (b)); WF-045,
+WF-046 and WF-051 walk the graph without the shifted edges, ref evaluates such
+a part per depth in the chain and per depth by level (RUNTIME-SEMANTICS ch.
+6.2), and a cycle in the links is EF-033 at case input. The part is narrow on
+purpose. Open, after the second Fable advice of the same day: the household
+widening — a fold or a quantifier over the subject's own to-many satellites,
+and the step to a satellite and back, counted as local or shifted — is the
+next card (`instance-cycle-household-reads`), before the frontend admits the
+form (`check-admits-instance-cycle`); a read over a hub (a relation whose role
+on the side of the cycle's type is to-many) stays refused statically, because
+measured on a miniature it gives two stable models, and no ground-graph test
+per case is planned. The v2 rule set of the workbench therefore keeps its
+bridge K12 until it rewrites the exception of art. 21 lid 2 onder a WW without
+a derived end date of the new right — a norm question for the workbench
+(the new right as an input characteristic in the concurrence, or as the
+successor over `eerdere recht`).
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3

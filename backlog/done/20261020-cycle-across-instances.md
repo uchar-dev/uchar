@@ -302,3 +302,11 @@ object van een andere keten, dat de diepte niet ordent). Diagnose in `werk/brugg
   verruimt (punten 1 en 2), en een normkeuze voor 3.
 - De melding buiten de afbakening kan de reden noemen die de verifier nu niet noemt: welke lezing achter een interne
   rand noch verschoven noch lokaal is (de diagnose van meting 5 laat zien dat dat de bruikbare informatie is).
+
+### Landing (hoofdsessie, 2026-10-22)
+
+Gerebased op main `0a02aa1b` (K13 geland); het enige conflict was `EXPECTED_PLAYED`, 268 + 1 = 269. `gates-3` op
+`22744f78`: alle zeventien groen, EXIT 0 (13:29–14:05). Fable-advies 2 (`research/bruggen-2026-10-22/fable-advies-2.md`)
+adviseerde de kern nu te landen; de verruiming tot het huishouden is de volgende kaart
+(`instance-cycle-household-reads`), vóór `check-admits-instance-cycle`. CONSTRUCTS-rij 45 uit de Result, met de
+kolom "out" naar dat advies; PLAN §9 "A cycle over a switch relation is ordered by depth".
