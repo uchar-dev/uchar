@@ -680,8 +680,10 @@ public final class SemanticTokens {
         List<Decl> found = new ArrayList<>();
         for (Decl d : declarations.keySet())
             if (d.kind() == Kind.ENUMERATION_VALUE && d.name().equals(norm(value))) found.add(d);
+        // a value several domains declare is one of them, and only its place in an expression says which: the span
+        // keeps the kind and names no declaration, as any name the place does not decide
         claim(range, found.isEmpty() ? Kind.UNRESOLVED : Kind.ENUMERATION_VALUE, false,
-                found.isEmpty() ? null : found.get(0));
+                found.size() == 1 ? found.get(0) : null);
     }
 
     /** The declaration of {@code name} of {@code kind}, null when the files declare none. */
@@ -781,8 +783,11 @@ public final class SemanticTokens {
                 if (claim[j] != null || !inName(pieces.get(j).type())) break;
                 run.add(j);
             }
+            boolean afterStep = afterLink(first, i), afterSubject = afterSubjectWord(first, i);
             for (int k = run.size() - 1; k >= 0; k--) {
-                Match m = match(i, run.get(k), scope, navigationStep(run.get(k), last));
+                boolean step = navigationStep(run.get(k), last);
+                Match m = match(i, run.get(k), scope, step && afterStep ? MIDDLE_ORDER : step ? STEP_ORDER
+                        : afterStep ? HEAD_ORDER : afterSubject ? SUBJECT_ORDER : PLACE_ORDER);
                 if (m == null) continue;
                 matches.add(m);
                 end = run.get(k);
@@ -894,20 +899,51 @@ public final class SemanticTokens {
         return next < last && pieces.get(next).type() == RegelSpraakLexer.VAN;
     }
 
-    /** The order in which the kinds a run of words can name are tried: a navigation step names a member or a role
-     *  before a type ("alle vondsten van de Jutter" walks the role vondst), a name in any other place names a type
-     *  before a role ("een Jutter"). A variable of the rule shadows a parameter, as in the resolution, and both stand
-     *  first outside a navigation step; inside one a member goes first, as the resolution reads "de X van Y" as an
-     *  attribute read before it tries a name ({@code ExpressionBuilder.buildAttribute}). */
+    /** Whether piece {@code at} follows a navigation link: 'van' and at most an article or a quantifier stand before it,
+     *  so it is the onderwerp a step navigates from ("de leeftijd van DE JUTTER"). */
+    private boolean afterLink(int from, int at) {
+        int i = at - 1;
+        while (i >= from && (pieces.get(i).hidden() || (LINK_WORDS.contains(pieces.get(i).type())
+                && pieces.get(i).type() != RegelSpraakLexer.VAN))) i--;
+        return i >= from && pieces.get(i).type() == RegelSpraakLexer.VAN;
+    }
+
+    /** Whether piece {@code at} follows an indefinite article or a quantifier directly ("EEN Jutter", "ALLE
+     *  vondsten", "hij is EEN aanmelder"): the place of a subject or of the name a membership test writes. */
+    private boolean afterSubjectWord(int from, int at) {
+        int i = at - 1;
+        while (i >= from && pieces.get(i).hidden()) i--;
+        return i >= from && SUBJECT_WORDS.contains(pieces.get(i).type());
+    }
+
+    private static final java.util.Set<Integer> SUBJECT_WORDS = java.util.Set.of(RegelSpraakLexer.EEN,
+            RegelSpraakLexer.ALLE, RegelSpraakLexer.AL, RegelSpraakLexer.GEEN_VAN_DE, RegelSpraakLexer.EEN_TELWOORD,
+            RegelSpraakLexer.TWEE_TELWOORD, RegelSpraakLexer.DRIE_TELWOORD, RegelSpraakLexer.VIER_TELWOORD);
+
+    /** The order in which the kinds a run of words can name are tried, by its place, after the resolution's reading of
+     *  each place ({@code ExpressionBuilder.buildAttribute}, {@code attributeRef}, {@code resolveSubject}). The first
+     *  step of a navigation ("DE LEEFTIJD van de Jutter") names a member before anything else; a step inside one
+     *  ("van DE MAST van de post") names a role; the onderwerp a navigation ends in ("van DE JUTTER") and a subject
+     *  ("EEN Jutter", "alle vondsten") name a type before a role, and never a member first; elsewhere a variable of the
+     *  rule shadows a parameter and both go before the members and types of the model. */
     private static final List<Kind> STEP_ORDER = List.of(Kind.ATTRIBUTE, Kind.CHARACTERISTIC, Kind.ROLE, Kind.PARAMETER,
-            Kind.VARIABLE, Kind.OBJECT_TYPE, Kind.DIMENSION_LABEL, Kind.DAY_KIND, Kind.DIMENSION, Kind.TIMELINE);
+            Kind.VARIABLE, Kind.OBJECT_TYPE, Kind.DIMENSION_LABEL, Kind.DAY_KIND, Kind.DIMENSION, Kind.TIMELINE, Kind.UNIT);
+    private static final List<Kind> MIDDLE_ORDER = List.of(Kind.ROLE, Kind.OBJECT_TYPE, Kind.ATTRIBUTE,
+            Kind.CHARACTERISTIC, Kind.VARIABLE, Kind.PARAMETER, Kind.DIMENSION_LABEL, Kind.DAY_KIND, Kind.DIMENSION,
+            Kind.TIMELINE, Kind.UNIT);
+    private static final List<Kind> HEAD_ORDER = List.of(Kind.OBJECT_TYPE, Kind.ROLE, Kind.VARIABLE, Kind.PARAMETER,
+            Kind.ATTRIBUTE, Kind.CHARACTERISTIC, Kind.DIMENSION_LABEL, Kind.DAY_KIND, Kind.DIMENSION, Kind.TIMELINE,
+            Kind.UNIT);
+    private static final List<Kind> SUBJECT_ORDER = List.of(Kind.OBJECT_TYPE, Kind.ROLE, Kind.CHARACTERISTIC,
+            Kind.DAY_KIND, Kind.VARIABLE, Kind.PARAMETER, Kind.ATTRIBUTE, Kind.DIMENSION_LABEL, Kind.DIMENSION,
+            Kind.TIMELINE, Kind.UNIT);
     private static final List<Kind> PLACE_ORDER = List.of(Kind.VARIABLE, Kind.PARAMETER, Kind.ATTRIBUTE,
             Kind.CHARACTERISTIC, Kind.OBJECT_TYPE, Kind.ROLE, Kind.DAY_KIND, Kind.DIMENSION_LABEL, Kind.DIMENSION,
-            Kind.TIMELINE);
+            Kind.TIMELINE, Kind.UNIT);
 
     /** What pieces {@code first}..{@code last} name in {@code scope}, or null: the kinds their text can name, in the
      *  order above, with every declaration of the first kind that has one. */
-    private Match match(int first, int last, Scope scope, boolean step) {
+    private Match match(int first, int last, Scope scope, List<Kind> order) {
         String written = text(first, last);
         boolean article = written.matches("(?i)^(de|het|een)\\s.*");
         Map<Kind, List<Candidate>> found = new java.util.EnumMap<>(Kind.class);
@@ -937,7 +973,15 @@ public final class SemanticTokens {
         }
         if (model.timelineByName(written) != null && !article)
             found.put(Kind.TIMELINE, List.of(Candidate.of(lookup(Kind.TIMELINE, null, RegelSpraakModel.normaliseTimelineName(written)))));
-        for (Kind kind : step ? STEP_ORDER : PLACE_ORDER)
+        // a unit a system of the files declares, written in words where no unit expression stands: the appositive of
+        // an attribute read ("de afstand in kilometers", ExpressionBuilder.attributeRef). A time unit the lexer reads
+        // as a keyword ("de maand uit") is a unit only where the parse puts a unit expression (pass 2).
+        boolean words = true;
+        for (int i = first; i <= last; i++) if (!pieces.get(i).hidden() && !isWord(pieces.get(i).type())) words = false;
+        Decl unit = words ? unitSpellings.get(written) : null;
+        if (words && unit == null) unit = unitSpellings.get(RegelSpraakModel.normaliseTimeUnit(written));
+        if (unit != null) found.put(Kind.UNIT, List.of(Candidate.of(unit)));
+        for (Kind kind : order)
             if (found.containsKey(kind)) return new Match(first, last, kind, found.get(kind));
         return null;
     }
