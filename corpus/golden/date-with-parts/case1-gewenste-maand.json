@@ -15,6 +15,9 @@
           },
           "schrikkeljaar": {
             "number": "2024"
+          },
+          "verre jaar": {
+            "number": "12026"
           }
         },
         "roles": {},
@@ -47,6 +50,11 @@
       "value": {
         "date": "2024-02-29"
       }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "ver vooruit"
     },
     {
       "kind": "consistent"

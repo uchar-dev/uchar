@@ -15,6 +15,9 @@
           },
           "schrikkeljaar": {
             "number": "2000"
+          },
+          "verre jaar": {
+            "number": "2026"
           }
         },
         "roles": {},
@@ -47,6 +50,11 @@
       "value": {
         "date": "2000-02-29"
       }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "ver vooruit"
     },
     {
       "kind": "consistent"

@@ -5,6 +5,8 @@ Objecttype de Schuit (mv: Schuiten)
     het aanlegtijdstip Datum en tijd in millisecondes;
     het schrikkeljaar Numeriek (geheel getal);
     de schrikkeldag Datum in dagen;
+    het verre jaar Numeriek (geheel getal);
+    is ver vooruit kenmerk (bijvoeglijk);
 
 Regel gewenste maand
     geldig altijd
@@ -17,3 +19,8 @@ Regel aanlegtijdstip
 Regel schrikkeldag
     geldig altijd
         De schrikkeldag van een Schuit moet gesteld worden op de datum met jaar: zijn schrikkeljaar, maand: 2 en dag: 29.
+
+Regel ver vooruit
+    geldig altijd
+        Een Schuit is ver vooruit
+        indien de datum met jaar: zijn verre jaar, maand: de maand uit zijn gewenste dag en dag: 1 later is dan zijn gewenste dag.

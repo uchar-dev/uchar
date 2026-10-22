@@ -5172,7 +5172,13 @@ subject (ch. 5.5). `<found>` is `unreached`; `true` or `false`; `fault`
 with the EF code, or `fault -` for a fault without one; or the value: a
 number as its exact decimal where it terminates and else as its quotient to
 16 significant digits rounded half to even (IEEE 754 decimal64), without
-trailing zeros; a date and a date-time as the case format writes them; a
+trailing zeros; a date and a date-time as the case format writes them,
+and a year the case format cannot write — below 0000 or above 9999, which
+the date construction reaches (ch. 3.8) — with its sign and at least four
+digits, `+12026-03-01`, `-0005-03-01` (ISO 8601's expanded form;
+*provisional decision of the builder of card date-with-in-ref-and-clingo,
+2026-10-22*: the Drools backend writes it so, `ref` wrote `12026-03-01`
+and `-005-03-01` until then, and the golden `date-with-parts` reads one); a
 text and an enumeration value quoted, with `\`, `"` and the line breaks
 escaped; leeg as `empty`; a timeline as `[[<from> <to> <value>], …]`, with
 `empty` as the value of a period without one. After the value of an

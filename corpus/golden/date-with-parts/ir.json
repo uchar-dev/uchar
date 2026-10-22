@@ -59,9 +59,25 @@
               "node": "Date",
               "precision": "day"
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "verre jaar",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
           }
         ],
-        "characteristics": []
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "ver vooruit",
+            "kind": "adjectival"
+          }
+        ]
       }
     ],
     "factTypes": [],
@@ -394,6 +410,112 @@
             },
             "initialisation": false,
             "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "ver vooruit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "ver vooruit",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "Een Schuit is ver vooruit"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "later",
+              "left": {
+                "node": "BuiltinCall",
+                "kind": "dateWith",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "verre jaar",
+                    "subjectType": "Schuit",
+                    "source": {
+                      "snippet": "zijn verre jaar"
+                    }
+                  },
+                  {
+                    "node": "BuiltinCall",
+                    "kind": "monthOf",
+                    "arguments": [
+                      {
+                        "node": "AttributeReference",
+                        "attribute": "gewenste dag",
+                        "subjectType": "Schuit",
+                        "source": {
+                          "snippet": "zijn gewenste dag"
+                        }
+                      }
+                    ],
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative"
+                    },
+                    "source": {
+                      "snippet": "de maand uit zijn gewenste dag"
+                    }
+                  },
+                  {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1"
+                    }
+                  }
+                ],
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "de datum met jaar: zijn verre jaar, maand: de maand uit zijn gewenste dag en dag: 1"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "gewenste dag",
+                "subjectType": "Schuit",
+                "source": {
+                  "snippet": "zijn gewenste dag"
+                }
+              },
+              "source": {
+                "snippet": "de datum met jaar: zijn verre jaar, maand: de maand uit zijn gewenste dag en dag: 1 later is dan zijn gewenste dag"
+              }
+            },
+            "initialisation": false
           }
         ]
       }

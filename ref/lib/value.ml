@@ -121,9 +121,13 @@ let date_of_iso s =
       else Date (days_from_civil ~y ~m ~d))
   | _ -> fault "malformed date lexeme %S (expected ISO yyyy-mm-dd)" s
 
+(* a year the case format cannot write (below 0000, above 9999) in ISO 8601's
+   expanded form, a sign and at least four digits, as RUNTIME-SEMANTICS
+   ch. 5.12 writes a value: +12026-03-01, -0005-03-01 *)
 let iso_of_date z =
   let y, m, d = civil_from_days z in
-  Printf.sprintf "%04d-%02d-%02d" y m d
+  if y >= 0 && y <= 9999 then Printf.sprintf "%04d-%02d-%02d" y m d
+  else Printf.sprintf "%c%04d-%02d-%02d" (if y < 0 then '-' else '+') (abs y) m d
 
 (* --- datum-tijd lexemes (WF-095, IR-SPEC ch. 4.1) ---------------------- *)
 

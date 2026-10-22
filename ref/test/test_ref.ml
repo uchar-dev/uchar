@@ -4067,7 +4067,12 @@ let () =
     (date_time_with [ "146140482"; "1"; "1"; "0"; "0"; "0"; "0" ]
      = Value.Date_time (Value.days_from_civil ~y:146140482 ~m:1 ~d:1 * Value.ms_per_day));
   expect_fault "WV-3.8-datumtijdmet-buiten-bereik" (fun () ->
-      date_time_with [ "200000000"; "3"; "1"; "0"; "0"; "0"; "0" ])
+      date_time_with [ "200000000"; "3"; "1"; "0"; "0"; "0"; "0" ]);
+  (* ch. 5.12: a year the case format cannot write, with its sign and at
+     least four digits (ISO 8601's expanded form) *)
+  check "WV-5.12-jaar-boven-9999" (Value.iso_of_date (Value.days_from_civil ~y:12026 ~m:3 ~d:1) = "+12026-03-01");
+  check "WV-5.12-jaar-onder-0000" (Value.iso_of_date (Value.days_from_civil ~y:(-5) ~m:3 ~d:1) = "-0005-03-01");
+  check "WV-5.12-jaar-0000" (Value.iso_of_date (Value.days_from_civil ~y:0 ~m:3 ~d:1) = "0000-03-01")
 
 (* --- ch. 3.8: the datum-tijd millisecond layer (worked examples
    verbatim) --------------------------------------------------------------- *)
