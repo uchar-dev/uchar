@@ -38,15 +38,21 @@ De snippets van `percentageOf` stonden hier eerst. Ze zijn nu een eigen kaart: `
 
 ## Result (2026-10-22)
 
-Tak `card/check-admits-instance-cycle`, op main `6efa0aa5`. Geraakt: `frontends/regelspraak/**`, de `source.rgs` van
-de twee goldens, en (door de extra fix hieronder, vondst 2) de `ir.json` van 38 goldens, `toka/casus/ir.json`, zes
+Tak `card/check-admits-instance-cycle`, begonnen op main `6efa0aa5`, gerebased op main `0cedb232` (de clingo-fix met
+haar golden). Geraakt: `frontends/regelspraak/**`, de `source.rgs` van de twee goldens, en (door de extra fix
+hieronder, vondst 2) de `ir.json` van 39 goldens, `toka/casus/ir.json`, zes
 TOKA-slices, `toka/README.md` en twee Drools-tests. Niet geraakt: `spec/`, `ref/`, `backends/clingo/`, de
 gate-scripts, `corpus/negative/`, `corpus/golden/anchor/`, de `NOTE.md` van beide goldens (vondst 3).
 
-- `b28b795c` de kaart naar `doing/`.
-- `ee0b3c57` `check` laat de instantiegeordende kring toe en noemt de lezing buiten de afbakening (RGS-357).
-- `e78f2ba1` `source.rgs` voor `jutterswet-vergunningketen` en `jutterswet-vergunningtermijnen`.
-- `bbd203c3` extra fix zonder kaart: een snippet stopt vóór de slotpunt van de zin (vondst 2).
+Na de rebase:
+
+- `ece0b721` de kaart naar `doing/`.
+- `53036a53` `check` laat de instantiegeordende kring toe en noemt de lezing buiten de afbakening (RGS-357).
+- `d9131437` `source.rgs` voor `jutterswet-vergunningketen` en `jutterswet-vergunningtermijnen`.
+- `f05d5fae` extra fix zonder kaart: een snippet stopt vóór de slotpunt van de zin (vondst 2).
+- `274afdca` deze Result.
+- `1b5c9e49` de golden van de clingo-fix (`jutterswet-vroege-vondsten-zonder-schorsing`), die met de snippets van vóór
+  de fix op main landde: twee snippets zonder de slotpunt, verder niets.
 
 **Wat `Dependencies.java` nu doet.** Een lezing draagt haar pad (`NodeRead.path`, de hops vanaf het onderwerp), zoals
 `dep_expr_at` van de verifier: een vouw leest argument en filter aan het eind van haar bereik, een kwantor filter en
@@ -115,11 +121,13 @@ document). De andere lezingen van meting 5 noemt `check` niet: ze zijn lokaal.
 **Gates.** Tijdens de bouw: `make -C frontends/regelspraak test` 1284 tests groen (na de snippetfix 1285); gate 10 PASS
 (1284 tests, 135 rgs-goldens bytegelijk, `check-rgs-codes` PASS met 356 codes), gate 3 PASS, gate 11 PASS, gate 16 PASS
 (35 scenario-goldens, 123 casebestanden), alle vier vóór de snippetfix; na de snippetfix de twee Drools-getuigen los
-groen. De volledige set één keer op de eindstand (`werk/gates.sh`, `gates-1`, op `bbd203c3`, 17:13–17:46): alle
+groen. De volledige set op de stand vóór de rebase (`werk/gates.sh`, `gates-1`, op `bbd203c3`, 17:13–17:46): alle
 zeventien groen, `EXIT 0`. Gate 10: 1285 tests, 135 rgs-goldens bytegelijk. Gate 11 PASS, met de opnieuw uitgegeven dump
 en de gemigreerde slices. Gate 12: 272 gespeeld op beide takken, de suite 1654 tests. Gate 16: 35 scenario-goldens, 123
-casebestanden. Gate 17: 272 goldens en 746 casebestanden vergeleken. Main stond tijdens de run nog op `6efa0aa5`, dus
-er was geen rebase nodig.
+casebestanden. Gate 17: 272 goldens en 746 casebestanden vergeleken. Main bewoog tijdens die run naar `0cedb232`
+(de clingo-fix, met een nieuwe golden met `source.rgs`). Daarom gerebased, de nieuwe golden opnieuw uitgegeven
+(`1b5c9e49`) en de volledige set nog één keer gedraaid (`gates-2` op `1b5c9e49`, 17:48–18:19): alle zeventien
+groen, `EXIT 0`; gate 10 136 rgs-goldens bytegelijk, gate 12 273 gespeeld op beide takken.
 
 ### Vondsten
 
@@ -142,7 +150,8 @@ er was geen rebase nodig.
    Getuige `SentencePeriodSnippetTest`, rood op `e78f2ba1` (`werk/bruggen/check-admits/snippet/red.txt`). Opnieuw
    uitgegeven: 38 goldens, de TOKA-dump en zes slices. Volgens `werk/bruggen/percentage/snippet-diff.py` zijn het 45
    JSON-bestanden zonder snippets gelijk aan `e78f2ba1`, met 99 gewijzigde snippets, elk alleen de slotpunt minder
-   (`werk/bruggen/check-admits/snippet/snippet-diff-2.txt`). De scenarioroute (gate 16) gaf dezelfde `ir.json` en
+   (`werk/bruggen/check-admits/snippet/snippet-diff-2.txt`), plus na de rebase de golden van de clingo-fix met twee
+snippets (`snippet-diff-3.txt`). De scenarioroute (gate 16) gaf dezelfde `ir.json` en
    dezelfde casebestanden. TOKA: de dump is opnieuw uitgegeven en de slices zijn gemigreerd met dezelfde negen
    strings (13 vervangingen). `toka/README.md` noemt de landing onder de bewuste afwijkingen.
    Aangepaste tests, die de oude snippet pinden:
