@@ -313,3 +313,29 @@ bij; de nieuwe getuigen draaien in de suite van gate 10. Het IR verandert alleen
 die niets noemt (een `Unresolved` met WARNING waar een `VariableReference` stond); de tekst van IR-SPEC over
 `VariableReference` ("survives only as the marker for a variable the resolver could not bind", geweigerd onder WF-034)
 blijft juist, alleen schrijft deze frontend de knoop niet meer.
+
+### Vervolg (TOKA-getuige)
+
+`2be0800f` op tak `card/semantic-tokens-toka` (vanaf `8ded3090`), het punt "TOKA, niet in de corpusgetuige" hierboven:
+`toka/src/test/java/dev/uchar/regelspraak/SemanticTokensCasusTest.java` leest de 47 `toka/casus/toka-*.rgs` in
+naamvolgorde als één document door `Resolver.tokens` en eist volledige dekking (elk token in precies één span, geen
+overlap, geen witruimte aan de rand), de tekst op elke span, elke verwijzing naar een span met `declaration` van
+dezelfde soort, geen verwijzing zonder declaratie en geen `word`. `SemanticTokensCheck` is een testklasse en gate 11
+compileert alleen de hoofdklassen van de frontend; de controles staan daarom opnieuw in de test, met een eigen lexing
+van de keten. De spans `unresolved` zijn precies de lijst `UNDECLARED`: zes namen met fragment en reden, elk een lid
+dat alle 29 replay-slices declareren en geen fragment ("daadwerkelijke datum-tijd van vertrek" in toka-22, "in het
+hoogseizoen" in toka-26, "de treinmiles van alle passagiers" in toka-32 t/m 37, "het maximaal aantal te ontvangen
+treinmiles" in toka-35 en -37, "passagier jonger dan 18 jaar" in toka-41 en -45, "de datum van vertrek van de reis" in
+toka-43 en -44), per voorkomen de woorden die `unresolved` uitkomen (24 spans). De lijst faalt in beide richtingen: een
+span `unresolved` buiten haar, een naam die niet meer in zijn fragment staat, of een voorkomen dat andere woorden
+`unresolved` laat. Op kopieën buiten de repository rood gezien: een naam weg, andere woorden, een fragment te veel, een
+fragment dat niet bestaat, een span weg, een verwijzing een kolom verschoven, een vloer één hoger.
+
+Telling (2026-10-22, de vloeren in de test): 47 fragmenten, 1667 spans, 9 diagnostics; 403 naamspans, waarvan 143
+declaraties en 260 verwijzingen, alle gekoppeld; per soort `attribute` 93, `role` 75, `unit` 65, `objectType` 38,
+`parameter` 32, `namedForm` 31, `characteristic` 26, `domain` 14, `variable` 12, `factType` 4, `enumerationValue` 4,
+`unitSystem` 3, `timeline` 3, `dayKind` 3; lexicaal `keyword` 903, `punctuation` 287, `number` 34, `string` 12,
+`relationDescription` 4; `unresolved` 24. Gate 1 PASS; gate 11 PASS, TOKA-suite 28 tests (vloer
+`EXPECTED_MIN_TESTS=27` niet verhoogd: het script is beschermd). `toka/README.md` noemt de test; `CLAUDE.md` en
+`README.md` dragen dezelfde opsomming nog met "the two tests" en zijn niet geraakt (voorstel in het verslag aan de
+hoofdsessie).
