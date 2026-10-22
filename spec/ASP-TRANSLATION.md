@@ -649,7 +649,10 @@ and this backend); declared factors and stelsel never enter.
   the chain's intermediates go negative and gringo's toward-zero
   division stops being the floor the era re-encode needs; ref computes
   those years, so the fence is a loud narrowing, never a silent wrong
-  date.
+  date. Since 2026-10-22 a second fence, `easterSunday of a year after
+  5000000 is not translated`: beyond that year the day number leaves
+  clingo's integers, and until then the chain wrapped silently (year
+  6 000 000 gave day −2104231732 where ref gives 6000000-04-02).
 - **Emptiness**: the date operand PROPAGATES by its bare join (an
   unbound chain leaves the rule — or the `dpmN` helper — underivable,
   leeg as absence); the duration COALESCES through `coalesce0` (leeg

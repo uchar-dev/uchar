@@ -4013,6 +4013,12 @@ let () =
      a non-date extractor operand faults *)
   expect_fault "WV-3.8-paasdag-frac" (fun () -> Arith.easter_sunday (n "2024.5"));
   expect_fault "WV-3.8-paasdag-eenheid" (fun () -> Arith.easter_sunday (num_with_unit jr "2024"));
+  (* a whole year outside the machine-integer range faults, never wraps:
+     10^17 fits an OCaml int, its civil day number does not *)
+  expect_fault "WV-3.8-paasdag-jaar-buiten-bereik" (fun () ->
+      Arith.easter_sunday (n "100000000000000000"));
+  expect_num "WV-3.8-paasdag-groot-jaar" (Arith.year_of (Arith.easter_sunday (n "1000000000000000")))
+    "1000000000000000";
   expect_fault "WV-3.8-maand-uit-tekst" (fun () -> Arith.month_of (Value.Text "x"))
 
 (* --- ch. 3.8: the date construction (worked examples verbatim) ---------- *)

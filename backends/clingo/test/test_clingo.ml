@@ -13846,10 +13846,11 @@ let () =
    in the schema and its [v0, L5] pairs; the migration script and the Java
    table are held to it, and this block holds the OCaml table to it. It is
    the only thing that does for the values no document carries: negative,
-   concatenation, hourOf, minuteOf, secondOf, millisecondOf, dateWith,
-   dateTimeWith, elevenTest and exactDigits occur in no document of the
-   repository and in no other OCaml suite (measured at the L5 landing), so a
-   misspelling of one of them loads nothing and fails nothing elsewhere.
+   concatenation, hourOf, minuteOf, secondOf, millisecondOf, elevenTest and
+   exactDigits occur in no document of the repository and in no other OCaml
+   suite (measured at the L5 landing; dateWith and dateTimeWith, then in the
+   list, are in golden date-with-parts since 2026-10-22), so a misspelling of
+   one of them loads nothing and fails nothing elsewhere.
 
    Per family: the wire values of [values] are the L5 side of `table_rows`, and
    those of [refused] the L5 side of `geweigerd`; at every place the family
@@ -15857,6 +15858,38 @@ let () =
       check "hoist: a variable an earlier atom binds stays in the head, the atom in the body"
         (body = [ "dtf9_def(X3)"; "D1 = #max { L : dtf9(X3,L,_) }" ])
   | _ -> check "hoist: a variable an earlier atom binds stays in the head (another plan)" false
+
+(* THE EASTER YEAR'S UPPER FENCE (found by the builder of the card
+   date-with-in-ref-and-clingo, 2026-10-22): beyond year 5 000 000 the civil
+   day number leaves clingo's integers, and until then the chain wrapped
+   silently — year 6 000 000 gave day -2104231732 where ref gives
+   6000000-04-02. ref and Drools answer that year and a case cannot write the
+   date, so no golden or red case can hold the refusal; it is pinned here. *)
+let () =
+  let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Schuit","animate":false,"plural":"Schuiten","attributes":[{"node":"Attribute","name":"paasjaar","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"paasdag","datatype":{"node":"Date","precision":"day"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"paasdag","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"paasdag","subjectType":"Schuit","source":{"snippet":"De paasdag van een Schuit"}},"value":{"node":"BuiltinCall","kind":"easterSunday","arguments":[{"node":"AttributeReference","attribute":"paasjaar","subjectType":"Schuit","source":{"snippet":"zijn paasjaar"}}],"type":{"node":"Date","precision":"day"},"source":{"snippet":"de eerste paasdag van zijn paasjaar"}},"initialisation":false,"presentation":"equation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
+  let case_text =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "S1", "objectType": "Schuit",
+    "attributes": { "paasjaar": { "number": "6000000" } }, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+  in
+  let doc, case = load_pair ~ir ~case_text in
+  let label = "ch3.8 easterSunday of year 6000000: clingo refuses by name" in
+  match translate doc case with
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
+  | program -> (
+      match Solve.run_clingo program with
+      | _, Unix.WEXITED 20 ->
+          let ws = Solve.diagnostic program in
+          check (label ^ " (" ^ String.concat "; " ws ^ ")")
+            (List.exists
+               (fun w ->
+                 Uchar_ref.Case.contains ~needle:"easterSunday of a year after 5000000 is not translated" w)
+               ws)
+      | _, Unix.WEXITED (10 | 30) -> check (label ^ " (clingo found a model)") false
+      | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
+      | _, _ -> check (label ^ " (clingo killed)") false)
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

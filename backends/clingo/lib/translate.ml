@@ -5530,6 +5530,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         subject
         (String.concat ", " ((base :: ctx.rule_guard) @ by))
         ty;
+      (* beyond year 5 000 000 the day number leaves clingo's integers and the
+         chain wrapped silently (year 6 000 000 gave day -2104231732) *)
+      emit ctx
+        "viol(\"easterSunday of a year after 5000000 is not translated (the civil day number \
+         would leave clingo's integers)\",%s) :- %s, (%s) > 5000000."
+        subject
+        (String.concat ", " ((base :: ctx.rule_guard) @ by))
+        ty;
       let av = fresh ctx "A" and bv = fresh ctx "B" and cv = fresh ctx "C" in
       let dv = fresh ctx "D" and ev = fresh ctx "E" in
       let fv = fresh ctx "F" and gv = fresh ctx "G" and hv = fresh ctx "H" in

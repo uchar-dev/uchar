@@ -517,10 +517,13 @@ let day_from = function
 let easter_sunday = function
   | Empty -> Empty
   | Num (q, Unitless) when Z.equal (Q.den q) Z.one ->
+      (* the year is bounded where [days_from_civil] could leave the machine
+         integer (its era term is about 365.25 · year), not only where the
+         year itself does: between the two the date wrapped silently *)
       let j =
         match Z.to_int (Q.num q) with
-        | j -> j
-        | exception Z.Overflow ->
+        | j when j <= max_int / 400 && j >= -(max_int / 400) -> j
+        | _ | (exception Z.Overflow) ->
             fault "easterSunday: year %s is out of range" (Q.to_string q)
       in
       let a = j mod 19 and b = j / 100 and c = j mod 100 in
