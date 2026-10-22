@@ -151,3 +151,10 @@ besluiten V2 (eenheid van het effectieve type) en V3 (de gevulde telling is een 
 **Gates.** `werk/gates.sh` op `ffcd2713` (`werk/bruggen/u4/gates-1.summary.txt`): de zeventien gates groen,
 `EXIT 0` (gate 12 945 s, gate 17 510 s). Tijdens de bouw: gate 5, gate 12 `--fast`, gate 17 (drie keer, met de bewaarde
 werkmap) en de vier getuigen los, alles in `werk/bruggen/u4/`.
+
+### Landing (hoofdsessie, 2026-10-22)
+
+`gates-2` op `9b8689bd` (gerebased op main `c98b690d`, percentage-of-snippets): alle zeventien groen, EXIT 0
+(15:37–16:08). Daarna gerebased op `d0daba6a` (de clingo-fix CLINGO-030; alleen `backends/clingo/` en één zin in
+`spec/ASP-TRANSLATION.md`, geen overlap) zonder nieuwe run. PLAN §9 "A form without a condition has a reading of its
+value", naar de voorgestelde regel. Geen CONSTRUCTS-delta.

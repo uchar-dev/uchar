@@ -1283,6 +1283,19 @@ a derived end date of the new right — a norm question for the workbench
 (the new right as an input characteristic in the concurrence, or as the
 successor over `eerdere recht`).
 
+**A form without a condition has a reading of its value (2026-10-22, card
+`readings-of-unconditional-forms`):** RUNTIME-SEMANTICS ch. 5.12 gives a form
+without a condition that computes a value the reading of that value — status
+`HOLDS` where the form is at its turn, with the nodes of its value as a form
+with a condition has them — so that an explanation can account for a value an
+ordinary rule computes (the distribution's card
+`explanation-computed-attributes`). Comparing those value nodes in gate 17
+surfaced six existing differences between the readings of ref and Drools,
+fixed in the same card. Two provisional decisions of the card stand open for
+the maintainer: the unit behind a number in the canonical text is that of the
+node's effective type (ch. 2.10), and a filled count is a count, its
+contributors without their value (ch. 3.4c).
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
