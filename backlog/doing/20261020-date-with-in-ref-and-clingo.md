@@ -82,3 +82,112 @@ attributen, één regel `dateWith` en één `dateTimeWith`):
 Drools volgt de regel dus op elke dag die niet bestaat (een fout, geen doorrol of klem); het wijkt alleen af in de vorm:
 zijn fout draagt geen EF-code (`FAULT EvaluationFaults: …` of `FAULT ComputeFault: …`), en een datum-tijd boven het
 millisecondebereik (jaar ruim boven 146 miljoen) controleert het niet.
+
+## Result (2026-10-22)
+
+Tak `card/date-with-in-ref-and-clingo`, vanaf `d6015ecf`, ongemerged en ongepusht, samen met de kaart
+`clingo-nested-aggregate-in-fold-filter`. Beschermde paden als voorstel geraakt: `spec/RUNTIME-SEMANTICS.md`,
+`spec/ASP-TRANSLATION.md` en in `scripts/check-drools.sh` alleen `EXPECTED_PLAYED`. De kaart blijft in `doing/`; de
+hoofdsessie verplaatst haar bij de landing en landt CONSTRUCTS (tekst hieronder).
+
+- `f9a29eca` beide kaarten naar `doing/`.
+- `b8e9b013` het voorlopige besluit over een datum die niet bestaat, met de Drools-meting (hierboven).
+- `eca8a497` rood eerst: de golden `date-with-parts` (met de twee goldens van de andere kaart), `EXPECTED_PLAYED` 264 → 267.
+- `5c807c3a` ref: `Arith.date_construction` (`ref/lib/arith.ml`), de arm in `eval.ml`, 21 voorbeelden `WV-3.8-datum…`
+  en het paar `WV-5.11-datummet-deel0-eerst`/`-deel1-later`.
+- `276e6d79` clingo: `date_construction` in `translate.ml`, de arm in `expr_term` (`dateWith`) en in `dt_term`
+  (`dateTimeWith`); de zin van CLINGO-009 noemt de constructor niet meer als flank; in de suite tien getuigen van een
+  dag of kloktijd die niet bestaat (en van jaar 0) en twee waarden in ref en clingo.
+- `ffb6d9c2` het spec-voorstel (ch. 1.2, 3.8, 5.7b, 5.11; ASP-TRANSLATION S6a en S19).
+- `5d774f2d` en `b9436dc8` twee vondsten, op verzoek van de eigenaar direct op deze tak gefixt (zie Vondsten).
+- dit Result.
+
+### Gates
+
+`gates-1` op `ffb6d9c2`: EXIT 0, alle 17 groen (`werk/bruggen/date-with/gates-1.summary.txt`). Daarna kwamen de twee
+fixes van vondsten; `gates-2` op `b9436dc8`: EXIT 0, alle 17 groen (`werk/bruggen/date-with/gates-2.summary.txt`):
+gate 5 1339 voorbeelden en 856 gevallen, gate 6 856 gevallen, gate 12 played 267 op beide takken, gate 17 267 goldens
+en 727 casusbestanden vergeleken, 0 afwijkingen. Na `b9436dc8` veranderde alleen dit Result.
+
+Tussendoor op `276e6d79`: gate 5 PASS (1334 voorbeelden, 856 gevallen), gate 6 PASS (2221 controles, 856 gevallen),
+gate 8 PASS (46 rode gevallen), gate 12 `--fast` PASS (played 267).
+
+### Rood eerst en de getuige
+
+Op `eca8a497`: ref `EVALUATION FAULT: REF-007: function kind not implemented in this card` en clingo `TRANSLATION
+FAULT: CLINGO-008` op alle drie de gevallen van `date-with-parts`; Drools `PLAYED 3` op beide takken. Na `276e6d79`
+spelen ref en clingo ze ook: de getuige van de kaart, gewenste dag 15-03-2026 → gewenste maand 01-03-2026, is
+`case1-gewenste-maand` (ref ≡ clingo ≡ Drools, beide takken). De golden draagt verder een datum-tijd
+(2026-03-15T06:30:00 en 2026-12-31T23:30:00), de schrikkeldagen van 2024, 2000 en 2028, de leeghoek, en sinds
+`b9436dc8` een datum van jaar 12026 in een voorwaarde.
+
+### De regel en wat ref en clingo doen
+
+De regel is het voorlopige besluit hierboven; RUNTIME-SEMANTICS ch. 3.8 ("Date construction") schrijft hem met de
+uitgerekende voorbeelden. Gemeten op dezelfde delen als Drools:
+
+| delen | ref | clingo |
+|---|---|---|
+| 2026, 4, 31 / 2026, 2, 29 / 2026, 13, 1 / 2026, 0, 1 / 2026, 3, 0 | `EVALUATION FAULT: dateWith: year 2026, month 4 and day 31 name no calendar day` (enz.) | `UNSATISFIABLE — … viol("dateWith: the parts name no calendar day","S1")` |
+| uur 24, minuut 60, seconde 60, milliseconde 1000 | `dateTimeWith: hour 24, minute 0, second 0 and millisecond 0 name no clock time` (enz.) | `viol("dateTimeWith: the parts name no clock time","S1")` |
+| 2024, 2, 29 | 2024-02-29 | dag 19782 (= 2024-02-29) |
+| jaar 0 / jaar −5 | 0000-03-01 / -0005-03-01 | weigert luid: `dateWith of a year before 1 is not translated` |
+| jaar 10000 | 10000-03-01 (sinds `b9436dc8` geschreven als +10000-03-01) | dag 2932957 (dezelfde) |
+| jaar 200 000 000, datum-tijd | `dateTimeWith: the instant lies outside the representable millisecond range` | weigert luid: `… of a year after 5000000 is not translated` |
+| jaar 5 000 000, 12, 31 | 5000000-12-31 | dag 1825493337 (dezelfde) |
+
+Drools volgt de regel op elke dag of kloktijd die niet bestaat, maar zonder EF-code, en geeft een datum-tijd buiten het
+millisecondebereik (+200000000-03-01T00:00).
+
+### Wat ik niet deed, met reden
+
+1. **Geen rood geval en geen EF-code.** Gate 8 eist van het Drools-been een `FAULT` met de vastgepinde code voor elk
+   geval dat niet in zijn uitsluitingslijst staat, en een vermelding van een geval dat faalt is verouderd; de
+   Drools-backend geeft deze fout zonder code, en `backends/drools/` en de gatescripts vallen buiten deze kaart. Een
+   code komt volgens ch. 5.7b samen met haar getuige, dus de fout staat nu bij "Kinds without a code". Het rode geval
+   ligt klaar in `werk/bruggen/date-with/red-date-with-no-calendar-day/` (vijf gevallen, IR, voorgestelde rij EF-032
+   met parameters `year`, `month`, `day`, en wat Drools, ref en clingo dan moeten doen; README daar).
+2. **Geen bereik op dagprecisie.** Het besluit van de eigenaar van 2026-10-09 (epochdagen ±53 375 995 583) hoort bij
+   `datumrekening-slaat-stil-om`; ref begrenst het jaar hier waar zijn machinegetal ophoudt (|jaar| ≤ 2⁶²/400, de
+   paasjaar-zin van ch. 3.8), clingo op 1..5 000 000.
+3. **Geen `dateWith` in een dagsoortvoorwaarde in clingo.** De ASP-backend rekent een dagsoortvoorwaarde bij de
+   vertaling uit en kent daar een genoemde deelverzameling van operanden (ASP-TRANSLATION S6a); `dateWith` hoort er niet
+   bij en wordt daar met naam geweigerd, waar ref haar rekent. Een vorm die erbij kan, geen fout antwoord.
+
+### Voorgestelde CONSTRUCTS-tekst
+
+Rij "— `FunctionKind` (date/time)" (ch. 2.1), achteraan in de kolom met de landingen:
+
+> **Landed (2026-10-22, card `date-with-in-ref-and-clingo`):** DATUM_MET/DATUMTIJD_MET (`dateWith`/`dateTimeWith`)
+> execute in ref and clingo (RS ch. 3.8 "Date construction"; golden `date-with-parts`; ch. 5.11 pair
+> `WV-5.11-datummet-…`). Parts that name no calendar day or no clock time are a fault, never a roll-over or a clamp
+> (provisional decision of the card's builder); the kind has no EF code yet, its red case waits on the Drools backend
+> reporting one. Delta to v0, in the Easter year's shape: a non-whole or unit-carrying part faults where v0's
+> `rsDatumMet`/`rsDatumtijdMet` take `intValue()`. The ASP backend carries years 1..5 000 000 and refuses the rest
+> loudly.
+
+### Vondsten (buiten de kaart; de eerste twee op verzoek van de eigenaar hier gefixt)
+
+1. **clingo, eerste paasdag van een groot jaar, stille omslag** (gefixt in `5d774f2d`). Jaar 6 000 000 gaf dagnummer
+   −2104231732 waar ref 6000000-04-02 geeft: het dagnummer verlaat clingo's gehele getallen. Nu het jaarhek van de
+   datumconstructie, `easterSunday of a year after 5000000 is not translated`. Getuige: een test in de clingo-suite;
+   een golden of rood geval kan het niet dragen, want ref en Drools beantwoorden dat jaar en een casus kan de datum
+   niet schrijven. ASP-TRANSLATION S6a noemt het hek.
+2. **ref, eerste paasdag van een groot jaar, stille omslag** (gefixt in `5d774f2d`). Jaar 10¹⁷ gaf
+   −1010939711066219-12-12: ref begrensde het jaar pas bij 2⁶², terwijl `days_from_civil` al vanaf ruim 10¹⁶ omslaat.
+   Nu dezelfde grens als `dateWith` (|jaar| ≤ 2⁶²/400); de norm stond al in ch. 3.8 ("a whole year outside the
+   executor's machine-integer range"). Getuigen: `WV-3.8-paasdag-jaar-buiten-bereik` en `WV-3.8-paasdag-groot-jaar`
+   (10¹⁵ rekent nog). Geen rood geval: de soort heeft geen code, en clingo weigert 10¹⁷ al bij de invoer (CLINGO-001),
+   wat een vermelding in de divergentielijst van gate 8 zou vragen.
+3. **ref en Drools schrijven een jaar buiten 0000–9999 verschillend** (gefixt in `b9436dc8`, met een *voorlopig
+   besluit van de bouwer*). Ch. 5.12 schrijft een datum "as the case format writes them", en het casusformaat kent
+   zo'n jaar niet; de datumconstructie bereikt het nu. ref schreef `12026-03-01` en `-005-03-01`, Drools
+   `+12026-03-01` en `-0005-03-01` (gemeten in een lezing). Besluit: ISO 8601's uitgebreide vorm, zoals Drools;
+   `Value.iso_of_date` schrijft zo (ook in MISMATCH-zinnen en de parameter `from` van EF-009). Getuigen: de regel
+   `ver vooruit` in `date-with-parts` (gate 17 vergelijkt `+12026-03-01` in ref en beide Drools-takken) en
+   `WV-5.12-jaar-…`. Zin in ch. 5.12, gemarkeerd.
+4. **Drools, geen EF-code op de fout van de datumconstructie, en geen millisecondebereik voor `dateTimeWith`**
+   (niet gefixt: `backends/drools/` valt buiten deze tak). Zie punt 1 van "Wat ik niet deed" en de README bij het
+   klaargelegde rode geval.
+5. **Opmerking in de clingo-suite** (meegenomen in `5d774f2d`): het naamtabelblok zei dat `dateWith` en
+   `dateTimeWith` in geen document staan; sinds `date-with-parts` wel.
