@@ -50,6 +50,26 @@ lezer zelf zoeken. Dat is precies wat de werkbank nodig heeft.
   de afbakening, dan geeft de verifier naast de kring een eigen arm `WF-045.instance-cycle-read-outside`. Die heeft de
   parameters `form`, `node`, `path` en `clause`. Drools geeft dezelfde weigering in dezelfde zin.
 
+## Voorlopige besluiten van de bouwer (2026-10-22)
+
+*Keuzes die B2.1–B2.3 niet beslissen en die de bouw nodig had; de eigenaar kan ze omdraaien. Elk staat in IR-SPEC
+ch. 5.3.*
+
+1. **De arm heet `WF-045.instance-read-outside`.** B2.3 noemt `instance-cycle-read-outside`; gate 3 (check 5, kaart
+   `verifier-arm-keys`) laat een slug van ten hoogste drie woorden toe.
+2. **De arm vuurt per lezing, op een deel met een schakelrelatie.** Een deel met een
+   schakelrelatie is een sterk samenhangend deel van regels en defaults-groepen zonder recursieve creatie waarvan ten
+   minste één lezing achter een interne rand met een stap over een schakelrelatie begint (de eerste stap, of de
+   tweede na een eigenaarsstap). De arm noemt elke lezing die noch verschoven noch lokaal is, en de clausule waarop
+   zij valt; de clausules over het deel als geheel (ten minste één verschoven rand, kringvrij zonder de verschoven
+   randen, alleen regels en defaults-groepen, geen recursieve creatie) noemen geen lezing en geven geen arm. Een deel
+   zonder schakelrelatie (de voorganger to-many, de relatie door een feitcreatie geschreven) geeft geen arm.
+3. **De clausulesleutels:** `hub`, `satellite-of-satellite`, `two-switch-steps`, `set-of-predecessors` (de vier van
+   B2.2), `one-walk` (één schakelrelatie, één rol), `one-satellite-relation` (één satellietrelatie per satelliettype)
+   en `shifted-or-local` (elke andere stap: een relatie met een schrijver, een reciproke relatie, een tweede relatie
+   tussen vergelijkbare typen, een R-stap na een huishoudstap die geen eigenaarsstap vooraf is, een lezing zonder
+   geschreven pad). Een gedeelde satelliet is een hub: de rol aan de T-kant is to-many.
+
 ## Doel
 
 - Verifier `instance_ordering`:

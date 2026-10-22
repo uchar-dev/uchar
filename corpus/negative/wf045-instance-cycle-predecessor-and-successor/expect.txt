@@ -1,2 +1,5 @@
-WF-045.dependency-cycle
-cycle=saldo -> overschot -> saldo
+WF-045.instance-read-outside
+form=overschot
+node=attr:vergunning:saldo
+path=opvolging/volgende vergunning
+clause=one-walk

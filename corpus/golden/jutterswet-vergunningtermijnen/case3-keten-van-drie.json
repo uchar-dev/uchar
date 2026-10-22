@@ -1,0 +1,216 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "tweede",
+        "objectType": "Vergunning",
+        "attributes": {
+          "basiseinddag": {
+            "date": "2026-08-01"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "eerste"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "derde",
+        "objectType": "Vergunning",
+        "attributes": {
+          "basiseinddag": {
+            "date": "2027-01-01"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "tweede"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "termijn d",
+        "objectType": "Termijn",
+        "attributes": {
+          "begindag": {
+            "date": "2026-12-01"
+          },
+          "einddag": {
+            "date": "2027-01-31"
+          }
+        },
+        "roles": {
+          "houder": [
+            "derde"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "eerste",
+        "objectType": "Vergunning",
+        "attributes": {
+          "basiseinddag": {
+            "date": "2026-03-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "termijn a",
+        "objectType": "Termijn",
+        "attributes": {
+          "begindag": {
+            "date": "2026-01-01"
+          },
+          "einddag": {
+            "date": "2026-03-11"
+          }
+        },
+        "roles": {
+          "houder": [
+            "eerste"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "termijn b",
+        "objectType": "Termijn",
+        "attributes": {
+          "begindag": {
+            "date": "2026-02-01"
+          },
+          "einddag": {
+            "date": "2026-03-21"
+          }
+        },
+        "roles": {
+          "houder": [
+            "eerste"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "termijn c",
+        "objectType": "Termijn",
+        "attributes": {
+          "begindag": {
+            "date": "2026-03-05"
+          },
+          "einddag": {
+            "date": "2026-04-01"
+          }
+        },
+        "roles": {
+          "houder": [
+            "eerste"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "eerste",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2026-03-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "termijn a",
+      "attribute": "overschot",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "termijn b",
+      "attribute": "overschot",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "termijn c",
+      "attribute": "overschot"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "eerste",
+      "characteristic": "afgewikkeld"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "eerste",
+      "attribute": "restant",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "tweede",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2026-08-31"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "tweede",
+      "characteristic": "afgewikkeld"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "tweede",
+      "attribute": "restant"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "derde",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2027-01-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "termijn d",
+      "attribute": "overschot",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "derde",
+      "characteristic": "afgewikkeld"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "derde",
+      "attribute": "restant",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

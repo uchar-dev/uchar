@@ -1,0 +1,72 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "basiseinddag": {
+            "date": "2026-06-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "T1",
+        "objectType": "Termijn",
+        "attributes": {
+          "begindag": {
+            "date": "2026-05-01"
+          },
+          "einddag": {
+            "date": "2026-06-11"
+          }
+        },
+        "roles": {
+          "houder": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2026-06-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "T1",
+      "attribute": "overschot",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "afgewikkeld"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "restant",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

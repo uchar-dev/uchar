@@ -832,3 +832,24 @@ real output: WF-020 and WF-107 (the list names, four), WF-038 (ten), WF-089
 | directory | rule | delta | stamp | arm | reason |
 | --- | --- | --- | --- | --- | --- |
 | `wf098-v0-name-evaluation-date` | WF-098 | N2 (D47, U20) | toegevoegd | context value 'Rekendatum' is not one of the two admissible names evaluationDate, … | the v0 spelling of `evaluationDate` falls outside the closed set since L5, as `de dag` has since L4; `corpus/golden/anchor/jutterswet-penningvintage` with its one `ContextValue` named `Rekendatum`. Arm-exact: with the name readmitted it alone turns clean (707 documents compared) |
+
+## Vervallen bij een normwijziging
+
+A witness whose defect a later decision admits leaves the corpus with the
+stamp of the v1 migration, **verwijderd-met-reden**, in a row of this list,
+measured before its removal, so that a witness never leaves the corpus
+unrecorded. The floor `EXPECTED_MIN_NEGATIVE` in `scripts/check-verifier.sh`
+is a lower bound and does not have to move.
+
+### `instance-cycle-household-reads` (2026-10-22)
+
+The card (`backlog/done/20261022-instance-cycle-household-reads.md`,
+voorlopig besluit B2.1) widens the reads of an instance-ordered part
+(`spec/IR-SPEC.md` ch. 5.3) to the household of an object: its satellites
+over the satellite relations of the cycle's type, which all stand at its
+depth. A hop to a satellite may reach a to-many role (the range of a fold or
+a quantifier); the owner's role stays to-one.
+
+| directory | rule | card | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf045-instance-cycle-to-many-satellite-step` | WF-045 | B2.1 | verwijderd-met-reden | `WF-045.dependency-cycle`, the hop after the predecessor reaching a to-many role | a fold over the termijnen of the vorige vergunning lands in the household of the predecessor, every member of which stands at its depth: since B2.1 a shifted read whatever the cardinality on the satellite's side. Measured 2026-10-22: the document is verifier-clean on the verifier of the card. The form is a clause of the golden `corpus/golden/jutterswet-vergunningtermijnen` (the verlengde einddag, a sum over the termijnen of the vorige vergunning) |

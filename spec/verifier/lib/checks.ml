@@ -8017,17 +8017,24 @@ let dep_edges (forms : dep_form array) =
    A satellite relation F of a type T: a fact type other than R with two
    roles, one filled by a type comparable with T and to-one (the owner role:
    a satellite belongs to at most one object of T), the other by a type not
-   comparable with T (the satellite). Its links are the case's too.
+   comparable with T (the satellite). Its links are the case's too. The
+   household of an object X of T is X with its satellites over the
+   satellite relations of T; every member stands at the depth of X. A
+   household hop is a hop over a satellite relation of T, to the satellite
+   (to-one, or to-many as the range of a fold or a quantifier) or back to
+   the owner.
 
    The path of a read ([dep_expr_at]) decides its class within a cycle over
-   R and T. Shifted: one hop over R reaching the predecessor's role, then at
-   most one hop over a satellite relation of T to its satellite, every hop
-   reaching a to-one role, so a shifted read lands on the predecessor or its
-   one satellite. Local: no hop, or one hop over a satellite relation of T
-   in either direction, reaching a to-one role, so it lands on the object
-   itself, its satellite or its owner. A shifted edge is an edge whose every
-   read of its node in the consumer is shifted; an edge whose consumer reads
-   the node shifted and also otherwise is an ordinary edge.
+   R and T. Local: household hops from the subject, so the read lands in
+   the subject's household. Shifted: at most one hop to the owner (where the
+   subject is a satellite), one hop over R reaching the predecessor's role,
+   then household hops, so it lands in the predecessor's household. A
+   shifted edge is an edge whose every read of its node in the consumer is
+   shifted; an edge whose consumer reads the node shifted and also otherwise
+   is an ordinary edge. Outside both, with the clause the first hop beyond
+   them falls on: a hub (a relation whose role on the side of T is to-many),
+   a satellite of a satellite, a second step over R, a set of objects of
+   T's chain, or any other hop (IR-SPEC ch. 5.3).
 
    A strongly connected part of the graph is instance-ordered when it holds
    no creation of a recursive group (the two exceptions are disjoint) and
@@ -8084,8 +8091,9 @@ let components n (succ : int list array) =
   List.rev !out
 
 (* The instance-ordered parts of the graph over [forms] and [edges]
-   ([dep_edges]), and the test that names a shifted edge of one of them:
-   [shifted (producer, consumer, node)]. *)
+   ([dep_edges]), the test that names a shifted edge of one of them,
+   [shifted (producer, consumer, node)], and the reads that keep a part over
+   a switch relation from being one: (consumer, node, path, clause). *)
 let instance_ordering ctx (forms : dep_form array) edges =
   let n = Array.length forms in
   let written = Hashtbl.create 16 in
@@ -8101,48 +8109,84 @@ let instance_ordering ctx (forms : dep_form array) edges =
         | _ -> None)
     | _ -> None
   in
-  (* a hop over a satellite relation of [t] other than [r]: the relation, the
-     satellite type, and the hop from the satellite to its owner *)
+  (* a hop over a satellite relation of [t] other than [r] (ch. 5.3): the
+     direction, and the relation, the satellite type and the hop from the
+     satellite to its owner. The owner's role is to-one, so a satellite has one
+     owner; the hop to the satellite may reach a set (the range of a fold or a
+     quantifier), since every satellite of an object stands at its depth *)
   let satellite_hop ~r ~t (rb : role_binding) =
     match resolve_binding ctx rb with
     | Ok (ft, bound, other)
-      when (not ft.reciprocal) && norm rb.rb_fact_type <> r && input_only rb.rb_fact_type
-           && not bound.role_many -> (
+      when (not ft.reciprocal) && norm rb.rb_fact_type <> r && input_only rb.rb_fact_type -> (
         match (filler bound, filler other, other.role_identifier) with
         | Some b, Some o, Some owner_role
           when type_compatible ctx o t && (not (type_compatible ctx b t)) && not other.role_many ->
             (* to the satellite: the role it leaves is the owner's *)
-            Some (norm rb.rb_fact_type, b, { rb_fact_type = rb.rb_fact_type; rb_role = owner_role })
-        | Some b, Some o, _ when type_compatible ctx b t && not (type_compatible ctx o t) ->
+            Some (`To_satellite, (norm rb.rb_fact_type, b, { rb_fact_type = rb.rb_fact_type; rb_role = owner_role }))
+        | Some b, Some o, _ when type_compatible ctx b t && (not (type_compatible ctx o t)) && not bound.role_many ->
             (* to the owner, whose role is the one reached *)
-            Some (norm rb.rb_fact_type, o, rb)
+            Some (`To_owner, (norm rb.rb_fact_type, o, rb))
         | _ -> None)
     | _ -> None
   in
-  let to_satellite ~t (rb : role_binding) =
+  (* the clause of ch. 5.3 a hop falls on that is neither the part's step to
+     the predecessor nor a household hop: a hub (the role on the side of [t]
+     is to-many, a shared satellite included), a satellite of a satellite, a
+     set of objects of [t]'s chain, or else the general clause *)
+  let clause_of_hop ~t (rb : role_binding) =
     match resolve_binding ctx rb with
-    | Ok (_, bound, _) -> ( match filler bound with Some b -> not (type_compatible ctx b t) | None -> false)
-    | Error _ -> false
+    | Ok (_, bound, other) -> (
+        match (filler bound, filler other) with
+        | Some b, Some o -> (
+            match (type_compatible ctx b t, type_compatible ctx o t) with
+            | true, true -> if bound.role_many then "set-of-predecessors" else "shifted-or-local"
+            | false, true -> if other.role_many then "hub" else "shifted-or-local"
+            | true, false -> if bound.role_many then "hub" else "shifted-or-local"
+            | false, false -> "satellite-of-satellite")
+        | _ -> "shifted-or-local")
+    | Error _ -> "shifted-or-local"
   in
-  (* the class of a read path within a part over (r, role, t): `Shifted or
-     `Local with the satellite hop it takes, if any *)
-  let classify ~r ~role ~t = function
-    | Some (h :: rest) when (match switch_hop h with Some (r', role', _) -> r' = r && role' = role | None -> false)
-      -> (
-        match rest with
-        | [] -> Some (`Shifted, None)
-        | [ s ] when to_satellite ~t s -> (
-            match satellite_hop ~r ~t s with Some sat -> Some (`Shifted, Some sat) | None -> None)
-        | _ -> None)
-    | Some [] -> Some (`Local, None)
-    | Some [ s ] -> ( match satellite_hop ~r ~t s with Some sat -> Some (`Local, Some sat) | None -> None)
-    | _ -> None
+  (* The class of a read path within a part over (r, role, t), as a walk over
+     its hops: `Local, household hops from the subject; `Shifted, at most one
+     hop to the owner as the first hop, one hop over r to the predecessor's
+     role, then household hops of the predecessor. A household hop is a hop
+     over a satellite relation of t, to the satellite or back to the owner.
+     The satellite relations walked come along; a path outside both comes back
+     with the clause its first hop beyond them falls on. *)
+  let classify ~r ~role ~t path =
+    let rec go state sats = function
+      | [] -> Ok ((if state = `Pred then `Shifted else `Local), sats)
+      | h :: rest -> (
+          match switch_hop h with
+          | Some (r', role', _) when r' = r && role' = role -> (
+              match state with
+              | `Subject | `Owner_first -> go `Pred sats rest
+              | `Pred -> Error "two-switch-steps"
+              | `Household -> Error "shifted-or-local")
+          | Some _ -> Error (if state = `Pred then "two-switch-steps" else "one-walk")
+          | None -> (
+              match satellite_hop ~r ~t h with
+              | Some (dir, sat) ->
+                  let state =
+                    match (state, dir) with
+                    | `Subject, `To_owner -> `Owner_first
+                    | `Pred, _ -> `Pred
+                    | _ -> `Household
+                  in
+                  go state (sat :: sats) rest
+              | None -> Error (clause_of_hop ~t h)))
+    in
+    match path with Some p -> go `Subject [] p | None -> Error "shifted-or-local"
   in
   let succ = Array.make n [] in
   List.iter (fun (pi, ci, _, _) -> if not (List.mem ci succ.(pi)) then succ.(pi) <- ci :: succ.(pi)) edges;
   let positions ci node =
     List.filter_map (fun (node', path) -> if node' = node then Some path else None) forms.(ci).df_paths
   in
+  (* per strongly connected part: Some (its order, its shifted edges) where
+     it is instance-ordered, and the reads behind its internal edges that fall
+     outside ch. 5.3 where it walks a switch relation, each with the clause it
+     falls on (WF-045.instance-read-outside) *)
   let parts =
     List.filter_map
       (fun part ->
@@ -8154,39 +8198,53 @@ let instance_ordering ctx (forms : dep_form array) edges =
           (* the reads behind the internal edges, one entry per consumer and node *)
           let reads = List.sort_uniq compare (List.map (fun (_, ci, node, _) -> (ci, node)) internal) in
           let all_paths = List.concat_map (fun (ci, node) -> positions ci node) reads in
-          let walks =
+          (* the hops over a switch relation a read starts with: its first
+             hop, or its second after a hop to the owner of a satellite *)
+          let walk_of = function
+            | Some (h :: rest) -> (
+                match (switch_hop h, rest) with
+                | Some (r, role, t), _ -> Some (r, role, t, h)
+                | None, h' :: _ -> Option.map (fun (r, role, t) -> (r, role, t, h')) (switch_hop h')
+                | None, [] -> None)
+            | _ -> None
+          in
+          let walks = List.sort_uniq compare (List.filter_map walk_of all_paths) in
+          let each_read f =
             List.sort_uniq compare
-              (List.filter_map
-                 (function Some (h :: _) -> Option.map (fun (r, role, t) -> (r, role, t, h)) (switch_hop h) | _ -> None)
-                 all_paths)
+              (List.concat_map
+                 (fun (ci, node) -> List.filter_map (fun path -> f ci node path) (positions ci node))
+                 reads)
           in
           match List.sort_uniq compare (List.map (fun (r, role, _, _) -> (r, role)) walks) with
-          | [ (r, role) ] -> (
+          | [] -> None
+          | [ (r, role) ] ->
               let t, first_hop = match walks with (_, _, t, h) :: _ -> (t, h) | [] -> assert false in
               let classes =
                 List.map (fun (ci, node) -> ((ci, node), List.map (classify ~r ~role ~t) (positions ci node))) reads
               in
-              if List.exists (fun (_, cs) -> List.mem None cs) classes then None
+              let sats =
+                List.sort_uniq compare
+                  (List.concat_map
+                     (fun (_, cs) -> List.concat_map (function Ok (_, sats) -> sats | Error _ -> []) cs)
+                     classes)
+              in
+              (* one satellite relation per satellite type: two would give a
+                 satellite two owners, and the order two depths *)
+              let shared (f, s, _) = List.exists (fun (f', s', _) -> f <> f' && type_compatible ctx s s') sats in
+              let outside =
+                each_read (fun ci node path ->
+                    match classify ~r ~role ~t path with
+                    | Error clause -> Some (ci, node, path, clause)
+                    | Ok (_, sats) when List.exists shared sats -> Some (ci, node, path, "one-satellite-relation")
+                    | Ok _ -> None)
+              in
+              if outside <> [] then Some (None, outside)
               else
                 let shifted_reads =
                   List.filter_map
                     (fun (k, cs) ->
-                      if List.for_all (function Some (`Shifted, _) -> true | _ -> false) cs then Some k else None)
+                      if List.for_all (function Ok (`Shifted, _) -> true | _ -> false) cs then Some k else None)
                     classes
-                in
-                let sats =
-                  List.sort_uniq compare
-                    (List.concat_map
-                       (fun (_, cs) -> List.filter_map (function Some (_, Some sat) -> Some sat | _ -> None) cs)
-                       classes)
-                in
-                (* one satellite relation per satellite type: two would give a
-                   satellite two owners, and the order two depths *)
-                let shared =
-                  List.exists
-                    (fun (f, s, _) ->
-                      List.exists (fun (f', s', _) -> f <> f' && type_compatible ctx s s') sats)
-                    sats
                 in
                 let remaining =
                   List.filter (fun (_, ci, node, _) -> not (List.mem (ci, node) shifted_reads)) internal
@@ -8207,32 +8265,42 @@ let instance_ordering ctx (forms : dep_form array) edges =
                     remaining;
                   if not !changed then true else if round > List.length part then false else settle (round + 1)
                 in
-                if shifted_reads = [] || shared || not (settle 0) then None
+                if shifted_reads = [] || not (settle 0) then None
                 else
                   Some
-                    ( {
-                        io_relation = first_hop.rb_fact_type;
-                        io_role = first_hop.rb_role;
-                        io_owners =
-                          List.sort_uniq compare (List.map (fun (_, _, owner) -> owner) sats);
-                        io_members = List.map (fun i -> (forms.(i).df_at, Hashtbl.find level i)) part;
-                      },
-                      List.filter_map
-                        (fun (pi, ci, node, _) ->
-                          if List.mem (ci, node) shifted_reads then Some (pi, ci, node) else None)
-                        internal ))
-          | _ -> None)
+                    ( Some
+                        ( {
+                            io_relation = first_hop.rb_fact_type;
+                            io_role = first_hop.rb_role;
+                            io_owners = List.sort_uniq compare (List.map (fun (_, _, owner) -> owner) sats);
+                            io_members = List.map (fun i -> (forms.(i).df_at, Hashtbl.find level i)) part;
+                          },
+                          List.filter_map
+                            (fun (pi, ci, node, _) ->
+                              if List.mem (ci, node) shifted_reads then Some (pi, ci, node) else None)
+                            internal ),
+                      [] )
+          | _ ->
+              (* one switch relation, one role: every read that walks one is named *)
+              Some
+                ( None,
+                  each_read (fun ci node path ->
+                      if walk_of path <> None then Some (ci, node, path, "one-walk") else None) ))
       (components n succ)
   in
-  let removed = List.concat_map snd parts in
-  (List.map fst parts, fun (pi, ci, node) -> List.mem (pi, ci, node) removed)
+  let orders = List.filter_map fst parts in
+  let removed = List.concat_map snd orders in
+  ( List.map fst orders,
+    (fun (pi, ci, node) -> List.mem (pi, ci, node) removed),
+    List.concat_map snd parts )
 
 (* the instance-ordered parts of a document, for the executors: ref orders
    their members by depth and level, and the case reader refuses a cycle in
    the links of their switch relation (EF-033) *)
 let instance_orders ctx =
   let forms = Array.of_list (dep_forms ctx) in
-  fst (instance_ordering ctx forms (dep_edges forms))
+  let orders, _, _ = instance_ordering ctx forms (dep_edges forms) in
+  orders
 
 (* The verifier's --dependency-edges report: every edge of the graph
    WF-045 and WF-046 walk, one tab-separated line each, sorted and without
@@ -8272,12 +8340,32 @@ let wf045_046 ctx =
   (* the shifted edges of an instance-ordered part leave both walks: such a
      cycle is admitted, and a negative shifted edge on it reads the
      predecessor, which is settled before the object reads it (ch. 5.3) *)
-  let _, shifted = instance_ordering ctx forms edges in
+  let _, shifted, outside = instance_ordering ctx forms edges in
   List.iter
     (fun (pi, ci, node, kind) ->
       if (not (shifted (pi, ci, node))) && not (List.mem (ci, kind) succ.(pi)) then
         succ.(pi) <- (ci, kind) :: succ.(pi))
     edges;
+  (* beside the cycle, the read that keeps a part over a switch relation from
+     being instance-ordered, with the clause of ch. 5.3 it falls on: the cycle
+     names the forms, this names the read the author has to change *)
+  let viol_outside =
+    List.map
+      (fun (ci, node, path, clause) ->
+        let path =
+          match path with
+          | Some hops ->
+              String.concat "; " (List.map (fun (rb : role_binding) -> rb.rb_fact_type ^ "/" ^ rb.rb_role) hops)
+          | None -> "(none)"
+        in
+        v
+          ~params:[ ("form", forms.(ci).df_name); ("node", node); ("path", path); ("clause", clause) ]
+          "WF-045.instance-read-outside" forms.(ci).df_at
+          (Printf.sprintf
+             "read outside the instance-ordered cycle (ch. 5.3): %s reads %s over [%s], which falls on the clause %s"
+             forms.(ci).df_name node path clause))
+      outside
+  in
   (* WF-045: the graph minus recursive-creation forms and minus the shifted
      edges of instance-ordered parts must be acyclic *)
   let skip i = forms.(i).df_recursive_creation in
@@ -8332,7 +8420,7 @@ let wf045_046 ctx =
               :: !viol46)
         succ.(pi))
     forms;
-  List.rev !viol45 @ List.sort_uniq compare (List.rev !viol46)
+  List.rev !viol45 @ viol_outside @ List.sort_uniq compare (List.rev !viol46)
 
 (* ======================================================================= *)
 
@@ -9225,7 +9313,7 @@ let wf051 ctx =
   Array.iteri (fun i (f : dep_form) -> List.iter (fun n -> Hashtbl.add writers n i) f.df_writes) forms;
   (* the graph without the shifted edges of instance-ordered parts, as
      WF-045 and WF-046 walk it *)
-  let _, shifted = instance_ordering ctx forms (dep_edges forms) in
+  let _, shifted, _ = instance_ordering ctx forms (dep_edges forms) in
   let succ = Array.make nf [] in
   Array.iteri
     (fun ci (f : dep_form) ->

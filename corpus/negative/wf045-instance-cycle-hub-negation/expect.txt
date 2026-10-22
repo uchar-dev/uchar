@@ -1,0 +1,5 @@
+WF-045.instance-read-outside
+form=blokkade
+node=char:vergunning:openstand
+path=registratie/register; registratie/geregistreerde vergunning
+clause=hub

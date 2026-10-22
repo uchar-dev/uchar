@@ -1,2 +1,5 @@
-WF-045.dependency-cycle
-cycle=restant -> overschot -> verlengde einddag -> restant
+WF-045.instance-read-outside
+form=verlengde einddag
+node=attr:termijn:overschot
+path=vorige vergunning/vorige vergunning; vergunningstermijn/termijn
+clause=hub

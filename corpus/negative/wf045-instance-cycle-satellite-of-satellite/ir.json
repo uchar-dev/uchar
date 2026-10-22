@@ -43,6 +43,25 @@
         "attributes": [
           {
             "node": "Attribute",
+            "name": "nummer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Deeltermijn",
+        "animate": false,
+        "plural": "Deeltermijnen",
+        "attributes": [
+          {
+            "node": "Attribute",
             "name": "overschot",
             "datatype": {
               "node": "Number",
@@ -59,8 +78,7 @@
                   "den": 1
                 }
               }
-            },
-            "plural": "overschotten"
+            }
           }
         ],
         "characteristics": []
@@ -101,8 +119,26 @@
             "node": "Role",
             "name": "termijn",
             "objectType": "Termijn",
-            "plural": "termijnen",
-            "many": true
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "onderverdeling",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "hoofdtermijn",
+            "objectType": "Termijn",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "deeltermijn",
+            "objectType": "Deeltermijn",
+            "many": false
           }
         ]
       }
@@ -147,9 +183,9 @@
             "target": {
               "node": "AttributeReference",
               "attribute": "overschot",
-              "subjectType": "Termijn",
+              "subjectType": "Deeltermijn",
               "source": {
-                "snippet": "Het overschot van een Termijn"
+                "snippet": "Het overschot van een Deeltermijn"
               }
             },
             "value": {
@@ -161,9 +197,14 @@
                   "attribute": "stopdag",
                   "subjectType": "Vergunning",
                   "source": {
-                    "snippet": "de stopdag van de houder van de Termijn"
+                    "snippet": "de stopdag van de houder van de hoofdtermijn van de Deeltermijn"
                   },
                   "path": [
+                    {
+                      "node": "RoleBinding",
+                      "factType": "onderverdeling",
+                      "role": "hoofdtermijn"
+                    },
                     {
                       "node": "RoleBinding",
                       "factType": "vergunningstermijn",
@@ -176,9 +217,14 @@
                   "attribute": "verlengde einddag",
                   "subjectType": "Vergunning",
                   "source": {
-                    "snippet": "de verlengde einddag van de houder van de Termijn"
+                    "snippet": "de verlengde einddag van de houder van de hoofdtermijn van de Deeltermijn"
                   },
                   "path": [
+                    {
+                      "node": "RoleBinding",
+                      "factType": "onderverdeling",
+                      "role": "hoofdtermijn"
+                    },
                     {
                       "node": "RoleBinding",
                       "factType": "vergunningstermijn",
@@ -204,7 +250,7 @@
                 }
               },
               "source": {
-                "snippet": "de tijdsduur van de stopdag van de houder van de Termijn tot de verlengde einddag van de houder van de Termijn in hele dagen"
+                "snippet": "de tijdsduur van de stopdag van de houder van de hoofdtermijn van de Deeltermijn tot de verlengde einddag van de houder van de hoofdtermijn van de Deeltermijn in hele dagen"
               }
             },
             "initialisation": false,
@@ -240,20 +286,13 @@
                 }
               },
               "right": {
-                "node": "Aggregation",
-                "kind": "sum",
-                "arguments": [
-                  {
-                    "node": "AttributeReference",
-                    "attribute": "overschot",
-                    "subjectType": "Termijn",
-                    "source": {
-                      "snippet": "de overschotten van alle termijnen van de vorige vergunning van de Vergunning"
-                    }
-                  }
-                ],
-                "elementType": "Termijn",
-                "sourcePath": [
+                "node": "AttributeReference",
+                "attribute": "overschot",
+                "subjectType": "Deeltermijn",
+                "source": {
+                  "snippet": "het overschot van de deeltermijn van de termijn van de vorige vergunning van de Vergunning"
+                },
+                "path": [
                   {
                     "node": "RoleBinding",
                     "factType": "vorige vergunning",
@@ -263,34 +302,20 @@
                     "node": "RoleBinding",
                     "factType": "vergunningstermijn",
                     "role": "termijn"
+                  },
+                  {
+                    "node": "RoleBinding",
+                    "factType": "onderverdeling",
+                    "role": "deeltermijn"
                   }
-                ],
-                "type": {
-                  "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
-                  "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "dg",
-                    "system": "Tijd",
-                    "canonical": "dg",
-                    "factorToCanonical": {
-                      "num": 1,
-                      "den": 1
-                    }
-                  }
-                },
-                "source": {
-                  "snippet": "de som van de overschotten van alle termijnen van de vorige vergunning van de Vergunning"
-                }
+                ]
               },
               "type": {
                 "node": "Date",
                 "precision": "day"
               },
               "source": {
-                "snippet": "zijn basiseinddag plus de som van de overschotten van alle termijnen van de vorige vergunning van de Vergunning"
+                "snippet": "zijn basiseinddag plus het overschot van de deeltermijn van de termijn van de vorige vergunning van de Vergunning"
               }
             },
             "initialisation": false,

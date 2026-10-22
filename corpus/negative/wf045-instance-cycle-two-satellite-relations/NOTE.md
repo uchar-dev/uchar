@@ -16,6 +16,12 @@ Measured 2026-10-22: with the verifier's test for two satellite relations of
 one satellite type switched off, the document is verifier-clean; the witness
 fails on this clause.
 
+Since 2026-10-22 (card `instance-cycle-household-reads`) the verifier names
+both reads over a Termijn beside the cycle, each as
+`WF-045.instance-read-outside` with clause `one-satellite-relation`; the
+pin is the read beside the predecessor (form `saldo`, path `vorige
+vergunning/vorige vergunning; vergunningstermijn/lopende termijn`).
+
 Written in RegelSpraak, emitted with a helper attribute in the overschot and
 the read set back by hand:
 

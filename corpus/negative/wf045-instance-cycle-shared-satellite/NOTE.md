@@ -18,6 +18,14 @@ changed, the document is verifier-clean (the hop to the termijn is then a
 satellite step and the fold over the one houder a local read); the witness
 fails on this clause alone.
 
+Since 2026-10-22 (card `instance-cycle-household-reads`) the verifier names
+both reads that cross `vergunningstermijn` beside the cycle, each as
+`WF-045.instance-read-outside` with clause `hub`: a satellite shared by
+several owners is a hub, a relation whose role on the side of the cycle's
+type is to-many. The pin is the read beside the predecessor (form
+`verlengde einddag`, path `vorige vergunning/vorige vergunning;
+vergunningstermijn/termijn`).
+
 Written in RegelSpraak, emitted with a helper attribute in the restant and
 the read set back by hand:
 

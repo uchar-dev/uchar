@@ -14,6 +14,11 @@ Measured 2026-10-22: with the verifier taking every hop over a switch
 relation as shifted, whatever role it reaches, the document is
 verifier-clean; the witness fails on this clause.
 
+Since 2026-10-22 (card `instance-cycle-household-reads`) the verifier names
+both reads beside the cycle, each as `WF-045.instance-read-outside`
+with clause `one-walk`; the pin is the read of the successor (form
+`overschot`, path `opvolging/volgende vergunning`).
+
 Written in RegelSpraak, emitted with a helper attribute in the overschot and
 the read set back by hand:
 

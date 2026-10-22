@@ -1,0 +1,5 @@
+WF-045.instance-read-outside
+form=verlengde einddag
+node=attr:deeltermijn:overschot
+path=vorige vergunning/vorige vergunning; vergunningstermijn/termijn; onderverdeling/deeltermijn
+clause=satellite-of-satellite

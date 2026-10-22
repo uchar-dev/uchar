@@ -1,0 +1,154 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "basiseinddag": {
+            "date": "2026-12-01"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "T3",
+        "objectType": "Termijn",
+        "attributes": {
+          "begindag": {
+            "date": "2026-11-01"
+          },
+          "einddag": {
+            "date": "2027-01-10"
+          }
+        },
+        "roles": {
+          "houder": [
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "basiseinddag": {
+            "date": "2026-06-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "T1",
+        "objectType": "Termijn",
+        "attributes": {
+          "begindag": {
+            "date": "2026-04-01"
+          },
+          "einddag": {
+            "date": "2026-07-15"
+          }
+        },
+        "roles": {
+          "houder": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "T2",
+        "objectType": "Termijn",
+        "attributes": {
+          "begindag": {
+            "date": "2026-05-15"
+          },
+          "einddag": {
+            "date": "2026-06-21"
+          }
+        },
+        "roles": {
+          "houder": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2026-06-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "T1",
+      "attribute": "overschot",
+      "value": {
+        "number": "44"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "T2",
+      "attribute": "overschot",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "afgewikkeld"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "restant",
+      "value": {
+        "number": "64"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2027-02-03"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "T3",
+      "attribute": "overschot"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "afgewikkeld"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "restant"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

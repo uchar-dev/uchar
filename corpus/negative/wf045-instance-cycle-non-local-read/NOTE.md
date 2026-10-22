@@ -17,6 +17,12 @@ document.
 Measured 2026-10-22: with the class of such a read relaxed to local in the
 verifier, the document is verifier-clean; the witness fails on this clause.
 
+Since 2026-10-22 (card `instance-cycle-household-reads`) the verifier names
+the read beside the cycle: `WF-045.instance-read-outside`, form
+`overschot`, path `registratie/register; registratie/geregistreerde
+vergunning`, clause `hub` (the register is a hub: the role of the Vergunning
+in `registratie` is to-many). The pin is that arm.
+
 Written in RegelSpraak, emitted with a helper attribute in the overschot and
 the read set back by hand:
 
