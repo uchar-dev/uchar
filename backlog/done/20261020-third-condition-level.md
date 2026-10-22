@@ -257,3 +257,11 @@ goldens op beide takken; gate 17 vergelijkt 270 goldens zonder afwijking. De her
 
 **Niet gedaan.** Een bullet na een gebullette deelselectie teruggeven aan de buitenste lijst (voorlopig besluit
 hierboven). Geen CONSTRUCTS-rij: de wire (`Compound`) en WF-041 veranderen niet. Geen PLAN-tekst nodig.
+
+### Landing (hoofdsessie, 2026-10-22)
+
+Gerebased op main `018be1df` (K12-kern geland); de conflicten waren alleen `EXPECTED_PLAYED`: 268 + 1 (K12) + 2 (deze
+kaart) = 271, de twee commentaarregels hernummerd naar 269 → 270 en 270 → 271. `gates-3` op `1c775c9c`: alle zeventien
+groen, EXIT 0 (14:06–14:42). De ene regel uit `scripts/check-rgs-codes.sh` (de Nederlandse-woorduitzondering van
+RGS-300) vervalt met RGS-300 zelf, anders faalt het script op een verouderde uitzondering; door de hoofdsessie
+nagekeken en meegenomen. In `backlog/new/20261019-message-language.md` vervallen de punten over RGS-300 (aangetekend).

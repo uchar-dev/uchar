@@ -15,6 +15,8 @@ Gemeten op main (steekproef van de review, bij de start na te tellen):
   Engelse frontendbronnen.
 - De Engelse frontendcatalogus schrijft "objecttype" 24 keer als gewoon woord; RGS-300 "in one EN row" leest als
   "English" (bedoeld: een EN-rij, de AND van een beslistabel).
+  *(2026-10-22: RGS-300 vervalt met `third-condition-level`, een rij met meer of-cellen wordt nu geschreven; het punt
+  over RGS-300 hier en in besluit 2 vervalt.)*
 - `backends/drools/.../message/messages-drools.nl.tsv`: naast 29 Engelse zinnen, die de eigenaar eerder zo liet, zijn
   ook EF-003, EF-007..012 en EF-019 Engels.
 - Buiten de catalogus: in `backends/drools/src/main` (zonder de runtime) ongeveer 143 Nederlandse exceptieteksten
