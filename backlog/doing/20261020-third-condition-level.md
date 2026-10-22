@@ -99,3 +99,132 @@ alleen als de geneste groep zelf een alle-groep is.
 - Rood eerst: R1, R2 (`•`-vorm en ingesprongen vorm), R3 (`...`) en de alle/of-zin hierboven als frontendtests; één
   golden op de Jutterswet-getuige van deze kaart (vier casussen) in gates 5, 6, 12 en 17. Als meting, zonder bestand in
   deze repository: of een lijst in de v2-regelset herleving-WW het stille geval draagt.
+
+## Voorlopig besluit van de bouwer (2026-10-22): een bullet na een gebullette deelselectie
+
+*Gemarkeerd voorlopig besluit; het advies beslist dit niet. De eigenaar kan het omdraaien.*
+
+Een gebullette deelselectie die een bullet van een buitenste lijst afsluit ("- zijn controle is later dan de laatste
+van de einddag van alle klachten van de Schuit die aan alle volgende voorwaarden voldoen: .. … .. …"), krijgt van de
+grammatica elke bullet erna, ook een volgende bullet van de buitenste lijst ("- zijn dagen is groter dan 10"). Die staat
+dan in de ontleding binnen de expressie van de buitenste bullet. Besluit: haar bullets staan dieper dan haar bullet
+(anders RGS-353 op die bullet), en een bullet die niet dieper staat dan haar bullet, is niet van haar en wordt
+geweigerd: RGS-355 met de uitleg en de twee uitwegen (de bullet met de deelselectie als laatste van haar lijst, of de
+deelselectie tussen haakjes; beide gemeten, beide spelen). Niet gekozen: de bullet teruggeven aan de buitenste lijst.
+Dat vraagt het opsplitsen van een ontlede expressie: de typecontrole (`conditions`) loopt de ontleding af met het
+element als onderwerp (`inFilterScope`), en de bronfragmenten van alle knopen tussen de buitenste bullet en de
+deelselectie lopen tot het einde van de lijst. Tot deze kaart werd zo'n bullet stil een lid van het filter, gelezen op
+het element (vondst 1 in de Result).
+
+## Result (2026-10-22)
+
+Tak `card/third-condition-level` op main `5d8a06de`. Geraakt: `frontends/regelspraak/**` (de lexer, de opmerking bij
+`bullet`, `RuleChecker`, het register en beide catalogi, `grammar/DIVERGENCES.md`, een nieuwe testklasse en vier
+aangepaste), de golden `corpus/golden/jutterswet-vrijstelling-drie-niveaus/`, `EXPECTED_PLAYED` in
+`scripts/check-drools.sh` en deze kaart. Niet geraakt: `spec/`, `ref/`, `backends/`, `toka/`, de andere gate-scripts.
+
+- `6d234b4c` de kaart naar `doing/`.
+- `ab0fe23f` de diepte van een bullet: lexer, boombouwer, vier ERRORs, DIVERGENCES ("§13.4.14.6–7 The depth of a
+  bullet"), `BulletDepthTest`, de aangepaste tests.
+- `4f19ef95` de golden en `EXPECTED_PLAYED` 268 → 269.
+
+**Draagt v2 het stille geval? Nee** (meting 2, zonder bestand in deze repository). De v2-regelset herleving-WW
+(fundament en herleving-ww, werkbank `c53dfd9`) geeft met deze tak exit 0, `diagnostics: []` en een IR dat bytegelijk is
+aan dat van main; de acht scenariodocumenten geven bytegelijke casebestanden. Een regelscan over dezelfde bronnen vond 58
+voorwaardenlijsten, 15 met een groepskop, en geen die onder de nieuwe regel anders leest of een van de vier ERRORs geeft.
+In uchar lezen het corpus (131 rgs-goldens, gate 10), `toka/` (gate 11) en de 33 scenario-goldens met 114 casebestanden
+(gate 16) bytegelijk; de rgs-bronnen onder `backends/drools/src/test/resources` geven een bytegelijk IR. De enige lijst
+met een hernesting op kolom (`toka-45`, `-` en ingesprongen `..`) leest onder "teken wint" zoals de oude
+kolomhernesting: de TOKA-casusdump, die haar draagt, komt bytegelijk terug (gate 11).
+
+**De regel** (B3.1–B3.3). `DOTDOT : '..' '.'*`. De diepte van een bullet is (aantal tekens, kolom), eerst het teken; de
+kolom telt alleen tussen bullets met evenveel tekens. Eén boombouwer (`RuleChecker.bulletTree`, gevoed door
+`flattenBullets`) bouwt de boom voor voorwaarden, deelselecties en consistentiecriteria; een geneste groep krijgt als
+bronfragment de tekst van haar kop tot haar laatste bullet in de boom (gelijk aan de oude tekst waar boom en ontleding
+samenvallen). R1 (`-`, `..`, `....`), R2 (`•`, `••`, `•••` en de ingesprongen vorm) en R3 (`...`) geven dezelfde boom,
+`atLeast 1 [Blik, all [leeftijd > 65, atLeast 1 [Touw, Glas, Kurk]]]`, zonder diagnostic; alle vier spelen de vier
+casussen in ref, clingo en beide Drools-takken. R4 en R5 geven een bytegelijk IR.
+
+**De vier ERRORs**, elk op de regel van de bullet die zij noemt (zinnen zoals de frontend ze nu schrijft, ingekort):
+
+- RGS-353 `group-header-without-deeper-bullet`, de alle/of-zin van `proef/q3/`: "de bullet '- hij voldoet aan ten minste
+  één van de volgende voorwaarden:' opent een groep, maar de bullet erna, '- zijn soort is gelijk aan 'Touw'', staat niet
+  dieper: een bullet onder een groepskop staat dieper, met meer tekens (…) of, bij hetzelfde teken, op een diepere kolom
+  (…)". Onder elke kwantor; ook een kop zonder bullet erna, en een deelselectie in een bullet waarvan de eerste bullet
+  niet dieper staat dan die bullet.
+- RGS-354 `deeper-bullet-without-group-header`, `- zijn leeftijd is groter dan 65` en dan `.. zijn soort is gelijk aan
+  'Touw'.`: "de bullet '.. zijn soort is gelijk aan 'Touw'.' staat dieper dan de bullet ervoor, '- zijn leeftijd is
+  groter dan 65', maar die opent geen groep (…)".
+- RGS-355 `bullet-returns-to-no-open-level`, `-` kop, twee `....`, dan `..`: "de bullet '.. zijn soort is gelijk aan
+  'Blik'.' staat minder diep dan de bullet ervoor, maar niet even diep als een open niveau van de lijst (…)". Met een
+  tweede deel na een gebullette deelselectie (het voorlopig besluit hierboven): "… staat niet dieper dan de bullet '-
+  zijn controle is later dan … die aan alle volgende voorwaarden voldoen:', waarvan de deelselectie de bullets ervoor
+  draagt, dus hij hoort bij de lijst van die bullet; (…) Zet de bullet met de deelselectie als laatste in zijn lijst, of
+  zet de deelselectie tussen haakjes".
+- RGS-356 `two-bullet-sign-families`, `-` en `•` in één lijst: "de lijst mengt de bullettekens '-' en '•': de diepte
+  telt de tekens van één familie (…)".
+
+Na zo'n ERROR is de voorwaarde een marker zonder reden (de ERROR is de diagnose); een consistentieregel stopt erna, zonder
+RGS-180 ernaast. Vervallen: `reNestParts`, `reNestColumns`, `columnsInconsistentDeep`, `buildFromNodes`,
+`bulletsInconsistent`, `ambiguousNestedBullets`, de terugval `RGS-092.counting-deep-bullet` in de deelselectie,
+`buildNested` en `buildCriterion`, en de catalogusdelen `RGS-092.bullets-inconsistent`, `RGS-092.renested-bullet` en
+`RGS-092.counting-deep-bullet`. Geen registerregel verviel (RGS-092 heeft andere delen); het register telt 356 codes.
+
+**Hoe de tests veranderden.**
+
+- `SilentMarkerTest`: `inconsistent_bullets_report_the_unclear_nesting` (`-` en daarna `..` zonder groepskop; pinde de
+  marker met de WARNING "staan op verschillende kolommen of dragen verschillende tekens") heet nu
+  `a_deeper_bullet_without_a_group_header_is_an_error` en pint RGS-354. `a_counting_quantifier_over_deeper_nesting_is_reported`
+  (een deelselectie onder 'ten minste 2', alles `..` op één kolom, een groepskop gevolgd door `..`; pinde de marker "een
+  tellende kwantor over een deelselectie") heet nu `a_group_header_without_a_deeper_bullet_is_an_error` en pint
+  RGS-353. Beide eisen precies één ERROR en geen sweep-melding. `a_missing_expression_and_an_unbindable_primary_are_reported`
+  bereikte het foutherstel via de syntaxfout van `...`; dat is nu niveau 3, dus de invoer schrijft `.. .`, dezelfde
+  tokens als `...` vóór deze kaart, met dezelfde meldingen (gemeten op beide lexers).
+- `WindowQuantifierTest.a_window_under_no_within_all_refuses` schreef `•` ingesprongen onder een `-`-kop, twee
+  tekenfamilies die de kolom tot nu hernestte; de toets schrijft nu `..` en houdt haar onderwerp (WF-112). De gemengde
+  vorm is nu RGS-356 (`BulletDepthTest.two_sign_families_are_an_error`).
+- `MarkerReasonPinTest` en `MarkerReportTest`: drie nieuwe plekken met reden null (`buildCompound`, `buildCriteria`,
+  `compoundElementFilterBare`), ingedeeld als ERROR-route zonder document.
+- Nieuw `BulletDepthTest` (16 tests). Rood eerst gemeten: R1, R2 (beide vormen), R3 en de alle/of-zin faalden vóór de
+  bouw (R1 en beide R2-vormen een marker met de WARNING, R3 de syntaxfout, de alle/of-zin zonder diagnostic).
+
+**De golden** `jutterswet-vrijstelling-drie-niveaus`: de getuige van deze kaart in de vorm R1, vier casussen uit
+`scenario.rgs` (gate 16): 30 jaar en Blik; 70 en Touw (met 70 en Kurk); 30 en Touw (met 70 en Touw); 70 en Hout (met 70
+en Glas). De tweede Jutter geeft elke casus een vrijstelling, zodat geen ervan een uitvoerder die niets doet overleeft
+(gate 7; een lijst van overlevers mocht niet groeien). ref, clingo en beide Drools-takken: 4 van 4; `EXPECTED_PLAYED`
+268 → 269.
+
+**Meting 5** (zonder bestand in deze repository): een kopie van v2 in de werkmap met in `hww-02` de herleefbaarheid na
+een intrekking als vijftiende tak van de of-lijst van "indicatie kan herleefd worden art. 21 lid 1" (`- hij voldoet aan
+alle volgende voorwaarden:`, `..` de aanvraag vóór de bezwaartermijn, `..` een of-groep met `...` de codes 14, 15 en 17)
+en zonder de `Afwijking van`: `--ir` exit 0, `diagnostics: []`, 41 resolved regels (de regel nu als gewone regel in
+plaats van een defaultsgroep). De 160 casebestanden van de acht scenariodocumenten zijn bytegelijk aan die van de
+ongewijzigde v2; ref: 160 van 160 PASS op beide IR's, met gelijke uitvoer per casus; Drools (exec-model): PLAYED 160 op
+beide. clingo vertaalt v2 niet (TRANSLATION FAULT op een eenheiddragende vermenigvuldiging), op beide gelijk. Afwijking
+22 kan dus vervallen; dat is stap 2 van het advies, voor de werkbank.
+
+**Gates.** Tijdens de bouw: de frontendsuite groen (1275 tests), gates 10, 11 en 16 PASS. De zeventien gates op de
+eindstand van de code (`4f19ef95`, main `5d8a06de` onbewogen): `EXIT 0`, failed=0 (samenvatting
+`werk/bruggen/third-level/gates-1.summary.txt`); gate 12 speelt 269 goldens op beide takken, gate 17 vergelijkt 269
+goldens zonder afwijking.
+
+**Vondsten.**
+
+1. Een bullet van een buitenste lijst na een gebullette deelselectie werd stil een lid van haar filter, gelezen op het
+   element: in een alle-lijst met `- zijn controle is later dan de laatste van de einddag van alle klachten van de Schuit
+   die aan alle volgende voorwaarden voldoen: .. … .. …` en daarna `- zijn dagen is groter dan 10` las main de laatste
+   bullet als de dagen van de Klacht, met `diagnostics: []` (gemeten). Een tweede stil fout antwoord van dezelfde
+   oorzaak; nu RGS-355 met de uitwegen (voorlopig besluit hierboven, getuige
+   `BulletDepthTest.a_bullet_after_a_bulleted_subselection_is_refused_with_the_ways_out`).
+2. `DecisionTableDesugar` weigert een tabelrij met twee of-cellen (RGS-300), omdat "two nested OR-lists would silently
+   swallow each other's bullets". Onder de dieptediscipline is dat niet meer zo (de desugaring schrijft `•` en `••`); de
+   weigering blijft staan, buiten deze kaart.
+3. `EXPECTED_PLAYED`: de parallelle bouwer in `wt/cycle-across-instances` telt mogelijk ook een golden bij; de tweede
+   landing herrekent bij de rebase.
+4. Een lijst waarvan de eerste bullet op de regel van de openingszin staat ("… voldoet: - a", dan "- b" op de volgende
+   regel) heeft bullets op verschillende kolommen met hetzelfde teken: vroeger een marker, nu RGS-355. Geen bron schrijft
+   zo (gates 10, 11, 16 en v2).
+5. De sectie in DIVERGENCES heet "§13.4.14.6–7 The depth of a bullet", Engels zoals de rest van dat bestand.
+
+**Niet gedaan.** Een bullet na een gebullette deelselectie teruggeven aan de buitenste lijst (voorlopig besluit
+hierboven). Geen CONSTRUCTS-rij: de wire (`Compound`) en WF-041 veranderen niet. Geen PLAN-tekst nodig.
