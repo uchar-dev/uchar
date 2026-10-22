@@ -718,9 +718,9 @@ final class ExpressionBuilder {
         if (p.expressie() != null)      return build(p.expressie()); // ( expressie )
         if (p.onderwerp() != null) {
             Expr poss = subjectPossessive(p.onderwerp(), source); // "zijn <attribuut van het subject>"
-            return poss != null ? poss : nameRef(src(p.onderwerp()), false, source);
+            return poss != null ? poss : nameRef(src(p.onderwerp()), source);
         }
-        if (p.variabeleNaam() != null)  return nameRef(src(p.variabeleNaam()), true, source);
+        if (p.variabeleNaam() != null)  return nameRef(src(p.variabeleNaam()), source);
         return unresolvedMarker(p, Msg.frontend("RGS-092.primary-form"));
     }
 
@@ -730,7 +730,7 @@ final class ExpressionBuilder {
      *  "Daarbij geldt" variable — and any other left operand is refused rather than read as one. */
     private Expr buildPercentageOfParentheses(PercentageVanHaakjesContext h, Source source) {
         String name = (h.bepaaldLidwoord() != null ? src(h.bepaaldLidwoord()) + " " : "") + src(h.kaleNaamDeel());
-        Expr left = nameRef(name, false, source(h.kaleNaamDeel())), right = build(h.expressie());
+        Expr left = nameRef(name, source(h.kaleNaamDeel())), right = build(h.expressie());
         if (!(left.type() instanceof Datatype.Percentage)) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                     "RGS-063", params("expression", source.snippet(), "name", name), h.getStart().getLine()));
@@ -934,7 +934,7 @@ final class ExpressionBuilder {
         // element falls back to a same-named declared parameter, where the parameter is the
         // concrete reading and the count reading is meaningless.
         if (kind == Expr.FunctionKind.AANTAL && elem == null) {
-            Expr ref = nameRef(source.snippet(), false, source);
+            Expr ref = nameRef(source.snippet(), source);
             if (!(ref instanceof Expr.Unresolved)) return ref;
         }
         // §5.7 the CONCATENATION of subject expressions under a count (IR-SPEC ch. 4.3, WF-110;
@@ -2192,12 +2192,12 @@ final class ExpressionBuilder {
      *
      *  <p>The refusal is {@link #countSourceError}'s, in the verifier's sentence; this names the object type in its
      *  Dutch context, so an author who named a population learns which one the count read as a type. Only an
-     *  operand that resolved to NOTHING declared qualifies — a bare name kept as a {@link Expr.VariableRef}, or an
-     *  unresolved one — so a parameter, a "Daarbij geldt" variable or an attribute that shares a type's name is
-     *  never re-read. Null when the operand names no type. */
+     *  operand that resolved to NOTHING declared qualifies — an unresolved one, a bare name among them — so a
+     *  parameter, a "Daarbij geldt" variable or an attribute that shares a type's name is never re-read. Null when the
+     *  operand names no type. */
     private Msg countOverObjectType(List<Expr> arguments, FunctieAanroepContext f) {
         if (!(f instanceof AantalFuncContext cf) || arguments.size() != 1) return null;
-        if (!(arguments.get(0) instanceof Expr.VariableRef || arguments.get(0) instanceof Expr.Unresolved)) return null;
+        if (!(arguments.get(0) instanceof Expr.Unresolved)) return null;
         String operand = src(cf.primaireExpressie(0)).replaceAll("^\\((.*)\\)$", "$1").trim();
         String bare = operand.replaceFirst("(?i)^(de|het|een|alle)\\s+", "");
         ObjectType type = PluralMatcher.findObjectType(model.objectTypes.values(), bare);
@@ -3016,7 +3016,7 @@ final class ExpressionBuilder {
         String name = src(o);
         String key = variableKey(name);
         boolean variable = binderMode ? binders.containsKey(key) : visible.containsKey(key);
-        return variable ? nameRef(name, false, source(o)) : null;
+        return variable ? nameRef(name, source(o)) : null;
     }
 
     private static String stripArticle(String name) {
@@ -3362,14 +3362,16 @@ final class ExpressionBuilder {
         return null;
     }
 
-    /** A bare name: a known parameter binds to a ParameterRef; a variabeleNaam that is
-     *  not a parameter stays a (so-far untyped) VariableRef; anything else is unresolved. */
-    private Expr nameRef(String name, boolean isVariable, Source source) {
+    /** A bare name: a "Daarbij geldt" variable, else a known parameter binds to a ParameterRef; anything else is
+     *  unresolved, a marker whose WARNING names it. The onderwerp route ("de basisprijs") and the variabeleNaam route
+     *  ("basisprijs", without an article) answer alike: until 2026-10-22 the second kept the name as a VariableRef
+     *  without a word, a document the verifier refuses (WF-034: a variable reference resolves against no binding). */
+    private Expr nameRef(String name, Source source) {
         // §11 resolve the captured "Daarbij geldt:" definition FIRST: a local variable reference works WITH or WITHOUT
         // a leading article (the spec explicitly allows a lidwoord at a variable reference — "de drempel" arrives via
-        // the onderwerp path with isVariable=false; variableKey strips the lidwoord so both forms hit one key),
+        // the onderwerp path; variableKey strips the lidwoord so both forms hit one key),
         // and it SHADOWS a same-named global parameter (a variable "geldt alleen binnen de regel"). A name with no
-        // definition (or a forward/cyclic reference, not yet in the map) falls through to the parameter / VariableRef.
+        // definition (or a forward/cyclic reference, not yet in the map) falls through to the parameter, else the marker.
         String key = variableKey(name);
         if (binderMode) {
             // The RESULT route: a BinderRef under the Let chain, typed with the definition's own type — the type the
@@ -3384,7 +3386,6 @@ final class ExpressionBuilder {
         Parameter p = model.parameters.get(stripped);
         if (p == null) p = model.parameters.get(name);
         if (p != null) return new Expr.ParameterRef(p, source);
-        if (isVariable) return new Expr.VariableRef(name, unknown(), source);
         return unresolvedMarker(source, Msg.frontend("PART.unresolved-name", "name", name));
     }
 
