@@ -118,15 +118,22 @@ het element (vondst 1 in de Result).
 
 ## Result (2026-10-22)
 
-Tak `card/third-condition-level` op main `5d8a06de`. Geraakt: `frontends/regelspraak/**` (de lexer, de opmerking bij
-`bullet`, `RuleChecker`, het register en beide catalogi, `grammar/DIVERGENCES.md`, een nieuwe testklasse en vier
-aangepaste), de golden `corpus/golden/jutterswet-vrijstelling-drie-niveaus/`, `EXPECTED_PLAYED` in
-`scripts/check-drools.sh` en deze kaart. Niet geraakt: `spec/`, `ref/`, `backends/`, `toka/`, de andere gate-scripts.
+Tak `card/third-condition-level`, gebouwd op main `5d8a06de` en na de gates herbaseerd op main `0a02aa1b` (twee
+nieuwe kaarten in `backlog/new/`, geen code); de hashes hieronder zijn die na de herbasering. Geraakt: `frontends/regelspraak/**` (de lexer, de opmerking bij
+`bullet`, `RuleChecker`, `DecisionTableDesugar`, het register en beide catalogi, `grammar/DIVERGENCES.md`, een nieuwe
+testklasse en vijf aangepaste), de goldens `corpus/golden/jutterswet-vrijstelling-drie-niveaus/` en
+`corpus/golden/jutterswet-premietabel-twee-ofcellen/`, `EXPECTED_PLAYED` in `scripts/check-drools.sh`, één regel in
+`scripts/check-rgs-codes.sh` (de fixronde; zie daar) en deze kaart. Niet geraakt: `spec/`, `ref/`, `backends/`, `toka/`,
+de andere gate-scripts.
 
-- `6d234b4c` de kaart naar `doing/`.
-- `ab0fe23f` de diepte van een bullet: lexer, boombouwer, vier ERRORs, DIVERGENCES ("§13.4.14.6–7 The depth of a
+- `d5b2c137` de kaart naar `doing/`.
+- `5365879a` de diepte van een bullet: lexer, boombouwer, vier ERRORs, DIVERGENCES ("§13.4.14.6–7 The depth of a
   bullet"), `BulletDepthTest`, de aangepaste tests.
-- `4f19ef95` de golden en `EXPECTED_PLAYED` 268 → 269.
+- `62cf8ccb` de golden en `EXPECTED_PLAYED` 268 → 269.
+- `b435f218` het voorlopig besluit en deze Result.
+- Fixronde (op aanwijzing van de eigenaar, vondst 2): `35e19066` een beslistabelrij met meer of-cellen wordt
+  zustergroepen, RGS-300 vervalt; `49bca3e5` de golden `jutterswet-premietabel-twee-ofcellen` en `EXPECTED_PLAYED`
+  269 → 270.
 
 **Draagt v2 het stille geval? Nee** (meting 2, zonder bestand in deze repository). De v2-regelset herleving-WW
 (fundament en herleving-ww, werkbank `c53dfd9`) geeft met deze tak exit 0, `diagnostics: []` en een IR dat bytegelijk is
@@ -168,7 +175,8 @@ Na zo'n ERROR is de voorwaarde een marker zonder reden (de ERROR is de diagnose)
 RGS-180 ernaast. Vervallen: `reNestParts`, `reNestColumns`, `columnsInconsistentDeep`, `buildFromNodes`,
 `bulletsInconsistent`, `ambiguousNestedBullets`, de terugval `RGS-092.counting-deep-bullet` in de deelselectie,
 `buildNested` en `buildCriterion`, en de catalogusdelen `RGS-092.bullets-inconsistent`, `RGS-092.renested-bullet` en
-`RGS-092.counting-deep-bullet`. Geen registerregel verviel (RGS-092 heeft andere delen); het register telt 356 codes.
+`RGS-092.counting-deep-bullet`. Geen registerregel verviel voor de bullets zelf (RGS-092 heeft andere delen); in de
+fixronde verviel RGS-300, en het register telt 355 codes.
 
 **Hoe de tests veranderden.**
 
@@ -203,10 +211,32 @@ ongewijzigde v2; ref: 160 van 160 PASS op beide IR's, met gelijke uitvoer per ca
 beide. clingo vertaalt v2 niet (TRANSLATION FAULT op een eenheiddragende vermenigvuldiging), op beide gelijk. Afwijking
 22 kan dus vervallen; dat is stap 2 van het advies, voor de werkbank.
 
-**Gates.** Tijdens de bouw: de frontendsuite groen (1275 tests), gates 10, 11 en 16 PASS. De zeventien gates op de
-eindstand van de code (`4f19ef95`, main `5d8a06de` onbewogen): `EXIT 0`, failed=0 (samenvatting
-`werk/bruggen/third-level/gates-1.summary.txt`); gate 12 speelt 269 goldens op beide takken, gate 17 vergelijkt 269
-goldens zonder afwijking.
+**Fixronde: een beslistabelrij met meer of-cellen** (vondst 2, door de eigenaar in deze kaart getrokken). De
+desugaring sloeg zo'n rij over met de WARNING RGS-300 ("meer dan één concatenatie-cel (OR-lijst) in één EN-rij wordt niet
+ondersteund — rij overgeslagen"), omdat zonder diepte de tweede geneste groep de waarden van de eerste opnam. Nu schrijft
+zij een rij met meer voorwaarden als een alle-lijst, en elke of-cel als een eigen geneste groep "er voldoet aan tenminste
+één van de volgende voorwaarden:" met `•` als kop op niveau 1 en `••` voor haar waarden op niveau 2, na de andere
+voorwaarden van de rij, in kolomvolgorde; een `•` na een `••` keert terug naar de lijst van de rij. Een rij met ten
+hoogste één of-cel blijft bytegelijk: de overige tests van `DecisionTableDesugarTest`, die de geschreven tekst pinnen,
+zijn ongewijzigd groen, en de beslistabelgoldens komen in gate 10 bytegelijk terug. Rood eerst: `DecisionTableDesugarTest.a_row_with_two_disjunctions_reads_as_two_groups` (een
+Jutterswet-tabel, gaf RGS-300 en geen regel; nu `all [atLeast 1 [touw, glas], atLeast 1 [noord, zuid]]` zonder
+diagnostic). `more_than_one_disjunction_in_one_and_row_is_skipped_with_a_warning` pinde de oude weigering; zij heet nu
+`more_than_one_disjunction_in_one_and_row_becomes_sister_groups` en pint de geschreven regel. RGS-300 vervalt uit het
+register, beide catalogi en de bron. **Beschermd pad:** `scripts/check-rgs-codes.sh` droeg in `DUTCH_EXCEPTIONS` een
+uitzondering voor het Engelse woord 'en' in de zin van RGS-300; het script laat een uitzondering zonder zin falen als
+verouderd, dus die ene regel is weggehaald. Dat is buiten de opdracht ("alleen `EXPECTED_PLAYED`") en vraagt de review
+van de eigenaar. De golden `jutterswet-premietabel-twee-ofcellen`: rij 1 met twee of-cellen, rij 2 met twee gewone cellen,
+vijf casussen die de vier combinaties van rij 1 en de drie manieren van falen raken, met een tweede Vondst die steeds een
+premie krijgt (gate 7); ref, clingo en beide Drools-takken 5 van 5; `EXPECTED_PLAYED` 269 → 270. De open kaart
+`backlog/new/20261019-message-language.md` noemt de Engelse zin van RGS-300; dat punt vervalt.
+
+**Gates.** Tijdens de bouw: de frontendsuite groen (1275 tests, na de fixronde 1276), gates 10, 11 en 16 PASS. De
+zeventien gates op `4f19ef95` (vóór de fixronde en de herbasering, nu `62cf8ccb`): `EXIT 0`, failed=0
+(`werk/bruggen/third-level/gates-1.summary.txt`); gate 12 speelde 269 goldens op beide takken, gate 17 vergeleek 269
+goldens zonder afwijking. Na de fixronde, op `ad178bb6` (vóór de herbasering, nu `49bca3e5`): `EXIT 0`, failed=0
+(`werk/bruggen/third-level/gates-2.summary.txt`); gate 10 133 rgs-goldens bytegelijk, 355 codes; gate 12 speelt 270
+goldens op beide takken; gate 17 vergelijkt 270 goldens zonder afwijking. De herbasering voegde alleen twee kaarten in
+`backlog/new/` toe, die geen gate leest; daarom geen nieuwe run.
 
 **Vondsten.**
 
@@ -216,9 +246,8 @@ goldens zonder afwijking.
    bullet als de dagen van de Klacht, met `diagnostics: []` (gemeten). Een tweede stil fout antwoord van dezelfde
    oorzaak; nu RGS-355 met de uitwegen (voorlopig besluit hierboven, getuige
    `BulletDepthTest.a_bullet_after_a_bulleted_subselection_is_refused_with_the_ways_out`).
-2. `DecisionTableDesugar` weigert een tabelrij met twee of-cellen (RGS-300), omdat "two nested OR-lists would silently
-   swallow each other's bullets". Onder de dieptediscipline is dat niet meer zo (de desugaring schrijft `•` en `••`); de
-   weigering blijft staan, buiten deze kaart.
+2. `DecisionTableDesugar` weigerde een tabelrij met twee of-cellen (RGS-300), met een reden die onder de
+   dieptediscipline niet meer gold. Gefixt in de fixronde hierboven.
 3. `EXPECTED_PLAYED`: de parallelle bouwer in `wt/cycle-across-instances` telt mogelijk ook een golden bij; de tweede
    landing herrekent bij de rebase.
 4. Een lijst waarvan de eerste bullet op de regel van de openingszin staat ("… voldoet: - a", dan "- b" op de volgende
