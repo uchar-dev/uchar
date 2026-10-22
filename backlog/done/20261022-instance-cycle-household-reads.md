@@ -290,3 +290,12 @@ geïnstrumenteerde verifier van main er vijf (`werk/bruggen/household/m0-reads.t
   geeft precies één lezing buiten, de samenlooplezing (`hub`). Acceptatie (c) van die kaart (de v2-regelset met de
   verlenging in de maxdatum geeft `check` exit 0) haalt de frontend dus pas na de herschrijving van hww-06 in de
   werkbank (B2.5).
+
+### Landing (hoofdsessie, 2026-10-22)
+
+Gerebased op main `88c4624b` (U4 en de clingo-fix CLINGO-030 geland), zonder conflict; `gates-2` op `965badfa`: alle
+zeventien groen, EXIT 0 (16:09–16:45), dus gate 17 vergelijkt de nieuwe golden ook met de lezingen van vormen zonder
+voorwaarde. CONSTRUCTS-rij 45 vervangen door de voorgestelde; PLAN §9 een alinea bij die van `cycle-across-instances`;
+in `check-admits-instance-cycle` de armnaam `WF-045.instance-read-outside`. Vondst 1 (clingo, unsafe variable in de
+bewaking van een filtervergelijking) loopt direct als fix op `fix/clingo-filter-guard-binding`. Vondst 4 (geen getuige
+maakt de diepte van een satelliet beslissend) staat open zonder fix: de kaart vroeg geen nieuwe vorm.

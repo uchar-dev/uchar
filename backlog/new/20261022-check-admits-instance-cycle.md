@@ -26,7 +26,7 @@ niet zegt welk feittype twee objecten van één type verbindt.
   gates groen.
 - (c) Als meting, zonder bestand in deze repository: de v2-regelset herleving-WW met de verlenging in de maxdatum van
   het recht (zonder brug K12). Zolang de werkbank hww-06 niet herschrijft (normvraag B2.5 van Fable-advies 2), weigert
-  `check` alleen de samenlooplezing, met een melding die de lezing noemt zoals `WF-045.instance-cycle-read-outside`
+  `check` alleen de samenlooplezing, met een melding die de lezing noemt zoals `WF-045.instance-read-outside`
   van de verifier. Na de herschrijving geeft `check` exit 0.
 
 May touch: `frontends/regelspraak/**`, `corpus/golden/jutterswet-vergunningketen/` en

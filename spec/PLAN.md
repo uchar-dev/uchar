@@ -1282,6 +1282,14 @@ bridge K12 until it rewrites the exception of art. 21 lid 2 onder a WW without
 a derived end date of the new right — a norm question for the workbench
 (the new right as an input characteristic in the concurrence, or as the
 successor over `eerdere recht`).
+The household widening landed the same day (card
+`instance-cycle-household-reads`, provisional decisions B2.1–B2.3): folds and
+quantifiers over the to-many satellites of the object or of its predecessor,
+and the hop to a satellite and back, are local or shifted; a part that falls on
+a clause names each read outside it (`WF-045.instance-read-outside`, with the
+clause key of IR-SPEC ch. 5.3; DROOLS-292). On the v2 document with the
+extension in the maximum date, the read over the concurrence is the only one
+left outside.
 
 **A form without a condition has a reading of its value (2026-10-22, card
 `readings-of-unconditional-forms`):** RUNTIME-SEMANTICS ch. 5.12 gives a form
