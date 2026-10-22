@@ -562,6 +562,22 @@ let split_on_string sep s =
    has no code: a guard of this backend's own limits ("arithmetic range exceeded
    …"), the unbounded form it holds as a whole number, or a kind no red case
    witnesses yet. *)
+(* the parts a date-construction witness carries after its sentence,
+   `viol(("…",2026,4,31),"S1")`, named in order *)
+let date_parts witness names =
+  match String.index_opt witness ')' with
+  | None -> []
+  | Some close -> (
+      let inner = String.sub witness 0 close in
+      match String.rindex_opt inner '"' with
+      | None -> []
+      | Some q -> (
+          let values =
+            String.split_on_char ',' (String.sub inner (q + 1) (String.length inner - q - 1))
+            |> List.filter (fun v -> v <> "")
+          in
+          try List.combine names values with Invalid_argument _ -> []))
+
 let viol_code witness =
   let opens p = String.starts_with ~prefix:("viol(\"" ^ p) witness in
   let holds s = Case.contains ~needle:s witness in
@@ -615,6 +631,21 @@ let viol_code witness =
         @ found "objectType" (snd attribute_of) )
   else if opens "to-one second filler on role " then
     Some ("EF-017", found "role" (between "second filler on role " "\",") @ label)
+  else if
+    String.starts_with ~prefix:"viol((\"dateWith: the parts name no calendar day\"," witness
+    || String.starts_with ~prefix:"viol((\"dateTimeWith: the parts name no calendar day\"," witness
+  then
+    (* the date construction (ch. 3.8): the witness carries the parts *)
+    Some ("EF-032", date_parts witness [ "year"; "month"; "day" ])
+  else if String.starts_with ~prefix:"viol((\"dateTimeWith: the parts name no clock time\"," witness
+  then Some ("EF-032", date_parts witness [ "hour"; "minute"; "second"; "millisecond" ])
+  else if
+    (opens "dateWith of a year " || opens "dateTimeWith of a year ") && holds " is not translated"
+  then
+    (* this backend's year fence of the date construction, a limit of its
+       integers: where the instant also leaves the millisecond range, ref and
+       Drools fault with EF-007 and gate 8 lists this code as the divergence *)
+    Some ("CLINGO-029", [])
   else None
 
 (* the conjunctions under which term [t] is negative ([~neg:true]) or positive
@@ -6382,25 +6413,31 @@ and date_construction ctx ~subject ~subject_ot ~time (args : expr list) =
   in
   let atoms = List.concat_map fst parts in
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-  let witness text test =
-    emit ctx "viol(\"%s\",%s) :- %s, %s." text subject
+  (* [reason] is the witness's first argument: a quoted sentence, or for the
+     fault kind EF-032 a tuple of the sentence and the parts it is about, so
+     that [viol_code] reads the parameters of ch. 5.7b off the ground atom *)
+  let witness reason test =
+    emit ctx "viol(%s,%s) :- %s, %s." reason subject
       (String.concat ", " ((base :: ctx.rule_guard) @ atoms))
       test
   in
+  let quoted text = Printf.sprintf "\"%s\"" text in
   let y, m, d, clock =
     match List.map snd parts with
     | y :: m :: d :: clock -> (y, m, d, clock)
     | _ -> assert false (* the arity test above *)
   in
   witness
-    (name ^ " of a year before 1 is not translated (the civil chain needs non-negative \
-              intermediates)")
+    (quoted
+       (name ^ " of a year before 1 is not translated (the civil chain needs non-negative \
+                intermediates)"))
     (y ^ " < 1");
   witness
-    (name ^ " of a year after 5000000 is not translated (the civil day number would leave \
-              clingo's integers)")
+    (quoted
+       (name ^ " of a year after 5000000 is not translated (the civil day number would leave \
+                clingo's integers)"))
     (y ^ " > 5000000");
-  let no_day = name ^ ": the parts name no calendar day" in
+  let no_day = Printf.sprintf "(\"%s: the parts name no calendar day\",%s,%s,%s)" name y m d in
   witness no_day (m ^ " < 1");
   witness no_day (m ^ " > 12");
   witness no_day (d ^ " < 1");
@@ -6427,7 +6464,9 @@ and date_construction ctx ~subject ~subject_ot ~time (args : expr list) =
   match clock with
   | [] -> (atoms @ chain, zt, None)
   | [ hh; mi; ss; ms ] ->
-      let no_time = name ^ ": the parts name no clock time" in
+      let no_time =
+        Printf.sprintf "(\"%s: the parts name no clock time\",%s,%s,%s,%s)" name hh mi ss ms
+      in
       List.iter
         (fun (t, hi) ->
           witness no_time (t ^ " < 0");

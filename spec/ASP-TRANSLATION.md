@@ -811,14 +811,20 @@ and this backend); declared factors and stelsel never enter.
   pair term's second component. Parts that name no calendar day (a month
   outside 1..12, a day below 1 or beyond the month's length by the
   February/non-February rule pair of the month step) or no clock time
-  derive a `viol/2` witness, never a rolled-over or clamped date; every
-  witness joins all parts, so a leeg part leaves the value leeg and fires
-  none, as in ref. The year is fenced to 1..5 000 000 by two further
-  witnesses that refuse loudly: below 1 the shifted year turns negative
-  and gringo's truncation stops being the floor, beyond 5 000 000 the day
-  number leaves clingo's integers. A datum-tijd that far out is still
-  inside the representable millisecond range, so that range needs no
-  fence here.
+  derive a `viol/2` witness, never a rolled-over or clamped date; its
+  first argument is a tuple of the sentence and the parts,
+  `viol(("dateWith: the parts name no calendar day",Y,M,D),S)`, so that
+  the runner reads the fault kind EF-032 and its parameters off the ground
+  atom (`viol_code`). Every witness joins all parts, so a leeg part leaves
+  the value leeg and fires none, as in ref. The year is fenced to
+  1..5 000 000 by two further witnesses that refuse loudly with this
+  backend's own code, CLINGO-029 (a limit): below 1 the shifted year turns
+  negative and gringo's truncation stops being the floor, beyond 5 000 000
+  the day number leaves clingo's integers. Every instant outside the
+  representable millisecond range lies beyond those years, so where ref
+  and Drools fault with EF-007 this backend refuses with CLINGO-029, and
+  gate 8 lists the red case `date-time-with-outside-range` in its
+  divergence list.
 - **Loud flanks**: the sub-day part extractors
   (`uur/minuut/seconde/milliseconde-uit`), and datum-tijd
   **(on)gelijk-aan** still fault at translation — outside the arithmetic,

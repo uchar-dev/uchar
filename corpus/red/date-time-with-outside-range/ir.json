@@ -1,0 +1,204 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Schuit",
+        "animate": false,
+        "plural": "Schuiten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ligjaar",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ligmaand",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ligdag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "liguur",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ligminuut",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ligseconde",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ligmilliseconde",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ligtijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "ligtijdstip",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "ligtijdstip",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "Het ligtijdstip van een Schuit"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "dateTimeWith",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "ligjaar",
+                  "subjectType": "Schuit",
+                  "source": {
+                    "snippet": "zijn ligjaar"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "ligmaand",
+                  "subjectType": "Schuit",
+                  "source": {
+                    "snippet": "zijn ligmaand"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "ligdag",
+                  "subjectType": "Schuit",
+                  "source": {
+                    "snippet": "zijn ligdag"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "liguur",
+                  "subjectType": "Schuit",
+                  "source": {
+                    "snippet": "zijn liguur"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "ligminuut",
+                  "subjectType": "Schuit",
+                  "source": {
+                    "snippet": "zijn ligminuut"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "ligseconde",
+                  "subjectType": "Schuit",
+                  "source": {
+                    "snippet": "zijn ligseconde"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "ligmilliseconde",
+                  "subjectType": "Schuit",
+                  "source": {
+                    "snippet": "zijn ligmilliseconde"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "source": {
+                "snippet": "de datumtijd met jaar: zijn ligjaar, maand: zijn ligmaand, dag: zijn ligdag, uur: zijn liguur, minuut: zijn ligminuut, seconde: zijn ligseconde en milliseconde: zijn ligmilliseconde"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

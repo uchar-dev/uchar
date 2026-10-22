@@ -349,6 +349,8 @@ EF-016.object-labelled	{label}, a {type}
 EF-016.write	the rule "{rule}" writes {value}
 EF-019.condition	Unresolved condition reached in evaluation
 EF-019.expression	Unresolved reached in evaluation: this rule fails observably
+EF-032.day	{function}: year {year}, month {month} and day {day} name no calendar day
+EF-032.time	{function}: hour {hour}, minute {minute}, second {second} and millisecond {millisecond} name no clock time
 FRAME.case-reads	{sentence}; the case reads it
 FRAME.case-sets	{sentence}; the case sets it
 FRAME.contract	contract: {sentence}

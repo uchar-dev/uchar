@@ -366,19 +366,46 @@ public final class RegelSpraakRuntime {
     }
 
     /** §13.4.17.35 "de datum met jaar/maand/dag": a LocalDate from three numeric parts; any empty part -> leeg.
-     *  The single implementation (single-runtime principle). */
+     *  Parts that name no calendar day fault in the reference interpreter's sentence (uchar RUNTIME-SEMANTICS ch. 3.8,
+     *  fault kind EF-032), never a roll-over or a clamp; a part that is no whole number of an int is refused by its
+     *  exact conversion rather than truncated. A year beyond the years a LocalDate holds stays java.time's
+     *  exception. The single implementation (single-runtime principle). */
     public static java.time.LocalDate rsDatumMet(Object jaar, Object maand, Object dag) {
         if (jaar == null || maand == null || dag == null) return null;
-        return java.time.LocalDate.of(toBd(jaar).intValue(), toBd(maand).intValue(), toBd(dag).intValue());
+        int j = toBd(jaar).intValueExact(), m = toBd(maand).intValueExact(), d = toBd(dag).intValueExact();
+        toetsKalenderdag("dateWith", j, m, d);
+        return java.time.LocalDate.of(j, m, d);
     }
 
     /** §13.4.17.36 "de datumtijd met jaar/…/milliseconde": a LocalDateTime from seven parts (the 7th, a
-     *  millisecond, scaled to nanoOfSecond); any empty part -> leeg. The single implementation (single-runtime principle). */
+     *  millisecond, scaled to nanoOfSecond); any empty part -> leeg. Parts that name no calendar day or no clock time
+     *  fault as in {@link #rsDatumMet} (EF-032), and an instant outside {@link #MS_MIN}..{@link #MS_MAX} faults as a
+     *  step does (EF-007), also where java.time could still hold it. The single implementation (single-runtime
+     *  principle). */
     public static java.time.LocalDateTime rsDatumtijdMet(Object jaar, Object maand, Object dag, Object uur,
             Object minuut, Object seconde, Object milli) {
         if (jaar == null || maand == null || dag == null || uur == null || minuut == null || seconde == null || milli == null) return null;
-        return java.time.LocalDateTime.of(toBd(jaar).intValue(), toBd(maand).intValue(), toBd(dag).intValue(),
-                toBd(uur).intValue(), toBd(minuut).intValue(), toBd(seconde).intValue(), toBd(milli).intValue() * 1_000_000);
+        int j = toBd(jaar).intValueExact(), m = toBd(maand).intValueExact(), d = toBd(dag).intValueExact();
+        int u = toBd(uur).intValueExact(), mi = toBd(minuut).intValueExact(), s = toBd(seconde).intValueExact(),
+                ms = toBd(milli).intValueExact();
+        toetsKalenderdag("dateTimeWith", j, m, d);
+        if (u < 0 || u > 23 || mi < 0 || mi > 59 || s < 0 || s > 59 || ms < 0 || ms > 999)
+            throw new IllegalStateException(Msg.drools("EF-032.time", "function", "dateTimeWith", "hour", u,
+                    "minute", mi, "second", s, "millisecond", ms).text());
+        // beyond the years a LocalDateTime holds the instant lies far outside the range, which ends near year 146 million
+        if (Math.abs((long) j) > 999_999_999L) throw new IllegalStateException(DATUMTIJD_BUITEN_BEREIK);
+        java.time.LocalDateTime t = java.time.LocalDateTime.of(j, m, d, u, mi, s, ms * 1_000_000);
+        milliseconden(t);
+        return t;
+    }
+
+    /** Whether year {@code j}, month {@code m} and day {@code d} name a day of the proleptic Gregorian calendar
+     *  (ch. 3.8): a month 1..12 and a day 1..the month's length, leap years included; if not, the fault of EF-032 in
+     *  the reference interpreter's sentence, which names {@code function}. */
+    private static void toetsKalenderdag(String function, int j, int m, int d) {
+        if (m < 1 || m > 12 || d < 1 || d > java.time.Month.of(m).length(java.time.Year.isLeap(j)))
+            throw new IllegalStateException(Msg.drools("EF-032.day", "function", function, "year", j, "month", m,
+                    "day", d).text());
     }
 
     /** The representable millisecond range of a datum-tijd value, [-2^62, 2^62 - 1] ms around 1970-01-01T00:00:00,

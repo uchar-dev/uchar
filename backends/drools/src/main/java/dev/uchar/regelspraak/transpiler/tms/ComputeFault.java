@@ -12,7 +12,8 @@ import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
  * (ch. 3.6, 8.1, 8.2), the bound day outside a day-kind evaluation (ch. 8.2), an {@code Unresolved} node the evaluation
  * reaches (ch. 5.7), an
  * easterSunday of a year that is not whole or lies outside the years a date holds (ch. 3.8), a dateWith or a
- * dateTimeWith over parts that name no moment, and an irrational square root without a rounding (ch. 2.2). Its sentence
+ * dateTimeWith over parts that name no calendar day or no clock time (EF-032) or that are no whole numbers, and an
+ * irrational square root without a rounding (ch. 2.2). Its sentence
  * ({@link #sentence}) is the reference interpreter's wherever that executor names the fault, so a pinned fragment matches
  * both.
  *
@@ -81,7 +82,8 @@ public final class ComputeFault extends RuntimeException {
     /** The fault kind of this fault (RUNTIME-SEMANTICS ch. 5.7b), read off its sentence: the sentences are this
      *  class's constants and the runtime's, the reference interpreter's words, and a plan term carries a sentence
      *  rather than a code, so the kind is named here, beside the text and never inside it. Null for a sentence of a
-     *  kind no red case witnesses yet (an irrational square root, an easterSunday or a dateWith out of range). */
+     *  kind no red case witnesses yet (an irrational square root, an easterSunday out of range, a part of a dateWith
+     *  that is no whole number). */
     public String code() {
         if (sentence.equals(EVALUATION_DATE_WITHOUT_DATE) || sentence.equals(RegelSpraakRuntime.REKENJAAR_ZONDER_REKENDATUM))
             return "EF-011";
@@ -91,7 +93,20 @@ public final class ComputeFault extends RuntimeException {
         if (sentence.equals(RegelSpraakRuntime.DATUMTIJD_BUITEN_BEREIK)) return "EF-007";
         if (sentence.startsWith("duration count ") && sentence.endsWith(" is out of range")) return "EF-008";
         if (sentence.startsWith(ComputeHelpers.DAY_KIND_WALK)) return "EF-009";
+        if (namesNoMoment(sentence)) return "EF-032";
         return null;
+    }
+
+    /** The runtime's sentences of EF-032 ({@code rsDatumMet}, {@code rsDatumtijdMet}), the reference interpreter's
+     *  words: parts that name no calendar day, and parts that name no clock time. */
+    private static final java.util.regex.Pattern NO_CALENDAR_DAY = java.util.regex.Pattern.compile(
+            "(?:dateWith|dateTimeWith): year (-?\\d+), month (-?\\d+) and day (-?\\d+) name no calendar day");
+    private static final java.util.regex.Pattern NO_CLOCK_TIME = java.util.regex.Pattern.compile(
+            "dateTimeWith: hour (-?\\d+), minute (-?\\d+), second (-?\\d+) and millisecond (-?\\d+) name no clock time");
+
+    /** Whether {@code sentence} is a fault of EF-032. */
+    static boolean namesNoMoment(String sentence) {
+        return NO_CALENDAR_DAY.matcher(sentence).matches() || NO_CLOCK_TIME.matcher(sentence).matches();
     }
 
     private static final java.util.regex.Pattern COUNT_OUT_OF_RANGE =
@@ -100,7 +115,7 @@ public final class ComputeFault extends RuntimeException {
             java.util.regex.Pattern.compile("no day of the kind within (\\d+) calendar days of (\\S+)");
 
     /** The parameters of this fault's kind (RUNTIME-SEMANTICS ch. 5.7b) that its sentence carries, in the order of the
-     *  table: the count of EF-008, the reach and the starting day of EF-009. The sentence is the one place they stand
+     *  table: the count of EF-008, the reach and the starting day of EF-009, the parts of EF-032. The sentence is the one place they stand
      *  (a plan term carries a sentence, not fields); a kind whose sentence names none has none. */
     public java.util.Map<String, String> params() {
         java.util.Map<String, String> p = new java.util.LinkedHashMap<>();
@@ -110,6 +125,19 @@ public final class ComputeFault extends RuntimeException {
         if ("EF-009".equals(code()) && walk.find()) {
             p.put("from", walk.group(2));
             p.put("reach", walk.group(1));
+        }
+        var day = NO_CALENDAR_DAY.matcher(sentence);
+        if (day.matches()) {
+            p.put("year", day.group(1));
+            p.put("month", day.group(2));
+            p.put("day", day.group(3));
+        }
+        var clock = NO_CLOCK_TIME.matcher(sentence);
+        if (clock.matches()) {
+            p.put("hour", clock.group(1));
+            p.put("minute", clock.group(2));
+            p.put("second", clock.group(3));
+            p.put("millisecond", clock.group(4));
         }
         return p;
     }

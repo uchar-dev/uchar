@@ -169,15 +169,17 @@ public final class ComputeHelpers {
 
     /** The fault of a date step the runtime raised as {@code e}, as an evaluation fault in its own sentence, which is
      *  the reference interpreter's: a step that leaves the representable range of a datum-tijd, a duration count outside
-     *  that range (RUNTIME-SEMANTICS ch. 3.8), a step on a date beyond the years the runtime's dates hold, and a walk over
-     *  the days of a day kind that passes the reach of ch. 3.8 without one. Any other {@code IllegalStateException} out
+     *  that range (RUNTIME-SEMANTICS ch. 3.8), a step on a date beyond the years the runtime's dates hold, a walk over
+     *  the days of a day kind that passes the reach of ch. 3.8 without one, and a date construction whose parts name no
+     *  calendar day or no clock time or whose instant leaves the range. Any other {@code IllegalStateException} out
      *  of the date step is no evaluation fault and is thrown as it is. */
     private static RuntimeException dateFault(IllegalStateException e) {
         String sentence = String.valueOf(e.getMessage());
         boolean range = sentence.equals(RegelSpraakRuntime.DATUMTIJD_BUITEN_BEREIK)
                 || sentence.equals(RegelSpraakRuntime.DATUM_BUITEN_JAREN)
                 || (sentence.startsWith("duration count ") && sentence.endsWith(" is out of range"))
-                || sentence.startsWith(DAY_KIND_WALK);
+                || sentence.startsWith(DAY_KIND_WALK)
+                || ComputeFault.namesNoMoment(sentence);
         return range ? new ComputeFault(sentence, e) : e;
     }
 
@@ -205,9 +207,10 @@ public final class ComputeHelpers {
     }
 
     /** A date of three parts ({@code rsDatumMet}), {@code spelling} the builtin's name for the sentence of a fault: any
-     *  leeg part leeg (RUNTIME-SEMANTICS ch. 1.2); a part that is not a whole number within the range of a date part, or
-     *  parts that name no day, fault, since the reference interpreter makes no such date, and the runtime would
-     *  truncate the part or throw past the fire. */
+     *  leeg part leeg (RUNTIME-SEMANTICS ch. 1.2); a part that is not a whole number within the range of a date part
+     *  faults, since the reference interpreter makes no such date; parts that name no calendar day or no clock time
+     *  fault with EF-032 and an instant outside the millisecond range with EF-007 (ch. 3.8), in the runtime's sentence,
+     *  which is the reference interpreter's ({@link #dateFault}). */
     public static Object dateWith(String spelling, Object year, Object month, Object day) {
         return dateConstruction(spelling, false, year, month, day);
     }
@@ -229,7 +232,10 @@ public final class ComputeHelpers {
         try {
             return time ? RegelSpraakRuntime.rsDatumtijdMet(v[0], v[1], v[2], v[3], v[4], v[5], v[6])
                     : RegelSpraakRuntime.rsDatumMet(v[0], v[1], v[2]);
+        } catch (IllegalStateException e) {
+            throw dateFault(e);
         } catch (java.time.DateTimeException e) {
+            // a year beyond the years this backend's dates hold, which the reference interpreter answers
             throw new ComputeFault(spelling + ": " + e.getMessage(), e);
         }
     }

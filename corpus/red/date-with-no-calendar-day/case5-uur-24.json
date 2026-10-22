@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "ligjaar": {
+            "number": "2026"
+          },
+          "ligmaand": {
+            "number": "3"
+          },
+          "ligdag": {
+            "number": "1"
+          },
+          "liguur": {
+            "number": "24"
+          },
+          "ligminuut": {
+            "number": "0"
+          },
+          "ligseconde": {
+            "number": "0"
+          },
+          "ligmilliseconde": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-032",
+    "params": {
+      "hour": "24",
+      "minute": "0",
+      "second": "0",
+      "millisecond": "0"
+    }
+  }
+}

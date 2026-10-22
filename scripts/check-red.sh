@@ -133,6 +133,9 @@ date-time-step-outside-range/case1-plus-uren|clingo|CLINGO-001|LIMIT measured 20
 date-time-step-outside-range/case2-min-uren|clingo|CLINGO-001|LIMIT measured 2026-10-18: the step's millisecond value 2000000000000 "exceeds clingo's integer range" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
 date-time-step-outside-range/case3-plus-dagen|clingo|CLINGO-001|LIMIT measured 2026-10-18: the step's millisecond value 60000000000 "exceeds clingo's integer range" at translation, where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007)
 date-time-step-outside-range/case4-telling-buiten-bereik|clingo|CLINGO-001|LIMIT measured 2026-10-18: the duration count 18446744073709551617 "exceeds clingo's integer range" at translation, where ref and Drools refuse the count itself as out of range (EF-008)
+date-time-with-outside-range/case1-jaar-200-miljoen|clingo|CLINGO-029|LIMIT measured 2026-10-22 (card date-with-in-ref-and-clingo): the date construction's year fence, "dateTimeWith of a year after 5000000 is not translated (the civil day number would leave clingo's integers)", where ref and Drools fault on the datum-tijd range of ch. 3.8 (EF-007): every instant outside that range lies beyond the years this backend's day numbers hold
+date-time-with-outside-range/case2-een-milliseconde-na-het-bereik|clingo|CLINGO-029|LIMIT measured 2026-10-22 (card date-with-in-ref-and-clingo): the same year fence, at year 146140482, where ref and Drools fault one millisecond past the top of the range (EF-007)
+date-time-with-outside-range/case3-een-milliseconde-voor-het-bereik|clingo|CLINGO-029|LIMIT measured 2026-10-22 (card date-with-in-ref-and-clingo): the fence of a year before 1, "dateTimeWith of a year before 1 is not translated", where ref and Drools fault one millisecond before the bottom of the range (EF-007)
 EOF2
 div_used=$(mktemp) || exit 2
 pinned_map=$(mktemp) || exit 2

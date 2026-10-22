@@ -2298,7 +2298,7 @@ examples (absolute, pinned; each becomes a `ref/` test verbatim):
 `drools-datumstap-buiten-bereik`).** A datum-tijd value is a whole
 number of milliseconds since 1970-01-01T00:00:00 in the closed interval
 [−2⁶², 2⁶² − 1], that is −4 611 686 018 427 387 904 to
-4 611 686 018 427 387 903 ms: from −146136543-09-09T08:23:32.096 to
+4 611 686 018 427 387 903 ms: from −146136543-09-08T08:23:32.096 to
 146140482-04-24T15:36:27.903 in the proleptic Gregorian calendar, about
 146 million years either side of the epoch. The bound belongs to the
 language, not to an engine: an executor with wider integers still
@@ -2311,7 +2311,9 @@ the interval; in a sub-day unit, when the step itself (the count times
 the unit's length in milliseconds) or the instant it reaches lies
 outside it; in a calendar unit, when the instant it reaches lies above
 the interval or the midnight of the civil day it lands on lies below
-it. Until 2026-10-09 this chapter gave no number and said that v0's
+it. A date construction faults the same way when the instant its parts
+name lies outside the interval ("Date construction" below). Until
+2026-10-09 this chapter gave no number and said that v0's
 `LocalDateTime.plus` raises `DateTimeException` past the range; it does
 not, since `java.time` reaches years ±999 999 999.
 
@@ -2400,8 +2402,10 @@ never a roll-over into the next month (31 April is not 1 May), never a
 clamp to the month's end (31 April is not 30 April either — the month-end
 clamp belongs to date ± duration, a step, not to the construction), and
 never leeg. A whole year outside the executor's machine-integer range is a
-fault, never a wrap-around, as for the Easter year. The fault has no code
-yet (ch. 5.7b, "Kinds without a code"). Worked examples (absolute,
+fault, never a wrap-around, as for the Easter year. Parts that name no
+day or no clock time are the fault kind EF-032, with the parts as its
+parameters; an instant outside the representable millisecond range is the
+range's own kind, EF-007 (ch. 5.7b). Worked examples (absolute,
 pinned; each a `ref/` test verbatim): datum met jaar 2026, maand 3, dag 1
 = **2026-03-01**; 2024, 2, 29 = **2024-02-29**; 2000, 2, 29 =
 **2000-02-29**; 2026, 2, 29 = **fault** (2026 is no leap year); 1900, 2,
@@ -2413,14 +2417,19 @@ calendar); datumtijd met 2026, 3, 1, 6, 30, 0, 0 =
 **2026-03-01T06:30:00**; 2026, 12, 31, 23, 59, 59, 999 =
 **2026-12-31T23:59:59.999**; uur 24, seconde 60 or milliseconde 1000 =
 **fault**; jaar 146140482, maand 1, dag 1, 0:00 = **146140482-01-01T00:00:00**
-and jaar 200000000 = **fault** (outside the millisecond range). **Executed
-(2026-10-22, both executors):** golden `date-with-parts` (the witness
-15-03-2026 → 01-03-2026, a datum-tijd, two leap years and the leeg
-corner). The ASP backend carries years 1 to 5 000 000 and refuses the rest
-loudly (`spec/ASP-TRANSLATION.md` S6a). The Drools backend faults on every
-part that names no day or clock time, without the code; it answers a
-datum-tijd beyond the millisecond range (jaar 200000000 →
-+200000000-03-01T00:00, measured 2026-10-22).
+and jaar 200000000 = **fault** (EF-007); the two ends of the range to
+the millisecond, 146140482-04-24T15:36:27.903 and
+−146136543-09-08T08:23:32.096, are instants, and one millisecond past
+either is **fault** (EF-007). **Executed (2026-10-22, all three
+executors):** golden `date-with-parts` (the witness 15-03-2026 →
+01-03-2026, a datum-tijd, two leap years and the leeg corner), red cases
+`date-with-no-calendar-day` (EF-032) and `date-time-with-outside-range`
+(EF-007). The ASP backend carries years 1 to 5 000 000 and refuses the
+rest loudly with its own code, CLINGO-029 (`spec/ASP-TRANSLATION.md` S6a),
+so it refuses every instant outside the millisecond range before the range
+is reached; gate 8 lists it there. Until 2026-10-22 the Drools backend
+faulted on these parts without a code and answered a datum-tijd beyond the
+range (jaar 200000000 → +200000000-03-01T00:00).
 
 ### 3.9 The whole-period qualifier (§8.2)
 
@@ -4067,8 +4076,9 @@ parameters, the clause that defines it and its witnesses.
   reasons, `from` (EF-009), `creation`, `stratum` and `depth` (EF-015),
   `values` (EF-016) and `filler` (EF-017). The Drools backend emits only `field` and
   `lexeme` (EF-003), `count` (EF-008), `from` and `reach` (EF-009), `creation`,
-  `stratum` and `depth` (EF-015), and `rules`, `values`, `attribute`, `label`
-  and `objectType` (EF-016), and no other.
+  `stratum` and `depth` (EF-015), `rules`, `values`, `attribute`, `label`
+  and `objectType` (EF-016), and the parts of EF-032 (since 2026-10-22, as ref
+  and the ASP backend), and no other.
   Gate 8 holds each executor's emitted keys to this column: a key outside the
   column of its code fails with the code, the executor and the key.
 - **Witnesses.** A code enters the table together with its witness: a red
@@ -4085,12 +4095,7 @@ parameters, the clause that defines it and its witnesses.
 - **Kinds without a code.** A normative fault without a witness keeps its
   text and gets a code when a red case for it lands: today, among others,
   the pass budget of ch. 5.7 step 4 where no divergence by two writers is
-  named; and the date construction whose parts name no calendar day or no
-  clock time (ch. 3.8), whose red case waits until the Drools backend
-  reports a code beside its fault (until then gate 8's Drools leg cannot
-  replay it: it demands the pinned code of a case it does not exclude, and
-  an exclusion of a case that faults is stale). A safeguard of one
-  executor (a fire cap) is no fault kind. On the
+  named. A safeguard of one executor (a fire cap) is no fault kind. On the
   `§9.5` channel three kinds have no witness and so no code; each deposits
   its fact without a code (ch. 5.6): a negative radicand (ch. 1.2), which no
   golden can witness while the ASP backend has no square root and gate 6
@@ -4108,7 +4113,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 11.3 | `corpus/red/input-overprecision`, `corpus/red/input-overprecision-param`, `corpus/red/list-element-overprecision`, `corpus/red/struct-field-overprecision` |
 | EF-005 | a filled dividend is divided by a numeric zero | §9.5 | `rule`, `label` | ch. 1.4 point 4; ch. 2.2 | `corpus/golden/division-by-numeric-zero`, `corpus/golden/division-abs-by-numeric-zero`, `corpus/golden/filled-count-unguarded-division`, `corpus/golden/at-most-reads-until-settled`, `corpus/golden/closed-runtime-division-by-zero`, `corpus/golden/fold-filter-divides-by-zero` |
 | EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4 | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating` |
-| EF-007 | a datum-tijd step leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range` |
+| EF-007 | a datum-tijd step or construction leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range`, `corpus/red/date-time-with-outside-range` |
 | EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/red/date-time-step-outside-range` |
 | EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/red/day-kind-unsatisfiable-walk`, `corpus/red/day-kind-scope-outside-table` |
 | EF-010 | the bound day is read outside a day-kind evaluation | fault | — | ch. 3.8 | `corpus/red/context-value-de-dag-outside-day-kind` |
@@ -4133,6 +4138,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-029 | a recipient of an ordered allocation has an empty tie-break weight | §9.5 | `rule`, `label` | ch. 4.2; ch. 4.4 | `corpus/golden/jutterswet-rangmaximering`, `corpus/golden/jutterswet-verdeling-dubbelbezet` |
 | EF-030 | a recipient of an allocation has an empty or negative cap | §9.5 | `rule`, `label` | ch. 4.3; ch. 4.4 | `corpus/golden/jutterswet-berging`, `corpus/golden/jutterswet-rangmaximering` |
 | EF-031 | a filled dividend is divided by an empty divisor | §9.5 | `rule`, `label` | ch. 1.2; ch. 1.4 point 4 | `corpus/golden/jutterswet-bergloon`, `corpus/golden/synth3-takhek`, `corpus/golden/synth3-operandvolgorde` |
+| EF-032 | the parts of a date construction name no calendar day or no clock time | fault | `year`, `month`, `day`, `hour`, `minute`, `second`, `millisecond` | ch. 3.8 | `corpus/red/date-with-no-calendar-day` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified

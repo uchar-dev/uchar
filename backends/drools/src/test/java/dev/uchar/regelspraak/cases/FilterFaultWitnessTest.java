@@ -1012,9 +1012,10 @@ class FilterFaultWitnessTest {
      *  whole number of at least 0 is a real power, which is OPEN (RUNTIME-SEMANTICS ch. 2.1). Since card
      *  drl-teksttak-op-truth-maintenance the DRL-text branch renders that analysis, so both branches answer the five and
      *  refuse the power in one sentence.
-     *  Where J1 is actief, the reference interpreter faults on the day-kind walk and on the Rekenjaar too, and so do
-     *  both branches, with the runtime's sentence in the cause chain; for the other four it answers or crashes where
-     *  this backend faults (reported with the fix round, not pinned here). */
+     *  Where J1 is actief, the reference interpreter faults on the day-kind walk, on the Rekenjaar and, since the card
+     *  date-with-in-ref-and-clingo (2026-10-22), on the date of maand 13 (EF-032) too, and so do both branches, with the
+     *  runtime's sentence in the cause chain; for the other three it answers or crashes where this backend faults
+     *  (reported with the fix round, not pinned here). */
     @Test void a_filter_that_fails_otherwise_than_by_a_division() throws Exception {
         String vinddatum = ownRead("vinddatum", "Vondst");
         Map<String, String> filters = new java.util.LinkedHashMap<>();
@@ -1043,7 +1044,8 @@ class FilterFaultWitnessTest {
                 "rekenjaar", Map.of("gewicht", "10"), "paasdag", Map.of("jaar", "2000000000"));
         java.util.Set<String> refused = java.util.Set.of("macht");
         Map<String, String> fault = Map.of("dagsoortstap", "day-kind walk: no day of the kind within 40000 calendar days",
-                "rekenjaar", "the evaluationYear context value needs an evaluation date");
+                "rekenjaar", "the evaluationYear context value needs an evaluation date",
+                "datum met", "dateWith: year 2026, month 13 and day 1 name no calendar day");
         List<String> deviating = new ArrayList<>();
         for (Map.Entry<String, String> f : filters.entrySet()) {
             Path ir = vondsttal(f.getValue());

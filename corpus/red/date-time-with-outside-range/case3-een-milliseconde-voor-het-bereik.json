@@ -1,0 +1,42 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "ligjaar": {
+            "number": "-146136543"
+          },
+          "ligmaand": {
+            "number": "9"
+          },
+          "ligdag": {
+            "number": "8"
+          },
+          "liguur": {
+            "number": "8"
+          },
+          "ligminuut": {
+            "number": "23"
+          },
+          "ligseconde": {
+            "number": "32"
+          },
+          "ligmilliseconde": {
+            "number": "95"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-007",
+    "params": {}
+  }
+}

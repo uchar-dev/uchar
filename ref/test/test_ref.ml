@@ -4068,6 +4068,15 @@ let () =
      = Value.Date_time (Value.days_from_civil ~y:146140482 ~m:1 ~d:1 * Value.ms_per_day));
   expect_fault "WV-3.8-datumtijdmet-buiten-bereik" (fun () ->
       date_time_with [ "200000000"; "3"; "1"; "0"; "0"; "0"; "0" ]);
+  (* the two ends of the range, to the millisecond: 2^62 - 1 and -2^62 *)
+  check "WV-3.8-datumtijdmet-bovengrens"
+    (date_time_with [ "146140482"; "4"; "24"; "15"; "36"; "27"; "903" ] = Value.Date_time max_int);
+  expect_fault "WV-3.8-datumtijdmet-bovengrens-plus-een" (fun () ->
+      date_time_with [ "146140482"; "4"; "24"; "15"; "36"; "27"; "904" ]);
+  check "WV-3.8-datumtijdmet-ondergrens"
+    (date_time_with [ "-146136543"; "9"; "8"; "8"; "23"; "32"; "96" ] = Value.Date_time min_int);
+  expect_fault "WV-3.8-datumtijdmet-ondergrens-min-een" (fun () ->
+      date_time_with [ "-146136543"; "9"; "8"; "8"; "23"; "32"; "95" ]);
   (* ch. 5.12: a year the case format cannot write, with its sign and at
      least four digits (ISO 8601's expanded form) *)
   check "WV-5.12-jaar-boven-9999" (Value.iso_of_date (Value.days_from_civil ~y:12026 ~m:3 ~d:1) = "+12026-03-01");
