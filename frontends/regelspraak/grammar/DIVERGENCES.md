@@ -3691,3 +3691,159 @@ filling). Witnesses: `GeneratedFromTest` (frontend) and
 `GeneratedDesignationsTest` and `GeneratedNamesPerPartTest` (frontend);
 for the wire `OriginOnTheWireTest` (frontend), `OriginWitnessTest`
 (backend) and `OriginSourceRouteTest` (the route suite of gate 15).
+
+---
+
+## Semantic tokens — a kind and a position per piece of source text, beside the IR
+
+Not a grammar divergence: an output of the frontend beside the IR, never on the wire (card `semantic-tokens`,
+2026-10-22). A consumer that shows the rules — colours a name by what it names, points at a name that names nothing —
+cannot use the IR for it: the IR is the abstract form (decision tables desugared, generated names, defaults groups)
+and carries no position per name, and deriving the kind of a name itself would rebuild the resolution. The diagnostic
+codes are the precedent (`Diagnostic(severity, code, params, …)`, card `frontend-codes`): a second output with a
+fixed form, next to the IR.
+
+**Access.** `Resolver.tokens(List<SemanticTokens.SourceFile>)` takes the files, each with a name and a text, and gives
+a `SemanticTokens.Document`: per file the spans, and the diagnostics. The CLI writes it as JSON:
+`Resolver --tokens <out.json> <file.rgs…>`. The files are read as one chain, each text followed by a line end, as
+`--ir` reads several files, and resolved once; a reference may cross a file boundary. The output is written also when
+the model carries an ERROR or a syntax error, because that is where it helps most: exit 0 when the file is written, 2
+on wrong usage (no output file, no source, or `--tokens` beside `--ir` or `--cases`). The diagnostics go to stderr as
+well, each with its file and line. `--ir` and `--cases` do not change.
+
+**Form.**
+
+```json
+{
+  "files": [
+    {
+      "file": "regels.rgs",
+      "spans": [
+        {"line": 5, "column": 8, "endLine": 5, "endColumn": 11, "kind": "keyword", "text": "Het"},
+        {"line": 5, "column": 12, "endLine": 5, "endColumn": 20, "kind": "attribute", "text": "leeftijd", "declaredAt": {"file": "jutters.rgs", "line": 3, "column": 7}},
+        {"line": 7, "column": 4, "endLine": 7, "endColumn": 15, "kind": "variable", "text": "basisbedrag", "declaration": true}
+      ]
+    }
+  ],
+  "diagnostics": [
+    {"severity": "WARNING", "code": "RGS-092", "params": {"reason": "…", "expression": "…"}, "message": "…", "file": "regels.rgs", "line": 9}
+  ]
+}
+```
+
+One entry per file, in the order given, with its spans in source order, one span per line of the JSON; every
+character outside printable ASCII is written as an escape. A span has its start and end, its `kind`, its `text` as
+written, and where it names a declared thing either `"declaration": true` (the declaration itself) or `declaredAt`, the
+start of the span of its declaration, when that stands in the files read. A name of a member the frontend generates
+(the opgave marker, §7: `berekende X`, `afwijkende opgave X`, …) has no declaration of its own and carries
+`generatedFrom`, the declaration of the element it comes from ("Gegenereerde elementen"). A diagnostic has its
+severity, code, parameters (strings), its message in the frontend's default language, and the file and the line in
+that file; one without a place carries no file and line 0. The diagnostics are the model's and the WARNINGs the
+emitter adds for what the wire cannot carry, as `--ir` prints them.
+
+**Positions.** The line counts from 1 in the file the span stands in, as the diagnostics do. The column counts from 0
+in UTF-16 code units: the default position encoding of the Language Server Protocol and the unit of a JavaScript string,
+so a browser and a language server use the value as it is. ANTLR counts columns in code points; the two differ after
+a character outside the Basic Multilingual Plane. The end is exclusive: the position just after the last character.
+
+**Coverage.** Every token of the lexer, on the default channel and on the hidden one, lies in exactly one span, apart
+from the whitespace at its edges; spans do not overlap; the whitespace between tokens lies outside every span. A token
+of several words (a keyword phrase such as `moet berekend worden als`, also over a line end) is one span. A name of
+several words is one span, also over a line end; a comment inside a name splits it into two spans of the same name. A
+decision-table row is one token of the lexer, which the frontend splits as the resolution splits it: its pipes are
+`punctuation`, the dashes of the separator row and the cell `n.v.t.` are one span each, and every other cell is lexed
+on its own and read as rule text. A text literal is one span from quote to quote, split only around an `«expression»`.
+A character the lexer cannot read (a lone `_`) is no token; a syntax error says so, and it lies in no span.
+
+**Kinds from the lexer.** `keyword`: every keyword of the language — the definition and rule keywords, the
+articles, prepositions and quantifiers, the comparison and arithmetic words, the datatypes, the phrases, `waar` and
+`onwaar`, a time unit written as a keyword outside a unit expression ("de maand uit"), the head markers `(mv:`,
+`(bezield)` and the like, `(taal:` in a vocabulary head, the word `geen` (a word to the lexer, the negation to the
+language) and the table cell `n.v.t.`. `comment`: a `//` comment, the `// Bron:` annotations included. `heading`: a
+`---` heading line of an object type. `number`, `date`: the literals. `string`: a text literal. `punctuation`: brackets,
+`;` `.` `:` `,` `-` `..` `•` `/` `=` `%` `^` `€` `'` `«` `»`, the `)` closing a designation, and a table's pipes.
+`designation`: the text of a designation `(<vocabulary>: <text>)`. `relationDescription`: the free text a fact type's
+cardinality line writes after a role name ("heeft", "wordt verdeeld over"). `word`: a word outside every name the
+parse gave; only ANTLR's recovery after a syntax error leaves one (below).
+
+**Kinds from the resolution**, named after the wire where the wire names the concept: `objectType`, `attribute`,
+`characteristic`, `role`, `factType`, `parameter`, `domain`, `enumerationValue`, `unitSystem`, `unit`, `dimension`,
+`dimensionLabel`, `timeline`, `dayKind`, `vocabulary` (the opener `(<vocabulary>:` of a designation, which the lexer
+reads as one token with its bracket and colon), `namedForm` (the name of a rule, a decision table or an exception
+block, and a reference to one: `regelversie <naam>`, the carrier of `Uitzondering op`), `ruleGroup`, `variable` (a
+`Daarbij geldt` variable, declared there and read in its own rule), and `unresolved` for a word in a name place that
+names nothing (also an enumeration value no domain declares). A plural (`(mv: …)`) is a reference to the singular's
+declaration. A unit is declared by its word (`de meter`); its abbreviations and plural refer to it. A time unit and a
+sign that no unit system of the files declares are a `unit` without `declaredAt`.
+
+**How a name is read.** A pass after the resolution, over the token stream and the parse tree, asks the finished
+model what each run of words names, with the lookups the resolution uses (`objectTypeByName`, `attributeName` and
+`declarantOf` on a type, `PluralMatcher`, `CharacteristicMatcher`, `roleNameMatches`, the dimension, timeline, day-kind
+and unit lookups). It does not record inside the resolution: the resolution binds a name on its text — a `kaleNaam` is
+re-split against the model, a multi-word characteristic is put together from two parse nodes ("de Meting bereikbaar
+per" + "trein") — and often tries a reading and falls back, so a token position would have to travel through every one
+of those string operations. A declaration and a name the parse places (an object type in a head, a domain as a
+datatype, a unit expression, a timeline, a dimension and its labels in a selection, a form, an enumeration value) are
+taken from their parse node. In rule text, at each word the longest run of words the model declares is one name. Its
+kind follows its place, as the resolution reads the place: the first step of a navigation ("DE LEEFTIJD van de
+Jutter") names a member before anything else; a step inside one ("van DE MAST van de post") a role; the subject a
+navigation ends in ("van DE JUTTER") and a name after `een`, `alle` or a numeral a type before a role, a member last;
+anywhere else a variable of the rule shadows a parameter, and both go before the members and types. A navigation is
+read from its end: the type a step leads to decides which of several declarations of one name the step before it
+names (the role `mast` of the fact type that relates a post, not that of the one that relates a sign); outside a
+navigation the rule's subject decides, read with the resolution's own `ExpressionBuilder` on a copy of the model. A name
+that stays one of several declarations of its kind carries its kind and no `declaredAt`: a wrong link would be worse
+than none. The resolution and this pass can part; the corpus witness measures it.
+
+**After a syntax error.** The parse tree is ANTLR's recovery. Rule text in it is read as any rule text: a word there
+that names nothing is `unresolved`. A word the recovery placed in no name and no rule text keeps its lexical kind
+`word`, not `unresolved`: the syntax error marks the place, and marking every word after it would mark the consequence
+rather than the cause. Seven places where the resolution itself crashed on a parse node the recovery left without a
+child — and with it `--ir`, which crashed instead of reporting the syntax error — skip the node now (a conversion, a
+rounding or a start date without its number, a condition or criteria header without its bullets, a start-point
+determination without its subject).
+
+**LSP 3.17.** The token type of the Language Server Protocol closest to each kind, for a later language server that
+passes the output on (a language server itself is no part of this output):
+
+| Kind | LSP token type | Modifiers |
+|---|---|---|
+| `keyword` | `keyword` | |
+| `comment` | `comment` | |
+| `heading` | `comment` | `documentation` |
+| `number`, `date` | `number` | |
+| `string`, `designation`, `relationDescription` | `string` | |
+| `punctuation` | `operator` | |
+| `objectType` | `class` | |
+| `attribute` | `property` | |
+| `characteristic` | `property` | |
+| `role` | `property` | |
+| `factType` | `interface` | |
+| `parameter` | `variable` | `readonly` |
+| `variable` | `variable` | |
+| `domain`, `timeline`, `dayKind` | `type` | |
+| `enumerationValue`, `dimensionLabel` | `enumMember` | |
+| `dimension` | `enum` | |
+| `unit` | `type` | `defaultLibrary` where it has no `declaredAt` |
+| `unitSystem`, `vocabulary`, `ruleGroup` | `namespace` | |
+| `namedForm` | `function` | |
+| `unresolved`, `word` | none: a language server reports an `unresolved` span as a diagnostic, and passes neither | |
+
+A span with `"declaration": true` takes the modifier `declaration`.
+
+**Not covered.** A test document of the scenario layer (`--cases`, `ScenarioResolver`): its scenario blocks are no
+part of `regelSpraakDocument`, so they are a syntax error here. The words of a designation's text, which no rule reads,
+are one `designation` span.
+
+**Witnesses.** `SemanticTokensTest`: a Jutterswet model of two files with every kind of name, a name over two lines, a
+name that names nothing, a `// Bron:` comment, a reference across the file boundary, and a character outside the Basic
+Multilingual Plane before a name on its line (a `//` comment runs to the end of its line, so the character stands in a
+designation and in a text literal, and once in a comment, whose end column it moves); the JSON; and the CLI with an
+error and with wrong usage. `SemanticTokensCorpusTest`: every `corpus/golden/**/source.rgs` as one document — the
+coverage and the positions (`SemanticTokensCheck`, which lexes the files again itself), every reference pointing at a
+declaration of its kind, every reference whose kind has declarations carrying one, no `unresolved` in a document
+without diagnostics (a reason-carrying list, stale-failing, is empty), and a `word` only in a document with a syntax
+error; floors on the files, the spans and the name spans per kind. `SemanticTokensRecoveryTest`: the seven broken
+sources, and every golden cut at forty places and with each of twenty lines left out. Measured on the casus of the
+parity zone (its 47 fragments as one document, outside the suite because the zone's material stays out of this one):
+complete coverage, every reference linked, and 24 spans `unresolved`, each a name the fragments do not declare.

@@ -253,8 +253,8 @@ public final class SemanticTokens {
                     t.getTokenIndex()));
         }
         claim = new Name[pieces.size()];
-        // the subject type of a rule and the holder of an attribute come from the resolution's own builder, run on a
-        // copy so that a diagnostic it raises again does not reach the model the caller reads
+        // the subject type of a rule comes from the resolution's own builder, run on a copy so that a diagnostic it
+        // raises again does not reach the model the caller reads
         builder = new ExpressionBuilder(model.copy());
     }
 

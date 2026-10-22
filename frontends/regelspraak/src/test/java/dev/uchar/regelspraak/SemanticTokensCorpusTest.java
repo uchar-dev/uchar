@@ -34,10 +34,17 @@ class SemanticTokensCorpusTest {
     private static final Map<String, String> UNRESOLVED_KNOWN = Map.of();
 
     /** Floors, measured at the build (card semantic-tokens, 2026-10-22): the goldens read, the spans written, and the
-     *  name spans per kind. A floor catches shrink, not growth: a corpus card adds goldens without touching them. */
+     *  name spans per kind. A floor catches shrink, not growth: a corpus card adds goldens without touching them. A
+     *  change that moves names from one kind to another lowers the floor it falls under in the same commit. */
     private static final int MIN_FILES = 127;
-    private static final int MIN_SPANS = 0;
-    private static final Map<Kind, Integer> MIN_NAMES = new EnumMap<>(Kind.class);
+    private static final int MIN_SPANS = 18813;
+    private static final Map<Kind, Integer> MIN_NAMES = new EnumMap<>(Map.ofEntries(
+            Map.entry(Kind.OBJECT_TYPE, 1441), Map.entry(Kind.ATTRIBUTE, 1332), Map.entry(Kind.CHARACTERISTIC, 351),
+            Map.entry(Kind.ROLE, 733), Map.entry(Kind.FACT_TYPE, 98), Map.entry(Kind.PARAMETER, 43),
+            Map.entry(Kind.DOMAIN, 8), Map.entry(Kind.ENUMERATION_VALUE, 17), Map.entry(Kind.UNIT_SYSTEM, 33),
+            Map.entry(Kind.UNIT, 243), Map.entry(Kind.DIMENSION, 9), Map.entry(Kind.DIMENSION_LABEL, 13),
+            Map.entry(Kind.TIMELINE, 5), Map.entry(Kind.DAY_KIND, 28), Map.entry(Kind.VOCABULARY, 48),
+            Map.entry(Kind.NAMED_FORM, 489), Map.entry(Kind.RULE_GROUP, 4), Map.entry(Kind.VARIABLE, 31)));
 
     private static Path corpus() {
         for (Path p = Path.of("").toAbsolutePath(); p != null; p = p.getParent()) {
