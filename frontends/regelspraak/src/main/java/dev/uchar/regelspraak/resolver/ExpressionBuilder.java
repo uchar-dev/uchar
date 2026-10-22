@@ -246,7 +246,7 @@ final class ExpressionBuilder {
      *  nothing from {@code from} keeps its own refusal. */
     private Expr reanchorRead(Expr.AttributeReference a, List<RegelSpraakModel.RoleBindingRef> back, ObjectType from,
                               ObjectType to, Msg[] why) {
-        if (a.set()) return a;                                          // a set reading outside a fold source: the set fence's
+        if (a.set() || a.objectType() == null) return a;               // the set fence's, or a read bound to no type: its own refusal
         List<RegelSpraakModel.RoleBindingRef> forward = dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, from, a);
         if (forward.isEmpty() && dev.uchar.regelspraak.emit.IrEmitter.unboundRead(model, from, a)) return a;
         List<RegelSpraakModel.RoleBindingRef> path = new ArrayList<>(back);
@@ -295,7 +295,10 @@ final class ExpressionBuilder {
             return new Expr.FunctionCall(f.kind(), List.of(moved), f.elementObjectType(), fallback, f.filter(),
                     f.dimensionSelection(), f.type(), f.source(), f.granularity());
         }
-        if (f.dimensionSelection() != null || f.elementObjectType() != null) {
+        // a fold over a dimension, a fold of another shape, and the operators over the subject's own timeline read the
+        // subject itself, and none of them has a spelling over a navigation
+        if (f.dimensionSelection() != null || f.elementObjectType() != null || f.kind() == Expr.FunctionKind.TOTAAL
+                || f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN) {
             why[0] = Msg.frontend("PART.reanchor-form", "expression", f.source());
             return f;
         }

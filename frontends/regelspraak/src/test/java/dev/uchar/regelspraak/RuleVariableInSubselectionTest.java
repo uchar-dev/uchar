@@ -90,6 +90,47 @@ class RuleVariableInSubselectionTest {
                 FoldInElementConditionTest.filter(m), "de variabele leest wat de inline vouw R1 leest");
     }
 
+    /** A variable read in the filter of the fold another variable defines: each filter is written from its own
+     *  element, the keurdatum from the klacht over its beklaagde schuit, the fold from the lading over its schuit. */
+    @Test void a_variable_in_the_filter_of_a_variable_reads_from_each_element() {
+        String model = FoldInElementConditionTest.MODEL.replace(
+                "    de eerste schone maand vanaf-de-eindmaand Datum in dagen;",
+                "    de eerste schone maand vanaf-de-eindmaand Datum in dagen;\n    de keurdatum Datum in dagen;");
+        RegelSpraakModel m = Resolver.resolve(model + """
+            Regel eerste schone maand vanaf de eindmaand
+                geldig altijd
+                    De eerste schone maand vanaf-de-eindmaand van een Schuit moet berekend worden als de eerste van de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen:
+                    - hij heeft geen overlading
+                    - zijn maand plus 1 mnd is later dan de grens.
+                    Daarbij geldt:
+                        de startgrens is de keurdatum van de Schuit.
+                        de grens is de laatste van de einddag van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn einddag is later dan de startgrens.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "" + m.diagnostics);
+        String fold = String.valueOf(comparand(m));
+        assertTrue(fold.contains("right={node=AttributeReference, attribute=keurdatum, subjectType=Schuit, "
+                + "path=[{node=RoleBinding, factType=schuitklacht, role=beklaagde schuit}]"), () -> fold);
+        assertTrue(fold.contains("sourcePath=[{node=RoleBinding, factType=lading in-een-maand, role=schuit}, "
+                + "{node=RoleBinding, factType=schuitklacht, role=klacht}]"), () -> fold);
+    }
+
+    @Test void a_variable_in_the_test_of_a_quantifier_reads_over_the_way_back() {
+        String model = MODEL.replace("    de peildatum Datum in dagen;",
+                "    de peildatum Datum in dagen;\n    is vroeg kenmerk (bijvoeglijk);");
+        RegelSpraakModel m = Resolver.resolve(model + """
+            Regel vroeg
+                geldig altijd
+                    Een Schuit is vroeg
+                    indien de maand van ten minste één van de ladingen van de Schuit later is dan de peildag.
+                    Daarbij geldt:
+                        de peildag is de gewenste dag van het verzoek van de Schuit.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "" + m.diagnostics);
+        String ir = FoldInElementConditionTest.text(Report.json(dev.uchar.regelspraak.emit.IrEmitter.emit(m)));
+        assertTrue(ir.contains("attribute=gewenste dag, subjectType=Verzoek, path=[{node=RoleBinding, factType=lading "
+                + "in-een-maand, role=schuit}, {node=RoleBinding, factType=schuitverzoek, role=verzoek}]"), () -> ir);
+    }
+
     @Test void a_variable_outside_the_subselection_is_unchanged() {
         RegelSpraakModel m = Resolver.resolve(MODEL + """
             Regel eerste schone maand
