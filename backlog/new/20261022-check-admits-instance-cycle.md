@@ -29,3 +29,14 @@ niet zegt welk feittype twee objecten van één type verbindt.
 
 May touch: `frontends/regelspraak/**`, `corpus/golden/jutterswet-vergunningketen/` (alleen `source.rgs`), deze kaart.
 Start pas als `cycle-across-instances` geland is.
+
+## Mee in deze tak: de snippets van `percentageOf` (2026-10-22)
+
+Uit het Fable-advies over de uitleg van berekende waarden (`uchar-dev/research/uitleg-berekende-waarden-2026-10-22/fable-advies.md`,
+§1.4, §5 U5, beslispunt 6), op aanwijzing van de eigenaar direct op te lossen in de eerstvolgende frontendtak: beide
+operanden van `het percentage X van Y` dragen de brontekst van de hele uitdrukking als snippet
+(`ExpressionBuilder.java` r. ±3039–3053: `new Expr.ParameterRef(pct, source)` en `attributeRef(…, source)` krijgen de
+`source` van de `Binary`). Een uitlegzin die operanden met hun waarde noemt, noemt dan twee keer de hele frase; het
+raakt de herlevingsgrens van v2. De `ParameterRef` krijgt de bron van het eerste naamdeel, de operand V die van de
+overige delen met het onderwerp. Rood eerst: een frontendtest die de snippets van beide operanden pint; elke golden met
+een `percentageOf` opnieuw uitgegeven (gates 2, 10 en 16); de verifier en de uitvoerders lezen geen snippet.
