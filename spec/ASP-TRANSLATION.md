@@ -1088,9 +1088,10 @@ atom copied into the helper's body) and the result. An aggregate that
 reads a variable of the enclosing rule — its subject, its guard, a `Let`
 binder — or that is no assignment is refused by name (CLINGO-028), never
 hoisted into a helper that would read a variable of its own in its place.
-The hoist reads the atoms the condition's translation returns; a form a
-node registers for the pass before a creation (`register_pre`) does not
-pass through it.
+The forms a filter and a matrix take in the pass before a creation
+(`register_pre`, clones of their own atoms) pass through the hoist where
+they enter the element of the quantifier fold's `#count` in that pass
+(clingo suite, `tr-kv-listed`).
 The **self-denoting** source (WF-083, RS ch. 3.4a) is, since L2, a
 plain count source: the count carries its `sourceRole` and translates as
 every other count. *Until L2* the written role stood in the argument's

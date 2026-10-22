@@ -8055,8 +8055,13 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
         (lazy
           (match kv_quantifier with
           | At_least ->
-              let f = Option.value (Lazy.force !fpre) ~default:fatoms
-              and m = Option.value (Lazy.force !mpre) ~default:atoms in
+              (* the forms of that pass are clones of the filter's and the
+                 matrix's own atoms ([pre_clone]), taken before the hoist, so
+                 an aggregate in them goes through it here, where they enter
+                 the element of a #count *)
+              let hoist = hoist_element_aggregates ctx ~x ~el ~outside:[ subject ] in
+              let f = hoist (Option.value (Lazy.force !fpre) ~default:fatoms)
+              and m = hoist (Option.value (Lazy.force !mpre) ~default:atoms) in
               ctx.fresh <- ctx.fresh + 1;
               let pp = Printf.sprintf "kvp%d" ctx.fresh in
               let h = fresh ctx "H" in

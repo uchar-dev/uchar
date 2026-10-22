@@ -10997,6 +10997,39 @@ let () =
     ~case_text:(pf_case ~instances:(h2 ~case_schuit:true ()) h99);
   both_answer ~name:"W1's own schuit beside the created one closes the fold in that pass too (r6-kv-both, control)"
     ~ir:(doc ~creations:[ under_five ] kv_rule) ~case_text:(pf_case ~instances:(h2 ~case_schuit:true ()) h99);
+  (* tr-kv-1 with an aggregate in the matrix of the fold over the schuiten
+     (card clingo-nested-aggregate-in-fold-filter, fix round 2026-10-22):
+     "lengte > de laatste van (de bonus van de werf van de schuit) en (5)" in
+     place of "lengte > 5". The matrix reads a role, so in a document with a
+     creation it has a form for the pass before a creation ([pre_clone]), and
+     the fold's verdict in that pass counts its members in a #count whose
+     element holds that form; the listed fold's #max stood inside that #count
+     and clingo stopped with a parse error. It goes through the helper
+     predicate per element there as well. *)
+  let bonus_of_werf =
+    {|{ "node": "AttributeReference", "attribute": "bonus", "subjectType": "Werf",
+        "source": { "snippet": "de bonus van de werf van de schuit" },
+        "path": [ { "node": "RoleBinding", "factType": "ligplaats", "role": "werf" } ] }|}
+  in
+  let last_bonus_5 =
+    Printf.sprintf
+      {|{ "node": "Aggregation", "kind": "last", "arguments": [ %s, %s ], "type": %s, "source": { "snippet": "de laatste van de bonus en 5" } }|}
+      bonus_of_werf (lit "5") n0
+  in
+  let kv_rule_listed =
+    pf_rule ~ot:"Haven" ~objective:"bonus"
+      ~precondition:
+        (werven_kv
+           (pf_comp ~cutoff:1 "atLeast"
+              [ kv ~cutoff:1 "atLeast" (gt length last_bonus_5);
+                pf_comp "all" [ gt bonus_w (lit "4"); gt bonus_w p ] ]))
+      (lit "99")
+  in
+  named_refusal ~by:"the quantifier fold" ~ref_plays:false
+    ~name:"a listed fold in the matrix over the schuiten, the pass before a creation (tr-kv-listed)"
+    ~ir:(doc ~creations:[ under_five ] kv_rule_listed) ~param:"p" ~case_text:(pf_case ~instances:(h2 ()) h99);
+  both_answer ~name:"a listed fold in the matrix over the schuiten, W1's own schuit beside the created one (tr-kv-listed-both, control)"
+    ~ir:(doc ~creations:[ under_five ] kv_rule_listed) ~case_text:(pf_case ~instances:(h2 ~case_schuit:true ()) h99);
   let dmd =
     pf_rule ~ot:"Haven" ~objective:"bonus"
       (let_ "k" p
