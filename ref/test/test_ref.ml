@@ -9350,6 +9350,97 @@ let () =
             (code = Some "EF-033"
             && params = [ ("factType", "vorige vergunning"); ("cycle", "V1, V2") ]))
 
+(* WV-6.4-l: a defaults group on the instance-ordered cycle (WF-051 over the
+   graph without the shifted edges). The einddag of a Vergunning may be given
+   ("mag opgegeven worden"): the group "opgave boven berekening einddag" puts
+   the opgegeven einddag above the berekende einddag, which is the basiseinddag
+   plus the restant of the vorige vergunning; the restant reads the einddag.
+   The group's reads are negative edges, local ones here. V1 (no predecessor),
+   V2 with an opgegeven einddag 01-01-2027 and V3: berekende einddag V2
+   03-03-2027 but einddag V2 01-01-2027, restant V2 122 dagen (from 01-09-2026),
+   einddag V3 01-06-2027 + 122 dagen = 01-10-2027; the consistency the frontend
+   adds for a given value that differs from the computed one holds for V2. The
+   ASP backend and both Drools branches answer the same (measured 2026-10-22). *)
+let wv64_opgave =
+  {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vergunning",
+"animate":false,"plural":"Vergunningen","attributes":[{"node":"Attribute","name":"stopdag",
+"datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"basiseinddag",
+"datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"einddag",
+"datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"opgegeven einddag",
+"datatype":{"node":"Date","precision":"day"},"origin":{"form":"inputAboveComputation",
+"from":{"kind":"attribute","owner":"Vergunning","name":"einddag"}}},{"node":"Attribute",
+"name":"berekende einddag","datatype":{"node":"Date","precision":"day"},
+"origin":{"form":"inputAboveComputation","from":{"kind":"attribute","owner":"Vergunning",
+"name":"einddag"}}},{"node":"Attribute","name":"restant","datatype":{"node":"Number","whole":true,
+"decimals":0,"sign":"unspecified","unit":{"node":"Unit","abbreviation":"dg","system":"Tijd",
+"canonical":"dg","factorToCanonical":{"num":1,"den":1}}}}],
+"characteristics":[{"node":"Characteristic","name":"afwijkende opgave einddag","kind":"possessive",
+"origin":{"form":"inputAboveComputation","from":{"kind":"attribute","owner":"Vergunning",
+"name":"einddag"}}}]}],"factTypes":[{"node":"FactType","name":"vorige vergunning",
+"reciprocal":false,"roles":[{"node":"Role","name":"vergunning","objectType":"Vergunning",
+"many":false},{"node":"Role","name":"vorige vergunning","objectType":"Vergunning","many":false}]}],
+"parameters":[],"domains":[],"unitSystems":[{"node":"UnitSystem","name":"Tijd",
+"units":[{"node":"Unit","abbreviation":"dg","system":"Tijd","canonical":"dg",
+"factorToCanonical":{"num":1,"den":1},"spellings":["dag"]}]}],"dimensions":[],"timelines":[],
+"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"restant",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"restant","subjectType":"Vergunning"},"value":{"node":"BuiltinCall","kind":"duration",
+"arguments":[{"node":"AttributeReference","attribute":"stopdag","subjectType":"Vergunning"},
+{"node":"AttributeReference","attribute":"einddag","subjectType":"Vergunning"}],
+"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}},
+"condition":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"Predicate",
+"kind":"filled","operand":{"node":"AttributeReference","attribute":"stopdag",
+"subjectType":"Vergunning"},"negated":false,"digits":0},{"node":"Predicate","kind":"filled",
+"operand":{"node":"AttributeReference","attribute":"einddag","subjectType":"Vergunning"},
+"negated":false,"digits":0},{"node":"Comparison","op":"earlier","left":{"node":"AttributeReference",
+"attribute":"stopdag","subjectType":"Vergunning"},"right":{"node":"AttributeReference",
+"attribute":"einddag","subjectType":"Vergunning"}}]},"initialisation":false,
+"presentation":"calculation"}]},{"node":"Rule","name":"einddag",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"berekende einddag","subjectType":"Vergunning"},"value":{"node":"Binary","op":"plus",
+"left":{"node":"AttributeReference","attribute":"basiseinddag","subjectType":"Vergunning"},
+"right":{"node":"AttributeReference","attribute":"restant","subjectType":"Vergunning",
+"path":[{"node":"RoleBinding","factType":"vorige vergunning","role":"vorige vergunning"}]},
+"type":{"node":"Date","precision":"day"}},"initialisation":false,"presentation":"calculation"}]},
+{"node":"Rule","name":"afwijking opgave einddag","versions":[{"validity":{"node":"Validity"},
+"target":{"node":"AttributeReference","attribute":"afwijkende opgave einddag",
+"subjectType":"Vergunning"},"value":{"node":"Literal","value":{"boolean":true},
+"type":{"node":"Boolean"}},"condition":{"node":"Compound","quantifier":"all","threshold":0,
+"parts":[{"node":"Predicate","kind":"filled","operand":{"node":"AttributeReference",
+"attribute":"opgegeven einddag","subjectType":"Vergunning"},"negated":false,"digits":0},
+{"node":"Predicate","kind":"filled","operand":{"node":"AttributeReference",
+"attribute":"berekende einddag","subjectType":"Vergunning"},"negated":false,"digits":0},
+{"node":"Comparison","op":"notEqual","left":{"node":"AttributeReference",
+"attribute":"opgegeven einddag","subjectType":"Vergunning"},"right":{"node":"AttributeReference",
+"attribute":"berekende einddag","subjectType":"Vergunning"}}]},"initialisation":false}],
+"origin":{"form":"inputAboveComputation","from":{"kind":"attribute","owner":"Vergunning",
+"name":"einddag"}}}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],
+"consistencies":[{"node":"Consistency","name":"controle opgave einddag",
+"versions":[{"subject":"Vergunning","assertion":{"node":"CharacteristicCheck",
+"characteristic":"afwijkende opgave einddag","negated":true},"validity":{"node":"Validity"}}],
+"origin":{"form":"inputAboveComputation","from":{"kind":"attribute","owner":"Vergunning",
+"name":"einddag"}}}],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],
+"ruleGroups":[],"prioritizedDefaults":[{"node":"PrioritizedDefaults",
+"name":"opgave boven berekening einddag","subject":"Vergunning","attribute":"einddag",
+"defaults":[{"node":"Default","justification":{"node":"Compound","quantifier":"all","threshold":0,
+"parts":[]},"consequence":{"node":"AttributeReference","attribute":"opgegeven einddag",
+"subjectType":"Vergunning"}},{"node":"Default","justification":{"node":"Compound",
+"quantifier":"all","threshold":0,"parts":[]},"consequence":{"node":"AttributeReference",
+"attribute":"berekende einddag","subjectType":"Vergunning"}}],"validity":{"node":"Validity"},
+"origin":{"form":"inputAboveComputation","from":{"kind":"attribute","owner":"Vergunning",
+"name":"einddag"}}}]},"diagnostics":[]}|}
+
+let () =
+  List.iter
+    (fun order ->
+      with_instance_case wv64_opgave ~order {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "V3", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2027-06-01"}}, "roles": {"vorige vergunning": ["V2"]}, "characteristics": []}, {"label": "V2", "objectType": "Vergunning", "attributes": {"stopdag": {"date": "2026-09-01"}, "basiseinddag": {"date": "2026-12-01"}, "opgegeven einddag": {"date": "2027-01-01"}}, "roles": {"vorige vergunning": ["V1"]}, "characteristics": []}, {"label": "V1", "objectType": "Vergunning", "attributes": {"stopdag": {"date": "2026-03-01"}, "basiseinddag": {"date": "2026-06-01"}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeValue", "label": "V1", "attribute": "einddag", "value": {"date": "2026-06-01"}}, {"kind": "attributeValue", "label": "V1", "attribute": "restant", "value": {"number": "92"}}, {"kind": "attributeValue", "label": "V2", "attribute": "berekende einddag", "value": {"date": "2027-03-03"}}, {"kind": "attributeValue", "label": "V2", "attribute": "einddag", "value": {"date": "2027-01-01"}}, {"kind": "attributeValue", "label": "V2", "attribute": "restant", "value": {"number": "122"}}, {"kind": "attributeValue", "label": "V3", "attribute": "einddag", "value": {"date": "2027-10-01"}}, {"kind": "inconsistent", "rule": "controle opgave einddag", "label": "V2"}]}|} (fun violations load evaluate ->
+          let tag = "WV-6.4-l-" ^ String.concat "" (List.map string_of_int order) in
+          check (tag ^ "-verifier-schoon") (violations = []);
+          let c = load () in
+          check tag (Case.check c (evaluate c) = [])))
+    [ [ 0; 1; 2 ]; [ 2; 1; 0 ] ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

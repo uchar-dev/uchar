@@ -5818,6 +5818,17 @@ the level of the member (ch. 6.2): stratum k, then depth d, then level l.
   ("einddag zonder restant" writes 01-12-2026, "einddag" 03-03-2027). In
   depth order: **V1 zonder verlenging, V2 not, einddag V2 03-03-2027**,
   which is the ASP backend's stable model as well.
+- A defaults group on the cycle (`ref/` test WV-6.4-l, absolute, in two orders
+  of the rules): the einddag "mag opgegeven worden", so the group "opgave boven
+  berekening einddag" puts a given einddag above the berekende einddag, which
+  is the basiseinddag plus the restant of the vorige vergunning. The group's
+  displacement reads are negative edges (WF-051), local ones on this cycle. V1
+  without a predecessor, V2 with an opgegeven einddag 01-01-2027, V3 after V2:
+  **berekende einddag V2 03-03-2027, einddag V2 01-01-2027, restant V2 122**
+  (from 01-09-2026), **einddag V3 01-06-2027 + 122 dagen = 01-10-2027**, and the
+  consistency of a given value that differs from the computed one holds for
+  V2. The ASP backend and both Drools branches answer the same (measured
+  2026-10-22).
 - A cycle in the links (`ref/` test WV-6.4-k, red case
   `corpus/red/instance-order-link-cycle`): V1's vorige vergunning is V2 and
   V2's is V1. The case is refused while it is read, **EF-033** with

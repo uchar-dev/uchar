@@ -115,3 +115,36 @@ to-many, R door een feitcreatie geschreven, gedeelde satelliet, dezelfde knoop o
 door een to-many stap); een rood geval met een schakelkring (`expectedFault` EF-032) in ref, clingo en Drools; het
 gewerkte voorbeeld van ch. 6.4 als ref-test; `EXPECTED_PLAYED` plus één. De CONSTRUCTS-rij als tekst in de Result.
 Start pas als `date-with-in-ref-and-clingo` geland is (beide raken `spec/RUNTIME-SEMANTICS.md`, ref en clingo).
+
+## Voorlopige besluiten van de bouwer (2026-10-22)
+
+*Normkeuzes die het advies niet beslist en die de bouw nodig had; de eigenaar kan ze omdraaien. Elk staat in IR-SPEC
+ch. 5.3 met reden en getuige.*
+
+1. **Een stap reikt naar één.** Een satellietstap is een stap over een satellietrelatie (eigenaarsrol to-one, zoals het
+   advies) én bereikt een to-one rol; dat geldt voor elke stap van een verschoven of lokale lezing. Anders is de
+   vijfde negatieve ("R-stap gevolgd door een to-many stap") niet te onderscheiden van een toegelaten vorm. Een vouw over
+   de satellieten van de voorganger is gezond (zij hebben één diepte) en blijft een latere uitbreiding, zoals een
+   verzameling voorgangers.
+2. **Lokaal is smal, en verplicht.** Het advies laat elke gewone rand binnen de kring toe zolang de graaf zonder de
+   verschoven randen kringvrij is. Dat is niet gezond: een regel in de kring die de einddag van álle Vergunningen leest
+   (een vouw over de populatie) sluit per object een echte kring (restant(x) ← einddag(y) ← restant(x) met x de vorige
+   van y) die de statische toets dan niet ziet. Daarom moet elke lezing achter een interne rand verschoven of lokaal
+   zijn: lokaal is geen stap, of één stap over een satellietrelatie, heen of terug. Twee stappen (naar een satelliet en
+   terug), een vouw over de eigen satellieten en elke andere relatie maken het deel ongeordend.
+3. **Eén schakelrelatie, één rol per deel.** Alle verschoven lezingen van een deel lopen over dezelfde relatie naar
+   dezelfde rol. Een deel dat de voorganger én de opvolger leest (dezelfde relatie, de andere rol) sluit per object een
+   echte kring; het advies sluit dat niet uit.
+4. **Eén satellietrelatie per satelliettype in een deel**, anders kan een satelliet twee eigenaars van verschillende
+   diepte hebben.
+5. **Alleen regels en defaults-groepen**, en geen deel met een creatie van een recursieve groep (de twee uitzonderingen
+   disjunct, zoals het advies schrijft). Een reciprook feittype is geen schakelrelatie (zijn schakels lopen beide kanten
+   op).
+6. **EF-033** staat op het kanaal `case input` (de schakels zijn invoer; geen vorm schrijft ze). `factType` is de
+   gedeclareerde naam, `cycle` de labels van de kring vanaf het kleinste label (bytevolgorde) langs de rol naar de
+   voorganger, gescheiden door `, `; bij meer kringen die met het kleinste label. In ref en clingo staat de toets in de
+   case-lezer die zij delen, in Drools in `CaseInput.of`.
+7. **Diepte en niveau.** Een satelliet staat op de diepte van haar eigenaar; een gemaakt object (creatie) op 0. In ref
+   rekent een deel binnen zijn stratum per diepte en per diepte per niveau (de langste weg over de niet-verschoven
+   interne randen, een strikte of negatieve rand telt één); Drools ordent niet en laat truth maintenance terugnemen
+   (gemeten, zie Result).
