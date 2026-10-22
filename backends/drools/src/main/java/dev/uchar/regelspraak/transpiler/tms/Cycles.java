@@ -72,8 +72,14 @@ import java.util.TreeSet;
 public final class Cycles {
     private Cycles() {}
 
-    /** A read: the node, and whether the edge it draws is negative (ch. 5.2). */
-    private record Read(String node, boolean negative) {}
+    /** A read: the node, whether the edge it draws is negative (ch. 5.2), and for a read of an attribute or a
+     *  characteristic its path, the role bindings from the form's subject to the object it lands on (the ranges of the
+     *  folds it sits in, then its own hops), null where no written path reaches it (the verifier's {@code dep_expr_at}). */
+    private record Read(String node, boolean negative, List<RoleBindingRef> path) {
+        Read(String node, boolean negative) {
+            this(node, negative, null);
+        }
+    }
 
     /** One form of the graph: its kind and name as the refusal names it, the IR node it is built from, whether it is a
      *  creation member of a recursive rule group, whether its writes are irrevocable, and the nodes it writes and
@@ -81,7 +87,13 @@ public final class Cycles {
      *  reads every value that is not a characteristic strictly (the verifier's {@code strict_unless_char},
      *  RUNTIME-SEMANTICS ch. 6.1): a transient it acted on would persist. */
     private record Form(ProducerConsumer.FormKind kind, String name, Object source, boolean recursiveCreation,
-                        boolean irrevocable, Set<String> writes, List<Read> reads) {}
+                        boolean irrevocable, Set<String> writes, List<Read> reads) {
+        /** A rule or a defaults group, the forms that write per subject of their own type: the only forms an
+         *  instance-ordered part may hold. */
+        boolean perSubject() {
+            return kind == ProducerConsumer.FormKind.REGEL || kind == ProducerConsumer.FormKind.DEFAULTS_GROUP;
+        }
+    }
 
     /** An edge from the form that writes {@code node} to the form that reads it; {@code strict} where ch. 5.2 makes
      *  the edge strict or negative, so that off a cycle the reader's stratum lies above the writer's. */
@@ -97,7 +109,11 @@ public final class Cycles {
         Graph g = new Graph(loaded.model(), loaded.prioritizedDefaults(), loaded.navigationBindings(),
                 loaded.roleBindings(), loaded.sourcePaths());
         List<Form> graphForms = g.graphForms();
-        List<Edge> edges = edges(graphForms);
+        // the shifted edges of an instance-ordered part leave both walks, as the verifier's do (IR-SPEC ch. 5.3)
+        Set<Edge> shifted = new HashSet<>();
+        for (Order o : orders(g, graphForms, edges(graphForms))) shifted.addAll(o.shifted());
+        List<Edge> edges = new ArrayList<>();
+        for (Edge r : edges(graphForms)) if (!shifted.contains(r)) edges.add(r);
         List<Msg> cycles = cycles45(g, graphForms, edges);
         if (!cycles.isEmpty())
             return DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.reason("sentence", cycles.size() == 1
@@ -108,6 +124,117 @@ public final class Cycles {
         return DroolsCode.NEGATION_ON_CYCLE.reason("sentence", negations.size() == 1
                 ? DroolsCode.NEGATION_ON_CYCLE.part("one", "negation", negations.get(0))
                 : DroolsCode.NEGATION_ON_CYCLE.part("several", "count", negations.size(), "negations", new Msg.Joined(negations, "; ")));
+    }
+
+    /** The switch relations of the instance-ordered parts of the document, each as the hop that reaches the predecessor
+     *  (its fact type and the role it reaches, spelled as the first shifted read names them), once per pair: the links
+     *  over each must form no cycle in a case (EF-033, RUNTIME-SEMANTICS ch. 6.2), which {@code CaseInput} tests. */
+    static List<RoleBindingRef> instanceWalks(RegelSpraakModel model, List<PrioritizedDefaults> defaults,
+                                              Map<Object, List<RoleBindingRef>> navigation,
+                                              Map<Object, RoleBindingRef> roleBindings,
+                                              Map<Object, List<RoleBindingRef>> sourcePaths) {
+        Graph g = new Graph(model, defaults, navigation, roleBindings, sourcePaths);
+        List<Form> graphForms = g.graphForms();
+        Map<String, RoleBindingRef> out = new java.util.TreeMap<>();
+        for (Order o : orders(g, graphForms, edges(graphForms)))
+            out.putIfAbsent(Namen.norm(o.walk().factType()) + "\u0000" + Namen.norm(o.walk().role()), o.walk());
+        return List.copyOf(out.values());
+    }
+
+    /** An instance-ordered part: the hop over its switch relation to the predecessor, and its shifted edges. */
+    private record Order(RoleBindingRef walk, Set<Edge> shifted) {}
+
+    /** A satellite hop of a part: the satellite relation, the satellite type, and whether the hop reaches it. */
+    private record Satellite(String relation, ObjectType satellite) {}
+
+    /**
+     * The instance-ordered parts of the graph (IR-SPEC ch. 5.3), as the verifier's {@code instance_ordering} finds them:
+     * a strongly connected part of the whole graph that holds no creation of a recursive group and only rules and
+     * defaults groups, whose internal edges include a shifted one, whose shifted reads all walk one switch relation to
+     * one role, every read behind whose internal edges is shifted or local, whose satellite types are each reached
+     * through one satellite relation, and which is acyclic without its shifted edges. A shifted read lands on the
+     * predecessor or its one satellite, a local read on the object, its satellite or its owner; a shifted edge is one
+     * whose consumer reads its node in shifted reads only. Truth maintenance needs no order of the objects on such a
+     * part: a value justified by a leeg predecessor is withdrawn once the predecessor's value arrives. The levels the
+     * reference interpreter orders a depth by are therefore not computed here; their acyclicity is.
+     */
+    private static List<Order> orders(Graph g, List<Form> forms, List<Edge> edges) {
+        int n = forms.size();
+        Set<String> written = new HashSet<>();
+        for (Form f : forms) written.addAll(f.writes());
+        List<List<Edge>> out = new ArrayList<>();
+        for (int i = 0; i < n; i++) out.add(new ArrayList<>());
+        for (Edge r : edges) out.get(r.producer()).add(r);
+        List<Order> orders = new ArrayList<>();
+        for (Set<Integer> part : components(n, out)) {
+            List<Edge> internal = new ArrayList<>();
+            for (Edge r : edges) if (part.contains(r.producer()) && part.contains(r.consumer())) internal.add(r);
+            if (internal.isEmpty()) continue;
+            if (part.stream().anyMatch(i -> forms.get(i).recursiveCreation() || !forms.get(i).perSubject())) continue;
+            // the reads behind the internal edges, one entry per consumer and node, with the paths of their positions
+            Map<String, List<List<RoleBindingRef>>> positions = new LinkedHashMap<>();
+            for (Edge r : internal) {
+                String key = r.consumer() + "\u0000" + r.node();
+                if (positions.containsKey(key)) continue;
+                List<List<RoleBindingRef>> paths = new ArrayList<>();
+                for (Read l : forms.get(r.consumer()).reads()) if (l.node().equals(r.node())) paths.add(l.path());
+                positions.put(key, paths);
+            }
+            Map<String, RoleBindingRef> walks = new java.util.TreeMap<>();
+            ObjectType t = null;
+            for (List<List<RoleBindingRef>> paths : positions.values())
+                for (List<RoleBindingRef> path : paths)
+                    if (path != null && !path.isEmpty()) {
+                        ObjectType reached = g.switchHop(path.get(0), written);
+                        if (reached != null) {
+                            String key = Namen.norm(path.get(0).factType()) + "\u0000" + Namen.norm(path.get(0).role());
+                            if (!walks.containsKey(key)) walks.put(key, path.get(0));
+                            if (t == null) t = reached;
+                        }
+                    }
+            if (walks.size() != 1) continue;
+            RoleBindingRef walk = walks.values().iterator().next();
+            Set<String> shiftedReads = new HashSet<>();
+            Set<Satellite> satellites = new LinkedHashSet<>();
+            boolean ordered = true;
+            for (Map.Entry<String, List<List<RoleBindingRef>>> e : positions.entrySet()) {
+                boolean allShifted = true;
+                for (List<RoleBindingRef> path : e.getValue()) {
+                    String kind = g.classify(path, walk, t, written, satellites);
+                    if (kind == null) ordered = false;
+                    else if (!kind.equals("shifted")) allShifted = false;
+                }
+                if (allShifted) shiftedReads.add(e.getKey());
+            }
+            if (!ordered || shiftedReads.isEmpty()) continue;
+            // one satellite relation per satellite type: two would give a satellite two owners
+            boolean shared = false;
+            for (Satellite a : satellites)
+                for (Satellite b : satellites)
+                    if (!a.relation().equals(b.relation())
+                            && (a.satellite().isA(b.satellite()) || b.satellite().isA(a.satellite()))) shared = true;
+            if (shared) continue;
+            Set<Edge> shifted = new HashSet<>();
+            List<Edge> remaining = new ArrayList<>();
+            for (Edge r : internal)
+                if (shiftedReads.contains(r.consumer() + "\u0000" + r.node())) shifted.add(r);
+                else remaining.add(r);
+            if (cyclic(n, remaining)) continue;
+            orders.add(new Order(walk, shifted));
+        }
+        return orders;
+    }
+
+    /** Whether {@code edges} over {@code n} forms close a cycle. */
+    private static boolean cyclic(int n, List<Edge> edges) {
+        List<List<Edge>> out = new ArrayList<>();
+        for (int i = 0; i < n; i++) out.add(new ArrayList<>());
+        for (Edge r : edges) out.get(r.producer()).add(r);
+        for (Set<Integer> component : components(n, out)) {
+            int first = component.iterator().next();
+            if (component.size() > 1 || out.get(first).stream().anyMatch(r -> r.consumer() == first)) return true;
+        }
+        return false;
     }
 
     /** The order of the cycles and negations of one refusal: by their Dutch text, whatever language the refusal is
@@ -549,7 +676,7 @@ public final class Cycles {
 
         private static List<Read> negative(List<Read> l) {
             List<Read> out = new ArrayList<>();
-            for (Read x : l) out.add(new Read(x.node(), true));
+            for (Read x : l) out.add(new Read(x.node(), true, x.path()));
             return out;
         }
 
@@ -558,15 +685,22 @@ public final class Cycles {
         /** The verifier's {@code dep_expr}: every expression node, so a node the IR records gain later fails to compile
          *  here until it is decided what it reads. */
         private void expr(Expr e, ObjectType subject, List<Read> out) {
+            expr(e, subject, List.of(), out);
+        }
+
+        /** {@link #expr(Expr, ObjectType, List)} on the object {@code at} names: the role bindings from the form's
+         *  subject to it, null where no written path reaches it (the verifier's {@code dep_expr_at}). */
+        private void expr(Expr e, ObjectType subject, List<RoleBindingRef> at, List<Read> out) {
             if (e == null) return;
             switch (e) {
                 case Expr.AttributeReference a -> {
                     if (a.objectType() == null || a.attribute() == null) return;
-                    for (RoleBindingRef hop : navigation.getOrDefault(a, List.of()))
+                    List<RoleBindingRef> hops = navigation.getOrDefault(a, List.of());
+                    for (RoleBindingRef hop : hops)
                         if (hop.factType() != null) out.add(new Read(relation(hop.factType()), false));
-                    out.add(new Read(member(a.objectType(), a.attribute(), false), false));
+                    out.add(new Read(member(a.objectType(), a.attribute(), false), false, then(at, hops)));
                 }
-                case Expr.Binary b -> { expr(b.left(), subject, out); expr(b.right(), subject, out); }
+                case Expr.Binary b -> { expr(b.left(), subject, at, out); expr(b.right(), subject, at, out); }
                 case Expr.FunctionCall f -> {
                     ObjectType el = f.elementObjectType();
                     if (el != null) out.add(new Read(population(el), false));
@@ -575,40 +709,43 @@ public final class Cycles {
                         for (RoleBindingRef hop : path) if (hop.factType() != null) out.add(new Read(relation(hop.factType()), false));
                     RoleBindingRef role = roleBindings.get(f);
                     if (role != null && role.factType() != null) out.add(new Read(relation(role.factType()), false));
+                    // the argument and the filter of an instance fold are read on its elements, at the end of its range
+                    List<RoleBindingRef> elAt = role != null ? then(at, List.of(role)) : path != null ? then(at, path) : at;
                     // the count source names the relation's role, not a member: it reads the link set and the
                     // population drawn above, never a member of the contributor
                     boolean countSource = f.kind() == Expr.FunctionKind.AANTAL && el != null && f.arguments().size() == 1
                             && f.arguments().get(0) instanceof Expr.AttributeReference source && source.attribute() != null
                             && (path != null || role != null)
                             && !carries(el, source.attribute(), false) && !carries(el, source.attribute(), true);
-                    if (!countSource) for (Expr a : f.arguments()) expr(a, subject, out);
-                    expr(f.emptyFallback(), subject, out);
-                    condition(f.filter(), el != null ? el : subject, false, out);
+                    if (!countSource) for (Expr a : f.arguments()) expr(a, subject, elAt, out);
+                    expr(f.emptyFallback(), subject, at, out);
+                    condition(f.filter(), el != null ? el : subject, false, elAt, out);
                 }
                 case Expr.InstanceSetUnion u -> {
                     for (Expr.InstanceSetUnion.Branch t : u.branches()) {
                         if (t.elementType() != null) out.add(new Read(population(t.elementType()), false));
                         if (t.sourceRole() != null && t.sourceRole().factType() != null)
                             out.add(new Read(relation(t.sourceRole().factType()), false));
-                        condition(t.filter(), t.elementType(), false, out);
+                        condition(t.filter(), t.elementType(), false,
+                                t.sourceRole() != null ? then(at, List.of(t.sourceRole())) : null, out);
                     }
                 }
-                case Expr.Rounding a -> expr(a.base(), subject, out);
+                case Expr.Rounding a -> expr(a.base(), subject, at, out);
                 case Expr.Clamp b -> {
-                    expr(b.base(), subject, out);
-                    expr(b.minimum(), subject, out);
-                    expr(b.maximum(), subject, out);
+                    expr(b.base(), subject, at, out);
+                    expr(b.minimum(), subject, at, out);
+                    expr(b.maximum(), subject, at, out);
                 }
-                case Expr.DimensionCellRead c -> expr(c.attribute(), subject, out);
+                case Expr.DimensionCellRead c -> expr(c.attribute(), subject, at, out);
                 case Expr.TextComposition t -> {
                     for (Expr.TextComposition.Part d : t.parts())
-                        if (d instanceof Expr.TextComposition.EmbeddedExpression i) expr(i.expr(), subject, out);
+                        if (d instanceof Expr.TextComposition.EmbeddedExpression i) expr(i.expr(), subject, at, out);
                 }
-                case Expr.Let l -> { expr(l.value(), subject, out); expr(l.body(), subject, out); }
+                case Expr.Let l -> { expr(l.value(), subject, at, out); expr(l.body(), subject, at, out); }
                 case Expr.IfThenElse i -> {
-                    condition(i.condition(), subject, false, out);
-                    expr(i.then(), subject, out);
-                    expr(i.otherwise(), subject, out);
+                    condition(i.condition(), subject, false, at, out);
+                    expr(i.then(), subject, at, out);
+                    expr(i.otherwise(), subject, at, out);
                 }
                 case Expr.Literal ignored -> { }
                 case Expr.ParameterRef ignored -> { }
@@ -619,20 +756,33 @@ public final class Cycles {
             }
         }
 
+        /** {@code at} followed by {@code hops}; null where {@code at} is. */
+        private static List<RoleBindingRef> then(List<RoleBindingRef> at, List<RoleBindingRef> hops) {
+            if (at == null) return null;
+            List<RoleBindingRef> out = new ArrayList<>(at);
+            out.addAll(hops);
+            return out;
+        }
+
+        private void condition(Condition c, ObjectType subject, boolean neg, List<Read> out) {
+            condition(c, subject, neg, List.of(), out);
+        }
+
         /** The verifier's {@code dep_cond}: {@code neg} is the negation-like context a characteristic read under it
          *  takes; a leeg or gevuld test makes every read under it negative, in either polarity; a quantifier fold reads
-         *  its range negatively under all, none, atMost and exactly and its matrix under none, atMost and exactly. */
-        private void condition(Condition c, ObjectType subject, boolean neg, List<Read> out) {
+         *  its range negatively under all, none, atMost and exactly and its matrix under none, atMost and exactly.
+         *  {@code at} as in {@link #expr(Expr, ObjectType, List, List)}. */
+        private void condition(Condition c, ObjectType subject, boolean neg, List<RoleBindingRef> at, List<Read> out) {
             if (c == null) return;
             switch (c) {
-                case Condition.Comparison v -> { expr(v.left(), subject, out); expr(v.right(), subject, out); }
+                case Condition.Comparison v -> { expr(v.left(), subject, at, out); expr(v.right(), subject, at, out); }
                 case Condition.Predicate p -> {
                     if (p.kind() == Condition.PredicateKind.LEEG || p.kind() == Condition.PredicateKind.GEVULD) {
                         List<Read> under = new ArrayList<>();
-                        expr(p.operand(), subject, under);
+                        expr(p.operand(), subject, at, under);
                         out.addAll(negative(under));
                     } else {
-                        expr(p.operand(), subject, out);
+                        expr(p.operand(), subject, at, out);
                     }
                 }
                 case Condition.CharacteristicCheck k -> {
@@ -643,11 +793,14 @@ public final class Cycles {
                         for (RoleBindingRef hop : path)
                             if (hop.factType() != null) out.add(new Read(relation(hop.factType()), false));
                         ObjectType reaches = filler(path.get(path.size() - 1));
-                        if (reaches != null) out.add(new Read(member(reaches, k.characteristic(), true), negative));
+                        if (reaches != null) out.add(new Read(member(reaches, k.characteristic(), true), negative, then(at, path)));
                         return;
                     }
                     ObjectType carrier = k.owner() != null ? k.owner() : subject;
-                    if (carrier != null) out.add(new Read(member(carrier, k.characteristic(), true), negative));
+                    // an owner other than the subject is the other object in scope of a fact creation, which no
+                    // written path reaches
+                    List<RoleBindingRef> own = k.owner() == null || k.owner() == subject ? at : null;
+                    if (carrier != null) out.add(new Read(member(carrier, k.characteristic(), true), negative, own));
                 }
                 case Condition.RoleMembership r -> {
                     RoleBindingRef rb = roleBindings.get(r);
@@ -655,13 +808,13 @@ public final class Cycles {
                 }
                 // a role check the loader records without a binding: no relation of its own to name
                 case Condition.FarRoleMembership ignored -> { }
-                case Condition.TimeWindow p -> { expr(p.from(), subject, out); expr(p.until(), subject, out); }
+                case Condition.TimeWindow p -> { expr(p.from(), subject, at, out); expr(p.until(), subject, at, out); }
                 case Condition.Compound s -> {
                     boolean under = switch (s.quantifier()) {
                         case GEEN, TEN_HOOGSTE, PRECIES -> true;
                         default -> neg;
                     };
-                    for (Condition d : s.components()) condition(d, subject, under, out);
+                    for (Condition d : s.components()) condition(d, subject, under, at, out);
                 }
                 case Condition.QuantifierFold kv -> {
                     boolean rangeNeg = neg || kv.quantifier() != Condition.Quantifier.TEN_MINSTE;
@@ -672,8 +825,10 @@ public final class Cycles {
                     if (kv.sourcePath() != null) range.addAll(kv.sourcePath());
                     for (RoleBindingRef hop : range)
                         if (hop.factType() != null) out.add(new Read(relation(hop.factType()), rangeNeg));
-                    part(kv.filter(), kv.elementObjectType(), rangeNeg, out);
-                    part(kv.test(), kv.elementObjectType(), matrixNeg, out);
+                    // filter and matrix are read on the members, at the end of the range
+                    List<RoleBindingRef> memberAt = then(at, range);
+                    part(kv.filter(), kv.elementObjectType(), rangeNeg, memberAt, out);
+                    part(kv.test(), kv.elementObjectType(), matrixNeg, memberAt, out);
                 }
                 case Condition.RuleStatusCheck rv -> {
                     if (rv.rule() != null) out.add(new Read(channel(rv.rule()), true));
@@ -683,10 +838,88 @@ public final class Cycles {
         }
 
         /** A part of a quantifier fold: negative throughout where {@code negative}, its own kinds otherwise. */
-        private void part(Condition c, ObjectType subject, boolean negative, List<Read> out) {
+        private void part(Condition c, ObjectType subject, boolean negative, List<RoleBindingRef> at, List<Read> out) {
             List<Read> under = new ArrayList<>();
-            condition(c, subject, negative, under);
+            condition(c, subject, negative, at, under);
             out.addAll(negative ? negative(under) : under);
+        }
+
+        // ---------------- the instance-ordered part (IR-SPEC ch. 5.3) ----------------
+
+        /** The two roles of a hop over a two-role fact type that is not reciprocal: the role it reaches and the other;
+         *  null where the hop names no such fact type or no one role of it. */
+        private RegelSpraakModel.Role[] roles(RoleBindingRef hop) {
+            if (hop == null || hop.factType() == null || hop.role() == null) return null;
+            for (RegelSpraakModel.FactType ft : model.factTypes.values()) {
+                if (!Namen.norm(ft.name).equals(Namen.norm(hop.factType()))) continue;
+                if (ft.reciprocal || ft.roles.size() != 2) return null;
+                RegelSpraakModel.Role a = ft.roles.get(0), b = ft.roles.get(1);
+                boolean ma = a.name() != null && Namen.norm(a.name()).equals(Namen.norm(hop.role()));
+                boolean mb = b.name() != null && Namen.norm(b.name()).equals(Namen.norm(hop.role()));
+                if (ma == mb) return null;
+                return ma ? new RegelSpraakModel.Role[] {a, b} : new RegelSpraakModel.Role[] {b, a};
+            }
+            return null;
+        }
+
+        private static boolean comparable(ObjectType a, ObjectType b) {
+            return a != null && b != null && (a.isA(b) || b.isA(a));
+        }
+
+        /** The type a hop over a switch relation reaches (the predecessor's), or null: two roles filled by comparable
+         *  types, the reached one to-one, and no form writing the link set. */
+        ObjectType switchHop(RoleBindingRef hop, Set<String> written) {
+            RegelSpraakModel.Role[] r = roles(hop);
+            if (r == null || r[0].many() || written.contains(relation(hop.factType()))) return null;
+            ObjectType bound = model.objectTypeByName(r[0].objectTypeName()), other = model.objectTypeByName(r[1].objectTypeName());
+            return comparable(bound, other) ? bound : null;
+        }
+
+        /** The satellite a hop over a satellite relation of {@code t} other than {@code walk} names, or null: two
+         *  roles, no form writing the link set, the reached role to-one, the owner's role filled by a type comparable
+         *  with {@code t} and to-one, the other by a type not comparable with it; the hop runs either way. */
+        Satellite satelliteHop(RoleBindingRef hop, RoleBindingRef walk, ObjectType t, Set<String> written) {
+            RegelSpraakModel.Role[] r = roles(hop);
+            if (r == null || r[0].many() || written.contains(relation(hop.factType()))
+                    || Namen.norm(hop.factType()).equals(Namen.norm(walk.factType()))) return null;
+            ObjectType bound = model.objectTypeByName(r[0].objectTypeName()), other = model.objectTypeByName(r[1].objectTypeName());
+            if (bound == null || other == null) return null;
+            if (comparable(other, t) && !comparable(bound, t) && !r[1].many())
+                return new Satellite(Namen.norm(hop.factType()), bound);
+            if (comparable(bound, t) && !comparable(other, t))
+                return new Satellite(Namen.norm(hop.factType()), other);
+            return null;
+        }
+
+        /** The class of a read path within a part that walks {@code walk} on type {@code t}: "shifted" (one hop over
+         *  the switch relation to the predecessor's role, then at most one hop to a satellite), "local" (no hop, or
+         *  one hop over a satellite relation either way), or null; the satellite a hop takes is added to
+         *  {@code satellites}. */
+        String classify(List<RoleBindingRef> path, RoleBindingRef walk, ObjectType t, Set<String> written,
+                        Set<Satellite> satellites) {
+            if (path == null) return null;
+            if (path.isEmpty()) return "local";
+            RoleBindingRef first = path.get(0);
+            if (switchHop(first, written) != null && Namen.norm(first.factType()).equals(Namen.norm(walk.factType()))
+                    && Namen.norm(first.role()).equals(Namen.norm(walk.role()))) {
+                if (path.size() == 1) return "shifted";
+                if (path.size() == 2) {
+                    RegelSpraakModel.Role[] r = roles(path.get(1));
+                    ObjectType reached = r == null ? null : model.objectTypeByName(r[0].objectTypeName());
+                    Satellite s = reached != null && !comparable(reached, t) ? satelliteHop(path.get(1), walk, t, written) : null;
+                    if (s == null) return null;
+                    satellites.add(s);
+                    return "shifted";
+                }
+                return null;
+            }
+            if (path.size() == 1) {
+                Satellite s = satelliteHop(first, walk, t, written);
+                if (s == null) return null;
+                satellites.add(s);
+                return "local";
+            }
+            return null;
         }
 
         /** The declared filler of the role a hop binds: the type it reaches. */

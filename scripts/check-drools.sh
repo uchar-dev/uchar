@@ -1398,7 +1398,11 @@ EXPECTED_CHANNEL=(
 # jutterswet-schone-maand-na-zware-klacht, a fold over a relation of the rule subject in the filter of another fold,
 # written in RegelSpraak with hand-computed cases. No source file of this backend changed; it plays on both with
 # PLAYED 4.
-EXPECTED_PLAYED=268
+# 268 -> 269 (2026-10-22, card cycle-across-instances): the golden jutterswet-vergunningketen, a value of an object that
+# reads the same value of its predecessor (the instance-ordered cycle, IR-SPEC ch. 5.3), hand-written IR with
+# hand-computed cases. The cycle analysis of this backend (Cycles) leaves the shifted edges out of its walk as the
+# verifier does, and truth maintenance settles the chain; it plays on both with PLAYED 3.
+EXPECTED_PLAYED=269
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

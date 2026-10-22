@@ -232,6 +232,8 @@ public final class TmsTranspiler {
 
     private final RegelSpraakModel model;
     private final ClassLoader beanLoader;
+    /** The switch relations of the instance-ordered parts ({@link #instanceWalks}), computed on first use. */
+    private List<RoleBindingRef> instanceWalks;
     private final List<PrioritizedDefaults> defaults;
     private final Map<Object, List<RoleBindingRef>> navigationBindings;
     /** The one-step range of a fold ({@code sourceRole}), by node. */
@@ -365,6 +367,15 @@ public final class TmsTranspiler {
      *  table is required, also those no lowered form reads yet: a build that could leave one out could also lower a
      *  form that needs it as if the document carried none. Fact beans resolve against {@code beanLoader}; null routes
      *  to this transpiler's own loader. */
+    /** The switch relations of the document's instance-ordered parts, as the hops that reach the predecessor
+     *  ({@link Cycles#instanceWalks}): a case reader refuses a cycle in their links (EF-033, RUNTIME-SEMANTICS
+     *  ch. 6.2). */
+    public synchronized List<RoleBindingRef> instanceWalks() {
+        if (instanceWalks == null)
+            instanceWalks = Cycles.instanceWalks(model, defaults, navigationBindings, roleBindings, sourcePaths);
+        return instanceWalks;
+    }
+
     public static TmsTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
             Map<Object, RoleBindingRef> roleBindings, List<Expr.Let> lets,
             Map<Object, List<RoleBindingRef>> sourcePaths,

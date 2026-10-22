@@ -587,6 +587,7 @@ public final class CaseRunner {
             if (c instanceof ComputeFault f && f.code() != null) kind = new FaultKind(f.code(), f.params());
             else if (c instanceof WritersConflict w) kind = new FaultKind(w.code(), w.params());
             else if (c instanceof CaseDateFault d) kind = new FaultKind(d.code(), d.params());
+            else if (c instanceof CaseInput.LinkCycleFault l) kind = new FaultKind(l.code(), l.params());
             if (kind != null) {
                 String code = kind.code();
                 if (kinds.stream().noneMatch(k -> k.code().equals(code))) kinds.add(kind);

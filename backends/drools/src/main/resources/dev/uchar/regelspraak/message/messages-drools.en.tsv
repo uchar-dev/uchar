@@ -351,6 +351,7 @@ EF-019.condition	Unresolved condition reached in evaluation
 EF-019.expression	Unresolved reached in evaluation: this rule fails observably
 EF-032.day	{function}: year {year}, month {month} and day {day} name no calendar day
 EF-032.time	{function}: hour {hour}, minute {minute}, second {second} and millisecond {millisecond} name no clock time
+EF-033	the links of the fact type "{factType}" form a cycle through {cycle}: the forms of an instance-ordered cycle evaluate per object along the chain this relation lays, and the chain must end (RUNTIME-SEMANTICS ch. 6.2)
 FRAME.case-reads	{sentence}; the case reads it
 FRAME.case-sets	{sentence}; the case sets it
 FRAME.contract	contract: {sentence}

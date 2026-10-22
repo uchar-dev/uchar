@@ -71,7 +71,18 @@ class TmsCycleVerifierWitnessTest {
             n++;
         }
         assertEquals(List.of(), admitted);
-        assertEquals(22, n);
+        // 22 until 2026-10-22; the card cycle-across-instances added the five witnesses of the instance-ordered cycle
+        // (wf045-instance-cycle-*), each a WF-045 cycle that is no instance-ordered part, which this branch refuses
+        // as the verifier does
+        assertEquals(27, n);
+    }
+
+    /** The instance-ordered cycle (IR-SPEC ch. 5.3): the golden whose einddag reads the restant of the vorige
+     *  vergunning, in the form with a leeg-test and in the positive form over a satellite, has a cycle of the graph
+     *  that is closed by shifted edges alone, which this branch admits as the verifier does. */
+    @Test void the_instance_ordered_cycle_is_admitted() throws Exception {
+        assertNull(Cycles.refusal(IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(
+                CORPUS.resolve("golden").resolve("jutterswet-vergunningketen").resolve("ir.json"))))));
     }
 
     @Test void the_wrakboekingen_and_the_recursive_creations_have_no_cycle() throws Exception {

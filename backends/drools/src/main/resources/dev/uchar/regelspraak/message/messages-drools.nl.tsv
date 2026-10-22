@@ -351,6 +351,7 @@ EF-019.condition	Unresolved condition reached in evaluation
 EF-019.expression	Unresolved reached in evaluation: this rule fails observably
 EF-032.day	{function}: year {year}, month {month} and day {day} name no calendar day
 EF-032.time	{function}: hour {hour}, minute {minute}, second {second} and millisecond {millisecond} name no clock time
+EF-033	de schakels van het feittype "{factType}" vormen een kring door {cycle}: de vormen van een per object geordende kring rekenen per object langs de keten die deze relatie legt, en die keten moet eindigen (RUNTIME-SEMANTICS ch. 6.2)
 FRAME.case-reads	{sentence}; de case leest het
 FRAME.case-sets	{sentence}; de case zet het
 FRAME.contract	contract: {sentence}

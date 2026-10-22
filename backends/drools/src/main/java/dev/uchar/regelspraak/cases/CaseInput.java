@@ -183,6 +183,7 @@ public final class CaseInput {
             for (JsonNode i : instances) inputData.setAttributesAndCharacteristics(i);
             for (JsonNode i : instances) inputData.setRoles(i);
             inputData.mirrorReciprocalRoles();
+            inputData.refuseLinkCycles(build, instances);
             return inputData;
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
@@ -513,6 +514,98 @@ public final class CaseInput {
      *  </ul>
      *  A collision names the link whose leg the pass mirrored, the one that wrote the bean's own field: a leg the pass
      *  wrote itself never collides, since it writes only an empty field and its partner then reads back. */
+    /** A cycle in the links of the switch relation of an instance-ordered part (RUNTIME-SEMANTICS ch. 6.2): the fault
+     *  kind EF-033 of the case input, with the declared name of the fact type and the labels of the cycle. */
+    static final class LinkCycleFault extends IllegalArgumentException {
+        private static final long serialVersionUID = 1L;
+
+        private final String factType;
+        private final String cycle;
+
+        LinkCycleFault(String factType, String cycle) {
+            super(dev.uchar.regelspraak.message.Msg.drools("EF-033", "factType", factType, "cycle", cycle).text());
+            this.factType = factType;
+            this.cycle = cycle;
+        }
+
+        String code() {
+            return "EF-033";
+        }
+
+        /** The parameters of the kind (ch. 5.7b): the fact type and the labels of the cycle, joined by ", ". */
+        Map<String, String> params() {
+            Map<String, String> out = new LinkedHashMap<>();
+            out.put("factType", factType);
+            out.put("cycle", cycle);
+            return out;
+        }
+    }
+
+    /**
+     * RUNTIME-SEMANTICS ch. 6.2: the members of an instance-ordered part evaluate per object along the chain its switch
+     * relation lays, and the chain must end. No form writes that relation (IR-SPEC ch. 5.3), so its links are the
+     * case's, and a cycle in them is a fault of the case input, EF-033, refused here before anything goes into a
+     * session. Truth maintenance would fire such a cycle up to the fire cap, with its values feeding each other. The
+     * links are read as the case writes them, from either side: a key that names the predecessor's role gives the
+     * instance its predecessor, a key that names the other role makes the instance the predecessor of every label it
+     * lists. The cycle reported is the one whose smallest label is the smallest, listed from that label along the
+     * predecessor's role, as the reference interpreter's case reader reports it.
+     */
+    private void refuseLinkCycles(DroolsBackend.Build build, JsonNode instances) {
+        for (RegelSpraakModel.RoleBindingRef walk : build.execModelTranspiler().instanceWalks()) {
+            RegelSpraakModel.FactType ft = null;
+            for (RegelSpraakModel.FactType f : model.factTypes.values())
+                if (Namen.norm(f.name).equals(Namen.norm(walk.factType()))) ft = f;
+            if (ft == null || ft.roles.size() != 2)
+                throw new IllegalStateException("CaseInput: the switch relation " + walk.factType() + " has no two roles");
+            RegelSpraakModel.Role toPredecessor = Namen.norm(ft.roles.get(0).name()).equals(Namen.norm(walk.role()))
+                    ? ft.roles.get(0) : ft.roles.get(1);
+            RegelSpraakModel.Role toSuccessor = toPredecessor == ft.roles.get(0) ? ft.roles.get(1) : ft.roles.get(0);
+            ObjectType fillsSuccessor = model.objectTypeByName(toSuccessor.objectTypeName());
+            ObjectType fillsPredecessor = model.objectTypeByName(toPredecessor.objectTypeName());
+            Map<String, String> predecessor = new TreeMap<>();
+            for (JsonNode i : instances) {
+                String label = i.get("label").asText();
+                ObjectType type = labelType.get(label);
+                JsonNode roles = i.get("roles");
+                if (roles == null || type == null) continue;
+                for (Map.Entry<String, JsonNode> e : (Iterable<Map.Entry<String, JsonNode>>) roles::fields) {
+                    String key = Namen.norm(e.getKey());
+                    if (names(toPredecessor).contains(key) && type.isA(fillsSuccessor))
+                        for (JsonNode l : e.getValue()) predecessor.put(label, l.asText());
+                    else if (names(toSuccessor).contains(key) && type.isA(fillsPredecessor))
+                        for (JsonNode l : e.getValue()) predecessor.put(l.asText(), label);
+                }
+            }
+            Map<String, Integer> state = new java.util.HashMap<>();
+            List<List<String>> cycles = new ArrayList<>();
+            for (String start : predecessor.keySet()) {
+                List<String> path = new ArrayList<>();
+                String label = start;
+                while (label != null && !state.containsKey(label)) {
+                    state.put(label, 1);
+                    path.add(label);
+                    label = predecessor.get(label);
+                }
+                if (label != null && state.get(label) == 1) cycles.add(new ArrayList<>(path.subList(path.indexOf(label), path.size())));
+                for (String l : path) state.put(l, 2);
+            }
+            if (cycles.isEmpty()) continue;
+            cycles.sort(Comparator.comparing((List<String> c) -> Collections.min(c)));
+            List<String> cycle = cycles.get(0);
+            Collections.rotate(cycle, -cycle.indexOf(Collections.min(cycle)));
+            throw new LinkCycleFault(ft.name, String.join(", ", cycle));
+        }
+    }
+
+    /** The keys a case may write a role under: its name and its plural, normalised. */
+    private static List<String> names(RegelSpraakModel.Role r) {
+        List<String> out = new ArrayList<>();
+        if (r.name() != null) out.add(Namen.norm(r.name()));
+        if (r.plural() != null) out.add(Namen.norm(r.plural()));
+        return out;
+    }
+
     private void mirrorReciprocalRoles() {
         for (Object bean : labelToBean.values()) {
             // the reciprocal role of an instance of a SUBTYPE of its filler is its ancestor's (IR-SPEC ch. 2.6):
