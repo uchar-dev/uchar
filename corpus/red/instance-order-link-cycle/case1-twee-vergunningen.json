@@ -1,0 +1,52 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2026-03-01"
+          },
+          "basiseinddag": {
+            "date": "2026-06-01"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2026-09-01"
+          },
+          "basiseinddag": {
+            "date": "2026-12-01"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-033",
+    "params": {
+      "factType": "vorige vergunning",
+      "cycle": "V1, V2"
+    }
+  }
+}

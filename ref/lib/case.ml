@@ -703,6 +703,81 @@ let check_role_targets (doc : document) (world : World.t) =
         i.left_side)
     world.instances
 
+(* RUNTIME-SEMANTICS ch. 6.2: the forms of an instance-ordered cycle evaluate
+   per object in the order of the chain its switch relation lays, and the
+   chain must end. The links of that relation are the case's alone (no form
+   writes it, IR-SPEC ch. 5.3), so a cycle in them is a property of the case
+   input: refused here, before any rule fires, with EF-033. Without this the
+   ASP backend grounds without bound and the reference interpreter has no
+   depth to order by. The cycle reported is the one whose smallest label is
+   the smallest, listed from that label along the role the hop reaches (the
+   predecessor's), labels compared byte by byte. *)
+let check_link_cycles (doc : document) (world : World.t) =
+  let walks =
+    List.sort_uniq compare
+      (List.map
+         (fun (o : Ir_v0.Checks.instance_order) -> (o.io_relation, o.io_role))
+         (Ir_v0.Checks.instance_orders { Ir_v0.Checks.doc }))
+  in
+  List.iter
+    (fun (relation, role) ->
+      (* the fact type as the document declares it: the parameter names it so *)
+      let declared, reached =
+        match List.find_opt (fun (n, _) -> norm n = norm relation) doc.fact_types with
+        | Some (declared, (ft : fact_type_name)) -> (
+            declared,
+            match
+              List.find_opt
+                (fun (r : role_ref) ->
+                  match r.role_identifier with Some n -> norm n = norm role | None -> false)
+                ft.role_names
+            with
+            | Some r -> r
+            | None -> invalid_arg ("Case.check_link_cycles: no role " ^ role ^ " of " ^ relation))
+        | None -> invalid_arg ("Case.check_link_cycles: no fact type " ^ relation)
+      in
+      (* the predecessor: the first key that holds links, as Eval reads them *)
+      let pred (i : World.instance) =
+        List.fold_left
+          (fun acc k -> if acc = [] then World.left_side i k else acc)
+          []
+          (List.filter_map (fun k -> k) [ reached.role_plural; reached.role_identifier ])
+      in
+      let state = Hashtbl.create 16 in
+      let cycles = ref [] in
+      let rec walk path label =
+        match Hashtbl.find_opt state label with
+        | Some `Done -> ()
+        | Some `On_path ->
+            let rec from acc = function
+              | l :: rest -> if l = label then l :: acc else from (l :: acc) rest
+              | [] -> acc
+            in
+            cycles := from [] path :: !cycles
+        | None -> (
+            Hashtbl.replace state label `On_path;
+            (match pred (World.get world label) with
+            | p :: _ -> walk (label :: path) p
+            | [] -> ());
+            Hashtbl.replace state label `Done)
+      in
+      SMap.iter (fun label _ -> walk [] label) world.instances;
+      let smallest c = List.fold_left min (List.hd c) c in
+      match List.sort (fun a b -> compare (smallest a) (smallest b)) !cycles with
+      | [] -> ()
+      | c :: _ ->
+          let rec rotate c = if List.hd c = smallest c then c else rotate (List.tl c @ [ List.hd c ]) in
+          let c = rotate c in
+          failc
+            ~params:[ ("factType", declared); ("cycle", String.concat ", " c) ]
+            "EF-033"
+            "the links of the fact type %S form a cycle (%s): the forms of an instance-ordered cycle \
+             evaluate per object along the chain this relation lays, and the chain must end \
+             (RUNTIME-SEMANTICS ch. 6.2)"
+            declared
+            (String.concat " -> " (c @ [ List.hd c ])))
+    walks
+
 let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) : expectation =
   let kvs = obj ~at j in
   let get_instance () =
@@ -922,6 +997,7 @@ let load_file (doc : document) path : t =
   in
   let world = materialise_relations doc world in
   check_role_targets doc world;
+  check_link_cycles doc world;
   let params, param_tls =
     List.fold_left
       (fun (params, ptls) (name, vj) ->

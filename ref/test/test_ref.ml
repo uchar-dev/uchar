@@ -9099,6 +9099,257 @@ let () =
       check "WV-5.12-fout-in-een-kwantorvouw" (got = expected);
       if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
 
+(* --- ch. 6.2/6.4: the instance-ordered cycle -------------------------------- *)
+
+(* The document and the case as files, loaded the way the runner loads them,
+   the rules of the document in the order [order] gives (indices into its
+   rules); [f] gets the loaded case and the evaluation, deferred so that a
+   fault at load or at evaluation is caught where it is pinned. *)
+let with_instance_case ir ~order case_data f =
+  let doc =
+    match Yojson.Safe.from_string ir with
+    | `Assoc kvs ->
+        `Assoc
+          (List.map
+             (fun (k, v) ->
+               match (k, v) with
+               | "rules", `Assoc rkvs ->
+                   ( k,
+                     `Assoc
+                       (List.map
+                          (fun (rk, rv) ->
+                            match (rk, rv) with
+                            | "rules", `List rs -> (rk, `List (List.map (List.nth rs) order))
+                            | _ -> (rk, rv))
+                          rkvs) )
+               | _ -> (k, v))
+             kvs)
+    | _ -> invalid_arg "with_instance_case: the document is no object"
+  in
+  let write suffix text =
+    let file = Filename.temp_file "ref-wv64-instance" suffix in
+    let oc = open_out file in
+    output_string oc text;
+    close_out oc;
+    file
+  in
+  let irf = write ".ir.json" (Yojson.Safe.to_string doc) and casef = write ".case.json" case_data in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      let d = Ir_v0.Loader.load_file irf in
+      f
+        (Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier irf))
+        (fun () -> Case.load_file d casef)
+        (fun (c : Case.t) ->
+          Eval.evaluate
+            { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+              locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+            c.world))
+
+(* the rules of R1 below: "restant", "einddag", "einddag zonder restant" *)
+let wv64_r1 =
+  {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vergunning",
+"animate":false,"plural":"Vergunningen","attributes":[{"node":"Attribute","name":"stopdag",
+"datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"basiseinddag",
+"datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"einddag",
+"datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"restant",
+"datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}}],
+"characteristics":[]}],"factTypes":[{"node":"FactType","name":"vorige vergunning",
+"reciprocal":false,"roles":[{"node":"Role","name":"vergunning","objectType":"Vergunning",
+"many":false},{"node":"Role","name":"vorige vergunning","objectType":"Vergunning","many":false}]}],
+"parameters":[],"domains":[],"unitSystems":[{"node":"UnitSystem","name":"Tijd",
+"units":[{"node":"Unit","abbreviation":"dg","system":"Tijd","canonical":"dg",
+"factorToCanonical":{"num":1,"den":1},"spellings":["dag"]}]}],"dimensions":[],"timelines":[],
+"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"restant",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"restant","subjectType":"Vergunning"},"value":{"node":"BuiltinCall","kind":"duration",
+"arguments":[{"node":"AttributeReference","attribute":"stopdag","subjectType":"Vergunning"},
+{"node":"AttributeReference","attribute":"einddag","subjectType":"Vergunning"}],
+"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}},
+"condition":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"Predicate",
+"kind":"filled","operand":{"node":"AttributeReference","attribute":"stopdag",
+"subjectType":"Vergunning"},"negated":false,"digits":0},{"node":"Predicate","kind":"filled",
+"operand":{"node":"AttributeReference","attribute":"einddag","subjectType":"Vergunning"},
+"negated":false,"digits":0},{"node":"Comparison","op":"earlier","left":{"node":"AttributeReference",
+"attribute":"stopdag","subjectType":"Vergunning"},"right":{"node":"AttributeReference",
+"attribute":"einddag","subjectType":"Vergunning"}}]},"initialisation":false,
+"presentation":"calculation"}]},{"node":"Rule","name":"einddag",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"einddag","subjectType":"Vergunning"},"value":{"node":"Binary","op":"plus",
+"left":{"node":"AttributeReference","attribute":"basiseinddag","subjectType":"Vergunning"},
+"right":{"node":"AttributeReference","attribute":"restant","subjectType":"Vergunning",
+"path":[{"node":"RoleBinding","factType":"vorige vergunning","role":"vorige vergunning"}]},
+"type":{"node":"Date","precision":"day"}},"condition":{"node":"Predicate","kind":"filled",
+"operand":{"node":"AttributeReference","attribute":"restant","subjectType":"Vergunning",
+"path":[{"node":"RoleBinding","factType":"vorige vergunning","role":"vorige vergunning"}]},
+"negated":false,"digits":0},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule",
+"name":"einddag zonder restant","versions":[{"validity":{"node":"Validity"},
+"target":{"node":"AttributeReference","attribute":"einddag","subjectType":"Vergunning"},
+"value":{"node":"AttributeReference","attribute":"basiseinddag","subjectType":"Vergunning"},
+"condition":{"node":"Predicate","kind":"empty","operand":{"node":"AttributeReference",
+"attribute":"restant","subjectType":"Vergunning","path":[{"node":"RoleBinding",
+"factType":"vorige vergunning","role":"vorige vergunning"}]},"negated":false,"digits":0},
+"initialisation":false,"presentation":"equation"}]}],"dayKindDefinitions":[],"objectCreations":[],
+"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],
+"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+
+(* The ch. 6.4 worked example of the instance-ordered cycle (WV-6.4-i). The
+   einddag of a Vergunning is its basiseinddag plus the restant of its vorige
+   vergunning when that is filled, else its basiseinddag; its restant is the
+   days from its stopdag to its einddag when both are filled and the stopdag
+   is earlier. V1 (stopdag 01-03-2026, basiseinddag 01-06-2026, no
+   predecessor) and V2 (basiseinddag 01-12-2026, vorige vergunning V1): einddag
+   V1 01-06-2026 (the basiseinddag: no predecessor), restant V1 92, einddag V2
+   03-03-2027. The verifier admits the cycle (restant -> einddag closes it only
+   over the predecessor), and the outcome is the same in every order of the
+   three rules and of the two objects in the case. *)
+let () =
+  let case_data ~v2_first =
+    let v1 =
+      {|{"label": "V1", "objectType": "Vergunning", "attributes": {"stopdag": {"date": "2026-03-01"}, "basiseinddag": {"date": "2026-06-01"}}, "roles": {}, "characteristics": []}|}
+    and v2 =
+      {|{"label": "V2", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-12-01"}}, "roles": {"vorige vergunning": ["V1"]}, "characteristics": []}|}
+    in
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s], "parameters": {}}, "expected": [
+         {"kind": "attributeValue", "label": "V1", "attribute": "einddag", "value": {"date": "2026-06-01"}},
+         {"kind": "attributeValue", "label": "V1", "attribute": "restant", "value": {"number": "92"}},
+         {"kind": "attributeValue", "label": "V2", "attribute": "einddag", "value": {"date": "2027-03-03"}},
+         {"kind": "attributeEmpty", "label": "V2", "attribute": "restant"},
+         {"kind": "consistent"}]}|}
+      (if v2_first then v2 ^ ", " ^ v1 else v1 ^ ", " ^ v2)
+  in
+  List.iter
+    (fun (order, v2_first) ->
+      with_instance_case wv64_r1 ~order (case_data ~v2_first) (fun violations load evaluate ->
+          let tag =
+            Printf.sprintf "WV-6.4-i-%s%s" (String.concat "" (List.map string_of_int order))
+              (if v2_first then "-v2-eerst" else "")
+          in
+          check (tag ^ "-verifier-schoon") (violations = []);
+          let c = load () in
+          check tag (Case.check c (evaluate c) = [])))
+    [ ([ 0; 1; 2 ], false); ([ 2; 1; 0 ], false); ([ 1; 0; 2 ], true); ([ 2; 0; 1 ], true) ]
+
+(* WV-6.4-i without a predecessor: the einddag is the basiseinddag *)
+let () =
+  with_instance_case wv64_r1 ~order:[ 0; 1; 2 ]
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [
+       {"label": "V1", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-06-01"}}, "roles": {}, "characteristics": []}],
+       "parameters": {}}, "expected": [
+       {"kind": "attributeValue", "label": "V1", "attribute": "einddag", "value": {"date": "2026-06-01"}},
+       {"kind": "attributeEmpty", "label": "V1", "attribute": "restant"}]}|}
+    (fun _ load evaluate ->
+      let c = load () in
+      check "WV-6.4-i-zonder-voorganger" (Case.check c (evaluate c) = []))
+
+(* WV-6.4-j: a characteristic on the instance-ordered cycle. "zonder
+   verlenging" holds for a Vergunning whose vorige vergunning has a leeg
+   restant (a negative shifted edge), "einddag zonder restant" writes the
+   basiseinddag on a Vergunning zonder verlenging, and einddag and restant
+   are R1's. A characteristic is never withdrawn (ch. 5.3): evaluated on V2
+   before the restant of V1 is computed, it would hold for V2 for good, and
+   two writers of the einddag of V2 would disagree. Measured 2026-10-22 with
+   the depth order switched off: EF-016, "einddag zonder restant" writes
+   2026-12-01 and "einddag" 2027-03-03. With it, in either order of the four
+   rules: V1 zonder verlenging, V2 not, einddag V2 03-03-2027, the answer of
+   the ASP backend as well. *)
+let wv64_kenmerk =
+  {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vergunning",
+"animate":false,"plural":"Vergunningen","attributes":[{"node":"Attribute","name":"stopdag",
+"datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"basiseinddag",
+"datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"einddag",
+"datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"restant",
+"datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}}],
+"characteristics":[{"node":"Characteristic","name":"zonder verlenging","kind":"adjectival"}]}],
+"factTypes":[{"node":"FactType","name":"vorige vergunning","reciprocal":false,
+"roles":[{"node":"Role","name":"vergunning","objectType":"Vergunning","many":false},{"node":"Role",
+"name":"vorige vergunning","objectType":"Vergunning","many":false}]}],"parameters":[],"domains":[],
+"unitSystems":[{"node":"UnitSystem","name":"Tijd","units":[{"node":"Unit","abbreviation":"dg",
+"system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1},"spellings":["dag"]}]}],
+"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule",
+"name":"zonder verlenging","versions":[{"validity":{"node":"Validity"},
+"target":{"node":"AttributeReference","attribute":"zonder verlenging","subjectType":"Vergunning"},
+"value":{"node":"Literal","value":{"boolean":true},"type":{"node":"Boolean"}},
+"condition":{"node":"Predicate","kind":"empty","operand":{"node":"AttributeReference",
+"attribute":"restant","subjectType":"Vergunning","path":[{"node":"RoleBinding",
+"factType":"vorige vergunning","role":"vorige vergunning"}]},"negated":false,"digits":0},
+"initialisation":false}]},{"node":"Rule","name":"einddag zonder restant",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"einddag","subjectType":"Vergunning"},"value":{"node":"AttributeReference",
+"attribute":"basiseinddag","subjectType":"Vergunning"},"condition":{"node":"CharacteristicCheck",
+"characteristic":"zonder verlenging","negated":false},"initialisation":false,
+"presentation":"equation"}]},{"node":"Rule","name":"einddag",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"einddag","subjectType":"Vergunning"},"value":{"node":"Binary","op":"plus",
+"left":{"node":"AttributeReference","attribute":"basiseinddag","subjectType":"Vergunning"},
+"right":{"node":"AttributeReference","attribute":"restant","subjectType":"Vergunning",
+"path":[{"node":"RoleBinding","factType":"vorige vergunning","role":"vorige vergunning"}]},
+"type":{"node":"Date","precision":"day"}},"condition":{"node":"Predicate","kind":"filled",
+"operand":{"node":"AttributeReference","attribute":"restant","subjectType":"Vergunning",
+"path":[{"node":"RoleBinding","factType":"vorige vergunning","role":"vorige vergunning"}]},
+"negated":false,"digits":0},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule",
+"name":"restant","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"restant","subjectType":"Vergunning"},"value":{"node":"BuiltinCall","kind":"duration",
+"arguments":[{"node":"AttributeReference","attribute":"stopdag","subjectType":"Vergunning"},
+{"node":"AttributeReference","attribute":"einddag","subjectType":"Vergunning"}],
+"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}},
+"condition":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"Predicate",
+"kind":"filled","operand":{"node":"AttributeReference","attribute":"stopdag",
+"subjectType":"Vergunning"},"negated":false,"digits":0},{"node":"Predicate","kind":"filled",
+"operand":{"node":"AttributeReference","attribute":"einddag","subjectType":"Vergunning"},
+"negated":false,"digits":0},{"node":"Comparison","op":"earlier","left":{"node":"AttributeReference",
+"attribute":"stopdag","subjectType":"Vergunning"},"right":{"node":"AttributeReference",
+"attribute":"einddag","subjectType":"Vergunning"}}]},"initialisation":false,
+"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],
+"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],
+"ruleGroups":[]},"diagnostics":[]}|}
+
+let () =
+  let case_data =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [
+       {"label": "V2", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-12-01"}}, "roles": {"vorige vergunning": ["V1"]}, "characteristics": []},
+       {"label": "V1", "objectType": "Vergunning", "attributes": {"stopdag": {"date": "2026-03-01"}, "basiseinddag": {"date": "2026-06-01"}}, "roles": {}, "characteristics": []}],
+       "parameters": {}}, "expected": [
+       {"kind": "characteristicPresent", "label": "V1", "characteristic": "zonder verlenging"},
+       {"kind": "characteristicAbsent", "label": "V2", "characteristic": "zonder verlenging"},
+       {"kind": "attributeValue", "label": "V1", "attribute": "einddag", "value": {"date": "2026-06-01"}},
+       {"kind": "attributeValue", "label": "V1", "attribute": "restant", "value": {"number": "92"}},
+       {"kind": "attributeValue", "label": "V2", "attribute": "einddag", "value": {"date": "2027-03-03"}},
+       {"kind": "consistent"}]}|}
+  in
+  List.iter
+    (fun order ->
+      with_instance_case wv64_kenmerk ~order case_data (fun violations load evaluate ->
+          let tag = "WV-6.4-j-" ^ String.concat "" (List.map string_of_int order) in
+          check (tag ^ "-verifier-schoon") (violations = []);
+          let c = load () in
+          check tag (Case.check c (evaluate c) = [])))
+    [ [ 0; 1; 2; 3 ]; [ 3; 2; 1; 0 ] ]
+
+(* WV-6.4-k: a cycle in the links of the switch relation is refused while the
+   case is read, before any rule fires (EF-033, ch. 5.7b): V1's vorige
+   vergunning is V2 and V2's is V1. The cycle is listed from its smallest
+   label along the predecessor's role. *)
+let () =
+  with_instance_case wv64_r1 ~order:[ 0; 1; 2 ]
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [
+       {"label": "V2", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-12-01"}}, "roles": {"vorige vergunning": ["V1"]}, "characteristics": []},
+       {"label": "V1", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-06-01"}}, "roles": {"vorige vergunning": ["V2"]}, "characteristics": []}],
+       "parameters": {}}, "expected": [{"kind": "consistent"}]}|}
+    (fun _ load _ ->
+      match load () with
+      | (_ : Case.t) -> check "WV-6.4-k-schakelkring" false
+      | exception Case.Error { code; params; _ } ->
+          check "WV-6.4-k-schakelkring"
+            (code = Some "EF-033"
+            && params = [ ("factType", "vorige vergunning"); ("cycle", "V1, V2") ]))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

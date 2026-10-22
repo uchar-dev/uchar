@@ -2652,8 +2652,10 @@ let rule_name (r : resolved_rule) = Option.value r.rr_name ~default:"<naamloos>"
    the instance [body] gets come from that world while the writes and the
    channel facts land on [world]: a creation reads the settled world of
    the generation before its own, not what its own generation makes or
-   links (ch. 5.5) *)
-let over_subjects ?(exact = false) ?(except = []) ?read env world ~otype ~rule body =
+   links (ch. 5.5). Given [only], the subjects it refuses are left out: the
+   forms of an instance-ordered cycle run on the objects whose turn it is
+   (ch. 6.2) *)
+let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) env world ~otype ~rule body =
   let isa a b =
     (if exact then norm a = norm b else isa env a b)
     (* the ch. 7.10 absorption: on these concrete types the rule IS a
@@ -2673,7 +2675,8 @@ let over_subjects ?(exact = false) ?(except = []) ?read env world ~otype ~rule b
           w !pending
       in
       (w, changed || ch))
-    (world, false) (World.of_type ~isa (Option.value read ~default:world) otype)
+    (world, false)
+    (List.filter only (World.of_type ~isa (Option.value read ~default:world) otype))
 
 (* ch. 3.7: the pro-rata target — the one implemented temporal write.
    The value MUST be tijdsevenredig-deel over an own temporal attribute
@@ -2877,7 +2880,7 @@ let characteristic_value_constant_true (r : resolved_rule) ~ot ~attr =
          at evaluation"
         (rule_name r) attr ot value_node
 
-let run_rule env world (r : resolved_rule) =
+let run_rule ?only env world (r : resolved_rule) =
   if not (applies env r.rr_validity) then (world, false)
   else
     match r.objective with
@@ -2966,7 +2969,7 @@ let run_rule env world (r : resolved_rule) =
           | Some Characteristic_attribution -> []
           | _ -> Ir_v0.Desugar.absorbed_on env.doc ~otype:ot ~attr
         in
-        over_subjects ~except env world ~otype:ot ~rule:(rule_name r) (fun w self err ->
+        over_subjects ~except ?only env world ~otype:ot ~rule:(rule_name r) (fun w self err ->
             let fire =
               match (clip, r.rr_condition) with
               | Some _, _ -> true
@@ -3367,7 +3370,7 @@ type chain_result = Decided of defaults_decision | Conflict of string | Undecide
    with the subject type every root default of it was declared on, and that
    default is evaluated there. [world0] is the input world the
    initialisation default's justification reads (ch. 7.3). *)
-let run_defaults_group env world ~world0 ~owner
+let run_defaults_group ?only env world ~world0 ~owner
     (members : (prioritized_defaults * string list) list) =
   let l0 = fst (List.hd members) in
   let env = { env with subj = Some l0.pd_subject } in
@@ -3404,7 +3407,7 @@ let run_defaults_group env world ~world0 ~owner
       Value.fault
         "temporal characteristic %S as a defaults target: temporal writes are not implemented" k
   | _ -> ());
-  over_subjects ~exact:true env world ~otype:owner ~rule:target_form (fun w self cond_err ->
+  over_subjects ~exact:true ?only env world ~otype:owner ~rule:target_form (fun w self cond_err ->
       let speculate f =
         let buf = ref [] in
         let r = f (fun m -> buf := m :: !buf) in
@@ -4089,6 +4092,73 @@ let evaluate env world =
   let uni_stratum (u : resolved_uniqueness) = stratum_of u.uni_pointer in
   let uu_stratum (u : resolved_uniqueness_union) = stratum_of u.uu_pointer in
   let indexed l = List.mapi (fun i x -> (i, x)) l in
+  (* The instance-ordered parts (RUNTIME-SEMANTICS ch. 6.2,
+     [Ir_v0.Checks.instance_orders]). Their members share a stratum, since
+     every edge of a cycle counts positive above, and within it they run per
+     object in the order of the chain their switch relation lays: depth 0
+     the objects without a predecessor, depth d + 1 those whose predecessor
+     stands at depth d, a satellite at the depth of its owner; per depth the
+     members run level by level, so a member that reads another negatively
+     on the same object reads it settled. The links are the case's, since no
+     form writes them, so the depths are read off the input world; an
+     instance a creation makes has no link and stands at depth 0. The case
+     reader refused a cycle in the links (EF-033), so every chain ends.
+
+     Without this order the members ran in passes over every object at once:
+     a member that tested the predecessor's value leeg acted on a value not
+     computed yet, and a write it made then stayed (ch. 6.1, no retraction). *)
+  let ordered = Hashtbl.create 8 in
+  List.iter
+    (fun (o : Ir_v0.Checks.instance_order) ->
+      let pred = { rb_fact_type = o.io_relation; rb_role = o.io_role } in
+      let memo = Hashtbl.create 16 in
+      let rec depth label =
+        match Hashtbl.find_opt memo label with
+        | Some d -> d
+        | None ->
+            let d =
+              match SMap.find_opt label world0.World.instances with
+              | None -> 0
+              | Some i -> (
+                  match linked env world0 i ~binding:pred with
+                  | p :: _ -> 1 + depth p.World.label
+                  | [] -> (
+                      match List.concat_map (fun owner -> linked env world0 i ~binding:owner) o.io_owners with
+                      | owner :: _ -> depth owner.World.label
+                      | [] -> 0))
+            in
+            Hashtbl.replace memo label d;
+            d
+      in
+      let deepest = SMap.fold (fun label _ acc -> max acc (depth label)) world0.World.instances 0 in
+      List.iter (fun (at, level) -> Hashtbl.replace ordered at (depth, level, deepest)) o.io_members)
+    (Ir_v0.Checks.instance_orders { doc = env.doc });
+  (* the depth and the level whose turn it is while a stratum with such
+     members settles, None otherwise *)
+  let phase = ref None in
+  (* the subjects a form found at the pointers [ats] runs on now, or None for
+     a form of no instance-ordered part *)
+  let only_at ats =
+    match List.filter_map (Hashtbl.find_opt ordered) ats with
+    | [] -> None
+    | (depth, _, _) :: _ as found ->
+        let level = List.fold_left (fun acc (_, l, _) -> max acc l) 0 found in
+        Some
+          (fun (i : World.instance) ->
+            match !phase with
+            | None -> true
+            | Some (d, l) ->
+                let di = depth i.label in
+                di < d || (di = d && level <= l))
+  in
+  (* the depths and levels stratum [j] settles through, if it holds members *)
+  let phases j =
+    Hashtbl.fold
+      (fun at (_, level, deepest) acc ->
+        if stratum_of at <> j then acc
+        else match acc with None -> Some (deepest, level) | Some (d, l) -> Some (max d deepest, max l level))
+      ordered None
+  in
   (* defaults groups (ch. 7.2): members share one (subject, target); a
      group runs at the max of its members' strata *)
   (* One stack per (CONCRETE type, target): inheritance composed the
@@ -4103,7 +4173,7 @@ let evaluate env world =
     List.map
       (fun (owner, _key, members, pointers) ->
         let stratum = List.fold_left (fun acc p -> max acc (stratum_of p)) 0 pointers in
-        (stratum, owner, members))
+        (stratum, owner, members, pointers))
       (effective_defaults env)
   in
   (* the forms of stratum <= k that make nothing — rules, allocations,
@@ -4116,7 +4186,7 @@ let evaluate env world =
     List.filter_map
       (fun r ->
         if rule_stratum r > k then None
-        else Some (named "rule" r.rr_name, fun w -> run_rule env w r))
+        else Some (named "rule" r.rr_name, fun w -> run_rule ?only:(only_at [ r.rr_pointer ]) env w r))
       env.doc.resolved_rules
     @ List.filter_map
         (fun (v : resolved_allocation) ->
@@ -4124,12 +4194,12 @@ let evaluate env world =
           else Some (named "allocation" v.vd_name, fun w -> run_allocation env w v))
         env.doc.allocations
     @ List.filter_map
-        (fun (stratum, owner, members) ->
+        (fun (stratum, owner, members, pointers) ->
           if stratum > k then None
           else
             Some
               ( named "defaults group" (fst (List.hd members)).pd_name,
-                fun w -> run_defaults_group env w ~world0 ~owner members ))
+                fun w -> run_defaults_group ?only:(only_at pointers) env w ~world0 ~owner members ))
         defaults_groups
   in
   (* the creations of stratum <= k — fact creations, then object creations,
@@ -4316,8 +4386,22 @@ let evaluate env world =
       else
         let steps = settling_upto.(j) in
         let own = List.length steps - if j = 0 then 0 else List.length settling_upto.(j - 1) in
+        let fix w = fixpoint ~budget:(max 100 (own + 1)) ~cause:(disagreement steps) (pass steps) w in
+        (* a stratum with instance-ordered members settles depth by depth and,
+           per depth, level by level, before the whole stratum once more *)
         let world =
-          fixpoint ~budget:(max 100 (own + 1)) ~cause:(disagreement steps) (pass steps) world
+          match phases j with
+          | None -> fix world
+          | Some (deepest, top) ->
+              let w = ref world in
+              for d = 0 to deepest do
+                for l = 0 to top do
+                  phase := Some (d, l);
+                  w := fix !w
+                done
+              done;
+              phase := None;
+              fix !w
         in
         upto (j + 1) (if j < k then checks j world else world)
     in
