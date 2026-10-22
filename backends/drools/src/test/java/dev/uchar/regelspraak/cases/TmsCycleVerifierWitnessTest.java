@@ -73,8 +73,41 @@ class TmsCycleVerifierWitnessTest {
         assertEquals(List.of(), admitted);
         // 22 until 2026-10-22; the card cycle-across-instances added the eight witnesses of the instance-ordered cycle
         // (wf045-instance-cycle-*), each a WF-045 cycle that is no instance-ordered part, which this branch refuses
-        // as the verifier does
-        assertEquals(30, n);
+        // as the verifier does; the card instance-cycle-household-reads removed one of them (a fold over the
+        // satellites of the predecessor is a shifted read since) and added two (the hub, the satellite of a satellite)
+        assertEquals(31, n);
+    }
+
+    /** A negative whose pin is the verifier's arm WF-045.instance-read-outside (IR-SPEC ch. 5.3) is refused here with
+     *  the read the arm names, its path and its clause; a negative of the instance-ordered cycle pinned on the cycle
+     *  alone is refused for its cycle, without a read. */
+    @Test void the_refusal_names_the_read_the_verifier_names() throws Exception {
+        List<String> wrong = new ArrayList<>();
+        int named = 0;
+        for (Path ir : documents(CORPUS.resolve("negative"), "wf045-instance-cycle-.*")) {
+            List<String> expect = Files.readAllLines(ir.resolveSibling("expect.txt"));
+            Reason w = Cycles.refusal(IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(ir))));
+            String doc = CORPUS.relativize(ir.getParent()).toString();
+            if (expect.get(0).equals("WF-045.instance-read-outside")) {
+                named++;
+                String text = w == null ? "" : w.text(java.util.Locale.ENGLISH);
+                String path = value(expect, "path"), clause = value(expect, "clause");
+                if (w == null || w.code() != dev.uchar.regelspraak.refusal.DroolsCode.INSTANCE_READ_OUTSIDE
+                        || !text.contains(" over [" + path + "] (clause " + clause + ")"))
+                    wrong.add(doc + ": " + (w == null ? "admitted" : w.code().id() + " " + text));
+            } else if (w == null || w.code() != dev.uchar.regelspraak.refusal.DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION) {
+                wrong.add(doc + ": " + (w == null ? "admitted" : w.code().id() + " " + w.text()));
+            }
+        }
+        assertEquals(List.of(), wrong);
+        // measured 2026-10-22: six of the nine witnesses pin the arm
+        int pinned = named;
+        assertTrue(pinned >= 6, () -> "negatives pinned on the read outside: " + pinned);
+    }
+
+    private static String value(List<String> expect, String name) {
+        return expect.stream().filter(l -> l.startsWith(name + "=")).map(l -> l.substring(name.length() + 1))
+                .findFirst().orElseThrow(() -> new AssertionError("expect.txt names no " + name));
     }
 
     /** The instance-ordered cycle (IR-SPEC ch. 5.3): the golden whose einddag reads the restant of the vorige
@@ -83,6 +116,14 @@ class TmsCycleVerifierWitnessTest {
     @Test void the_instance_ordered_cycle_is_admitted() throws Exception {
         assertNull(Cycles.refusal(IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(
                 CORPUS.resolve("golden").resolve("jutterswet-vergunningketen").resolve("ir.json"))))));
+    }
+
+    /** Reads in the household of the object (IR-SPEC ch. 5.3, card instance-cycle-household-reads): a fold over the
+     *  own to-many termijnen, a filter and a quantifier that read the houder of a termijn, and a fold over the termijnen
+     *  of the predecessor; the branch admits the cycle as the verifier does. */
+    @Test void the_reads_in_the_household_are_admitted() throws Exception {
+        assertNull(Cycles.refusal(IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(
+                CORPUS.resolve("golden").resolve("jutterswet-vergunningtermijnen").resolve("ir.json"))))));
     }
 
     @Test void the_wrakboekingen_and_the_recursive_creations_have_no_cycle() throws Exception {

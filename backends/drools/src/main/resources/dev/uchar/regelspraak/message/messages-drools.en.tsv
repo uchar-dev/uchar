@@ -326,6 +326,7 @@ DROOLS-288	the target {targetName} on {objectType} is written alongside an inher
 DROOLS-289	{description}: {reason}
 DROOLS-290	a division and a root that deposit in one condition or in the filters of one fold ({form}): the test of this branch puts their §9.5 deposits together, and the fact cannot say which kind deposited, while a division has the code EF-031 and a root has none (RUNTIME-SEMANTICS ch. 5.7b)
 DROOLS-291	a member condition that can fail or deposit in a QuantifierFold over a path along which a member can be reached by more than one route ('{description}'): the reference interpreter reads such a member once, at its first route (RUNTIME-SEMANTICS ch. 3.4b, 5.11), and this branch gives it a place in the order of the members per route; this branch does not carry this form yet
+DROOLS-292	exec-model: {cycles}, and outside the scope of the instance-ordered cycle: {reads} — a cycle over a switch relation is admitted only where every read behind an edge inside it lands in the household of the object or of its predecessor (WF-045, IR-SPEC ch. 5.3)
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-005.bare	rational division by 0
@@ -427,3 +428,4 @@ PART.cycle.nodes	the nodes {names}
 PART.cycle.channel	the channel of "{rule}"
 PART.cycle.population	the population of {type}
 PART.cycle.relation	the relation {factType}
+PART.cycle.read-outside	{form} reads {node} over [{path}] (clause {clause})

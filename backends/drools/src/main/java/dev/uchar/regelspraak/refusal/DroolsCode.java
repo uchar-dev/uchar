@@ -312,7 +312,8 @@ public enum DroolsCode {
     DEFAULTS_TWO_WRITERS_OVER_STACK("DROOLS-288", Kind.REFUSAL, "defaults-two-writers-over-stack", "targetName,objectType,computationCount,initialisationCount", null),
     PRO_RATA_FIXED_GRID("DROOLS-289", Kind.REFUSAL, "pro-rata-fixed-grid", "description,reason", null),
     DEPOSIT_KINDS_MIXED("DROOLS-290", Kind.REFUSAL, "deposit-kinds-mixed", "form", null),
-    QUANTIFIER_MEMBER_TWO_ROUTES("DROOLS-291", Kind.LIMIT, "quantifier-member-two-routes", "description", null);
+    QUANTIFIER_MEMBER_TWO_ROUTES("DROOLS-291", Kind.LIMIT, "quantifier-member-two-routes", "description", null),
+    INSTANCE_READ_OUTSIDE("DROOLS-292", Kind.CONTRACT, "instance-read-outside", "cycles,reads", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

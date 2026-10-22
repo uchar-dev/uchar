@@ -110,15 +110,23 @@ public final class Cycles {
                 loaded.roleBindings(), loaded.sourcePaths());
         List<Form> graphForms = g.graphForms();
         // the shifted edges of an instance-ordered part leave both walks, as the verifier's do (IR-SPEC ch. 5.3)
+        Ordering ordering = orders(g, graphForms, edges(graphForms));
         Set<Edge> shifted = new HashSet<>();
-        for (Order o : orders(g, graphForms, edges(graphForms))) shifted.addAll(o.shifted());
+        for (Order o : ordering.orders()) shifted.addAll(o.shifted());
         List<Edge> edges = new ArrayList<>();
         for (Edge r : edges(graphForms)) if (!shifted.contains(r)) edges.add(r);
         List<Msg> cycles = cycles45(g, graphForms, edges);
-        if (!cycles.isEmpty())
-            return DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.reason("sentence", cycles.size() == 1
+        if (!cycles.isEmpty()) {
+            Msg cycle = cycles.size() == 1
                     ? DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.part("one", "cycle", cycles.get(0))
-                    : DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.part("several", "count", cycles.size(), "cycles", new Msg.Joined(cycles, "; ")));
+                    : DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.part("several", "count", cycles.size(), "cycles", new Msg.Joined(cycles, "; "));
+            // beside the cycle, the reads that keep a part over a switch relation from being instance-ordered, as the
+            // verifier's WF-045.instance-read-outside names them: the read the author has to change
+            List<Msg> reads = readsOutside(g, graphForms, ordering.outside());
+            if (!reads.isEmpty())
+                return DroolsCode.INSTANCE_READ_OUTSIDE.reason("cycles", cycle, "reads", new Msg.Joined(reads, "; "));
+            return DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION.reason("sentence", cycle);
+        }
         List<Msg> negations = negations46(g, graphForms, edges);
         if (negations.isEmpty()) return null;
         return DroolsCode.NEGATION_ON_CYCLE.reason("sentence", negations.size() == 1
@@ -136,7 +144,7 @@ public final class Cycles {
         Graph g = new Graph(model, defaults, navigation, roleBindings, sourcePaths);
         List<Form> graphForms = g.graphForms();
         Map<String, RoleBindingRef> out = new java.util.TreeMap<>();
-        for (Order o : orders(g, graphForms, edges(graphForms)))
+        for (Order o : orders(g, graphForms, edges(graphForms)).orders())
             out.putIfAbsent(Namen.norm(o.walk().factType()) + "\u0000" + Namen.norm(o.walk().role()), o.walk());
         return List.copyOf(out.values());
     }
@@ -144,21 +152,42 @@ public final class Cycles {
     /** An instance-ordered part: the hop over its switch relation to the predecessor, and its shifted edges. */
     private record Order(RoleBindingRef walk, Set<Edge> shifted) {}
 
-    /** A satellite hop of a part: the satellite relation, the satellite type, and whether the hop reaches it. */
+    /** A satellite relation a part walks: the relation and the satellite type. */
     private record Satellite(String relation, ObjectType satellite) {}
+
+    /** A hop over a satellite relation: the relation walked, and whether the hop goes back to the owner. */
+    private record Step(Satellite satellite, boolean toOwner) {}
+
+    /** The class of a read path within a part: {@code kind} "shifted" or "local" with the satellite relations it
+     *  walks, or {@code kind} null with the clause of IR-SPEC ch. 5.3 the path falls on. */
+    private record Verdict(String kind, String clause, List<Satellite> satellites) {
+        static Verdict outside(String clause) {
+            return new Verdict(null, clause, List.of());
+        }
+    }
+
+    /** A read behind an internal edge of a part over a switch relation that is neither shifted nor local: the form
+     *  that reads, the node, the path, and the clause it falls on (the verifier's WF-045.instance-read-outside). */
+    private record Outside(int form, String node, List<RoleBindingRef> path, String clause) {}
+
+    /** The instance-ordered parts of a document, and the reads that keep the other parts over a switch relation from
+     *  being one. */
+    private record Ordering(List<Order> orders, List<Outside> outside) {}
 
     /**
      * The instance-ordered parts of the graph (IR-SPEC ch. 5.3), as the verifier's {@code instance_ordering} finds them:
      * a strongly connected part of the whole graph that holds no creation of a recursive group and only rules and
      * defaults groups, whose internal edges include a shifted one, whose shifted reads all walk one switch relation to
      * one role, every read behind whose internal edges is shifted or local, whose satellite types are each reached
-     * through one satellite relation, and which is acyclic without its shifted edges. A shifted read lands on the
-     * predecessor or its one satellite, a local read on the object, its satellite or its owner; a shifted edge is one
-     * whose consumer reads its node in shifted reads only. Truth maintenance needs no order of the objects on such a
+     * through one satellite relation, and which is acyclic without its shifted edges. A shifted read lands in the
+     * household of the predecessor (the predecessor and its satellites), a local read in that of the object; a shifted
+     * edge is one whose consumer reads its node in shifted reads only. A part that walks a switch relation and falls on
+     * a clause names its reads outside, each with the clause, as the verifier's WF-045.instance-read-outside does.
+     * Truth maintenance needs no order of the objects on such a
      * part: a value justified by a leeg predecessor is withdrawn once the predecessor's value arrives. The levels the
      * reference interpreter orders a depth by are therefore not computed here; their acyclicity is.
      */
-    private static List<Order> orders(Graph g, List<Form> forms, List<Edge> edges) {
+    private static Ordering orders(Graph g, List<Form> forms, List<Edge> edges) {
         int n = forms.size();
         Set<String> written = new HashSet<>();
         for (Form f : forms) written.addAll(f.writes());
@@ -166,6 +195,7 @@ public final class Cycles {
         for (int i = 0; i < n; i++) out.add(new ArrayList<>());
         for (Edge r : edges) out.get(r.producer()).add(r);
         List<Order> orders = new ArrayList<>();
+        List<Outside> outside = new ArrayList<>();
         for (Set<Integer> part : components(n, out)) {
             List<Edge> internal = new ArrayList<>();
             for (Edge r : edges) if (part.contains(r.producer()) && part.contains(r.consumer())) internal.add(r);
@@ -173,47 +203,72 @@ public final class Cycles {
             if (part.stream().anyMatch(i -> forms.get(i).recursiveCreation() || !forms.get(i).perSubject())) continue;
             // the reads behind the internal edges, one entry per consumer and node, with the paths of their positions
             Map<String, List<List<RoleBindingRef>>> positions = new LinkedHashMap<>();
+            Map<String, Edge> readers = new LinkedHashMap<>();
             for (Edge r : internal) {
                 String key = r.consumer() + "\u0000" + r.node();
                 if (positions.containsKey(key)) continue;
                 List<List<RoleBindingRef>> paths = new ArrayList<>();
                 for (Read l : forms.get(r.consumer()).reads()) if (l.node().equals(r.node())) paths.add(l.path());
                 positions.put(key, paths);
+                readers.put(key, r);
             }
             Map<String, RoleBindingRef> walks = new java.util.TreeMap<>();
             ObjectType t = null;
             for (List<List<RoleBindingRef>> paths : positions.values())
-                for (List<RoleBindingRef> path : paths)
-                    if (path != null && !path.isEmpty()) {
-                        ObjectType reached = g.switchHop(path.get(0), written);
-                        if (reached != null) {
-                            String key = Namen.norm(path.get(0).factType()) + "\u0000" + Namen.norm(path.get(0).role());
-                            if (!walks.containsKey(key)) walks.put(key, path.get(0));
-                            if (t == null) t = reached;
-                        }
+                for (List<RoleBindingRef> path : paths) {
+                    RoleBindingRef hop = g.walkOf(path, written);
+                    if (hop != null) {
+                        String key = Namen.norm(hop.factType()) + "\u0000" + Namen.norm(hop.role());
+                        if (!walks.containsKey(key)) walks.put(key, hop);
+                        if (t == null) t = g.switchHop(hop, written);
                     }
-            if (walks.size() != 1) continue;
-            RoleBindingRef walk = walks.values().iterator().next();
-            Set<String> shiftedReads = new HashSet<>();
-            Set<Satellite> satellites = new LinkedHashSet<>();
-            boolean ordered = true;
-            for (Map.Entry<String, List<List<RoleBindingRef>>> e : positions.entrySet()) {
-                boolean allShifted = true;
-                for (List<RoleBindingRef> path : e.getValue()) {
-                    String kind = g.classify(path, walk, t, written, satellites);
-                    if (kind == null) ordered = false;
-                    else if (!kind.equals("shifted")) allShifted = false;
                 }
-                if (allShifted) shiftedReads.add(e.getKey());
+            if (walks.isEmpty()) continue;
+            if (walks.size() > 1) {
+                // one switch relation, one role: every read that walks one is named
+                for (Map.Entry<String, List<List<RoleBindingRef>>> e : positions.entrySet())
+                    for (List<RoleBindingRef> path : e.getValue())
+                        if (g.walkOf(path, written) != null)
+                            outside.add(new Outside(readers.get(e.getKey()).consumer(), readers.get(e.getKey()).node(), path, "one-walk"));
+                continue;
             }
-            if (!ordered || shiftedReads.isEmpty()) continue;
+            RoleBindingRef walk = walks.values().iterator().next();
+            Map<String, List<Verdict>> verdicts = new LinkedHashMap<>();
+            Set<Satellite> satellites = new LinkedHashSet<>();
+            for (Map.Entry<String, List<List<RoleBindingRef>>> e : positions.entrySet()) {
+                List<Verdict> vs = new ArrayList<>();
+                for (List<RoleBindingRef> path : e.getValue()) {
+                    Verdict v = g.classify(path, walk, t, written);
+                    vs.add(v);
+                    satellites.addAll(v.satellites());
+                }
+                verdicts.put(e.getKey(), vs);
+            }
             // one satellite relation per satellite type: two would give a satellite two owners
-            boolean shared = false;
+            Set<Satellite> shared = new HashSet<>();
             for (Satellite a : satellites)
                 for (Satellite b : satellites)
                     if (!a.relation().equals(b.relation())
-                            && (a.satellite().isA(b.satellite()) || b.satellite().isA(a.satellite()))) shared = true;
-            if (shared) continue;
+                            && (a.satellite().isA(b.satellite()) || b.satellite().isA(a.satellite()))) shared.add(a);
+            boolean ordered = true;
+            for (Map.Entry<String, List<Verdict>> e : verdicts.entrySet()) {
+                List<List<RoleBindingRef>> paths = positions.get(e.getKey());
+                Edge reader = readers.get(e.getKey());
+                for (int k = 0; k < paths.size(); k++) {
+                    Verdict v = e.getValue().get(k);
+                    String clause = v.kind() == null ? v.clause()
+                            : v.satellites().stream().anyMatch(shared::contains) ? "one-satellite-relation" : null;
+                    if (clause != null) {
+                        outside.add(new Outside(reader.consumer(), reader.node(), paths.get(k), clause));
+                        ordered = false;
+                    }
+                }
+            }
+            if (!ordered) continue;
+            Set<String> shiftedReads = new HashSet<>();
+            for (Map.Entry<String, List<Verdict>> e : verdicts.entrySet())
+                if (e.getValue().stream().allMatch(v -> "shifted".equals(v.kind()))) shiftedReads.add(e.getKey());
+            if (shiftedReads.isEmpty()) continue;
             Set<Edge> shifted = new HashSet<>();
             List<Edge> remaining = new ArrayList<>();
             for (Edge r : internal)
@@ -222,7 +277,20 @@ public final class Cycles {
             if (cyclic(n, remaining)) continue;
             orders.add(new Order(walk, shifted));
         }
-        return orders;
+        return new Ordering(orders, outside);
+    }
+
+    /** The reads outside of {@code outside} as the refusal names them, once each and sorted. */
+    private static List<Msg> readsOutside(Graph g, List<Form> forms, List<Outside> outside) {
+        Map<String, Msg> out = new java.util.TreeMap<>();
+        for (Outside o : outside) {
+            List<String> hops = new ArrayList<>();
+            if (o.path() != null) for (RoleBindingRef h : o.path()) hops.add(h.factType() + "/" + h.role());
+            Msg m = Msg.drools("PART.cycle.read-outside", "form", form(forms.get(o.form())), "node", g.node(o.node()),
+                    "path", o.path() == null ? "(none)" : String.join("; ", hops), "clause", o.clause());
+            out.put(sortKey(m), m);
+        }
+        return new ArrayList<>(out.values());
     }
 
     /** Whether {@code edges} over {@code n} forms close a cycle. */
@@ -875,51 +943,76 @@ public final class Cycles {
             return comparable(bound, other) ? bound : null;
         }
 
-        /** The satellite a hop over a satellite relation of {@code t} other than {@code walk} names, or null: two
-         *  roles, no form writing the link set, the reached role to-one, the owner's role filled by a type comparable
-         *  with {@code t} and to-one, the other by a type not comparable with it; the hop runs either way. */
-        Satellite satelliteHop(RoleBindingRef hop, RoleBindingRef walk, ObjectType t, Set<String> written) {
+        /** The hop over a satellite relation of {@code t} other than {@code walk}, or null: two roles, no form writing
+         *  the link set, the owner's role filled by a type comparable with {@code t} and to-one, the other by a type
+         *  not comparable with it. The hop runs either way; to the satellite it may reach a set (the range of a fold or a
+         *  quantifier), since every satellite of an object stands at its depth (the verifier's {@code satellite_hop}). */
+        Step satelliteHop(RoleBindingRef hop, RoleBindingRef walk, ObjectType t, Set<String> written) {
             RegelSpraakModel.Role[] r = roles(hop);
-            if (r == null || r[0].many() || written.contains(relation(hop.factType()))
+            if (r == null || written.contains(relation(hop.factType()))
                     || Namen.norm(hop.factType()).equals(Namen.norm(walk.factType()))) return null;
             ObjectType bound = model.objectTypeByName(r[0].objectTypeName()), other = model.objectTypeByName(r[1].objectTypeName());
             if (bound == null || other == null) return null;
             if (comparable(other, t) && !comparable(bound, t) && !r[1].many())
-                return new Satellite(Namen.norm(hop.factType()), bound);
-            if (comparable(bound, t) && !comparable(other, t))
-                return new Satellite(Namen.norm(hop.factType()), other);
+                return new Step(new Satellite(Namen.norm(hop.factType()), bound), false);
+            if (comparable(bound, t) && !comparable(other, t) && !r[0].many())
+                return new Step(new Satellite(Namen.norm(hop.factType()), other), true);
             return null;
         }
 
-        /** The class of a read path within a part that walks {@code walk} on type {@code t}: "shifted" (one hop over
-         *  the switch relation to the predecessor's role, then at most one hop to a satellite), "local" (no hop, or
-         *  one hop over a satellite relation either way), or null; the satellite a hop takes is added to
-         *  {@code satellites}. */
-        String classify(List<RoleBindingRef> path, RoleBindingRef walk, ObjectType t, Set<String> written,
-                        Set<Satellite> satellites) {
-            if (path == null) return null;
-            if (path.isEmpty()) return "local";
-            RoleBindingRef first = path.get(0);
-            if (switchHop(first, written) != null && Namen.norm(first.factType()).equals(Namen.norm(walk.factType()))
-                    && Namen.norm(first.role()).equals(Namen.norm(walk.role()))) {
-                if (path.size() == 1) return "shifted";
-                if (path.size() == 2) {
-                    RegelSpraakModel.Role[] r = roles(path.get(1));
-                    ObjectType reached = r == null ? null : model.objectTypeByName(r[0].objectTypeName());
-                    Satellite s = reached != null && !comparable(reached, t) ? satelliteHop(path.get(1), walk, t, written) : null;
-                    if (s == null) return null;
-                    satellites.add(s);
-                    return "shifted";
-                }
-                return null;
-            }
-            if (path.size() == 1) {
-                Satellite s = satelliteHop(first, walk, t, written);
-                if (s == null) return null;
-                satellites.add(s);
-                return "local";
-            }
+        /** The clause of IR-SPEC ch. 5.3 a hop falls on that is neither the part's step to the predecessor nor a
+         *  household hop (the verifier's {@code clause_of_hop}): a hub, where the role on the side of {@code t} is
+         *  to-many, a shared satellite included; a satellite of a satellite; a set of objects of {@code t}'s chain; or
+         *  else the general clause. */
+        String clauseOfHop(RoleBindingRef hop, ObjectType t) {
+            RegelSpraakModel.Role[] r = roles(hop);
+            if (r == null) return "shifted-or-local";
+            ObjectType bound = model.objectTypeByName(r[0].objectTypeName()), other = model.objectTypeByName(r[1].objectTypeName());
+            if (bound == null || other == null) return "shifted-or-local";
+            boolean b = comparable(bound, t), o = comparable(other, t);
+            if (b && o) return r[0].many() ? "set-of-predecessors" : "shifted-or-local";
+            if (o) return r[1].many() ? "hub" : "shifted-or-local";
+            if (b) return r[0].many() ? "hub" : "shifted-or-local";
+            return "satellite-of-satellite";
+        }
+
+        /** The hop over a switch relation a read path starts with: its first hop, or its second after a hop that is
+         *  none (the hop to the owner of a satellite); null where there is neither. */
+        RoleBindingRef walkOf(List<RoleBindingRef> path, Set<String> written) {
+            if (path == null || path.isEmpty()) return null;
+            if (switchHop(path.get(0), written) != null) return path.get(0);
+            if (path.size() > 1 && switchHop(path.get(1), written) != null) return path.get(1);
             return null;
+        }
+
+        /** The class of a read path within a part that walks {@code walk} on type {@code t}, as a walk over its hops
+         *  (the verifier's {@code classify}): "local", household hops from the subject; "shifted", at most one hop to the
+         *  owner as the first hop, one hop over the switch relation to the predecessor's role, then household hops of
+         *  the predecessor. A household hop is a hop over a satellite relation of {@code t}, to the satellite or back to
+         *  the owner. Outside both, the clause the first hop beyond them falls on. */
+        Verdict classify(List<RoleBindingRef> path, RoleBindingRef walk, ObjectType t, Set<String> written) {
+            if (path == null) return Verdict.outside("shifted-or-local");
+            String state = "subject";
+            List<Satellite> satellites = new ArrayList<>();
+            for (RoleBindingRef hop : path) {
+                if (switchHop(hop, written) != null) {
+                    boolean same = Namen.norm(hop.factType()).equals(Namen.norm(walk.factType()))
+                            && Namen.norm(hop.role()).equals(Namen.norm(walk.role()));
+                    if (!same) return Verdict.outside(state.equals("pred") ? "two-switch-steps" : "one-walk");
+                    switch (state) {
+                        case "subject", "owner-first" -> state = "pred";
+                        case "pred" -> { return Verdict.outside("two-switch-steps"); }
+                        default -> { return Verdict.outside("shifted-or-local"); }
+                    }
+                    continue;
+                }
+                Step s = satelliteHop(hop, walk, t, written);
+                if (s == null) return Verdict.outside(clauseOfHop(hop, t));
+                satellites.add(s.satellite());
+                if (state.equals("subject") && s.toOwner()) state = "owner-first";
+                else if (!state.equals("pred")) state = "household";
+            }
+            return new Verdict(state.equals("pred") ? "shifted" : "local", null, satellites);
         }
 
         /** The declared filler of the role a hop binds: the type it reaches. */

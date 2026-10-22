@@ -1408,7 +1408,11 @@ EXPECTED_CHANNEL=(
 # 270 -> 271 (2026-10-22, fix round of card third-condition-level): the golden jutterswet-premietabel-twee-ofcellen, a
 # decision-table row with two or-cells, desugared to two sister groups, written in RegelSpraak with hand-computed cases.
 # No source file of this backend changed; it plays on both with PLAYED 5.
-EXPECTED_PLAYED=271
+# 271 -> 272 (2026-10-22, card instance-cycle-household-reads): the golden jutterswet-vergunningtermijnen, reads in the
+# household of an object on the instance-ordered cycle (folds and a quantifier over the own to-many satellites, the hop
+# to a satellite and back, a fold over the satellites of the predecessor), hand-written IR with hand-computed cases.
+# Cycles classifies the reads as the verifier does; it plays on both with PLAYED 3.
+EXPECTED_PLAYED=272
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
