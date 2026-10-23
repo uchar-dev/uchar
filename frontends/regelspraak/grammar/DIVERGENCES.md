@@ -1597,10 +1597,13 @@ the element: over one step the read reaches the subject back over the
 relation's other role, but over a path no walk from the element names the
 subject (the melder of a Vondst has more Meldingen than the one the rule is
 about), and a binding from the element would read another object without a
-word. Such an operand is refused with an ERROR (RGS-348) that names the read;
+word. Such an operand was refused with an ERROR (RGS-348) that named the read;
 a literal, a parameter, and an own attribute of the element are read as
-before. Where the element has the rule subject's own type, an own read of the
-subject is refused too, over a path and over one step (RGS-349, next section).
+before. Since 2026-10-23 such an operand carries the form anchor and is read
+on the rule subject, over a path and over one step, and RGS-348 is retired
+("The rule subject in a subselection — `zelf`", below). Where the element has
+the rule subject's own type, a read of the subject that does not write `zelf`
+is refused, over a path and over one step (RGS-349, next section).
 A count over a path ("het aantal vondsten van de melder van de
 Melding") stays refused (§13.4.17.47, "A count over a written path"): it is a
 count, not a quantifier, and the wire has no range of more than one step under
@@ -1619,6 +1622,12 @@ hand-written `ir.json`. Witnesses: `QuantifierOverPathTest`, the golden
 ---
 
 ## A read of a rule subject of the element's own type in a fold — refused (2026-10-20)
+
+*History.* Since 2026-10-23 the next section but one, "The rule subject in a
+subselection — `zelf`", holds what is current: the IR has a reference to the
+outer subject there (the form anchor), RGS-349 and RGS-350 refuse only a read
+that does not write `zelf`, and the variable of the rule reads the rule subject.
+The text below records the narrowing as it stood.
 
 A narrowing: a sentence this frontend wrote and every executor answered
 wrongly. The test of a quantifier fold and the filter of a subselection ("die
@@ -1675,6 +1684,12 @@ RegelSpraak sources of the repository raises either code. Witness:
 ---
 
 ## A read of the rule subject in a filter — written over the way back (2026-10-22)
+
+*History.* Since 2026-10-23 the next section, "The rule subject in a
+subselection — `zelf`", holds what is current: the lowering over the way back
+is gone, a read of the rule subject in a filter or a quantifier test carries
+the form anchor, and RGS-352 is retired. The text below records the lowering as
+it stood.
 
 Not a dialect extension: the wire form IR-SPEC ch. 4.3 already carries
 (`sourcePath`, WF-102, a navigation `path`), which this frontend did not write
@@ -1750,6 +1765,135 @@ disk with `diagnostics: []` and verifier-clean; the golden
 branches. All 127 rgs goldens, the parity zone and the scenario goldens re-emit
 byte-identically. Witnesses: `FoldInElementConditionTest`,
 `RuleVariableInSubselectionTest`.
+
+---
+
+## The rule subject in a subselection — `zelf` (2026-10-23)
+
+A dialect extension (card `subselection-reads-subject`; IR-SPEC ch. 4.1a,
+WF-122; RUNTIME-SEMANTICS ch. 3.4a). The filter of a fold ("die aan alle
+volgende voorwaarden voldoen: …") and the test of a quantifier fold are read
+per element, with the element as their subject (RUNTIME-SEMANTICS ch. 3.9a).
+RegelSpraak v2.3.0 §5.6 has no word for the subject of the rule there, so a
+sentence could not leave the rule subject out of a fold over its own type ("…
+alle rechten van de samenloop van het Recht … die niet het Recht zelf zijn", art.
+21 lid 2 onder a WW) nor compare a member with it ("zijn ingangsdag is later
+dan de ingangsdag van de Vergunning zelf"). The IR has the form anchor for
+that: `anchor: "form"` on a read, a characteristic check or a fold says that
+the node is read on the subject of the form, as if it stood in the form's own
+condition or value, and `IdentityCheck` compares the element with that
+subject. The two sections above are the history of this one: the narrowing of
+2026-10-20 and the lowering over the way back of 2026-10-22.
+
+**Surface syntax.** One token, `ZELF` (`'zelf'`), and two productions:
+
+- `onderwerpVerwijzing : bepaaldLidwoord rangtelwoord? kaleNaam ZELF?` —
+  "de Vergunning zelf" names the subject of the form, the rule subject of a
+  rule; the name before the word is the own name of that subject's type,
+  written as declared (no role, no supertype, no other case);
+- `identiteitsToets : NIET? bepaaldLidwoord kaleNaam ZELF`, an alternative of
+  both operator rules: "hij is (niet) de Vergunning zelf" in a bullet, "die
+  (niet) de Vergunning zelf zijn" as the predicate of a subselection. A rule of
+  its own, so no reader of the operator rules takes its name for a
+  characteristic.
+
+`ZELF` is no name word (`kaleNaamWoord`, `naamWoordLower`, `naamWoordAny`):
+a name that ran on over it would swallow the marker. A scenario name and a rule
+name take every token, so the word stays free text there, as v2 of the
+werkbank writes it ("… van het recht zelf in een samenloop", "… dat zelf is
+geëindigd"); `regelReferentieWoord` takes it too, so a rule name with the word
+stays referable in the list of a scope. The price of the keyword: a declared
+attribute, role, parameter, variable, situation or timeline name, and the rule
+name after `regelversie`, that contains the word "zelf" no longer parses. None
+of the repository's sources writes one; the word stood in three scenario names
+("doel zelf in invoer"), which read as before. "zelfstandige" lexes as one
+word, as before.
+
+**Lowering (resolver).** One rule: the frontend builds every expression at the
+subject the sentence names, and a node built at the subject of the form that
+stands in a filter or a quantifier test carries the form anchor
+(`ExpressionBuilder.reach`, `atForm`, `anchor`). In a filter that holds for
+
+- a read, a fold or a characteristic check whose reference is "… zelf";
+- one whose reference is the bare own name of the form subject's type ("de
+  afmeerdag van de Schuit", "alle klachten van de Schuit" in a filter over the
+  ladingen of a Schuit), where no element in scope has that type;
+- a variable of the rule ("Daarbij geldt:"): its definition is built at the
+  rule subject, and it is substituted with the anchor on every read and fold of
+  it that starts there (IR-SPEC ch. 4.10 (c)).
+
+In the test of a quantifier at the form's own level the operand beside the
+quantified one is built at the rule subject ("indien de leeftijd van ten
+minste één van de jutters van de ploeg van de Jutter groter is dan de
+drempel van de Ploeg"), so its reads and folds carry the anchor; an own read
+of the element's type by that type's name stays the element's, and so does an
+operand the matrix built again from the element ("de sluitdag van de jutter
+van de Vondst"). "zijn …" and "hij" in a subselection are the element, as
+before. A read that navigates from the element ("de afmeerdag van de schuit
+van de Lading in-een-maand") keeps the navigation: the IR has two spellings of
+the same reading where the way back from the element is to-one (IR-SPEC ch.
+4.1a), and the golden `fold-filter-subject-two-spellings` pins both on one
+value. Outside a filter and a test the word is admitted and changes nothing:
+"de Vergunning zelf" in a rule's own condition is the Vergunning, without a
+warning, so the same sentence may stand in and outside a filter. The emitter
+writes an anchored node from the subject of the form (`IrEmitter.atForm`) and
+refuses an anchor where WF-122 refuses one; the resolver's checks of the paths
+it writes (`RuleChecker.checkPaths`) and its dependency graph
+(`Dependencies`, WF-045) read an anchored node on that subject too, as the
+verifier does.
+
+**Gone.** The lowering over the way back (`ExpressionBuilder.frame`,
+`reanchor`, `wayBack`, `chainTo`, `foldAtAnchor`, `matrixFromElement`), and
+with it RGS-348 (a read of the rule subject in the test of a quantifier over
+a path) and RGS-352 (a read of the rule subject in a filter without a spelling
+from the element): both existed because the way back was missing, and the
+anchor needs none. Both codes leave the register and the catalogues and are
+not reused. The refusal of a variable of the rule in a subselection over the
+rule subject's own type (RGS-350, 2026-10-22) is gone as well: the variable
+names the rule subject.
+
+**Refused, loudly.**
+
+- RGS-350: in a filter, the bare name of a type that the rule subject and an
+  element in scope both have ("de leeftijd van de Jutter" in a subselection of
+  Jutters on a Jutter, a read, a fold source or a characteristic check); the
+  message names "de … van de Jutter zelf" as the way out.
+- RGS-349: in the test of a quantifier over elements of the rule subject's own
+  type, a read of the subject that is not written with `zelf` ("de leeftijd van
+  de Jutter", "zijn leeftijd"); a variable of the rule is admitted. The message
+  names the way out.
+- RGS-358 (new), with its reason: "zelf" after another name than the own name
+  of the form subject's type; the element of an enclosing subselection named by
+  its type in a nested one (it has no name there: only the inner element and
+  the rule subject do; the read over its role stays, "de afmeerdag van de
+  beklaagde schuit van de Klacht"); in the test of a quantifier inside a
+  filter, a read of the condition's own subject, the enclosing element; the
+  identity check outside a filter or a test, or about another operand than
+  "hij"; a role check, a union count, a fold over a dimension or an operator
+  over the subject's own timeline of the rule subject in a filter, which have
+  no node the anchor can stand on (IR-SPEC ch. 4.1a: `RoleMembership` and
+  `InstanceSetUnion` carry none); and a quantifier over a relation of the rule
+  subject inside a filter or a test: the IR has the anchor on
+  `QuantifierFold`, this frontend writes none until a sentence asks for it.
+
+**Measured** 2026-10-23 over every RegelSpraak document of the repository —
+the 227 tracked `.rgs` files each alone (the corpus sources, the Drools test
+resources, the scenario files, the 47 fragments of the parity zone), the 36
+scenario files with their source in `--cases` mode, and the casus of the
+parity zone with and without the two holdouts of gate 11, 265 documents: the
+IR, the case files, the diagnostics and the exit code are byte-identical
+before and after, but for the three goldens of B2 of the card, whose `ir.json`
+the frontend now writes with the anchor in 13 places
+(`fold-filter-nested-aggregate` 10, `jutterswet-schone-maand-na-zware-klacht`
+1, `jutterswet-vergunningtermijnen` 2; their cases are unchanged), and for the
+line numbers in the stack trace of the emitter's refusal of three fragments
+of the parity zone alone, which are no documents. The golden
+`jutterswet-registervoorrang` has its source now and the frontend writes its
+`ir.json`, which differs from the hand-written one in five source snippets
+only. Witnesses: `RuleSubjectSelfTest`, `FoldInElementConditionTest`,
+`RuleVariableInSubselectionTest`, `QuantifierOverPathTest`,
+`QuantifierMatrixElementNameTest`; the goldens `jutterswet-registervoorrang`,
+`fold-filter-subject-two-spellings` and the three above.
 
 ---
 
