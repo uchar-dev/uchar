@@ -465,9 +465,17 @@ type ctx = {
      form's own level, where [subject] is the form subject. A node with
      `anchor` is translated on it ([at_form]) *)
   mutable form_subject : (string * string) option;
-  (* the variables of the form subjects an anchored node was translated on,
-     which [unkeyed_form_read] holds every later rule to *)
+  (* the variables of the form subjects an anchored node was translated on
+     in the current form, which [unkeyed_form_read] holds every later rule of
+     that form to; emptied where a form begins ([each_form]) *)
   mutable anchored : string list;
+  (* the reach of the current member from the form subject: per move to a
+     member ([with_member_reach]) the outer subject's is_a and the range join,
+     innermost first, down to the form subject. Lazy, so that a document that
+     never asks for it translates with the variable numbering it had. A guard
+     that reads the form subject or, inside an anchored node, a member carries
+     it ([with_reach]), so that the guard binds every variable it names *)
+  mutable member_reach : string list Lazy.t;
 }
 
 (* S ⊑ T, for the OCaml-side scans over case instances. The ASP side does
@@ -554,12 +562,19 @@ let asp_variables (s : string) =
    object of that type satisfies the body, because the read binds the
    variable itself: a wrong answer, not an unsafe rule. The helpers of the
    conditions and folds a filter or a quantifier test commonly holds carry
-   it. Every other rule that names, in its body and not in its head, the
-   variable of a form subject an anchored node was read on ([anchored]) is
-   refused here, so that no helper this backend does not key answers. A
-   viol/2 fence is exempt: over a member it fires whatever the subject, as
-   every fence over a member does where the rule has no condition
-   ([with_member_reach]). *)
+   it. Every other rule of the form that names, in its body and not in its
+   head, the variable of a form subject an anchored node was read on
+   ([anchored]) is refused here, so that no helper this backend does not key
+   answers. Two exemptions. A viol/2 fence: over a member it fires whatever
+   the subject, as every fence over a member does where the rule has no
+   condition ([with_member_reach]). And the literals of the guard the rule
+   was written under ([rule_guard]: the member's reach, a short circuit's
+   prefix): the reader of the helper stands under the same guard for its own
+   form subject, so a helper that reads the form subject only there holds
+   for the member exactly where some form subject reaches it, which is all
+   the reader asks; unless such a literal shares a variable outside the head
+   with the rest of the body (a Let's value the guard binds), through which
+   the helper's value would depend on the form subject. *)
 let split_rule text =
   let n = String.length text in
   let rec go i =
@@ -575,15 +590,70 @@ let split_rule text =
   in
   go 0
 
+(* the literals of a rule body: the text up to its closing period, cut at the
+   commas outside parentheses, braces, brackets and string literals *)
+let body_literals (body : string) : string list =
+  let body = String.trim body in
+  let body =
+    if String.ends_with ~suffix:"." body then String.sub body 0 (String.length body - 1) else body
+  in
+  let n = String.length body in
+  let cur = Buffer.create 64 and out = ref [] in
+  let flush () =
+    out := String.trim (Buffer.contents cur) :: !out;
+    Buffer.clear cur
+  in
+  let rec go i depth =
+    if i < n then
+      match body.[i] with
+      | '"' ->
+          let rec close j =
+            if j >= n then n else if body.[j] = '\\' then close (j + 2) else if body.[j] = '"' then j + 1 else close (j + 1)
+          in
+          let j = min n (close (i + 1)) in
+          Buffer.add_string cur (String.sub body i (j - i));
+          go j depth
+      | ',' when depth = 0 ->
+          flush ();
+          go (i + 1) depth
+      | c ->
+          Buffer.add_char cur c;
+          go (i + 1)
+            (match c with '(' | '{' | '[' -> depth + 1 | ')' | '}' | ']' -> depth - 1 | _ -> depth)
+  in
+  go 0 0;
+  flush ();
+  List.rev (List.filter (fun l -> l <> "") !out)
+
 let unkeyed_form_read ctx text =
   match (ctx.anchored, split_rule text) with
   | [], _ | _, None -> ()
   | vars, Some (head, body) ->
       if head <> "" && not (String.starts_with ~prefix:"viol(" head) then begin
-        let in_head = asp_variables head and in_body = asp_variables body in
+        let in_head = asp_variables head in
+        let guard, own = List.partition (fun l -> List.mem l ctx.rule_guard) (body_literals body) in
+        let own_vars = List.concat_map asp_variables own in
+        (* the variables of the guard literals joined to [v] through variables
+           outside the head, [v] included *)
+        let rec joined comp pending =
+          let hit, rest =
+            List.partition (fun l -> List.exists (fun w -> List.mem w comp) (asp_variables l)) pending
+          in
+          if hit = [] then comp
+          else
+            joined
+              (comp
+              @ List.filter
+                  (fun w -> not (List.mem w in_head || List.mem w comp))
+                  (List.sort_uniq compare (List.concat_map asp_variables hit)))
+              rest
+        in
         List.iter
           (fun v ->
-            if List.mem v in_body && not (List.mem v in_head) then
+            if
+              (not (List.mem v in_head))
+              && List.exists (fun w -> List.mem w own_vars) (joined [ v ] guard)
+            then
               fault
                 "a helper rule over a member reads the form subject %s, an anchored node's \
                  subject, without carrying it in its head (IR-SPEC ch. 4.1a): this backend keys \
@@ -2033,6 +2103,22 @@ let source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x =
    form subject's variable, which the rule or the aggregate element the
    filter's atoms land in binds. [k] gets that variable and its type; inside,
    the form's own level holds again. *)
+(* [g] with the member's reach ([member_reach]) beside it: the reach's
+   literals [g] does not hold yet, appended, so that the places [before_arm]
+   records in the guard stay where they are *)
+let with_reach ctx g = g @ List.filter (fun a -> not (List.mem a g)) (Lazy.force ctx.member_reach)
+
+(* the guard [g] extended by [extra]. Where [extra] reads the form subject at
+   a member's level (an anchored node, an identity check), nothing in the
+   rules the guard rides binds that subject but the member's reach: it joins
+   the guard, which then holds for the member where some form subject whose
+   range holds it passes [extra] — where RUNTIME-SEMANTICS ch. 3.4a, "Once
+   or per member", lets a member reach what the guard guards *)
+let guard_with ctx g extra =
+  match ctx.form_subject with
+  | Some (s, _) when List.exists (fun a -> List.mem s (asp_variables a)) extra -> with_reach ctx (g @ extra)
+  | _ -> g @ extra
+
 let at_form ctx (k : string -> string -> 'a) : 'a =
   match ctx.form_subject with
   | None ->
@@ -2042,8 +2128,16 @@ let at_form ctx (k : string -> string -> 'a) : 'a =
          subject itself to read (WF-122)"
   | Some (s, sot) as saved ->
       if not (List.mem s ctx.anchored) then ctx.anchored <- s :: ctx.anchored;
+      (* the guard can read the member (a short circuit's prefix); at the
+         form's own level only the member's reach binds it *)
+      let saved_g = ctx.rule_guard in
+      if saved_g <> [] then ctx.rule_guard <- with_reach ctx saved_g;
       ctx.form_subject <- None;
-      Fun.protect ~finally:(fun () -> ctx.form_subject <- saved) (fun () -> k s sot)
+      Fun.protect
+        ~finally:(fun () ->
+          ctx.form_subject <- saved;
+          ctx.rule_guard <- saved_g)
+        (fun () -> k s sot)
 
 (* the form subject's variable and type at a position over [subject]: the one
    a move to a member kept, or [subject] itself at the form's own level *)
@@ -2197,24 +2291,25 @@ let hoist_element_aggregates ctx ~x ~el ~outside atoms =
    empty, so a document whose rule has no condition translates as before. *)
 let with_member_reach ctx ~subject ~subject_ot ~join ?range ?part f =
   let saved = ctx.param_reach and saved_p = ctx.parts and saved_s = ctx.deposit_subject
-  and saved_g = ctx.rule_guard and saved_f = ctx.form_subject in
+  and saved_g = ctx.rule_guard and saved_f = ctx.form_subject and saved_r = ctx.member_reach in
   (* the first move from the form's own level names the form subject *)
   if saved_f = None then ctx.form_subject <- Some (subject, subject_ot);
   ctx.param_reach <-
     (fun name -> (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join ()) @ saved name);
   if ctx.deposit_subject = None then ctx.deposit_subject <- Some subject;
   (match part with Some pt -> ctx.parts <- pt :: ctx.parts | None -> ());
-  if saved_g <> [] then
-    ctx.rule_guard <-
-      (Printf.sprintf "isa(%s,%s)" subject (str subject_ot)
-      :: (match range with Some r -> r | None -> join ()))
-      @ saved_g;
+  let here =
+    lazy (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: (match range with Some r -> r | None -> join ()))
+  in
+  if saved_g <> [] then ctx.rule_guard <- Lazy.force here @ saved_g;
+  ctx.member_reach <- lazy (Lazy.force here @ Lazy.force saved_r);
   let r = f () in
   ctx.param_reach <- saved;
   ctx.parts <- saved_p;
   ctx.deposit_subject <- saved_s;
   ctx.rule_guard <- saved_g;
   ctx.form_subject <- saved_f;
+  ctx.member_reach <- saved_r;
   r
 
 (* the range order of a fold over [el] from [subject] ([use_ro]), and a part
@@ -3662,12 +3757,16 @@ let let_binder ctx ~subject ~subject_ot ((va, vt, vs) : string list * string * i
   else begin
     ctx.fresh <- ctx.fresh + 1;
     let p = Printf.sprintf "let%d" ctx.fresh in
-    let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-    let body = String.concat ", " (base :: va) in
-    emit ctx "%s(%s,%s) :- %s." p subject vt body;
+    (* a value that reads the form subject of a member (an anchored read,
+       IR-SPEC ch. 4.1a) keys the helper by that subject ([helper_key]) *)
+    let key, opening =
+      helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) va
+    in
+    let body = String.concat ", " (opening @ va) in
+    emit ctx "%s(%s,%s) :- %s." p key vt body;
     let v = fresh ctx "LB" in
-    register_bound ctx ~pred:p ~subject ~body ~term:vt ~v;
-    ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, vs)
+    register_bound ctx ~pred:p ~subject:key ~body ~term:vt ~v;
+    ([ Printf.sprintf "%s(%s,%s)" p key v ], v, vs)
   end
 
 (* a Let at rule level, up to its body: the value, translated as the value of
@@ -6710,15 +6809,20 @@ and translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding
   in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "q%d" ctx.fresh in
-  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+  (* an operand that reads the form subject of a member (an anchored read,
+     IR-SPEC ch. 4.1a) keys the helpers by that subject ([helper_key]) *)
+  let hkey, opening =
+    helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) (bl @ br)
+  in
+  let base = String.concat ", " opening in
   let guard = ctx.rule_guard in
   let lbody = String.concat ", " (base :: bl) in
   let rbody = String.concat ", " (base :: br) in
   let full = String.concat ", " ((base :: guard) @ bl @ br) in
   range_guard ctx ~subject ~body:((base :: guard) @ bl @ br) range_bounds;
-  emit ctx "%s_ldef(%s) :- %s." p subject lbody;
-  emit ctx "%s_rdef(%s) :- %s." p subject rbody;
-  emit ctx "%s(%s,0) :- %s, not %s_ldef(%s)." p subject base p subject;
+  emit ctx "%s_ldef(%s) :- %s." p hkey lbody;
+  emit ctx "%s_rdef(%s) :- %s." p hkey rbody;
+  emit ctx "%s(%s,0) :- %s, not %s_ldef(%s)." p hkey base p hkey;
   (* the deposits ride the reading form's rule × subject: inside a fold member,
      a quantifier element or a closed body that is [deposit_subject], joined
      through the reach of the place ([param_reach]) *)
@@ -6729,12 +6833,12 @@ and translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding
   in
   deposit ctx ~code:"EF-031" ~rule:(str ctx.rule_name) ~subject:key
     (Printf.sprintf "%s, %s_ldef(%s), not %s_rdef(%s)" (String.concat ", " (reach @ (base :: guard))) p
-       subject p subject);
+       hkey p hkey);
   deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject:key
     (Printf.sprintf "%s, (%s) == 0" (String.concat ", " (reach @ [ full ])) tr);
   (match rounding with
   | None ->
-      emit ctx "%s(%s,V) :- %s, (%s) != 0, %s \\ %s == 0, V = %s/%s." p subject full tr numt
+      emit ctx "%s(%s,V) :- %s, (%s) != 0, %s \\ %s == 0, V = %s/%s." p hkey full tr numt
         dent numt dent;
       emit ctx "viol(\"%s\",%s) :- %s, (%s) != 0, %s \\ %s != 0." (non_exact_division ctx) subject
         full tr numt dent
@@ -6765,9 +6869,9 @@ and translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding
         | Toward_zero -> Printf.sprintf "(%s) != 0" tr
         | _ -> Printf.sprintf "%s >= 0, %s > 0" numt dent
       in
-      emit ctx "%s(%s,V) :- %s, %s, V = %s." p subject full guards value);
+      emit ctx "%s(%s,V) :- %s, %s, V = %s." p hkey full guards value);
   let v = fresh ctx "Q" in
-  ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, out_scale)
+  ([ Printf.sprintf "%s(%s,%s)" p hkey v ], v, out_scale)
 
 (* tot de macht (ch. 2.2, arith.pow_): exact integer power. Only a
    compile-time non-negative integer exponent translates: the result
@@ -7933,7 +8037,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let atoms =
         List.fold_left
           (fun prefix c ->
-            ctx.rule_guard <- saved @ prefix;
+            ctx.rule_guard <- guard_with ctx saved prefix;
             let a, pre = with_pre ctx c (fun () -> cond_atoms ctx ~subject ~subject_ot c) in
             members := (a, pre) :: !members;
             prefix @ a)
@@ -12399,7 +12503,7 @@ let translate (doc : document) (case : Case.t) : string =
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
       before_arm = []; pre_scope = []; pre_reach = []; pre_let = [];
       pre_asks = []; signs = []; sign_helpers = []; oc_strata;
-      form_subject = None; anchored = [] }
+      form_subject = None; anchored = []; member_reach = lazy [] }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a
@@ -12463,11 +12567,24 @@ let translate (doc : document) (case : Case.t) : string =
      UNSAT diagnosis re-runs without exactly this line to report which
      guard fired *)
   emit ctx ":- viol(_,_).";
-  List.iter (translate_rule ctx) doc.resolved_rules;
+  (* the fence of the form anchor ([unkeyed_form_read]) holds each form to the
+     form subjects of its own anchored nodes: a form without one names its
+     subject's variable, or an aggregate's local one, wherever it likes. The
+     passes after the forms write for every form at once, and are held to the
+     form subjects of them all *)
+  let all_anchored = ref [] in
+  let each_form f =
+    ctx.anchored <- [];
+    f ();
+    all_anchored := List.sort_uniq compare (ctx.anchored @ !all_anchored);
+    ctx.anchored <- []
+  in
+  List.iter (fun r -> each_form (fun () -> translate_rule ctx r)) doc.resolved_rules;
+  ctx.anchored <- !all_anchored;
   writer_conflicts ctx;
-  List.iter (translate_fact_creation ctx) doc.fact_creations;
-  List.iteri (translate_object_creation ctx) doc.object_creations;
-  List.iteri (translate_allocation ctx) doc.allocations;
+  List.iter (fun f -> each_form (fun () -> translate_fact_creation ctx f)) doc.fact_creations;
+  List.iteri (fun i o -> each_form (fun () -> translate_object_creation ctx i o)) doc.object_creations;
+  List.iteri (fun i a -> each_form (fun () -> translate_allocation ctx i a)) doc.allocations;
   (* One stack per (CONCRETE type, target): the block order of ch. 7.10
      composed the inherited declarations into it, so what is translated here
      is already the effective stack. In a document without a supertype edge
@@ -12478,11 +12595,12 @@ let translate (doc : document) (case : Case.t) : string =
    in
    List.iteri
      (fun gidx (owner, _key, members, _contributors) ->
-       translate_defaults_group ctx gidx ~owner members)
+       each_form (fun () -> translate_defaults_group ctx gidx ~owner members))
      groups);
-  List.iteri (translate_consistency ctx) doc.consistencies;
-  List.iter (translate_uniqueness ctx) doc.uniquenesses;
-  List.iteri (translate_uniqueness_union ctx) doc.uniqueness_unions;
+  List.iteri (fun i c -> each_form (fun () -> translate_consistency ctx i c)) doc.consistencies;
+  List.iter (fun u -> each_form (fun () -> translate_uniqueness ctx u)) doc.uniquenesses;
+  List.iteri (fun i u -> each_form (fun () -> translate_uniqueness_union ctx i u)) doc.uniqueness_unions;
+  ctx.anchored <- !all_anchored;
   emit_barriers ctx;
   translate_case ctx case;
   emit ctx "#show val/3. #show has/2. #show inconsistent/2. #show tl/5.";
