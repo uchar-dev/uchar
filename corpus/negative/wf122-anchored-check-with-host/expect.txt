@@ -1,0 +1,3 @@
+WF-122.anchored-check-host
+characteristic=geschorst
+host=Vergunning

@@ -1,0 +1,5 @@
+WF-102.path-not-connected
+role=vergunning
+filler=Vergunning
+startType=Register
+origin=the fold subject

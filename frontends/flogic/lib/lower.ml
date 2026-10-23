@@ -339,7 +339,7 @@ let rec low_expr m (ctx : ctx) ~line (e : expr) : A.expr =
       ignore (attr_type m ~line ctx.c_subject attr);
       A.Attribute_reference
         { attribute_ref = Some attr; object_type = Some ctx.c_subject; source_name = Some (show_expr e);
-          navigation_bindings = None }
+          navigation_bindings = None; anchor = None }
   | E_path (v, _) when v <> ctx.c_var ->
       refuse ~line "the path %s does not start at the rule's subject ?%s" (show_expr e) ctx.c_var
   | E_path (_, steps) ->
@@ -397,12 +397,12 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
           call_arguments =
             [ A.Attribute_reference
                 { attribute_ref = Some role; object_type = Some ctx.c_subject;
-                  source_name = Some (show_expr operand); navigation_bindings = None } ];
+                  source_name = Some (show_expr operand); navigation_bindings = None; anchor = None } ];
           element_object_type = Some el; empty_fallback = None; filter = None;
           dimension_selection = None;
           typ = Some (num ~sign_char:A.Non_negative ~whole_part:true ~decimal_places:0 ());
           source_name = Some (show_expr whole); grain = None;
-          source_role = Some { rb_fact_type = f.f_name; rb_role = role }; source_path = None }
+          source_role = Some { rb_fact_type = f.f_name; rb_role = role }; source_path = None; anchor = None }
   | "sum", [ role; attr ] ->
       let f, el = find_hop m ~line ~subject:ctx.c_subject role in
       let dt = attr_type m ~line el attr in
@@ -420,7 +420,7 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
           call_arguments =
             [ A.Attribute_reference
                 { attribute_ref = Some attr; object_type = Some el; source_name = Some (show_expr operand);
-                  navigation_bindings = None } ];
+                  navigation_bindings = None; anchor = None } ];
           element_object_type = Some el;
           empty_fallback =
             Some
@@ -428,7 +428,7 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
                  { variant = A.Lv_number zero; typ = Some (literal_type zero); source_name = Some zero });
           filter = None; dimension_selection = None; typ = Some dt;
           source_name = Some (show_expr whole); grain = None;
-          source_role = Some { rb_fact_type = f.f_name; rb_role = role }; source_path = None }
+          source_role = Some { rb_fact_type = f.f_name; rb_role = role }; source_path = None; anchor = None }
   | "count", _ ->
       refuse ~line "count{...} counts the members of ONE role hop, ?%s.role" v
   | "sum", _ ->
@@ -506,7 +506,7 @@ let rec low_cond m ctx (g : goal) : A.condition_expr =
           ctx.c_subject;
       A.Characteristic_check
         { characteristic = Some k; negation = false; holder = None;
-          time_period = None; source_name = Some (show_goal g); navigation_binding = None }
+          time_period = None; source_name = Some (show_goal g); navigation_binding = None; anchor = None }
   | G_cmp (op, l, r, line) when as_quantification ~line l <> None ->
       low_quantifier_fold m ctx ~line ~op ~rhs:r
         ~q:(Option.get (as_quantification ~line l))
@@ -655,7 +655,7 @@ and low_quantifier_fold m ctx ~line ~op ~q ~rhs ~source_name : A.condition_expr 
   A.Quantifier_fold
     { kv_quantifier = quantifier_kind; kv_threshold = cutoff; kv_element_object_type = Some el;
       kv_filter = filter; kv_test = Some test; kv_source = Some source_name;
-      kv_source_role = Some { rb_fact_type = f.f_name; rb_role = q.q_role }; kv_source_path = None }
+      kv_source_role = Some { rb_fact_type = f.f_name; rb_role = q.q_role }; kv_source_path = None; kv_anchor = None }
 
 (* --- rules ----------------------------------------------------------------- *)
 
@@ -752,7 +752,7 @@ let objective m ~subject ~attr ~characteristic ~source_name ~line =
   if not characteristic then ignore (attr_type m ~line subject attr);
   A.Attribute_reference
     { attribute_ref = Some attr; object_type = Some subject; source_name = Some source_name;
-      navigation_bindings = None }
+      navigation_bindings = None; anchor = None }
 
 let document (stmts : stmt list) : A.document =
   let m = collect stmts in

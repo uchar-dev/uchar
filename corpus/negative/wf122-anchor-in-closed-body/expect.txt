@@ -1,0 +1,3 @@
+WF-122.anchor-outside-context
+node=AttributeReference
+position=a closed function or lambda body

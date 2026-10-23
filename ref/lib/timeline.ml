@@ -366,7 +366,7 @@ let attr_grid (doc : Ir_v0.Ast.document) (ot : Ir_v0.Ast.object_type) name =
   let variable =
     match Option.join (Ir_v0.Checks.find_ci ot.attribute_timeline_names name) with
     | Some n -> (
-        match Ir_v0.Checks.find_timeline { Ir_v0.Checks.doc } n with
+        match Ir_v0.Checks.find_timeline (Ir_v0.Checks.ctx_of doc) n with
         | Some tl -> tl.variable_start
         | None -> false)
     | None -> false

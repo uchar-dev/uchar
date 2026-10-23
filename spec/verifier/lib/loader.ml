@@ -469,6 +469,14 @@ let context_type ~refusal path kvs : datatype =
   | `Assoc _ as t -> datatype (path / "type") t
   | _ -> fail (path / "type") refusal
 
+(* The anchor of a walk-starting node (IR-SPEC ch. 4.1a, WF-122): one value,
+   "form". Where it may stand is WF-122's; the loader reads its value. *)
+let anchor path j : anchor =
+  match j with
+  | `String "form" -> Anchor_form
+  | `String s -> fail path ("unknown anchor value \"" ^ s ^ "\"")
+  | _ -> fail path "an anchor is the string \"form\""
+
 let rec expr path j : expr =
   let kvs = obj path j in
   let f name = field path kvs name in
@@ -509,8 +517,8 @@ let rec expr path j : expr =
       (* the eight folds (delta B21), read into the in-memory [Function_call] with
          no granularity: that field is a builtin's and unknown here *)
       check_keys path kvs
-        ~ext:[ "elementType"; "filter"; "emptyFallback"; "dimensionSelection"; "sourceRole";
-               "sourcePath"; "source" ]
+        ~ext:[ "elementType"; "anchor"; "filter"; "emptyFallback"; "dimensionSelection";
+               "sourceRole"; "sourcePath"; "source" ]
         [ "node"; "kind"; "arguments"; "type" ];
       let kind = enum Spelling.aggregation_kind (path / "kind") (f "kind") in
       let call_arguments = arguments () in
@@ -546,6 +554,7 @@ let rec expr path j : expr =
           source_path =
             ext_field path kvs "sourcePath" (fun p j ->
                 List.mapi (fun i x -> role_binding (p / string_of_int i) x) (list_ p j));
+          anchor = ext_field path kvs "anchor" anchor;
         }
   | "BuiltinCall" ->
       (* the seventeen other kinds (delta B21), with plain arguments: an
@@ -567,6 +576,7 @@ let rec expr path j : expr =
           grain = ext_field path kvs "granularity" (enum Spelling.granularity);
           source_role = None;
           source_path = None;
+          anchor = None;
         }
   | "InstanceSetUnion" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "branches" ];
@@ -606,7 +616,7 @@ let rec expr path j : expr =
   | "AttributeReference" ->
       (* the path is written whole or not at all: absent is the subject's own
          read, and a path without a hop is no navigation *)
-      check_keys path kvs ~ext:[ "path"; "source" ] [ "node"; "attribute"; "subjectType" ];
+      check_keys path kvs ~ext:[ "anchor"; "path"; "source" ] [ "node"; "attribute"; "subjectType" ];
       Attribute_reference
         {
           attribute_ref = str_opt (path / "attribute") (f "attribute");
@@ -617,6 +627,7 @@ let rec expr path j : expr =
                 match List.mapi (fun i x -> role_binding (p / string_of_int i) x) (list_ p j) with
                 | [] -> fail p "an empty path is not a navigation"
                 | hops -> hops);
+          anchor = ext_field path kvs "anchor" anchor;
         }
   | "DimensionCellRead" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "attribute"; "labels" ];
@@ -931,7 +942,7 @@ and condition_expr path j : condition_expr =
   | "CharacteristicCheck" ->
       (* the host is written whole or not at all: absent is the subject
          (RUNTIME-SEMANTICS ch. 5.8b), the v0 null *)
-      check_keys path kvs ~ext:[ "host"; "wholePeriod"; "navigation"; "source" ]
+      check_keys path kvs ~ext:[ "host"; "anchor"; "wholePeriod"; "navigation"; "source" ]
         [ "node"; "characteristic"; "negated" ];
       Characteristic_check
         {
@@ -941,7 +952,14 @@ and condition_expr path j : condition_expr =
           time_period = time_period ();
           source_name = source_name ();
           navigation_binding = ext_field path kvs "navigation" role_binding;
+          anchor = ext_field path kvs "anchor" anchor;
         }
+  | "IdentityCheck" ->
+      (* the anchor is required and has one value: read for its value, not
+         kept (Ast) *)
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "anchor"; "negated" ];
+      let Anchor_form = anchor (path / "anchor") (f "anchor") in
+      Identity_check { negation = bool_ (path / "negated") (f "negated"); source_name = source_name () }
   | "RoleMembership" ->
       check_keys path kvs ~ext:[ "counterpartType"; "source" ] [ "node"; "factType"; "role"; "negated" ];
       Role_membership
@@ -978,7 +996,7 @@ and condition_expr path j : condition_expr =
           source_name = source_name ();
         }
   | "QuantifierFold" ->
-      check_keys path kvs ~ext:[ "threshold"; "filter"; "sourceRole"; "sourcePath"; "source" ]
+      check_keys path kvs ~ext:[ "threshold"; "anchor"; "filter"; "sourceRole"; "sourcePath"; "source" ]
         [ "node"; "quantifier"; "elementType"; "test" ];
       (* the range, exactly one spelling (B12): written, never derived *)
       (match (List.mem_assoc "sourceRole" kvs, List.mem_assoc "sourcePath" kvs) with
@@ -1014,6 +1032,7 @@ and condition_expr path j : condition_expr =
           kv_source_path =
             ext_field path kvs "sourcePath" (fun p j ->
                 List.mapi (fun i x -> role_binding (p / string_of_int i) x) (list_ p j));
+          kv_anchor = ext_field path kvs "anchor" anchor;
         }
   | "Regelversie" ->
       (* the one node that keeps its v0 shape: the rule-status check waits
@@ -1963,8 +1982,17 @@ let vocabularies (j : json) : vocabulary_table =
    a residual arm's words. And so is a fixed start point that does not fit its
    grid (WF-115, [Checks.wf115_findings]): an executor lays the periods
    from it, and one it cannot read or that contradicts the timeline has no
-   grid to lay. *)
+   grid to lay. And so, for now, is the form anchor (IR-SPEC ch. 4.1a, WF-122):
+   a node with `anchor` and an IdentityCheck load for the verifier, and an
+   executor of this library refuses them ([anchor_not_carried]) until it reads
+   them on the form subject, so that none of them reads such a node on the
+   subject of its position. *)
 type reader = Verifier | Executor
+
+let anchor_not_carried =
+  "a node with anchor \"form\" or an IdentityCheck (IR-SPEC ch. 4.1a, WF-122) is not \
+   carried by this executor yet: it reads the subject of the form, and this executor would \
+   read the subject of its position"
 
 (* The executor's refusals, after the structural load: every Literal,
    ContextValue, VariableReference, Unresolved, QuantifierFold and Diagnostic node of the
@@ -2001,6 +2029,10 @@ let executor_refusals (j : json) =
             fail path (Checks.variable_reference_refusal name)
         | Some (`String "Unresolved") ->
             if not (List.mem_assoc "source" kvs) then fail path Checks.marker_without_source
+        | Some (`String ("AttributeReference" | "CharacteristicCheck" | "Aggregation" | "QuantifierFold"))
+          when List.mem_assoc "anchor" kvs ->
+            fail (path / "anchor") anchor_not_carried
+        | Some (`String "IdentityCheck") -> fail path anchor_not_carried
         | Some (`String "QuantifierFold") -> (
             match field path kvs "quantifier" with
             | `String s when Spelling.is_refused Spelling.quantifier s ->

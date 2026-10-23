@@ -1,0 +1,2 @@
+WF-122.fold-source-anchored
+function=maximum

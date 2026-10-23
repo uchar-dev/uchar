@@ -598,7 +598,7 @@ let () =
       animate = false; plural = Some "Zaken" }
   in
   let aref a : A.expr =
-    Attribute_reference { attribute_ref = Some a; object_type = Some "Zaak"; source_name = Some a; navigation_bindings = None }
+    Attribute_reference { attribute_ref = Some a; object_type = Some "Zaak"; source_name = Some a; navigation_bindings = None; anchor = None }
   in
   let lit v t : A.expr =
     Literal { variant = v; typ = Some t; source_name = Some "proef" }
@@ -616,7 +616,7 @@ let () =
   let spoedeisend : A.condition_expr =
     Characteristic_check
       { characteristic = Some "spoedeisend"; negation = false; holder = Some "Zaak"; time_period = None;
-        source_name = Some "zij is spoedeisend"; navigation_binding = None }
+        source_name = Some "zij is spoedeisend"; navigation_binding = None; anchor = None }
   in
   let year_2026 : A.validity_window = { valid_from = Some "2026-01-01"; valid_to = Some "2027-01-01" } in
   let link : A.fact_type_name =

@@ -1430,7 +1430,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
              (Attribute_reference
                 { attribute_ref = Some fld_name; object_type = Some callee_type; source_name = Some source_name;
                   navigation_bindings =
-                    Some [ { rb_fact_type = subscope_fact_type v; rb_role = callee_role } ] })
+                    Some [ { rb_fact_type = subscope_fact_type v; rb_role = callee_role } ]; anchor = None })
              (Some fld_ty))
   in
   (* a declared subscope's per-field output read in CONDITION position (IR-SPEC
@@ -1474,7 +1474,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
           (Characteristic_check
              { characteristic = Some fld_name; negation = false;
                holder = None; time_period = None; source_name = Some source_name;
-               navigation_binding = Some { I.rb_fact_type = subscope_fact_type v; rb_role = callee_role } })
+               navigation_binding = Some { I.rb_fact_type = subscope_fact_type v; rb_role = callee_role }; anchor = None })
   in
   (* variables that are always filled: inputs (the case dossier fulfils
      Catala's input contract) or variables carrying an unconditional default
@@ -1537,7 +1537,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     typed_ref
       (Attribute_reference
          { attribute_ref = Some vname; object_type = Some ot_name; source_name = Some ("de " ^ vname);
-           navigation_bindings })
+           navigation_bindings; anchor = None })
       (Some dt)
   in
   (* the shared scalar-read check (subscope/closed-body/boolean-carriage/
@@ -1621,7 +1621,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
     let k = characteristic_read ~in_body name in
     Characteristic_check
       { characteristic = Some k; negation = false; holder = None; time_period = None; source_name = Some k;
-        navigation_binding = None }
+        navigation_binding = None; anchor = None }
   in
   let lookup_var v = try Some (snd (lookup v)) with Not_found -> None in
   let value_expr, cond_expr =
@@ -1644,7 +1644,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
         Characteristic_check
           { characteristic = Some k; negation = false; holder = None;
             time_period = None; source_name = Some k;
-            navigation_binding = Some { I.rb_fact_type = fact_type_name; rb_role = role_ref } })
+            navigation_binding = Some { I.rb_fact_type = fact_type_name; rb_role = role_ref }; anchor = None })
       ~lookup_var ~read_subscope_output ~check_subscope_output ~fused_map:(fun _ -> None)
       ~per_element_call:(fun _ _ ->
         refuse
@@ -2330,7 +2330,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
        for the walks that must see it rather than a silent leaf *)
     | Quantifier_fold { kv_filter; kv_test; _ } ->
         Option.iter fence_cond kv_filter; Option.iter fence_cond kv_test
-    | Characteristic_check _ | Role_membership _
+    | Characteristic_check _ | Role_membership _ | Identity_check _
     | Rule_status_check _ | Condition_unresolved _ -> ()
   in
   fence_expr body;

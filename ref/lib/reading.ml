@@ -57,6 +57,7 @@ let cond_kind (c : condition_expr) =
   | Compound _ -> "Compound"
   | Quantifier_fold _ -> "QuantifierFold"
   | Rule_status_check _ -> "Regelversie"
+  | Identity_check _ -> "IdentityCheck"
   | Condition_unresolved _ -> "Unresolved"
 
 let is_aggregation kind =
@@ -135,7 +136,9 @@ and walk_cond ~own ?(scope = []) acc (c : condition_expr) =
   match c with
   | Comparison { left_side; right_side; _ } -> opt sube (opt sube acc left_side) right_side
   | Predicate { operand; _ } -> opt sube acc operand
-  | Characteristic_check _ | Role_membership _ | Rule_status_check _ | Condition_unresolved _ -> acc
+  | Characteristic_check _ | Role_membership _ | Rule_status_check _ | Identity_check _
+  | Condition_unresolved _ ->
+      acc
   | Time_window { starting_at; up_to; _ } -> opt sube (opt sube acc starting_at) up_to
   | Compound { components; _ } -> List.fold_left (walk_cond ~own ~scope) acc components
   | Quantifier_fold { kv_filter; kv_test; _ } ->

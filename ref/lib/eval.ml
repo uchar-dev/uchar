@@ -273,7 +273,7 @@ let rec contains_time_window (c : condition_expr) =
       let opt = function Some c -> contains_time_window c | None -> false in
       opt kv_filter || opt kv_test
   | Comparison _ | Predicate _ | Characteristic_check _ | Role_membership _
-  | Rule_status_check _ | Condition_unresolved _ ->
+  | Rule_status_check _ | Identity_check _ | Condition_unresolved _ ->
       false
 
 
@@ -1113,7 +1113,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
                 ~matches:(day_kind_pred env world self ~err k)
                 ~result_unit van up_to)
       | _ -> Value.fault "duration expects two arguments")
-  | Function_call { kind; call_arguments; element_object_type; empty_fallback; filter; dimension_selection; grain; source_role; source_path; typ = _; source_name = _ } ->
+  | Function_call { kind; call_arguments; element_object_type; empty_fallback; filter; dimension_selection; grain; source_role; source_path; typ = _; source_name = _; anchor = _ } ->
       eval_function_call env world self ~err ~kind ~call_arguments ~element_object_type ~empty_fallback ~filter
         ~dimension_selection ~grain ~source_role ~source_path
   | Text_composition { pieces; _ } ->
@@ -1780,8 +1780,8 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
               name el
           else if
             match env.subj with
-            | Some st -> Ir_v0.Checks.roles_named_from { doc = env.doc } ~from_type:st ~name <> []
-            | None -> Ir_v0.Checks.is_role_name { doc = env.doc } name
+            | Some st -> Ir_v0.Checks.roles_named_from (Ir_v0.Checks.ctx_of env.doc) ~from_type:st ~name <> []
+            | None -> Ir_v0.Checks.is_role_name (Ir_v0.Checks.ctx_of env.doc) name
           then
             Value.fault
               "value aggregation over %S, which is no attribute of %S: a value fold reads an \
@@ -2398,7 +2398,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
          fact type's one role is its own other end. *)
       let own, other =
         match
-          Ir_v0.Checks.resolve_binding { doc = env.doc } { rb_fact_type = fact_type; rb_role = role }
+          Ir_v0.Checks.resolve_binding (Ir_v0.Checks.ctx_of env.doc) { rb_fact_type = fact_type; rb_role = role }
         with
         | Ok (_, own, other) -> (own, other)
         | Error e -> Value.fault "role check: %s" e
@@ -2582,6 +2582,9 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
                    | _ -> true)
            | _ -> assert false))
   | Condition_unresolved _ -> Value.faultc "EF-019" "Unresolved condition reached in evaluation"
+  (* the loader refuses an IdentityCheck for an executor until this one reads
+     it on the form subject (Ir_v0.Loader.anchor_not_carried) *)
+  | Identity_check _ -> assert false
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
    Two steps stand between a unit SPELLING on a duration node and a verdict
@@ -3215,7 +3218,7 @@ let creation_pair env (oc : resolved_object_creation) =
      self-typed pair, whose derivation mirrors v0's null *)
   match oc.oc_connecting_role with
   | Some rb -> (
-      match Ir_v0.Checks.resolve_binding { doc = env.doc } rb with
+      match Ir_v0.Checks.resolve_binding (Ir_v0.Checks.ctx_of env.doc) rb with
       | Ok (_, bound, other) -> Some (rb.rb_fact_type, bound, other)
       | Error e -> Value.fault "%s" e)
   | None -> connecting_pair env ~from_type:subject ~to_type:created
@@ -3781,7 +3784,7 @@ let vintage_read_params (doc : document) : string list =
     match c with
     | Comparison { left_side; right_side; _ } -> opt left_side; opt right_side
     | Predicate { operand; _ } -> opt operand
-    | Characteristic_check _ | Role_membership _ | Rule_status_check _
+    | Characteristic_check _ | Role_membership _ | Rule_status_check _ | Identity_check _
     | Condition_unresolved _ ->
         ()
     | Time_window { starting_at; up_to; _ } -> opt starting_at; opt up_to
@@ -3930,7 +3933,7 @@ let evaluate env world =
      through a recursive-group creation and carries no negative edge) —
      ref/ re-runs those two checks itself rather than silently
      answering on a graph the verifier would reject *)
-  (match Ir_v0.Checks.wf045_046 { doc = env.doc } with
+  (match Ir_v0.Checks.wf045_046 (Ir_v0.Checks.ctx_of env.doc) with
   | [] -> ()
   | { Ir_v0.Checks.wf; at; reason; _ } :: _ ->
       Value.fault "%s at %s: %s — the dependency graph is ill-formed; ref/ refuses to evaluate"
@@ -3979,7 +3982,7 @@ let evaluate env world =
      b = 1 here and leeg in the ASP backend. RUNTIME-SEMANTICS ch. 6.1
      records both as open (the older residual "conditions on
      attribute-writing forms read positively"). *)
-  let dforms = Ir_v0.Checks.dep_forms { doc = env.doc } in
+  let dforms = Ir_v0.Checks.dep_forms (Ir_v0.Checks.ctx_of env.doc) in
   let n = List.length dforms in
   let arr = Array.of_list dforms in
   let strata = Array.make n 0 in
@@ -4132,7 +4135,7 @@ let evaluate env world =
       in
       let deepest = SMap.fold (fun label _ acc -> max acc (depth label)) world0.World.instances 0 in
       List.iter (fun (at, level) -> Hashtbl.replace ordered at (depth, level, deepest)) o.io_members)
-    (Ir_v0.Checks.instance_orders { doc = env.doc });
+    (Ir_v0.Checks.instance_orders (Ir_v0.Checks.ctx_of env.doc));
   (* the depth and the level whose turn it is while a stratum with such
      members settles, None otherwise *)
   let phase = ref None in

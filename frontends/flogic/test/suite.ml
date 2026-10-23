@@ -265,14 +265,14 @@ let () =
       characteristic_granularity = []; characteristic_timeline_count = []; animate = false; plural = None }
   in
   let aref a : A.expr =
-    Attribute_reference { attribute_ref = Some a; object_type = Some "Sein"; source_name = Some a; navigation_bindings = None }
+    Attribute_reference { attribute_ref = Some a; object_type = Some "Sein"; source_name = Some a; navigation_bindings = None; anchor = None }
   in
   let number n : A.expr = Literal { variant = Lv_number n; typ = Some num0; source_name = Some n } in
   (* the subject's own type as the host: the reading an absent host has *)
   let gehesen : A.condition_expr =
     Characteristic_check
       { characteristic = Some "gehesen"; negation = false; holder = Some "Sein"; time_period = None;
-        source_name = Some "?S : gehesen"; navigation_binding = None }
+        source_name = Some "?S : gehesen"; navigation_binding = None; anchor = None }
   in
   let seizoen : A.validity_window = { valid_from = Some "2026-04-01"; valid_to = Some "2026-10-01" } in
   let sein_pair : A.fact_type_name =

@@ -1,0 +1,365 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vergunning",
+        "animate": false,
+        "plural": "Vergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "basiseinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "einddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "blokkade",
+            "kind": "possessive"
+          },
+          {
+            "node": "Characteristic",
+            "name": "openstand",
+            "kind": "possessive"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Register",
+        "animate": false,
+        "plural": "Registers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "nummer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vorige vergunning",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vorige vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "registratie",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "register",
+            "objectType": "Register",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "geregistreerde vergunning",
+            "objectType": "Vergunning",
+            "plural": "geregistreerde vergunningen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "einddag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "einddag",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De einddag van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "basiseinddag",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "zijn basiseinddag"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "blokkade",
+              "negated": true,
+              "source": {
+                "snippet": "de vorige vergunning van de Vergunning geen blokkade heeft"
+              },
+              "navigation": {
+                "node": "RoleBinding",
+                "factType": "vorige vergunning",
+                "role": "vorige vergunning"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "einddag zonder vorige",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "einddag",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De einddag van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "basiseinddag",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "zijn basiseinddag"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "empty",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "basiseinddag",
+                "subjectType": "Vergunning",
+                "source": {
+                  "snippet": "de basiseinddag van de vorige vergunning van de Vergunning"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "vorige vergunning",
+                    "role": "vorige vergunning"
+                  }
+                ]
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "de basiseinddag van de vorige vergunning van de Vergunning leeg is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "openstand",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "openstand",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Een Vergunning heeft de openstand"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "empty",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "einddag",
+                "subjectType": "Vergunning",
+                "source": {
+                  "snippet": "zijn einddag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn einddag leeg is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "blokkade",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "blokkade",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Een Vergunning heeft de blokkade"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Predicate",
+                "kind": "filled",
+                "operand": {
+                  "node": "AttributeReference",
+                  "attribute": "einddag",
+                  "subjectType": "Vergunning",
+                  "anchor": "form",
+                  "source": {
+                    "snippet": "de einddag van de Vergunning zelf"
+                  }
+                },
+                "negated": false,
+                "digits": 0,
+                "source": {
+                  "snippet": "de einddag van de Vergunning zelf gevuld is"
+                }
+              },
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "openstand",
+                "negated": false,
+                "source": {
+                  "snippet": "ten minste \u00e9\u00e9n van de geregistreerde vergunningen van het register van de Vergunning de openstand heeft"
+                }
+              },
+              "source": {
+                "snippet": "ten minste \u00e9\u00e9n van de geregistreerde vergunningen van het register van de Vergunning de openstand heeft"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registratie",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registratie",
+                  "role": "geregistreerde vergunning"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

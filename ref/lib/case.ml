@@ -717,7 +717,7 @@ let check_link_cycles (doc : document) (world : World.t) =
     List.sort_uniq compare
       (List.map
          (fun (o : Ir_v0.Checks.instance_order) -> (o.io_relation, o.io_role))
-         (Ir_v0.Checks.instance_orders { Ir_v0.Checks.doc }))
+         (Ir_v0.Checks.instance_orders (Ir_v0.Checks.ctx_of doc)))
   in
   List.iter
     (fun (relation, role) ->

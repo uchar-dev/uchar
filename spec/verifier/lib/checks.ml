@@ -675,7 +675,28 @@ let fixed_start_point_adoption_refusal ~facet ~timeline_state ~from_timeline =
 
 (* --- document context --------------------------------------------------- *)
 
-type ctx = { doc : document }
+(* Where the expression walk stands with respect to the form anchor (IR-SPEC
+   ch. 4.1a, WF-122). [Scope_element] is a per-element context that admits the
+   anchor: the filter of an instance fold with a range, and the filter and the
+   test of a quantifier fold, where the subject is the element and a node with
+   `anchor` reads the subject of the form. The others refuse it: the form's own
+   condition and value and the condition of a gedurende clip (whose subject is
+   the subject of the clip itself), where it would be a second spelling of the
+   read; a closed function or lambda body, which reads no subject; and the
+   filter of a selection of an instance-set union, a per-element context the
+   anchor is not admitted in until a sentence and a golden carry it there. *)
+type anchor_scope = Scope_form | Scope_element | Scope_clip | Scope_closed | Scope_selection
+
+(* [form] is the subject type of the form the walk is in (None where the form
+   has no subject: a day-kind definition, a function body) and [scope] where
+   it stands; both are set where a form or a context begins
+   ([expression_layer], the filters and tests, the closed bodies, [dep_forms])
+   and passed on unchanged otherwise. Every other reader of [ctx] ignores
+   them. *)
+type ctx = { doc : document; form : string option; scope : anchor_scope }
+
+(* the context of a document outside any form *)
+let ctx_of doc = { doc; form = None; scope = Scope_form }
 
 (* --- the supertype chain (IR-SPEC ch. 2.2) ------------------------------- *)
 
@@ -776,8 +797,8 @@ let type_compatible ctx a b = is_sub ctx ~sub:a ~super:b || is_sub ctx ~sub:b ~s
    a check context — the reference interpreter's loader and evaluator and
    the ASP translator resolve members through these, so the chain has one
    definition in the house and the three readers cannot drift on it. *)
-let effective_ot doc name = object_type { doc } name
-let subtype_of doc ~sub ~super = is_sub { doc } ~sub ~super
+let effective_ot doc name = object_type (ctx_of doc) name
+let subtype_of doc ~sub ~super = is_sub (ctx_of doc) ~sub ~super
 
 (* CAN one object be both an [a] and a [b]? Populations are EXTENSIONAL — a
    declaration names a set of objects, and a subtype's objects are its
@@ -799,7 +820,7 @@ let subtype_of doc ~sub ~super = is_sub { doc } ~sub ~super
    change this answer. The two direct directions ride in front as the fast path
    and as the answer for a type the table does not declare. *)
 let populations_overlap doc a b =
-  let ctx = { doc } in
+  let ctx = ctx_of doc in
   is_sub ctx ~sub:a ~super:b
   || is_sub ctx ~sub:b ~super:a
   || List.exists
@@ -859,7 +880,7 @@ let wf109_host_sentence ~host ~bound ~hits ~near =
    concrete type would make one target report under as many names as it has
    subtypes. *)
 let declaring_type doc ~from ~kind ~member =
-  match declared_object_type { doc } from with
+  match declared_object_type (ctx_of doc) from with
   | None -> None
   | Some ot ->
       List.find_map
@@ -870,7 +891,7 @@ let declaring_type doc ~from ~kind ~member =
             | `Characteristic -> mem_ci (some_names t.characteristics) member
           in
           if hit then t.ot_ident else None)
-        (chain_from { doc } ot)
+        (chain_from (ctx_of doc) ot)
 
 (* A defaults group's target as the ch. 7.10 composition keys it: the target
    KIND and name, without the subject, so an attribute and a characteristic
@@ -3532,7 +3553,9 @@ let day_kind_scan at (c0 : condition_expr) : violation list * string list =
        arms above are flagged for; the day-kind admission list is closed *)
     | Quantifier_fold { kv_element_object_type; _ } ->
         impure "instance quantification" (Option.value kv_element_object_type ~default:"?")
-    | Condition_unresolved _ -> ()
+    (* an identity check reads no state; outside a per-element context, and a
+       day kind has none, WF-122 (c) refuses it *)
+    | Identity_check _ | Condition_unresolved _ -> ()
   in
   co c0;
   (List.rev !viols, List.rev !refs)
@@ -4476,7 +4499,7 @@ and mentions_binder_cond b (c : condition_expr) : bool =
   | Quantifier_fold { kv_filter; kv_test; _ } ->
       let sub = function Some c -> mentions_binder_cond b c | None -> false in
       sub kv_filter || sub kv_test
-  | Characteristic_check _ | Role_membership _ | Rule_status_check _
+  | Characteristic_check _ | Role_membership _ | Rule_status_check _ | Identity_check _
   | Condition_unresolved _ -> false
 
 (* WF-077 — the condition-operand discipline (IR-SPEC ch. 4.10). Everywhere an
@@ -4516,7 +4539,7 @@ let wf077_condition at (c : condition_expr) : violation list =
         List.concat
           (List.mapi (fun i c -> walk (Printf.sprintf "%s/parts/%d" at i) c) components)
     | Characteristic_check _ | Role_membership _ | Rule_status_check _
-    | Quantifier_fold _ | Condition_unresolved _ ->
+    | Quantifier_fold _ | Identity_check _ | Condition_unresolved _ ->
         [ v "WF-077.condition-reads-state" at
             "an IfThenElse condition reads a characteristic, role or channel — not admissible (only \
              binders, parameters and literals may be read; route state reads through a Let \
@@ -4637,7 +4660,7 @@ let rec cond_has_window (c : condition_expr) =
   | Quantifier_fold { kv_filter; kv_test; _ } ->
       List.exists cond_has_window (List.filter_map Fun.id [ kv_filter; kv_test ])
   | Comparison _ | Predicate _ | Characteristic_check _ | Role_membership _ | Rule_status_check _
-  | Condition_unresolved _ ->
+  | Identity_check _ | Condition_unresolved _ ->
       false
 
 let wf112_position at (quantifier_kind : quantifier_kind) (parts : condition_expr list) =
@@ -4650,8 +4673,61 @@ let wf112_position at (quantifier_kind : quantifier_kind) (parts : condition_exp
              reading is specified for a verdict that is counted or complemented" ]
       else []
 
+(* --- the form anchor (IR-SPEC ch. 4.1a, WF-122) --------------------------
+
+   A node with `anchor` is read as the same node without it, standing in the
+   form's own condition or value: on the subject of the form, which [ctx]
+   carries. The walks below and the dependency walk ([dep_expr_at]) take the
+   anchor off at the node and read the rest unchanged, so every rule that
+   judges a read against its subject judges an anchored one against the form
+   subject (WF-053, WF-047, WF-102, WF-108 (c), WF-083, WF-100, WF-109). *)
+let unanchored_expr (e : expr) : expr option =
+  match e with
+  | Attribute_reference ({ anchor = Some _; _ } as r) -> Some (Attribute_reference { r with anchor = None })
+  | Function_call ({ anchor = Some _; _ } as f) -> Some (Function_call { f with anchor = None })
+  | _ -> None
+
+let unanchored_cond (c : condition_expr) : condition_expr option =
+  match c with
+  | Characteristic_check ({ anchor = Some _; _ } as k) -> Some (Characteristic_check { k with anchor = None })
+  | Quantifier_fold ({ kv_anchor = Some _; _ } as k) -> Some (Quantifier_fold { k with kv_anchor = None })
+  | _ -> None
+
+(* The position [ctx] stands at, named as WF-122 names it where it is no
+   per-element context of a form with a subject; None where it is one. *)
+let anchor_position ctx : string option =
+  match (ctx.scope, ctx.form) with
+  | Scope_closed, _ -> Some "a closed function or lambda body"
+  | _, None -> Some "a form without a subject"
+  | Scope_element, Some _ -> None
+  | Scope_form, Some _ -> Some "the form's own condition or value"
+  | Scope_clip, Some _ -> Some "the condition of a gedurende clip"
+  | Scope_selection, Some _ -> Some "the filter of a selection of an instance-set union"
+
+(* WF-122 (a): the anchor of [node] at [at], where [position] is no
+   per-element context *)
+let anchor_outside ~node ~position at =
+  v ~params:[("node", node); ("position", position)] "WF-122.anchor-outside-context"
+    (at ^ "/anchor")
+    (Printf.sprintf
+       "the anchor \"form\" of this %s stands in %s, which is no per-element context the \
+        anchor stands in: it reads the subject of the form where the filter of an instance fold, \
+        or the filter or the test of a quantifier fold, has moved the subject to the element \
+        (IR-SPEC ch. 4.1a)"
+       node position)
+
+let anchor_placement ctx at node =
+  match anchor_position ctx with
+  | None -> []
+  | Some position -> [ anchor_outside ~node ~position at ]
+
 let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) at (e : expr) :
     violation list =
+  match unanchored_expr e with
+  | Some inner ->
+      anchor_placement ctx at (Spelling.expr_node e)
+      @ walk_expr { ctx with scope = Scope_form } ~binders ~subject:ctx.form ~body ~union_ok at inner
+  | None ->
   (* [union_ok] is WF-110 (a) carried DOWN one level: the instance-set union
      is admissible at exactly one position, and only the parent knows the
      position. It is an optional argument with a false default, so it reaches
@@ -5241,7 +5317,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              let fsubject =
                match f.element_object_type with Some el -> Some el | None -> subject
              in
-             walk_cond ctx ~binders ~subject:fsubject (sub "filter") c
+             (* with a range the filter is the instance subselection, a
+                per-element context; without one it is a gedurende clip,
+                whose subject is the clip's own (WF-122) *)
+             let scope = if ranged then Scope_element else Scope_clip in
+             walk_cond { ctx with scope } ~binders ~subject:fsubject (sub "filter") c
          | None -> [])
       (* WF-089/WF-090 (domain identity, ch. 2.4), aggregation position: an
          element-passing fold's own type against each operand's type. The
@@ -5301,6 +5381,21 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
           (List.mapi
              (fun i a ->
                let p = Printf.sprintf "%s/arguments/%d" at i in
+               (* WF-122 (a): the source names the member each contributor
+                  gives, read on the contributor (WF-083), and is no read of a
+                  subject; the anchor of a fold stands on the fold *)
+               (match a with
+                | Attribute_reference { anchor = Some _; _ } when source_position ->
+                    [ v ~params:[("function", Spelling.encode Spelling.aggregation_kind f.kind)]
+                        "WF-122.fold-source-anchored" (p ^ "/anchor")
+                        (Printf.sprintf
+                           "the source of a %s aggregation carries anchor \"form\": a fold source \
+                            names the member each contributor gives and is read on the contributor, \
+                            never on a subject, so it has no subject to anchor; an anchor on the \
+                            aggregation starts its range at the form subject (IR-SPEC ch. 4.1a)"
+                           (Spelling.encode Spelling.aggregation_kind f.kind)) ]
+                | _ -> [])
+               @
                match (a, f.element_object_type) with
                | Attribute_reference { attribute_ref; object_type = None; _ }, Some _ when source_position ->
                    [ v ~params:[("attribute", Option.value attribute_ref ~default:"?")] "WF-034.ref-without-subject" p
@@ -5808,7 +5903,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    [ v ~params:[("attribute", a); ("objectType", otn)] "WF-049.read-not-temporal" (sub "base")
                        ("temporal read of '" ^ a ^ "', which is not a temporal attribute of '"
                       ^ otn ^ "'") ])
-                @ (match subject with
+                @ (match (if unanchored_expr base_expr <> None then ctx.form else subject) with
                   | Some st when norm st <> norm otn ->
                       [ v ~params:[("objectType", otn); ("subjectType", st)] "WF-049.timeline-wrong-type" (sub "base")
                           ("the read's timeline belongs to '" ^ otn
@@ -6390,7 +6485,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                     fold-filter discipline, once per selection *)
                  @
                  match b.isb_filter with
-                 | Some c -> walk_cond ctx ~binders ~subject:b.isb_element_type (bat ^ "/filter") c
+                 | Some c ->
+                     walk_cond { ctx with scope = Scope_selection } ~binders ~subject:b.isb_element_type
+                       (bat ^ "/filter") c
                  | None -> [])
                branches))
 
@@ -6452,7 +6549,7 @@ and check_fold_fn ctx ~binders ~subject ~host at ~params ~result (fn : fold_fn) 
          read from inside the body no longer resolves and is rejected; their
          names ride in the [Closed_pos] payload solely to sharpen that
          diagnostic. *)
-      @ walk_expr ctx
+      @ walk_expr { ctx with scope = Scope_closed }
           ~binders:(List.map (fun (n, dt) -> (n, Some dt)) parameters)
           ~subject
           ~body:(Closed_pos ("WF-069", List.map fst binders))
@@ -6475,6 +6572,23 @@ and check_fold_fn ctx ~binders ~subject ~host at ~params ~result (fn : fold_fn) 
    which is the positional half of WF-109's scope (ch. 4.6 (q2)). *)
 and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condition_expr) :
     violation list =
+  match unanchored_cond c with
+  | Some inner ->
+      anchor_placement ctx at
+        (match c with Characteristic_check _ -> "CharacteristicCheck" | _ -> "QuantifierFold")
+      (* WF-122 (b): the anchor says whose characteristic the check reads *)
+      @ (match inner with
+         | Characteristic_check { holder = Some h; characteristic; _ } ->
+             [ v ~params:[("characteristic", Option.value characteristic ~default:"?"); ("host", h)]
+                 "WF-122.anchored-check-host" (at ^ "/host")
+                 (Printf.sprintf
+                    "the characteristic check on '%s' carries anchor \"form\" and the host '%s': \
+                     the anchor names the form subject as the object the check reads, so a host \
+                     names it a second time, or names another (IR-SPEC ch. 4.1a)"
+                    (Option.value characteristic ~default:"?") h) ]
+         | _ -> [])
+      @ walk_cond { ctx with scope = Scope_form } ~binders ~subject:ctx.form ~body ?fc_target at inner
+  | None ->
   let sub p = at ^ "/" ^ p in
   let whole_period_check time_period operands =
     match time_period with
@@ -6883,7 +6997,9 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
                  | Some d when not (is_date d) ->
                      [ v ~params:[("type", datatype_kind d)] "WF-042.bound-not-date" (sub n) ("window bound is " ^ datatype_kind d ^ ", must be a date") ]
                  | _ -> [])
-                @ wf111_bound ctx ~subject (sub n) n e
+                @ wf111_bound ctx
+                    ~subject:(if unanchored_expr e <> None then ctx.form else subject)
+                    (sub n) n e
                 @ walk_expr ctx ~binders ~subject (sub n) e
             | None -> [])
           [ ("from", starting_at); ("to", up_to) ]
@@ -7035,14 +7151,29 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
            match k.kv_element_object_type with Some el -> Some el | None -> subject
          in
          let walk_sub p = function
-           | Some c -> walk_cond ctx ~binders ~subject:esubject ~body (sub p) c
+           | Some c -> walk_cond { ctx with scope = Scope_element } ~binders ~subject:esubject ~body (sub p) c
            | None -> []
          in
          walk_sub "filter" k.kv_filter @ walk_sub "test" k.kv_test)
   | Rule_status_check _ -> [] (* row-30 split; admissibility OPEN *)
+  (* WF-122 (c): the identity check compares the element with the form
+     subject, so it stands where an anchor stands *)
+  | Identity_check _ -> (
+      match anchor_position ctx with
+      | None -> []
+      | Some position ->
+          [ v ~params:[("position", position)] "WF-122.identity-outside-context" at
+              (Printf.sprintf
+                 "an IdentityCheck in %s, which is no per-element context the anchor stands in: \
+                  it compares the element of the filter of an instance fold, or of the filter or \
+                  the test of a quantifier fold, with the subject of the form (IR-SPEC ch. 4.5)"
+                 position) ])
   | Condition_unresolved _ -> []
 
 let expression_layer ctx =
+  (* every form's walk starts in its own condition or value, on its subject
+     (the form anchor, WF-122) *)
+  let at_form subject = { ctx with form = subject; scope = Scope_form } in
   List.concat_map
     (fun (r : resolved_rule) ->
       let at = r.rr_pointer in
@@ -7051,6 +7182,7 @@ let expression_layer ctx =
         | Some (Attribute_reference { object_type; _ }) -> object_type
         | _ -> None
       in
+      let ctx = at_form subject in
       (* The target lvalue is WF-022's job, not part of the walk. Since L2 it
          carries no type of its own (B13): the attribute declaration it writes
          is the one source, crossed where it is declared, so the target has
@@ -7108,11 +7240,18 @@ let expression_layer ctx =
       @ (match r.value_node with Some e -> walk_expr ctx ~binders:[] ~subject (at ^ "/value") e | None -> [])
       @ (match r.rr_condition with
          | Some c -> walk_cond ctx ~binders:[] ~subject (at ^ "/condition") c
-         | None -> []))
+         | None -> [])
+      (* WF-122 (a): the target names what the form writes on its subject *)
+      @ (match r.objective with
+         | Some (Attribute_reference { anchor = Some _; _ }) ->
+             [ anchor_outside ~node:"AttributeReference" ~position:"the target of a rule version"
+                 (at ^ "/target") ]
+         | _ -> []))
     ctx.doc.resolved_rules
   @ List.concat_map
       (fun (r : resolved_object_creation) ->
         let at = r.oc_pointer in
+        let ctx = at_form r.oc_subject in
         List.concat
           (List.mapi
              (fun j t ->
@@ -7140,21 +7279,24 @@ let expression_layer ctx =
   @ List.concat_map
       (fun (r : resolved_allocation) ->
         match r.vd_condition with
-        | Some c -> walk_cond ctx ~binders:[] ~subject:r.source_type (r.vd_pointer ^ "/condition") c
+        | Some c ->
+            walk_cond (at_form r.source_type) ~binders:[] ~subject:r.source_type
+              (r.vd_pointer ^ "/condition") c
         | None -> [])
       ctx.doc.allocations
   @ List.concat_map
       (fun (r : resolved_consistency) ->
         match r.assertion with
         | Some c ->
-            walk_cond ctx ~binders:[] ~subject:r.cons_subject (r.cons_pointer ^ "/assertion") c
+            walk_cond (at_form r.cons_subject) ~binders:[] ~subject:r.cons_subject
+              (r.cons_pointer ^ "/assertion") c
         | None -> [])
       ctx.doc.consistencies
   @ List.concat_map
       (fun (i, r) ->
         match r.rd_condition with
         | Some c ->
-            walk_cond ctx ~binders:[] ~subject:None
+            walk_cond (at_form None) ~binders:[] ~subject:None
               (Printf.sprintf "/dayKindDefinitions/%d/condition" i) c
         | None -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_day_kind_definitions)
@@ -7164,8 +7306,8 @@ let expression_layer ctx =
         | Some c ->
             (* the ONE position that binds two objects: the anchor it iterates
                and the target its join chain reaches (WF-109, ch. 4.6 (q2)) *)
-            walk_cond ctx ~binders:[] ~subject:r.anchor_point ?fc_target:r.fc_target
-              (r.fc_pointer ^ "/condition") c
+            walk_cond (at_form r.anchor_point) ~binders:[] ~subject:r.anchor_point
+              ?fc_target:r.fc_target (r.fc_pointer ^ "/condition") c
         | None -> [])
       ctx.doc.fact_creations
   @ List.concat_map
@@ -7173,6 +7315,7 @@ let expression_layer ctx =
         (* the expression walk descends into sub-defaults (ch. 7.9): a
            sub-default's justification and consequence are checked exactly as
            a root default's, the exception group inheriting the root subject *)
+        let ctx = at_form (Some l.pd_subject) in
         let rec default_walk prefix (r : default) =
           (match r.default_justification with
           | Some c ->
@@ -7351,8 +7494,17 @@ type dep_form = {
    object it lands on: [at] followed by its own hops, or the range of the fold
    it sits in. A read of another node carries None. The instance-ordered
    cycle (IR-SPEC ch. 5.3) reads the path; the walks of WF-045 and WF-046 read
-   node and kind as before. *)
+   node and kind as before.
+
+   A node with `anchor` (WF-122) is read where the form reads: on the form
+   subject ([ctx.form]), with the path of an own read of the form, Some [],
+   so its path is its own hops; the range of the folds around it is not
+   its path. The kind its position gives (a negative part of a quantifier
+   fold, a leeg/gevuld test) reaches it unchanged. *)
 let rec dep_expr_at ctx ~subject ~at acc (e : expr) =
+  match unanchored_expr e with
+  | Some inner -> dep_expr_at ctx ~subject:ctx.form ~at:(Some []) acc inner
+  | None ->
   match e with
   | Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings; _ } ->
       (* a navigated read consumes the link set of every hop relation
@@ -7502,6 +7654,9 @@ and dep_fold_fn_at ctx ~subject ~at acc = function
 and dep_opt_at ctx ~subject ~at acc = function Some e -> dep_expr_at ctx ~subject ~at acc e | None -> acc
 
 and dep_cond_at ctx ~subject ~at ~neg acc (c : condition_expr) =
+  match unanchored_cond c with
+  | Some inner -> dep_cond_at ctx ~subject:ctx.form ~at:(Some []) ~neg acc inner
+  | None ->
   match c with
   | Comparison { left_side; right_side; _ } ->
       dep_opt_at ctx ~subject ~at (dep_opt_at ctx ~subject ~at acc left_side) right_side
@@ -7640,14 +7795,24 @@ and dep_cond_at ctx ~subject ~at ~neg acc (c : condition_expr) =
       @ acc
   | Rule_status_check { rule_def = Some r; _ } -> (n_chan r, Dep_neg, None) :: acc
   | Rule_status_check _ -> acc
+  (* identity is input: the objects a form runs on and the elements of a fold
+     are the reach and the population, read by the fold that holds it *)
+  | Identity_check _ -> acc
   | Condition_unresolved _ -> acc
 
 (* the reads without their paths, prepended to [acc] as the walk prepends *)
 let without_paths reads acc = List.map (fun (node, kind, _) -> (node, kind)) reads @ acc
 
-let dep_expr ctx ~subject acc e = without_paths (dep_expr_at ctx ~subject ~at:(Some []) [] e) acc
-let dep_opt ctx ~subject acc e = without_paths (dep_opt_at ctx ~subject ~at:(Some []) [] e) acc
-let dep_cond ctx ~subject ~neg acc c = without_paths (dep_cond_at ctx ~subject ~at:(Some []) ~neg [] c) acc
+(* the reads of a form's own expression or condition, on its subject: the
+   form subject an anchored node reads (WF-122) is that subject *)
+let dep_expr ctx ~subject acc e =
+  without_paths (dep_expr_at { ctx with form = subject } ~subject ~at:(Some []) [] e) acc
+
+let dep_opt ctx ~subject acc e =
+  without_paths (dep_opt_at { ctx with form = subject } ~subject ~at:(Some []) [] e) acc
+
+let dep_cond ctx ~subject ~neg acc c =
+  without_paths (dep_cond_at { ctx with form = subject } ~subject ~at:(Some []) ~neg [] c) acc
 
 (* A form of the six named forms (IR-SPEC ch. 3, Versioning) is recorded
    at the wire pointer of its version, which the loader sets
@@ -7677,7 +7842,9 @@ let dep_forms ctx : dep_form list =
   (* the same for reads with their paths ([dep_expr_at]), kept for the forms
      that write per subject, a rule and a defaults group *)
   let cond_at ~subject c =
-    match c with Some c -> dep_cond_at ctx ~subject ~at:(Some []) ~neg:false [] c | None -> []
+    match c with
+    | Some c -> dep_cond_at { ctx with form = subject } ~subject ~at:(Some []) ~neg:false [] c
+    | None -> []
   in
   let strict_unless_char_at reads =
     List.map
@@ -7703,7 +7870,10 @@ let dep_forms ctx : dep_form list =
                 ot a
             in
             let subject = Some ot in
-            let reads = dep_opt_at ctx ~subject ~at:(Some []) (cond_at ~subject r.rr_condition) r.value_node in
+            let reads =
+              dep_opt_at { ctx with form = subject } ~subject ~at:(Some [])
+                (cond_at ~subject r.rr_condition) r.value_node
+            in
             let reads =
               if r.rr_presentation = Some Characteristic_attribution then strict_unless_char_at reads
               else if absorbing_types ctx.doc ~otype:ot ~attr:a <> [] then
@@ -7947,12 +8117,13 @@ let dep_forms ctx : dep_form list =
       (fun i (l : prioritized_defaults) ->
         let at = Printf.sprintf "/prioritizedDefaults/%d" i in
         let name = Option.value l.pd_name ~default:at in
+        let fctx = { ctx with form = Some l.pd_subject } in
         let rec default_reads (r : default) =
           (match r.default_justification with
-          | Some c -> dep_cond_at ctx ~subject:(Some l.pd_subject) ~at:(Some []) ~neg:false [] c
+          | Some c -> dep_cond_at fctx ~subject:(Some l.pd_subject) ~at:(Some []) ~neg:false [] c
           | None -> [])
           @ (match r.default_consequence with
-            | Some e -> dep_expr_at ctx ~subject:(Some l.pd_subject) ~at:(Some []) [] e
+            | Some e -> dep_expr_at fctx ~subject:(Some l.pd_subject) ~at:(Some []) [] e
             | None -> [])
           @ (match r.default_exceptions with
             | Some egs ->
@@ -8323,7 +8494,7 @@ let instance_orders ctx =
    that must agree with this graph, such as the Drools backend's rule graph
    (scripts/check-graph.sh). *)
 let dependency_edges (doc : document) =
-  let forms = Array.of_list (dep_forms { doc }) in
+  let forms = Array.of_list (dep_forms (ctx_of doc)) in
   let kind = function Dep_pos -> "positive" | Dep_strict -> "strict" | Dep_neg -> "negative" in
   List.sort_uniq compare
     (List.map
@@ -9915,7 +10086,7 @@ and invoked_cond acc (c : condition_expr) : string list =
   | Quantifier_fold { kv_filter; kv_test; _ } ->
       let sub acc = function Some c -> invoked_cond acc c | None -> acc in
       sub (sub acc kv_filter) kv_test
-  | Characteristic_check _ | Role_membership _ | Rule_status_check _
+  | Characteristic_check _ | Role_membership _ | Rule_status_check _ | Identity_check _
   | Condition_unresolved _ ->
       acc
 
@@ -9982,7 +10153,7 @@ let wf067 ctx =
            (* a FunctionDef body is closed and top-level: it sees only its own
               parameters, so there are no outer binders to remember (WF-064's
               closure clause has nothing to name here) *)
-           @ walk_expr ctx
+           @ walk_expr { ctx with form = None; scope = Scope_closed }
                ~binders:(List.map (fun (n, dt) -> (n, Some dt)) fd.fd_parameters)
                ~subject:None ~body:(Closed_pos ("WF-067", [])) (at ^ "/body") fd.fd_body
            @ (if reaches ~target:fd.fd_name ~visited:[ norm fd.fd_name ] fd.fd_name then
@@ -10236,7 +10407,7 @@ and markers_cond acc (c : condition_expr) : string option list =
   | Time_window { starting_at; up_to; _ } -> o (o acc starting_at) up_to
   | Compound { components; _ } -> List.fold_left markers_cond acc components
   | Quantifier_fold { kv_filter; kv_test; _ } -> oc (oc acc kv_filter) kv_test
-  | Characteristic_check _ | Role_membership _ | Rule_status_check _ -> acc
+  | Characteristic_check _ | Role_membership _ | Rule_status_check _ | Identity_check _ -> acc
 
 (* Every expression and condition position of the document, with the
    markers below it in document order. *)
@@ -10985,7 +11156,7 @@ let vocabularies (doc : document) (t : vocabulary_table) : violation list =
   wf116 t @ wf117 t @ wf118 doc t @ wf119 t @ wf120 doc t @ wf121 t
 
 let all (doc : document) : violation list =
-  let ctx = { doc } in
+  let ctx = ctx_of doc in
   List.map (fun x -> { x with at = m1_named doc x.at })
   @@ List.concat
     [ wf001 ctx; wf002 ctx; wf103 ctx; wf104 ctx; wf105 ctx;

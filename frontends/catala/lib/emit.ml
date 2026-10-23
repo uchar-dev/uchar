@@ -162,11 +162,12 @@ let rec expr (e : expr) : json =
       node "Rounding"
         [ ("base", opt expr base_expr); ("mode", enum Spelling.rounding_mode mode_kind);
           ("decimals", i decimal_places); typ t; source br ]
-  | Attribute_reference { attribute_ref; object_type; source_name = br; navigation_bindings = nb } ->
+  | Attribute_reference { attribute_ref; object_type; source_name = br; navigation_bindings = nb; anchor } ->
       (* a reference writes no type (B13). path is written only when the
          reference actually navigates (Phase 5c subscope lowering: the caller
          reads a callee output over the back-link); without it the read is the
          subject's own (IR-SPEC ch. 4.1a) *)
+      if anchor <> None then failwith "Emit: the skeleton writes no form anchor";
       node "AttributeReference"
         ([ ("attribute", so attribute_ref); ("subjectType", so object_type); source br ]
         @ optional "path" (fun hops -> `List (List.map role_binding hops)) nb)
@@ -306,7 +307,8 @@ and condition_expr (c : condition_expr) : json =
         [ ("quantifier", enum Spelling.quantifier quantifier_kind); ("threshold", i cutoff);
           ("parts", `List (List.map condition_expr components)); source br ]
   | Characteristic_check
-      { characteristic; negation; holder; time_period = p; source_name = br; navigation_binding = nb } ->
+      { characteristic; negation; holder; time_period = p; source_name = br; navigation_binding = nb; anchor } ->
+      if anchor <> None then failwith "Emit: the skeleton writes no form anchor";
       (* the host is written only when the check names one (absent is the
          subject, RUNTIME-SEMANTICS ch. 5.8b); navigation is written whole or
          not at all, only when the check actually navigates (ch. 4.1a/5: a

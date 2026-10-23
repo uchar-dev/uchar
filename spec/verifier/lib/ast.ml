@@ -184,6 +184,14 @@ type literal_variant =
   | Lv_enumeration of string
   | Lv_constructor of string
 
+(* The anchor of a walk-starting node in a per-element context (IR-SPEC
+   ch. 4.1a, WF-122; RUNTIME-SEMANTICS ch. 3.4a): the node is evaluated with the
+   subject of its FORM as its subject, as if it stood in the form's own
+   condition or value, where the filter or the test around it has moved the
+   subject to the element. One value on the wire, "form"; absent is no
+   anchor, and the node reads the subject of its position. *)
+type anchor = Anchor_form
+
 type expr =
   | Literal of { variant : literal_variant; typ : datatype option; source_name : string option }
       (* the variant is the one value a literal carries in memory: a reader
@@ -215,6 +223,9 @@ type expr =
              elementType under any kind but total (B12): a range here
              makes the argument the set source, its absence makes it the
              subject's own read *)
+      anchor : anchor option;
+          (* an Aggregation's anchor (WF-122): the range starts at the form
+             subject; a BuiltinCall carries none *)
     }
   | Instance_set_union of {
       (* extension: the §5.7 concatenation of subject expressions, the
@@ -248,6 +259,7 @@ type expr =
              bound role is the role the hop reaches. Absent: the subject's
              own read, whose [object_type] (the wire's subjectType) is the
              subject type (WF-053); never empty *)
+      anchor : anchor option; (* WF-122: the read starts at the form subject *)
     }
   | Dimension_cell_read of { attribute_ref : expr option; labels : string option list; source_name : string option }
   | Parameter_ref of { parameter : string option; source_name : string option }
@@ -400,6 +412,9 @@ and condition_expr =
       navigation_binding : role_binding option;
           (* the one hop of a navigated check — the bound role is the role
              the hop reaches. Absent: the check reads the subject *)
+      anchor : anchor option;
+          (* WF-122: the check reads the form subject; it then carries no
+             [holder] *)
     }
   (* The role check (IR-SPEC ch. 4.5, B9): true iff a link of the declared
      fact type [fact_type] exists in which the subject fills [role], named
@@ -448,7 +463,13 @@ and condition_expr =
              the WF-102 discipline, under this node's own rule. The loader
              demands exactly one of the two (B12): the range is written,
              never derived *)
+      kv_anchor : anchor option; (* WF-122: the range starts at the form subject *)
     }
+  (* The identity check (IR-SPEC ch. 4.5, WF-122): true iff the subject of
+     its position — the element of the filter or the test around it — is the
+     same object as the subject of the form; [negation] turns that around. Its
+     anchor is required on the wire and has one value, so it is not kept. *)
+  | Identity_check of { negation : bool; source_name : string option }
   | Rule_status_check of { rule_def : string option; inconsistent : bool; source_name : string option }
   | Condition_unresolved of { source_name : string option }
 

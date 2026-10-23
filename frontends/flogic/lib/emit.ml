@@ -95,16 +95,17 @@ let rec expr (e : expr) : json =
       node "Binary"
         [ ("op", enum Spelling.binary_op op); ("left", opt expr left_side);
           ("right", opt expr right_side); typ t; source br ]
-  | Attribute_reference { attribute_ref; object_type; source_name = br; navigation_bindings } ->
+  | Attribute_reference { attribute_ref; object_type; source_name = br; navigation_bindings; anchor } ->
       if navigation_bindings <> None then
         failwith "Emit: the slice synthesises no navigation path";
+      if anchor <> None then failwith "Emit: the slice writes no form anchor";
       node "AttributeReference"
         [ ("attribute", so attribute_ref); ("subjectType", so object_type); source br ]
   | Function_call
       { kind; call_arguments; element_object_type; empty_fallback; filter; dimension_selection;
-        typ = t; source_name = br; grain; source_role; source_path } ->
+        typ = t; source_name = br; grain; source_role; source_path; anchor } ->
       if filter <> None || dimension_selection <> None || grain <> None
-         || source_path <> None then
+         || source_path <> None || anchor <> None then
         failwith "Emit: aggregation qualifier not produced by the F-logic slice";
       (* the slice's two folds read linked instances, so the range is written
          whole on every one of them and never left to be derived (B12) *)
@@ -148,9 +149,10 @@ let rec condition_expr (c : condition_expr) : json =
      one-step [sourceRole], never [sourcePath]. *)
   | Quantifier_fold
       { kv_quantifier; kv_threshold; kv_element_object_type; kv_filter; kv_test; kv_source;
-        kv_source_role; kv_source_path } ->
+        kv_source_role; kv_source_path; kv_anchor } ->
       if kv_source_path <> None then
         failwith "Emit: the slice writes no multi-step quantifier range";
+      if kv_anchor <> None then failwith "Emit: the slice writes no form anchor";
       let rb =
         match kv_source_role with
         | Some rb -> rb
@@ -166,9 +168,10 @@ let rec condition_expr (c : condition_expr) : json =
 
 and condition_leaf (c : condition_expr) : json =
   match c with
-  | Characteristic_check { characteristic; negation; holder; time_period; source_name = br; navigation_binding } ->
-      if time_period <> None || navigation_binding <> None then
-        failwith "Emit: the slice writes no period or navigation on a characteristic check";
+  | Characteristic_check
+      { characteristic; negation; holder; time_period; source_name = br; navigation_binding; anchor } ->
+      if time_period <> None || navigation_binding <> None || anchor <> None then
+        failwith "Emit: the slice writes no period, navigation or anchor on a characteristic check";
       node "CharacteristicCheck"
         ([ ("characteristic", so characteristic); ("negated", b negation) ]
         @ optional "host" s holder

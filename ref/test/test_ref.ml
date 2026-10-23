@@ -816,7 +816,7 @@ let num0 : Ir_v0.Ast.datatype = Number { whole_part = true; decimal_places = 0; 
 (* the subject's own read: no navigation bindings, and no type of its own
    (B13) — the declaration is the one source *)
 let aref attr otn : Ir_v0.Ast.expr =
-  Attribute_reference { attribute_ref = Some attr; object_type = Some otn; source_name = None; navigation_bindings = None }
+  Attribute_reference { attribute_ref = Some attr; object_type = Some otn; source_name = None; navigation_bindings = None; anchor = None }
 
 (* a literal as the loader reads it off the wire (Ir_v0.Loader): the value
    variant its type names *)
@@ -937,6 +937,7 @@ let () =
                     time_period = None;
                     source_name = None;
                     navigation_binding = None;
+                    anchor = None;
                   }));
         ];
     }
@@ -1065,7 +1066,7 @@ let () =
 let () =
   let kc name = 
     Ir_v0.Ast.Characteristic_check
-      { characteristic = Some name; negation = true; holder = Some "Aanvraag"; time_period = None; source_name = None; navigation_binding = None }
+      { characteristic = Some name; negation = true; holder = Some "Aanvraag"; time_period = None; source_name = None; navigation_binding = None; anchor = None }
   in
   let kt name char cond =
     rr name Characteristic_attribution
@@ -1262,6 +1263,7 @@ let () =
         object_type = Some "Wachter";
         source_name = None;
         navigation_bindings = Some [ successor ];
+        anchor = None;
       }
   in
   let test variety negation operand : Ir_v0.Ast.condition_expr =
@@ -2362,7 +2364,7 @@ let () =
   let kc name : Ir_v0.Ast.condition_expr =
     Characteristic_check
       { characteristic = Some name; negation = false; holder = Some "Jutter";
-        time_period = None; source_name = None; navigation_binding = None }
+        time_period = None; source_name = None; navigation_binding = None; anchor = None }
   in
   let leaf name lex : Ir_v0.Ast.default =
     { default_decision = None; default_justification = Some (kc name);
@@ -2697,10 +2699,10 @@ let () =
         call_arguments =
           [ Attribute_reference
               { attribute_ref = Some "bewaartarief"; object_type = Some "Vondst";
-                source_name = None; navigation_bindings = None } ];
+                source_name = None; navigation_bindings = None; anchor = None } ];
         element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
         dimension_selection = None; typ = Some num_eur; source_name = None; grain = None;
-        source_role = Some { rb_fact_type = "bewaring"; rb_role = "vondst" }; source_path = None }
+        source_role = Some { rb_fact_type = "bewaring"; rb_role = "vondst" }; source_path = None; anchor = None }
   in
   let tl_of segs label = { (inst label "Vondst" []) with
                            tls = World.SMap.add "bewaartarief" segs World.SMap.empty } in
@@ -3886,7 +3888,7 @@ let () =
       { kind; call_arguments = [ the_day ]; element_object_type = None; empty_fallback = None;
         filter = None; dimension_selection = None;
         typ = Some (Number { whole_part = true; decimal_places = 0; sign_char = None; measure_unit = None });
-        source_name = None; grain = None; source_role = None; source_path = None }
+        source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
   in
   let eq (l : Ir_v0.Ast.expr) lex : Ir_v0.Ast.condition_expr =
     Comparison
@@ -3940,7 +3942,7 @@ let () =
         call_arguments =
           [ aref "aanvang" "Post"; aref "sluiting" "Post" ];
         element_object_type = None; empty_fallback = None; filter = None; dimension_selection = None;
-        typ = Some num_kd; source_name = None; grain = None; source_role = None; source_path = None }
+        typ = Some num_kd; source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
   in
   check "WV-3.8-dk-eval-stap" (ev (step_item "2") = Value.date_of_iso "2024-12-26");
   expect_num "WV-3.8-dk-eval-telling" (ev counting) "2";
@@ -4201,7 +4203,7 @@ let () =
         call_arguments = [ aref a "Vondst"; aref b "Vondst" ];
         element_object_type = None; empty_fallback = None; filter = None;
         dimension_selection = None; typ = Some num_hour; source_name = None;
-        grain = None; source_role = None; source_path = None }
+        grain = None; source_role = None; source_path = None; anchor = None }
   in
   (* the widened WF-035 fence: a datum-tijd operand rides its sub-day unit
      into the ms layer (WV-3.8-dt-uur, through the evaluator) *)
@@ -4256,14 +4258,14 @@ let () =
   let count_source : Ir_v0.Ast.expr =
     Attribute_reference
       { attribute_ref = Some "vondsten"; object_type = Some "Jutter"; source_name = None;
-        navigation_bindings = None }
+        navigation_bindings = None; anchor = None }
   in
   let quantity source_role : Ir_v0.Ast.expr =
     Function_call
       { kind = Count; call_arguments = [ count_source ];
         element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
         dimension_selection = None; typ = Some num0; source_name = None;
-        grain = None; source_role; source_path = None }
+        grain = None; source_role; source_path = None; anchor = None }
   in
   let vondst = Some { Ir_v0.Ast.rb_fact_type = "vondstaanmelding"; rb_role = "vondst" } in
   let env = env_of doc in
@@ -4336,13 +4338,13 @@ let () =
   let path3 = path2 @ [ rb "inpakking" "ingepakte kist" ] in
   let source_name attr otn : Ir_v0.Ast.expr =
     Attribute_reference
-      { attribute_ref = Some attr; object_type = Some otn; source_name = None; navigation_bindings = None }
+      { attribute_ref = Some attr; object_type = Some otn; source_name = None; navigation_bindings = None; anchor = None }
   in
   let fold_node kind attr el trail empty_fallback : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments = [ source_name attr el ]; element_object_type = Some el; empty_fallback; filter = None;
         dimension_selection = None; typ = Some num2; source_name = None; grain = None;
-        source_role = None; source_path = Some trail }
+        source_role = None; source_path = Some trail; anchor = None }
   in
   let minimum = fold_node Minimum "gewicht" "Vondst" path2 None in
   let summed =
@@ -4415,7 +4417,7 @@ let () =
            { kind = Minimum; call_arguments = [ source_name "gewicht" "Vondst" ];
              element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
              dimension_selection = None; typ = Some num2; source_name = None; grain = None;
-             source_role = Some (rb "berging" "geborgen vondst"); source_path = Some path2 }))
+             source_role = Some (rb "berging" "geborgen vondst"); source_path = Some path2; anchor = None }))
     "sourcePath beside sourceRole: a fold carries one range, never two";
   expect_fault "WV-3.4b-eenstaps-pad-faalt"
     (fun () -> ev w1 "J1" (fold_node Minimum "gewicht" "Vondst" [ rb "berging" "geborgen vondst" ] None));
@@ -4427,7 +4429,7 @@ let () =
            { kind = Minimum; call_arguments = [ source_name "gewicht" "Vondst"; source_name "gewicht" "Vondst" ];
              element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
              dimension_selection = None; typ = Some num2; source_name = None; grain = None;
-             source_role = None; source_path = Some path2 }));
+             source_role = None; source_path = Some path2; anchor = None }));
   (* WF-102 (c), the verifier's sentence: a count's range is one step,
      spelled sourceRole, so a path under `count` is refused by name, with and
      without a die/dat subselection. Until this refusal ref counted the
@@ -4437,7 +4439,7 @@ let () =
       { kind = Count; call_arguments = [ source_name "geborgen vondsten" "Jutter" ];
         element_object_type = Some "Vondst"; empty_fallback = None; filter;
         dimension_selection = None; typ = Some num0; source_name = None; grain = None;
-        source_role = None; source_path = Some path2 }
+        source_role = None; source_path = Some path2; anchor = None }
   in
   let zwaar : Ir_v0.Ast.condition_expr =
     Comparison
@@ -4460,7 +4462,7 @@ let () =
     Function_call
       { kind = Count; call_arguments = [ source_name source_label source_ot ]; element_object_type = Some "Vondst";
         empty_fallback = None; filter = None; dimension_selection = None; typ = Some num0; source_name = None;
-        grain = None; source_role = None; source_path = Some trail }
+        grain = None; source_role = None; source_path = Some trail; anchor = None }
   in
   let one_step = [ rb "berging" "geborgen vondst" ] in
   expect_fault_msg "WV-3.4b-telling-over-een-lid-met-pad-faalt"
@@ -4526,11 +4528,11 @@ let () =
       { kind = Minimum;
         call_arguments =
           [ Attribute_reference
-              { attribute_ref = Some "gewicht"; object_type = Some "Vondst"; source_name = None; navigation_bindings = None } ];
+              { attribute_ref = Some "gewicht"; object_type = Some "Vondst"; source_name = None; navigation_bindings = None; anchor = None } ];
         element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
         dimension_selection = None; typ = Some num2; source_name = None; grain = None;
         source_role = None;
-        source_path = Some [ rb "bemanning" "boot"; rb "bootvangst" "vondst" ] }
+        source_path = Some [ rb "bemanning" "boot"; rb "bootvangst" "vondst" ]; anchor = None }
   in
   let env = env_of doc in
   let left_side l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
@@ -4618,20 +4620,20 @@ let () =
   let rb f r : Ir_v0.Ast.role_binding = { rb_fact_type = f; rb_role = r } in
   let set_source attr : Ir_v0.Ast.expr =
     Attribute_reference
-      { attribute_ref = Some attr; object_type = Some "Vondst"; source_name = None; navigation_bindings = None }
+      { attribute_ref = Some attr; object_type = Some "Vondst"; source_name = None; navigation_bindings = None; anchor = None }
   in
   (* the count source: the counted role's name, read on the fold subject (D8 (ii)) *)
   let tally_source : Ir_v0.Ast.expr =
     Attribute_reference
       { attribute_ref = Some "vondsten"; object_type = Some "Jutter"; source_name = None;
-        navigation_bindings = None }
+        navigation_bindings = None; anchor = None }
   in
   let fold_node kind call_arguments filter trail : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments; element_object_type = Some "Vondst"; empty_fallback = None; filter;
         dimension_selection = None; typ = Some num0; source_name = None; grain = None;
         source_role = (if trail = None then Some (rb "vondstaanmelding" "vondst") else None);
-        source_path = trail }
+        source_path = trail; anchor = None }
   in
   let populated ?filter attr = fold_node Filled_count [ set_source attr ] filter None in
   let quantity ?filter () = fold_node Count [ tally_source ] filter None in
@@ -4824,14 +4826,14 @@ let () =
   in
   let characteristic k : Ir_v0.Ast.condition_expr =
     Characteristic_check { characteristic = Some k; navigation_binding = None; negation = false;
-                    holder = None; time_period = None; source_name = None }
+                    holder = None; time_period = None; source_name = None; anchor = None }
   in
   let union branch_list : Ir_v0.Ast.expr = Instance_set_union { branches = branch_list; source_name = None } in
   let tally branch_list : Ir_v0.Ast.expr =
     Function_call
       { kind = Count; call_arguments = [ union branch_list ]; element_object_type = None; empty_fallback = None;
         filter = None; dimension_selection = None; typ = Some num0; source_name = None;
-        grain = None; source_role = None; source_path = None }
+        grain = None; source_role = None; source_path = None; anchor = None }
   in
   let over_relations =
     tally [ branch_node "vondstaanmelding" "aangemelde vondst"; branch_node "vondstberging" "geborgen vondst" ]
@@ -4929,7 +4931,7 @@ let () =
         call_arguments =
           [ union [ branch_node "vondstaanmelding" "aangemelde vondst"; branch_node "vondstberging" "geborgen vondst" ] ];
         element_object_type = el; empty_fallback = None; filter; dimension_selection = None;
-        typ = Some num0; source_name = None; grain = None; source_role = role_ref; source_path = None }
+        typ = Some num0; source_name = None; grain = None; source_role = role_ref; source_path = None; anchor = None }
   in
   let sentence_text field_list =
     Printf.sprintf
@@ -4991,7 +4993,7 @@ let () =
     Function_call
       { kind = Count; call_arguments; element_object_type = None; empty_fallback = None; filter = None;
         dimension_selection = None; typ = Some num0; source_name = None; grain = None;
-        source_role = None; source_path = None }
+        source_role = None; source_path = None; anchor = None }
   in
   let proportion = aref "gewicht" "Vondst" in
   let vindplaats = aref "vindplaats" "Vondst" in
@@ -5040,7 +5042,7 @@ let () =
     Function_call
       { kind; call_arguments; element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
         dimension_selection = None; typ = Some num0; source_name = None; grain = None; source_role;
-        source_path = None }
+        source_path = None; anchor = None }
   in
   let element_list : Ir_v0.Ast.expr =
     List_literal
@@ -5100,7 +5102,7 @@ let () =
     Function_call
       { kind; call_arguments; element_object_type = element; empty_fallback = None; filter = None;
         dimension_selection = None; typ = Some num0; source_name = None; grain = None;
-        source_role = Some value_range; source_path = None }
+        source_role = Some value_range; source_path = None; anchor = None }
   in
   let two = litv "2" num0 in
   let union : Ir_v0.Ast.expr =
@@ -5119,7 +5121,7 @@ let () =
         Function_call
           { kind = Absolute_value; call_arguments = [ two ]; element_object_type = None;
             empty_fallback = None; filter = None; dimension_selection = None; typ = Some num0;
-            source_name = None; grain = None; source_role = None; source_path = None });
+            source_name = None; grain = None; source_role = None; source_path = None; anchor = None });
       ("an Unresolved", Expr_unresolved { typ = Some num0; source_name = Some "iets onbekends" });
       ("an Aggregation", fold_node Count [ aref "vondsten" "Vondst" ]) ]
   in
@@ -5152,7 +5154,7 @@ let () =
         (Function_call
            { kind = Total; call_arguments = [ two ]; element_object_type = Some "Vondst"; empty_fallback = None;
              filter = None; dimension_selection = None; typ = Some num0; source_name = None; grain = None;
-             source_role = None; source_path = None }))
+             source_role = None; source_path = None; anchor = None }))
     "a total aggregation carries elementType \"Vondst\" and a Literal operand";
   expect_fault_msg "WF-037-bronarm-filledCount-a Literal"
     (fun () -> ev (fold_node Filled_count [ two ]))
@@ -5305,9 +5307,9 @@ let () =
           Some
             (Characteristic_check
                { characteristic = Some "actief"; negation = false; holder = None;
-                 time_period = None; source_name = None; navigation_binding = None });
+                 time_period = None; source_name = None; navigation_binding = None; anchor = None });
         dimension_selection = None; typ = Some num0; source_name = None; grain = year;
-        source_role = None; source_path = None }
+        source_role = None; source_path = None; anchor = None }
   in
   let window ?starting_at ?up_to ?(incl = false) () : Ir_v0.Ast.condition_expr =
     Time_window
@@ -5416,9 +5418,9 @@ let () =
           Some
             (Characteristic_check
                { characteristic = Some "aanwezig"; negation = false; holder = None;
-                 time_period = None; source_name = None; navigation_binding = None });
+                 time_period = None; source_name = None; navigation_binding = None; anchor = None });
         dimension_selection = None; typ = Some num0; source_name = None; grain = month_kind;
-        source_role = None; source_path = None }
+        source_role = None; source_path = None; anchor = None }
   in
   let window : Ir_v0.Ast.condition_expr =
     Time_window
@@ -5491,18 +5493,19 @@ let () =
     }
   in
   let voorliggerrang : Ir_v0.Ast.expr =
-    Attribute_reference { attribute_ref = Some "rangnummer"; object_type = Some "Wachter"; source_name = None; navigation_bindings = Some [ { rb_fact_type = "ketenband"; rb_role = "voorligger" } ] }
+    Attribute_reference { attribute_ref = Some "rangnummer"; object_type = Some "Wachter"; source_name = None; navigation_bindings = Some [ { rb_fact_type = "ketenband"; rb_role = "voorligger" } ]; anchor = None }
   in
   let opvolgeraantal : Ir_v0.Ast.expr =
     Function_call
       {
         kind = Count;
         call_arguments =
-          [ Attribute_reference { attribute_ref = Some "opvolgers"; object_type = Some "Wachter"; source_name = None; navigation_bindings = None } ];
+          [ Attribute_reference { attribute_ref = Some "opvolgers"; object_type = Some "Wachter"; source_name = None; navigation_bindings = None; anchor = None } ];
         element_object_type = Some "Wachter"; empty_fallback = None; filter = None;
         dimension_selection = None; typ = Some num0; source_name = None; grain = None;
         source_role = Some { rb_fact_type = "ketenband"; rb_role = "opvolger" };
         source_path = None;
+        anchor = None;
       }
   in
   let env = env_of doc in
@@ -5605,7 +5608,7 @@ let () =
   let nav_read ft role_ref : Ir_v0.Ast.expr =
     Attribute_reference
       { attribute_ref = Some "strandtegoed"; object_type = Some "Jutter"; source_name = None;
-        navigation_bindings = Some [ { rb_fact_type = ft; rb_role = role_ref } ] }
+        navigation_bindings = Some [ { rb_fact_type = ft; rb_role = role_ref } ]; anchor = None }
   in
   let plus2 : Ir_v0.Ast.expr =
     Binary
@@ -5680,14 +5683,14 @@ let () =
     }
   in
   let count_source name : Ir_v0.Ast.expr =
-    Attribute_reference { attribute_ref = Some name; object_type = Some "Jutter"; source_name = None; navigation_bindings = None }
+    Attribute_reference { attribute_ref = Some name; object_type = Some "Jutter"; source_name = None; navigation_bindings = None; anchor = None }
   in
   let quantity ?source_role name el : Ir_v0.Ast.expr =
     Function_call
       { kind = Count; call_arguments = [ count_source name ];
         element_object_type = Some el; empty_fallback = None; filter = None;
         dimension_selection = None; typ = Some num0; source_name = None;
-        grain = None; source_role; source_path = None }
+        grain = None; source_role; source_path = None; anchor = None }
   in
   let kavel = { Ir_v0.Ast.rb_fact_type = "kaveltoewijzing"; rb_role = "duinkavel" } in
   let vat = { Ir_v0.Ast.rb_fact_type = "vatberging"; rb_role = "vat" } in
@@ -5912,7 +5915,7 @@ let () =
   let kc holder : Ir_v0.Ast.condition_expr =
     Characteristic_check
       { characteristic = Some "gekeurd"; negation = false; holder; time_period = None;
-        source_name = None; navigation_binding = None }
+        source_name = None; navigation_binding = None; anchor = None }
   in
   let ec label c = Eval.eval_cond (env_of doc) w (World.get w label) ~err:no_err c in
   check "WV-5.8b-eigenaar-afwezig" (ec "v1" (kc None));
@@ -5927,7 +5930,7 @@ let () =
   let kc_nav holder : Ir_v0.Ast.condition_expr =
     Characteristic_check
       { characteristic = Some "gekeurd"; negation = false; holder; time_period = None; source_name = None;
-        navigation_binding = Some { rb_fact_type = "vondstvinding"; rb_role = "vinder" } }
+        navigation_binding = Some { rb_fact_type = "vondstvinding"; rb_role = "vinder" }; anchor = None }
   in
   match ec "v1" (kc_nav (Some "Jutter")) with
   | exception Value.Fault { text = m; _ } ->
@@ -5987,7 +5990,7 @@ let () =
               Some
                 (Characteristic_check
                    { characteristic = Some "gehesen"; negation = false; holder;
-                     time_period = None; source_name = None; navigation_binding = None });
+                     time_period = None; source_name = None; navigation_binding = None; anchor = None });
             fc_validity = None; fc_fact_type = "vakbeseining";
             anchor_role = "seinvak"; objective_role = "vaksein";
             join_role = rb "seinvoering" "sein"; fc_pointer = "" } ];
@@ -6169,7 +6172,7 @@ let () =
     Characteristic_check
       { characteristic = Some "bedrijvig"; negation; holder = None;
         time_period = Some { gp_granularity = year; gp_negated = not_flag }; source_name = None;
-        navigation_binding = Some { rb_fact_type = "ligplaats"; rb_role = "werf" } }
+        navigation_binding = Some { rb_fact_type = "ligplaats"; rb_role = "werf" }; anchor = None }
   in
   let ec ~link period_list c =
     let w = world_state ~link period_list in
@@ -6207,7 +6210,7 @@ let () =
      directions in one check: the full year passes, the half year does not,
      which is what separates the own arm from a constant. *)
   let own_cond : Ir_v0.Ast.condition_expr =
-    Characteristic_check { characteristic = Some "bedrijvig"; negation = false; holder = None; time_period = Some { gp_granularity = true; gp_negated = false }; source_name = None; navigation_binding = None }
+    Characteristic_check { characteristic = Some "bedrijvig"; negation = false; holder = None; time_period = Some { gp_granularity = true; gp_negated = false }; source_name = None; navigation_binding = None; anchor = None }
   in
   let ec_own period_list =
     let w = world_state ~link:false period_list in
@@ -6540,7 +6543,7 @@ let () =
     Function_call
       { kind = Sum_function; call_arguments = args; element_object_type = None; empty_fallback = empty_value;
         filter = None; dimension_selection = None; typ = Some num0; source_name = None;
-        grain = None; source_role = None; source_path = None }
+        grain = None; source_role = None; source_path = None; anchor = None }
   in
   expect_msg "WV-5.11-som-bijdrager0-eerst" (run_v (summed [ tree; pit ] None)) bm;
   expect_msg "WV-5.11-som-bijdrager1-later" (run_v (summed [ pit; tree ] None)) pm;
@@ -6556,7 +6559,7 @@ let () =
     Function_call
       { kind = Concatenation; call_arguments = args; element_object_type = None; empty_fallback = None;
         filter = None; dimension_selection = None; typ = Some Text_type; source_name = None;
-        grain = None; source_role = None; source_path = None }
+        grain = None; source_role = None; source_path = None; anchor = None }
   in
   expect_msg "WV-5.11-concat-deel0-eerst" (run_v (concat [ tree; pit ])) bm;
   expect_msg "WV-5.11-concat-deel1-later" (run_v (concat [ pit; tree ])) pm;
@@ -6572,7 +6575,7 @@ let () =
     Function_call
       { kind = Date_with; call_arguments = args @ [ litv "1" num0 ]; element_object_type = None;
         empty_fallback = None; filter = None; dimension_selection = None; typ = Some Date_in_days;
-        source_name = None; grain = None; source_role = None; source_path = None }
+        source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
   in
   expect_msg "WV-5.11-datummet-deel0-eerst" (run_v (date_with [ tree; pit ])) bm;
   expect_msg "WV-5.11-datummet-deel1-later" (run_v (date_with [ pit; tree ])) pm;
@@ -6692,10 +6695,10 @@ let () =
     Function_call
       { kind = Count;
         call_arguments =
-          [ Attribute_reference { attribute_ref = Some "deelvangsten"; object_type = Some "Vangst"; source_name = None; navigation_bindings = None } ];
+          [ Attribute_reference { attribute_ref = Some "deelvangsten"; object_type = Some "Vangst"; source_name = None; navigation_bindings = None; anchor = None } ];
         element_object_type = Some "Deelvangst"; empty_fallback = None; filter = Some member_filter;
         dimension_selection = None; typ = Some num0; source_name = None; grain = None;
-        source_role = Some { rb_fact_type = "deelname"; rb_role = "deelvangst" }; source_path = None }
+        source_role = Some { rb_fact_type = "deelname"; rb_role = "deelvangst" }; source_path = None; anchor = None }
   in
   expect_msg "WV-5.11-instantiefold-lid0-eerst" (run_members counting "1" "0") bm;
   expect_msg "WV-5.11-instantiefold-lid1-later" (run_members counting "0" "1") pm;
@@ -6705,10 +6708,10 @@ let () =
       { kind = Sum_function;
         call_arguments =
           [ Attribute_reference
-              { attribute_ref = Some "bedrag"; object_type = Some "Deelvangst"; source_name = None; navigation_bindings = None } ];
+              { attribute_ref = Some "bedrag"; object_type = Some "Deelvangst"; source_name = None; navigation_bindings = None; anchor = None } ];
         element_object_type = Some "Deelvangst"; empty_fallback = None; filter = Some member_filter;
         dimension_selection = None; typ = Some num0; source_name = None; grain = None;
-        source_role = Some { rb_fact_type = "deelname"; rb_role = "deelvangst" }; source_path = None }
+        source_role = Some { rb_fact_type = "deelname"; rb_role = "deelvangst" }; source_path = None; anchor = None }
   in
   expect_msg "WV-5.11-instantiesom-lid0-eerst" (run_members members_sum "1" "0") bm;
   expect_msg "WV-5.11-instantiesom-lid1-later" (run_members members_sum "0" "1") pm
@@ -6746,7 +6749,7 @@ let () =
   in
   let betwist : Ir_v0.Ast.condition_expr =
     Characteristic_check { characteristic = Some "betwist"; negation = false;
-                    holder = None; time_period = None; source_name = None; navigation_binding = None }
+                    holder = None; time_period = None; source_name = None; navigation_binding = None; anchor = None }
   in
   let deep : Ir_v0.Ast.condition_expr =
     Comparison { op = Greater; left_side = Some (aref "bergingsdiepte" "Wrakrecht");
@@ -6821,7 +6824,7 @@ let () =
   in
   let kc k : Ir_v0.Ast.condition_expr =
     Characteristic_check { characteristic = Some k; negation = false; holder = None;
-                    time_period = None; source_name = None; navigation_binding = None }
+                    time_period = None; source_name = None; navigation_binding = None; anchor = None }
   in
   let cluster k value_node : Ir_v0.Ast.prioritized_defaults =
     { pd_name = Some ("uitkering bij " ^ k); pd_subject = "Strandrecht"; pd_characteristic = None;
@@ -6859,7 +6862,7 @@ let () =
   in
   let kc k : Ir_v0.Ast.condition_expr =
     Characteristic_check { characteristic = Some k; negation = false; holder = None;
-                    time_period = None; source_name = None; navigation_binding = None }
+                    time_period = None; source_name = None; navigation_binding = None; anchor = None }
   in
   let cluster subject_ref k value_node unordered : Ir_v0.Ast.prioritized_defaults =
     { pd_name = Some (subject_ref ^ " bij " ^ k); pd_subject = subject_ref; pd_characteristic = None;
@@ -6926,7 +6929,7 @@ let () =
   in
   let kc k : Ir_v0.Ast.condition_expr =
     Characteristic_check { characteristic = Some k; negation = false; holder = None;
-                    time_period = None; source_name = None; navigation_binding = None }
+                    time_period = None; source_name = None; navigation_binding = None; anchor = None }
   in
   let d precondition value_node : Ir_v0.Ast.default =
     { default_decision = None; default_justification = Some precondition;
@@ -7036,7 +7039,7 @@ let () =
   in
   let kc k : Ir_v0.Ast.condition_expr =
     Characteristic_check { characteristic = Some k; negation = false; holder = None;
-                    time_period = None; source_name = None; navigation_binding = None }
+                    time_period = None; source_name = None; navigation_binding = None; anchor = None }
   in
   let d precondition value_node : Ir_v0.Ast.default =
     { default_decision = None; default_justification = Some precondition;
@@ -7153,7 +7156,7 @@ let () =
                (Characteristic_check
                   { characteristic = Some "gemeld"; negation = false;
                     holder = Some "Vondst"; time_period = None; source_name = None;
-                    navigation_binding = None })) ] }
+                    navigation_binding = None; anchor = None })) ] }
   in
   let owner_run chars =
     let i = { (inst "x" "Wrakvondst" []) with World.chars = List.map Ir_v0.Checks.norm chars } in
@@ -7255,6 +7258,7 @@ let kv_cond ?(quantifier_kind : Ir_v0.Ast.quantifier_kind = All) ?cutoff ?filter
       kv_source = None;
       kv_source_role = Some { rb_fact_type = "ploegindeling"; rb_role = "berger" };
       kv_source_path = None;
+      kv_anchor = None;
     }
 
 (* one world per row: the ploeg P1 and its bergers, each with its own
@@ -7440,7 +7444,7 @@ let () =
                 kv_filter = None;
                 kv_test = None; kv_source = None;
                 kv_source_role = Some { rb_fact_type = "ploegindeling"; rb_role = "berger" };
-                kv_source_path = None })))
+                kv_source_path = None; kv_anchor = None })))
     "quantifier fold without a test: the matrix is what every contributor must satisfy, and a \
      quantifier over no condition has no verdict";
   (* WF-108 (c), the range's shape: one spelling and a path of at least two
@@ -7622,7 +7626,7 @@ let () =
   let havengeld_werf : Ir_v0.Ast.expr =
     Attribute_reference
       { attribute_ref = Some "havengeld"; object_type = Some "Werf"; source_name = None;
-        navigation_bindings = Some [ { rb_fact_type = "ligplaats"; rb_role = "werf" } ] }
+        navigation_bindings = Some [ { rb_fact_type = "ligplaats"; rb_role = "werf" } ]; anchor = None }
   in
   let ev_nav ?variety ?not_flag ~link tl =
     let w1 = with_timeline "havengeld" tl (inst "W1" "Werf" []) in
@@ -7669,7 +7673,7 @@ let () =
         navigation_bindings =
           Some
             [ { rb_fact_type = "ligplaats"; rb_role = "werf" };
-              { rb_fact_type = "havenligging"; rb_role = "thuishaven" } ] }
+              { rb_fact_type = "havenligging"; rb_role = "thuishaven" } ]; anchor = None }
   in
   let ev_chain ?variety ~haven tl =
     let h1 = with_timeline "havengeld" tl (inst "H1" "Haven" []) in
@@ -8416,7 +8420,7 @@ let () =
   let characteristic k : Ir_v0.Ast.condition_expr =
     Characteristic_check
       { characteristic = Some k; navigation_binding = None; negation = false;
-        holder = None; time_period = None; source_name = None }
+        holder = None; time_period = None; source_name = None; anchor = None }
   in
   let doc value_node =
     { empty_doc with
@@ -8539,7 +8543,7 @@ let () =
     Function_call
       { kind = Total; call_arguments = [ aref "leeftijd" "Jutter" ]; element_object_type = Some el;
         empty_fallback = None; filter = None; dimension_selection = None; typ = Some num0; source_name = None;
-        grain = None; source_role = None; source_path = None }
+        grain = None; source_role = None; source_path = None; anchor = None }
   in
   expect_fault_msg "WV-4.3-totaal-zonder-bereik-over-een-supertype-faalt"
     (fun () -> run (grand_total "Persoon"))
@@ -8566,7 +8570,7 @@ let () =
     Function_call
       { kind; call_arguments; element_object_type = None; empty_fallback = None; filter = None;
         dimension_selection = None; typ = Some num0; source_name = None; grain = Some Month;
-        source_role = None; source_path = None }
+        source_role = None; source_path = None; anchor = None }
   in
   expect_fault_msg "WF-037-granulariteit-op-een-niet-emmerende-builtin-faalt"
     (fun () -> run (with_granularity Year_of [ litv "2026-03-15" Ir_v0.Ast.Date_in_days ]))
@@ -8748,7 +8752,7 @@ let () =
     Function_call
       { kind; call_arguments = [ body_text ]; element_object_type = None; empty_fallback = None; filter = None;
         dimension_selection = None; typ = Some num0; source_name = None; grain = None; source_role = None;
-        source_path = None }
+        source_path = None; anchor = None }
   in
   let run value_node =
     let doc =
@@ -8786,7 +8790,7 @@ let () =
     Function_call
       { kind; call_arguments = [ aref "van" "Jutter"; aref "tot" "Jutter" ];
         element_object_type = None; empty_fallback = None; filter = None; dimension_selection = None;
-        typ = Some vadem; source_name = None; grain = None; source_role = None; source_path = None }
+        typ = Some vadem; source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
   in
   let doc kind =
     { empty_doc with
@@ -8824,7 +8828,7 @@ let () =
   let extent ?(kind = Ir_v0.Ast.Duration) typ a b : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments = [ a; b ]; element_object_type = None; empty_fallback = None; filter = None;
-        dimension_selection = None; typ; source_name = None; grain = None; source_role = None; source_path = None }
+        dimension_selection = None; typ; source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
   in
   let van = aref "van" "Jutter" and up_to = aref "tot" "Jutter" and moment = aref "moment" "Jutter" in
   let run value_node =

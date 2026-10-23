@@ -1,0 +1,3 @@
+WF-053.read-other-type
+subjectType=Register
+objectType=Vergunning

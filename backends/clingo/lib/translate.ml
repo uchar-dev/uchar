@@ -1308,7 +1308,7 @@ let walk_order ~(value : string -> expr -> bool) (visit : expr -> unit) =
     | Quantifier_fold { kv_filter; kv_test; _ } ->
         (match kv_filter with Some f -> cond f | None -> ());
         (match kv_test with Some t -> cond t | None -> ())
-    | Characteristic_check _ | Role_membership _ | Rule_status_check _
+    | Characteristic_check _ | Role_membership _ | Rule_status_check _ | Identity_check _
     | Condition_unresolved _ ->
         ()
   in
@@ -1678,7 +1678,7 @@ let expr_reaches ctx (hit : expr -> bool) (e : expr) : bool =
     | Quantifier_fold { kv_test; kv_filter; _ } ->
         (match kv_test with Some t -> co t | None -> false)
         || (match kv_filter with Some f -> co f | None -> false)
-    | Characteristic_check _ | Role_membership _ | Rule_status_check _
+    | Characteristic_check _ | Role_membership _ | Rule_status_check _ | Identity_check _
     | Condition_unresolved _ ->
         false
   in
@@ -2135,7 +2135,7 @@ let set_source_attribute ctx ~subject_ot ~el a =
         "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
          ill-formed in an aggregation source position"
         a el
-    else if Ir_v0.Checks.roles_named_from { doc = ctx.doc } ~from_type:subject_ot ~name:a <> [] then
+    else if Ir_v0.Checks.roles_named_from (Ir_v0.Checks.ctx_of ctx.doc) ~from_type:subject_ot ~name:a <> [] then
       fault
         "value aggregation over %S, which is no attribute of %S: a value fold reads an attribute \
          per contributor, and a role name is a count source only a count folds"
@@ -7695,7 +7695,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          role/3 alike. *)
       let own, other =
         match
-          Ir_v0.Checks.resolve_binding { doc = ctx.doc } { rb_fact_type = fact_type; rb_role = role }
+          Ir_v0.Checks.resolve_binding (Ir_v0.Checks.ctx_of ctx.doc) { rb_fact_type = fact_type; rb_role = role }
         with
         | Ok (_, own, other) -> (own, other)
         | Error e -> fault "role check: %s" e
@@ -10415,7 +10415,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   let pair =
     match oc.oc_connecting_role with
     | Some rb -> (
-        match Ir_v0.Checks.resolve_binding { doc = ctx.doc } rb with
+        match Ir_v0.Checks.resolve_binding (Ir_v0.Checks.ctx_of ctx.doc) rb with
         | Ok (_, bound, other) -> Some (rb.rb_fact_type, bound, other)
         | Error e -> fault "%s" e)
     | None -> Eval.connecting_pair env ~from_type:subject_ot ~to_type:created
@@ -11010,7 +11010,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
        verifier's dependency reads (the machinery WF-045/046 trusts), so
        the fence cannot drift from the graph the verifier checks. *)
     let target_node = Ir_v0.Checks.n_attr dt da in
-    let dforms = Ir_v0.Checks.dep_forms { doc = ctx.doc } in
+    let dforms = Ir_v0.Checks.dep_forms (Ir_v0.Checks.ctx_of ctx.doc) in
     if
       List.exists
         (fun (f : Ir_v0.Checks.dep_form) ->
@@ -11956,7 +11956,7 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    answers rapportaantal(H1) = 1, and this backend refused the Rapport
    where, before the test reached off the cycle, it answered 1 as well. *)
 let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
-  let cctx = { Ir_v0.Checks.doc } in
+  let cctx = Ir_v0.Checks.ctx_of doc in
   let forms = Array.of_list (Ir_v0.Checks.dep_forms cctx) in
   (* without a recursive creation WF-045 admits no cycle *)
   if Array.exists (fun (f : Ir_v0.Checks.dep_form) -> f.df_recursive_creation) forms then begin
@@ -12132,7 +12132,7 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
    does; a stratification of its own could split a chain ref counts as
    one, or join two that ref counts apart. *)
 let object_creation_strata (doc : document) : (string * int) list =
-  let forms = Array.of_list (Ir_v0.Checks.dep_forms { Ir_v0.Checks.doc }) in
+  let forms = Array.of_list (Ir_v0.Checks.dep_forms (Ir_v0.Checks.ctx_of doc)) in
   let n = Array.length forms in
   let strata = form_strata forms in
   List.map

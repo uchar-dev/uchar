@@ -1,0 +1,3 @@
+WF-122.anchor-outside-context
+node=CharacteristicCheck
+position=the filter of a selection of an instance-set union
