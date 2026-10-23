@@ -145,3 +145,12 @@ token `ZELF` blijft daar vrije tekst, en een woord als "zelfstandige" lext als �
 frontend-test die een scenarionaam en een regelnaam met "zelf" erin (in de vorm van de twee v2-namen, "… van het recht
 zelf in een samenloop", "… dat zelf is geëindigd") parset zoals vóór de kaart, en dat de 179 bronnen van de repository
 bytegelijk emitteren.
+
+## Mandaat (2026-10-23)
+
+De eigenaar: "jij mag, na review en alles groen, ook zelf landen". Dat geldt voor de beschermde paden die de kaart raakt
+(`spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/schema/`, `spec/verifier/`, `corpus/negative/`, de vloeren in
+`scripts/`) en voor de landing na een review en groene gates. Bouw in vier stappen met elk een verse bouwer (het
+stappenplan van het Fable-advies): 1–2 spec, schema, verifier en negatieven; 3–4 ref en clingo; 5 Drools; 6–7 frontend
+en corpus. CONSTRUCTS en PLAN landt de hoofdsessie.
+
