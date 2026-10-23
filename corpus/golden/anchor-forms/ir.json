@@ -297,7 +297,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; de Vergunning zelf is geschorst"
               }
             },
             "initialisation": false,
@@ -454,7 +454,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die zijn tarief is groter dan het nummer van het register van de Vergunning zelf"
               }
             },
             "initialisation": false,
@@ -581,7 +581,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; ten minste een van de vergunningen van het register van de Vergunning zelf heeft een tarief van ten minste 20"
               }
             },
             "initialisation": false,
@@ -646,7 +646,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die hij is de Vergunning zelf"
               }
             },
             "initialisation": false,
@@ -772,7 +772,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1"
               }
             },
             "initialisation": false,
@@ -892,7 +892,7 @@
                         "sign": "unspecified"
                       },
                       "source": {
-                        "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf"
+                        "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf die zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf"
                       }
                     },
                     "source": {
@@ -901,7 +901,7 @@
                   }
                 ],
                 "source": {
-                  "snippet": "aan alle volgende voorwaarden voldoen"
+                  "snippet": "aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf"
                 }
               },
               "sourcePath": [
@@ -923,7 +923,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf"
               }
             },
             "initialisation": false,
@@ -1052,7 +1052,7 @@
                         "sign": "unspecified"
                       },
                       "source": {
-                        "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf"
+                        "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf die zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf"
                       }
                     },
                     "source": {
@@ -1061,7 +1061,7 @@
                   }
                 ],
                 "source": {
-                  "snippet": "aan alle volgende voorwaarden voldoen"
+                  "snippet": "aan alle volgende voorwaarden voldoen: zijn korting is leeg; zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf"
                 }
               },
               "sourcePath": [
@@ -1083,7 +1083,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: zijn korting is leeg; zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf"
               }
             },
             "initialisation": false,
@@ -1319,7 +1319,7 @@
                   }
                 ],
                 "source": {
-                  "snippet": "aan alle volgende voorwaarden voldoen"
+                  "snippet": "aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1"
                 }
               },
               "sourcePath": [
@@ -1341,7 +1341,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1"
               }
             },
             "condition": {
@@ -1457,7 +1457,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die zijn tarief gedeeld door zijn teller is groter dan 1"
               }
             },
             "condition": {

@@ -266,7 +266,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de som van het tarief van alle vergunningen van het register van de Vergunning die aan de volgende voorwaarde voldoen"
+                "snippet": "de som van het tarief van alle vergunningen van het register van de Vergunning die aan de volgende voorwaarde voldoen die zijn tarief is kleiner dan het eind van de vorige vergunning van de Vergunning zelf"
               }
             },
             "initialisation": false,
