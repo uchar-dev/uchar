@@ -2575,10 +2575,16 @@ let pre_epoch_fence ctx ~subject ~body t =
    non-negative operands, so truncation is floor). The clamp is the exact
    integer min (a + b − |a − b|)/2; the re-encode is days_from_civil with
    the (14 − m)/12 March-shift. An empty date or duration operand leaves
-   the chain unbound — the helper underivable, leeg as absence. *)
+   the chain unbound — the helper underivable, leeg as absence. Where the
+   operands read the form subject of a member (an anchored read, IR-SPEC
+   ch. 4.1a), the helper carries that subject in its head ([helper_key]). *)
 let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~dur_atoms
     ~count =
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+  let key, opening =
+    helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot)
+      (date_atoms @ dur_atoms)
+  in
   pre_epoch_fence ctx ~subject ~body:((base :: ctx.rule_guard) @ date_atoms) date_term;
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "dpm%d" ctx.fresh in
@@ -2618,7 +2624,7 @@ let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~
         Printf.sprintf "%s = 30+((%s+(%s/8)) \\ 2)" ml mt mt ]
       ml
   in
-  emit ctx "%s(%s,%s) :- %s." p subject z1 (String.concat ", " (base :: body1));
+  emit ctx "%s(%s,%s) :- %s." p key z1 (String.concat ", " (opening @ body1));
   let lv = fresh ctx "L" in
   let body2, z2 =
     finish
@@ -2628,9 +2634,9 @@ let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~
         Printf.sprintf "%s = 28+%s" ml lv ]
       ml
   in
-  emit ctx "%s(%s,%s) :- %s." p subject z2 (String.concat ", " (base :: body2));
+  emit ctx "%s(%s,%s) :- %s." p key z2 (String.concat ", " (opening @ body2));
   let v = fresh ctx "DP" in
-  ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, 1)
+  ([ Printf.sprintf "%s(%s,%s)" p key v ], v, 1)
 
 let compare_sym = function
   | Greater_or_equal | Later_or_equal -> ">="
@@ -5089,9 +5095,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       ctx.fresh <- ctx.fresh + 1;
       let pred = Printf.sprintf "fl%d" ctx.fresh in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+      (* an operand that reads the form subject of a member (an anchored read,
+         IR-SPEC ch. 4.1a) keys the helper by that subject ([helper_key]) *)
+      let key, opening =
+        helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot)
+          (List.concat_map (fun (atoms, _, _) -> atoms) ops)
+      in
       List.iter
         (fun (atoms, t, s) ->
-          let body = base :: atoms in
+          let body = opening @ atoms in
           (* the fence carries [rule_guard] like its siblings in the min/max
              folds; the fold's own value rule keeps the bare body, which is the
              sibling convention exactly *)
@@ -5099,14 +5111,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ atoms)
               [ (t, 1073741823 / (m / s)) ];
           let t' = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
-          emit ctx "%s(%s,%s) :- %s." pred subject t' (String.concat ", " body))
+          emit ctx "%s(%s,%s) :- %s." pred key t' (String.concat ", " body))
         ops;
-      emit ctx "%s_def(%s) :- %s(%s,X)." pred subject pred subject;
+      emit ctx "%s_def(%s) :- %s(%s,X)." pred key pred key;
       let v = fresh ctx "F" in
       let x = Printf.sprintf "X%s" v in
       let agg = match kind with First -> "#min" | _ -> "#max" in
-      ( [ Printf.sprintf "%s_def(%s)" pred subject;
-          Printf.sprintf "%s = %s { %s : %s(%s,%s) }" v agg x pred subject x ],
+      ( [ Printf.sprintf "%s_def(%s)" pred key;
+          Printf.sprintf "%s = %s { %s : %s(%s,%s) }" v agg x pred key x ],
         v,
         m )
   | Function_call { kind = Total; call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ]; filter = Some c; source_role = None; source_path = None; _ }
