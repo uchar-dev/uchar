@@ -1213,6 +1213,114 @@ to Duinkavel the count still reads the relation its binding names and
 counts **3** (WV-3.4a-typenpaar-tweede-feittype-bindt); until L2 the
 bindingless written form faulted loudly there.
 
+**The form anchor: the form subject in a filter** *(voorlopig besluit
+2026-10-23, card `subselection-reads-subject`; `IR-SPEC.md` ch. 4.1a,
+WF-122)*. In the `filter` of an instance fold with a range, and in the
+`filter` and the `test` of a quantifier fold (ch. 3.9a), the subject is the
+member. A node there that carries `anchor: "form"` is evaluated with the
+**form subject** as its subject, as if it stood in the form's own condition
+or value: the object the form runs on (ch. 5.12, *Which forms, which
+objects*), whichever fold and filter it stands in, at any depth. Everything
+about such a node is what it is in the form's own condition: an anchored
+own read reads the form subject's attribute (ch. 5.8 rule 4), an anchored
+navigated read walks from the form subject (ch. 5.8 rules 1–3), an anchored
+characteristic check reads the form subject's characteristic, an anchored
+fold ranges from the form subject, and the fold's own filter has the fold's
+member as its subject again. A node without the anchor reads the member, as
+before.
+
+The **identity check** (`IdentityCheck`, `IR-SPEC.md` ch. 4.5) is **waar**
+iff the member is the form subject, the same object (ch. 5.8, *Identity*),
+and **onwaar** otherwise; `negated: true` turns that around. It reads no
+value, so it is never leeg and never faults. "die niet het Recht zelf zijn"
+is `negated: true`: it takes the form subject out of a range that reaches it.
+
+**A leeg value of the form subject needs no rule of its own.** An ordering
+comparison (`<`, `≤`, `>`, `≥`, `eerder`, `later`) between a member's value
+and a leeg value of the form subject is onwaar for every member (ch. 1.2, the
+comparison table; an equality or an inequality there follows its own row of
+that table, as anywhere), so under such a filter every member drops out and
+the fold runs over no contributor: a maximum reads leeg, a sum its fallback,
+a count 0, a quantifier `all` waar (ch. 3.9a, the vacuous case), `atLeast` 1
+onwaar. In a quantifier's test the same comparison fails the matrix for every
+contributor: `all` over at least one contributor is onwaar. This is the one
+reading a filter operand has (ch. 1.2, 3.4a above). A `Let` that bound the
+form subject's value before the fold would make the whole `Let` leeg instead
+(ch. 10.6, clause 2): one sentence, two answers, which is why the IR carries
+the read as an anchor and not as a binding (`IR-SPEC.md` ch. 4.1a).
+
+**Once or per member.** The value of an anchored node does not depend on the
+member, so an executor may compute it once per form subject and use that
+value at each member. What it may not change is where the node is evaluated:
+the node is evaluated at the members whose evaluation of the filter or the
+test reaches it (ch. 5.10, 5.11), as every node there is, so a §9.5 deposit
+(ch. 5.6) or a fault of it arises iff at least one member reaches it. A
+deposit is identified by rule × subject (ch. 5.6), so a deposit at every
+member that reaches it is one fact; a fault ends the evaluation at the first
+member that reaches it, with the fault the one computation gives. An executor
+that computes the node where no member reaches it — over an empty range, or
+at a member whose filter stopped before the node (ch. 5.10) — must not raise
+its fault or make its deposit there.
+
+**Two spellings, one answer.** Where the member reaches the form subject over
+a hop whose reached role is to-one ("de schuit van de Lading", from a lading of
+that schuit), a navigation from the member and an anchored read give the same
+value at every member (`IR-SPEC.md` ch. 4.1a): every member the range reaches
+from the form subject S over a role links back to S over the opposite role.
+Their dependency edges differ (ch. 6.1); their answers do not.
+
+Worked example (the golden `jutterswet-registervoorrang`, verbatim in gates
+5, 6 and 12 and as `WV-3.4a-anchor-*` in `ref/` tests). A `Register` holds
+`Vergunningen` through the fact type `registerinschrijving` (roles `register`,
+filled by Register, to-one, and `vergunning`, plural `vergunningen`, filled by
+Vergunning, to-many). A Vergunning has an `ingangsdag` (a date), a `tarief`
+(a whole number) and the derived `hoogste latere tarief`, and the
+characteristic `voorrang`. Both rules range over `sourcePath
+[registerinschrijving/register, registerinschrijving/vergunning]` from the
+Vergunning, a range that reaches the Vergunning itself:
+
+- **hoogste latere tarief** — "de maximale waarde van het tarief van alle
+  vergunningen van het register van de Vergunning die aan alle volgende
+  voorwaarden voldoen: hij is niet de Vergunning zelf; zijn ingangsdag is
+  later dan de ingangsdag van de Vergunning zelf": a maximum whose filter is
+  `all` over an `IdentityCheck` with `negated: true` and a comparison `later`
+  of the member's `ingangsdag` with the anchored `ingangsdag`;
+- **voorrang** — "een Vergunning heeft de voorrang indien de ingangsdag van
+  alle vergunningen van het register van de Vergunning die niet de Vergunning
+  zelf zijn later is dan de ingangsdag van de Vergunning zelf": a quantifier
+  `all` with the identity check as its filter and the same comparison as its
+  test.
+
+The identity check is redundant beside a strict `later` in the value fold (no
+member starts later than itself); it is written there so that both forms of
+the card's sentence, the exclusion and the comparison, stand in one filter. In
+the quantifier it is not redundant: without it the Vergunning would be its own
+contributor and its test, `later` than itself, would fail.
+
+| case | register, Vergunningen (ingangsdag, tarief) | hoogste latere tarief | voorrang |
+|---|---|---|---|
+| `WV-3.4a-anchor-three` | R1: V1 (2026-01-01, 10), V2 (2026-03-01, 20), V3 (2026-06-01, 15) | V1 **20**, V2 **15**, V3 **leeg** | V1 **waar**, V2 onwaar, V3 onwaar |
+| `WV-3.4a-anchor-alone` | R1: V4 (2026-01-01, 10) | V4 **leeg** | V4 **waar** |
+| `WV-3.4a-anchor-two-registers` | R1: V1 (2026-01-01, 10), V2 (2026-03-01, 20); R2: V3 (2026-02-01, 30) | V1 **20**, V2 leeg, V3 **leeg** | V1 waar, V2 onwaar, V3 **waar** |
+| `WV-3.4a-anchor-empty-subject` | R1: V1 (leeg, 10), V2 (2026-03-01, 20) | V1 **leeg**, V2 leeg | V1 **onwaar**, V2 onwaar |
+| `WV-3.4a-anchor-empty-member` | R1: V1 (2026-01-01, 10), V2 (leeg, 20), V3 (2026-03-01, 15) | V1 **15**, V2 leeg, V3 leeg | V1 **onwaar**, V2 onwaar, V3 onwaar |
+| `WV-3.4a-anchor-same-day` | R1: V1 (2026-01-01, 10), V2 (2026-01-01, 20) | V1 **leeg**, V2 **leeg** | V1 **onwaar**, V2 **onwaar** |
+
+Read per case. **three**: each Vergunning gets a different answer from the
+same rules; V3, the latest, has no later member (leeg), and V2 and V3 have V1,
+which starts earlier, among their contributors (onwaar). **alone**: the range reaches V4 alone, the identity check drops it,
+so the maximum has no contributor (leeg) and `all` is waar over none. **two
+registers**: the range is the register's, so V3 (2026-02-01, in R2) does not
+count for V1 (2026-01-01, in R1) although it starts later; V3 is alone in R2.
+**empty subject**: V1's ingangsdag is leeg, so the anchored operand is leeg at
+every member: the comparison fails for V2, the maximum has no contributor
+(leeg), and V2 is a contributor of the quantifier whose test fails (onwaar);
+for V2, V1 is a member with a leeg ingangsdag, which drops out of V2's maximum
+(leeg) and fails V2's test (onwaar). **empty member**: V2's ingangsdag is leeg, so V2 drops out of V1's
+value fold, which folds V3 alone (15), while in V1's quantifier V2 passes the
+filter and fails the test (onwaar); V3 has no later member. **same day**: a
+strict `later` counts no member of the same day, in either direction.
+
 ### 3.4b The multi-step fold source — the flat union (WF-102)
 
 A set fold source may describe its range with a PATH of relations rather
@@ -2715,7 +2823,11 @@ contributor with the element as subject. There is one definition of
 `test` is evaluated the same way — **per contributor, the element as the
 condition's subject**. That is the whole difference between the two
 condition fields: `filter` says which members the sentence is about,
-`test` says what it claims about them.
+`test` says what it claims about them. In both, a node with the form anchor
+reads the form subject and an identity check compares the member with it
+(ch. 3.4a, *The form anchor*); the worked example there carries a quantifier
+`all` whose filter excludes the form subject and whose test compares each
+member's ingangsdag with the form subject's (`voorrang`).
 
 **`none` is the per-MEMBER complement, never the fold's.** `not (all)` and
 `none` are different conditions and the difference shows on exactly the
@@ -4211,6 +4323,24 @@ null-safe navigation readers:
    test left the wire with B11, and the frontend writes the own read. The
    navigated characteristic check was outside that rule, and a
    self-denoting name there was refused by both executors.
+5. **A read with the form anchor starts at the form subject.** In a
+   filter or a quantifier's test, where the subject is the member, a read
+   that carries `anchor: "form"` (`IR-SPEC.md` ch. 4.1a) is read on the
+   form subject: rules 1–4 apply with the form subject in place of the
+   member. Without a `path` it is the form subject's own read, unconditional
+   as rule 4 says; with one, its hops start at the form subject and rule 1
+   reads it leeg on an absent link. The navigated characteristic check with
+   the anchor makes its hop from the form subject and keeps rule 3.
+
+**Identity.** Two objects are the same object iff they are one instance:
+the instance a label of the case input names (ch. 5.7a), or the instance a
+creation made (ch. 5.5). An object of one type is the object of another type
+only where it is an instance of both (`IR-SPEC.md` ch. 2.2: an instance of a
+subtype is an instance of its supertypes). The identity check
+(`IdentityCheck`, `IR-SPEC.md` ch. 4.5) compares the member of its filter or
+test with the form subject by this identity and by nothing else; it reads no
+attribute and no link, so it is never leeg and never faults (ch. 3.4a, *The
+form anchor*).
 
 Worked example (the `jutterswet-kustwacht` anchor, case 2, verbatim in
 gates 5–6): W1 mans post P1 in kustvak V1 (verraderlijk, gevarenklasse
@@ -5190,7 +5320,10 @@ a fold over a set — the source, the filter and the matrix of an
 aggregation with a range or over an instance-set union (ch. 3.4, 3.4a,
 3.4d) and of a quantifier fold (ch. 3.9a) — and a node read once per
 element of a list (ch. 10.2) has no reading of its own; it keeps its
-number. The node of a fold over a set carries its **contributors** instead,
+number. A node with the form anchor there (ch. 3.4a) is read per member too
+and has none either, although its value does not depend on the member (card
+`subselection-reads-subject`, 2026-10-23, B7). The node of a fold over a set
+carries its **contributors** instead,
 the members of its range that pass its filter: for a count each instance it
 counts, for the filled count (ch. 3.4c) each member whose value is filled;
 for a value fold each member with the value it contributes, where a
@@ -5551,6 +5684,21 @@ the form's subject to the object it lands on: the ranges of the folds it sits
 in, then its own hops. The path decides nothing about the edge kind; it
 decides whether the read is shifted, local or neither within an
 instance-ordered cycle (IR-SPEC ch. 5.3, ch. 6.2 below).
+
+*A read with the form anchor* (since 2026-10-23, card
+`subselection-reads-subject`; ch. 3.4a, `IR-SPEC.md` ch. 4.1a and 5.1). A node
+with `anchor: "form"` in a filter or a test draws the edges the same node
+draws in the form's own condition or value: a read of the form subject's type
+× its member (a navigated one with the link set of each hop), an anchored
+fold the population of its element type and the link sets of its own range.
+Its kind is the kind of its position, as for every read there: negative in the
+range or the matrix of a quantifier fold where those are negative, and under
+a leeg/gevuld test. Its path is its own hops alone, without the ranges of the
+folds around it, so an anchored own read is local. An identity check draws no
+edge. The navigation from the member and the anchored read of the same
+object (ch. 3.4a, *Two spellings*) differ in one edge: the navigation reads
+the link set of its relation, the anchored read does not, and both orders are
+sound.
 
 *Navigated reads (ch. 5.8)* consume relation(each hop), named by the
 hop's binding — since L2 every hop carries one (B11); until L2 a
