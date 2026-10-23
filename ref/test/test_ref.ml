@@ -5821,6 +5821,10 @@ let () =
     [ ("V1", "R1", Some "2026-01-01", 10); ("V2", "R1", Some "2026-01-01", 20);
       ("V3", "R1", Some "2026-02-01", 5) ]
     [ ("V1", Some "5", false); ("V2", Some "5", false); ("V3", None, false) ];
+  row "WV-3.4a-anchor-earlier-elsewhere" [ "R1"; "R2" ]
+    [ ("V1", "R1", Some "2026-03-01", 10); ("V2", "R1", Some "2026-02-01", 20);
+      ("V3", "R2", Some "2025-12-01", 30) ]
+    [ ("V1", None, false); ("V2", Some "10", true); ("V3", None, true) ];
   (* ref's own arm, which no table row reaches: an identity check where no
      filter or test has moved the subject to a member has no form subject
      apart from the subject itself, and is refused (WF-122 (c) refuses the

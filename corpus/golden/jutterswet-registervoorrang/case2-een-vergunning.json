@@ -1,0 +1,53 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "R1",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-01-01"
+          },
+          "tarief": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V4",
+      "attribute": "hoogste latere tarief"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V4",
+      "characteristic": "voorrang"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

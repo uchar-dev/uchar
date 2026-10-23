@@ -1305,6 +1305,7 @@ contributor and its test, `later` than itself, would fail.
 | `WV-3.4a-anchor-empty-subject` | R1: V1 (leeg, 10), V2 (2026-03-01, 20), V3 (2026-06-01, 15) | V1 **leeg**, V2 **15**, V3 leeg | V1 **onwaar**, V2 onwaar, V3 onwaar |
 | `WV-3.4a-anchor-empty-member` | R1: V1 (2026-01-01, 10), V2 (leeg, 20), V3 (2026-03-01, 15) | V1 **15**, V2 leeg, V3 leeg | V1 **onwaar**, V2 onwaar, V3 onwaar |
 | `WV-3.4a-anchor-same-day` | R1: V1 (2026-01-01, 10), V2 (2026-01-01, 20), V3 (2026-02-01, 5) | V1 **5**, V2 **5**, V3 leeg | V1 **onwaar**, V2 **onwaar**, V3 onwaar |
+| `WV-3.4a-anchor-earlier-elsewhere` | R1: V1 (2026-03-01, 10), V2 (2026-02-01, 20); R2: V3 (2025-12-01, 30) | V1 **leeg**, V2 **10**, V3 leeg | V1 **onwaar**, V2 **waar**, V3 waar |
 
 Read per case. **three**: each Vergunning gets a different answer from the
 same rules; V3, the latest, has no later member (leeg), and V2 and V3 have V1,
@@ -1323,9 +1324,13 @@ filter and fails the test (onwaar); V3 has no later member. **same day**: a
 strict `later` counts no member of the same day, in either direction: V1 and V2
 each fold V3 alone (5, where a comparison that admitted the same day would give
 20 and 10), and V2 fails V1's test (onwaar, where such a comparison would hold).
-The third Vergunning of the empty-subject and the same-day cases gives each a
-value the input does not carry, so a run that evaluates nothing does not pass
-them (gate 7).
+**earlier elsewhere**: V1's one member V2 starts earlier than V1 (leeg,
+onwaar), V2's one member V1 starts later than V2 (10, waar), and V3 is alone
+in R2. The test compares each member with the form subject, not with any
+Vergunning: V2 starts later than V3, so a reading that compared it with V3
+would give V1 the voorrang. The third Vergunning of the empty-subject and the
+same-day cases gives each a value the input does not carry, so a run that
+evaluates nothing does not pass them (gate 7).
 
 ### 3.4b The multi-step fold source — the flat union (WF-102)
 

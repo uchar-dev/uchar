@@ -152,7 +152,7 @@ let union_kinds =
     "StructLiteral"; "FieldAccess"; "ListLiteral"; "Lambda"; "IfThenElse"; "Invoke"; "Fold";
     "MapList"; "FilterList"; "ListLength"; "Let"; "InstanceSetUnion"; "Comparison"; "Predicate";
     "CharacteristicCheck"; "RoleMembership"; "TimeWindow"; "Compound"; "QuantifierFold";
-    "Regelversie" ]
+    "IdentityCheck"; "Regelversie" ]
 
 (* the value at a JSON pointer of the document; an absent member is None *)
 let at (json : Yojson.Safe.t) pointer =

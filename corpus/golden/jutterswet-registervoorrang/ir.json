@@ -1,0 +1,293 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vergunning",
+        "animate": false,
+        "plural": "Vergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ingangsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoogste latere tarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "voorrang",
+            "kind": "possessive"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Register",
+        "animate": false,
+        "plural": "Registers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "nummer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "registerinschrijving",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "register",
+            "objectType": "Register",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vergunning",
+            "objectType": "Vergunning",
+            "plural": "vergunningen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "hoogste latere tarief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hoogste latere tarief",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Het hoogste latere tarief van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "IdentityCheck",
+                    "anchor": "form",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij is niet de Vergunning zelf"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "ingangsdag",
+                      "subjectType": "Vergunning",
+                      "source": {
+                        "snippet": "zijn ingangsdag"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "ingangsdag",
+                      "subjectType": "Vergunning",
+                      "anchor": "form",
+                      "source": {
+                        "snippet": "de ingangsdag van de Vergunning zelf"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen: - hij is niet de Vergunning zelf - zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "voorrang",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "voorrang",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Een Vergunning heeft de voorrang"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "IdentityCheck",
+                "anchor": "form",
+                "negated": true,
+                "source": {
+                  "snippet": "die niet de Vergunning zelf zijn"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "later",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "ingangsdag",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "de ingangsdag"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "ingangsdag",
+                  "subjectType": "Vergunning",
+                  "anchor": "form",
+                  "source": {
+                    "snippet": "de ingangsdag van de Vergunning zelf"
+                  }
+                },
+                "source": {
+                  "snippet": "later is dan de ingangsdag van de Vergunning zelf"
+                }
+              },
+              "source": {
+                "snippet": "de ingangsdag van alle vergunningen van het register van de Vergunning die niet de Vergunning zelf zijn later is dan de ingangsdag van de Vergunning zelf"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

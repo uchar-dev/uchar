@@ -1,0 +1,123 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "R1",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "R2",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-03-01"
+          },
+          "tarief": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-02-01"
+          },
+          "tarief": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2025-12-01"
+          },
+          "tarief": {
+            "number": "30"
+          }
+        },
+        "roles": {
+          "register": [
+            "R2"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "hoogste latere tarief"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "voorrang"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "hoogste latere tarief",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "voorrang"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "hoogste latere tarief"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V3",
+      "characteristic": "voorrang"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

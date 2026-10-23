@@ -1,0 +1,109 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "R1",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "tarief": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-03-01"
+          },
+          "tarief": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-06-01"
+          },
+          "tarief": {
+            "number": "15"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "hoogste latere tarief"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "voorrang"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "hoogste latere tarief",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "voorrang"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "hoogste latere tarief"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V3",
+      "characteristic": "voorrang"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
