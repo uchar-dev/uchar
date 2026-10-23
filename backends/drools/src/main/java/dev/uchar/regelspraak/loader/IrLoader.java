@@ -1555,8 +1555,9 @@ public final class IrLoader {
             // carries no written navigation; the record's components for both stay empty
             case "AttributeReference" -> {
                 String p = pathOf(n);
+                // the record carries the anchor beside the table the backend reads it from
                 Expr.AttributeReference a = new Expr.AttributeReference(text(n, "attribute"), ot(text(n, "subjectType")),
-                        null, null, null, source(n), false, List.of());
+                        null, null, null, source(n), false, List.of(), List.of(), null, 0, anchorValue(n, p));
                 sites.put(a, p);
                 anchor(n, p, a);
                 if (n.has("path")) {
@@ -1694,7 +1695,7 @@ public final class IrLoader {
         String elementType = optText(n, p, "elementType");
         Expr.FunctionCall f = new Expr.FunctionCall(fk, args, ot(elementType), expr(nodeField(n, "emptyFallback")),
                 condition(nodeField(n, "filter")), dimensionSelection(nodeField(n, "dimensionSelection")), typeField(n),
-                source(n), null);
+                source(n), null, anchorValue(n, p));
         // IR-SPEC ch. 4.3: the range of a fold over ONE source is one field with two spellings, and a fold with an
         // element type and a kind other than total carries it — without it the argument is the subject's own
         // attribute and the fold folds something the sentence did not name. Both spellings at once is no document.
@@ -2161,7 +2162,7 @@ public final class IrLoader {
             case "CharacteristicCheck" -> {
                 String p = pathOf(n);
                 Condition.CharacteristicCheck k = new Condition.CharacteristicCheck(text(n, "characteristic"), null, bool(n, "negated"),
-                        ot(text(n, "host")), wholePeriod(nodeField(n, "wholePeriod")), source(n));
+                        ot(text(n, "host")), wholePeriod(nodeField(n, "wholePeriod")), source(n), anchorValue(n, p));
                 RoleBindingRef nb = roleBinding(n, p, "navigation");
                 if (nb != null) navigationBindings.put(k, List.of(nb));
                 anchor(n, p, k);

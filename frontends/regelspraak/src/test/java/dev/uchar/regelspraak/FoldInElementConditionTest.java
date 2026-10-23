@@ -15,9 +15,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * A fold over a relation of the rule subject, read in the filter of another fold (card fold-in-element-condition,
- * bridge K13 of the rule set herleving-WW): the filter is read per element, so the inner fold is written from the
- * element with the way back to the rule subject in front of its range — the IR the element-role spelling R4 already
- * gets (grammar/DIVERGENCES.md, "A read of the rule subject in a filter").
+ * bridge K13 of the rule set herleving-WW): the filter is read per element, so the inner fold is built at the rule
+ * subject and carries the form anchor (IR-SPEC ch. 4.1a, WF-122; card subselection-reads-subject,
+ * grammar/DIVERGENCES.md, "The rule subject in a subselection — zelf"). Until 2026-10-23 it was written from the
+ * element with the way back in front of its range, the IR of the element-role spelling R4, which keeps it.
  */
 class FoldInElementConditionTest {
 
@@ -44,23 +45,35 @@ class FoldInElementConditionTest {
     static final String R4_WITHOUT_FILTER = rule(MODEL, "zijn maand plus 1 mnd is later dan de laatste van de einddag van "
             + "alle klachten van de schuit van de Lading in-een-maand.");
 
-    @Test void r1_reads_the_klachten_of_the_rule_subject_over_the_way_back() {
+    /** Changed 2026-10-23 (card subselection-reads-subject): R1 had the IR of R4, the way back over 'schuit' in front of
+     *  the klachten; now its fold is read at the rule subject, with the anchor and the one-step range from the Schuit. R4
+     *  navigates from the element and keeps the path: the two spellings of one reading (RUNTIME-SEMANTICS ch. 3.4a). */
+    @Test void r1_reads_the_klachten_of_the_rule_subject_with_the_form_anchor() {
         RegelSpraakModel m = Resolver.resolve(R1);
         assertTrue(m.diagnostics.isEmpty(), () -> "R1 gaat zonder diagnostiek: " + m.diagnostics);
-        Object filter = filter(m);
-        assertEquals(filter(clean(R4)), filter, "R1 krijgt het IR van R4, de spelling via de rol van het element");
-        assertTrue(text(filter).contains("sourcePath=[{node=RoleBinding, factType=lading in-een-maand, role=schuit}, "
-                + "{node=RoleBinding, factType=schuitklacht, role=klacht}]"), () -> "het pad terug staat vóór de klachten: " + filter);
+        String filter = text(filter(m));
+        assertTrue(filter.contains("elementType=Klacht, anchor=form, filter="), () -> "de vouw draagt het anker: " + filter);
+        assertTrue(filter.contains("sourceRole={node=RoleBinding, factType=schuitklacht, role=klacht}"),
+                () -> "het bereik begint bij de Schuit: " + filter);
+        assertFalse(filter.contains("sourcePath"), () -> "geen weg terug: " + filter);
+        String r4 = text(filter(clean(R4)));
+        assertTrue(r4.contains("sourcePath=[{node=RoleBinding, factType=lading in-een-maand, role=schuit}, "
+                + "{node=RoleBinding, factType=schuitklacht, role=klacht}]"), () -> "R4 navigeert vanaf het element: " + r4);
+        assertFalse(r4.contains("anchor"), () -> r4);
     }
 
     @Test void r2_with_parentheses_is_r1() {
         assertEquals(filter(clean(R1)), filter(clean(R2)));
     }
 
+    /** Changed 2026-10-23, as R1: the anchor instead of the IR of R4 without its filter, which keeps its path. */
     @Test void r3_without_a_filter_reads_the_klachten_of_the_rule_subject() {
         RegelSpraakModel m = Resolver.resolve(R3);
         assertTrue(m.diagnostics.isEmpty(), () -> "R3 gaat zonder WARNING: " + m.diagnostics);
-        assertEquals(filter(clean(R4_WITHOUT_FILTER)), filter(m));
+        String filter = text(filter(m));
+        assertTrue(filter.contains("elementType=Klacht, anchor=form, sourceRole={node=RoleBinding, factType=schuitklacht, "
+                + "role=klacht}"), () -> filter);
+        assertTrue(text(filter(clean(R4_WITHOUT_FILTER))).contains("sourcePath="));
     }
 
     @Test void r4_carries_no_stale_warning() {
@@ -68,24 +81,27 @@ class FoldInElementConditionTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "R4 draagt de vouw gelowerd, dus geen 'blijft onopgelost': " + m.diagnostics);
     }
 
-    @Test void a_fold_without_a_way_back_is_refused_with_the_way_out() {
+    /** Changed 2026-10-23 (card subselection-reads-subject): a lading of several schuiten has no way back, and the read
+     *  was refused (RGS-352, retired); the anchor reads the rule subject without one. */
+    @Test void a_fold_of_the_rule_subject_needs_no_way_back() {
         String manyToMany = MODEL.replace("Eén schuit heeft meerdere ladingen", "meerdere schuiten hebben meerdere ladingen");
         RegelSpraakModel m = Resolver.resolve(rule(manyToMany, "zijn maand plus 1 mnd is later dan de laatste van de einddag "
                 + "van alle klachten van de Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'."));
-        Diagnostic d = only(m, "RGS-352");
-        assertEquals(Severity.ERROR, d.severity());
-        assertEquals(5 + MODEL.lines().count(), d.line());
-        for (String part : List.of("de laatste van de einddag van alle klachten van de Schuit", "Schuit", "Lading in-een-maand",
-                "'schuit'", "'lading in-een-maand'", "eigen lid"))
-            assertTrue(d.message().contains(part), () -> "de weigering noemt '" + part + "': " + d.message());
-        assertTrue(m.diagnostics.stream().noneMatch(x -> x.severity() == Severity.WARNING),
-                () -> "geen WARNING met een marker: " + m.diagnostics);
+        assertTrue(m.diagnostics.isEmpty(), () -> "" + m.diagnostics);
+        String filter = text(filter(m));
+        assertTrue(filter.contains("elementType=Klacht, anchor=form, filter="), () -> filter);
+        assertTrue(filter.contains("sourceRole={node=RoleBinding, factType=schuitklacht, role=klacht}"), () -> filter);
     }
 
-    @Test void a_count_over_the_way_back_is_refused() {
+    /** Changed 2026-10-23, as above: a count over the way back was refused (RGS-352: its range would be a path, WF-102
+     *  (c)); with the anchor its range is the one relation from the Schuit. */
+    @Test void a_count_of_the_rule_subject_carries_the_form_anchor() {
         RegelSpraakModel m = Resolver.resolve(rule(MODEL, "zijn gewicht is groter dan het aantal klachten van de Schuit."));
-        Diagnostic d = only(m, "RGS-352");
-        assertTrue(d.message().contains("WF-102 (c)"), () -> "een telling heeft geen pad als bereik: " + d.message());
+        assertTrue(m.diagnostics.isEmpty(), () -> "" + m.diagnostics);
+        String filter = text(filter(m));
+        assertTrue(filter.contains("{node=Aggregation, kind=count, arguments=[{node=AttributeReference, attribute=klachten, "
+                + "subjectType=Schuit}], elementType=Klacht, anchor=form, sourceRole={node=RoleBinding, factType=schuitklacht, "
+                + "role=klacht}"), () -> filter);
     }
 
     @Test void an_element_of_the_rule_subjects_own_type_is_refused() {
@@ -107,7 +123,8 @@ class FoldInElementConditionTest {
         assertTrue(d.message().contains("alle klachten van de Schuit"), () -> "de weigering noemt de lezing: " + d.message());
     }
 
-    @Test void a_fold_of_the_rule_subject_in_the_test_of_a_quantifier_reads_over_the_way_back() {
+    /** Changed 2026-10-23: the fold beside the quantified operand carries the anchor instead of the way back. */
+    @Test void a_fold_of_the_rule_subject_in_the_test_of_a_quantifier_carries_the_form_anchor() {
         String model = MODEL.replace("    de eerste schone maand vanaf-de-eindmaand Datum in dagen;",
                 "    de eerste schone maand vanaf-de-eindmaand Datum in dagen;\n    is vroeg kenmerk (bijvoeglijk);");
         RegelSpraakModel m = Resolver.resolve(model + """
@@ -116,10 +133,10 @@ class FoldInElementConditionTest {
                     Een Schuit is vroeg
                     indien de maand van ten minste één van de ladingen van de Schuit later is dan de laatste van de einddag van alle klachten van de Schuit.
             """);
-        assertTrue(m.diagnostics.isEmpty(), () -> "de toets van de kwantor leest de vouw over het pad terug: " + m.diagnostics);
+        assertTrue(m.diagnostics.isEmpty(), () -> "de toets van de kwantor leest de vouw aan het regelonderwerp: " + m.diagnostics);
         String ir = text(Report.json(IrEmitter.emit(m)));
-        assertTrue(ir.contains("elementType=Klacht, sourcePath=[{node=RoleBinding, factType=lading in-een-maand, role=schuit}, "
-                + "{node=RoleBinding, factType=schuitklacht, role=klacht}]"), () -> ir);
+        assertTrue(ir.contains("elementType=Klacht, anchor=form, sourceRole={node=RoleBinding, factType=schuitklacht, "
+                + "role=klacht}"), () -> ir);
     }
 
     @Test void a_comparison_in_a_filter_is_typed_on_the_element() {

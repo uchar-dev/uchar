@@ -147,10 +147,20 @@ public sealed interface Expr {
      *  ordinary instance aggregation. */
     record FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,
                    Expr emptyFallback, Condition filter, DimensionSelection dimensionSelection,
-                   Datatype type, Source source, Granularity granularity) implements Expr {
+                   Datatype type, Source source, Granularity granularity, boolean anchored) implements Expr {
         /** {@code granularity} is the §13.4.17.57 aantal-dagen-in operator's stated bucket unit ("in <de maand|
          *  het jaar>"); null for every other functie. The transpiler requires it to MATCH the doel's tijdlijn
-         *  (§4.21/§7.2), markering a mismatch rather than silently bucketing by the wrong unit. */
+         *  (§4.21/§7.2), markering a mismatch rather than silently bucketing by the wrong unit.
+         *
+         *  <p>{@code anchored}: the form anchor of IR-SPEC ch. 4.1a (WF-122) — the fold stands in a filter or a
+         *  quantifier test and its range starts at the subject of the form, not at the element; the wire writes
+         *  {@code anchor: "form"}. False everywhere else. */
+        public FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,
+                       Expr emptyFallback, Condition filter, DimensionSelection dimensionSelection,
+                       Datatype type, Source source, Granularity granularity) {
+            this(kind, arguments, elementObjectType, emptyFallback, filter, dimensionSelection, type, source, granularity,
+                    false);
+        }
         public FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,
                        Expr emptyFallback, Condition filter, DimensionSelection dimensionSelection,
                        Datatype type, Source source) {
@@ -227,8 +237,19 @@ public sealed interface Expr {
                         String navigationRole, Datatype type, Source source, boolean set,
                         java.util.List<String> navigationPath,
                         java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> rangePath,
-                        Condition.Quantifier quantifier, int threshold)
+                        Condition.Quantifier quantifier, int threshold, boolean anchored)
             implements Expr {
+        /** {@code anchored}: the form anchor of IR-SPEC ch. 4.1a (WF-122) — the read stands in a filter or a
+         *  quantifier test and starts at the subject of the form ("de ingangsdag van de Vergunning zelf"), not at the
+         *  element; the wire writes {@code anchor: "form"}, and its walk is derived from that subject. */
+        public AttributeReference(String attribute, ObjectType objectType, String subjectSource,
+                            String navigationRole, Datatype type, Source source, boolean set,
+                            java.util.List<String> navigationPath,
+                            java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef> rangePath,
+                            Condition.Quantifier quantifier, int threshold) {
+            this(attribute, objectType, subjectSource, navigationRole, type, source, set, navigationPath, rangePath,
+                    quantifier, threshold, false);
+        }
         /** {@code set} marks an operand that ranges over a SET (a §13.4.2 set quantifier — alle/al/geen van de/
          *  ten minste…/ten hoogste…/precies… — NOT the bare definite "de"), computed structurally from the
          *  onderwerp's quantifier rather than re-scanned from the onderwerp text. Lets the transpiler/resolver

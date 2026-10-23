@@ -155,6 +155,48 @@ public final class IrEmitter {
     /** The name {@link #foldSource} is written with where it differs from the record's: see
      *  {@link #countSourceName}. Null: the record's own name. */
     private String foldSourceName;
+    /** The subject of the form while a filter or a quantifier test is emitted, which moves the subject to the
+     *  element (RUNTIME-SEMANTICS ch. 3.4a, 3.9a); null at the form's own level. An anchored node is written from it
+     *  (IR-SPEC ch. 4.1a, WF-122). */
+    private ObjectType formSubject;
+    /** Whether an anchored node is being emitted and no filter or test was entered since: the subject is the form's
+     *  again there, so a second anchor would be the misplaced one WF-122 refuses. */
+    private boolean inAnchored;
+
+    /** {@code body} with the subject moved to the element {@code element} of a filter or a quantifier test; the subject
+     *  before it is the form's subject where none was moved yet. */
+    private void perElement(ObjectType element, Runnable body) {
+        ObjectType previousSubject = currentSubject, previousForm = formSubject;
+        boolean previousAnchored = inAnchored;
+        if (formSubject == null) formSubject = currentSubject;
+        if (element != null) currentSubject = element;
+        inAnchored = false;
+        try {
+            body.run();
+        } finally {
+            currentSubject = previousSubject;
+            formSubject = previousForm;
+            inAnchored = previousAnchored;
+        }
+    }
+
+    /** {@code body} for the anchored node {@code what}, written from the subject of the form (IR-SPEC ch. 4.1a): an
+     *  anchor outside a filter or a test, or inside another anchored node, has no reading and is refused. */
+    private void atForm(String what, Runnable body) {
+        if (formSubject == null || inAnchored)
+            throw new IllegalStateException("IrEmitter: '" + what + "' draagt het vormanker (IR-SPEC ch. 4.1a, WF-122) "
+                    + (inAnchored ? "binnen een andere geankerde knoop" : "buiten een filter of een kwantortoets")
+                    + "; daar is het onderwerp al dat van de vorm");
+        ObjectType previousSubject = currentSubject;
+        currentSubject = formSubject;
+        inAnchored = true;
+        try {
+            body.run();
+        } finally {
+            currentSubject = previousSubject;
+            inAnchored = false;
+        }
+    }
 
     // --- top-level model ---------------------------------------------------
 
@@ -874,70 +916,11 @@ public final class IrEmitter {
             // IR-SPEC ch. 4.3: the eight fold kinds are an Aggregation, every other function a BuiltinCall, each
             // with the fields of its own node only
             case Expr.FunctionCall f -> {
-                boolean aggregation = kindFamily(f.kind()) == Spelling.AGGREGATION_KIND;
-                if (aggregation && f.granularity() != null)
-                    throw facetRefusal(f, "de granulariteit " + Spelling.GRANULARITY.spelling(f.granularity()),
-                            "een BuiltinCall");
-                if (!aggregation) {
-                    if (f.elementObjectType() != null)
-                        throw facetRefusal(f, "het elementtype '" + f.elementObjectType().name + "'", "een Aggregation");
-                    if (f.emptyFallback() != null) throw facetRefusal(f, "een leegwaarde", "een Aggregation");
-                    if (f.dimensionSelection() != null) throw facetRefusal(f, "een dimensieselectie", "een Aggregation");
-                }
-                // IR-SPEC ch. 4.3 (row 28): a dimension fold ranges over the labels of the subject's own
-                // dimensioned attribute, not over instances, so it has no element type and no range and its one
-                // argument is an ordinary read. The resolver records the subject as its element type; written, that
-                // type would demand a range the fold does not have. Any other element type would be a fold this
-                // reading does not describe.
-                boolean dimensionFold = aggregation && f.dimensionSelection() != null;
-                if (dimensionFold && f.elementObjectType() != null && f.elementObjectType() != currentSubject)
-                    throw foldRefusal(f, "haar dimensieselectie loopt over een attribuut van "
-                            + f.elementObjectType().name + ", en een dimensievouw leest het eigen attribuut van "
-                            + (currentSubject == null ? "het onderwerp" : currentSubject.name));
-                ObjectType element = dimensionFold ? null : f.elementObjectType();
-                w.key("node").value(aggregation ? "Aggregation" : "BuiltinCall");
-                w.key("kind").value(category(f));
-                // decided before the arguments are written: under count the source's name follows the role
-                // the range binds
-                FoldRange range = dimensionFold ? null : foldRange(f);
-                w.key("arguments").beginArray();
-                Expr previousFoldSource = foldSource;
-                String previousName = foldSourceName;
-                foldSource = range == null ? null : f.arguments().get(0);
-                foldSourceName = range == null ? null : range.sourceName();
-                for (Expr a : f.arguments()) expr(a);
-                foldSource = previousFoldSource;
-                foldSourceName = previousName;
-                w.endArray();
-                if (element != null) w.key("elementType").value(element.name);
-                // the filter is a subselectie over the fold ELEMENT: an element-own read there is an own
-                // read, not a navigation from the outer subject — emit the filter (and only the filter)
-                // with the element as subject so such reads take the own-attribute branch and carry no
-                // spurious by-pair path. Restore the outer subject afterwards.
-                if (f.filter() != null) {
-                    w.key("filter");
-                    ObjectType previousSubject = currentSubject;
-                    if (element != null) currentSubject = element;
-                    condition(f.filter());
-                    currentSubject = previousSubject;
-                }
-                if (f.emptyFallback() != null) { w.key("emptyFallback"); expr(f.emptyFallback()); }
-                if (f.dimensionSelection() != null) { w.key("dimensionSelection"); dimensionSelection(f.dimensionSelection()); }
-                // IR-SPEC ch. 4.3 / WF-102: the range is ONE field with two spellings. A resolved
-                // multi-step range goes out as sourcePath; the one-step range stays sourceRole, and the two are
-                // mutually exclusive on the wire — so the path is written INSTEAD OF the binding, never
-                // beside it. Only a fold has a range: a builtin reaches here with no element type, so
-                // vouwbereik gave it none.
-                if (range != null && range.role() != null) { w.key("sourceRole"); roleBinding(range.role()); }
-                if (range != null && !range.path().isEmpty()) {
-                    w.key("sourcePath").beginArray();
-                    for (RegelSpraakModel.RoleBindingRef step : range.path()) roleBinding(step);
-                    w.endArray();
-                }
-                if (!aggregation && f.granularity() != null)
-                    w.key("granularity").value(Spelling.GRANULARITY.spelling(f.granularity()));
-                w.key("type"); derivedType(functionType(f));
-                sourceReference(f.source().snippet());
+                if (!f.anchored()) function(f);
+                else if (!isFoldSource(f))
+                    throw new IllegalStateException("IrEmitter: '" + f.source().snippet() + "' draagt het vormanker, "
+                            + "en alleen een instantievouw over één bron draagt het (IR-SPEC ch. 4.1a)");
+                else atForm(f.source().snippet(), () -> function(f));
             }
             case Expr.Rounding a -> {
                 w.key("node").value("Rounding");
@@ -957,20 +940,11 @@ public final class IrEmitter {
                 sourceReference(b.source().snippet());
             }
             case Expr.AttributeReference r -> {
-                w.key("node").value("AttributeReference");
-                w.key("attribute").value(r == foldSource && foldSourceName != null ? foldSourceName : r.attribute());
-                w.key("subjectType").value(nameOf(r.objectType()));
-                sourceReference(r.source().snippet());
-                if (r != foldSource) {
-                    List<RegelSpraakModel.RoleBindingRef> nb = navigationBindings(r);
-                    if (!nb.isEmpty()) {
-                        w.key("path").beginArray();
-                        for (RegelSpraakModel.RoleBindingRef b : nb) roleBinding(b);
-                        w.endArray();
-                    } else {
-                        ownRead(r);
-                    }
-                }
+                if (!r.anchored()) attributeReference(r);
+                else if (r == foldSource)
+                    throw new IllegalStateException("IrEmitter: de vouwbron '" + r.source().snippet() + "' draagt het "
+                            + "vormanker; de bron van een vouw leest door het bereik (IR-SPEC ch. 4.1a, WF-122)");
+                else atForm(r.source().snippet(), () -> attributeReference(r));
             }
             case Expr.DimensionCellRead c -> {
                 w.key("node").value("DimensionCellRead");
@@ -1049,10 +1023,7 @@ public final class IrEmitter {
                                 + "' zonder haar relatie; de wire eist die (WF-110)");
                     w.key("sourceRole"); roleBinding(t.sourceRole());
                     w.key("filter");
-                    ObjectType previousSubject = currentSubject;
-                    if (t.elementType() != null) currentSubject = t.elementType();
-                    condition(t.filter());
-                    currentSubject = previousSubject;
+                    perElement(t.elementType(), () -> condition(t.filter()));
                     sourceReference(t.source().snippet());
                     w.endObject();
                 }
@@ -1067,6 +1038,115 @@ public final class IrEmitter {
             }
         }
         w.endObject();
+    }
+
+    /** An Aggregation or a BuiltinCall (IR-SPEC ch. 4.3), written from {@link #currentSubject}. */
+    private void function(Expr.FunctionCall f) {
+        boolean aggregation = kindFamily(f.kind()) == Spelling.AGGREGATION_KIND;
+        if (aggregation && f.granularity() != null)
+            throw facetRefusal(f, "de granulariteit " + Spelling.GRANULARITY.spelling(f.granularity()),
+                    "een BuiltinCall");
+        if (!aggregation) {
+            if (f.elementObjectType() != null)
+                throw facetRefusal(f, "het elementtype '" + f.elementObjectType().name + "'", "een Aggregation");
+            if (f.emptyFallback() != null) throw facetRefusal(f, "een leegwaarde", "een Aggregation");
+            if (f.dimensionSelection() != null) throw facetRefusal(f, "een dimensieselectie", "een Aggregation");
+        }
+        // IR-SPEC ch. 4.3 (row 28): a dimension fold ranges over the labels of the subject's own
+        // dimensioned attribute, not over instances, so it has no element type and no range and its one
+        // argument is an ordinary read. The resolver records the subject as its element type; written, that
+        // type would demand a range the fold does not have. Any other element type would be a fold this
+        // reading does not describe.
+        boolean dimensionFold = aggregation && f.dimensionSelection() != null;
+        if (dimensionFold && f.elementObjectType() != null && f.elementObjectType() != currentSubject)
+            throw foldRefusal(f, "haar dimensieselectie loopt over een attribuut van "
+                    + f.elementObjectType().name + ", en een dimensievouw leest het eigen attribuut van "
+                    + (currentSubject == null ? "het onderwerp" : currentSubject.name));
+        ObjectType element = dimensionFold ? null : f.elementObjectType();
+        w.key("node").value(aggregation ? "Aggregation" : "BuiltinCall");
+        w.key("kind").value(category(f));
+        // decided before the arguments are written: under count the source's name follows the role
+        // the range binds
+        FoldRange range = dimensionFold ? null : foldRange(f);
+        w.key("arguments").beginArray();
+        Expr previousFoldSource = foldSource;
+        String previousName = foldSourceName;
+        foldSource = range == null ? null : f.arguments().get(0);
+        foldSourceName = range == null ? null : range.sourceName();
+        for (Expr a : f.arguments()) expr(a);
+        foldSource = previousFoldSource;
+        foldSourceName = previousName;
+        w.endArray();
+        if (element != null) w.key("elementType").value(element.name);
+        if (f.anchored()) w.key("anchor").value("form");
+        // the filter is a subselectie over the fold ELEMENT: an element-own read there is an own
+        // read, not a navigation from the outer subject — emit the filter (and only the filter)
+        // with the element as subject so such reads take the own-attribute branch and carry no
+        // spurious by-pair path. Restore the outer subject afterwards.
+        if (f.filter() != null) {
+            w.key("filter");
+            // a dimension fold's filter reads the subject's labels: the subject does not move there
+            if (element != null) perElement(element, () -> condition(f.filter()));
+            else condition(f.filter());
+        }
+        if (f.emptyFallback() != null) { w.key("emptyFallback"); expr(f.emptyFallback()); }
+        if (f.dimensionSelection() != null) { w.key("dimensionSelection"); dimensionSelection(f.dimensionSelection()); }
+        // IR-SPEC ch. 4.3 / WF-102: the range is ONE field with two spellings. A resolved
+        // multi-step range goes out as sourcePath; the one-step range stays sourceRole, and the two are
+        // mutually exclusive on the wire — so the path is written INSTEAD OF the binding, never
+        // beside it. Only a fold has a range: a builtin reaches here with no element type, so
+        // vouwbereik gave it none.
+        if (range != null && range.role() != null) { w.key("sourceRole"); roleBinding(range.role()); }
+        if (range != null && !range.path().isEmpty()) {
+            w.key("sourcePath").beginArray();
+            for (RegelSpraakModel.RoleBindingRef step : range.path()) roleBinding(step);
+            w.endArray();
+        }
+        if (!aggregation && f.granularity() != null)
+            w.key("granularity").value(Spelling.GRANULARITY.spelling(f.granularity()));
+        w.key("type"); derivedType(functionType(f));
+        sourceReference(f.source().snippet());
+    }
+
+    /** An AttributeReference (IR-SPEC ch. 4.1), its walk derived from {@link #currentSubject}. */
+    private void attributeReference(Expr.AttributeReference r) {
+        w.key("node").value("AttributeReference");
+        w.key("attribute").value(r == foldSource && foldSourceName != null ? foldSourceName : r.attribute());
+        w.key("subjectType").value(nameOf(r.objectType()));
+        if (r.anchored()) w.key("anchor").value("form");
+        sourceReference(r.source().snippet());
+        if (r != foldSource) {
+            List<RegelSpraakModel.RoleBindingRef> nb = navigationBindings(r);
+            if (!nb.isEmpty()) {
+                w.key("path").beginArray();
+                for (RegelSpraakModel.RoleBindingRef b : nb) roleBinding(b);
+                w.endArray();
+            } else {
+                ownRead(r);
+            }
+        }
+    }
+
+    /** A CharacteristicCheck (IR-SPEC ch. 4.5), its navigation derived from {@link #currentSubject}. */
+    private void characteristicCheck(Condition.CharacteristicCheck k) {
+        w.key("node").value("CharacteristicCheck");
+        w.key("characteristic").value(k.characteristic());
+        w.key("negated").value(k.negation());
+        // absent is the subject (RUNTIME-SEMANTICS ch. 5.8b)
+        if (k.owner() != null) w.key("host").value(k.owner().name);
+        if (k.anchored()) w.key("anchor").value("form");
+        wholePeriod(k.period());
+        sourceReference(k.source().snippet());
+        // the binding IS the hop: a navigated check without one would read the subject's own kenmerk
+        if (k.navigation() != null) {
+            RegelSpraakModel.RoleBindingRef nb = navigationBinding(k);
+            if (nb == null)
+                throw new IllegalStateException("IrEmitter: de kenmerkcheck '" + k.source().snippet()
+                        + "' navigeert via '" + k.navigation() + "', en vanaf "
+                        + (currentSubject == null ? "geen onderwerp" : "'" + currentSubject.name + "'")
+                        + " bindt die stap geen unieke rol");
+            w.key("navigation"); roleBinding(nb);
+        }
     }
 
     private void textCompositionPart(Expr.TextComposition.Part d) {
@@ -1119,23 +1199,11 @@ public final class IrEmitter {
                 sourceReference(p.source().snippet());
             }
             case Condition.CharacteristicCheck k -> {
-                w.key("node").value("CharacteristicCheck");
-                w.key("characteristic").value(k.characteristic());
-                w.key("negated").value(k.negation());
-                // absent is the subject (RUNTIME-SEMANTICS ch. 5.8b)
-                if (k.owner() != null) w.key("host").value(k.owner().name);
-                wholePeriod(k.period());
-                sourceReference(k.source().snippet());
-                // the binding IS the hop: a navigated check without one would read the subject's own kenmerk
-                if (k.navigation() != null) {
-                    RegelSpraakModel.RoleBindingRef nb = navigationBinding(k);
-                    if (nb == null)
-                        throw new IllegalStateException("IrEmitter: de kenmerkcheck '" + k.source().snippet()
-                                + "' navigeert via '" + k.navigation() + "', en vanaf "
-                                + (currentSubject == null ? "geen onderwerp" : "'" + currentSubject.name + "'")
-                                + " bindt die stap geen unieke rol");
-                    w.key("navigation"); roleBinding(nb);
-                }
+                if (!k.anchored()) characteristicCheck(k);
+                else if (k.owner() != null)
+                    throw new IllegalStateException("IrEmitter: de geankerde kenmerkcheck '" + k.source().snippet()
+                            + "' noemt een drager; het anker zegt al wiens kenmerk het is (WF-122)");
+                else atForm(k.source().snippet(), () -> characteristicCheck(k));
             }
             // IR-SPEC ch. 4.5: one node for both sides of the role check, naming the fact type, the role the
             // subject plays in it and, where the check narrows it, the type of the other end; where the
@@ -1178,12 +1246,11 @@ public final class IrEmitter {
                 // FunctionCall.filter is: an element-own read there is an own read, not a navigation from the
                 // outer subject, so emit both with the element as subject and they take the own-attribute
                 // branch and carry no spurious by-pair path. Restore the outer subject after.
-                ObjectType previousSubject = currentSubject;
-                if (k.elementObjectType() != null) currentSubject = k.elementObjectType();
-                // an absent filter is no subselection
-                if (k.filter() != null) { w.key("filter"); condition(k.filter()); }
-                w.key("test"); condition(k.test());
-                currentSubject = previousSubject;
+                perElement(k.elementObjectType(), () -> {
+                    // an absent filter is no subselection
+                    if (k.filter() != null) { w.key("filter"); condition(k.filter()); }
+                    w.key("test"); condition(k.test());
+                });
                 sourceReference(k.source().snippet());
                 // the range is ONE field with two spellings, mutually exclusive, and required: without it the
                 // fold would range over nothing the sentence named (WF-102, WF-108 (c))

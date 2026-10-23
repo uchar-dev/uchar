@@ -1049,21 +1049,37 @@ final class RuleChecker {
         Set<Object> reported = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         for (ResolvedRule r : model.resolvedRules) {
             ObjectType s = r.target() instanceof Expr.AttributeReference d ? d.objectType() : null;
+            pathForm = s;
             navigation(r.value(), s, reported);
             navigation(r.condition(), s, reported);
         }
+        pathForm = null;
         for (var d : model.resolvedDayKindDefinitions) navigation(d.condition(), null, reported);
         for (var oc : model.objectCreations) {
+            pathForm = oc.subject();
             for (var t : oc.initialisations()) navigation(t.value(), oc.subject(), reported);
             navigation(oc.condition(), oc.subject(), reported);
         }
-        for (var v : model.allocations)
+        for (var v : model.allocations) {
+            pathForm = v.sourceType();
             if (v.method() != ResolvedAllocation.Method.COMPLEX) navigation(v.condition(), v.sourceType(), reported);
-        for (var c : model.consistencies) navigation(c.assertion(), c.subject(), reported);
-        for (var fc : model.factCreations) navigation(fc.condition(), fc.anchor(), reported);
-        for (var pd : model.prioritizedDefaults)
-            navigationDefaults(pd.defaults(), model.objectTypes.get(pd.subject()), reported);
+        }
+        for (var c : model.consistencies) {
+            pathForm = c.subject();
+            navigation(c.assertion(), c.subject(), reported);
+        }
+        for (var fc : model.factCreations) {
+            pathForm = fc.anchor();
+            navigation(fc.condition(), fc.anchor(), reported);
+        }
+        for (var pd : model.prioritizedDefaults) {
+            pathForm = model.objectTypes.get(pd.subject());
+            navigationDefaults(pd.defaults(), pathForm, reported);
+        }
     }
+
+    /** The subject of the form {@link #checkPaths} walks: an anchored node is written from it (IR-SPEC ch. 4.1a). */
+    private ObjectType pathForm;
 
     /**
      * WF-034, producer side, for one shape of read: a name that took in a word before 'van'. The name of a read runs
@@ -1171,24 +1187,26 @@ final class RuleChecker {
         switch (e) {
             case Expr.AttributeReference a -> {
                 if (a.set() || !reported.add(a)) return;
-                Typing.Coded error = dev.uchar.regelspraak.emit.IrEmitter.unboundRead(model, subject, a)
-                        ? unboundReadError(a, subject) : manyStepError(a, subject);
-                if (error == null) error = memberError(a, subject, false);
+                ObjectType from = a.anchored() ? pathForm : subject;
+                Typing.Coded error = dev.uchar.regelspraak.emit.IrEmitter.unboundRead(model, from, a)
+                        ? unboundReadError(a, from) : manyStepError(a, from);
+                if (error == null) error = memberError(a, from, false);
                 if (error != null) model.diagnostics.add(error.at(Severity.ERROR, a.source().line()));
                 else reportDoubleReading(a);
             }
             case Expr.FunctionCall f -> {
+                ObjectType from = f.anchored() ? pathForm : subject;
                 boolean foldSource = dev.uchar.regelspraak.emit.IrEmitter.isFoldSource(f);
-                var refusal = dev.uchar.regelspraak.emit.IrEmitter.foldRefusalOf(model, subject, f);
+                var refusal = dev.uchar.regelspraak.emit.IrEmitter.foldRefusalOf(model, from, f);
                 if (refusal != null && reported.add(f))
-                    model.diagnostics.add(foldError(f, subject, refusal).at(Severity.ERROR, f.source().line()));
+                    model.diagnostics.add(foldError(f, from, refusal).at(Severity.ERROR, f.source().line()));
                 // a fold's source is read through its range, never as a read of its own
                 for (int i = foldSource ? 1 : 0; i < f.arguments().size(); i++)
-                    navigation(f.arguments().get(i), subject, reported);
-                navigation(f.emptyFallback(), subject, reported);
+                    navigation(f.arguments().get(i), from, reported);
+                navigation(f.emptyFallback(), from, reported);
                 // the filter reads each contributor; a dimension fold has none and reads the subject's labels
                 ObjectType element = f.dimensionSelection() == null ? f.elementObjectType() : null;
-                navigation(f.filter(), element != null ? element : subject, reported);
+                navigation(f.filter(), element != null ? element : from, reported);
             }
             case Expr.Binary b -> {
                 navigation(b.left(), subject, reported);
@@ -1886,7 +1904,8 @@ final class RuleChecker {
                 yield same ? s : new Condition.Compound(s.quantifier(), s.threshold(), parts, s.source());
             }
             case Condition.CharacteristicCheck k -> k.owner() != sup ? k
-                    : new Condition.CharacteristicCheck(k.characteristic(), k.navigation(), k.negation(), sub, k.period(), k.source());
+                    : new Condition.CharacteristicCheck(k.characteristic(), k.navigation(), k.negation(), sub, k.period(), k.source(),
+                            k.anchored());
             // the filter and the test read each element
             case Condition.QuantifierFold k -> k;
             case Condition.RoleMembership r -> r;
@@ -1902,7 +1921,7 @@ final class RuleChecker {
         return switch (e) {
             case Expr.AttributeReference a -> !ownReadOf(a, sup) ? a
                     : new Expr.AttributeReference(a.attribute(), sub, a.subjectSource(), a.navigationRole(), a.type(), a.source(),
-                            a.set(), a.navigationPath(), a.rangePath(), a.quantifier(), a.threshold());
+                            a.set(), a.navigationPath(), a.rangePath(), a.quantifier(), a.threshold(), a.anchored());
             case Expr.Binary b -> {
                 Expr l = opSubtype(b.left(), sup, sub), r = opSubtype(b.right(), sup, sub);
                 yield l == b.left() && r == b.right() ? b : new Expr.Binary(b.op(), l, r, b.type(), b.source());
@@ -1926,7 +1945,7 @@ final class RuleChecker {
                 boolean same = empty == f.emptyFallback() && filter == f.filter() && element == f.elementObjectType();
                 for (int i = 0; i < args.size(); i++) same &= args.get(i) == f.arguments().get(i);
                 yield same ? f : new Expr.FunctionCall(f.kind(), args, element, empty, filter, f.dimensionSelection(),
-                        f.type(), f.source(), f.granularity());
+                        f.type(), f.source(), f.granularity(), f.anchored());
             }
             case Expr.Rounding a -> {
                 Expr b = opSubtype(a.base(), sup, sub);
@@ -5277,38 +5296,10 @@ final class RuleChecker {
      *  restored around the bullet walk — aggregationFilter runs DURING {@code builder.build}, nested inside the outer rule
      *  resolution, so the rule subject must be put back (in a finally, even on a bullet-resolution throw).
      *
-     *  <p>Where the elements have the rule subject's own type, a read whose onderwerp names that type ("de leeftijd
-     *  van de Jutter" in a subselection of Jutters on a Jutter) names the element and the rule subject alike; it is
-     *  bound to the element, and the IR has no reference to the outer subject in a filter, so the frontend cannot
-     *  write the other reading. Such a filter is refused (RGS-350, review 2026-10-20) instead of being bound to the
-     *  element: "zijn leeftijd" is the element's and binds. */
+     *  <p>A read of the rule subject there is built at that subject and carries the form anchor; where the elements
+     *  have the rule subject's own type, the bare type name names both and is refused (RGS-350): the builder decides
+     *  both, read by read ({@code ExpressionBuilder.reach}). */
     private Condition compoundElementFilter(SamengesteldPredicaatContext sp, ObjectType elem) {
-        boolean sameType = elem != null && builder.subject() == elem;
-        Condition filter = compoundElementFilterBare(sp, elem);
-        Source read = sameType ? readNamingType(filter, elem) : null;
-        if (read == null) return filter;
-        model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-350",
-                params("filter", source(sp), "read", read, "type", elem.name), read.line()));
-        return new Condition.Unresolved(source(sp), null);   // the ERROR above is this marker's diagnosis
-    }
-
-    /** A read in {@code filter} whose written onderwerp ends in the name of {@code type} ("… van de Jutter"), or null;
-     *  a possessive ("zijn jutter") names the element and is no such read. */
-    private Source readNamingType(Condition filter, ObjectType type) {
-        Source[] found = new Source[1];
-        Condition.containsOperand(filter, x -> {
-            boolean named = false;
-            if (x instanceof Expr.AttributeReference a && a.subjectSource() != null) {
-                String[] parts = a.subjectSource().split("\\s+van\\s+");
-                named = model.objectTypeByName(stripArticle(parts[parts.length - 1])) == type;
-            }
-            if (named) found[0] = x.source();
-            return named;
-        });
-        return found[0];
-    }
-
-    private Condition compoundElementFilterBare(SamengesteldPredicaatContext sp, ObjectType elem) {
         if (sp == null || elem == null
                 || (sp.samengesteldeVoorwaardeOnderdeel() == null && sp.elementaireVoorwaarde() == null)) return null;
         ObjectType previous = builder.subject();          // SAVE the outer rule subject
@@ -5497,6 +5488,7 @@ final class RuleChecker {
     }
 
     private Condition conditionFromToplevelBare(Expr lhs, ToplevelOperatorContext op, Source source) {
+        if (op.identiteitsToets() != null) return identityCheck(lhs, op.identiteitsToets(), source);
         Condition.WholePeriod period = wholePeriod(op.gehelePeriodevergelijking());   // §8.2 whole-period check
         // A dangling absorbed "niet" silently INVERTS a comparison / leeg-gevuld (the bare-attr resolution dropped the
         // negator) -> marker it. The kenmerkcheck DE-negates it (bindCharacteristicCheck) and elfproef/numeriek RECOVER it
@@ -5592,8 +5584,8 @@ final class RuleChecker {
      * emitting it would only move the refusal downstream.
      *
      * <p>A MULTI-STEP written range (the operand resolved a {@code rangePath}) is the fold's {@code sourcePath}
-     * (IR-SPEC ch. 4.5, WF-108 (c); card frontend-kwantor-over-een-pad, 2026-10-20), and the matrix then reads
-     * nothing from the rule subject ({@link #subjectRead}). A range that does not resolve at all declines and keeps
+     * (IR-SPEC ch. 4.5, WF-108 (c); card frontend-kwantor-over-een-pad, 2026-10-20); what the matrix reads of the
+     * rule subject carries the form anchor ({@link #matrixAtForm}). A range that does not resolve at all declines and keeps
      * the fence's error rather than lowering, because lowering would be a guess — a quantifier bound to no relation
      * is the silent-wrong-set failure a required range prevents (WF-048 until L2; since L2 the quantifier fold
      * carries its range by schema), and a loud refusal beats a fold over a set the sentence never named.
@@ -5608,6 +5600,12 @@ final class RuleChecker {
     private Condition quantifierFold(Condition c, ExpressieContext lhsCtx, ExpressieContext rhsCtx, Source source) {
         Expr.AttributeReference set = onlySetOperand(c);
         if (set == null) return c;
+        // a quantifier over a relation of the form's subject, in a filter or a test: the frontend writes no anchored
+        // quantifier fold (IR-SPEC ch. 4.1a has the field, no sentence of this dialect has asked for it yet)
+        if (set.anchored()) {
+            builder.refuseRuleSubject(set.source(), Msg.frontend("PART.subject-quantifier-in-filter"), source);
+            return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
+        }
         Condition.Quantifier q = set.quantifier();
         if (q == null) return c;                             // bare "de": no set reading to quantify
         boolean counting = q == Condition.Quantifier.TEN_MINSTE || q == Condition.Quantifier.TEN_HOOGSTE
@@ -5629,8 +5627,7 @@ final class RuleChecker {
         // aangemeld zijn") but selects the quantified MEMBERS, so a die on the other side of the
         // comparison belongs to that operand's own navigation and is none of this fold's business.
         ExpressionBuilder.Subselection ds = builder.subselection(
-                c instanceof Condition.Comparison v && v.right() == set ? rhsCtx : lhsCtx, elem, set,
-                sourcePath.isEmpty() ? List.of(sourceRole) : sourcePath);
+                c instanceof Condition.Comparison v && v.right() == set ? rhsCtx : lhsCtx, elem, set);
         if (ds != null && ds.filter() == null) {
             model.diagnostics.add(new Diagnostic(Severity.WARNING,
                     "RGS-210", params("source", set.source(), "reason", ds.reason()), set.source().line()));
@@ -5645,71 +5642,90 @@ final class RuleChecker {
                 set.type(), set.source(), false, List.of(), List.of(), null);
         Condition matrix = elementRead(withOperand(c, set, own), own, elem,
                 c instanceof Condition.Comparison v && v.left() == set ? rhsCtx : lhsCtx, source);
-        // Where the element has the rule subject's own type, an own read of the subject is a read of the element as
-        // well, and the matrix would take it from the element, over one step as over a path (review 2026-10-20).
-        boolean sameType = builder.subject() == elem;
-        if (!sameType && sourcePath.isEmpty()) matrix = matrixFromElement(c, set, matrix, own, elem, sourceRole);
-        Source subjectRead = sameType || !sourcePath.isEmpty() ? subjectRead(c, set, matrix, own, sameType ? null : elem) : null;
-        if (subjectRead != null) {
-            model.diagnostics.add(sameType
-                    ? new Diagnostic(Severity.ERROR, "RGS-349", params("expression", source, "read", subjectRead,
-                            "type", elem.name), source.line())
-                    : new Diagnostic(Severity.ERROR, "RGS-348", params("expression", source,
-                            "read", subjectRead, "subject", builder.subject() == null ? "?" : builder.subject().name,
-                            "element", elem.name), source.line()));
-            return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
-        }
-        return new Condition.QuantifierFold(q, threshold, elem, filter, matrix, sourceRole, sourcePath, source);
+        matrix = matrixAtForm(c, set, matrix, own, elem, source);
+        return matrix == null ? new Condition.Unresolved(source, null)   // the ERROR raised is this marker's diagnosis
+                : new Condition.QuantifierFold(q, threshold, elem, filter, matrix, sourceRole, sourcePath, source);
     }
 
     /**
-     * The operand beside the quantified one in the matrix of a quantifier over one relation, built with the rule subject
-     * and read per element: written from the element over the way back to the rule subject, the relation's other role,
-     * where that role is to-one (grammar/DIVERGENCES.md, "A read of the rule subject in a filter"). A read of the rule
-     * subject's own attribute bound by the type pair before, and the same binding is now written; a navigated read and
-     * a fold over a relation of the rule subject had no spelling from the element. Where the way back is to-many, or a
-     * part of the operand has no spelling from the element, the operand stays as built and its own refusals speak; an
-     * operand {@link #elementRead} built with the element as subject stays as well.
+     * The operand beside the quantified one in the matrix of a quantifier, built with the subject the condition is about
+     * and read per element (RUNTIME-SEMANTICS ch. 3.9a): at the form's own level that subject is the form's, so every
+     * read and fold of the operand that starts at it carries the form anchor (IR-SPEC ch. 4.1a; grammar/DIVERGENCES.md,
+     * "The rule subject in a subselection — zelf"). Where the element has the rule subject's own type, a read of the
+     * subject that is not written with "zelf" names the element as well and is refused (RGS-349); a variable of the rule
+     * names the rule subject. In a filter the condition is about an element of the enclosing fold, which the anchor does
+     * not reach, so a read of it is refused (RGS-358); a read written at the form's subject carries the anchor already.
+     * An operand {@link #elementRead} built with the element as subject stays as it is, and so does an own read of the
+     * element's type where it is another than the rule subject's: it names the element. Null after a refusal.
      */
-    private Condition matrixFromElement(Condition c, Expr set, Condition matrix, Expr own, ObjectType elem,
-                                        RegelSpraakModel.RoleBindingRef sourceRole) {
+    private Condition matrixAtForm(Condition c, Expr set, Condition matrix, Expr own, ObjectType elem, Source source) {
         if (!(c instanceof Condition.Comparison written) || !(matrix instanceof Condition.Comparison m)) return matrix;
         Expr other = written.left() == set ? written.right() : written.left();
         Expr inMatrix = m.left() == own ? m.right() : m.left();
-        if (inMatrix != other || sourceRole == null) return matrix;
-        ExpressionBuilder.Frame frame = builder.frame(builder.subject(), elem, List.of(sourceRole), null);
-        if (frame == null || frame.back() == null) return matrix;
-        ExpressionBuilder.Reanchored r = builder.reanchor(other, frame.back(), builder.subject(), elem);
-        return r.refusal() != null || r.expr() == other ? matrix : withOperand(matrix, other, r.expr());
+        if (inMatrix != other || !ExpressionBuilder.readsSubject(other)) return matrix;
+        if (builder.inPerElementContext()) {
+            Source read = subjectRead(other, false);
+            if (read == null) return matrix;
+            builder.refuseRuleSubject(read, Msg.frontend("PART.subject-intermediate-test", "element", builder.subject().name),
+                    source);
+            return null;
+        }
+        if (builder.subject() == elem) {
+            Source read = subjectRead(other, true);
+            if (read != null) {
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-349", params("expression", source, "read", read,
+                        "type", elem.name), source.line()));
+                return null;
+            }
+        }
+        ExpressionBuilder.Anchored x = builder.anchor(other, builder.subject() == elem ? null : elem);
+        if (x.refusal() != null) {
+            builder.refuseRuleSubject(other.source(), x.refusal(), source);
+            return null;
+        }
+        return withOperand(matrix, other, x.expr());
     }
 
     /**
-     * The read the matrix of a quantifier over a path would take from the rule subject, or null. The matrix is
-     * evaluated per contributor with the element as its subject (RUNTIME-SEMANTICS ch. 3.9a), so the operand beside
-     * the quantified one, built from the rule subject, is written from the element. Over one step such a read reaches
-     * the subject back over the relation's other role; over a path no walk from the element names the subject (the
-     * melder of a Vondst has more Meldingen than the one the rule is about), and a by-pair binding from the element
-     * would read another object without a word. So such an operand is refused: one the matrix took over unchanged
-     * ({@link #elementRead} built no other) that reads anything but an own attribute of the element, or folds
-     * instances. A literal, a parameter and arithmetic over them read no subject. With {@code elem} null every read
-     * counts, an own one too: the element has the rule subject's type, and "de leeftijd van de Jutter" or "zijn
-     * leeftijd" in the matrix of a fold over Jutters would read the element.
+     * A read of {@code e} that starts at the subject the condition is about and carries no form anchor — a read, a fold
+     * over instances, a union — or null. With {@code explicit} a read written with "zelf" and a variable of the rule
+     * name the rule subject and are no such read. A literal, a parameter and arithmetic over them read no subject.
      */
-    private static Source subjectRead(Condition c, Expr set, Condition matrix, Expr own, ObjectType elem) {
-        if (!(c instanceof Condition.Comparison written) || !(matrix instanceof Condition.Comparison m)) return null;
-        Expr other = written.left() == set ? written.right() : written.left();
-        Expr inMatrix = m.left() == own ? m.right() : m.left();
-        if (inMatrix != other) return null;
-        Source[] found = new Source[1];
-        Expr.contains(other, x -> {
-            boolean fromSubject = x instanceof Expr.AttributeReference a && (elem == null || !(a.objectType() == elem
-                    && a.navigationRole() == null && (a.navigationPath() == null || a.navigationPath().isEmpty())))
-                    || x instanceof Expr.FunctionCall f && f.elementObjectType() != null
-                    || x instanceof Expr.InstanceSetUnion;
-            if (fromSubject) found[0] = x.source();
-            return fromSubject;
-        });
-        return found[0];
+    private Source subjectRead(Expr e, boolean explicit) {
+        if (e == null || explicit && builder.namesFormSubject(e)) return null;
+        return switch (e) {
+            case Expr.AttributeReference a -> a.anchored() ? null : a.source();
+            case Expr.FunctionCall f -> {
+                if (f.anchored()) yield null;
+                if (f.elementObjectType() != null || f.dimensionSelection() != null) yield f.source();
+                Source found = null;
+                for (Expr x : f.arguments()) if (found == null) found = subjectRead(x, explicit);
+                yield found != null ? found : subjectRead(f.emptyFallback(), explicit);
+            }
+            case Expr.InstanceSetUnion u -> u.source();
+            case Expr.IfThenElse k -> k.source();
+            case Expr.Binary b -> { Source l = subjectRead(b.left(), explicit); yield l != null ? l : subjectRead(b.right(), explicit); }
+            case Expr.Rounding r -> subjectRead(r.base(), explicit);
+            case Expr.Clamp c -> {
+                Source found = subjectRead(c.base(), explicit);
+                if (found == null) found = subjectRead(c.minimum(), explicit);
+                yield found != null ? found : subjectRead(c.maximum(), explicit);
+            }
+            case Expr.TextComposition t -> {
+                Source found = null;
+                for (Expr.TextComposition.Part d : t.parts())
+                    if (found == null && d instanceof Expr.TextComposition.EmbeddedExpression i) found = subjectRead(i.expr(), explicit);
+                yield found;
+            }
+            case Expr.DimensionCellRead d -> subjectRead(d.attribute(), explicit);
+            case Expr.Let l -> { Source v = subjectRead(l.value(), explicit); yield v != null ? v : subjectRead(l.body(), explicit); }
+            case Expr.Literal x -> null;
+            case Expr.ParameterRef x -> null;
+            case Expr.VariableRef x -> null;
+            case Expr.BinderRef x -> null;
+            case Expr.Constant x -> null;
+            case Expr.Unresolved x -> null;
+        };
     }
 
     /**
@@ -5802,6 +5818,7 @@ final class RuleChecker {
         if (nameCtx == null || lhsCtx == null) return null;
         ExpressionBuilder.QuantifiedSubject g = builder.quantifiedSubject(lhsCtx);
         if (g == null) return null;                            // no member phrase written — nothing to say
+        if (builder.refusesQuantifiedRange(lhsCtx, source)) return new Condition.Unresolved(source, null);
         if (g.reason() != null) { reportFoldRefusal(g.subjectSource(), g.reason(), source); return null; }
         boolean counting = g.quantifier() == Condition.Quantifier.TEN_MINSTE
                 || g.quantifier() == Condition.Quantifier.TEN_HOOGSTE || g.quantifier() == Condition.Quantifier.PRECIES;
@@ -5842,8 +5859,7 @@ final class RuleChecker {
                             "element", g.element().name), source);
             return null;
         }
-        ExpressionBuilder.Subselection ds = builder.subselection(lhsCtx, g.element(), null,
-                g.path().isEmpty() ? List.of(sourceRole) : g.path());
+        ExpressionBuilder.Subselection ds = builder.subselection(lhsCtx, g.element(), null);
         if (ds != null && ds.filter() == null) {
             // The comparison route can stop at a WARNING here because the set reading it leaves standing
             // raises the fence's ERROR that blocks the document. This route has no set reading, so the
@@ -5983,7 +5999,28 @@ final class RuleChecker {
         return holder != null && holder.characteristicGranularityOf(k.characteristic()) != null;
     }
 
+    /**
+     * "hij is (niet) de Vergunning zelf" (grammar/DIVERGENCES.md, "The rule subject in a subselection — zelf"): the
+     * identity check of the element of a filter or a quantifier test against the subject of the form (IR-SPEC ch. 4.5,
+     * {@code IdentityCheck}). The name before "zelf" is the form subject's type's own name; outside a filter or a test
+     * the element and the subject are one object, and only "hij" names the element. Each other shape is refused.
+     */
+    private Condition identityCheck(Expr lhs, IdentiteitsToetsContext t, Source source) {
+        String name = stripArticle(src(t.kaleNaam()));
+        Msg reason = null;
+        if (model.objectTypes.get(name) == null || model.objectTypes.get(name) != builder.formSubject())
+            reason = builder.selfElsewhere(name);
+        else if (!builder.inPerElementContext())
+            reason = Msg.frontend("PART.subject-identity-outside");
+        else if (!(lhs instanceof Expr.Constant c && c.name().equalsIgnoreCase("hij")))
+            reason = Msg.frontend("PART.subject-identity-not-element", "operand", lhs.source());
+        if (reason == null) return new Condition.IdentityCheck(t.NIET() != null, source);
+        builder.refuseRuleSubject(source, reason, source);
+        return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
+    }
+
     private Condition conditionFromNonToplevelBare(Expr lhs, NonToplevelOperatorContext op, Source source) {
+        if (op.identiteitsToets() != null) return identityCheck(lhs, op.identiteitsToets(), source);
         Condition.WholePeriod period = wholePeriod(op.gehelePeriodevergelijking());   // §8.2 whole-period check
         // A dangling absorbed "niet" silently INVERTS a comparison / leeg-gevuld -> marker it. The kenmerkcheck
         // DE-negates it and elfproef/numeriek RECOVER it (elfOperand), so only those two operators are guarded here.
@@ -6036,7 +6073,8 @@ final class RuleChecker {
         // §8.1.8 kenmerkcheck (its onderwerp is a tijdsafhankelijk kenmerk). Over any other membership form (a
         // §8.1.7 rolcheck) the qualifier has no defined meaning -> an honest marker, never silently dropped.
         return c instanceof Condition.CharacteristicCheck k
-                ? new Condition.CharacteristicCheck(k.characteristic(), k.navigation(), k.negation(), k.owner(), period, k.source())
+                ? new Condition.CharacteristicCheck(k.characteristic(), k.navigation(), k.negation(), k.owner(), period, k.source(),
+                        k.anchored())
                 // GEEN GETUIGE: deze marker haalt het model nooit. Hij ontstaat alleen met een §8.2-
                 // kwalificatie, en dan loopt hij altijd door checkWholePeriod, die een Onopgelost nooit
                 // tijdsafhankelijk acht en hem dus vervangt door haar eigen marker MET ERROR. De reden
@@ -6050,7 +6088,8 @@ final class RuleChecker {
      *  kenmerk/rolcheck (null, or an Unresolved) becomes an honest marker, never a silently-true gate. */
     private static Condition negate(Condition c, Source source) {
         if (c instanceof Condition.CharacteristicCheck k)
-            return new Condition.CharacteristicCheck(k.characteristic(), k.navigation(), !k.negation(), k.owner(), k.period(), k.source());
+            return new Condition.CharacteristicCheck(k.characteristic(), k.navigation(), !k.negation(), k.owner(), k.period(), k.source(),
+                    k.anchored());
         if (c instanceof Condition.RoleMembership r)
             return new Condition.RoleMembership(r.role(), r.otherToFiller(), r.source(), !r.negation());
         if (c instanceof Condition.FarRoleMembership vr)
@@ -6129,6 +6168,29 @@ final class RuleChecker {
         }
         ObjectType subject = builder.subject();
         if (subject == null) return null;
+        // "de Vergunning zelf heeft de voorrang", and the bare name of the form subject's type, in a filter or a test:
+        // the check of the subject of the form, with the form anchor (IR-SPEC ch. 4.1a); a name the IR cannot reach
+        // from there is refused
+        ExpressionBuilder.Anchor written = builder.writtenAnchor(lhs);
+        ExpressionBuilder.Reach reach = builder.reach(written);
+        if (builder.refusedReach(reach, written, lhs.source(), lhs.type(), source) != null)
+            return new Condition.Unresolved(source, null);   // the ERROR raised is this marker's diagnosis
+        boolean anchored = reach == ExpressionBuilder.Reach.FORM && builder.inPerElementContext()
+                || lhs instanceof Expr.AttributeReference a && a.anchored();
+        if (reach == ExpressionBuilder.Reach.FORM) subject = builder.formSubject();
+        Condition c = characteristicCheckOn(subject, lhs, nameCtx, withIndefiniteArticle, hasVerb, source);
+        if (!anchored || c == null || c instanceof Condition.Unresolved) return c;
+        if (c instanceof Condition.CharacteristicCheck k && k.owner() == null)
+            return new Condition.CharacteristicCheck(k.characteristic(), k.navigation(), k.negation(), null, k.period(),
+                    k.source(), true);
+        builder.refuseRuleSubject(lhs.source(), Msg.frontend("PART.subject-no-anchor", "expression", source), source);
+        return new Condition.Unresolved(source, null);   // the ERROR above is this marker's diagnosis
+    }
+
+    /** {@link #characteristicCheckPredicateBare} on {@code subject}: the check or the role check {@code lhs} and the
+     *  name write. */
+    private Condition characteristicCheckOn(ObjectType subject, Expr lhs, KaleNaamContext nameCtx,
+                                            boolean withIndefiniteArticle, boolean hasVerb, Source source) {
         String suffix = stripArticle(src(nameCtx));
         String head = subjectHead(lhs, subject);
         // not the subject itself -> a navigated kenmerk ("zijn reis is duurzaam", or the EEN-form "zijn reis is
@@ -6343,6 +6405,9 @@ final class RuleChecker {
         if (lhs instanceof Expr.Constant c)
             return (targetRole == null && c.name().equalsIgnoreCase("hij")) ? "" : null;
         String b = lhs.source() == null ? "" : stripArticle(lhs.source().snippet());
+        // "de Vergunning zelf": the word names the subject and is no part of a characteristic's name
+        ExpressionBuilder.Anchor written = builder.writtenAnchor(lhs);
+        if (written != null && written.self()) b = b.replaceFirst("(?i)\\s+zelf$", "");
         if (b.equalsIgnoreCase(subject.name)) return "";                              // "de Meting"
         if (b.regionMatches(true, 0, subject.name + " ", 0, subject.name.length() + 1)) // "de Meting vaarbaar bij"
             return b.substring(subject.name.length()).trim();

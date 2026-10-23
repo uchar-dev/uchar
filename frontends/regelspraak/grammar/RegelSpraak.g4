@@ -167,7 +167,7 @@ regelReferentie : regelReferentieWoord+ ;
 regelReferentieWoord
     : LOWER_ID | UPPER_ID | NUMBER | PERCENT_SIGN | AANTAL_WORD
     | VAN | OP | IN | VOOR | OVER | BIJ | TOT | TOT_EN_MET | PER | MET | OF | DAN | NIET
-    | DE | HET | EEN | ZIJN | VANAF | GELDIG
+    | DE | HET | EEN | ZIJN | VANAF | GELDIG | ZELF
     | IS | HEEFT | HEBBEN | WORDT_VERDEELD_OVER
     | EEN_TELWOORD | TWEE_TELWOORD | DRIE_TELWOORD | VIER_TELWOORD
     | JAAR | MAAND | DAG | WEEK | KWARTAAL | UUR | MINUUT | SECONDE | MILLISECONDE
@@ -703,7 +703,8 @@ onderwerpKeten // §13.4.1.1 — source EBNF has an unbalanced '('; flat choice 
       ) ( ( DIE | DAT ) predicaat )?
     ;
 universeelOnderwerp : onbepaaldLidwoord kaleNaam ;             // §13.4.1.2
-onderwerpVerwijzing : bepaaldLidwoord rangtelwoord? kaleNaam ; // §13.4.1.3
+onderwerpVerwijzing : bepaaldLidwoord rangtelwoord? kaleNaam ZELF? ; // §13.4.1.3; ZELF: the rule subject (grammar/DIVERGENCES.md,
+                                                                // "The rule subject in a subselection — zelf")
 selector            : lidwoord kaleNaam ;                      // §13.4.2.7
 // objectexpressie (§13.4.17.5): a possibly-quantified subject, incl. the
 // quantifier+bare-role form "alle deelnemers van de groep".
@@ -1005,6 +1006,7 @@ nonToplevelOperator // §13.4.15.71-.100 (verb-leading), unified across types
     | ( IS | ZIJN ) gehelePeriodevergelijking? NIET EEN kaleNaam
     | ( IS | HEEFT | ZIJN | HEBBEN ) gehelePeriodevergelijking? EEN? kaleNaam
     | gehelePeriodevergelijking? EEN kaleNaam ( IS | ZIJN )
+    | ( IS | ZIJN ) identiteitsToets
     ;
 toplevelOperator // §13.4.15.19-.48 (verb-split / trailing), unified across types
     : gehelePeriodevergelijking? ( LEEG | GEVULD ) ( IS | ZIJN )
@@ -1012,7 +1014,12 @@ toplevelOperator // §13.4.15.19-.48 (verb-split / trailing), unified across typ
     | gehelePeriodevergelijking? NIET? ( NUMERIEK_IS_MET_EXACT | NUMERIEK_ZIJN_MET_EXACT ) NUMBER CIJFERS
     | gehelePeriodevergelijking? vergelijkingsTekenGesplitst expressie
     | gehelePeriodevergelijking? EEN? kaleNaam ( IS | HEEFT | ZIJN | HEBBEN )
+    | identiteitsToets ( IS | ZIJN )
     ;
+// The identity check of the element of a subselection or a quantifier test against the rule subject: "hij is niet de
+// Vergunning zelf", "die niet de Vergunning zelf zijn" (grammar/DIVERGENCES.md, "The rule subject in a subselection —
+// zelf"). A rule of its own, so that no reader of the two operator rules takes its name for a characteristic.
+identiteitsToets : NIET? bepaaldLidwoord kaleNaam ZELF ;
 
 periodevergelijkingEnkelvoudig // §13.4.15.68
     : VANAF expressie

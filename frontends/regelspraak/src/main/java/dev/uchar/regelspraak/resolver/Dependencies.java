@@ -794,6 +794,17 @@ final class Dependencies {
             return result;
         }
 
+        /** The subject of the form whose reads are collected: an anchored node is read on it (IR-SPEC ch. 4.1a, 5.1). */
+        private String formSubject;
+
+        /** {@code unanchored_expr}/{@code unanchored_cond}: {@code n} without its form anchor, read as the same node on the
+         *  form's subject, at its own steps (the verifier's {@code ~at:(Some [])}). */
+        private static Map<String, Object> unanchored(Map<String, Object> n) {
+            Map<String, Object> plain = new LinkedHashMap<>(n);
+            plain.remove("anchor");
+            return plain;
+        }
+
         /** {@code dep_expr_at}: the reads of {@code e} in front of {@code acc}, as the verifier accumulates them;
          *  {@code at} is the path of the object {@code e} is read on (empty on the subject, null where no written path
          *  reaches it). */
@@ -801,6 +812,7 @@ final class Dependencies {
             if (e == null) return acc;
             Map<String, Object> n = obj(e);
             String node = text(n, "node");
+            if (n.get("anchor") != null) return readExpr(formSubject, List.of(), acc, unanchored(n));
             switch (node) {
                 case "AttributeReference" -> {
                     String a = text(n, "attribute"), ot = text(n, "subjectType");
@@ -898,6 +910,9 @@ final class Dependencies {
         List<NodeRead> readCond(String subject, List<Hop> at, boolean neg, List<NodeRead> acc, Object c) {
             if (c == null) return acc;
             Map<String, Object> n = obj(c);
+            // the identity check reads no node (IR-SPEC ch. 5.1); every other anchored node is read on the form's subject
+            if (n.get("anchor") != null && !"IdentityCheck".equals(text(n, "node")))
+                return readCond(formSubject, List.of(), neg, acc, unanchored(n));
             switch (text(n, "node")) {
                 case "Comparison" -> { return readExpr(subject, at, readExpr(subject, at, acc, n.get("left")), n.get("right")); }
                 case "Predicate" -> {
@@ -1051,6 +1066,7 @@ final class Dependencies {
                 boolean characteristic = !Boolean.TRUE.equals(v.irNode().get("initialisation")) && v.irNode().get("presentation") == null;
                 List<String> writes = memberWrites(ot, a, characteristic, false);
                 // a rule writes per subject of its type: its reads carry their paths from the subject (ch. 5.3)
+                formSubject = ot;
                 List<NodeRead> uses = readExpr(ot, List.of(), condition(ot, List.of(), v.irNode().get("condition")),
                         v.irNode().get("value"));
                 if (characteristic) uses = strict(uses);
@@ -1070,12 +1086,14 @@ final class Dependencies {
                 if (text(k, "sourceAttribute") != null) uses.add(new NodeRead(attrNode(bt, text(k, "sourceAttribute")), POS));
                 for (String field : List.of("ratioAttribute", "maximumAttribute", "orderingAttribute"))
                     if (text(k, field) != null) uses.add(new NodeRead(attrNode(dt, text(k, field)), POS));
+                formSubject = text(k, "sourceType");
                 uses.addAll(condition(text(k, "sourceType"), null, k.get("condition")));
                 result.add(new Form(v.at(), v.name() == null ? v.at() : v.name(), "allocations", false, writes, uses));
             }
             // the consistencies
             for (Version v : versions("consistencies")) {
                 String name = v.name() == null ? v.at() : v.name();
+                formSubject = text(v.irNode(), "subject");
                 result.add(new Form(v.at(), name, "consistencies", false, List.of(chanNode(name)),
                         strict(condition(text(v.irNode(), "subject"), null, v.irNode().get("assertion")))));
             }
@@ -1126,6 +1144,7 @@ final class Dependencies {
                         writes.addAll(memberWrites(nt, text(t, "member"), Boolean.TRUE.equals(t.get("characteristic")), true));
                 List<NodeRead> uses = new ArrayList<>();
                 if (subject != null) uses.add(new NodeRead(popNode(subject), POS));
+                formSubject = subject;
                 List<NodeRead> values = condition(subject, null, k.get("condition"));
                 for (Map<String, Object> t : list(k, "initialisations")) values = readExpr(subject, null, values, t.get("value"));
                 uses.addAll(values);
@@ -1139,6 +1158,7 @@ final class Dependencies {
                 List<Map<String, Object>> path = list(k, "path");
                 List<NodeRead> uses = new ArrayList<>();
                 for (Map<String, Object> hop : path) uses.add(new NodeRead(relNode(text(hop, "factType")), POS));
+                formSubject = text(k, "anchor");
                 uses.addAll(condition(text(k, "anchor"), null, k.get("condition")));
                 // the created relation and no population: a fact creation links instances that exist
                 List<String> writes = List.of(relNode(text(k, "factType")));
@@ -1153,6 +1173,7 @@ final class Dependencies {
                 String name = text(l, "name") == null ? at : text(l, "name");
                 String subjectType = text(l, "subject");
                 List<NodeRead> uses = new ArrayList<>();
+                formSubject = subjectType;
                 for (Map<String, Object> d : list(l, "defaults")) uses.addAll(defaultReads(subjectType, d));
                 List<String> writes = new ArrayList<>();
                 if (text(l, "characteristic") != null)

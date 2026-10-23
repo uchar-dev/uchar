@@ -392,6 +392,9 @@ REKENDATUM : 'Rekendatum' ;
 REKENJAAR  : 'Rekenjaar'  ;
 REGELVERSIE: 'regelversie' ;
 HIJ        : 'hij'        ;
+// "de Vergunning zelf": the rule subject in a subselection or a quantifier test (grammar/DIVERGENCES.md, "The rule
+// subject in a subselection — zelf"). No name word: a name that ran on over it would swallow the marker.
+ZELF       : 'zelf'       ;
 
 // --- kenmerk keyword ---
 KENMERK : 'kenmerk' ;

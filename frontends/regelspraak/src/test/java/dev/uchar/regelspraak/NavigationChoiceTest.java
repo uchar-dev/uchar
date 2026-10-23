@@ -439,8 +439,10 @@ class NavigationChoiceTest {
                 new String[]{"Schuit", """
                         Een Schuit is gekeurd
                         indien het peil van de Vuurtoren groter is dan 2."""},
-                // the quantifier fold's test reads each contributor, so the read is written from the Schuit
-                new String[]{"Schuit", """
+                // the operand beside the quantified one is the rule subject's and carries the form anchor, so the read
+                // is written from the Haven (until 2026-10-23, card subselection-reads-subject: from the Schuit, the
+                // element the quantifier fold's test reads)
+                new String[]{"Haven", """
                         Een Haven is veilig
                         indien de romplengte van alle liggers van de Haven groter is dan het peil van de Vuurtoren."""});
         for (String[] form : forms) {

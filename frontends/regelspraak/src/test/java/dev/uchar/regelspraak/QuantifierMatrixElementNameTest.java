@@ -71,11 +71,20 @@ class QuantifierMatrixElementNameTest {
         assertEquals(List.of("jutter"), r.navigationPath());
     }
 
-    @Test void the_wire_is_that_of_the_possessive_form() {
-        // the two spellings name the same role from the element, so they write one document but for the source text
-        String elementName = IrEmitter.emit(clean(laatklasse("de sluitdag van de jutter van de Vondst")));
-        String possessive = IrEmitter.emit(clean(laatklasse("de sluitdag van zijn jutter")));
-        assertEquals(withoutSource(possessive), withoutSource(elementName));
+    /** Changed 2026-10-23 (card subselection-reads-subject): the two spellings wrote one document, both over the role
+     *  'jutter' from the Vondst. They read the same object, but the possessive one names the rule subject's own role and
+     *  is built at the rule subject, so it carries the form anchor (IR-SPEC ch. 4.1a), and the element-name one navigates
+     *  from the element: the two spellings of one reading of RUNTIME-SEMANTICS ch. 3.4a. */
+    @Test void the_possessive_form_carries_the_anchor_and_the_element_name_navigates() {
+        String elementName = IrEmitter.emit(clean(laatklasse("de sluitdag van de jutter van de Vondst"))).replaceAll("\\s+", "");
+        String possessive = IrEmitter.emit(clean(laatklasse("de sluitdag van zijn jutter"))).replaceAll("\\s+", "");
+        assertTrue(elementName.contains("\"right\":{\"node\":\"AttributeReference\",\"attribute\":\"sluitdag\","
+                + "\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"desluitdagvandejuttervandeVondst\"},"
+                + "\"path\":[{\"node\":\"RoleBinding\",\"factType\":\"JutterHeeftVondst\",\"role\":\"jutter\"}]}"),
+                elementName);
+        assertTrue(possessive.contains("\"right\":{\"node\":\"AttributeReference\",\"attribute\":\"sluitdag\","
+                + "\"subjectType\":\"Jutter\",\"anchor\":\"form\",\"source\":{\"snippet\":\"desluitdagvanzijnjutter\"}}"),
+                possessive);
     }
 
     @Test void a_type_error_after_the_second_read_stays_loud() {
@@ -102,9 +111,5 @@ class QuantifierMatrixElementNameTest {
                 + "alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is later dan de "
                 + "sluitdag van de jutter van de Vondst.\n");
         assertNotNull(m);
-    }
-
-    private static String withoutSource(String json) {
-        return json.replaceAll("\"source\": \\{[^}]*\\}", "").replaceAll("\\s+", "");
     }
 }

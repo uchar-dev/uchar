@@ -12,9 +12,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * A variable of the rule ("Daarbij geldt:", §13.4.2.10) read in a subselection means what it means outside it: its
- * expression belongs to the rule subject, so the frontend writes it from the element with the way back to the rule
- * subject in front of it (card rule-variable-in-subselection; grammar/DIVERGENCES.md, "A read of the rule subject in a
- * filter"). Until then a read of two steps and a fold were refused, and a read of one step bound by the type pair.
+ * expression belongs to the rule subject, so the frontend substitutes it with the form anchor on every read and fold
+ * of it that starts at the subject (IR-SPEC ch. 4.10 (c), ch. 4.1a; card subselection-reads-subject,
+ * grammar/DIVERGENCES.md, "The rule subject in a subselection — zelf"). From 2026-10-22 it was written from the element
+ * with the way back in front of it (card rule-variable-in-subselection); before that a read of two steps and a fold
+ * were refused, and a read of one step bound by the type pair.
  */
 class RuleVariableInSubselectionTest {
 
@@ -90,9 +92,11 @@ class RuleVariableInSubselectionTest {
                 FoldInElementConditionTest.filter(m), "de variabele leest wat de inline vouw R1 leest");
     }
 
-    /** A variable read in the filter of the fold another variable defines: each filter is written from its own
-     *  element, the keurdatum from the klacht over its beklaagde schuit, the fold from the lading over its schuit. */
-    @Test void a_variable_in_the_filter_of_a_variable_reads_from_each_element() {
+    /** A variable read in the filter of the fold another variable defines. Changed 2026-10-23 (card
+     *  subselection-reads-subject): each filter was written from its own element, the keurdatum from the klacht over its
+     *  beklaagde schuit, the fold from the lading over its schuit; now the fold carries the anchor, and in its filter the
+     *  anchor still names the subject of the form, the Schuit, so the keurdatum is an anchored own read of it. */
+    @Test void a_variable_in_the_filter_of_a_variable_reads_the_rule_subject() {
         String model = FoldInElementConditionTest.MODEL.replace(
                 "    de eerste schone maand vanaf-de-eindmaand Datum in dagen;",
                 "    de eerste schone maand vanaf-de-eindmaand Datum in dagen;\n    de keurdatum Datum in dagen;");
@@ -108,13 +112,15 @@ class RuleVariableInSubselectionTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "" + m.diagnostics);
         String fold = String.valueOf(comparand(m));
-        assertTrue(fold.contains("right={node=AttributeReference, attribute=keurdatum, subjectType=Schuit, "
-                + "path=[{node=RoleBinding, factType=schuitklacht, role=beklaagde schuit}]"), () -> fold);
-        assertTrue(fold.contains("sourcePath=[{node=RoleBinding, factType=lading in-een-maand, role=schuit}, "
-                + "{node=RoleBinding, factType=schuitklacht, role=klacht}]"), () -> fold);
+        assertTrue(fold.contains("right={node=AttributeReference, attribute=keurdatum, subjectType=Schuit, anchor=form}"),
+                () -> fold);
+        assertTrue(fold.contains("elementType=Klacht, anchor=form, filter="), () -> fold);
+        assertTrue(fold.contains("sourceRole={node=RoleBinding, factType=schuitklacht, role=klacht}"), () -> fold);
+        assertFalse(fold.contains("sourcePath") || fold.contains("path="), () -> "geen weg terug: " + fold);
     }
 
-    @Test void a_variable_in_the_test_of_a_quantifier_reads_over_the_way_back() {
+    /** Changed 2026-10-23: the anchor and the hop from the Schuit instead of the way back over 'schuit'. */
+    @Test void a_variable_in_the_test_of_a_quantifier_carries_the_form_anchor() {
         String model = MODEL.replace("    de peildatum Datum in dagen;",
                 "    de peildatum Datum in dagen;\n    is vroeg kenmerk (bijvoeglijk);");
         RegelSpraakModel m = Resolver.resolve(model + """
@@ -127,8 +133,8 @@ class RuleVariableInSubselectionTest {
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "" + m.diagnostics);
         String ir = FoldInElementConditionTest.text(Report.json(dev.uchar.regelspraak.emit.IrEmitter.emit(m)));
-        assertTrue(ir.contains("attribute=gewenste dag, subjectType=Verzoek, path=[{node=RoleBinding, factType=lading "
-                + "in-een-maand, role=schuit}, {node=RoleBinding, factType=schuitverzoek, role=verzoek}]"), () -> ir);
+        assertTrue(ir.contains("attribute=gewenste dag, subjectType=Verzoek, anchor=form, path=[{node=RoleBinding, "
+                + "factType=schuitverzoek, role=verzoek}]"), () -> ir);
     }
 
     @Test void a_variable_outside_the_subselection_is_unchanged() {
@@ -143,15 +149,20 @@ class RuleVariableInSubselectionTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "R3 gaat zonder diagnostiek: " + m.diagnostics);
     }
 
-    @Test void a_variable_without_a_way_back_is_refused() {
+    /** Changed 2026-10-23: a lading of several schuiten has no way back, and the variable was refused (RGS-352,
+     *  retired); with the anchor it reads the rule subject, as the inline read does. */
+    @Test void a_variable_needs_no_way_back() {
         String manyToMany = MODEL.replace("Eén schuit heeft meerdere ladingen", "meerdere schuiten hebben meerdere ladingen");
         RegelSpraakModel m = Resolver.resolve(rule(manyToMany, "de peildag", "de gewenste dag van het verzoek van de Schuit"));
-        Diagnostic d = FoldInElementConditionTest.only(m, "RGS-352");
-        for (String part : List.of("de peildag", "de gewenste dag van het verzoek van de Schuit", "eigen lid"))
-            assertTrue(d.message().contains(part), () -> "de weigering noemt '" + part + "': " + d.message());
+        assertTrue(m.diagnostics.isEmpty(), () -> "" + m.diagnostics);
+        assertEquals(comparand(FoldInElementConditionTest.clean(rule(manyToMany, "de gewenste dag van het verzoek van de "
+                + "Schuit", null))), comparand(m));
+        assertTrue(String.valueOf(comparand(m)).contains("anchor=form"), () -> "" + comparand(m));
     }
 
-    @Test void a_variable_in_a_subselection_over_the_rule_subjects_own_type_is_refused() {
+    /** Changed 2026-10-23: refused with RGS-350 until now, since the filter would read the element; a variable names the
+     *  rule subject, whatever the type of the elements, and the anchor gives the IR the spelling (IR-SPEC ch. 4.10 (c)). */
+    @Test void a_variable_in_a_subselection_over_the_rule_subjects_own_type_reads_the_rule_subject() {
         String towing = MODEL.replace("Objecttype het Verzoek", """
                 Feittype sleep
                     de sleper Schuit
@@ -166,8 +177,10 @@ class RuleVariableInSubselectionTest {
                     Daarbij geldt:
                         de peildag is zijn peildatum.
             """);
-        Diagnostic d = FoldInElementConditionTest.only(m, "RGS-350");
-        assertTrue(d.message().contains("de peildag"), () -> "de weigering noemt de variabele: " + d.message());
+        assertTrue(m.diagnostics.isEmpty(), () -> "" + m.diagnostics);
+        String filter = FoldInElementConditionTest.text(FoldInElementConditionTest.filter(m));
+        assertTrue(filter.contains("left={node=AttributeReference, attribute=peildatum, subjectType=Schuit}, "
+                + "right={node=AttributeReference, attribute=peildatum, subjectType=Schuit, anchor=form}"), () -> filter);
     }
 
     /** The right side of the second condition on the ladingen, without source records. */

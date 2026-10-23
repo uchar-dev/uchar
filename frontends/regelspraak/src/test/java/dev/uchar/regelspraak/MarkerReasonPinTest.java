@@ -49,32 +49,43 @@ class MarkerReasonPinTest {
     record Site(String file, String method, int count, String why) {}
 
     /** The fourteen sanctioned null-constructions, measured 2026-09-19, grown by one 2026-09-20, by two 2026-10-20 and
-     *  by two and by three 2026-10-22. Growth
+     *  by two and by three 2026-10-22; on 2026-10-23 (card subselection-reads-subject) the way back and its refusal
+     *  went and the form anchor came, with its refusals. Growth
      *  is NOT free here (unlike
      *  a gate floor): a null is a promise that something else speaks, so every new one is listed with
      *  the diagnostic that keeps that promise. */
     static final List<Site> SANCTIONED = List.of(
             new Site("RuleChecker.java", "checkWholePeriod", 1,
                     "de §8.2-ERROR die de regel erboven opwerpt IS de diagnose van deze marker"),
-            new Site("RuleChecker.java", "quantifierFold", 1,
-                    "de RGS-348- of RGS-349-ERROR die de regel erboven opwerpt (de toets van een kwantor over een pad "
-                    + "leest het regelonderwerp; of het onderwerp heeft het type van het element; 2026-10-20) IS de "
-                    + "diagnose van deze marker"),
-            new Site("RuleChecker.java", "compoundElementFilter", 1,
-                    "de RGS-350-ERROR die de regel erboven opwerpt (een deelselectie noemt een onderwerp van het "
-                    + "type van het element; 2026-10-20) IS de diagnose van deze marker"),
+            new Site("RuleChecker.java", "quantifierFold", 2,
+                    "de RGS-358-ERROR (een kwantor over een relatie van het regelonderwerp in een deelselectie) en de "
+                    + "RGS-349- of RGS-358-ERROR die matrixAtForm opwerpt (de toets leest het regelonderwerp van het "
+                    + "type van het element zonder 'zelf', of het element van een omsluitende deelselectie; "
+                    + "2026-10-23) zijn de diagnose van deze markers"),
+            new Site("RuleChecker.java", "identityCheck", 1,
+                    "de RGS-358-ERROR die de regel erboven opwerpt (een identiteitstoets buiten een deelselectie, "
+                    + "over iets anders dan het element, of na een andere naam dan die van het type van het "
+                    + "regelonderwerp; 2026-10-23) IS de diagnose van deze marker"),
+            new Site("RuleChecker.java", "characteristicCheckPredicateBare", 2,
+                    "de RGS-350- of RGS-358-ERROR die refusedReach opwerpt (de kale typenaam van het type van element en "
+                    + "regelonderwerp, een tussenliggend element, 'zelf' na een andere naam), en de RGS-358-ERROR over "
+                    + "een rolcheck van het regelonderwerp in een deelselectie (2026-10-23), zijn de diagnose van deze "
+                    + "markers"),
+            new Site("RuleChecker.java", "quantifierCharacteristicCheck", 1,
+                    "de RGS-350- of RGS-358-ERROR die refusesQuantifiedRange opwerpt (een kwantor over het "
+                    + "regelonderwerp in een deelselectie; 2026-10-23) IS de diagnose van deze marker"),
             new Site("RuleChecker.java", "buildCompound", 1,
                     "de bullet-ERROR (RGS-353 tot en met RGS-356) die bulletTree opwerpt (de diepte van een bullet; "
                     + "2026-10-22) IS de diagnose van deze marker"),
             new Site("RuleChecker.java", "buildCriteria", 1,
                     "de bullet-ERROR (RGS-353 tot en met RGS-356) die bulletTree opwerpt IS de diagnose van deze "
                     + "marker; de consistentieregel stopt erna, zonder RGS-180"),
-            new Site("RuleChecker.java", "compoundElementFilterBare", 1,
+            new Site("RuleChecker.java", "compoundElementFilter", 1,
                     "de bullet-ERROR (RGS-353 tot en met RGS-356) die bulletTree opwerpt over de bullets van de "
                     + "deelselectie IS de diagnose van deze marker"),
             new Site("RuleChecker.java", "dayKindOperandError", 1,
                     "meldPredicaat werpt de Tabel-57-ERROR op; die is de diagnose van deze marker"),
-            new Site("ExpressionBuilder.java", "buildFunction", 3,
+            new Site("ExpressionBuilder.java", "buildFold", 3,
                     "alle drie de markers staan direct onder hun eigen melding — de aggregatie over een "
                     + "ongedeclareerd lid, de niet-omgezette dimensieselectie / 'gedurende de tijd dat', "
                     + "en (2026-09-20) de WF-037-ERROR op een niet-set bron onder 'het aantal gevulde "
@@ -86,12 +97,23 @@ class MarkerReasonPinTest {
                     + "de sweep zou dat herhalen"),
             new Site("ExpressionBuilder.java", "checkOrdinal", 2,
                     "de §5.5.3-ERROR respectievelijk -WARNING staat vlak boven de marker"),
-            new Site("ExpressionBuilder.java", "refuseInFilter", 1,
-                    "de RGS-352-ERROR die de regel erboven opwerpt (een lezing van het regelonderwerp in een filter "
-                    + "zonder spelling vanaf het element; 2026-10-22) IS de diagnose van deze marker"),
             new Site("ExpressionBuilder.java", "variableInFilter", 1,
-                    "de RGS-350-ERROR die de regel erboven opwerpt (een variabele van de regel in een deelselectie over "
-                    + "elementen van het type van het regelonderwerp; 2026-10-22) IS de diagnose van deze marker"));
+                    "de RGS-358-ERROR die de regel erboven opwerpt (een variabele van de regel in een deelselectie "
+                    + "waarvan de definitie geen vorm met het vormanker heeft; 2026-10-23) IS de diagnose van deze "
+                    + "marker"),
+            new Site("ExpressionBuilder.java", "attributeRef", 1,
+                    "de RGS-358-ERROR die de regel erboven opwerpt (een lezing van het regelonderwerp zonder vorm met "
+                    + "het vormanker; 2026-10-23) IS de diagnose van deze marker"),
+            new Site("ExpressionBuilder.java", "foldAtForm", 1,
+                    "de RGS-358-ERROR die de regel erboven opwerpt (een vouw over het regelonderwerp zonder vorm met "
+                    + "het vormanker; 2026-10-23) IS de diagnose van deze marker"),
+            new Site("ExpressionBuilder.java", "refusedReach", 1,
+                    "de RGS-350- of RGS-358-ERROR die de regels erboven opwerpen (de kale typenaam van het type van "
+                    + "element en regelonderwerp, een tussenliggend element, 'zelf' na een andere naam; 2026-10-23) IS "
+                    + "de diagnose van deze marker"),
+            new Site("ExpressionBuilder.java", "identityFilter", 1,
+                    "de RGS-358-ERROR die de regel erboven opwerpt ('die niet de … zelf zijn' na een andere naam dan "
+                    + "die van het type van het regelonderwerp; 2026-10-23) IS de diagnose van deze marker"));
 
     /** A marker construction: the two record constructors and the two {@code unresolvedMarker(…)} helpers. */
     private static final Pattern BUILD =

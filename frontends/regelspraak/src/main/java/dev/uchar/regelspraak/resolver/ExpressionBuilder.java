@@ -89,15 +89,12 @@ final class ExpressionBuilder {
     void setCompoundFilter(CompoundFilterResolver r) { this.compoundFilter = r; }
 
     /**
-     * The filter of a fold being built (grammar/DIVERGENCES.md, "A read of the rule subject in a filter"): the subject
-     * the fold is written from ({@code outer}), its element type, the way back from an element to {@code outer} — one
-     * role binding per step of the fold's range, element-inward, each to-one — and the filter as written. Where a step
-     * has no single way back, {@code back} is null and {@code noWayBack} says why. A filter is read per element, with
-     * the element as its subject, and the IR has no reference to the outer subject there, so a read that belongs to
-     * {@code outer} is written from the element with the way back in front of it.
+     * A filter being built (grammar/DIVERGENCES.md, "The rule subject in a subselection — zelf"): the subject the fold
+     * or quantifier is written from ({@code outer}), its element type, and the filter as written. A filter is read per
+     * element, with the element as its subject (RUNTIME-SEMANTICS ch. 3.4a, 3.9a); a read that belongs to the subject of
+     * the form is built at that subject and carries the form anchor (IR-SPEC ch. 4.1a, WF-122).
      */
-    record Frame(ObjectType outer, ObjectType element, List<RegelSpraakModel.RoleBindingRef> back, Msg noWayBack,
-                 Source filter) {}
+    record Frame(ObjectType outer, ObjectType element, Source filter) {}
 
     /** The filters being built, innermost first. */
     private final java.util.Deque<Frame> frames = new java.util.ArrayDeque<>();
@@ -107,45 +104,28 @@ final class ExpressionBuilder {
     private record Scope(ObjectType element, List<Frame> frames) {}
     private final Map<PredicaatContext, Scope> scopes = new java.util.IdentityHashMap<>();
 
-    /** The subject the current rule's variables were built at: their reads belong to it. */
-    private ObjectType variablesSubject;
+    /** The reads written with "zelf" and the variables of the rule, by identity: they name the subject of the form
+     *  explicitly, so the test of a quantifier over elements of its own type may read them (RGS-349 refuses the rest). */
+    private final java.util.Set<Expr> explicitSubjectReads =
+            java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 
-    /** The filter of a fold over {@code range} from {@code outer} to elements of type {@code element}. */
-    Frame frame(ObjectType outer, ObjectType element, List<RegelSpraakModel.RoleBindingRef> range, Source filter) {
-        List<RegelSpraakModel.RoleBindingRef> back = new ArrayList<>();
-        for (int i = range.size() - 1; i >= 0; i--) {
-            RegelSpraakModel.RoleBindingRef step = range.get(i);
-            RegelSpraakModel.FactType ft = model.factTypes.get(step.factType());
-            if (ft == null) return null;
-            if (ft.reciprocal)
-                return new Frame(outer, element, null, Msg.frontend("PART.way-back-reciprocal", "factType", ft.name), filter);
-            RegelSpraakModel.Role near = null, far = null;
-            for (RegelSpraakModel.Role r : ft.roles) {
-                if (r.name().equals(step.role())) far = r;
-                else near = r;
-            }
-            if (near == null || far == null) return null;
-            if (near.many())
-                return new Frame(outer, element, null, Msg.frontend("PART.way-back-many", "holder", far.objectTypeName(),
-                        "role", near.name(), "factType", ft.name), filter);
-            back.add(new RegelSpraakModel.RoleBindingRef(ft.name, near.name()));
-        }
-        return new Frame(outer, element, List.copyOf(back), null, filter);
-    }
+    /** The anchor a bare reference written as an operand ("de Vergunning zelf", "de Schuit") was built from, by identity. */
+    private final Map<Expr, Anchor> writtenAnchors = new java.util.IdentityHashMap<>();
 
-    /** The one-step range of a fold over a set reading or a count source from the current subject, or its written
-     *  path; null where it has none (the fold's own refusal speaks then). */
-    private List<RegelSpraakModel.RoleBindingRef> foldRange(List<Expr> arguments, ObjectType elem) {
-        if (arguments.size() != 1 || !(arguments.get(0) instanceof Expr.AttributeReference a) || currentSubject == null)
-            return null;
-        if (a.set() && a.rangePath() != null && !a.rangePath().isEmpty()) return a.rangePath();
-        if (!a.set() && !(a.type() instanceof Datatype.Unknown)) return null;
-        RegelSpraakModel.RoleBindingRef rb = dev.uchar.regelspraak.emit.IrEmitter.rangeRole(model, currentSubject, elem, a);
-        return rb == null ? null : List.of(rb);
-    }
+    /** The anchor the operand {@code e} was written with where it is a bare reference, or null. */
+    Anchor writtenAnchor(Expr e) { return e == null ? null : writtenAnchors.get(e); }
+
+    /** Whether {@code e} names the subject of the form explicitly: written with "zelf", or a variable of the rule. */
+    boolean namesFormSubject(Expr e) { return explicitSubjectReads.contains(e); }
+
+    /** The subject of the form: the subject the outermost filter is written from, or the current subject outside one. */
+    ObjectType formSubject() { return frames.isEmpty() ? currentSubject : frames.peekLast().outer(); }
+
+    /** Whether a filter is being built with its element as the current subject: a per-element context. */
+    boolean inPerElementContext() { return !frames.isEmpty() && frames.peek().element() == currentSubject; }
 
     /** {@code build} with {@code frame} around it, the filter of subselection {@code p} over {@code elem}; without a frame
-     *  (a fold without a range) as before. */
+     *  (a fold without a subject) as before. */
     private <T> T inFilter(Frame frame, PredicaatContext p, ObjectType elem, java.util.function.Supplier<T> build) {
         if (frame != null) frames.push(frame);
         scopes.put(p, new Scope(elem, List.copyOf(frames)));
@@ -176,27 +156,197 @@ final class ExpressionBuilder {
         }
     }
 
-    /** What {@link #reanchor} gives: the expression written from the element, or why it has no such spelling. */
-    record Reanchored(Expr expr, Msg refusal) {}
-
-    /**
-     * {@code e}, built at {@code from}, written from {@code to}: every read and every fold range that starts at
-     * {@code from} gets {@code back}, the way from {@code to} to {@code from}, in front of it. A fold's own filter reads
-     * its element and stays as it is. The definition is not built again with the element as its subject, since "zijn X"
-     * would then read the element.
-     */
-    Reanchored reanchor(Expr e, List<RegelSpraakModel.RoleBindingRef> back, ObjectType from, ObjectType to) {
-        Msg[] why = new Msg[1];
-        Expr result = reanchor(e, back, from, to, why);
-        return why[0] != null ? new Reanchored(null, why[0]) : new Reanchored(result, null);
+    /** {@code build} at the subject of the form, outside every filter: what a node with the form anchor reads, as if it
+     *  stood in the form's own condition or value (IR-SPEC ch. 4.1a). */
+    <T> T atForm(java.util.function.Supplier<T> build) {
+        ObjectType previous = currentSubject;
+        List<Frame> saved = List.copyOf(frames);
+        currentSubject = formSubject();
+        frames.clear();
+        try {
+            return build.get();
+        } finally {
+            currentSubject = previous;
+            frames.clear();
+            frames.addAll(saved);
+        }
     }
 
-    private Expr reanchor(Expr e, List<RegelSpraakModel.RoleBindingRef> back, ObjectType from, ObjectType to, Msg[] why) {
+    /** The innermost written reference of a chain — the anchor its walk starts from — and whether it carries "zelf". */
+    record Anchor(String name, boolean self) {}
+
+    /** The anchor of {@code o}'s chain: the last segment of its innermost definite reference ("de Schuit" in "alle
+     *  klachten van de Schuit"), or null where the chain ends in none (a possessive, an indefinite subject, a
+     *  population). */
+    static Anchor anchorOf(OnderwerpContext o) {
+        OnderwerpContext rest = o;
+        while (rest != null) {
+            if (rest.onderwerp() != null) { rest = rest.onderwerp(); continue; }
+            // a greedy name runs on over an inner "van": "alle klachten van de Schuit" can be one name, anchored at its
+            // last segment; a set without one names a population
+            if (rest.kaleNaam() != null) {
+                String name = src(rest.kaleNaam());
+                return isSetSubject(rest) && name.split("\\s+van\\s+").length < 2 ? null : new Anchor(lastSegment(name), false);
+            }
+            OnderwerpKetenContext k = rest.onderwerpKeten();
+            if (k == null) return null;
+            if (k.selector() != null && k.onderwerp() != null) { rest = k.onderwerp(); continue; }
+            if (k.onderwerpVerwijzing() != null && k.onderwerpVerwijzing().kaleNaam() != null)
+                return new Anchor(lastSegment(src(k.onderwerpVerwijzing().kaleNaam())), k.onderwerpVerwijzing().ZELF() != null);
+            return null;
+        }
+        return null;
+    }
+
+    /** The last "van"-segment of a written name, without its article: the name a greedy name ran on to. */
+    private static String lastSegment(String name) {
+        String[] parts = name.split("\\s+van\\s+");
+        return stripArticle(parts[parts.length - 1]).trim();
+    }
+
+    /** What a written reference reaches in the context it is built in. */
+    enum Reach {
+        /** the current subject, or what a walk from it reaches: built as written */
+        ELEMENT,
+        /** the subject of the form, from a filter or a quantifier test: built there, with the anchor */
+        FORM,
+        /** the bare name of a type that the subject of the form and an element both have (RGS-350) */
+        AMBIGUOUS,
+        /** the bare name of the element of an enclosing subselection, which the anchor does not reach (B6) */
+        INTERMEDIATE,
+        /** "zelf" after a name that is not the name of the type of the form's subject */
+        SELF_ELSEWHERE
+    }
+
+    /** What {@code a} reaches here. "zelf" names the subject of the form wherever it stands, and is only admitted after
+     *  that type's own name. In a filter, the bare own name of the form subject's type names that subject unless an
+     *  element has the type as well; the bare name of an enclosing element's type names nothing the IR can reach. A
+     *  role name or a name in another case is no type name here: it keeps the walk from the element. */
+    Reach reach(Anchor a) {
+        if (a == null) return Reach.ELEMENT;
+        ObjectType form = formSubject();
+        ObjectType named = model.objectTypes.get(a.name());
+        if (a.self()) return named != null && named == form ? Reach.FORM : Reach.SELF_ELSEWHERE;
+        if (named == null || !inPerElementContext()) return Reach.ELEMENT;
+        boolean element = false, enclosing = false;
+        int depth = 0;
+        for (Frame f : frames) {
+            if (f.element() == named) { if (depth == 0) element = true; else enclosing = true; }
+            depth++;
+        }
+        if (named == form) return element || enclosing ? Reach.AMBIGUOUS : Reach.FORM;
+        return enclosing && !element ? Reach.INTERMEDIATE : Reach.ELEMENT;
+    }
+
+    /** The refusal of a read {@code reach} does not let this frontend write, with its marker; null for the readings it
+     *  writes. */
+    Expr refusedReach(Reach reach, Anchor a, Object read, Datatype type, Source source) {
+        switch (reach) {
+            case AMBIGUOUS -> model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "RGS-350", params("filter", frames.peek().filter(), "read", read, "type", a.name()), source.line()));
+            case INTERMEDIATE -> {
+                Frame enclosing = null;
+                for (Frame f : frames) if (f.element() == model.objectTypes.get(a.name())) enclosing = f;
+                refuseRuleSubject(read, Msg.frontend("PART.subject-intermediate-element", "type", a.name(),
+                        "filter", enclosing == null ? "" : enclosing.filter()), source);
+            }
+            case SELF_ELSEWHERE -> refuseRuleSubject(read, selfElsewhere(a.name()), source);
+            default -> { return null; }
+        }
+        return new Expr.Unresolved(type, source, null);   // the ERROR above is this marker's diagnosis
+    }
+
+    /** Why "zelf" after {@code name} names nothing: it names the subject of the form, and only after its type's name. */
+    Msg selfElsewhere(String name) {
+        ObjectType form = formSubject();
+        return Msg.frontend("PART.subject-self-elsewhere", "name", name, "subject", form == null ? "?" : form.name);
+    }
+
+    /** The refusal of a read of the subject of the form that this frontend cannot write (RGS-358). */
+    void refuseRuleSubject(Object read, Msg reason, Source source) {
+        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-358",
+                params("read", read, "reason", reason), source.line()));
+    }
+
+    /** In a filter or a test, the refusal of a quantifier whose member phrase {@code e} names the subject of the form, or a
+     *  name the IR cannot reach from there (RGS-350, RGS-358), with true; false where it names neither. The anchor of a
+     *  member phrase runs on over the words of the predicate after it, so its longest opening type name counts. */
+    boolean refusesQuantifiedRange(ExpressieContext e, Source source) {
+        PrimaireExpressieContext p = e instanceof PrimaireExprContext pe ? pe.primaireExpressie() : null;
+        AttribuutVanOnderwerpContext a = p == null ? null : p.attribuutVanOnderwerp();
+        Anchor written = a == null || a.onderwerp() == null ? null : anchorOf(a.onderwerp());
+        if (written == null) return false;
+        String[] words = written.name().split("\\s+");
+        Anchor anchor = written;
+        for (int n = words.length; n >= 1; n--) {
+            String prefix = String.join(" ", java.util.Arrays.copyOfRange(words, 0, n));
+            if (model.objectTypes.get(prefix) != null) { anchor = new Anchor(prefix, written.self()); break; }
+        }
+        Reach reach = reach(anchor);
+        if (reach == Reach.ELEMENT || reach == Reach.FORM && !inPerElementContext()) return false;
+        if (reach == Reach.FORM) refuseRuleSubject(source(a), Msg.frontend("PART.subject-quantifier-in-filter"), source);
+        else refusedReach(reach, anchor, source(a), unknown(), source);
+        return true;
+    }
+
+    /** What {@link #anchor} gives: the expression with the form anchor, or why it has no such spelling. */
+    record Anchored(Expr expr, Msg refusal) {}
+
+    /**
+     * {@code e}, built at the subject of the form, read where the subject is an element (IR-SPEC ch. 4.1a): every read
+     * and every fold of {@code e} that starts at the subject carries the form anchor; a fold's own filter reads its
+     * element, and its fallback is read where the fold stands, so neither is touched. The nodes are new, so a shared
+     * definition keeps its own reading where it stands outside a filter.
+     */
+    Anchored anchor(Expr e) {
+        return anchor(e, null);
+    }
+
+    /** {@link #anchor}, where an own read of {@code element} — the type of the elements, another than the form subject's —
+     *  names the element and stays as it is: the operand beside the quantified one, whose read of the element by its
+     *  type name the matrix takes from the element (RUNTIME-SEMANTICS ch. 3.9a). */
+    Anchored anchor(Expr e, ObjectType element) {
+        Msg[] why = new Msg[1];
+        Expr result = anchor(e, element, why);
+        return why[0] != null ? new Anchored(null, why[0]) : new Anchored(result, null);
+    }
+
+    private Expr anchor(Expr e, ObjectType element, Msg[] why) {
         if (e == null || why[0] != null) return e;
-        java.util.function.UnaryOperator<Expr> again = x -> reanchor(x, back, from, to, why);
+        java.util.function.UnaryOperator<Expr> again = x -> anchor(x, element, why);
         switch (e) {
-            case Expr.AttributeReference a -> { return reanchorRead(a, back, from, to, why); }
-            case Expr.FunctionCall f -> { return reanchorFunction(f, back, from, to, why); }
+            case Expr.AttributeReference a -> {
+                boolean elementRead = element != null && a.objectType() == element && a.navigationRole() == null
+                        && a.navigationPath().isEmpty() && !a.set();
+                return a.anchored() || elementRead ? a : new Expr.AttributeReference(a.attribute(), a.objectType(), a.subjectSource(),
+                        a.navigationRole(), a.type(), a.source(), a.set(), a.navigationPath(), a.rangePath(), a.quantifier(),
+                        a.threshold(), true);
+            }
+            case Expr.FunctionCall f -> {
+                if (f.anchored()) return f;
+                if (dev.uchar.regelspraak.emit.IrEmitter.isFoldSource(f))
+                    return new Expr.FunctionCall(f.kind(), f.arguments(), f.elementObjectType(), f.emptyFallback(), f.filter(),
+                            f.dimensionSelection(), f.type(), f.source(), f.granularity(), true);
+                // a fold over a dimension or of another shape, and the operators over the subject's own timeline, read
+                // the subject without a node the anchor can stand on
+                if (f.dimensionSelection() != null || f.elementObjectType() != null || f.filter() != null
+                        || f.kind() == Expr.FunctionKind.TOTAAL || f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL
+                        || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN) {
+                    why[0] = Msg.frontend("PART.subject-no-anchor", "expression", f.source());
+                    return e;
+                }
+                List<Expr> arguments = new ArrayList<>();
+                boolean changed = false;
+                for (Expr x : f.arguments()) {
+                    Expr moved = again.apply(x);
+                    changed |= moved != x;
+                    arguments.add(moved);
+                }
+                Expr fallback = again.apply(f.emptyFallback());
+                return !changed && fallback == f.emptyFallback() ? f
+                        : new Expr.FunctionCall(f.kind(), List.copyOf(arguments), f.elementObjectType(), fallback, f.filter(),
+                                f.dimensionSelection(), f.type(), f.source(), f.granularity());
+            }
             case Expr.Binary b -> {
                 Expr l = again.apply(b.left()), r = again.apply(b.right());
                 return l == b.left() && r == b.right() ? b : new Expr.Binary(b.op(), l, r, b.type(), b.source());
@@ -222,6 +372,7 @@ final class ExpressionBuilder {
                 }
                 return changed ? new Expr.TextComposition(List.copyOf(parts), t.source()) : t;
             }
+            // the anchor stands on the read inside the cell (IR-SPEC ch. 4.1a)
             case Expr.DimensionCellRead d -> {
                 Expr moved = again.apply(d.attribute());
                 return moved == d.attribute() || !(moved instanceof Expr.AttributeReference a) ? d
@@ -231,8 +382,9 @@ final class ExpressionBuilder {
                 Expr value = again.apply(l.value()), body = again.apply(l.body());
                 return value == l.value() && body == l.body() ? l : new Expr.Let(l.binder(), value, body, l.type(), l.source());
             }
-            case Expr.IfThenElse k -> { why[0] = Msg.frontend("PART.reanchor-form", "expression", k.source()); return e; }
-            case Expr.InstanceSetUnion u -> { why[0] = Msg.frontend("PART.reanchor-form", "expression", u.source()); return e; }
+            // the two walk starters without an anchor (IR-SPEC ch. 4.1a), and the node no RegelSpraak sentence builds
+            case Expr.InstanceSetUnion u -> { why[0] = Msg.frontend("PART.subject-no-anchor", "expression", u.source()); return e; }
+            case Expr.IfThenElse k -> { why[0] = Msg.frontend("PART.subject-no-anchor", "expression", k.source()); return e; }
             case Expr.Literal x -> { return e; }
             case Expr.ParameterRef x -> { return e; }
             case Expr.VariableRef x -> { return e; }
@@ -240,79 +392,6 @@ final class ExpressionBuilder {
             case Expr.Constant x -> { return e; }
             case Expr.Unresolved x -> { return e; }
         }
-    }
-
-    /** A read from {@code from}, written from {@code to} over {@code back} and the read's own steps. A read that binds
-     *  nothing from {@code from} keeps its own refusal. */
-    private Expr reanchorRead(Expr.AttributeReference a, List<RegelSpraakModel.RoleBindingRef> back, ObjectType from,
-                              ObjectType to, Msg[] why) {
-        if (a.set() || a.objectType() == null) return a;               // the set fence's, or a read bound to no type: its own refusal
-        List<RegelSpraakModel.RoleBindingRef> forward = dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, from, a);
-        if (forward.isEmpty() && dev.uchar.regelspraak.emit.IrEmitter.unboundRead(model, from, a)) return a;
-        List<RegelSpraakModel.RoleBindingRef> path = new ArrayList<>(back);
-        path.addAll(forward);
-        List<String> roles = path.stream().map(RegelSpraakModel.RoleBindingRef::role).toList();
-        // one step stays the written navigationRole, a chain is a navigationPath (the invariant of AttributeReference)
-        Expr.AttributeReference moved = new Expr.AttributeReference(a.attribute(), a.objectType(), a.subjectSource(),
-                roles.get(0), a.type(), a.source(), false, roles.size() == 1 ? List.of() : roles, a.rangePath(),
-                a.quantifier(), a.threshold());
-        if (!dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, to, moved).equals(path)) {
-            why[0] = Msg.frontend("PART.reanchor-names", "roles", "'" + String.join("', '", roles) + "'", "element", to.name);
-            return a;
-        }
-        return moved;
-    }
-
-    /** A fold from {@code from}, written from {@code to}: its range gets {@code back} in front of it, a written path
-     *  (IR-SPEC ch. 4.3, WF-102), and its fallback is read where it stands. Another function's operands are read where
-     *  it stands. */
-    private Expr reanchorFunction(Expr.FunctionCall f, List<RegelSpraakModel.RoleBindingRef> back, ObjectType from,
-                                  ObjectType to, Msg[] why) {
-        if (dev.uchar.regelspraak.emit.IrEmitter.isFoldSource(f)) {
-            Expr.AttributeReference arg = (Expr.AttributeReference) f.arguments().get(0);
-            if (f.kind() == Expr.FunctionKind.AANTAL || arg.type() instanceof Datatype.Unknown) {
-                why[0] = Msg.frontend("PART.reanchor-count");
-                return f;
-            }
-            if (!arg.set()) {
-                why[0] = Msg.frontend("PART.reanchor-form", "expression", f.source());
-                return f;
-            }
-            List<RegelSpraakModel.RoleBindingRef> range = arg.rangePath() != null && !arg.rangePath().isEmpty()
-                    ? arg.rangePath() : null;
-            if (range == null) {
-                RegelSpraakModel.RoleBindingRef rb = dev.uchar.regelspraak.emit.IrEmitter.rangeRole(model, from,
-                        f.elementObjectType(), arg);
-                if (rb == null) return f;                               // no range from `from` either: its own refusal stands
-                range = List.of(rb);
-            }
-            List<RegelSpraakModel.RoleBindingRef> path = new ArrayList<>(back);
-            path.addAll(range);
-            Expr.AttributeReference moved = new Expr.AttributeReference(arg.attribute(), arg.objectType(),
-                    arg.subjectSource(), arg.navigationRole(), arg.type(), arg.source(), true, arg.navigationPath(),
-                    List.copyOf(path), arg.quantifier(), arg.threshold());
-            Expr fallback = reanchor(f.emptyFallback(), back, from, to, why);
-            return new Expr.FunctionCall(f.kind(), List.of(moved), f.elementObjectType(), fallback, f.filter(),
-                    f.dimensionSelection(), f.type(), f.source(), f.granularity());
-        }
-        // a fold over a dimension, a fold of another shape, and the operators over the subject's own timeline read the
-        // subject itself, and none of them has a spelling over a navigation
-        if (f.dimensionSelection() != null || f.elementObjectType() != null || f.kind() == Expr.FunctionKind.TOTAAL
-                || f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN) {
-            why[0] = Msg.frontend("PART.reanchor-form", "expression", f.source());
-            return f;
-        }
-        List<Expr> arguments = new ArrayList<>();
-        boolean changed = false;
-        for (Expr x : f.arguments()) {
-            Expr moved = reanchor(x, back, from, to, why);
-            changed |= moved != x;
-            arguments.add(moved);
-        }
-        Expr fallback = reanchor(f.emptyFallback(), back, from, to, why);
-        return !changed && fallback == f.emptyFallback() ? f
-                : new Expr.FunctionCall(f.kind(), List.copyOf(arguments), f.elementObjectType(), fallback, f.filter(),
-                        f.dimensionSelection(), f.type(), f.source(), f.granularity());
     }
 
     /** The kinds that fold a set of instances or values over one written source. */
@@ -324,121 +403,86 @@ final class ExpressionBuilder {
     }
 
     /** Whether {@code e} reads anything of a subject: a read, a fold, a union or a choice. */
-    private static boolean readsSubject(Expr e) {
+    static boolean readsSubject(Expr e) {
         return Expr.contains(e, x -> x instanceof Expr.AttributeReference || x instanceof Expr.FunctionCall f
                 && (f.elementObjectType() != null || f.dimensionSelection() != null)
                 || x instanceof Expr.InstanceSetUnion || x instanceof Expr.IfThenElse);
     }
 
-    /** The filters from the innermost one out to the one whose outer subject {@code home} names, or null where none does
-     *  or the innermost filter is not the one being built at the current subject. */
-    private List<Frame> chainTo(java.util.function.Predicate<ObjectType> home) {
-        if (frames.isEmpty() || frames.peek().element() != currentSubject) return null;
-        List<Frame> chain = new ArrayList<>();
-        for (Frame f : frames) {
-            chain.add(f);
-            if (home.test(f.outer())) return chain;
-        }
-        return null;
-    }
-
-    /** The way back over {@code chain}, or the frame whose filter has none. */
-    private static Object wayBack(List<Frame> chain) {
-        List<RegelSpraakModel.RoleBindingRef> back = new ArrayList<>();
-        for (Frame f : chain) {
-            if (f.back() == null) return f;
-            back.addAll(f.back());
-        }
-        return back;
-    }
-
-    /** The refusal of a read of the outer subject in a filter that has no spelling from the element. */
-    private Expr refuseInFilter(Object expression, Expr built, Frame home, Frame innermost, Msg reason, Source source) {
-        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-352",
-                params("expression", expression, "subject", home.outer().name, "element", innermost.element().name,
-                        "filter", innermost.filter(), "reason", reason), source.line()));
-        return new Expr.Unresolved(built.type(), source, null);   // the ERROR above is this marker's diagnosis
-    }
-
     /**
-     * A fold in a filter whose written range is anchored at the subject an enclosing fold is written from ("de laatste
+     * A fold whose written range is anchored at the subject of the form, in a filter or a quantifier test ("de laatste
      * van de einddag van alle klachten van de Schuit" in the filter of a fold over the ladingen of a Schuit): built at
-     * that subject, as written, and then written from the element over the way back. Null where the range is anchored
-     * at the element or at nothing a filter names, which the walk from the element decides as before.
+     * that subject, as written, with the form anchor. The refusal of a range anchored at a name the IR cannot reach
+     * from there, with its marker. Null where the range is anchored at the element or at nothing a filter names, which
+     * the walk from the element decides as before; at the form's own level a range anchored with "zelf" is built as
+     * written, and named as explicit.
      */
-    private Expr foldAtAnchor(FunctieAanroepContext f) {
-        if (frames.isEmpty()) return null;
+    private Expr foldAtForm(FunctieAanroepContext f) {
         // a set source writes its elements and then its anchor; a count source names its elements as a member of the
         // anchor ("het aantal klachten van de Schuit"), so its onderwerp is the anchor alone
         OnderwerpContext o = foldSourceSubject(f);
-        int least = 2;
         if (o == null && f instanceof AantalFuncContext cf && cf.primaireExpressie().size() == 1
-                && cf.primaireExpressie(0).attribuutVanOnderwerp() != null) {
+                && cf.primaireExpressie(0).attribuutVanOnderwerp() != null)
             o = cf.primaireExpressie(0).attribuutVanOnderwerp().onderwerp();
-            least = 1;
+        Anchor a = o == null ? null : anchorOf(o);
+        Reach reach = reach(a);
+        Expr refused = refusedReach(reach, a, source(f), unknown(), source(f));
+        if (refused != null) return refused;
+        if (reach != Reach.FORM) return null;
+        if (!inPerElementContext()) {
+            Expr built = buildFold(f);
+            explicitSubjectReads.add(built);
+            return built;
         }
-        List<String> segments = new ArrayList<>();
-        if (o == null || !rangeSegments(o, segments) || segments.size() < least) return null;
-        OnderwerpContext last = o;
-        while (last.onderwerp() != null) last = last.onderwerp();
-        if (last.onderwerpKeten() != null && last.onderwerpKeten().ZIJN() != null) return null;   // "zijn X": the element's
-        String anchor = segments.get(segments.size() - 1);
-        if (namesType(anchor, currentSubject)) return null;
-        // the anchor is the outer subject only where it is that type's own name: a role of the element ("de schuit")
-        // and a name a leading word was dropped from keep the walk from the element
-        List<Frame> chain = chainTo(t -> model.objectTypes.get(anchor) == t);
-        if (chain == null) return null;
-        Frame home = chain.get(chain.size() - 1);
-        ObjectType element = currentSubject;
-        List<Frame> saved = List.copyOf(frames);
-        for (int i = 0; i < chain.size(); i++) frames.pop();
-        currentSubject = home.outer();
-        Expr built;
-        try {
-            built = buildFunction(f);
-        } finally {
-            currentSubject = element;
-            frames.clear();
-            frames.addAll(saved);
-        }
+        Expr built = atForm(() -> buildFold(f));
         if (built instanceof Expr.Unresolved) return built;
-        Object back = wayBack(chain);
-        if (back instanceof Frame without) return refuseInFilter(source(f), built, home, chain.get(0), without.noWayBack(), source(f));
-        @SuppressWarnings("unchecked") List<RegelSpraakModel.RoleBindingRef> path = (List<RegelSpraakModel.RoleBindingRef>) back;
-        Reanchored r = reanchor(built, path, home.outer(), element);
-        return r.refusal() != null ? refuseInFilter(source(f), built, home, chain.get(0), r.refusal(), source(f)) : r.expr();
-    }
-
-    /** Whether the written name {@code name} names the object type {@code type}, under the name candidates. */
-    private boolean namesType(String name, ObjectType type) {
-        if (type == null) return false;
-        for (String candidate : RegelSpraakModel.nameCandidates(name))
-            if (model.objectTypeByName(candidate) == type) return true;
-        return false;
+        Anchored x = anchor(built);
+        if (x.refusal() == null) return x.expr();
+        refuseRuleSubject(source(f), x.refusal(), source(f));
+        return new Expr.Unresolved(built.type(), source(f), null);   // the ERROR above is this marker's diagnosis
     }
 
     /**
-     * A variable of the rule read in a filter: its definition was built at the rule subject, so it is written from the
-     * element over the way back, the meaning it has outside the filter. Where the element has the rule subject's own
-     * type the reading is refused (RGS-350), and where there is no way back as well (RGS-352). Outside a filter, and in a
-     * filter built at another subject than the variables', the definition stands as built.
+     * A variable of the rule read in a filter or a quantifier test: its definition was built at the subject of the form,
+     * so it is read there, with the form anchor on every read and fold of it that starts at the subject (IR-SPEC ch.
+     * 4.10 (c)). Outside a filter, and in a filter built at another subject than the variables', the definition stands as
+     * built.
      */
     private Expr variableInFilter(String name, Expr definition, Source source) {
-        if (frames.isEmpty() || variablesSubject == null || !readsSubject(definition)) return definition;
-        List<Frame> chain = chainTo(t -> t == variablesSubject);
-        if (chain == null) return definition;
-        Frame home = chain.get(chain.size() - 1);
-        Msg read = Msg.frontend("PART.variable-read", "name", name, "definition", definition.source());
-        if (chain.get(0).element() == variablesSubject) {
-            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-350",
-                    params("filter", chain.get(0).filter(), "read", read, "type", variablesSubject.name), source.line()));
-            return new Expr.Unresolved(definition.type(), source, null);   // the ERROR above is this marker's diagnosis
+        if (!inPerElementContext() || variablesSubject == null || variablesSubject != formSubject()
+                || !readsSubject(definition)) return definition;
+        Anchored x = anchor(definition);
+        if (x.refusal() == null) return x.expr();
+        refuseRuleSubject(Msg.frontend("PART.variable-read", "name", name, "definition", definition.source()), x.refusal(),
+                source);
+        return new Expr.Unresolved(definition.type(), source, null);   // the ERROR above is this marker's diagnosis
+    }
+
+    /** The subject the current rule's variables were built at: their reads belong to it. */
+    private ObjectType variablesSubject;
+
+    /** The text of {@code ctx} without the "zelf" of its references: the name the reference is resolved by. A
+     *  subselection keeps its own words. */
+    static String withoutSelf(ParserRuleContext ctx) {
+        List<org.antlr.v4.runtime.Token> self = new ArrayList<>();
+        collectSelf(ctx, self);
+        if (self.isEmpty() || ctx.getStart() == null || ctx.getStop() == null) return src(ctx);
+        org.antlr.v4.runtime.CharStream in = ctx.getStart().getInputStream();
+        StringBuilder text = new StringBuilder();
+        int from = ctx.getStart().getStartIndex();
+        for (org.antlr.v4.runtime.Token t : self) {
+            if (t.getStartIndex() > from) text.append(in.getText(org.antlr.v4.runtime.misc.Interval.of(from, t.getStartIndex() - 1)));
+            from = t.getStopIndex() + 1;
         }
-        Object back = wayBack(chain);
-        if (back instanceof Frame without) return refuseInFilter(read, definition, home, chain.get(0), without.noWayBack(), source);
-        @SuppressWarnings("unchecked") List<RegelSpraakModel.RoleBindingRef> path = (List<RegelSpraakModel.RoleBindingRef>) back;
-        Reanchored r = reanchor(definition, path, variablesSubject, currentSubject);
-        return r.refusal() != null ? refuseInFilter(read, definition, home, chain.get(0), r.refusal(), source) : r.expr();
+        if (ctx.getStop().getStopIndex() >= from)
+            text.append(in.getText(org.antlr.v4.runtime.misc.Interval.of(from, ctx.getStop().getStopIndex())));
+        return text.toString().replaceAll("\\s+", " ").trim();
+    }
+
+    private static void collectSelf(ParseTree t, List<org.antlr.v4.runtime.Token> out) {
+        if (t instanceof OnderwerpVerwijzingContext v && v.ZELF() != null) out.add(v.ZELF().getSymbol());
+        if (t instanceof PredicaatContext) return;
+        for (int i = 0; i < t.getChildCount(); i++) collectSelf(t.getChild(i), out);
     }
 
     /**
@@ -1072,7 +1116,12 @@ final class ExpressionBuilder {
         if (p.expressie() != null)      return build(p.expressie()); // ( expressie )
         if (p.onderwerp() != null) {
             Expr poss = subjectPossessive(p.onderwerp(), source); // "zijn <attribuut van het subject>"
-            return poss != null ? poss : nameRef(src(p.onderwerp()), source);
+            if (poss != null) return poss;
+            Expr named = nameRef(src(p.onderwerp()), source);
+            // "de Vergunning zelf" as an operand: what a characteristic check reads its subject by
+            Anchor anchor = anchorOf(p.onderwerp());
+            if (named instanceof Expr.Unresolved && anchor != null) writtenAnchors.put(named, anchor);
+            return named;
         }
         if (p.variabeleNaam() != null)  return nameRef(src(p.variabeleNaam()), source);
         return unresolvedMarker(p, Msg.frontend("RGS-092.primary-form"));
@@ -1276,9 +1325,16 @@ final class ExpressionBuilder {
         // faithfully, so it keeps the sharing a Let gives it.
         if (binderMode && aggregates(kind)) return inlining(() -> buildFunction(f));
         if (folds(kind)) {
-            Expr anchored = foldAtAnchor(f);
-            if (anchored != null) return anchored;
+            Expr atForm = foldAtForm(f);
+            if (atForm != null) return atForm;
         }
+        return buildFold(f);
+    }
+
+    /** {@link #buildFunction} past the fold whose range starts at the subject of the form. */
+    private Expr buildFold(FunctieAanroepContext f) {
+        Source source = source(f);
+        Expr.FunctionKind kind = functionKind(f);
         List<Expr> arguments = stepsAfterSet(kind, args(f), f);
         ObjectType elem = aggregationElement(kind, arguments);
         // §13.4.17.47 telling vs a declared parameter whose name begins with "aantal": the spec
@@ -2030,13 +2086,13 @@ final class ExpressionBuilder {
             // §13.4.13.4 the COMPOUND subselectie "die aan alle volgende voorwaarden voldoen: …" — resolve its bullets
             // against the ELEMENT (via the RuleChecker callback) into a Condition.Compound on the source pattern.
             if (p.samengesteldPredicaat() != null) {
-                List<RegelSpraakModel.RoleBindingRef> range = foldRange(arguments, elem);
-                Frame frame = range == null || currentSubject == null ? null : frame(currentSubject, elem, range, source(p));
+                Frame frame = currentSubject == null ? null : new Frame(currentSubject, elem, source(p));
                 Condition c = compoundFilter != null
                         ? inFilter(frame, p, elem, () -> compoundFilter.resolve(p.samengesteldPredicaat(), elem)) : null;
                 return c != null ? c : new Condition.Unresolved(source(p), null);
             }
-            Condition filter = elementCharacteristicCheckFilter(p, elem);
+            Condition filter = identityFilter(p);
+            if (filter == null) filter = elementCharacteristicCheckFilter(p, elem);
             // §5.6 getalpredicaat "die <op> <expr>" (e.g. "die kleiner zijn dan 18"): a comparison of the AGGREGATED
             // attribute (the LHS the operator folds) -> a Condition.Comparison the accumulate source pattern constrains.
             if (filter == null) filter = elementComparison(p, elem, arguments);
@@ -2130,20 +2186,20 @@ final class ExpressionBuilder {
         if (p != null) consumed.remove(p);
     }
 
-    Subselection subselection(ParseTree operand, ObjectType elem, Expr quantified,
-                              List<RegelSpraakModel.RoleBindingRef> range) {
+    Subselection subselection(ParseTree operand, ObjectType elem, Expr quantified) {
         if (elem == null || operand == null) return null;
         PredicaatContext p = findSubselectionPredicate(operand);
         if (p == null) return null;
         consumed.add(p);
         if (p.samengesteldPredicaat() != null) {
-            Frame frame = range == null || currentSubject == null ? null : frame(currentSubject, elem, range, source(p));
+            Frame frame = currentSubject == null ? null : new Frame(currentSubject, elem, source(p));
             Condition c = compoundFilter != null
                     ? inFilter(frame, p, elem, () -> compoundFilter.resolve(p.samengesteldPredicaat(), elem)) : null;
             return c != null ? new Subselection(c, null)
                     : new Subselection(null, Msg.frontend("PART.subselection-no-compound", "element", elem.name));
         }
-        Condition filter = elementCharacteristicCheckFilter(p, elem);
+        Condition filter = identityFilter(p);
+        if (filter == null) filter = elementCharacteristicCheckFilter(p, elem);
         if (filter != null) return new Subselection(filter, null);
         // §5.6 getalpredicaat "die <op> <expr>" names no attribute of its own, so elementComparison
         // re-anchors the FOLD's operand as its left side. When that operand is TIJDSAFHANKELIJK the filter
@@ -2325,6 +2381,20 @@ final class ExpressionBuilder {
             if (r != null) return r;
         }
         return null;
+    }
+
+    /** "die (niet) de Vergunning zelf zijn" (grammar/DIVERGENCES.md, "The rule subject in a subselection — zelf"): the
+     *  identity check of the element against the subject of the form (IR-SPEC ch. 4.5, {@code IdentityCheck}), the
+     *  name before "zelf" that subject's type's own name; null where the predicaat is no identity check. */
+    private Condition identityFilter(PredicaatContext p) {
+        IdentiteitsToetsContext t = p.toplevelOperator() != null ? p.toplevelOperator().identiteitsToets()
+                : p.nonToplevelOperator() != null ? p.nonToplevelOperator().identiteitsToets() : null;
+        if (t == null) return null;
+        String name = stripArticle(src(t.kaleNaam()));
+        if (model.objectTypes.get(name) != null && model.objectTypes.get(name) == formSubject())
+            return new Condition.IdentityCheck(t.NIET() != null, source(p));
+        refuseRuleSubject(source(p), selfElsewhere(name), source(p));
+        return new Condition.Unresolved(source(p), null);   // the ERROR above is this marker's diagnosis
     }
 
     /** A "die een &lt;kenmerk&gt; zijn" subselectie resolved against the counted element type: the
@@ -3065,9 +3135,30 @@ final class ExpressionBuilder {
     }
 
     /** Build "&lt;attr&gt; van &lt;onderwerp&gt;" into an {@link Expr.AttributeReference} — the shared core of
-     *  {@link #buildAttribute} and {@link #subjectAsValue}. */
+     *  {@link #buildAttribute} and {@link #subjectAsValue}. In a filter or a quantifier test a read of the subject of the
+     *  form is built at that subject and carries the form anchor (IR-SPEC ch. 4.1a); a name the IR cannot reach from
+     *  there is refused ({@link #reach}). */
     private Expr attributeRef(String attr, OnderwerpContext subjectType, Source source) {
-        String subjectSource = subjectType != null ? src(subjectType) : "";
+        Anchor a = subjectType == null ? null : anchorOf(subjectType);
+        Reach reach = reach(a);
+        Expr refused = refusedReach(reach, a, source, unknown(), source);
+        if (refused != null) return refused;
+        if (reach != Reach.FORM) return attributeRefAt(attr, subjectType, source);
+        if (!inPerElementContext()) {
+            Expr built = attributeRefAt(attr, subjectType, source);
+            explicitSubjectReads.add(built);
+            return built;
+        }
+        Expr built = atForm(() -> attributeRefAt(attr, subjectType, source));
+        Anchored x = anchor(built);
+        if (x.refusal() == null) return x.expr();
+        refuseRuleSubject(source, x.refusal(), source);
+        return new Expr.Unresolved(built.type(), source, null);   // the ERROR above is this marker's diagnosis
+    }
+
+    /** {@link #attributeRef} from the current subject. */
+    private Expr attributeRefAt(String attr, OnderwerpContext subjectType, Source source) {
+        String subjectSource = subjectType != null ? withoutSelf(subjectType) : "";
         // §13.4.1.3/§5.5.3 a rangtelwoord on the SUBJECT reference ("de bijdrage van de als tweede genoemde
         // deelnemer"): consume the ordinal — the bare resolution when it selects the rule's single binding,
         // an ERROR/marker otherwise (checkOrdinal). Never silently dropped (the pre-consumption behavior
@@ -3763,7 +3854,11 @@ final class ExpressionBuilder {
             if (v != null) return new Expr.BinderRef(v.name(), v.value().type(), source);
         } else {
             Expr inlined = visible.get(key);
-            if (inlined != null) return variableInFilter(name, inlined, source);
+            if (inlined != null) {
+                Expr read = variableInFilter(name, inlined, source);
+                explicitSubjectReads.add(read);   // a variable of the rule is the rule subject's, wherever it is read
+                return read;
+            }
         }
         String stripped = name.replaceFirst("^(?i)(de|het|een)\\s+", "");
         Parameter p = model.parameters.get(stripped);

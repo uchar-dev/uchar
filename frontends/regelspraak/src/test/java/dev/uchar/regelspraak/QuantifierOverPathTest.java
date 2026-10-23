@@ -172,22 +172,19 @@ class QuantifierOverPathTest {
         assertTrue(ir.contains("\"sourcePath\":[" + MELDER + "," + VONDST + "]"), ir);
     }
 
-    /** The matrix reads with the element as subject: a read the frontend built from the rule subject has, over a path,
-     *  no walk back from the element, and is refused rather than bound from the element. Over one step it binds back
-     *  over the relation's other role, as before. */
-    @Test void a_test_that_reads_the_rule_subject_over_a_path_is_refused() {
-        RegelSpraakModel m = Resolver.resolve(MODEL + rule("Melding is dringend",
+    /** The matrix reads with the element as subject, and the operand beside the quantified one was built at the rule
+     *  subject: it carries the form anchor (IR-SPEC ch. 4.1a), over a path and over one step. Changed 2026-10-23 (card
+     *  subselection-reads-subject): over a path the read was refused (RGS-348, retired), since no walk led back from the
+     *  element; over one step it was written from the element over the relation's other role. */
+    @Test void a_test_that_reads_the_rule_subject_carries_the_form_anchor() {
+        String ir = clean(rule("Melding is dringend",
                 "het gewicht van ten minste één van de vondsten van de melder van de Melding groter is dan de drempel van de Melding"));
-        assertTrue(m.diagnostics.stream().anyMatch(d -> d.isError() && "RGS-348".equals(d.code())
-                        && d.message().contains("'de drempel van de Melding'")),
-                () -> "de lezing van het onderwerp hoort luid geweigerd te worden: " + m.diagnostics);
-        RegelSpraakModel one = Resolver.resolve(MODEL + """
-            Regel t
-                geldig altijd
-                    Een Jutter is kistplichtig
-                    indien het gewicht van ten minste één van de vondsten van de Jutter groter is dan de leeftijd van de Jutter.
-            """);
-        assertTrue(one.diagnostics.isEmpty(), () -> "over één stap bindt de lezing van het onderwerp terug: " + one.diagnostics);
+        assertTrue(ir.contains("\"right\":{\"node\":\"AttributeReference\",\"attribute\":\"drempel\",\"subjectType\":\"Melding\","
+                + "\"anchor\":\"form\",\"source\":{\"snippet\":\"dedrempelvandeMelding\"}}"), ir);
+        String one = clean(rule("Jutter is kistplichtig",
+                "het gewicht van ten minste één van de vondsten van de Jutter groter is dan de leeftijd van de Jutter"));
+        assertTrue(one.contains("\"right\":{\"node\":\"AttributeReference\",\"attribute\":\"leeftijd\",\"subjectType\":\"Jutter\","
+                + "\"anchor\":\"form\",\"source\":{\"snippet\":\"deleeftijdvandeJutter\"}}"), one);
     }
 
     /** A read the matrix builds again from the element ("de ... van de vinder van de Vondst") is the element's. */
@@ -230,7 +227,8 @@ class QuantifierOverPathTest {
     /** Review finding 1 (2026-10-20): where element and rule subject have the same type, a read of the subject in the
      *  test of a quantifier names the element as well, and the test is read per element with the element as its
      *  subject — every executor compared each element with itself. Refused by name (RGS-349), over a path and over one
-     *  step, beside the read an operand of another type takes (RGS-348). */
+     *  step; since 2026-10-23 (card subselection-reads-subject) a read written with "zelf" is the rule subject's and
+     *  carries the form anchor (RuleSubjectSelfTest), and the message names that way out. */
     @Test void a_test_that_reads_a_subject_of_the_element_type_is_refused() {
         String[][] forms = {
             {"de leeftijd van ten minste één van de jutters van de ploeg van de Jutter groter is dan de leeftijd van de Jutter",

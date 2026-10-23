@@ -69,7 +69,12 @@ public sealed interface Condition {
      *  constraint must attach to — a §13.4.7 feitcreatie hosts a doel-kenmerk on the {@code $doel} pattern,
      *  so the transpiler emits it only on that type and markers it elsewhere (never on the anker, even when
      *  the anker declares a same-named kenmerk). null leaves it unconstrained (the single-subject rule). */
-    record CharacteristicCheck(String characteristic, String navigation, boolean negation, ObjectType owner, WholePeriod period, Source source) implements Condition {
+    record CharacteristicCheck(String characteristic, String navigation, boolean negation, ObjectType owner, WholePeriod period, Source source,
+                               boolean anchored) implements Condition {
+        /** {@code anchored}: the form anchor of IR-SPEC ch. 4.1a (WF-122) — the check stands in a filter or a
+         *  quantifier test and reads the subject of the form ("de Vergunning zelf heeft de voorrang"), not the
+         *  element; the wire writes {@code anchor: "form"} and no {@code host}. */
+        public CharacteristicCheck(String characteristic, String navigation, boolean negation, ObjectType owner, WholePeriod period, Source source) { this(characteristic, navigation, negation, owner, period, source, false); }
         public CharacteristicCheck(String characteristic, String navigation, boolean negation, ObjectType owner, Source source) { this(characteristic, navigation, negation, owner, null, source); }
         public CharacteristicCheck(String characteristic, String navigation, boolean negation, Source source) { this(characteristic, navigation, negation, null, null, source); }
         public CharacteristicCheck(String characteristic, Source source) { this(characteristic, null, false, null, null, source); }

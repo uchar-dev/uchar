@@ -275,7 +275,7 @@ public final class ProducerConsumer {
         RegelSpraakModel.ObjectType reaches(Condition.CharacteristicCheck check, RegelSpraakModel.ObjectType subjectType);
 
         /** Whether {@code node} carries the form anchor (IR-SPEC ch. 4.1a): it is read on the subject of the form. The
-         *  wire route answers from the loader's table; the source route builds no anchor and answers no. */
+         *  wire route answers from the loader's table, the source route from the resolver's records. */
         default boolean anchored(Object node) {
             return false;
         }
@@ -286,14 +286,24 @@ public final class ProducerConsumer {
      *  binding it writes for the hop. A navigated check whose role reaches no unique type fails loudly, as the
      *  emitter refuses to write it. */
     public static Navigation sourceNavigation(RegelSpraakModel model) {
-        return (k, subjectType) -> {
-            if (k.navigation() == null) return null;
-            RegelSpraakModel.ObjectType reaches = model.roleTargetTypeToSubject(subjectType, k.navigation());
-            if (reaches == null)
-                throw new IllegalStateException("the characteristic check '" + k.characteristic() + "' navigates by the role '"
-                        + k.navigation() + "', which reaches no unique object type from "
-                        + (subjectType == null ? "an unknown subject" : "'" + subjectType.name + "'"));
-            return reaches;
+        return new Navigation() {
+            @Override public RegelSpraakModel.ObjectType reaches(Condition.CharacteristicCheck k,
+                                                                RegelSpraakModel.ObjectType subjectType) {
+                if (k.navigation() == null) return null;
+                RegelSpraakModel.ObjectType reaches = model.roleTargetTypeToSubject(subjectType, k.navigation());
+                if (reaches == null)
+                    throw new IllegalStateException("the characteristic check '" + k.characteristic() + "' navigates by the role '"
+                            + k.navigation() + "', which reaches no unique object type from "
+                            + (subjectType == null ? "an unknown subject" : "'" + subjectType.name + "'"));
+                return reaches;
+            }
+
+            // the resolver's records carry the anchor the emitter writes
+            @Override public boolean anchored(Object node) {
+                return node instanceof Expr.AttributeReference a && a.anchored()
+                        || node instanceof Expr.FunctionCall f && f.anchored()
+                        || node instanceof Condition.CharacteristicCheck k && k.anchored();
+            }
         };
     }
 

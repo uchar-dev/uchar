@@ -61,21 +61,30 @@ class MarkerReportTest {
     static {
         CLASSIFICATION.put("RuleChecker.java#checkWholePeriod", "ERROR (§8.2 over een statisch onderwerp): geen document");
         CLASSIFICATION.put("RuleChecker.java#quantifierFold",
-                "ERROR (RGS-348, de toets van een kwantor over een pad leest het regelonderwerp; RGS-349, het "
-                + "regelonderwerp heeft het type van het element): geen document");
-        CLASSIFICATION.put("RuleChecker.java#compoundElementFilter",
-                "ERROR (RGS-350, een deelselectie noemt een onderwerp van het type van het element): geen document");
+                "ERROR (RGS-349, de toets leest het regelonderwerp van het type van het element zonder 'zelf'; RGS-358, "
+                + "een kwantor over het regelonderwerp in een deelselectie, of de toets leest een omsluitend element): "
+                + "geen document");
+        CLASSIFICATION.put("RuleChecker.java#identityCheck", "ERROR (RGS-358, een identiteitstoets die het IR niet "
+                + "kan schrijven): geen document");
+        CLASSIFICATION.put("RuleChecker.java#quantifierCharacteristicCheck", "ERROR (RGS-350 of RGS-358, een kwantor "
+                + "over het regelonderwerp in een deelselectie): geen document");
+        CLASSIFICATION.put("RuleChecker.java#characteristicCheckPredicateBare", "ERROR (RGS-350 of RGS-358, een "
+                + "kenmerkcheck of rolcheck van het regelonderwerp die het IR in een deelselectie niet kan schrijven): "
+                + "geen document");
         CLASSIFICATION.put("RuleChecker.java#dayKindOperandError", "ERROR (Tabel 57): geen document");
-        for (String site : List.of("buildCompound", "buildCriteria", "compoundElementFilterBare"))
+        for (String site : List.of("buildCompound", "buildCriteria", "compoundElementFilter"))
             CLASSIFICATION.put("RuleChecker.java#" + site,
                     "ERROR (RGS-353 tot en met RGS-356, de diepte van een bullet): geen document");
-        CLASSIFICATION.put("ExpressionBuilder.java#refuseInFilter",
-                "ERROR (RGS-352, een lezing van het regelonderwerp in een filter zonder spelling vanaf het element): "
-                + "geen document");
         CLASSIFICATION.put("ExpressionBuilder.java#variableInFilter",
-                "ERROR (RGS-350, een variabele van de regel in een deelselectie over elementen van het type van het "
-                + "regelonderwerp): geen document");
-        CLASSIFICATION.put("ExpressionBuilder.java#buildFunction", "WARNING: aggregatie_over_een_ongedeclareerd_lid, "
+                "ERROR (RGS-358, een variabele van de regel in een deelselectie zonder vorm met het vormanker): "
+                + "geen document");
+        for (String site : List.of("attributeRef", "foldAtForm", "identityFilter"))
+            CLASSIFICATION.put("ExpressionBuilder.java#" + site,
+                    "ERROR (RGS-358, een lezing van het regelonderwerp die het IR niet kan schrijven): geen document");
+        CLASSIFICATION.put("ExpressionBuilder.java#refusedReach", "ERROR (RGS-350, de kale typenaam van het type van "
+                + "element en regelonderwerp; RGS-358, een tussenliggend element of 'zelf' na een andere naam): geen "
+                + "document");
+        CLASSIFICATION.put("ExpressionBuilder.java#buildFold", "WARNING: aggregatie_over_een_ongedeclareerd_lid, "
                 + "dimensieselectie_of_gedurende_op_een_aggregatie; ERROR (WF-037, aantal gevulde): geen document");
         CLASSIFICATION.put("ExpressionBuilder.java#checkFoldSource", "WARNING: vouwbron_geneste_verzamelingsstap, "
                 + "vouwbron_tussenstap, vouwbron_rolanker, vouwbron_bindt_niet_op_de_geschreven_naam");
