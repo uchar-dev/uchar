@@ -432,10 +432,11 @@ An `AttributeReference`, a `CharacteristicCheck`, an `Aggregation` and a
 `QuantifierFold` carry the optional field `anchor`, whose one value is `form`,
 and the condition union has the node `IdentityCheck {node, anchor, negated,
 source?}`, whose `anchor` is required (`../IR-SPEC.md` ch. 4.1a and 4.5). In
-the filter of an instance fold or of a union selection, or in the filter or the
-test of a quantifier fold, where the subject is the element, a node with the
-anchor reads the subject of its form, and the identity check compares the
-element with it. The canonical place of the field is after `subjectType` on the
+the filter of an instance fold, or in the filter or the test of a quantifier
+fold, where the subject is the element, a node with the anchor reads the
+subject of its form, and the identity check compares the element with it. The
+filter of a selection of an instance-set union is a per-element context too,
+and no position of the anchor (ch. 4.1a, WF-122 (a)). The canonical place of the field is after `subjectType` on the
 reference, after `host` on the check and after `elementType` on the two folds.
 The schema admits the field on every one of the four nodes wherever the node
 stands, the target of a rule version included, and the identity check wherever
