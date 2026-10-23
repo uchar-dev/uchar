@@ -1802,12 +1802,19 @@ a name that ran on over it would swallow the marker. A scenario name and a rule
 name take every token, so the word stays free text there, as v2 of the
 werkbank writes it ("… van het recht zelf in een samenloop", "… dat zelf is
 geëindigd"); `regelReferentieWoord` takes it too, so a rule name with the word
-stays referable in the list of a scope. The price of the keyword: a declared
-attribute, role, parameter, variable, situation or timeline name, and the rule
-name after `regelversie`, that contains the word "zelf" no longer parses. None
-of the repository's sources writes one; the word stood in three scenario names
-("doel zelf in invoer"), which read as before. "zelfstandige" lexes as one
-word, as before.
+stays referable in the list of a scope. A fact-type name takes every one-word
+token ("Namen in declaratiekoppen"), `ZELF` among them since review B of the
+card, so "Feittype belading zelf" reads as before: the name occurs in no rule
+text, so the token cannot run a reading on there. The price of the keyword: a
+declared object type, attribute, characteristic, role, domain, dimension, unit
+system, parameter, parameter set, day kind, timeline, vocabulary, variable or
+situation name, and the rule name after `regelversie`, that contains the word
+"zelf" no longer parses. Their rules take a closed set of word tokens, most of
+them shared with the names rule text reads (`lowerNaam`, `vrijeNaam`,
+`objectTypeNaam`), where a name that ran on over the word would swallow the
+marker; they are left as they are. None of the repository's sources writes
+one; the word stood in three scenario names ("doel zelf in invoer"), which read
+as before. "zelfstandige" lexes as one word, as before.
 
 **Lowering (resolver).** One rule: the frontend builds every expression at the
 subject the sentence names, and a node built at the subject of the form that

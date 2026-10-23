@@ -247,6 +247,17 @@ class RuleSubjectSelfTest {
         sameAsAnotherWord(SCOPE_LIST, "de proef zelf en het tarief zelf", List.of("proef zelf", "tarief zelf"));
     }
 
+    /** A fact-type name takes every one-word token, so "zelf" parses there as it did before it became a token (review B
+     *  of the card); the document emits what the same document with "ook" for "zelf" emits, but for that word. */
+    @Test void zelf_stays_free_text_in_the_name_of_a_fact_type() {
+        String source = voorrang("zijn tarief groter is dan 10").replace("Feittype registerinschrijving",
+                "Feittype registerinschrijving zelf");
+        RegelSpraakModel m = Resolver.resolve(source);
+        assertEquals(List.of(), m.diagnostics.stream().map(Diagnostic::toString).toList());
+        assertEquals(List.of("registerinschrijving zelf"), List.copyOf(m.factTypes.keySet()));
+        assertEquals(IrEmitter.emit(Resolver.resolve(source.replace("zelf", "ook"))), IrEmitter.emit(m).replace("zelf", "ook"));
+    }
+
     /** {@code source} resolves without a diagnostic, with the scenario and rule names as written, and emits what the same
      *  document with "ook" for "zelf" emits, but for that word: the IR, the case file and the scope. */
     private static void sameAsAnotherWord(String source, String scenario, List<String> rules) {
