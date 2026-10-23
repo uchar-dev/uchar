@@ -111,6 +111,26 @@ class AnchorWitnessTest {
         }
     }
 
+    /** An anchored total over the own timeline in a filter ("het totaal van de ploegvergoeding per maand van de Ploeg
+     *  zelf", in the filter of a count over the jutters of the Ploeg, {@code src/test/resources/anchor}): the total takes
+     *  the rule's own subject as a value, which an anchored node does not have here, so both branches refuse the form by
+     *  name, in one sentence, where they broke off without a code until review B of card subselection-reads-subject.
+     *  The verifier passes the document and ref plays its case (measured 2026-10-23). */
+    @Test void an_anchored_own_total_in_a_filter_is_refused_on_both_branches() throws Exception {
+        Path dir = Path.of("src", "test", "resources", "anchor", "own-total-in-filter");
+        JsonNode c = TmsDocuments.JSON.readTree(Files.readString(dir.resolve("case.json")));
+        String exec = null;
+        for (boolean viaDrl : new boolean[] {false, true}) {
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                    () -> CaseRunner.playCase(dir.resolve("ir.json"), c, viaDrl));
+            assertEquals(DroolsCode.ANCHORED_FORM_NOT_CARRIED, e.code(), e.getMessage());
+            assertTrue(e.getMessage().contains("het totaal van de ploegvergoeding per maand van de Ploeg zelf"),
+                    e.getMessage());
+            if (exec == null) exec = e.getMessage();
+            else assertEquals(exec, e.getMessage(), "the DRL-text branch refuses in the sentence of the exec-model branch");
+        }
+    }
+
     /** The loader reads the anchor for its one value, in the shared loader's sentences: another string, another JSON
      *  value, and an identity check without its required anchor are each a document error at the anchor's pointer. */
     @Test void an_anchor_other_than_form_is_a_document_error_at_its_pointer() throws Exception {

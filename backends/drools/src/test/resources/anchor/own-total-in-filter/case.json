@@ -1,0 +1,32 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {
+          "jutters": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "consistent"
+    }
+  ]
+}

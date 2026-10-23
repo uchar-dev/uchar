@@ -6066,6 +6066,8 @@ public final class TmsTranspiler {
         private ObjectType formType;
         /** Whether an anchored node compiles: its reads join or bind {@link #FOLD_SUBJECT} instead of the subject. */
         private boolean atForm;
+        /** While an anchored node compiles, that node, which a refusal of a form inside it names. */
+        private Object formNode;
         /** The values bound off the bean of the form's subject ({@link #FOLD_SUBJECT}) while an anchored node compiles:
          *  its input, which does not change while the session fires, on the pattern that binds it. */
         private final List<Binding> formBindings = new ArrayList<>();
@@ -6128,9 +6130,12 @@ public final class TmsTranspiler {
             return out;
         }
 
-        /** The subject itself as a bound value, for a consequence that hands on another object beside it. */
+        /** The subject itself as a bound value, for a consequence that hands on another object beside it. Refused by
+         *  name in an anchored node: a form that takes the subject itself, such as the total over the own timeline,
+         *  reads it off this rule's subject only, and a fold on the subject of the form binds that subject as
+         *  {@link #FOLD_SUBJECT}. */
         int member() {
-            if (atForm) throw new IllegalStateException("het onderwerp zelf gevraagd in een geankerde knoop");
+            if (atForm) throw new Refusal(DroolsCode.ANCHORED_FORM_NOT_CARRIED.reason("snippet", snippetOf(formNode)));
             int known = existing("onderwerp zelf");
             return known >= 0 ? known : allocateSlot(ReadKind.SUBJECT, "onderwerp zelf", SUBJECT);
         }
@@ -6154,11 +6159,13 @@ public final class TmsTranspiler {
             ObjectType outer = subject;
             subject = formType;
             atForm = true;
+            formNode = node;
             try {
                 return compile.get();
             } finally {
                 subject = outer;
                 atForm = false;
+                formNode = null;
             }
         }
 

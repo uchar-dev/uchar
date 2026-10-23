@@ -507,7 +507,8 @@ off the fold's subject; the `IdentityCheck` compares the member with the fold's 
 the anchor in a side table beside the model (`IrLoader.Loaded.anchored`), since the records are the frontend's. A fold
 that is read per member of another fold has that member as its subject and binds no subject of the form, so an anchored
 node in its filter or matrix is refused by name (DROOLS-293), and so is an anchored node under the whole-period
-qualifier, whose forms read the rule's own subject by the shape of the operand (DROOLS-294). `Cycles` and the rule
+qualifier, whose forms read the rule's own subject by the shape of the operand, and an anchored total over the own
+timeline, which takes the rule's own subject as a value (DROOLS-294). `Cycles` and the rule
 graph read an anchored node as the verifier does: on the subject of the form, along its own steps. Witness
 `AnchorWitnessTest`.
 

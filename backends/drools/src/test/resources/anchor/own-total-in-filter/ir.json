@@ -1,0 +1,213 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "wachtvergoeding per maand",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Ploeg",
+        "animate": false,
+        "plural": "Ploegen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "drukte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ploegvergoeding per maand",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "bemanning",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "ploeg",
+            "objectType": "Ploeg",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "plural": "jutters",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "drukte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "drukte",
+              "subjectType": "Ploeg",
+              "source": {
+                "snippet": "De drukte van een Ploeg"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "jutters",
+                  "subjectType": "Ploeg",
+                  "source": {
+                    "snippet": "jutters van de Ploeg die aan de volgende voorwaarde voldoen: (het totaal van de ploegvergoeding per maand van de Ploeg zelf) is groter dan 10"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "total",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "ploegvergoeding per maand",
+                          "subjectType": "Ploeg",
+                          "source": {
+                            "snippet": "de ploegvergoeding per maand van de Ploeg zelf"
+                          }
+                        }
+                      ],
+                      "elementType": "Ploeg",
+                      "anchor": "form",
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "het totaal van de ploegvergoeding per maand van de Ploeg zelf"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "10"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "10"
+                      }
+                    },
+                    "source": {
+                      "snippet": "(het totaal van de ploegvergoeding per maand van de Ploeg zelf) is groter dan 10"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: (het totaal van de ploegvergoeding per maand van de Ploeg zelf) is groter dan 10"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "bemanning",
+                "role": "jutter"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal jutters van de Ploeg die aan de volgende voorwaarde voldoen: (het totaal van de ploegvergoeding per maand van de Ploeg zelf) is groter dan 10"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
