@@ -40,3 +40,130 @@ toolchain heeft geen semantiek van zichzelf en bouwt haar niet na.
 - (b) Gericht: een vlakke groep, een geneste uitzondering, een stapel over een subtype met een gewone regel erin, en een
   default met een vouw in zijn voorwaarde: de bijdragen aan die vouw wijzen naar die default.
 - (c) De volledige gate-set groen vóór de landing (`WAY-OF-WORKING.md` §6).
+
+## Result (2026-10-23)
+
+Tak `card/drl-rule-origin`, vanaf `a68dd644`. Geen beschermd pad geraakt; geen delta voor `spec/CONSTRUCTS.md` of
+`spec/PLAN.md` (geen spec-wijziging, een ingang van de backend).
+
+- `1c0329a0` de ingang `originOf` en de twee getuigen.
+- dit Result, in het commit na `1c0329a0`.
+
+### De ingang
+
+`TmsTranspiler.originOf(String ruleName)` → `TmsTranspiler.RuleOrigin`, naast `formOf`. Bereikbaar via de build:
+`build.execModelTranspiler().originOf(name)`; de `Build` van beide takken draagt dezelfde analyse, en zo leest de
+toolchain nu al `generated()` (`Playground.java`).
+
+```java
+public record RuleOrigin(String form, Kind kind, String pointer) {
+    public enum Kind { NO_FORM, FORM, DEFAULT, STACK }
+}
+```
+
+- `NO_FORM`: een regel van geen vorm (een stand, een koppeling uit de invoer, de vergelijking van twee schrijvers);
+  `form` en `pointer` null.
+- `FORM`: een regel van een vorm die geen effectieve stapel is; `form` zoals `formOf`, `pointer` null. Ook de
+  bijdrageregels van een vouw die een gewone vorm als eerste registreerde, ook waar een stapel die die regel opnam
+  dezelfde vouw leest (`jutterswet-dringende-melding`: `dringende melding: bijdrage aan vouw 0`).
+- `DEFAULT`: een regel van een stapel die één default verlaagt; `form` de stapel (`defaults A:<type>.<lid>`),
+  `pointer` de default zoals `decisionsOf` hem noemt: `/rules/prioritizedDefaults/i/defaults/j` met
+  `/exceptions/members/m/defaults/l` per niveau, of voor een gewone regel die de stapel van een subtype opneemt
+  (ch. 7.10) `/rules/rules/f/versions/v`. Bij een default horen: zijn eigen regel (`default <label>`), zijn terugval,
+  de foutregel van zijn rechtvaardiging, de doorgeef-, verschil- en eensregels die zijn uitzonderingsgroepen verzoenen
+  (ch. 7.9), de bijdrage-, filterfout-, lidfout- en filterdeponeringsregels van de vouwen in zijn rechtvaardiging of
+  gevolg, en zijn leesregel.
+- `STACK`: een regel van de stapel zelf, geen default; `form` de stapel, `pointer` null: de verzoening van de groepen
+  aan de wortel (`doorgeven wortel`, `verschil wortel`, `eens wortel`, ch. 7.2) en `geen rekendatum` van een stapel
+  met een gedateerde groep.
+
+Waarom deze vorm:
+
+- Eén record met een expliciete soort in plaats van een combinatie van nulls: "van de stapel zelf" is een waarde
+  (`STACK`), geen ontbrekende pointer naast een vorm die toevallig een stapel is. De constructor weigert elke andere
+  combinatie: een pointer precies bij `DEFAULT`, een vorm precies niet bij `NO_FORM`.
+- De pointer in de vorm van `DefaultsDecision`: de toolchain vertaalt die vorm al (`Verbaliser`, `DEFAULT_POINTER` en
+  `RULE_POINTER`), dus een beslissing en een DRL-regel krijgen dezelfde sleutel.
+- Geen groepsnaam, variantnaam of positie in het antwoord: die staan in het document op de pointer, en de ingang
+  herhaalt het IR niet.
+- Geen aparte soort voor een gewone regel in een stapel: `DefaultsDecision` noemt die ook een default, met een
+  regelversie als pointer; de vorm van de pointer onderscheidt ze, en de toolchain heeft daar al een patroon voor.
+- Een leesregel (alleen in een bouw met lezingen) krijgt de herkomst van de regel die hij leest, de vorm
+  inbegrepen; `formOf` geeft hem bewust null, zodat een waarnemer zijn vuren niet als vuren van de vorm telt. Dat is
+  het enige verschil met `formOf`, en de corpusgetuige houdt het vast.
+- Een naam van geen regel van het model wordt geweigerd (`IllegalArgumentException`), zoals door `formOf`. Een regel
+  van een stapel waarvan de verlaging niets noteerde faalt luid (`IllegalStateException`), en `stackRules` weigert
+  zo'n regel al bij de bouw.
+
+Hoe: de verlaging noteert terwijl zij bouwt, nooit achteraf uit de naam. `ownRule` noteert zijn regels bij zijn
+default en houdt die default in het veld `lowering` zolang hij bouwt; de registratie van de leesbestanden van een
+stapel (waar de bijdrageregels van de vouwen worden ingeschreven) zet `lowering` per default; `Reads.recorder` noteert
+elke bijdrageregel die het inschrijft bij `lowering`; de verzoening onder een default en die aan de wortel noteren
+hun regels apart; `ReadingRule` kent de naam van de regel die hij leest. De pointer wordt pas bij de vraag berekend,
+door dezelfde `pointerOf` als `decisionsOf`. Geen gedragsverandering: geen `RulePlan` verandert. Gemeten: de
+DRL-tekst van alle 277 gedragen goldens, zonder en met lezingen (554 teksten), is bytegelijk aan die van `a68dd644`
+(een probe in de werkmap, niet gecommit); het exec-model rendert hetzelfde plan.
+
+### Getuigen
+
+- (a) `RuleOriginCorpusWitnessTest`: elke golden die de backend draagt, op de tak `DRL_TEXT` (de tak waarvan de
+  toolchain de tekst toont), zonder en met lezingen; per regel van de KieBase heeft `originOf` een antwoord, de vorm
+  is die van `formOf` (een leesregel: de herkomst van de regel die hij leest), een regel van een stapel is `DEFAULT`
+  of `STACK` en nooit `FORM`, en elke `DEFAULT`-pointer lost op in `ir.json` naar een `Default` van een groep op het
+  lid van de stapel of naar een regelversie op dat lid; elke `Default` van elke groep, op elke diepte, is de default
+  van ten minste één regel. Gemeten 2026-10-23, de vloeren: 277 goldens; zonder lezingen 2062 regels (1142 `FORM`,
+  681 `NO_FORM`, 213 `DEFAULT`, 26 `STACK`), van de `DEFAULT`-regels 4 van een regelversie en 12 bijdrageregels; met
+  lezingen 901 leesregels (176 van een default, 725 van een vorm); 160 defaults van de documenten, elk met een regel.
+  Ongeveer 21 s.
+- (b) `RuleOriginWitnessTest`, zes tests, per stapel de hele tabel in de volgorde van het model:
+  - vlakke groep: `jutterswet-premiestaffel`, groep `premie` (de vierde van het document): `default 0` tot en met
+    `default 2` → `/rules/prioritizedDefaults/3/defaults/0` tot en met `/2`, met op die pointers de groepsnaam
+    `premie` en de varianten `premie bij een zware vangst`, `premie bij veel vondsten`, `premie`;
+  - geneste uitzondering: `anchor/jutterswet-nestdiepte`, twee niveaus: `default 0.1.0.1.0` →
+    `…/defaults/0/exceptions/members/1/defaults/0/exceptions/members/1/defaults/0`, `verschil 0.1.0`, `eens 0.1.0` en
+    `terugval 0.1.0` → `…/defaults/0/exceptions/members/1/defaults/0`, `doorgeven 0` … `terugval 0` →
+    `…/defaults/0`, `doorgeven wortel` en `eens wortel` → `STACK`;
+  - stapel over een subtype met een gewone regel erin: `jutterswet-wrakbasis`, `defaults A:Wrakrecht.uitkering`:
+    `default 0` → `/rules/prioritizedDefaults/0/defaults/0` (de groep op Strandrecht), `default 1` →
+    `/rules/rules/0/versions/0` (`uitkering van een wrakrecht`), hun leesregels idem; de regel zelf blijft `FORM`;
+  - default met een vouw in zijn voorwaarde: `jutterswet-premiestaffel`: `bijdrage aan vouw 0` (de som in de
+    rechtvaardiging van `premie bij een zware vangst`) → `/3/defaults/0`, `vouw 1` (de telling) → `/3/defaults/1`,
+    `vouw 2` en `vouw 3` (minimum en maximum van `lichte vondsten`) → `/rules/prioritizedDefaults/4/defaults/0`;
+  - de stapel zelf: `jutterswet-uitsluiting-gedateerd`, `geen rekendatum` → `STACK`;
+  - een regel van geen vorm → `NO_FORM`, een naam van geen regel geweigerd.
+- Rood, met mutaties in de werkmap (niet gecommit): M1, zonder de notitie in `Reads.recorder`: de corpusgetuige 24
+  verschillen (de 12 bijdrageregels van een default, in beide bouwen) en de tests van de vlakke groep en de vouw rood;
+  M2, de verzoening van de uitzonderingsgroepen van een default als `STACK`: de test van de geneste uitzondering rood,
+  en de corpusgetuige meldt drie defaults zonder regel (`anchor/jutterswet-nestuitzondering` `/0/defaults/1`,
+  `jutterswet-meldtermijn-strandjutter` `/1/defaults/0`, `jutterswet-nestkenmerk-rgs` `/0/defaults/0`).
+
+### Suite en gate 12
+
+Op `1c0329a0`:
+
+- de JUnit-suite van `backends/drools` (`mvn -B -o test`): 1661 tests, 0 fouten, 0 overgeslagen; de corpusgetuige
+  ongeveer 12 s in de volle suite;
+- gate 12 (`scripts/check-drools.sh`): PASS; 274 goldens gespeeld op de exec-model-tak en op de DRL-teksttak, elke
+  statusregel gelijk; kanaalvloer 49 niet-gespeelde goldens bij naam; de suite van de gate 1661 tests (vloer 1573);
+  `check-drools-codes` PASS (292 codes).
+
+De volledige gate-set draait de hoofdsessie vóór de landing (acceptatie (c)).
+
+### Wat de toolchain ermee doet (kaart `drl-rule-provenance`)
+
+Per regelnaam in `drl` (dezelfde namen als de KieBase van de build): `RuleOrigin o =
+build.execModelTranspiler().originOf(name)`, en dan naar de sleutels van `GROUND`:
+
+- `FORM`: `rule` = `RegelSpraakModel.formName(o.form())` (het versie-achtervoegsel `#k` eraf);
+- `DEFAULT` met pointer `/rules/prioritizedDefaults/<i><rest>`: `group` = `rules.prioritizedDefaults[i].name`,
+  `pointer` = `<rest>` (de pointer zonder `/rules/prioritizedDefaults/<i>`), `variant` = de `name` van de `Default` op
+  de volle pointer waar die er een heeft, `position` = de laatste index van `<rest>` plus één;
+- `DEFAULT` met pointer `/rules/rules/<f>/versions/<v>`: `rule` = `rules.rules[f].name`;
+- `STACK`: van geen default en, bij een stapel uit groepen van meer typen, van geen enkele groep; de toolchain kiest of
+  zij dan niets of de stapel noemt (`generated()` geeft het lid);
+- `NO_FORM`: geen beslisser.
+
+De DRL van een variant is de verzameling regels met `DEFAULT` en haar pointer; bij een default met uitzonderingsgroepen
+horen daar de verzoeningsregels van die groepen bij (zij zetten de uitkomst van die default). Een regel van de
+opgavemarkering is voor `originOf` een gewone vorm of stapel; wat haar maakte leest de toolchain zoals nu
+(`generated` en `generatedFrom`).
