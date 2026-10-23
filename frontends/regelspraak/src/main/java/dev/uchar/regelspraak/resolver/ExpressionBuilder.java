@@ -239,11 +239,17 @@ final class ExpressionBuilder {
     }
 
     /** The refusal of a read {@code reach} does not let this frontend write, with its marker; null for the readings it
-     *  writes. */
-    Expr refusedReach(Reach reach, Anchor a, Object read, Datatype type, Source source) {
+     *  writes. A {@code characteristic} check is told the way out in the words of a check. */
+    Expr refusedReach(Reach reach, Anchor a, Object read, Datatype type, Source source, boolean characteristic) {
         switch (reach) {
-            case AMBIGUOUS -> model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                    "RGS-350", params("filter", frames.peek().filter(), "read", read, "type", a.name()), source.line()));
+            case AMBIGUOUS -> {
+                String named = model.objectTypes.get(a.name()).definite();
+                Msg escape = characteristic ? Msg.frontend("PART.subject-escape-characteristic", "named", named)
+                        : Msg.frontend("PART.subject-escape-value", "named", named);
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-350",
+                        params("escape", escape, "filter", frames.peek().filter(), "read", read, "type", a.name()),
+                        source.line()));
+            }
             case INTERMEDIATE -> {
                 Frame enclosing = null;
                 for (Frame f : frames) if (f.element() == model.objectTypes.get(a.name())) enclosing = f;
@@ -285,7 +291,7 @@ final class ExpressionBuilder {
         Reach reach = reach(anchor);
         if (reach == Reach.ELEMENT || reach == Reach.FORM && !inPerElementContext()) return false;
         if (reach == Reach.FORM) refuseRuleSubject(source(a), Msg.frontend("PART.subject-quantifier-in-filter"), source);
-        else refusedReach(reach, anchor, source(a), unknown(), source);
+        else refusedReach(reach, anchor, source(a), unknown(), source, false);
         return true;
     }
 
@@ -426,7 +432,7 @@ final class ExpressionBuilder {
             o = cf.primaireExpressie(0).attribuutVanOnderwerp().onderwerp();
         Anchor a = o == null ? null : anchorOf(o);
         Reach reach = reach(a);
-        Expr refused = refusedReach(reach, a, source(f), unknown(), source(f));
+        Expr refused = refusedReach(reach, a, source(f), unknown(), source(f), false);
         if (refused != null) return refused;
         if (reach != Reach.FORM) return null;
         if (!inPerElementContext()) {
@@ -3141,7 +3147,7 @@ final class ExpressionBuilder {
     private Expr attributeRef(String attr, OnderwerpContext subjectType, Source source) {
         Anchor a = subjectType == null ? null : anchorOf(subjectType);
         Reach reach = reach(a);
-        Expr refused = refusedReach(reach, a, source, unknown(), source);
+        Expr refused = refusedReach(reach, a, source, unknown(), source, false);
         if (refused != null) return refused;
         if (reach != Reach.FORM) return attributeRefAt(attr, subjectType, source);
         if (!inPerElementContext()) {

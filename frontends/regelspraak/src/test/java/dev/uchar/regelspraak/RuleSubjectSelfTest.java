@@ -188,6 +188,134 @@ class RuleSubjectSelfTest {
                 + "\"role\":\"beklaagdeschuit\"}]"), ir);
     }
 
+    /** A narrowing without a decision of its own (review B of the card): "zijn maand" in the test of a quantifier inside
+     *  a filter reads the condition's own subject, the element of the enclosing subselection (a Lading), which the frontend
+     *  wrote over the way back from the quantifier's element until 2026-10-23 and refuses now (RGS-358). The message
+     *  names the read over the role back from that element, which resolves and writes the path of that time. */
+    @Test void a_quantifier_test_in_a_filter_that_reads_the_enclosing_element_names_the_read_over_the_role() {
+        String model = """
+            Objecttype de Schuit (mv: Schuiten)
+                de eerste maand Datum in dagen;
+            Objecttype de Lading (mv: Ladingen)
+                de maand Datum in dagen;
+            Objecttype de Klacht (mv: Klachten)
+                de einddag Datum in dagen;
+            Feittype belading
+                de schuit Schuit
+                de lading (mv: ladingen) Lading
+            Eén schuit heeft meerdere ladingen
+            Feittype ladingklacht
+                de beklaagde lading Lading
+                de klacht (mv: klachten) Klacht
+            Eén beklaagde lading heeft meerdere klachten
+
+            Regel eerste maand
+                geldig altijd
+                    De eerste maand van een Schuit moet berekend worden als de eerste van de maand van alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: de einddag van alle klachten van de Lading is later dan %s.
+            """;
+        Diagnostic d = only(model.formatted("zijn maand"), "RGS-358");
+        assertTrue(d.message().contains("'zijn maand'") && d.message().contains("omsluitende deelselectie"), d::message);
+        assertTrue(d.message().contains("'… van de beklaagde lading van de Klacht'"),
+                () -> "de melding noemt de lezing over de rol: " + d.message());
+        String ir = clean(model.formatted("de maand van de beklaagde lading van de Klacht"));
+        assertTrue(ir.contains("{\"node\":\"AttributeReference\",\"attribute\":\"maand\",\"subjectType\":\"Lading\","
+                + "\"source\":{\"snippet\":\"demaandvandebeklaagdeladingvandeKlacht\"},\"path\":[{\"node\":\"RoleBinding\","
+                + "\"factType\":\"ladingklacht\",\"role\":\"beklaagdelading\"}]}"), ir);
+        assertFalse(ir.contains("anchor"), ir);
+    }
+
+    /** The bare type name of the rule subject in a filter, where the element has another role of that type than the way
+     *  back (B4 of the card; review B): "de afmeerdag van de Schuit" in a filter over the klachten of the thuishaven of a
+     *  Schuit, where a Klacht has a veroorzaker that is a Schuit. Until 2026-10-23 the name was read from the element over
+     *  that role, the afmeerdag of the veroorzaker, another schuit than the rule subject; now it reads the rule subject,
+     *  with the anchor. */
+    @Test void the_bare_type_name_of_the_rule_subject_in_a_filter_reads_the_rule_subject_not_a_role_of_the_element() {
+        String ir = clean("""
+            Objecttype de Schuit (mv: Schuiten)
+                de afmeerdag Datum in dagen;
+                de laatste klachtdag Datum in dagen;
+            Objecttype de Haven (mv: Havens)
+                de naam Tekst;
+            Objecttype de Klacht (mv: Klachten)
+                de einddag Datum in dagen;
+            Feittype ligplaats
+                de thuishaven Haven
+                de ligger (mv: liggers) Schuit
+            Eén thuishaven heeft meerdere liggers
+            Feittype havenklacht
+                de beklaagde haven Haven
+                de klacht (mv: klachten) Klacht
+            Eén beklaagde haven heeft meerdere klachten
+            Feittype veroorzaking
+                de veroorzaker Schuit
+                de veroorzaakte klacht (mv: veroorzaakte klachten) Klacht
+            Eén veroorzaker heeft meerdere veroorzaakte klachten
+
+            Regel laatste klachtdag
+                geldig altijd
+                    De laatste klachtdag van een Schuit moet berekend worden als de laatste van de einddag van alle klachten van de thuishaven van de Schuit die aan de volgende voorwaarde voldoen: zijn einddag is later dan de afmeerdag van de Schuit.
+            """);
+        assertTrue(ir.contains("\"right\":{\"node\":\"AttributeReference\",\"attribute\":\"afmeerdag\",\"subjectType\":"
+                + "\"Schuit\",\"anchor\":\"form\",\"source\":{\"snippet\":\"deafmeerdagvandeSchuit\"}}"), ir);
+        assertFalse(ir.contains("veroorzaker\"}"), () -> "geen weg over de rol veroorzaker: " + ir);
+    }
+
+    // ---- the way out in the messages ----
+
+    /** The way out names the type with the article of its declaration ("het Recht zelf", not "de Recht zelf"), and for a
+     *  characteristic check in the words of a check. */
+    @Test void the_way_out_takes_the_article_of_the_declaration_and_the_words_of_a_check() {
+        String model = """
+            Objecttype het Recht (mv: Rechten)
+                de ingangsdag Datum in dagen;
+                het tarief Numeriek (geheel getal);
+                het hoogste tarief Numeriek (geheel getal);
+                de proef kenmerk (bezittelijk);
+                is vroeg kenmerk (bijvoeglijk);
+            Objecttype de Samenloop (mv: Samenlopen)
+                het nummer Numeriek (geheel getal);
+            Feittype samenloopinschrijving
+                de samenloop Samenloop
+                het recht (mv: rechten) Recht
+            Eén samenloop heeft meerdere rechten
+
+            """;
+        String fold = model + """
+            Regel hoogste tarief
+                geldig altijd
+                    Het hoogste tarief van een Recht moet berekend worden als de maximale waarde van het tarief van alle rechten van de samenloop van het Recht die aan de volgende voorwaarde voldoen: %s.
+            """;
+        Diagnostic value = only(fold.formatted("zijn ingangsdag is later dan de ingangsdag van het Recht"), "RGS-350");
+        assertTrue(value.message().contains("'zijn …'") && value.message().contains("'… van het Recht zelf'"), value::message);
+        Diagnostic check = only(fold.formatted("het Recht heeft de proef"), "RGS-350");
+        assertTrue(check.message().contains("'hij heeft …'") && check.message().contains("'het Recht zelf heeft …'"),
+                check::message);
+        assertFalse(check.message().contains("'zijn …'"), check::message);
+        Diagnostic test = only(model + """
+            Regel vroeg
+                geldig altijd
+                    Een Recht is vroeg
+                    indien de ingangsdag van alle rechten van de samenloop van het Recht later is dan de ingangsdag van het Recht.
+            """, "RGS-349");
+        assertTrue(test.message().contains("'… van het Recht zelf'"), test::message);
+        assertFalse(test.message().contains("de Recht"), test::message);
+    }
+
+    /** A form the anchor cannot stand on (a role check of the rule subject in a filter) names the way out: a rule of its
+     *  own sets a member of the rule subject, which the subselection reads with "zelf". */
+    @Test void a_form_without_the_anchor_names_the_way_out() {
+        Diagnostic d = only(MODEL + """
+            Regel hoogste latere tarief
+                geldig altijd
+                    Het hoogste latere tarief van een Vergunning moet berekend worden als de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen:
+                    - zijn tarief is groter dan 0
+                    - de Vergunning zelf is een vergunning.
+            """, "RGS-358");
+        assertTrue(d.message().contains("geen vorm die het vormanker draagt"), d::message);
+        assertTrue(d.message().contains("laat een eigen regel de waarde of het kenmerk op het regelonderwerp zetten"),
+                () -> "de melding noemt de uitweg: " + d.message());
+    }
+
     // ---- outside a subselection the word changes nothing ----
 
     @Test void zelf_at_the_rule_level_reads_what_the_bare_name_reads() {

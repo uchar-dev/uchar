@@ -882,6 +882,8 @@ public final class RegelSpraakModel {
     /** An object type: its attributes (name -> datatype) and kenmerk names. */
     public static final class ObjectType {
         public final String name;
+        /** The definite article the declaration writes ("Objecttype het Register"), or null where it writes none. */
+        public String article;
         public boolean animate;
         /** The declared "(mv: …)" plural (§13.2.29), or null. Used to resolve a plural-form reference
          *  ("alle Natuurlijke personen" in a §8.1.6 uniciteitscontrole) back to this type by its exact
@@ -938,6 +940,8 @@ public final class RegelSpraakModel {
          *  emits {@code extends} needs the own set, not the closed one. */
         public ObjectType supertype;
         public ObjectType(String name) { this.name = name; }
+        /** The name with its declared article, as a message quotes a reference to the type ("het Register zelf"). */
+        public String definite() { return withArticle(article, name); }
 
         /** This type and every ancestor, nearest first. Cycle-safe by construction: WF-104 refuses
          *  a cycle at the document, and every reader here must still terminate on one. */
@@ -1130,8 +1134,19 @@ public final class RegelSpraakModel {
     public static final class FactType {
         public final String name;
         public final List<Role> roles = new ArrayList<>();
+        /** The definite article each role's declaration writes ("het register Register"), by role name; a role
+         *  declared without one has no entry. */
+        public final Map<String, String> roleArticles = new LinkedHashMap<>();
         public boolean reciprocal;
         public FactType(String name) { this.name = name; }
+        /** The role's name with its declared article, as a message quotes a navigation over it. */
+        public String definiteRole(String role) { return withArticle(roleArticles.get(role), role); }
+    }
+
+    /** {@code name} after {@code article}, or after "de" where the declaration writes none: the declaration is the only
+     *  place that says which article a name takes, and "de" is the article of most of them. */
+    static String withArticle(String article, String name) {
+        return (article == null ? "de" : article) + " " + name;
     }
     /** A feittype role. `plural` is the plural the model DECLARES via "(mv: …)"
      *  (§13.3.9.1), or null when none is declared — the resolver matches plural

@@ -137,6 +137,7 @@ public final class DefinitionResolver {
     // ---------------- §13.3.1 object types ----------------
     private void objectType(ObjectTypeDefinitionContext ctx) {
         ObjectType ot = model.objectTypes.computeIfAbsent(src(ctx.objectTypeNaam()), ObjectType::new);
+        if (ctx.bepaaldLidwoord() != null) ot.article = src(ctx.bepaaldLidwoord()).toLowerCase();
         if (ctx.BEZIELD() != null) ot.animate = true;
         if (ctx.meervoudsvorm() != null) ot.plural = src(ctx.meervoudsvorm()); // §13.2.29, for §8.1.6 plural refs
         supertypeClauses(ot, ctx.objectTypeSupertype());
@@ -1135,6 +1136,7 @@ public final class DefinitionResolver {
                         "RGS-027", params("factType", ft.name, "role", roleName),
                         ctx.feitTypeNaam().getStart().getLine()));
             roles.add(new Role(roleName, src(rs.objectTypeNaam()), plural));
+            if (rs.bepaaldLidwoord() != null) ft.roleArticles.put(roleName, src(rs.bepaaldLidwoord()).toLowerCase());
             roleLines.computeIfAbsent(ft, k -> new java.util.HashMap<>()).putIfAbsent(roleName, rs.getStart().getLine());
         }
         // §13.3.9.1 cardinaliteit: the line "<q1> <rol1> … <q2> <rol2>" marks each role one or

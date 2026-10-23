@@ -345,8 +345,8 @@ RGS-344	ordering-fold-operands-refused	ERROR	fold,kinds,mixture,sentences
 RGS-345	fact-model-contract-violation	ERROR	violation
 RGS-346	coverage-verdict	WARNING	category,name,reason,reasonClause,verdict
 RGS-347	period-coverage-hole	WARNING	holes,parameter,period,rule
-RGS-349	quantifier-test-reads-subject-of-element-type	ERROR	expression,read,type
-RGS-350	subselection-names-subject-of-element-type	ERROR	filter,read,type
+RGS-349	quantifier-test-reads-subject-of-element-type	ERROR	expression,named,read,type
+RGS-350	subselection-names-subject-of-element-type	ERROR	escape,filter,read,type
 RGS-351	second-subselection-on-one-chain	ERROR	expression,word
 RGS-353	group-header-without-deeper-bullet	ERROR	header,next
 RGS-354	deeper-bullet-without-group-header	ERROR	bullet,previous

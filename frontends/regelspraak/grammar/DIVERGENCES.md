@@ -1864,7 +1864,9 @@ names the rule subject.
 - RGS-350: in a filter, the bare name of a type that the rule subject and an
   element in scope both have ("de leeftijd van de Jutter" in a subselection of
   Jutters on a Jutter, a read, a fold source or a characteristic check); the
-  message names "de … van de Jutter zelf" as the way out.
+  message names "… van de Jutter zelf" as the way out, or "de Jutter zelf heeft
+  …" for a characteristic check, with the article of the type's declaration
+  ("het Recht zelf").
 - RGS-349: in the test of a quantifier over elements of the rule subject's own
   type, a read of the subject that is not written with `zelf` ("de leeftijd van
   de Jutter", "zijn leeftijd"); a variable of the rule is admitted. The message
@@ -1879,9 +1881,42 @@ names the rule subject.
   "hij"; a role check, a union count, a fold over a dimension or an operator
   over the subject's own timeline of the rule subject in a filter, which have
   no node the anchor can stand on (IR-SPEC ch. 4.1a: `RoleMembership` and
-  `InstanceSetUnion` carry none); and a quantifier over a relation of the rule
+  `InstanceSetUnion` carry none; the message names the way out, a rule of its
+  own that sets a member of the rule subject, read with "zelf"); and a quantifier over a relation of the rule
   subject inside a filter or a test: the IR has the anchor on
   `QuantifierFold`, this frontend writes none until a sentence asks for it.
+
+**Narrowed.** Two of these refusals take sentences the frontend wrote until
+2026-10-23, over the way back from the element (the section of 2026-10-22
+above). The one B6 of the card names: the element of an enclosing subselection
+named by its type in a nested one (no source of the repository writes one).
+And beside it: a read of the condition's own subject in the test of a
+quantifier inside a filter, "zijn …" among them — "de eerste van de maand van
+alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: de einddag
+van alle klachten van de Lading is later dan zijn maand", where "zijn maand" is
+the maand of the Lading, the enclosing element. Both read an element the anchor
+does not reach, so both are refused (RGS-358), and each message names the read
+that works: from the inner element over its role back. For the quantifier test
+over a one-step range the message names that role, "… van de beklaagde lading
+van de Klacht"; "de maand van de beklaagde lading van de Klacht" resolves to
+the path the frontend wrote over the way back
+(`path [ladingklacht.beklaagde lading]`). Witness: `RuleSubjectSelfTest`.
+
+**Read differently, without a diagnostic.** Two kinds of sentence change their
+meaning at this card. The bare own name of the rule subject's type in a filter
+(B4 of the card) was until 2026-10-23 a navigation from the element over the
+element's role of that type, wherever the element had one: where that role is
+the way back it named the rule subject, where it is another role it named
+another object. In a filter over "alle klachten van de thuishaven van de
+Schuit", where a Klacht has a `veroorzaker` of type Schuit, "zijn einddag is
+later dan de afmeerdag van de Schuit" read the afmeerdag of the veroorzaker of
+each klacht (`path [veroorzaking.veroorzaker]`); now it reads the afmeerdag of
+the rule subject, with the anchor, and a sentence that means the veroorzaker
+writes "de afmeerdag van de veroorzaker van de Klacht". And a source that wrote
+"zelf" before the word was a token: "de peildag van het register van de
+Vergunning zelf" in a filter over Vergunningen read the register of the
+element, and reads that of the rule subject now. The repository's sources write
+neither (the measurement below). Witness: `RuleSubjectSelfTest`.
 
 **Measured** 2026-10-23 over every RegelSpraak document of the repository —
 the 227 tracked `.rgs` files each alone (the corpus sources, the Drools test

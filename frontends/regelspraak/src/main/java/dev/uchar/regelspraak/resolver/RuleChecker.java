@@ -5642,7 +5642,7 @@ final class RuleChecker {
                 set.type(), set.source(), false, List.of(), List.of(), null);
         Condition matrix = elementRead(withOperand(c, set, own), own, elem,
                 c instanceof Condition.Comparison v && v.left() == set ? rhsCtx : lhsCtx, source);
-        matrix = matrixAtForm(c, set, matrix, own, elem, source);
+        matrix = matrixAtForm(c, set, matrix, own, elem, sourceRole, source);
         return matrix == null ? new Condition.Unresolved(source, null)   // the ERROR raised is this marker's diagnosis
                 : new Condition.QuantifierFold(q, threshold, elem, filter, matrix, sourceRole, sourcePath, source);
     }
@@ -5654,11 +5654,13 @@ final class RuleChecker {
      * "The rule subject in a subselection — zelf"). Where the element has the rule subject's own type, a read of the
      * subject that is not written with "zelf" names the element as well and is refused (RGS-349); a variable of the rule
      * names the rule subject. In a filter the condition is about an element of the enclosing fold, which the anchor does
-     * not reach, so a read of it is refused (RGS-358); a read written at the form's subject carries the anchor already.
+     * not reach, so a read of it is refused (RGS-358), naming the read over the role back from the element of a one-step
+     * {@code range}; a read written at the form's subject carries the anchor already.
      * An operand {@link #elementRead} built with the element as subject stays as it is, and so does an own read of the
      * element's type where it is another than the rule subject's: it names the element. Null after a refusal.
      */
-    private Condition matrixAtForm(Condition c, Expr set, Condition matrix, Expr own, ObjectType elem, Source source) {
+    private Condition matrixAtForm(Condition c, Expr set, Condition matrix, Expr own, ObjectType elem,
+                                   RegelSpraakModel.RoleBindingRef range, Source source) {
         if (!(c instanceof Condition.Comparison written) || !(matrix instanceof Condition.Comparison m)) return matrix;
         Expr other = written.left() == set ? written.right() : written.left();
         Expr inMatrix = m.left() == own ? m.right() : m.left();
@@ -5666,15 +5668,14 @@ final class RuleChecker {
         if (builder.inPerElementContext()) {
             Source read = subjectRead(other, false);
             if (read == null) return matrix;
-            builder.refuseRuleSubject(read, Msg.frontend("PART.subject-intermediate-test", "element", builder.subject().name),
-                    source);
+            builder.refuseRuleSubject(read, intermediateTest(elem, range), source);
             return null;
         }
         if (builder.subject() == elem) {
             Source read = subjectRead(other, true);
             if (read != null) {
-                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-349", params("expression", source, "read", read,
-                        "type", elem.name), source.line()));
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-349", params("expression", source,
+                        "named", elem.definite(), "read", read, "type", elem.name), source.line()));
                 return null;
             }
         }
@@ -5684,6 +5685,25 @@ final class RuleChecker {
             return null;
         }
         return withOperand(matrix, other, x.expr());
+    }
+
+    /**
+     * Why the test of a quantifier over {@code elem} in a filter cannot read the element of the enclosing subselection,
+     * with the read that can: from {@code elem} over its role back to that element, the other role of the fact type of
+     * a one-step {@code range} ("de maand van de beklaagde lading van de Klacht"). Until 2026-10-23 the frontend wrote
+     * such a read over that way back itself; the anchor reaches only the subject of the form (grammar/DIVERGENCES.md,
+     * "The rule subject in a subselection — zelf").
+     */
+    private Msg intermediateTest(ObjectType elem, RegelSpraakModel.RoleBindingRef range) {
+        ObjectType enclosing = builder.subject();
+        RegelSpraakModel.FactType ft = range == null ? null : model.factTypes.get(range.factType());
+        String back = null;
+        if (ft != null && ft.roles.size() == 2)
+            for (RegelSpraakModel.Role r : ft.roles)
+                if (!r.name().equals(range.role()) && model.objectTypeByName(r.objectTypeName()) == enclosing) back = r.name();
+        if (back == null) return Msg.frontend("PART.subject-intermediate-test", "element", enclosing.name);
+        return Msg.frontend("PART.subject-intermediate-test-role", "element", enclosing.name, "role", ft.definiteRole(back),
+                "quantified", elem.definite());
     }
 
     /**
@@ -6173,7 +6193,7 @@ final class RuleChecker {
         // from there is refused
         ExpressionBuilder.Anchor written = builder.writtenAnchor(lhs);
         ExpressionBuilder.Reach reach = builder.reach(written);
-        if (builder.refusedReach(reach, written, lhs.source(), lhs.type(), source) != null)
+        if (builder.refusedReach(reach, written, lhs.source(), lhs.type(), source, true) != null)
             return new Condition.Unresolved(source, null);   // the ERROR raised is this marker's diagnosis
         boolean anchored = reach == ExpressionBuilder.Reach.FORM && builder.inPerElementContext()
                 || lhs instanceof Expr.AttributeReference a && a.anchored();
