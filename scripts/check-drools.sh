@@ -294,6 +294,7 @@ known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]:-}"; do [ -n "$e" ] 
 #     never moves (measured 2026-09-06: a renamed player PASSES). That trade is deliberate —
 #     pinning all 109 players by name was weighed and rejected right above.
 EXPECTED_CHANNEL=(
+  "anchor-depth-two|EXCLUDE DROOLS-293|transpiler SKIP: an anchored node in the filter or the test of a fold that stands in the filter of another fold and is read per member of it (the anchor two folds deep, IR-SPEC ch. 4.1a): the rules of the inner fold bind no form subject, so the branch refuses the rule by name, as both branches do (card subselection-reads-subject, step 3). Written in fix round A of that card as the positive witness of the depth review A asked for; ref and clingo play it, so its pins are a ref = clingo pair"
   "anchor/jutterswet-aanmeldquotum|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead — the v0 backend has no temporal-read lowering"
   "anchor/jutterswet-aanspraaktelling|EXCLUDE DROOLS-002|loader Refusal: functionDefs — no function section in the v0 backend"
   "anchor/jutterswet-beschikkingsom|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
@@ -1435,7 +1436,13 @@ EXPECTED_CHANNEL=(
 # 276 -> 277 (2026-10-23, the same card, fix round A after review A): the golden anchor-once-per-member
 # (RUNTIME-SEMANTICS ch. 3.4a, "Once or per member": an anchored divisor of 0 deposits only where a member reaches it),
 # hand-written IR with hand-computed cases. No source file of this backend changed; it plays on both with PLAYED 3.
-EXPECTED_PLAYED=277
+# 277 -> 279 (2026-10-23, the same card, fix round A): the goldens anchor-forms (the anchored characteristic check,
+# navigated read and quantifier fold, the identity check without negation and between types that share no instance, and
+# rules whose helpers read the form subject behind a guard) and anchor-hub-own-hops (an anchored read whose own hop is
+# the switch relation, in the filter of a sum over a hub), hand-written IR with hand-computed cases. No source file of
+# this backend changed; they play on both with PLAYED 2 and 2. The golden anchor-depth-two of the same commit is pinned
+# in EXPECTED_CHANNEL (DROOLS-293).
+EXPECTED_PLAYED=279
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

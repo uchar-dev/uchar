@@ -1234,6 +1234,11 @@ iff the member is the form subject, the same object (ch. 5.8, *Identity*),
 and **onwaar** otherwise; `negated: true` turns that around. It reads no
 value, so it is never leeg and never faults. "die niet het Recht zelf zijn"
 is `negated: true`: it takes the form subject out of a range that reaches it.
+Where the member's type and the form subject's type share no instance
+(`IR-SPEC.md` ch. 2.2), no member is the form subject: the check is onwaar at
+every member, and with `negated: true` waar at every member (`IR-SPEC.md`
+ch. 4.6, WF-122 (c), says why it is admitted; the golden `anchor-forms`, a
+Register whose Vergunningen are the members, carries both).
 
 **A leeg value of the form subject needs no rule of its own.** An ordering
 comparison (`<`, `≤`, `>`, `≥`, `eerder`, `later`) between a member's value

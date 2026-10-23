@@ -1,0 +1,564 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "R1",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "R2",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-01-01"
+          },
+          "tarief": {
+            "number": "10"
+          },
+          "teller": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-03-01"
+          },
+          "tarief": {
+            "number": "20"
+          },
+          "teller": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": [
+          "geschorst"
+        ]
+      },
+      {
+        "label": "V3",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-06-01"
+          },
+          "tarief": {
+            "number": "15"
+          },
+          "teller": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-01-01"
+          },
+          "tarief": {
+            "number": "5"
+          },
+          "teller": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "register": [
+            "R2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-01-01"
+          },
+          "tarief": {
+            "number": "7"
+          },
+          "teller": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "register": [
+            "R2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V8",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-01-01"
+          },
+          "tarief": {
+            "number": "1"
+          },
+          "teller": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "tarief naast geschorste"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "tarief naast geschorste",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "tarief naast geschorste"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V4",
+      "attribute": "tarief naast geschorste"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "tarief naast geschorste"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V8",
+      "attribute": "tarief naast geschorste"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "tarief boven registernummer",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "tarief boven registernummer",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "tarief boven registernummer",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V4",
+      "attribute": "tarief boven registernummer"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "tarief boven registernummer"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V8",
+      "attribute": "tarief boven registernummer"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "tarief naast duur register",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "tarief naast duur register",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "tarief naast duur register",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V4",
+      "attribute": "tarief naast duur register"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "tarief naast duur register"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V8",
+      "attribute": "tarief naast duur register"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "eigen tarief",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "eigen tarief",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "eigen tarief",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "eigen tarief",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V5",
+      "attribute": "eigen tarief",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V8",
+      "attribute": "eigen tarief"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "deelbaar tarief",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "deelbaar tarief",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "deelbaar tarief",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "deelbaar tarief",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V5",
+      "attribute": "deelbaar tarief",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V8",
+      "attribute": "deelbaar tarief"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "gelijk aan later tarief",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "gelijk aan later tarief",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "gelijk aan later tarief"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V4",
+      "attribute": "gelijk aan later tarief"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "gelijk aan later tarief"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V8",
+      "attribute": "gelijk aan later tarief"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "later tarief zonder korting",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "later tarief zonder korting",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "later tarief zonder korting"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V4",
+      "attribute": "later tarief zonder korting"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "later tarief zonder korting"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V8",
+      "attribute": "later tarief zonder korting"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "deelbaar later tarief",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "deelbaar later tarief"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "deelbaar later tarief"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V4",
+      "attribute": "deelbaar later tarief"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "deelbaar later tarief"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V8",
+      "attribute": "deelbaar later tarief"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "deelbaar tarief van ongeschorste",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "deelbaar tarief van ongeschorste"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "deelbaar tarief van ongeschorste",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "deelbaar tarief van ongeschorste",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V5",
+      "attribute": "deelbaar tarief van ongeschorste",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V8",
+      "attribute": "deelbaar tarief van ongeschorste"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "registerrust"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "registerrust"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V3",
+      "characteristic": "registerrust"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V4",
+      "characteristic": "registerrust"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V5",
+      "characteristic": "registerrust"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V8",
+      "characteristic": "registerrust"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "R1",
+      "attribute": "hoogste tarief naast zichzelf",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "R2",
+      "attribute": "hoogste tarief naast zichzelf",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "R1",
+      "attribute": "hoogste tarief dat zichzelf is"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "R2",
+      "attribute": "hoogste tarief dat zichzelf is"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

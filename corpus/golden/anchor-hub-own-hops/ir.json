@@ -1,0 +1,288 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vergunning",
+        "animate": false,
+        "plural": "Vergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "tarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "basis",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "som",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "eind",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Register",
+        "animate": false,
+        "plural": "Registers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "nummer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "registerinschrijving",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "register",
+            "objectType": "Register",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vergunning",
+            "objectType": "Vergunning",
+            "plural": "vergunningen",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vorige vergunning",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vorige vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "eind",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eind",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De eind van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "basis",
+                "subjectType": "Vergunning",
+                "source": {
+                  "snippet": "zijn basis"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "som",
+                "subjectType": "Vergunning",
+                "source": {
+                  "snippet": "zijn som"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn basis plus zijn som"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "som",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "som",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De som van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Comparison",
+                "op": "less",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "zijn tarief"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "eind",
+                  "subjectType": "Vergunning",
+                  "anchor": "form",
+                  "source": {
+                    "snippet": "het eind van de vorige vergunning van de Vergunning zelf"
+                  },
+                  "path": [
+                    {
+                      "node": "RoleBinding",
+                      "factType": "vorige vergunning",
+                      "role": "vorige vergunning"
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "zijn tarief is kleiner dan het eind van de vorige vergunning van de Vergunning zelf"
+                }
+              },
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het tarief van alle vergunningen van het register van de Vergunning die aan de volgende voorwaarde voldoen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,130 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "R1",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "tarief": {
+            "number": "10"
+          },
+          "basis": {
+            "number": "100"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "tarief": {
+            "number": "50"
+          },
+          "basis": {
+            "number": "200"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ],
+          "vorige vergunning": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vergunning",
+        "attributes": {
+          "tarief": {
+            "number": "300"
+          },
+          "basis": {
+            "number": "0"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "som",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "eind",
+      "value": {
+        "number": "100"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "som",
+      "value": {
+        "number": "60"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "eind",
+      "value": {
+        "number": "260"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "som",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "eind",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

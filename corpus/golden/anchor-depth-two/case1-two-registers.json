@@ -1,0 +1,209 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "R1",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "R2",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-01-01"
+          },
+          "tarief": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-03-01"
+          },
+          "tarief": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-06-01"
+          },
+          "tarief": {
+            "number": "15"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-02-01"
+          },
+          "tarief": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "register": [
+            "R2"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "tarief bij latere in register",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "tarief bij latere in register",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "tarief bij latere in register"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V4",
+      "attribute": "tarief bij latere in register"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "tarief als laatste"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "tarief als laatste"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "tarief als laatste",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "tarief als laatste",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "tarief bij duur zonder zichzelf",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "tarief bij duur zonder zichzelf"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "tarief bij duur zonder zichzelf",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V4",
+      "attribute": "tarief bij duur zonder zichzelf"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "tarief bij een latere"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "tarief bij een latere",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "tarief bij een latere"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V4",
+      "attribute": "tarief bij een latere"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

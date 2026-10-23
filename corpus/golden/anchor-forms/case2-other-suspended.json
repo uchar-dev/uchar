@@ -1,0 +1,313 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "R1",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-01-01"
+          },
+          "tarief": {
+            "number": "10"
+          },
+          "teller": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": [
+          "geschorst"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-03-01"
+          },
+          "tarief": {
+            "number": "20"
+          },
+          "teller": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vergunning",
+        "attributes": {
+          "ingangsdag": {
+            "date": "2026-06-01"
+          },
+          "tarief": {
+            "number": "15"
+          },
+          "teller": {
+            "number": "3"
+          },
+          "korting": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "tarief naast geschorste",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "tarief naast geschorste"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "tarief naast geschorste"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "tarief boven registernummer",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "tarief boven registernummer",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "tarief boven registernummer",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "tarief naast duur register",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "tarief naast duur register",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "tarief naast duur register",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "eigen tarief",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "eigen tarief",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "eigen tarief",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "deelbaar tarief",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "deelbaar tarief",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "deelbaar tarief",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "gelijk aan later tarief",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "gelijk aan later tarief",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "gelijk aan later tarief"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "later tarief zonder korting",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "later tarief zonder korting"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "later tarief zonder korting"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "deelbaar later tarief"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "deelbaar later tarief",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "deelbaar later tarief"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "deelbaar tarief van ongeschorste"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "deelbaar tarief van ongeschorste",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "deelbaar tarief van ongeschorste",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "registerrust"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "registerrust"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V3",
+      "characteristic": "registerrust"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "R1",
+      "attribute": "hoogste tarief naast zichzelf",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "R1",
+      "attribute": "hoogste tarief dat zichzelf is"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

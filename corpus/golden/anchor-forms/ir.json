@@ -1,0 +1,1487 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vergunning",
+        "animate": false,
+        "plural": "Vergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ingangsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "teller",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "korting",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tarief naast geschorste",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tarief boven registernummer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tarief naast duur register",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "eigen tarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "deelbaar tarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gelijk aan later tarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "later tarief zonder korting",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "deelbaar later tarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "deelbaar tarief van ongeschorste",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "geschorst",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "registerrust",
+            "kind": "possessive"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Register",
+        "animate": false,
+        "plural": "Registers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "nummer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoogste tarief naast zichzelf",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoogste tarief dat zichzelf is",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "registerinschrijving",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "register",
+            "objectType": "Register",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vergunning",
+            "objectType": "Vergunning",
+            "plural": "vergunningen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "tarief naast geschorste",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "tarief naast geschorste",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De tarief naast geschorste van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "IdentityCheck",
+                    "anchor": "form",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij is niet de Vergunning zelf"
+                    }
+                  },
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "geschorst",
+                    "negated": false,
+                    "anchor": "form",
+                    "source": {
+                      "snippet": "de Vergunning zelf is geschorst"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; de Vergunning zelf is geschorst"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "registerrust",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "registerrust",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Een Vergunning heeft de registerrust"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "IdentityCheck",
+                "anchor": "form",
+                "negated": true,
+                "source": {
+                  "snippet": "die niet de Vergunning zelf zijn"
+                }
+              },
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "geschorst",
+                "negated": true,
+                "anchor": "form",
+                "source": {
+                  "snippet": "de Vergunning zelf is niet geschorst"
+                }
+              },
+              "source": {
+                "snippet": "voor alle vergunningen van het register van de Vergunning die niet de Vergunning zelf zijn geldt: de Vergunning zelf is niet geschorst"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "tarief boven registernummer",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "tarief boven registernummer",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De tarief boven registernummer van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "zijn tarief"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "nummer",
+                  "subjectType": "Register",
+                  "anchor": "form",
+                  "source": {
+                    "snippet": "het nummer van het register van de Vergunning zelf"
+                  },
+                  "path": [
+                    {
+                      "node": "RoleBinding",
+                      "factType": "registerinschrijving",
+                      "role": "register"
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "zijn tarief is groter dan het nummer van het register van de Vergunning zelf"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "tarief naast duur register",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "tarief naast duur register",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De tarief naast duur register van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "IdentityCheck",
+                    "anchor": "form",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij is niet de Vergunning zelf"
+                    }
+                  },
+                  {
+                    "node": "QuantifierFold",
+                    "quantifier": "atLeast",
+                    "threshold": 1,
+                    "elementType": "Vergunning",
+                    "anchor": "form",
+                    "test": {
+                      "node": "Comparison",
+                      "op": "greaterOrEqual",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "tarief",
+                        "subjectType": "Vergunning",
+                        "source": {
+                          "snippet": "zijn tarief"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "20"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "20"
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn tarief is groter dan of gelijk aan 20"
+                      }
+                    },
+                    "source": {
+                      "snippet": "ten minste een van de vergunningen van het register van de Vergunning zelf heeft een tarief van ten minste 20"
+                    },
+                    "sourcePath": [
+                      {
+                        "node": "RoleBinding",
+                        "factType": "registerinschrijving",
+                        "role": "register"
+                      },
+                      {
+                        "node": "RoleBinding",
+                        "factType": "registerinschrijving",
+                        "role": "vergunning"
+                      }
+                    ]
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; ten minste een van de vergunningen van het register van de Vergunning zelf heeft een tarief van ten minste 20"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "eigen tarief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eigen tarief",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De eigen tarief van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "IdentityCheck",
+                "anchor": "form",
+                "negated": false,
+                "source": {
+                  "snippet": "hij is de Vergunning zelf"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "deelbaar tarief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "deelbaar tarief",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De deelbaar tarief van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "IdentityCheck",
+                    "anchor": "form",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij is niet de Vergunning zelf"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "tarief",
+                        "subjectType": "Vergunning",
+                        "source": {
+                          "snippet": "zijn tarief"
+                        }
+                      },
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "teller",
+                        "subjectType": "Vergunning",
+                        "source": {
+                          "snippet": "zijn teller"
+                        }
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "zijn tarief gedeeld door zijn teller"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "1"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn tarief gedeeld door zijn teller is groter dan 1"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gelijk aan later tarief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gelijk aan later tarief",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De gelijk aan later tarief van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "IdentityCheck",
+                    "anchor": "form",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij is niet de Vergunning zelf"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "equal",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "tarief",
+                      "subjectType": "Vergunning",
+                      "source": {
+                        "snippet": "zijn tarief"
+                      }
+                    },
+                    "right": {
+                      "node": "Aggregation",
+                      "kind": "maximum",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "tarief",
+                          "subjectType": "Vergunning",
+                          "source": {
+                            "snippet": "het tarief"
+                          }
+                        }
+                      ],
+                      "elementType": "Vergunning",
+                      "anchor": "form",
+                      "filter": {
+                        "node": "Comparison",
+                        "op": "later",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "ingangsdag",
+                          "subjectType": "Vergunning",
+                          "source": {
+                            "snippet": "zijn ingangsdag"
+                          }
+                        },
+                        "right": {
+                          "node": "AttributeReference",
+                          "attribute": "ingangsdag",
+                          "subjectType": "Vergunning",
+                          "anchor": "form",
+                          "source": {
+                            "snippet": "de ingangsdag van de Vergunning zelf"
+                          }
+                        },
+                        "source": {
+                          "snippet": "zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf"
+                        }
+                      },
+                      "sourcePath": [
+                        {
+                          "node": "RoleBinding",
+                          "factType": "registerinschrijving",
+                          "role": "register"
+                        },
+                        {
+                          "node": "RoleBinding",
+                          "factType": "registerinschrijving",
+                          "role": "vergunning"
+                        }
+                      ],
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "later tarief zonder korting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "later tarief zonder korting",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De later tarief zonder korting van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Predicate",
+                    "kind": "empty",
+                    "operand": {
+                      "node": "AttributeReference",
+                      "attribute": "korting",
+                      "subjectType": "Vergunning",
+                      "source": {
+                        "snippet": "zijn korting"
+                      }
+                    },
+                    "negated": false,
+                    "digits": 0,
+                    "source": {
+                      "snippet": "zijn korting is leeg"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "equal",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "tarief",
+                      "subjectType": "Vergunning",
+                      "source": {
+                        "snippet": "zijn tarief"
+                      }
+                    },
+                    "right": {
+                      "node": "Aggregation",
+                      "kind": "maximum",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "tarief",
+                          "subjectType": "Vergunning",
+                          "source": {
+                            "snippet": "het tarief"
+                          }
+                        }
+                      ],
+                      "elementType": "Vergunning",
+                      "anchor": "form",
+                      "filter": {
+                        "node": "Comparison",
+                        "op": "later",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "ingangsdag",
+                          "subjectType": "Vergunning",
+                          "source": {
+                            "snippet": "zijn ingangsdag"
+                          }
+                        },
+                        "right": {
+                          "node": "AttributeReference",
+                          "attribute": "ingangsdag",
+                          "subjectType": "Vergunning",
+                          "anchor": "form",
+                          "source": {
+                            "snippet": "de ingangsdag van de Vergunning zelf"
+                          }
+                        },
+                        "source": {
+                          "snippet": "zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf"
+                        }
+                      },
+                      "sourcePath": [
+                        {
+                          "node": "RoleBinding",
+                          "factType": "registerinschrijving",
+                          "role": "register"
+                        },
+                        {
+                          "node": "RoleBinding",
+                          "factType": "registerinschrijving",
+                          "role": "vergunning"
+                        }
+                      ],
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "hoogste tarief naast zichzelf",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hoogste tarief naast zichzelf",
+              "subjectType": "Register",
+              "source": {
+                "snippet": "De hoogste tarief naast zichzelf van een Register"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "IdentityCheck",
+                "anchor": "form",
+                "negated": true,
+                "source": {
+                  "snippet": "die niet het Register zelf zijn"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "registerinschrijving",
+                "role": "vergunning"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het Register die niet het Register zelf zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "hoogste tarief dat zichzelf is",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hoogste tarief dat zichzelf is",
+              "subjectType": "Register",
+              "source": {
+                "snippet": "De hoogste tarief dat zichzelf is van een Register"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "IdentityCheck",
+                "anchor": "form",
+                "negated": false,
+                "source": {
+                  "snippet": "die het Register zelf zijn"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "registerinschrijving",
+                "role": "vergunning"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het Register die het Register zelf zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "deelbaar later tarief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "deelbaar later tarief",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De deelbaar later tarief van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "ingangsdag",
+                      "subjectType": "Vergunning",
+                      "source": {
+                        "snippet": "zijn ingangsdag"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "ingangsdag",
+                      "subjectType": "Vergunning",
+                      "anchor": "form",
+                      "source": {
+                        "snippet": "de ingangsdag van de Vergunning zelf"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "tarief",
+                        "subjectType": "Vergunning",
+                        "source": {
+                          "snippet": "zijn tarief"
+                        }
+                      },
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "teller",
+                        "subjectType": "Vergunning",
+                        "source": {
+                          "snippet": "zijn teller"
+                        }
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "zijn tarief gedeeld door zijn teller"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "1"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn tarief gedeeld door zijn teller is groter dan 1"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "geschorst",
+              "negated": true,
+              "source": {
+                "snippet": "hij is niet geschorst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "deelbaar tarief van ongeschorste",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "deelbaar tarief van ongeschorste",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De deelbaar tarief van ongeschorste van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "tarief",
+                    "subjectType": "Vergunning",
+                    "source": {
+                      "snippet": "zijn tarief"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "teller",
+                    "subjectType": "Vergunning",
+                    "source": {
+                      "snippet": "zijn teller"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "zijn tarief gedeeld door zijn teller"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "1"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "1"
+                  }
+                },
+                "source": {
+                  "snippet": "zijn tarief gedeeld door zijn teller is groter dan 1"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "geschorst",
+              "negated": true,
+              "source": {
+                "snippet": "hij is niet geschorst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
