@@ -154,3 +154,88 @@ De eigenaar: "jij mag, na review en alles groen, ook zelf landen". Dat geldt voo
 stappenplan van het Fable-advies): 1–2 spec, schema, verifier en negatieven; 3–4 ref en clingo; 5 Drools; 6–7 frontend
 en corpus. CONSTRUCTS en PLAN landt de hoofdsessie.
 
+## Result (2026-10-23)
+
+Tak `card/subselection-reads-subject`, vier bouwstappen met elk een verse bouwer (het stappenplan van het
+Fable-advies), na rebase op main `f22c9ff5`: `f4136dde0` en `939d09794` (stap 1), `0698e595e`, `a274d7554` en
+`f501bb45d` (stap 2), `4974e8d7a` (stap 3), `a73eef738`, `ded984d5d`, `8c0ed6ea0` en `36be0e265` (stap 4). Beschermde paden
+binnen het mandaat geraakt: `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/schema/`, `spec/verifier/`,
+`corpus/negative/`, in `scripts/` alleen `EXPECTED_PLAYED` van gate 12 (274 → 279 na de fixrondes). CONSTRUCTS-rij 46 en de punten
+voor PLAN §9 landt de hoofdsessie in de landingscommit.
+
+**Stap 1 — spec, schema, verifier.** Het veld `anchor` (enige waarde `"form"`) op `AttributeReference`,
+`CharacteristicCheck`, `Aggregation` en `QuantifierFold`, en de voorwaardeknoop `IdentityCheck {anchor, negated,
+source}` (IR-SPEC ch. 4.1a, 4.3, 4.5, 4.10 (c), 5.1, 5.3; RUNTIME-SEMANTICS ch. 3.4a met het uitgewerkte voorbeeld,
+3.9a, 5.8, 5.12, 6.1). Eén evaluatieregel: een geankerde knoop wordt gelezen op het onderwerp van de vorm. WF-122 met
+vier armen (plaatsing, vouwbron, host, identiteitstoets); WF-053, WF-102, WF-108 (c) en WF-045 oordelen op het
+vormonderwerp. Twaalf negatieven, elk op zijn arm; `--dependency-edges` en rapporten bytegelijk voor alle bestaande
+documenten.
+
+**Stap 2 — ref en clingo, de hub-golden.** ref leest een geankerde knoop op het vormonderwerp en de
+identiteitstoets als objectidentiteit; de voorbeelden van RS ch. 3.4a zijn ref-tests. clingo draagt de
+onderwerpvariabele in de context, vertaalt de identiteitstoets naar `X != S`, en zet het vormonderwerp in de kop van
+elke hulpregel die het leest (CLINGO-028 versmald; een hek weigert een niet-gesleutelde hulpregel bij naam); de
+ASP-programma's van alle 938 bestaande cases bytegelijk. De golden `jutterswet-registervoorrang` (handgeschreven, zeven
+cases; geval 7 is de getuige van de gesleutelde hulpregel).
+
+**Stap 3 — Drools.** Lader (`Loaded.anchored()`, `IdentityCheck`), één analyse voor beide renderingen: een geankerde
+knoop leest `$vouwonderwerp`, een geankerde vouw in een filter is een vouw op het vormonderwerp; `Cycles` en de
+regelgraaf lezen hem zoals de verifier. DROOLS-293 (diepte 2) en DROOLS-294 (gehele-periodekwalificatie, lezingen die
+alleen van het eigen onderwerp komen) weigeren bij naam. `AnchorWitnessTest`: de zes goldens met de weg terug spelen
+herschreven in de ankerspelling op beide takken.
+
+**Stap 4 — frontend en corpus.** `<lidwoord> <Typenaam> zelf` noemt het regelonderwerp (sleutelwoord `ZELF`, geen
+naamwoord; vrije tekst in scenario- en regelnamen); "hij is (niet) de X zelf" en "die (niet) de X zelf zijn" worden
+een `IdentityCheck`. De resolver bouwt elke lezing, vouw of kenmerkcheck van het regelonderwerp in een filter of een
+kwantortoets bij dat onderwerp, met het anker; ook de kale eigen typenaam waar geen element dat type heeft, een
+variabele van de regel, en de operand naast de gekwantificeerde. De lowering over de weg terug is weg, met RGS-348 en
+RGS-352; RGS-349/350 blijven voor de kale typenaam van het elementtype met `zelf` als uitweg; RGS-358 weigert wat het
+anker niet kan schrijven (tussenliggend element, B6; rolcheck en unie; kwantor over het regelonderwerp in een filter;
+`zelf` na een andere naam; identiteitstoets buiten een filter). De drie goldens van B2 komen met 13 ankers uit hun
+bron (cases gelijk); `jutterswet-registervoorrang` heeft zijn `source.rgs`; `fold-filter-subject-two-spellings` pint
+de twee spellingen op één waarde. Alle 265 RegelSpraak-documenten van de repository verder bytegelijk. clingo sleutelt
+twee hulpregels meer met het vormonderwerp (datum plus maanden, opgesomde eerste/laatste), die de ankerspelling van
+`fold-filter-nested-aggregate` vraagt; de andere 945 programma's bytegelijk.
+
+**Getuigen.** De goldens `jutterswet-registervoorrang` (7 cases) en `fold-filter-subject-two-spellings` (3 cases),
+de drie herschreven goldens, de 12 negatieven (`wf122-*` en vier onder hun eigen nummer), ref-tests `WV-3.4a-anchor-*`,
+de clingo-suite (zes rijen), `AnchorWitnessTest`, `RuleSubjectSelfTest` en de bijgewerkte frontendtests; gate 17
+vergelijkt de lezingen van beide Drools-takken met ref's trace op de nieuwe goldens.
+
+**Afwijkingen.** Stap 1: het filter van een union-selectie is een positie zonder anker; vier negatieven meer dan het
+advies; "eenmaal of per lid" scherper gesteld (een fout of deposito alleen als een lid de knoop bereikt). Stap 2: twee
+rijen van het uitgewerkte voorbeeld kregen een derde Vergunning (gate 7); meer gesleutelde hulpregels dan het advies
+noemt, en het hek; `ASP-TRANSLATION.md` niet aangeraakt (voorstel S8). Stap 3: frontendrecord `IdentityCheck` al in
+stap 3; diepte 2 en de gehele-periodekwalificatie geweigerd. Stap 4: zie "Afwijkingen" hierboven (o.a. "zijn …" in
+de kwantortoets van hetzelfde type blijft RGS-349, een geankerde kenmerkcheck gebouwd, geen geankerde kwantorvouw,
+`ZELF` in `regelReferentieWoord`, de Drools-lader vult de component, twee hulpregels van clingo gesleuteld).
+
+**Review en fixrondes.** Twee reviewers (verse Opus-agenten, alleen lezend, met proeven in een kopie):
+`werk/subselection-reads-subject/review/A.md` (spec, schema, verifier, ref, clingo, de nieuwe goldens) en `B.md` (Drools,
+frontend, scripts, de herschreven goldens). Geen stil fout antwoord gevonden. Verwerkt:
+
+- Fixronde A (`b3dc9591`, `1913a3dc`, `ac27d52c`, `2b5e32e7`, `43f73762`): clingo's omheining weigerde ook regels zonder
+  anker zodra een document een geankerde regel had (16 goldens in de proef), en een identiteits- of leegtoets vóór een
+  geankerde vouw gaf een grondingsfout zonder code; beide hersteld, alle 29 proeven van review A spelen. "Eenmaal of
+  per lid" kreeg een uitgewerkt voorbeeld, ref-tests en de golden `anchor-once-per-member`; positieve getuigen in
+  `anchor-forms` en `anchor-depth-two` (Drools: DROOLS-293); het pad van een geankerde lezing in een hub-filter in
+  `anchor-hub-own-hops` met zijn spiegel als negatief; het schema noemt de unieselectie niet meer; een negatief voor een
+  vorm zonder onderwerp; `spec/ASP-TRANSLATION.md` S8 bijgewerkt.
+- Fixronde B (`6f3c15a2`, `c820459af`, `1f1ed283`, `70a08f31`, `08668341`, `aa5e89e7`, `0d00603a`): een geankerd eigen
+  totaal in een filter brak beide Drools-takken af zonder code; nu DROOLS-294, met de eerste test die die code oproept.
+  **Voorlopig besluit van de hoofdsessie:** een kwantor in een filter waarvan de test met "zijn …" het omsluitende
+  element leest, speelde vóór de kaart over de weg terug en krijgt nu RGS-358; die vernauwing blijft, benoemd in
+  DIVERGENCES naast B6, en de melding noemt de lezing over de rol, die het oude IR geeft. DIVERGENCES zegt dat de kale
+  typenaam van het regelonderwerp in een filter, die vroeger stil een rol vanaf het element las, nu het regelonderwerp
+  leest (B4), met een test. RGS-349/350 noemen de uitweg met het lidwoord van het type en passend bij een
+  kenmerkcheck; feittypenamen nemen "zelf" weer; de pin van `FoldInElementConditionTest.r3_…` weer over het hele filter;
+  `anchor-once-per-member` uit de bron (het `ir.json` van de frontend wijkt van het handgeschreven af in vier snippets en
+  de `decimals`-annotatie van een deling, die geen uitvoerder leest, ch. 2.10; de cases spelen ongewijzigd).
+
+### Landing (hoofdsessie, 2026-10-23)
+
+De volledige gate-set op `0d00603a` (`werk/gates.sh`): 17 van 17 groen in 29 minuten (gate 12 741 s, 279 gespeeld op
+beide takken; gate 10 140 rgs-goldens). Suites: frontend 1302, Drools 1667, nul skips. In de landingscommit:
+CONSTRUCTS-rij 46, de vermelding in rij 40 en in PLAN dat RGS-348 en RGS-352 vervallen zijn, en de open punten in
+PLAN §9. Fast-forward op main en gepusht.
+

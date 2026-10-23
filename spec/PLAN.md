@@ -1261,7 +1261,8 @@ waits on open point 6 of the Drools truth-maintenance lowering and on the
 clingo binder leak (`20261009-clingo-let-binder-tussen-onderwerpen`), and
 changes the meaning on an empty value (IR-SPEC ch. 4.10 (c), ch. 10.6). Where
 the way back from the element is not to-one at every step, the frontend
-refuses the read (RGS-352) instead of writing a marker.
+refuses the read (RGS-352) instead of writing a marker. (Superseded 2026-10-23, card
+`subselection-reads-subject`: the frontend writes the form anchor; the way back, RGS-348 and RGS-352 are gone.)
 
 **A cycle over a switch relation is ordered by depth (2026-10-22, card
 `cycle-across-instances`):** since this card a value of an object may read the
@@ -1305,6 +1306,29 @@ fixed in the same card. Two provisional decisions of the card stand open for
 the maintainer: the unit behind a number in the canonical text is that of the
 node's effective type (ch. 2.10), and a filled count is a count, its
 contributors without their value (ch. 3.4c).
+
+**The form anchor (2026-10-23, card `subselection-reads-subject`):** a node in a
+filter or a quantifier test can read the subject of its form (`anchor: "form"`,
+`IdentityCheck`; IR-SPEC ch. 4.1a, WF-122; RegelSpraak "de X zelf"). The
+decisions B1–B8 of the card are provisional, after the Fable advice
+(`research/subselection-reads-subject-2026-10-23/fable-advies.md`); the
+werkbank confirmed the word `zelf` and, for hww-06, form a. Open: (1) an
+intermediate element of a nested subselection is not addressable by its type
+name (B6, RGS-358, read over its role), and neither is the enclosing element
+read with "zijn" in the test of a quantifier in a filter (a narrowing,
+provisional decision of the main session; the message names the read over
+the role); (2) `RoleMembership`, `InstanceSetUnion` and the filter of a union
+selection take no anchor; (3) the frontend writes no anchored quantifier fold
+(RGS-358), though the IR has it; (4) Drools refuses an anchored node at depth
+2 (DROOLS-293), and an anchored operand under the whole-period qualifier and an
+anchored own total (DROOLS-294), which ref carries; (5) an anchored node has
+no reading of its own in ch. 5.12, and `DroolsBackend.reached` and
+`navigationBindings` do not know the anchor (B7: a follow-up card when an
+explanation needs the subject's side); (6) clingo refuses by name the helpers
+it does not key with the form subject (`coalesce0`, `Match`, the chain of a
+counting compound); (7) gate 2 has no self-test rows for the schema side of
+the anchor; (8) the keyword's price: a declared name with the separate word
+"zelf" no longer parses, fact type names excepted (none in the repository).
 
 ## 10. Rough effort
 
