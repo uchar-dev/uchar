@@ -76,8 +76,9 @@ class TmsCycleVerifierWitnessTest {
         // as the verifier does; the card instance-cycle-household-reads removed one of them (a fold over the
         // satellites of the predecessor is a shifted read since) and added two (the hub, the satellite of a satellite);
         // the fix of the verifier's test "acyclic without its shifted edges" added one (positive-remainder); the card
-        // subselection-reads-subject added two, a cycle through an anchored read and the hub beside one (IR-SPEC ch. 4.1a)
-        assertEquals(34, n);
+        // subselection-reads-subject added two, a cycle through an anchored read and the hub beside one (IR-SPEC ch. 4.1a),
+        // and in its fix round A a third, the mirror of the golden anchor-hub-own-hops without its anchor
+        assertEquals(35, n);
     }
 
     /** A negative whose pin is the verifier's arm WF-045.instance-read-outside (IR-SPEC ch. 5.3) is refused here with
