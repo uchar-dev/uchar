@@ -98,5 +98,42 @@ een scenario: R1 herleeft niet.
      omweg verdwijnt);
   2. dat beide spellingen hetzelfde oordeel van de verifier krijgen (afhankelijkheidsgraaf, kringen, lezing 4) en
      hetzelfde antwoord in elke uitvoerder: een paar goldens dat dezelfde regel op beide manieren spelt, als getuige.
-- **Fable-advies aan het begin van de bouw**, één keer, over het ontwerp: de woorden van de dialectvorm, de vorm van de
-  verwijzing in het IR, en punt 1 hierboven.
+- **Fable-advies**: al vóór de bouw gevraagd, op verzoek van de eigenaar; zie de volgende paragraaf.
+
+## Voorlopige besluiten naar het Fable-advies (2026-10-23)
+
+Advies: `uchar-dev/research/subselection-reads-subject-2026-10-23/fable-advies.md` (vraag: `fable-vraag.md` ernaast;
+meetscript `proef/wayback_count.py`). Het criterium van de eigenaar: het IR mag veranderen, maar wordt niet
+dubbelzinnig, niet vies en verrast niet. De aanbevelingen zijn voorlopige besluiten; de eigenaar kan elk omdraaien.
+
+- **B1, de vorm in het IR.** Een optioneel veld `anchor` met als enige waarde `"form"` op de knopen die een wandeling bij
+  het onderwerp beginnen (`AttributeReference`, `CharacteristicCheck`, `Aggregation`, `QuantifierFold`), en een nieuwe
+  voorwaardeknoop `IdentityCheck {anchor, negated, source}`. Eén evaluatieregel: een geankerde knoop wordt geëvalueerd
+  met het onderwerp van de vorm als onderwerp, alsof hij in de eigen voorwaarde of waarde van de vorm stond. Zonder
+  anker verandert geen document. Afgewezen: `Let`/`BinderRef` (dekt de identiteitstoets en de test van een kwantor niet,
+  en de leeg-barrière geeft een ander antwoord dan ch. 1.2d) en een veld op de vouw (dekt de vergelijking niet).
+  `RoleMembership` en `InstanceSetUnion` krijgen geen anker, met reden in IR-SPEC.
+- **B2, spellingen.** Beide blijven geldig IR. De frontend schrijft het anker overal waar de zin het regelonderwerp
+  noemt, en de navigatie waar de zin vanaf het element navigeert ("de schuit van de Lading"); de lowering over de weg
+  terug (`frame`/`reanchor`/`wayBack`) verdwijnt, en RGS-348 en RGS-352 vervallen. Gemeten over 921 documenten: 13
+  knopen in 3 goldens krijgen een ander `ir.json` (`fold-filter-nested-aggregate`,
+  `jutterswet-schone-maand-na-zware-klacht`, `jutterswet-vergunningtermijnen`), hun cases niet; toka, red en negative
+  nul. Getuige: een golden die dezelfde lezing op beide manieren spelt, gelijk gepind.
+- **B3, het woord** (eigenaar en werkbank: het staat in de wetszinnen van hww-06): `<lidwoord> <Typenaam> zelf`, "die
+  niet het Recht zelf zijn", "later dan de eerste rechtdag van het Recht zelf"; `ZELF` wordt een sleutelwoord. Het
+  alternatief was het typevrije "het regelonderwerp".
+- **B4, de blote typenaam.** "het Recht" zonder `zelf` blijft RGS-349/RGS-350 waar het element het type van het
+  onderwerp heeft, met `zelf` als uitweg in de melding; de blote naam van een ander type blijft het regelonderwerp.
+- **B5, de test van een kwantor.** Dezelfde vorm, zonder beperking (bevestigt de aantekening hierboven).
+- **B6, een tussenliggend element** in een geneste subselectie is bij zijn typenaam niet meer aanspreekbaar en wordt luid
+  geweigerd (vandaag kan het over een to-one weg terug; 0 voorkomens in 921 documenten); de lezing over zijn rol
+  blijft. Open punt voor PLAN §9 bij de landing.
+- **B7, lezingen ch. 5.12.** Een geankerde knoop krijgt in deze kaart geen eigen lezing; een vervolgkaart als de uitleg
+  van de werkbank die waarde nodig heeft.
+- **B8, werkbank** (normvraag, niet van uchar): hww-06 met vorm a (R1 zelf uitgesloten); vorm b alleen als de
+  wetsuitleg "nieuw" als "later ontstaan" leest.
+
+Correctie op het advies: de nieuwe welgevormdheidsregel heet daar WF-120, maar dat nummer heeft de overbodige
+benaming (vocabulaires, IR-SPEC ch. 2.12) en WF-121 de herkomst; de nieuwe regel krijgt het eerstvolgende vrije nummer,
+nu WF-122. Het stappenplan van het advies (spec en schema, verifier en negatieven, ref, clingo, Drools, frontend,
+corpus en CONSTRUCTS) is het bouwplan.
