@@ -58,7 +58,7 @@ let trace ir_path case_path =
         as_of = case.as_of;
         locals = Uchar_ref.World.SMap.empty;
         btypes = Uchar_ref.World.SMap.empty;
-        subj = None;
+        subj = None; form = None;
       }
     in
     let final = Uchar_ref.Eval.evaluate env case.world in
@@ -130,7 +130,7 @@ let () =
         param_tls = case.param_tls;
         as_of = case.as_of;
         locals = Uchar_ref.World.SMap.empty;
-        btypes = Uchar_ref.World.SMap.empty; subj = None;
+        btypes = Uchar_ref.World.SMap.empty; subj = None; form = None;
       }
     in
     match case.expected_fault with

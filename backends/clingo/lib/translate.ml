@@ -482,7 +482,7 @@ let static_type ctx (e : expr) : datatype option =
   | _ ->
       Eval.static_type
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
         e
 
 (* a binder entry: the binding's (atoms, term, scale) and its static type *)
@@ -3767,7 +3767,7 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
           | Some rbs ->
               let env =
                 { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-                  as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+                  as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
               in
               let roles = List.map (Eval.bound_role env) rbs in
               List.iter
@@ -3965,6 +3965,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   match let_into_arm ctx e with
   | Some pushed -> expr_term ctx ~subject ~subject_ot pushed
   | None ->
+  if Ir_v0.Checks.unanchored_expr e <> None then
+    fault "a node with anchor \"form\" (IR-SPEC ch. 4.1a) is not translated by this backend yet";
   match e with
   | Function_call { kind; grain = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
   | Function_call { kind = Time_proportional_part | Day_count; grain = Some _; _ } ->
@@ -4065,7 +4067,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            hop roles are the bindings, resolved through ref's resolver. *)
         let env =
           { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-            as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+            as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
         in
         let roles = List.map (Eval.bound_role env) rbs in
         List.iter
@@ -4106,7 +4108,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         element_object_type = None; source_role = None; source_path = None; filter = None; _ } ->
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
       in
       if List.length branches < 2 then
         fault "an instance-set union carries at least TWO selections, found %d"
@@ -4248,7 +4250,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          subselection joins per contributor: the filter atoms range over the
          element variable (an unbound filter operand excludes the
          contributor for free). *)
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None } in
+      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None } in
       let v = fresh ctx "C" in
       let x = Printf.sprintf "X%s" v in
       let fatoms =
@@ -4371,7 +4373,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          refused a document ref plays (measured 2026-09-23). *)
       let env =
         { Eval.doc = ctx.doc; params = ctx.case.params; param_tls = ctx.case.param_tls;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
       in
       let v = fresh ctx "S" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
@@ -4805,7 +4807,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            set has no defined moment to fold (ch. 3.6); ref refuses the form, so this arm must \
            not answer from the asOfDate buckets"
           a;
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None } in
+      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None } in
       let v = fresh ctx "M" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       let fatoms =
@@ -4874,7 +4876,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            timeline whether it is filled (ch. 3.4c); ref refuses the form on that ground, so this \
            arm must not answer from a bucket it picked itself"
           a;
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None } in
+      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None } in
       let v = fresh ctx "F" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       let fatoms =
@@ -7363,6 +7365,11 @@ and cond_atoms ctx ~subject ~subject_ot (c : condition_expr) : string list =
   else cond_atoms_raw ctx ~subject ~subject_ot c
 
 and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
+  (match c with
+   | Identity_check _ -> fault "an IdentityCheck (IR-SPEC ch. 4.5) is not translated by this backend yet"
+   | _ when Ir_v0.Checks.unanchored_cond c <> None ->
+       fault "a node with anchor \"form\" (IR-SPEC ch. 4.1a) is not translated by this backend yet"
+   | _ -> ());
   match c with
   (* ch. 3.9's value test over a timeline, executed here since 2026-09-16
      (the fold itself is [whole_period_fails]). Every other Comparison arm
@@ -7587,7 +7594,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let k = req "characteristic" characteristic in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
       in
       let hop =
         match navigation_binding with
@@ -7665,7 +7672,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       let k = req "characteristic" characteristic in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+          as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
       in
       let role = Eval.bound_role env rb (* D53: the hop is the binding *) in
       if role.role_many then
@@ -7974,7 +7981,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
-          locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+          locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
       in
       let x = fresh ctx "X" in
       let join =
@@ -10410,7 +10417,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   let subject = "S" in
   let term = Printf.sprintf "oc%d(%s)" i subject in
   let env =
-    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
   in
   let pair =
     match oc.oc_connecting_role with
@@ -10542,7 +10549,7 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
   if applies ctx fc.fc_validity then begin
   let ftn = fc.fc_fact_type in
   let env =
-    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+    { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
   in
   let role rname = Eval.created_role env ~fact_type:ftn ~role:rname in
   let anchor_role = role fc.anchor_role in
@@ -11054,7 +11061,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
      edge inside the condition) rides the allocation's name, exactly as
      ref's cond_err does (S13) *)
   ctx.rule_name <- name;
-  let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None } in
+  let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None } in
   let role = role_canonical (Eval.bound_role env v.connecting_role) (* required (B12) *) in
   let p = Printf.sprintf "vd%d_" i in
   (* ch. 4.1: the recipient set of one source instance is every DOELTYPE
@@ -11449,7 +11456,7 @@ let translate_uniqueness ctx (u : resolved_uniqueness) =
     | Some rb ->
         let env =
           { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
-            as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+            as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
         in
         let role = Eval.bound_role env rb in
         [ Printf.sprintf "role(S1,%s,P)" (str (role_canonical role));
@@ -12197,7 +12204,7 @@ let translate (doc : document) (case : Case.t) : string =
      program is emitted, mirroring ref/'s evaluation entry *)
   Eval.parameter_set_check
     { Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
-      locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None };
+      locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None };
   emit ctx "%% generated by backends/clingo from uchar-ir-v1 + uchar-case-v0.";
   emit ctx "#defined val/3. #defined has/2. #defined role/3. #defined param/2.";
   emit ctx "#defined inconsistent/2. #defined tl/5. #defined param_tl/4. #defined ktl/4.";

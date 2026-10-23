@@ -258,7 +258,7 @@ let () =
       param_tls = case.param_tls;
       as_of = case.as_of;
       locals = Uchar_ref.World.SMap.empty;
-      btypes = Uchar_ref.World.SMap.empty; subj = None;
+      btypes = Uchar_ref.World.SMap.empty; subj = None; form = None;
     }
   in
   let final = Uchar_ref.Eval.evaluate env case.world in
@@ -460,7 +460,7 @@ let () =
   (* and ref pins the value clingo must reproduce: 2 jaar + 3 maand = 27 maand *)
   let env =
     { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
-      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
+      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None; form = None }
   in
   let final = Uchar_ref.Eval.evaluate env case.world in
   (match Uchar_ref.Case.check case final with
@@ -863,7 +863,7 @@ let derivation_line program attr =
 let ref_report doc (case : Uchar_ref.Case.t) =
   let env =
     { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
-      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
+      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None; form = None }
   in
   Uchar_ref.Case.check case (Uchar_ref.Eval.evaluate env case.world)
 
@@ -1612,7 +1612,7 @@ let ref_matches ~name ~ir ~case_text =
   let doc, case = load_pair ~ir ~case_text in
   let env =
     { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
-      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
+      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None; form = None }
   in
   match Uchar_ref.Case.check case (Uchar_ref.Eval.evaluate env case.world) with
   | [] -> check (name ^ ": ref pins the values") true
@@ -12193,7 +12193,7 @@ let () =
     (doc.presentation_annotations = [ "/rules/rules/0/versions/0/value/type/presentation" ]);
   let env =
     { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
-      locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None }
+      locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None; form = None }
   in
   (match Uchar_ref.Eval.evaluate env case.world with
   | _ -> check "L3-load-table: ref refuses the presentation tag in an annotation (got a world)" false

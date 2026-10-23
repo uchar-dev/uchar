@@ -306,7 +306,7 @@ let () =
       let final =
         Eval.evaluate
           { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
-            locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+            locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
           c.world
       in
       check "WV-2.3-maal-niet-heel-waarde-12" (Case.check c final = []);
@@ -377,7 +377,7 @@ let () =
         let final =
           Eval.evaluate
             { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
-              locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+              locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
             c.world
         in
         let v1 = World.get final "V1" in
@@ -901,7 +901,7 @@ let with_pointers (doc : Ir_v0.Ast.document) : Ir_v0.Ast.document =
 
 let env_of doc : Eval.env =
   { doc = with_pointers doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
-    locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+    locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
 
 (* WV-6.4-a (= the ch. 5.3 pair): producer/consumer across one negative
    edge — {waar, onwaar} at inkomen 50, {onwaar, waar} at 200, never the
@@ -1615,7 +1615,7 @@ let () =
       let final =
         Eval.evaluate
           { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
-            locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+            locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
           c.world
       in
       check "WV-6.4-h-rolcheck-na-de-feitcreatie" (Case.check c final = []))
@@ -1644,7 +1644,7 @@ let with_files ?(world_state = Fun.id) ~ir ~case_data f =
       f findings c (fun () ->
           Eval.evaluate
             { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
-              locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+              locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
             (world_state c.world)))
 
 (* verifier-clean, evaluated without a fault, every expectation of the case
@@ -2986,7 +2986,7 @@ let () =
         ignore
           (Eval.evaluate
              { Eval.doc; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
-               locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+               locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
              c.world))
   in
   let enclosed = "pro-rata onto or from a grid that does not lie on the calendar is fenced" in
@@ -3074,7 +3074,7 @@ let () =
         ignore
           (Eval.evaluate
              { Eval.doc; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
-               locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+               locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
              c.world))
   in
   let timeline_total =
@@ -5732,6 +5732,112 @@ let () =
     (ev doc2 "j1" (quantity ~source_role:kavel "duinkavel" "Duinkavel")) "3";
   expect_fault "WV-3.4a-typenpaar-zonder-bereik" (fun () ->
       ev doc2 "j1" (quantity "duinkavel" "Duinkavel"))
+
+(* --- ch. 3.4a: the form anchor ------------------------------------------- *)
+
+(* WV-3.4a-anchor: the worked example of ch. 3.4a, *The form anchor*, row by
+   row. The document is the golden jutterswet-registervoorrang's (minified,
+   equal as JSON): a maximum whose filter excludes the Vergunning itself
+   (an IdentityCheck) and keeps the members that start later than it (an
+   anchored ingangsdag), and a quantifier `all` with the identity check as its
+   filter and the anchored comparison as its test, both over the Vergunningen
+   of the Vergunning's register. Each row is a case evaluated as the runner
+   evaluates one; per Vergunning the hoogste latere tarief and whether it has
+   the voorrang, as the table pins them. *)
+let () =
+  let doc =
+    {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vergunning","animate":false,"plural":"Vergunningen","attributes":[{"node":"Attribute","name":"ingangsdag","datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"tarief","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"hoogste latere tarief","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"voorrang","kind":"possessive"}]},{"node":"ObjectType","name":"Register","animate":false,"plural":"Registers","attributes":[{"node":"Attribute","name":"nummer","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[{"node":"FactType","name":"registerinschrijving","reciprocal":false,"roles":[{"node":"Role","name":"register","objectType":"Register","many":false},{"node":"Role","name":"vergunning","objectType":"Vergunning","plural":"vergunningen","many":true}]}],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"hoogste latere tarief","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"hoogste latere tarief","subjectType":"Vergunning","source":{"snippet":"Het hoogste latere tarief van een Vergunning"}},"value":{"node":"Aggregation","kind":"maximum","arguments":[{"node":"AttributeReference","attribute":"tarief","subjectType":"Vergunning","source":{"snippet":"het tarief"}}],"elementType":"Vergunning","filter":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"IdentityCheck","anchor":"form","negated":true,"source":{"snippet":"hij is niet de Vergunning zelf"}},{"node":"Comparison","op":"later","left":{"node":"AttributeReference","attribute":"ingangsdag","subjectType":"Vergunning","source":{"snippet":"zijn ingangsdag"}},"right":{"node":"AttributeReference","attribute":"ingangsdag","subjectType":"Vergunning","anchor":"form","source":{"snippet":"de ingangsdag van de Vergunning zelf"}},"source":{"snippet":"zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf"}}],"source":{"snippet":"aan alle volgende voorwaarden voldoen: - hij is niet de Vergunning zelf - zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf"}},"sourcePath":[{"node":"RoleBinding","factType":"registerinschrijving","role":"register"},{"node":"RoleBinding","factType":"registerinschrijving","role":"vergunning"}],"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen"}},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"voorrang","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"voorrang","subjectType":"Vergunning","source":{"snippet":"Een Vergunning heeft de voorrang"}},"value":{"node":"Literal","value":{"boolean":true},"type":{"node":"Boolean"},"source":{"snippet":"waar"}},"condition":{"node":"QuantifierFold","quantifier":"all","elementType":"Vergunning","filter":{"node":"IdentityCheck","anchor":"form","negated":true,"source":{"snippet":"die niet de Vergunning zelf zijn"}},"test":{"node":"Comparison","op":"later","left":{"node":"AttributeReference","attribute":"ingangsdag","subjectType":"Vergunning","source":{"snippet":"de ingangsdag"}},"right":{"node":"AttributeReference","attribute":"ingangsdag","subjectType":"Vergunning","anchor":"form","source":{"snippet":"de ingangsdag van de Vergunning zelf"}},"source":{"snippet":"later is dan de ingangsdag van de Vergunning zelf"}},"source":{"snippet":"de ingangsdag van alle vergunningen van het register van de Vergunning die niet de Vergunning zelf zijn later is dan de ingangsdag van de Vergunning zelf"},"sourcePath":[{"node":"RoleBinding","factType":"registerinschrijving","role":"register"},{"node":"RoleBinding","factType":"registerinschrijving","role":"vergunning"}]},"initialisation":false}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+  in
+  let register label =
+    Printf.sprintf
+      {|{"label":"%s","objectType":"Register","attributes":{},"roles":{},"characteristics":[]}|}
+      label
+  in
+  let vergunning (label, reg, day, tarief) =
+    let ingangsdag =
+      match day with Some d -> Printf.sprintf {|"ingangsdag":{"date":"%s"},|} d | None -> ""
+    in
+    Printf.sprintf
+      {|{"label":"%s","objectType":"Vergunning","attributes":{%s"tarief":{"number":"%d"}},"roles":{"register":["%s"]},"characteristics":[]}|}
+      label ingangsdag tarief reg
+  in
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-anchor" suffix in
+    let oc = open_out f in
+    output_string oc body_text;
+    close_out oc;
+    f
+  in
+  let evaluate ir registers vergunningen =
+    let case_text =
+      Printf.sprintf
+        {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[%s],"parameters":{}},"expected":[{"kind":"consistent"}]}|}
+        (String.concat "," (List.map register registers @ List.map vergunning vergunningen))
+    in
+    let irf = write ".ir.json" ir and casef = write ".case.json" case_text in
+    Fun.protect
+      ~finally:(fun () -> Sys.remove irf; Sys.remove casef)
+      (fun () ->
+        let d = Ir_v0.Loader.load_file irf in
+        let c = Case.load_file d casef in
+        Eval.evaluate
+          { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+            locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
+          c.world)
+  in
+  (* per Vergunning: its hoogste latere tarief (None for leeg) and its voorrang *)
+  let row name registers vergunningen expected =
+    let final = evaluate doc registers vergunningen in
+    List.iter
+      (fun (label, tarief, voorrang) ->
+        let v = World.get final label in
+        let at what = Printf.sprintf "%s-%s-%s" name label what in
+        (match tarief with
+        | Some t -> expect_num (at "tarief") (World.attr v "hoogste latere tarief") t
+        | None -> expect_empty (at "tarief") (World.attr v "hoogste latere tarief"));
+        check (at "voorrang") (World.has_char v "voorrang" = voorrang))
+      expected
+  in
+  row "WV-3.4a-anchor-three" [ "R1" ]
+    [ ("V1", "R1", Some "2026-01-01", 10); ("V2", "R1", Some "2026-03-01", 20);
+      ("V3", "R1", Some "2026-06-01", 15) ]
+    [ ("V1", Some "20", true); ("V2", Some "15", false); ("V3", None, false) ];
+  row "WV-3.4a-anchor-alone" [ "R1" ]
+    [ ("V4", "R1", Some "2026-01-01", 10) ]
+    [ ("V4", None, true) ];
+  row "WV-3.4a-anchor-two-registers" [ "R1"; "R2" ]
+    [ ("V1", "R1", Some "2026-01-01", 10); ("V2", "R1", Some "2026-03-01", 20);
+      ("V3", "R2", Some "2026-02-01", 30) ]
+    [ ("V1", Some "20", true); ("V2", None, false); ("V3", None, true) ];
+  row "WV-3.4a-anchor-empty-subject" [ "R1" ]
+    [ ("V1", "R1", None, 10); ("V2", "R1", Some "2026-03-01", 20);
+      ("V3", "R1", Some "2026-06-01", 15) ]
+    [ ("V1", None, false); ("V2", Some "15", false); ("V3", None, false) ];
+  row "WV-3.4a-anchor-empty-member" [ "R1" ]
+    [ ("V1", "R1", Some "2026-01-01", 10); ("V2", "R1", None, 20);
+      ("V3", "R1", Some "2026-03-01", 15) ]
+    [ ("V1", Some "15", false); ("V2", None, false); ("V3", None, false) ];
+  row "WV-3.4a-anchor-same-day" [ "R1" ]
+    [ ("V1", "R1", Some "2026-01-01", 10); ("V2", "R1", Some "2026-01-01", 20);
+      ("V3", "R1", Some "2026-02-01", 5) ]
+    [ ("V1", Some "5", false); ("V2", Some "5", false); ("V3", None, false) ];
+  (* ref's own arm, which no table row reaches: an identity check where no
+     filter or test has moved the subject to a member has no form subject
+     apart from the subject itself, and is refused (WF-122 (c) refuses the
+     document; the negative wf122-identity-check-outside-filter pins that) *)
+  let quantifier =
+    {|"condition":{"node":"QuantifierFold","quantifier":"all","elementType":"Vergunning","filter":{"node":"IdentityCheck","anchor":"form","negated":true,"source":{"snippet":"die niet de Vergunning zelf zijn"}},|}
+  in
+  let k = String.length quantifier in
+  let rec find i = if String.sub doc i k = quantifier then i else find (i + 1) in
+  let i = find 0 in
+  let outside =
+    String.sub doc 0 i
+    ^ {|"condition":{"node":"IdentityCheck","anchor":"form","negated":true,"source":{"snippet":"hij is niet de Vergunning zelf"}},"initialisation":false}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+  in
+  expect_fault_msg "WV-3.4a-anchor-identity-outside-a-filter"
+    (fun () -> ignore (evaluate outside [ "R1" ] [ ("V4", "R1", Some "2026-01-01", 10) ]))
+    "(WF-122)"
 
 (* --- ch. 5.8a: the near-side rolcheck ---------------------------------- *)
 
@@ -8934,7 +9040,7 @@ let readings_of ?(evaluate = true) irf casef =
   let c = Case.load_file d casef in
   let env =
     { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
-      locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+      locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
   in
   let final = if evaluate then Eval.evaluate env c.world else c.world in
   Reading.lines env ~world:final
@@ -9247,7 +9353,7 @@ let with_instance_case ir ~order case_data f =
         (fun (c : Case.t) ->
           Eval.evaluate
             { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
-              locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+              locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
             c.world))
 
 (* the rules of R1 below: "restant", "einddag", "einddag zonder restant" *)

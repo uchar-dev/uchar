@@ -1982,17 +1982,8 @@ let vocabularies (j : json) : vocabulary_table =
    a residual arm's words. And so is a fixed start point that does not fit its
    grid (WF-115, [Checks.wf115_findings]): an executor lays the periods
    from it, and one it cannot read or that contradicts the timeline has no
-   grid to lay. And so, for now, is the form anchor (IR-SPEC ch. 4.1a, WF-122):
-   a node with `anchor` and an IdentityCheck load for the verifier, and an
-   executor of this library refuses them ([anchor_not_carried]) until it reads
-   them on the form subject, so that none of them reads such a node on the
-   subject of its position. *)
+   grid to lay. *)
 type reader = Verifier | Executor
-
-let anchor_not_carried =
-  "a node with anchor \"form\" or an IdentityCheck (IR-SPEC ch. 4.1a, WF-122) is not \
-   carried by this executor yet: it reads the subject of the form, and this executor would \
-   read the subject of its position"
 
 (* The executor's refusals, after the structural load: every Literal,
    ContextValue, VariableReference, Unresolved, QuantifierFold and Diagnostic node of the
@@ -2029,10 +2020,6 @@ let executor_refusals (j : json) =
             fail path (Checks.variable_reference_refusal name)
         | Some (`String "Unresolved") ->
             if not (List.mem_assoc "source" kvs) then fail path Checks.marker_without_source
-        | Some (`String ("AttributeReference" | "CharacteristicCheck" | "Aggregation" | "QuantifierFold"))
-          when List.mem_assoc "anchor" kvs ->
-            fail (path / "anchor") anchor_not_carried
-        | Some (`String "IdentityCheck") -> fail path anchor_not_carried
         | Some (`String "QuantifierFold") -> (
             match field path kvs "quantifier" with
             | `String s when Spelling.is_refused Spelling.quantifier s ->

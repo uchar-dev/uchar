@@ -57,6 +57,13 @@ type env = {
          quantifier fold or a union selection. An own read names exactly
          this type ([own_read]); None where the position has no subject (a
          day-kind condition) *)
+  form : (string option * World.instance) option;
+      (* the form subject, its static type and its instance, for a node with
+         the form anchor (RUNTIME-SEMANTICS ch. 3.4a): kept from the first
+         move of the subject to a member ([at_member]) through every deeper
+         one. None at the form's own level, where [self] is the form subject
+         and WF-122 admits no anchor, and where the position has no form
+         subject (a day-kind condition, a closed body) *)
 }
 
 let req what = function Some x -> x | None -> Value.fault "missing %s in IR node" what
@@ -213,6 +220,35 @@ let own_read env (self : World.instance) otn =
         st otn
   | _ -> ());
   isa env self.otype otn
+
+(* The subject moves to a member of type [el] (the filter of an instance fold,
+   the filter and the test of a quantifier fold, the filter of a union
+   selection). The form subject is [self] where the move starts at the form's
+   own level and the one an outer move kept otherwise, so an anchored node
+   reads the same object at any depth (RUNTIME-SEMANTICS ch. 3.4a). *)
+let at_member env (self : World.instance) el =
+  { env with subj = el; form = (match env.form with Some _ as f -> f | None -> Some (env.subj, self)) }
+
+(* The form anchor (RUNTIME-SEMANTICS ch. 3.4a, IR-SPEC ch. 4.1a): a node with
+   `anchor` is evaluated with the form subject as its subject, as if it stood
+   in the form's own condition or value, so at the form's own level again. *)
+let at_form env : env * World.instance =
+  match env.form with
+  | Some (subj, form_self) -> ({ env with subj; form = None }, form_self)
+  | None ->
+      Value.fault
+        "a node with anchor \"form\" or an IdentityCheck stands where no filter or quantifier test \
+         has moved the subject to a member, so there is no form subject apart from the subject \
+         itself to read (WF-122)"
+
+(* [e] with its anchor taken off, and the env and the subject it is read on:
+   for the places that match a read's shape before they evaluate it *)
+let unanchored env (self : World.instance) (e : expr) : env * World.instance * expr =
+  match Ir_v0.Checks.unanchored_expr e with
+  | None -> (env, self, e)
+  | Some inner ->
+      let env, self = at_form env in
+      (env, self, inner)
 
 (* An instance of [inst_type] fills a role declaring filler type T iff
    inst_type ⊑ T — the declared filler type is an UPPER bound (ch. 2.6). *)
@@ -513,8 +549,14 @@ let whole_period_characteristic env ~(ot : string) ~(inst : World.instance optio
    hold the same fence in one shared place, for the same reason. *)
 let rec clip_member_qualifications (c : condition_expr) =
   match c with
-  | Characteristic_check { characteristic; holder; time_period; _ } ->
+  | Characteristic_check { characteristic; holder; time_period; anchor; _ } ->
       let ident = Option.value characteristic ~default:"?" in
+      (* WF-122: the clip reads its own subject's timelines, and the clip's
+         arms below read the member's shape without asking for an anchor *)
+      if anchor <> None then
+        Value.fault
+          "anchor \"form\" on the gedurende clip member %S: the condition of a clip is no \
+           per-element context (WF-122)" ident;
       if holder <> None then
         Value.fault
           "host on the gedurende clip member %S: the clip reads the subject's own \
@@ -524,6 +566,13 @@ let rec clip_member_qualifications (c : condition_expr) =
           "whole-period qualifier on the gedurende clip member %S: the clip already ranges \
            over the whole timeline" ident
   | Compound { components; _ } -> List.iter clip_member_qualifications components
+  | Comparison { left_side; right_side; _ }
+    when List.exists
+           (function Some e -> Ir_v0.Checks.unanchored_expr e <> None | None -> false)
+           [ left_side; right_side ] ->
+      Value.fault
+        "anchor \"form\" on an operand of a gedurende clip member: the condition of a clip is no \
+         per-element context (WF-122)"
   | _ -> ()
 
 (* the grid a temporal attribute declares (ch. 3.6): both temporal-total
@@ -736,7 +785,10 @@ let nav_target env world (self : World.instance) ~(bindings : role_binding list)
    is refused here in the verifier's sentence, so a hand-built node never
    folds an empty timeline to a pass. *)
 let whole_period_operand env world (self : World.instance) (e : expr) : Timeline.t =
-  match e with
+  (* the observer keeps [e], the node of the wire; an anchored operand is
+     read on the form subject (ch. 3.4a) *)
+  let env, self, read = unanchored env self e in
+  match read with
   | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings; _ }
     when Ir_v0.Checks.attr_temporal (object_type env otn) a ->
       let tl =
@@ -898,6 +950,13 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   | Some o -> o.expr e (fun () -> eval_expr_node env world self ~err e)
 
 and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
+  match Ir_v0.Checks.unanchored_expr e with
+  | Some inner ->
+      (* the form anchor (ch. 3.4a): the node without it, on the form subject;
+         the observer saw [e] and sees the fields, which [inner] shares *)
+      let env, self = at_form env in
+      eval_expr_node env world self ~err inner
+  | None ->
   match e with
   | Literal { variant; typ; _ } -> literal_value variant typ
   | Parameter_ref { parameter; _ } -> (
@@ -1175,6 +1234,8 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       match eval_expr env world self ~err date_value with
       | Value.Empty -> Value.Empty
       | Value.Date d -> (
+          (* an anchored base names the form subject's timeline (ch. 3.4a) *)
+          let env, self, base_expr = unanchored env self base_expr in
           match base_expr with
           | Attribute_reference
               { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
@@ -1494,7 +1555,7 @@ and eval_closed_body env world self ~err (parameters : (string * datatype) list)
   let btypes =
     List.fold_left (fun acc (pname, dt) -> SMap.add (norm pname) (Some dt) acc) SMap.empty parameters
   in
-  eval_expr { env with locals; btypes } world self ~err body
+  eval_expr { env with locals; btypes; form = None } world self ~err body
 
 (* WF-038's operand of a square root or an absolute value, read off its
    static type before the value is: the verifier's sentence, shared *)
@@ -1745,7 +1806,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
     let keep (i : World.instance) =
       match filter with
       | None -> true
-      | Some c -> eval_cond { env with subj = element_object_type } world i ~err c
+      | Some c -> eval_cond (at_member env self element_object_type) world i ~err c
     in
     (* D8: the single argument of an instance fold that carries a range is
        its SET source. Under `count` it names the counted role and the count
@@ -1943,7 +2004,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                   let bkeep (i : World.instance) =
                     match b.isb_filter with
                     | None -> true
-                    | Some c -> eval_cond { env with subj = Some el } world i ~err c
+                    | Some c -> eval_cond (at_member env self (Some el)) world i ~err c
                   in
                   filter_in_order bkeep
                     (fold_members ~binding env world self ~element:el))
@@ -2102,9 +2163,10 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
    it. *)
 and window_bounds env world (self : World.instance) ~err starting_at up_to =
   let bound side e =
-    (match e with
-     | Literal _ -> ()
-     | Attribute_reference
+    (* the shape of an anchored bound is judged on the form subject (ch. 3.4a) *)
+    (match unanchored env self e with
+     | _, _, Literal _ -> ()
+     | env, self, Attribute_reference
          { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
        when own_read env self otn && not (Ir_v0.Checks.attr_temporal (object_type env otn) a) ->
          ()
@@ -2151,6 +2213,11 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
   | Some o -> o.cond c (fun () -> eval_cond_node env world self ~err c)
 
 and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) : bool =
+  match Ir_v0.Checks.unanchored_cond c with
+  | Some inner ->
+      let env, self = at_form env in
+      eval_cond_node env world self ~err inner
+  | None ->
   match c with
   | Comparison { op; left_side; right_side; time_period = None; _ } ->
       let le = req "Comparison.left" left_side and re = req "Comparison.right" right_side in
@@ -2171,14 +2238,17 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
      false). *)
   | Comparison { op; left_side; right_side; time_period = Some gp; _ } ->
       let le = req "Comparison.left" left_side and re = req "Comparison.right" right_side in
-      let temporal_side = function
-        | Attribute_reference
+      (* the attribute and the object whose timeline is tested: the form
+         subject's for an anchored side (ch. 3.4a) *)
+      let temporal_side e =
+        match unanchored env self e with
+        | env, owner, Attribute_reference
             { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
-          when own_read env self otn && Ir_v0.Checks.attr_temporal (object_type env otn) a ->
-            Some a
+          when own_read env owner otn && Ir_v0.Checks.attr_temporal (object_type env otn) a ->
+            Some (a, owner)
         | _ -> None
       in
-      let attr, bound_e, op, tested_e =
+      let (attr, owner), bound_e, op, tested_e =
         match (temporal_side le, temporal_side re) with
         | Some a, None -> (a, re, op, le)
         | None, Some a -> (a, le, reversed op, re)
@@ -2192,8 +2262,8 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
                attribute of %S and a scalar bound"
               self.otype
       in
-      read_whole tested_e (World.timeline self attr);
-      let tested = Option.value (World.timeline self attr) ~default:[] in
+      read_whole tested_e (World.timeline owner attr);
+      let tested = Option.value (World.timeline owner attr) ~default:[] in
       let boundary = eval_expr env world self ~err bound_e in
       let g : Ir_v0.Ast.grain = if gp.gp_granularity then Year else Month in
       let verdict =
@@ -2456,7 +2526,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
       let keep (i : World.instance) =
         match kv_filter with
         | None -> true
-        | Some c -> eval_cond { env with subj = Some el } world i ~err c
+        | Some c -> eval_cond (at_member env self (Some el)) world i ~err c
       in
       let members =
         filter_in_order keep
@@ -2528,7 +2598,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
             List.iter
               (fun (m : World.instance) ->
                 let found =
-                  match eval_cond { env with subj = Some el; locals } world m ~err:ignore test with
+                  match eval_cond { (at_member env self (Some el)) with locals } world m ~err:ignore test with
                   | hit -> Member_verdict hit
                   | exception Value.Fault { code; _ } -> Member_fault code
                 in
@@ -2545,7 +2615,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
             | [] -> verdict hits
             | m :: rest ->
                 let hit =
-                  try eval_cond { env with subj = Some el } world m ~err test
+                  try eval_cond (at_member env self (Some el)) world m ~err test
                   with Value.Fault { code; _ } as fault ->
                     contribute m.label (Member_fault code);
                     unreached rest;
@@ -2582,9 +2652,11 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
                    | _ -> true)
            | _ -> assert false))
   | Condition_unresolved _ -> Value.faultc "EF-019" "Unresolved condition reached in evaluation"
-  (* the loader refuses an IdentityCheck for an executor until this one reads
-     it on the form subject (Ir_v0.Loader.anchor_not_carried) *)
-  | Identity_check _ -> assert false
+  (* ch. 3.4a: the member is the form subject, the same object; it reads no
+     value, so it is never leeg and never faults *)
+  | Identity_check { negation; _ } ->
+      let _, form_self = at_form env in
+      String.equal form_self.label self.label <> negation
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
    Two steps stand between a unit SPELLING on a duration node and a verdict
@@ -2623,7 +2695,7 @@ and day_kind_matches env world self ~err (name : string) (day : int) : bool =
     ~finally:(fun () -> day_kind_stack := saved)
     (fun () ->
       let env =
-        { env with locals = SMap.add day_kind_binder (Now (Value.Date day)) env.locals; subj = None }
+        { env with locals = SMap.add day_kind_binder (Now (Value.Date day)) env.locals; subj = None; form = None }
       in
       eval_cond env world self ~err c)
 
