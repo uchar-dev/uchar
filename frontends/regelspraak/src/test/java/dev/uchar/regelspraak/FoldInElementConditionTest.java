@@ -66,14 +66,18 @@ class FoldInElementConditionTest {
         assertEquals(filter(clean(R1)), filter(clean(R2)));
     }
 
-    /** Changed 2026-10-23, as R1: the anchor instead of the IR of R4 without its filter, which keeps its path. */
+    /** Changed 2026-10-23, as R1: the anchor instead of the IR of R4 without its filter, which keeps its path. The whole
+     *  filter of R3 is that of R4 without its filter, with the anchor and the one step from the Schuit in place of the
+     *  path over the way back: the pin is the full comparison it was before the card (review B of the card). */
     @Test void r3_without_a_filter_reads_the_klachten_of_the_rule_subject() {
         RegelSpraakModel m = Resolver.resolve(R3);
         assertTrue(m.diagnostics.isEmpty(), () -> "R3 gaat zonder WARNING: " + m.diagnostics);
-        String filter = text(filter(m));
-        assertTrue(filter.contains("elementType=Klacht, anchor=form, sourceRole={node=RoleBinding, factType=schuitklacht, "
-                + "role=klacht}"), () -> filter);
-        assertTrue(text(filter(clean(R4_WITHOUT_FILTER))).contains("sourcePath="));
+        String path = "sourcePath=[{node=RoleBinding, factType=lading in-een-maand, role=schuit}, "
+                + "{node=RoleBinding, factType=schuitklacht, role=klacht}]";
+        String r4 = text(filter(clean(R4_WITHOUT_FILTER)));
+        assertTrue(r4.contains("elementType=Klacht, " + path), () -> "R4 navigeert vanaf het element: " + r4);
+        assertEquals(r4.replace(path, "anchor=form, sourceRole={node=RoleBinding, factType=schuitklacht, role=klacht}"),
+                text(filter(m)));
     }
 
     @Test void r4_carries_no_stale_warning() {
