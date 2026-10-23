@@ -208,3 +208,10 @@ De DRL van een variant is de verzameling regels met `DEFAULT` en haar pointer; b
 horen daar de verzoeningsregels van die groepen bij (zij zetten de uitkomst van die default). Een regel van de
 opgavemarkering is voor `originOf` een gewone vorm of stapel; wat haar maakte leest de toolchain zoals nu
 (`generated` en `generatedFrom`).
+
+### Landing (hoofdsessie, 2026-10-23)
+
+Review door een verse Opus-agent (alleen lezen): geen fout; één gat in de getuigen en drie kleine punten, verwerkt in
+`9f0bedf8` (zie "Review"). De volledige gate-set op `9f0bedf8` (`werk/gates.sh`): 17 van 17 groen in 31 minuten (12
+804 s, 13 224 s, 17 410 s). Fast-forward op main en gepusht; daarna de toolchain-kaart `drl-rule-provenance` met de
+pin-bump.
