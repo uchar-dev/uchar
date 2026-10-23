@@ -93,7 +93,8 @@ Waarom deze vorm:
   het enige verschil met `formOf`, en de corpusgetuige houdt het vast.
 - Een naam van geen regel van het model wordt geweigerd (`IllegalArgumentException`), zoals door `formOf`. Een regel
   van een stapel waarvan de verlaging niets noteerde faalt luid (`IllegalStateException`), en `stackRules` weigert
-  zo'n regel al bij de bouw.
+  zo'n regel al bij de bouw: de regels van de stapel en de bijdrageregels die op dat moment onder de naam van de stapel
+  staan (fixronde, zie Review).
 
 Hoe: de verlaging noteert terwijl zij bouwt, nooit achteraf uit de naam. `ownRule` noteert zijn regels bij zijn
 default en houdt die default in het veld `lowering` zolang hij bouwt; de registratie van de leesbestanden van een
@@ -115,7 +116,8 @@ DRL-tekst van alle 277 gedragen goldens, zonder en met lezingen (554 teksten), i
   681 `NO_FORM`, 213 `DEFAULT`, 26 `STACK`), van de `DEFAULT`-regels 4 van een regelversie en 12 bijdrageregels; met
   lezingen 901 leesregels (176 van een default, 725 van een vorm); 160 defaults van de documenten, elk met een regel.
   Ongeveer 21 s.
-- (b) `RuleOriginWitnessTest`, zes tests, per stapel de hele tabel in de volgorde van het model:
+- (b) `RuleOriginWitnessTest`, zeven tests (de zevende uit de fixronde, zie Review), per stapel de hele tabel in de
+  volgorde van het model:
   - vlakke groep: `jutterswet-premiestaffel`, groep `premie` (de vierde van het document): `default 0` tot en met
     `default 2` → `/rules/prioritizedDefaults/3/defaults/0` tot en met `/2`, met op die pointers de groepsnaam
     `premie` en de varianten `premie bij een zware vangst`, `premie bij veel vondsten`, `premie`;
@@ -149,10 +151,49 @@ Op `1c0329a0`:
 
 De volledige gate-set draait de hoofdsessie vóór de landing (acceptatie (c)).
 
+### Review (fixronde, 2026-10-23)
+
+Een review (alleen lezen) vond geen fout en vier punten. Alle vier zijn verwerkt, in het commit na `d85c132a`:
+
+1. Gat in de getuigen. `conditionFaultRule` roept `reads.recorder()` zelf aan, binnen `ownRule`. Een vouw die de
+   foutregel van een default als eerste inschrijft, geeft haar bijdrageregels daardoor alleen via `lowering = k.d()` in
+   `ownRule` een default. Geen golden heeft dat pad, want in het corpus kan geen rechtvaardiging falen die een vouw leest,
+   en zonder die regel bleef alles groen. Nieuw is
+   `RuleOriginWitnessTest.the_fault_rule_of_a_justification_registers_its_folds_under_its_default`, met een document dat
+   in de test wordt geschreven (`TmsDocuments.document`): de default "zijn aanmelddatum indien het aantal vondsten groter
+   is dan 2 en zijn aanmelddatum plus zijn wachtdagen later is dan 2026-01-01". De test eist dat `default 0`,
+   `default 0: fout in de voorwaarde` en `bijdrage aan vouw 0` naar `/rules/prioritizedDefaults/0/defaults/0` wijzen
+   en `default 1` naar `/1`. Met mutaties in de werkmap (niet gecommit) werd de test rood:
+   - M3 schrapt `lowering = k.d()`: de bouw faalt in `stackRules` met "de regel 'defaults A:Jutter.meldtermijn:
+     bijdrage aan vouw 0' van de stapel … verlaagt geen default en niet de stapel zelf";
+   - M3b schrapt daarnaast de uitbreiding van de controle (hieronder): `originOf` faalt in de test zelf met "… en de
+     verlaging noteerde niet van welke default of dat hij van de stapel zelf is".
+
+   Zonder mutatie is de test groen.
+   Keuze bij de zin "`stackRules` weigert zo'n regel al bij de bouw": ik heb de controle uitgebreid en de zin niet
+   aangepast. De controle kijkt nu ook naar de regels die op dat moment in `formOfRule` onder de naam van de stapel
+   staan. Waarom: dan klopt de zin, en een ontbrekende notitie faalt bij elke bouw van een stapel, met de naam van de
+   regel en van de stapel. Anders faalt zij pas wanneer iemand `originOf` voor die regel vraagt. De corpusgetuige vraagt
+   dat alleen voor de goldens, de bouw ook voor elk document van de toolchain. Op dat moment staan onder de stapelnaam
+   precies de bijdrageregels die de verlaging van deze stapel inschreef; de regels van de stapel zelf zet `meet` pas
+   daarna in `formOfRule`.
+2. De Javadoc van `originOf` zegt nu "een regel die de stapel toevoegt om een default te verlagen" en "de
+   rechtvaardiging of het gevolg" (`jutterswet-sluitdag-gemeld` vouwt in het gevolg).
+3. `": geen rekendatum"` staat nu één keer, in een lokale variabele van `stackValidityFault`.
+4. De escapes in de kop van de DRL-tekst staan onder "Wat de toolchain ermee doet".
+
+Geen gedragsverandering. Vergeleken met `d85c132a` is de DRL-tekst bytegelijk voor alle 277 gedragen goldens, zonder
+en met lezingen (554 teksten; gemeten met een probe in de werkmap, niet gecommit). `BranchDumpsCorpusWitnessTest` is
+ongewijzigd en groen. De suite (`mvn -B -o test`) draaide 1662 tests: 0 fouten, 0 overgeslagen. Gates zijn in de
+fixronde niet gedraaid; die draait de hoofdsessie.
+
 ### Wat de toolchain ermee doet (kaart `drl-rule-provenance`)
 
 Per regelnaam in `drl` (dezelfde namen als de KieBase van de build): `RuleOrigin o =
-build.execModelTranspiler().originOf(name)`, en dan naar de sleutels van `GROUND`:
+build.execModelTranspiler().originOf(name)`, en dan naar de sleutels van `GROUND`. `originOf` verwacht de naam zonder
+escapes, zoals de KieBase hem heeft (`Rule.getName()`). De kop `rule "…"` in de DRL-tekst escapet de naam als
+stringliteral (`Namen.drlString`, aangeroepen in `DrlRendering.java` r. ±399: `\` → `\\`, `"` → `\"`, CR → `\r`,
+LF → `\n`); wie de naam uit de tekst leest, maakt die vier escapes eerst ongedaan, of neemt de namen uit de KieBase.
 
 - `FORM`: `rule` = `RegelSpraakModel.formName(o.form())` (het versie-achtervoegsel `#k` eraf);
 - `DEFAULT` met pointer `/rules/prioritizedDefaults/<i><rest>`: `group` = `rules.prioritizedDefaults[i].name`,

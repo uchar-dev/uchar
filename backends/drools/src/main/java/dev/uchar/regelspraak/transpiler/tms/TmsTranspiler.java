@@ -525,11 +525,11 @@ public final class TmsTranspiler {
     /**
      * Where rule {@code ruleName} of the model comes from ({@link RuleOrigin}), for every rule of the model: its form as
      * {@link #formOf} gives it and, for a rule of an effective defaults stack, the default it lowers, as the pointer
-     * {@link #decisionsOf} names a decider by, or that it lowers the stack itself. A rule an ordinary form adds to lower
-     * a default, a contribution rule of a fold that the default's justification reads among them, has that default; a
-     * contribution rule of a fold that an ordinary rule registered first has that rule's form, also where a stack that
-     * took the rule in reads the same fold. Read off what the lowering recorded while it built the rule, never off
-     * the rule's name. A name of no rule of the model is refused, as {@link #formOf} refuses it.
+     * {@link #decisionsOf} names a decider by, or that it lowers the stack itself. A rule the stack adds to lower a
+     * default, a contribution rule of a fold that the default's justification or consequence reads among them, has that
+     * default; a contribution rule of a fold that an ordinary rule registered first has that rule's form, also where a
+     * stack that took the rule in reads the same fold. Read off what the lowering recorded while it built the rule,
+     * never off the rule's name. A name of no rule of the model is refused, as {@link #formOf} refuses it.
      */
     public RuleOrigin originOf(String ruleName) {
         String form = formOf(ruleName);
@@ -2976,10 +2976,15 @@ public final class TmsTranspiler {
                 lowering = null;
             }
         }
-        // every rule of the stack lowers a default of it or the stack itself, and originOf says which
-        for (RulePlan r : rules)
-            if (!defaultOfRule.containsKey(r.name()) && !stackOwnRules.contains(r.name()))
-                throw new IllegalStateException("de regel '" + r.name() + "' van de stapel " + b.name + " verlaagt"
+        // every rule of the stack lowers a default of it or the stack itself, and originOf says which: the stack's own
+        // rules, and the contribution rules of the folds registered under its name, which do not stand in that list and
+        // which a fault rule of a justification registers on its own, before the loop above
+        List<String> ofStack = new ArrayList<>();
+        for (RulePlan r : rules) ofStack.add(r.name());
+        formOfRule.forEach((rule, of) -> { if (of.equals(b.name)) ofStack.add(rule); });
+        for (String rule : ofStack)
+            if (!defaultOfRule.containsKey(rule) && !stackOwnRules.contains(rule))
+                throw new IllegalStateException("de regel '" + rule + "' van de stapel " + b.name + " verlaagt"
                         + " geen default en niet de stapel zelf");
         derived.put(member.key(), member);
         defaultsGroups.add(new DefaultsGroup(b.name, general, rules.size(), List.copyOf(b.controlFacts)));
@@ -2997,8 +3002,9 @@ public final class TmsTranspiler {
         Alpha concrete = concreteType(b.javaClass);
         Alpha withoutDate = new Alpha(id("geen-rekendatum"),
                 List.of(new Alpha.FieldTest("date", Alpha.Comparator.LEEG, null)));
-        stackOwnRules.add(name + ": geen rekendatum");
-        return new RulePlan(name + ": geen rekendatum", form, null, new ReadTable(List.of()),
+        String rule = name + ": geen rekendatum";
+        stackOwnRules.add(rule);
+        return new RulePlan(rule, form, null, new ReadTable(List.of()),
                 List.of(new Subject(b.javaClass, SUBJECT, List.of(concrete), List.of(), List.of()),
                         new FactPattern(EvaluationDate.class, "$rekendatum", List.of(withoutDate), List.of(), List.of())),
                 new Consequence.Fault(SUBJECT, ComputeFault.VALIDITY_WITHOUT_DATE, new Consequence.FaultName(name, name),

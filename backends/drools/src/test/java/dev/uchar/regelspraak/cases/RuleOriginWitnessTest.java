@@ -11,14 +11,32 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static dev.uchar.regelspraak.cases.TmsDocuments.COUNTING;
+import static dev.uchar.regelspraak.cases.TmsDocuments.DATE;
+import static dev.uchar.regelspraak.cases.TmsDocuments.aggregation;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attribute;
+import static dev.uchar.regelspraak.cases.TmsDocuments.attributeGroup;
+import static dev.uchar.regelspraak.cases.TmsDocuments.binary;
+import static dev.uchar.regelspraak.cases.TmsDocuments.check;
+import static dev.uchar.regelspraak.cases.TmsDocuments.comparison;
+import static dev.uchar.regelspraak.cases.TmsDocuments.compound;
+import static dev.uchar.regelspraak.cases.TmsDocuments.defaultEntry;
+import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
+import static dev.uchar.regelspraak.cases.TmsDocuments.literal;
+import static dev.uchar.regelspraak.cases.TmsDocuments.number;
+import static dev.uchar.regelspraak.cases.TmsDocuments.numberType;
+import static dev.uchar.regelspraak.cases.TmsDocuments.objectType;
+import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
+import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
+import static dev.uchar.regelspraak.cases.TmsDocuments.unit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * {@code TmsTranspiler.originOf} on goldens that show each shape (card drl-rule-origin, acceptance (b)): per rule of an
- * effective stack, in the order of the model, its kind and the default it lowers, as the pointer
- * {@code DroolsBackend.decisionsOf} names a decider by. The labels in the names are the lowering's own numbering; the
- * pointers are the document's. Beside the table, where the shape needs it, what the toolchain reads at the pointer: the
+ * {@code TmsTranspiler.originOf} on goldens that show each shape (card drl-rule-origin, acceptance (b)), and on one
+ * document written here for a shape no golden has: per rule of an effective stack, in the order of the model, its kind
+ * and the default it lowers, as the pointer {@code DroolsBackend.decisionsOf} names a decider by. The labels in the names
+ * are the lowering's own numbering; the pointers are the document's. Beside the table, where the shape needs it, what the toolchain reads at the pointer: the
  * group's name and the variant's name, or the ordinary rule's name ({@code GROUND} in the toolchain's ENGINE.md).
  * {@link RuleOriginCorpusWitnessTest} holds the same over the whole corpus.
  */
@@ -132,6 +150,39 @@ class RuleOriginWitnessTest {
         assertEquals(new RuleOrigin("defaults K:Melding.voorrang", RuleOrigin.Kind.DEFAULT,
                 "/rules/prioritizedDefaults/0/defaults/0"),
                 m.execModelTranspiler().originOf("defaults K:Melding.voorrang: bijdrage aan vouw 4"));
+    }
+
+    @Test void the_fault_rule_of_a_justification_registers_its_folds_under_its_default() throws Exception {
+        // "De meldtermijn van een Jutter is zijn aanmelddatum indien het aantal vondsten van de Jutter groter is dan 2
+        // en zijn aanmelddatum plus zijn wachtdagen later is dan 2026-01-01": the date step can fault, so the default
+        // has a fault rule, which registers the reads of the justification at once, the count's fold among them, before
+        // the stack registers the reads of the default's own rule. No golden has that shape: in the corpus no
+        // justification that reads a fold can fault. The lower default reads no fold
+        String model = TmsDocuments.model(List.of(
+                objectType("Jutter", List.of(attribute("aanmelddatum", DATE),
+                        attribute("wachtdagen", numberType(true, 0, unit("dagen"))), attribute("meldtermijn", DATE)),
+                        List.of("gemeld")),
+                objectType("Vondst", List.of(attribute("taxatie", numberType(true, 0, null))), List.of())),
+                List.of(factTypeOneToMany("aanmelding", "aanmelder", "Jutter", "vondst", "Vondst", "vondsten")));
+        String vondsten = "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":\"Jutter\","
+                + "\"source\":{\"snippet\":\"vondsten van de Jutter\"}}";
+        String count = aggregation("count", vondsten, "Vondst", sourceRole("aanmelding", "vondst"), "null", "null",
+                COUNTING, "het aantal vondsten van de Jutter");
+        String aanmelddatum = ownRead("aanmelddatum", "Jutter");
+        String justification = compound("all", 0, List.of(
+                comparison("greater", count, number("2")),
+                comparison("later", binary("plus", aanmelddatum, ownRead("wachtdagen", "Jutter"), DATE),
+                        literal("2026-01-01", DATE))));
+        String group = attributeGroup("meldtermijn van een jutter", "Jutter", "meldtermijn", List.of(
+                defaultEntry(justification, aanmelddatum), defaultEntry(check("gemeld", false), aanmelddatum)));
+        DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(model, List.of(), List.of(), List.of(group)),
+                DroolsBackend.Branch.DRL_TEXT, false);
+        String stack = "defaults A:Jutter.meldtermijn", d0 = "/rules/prioritizedDefaults/0/defaults/0";
+        assertEquals(List.of(
+                stack + ": default 0 -> DEFAULT " + d0,
+                stack + ": default 0: fout in de voorwaarde -> DEFAULT " + d0,
+                stack + ": default 1 -> DEFAULT /rules/prioritizedDefaults/0/defaults/1",
+                stack + ": bijdrage aan vouw 0 -> DEFAULT " + d0), table(b, stack));
     }
 
     @Test void a_stack_lowers_itself_where_no_default_is_at_hand() throws Exception {
