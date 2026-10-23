@@ -19,12 +19,13 @@ teller, the same at every member. A teller of 0 makes the division a §9.5
 deposit of kind EF-005 on the rule × the form subject, and RUNTIME-SEMANTICS
 ch. 3.4a says it arises iff a member reaches the division.
 
-No `source.rgs`, by choice: the RegelSpraak frontend writes these words (with
-the frontend of `36be0e265`, measured in fix round A: the same identity check
-and anchored divisor, verifier-clean), but fix round A wrote its goldens by
-hand, from the proofs of review A (p7, p8, p8b), and routed none through the
-frontend while review B read it. A `source.rgs` beside this document is an
-open point of that round.
+The source is `source.rgs`, and the frontend writes this `ir.json` from it
+byte-identically (gate 10; fix round B of the card, after review B). The
+document fix round A wrote by hand differed from it in four source snippets
+and in the type annotation of the division (`decimals` 2, where the frontend
+writes 0): a composite position, whose annotation no consumer reads
+(RUNTIME-SEMANTICS ch. 2.10). The cases did not change; ref, clingo and both
+Drools branches play them on the frontend's document.
 
 ## Hand computation
 

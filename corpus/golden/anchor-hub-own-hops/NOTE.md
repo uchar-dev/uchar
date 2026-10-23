@@ -27,12 +27,17 @@ document without the anchor: there the read starts at the member, its path is
 the range and then the hop, and the cycle is refused
 (`WF-045.dependency-cycle`).
 
-No `source.rgs`, by choice: the RegelSpraak frontend writes these sentences
-with the same anchored read and its own hop (with the frontend of
-`36be0e265`, measured in fix round A, verifier-clean), inside a one-part
-composite and without the fallback 0, but fix round A wrote its goldens by
-hand, from the proof of review A (p19), and routed none through the frontend
-while review B read it. A `source.rgs` is an open point of that round.
+No `source.rgs`. The RegelSpraak frontend writes these sentences, with "… of
+0 als die er niet zijn" for the fallback, with the same anchored read and its
+own hop, but its document is another one (measured in fix round B of the
+card, 2026-10-23): "die aan de volgende voorwaarde voldoen: …" puts the
+comparison inside a one-part `Compound` (`quantifier: "the"`), and the
+frontend has no other spelling of a filter of one condition here (the §5.6
+form "die kleiner zijn dan …" is not lowered on this aggregation operand: a
+WARNING and an `Unresolved` filter). Beside the source snippets the two
+documents differ in that node, and the negative mirror
+`wf045-instance-cycle-hub-filter-without-anchor` is this document without the
+anchor, byte for byte; so the hand-written IR stays.
 
 ## Hand computation
 

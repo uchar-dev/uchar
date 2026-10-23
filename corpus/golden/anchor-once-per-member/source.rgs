@@ -1,0 +1,18 @@
+Objecttype de Vergunning (mv: Vergunningen)
+    het tarief Numeriek (geheel getal);
+    de teller Numeriek (geheel getal);
+    het hoogste tarief boven eigen teller Numeriek (geheel getal);
+
+Objecttype het Register (mv: Registers)
+    het nummer Numeriek (geheel getal);
+
+Feittype registerinschrijving
+    het register Register
+    de vergunning (mv: vergunningen) Vergunning
+Eén register heeft meerdere vergunningen
+
+Regel hoogste tarief boven eigen teller
+    geldig altijd
+        Het hoogste tarief boven eigen teller van een Vergunning moet berekend worden als de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen:
+        - hij is niet de Vergunning zelf
+        - zijn tarief gedeeld door de teller van de Vergunning zelf is groter dan 1.

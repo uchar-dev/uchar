@@ -105,7 +105,7 @@
               "attribute": "hoogste tarief boven eigen teller",
               "subjectType": "Vergunning",
               "source": {
-                "snippet": "De hoogste tarief boven eigen teller van een Vergunning"
+                "snippet": "Het hoogste tarief boven eigen teller van een Vergunning"
               }
             },
             "value": {
@@ -117,7 +117,7 @@
                   "attribute": "tarief",
                   "subjectType": "Vergunning",
                   "source": {
-                    "snippet": "het tarief"
+                    "snippet": "het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: - hij is niet de Vergunning zelf - zijn tarief gedeeld door de teller van de Vergunning zelf is groter dan 1"
                   }
                 }
               ],
@@ -161,7 +161,7 @@
                       "type": {
                         "node": "Number",
                         "whole": false,
-                        "decimals": 2,
+                        "decimals": 0,
                         "sign": "unspecified"
                       },
                       "source": {
@@ -189,7 +189,7 @@
                   }
                 ],
                 "source": {
-                  "snippet": "aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door de teller van de Vergunning zelf is groter dan 1"
+                  "snippet": "aan alle volgende voorwaarden voldoen: - hij is niet de Vergunning zelf - zijn tarief gedeeld door de teller van de Vergunning zelf is groter dan 1"
                 }
               },
               "sourcePath": [
@@ -211,7 +211,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: - hij is niet de Vergunning zelf - zijn tarief gedeeld door de teller van de Vergunning zelf is groter dan 1"
               }
             },
             "initialisation": false,
