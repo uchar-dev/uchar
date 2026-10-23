@@ -1,0 +1,3 @@
+WF-122.anchor-outside-context
+node=CharacteristicCheck
+position=a form without a subject

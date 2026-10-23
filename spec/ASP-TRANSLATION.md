@@ -1088,10 +1088,20 @@ helper predicate per element, `aghN(X,…,V) :- isa(X,T), …, V = #agg { …
 }.`, in the filter of every set fold and in a quantifier fold's filter and
 matrix alike. The helper's head carries the element variable, the
 variables the aggregate shares with an earlier atom of the condition (that
-atom copied into the helper's body) and the result. An aggregate that
-reads a variable of the enclosing rule — its subject, its guard, a `Let`
-binder — or that is no assignment is refused by name (CLINGO-028), never
-hoisted into a helper that would read a variable of its own in its place.
+atom copied into the helper's body) and the result. The form subject's
+variable, which an anchored node reads (IR-SPEC ch. 4.1a), is carried in the
+helper's head and bound in its body by its type. An aggregate that reads
+another variable of the enclosing rule — the fold's subject where that is a
+member, its guard, a `Let` binder — or that is no assignment is refused by
+name (CLINGO-028), never hoisted into a helper that would read a variable of
+its own in its place. Every other helper over a member whose body reads the
+form subject carries it in its head the same way, or the backend refuses the
+rule by name (card `subselection-reads-subject`). A helper that reads the
+form subject only in the guard it is written under (the member's reach, a
+short circuit's prefix) needs no key: its reader stands under the same guard
+for its own form subject, so the helper holds for the member where some form
+subject reaches it. Such a guard carries the member's reach, so that it binds
+the form subject (fix round A of that card).
 The forms a filter and a matrix take in the pass before a creation
 (`register_pre`, clones of their own atoms) pass through the hoist where
 they enter the element of the quantifier fold's `#count` in that pass

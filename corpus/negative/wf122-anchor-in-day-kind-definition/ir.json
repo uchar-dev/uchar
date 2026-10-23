@@ -1,0 +1,407 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandmeester",
+        "animate": true,
+        "plural": "Strandmeesters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vaste schouwlast",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "schouwdagen",
+                "canonical": "schouwdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "extra schouwlast",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "schouwdagen",
+                "canonical": "schouwdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "schouwplicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "schouwdagen",
+                "canonical": "schouwdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "schouwvrij",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "schouwdrempel",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "schouwdagen",
+            "canonical": "schouwdagen",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          }
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [
+      {
+        "node": "DayKind",
+        "name": "schouwdag",
+        "plural": "schouwdagen"
+      },
+      {
+        "node": "DayKind",
+        "name": "stormvloeddag",
+        "plural": "stormvloeddagen"
+      }
+    ]
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "schouwplicht van een strandmeester",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "schouwplicht",
+              "subjectType": "Strandmeester",
+              "source": {
+                "snippet": "De schouwplicht van een Strandmeester"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vaste schouwlast",
+                "subjectType": "Strandmeester",
+                "source": {
+                  "snippet": "zijn vaste schouwlast"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "extra schouwlast",
+                "subjectType": "Strandmeester",
+                "source": {
+                  "snippet": "zijn extra schouwlast"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "schouwdagen",
+                  "canonical": "schouwdagen",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "zijn vaste schouwlast plus zijn extra schouwlast"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Kenmerktoekenning schouwvrij",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "schouwvrij",
+              "subjectType": "Strandmeester",
+              "source": {
+                "snippet": "Een Strandmeester is schouwvrij"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "less",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "schouwplicht",
+                "subjectType": "Strandmeester",
+                "source": {
+                  "snippet": "zijn schouwplicht"
+                }
+              },
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "schouwdrempel",
+                "source": {
+                  "snippet": "de schouwdrempel"
+                }
+              },
+              "source": {
+                "snippet": "zijn schouwplicht kleiner is dan de schouwdrempel"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [
+      {
+        "node": "DayKindDefinition",
+        "dayKind": "schouwdag",
+        "condition": {
+          "node": "Compound",
+          "quantifier": "all",
+          "threshold": 0,
+          "parts": [
+            {
+              "node": "Comparison",
+              "op": "later",
+              "left": {
+                "node": "BoundDay",
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "de dag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "date": "2026-02-28"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "28-02-2026"
+                }
+              },
+              "source": {
+                "snippet": "de dag later is dan 28-02-2026"
+              }
+            },
+            {
+              "node": "Comparison",
+              "op": "earlier",
+              "left": {
+                "node": "BoundDay",
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "de dag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "date": "2026-10-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "01-10-2026"
+                }
+              },
+              "source": {
+                "snippet": "de dag eerder is dan 01-10-2026"
+              }
+            },
+            {
+              "node": "CharacteristicCheck",
+              "characteristic": "schouwvrij",
+              "negated": false,
+              "anchor": "form",
+              "source": {
+                "snippet": "de Strandmeester zelf is schouwvrij"
+              }
+            }
+          ],
+          "source": {
+            "snippet": "er aan alle volgende voorwaarden wordt voldaan: - de dag later is dan 28-02-2026 - de dag eerder is dan 01-10-2026"
+          }
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "DayKindDefinition",
+        "dayKind": "stormvloeddag",
+        "condition": {
+          "node": "Compound",
+          "quantifier": "all",
+          "threshold": 0,
+          "parts": [
+            {
+              "node": "Comparison",
+              "op": "later",
+              "left": {
+                "node": "BoundDay",
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "de dag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "date": "2026-09-30"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "30-09-2026"
+                }
+              },
+              "source": {
+                "snippet": "de dag later is dan 30-09-2026"
+              }
+            },
+            {
+              "node": "Comparison",
+              "op": "earlier",
+              "left": {
+                "node": "BoundDay",
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "de dag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "date": "2027-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "01-03-2027"
+                }
+              },
+              "source": {
+                "snippet": "de dag eerder is dan 01-03-2027"
+              }
+            }
+          ],
+          "source": {
+            "snippet": "er aan alle volgende voorwaarden wordt voldaan: - de dag later is dan 30-09-2026 - de dag eerder is dan 01-03-2027"
+          }
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
