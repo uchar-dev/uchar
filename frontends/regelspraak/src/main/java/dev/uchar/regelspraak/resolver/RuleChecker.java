@@ -1247,6 +1247,8 @@ final class RuleChecker {
             case Condition.FarRoleMembership r ->
                     roleCheckBinding(r, r.backref(), r.filler(), r.source(), subject, reported);
             case Condition.RuleStatusCheck ignored -> { }
+            // the identity check walks no binding: it compares two objects the context binds
+            case Condition.IdentityCheck ignored -> { }
             case Condition.Unresolved ignored -> { }
         }
     }
@@ -1890,6 +1892,7 @@ final class RuleChecker {
             case Condition.RoleMembership r -> r;
             case Condition.FarRoleMembership r -> r;
             case Condition.RuleStatusCheck r -> r;
+            case Condition.IdentityCheck i -> i;
             case Condition.Unresolved o -> o;
         };
     }
@@ -3820,6 +3823,7 @@ final class RuleChecker {
             case Condition.FarRoleMembership r ->
                     report.accept(dayKindImpure(day, rule, "role membership", r.backref()), r.source());
             case Condition.RuleStatusCheck r -> report.accept(dayKindImpure(day, rule, "rule-version state", r.rule()), r.source());
+            case Condition.IdentityCheck i -> report.accept(dayKindImpure(day, rule, "identity check", null), i.source());
             case Condition.QuantifierFold k -> report.accept(dayKindImpure(day, rule, "instance quantification",
                     k.elementObjectType() == null ? null : k.elementObjectType().name), k.source());
             case Condition.Unresolved ignored -> { }

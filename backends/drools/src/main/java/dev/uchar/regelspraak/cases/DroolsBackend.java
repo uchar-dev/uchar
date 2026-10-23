@@ -310,7 +310,7 @@ public final class DroolsBackend {
     private static TmsTranspiler analyse(IrLoader.Loaded loaded, ClassLoader cl, IrLoader.Positioned positioned) {
         TmsTranspiler t = positioned != null ? TmsTranspiler.withReadings(positioned, cl)
                 : TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.roleBindings(),
-                        loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings());
+                        loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings(), loaded.anchored());
         for (Coverage d : t.coverage())
             if (!d.lowered()) throw new Excluded(new Reason(d.code(), Msg.drools("FRAME.transpiler-verdict",
                     "verdict", d.verdict(), "key", d.key(), "reasonClause", d.reason().isEmpty() ? ""

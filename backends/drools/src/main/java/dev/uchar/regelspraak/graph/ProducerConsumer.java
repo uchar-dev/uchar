@@ -158,7 +158,7 @@ public final class ProducerConsumer {
             Set<ElementKey> writes = new LinkedHashSet<>();
             for (ResolvedObjectCreation.MemberInit t : o.initialisations())
                 if (t.attribute() != null) writes.add(elementOf(o.createdType(), t.attribute(), t.characteristic()));
-            Reader l = new Reader(navigation, new LinkedHashSet<>());
+            Reader l = new Reader(navigation, new LinkedHashSet<>(), o.subject());
             l.condition(o.condition(), o.subject());
             for (ResolvedObjectCreation.MemberInit t : o.initialisations()) l.expr(t.value(), o.subject());
             out.add(new Form(FormKind.OBJECT_CREATION, baseName(o.name()), writes, l.out()));
@@ -167,7 +167,7 @@ public final class ProducerConsumer {
             Set<ElementKey> writes = new LinkedHashSet<>();
             if (v.targetAttribute() != null) writes.add(elementOf(v.targetType(), v.targetAttribute(), false));
             if (v.remainderAttribute() != null) writes.add(elementOf(v.sourceType(), v.remainderAttribute(), false));
-            Reader l = new Reader(navigation, new LinkedHashSet<>());
+            Reader l = new Reader(navigation, new LinkedHashSet<>(), v.sourceType());
             l.member(v.sourceType(), v.sourceAttribute(), false);
             for (String a : new String[] { v.ratioAttribute(), v.maximumAttribute(), v.orderingAttribute() })
                 l.member(v.targetType(), a, false);
@@ -175,23 +175,23 @@ public final class ProducerConsumer {
             out.add(new Form(FormKind.ALLOCATION, baseName(v.name()), writes, l.out()));
         }
         for (ResolvedConsistency c : model.consistencies) {
-            Reader l = new Reader(navigation, new LinkedHashSet<>());
+            Reader l = new Reader(navigation, new LinkedHashSet<>(), c.subject());
             l.condition(c.assertion(), c.subject());
             out.add(new Form(FormKind.CONSISTENCY, baseName(c.name()), Set.of(), l.out()));
         }
         for (ResolvedUniqueness u : model.uniquenesses) {
-            Reader l = new Reader(navigation, new LinkedHashSet<>());
+            Reader l = new Reader(navigation, new LinkedHashSet<>(), u.subject());
             for (String key : u.keys()) l.member(u.subject(), key, false);
             out.add(new Form(FormKind.UNIQUENESS, baseName(u.name()), Set.of(), l.out()));
         }
         for (ResolvedUniquenessUnion u : model.uniquenessUnions) {
-            Reader l = new Reader(navigation, new LinkedHashSet<>());
+            Reader l = new Reader(navigation, new LinkedHashSet<>(), null);
             for (ResolvedUniquenessUnion.Source b : u.sources())
                 if (b.type() != null) for (String key : b.keys()) l.member(b.type(), key, false);
             out.add(new Form(FormKind.UNIQUENESS, baseName(u.name()), Set.of(), l.out()));
         }
         for (ResolvedFactCreation f : model.factCreations) {
-            Reader l = new Reader(navigation, new LinkedHashSet<>());
+            Reader l = new Reader(navigation, new LinkedHashSet<>(), f.anchor());
             l.condition(f.condition(), f.anchor());
             out.add(new Form(FormKind.FACT_CREATION, baseName(f.name()), Set.of(), l.out()));
         }
@@ -242,9 +242,9 @@ public final class ProducerConsumer {
 
     private static void readings(Default d, List<Integer> path, RegelSpraakModel.ObjectType subjectType,
                                  Navigation navigation, List<DefaultRead> out) {
-        Reader justification = new Reader(navigation, new LinkedHashSet<>());
+        Reader justification = new Reader(navigation, new LinkedHashSet<>(), subjectType);
         justification.condition(d.condition(), subjectType);
-        Reader consequence = new Reader(navigation, new LinkedHashSet<>());
+        Reader consequence = new Reader(navigation, new LinkedHashSet<>(), subjectType);
         consequence.expr(d.consequence(), subjectType);
         out.add(new DefaultRead(path, d, java.util.Collections.unmodifiableSet(justification.out()),
                 java.util.Collections.unmodifiableSet(consequence.out())));
@@ -273,6 +273,12 @@ public final class ProducerConsumer {
     public interface Navigation {
         /** The type {@code check}'s hop reaches from {@code subjectType}, or null when the check does not navigate. */
         RegelSpraakModel.ObjectType reaches(Condition.CharacteristicCheck check, RegelSpraakModel.ObjectType subjectType);
+
+        /** Whether {@code node} carries the form anchor (IR-SPEC ch. 4.1a): it is read on the subject of the form. The
+         *  wire route answers from the loader's table; the source route builds no anchor and answers no. */
+        default boolean anchored(Object node) {
+            return false;
+        }
     }
 
     /** The answer of a resolver's model: the record names the role its hop walks, and the reached type is the
@@ -298,7 +304,8 @@ public final class ProducerConsumer {
     public static Navigation wireNavigation(IrLoader.Loaded loaded) {
         RegelSpraakModel model = loaded.model();
         Map<Object, List<RegelSpraakModel.RoleBindingRef>> hops = loaded.navigationBindings();
-        return (k, subjectType) -> {
+        Set<Object> anchored = loaded.anchored();
+        Navigation reach = (k, subjectType) -> {
             List<RegelSpraakModel.RoleBindingRef> path = hops.get(k);
             if (path == null || path.isEmpty()) return null;
             RegelSpraakModel.RoleBindingRef hop = path.get(path.size() - 1);
@@ -311,6 +318,16 @@ public final class ProducerConsumer {
                         }
             throw new IllegalStateException("the characteristic check '" + k.characteristic() + "' navigates by the role '"
                     + hop.role() + "' of '" + hop.factType() + "', which names no declared role with a declared filler");
+        };
+        return new Navigation() {
+            @Override public RegelSpraakModel.ObjectType reaches(Condition.CharacteristicCheck check,
+                                                                RegelSpraakModel.ObjectType subjectType) {
+                return reach.reaches(check, subjectType);
+            }
+
+            @Override public boolean anchored(Object node) {
+                return anchored.contains(node);
+            }
         };
     }
 
@@ -326,8 +343,8 @@ public final class ProducerConsumer {
      *  answer (see {@link Navigation}). */
     public static Set<ElementKey> consumed(ResolvedRule r, Navigation navigation) {
         Set<ElementKey> out = new LinkedHashSet<>();
-        Reader reader = new Reader(java.util.Objects.requireNonNull(navigation, "navigation"), out);
         RegelSpraakModel.ObjectType subject = r.target() instanceof Expr.AttributeReference ref ? ref.objectType() : null;
+        Reader reader = new Reader(java.util.Objects.requireNonNull(navigation, "navigation"), out, subject);
         reader.condition(r.condition(), subject);
         reader.expr(r.value(), subject);
         return out;
@@ -337,7 +354,8 @@ public final class ProducerConsumer {
      *  expression with the subject a kenmerk check without an owner of its own is evaluated against, and from which a
      *  navigated check's hop starts. Only a kenmerk check asks for the subject; an attribuut read names its type
      *  itself. Without a {@code navigation} it reads nothing (see {@link #read}). */
-    private record Reader(Navigation navigation, Set<ElementKey> out) {
+    /** {@code form} is the type of the subject of the form being read, which an anchored node reads (IR-SPEC ch. 4.1a). */
+    private record Reader(Navigation navigation, Set<ElementKey> out, RegelSpraakModel.ObjectType form) {
 
         /** A member a form names outright rather than through an expression: an allocation's source amount or
          *  recipient attribute, a key of a uniqueness. */
@@ -348,6 +366,7 @@ public final class ProducerConsumer {
 
         void condition(Condition c, RegelSpraakModel.ObjectType subject) {
             if (c == null || navigation == null) return;
+            if (navigation.anchored(c)) subject = form;
             switch (c) {
                 case Condition.Comparison v -> { expr(v.left(), subject); expr(v.right(), subject); }
                 case Condition.Predicate p -> expr(p.operand(), subject);
@@ -372,12 +391,15 @@ public final class ProducerConsumer {
                 case Condition.RoleMembership ignored -> { }
                 case Condition.FarRoleMembership ignored -> { }
                 case Condition.RuleStatusCheck ignored -> { }
+                // identity is input: no node of IR-SPEC ch. 5.1
+                case Condition.IdentityCheck ignored -> { }
                 case Condition.Unresolved ignored -> { }
             }
         }
 
         void expr(Expr e, RegelSpraakModel.ObjectType subject) {
             if (e == null || navigation == null) return;
+            if (navigation.anchored(e)) subject = form;
             switch (e) {
                 case Expr.AttributeReference ref -> out.add(elementOf(ref.objectType(), ref.attribute(), false));
                 case Expr.Binary b -> { expr(b.left(), subject); expr(b.right(), subject); }

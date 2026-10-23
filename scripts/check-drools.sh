@@ -1420,7 +1420,13 @@ EXPECTED_CHANNEL=(
 # characteristic of a satellite that reads its owner negated on the instance-ordered cycle (the depth of a satellite is
 # its owner's, RUNTIME-SEMANTICS ch. 6.2), written in RegelSpraak with hand-computed cases. No source file of this
 # backend changed; it plays on both with PLAYED 3.
-EXPECTED_PLAYED=274
+# 274 -> 275 (2026-10-23, card subselection-reads-subject): the golden jutterswet-registervoorrang, the form anchor
+# (IR-SPEC ch. 4.1a, WF-122): a fold and a quantifier over the Vergunningen of the register of a Vergunning that leave
+# out the Vergunning itself (IdentityCheck) and compare a member's ingangsdag with its own (an anchored read), hand-written
+# IR with hand-computed cases. The loader reads the anchor into a side table and the node IdentityCheck; the analysis
+# reads an anchored node in a rule of a fold on the subject of the form off the fold's subject, and refuses one in a fold
+# read per member of another fold by name (DROOLS-293). It plays on both with PLAYED 7.
+EXPECTED_PLAYED=275
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

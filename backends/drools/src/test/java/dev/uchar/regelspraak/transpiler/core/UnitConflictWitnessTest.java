@@ -508,7 +508,8 @@ class UnitConflictWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             assertNotNull(TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(),
-                    loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings()));
+                    loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings(),
+                    loaded.anchored()));
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }

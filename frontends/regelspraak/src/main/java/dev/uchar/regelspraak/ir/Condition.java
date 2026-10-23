@@ -209,6 +209,13 @@ public sealed interface Condition {
      *  symmetrically; see grammar/DIVERGENCES.md). */
     record RuleStatusCheck(String rule, boolean inconsistent, Source source) implements Condition {}
 
+    /** IR-SPEC ch. 4.5 / 4.1a, WF-122: the identity check of the subject of the context, the element of a fold's
+     *  filter or of a quantifier fold's filter or test, against the subject of the form ("hij is niet de Vergunning
+     *  zelf"); {@code negated} complements it. The wire writes {@code anchor: "form"} on it, its one value, so the
+     *  record carries no field for it. Its own node because the IR has no expression that yields an object, so no
+     *  comparison can say it (RUNTIME-SEMANTICS ch. 3.4a). */
+    record IdentityCheck(boolean negated, Source source) implements Condition {}
+
     /** A condition form the resolver cannot structure — a marker with a reason, never a type.
      *  Membership and period tests have left this node for {@link CharacteristicCheck},
      *  {@link RoleMembership}, {@link FarRoleMembership} and {@link TimeWindow}.
@@ -248,6 +255,7 @@ public sealed interface Condition {
             case RoleMembership ignored -> { }
             case FarRoleMembership ignored -> { }
             case RuleStatusCheck ignored -> { }
+            case IdentityCheck ignored -> { }
         }
     }
 }

@@ -498,6 +498,19 @@ subject)"). The rule that reads the fold counts these facts on its subject besid
 own probe where its evaluation reaches the fold while one stands; the filter of each selection of an
 `InstanceSetUnion` does the same. Witness `TmsFilterDepositWitnessTest`.
 
+**The form anchor.** A node with `anchor: "form"` in a filter or a quantifier matrix (IR-SPEC ch. 4.1a, WF-122;
+RUNTIME-SEMANTICS ch. 3.4a) reads the subject of the form, which a contribution rule of a fold on that subject binds
+already, as the fold's subject. An anchored read joins its standing to the fold's subject, or binds an input member off
+the pattern of the fold's subject, under keys of its own beside the member's reads; an anchored fold is a fold on the
+subject of the form, with the contribution rules a fold in the form's own condition has, and the filter reads its value
+off the fold's subject; the `IdentityCheck` compares the member with the fold's subject by identity. The loader keeps
+the anchor in a side table beside the model (`IrLoader.Loaded.anchored`), since the records are the frontend's. A fold
+that is read per member of another fold has that member as its subject and binds no subject of the form, so an anchored
+node in its filter or matrix is refused by name (DROOLS-293), and so is an anchored node under the whole-period
+qualifier, whose forms read the rule's own subject by the shape of the operand (DROOLS-294). `Cycles` and the rule
+graph read an anchored node as the verifier does: on the subject of the form, along its own steps. Witness
+`AnchorWitnessTest`.
+
 **Condition forms.** A quantifier fold (RUNTIME-SEMANTICS ch. 3.9a) has the contributions of an aggregation over its
 one-step range: a contribution rule per member that passes the filter binds the member's reads of the filter and of
 the matrix, the condition the fold asks of each member, and inserts a `Contribution` with 1 or 0 for the member's verdict,

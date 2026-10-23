@@ -163,7 +163,7 @@ class TmsSkeletonWitnessTest {
         Path ir = TmsDocuments.document(TmsDocuments.model(CHARACTERISTICS), List.of());
         IrLoader.Loaded l = IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(ir)));
         Object[] goed = {l.model(), null, l.prioritizedDefaults(), l.roleBindings(), l.lets(), l.sourcePaths(),
-                l.navigationBindings()};
+                l.navigationBindings(), l.anchored()};
         assertSame(TmsTranspiler.class, build.invoke(null, goed).getClass());
         int tested = 0;
         for (int i = 2; i < goed.length; i++) {
@@ -171,13 +171,15 @@ class TmsSkeletonWitnessTest {
             arguments[i] = null;
             InvocationTargetException fault = assertThrows(InvocationTargetException.class, () -> build.invoke(null, arguments));
             NullPointerException npe = assertInstanceOf(NullPointerException.class, fault.getCause());
-            String category = build.getParameterTypes()[i] == List.class ? "empty list" : "empty map";
+            String category = build.getParameterTypes()[i] == List.class ? "empty list"
+                    : build.getParameterTypes()[i] == java.util.Set.class ? "empty set" : "empty map";
             assertTrue(npe.getMessage().startsWith("side table '")
                     && npe.getMessage().endsWith("' is null — pass an " + category + " for a document without one"),
                     "parameter " + i + ": " + npe.getMessage());
             tested++;
         }
-        assertEquals(5, tested);
+        // six since the card subselection-reads-subject, whose form anchor rides beside the model as a side table
+        assertEquals(6, tested);
     }
 
     private static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";

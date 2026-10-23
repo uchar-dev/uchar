@@ -1199,6 +1199,13 @@ public final class IrEmitter {
                             + nameOf(k.elementObjectType()));
                 }
             }
+            // IR-SPEC ch. 4.5, WF-122: the key order of the schema, the anchor its one value
+            case Condition.IdentityCheck i -> {
+                w.key("node").value("IdentityCheck");
+                w.key("anchor").value("form");
+                w.key("negated").value(i.negated());
+                sourceReference(i.source().snippet());
+            }
             case Condition.RuleStatusCheck r -> {
                 w.key("node").value("Regelversie");
                 w.key("regel").value(r.rule());

@@ -475,7 +475,7 @@ class TmsTimelineRefusalWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             TmsTranspiler t = TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.roleBindings(), l.lets(),
-                    l.sourcePaths(), l.navigationBindings());
+                    l.sourcePaths(), l.navigationBindings(), l.anchored());
             List<String> out = new ArrayList<>();
             for (Coverage d : t.coverage())
                 if (!d.lowered()) out.add("transpiler " + d.verdict() + ": " + d.key()

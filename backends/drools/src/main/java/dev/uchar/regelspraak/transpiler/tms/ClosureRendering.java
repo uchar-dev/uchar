@@ -379,6 +379,7 @@ final class ClosureRendering {
             case ELEVEN_TEST -> x -> ComputeHelpers.elevenTest(x[0], (Boolean) x[1]);
             case NUMERIEK_MET_EXACT -> x -> ComputeHelpers.exactDigits(x[0], (Integer) x[1], (Boolean) x[2]);
             case KENMERK -> x -> ComputeHelpers.characteristic(x[0], (Boolean) x[1]);
+            case SAME_OBJECT -> x -> ComputeHelpers.sameObject(x[0], x[1], (Boolean) x[2]);
             case CHARACTERISTIC_CHECK_ALONG_PATH -> x -> ComputeHelpers.characteristicCheckAlongPath(x[0], (Boolean) x[1]);
             case ROLE_COUNT -> x -> ComputeHelpers.roleCount(x[0], (Boolean) x[1]);
             case ROLE_FIELD -> x -> ComputeHelpers.roleField(x[0], (Boolean) x[1]);

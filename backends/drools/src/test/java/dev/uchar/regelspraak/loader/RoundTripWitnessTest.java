@@ -71,7 +71,8 @@ class RoundTripWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             TmsTranspiler et = TmsTranspiler.build(model, cl, loaded.prioritizedDefaults(),
-                    loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings());
+                    loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings(),
+                    loaded.anchored());
             for (Coverage d : et.coverage())
                 assertTrue(d.lowered(), golden + ": construct lowered — " + d.key() + " " + d.verdict());
         } finally {

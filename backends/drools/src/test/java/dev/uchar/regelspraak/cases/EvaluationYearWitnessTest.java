@@ -302,7 +302,7 @@ class EvaluationYearWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             return TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.roleBindings(), l.lets(),
-                    l.sourcePaths(), l.navigationBindings()).coverage();
+                    l.sourcePaths(), l.navigationBindings(), l.anchored()).coverage();
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }

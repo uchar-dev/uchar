@@ -361,6 +361,12 @@ public final class ComputeHelpers {
         return (Boolean) value == desired;
     }
 
+    /** The identity check of {@code member} against {@code formSubject} (RUNTIME-SEMANTICS ch. 3.4a): the same object,
+     *  by identity, as a bean is one object of the case; complemented where the check is negated ({@code negated}). */
+    public static boolean sameObject(Object member, Object formSubject, boolean negated) {
+        return (member == formSubject) != negated;
+    }
+
     /** A characteristic check of the object a path of roles reaches, as {@link #characteristic}: a check over an absent link,
      *  whose read is leeg, holds in neither polarity (RUNTIME-SEMANTICS ch. 5.8 rule 3). */
     public static boolean characteristicCheckAlongPath(Object value, boolean desired) {

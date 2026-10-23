@@ -107,7 +107,7 @@ public final class Cycles {
      *  forms gives the same sentence. */
     public static Reason refusal(IrLoader.Loaded loaded) {
         Graph g = new Graph(loaded.model(), loaded.prioritizedDefaults(), loaded.navigationBindings(),
-                loaded.roleBindings(), loaded.sourcePaths());
+                loaded.anchored(), loaded.roleBindings(), loaded.sourcePaths());
         List<Form> graphForms = g.graphForms();
         // the shifted edges of an instance-ordered part leave both walks, as the verifier's do (IR-SPEC ch. 5.3)
         Ordering ordering = orders(g, graphForms, edges(graphForms));
@@ -138,10 +138,10 @@ public final class Cycles {
      *  (its fact type and the role it reaches, spelled as the first shifted read names them), once per pair: the links
      *  over each must form no cycle in a case (EF-033, RUNTIME-SEMANTICS ch. 6.2), which {@code CaseInput} tests. */
     static List<RoleBindingRef> instanceWalks(RegelSpraakModel model, List<PrioritizedDefaults> defaults,
-                                              Map<Object, List<RoleBindingRef>> navigation,
+                                              Map<Object, List<RoleBindingRef>> navigation, Set<Object> anchored,
                                               Map<Object, RoleBindingRef> roleBindings,
                                               Map<Object, List<RoleBindingRef>> sourcePaths) {
-        Graph g = new Graph(model, defaults, navigation, roleBindings, sourcePaths);
+        Graph g = new Graph(model, defaults, navigation, anchored, roleBindings, sourcePaths);
         List<Form> graphForms = g.graphForms();
         Map<String, RoleBindingRef> out = new java.util.TreeMap<>();
         for (Order o : orders(g, graphForms, edges(graphForms)).orders())
@@ -321,9 +321,10 @@ public final class Cycles {
      * with a forbidden cycle gets strata as well; {@link #refusal} refuses it.
      */
     static Map<Object, Integer> strata(RegelSpraakModel model, List<PrioritizedDefaults> defaults,
-                                       Map<Object, List<RoleBindingRef>> navigation, Map<Object, RoleBindingRef> roleBindings,
+                                       Map<Object, List<RoleBindingRef>> navigation, Set<Object> anchored,
+                                       Map<Object, RoleBindingRef> roleBindings,
                                        Map<Object, List<RoleBindingRef>> sourcePaths) {
-        List<Form> graphForms = new Graph(model, defaults, navigation, roleBindings, sourcePaths).graphForms();
+        List<Form> graphForms = new Graph(model, defaults, navigation, anchored, roleBindings, sourcePaths).graphForms();
         int n = graphForms.size();
         List<Edge> edges = new ArrayList<>();
         for (Edge r : edges(graphForms))
@@ -506,6 +507,10 @@ public final class Cycles {
         private final RegelSpraakModel model;
         private final List<PrioritizedDefaults> defaults;
         private final Map<Object, List<RoleBindingRef>> navigation;
+        /** The anchored nodes (IR-SPEC ch. 4.1a), by identity: each is read on the subject of the form, from it. */
+        private final Set<Object> anchored;
+        /** While a form's reads are collected: the type of its subject, which an anchored node reads. */
+        private ObjectType formSubject;
         private final Map<Object, RoleBindingRef> roleBindings;
         private final Map<Object, List<RoleBindingRef>> sourcePaths;
         private final Stacks stacks;
@@ -515,10 +520,11 @@ public final class Cycles {
         private final Map<String, String> order = new HashMap<>();
 
         Graph(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Map<Object, List<RoleBindingRef>> navigation,
-              Map<Object, RoleBindingRef> roleBindings, Map<Object, List<RoleBindingRef>> sourcePaths) {
+              Set<Object> anchored, Map<Object, RoleBindingRef> roleBindings, Map<Object, List<RoleBindingRef>> sourcePaths) {
             this.model = model;
             this.defaults = defaults;
             this.navigation = navigation;
+            this.anchored = anchored;
             this.roleBindings = roleBindings;
             this.sourcePaths = sourcePaths;
             this.stacks = new Stacks(model, defaults);
@@ -612,6 +618,7 @@ public final class Cycles {
                 Set<String> writes = extensionWrite(d.objectType(), d.attribute(), characteristic);
                 if (r.name() != null) writes.add(channel(r.name()));
                 List<Read> reads = new ArrayList<>();
+                formSubject = d.objectType();
                 condition(r.condition(), d.objectType(), false, reads);
                 expr(r.value(), d.objectType(), reads);
                 if (!characteristic && !stacks.absorbedOn(d.objectType(), d.attribute()).isEmpty()) reads = negative(reads);
@@ -633,12 +640,14 @@ public final class Cycles {
                 if (v.targetType() != null)
                     for (String a : new String[] {v.ratioAttribute(), v.maximumAttribute(), v.orderingAttribute()})
                         if (a != null) reads.add(new Read(member(v.targetType(), a, false), false));
+                formSubject = v.sourceType();
                 condition(v.condition(), v.sourceType(), false, reads);
                 out.add(new Form(ProducerConsumer.FormKind.ALLOCATION, ProducerConsumer.baseName(v.name()), v, false,
                         false, writes, reads));
             }
             for (ResolvedConsistency c : model.consistencies) {
                 List<Read> reads = new ArrayList<>();
+                formSubject = c.subject();
                 condition(c.assertion(), c.subject(), false, reads);
                 out.add(new Form(ProducerConsumer.FormKind.CONSISTENCY, ProducerConsumer.baseName(c.name()), c,
                         false, true, c.name() == null ? Set.of() : Set.of(channel(c.name())), reads));
@@ -673,6 +682,7 @@ public final class Cycles {
                         if (t.attribute() != null) writes.addAll(mintWrite(o.createdType(), t.attribute(), t.characteristic()));
                 List<Read> reads = new ArrayList<>();
                 if (o.subject() != null) reads.add(new Read(population(o.subject()), false));
+                formSubject = o.subject();
                 condition(o.condition(), o.subject(), false, reads);
                 for (ResolvedObjectCreation.MemberInit t : o.initialisations()) expr(t.value(), o.subject(), reads);
                 String name = o.name() == null ? "" : o.name();
@@ -688,6 +698,7 @@ public final class Cycles {
                         reads.add(new Read(relation(t.roleBinding().factType()), false));
                 if (f.path() != null && f.path().factType() != null)
                     reads.add(new Read(relation(f.path().factType()), false));
+                formSubject = f.anchor();
                 condition(f.condition(), f.anchor(), false, reads);
                 String name = f.name() == null ? "" : f.name();
                 out.add(new Form(ProducerConsumer.FormKind.FACT_CREATION, ProducerConsumer.baseName(f.name()), f,
@@ -700,6 +711,7 @@ public final class Cycles {
                 if (subjectType != null && p.target() != null)
                     writes.addAll(extensionWrite(subjectType, p.target(), p.isCharacteristic()));
                 List<Read> reads = new ArrayList<>();
+                formSubject = subjectType;
                 for (Default d : p.defaults()) defaultReads(d, subjectType, reads);
                 out.add(new Form(ProducerConsumer.FormKind.DEFAULTS_GROUP,
                         p.name() != null ? ProducerConsumer.baseName(p.name()) : "/rules/prioritizedDefaults/" + i, p,
@@ -760,6 +772,11 @@ public final class Cycles {
          *  subject to it, null where no written path reaches it (the verifier's {@code dep_expr_at}). */
         private void expr(Expr e, ObjectType subject, List<RoleBindingRef> at, List<Read> out) {
             if (e == null) return;
+            // an anchored node is read as in the form's own condition or value: on its subject, along its own steps
+            if (anchored.contains(e)) {
+                subject = formSubject;
+                at = List.of();
+            }
             switch (e) {
                 case Expr.AttributeReference a -> {
                     if (a.objectType() == null || a.attribute() == null) return;
@@ -842,6 +859,10 @@ public final class Cycles {
          *  {@code at} as in {@link #expr(Expr, ObjectType, List, List)}. */
         private void condition(Condition c, ObjectType subject, boolean neg, List<RoleBindingRef> at, List<Read> out) {
             if (c == null) return;
+            if (anchored.contains(c)) {
+                subject = formSubject;
+                at = List.of();
+            }
             switch (c) {
                 case Condition.Comparison v -> { expr(v.left(), subject, at, out); expr(v.right(), subject, at, out); }
                 case Condition.Predicate p -> {
@@ -901,6 +922,8 @@ public final class Cycles {
                 case Condition.RuleStatusCheck rv -> {
                     if (rv.rule() != null) out.add(new Read(channel(rv.rule()), true));
                 }
+                // identity is input: no node of the graph
+                case Condition.IdentityCheck ignored -> { }
                 case Condition.Unresolved ignored -> { }
             }
         }

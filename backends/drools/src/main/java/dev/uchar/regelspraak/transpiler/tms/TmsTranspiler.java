@@ -236,6 +236,9 @@ public final class TmsTranspiler {
     private List<RoleBindingRef> instanceWalks;
     private final List<PrioritizedDefaults> defaults;
     private final Map<Object, List<RoleBindingRef>> navigationBindings;
+    /** The nodes that carry the form anchor (IR-SPEC ch. 4.1a, WF-122), by identity: each is read on the subject of the
+     *  form, where the filter or the test around it moved the subject to an element ({@link Reads#atForm}). */
+    private final Set<Object> anchored;
     /** The one-step range of a fold ({@code sourceRole}), by node. */
     private final Map<Object, RoleBindingRef> roleBindings;
     /** The multi-step range of a fold ({@code sourcePath}), by node. */
@@ -357,6 +360,9 @@ public final class TmsTranspiler {
     /** Beside {@link #noted}: the nodes whose reading follows from the outcomes of terms of the rule ({@link Derived},
      *  {@link #noteDerived}), by identity. */
     private Map<Object, Derived> notedDerived;
+    /** While the rules of a fold are built ({@link #foldFor}): whether the fold's subject is the subject of the form being
+     *  lowered, which its rules then bind as {@link #FOLD_SUBJECT}, so that an anchored node reads there. */
+    private boolean foldOnForm;
     /** Above zero while the rules of a fold are built ({@link #foldFor}): a node compiled there is evaluated per member
      *  in those rules, not in the rule that reads the fold, so it is not noted. */
     private int memberwise;
@@ -364,7 +370,8 @@ public final class TmsTranspiler {
     private final List<ReadingRule> readingRules = new ArrayList<>();
 
     private TmsTranspiler(RegelSpraakModel model, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
-                          Map<Object, List<RoleBindingRef>> navigationBindings, Map<Object, RoleBindingRef> roleBindings,
+                          Map<Object, List<RoleBindingRef>> navigationBindings, Set<Object> anchored,
+                          Map<Object, RoleBindingRef> roleBindings,
                           Map<Object, List<RoleBindingRef>> sourcePaths, EffectiveUnit eff,
                           dev.uchar.regelspraak.loader.NodePositions positions) {
         this.positions = positions;
@@ -372,6 +379,7 @@ public final class TmsTranspiler {
         this.beanLoader = beanLoader != null ? beanLoader : TmsTranspiler.class.getClassLoader();
         this.defaults = defaults;
         this.navigationBindings = navigationBindings;
+        this.anchored = anchored;
         this.roleBindings = roleBindings;
         this.sourcePaths = sourcePaths;
         this.eff = eff;
@@ -387,19 +395,19 @@ public final class TmsTranspiler {
      *  ch. 6.2). */
     public synchronized List<RoleBindingRef> instanceWalks() {
         if (instanceWalks == null)
-            instanceWalks = Cycles.instanceWalks(model, defaults, navigationBindings, roleBindings, sourcePaths);
+            instanceWalks = Cycles.instanceWalks(model, defaults, navigationBindings, anchored, roleBindings, sourcePaths);
         return instanceWalks;
     }
 
     public static TmsTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
             Map<Object, RoleBindingRef> roleBindings, List<Expr.Let> lets,
             Map<Object, List<RoleBindingRef>> sourcePaths,
-            Map<Object, List<RoleBindingRef>> navigationBindings) {
-        return build(m, beanLoader, defaults, roleBindings, lets, sourcePaths, navigationBindings, null);
+            Map<Object, List<RoleBindingRef>> navigationBindings, Set<Object> anchored) {
+        return build(m, beanLoader, defaults, roleBindings, lets, sourcePaths, navigationBindings, anchored, null);
     }
 
     /** A build with readings (card fixpoint-readings) of the loaded {@code document}: the build of
-     *  {@link #build(RegelSpraakModel, ClassLoader, List, Map, List, Map, Map)}, and beside the rule of every form with a
+     *  {@link #build(RegelSpraakModel, ClassLoader, List, Map, List, Map, Map, Set)}, and beside the rule of every form with a
      *  condition, or without one that computes a value, a reading rule, whose facts {@link #readingsOf} reads, numbering
      *  the nodes of a form by the positions the loader gives with the document. It takes the loaded document whole, so it
      *  leaves no side table out. */
@@ -408,22 +416,26 @@ public final class TmsTranspiler {
         Objects.requireNonNull(document, "document");
         dev.uchar.regelspraak.loader.IrLoader.Loaded l = document.loaded();
         return build(l.model(), beanLoader, l.prioritizedDefaults(), l.roleBindings(), l.lets(), l.sourcePaths(),
-                l.navigationBindings(), Objects.requireNonNull(document.positions(), "positions"));
+                l.navigationBindings(), l.anchored(), Objects.requireNonNull(document.positions(), "positions"));
     }
 
     /** The build, with {@code positions} for a build with readings and null for one without. */
     private static TmsTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
             Map<Object, RoleBindingRef> roleBindings, List<Expr.Let> lets,
             Map<Object, List<RoleBindingRef>> sourcePaths,
-            Map<Object, List<RoleBindingRef>> navigationBindings, dev.uchar.regelspraak.loader.NodePositions positions) {
+            Map<Object, List<RoleBindingRef>> navigationBindings, Set<Object> anchored,
+            dev.uchar.regelspraak.loader.NodePositions positions) {
         Objects.requireNonNull(defaults, "side table 'defaults' is null — pass an empty list for a document without one");
         Objects.requireNonNull(roleBindings, "side table 'roleBindings' is null — pass an empty map for a document without one");
         Objects.requireNonNull(lets, "side table 'lets' is null — pass an empty list for a document without one");
         Objects.requireNonNull(sourcePaths, "side table 'sourcePaths' is null — pass an empty map for a document without one");
         Objects.requireNonNull(navigationBindings, "side table 'navigationBindings' is null — pass an empty map for a document without one");
+        Objects.requireNonNull(anchored, "side table 'anchored' is null — pass an empty set for a document without one");
         // copied by identity: the loader keys its tables on the nodes, which are records with value equality
         Map<Object, List<RoleBindingRef>> nav = new IdentityHashMap<>(navigationBindings);
-        TmsTranspiler t = new TmsTranspiler(m, beanLoader, defaults, nav, new IdentityHashMap<>(roleBindings),
+        Set<Object> anchors = Collections.newSetFromMap(new IdentityHashMap<>());
+        anchors.addAll(anchored);
+        TmsTranspiler t = new TmsTranspiler(m, beanLoader, defaults, nav, anchors, new IdentityHashMap<>(roleBindings),
                 new IdentityHashMap<>(sourcePaths), new EffectiveUnit(lets), positions);
         t.modelplan = t.run();
         t.model0 = PatternDslRendering.model(t.modelplan);
@@ -1182,7 +1194,7 @@ public final class TmsTranspiler {
             }
         }
         if (!model.objectCreations.isEmpty() || !model.factCreations.isEmpty())
-            strata = Cycles.strata(model, defaults, navigationBindings, roleBindings, sourcePaths);
+            strata = Cycles.strata(model, defaults, navigationBindings, anchored, roleBindings, sourcePaths);
         // before any form lowers: a form that reads a created relation must know it while it lowers
         for (ResolvedObjectCreation o : model.objectCreations) {
             RoleBindingRef vr = roleBindings.get(o);
@@ -3782,6 +3794,8 @@ public final class TmsTranspiler {
      *  calls. Every expression node is named here, so a node the IR records gain later fails to compile until it is
      *  decided whether this branch computes it. */
     private Term value(Expr e, Reads reads) {
+        // IR-SPEC ch. 4.1a: an anchored node is read on the subject of the form, as in the form's own condition or value
+        if (anchored.contains(e) && !reads.atForm) return reads.atForm(e, () -> value(e, reads));
         Term planned = switch (e) {
             case Expr.Literal l -> literal(l);
             case Expr.AttributeReference a -> new Term.SlotValue(attributeRead(a, reads), source(a.source()));
@@ -3864,6 +3878,13 @@ public final class TmsTranspiler {
 
     private static String snippet(Condition c) {
         return snippet(c.source());
+    }
+
+    /** The source fragment of {@code node}, a condition or an expression of the IR, or the node as text otherwise. */
+    private static String snippetOf(Object node) {
+        if (node instanceof Condition c) return snippet(c);
+        if (node instanceof Expr e) return snippet(e.source());
+        return String.valueOf(node);
     }
 
     /** A literal: a number, and a percentage, a number in the unit %, exact where its
@@ -5050,13 +5071,18 @@ public final class TmsTranspiler {
         if (v == null) {
             String name = "vouw " + foldCounter++;
             Set<String> outside = foldBinders;
+            boolean outerOnForm = foldOnForm;
             foldBinders = reads.binderRange();
+            // the fold's subject is the form's where the rule that reads it runs on the form's subject, or reads it in an
+            // anchored node (IR-SPEC ch. 4.1a)
+            foldOnForm = !reads.contribution || reads.atForm;
             memberwise++;
             try {
                 v = build.apply(form + ": " + name, name);
             } finally {
                 memberwise--;
                 foldBinders = outside;
+                foldOnForm = outerOnForm;
             }
             perSubject.put(reads.subject, v);
         }
@@ -5246,6 +5272,8 @@ public final class TmsTranspiler {
     private Reads contributionReads(ObjectType subject, ObjectType elem, Consumer<Reads> range) {
         Reads reads = new Reads(elem);
         reads.outside = foldBinders;
+        reads.contribution = true;
+        reads.formType = foldOnForm ? subject : null;
         reads.addToHeadPlan(new FactPattern(beanClass(subject), FOLD_SUBJECT, List.of(), List.of(), List.of()));
         range.accept(reads);
         return reads;
@@ -5482,8 +5510,10 @@ public final class TmsTranspiler {
      *  {@code reads}. Every condition node is named here, so a node the IR records gain later fails to compile until it
      *  is decided whether this branch reads it. */
     private Term conditionTerm(Condition c, Reads reads) {
+        if (anchored.contains(c) && !reads.atForm) return reads.atForm(c, () -> conditionTerm(c, reads));
         Term t = switch (c) {
             case Condition.CharacteristicCheck k -> characteristicCheck(k, reads);
+            case Condition.IdentityCheck i -> identityCheck(i, reads);
             case Condition.Compound s -> compound(s, reads);
             case Condition.Comparison v -> comparison(v, reads);
             case Condition.Predicate p -> predicate(p, reads);
@@ -5503,6 +5533,17 @@ public final class TmsTranspiler {
         };
         note(c, t);
         return t;
+    }
+
+    /** The identity check (IR-SPEC ch. 4.5, WF-122; RUNTIME-SEMANTICS ch. 3.4a): whether the member, the subject of the
+     *  filter or the test, is the subject of the form, which the rule of a fold on the subject of the form binds as the
+     *  fold's subject, complemented where the check is negated. Neither object is ever leeg, so the check is never leeg
+     *  and never a fault. */
+    private Term identityCheck(Condition.IdentityCheck i, Reads reads) {
+        int form = reads.formSubject(i);
+        int member = reads.member();
+        return new Term.Call(StaticFunction.SAME_OBJECT, List.of(new Term.SlotValue(member, null),
+                new Term.SlotValue(form, null), constant(i.negated())), source(i.source()));
     }
 
     /**
@@ -5540,7 +5581,10 @@ public final class TmsTranspiler {
         // a rule condition does not bind
         if (!Host.hostOp(k, reads.subject))
             throw new Refusal(DroolsCode.CHARACTERISTIC_HOST_NOT_SUBJECT.reason("snippet", snippet(k)));
-        if (k.period() != null) return wholePeriodCharacteristicCheck(k, reads);
+        if (k.period() != null) {
+            refuseAnchoredUnderWholePeriod(k, reads);
+            return wholePeriodCharacteristicCheck(k, reads);
+        }
         boolean desired = !k.negation();
         List<RoleBindingRef> nav = navigationBindings.get(k);
         if (nav == null) {
@@ -5677,6 +5721,17 @@ public final class TmsTranspiler {
     private boolean ownTimeline(Expr e, Reads reads) {
         return e instanceof Expr.AttributeReference a && a.objectType() == reads.subject && a.attribute() != null
                 && !navigationBindings.containsKey(a) && declared(reads.subject, a.attribute(), false).time() != null;
+    }
+
+    /** Refuses the whole-period qualifier on {@code node} where it stands in an anchored node or one of its
+     *  {@code operands} is anchored (IR-SPEC ch. 4.1a): the forms of the qualifier read the timeline of the rule's own
+     *  subject by the shape of the operand, which an anchor moves to the subject of the form; as in the ASP backend this
+     *  branch does not carry it. */
+    private void refuseAnchoredUnderWholePeriod(Condition node, Reads reads, Expr... operands) {
+        boolean anchoredOperand = false;
+        for (Expr o : operands) anchoredOperand |= anchored.contains(o);
+        if (reads.atForm || anchoredOperand)
+            throw new Refusal(DroolsCode.ANCHORED_FORM_NOT_CARRIED.reason("snippet", snippet(node)));
     }
 
     /** The tests of {@code rsGeheelPeriode}, by its own codes: a comparison takes the code {@link TimeCalculation#test}
@@ -5888,7 +5943,10 @@ public final class TmsTranspiler {
      * comparison folds a timeline instead ({@link #wholePeriodComparison}).
      */
     private Term comparison(Condition.Comparison v, Reads reads) {
-        if (v.period() != null) return wholePeriodComparison(v, reads);
+        if (v.period() != null) {
+            refuseAnchoredUnderWholePeriod(v, reads, v.left(), v.right());
+            return wholePeriodComparison(v, reads);
+        }
         Datatype lt = eff.typeOf(v.left()), rt = eff.typeOf(v.right());
         Condition.Operator op = v.op();
         Term leftTerm = value(v.left(), reads), rightTerm = value(v.right(), reads);
@@ -5946,7 +6004,10 @@ public final class TmsTranspiler {
      *  writes a negated test as its sister test. Under the whole-period qualifier the test folds a timeline instead
      *  ({@link #wholePeriodPredicate}). */
     private Term predicate(Condition.Predicate p, Reads reads) {
-        if (p.period() != null) return wholePeriodPredicate(p, reads);
+        if (p.period() != null) {
+            refuseAnchoredUnderWholePeriod(p, reads, p.operand());
+            return wholePeriodPredicate(p, reads);
+        }
         switch (p.kind()) {
             case LEEG, GEVULD -> {
                 Term operand = value(p.operand(), reads);
@@ -5995,7 +6056,19 @@ public final class TmsTranspiler {
      * pattern itself: the plan of the rule ({@link #rulePlan}) carries every item, and a rendering makes the rule of it.
      */
     private final class Reads {
-        final ObjectType subject;
+        /** The rule's subject; while an anchored node compiles ({@link #atForm}) the subject of the form. */
+        ObjectType subject;
+        /** Whether this is the reads of a rule of a fold ({@link #contributionReads}), whose subject is a member and which
+         *  binds the fold's subject before it ({@link #FOLD_SUBJECT}). */
+        private boolean contribution;
+        /** In a rule of a fold on the subject of the form, which {@link #FOLD_SUBJECT} binds, the type of that subject:
+         *  an anchored node is read there (IR-SPEC ch. 4.1a, WF-122). Null in every other rule. */
+        private ObjectType formType;
+        /** Whether an anchored node compiles: its reads join or bind {@link #FOLD_SUBJECT} instead of the subject. */
+        private boolean atForm;
+        /** The values bound off the bean of the form's subject ({@link #FOLD_SUBJECT}) while an anchored node compiles:
+         *  its input, which does not change while the session fires, on the pattern that binds it. */
+        private final List<Binding> formBindings = new ArrayList<>();
         /** The slots of the value array, as the plan reads them. */
         private final List<dev.uchar.regelspraak.transpiler.tms.plan.Read> slots = new ArrayList<>();
         /** The values bound off the subject pattern. */
@@ -6057,8 +6130,68 @@ public final class TmsTranspiler {
 
         /** The subject itself as a bound value, for a consequence that hands on another object beside it. */
         int member() {
+            if (atForm) throw new IllegalStateException("het onderwerp zelf gevraagd in een geankerde knoop");
             int known = existing("onderwerp zelf");
             return known >= 0 ? known : allocateSlot(ReadKind.SUBJECT, "onderwerp zelf", SUBJECT);
+        }
+
+        /** The subject of the form itself as a bound value, for the identity check (IR-SPEC ch. 4.5, WF-122): the fold's
+         *  subject, which this rule of a fold on the subject of the form binds. Refused, naming {@code node}, in a rule
+         *  that binds no subject of the form. */
+        int formSubject(Object node) {
+            if (formType == null || atForm) throw new Refusal(DroolsCode.ANCHOR_FORM_SUBJECT_UNBOUND.reason("snippet", snippetOf(node)));
+            int known = existing("vormonderwerp zelf");
+            return known >= 0 ? known : allocateSlot(ReadKind.FORM_SUBJECT, "vormonderwerp zelf", FOLD_SUBJECT);
+        }
+
+        /** The term {@code compile} plans for the anchored node {@code node} (IR-SPEC ch. 4.1a, WF-122): planned with the
+         *  subject of the form as the subject, as in the form's own condition or value, its reads joined to or bound off
+         *  {@link #FOLD_SUBJECT}, under their own keys. Only a rule of a fold on the subject of the form binds it, so an
+         *  anchored node in a fold that is itself read per member of another fold is refused by name. */
+        Term atForm(Object node, Supplier<Term> compile) {
+            if (atForm) return compile.get();
+            if (formType == null) throw new Refusal(DroolsCode.ANCHOR_FORM_SUBJECT_UNBOUND.reason("snippet", snippetOf(node)));
+            ObjectType outer = subject;
+            subject = formType;
+            atForm = true;
+            try {
+                return compile.get();
+            } finally {
+                subject = outer;
+                atForm = false;
+            }
+        }
+
+        /** Refuses, naming {@code node}, a read this branch takes only off the rule's own subject, where an anchored node
+         *  compiles. */
+        private void notAtForm(Object node) {
+            if (atForm) throw new Refusal(DroolsCode.ANCHORED_FORM_NOT_CARRIED.reason("snippet", snippetOf(node)));
+        }
+
+        /** The variable of the object this rule reads its subject's members off: the fold's subject while an anchored node
+         *  compiles, else the subject. */
+        private String subjectVariable() {
+            return atForm ? FOLD_SUBJECT : SUBJECT;
+        }
+
+        /** The join of a standing fact on the object {@link #subjectVariable} names. */
+        private Join onSubjectHere(String id) {
+            return new Join(id, "subject", subjectVariable());
+        }
+
+        /** The planned items before the subject pattern, the pattern of {@link #FOLD_SUBJECT} with the bindings of
+         *  {@link #formBindings}. */
+        private List<LhsItem> head() {
+            if (formBindings.isEmpty()) return headPlan;
+            List<LhsItem> out = new ArrayList<>();
+            for (LhsItem item : headPlan) {
+                if (item instanceof FactPattern f && f.name().equals(FOLD_SUBJECT)) {
+                    List<Binding> b = new ArrayList<>(f.bindings());
+                    b.addAll(formBindings);
+                    out.add(new FactPattern(f.factClass(), f.name(), f.alpha(), f.joins(), f.betaTests(), f.afterAlpha(), b));
+                } else out.add(item);
+            }
+            return out;
         }
 
         /** The left-hand side of the rule after its subject pattern, once its condition and its value are compiled:
@@ -6102,7 +6235,7 @@ public final class TmsTranspiler {
 
         /** As {@link #rulePlan(String, List, Gevolg)}, for a rule of the agenda group {@code agendaGroup}. */
         RulePlan rulePlan(String name, String agendaGroup, List<LhsItem> items, Consequence consequence) {
-            List<LhsItem> lhs = new ArrayList<>(headPlan);
+            List<LhsItem> lhs = new ArrayList<>(head());
             lhs.add(new Subject(beanClass(subject), SUBJECT, subjectAlpha, subjectJoins, subjectBetaTests,
                     subjectBindings));
             lhs.addAll(rangePlan);
@@ -6129,7 +6262,7 @@ public final class TmsTranspiler {
          *  assembles them, in the main group and of no form, and a consequence that inserts the {@link Reading} of the
          *  subject with every slot this left-hand side binds. */
         RulePlan readingRulePlan(String name, String pointer, List<LhsItem> items) {
-            List<LhsItem> lhs = new ArrayList<>(headPlan);
+            List<LhsItem> lhs = new ArrayList<>(head());
             lhs.add(new Subject(beanClass(subject), SUBJECT, subjectAlpha, subjectJoins, subjectBetaTests,
                     subjectBindings));
             lhs.addAll(rangePlan);
@@ -6243,7 +6376,7 @@ public final class TmsTranspiler {
                     v.valueCanFail() ? existing("lidfout " + key) : -1};
             String b = "$bijdrage_" + id("vouw");
             Alpha ofFold = equal(id("vouw"), "fold", key);
-            Join onSubject = onSubject(id("vouw-onderwerp"));
+            Join onSubject = onSubjectHere(id("vouw-onderwerp"));
             String itemCount = "$aantal_" + id("vouw");
             int[] out;
             if (function == null) {
@@ -6263,7 +6396,7 @@ public final class TmsTranspiler {
             if (v.canFail()) {
                 String f = "$filterfout_" + id("vouw");
                 Alpha ofFilter = equal(id("filterfout"), "fold", key);
-                Join filterOnSubject = onSubject(id("filterfout-onderwerp"));
+                Join filterOnSubject = onSubjectHere(id("filterfout-onderwerp"));
                 String faults = "$filterfouten_" + id("vouw");
                 String earliest = "$eerste_filterfout_" + id("vouw");
                 states(new Accumulation(new FactPattern(FilterFault.class, f, List.of(ofFilter), List.of(filterOnSubject),
@@ -6274,7 +6407,7 @@ public final class TmsTranspiler {
             if (v.deposits()) {
                 String d = "$filterdeponering_" + id("vouw");
                 Alpha ofDeposit = equal(id("filterdeponering"), "fold", key);
-                Join depositOnSubject = onSubject(id("filterdeponering-onderwerp"));
+                Join depositOnSubject = onSubjectHere(id("filterdeponering-onderwerp"));
                 String deposits = "$filterdeponeringen_" + id("vouw");
                 states(new Accumulation(new FactPattern(FilterDeposit.class, d, List.of(ofDeposit),
                         List.of(depositOnSubject), List.of()),
@@ -6284,7 +6417,7 @@ public final class TmsTranspiler {
             if (v.valueCanFail()) {
                 String f = "$lidfout_" + id("vouw");
                 Alpha ofMember = equal(id("lidfout"), "fold", key);
-                Join memberOnSubject = onSubject(id("lidfout-onderwerp"));
+                Join memberOnSubject = onSubjectHere(id("lidfout-onderwerp"));
                 String faults = "$lidfouten_" + id("vouw");
                 String earliest = "$eerste_lidfout_" + id("vouw");
                 states(new Accumulation(new FactPattern(MemberFault.class, f, List.of(ofMember), List.of(memberOnSubject),
@@ -6298,6 +6431,8 @@ public final class TmsTranspiler {
         /** The session's evaluation date (RUNTIME-SEMANTICS ch. 8.1), bound off its {@link EvaluationDate}: one fact for the
          *  whole session, joined to no subject, bound among the parameters; null where the case carries no date. */
         int evaluationDate() {
+            // one fact for the whole session, read alike on the subject and on the form's subject
+            if (atForm) return unscoped(this::evaluationDate);
             int known = existing("rekendatum");
             if (known >= 0) return known;
             evaluationDateNeeded();
@@ -6361,6 +6496,7 @@ public final class TmsTranspiler {
          *  ({@link TmsTranspiler#allocation}). A recipient whose fact changes changes the list, and the activation that
          *  read it fires again. An accumulate over no fact still binds a row, an empty list. */
         int recipients(String allocation) {
+            notAtForm(allocation);
             String key = "ontvangers " + allocation;
             int known = existing(key);
             if (known >= 0) return known;
@@ -6374,6 +6510,7 @@ public final class TmsTranspiler {
         }
 
         int origin() {
+            notAtForm("herkomst");
             int known = existing("herkomst");
             if (known >= 0) return known;
             String g = "$herkomst_" + id("creatie");
@@ -6403,6 +6540,7 @@ public final class TmsTranspiler {
          *  ({@link TmsTranspiler#roleCheck}). Input does not change while the session fires, so it is bound off the
          *  subject's bean, as an input member is ({@link #own}). */
         int roleField(String field, Class<?> javaClass) {
+            notAtForm(field);
             String key = "rolveld " + field + " " + (javaClass == null ? "" : javaClass.getName());
             int known = existing(key);
             if (known >= 0) return known;
@@ -6416,6 +6554,7 @@ public final class TmsTranspiler {
          *  of an input relation stored on the other end ({@link TmsTranspiler#roleCheck}), bound off an accumulate,
          *  which over no bean still binds a row. */
         int roleFillers(Class<?> javaClass, String field) {
+            notAtForm(field);
             String key = "rolvullers " + javaClass.getName() + " " + field;
             int known = existing(key);
             if (known >= 0) return known;
@@ -6432,6 +6571,7 @@ public final class TmsTranspiler {
          *  any): the {@link RelationLink} facts, bound off an accumulate, which over no link still binds a row
          *  ({@link TmsTranspiler#roleCheck}). */
         int roleLinks(String relation, boolean subjectIsFirst, Class<?> javaClass) {
+            notAtForm(relation);
             String key = "rolkoppelingen " + relation + " " + subjectIsFirst + " "
                     + (javaClass == null ? "" : javaClass.getName());
             int known = existing(key);
@@ -6456,6 +6596,7 @@ public final class TmsTranspiler {
          *  subject's bean, since the relation is input; null where the subject has no parent. A scope over a relation a
          *  form creates, whose links are in no field, is refused. */
         int scopeRead(RoleBindingRef scopeRole) {
+            notAtForm(scopeRole.role());
             String key = "scope " + scopeRole.factType() + " " + scopeRole.role();
             int known = existing(key);
             if (known >= 0) return known;
@@ -6474,7 +6615,7 @@ public final class TmsTranspiler {
         }
 
         private int existing(String key) {
-            Integer i = index.get(key);
+            Integer i = index.get(scoped(key));
             if (i != null && use != null) use.add(i);
             return i == null ? -1 : i;
         }
@@ -6489,9 +6630,9 @@ public final class TmsTranspiler {
          *  {@code key}. */
         private int allocateSlot(ReadKind category, String key, String name) {
             int i = slots.size();
-            dev.uchar.regelspraak.transpiler.tms.plan.Read l = new dev.uchar.regelspraak.transpiler.tms.plan.Read(i, category, key, name);
+            dev.uchar.regelspraak.transpiler.tms.plan.Read l = new dev.uchar.regelspraak.transpiler.tms.plan.Read(i, category, scoped(key), name);
             slots.add(l);
-            index.put(key, i);
+            index.put(scoped(key), i);
             names.add(name);
             if (use != null) use.add(i);
             return i;
@@ -6505,7 +6646,25 @@ public final class TmsTranspiler {
         }
 
         private void bindSubject(Binding b) {
-            subjectBindings.add(b);
+            (atForm ? formBindings : subjectBindings).add(b);
+        }
+
+        /** The slot {@code read} gives for a read that does not depend on the subject, under its own key while an
+         *  anchored node compiles as well. */
+        private int unscoped(java.util.function.IntSupplier read) {
+            boolean was = atForm;
+            atForm = false;
+            try {
+                return read.getAsInt();
+            } finally {
+                atForm = was;
+            }
+        }
+
+        /** The key {@code key} of a read under which this rule knows it: apart for a read of the form's subject, which
+         *  can read a member the subject reads as well. */
+        private String scoped(String key) {
+            return atForm ? "vormonderwerp " + key : key;
         }
 
         private void parameters(LhsItem item) {
@@ -6520,7 +6679,7 @@ public final class TmsTranspiler {
          *  of it to {@code w}: a constraint on the member, the join on the subject, the binding. */
         private FactPattern state(Class<?> javaClass, String name, String memberField, ElementKey lk, String field, String w) {
             Alpha ofMember = equal(id("stand"), memberField, lk);
-            Join onSubject = onSubject(id("stand-onderwerp"));
+            Join onSubject = onSubjectHere(id("stand-onderwerp"));
             return new FactPattern(javaClass, name, List.of(ofMember), List.of(onSubject), List.of(Binding.of(w, javaClass, field)));
         }
 
@@ -6597,7 +6756,7 @@ public final class TmsTranspiler {
                 String st = "$padstand_" + slots.size();
                 Alpha ofPath = new Alpha(id("padstand"), List.of(new Alpha.FieldTest("path", Alpha.Comparator.GELIJK, ps),
                         new Alpha.FieldTest("member", Alpha.Comparator.GELIJK, lk)));
-                Join onSubject = onSubject(id("padstand-onderwerp"));
+                Join onSubject = onSubjectHere(id("padstand-onderwerp"));
                 states(new FactPattern(PathState.class, st, List.of(ofPath), List.of(onSubject),
                         List.of(Binding.of(w, PathState.class, "value"))));
                 paths.put(p.key(), p);
@@ -6614,6 +6773,7 @@ public final class TmsTranspiler {
          *  kept apart from another parameter's in another rule ({@link ParameterState}). A parameter the case leaves
          *  unset has a standing with a null value and reads leeg. */
         int parameter(Parameter p) {
+            if (atForm) return unscoped(() -> parameter(p));
             String name = Namen.ident(p.name(), false);
             String key = "parameter " + name;
             int known = existing(key);

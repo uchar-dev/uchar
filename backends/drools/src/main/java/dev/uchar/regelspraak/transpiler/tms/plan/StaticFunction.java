@@ -159,6 +159,9 @@ public enum StaticFunction {
     /** A characteristic check of the subject (ch. 5.8): its truth value off a total standing, which a {@code Boolean}
      *  constant must equal: false for a negated check. */
     KENMERK(ComputeHelpers.class, "characteristic", false),
+    /** The identity check (ch. 3.4a, IR-SPEC ch. 4.5): whether the member is the subject of the form, the same object,
+     *  complemented where a {@code Boolean} constant says the check is negated. */
+    SAME_OBJECT(ComputeHelpers.class, "sameObject", false),
     /** A characteristic check of the object a path of roles reaches, as {@link #KENMERK}; over an absent link, whose
      *  read is leeg, it holds in neither polarity (ch. 5.8 rule 3). */
     CHARACTERISTIC_CHECK_ALONG_PATH(ComputeHelpers.class, "characteristicCheckAlongPath", false),

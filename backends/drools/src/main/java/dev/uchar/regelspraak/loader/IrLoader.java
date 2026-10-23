@@ -216,6 +216,11 @@ public final class IrLoader {
     /** IR-SPEC ch. 4.1a: the navigation bindings per AttributeReference / Kenmerk node — see
      *  {@link Loaded#navigationBindings()}. Identity-keyed for {@link #roleBindings}'s reason. */
     private final Map<Object, List<RoleBindingRef>> navigationBindings = new java.util.IdentityHashMap<>();
+    /** IR-SPEC ch. 4.1a, WF-122: the nodes that carry {@code anchor: "form"} — see {@link Loaded#anchored()}.
+     *  Identity-keyed for {@link #roleBindings}'s reason. */
+    private final java.util.Set<Object> anchored = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    /** While {@link #checkSubjects} walks a form: the type of its subject, which an anchored node is read on. */
+    private ObjectType formSubject;
     /** The JSON pointer of every AttributeReference, fold and role check read, by identity: the node kinds
      *  {@link #checkSubjects} refuses after the whole document is read, at the place they were written. */
     private final Map<Object, String> sites = new java.util.IdentityHashMap<>();
@@ -275,11 +280,18 @@ public final class IrLoader {
      *         (its {@code navigationBindings}, one binding per hop, subject-outward) and per navigated
      *         {@link Condition.CharacteristicCheck} (its {@code navigation}, a one-hop list), by IDENTITY, verbatim off the
      *         wire. Where a node carries one it decides the walk in both transpiler branches; a node without one
-     *         is the subject's own read (or the element's, inside a fold's filter). */
+     *         is the subject's own read (or the element's, inside a fold's filter).
+     *  @param anchored the IR-SPEC ch. 4.1a nodes that carry {@code anchor: "form"} (WF-122), by IDENTITY: an
+     *         {@link Expr.AttributeReference}, a {@link Condition.CharacteristicCheck}, an aggregation's
+     *         {@link Expr.FunctionCall} or a {@link Condition.QuantifierFold} that starts its walk at the subject of the
+     *         form, where the filter or the test around it moved the subject to an element. The records are the
+     *         frontend's and have no field for it. A consumer that dropped this set would read such a node on the
+     *         element, a value the sentence does not name. The {@link Condition.IdentityCheck}, whose anchor is
+     *         required and has one value, is not in it. Empty for a document without an anchor. */
     public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults,
                          Map<Object, RoleBindingRef> roleBindings, List<Expr.Let> lets,
                          Map<Object, List<RoleBindingRef>> sourcePaths,
-                         Map<Object, List<RoleBindingRef>> navigationBindings) {}
+                         Map<Object, List<RoleBindingRef>> navigationBindings, java.util.Set<Object> anchored) {}
 
     /** A loaded document with the positions of its nodes on the wire ({@link NodePositions}): the JSON pointer, the
      *  place in the document's pre-order and the wire kind of every node of the condition and the expression union this
@@ -303,7 +315,8 @@ public final class IrLoader {
     public static Loaded loadAll(JsonNode root) {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
-        return new Loaded(model, l.prioritizedDefaults, l.roleBindings, l.lets, l.sourcePaths, l.navigationBindings);
+        return new Loaded(model, l.prioritizedDefaults, l.roleBindings, l.lets, l.sourcePaths, l.navigationBindings,
+                l.anchored);
     }
 
     /** As {@link #loadAll}, with the positions of the document's nodes beside what it returns. */
@@ -311,7 +324,7 @@ public final class IrLoader {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
         return new Positioned(new Loaded(model, l.prioritizedDefaults, l.roleBindings, l.lets, l.sourcePaths,
-                l.navigationBindings), l.positions);
+                l.navigationBindings, l.anchored), l.positions);
     }
 
     /** The IR-SPEC ch. 4.5 other-end narrowing of a loaded {@code RoleMembership}: the type the filler of the other
@@ -435,19 +448,34 @@ public final class IrLoader {
     private void checkSubjects() {
         for (ResolvedRule r : m.resolvedRules) {
             ObjectType s = r.target() instanceof Expr.AttributeReference a ? a.objectType() : null;
+            formSubject = s;
             checkValue(r.value(), s);
             checkCondition(r.condition(), s);
         }
+        formSubject = null;
         for (ResolvedDayKindDefinition d : m.resolvedDayKindDefinitions) checkCondition(d.condition(), null);
         for (ResolvedObjectCreation oc : m.objectCreations) {
+            formSubject = oc.subject();
             for (ResolvedObjectCreation.MemberInit t : oc.initialisations()) checkValue(t.value(), oc.subject());
             checkCondition(oc.condition(), oc.subject());
         }
-        for (ResolvedAllocation v : m.allocations) checkCondition(v.condition(), v.sourceType());
-        for (ResolvedConsistency c : m.consistencies) checkCondition(c.assertion(), c.subject());
-        for (ResolvedFactCreation fc : m.factCreations) checkCondition(fc.condition(), fc.anchor());
-        for (PrioritizedDefaults pd : prioritizedDefaults)
+        for (ResolvedAllocation v : m.allocations) {
+            formSubject = v.sourceType();
+            checkCondition(v.condition(), v.sourceType());
+        }
+        for (ResolvedConsistency c : m.consistencies) {
+            formSubject = c.subject();
+            checkCondition(c.assertion(), c.subject());
+        }
+        for (ResolvedFactCreation fc : m.factCreations) {
+            formSubject = fc.anchor();
+            checkCondition(fc.condition(), fc.anchor());
+        }
+        for (PrioritizedDefaults pd : prioritizedDefaults) {
+            formSubject = ot(pd.subject());
             for (Default d : pd.defaults()) checkDefault(d, ot(pd.subject()));
+        }
+        formSubject = null;
     }
 
     private void checkDefault(Default d, ObjectType s) {
@@ -461,6 +489,8 @@ public final class IrLoader {
     /** A value position and everything below it. Exhaustive over the sealed union, so a node the union grows is a
      *  compile error here rather than a subtree the walk skips. */
     private void checkValue(Expr e, ObjectType s) {
+        // IR-SPEC ch. 4.1a: an anchored node is read where the form's own condition or value would read it
+        if (e != null && anchored.contains(e)) s = formSubject;
         switch (e) {
             case null -> { }
             case Expr.AttributeReference a -> {
@@ -529,6 +559,7 @@ public final class IrLoader {
             }
             case Condition.RoleMembership r -> checkFilling(r, s);
             case Condition.CharacteristicCheck k -> { }
+            case Condition.IdentityCheck x -> { }
             case Condition.RuleStatusCheck x -> { }
             case Condition.Unresolved x -> { }
             // this loader refuses the node itself, so no document it returns carries one
@@ -1392,6 +1423,24 @@ public final class IrLoader {
         return category.asText();
     }
 
+    // --- the form anchor (IR-SPEC ch. 4.1a, WF-122) ----------------------------
+
+    /** Records {@code node} as anchored where its wire node {@code n} at {@code p} carries {@code anchor}, whose one
+     *  value is read as the shared loader reads it. Where it may stand is WF-122's, the verifier's question. */
+    private void anchor(JsonNode n, String p, Object node) {
+        if (anchorValue(n, p)) anchored.add(node);
+    }
+
+    /** Whether {@code n} at {@code p} carries {@code anchor}, refused in the shared loader's sentences where its value
+     *  is not the string "form". */
+    private boolean anchorValue(JsonNode n, String p) {
+        JsonNode a = n.get("anchor");
+        if (a == null) return false;
+        if (!a.isTextual()) throw new DocumentError(p + "/anchor", "an anchor is the string \"form\"");
+        if (!a.asText().equals("form")) throw new DocumentError(p + "/anchor", "unknown anchor value \"" + a.asText() + "\"");
+        return true;
+    }
+
     // --- the key sets of the rule-side nodes ----------------------------------
 
     /** A node's keys as the schema gives them: required, then optional (IR-SPEC § Method). */
@@ -1410,12 +1459,12 @@ public final class IrLoader {
             keyNames("Literal", List.of("node", "value", "type"), "source"),
             keyNames("TextComposition", List.of("node", "parts", "type"), "source"),
             keyNames("Binary", List.of("node", "op", "left", "right", "type"), "source"),
-            keyNames("Aggregation", List.of("node", "kind", "arguments", "type"), "elementType", "filter",
+            keyNames("Aggregation", List.of("node", "kind", "arguments", "type"), "elementType", "anchor", "filter",
                     "emptyFallback", "dimensionSelection", "sourceRole", "sourcePath", "source"),
             keyNames("BuiltinCall", List.of("node", "kind", "arguments", "type"), "filter", "granularity", "source"),
             keyNames("Rounding", List.of("node", "base", "mode", "decimals", "type"), "source"),
             keyNames("Clamp", List.of("node", "base", "type"), "minimum", "maximum", "source"),
-            keyNames("AttributeReference", List.of("node", "attribute", "subjectType"), "path", "source"),
+            keyNames("AttributeReference", List.of("node", "attribute", "subjectType"), "anchor", "path", "source"),
             keyNames("DimensionCellRead", List.of("node", "attribute", "labels"), "source"),
             keyNames("ParameterReference", List.of("node", "parameter"), "source"),
             keyNames("VariableReference", List.of("node", "name"), "source"),
@@ -1434,13 +1483,14 @@ public final class IrLoader {
             keyNames("Comparison", List.of("node", "op", "left", "right"), "wholePeriod", "source"),
             keyNames("Predicate", List.of("node", "kind", "operand", "negated", "digits"), "dayKind", "wholePeriod",
                     "source"),
-            keyNames("CharacteristicCheck", List.of("node", "characteristic", "negated"), "host", "wholePeriod",
+            keyNames("CharacteristicCheck", List.of("node", "characteristic", "negated"), "host", "anchor", "wholePeriod",
                     "source", "navigation"),
             keyNames("RoleMembership", List.of("node", "factType", "role", "negated"), "counterpartType", "source"),
             keyNames("TimeWindow", List.of("node", "toInclusive"), "from", "to", "source"),
             keyNames("Compound", List.of("node", "quantifier", "threshold", "parts"), "source"),
             keyNames("QuantifierFold", List.of("node", "quantifier", "elementType", "test"),
-                    "threshold", "filter", "source", "sourceRole", "sourcePath"),
+                    "threshold", "anchor", "filter", "source", "sourceRole", "sourcePath"),
+            keyNames("IdentityCheck", List.of("node", "anchor", "negated"), "source"),
             keyNames("Regelversie", List.of("node", "regel", "inconsistent"), "source"),
             keyNames("Unresolved", List.of("node"), "source"));
 
@@ -1508,6 +1558,7 @@ public final class IrLoader {
                 Expr.AttributeReference a = new Expr.AttributeReference(text(n, "attribute"), ot(text(n, "subjectType")),
                         null, null, null, source(n), false, List.of());
                 sites.put(a, p);
+                anchor(n, p, a);
                 if (n.has("path")) {
                     // written whole or not at all, never empty (IR-SPEC ch. 4.1a): an empty list would read as the
                     // subject's own attribute
@@ -1685,6 +1736,7 @@ public final class IrLoader {
         if (uncarried != null) throw uncarried;
         if (oneSource && (n.has("sourceRole") || n.has("sourcePath"))) checkFoldSource(n, p, fk, f);
         sites.put(f, p);
+        anchor(n, p, f);
         return f;
     }
 
@@ -2112,6 +2164,7 @@ public final class IrLoader {
                         ot(text(n, "host")), wholePeriod(nodeField(n, "wholePeriod")), source(n));
                 RoleBindingRef nb = roleBinding(n, p, "navigation");
                 if (nb != null) navigationBindings.put(k, List.of(nb));
+                anchor(n, p, k);
                 yield k;
             }
             // IR-SPEC ch. 4.5: one node for the role check — the fact type, the role the SUBJECT plays in it, and the
@@ -2193,10 +2246,18 @@ public final class IrLoader {
                 if (counts != n.has("threshold"))
                     throw new Refusal(DroolsCode.QUANTIFIER_THRESHOLD_MISMATCH.reason("quantifier", wq, "thresholdClause", DroolsCode.QUANTIFIER_THRESHOLD_MISMATCH.part(counts ? "and-no-threshold" : "and-one")), "Kwantorvouw.drempel");
                 // a subselection is written whole or not at all: absent is none, the record's null
-                yield new Condition.QuantifierFold(kw, counts ? intOf(n, "threshold") : 0,
+                Condition.QuantifierFold kv = new Condition.QuantifierFold(kw, counts ? intOf(n, "threshold") : 0,
                         ot(text(n, "elementType")),
                         condition(nodeField(n, "filter")), condition(nodeField(n, "test")),
                         sourcePath.isEmpty() ? roleBinding(n, p, "sourceRole") : null, sourcePath, source(n));
+                anchor(n, p, kv);
+                yield kv;
+            }
+            // IR-SPEC ch. 4.5, WF-122: the anchor is required and has one value, so it is read for its value only
+            case "IdentityCheck" -> {
+                String p = pathOf(n);
+                anchorValue(n, p);
+                yield new Condition.IdentityCheck(truth(n, p, "negated"), source(n));
             }
             case "Regelversie" -> new Condition.RuleStatusCheck(text(n, "regel"), bool(n, "inconsistent"), source(n));
             case "Unresolved" -> {
@@ -2888,6 +2949,7 @@ public final class IrLoader {
             case Condition.QuantifierFold kv -> { checkTypes(kv.filter(), types); checkTypes(kv.test(), types); }
             case Condition.RoleMembership r -> { }
             case Condition.CharacteristicCheck k -> { }
+            case Condition.IdentityCheck x -> { }
             case Condition.RuleStatusCheck x -> { }
             case Condition.Unresolved x -> { }
             case Condition.FarRoleMembership x -> { }

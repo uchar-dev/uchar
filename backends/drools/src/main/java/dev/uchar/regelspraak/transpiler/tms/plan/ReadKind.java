@@ -13,6 +13,9 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
 public enum ReadKind {
     /** The subject itself, for a consequence that hands it on ({@code lid}). */
     SUBJECT,
+    /** The subject of the form itself, which a rule of a fold on it binds before its member: the identity check compares
+     *  the member with it (IR-SPEC ch. 4.5, WF-122; {@code vormonderwerp}). */
+    FORM_SUBJECT,
     /** The input of a member of the subject, bound off its bean: of a member that no form writes ({@code eigen}), and
      *  the input that a member's standing carries where no derivation stands
      *  ({@code TmsTranspiler.inputStateRule}). */
