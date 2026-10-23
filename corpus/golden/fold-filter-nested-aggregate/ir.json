@@ -212,16 +212,10 @@
                             "node": "AttributeReference",
                             "attribute": "afmeerdag",
                             "subjectType": "Schuit",
+                            "anchor": "form",
                             "source": {
                               "snippet": "de afmeerdag van de Schuit"
-                            },
-                            "path": [
-                              {
-                                "node": "RoleBinding",
-                                "factType": "lading in-een-maand",
-                                "role": "schuit"
-                              }
-                            ]
+                            }
                           },
                           "right": {
                             "node": "Literal",
@@ -263,16 +257,10 @@
                             "node": "AttributeReference",
                             "attribute": "afmeerdag",
                             "subjectType": "Schuit",
+                            "anchor": "form",
                             "source": {
                               "snippet": "de afmeerdag van de Schuit"
-                            },
-                            "path": [
-                              {
-                                "node": "RoleBinding",
-                                "factType": "lading in-een-maand",
-                                "role": "schuit"
-                              }
-                            ]
+                            }
                           },
                           "right": {
                             "node": "Literal",
@@ -400,16 +388,10 @@
                             "node": "AttributeReference",
                             "attribute": "afmeerdag",
                             "subjectType": "Schuit",
+                            "anchor": "form",
                             "source": {
                               "snippet": "de afmeerdag van de Schuit"
-                            },
-                            "path": [
-                              {
-                                "node": "RoleBinding",
-                                "factType": "lading in-een-maand",
-                                "role": "schuit"
-                              }
-                            ]
+                            }
                           },
                           "right": {
                             "node": "Literal",
@@ -451,16 +433,10 @@
                             "node": "AttributeReference",
                             "attribute": "afmeerdag",
                             "subjectType": "Schuit",
+                            "anchor": "form",
                             "source": {
                               "snippet": "de afmeerdag van de Schuit"
-                            },
-                            "path": [
-                              {
-                                "node": "RoleBinding",
-                                "factType": "lading in-een-maand",
-                                "role": "schuit"
-                              }
-                            ]
+                            }
                           },
                           "right": {
                             "node": "Literal",
@@ -590,16 +566,10 @@
                             "node": "AttributeReference",
                             "attribute": "afmeerdag",
                             "subjectType": "Schuit",
+                            "anchor": "form",
                             "source": {
                               "snippet": "de afmeerdag van de Schuit"
-                            },
-                            "path": [
-                              {
-                                "node": "RoleBinding",
-                                "factType": "lading in-een-maand",
-                                "role": "schuit"
-                              }
-                            ]
+                            }
                           },
                           "right": {
                             "node": "Literal",
@@ -641,16 +611,10 @@
                             "node": "AttributeReference",
                             "attribute": "afmeerdag",
                             "subjectType": "Schuit",
+                            "anchor": "form",
                             "source": {
                               "snippet": "de afmeerdag van de Schuit"
-                            },
-                            "path": [
-                              {
-                                "node": "RoleBinding",
-                                "factType": "lading in-een-maand",
-                                "role": "schuit"
-                              }
-                            ]
+                            }
                           },
                           "right": {
                             "node": "Literal",
@@ -780,16 +744,10 @@
                             "node": "AttributeReference",
                             "attribute": "afmeerdag",
                             "subjectType": "Schuit",
+                            "anchor": "form",
                             "source": {
                               "snippet": "de afmeerdag van de Schuit"
-                            },
-                            "path": [
-                              {
-                                "node": "RoleBinding",
-                                "factType": "lading in-een-maand",
-                                "role": "schuit"
-                              }
-                            ]
+                            }
                           },
                           "right": {
                             "node": "Literal",
@@ -831,16 +789,10 @@
                             "node": "AttributeReference",
                             "attribute": "afmeerdag",
                             "subjectType": "Schuit",
+                            "anchor": "form",
                             "source": {
                               "snippet": "de afmeerdag van de Schuit"
-                            },
-                            "path": [
-                              {
-                                "node": "RoleBinding",
-                                "factType": "lading in-een-maand",
-                                "role": "schuit"
-                              }
-                            ]
+                            }
                           },
                           "right": {
                             "node": "Literal",
@@ -973,16 +925,10 @@
                             "node": "AttributeReference",
                             "attribute": "afmeerdag",
                             "subjectType": "Schuit",
+                            "anchor": "form",
                             "source": {
                               "snippet": "de afmeerdag van de Schuit"
-                            },
-                            "path": [
-                              {
-                                "node": "RoleBinding",
-                                "factType": "lading in-een-maand",
-                                "role": "schuit"
-                              }
-                            ]
+                            }
                           },
                           "right": {
                             "node": "Literal",
@@ -1024,16 +970,10 @@
                             "node": "AttributeReference",
                             "attribute": "afmeerdag",
                             "subjectType": "Schuit",
+                            "anchor": "form",
                             "source": {
                               "snippet": "de afmeerdag van de Schuit"
-                            },
-                            "path": [
-                              {
-                                "node": "RoleBinding",
-                                "factType": "lading in-een-maand",
-                                "role": "schuit"
-                              }
-                            ]
+                            }
                           },
                           "right": {
                             "node": "Literal",

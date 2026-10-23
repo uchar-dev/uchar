@@ -359,16 +359,10 @@
                       "node": "AttributeReference",
                       "attribute": "verlengde einddag",
                       "subjectType": "Vergunning",
+                      "anchor": "form",
                       "source": {
                         "snippet": "de verlengde einddag van de Vergunning"
-                      },
-                      "path": [
-                        {
-                          "node": "RoleBinding",
-                          "factType": "vergunningstermijn",
-                          "role": "houder"
-                        }
-                      ]
+                      }
                     },
                     "source": {
                       "snippet": "zijn begindag is eerder dan de verlengde einddag van de Vergunning"
@@ -456,16 +450,10 @@
                   "node": "AttributeReference",
                   "attribute": "verlengde einddag",
                   "subjectType": "Vergunning",
+                  "anchor": "form",
                   "source": {
                     "snippet": "de verlengde einddag van de Vergunning"
-                  },
-                  "path": [
-                    {
-                      "node": "RoleBinding",
-                      "factType": "vergunningstermijn",
-                      "role": "houder"
-                    }
-                  ]
+                  }
                 },
                 "source": {
                   "snippet": "de einddag van alle termijnen van de Vergunning eerder is dan de verlengde einddag van de Vergunning"

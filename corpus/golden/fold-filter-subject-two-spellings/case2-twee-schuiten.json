@@ -1,0 +1,194 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "afmeerdag": {
+            "date": "2026-04-15"
+          }
+        },
+        "roles": {
+          "ladingen": [
+            "L1",
+            "L2",
+            "L3"
+          ],
+          "klachten": [
+            "K1",
+            "K2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L1",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-02-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "L2",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-04-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "L3",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-05-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K1",
+        "objectType": "Klacht",
+        "attributes": {
+          "einddag": {
+            "date": "2026-03-10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Klacht",
+        "attributes": {
+          "einddag": {
+            "date": "2026-04-20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Schuit",
+        "attributes": {
+          "afmeerdag": {
+            "date": "2026-01-01"
+          }
+        },
+        "roles": {
+          "ladingen": [
+            "L4"
+          ],
+          "klachten": [
+            "K3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L4",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-02-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K3",
+        "objectType": "Klacht",
+        "attributes": {
+          "einddag": {
+            "date": "2026-01-15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "eerste klachtvrije maand",
+      "value": {
+        "date": "2026-04-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "eerste klachtvrije maand via de lading",
+      "value": {
+        "date": "2026-04-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "eerste maand na het afmeren",
+      "value": {
+        "date": "2026-05-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "eerste maand na het afmeren via de lading",
+      "value": {
+        "date": "2026-05-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "eerste klachtvrije maand",
+      "value": {
+        "date": "2026-02-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "eerste klachtvrije maand via de lading",
+      "value": {
+        "date": "2026-02-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "eerste maand na het afmeren",
+      "value": {
+        "date": "2026-02-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "eerste maand na het afmeren via de lading",
+      "value": {
+        "date": "2026-02-01"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

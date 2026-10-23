@@ -344,6 +344,7 @@
                         }
                       ],
                       "elementType": "Klacht",
+                      "anchor": "form",
                       "filter": {
                         "node": "Compound",
                         "quantifier": "the",
@@ -386,18 +387,11 @@
                           "snippet": "aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'"
                         }
                       },
-                      "sourcePath": [
-                        {
-                          "node": "RoleBinding",
-                          "factType": "lading in-een-maand",
-                          "role": "schuit"
-                        },
-                        {
-                          "node": "RoleBinding",
-                          "factType": "schuitklacht",
-                          "role": "klacht"
-                        }
-                      ],
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "schuitklacht",
+                        "role": "klacht"
+                      },
                       "type": {
                         "node": "Date",
                         "precision": "day"

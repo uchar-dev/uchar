@@ -121,7 +121,7 @@
                   "attribute": "tarief",
                   "subjectType": "Vergunning",
                   "source": {
-                    "snippet": "het tarief"
+                    "snippet": "het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: - hij is niet de Vergunning zelf - zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf"
                   }
                 }
               ],
@@ -187,7 +187,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen"
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen: - hij is niet de Vergunning zelf - zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf"
               }
             },
             "initialisation": false,
@@ -232,7 +232,7 @@
                 "anchor": "form",
                 "negated": true,
                 "source": {
-                  "snippet": "die niet de Vergunning zelf zijn"
+                  "snippet": "niet de Vergunning zelf zijn"
                 }
               },
               "test": {
@@ -243,7 +243,7 @@
                   "attribute": "ingangsdag",
                   "subjectType": "Vergunning",
                   "source": {
-                    "snippet": "de ingangsdag"
+                    "snippet": "de ingangsdag van alle vergunningen van het register van de Vergunning die niet de Vergunning zelf zijn"
                   }
                 },
                 "right": {
@@ -256,7 +256,7 @@
                   }
                 },
                 "source": {
-                  "snippet": "later is dan de ingangsdag van de Vergunning zelf"
+                  "snippet": "de ingangsdag van alle vergunningen van het register van de Vergunning die niet de Vergunning zelf zijn later is dan de ingangsdag van de Vergunning zelf"
                 }
               },
               "source": {

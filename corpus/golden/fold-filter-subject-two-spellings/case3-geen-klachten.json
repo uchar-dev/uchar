@@ -1,0 +1,78 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "afmeerdag": {
+            "date": "2026-01-01"
+          }
+        },
+        "roles": {
+          "ladingen": [
+            "L1",
+            "L2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L1",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-02-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "L2",
+        "objectType": "Lading in-een-maand",
+        "attributes": {
+          "maand": {
+            "date": "2026-03-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "eerste klachtvrije maand"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "eerste klachtvrije maand via de lading"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "eerste maand na het afmeren",
+      "value": {
+        "date": "2026-02-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "eerste maand na het afmeren via de lading",
+      "value": {
+        "date": "2026-02-01"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

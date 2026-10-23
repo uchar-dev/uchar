@@ -1426,7 +1426,13 @@ EXPECTED_CHANNEL=(
 # IR with hand-computed cases. The loader reads the anchor into a side table and the node IdentityCheck; the analysis
 # reads an anchored node in a rule of a fold on the subject of the form off the fold's subject, and refuses one in a fold
 # read per member of another fold by name (DROOLS-293). It plays on both with PLAYED 7.
-EXPECTED_PLAYED=275
+# 275 -> 276 (2026-10-23, the same card, the frontend step): the golden fold-filter-subject-two-spellings, one read of
+# the rule subject in a filter written with the form anchor and over the way back from the lading, a fold and a read,
+# each pair pinned on one value; frontend output, hand-computed cases. It plays on both with PLAYED 3. The three goldens
+# whose ir.json the frontend now writes with the anchor (fold-filter-nested-aggregate,
+# jutterswet-schone-maand-na-zware-klacht, jutterswet-vergunningtermijnen) and jutterswet-registervoorrang, now from
+# its source, keep their PLAYED lines.
+EXPECTED_PLAYED=276
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

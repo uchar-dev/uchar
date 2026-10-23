@@ -26,15 +26,17 @@ Jutterswet-flavoured casus, own values, rights-free.
   ladingen of the Schuit with a two-part filter; the second part compares with
   a `last` fold over the klachten of the Schuit, filtered on the soort.
 
-The frontend writes the inner fold from the lading, the subject of the filter:
-its range is the way back from the lading to the Schuit followed by the
-klachten, `sourcePath [lading in-een-maand.schuit, schuitklacht.klacht]`
-(IR-SPEC ch. 4.3, WF-102), which WF-102 (d) judges from the filter's subject
-(`frontends/regelspraak/grammar/DIVERGENCES.md`, "A read of the rule subject
-in a filter"). The inner `die` belongs to "alle klachten van de Schuit" (same
-file, "One subselection per chain"). The inner fold is the one the frontend
-writes for the element-role spelling "alle klachten van de schuit van de Lading
-in-een-maand die …" but for the source records (`FoldInElementConditionTest`).
+The inner fold reads the rule subject: the frontend builds it at the Schuit
+and writes it with the form anchor, `anchor: "form"` and the range
+`sourceRole schuitklacht.klacht` from the Schuit (IR-SPEC ch. 4.1a, WF-122;
+`frontends/regelspraak/grammar/DIVERGENCES.md`, "The rule subject in a
+subselection — zelf"). Until the card `subselection-reads-subject`
+(2026-10-23) it wrote the way back from the lading, `sourcePath [lading
+in-een-maand.schuit, schuitklacht.klacht]`, the spelling the element-role
+sentence "alle klachten van de schuit van de Lading in-een-maand die …" still
+gets (`FoldInElementConditionTest`); the cases did not change. The inner `die`
+belongs to "alle klachten van de Schuit" (same file, "One subselection per
+chain").
 
 ## Hand computation
 

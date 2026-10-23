@@ -20,6 +20,12 @@ another aggregate. The ASP backend moves it into a helper predicate per
 element, since clingo admits no aggregate inside an aggregate element
 (until the card it stopped with a parse error on every rule here).
 
+"de afmeerdag van de Schuit" in the subselection reads the rule subject: since
+the card `subselection-reads-subject` (2026-10-23) each of its ten reads is
+an own read of the Schuit with `anchor: "form"` (IR-SPEC ch. 4.1a, WF-122),
+where the frontend wrote the way back from the lading before (`path
+[lading in-een-maand.schuit]`). The cases did not change.
+
 ## Hand computation
 
 The ladingen are the same in every case: L1 maand 01-03-2026 gewicht 50, L2

@@ -1,0 +1,24 @@
+Objecttype de Vergunning (mv: Vergunningen)
+    de ingangsdag Datum in dagen;
+    het tarief Numeriek (geheel getal);
+    het hoogste latere tarief Numeriek (geheel getal);
+    de voorrang kenmerk (bezittelijk);
+
+Objecttype het Register (mv: Registers)
+    het nummer Numeriek (geheel getal);
+
+Feittype registerinschrijving
+    het register Register
+    de vergunning (mv: vergunningen) Vergunning
+Eén register heeft meerdere vergunningen
+
+Regel hoogste latere tarief
+    geldig altijd
+        Het hoogste latere tarief van een Vergunning moet berekend worden als de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning die aan alle volgende voorwaarden voldoen:
+        - hij is niet de Vergunning zelf
+        - zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf.
+
+Regel voorrang
+    geldig altijd
+        Een Vergunning heeft de voorrang
+        indien de ingangsdag van alle vergunningen van het register van de Vergunning die niet de Vergunning zelf zijn later is dan de ingangsdag van de Vergunning zelf.

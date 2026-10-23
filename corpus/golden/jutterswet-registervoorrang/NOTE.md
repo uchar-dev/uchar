@@ -21,8 +21,16 @@ exclusion) and an `AttributeReference` with `anchor: "form"` (the
 comparison), in the filter of the maximum and in the filter and the test of
 the quantifier `all`. This is the positive witness of WF-122.
 
-The `ir.json` is written by hand; the RegelSpraak source, with the word
-`zelf`, follows with the frontend of the card `subselection-reads-subject`.
+The RegelSpraak source is `source.rgs`, with the word `zelf`
+(`frontends/regelspraak/grammar/DIVERGENCES.md`, "The rule subject in a
+subselection — zelf"), and the frontend writes the `ir.json` from it
+byte-identically (gate 10). Until the frontend of the card
+`subselection-reads-subject` the `ir.json` was written by hand; the emitted
+one differs from it in five source snippets only: the snippet of the fold
+argument and of the maximum carry the whole written source with the
+subselection, the identity check of the quantifier carries its predicate
+without the `die` (as every predicate of a subselection), and the left
+operand and the test of the quantifier carry the written quantified operand.
 
 ## Hand computation
 

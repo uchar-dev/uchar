@@ -20,12 +20,14 @@ De vijf regels en hun lezingen achter een rand binnen de kring:
   eindigt. De lezing gaat één stap terug naar de eigenaar: lokaal.
 - **restant** (Vergunning): de som van de overschotten van de termijnen die
   vóór haar verlengde einddag begonnen. Een vouw over de eigen to-many
-  satellieten (lokaal), met in het filter de verlengde einddag van de houder
-  van de termijn: de stap naar de satelliet en terug (lokaal).
+  satellieten (lokaal), met in het filter de verlengde einddag van de
+  Vergunning: een eigen lezing met het vormanker (IR-SPEC ch. 4.1a), nul
+  stappen (lokaal).
 - **afgewikkeld** (kenmerk van de Vergunning): de einddag van alle termijnen
   ligt vóór haar verlengde einddag. Een kwantor `alle` over de eigen
-  termijnen (het bereik negatief, ch. 5.2), met in de toets dezelfde weg
-  heen en terug (lokaal). Zonder termijnen is een vergunning afgewikkeld.
+  termijnen (het bereik negatief, ch. 5.2), met in de toets dezelfde
+  geankerde eigen lezing (lokaal). Zonder termijnen is een vergunning
+  afgewikkeld.
 - **verlengde einddag**: de basiseinddag plus de som van de overschotten van
   alle termijnen van de vorige vergunning, indien het restant van de vorige
   vergunning gevuld is en de vorige vergunning niet afgewikkeld is. Een stap
@@ -89,7 +91,11 @@ Elke case pint ook dat het kanaal leeg is.
 
 De bron staat in `source.rgs`. Sinds de kaart `check-admits-instance-cycle`
 (2026-10-22) laat `check` de kring toe en geeft de frontend dit `ir.json`
-byte-identiek uit (gate 10). Tot dan was de golden handgeschreven: de
+byte-identiek uit (gate 10). Sinds de kaart `subselection-reads-subject`
+(2026-10-23) draagt "de verlengde einddag van de Vergunning" in het filter
+van het restant en in de toets van afgewikkeld het vormanker; daarvoor
+schreef de frontend de stap naar de satelliet en terug (`path
+[vergunningstermijn.houder]`). De cases veranderden niet. Tot dan was de golden handgeschreven: de
 frontend weigerde de kring, en het IR is gemaakt door de bron met
 hulpattributen te laten emitteren en die lezingen daarna in de JSON terug te
 zetten.
