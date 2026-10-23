@@ -459,6 +459,15 @@ type ctx = {
      ([object_creation_strata]); empty in a document without a recursive
      creation, where no creation depth is kept *)
   oc_strata : (string * int) list;
+  (* the form subject's variable and type (IR-SPEC ch. 4.1a, the form
+     anchor): set where the subject first moves to a member
+     ([with_member_reach]) and kept through every deeper move, [None] at the
+     form's own level, where [subject] is the form subject. A node with
+     `anchor` is translated on it ([at_form]) *)
+  mutable form_subject : (string * string) option;
+  (* the variables of the form subjects an anchored node was translated on,
+     which [unkeyed_form_read] holds every later rule to *)
+  mutable anchored : string list;
 }
 
 (* S ⊑ T, for the OCaml-side scans over case instances. The ASP side does
@@ -519,7 +528,77 @@ let refuse_attr_timeline ctx ~otype ~attr =
           attr)
     ctx.case.world.instances
 
-let emit ctx fmt = Printf.ksprintf (fun s -> Buffer.add_string ctx.buf (s ^ "\n")) fmt
+(* the variables of an ASP text: the identifiers that start with a capital,
+   outside string literals, an aggregate's local ones included *)
+let asp_variables (s : string) =
+  let n = String.length s in
+  let ident c =
+    (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' || c = '\''
+  in
+  let rec go i acc =
+    if i >= n then List.sort_uniq compare acc
+    else if s.[i] = '"' then
+      let rec close j = if j >= n then n else if s.[j] = '\\' then close (j + 2) else if s.[j] = '"' then j + 1 else close (j + 1) in
+      go (close (i + 1)) acc
+    else if s.[i] >= 'A' && s.[i] <= 'Z' && (i = 0 || not (ident s.[i - 1])) then
+      let rec stop j = if j < n && ident s.[j] then stop (j + 1) else j in
+      let j = stop i in
+      go j (String.sub s i (j - i) :: acc)
+    else go (i + 1) acc
+  in
+  go 0 []
+
+(* THE FORM ANCHOR'S FENCE (IR-SPEC ch. 4.1a). A helper rule over a member
+   whose body reads the form subject must carry the form subject in its head
+   ([helper_key]); without it the helper holds for the member as soon as ANY
+   object of that type satisfies the body, because the read binds the
+   variable itself: a wrong answer, not an unsafe rule. The helpers of the
+   conditions and folds a filter or a quantifier test commonly holds carry
+   it. Every other rule that names, in its body and not in its head, the
+   variable of a form subject an anchored node was read on ([anchored]) is
+   refused here, so that no helper this backend does not key answers. A
+   viol/2 fence is exempt: over a member it fires whatever the subject, as
+   every fence over a member does where the rule has no condition
+   ([with_member_reach]). *)
+let split_rule text =
+  let n = String.length text in
+  let rec go i =
+    if i + 1 >= n then None
+    else if text.[i] = '"' then
+      let rec close j =
+        if j >= n then n else if text.[j] = '\\' then close (j + 2) else if text.[j] = '"' then j + 1 else close (j + 1)
+      in
+      go (close (i + 1))
+    else if text.[i] = ':' && text.[i + 1] = '-' then
+      Some (String.trim (String.sub text 0 i), String.sub text (i + 2) (n - i - 2))
+    else go (i + 1)
+  in
+  go 0
+
+let unkeyed_form_read ctx text =
+  match (ctx.anchored, split_rule text) with
+  | [], _ | _, None -> ()
+  | vars, Some (head, body) ->
+      if head <> "" && not (String.starts_with ~prefix:"viol(" head) then begin
+        let in_head = asp_variables head and in_body = asp_variables body in
+        List.iter
+          (fun v ->
+            if List.mem v in_body && not (List.mem v in_head) then
+              fault
+                "a helper rule over a member reads the form subject %s, an anchored node's \
+                 subject, without carrying it in its head (IR-SPEC ch. 4.1a): this backend keys \
+                 the helpers of comparisons, leeg tests, quantifier folds and ranking and sum \
+                 folds by the form subject, and not this one: %s"
+                v text)
+          vars
+      end
+
+let emit ctx fmt =
+  Printf.ksprintf
+    (fun s ->
+      unkeyed_form_read ctx s;
+      Buffer.add_string ctx.buf (s ^ "\n"))
+    fmt
 
 (* a §9.5 deposit (RUNTIME-SEMANTICS ch. 5.6) under [body]: the channel fact
    inconsistent/2, whose identity is rule × subject, and beside it
@@ -1948,6 +2027,43 @@ let source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x =
       in
       atoms @ scope
 
+(* THE FORM ANCHOR (IR-SPEC ch. 4.1a, RUNTIME-SEMANTICS ch. 3.4a). A node with
+   `anchor` in a filter or a quantifier test is translated on the form
+   subject, as if it stood in the form's own condition: its atoms name the
+   form subject's variable, which the rule or the aggregate element the
+   filter's atoms land in binds. [k] gets that variable and its type; inside,
+   the form's own level holds again. *)
+let at_form ctx (k : string -> string -> 'a) : 'a =
+  match ctx.form_subject with
+  | None ->
+      fault
+        "a node with anchor \"form\" or an IdentityCheck stands where no filter or quantifier \
+         test has moved the subject to a member, so there is no form subject apart from the \
+         subject itself to read (WF-122)"
+  | Some (s, sot) as saved ->
+      if not (List.mem s ctx.anchored) then ctx.anchored <- s :: ctx.anchored;
+      ctx.form_subject <- None;
+      Fun.protect ~finally:(fun () -> ctx.form_subject <- saved) (fun () -> k s sot)
+
+(* the form subject's variable and type at a position over [subject]: the one
+   a move to a member kept, or [subject] itself at the form's own level *)
+let form_var ctx ~subject ~subject_ot =
+  match ctx.form_subject with Some f -> f | None -> (subject, subject_ot)
+
+(* THE KEY OF A HELPER RULE over the variable [x] of type [xt] whose body reads
+   [atoms]. A helper reifies a condition per instance, `p(X) :- isa(X,T), …`,
+   and is read as `p(X)` where X is bound. Where X is a member and the atoms
+   read the form subject (an anchored node, an identity check), the helper's
+   truth depends on that subject too: the key carries the form subject's
+   variable beside X and the body binds it by its type, so `p(S,X)` is read
+   where the rule binds both. Otherwise the key is X and the body opens as it
+   did. Returns the key and the opening atoms of the body. *)
+let helper_key ~form:(s, sot) ~over:(x, xt) atoms : string * string list =
+  let opening = Printf.sprintf "isa(%s,%s)" x (str xt) in
+  if s <> x && List.exists (fun a -> List.mem s (asp_variables a)) atoms then
+    (Printf.sprintf "%s,%s" s x, [ Printf.sprintf "isa(%s,%s)" s (str sot); opening ])
+  else (x, [ opening ])
+
 (* AN AGGREGATE IN THE CONDITION OF AN ELEMENT (card
    clingo-nested-aggregate-in-fold-filter). The condition of a fold's or a
    quantifier's element is translated with the element variable [x] as its
@@ -1964,32 +2080,15 @@ let source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x =
    with the rest of the rule is in its head. The condition's own variables
    are: [x], kept in the head; those an earlier atom of the same condition
    binds, kept in the head with those earlier atoms copied into the helper's
-   body; and anything of the enclosing rule — its subject, its guard, a Let
-   binder — which the helper cannot see. An aggregate that shares one of the
-   latter is refused by name (CLINGO-028) rather than hoisted into a helper
-   that would read a variable of its own in its place; so is an aggregate
-   that is not an assignment, or an earlier atom the helper would need that
-   itself reads the enclosing rule. *)
-
-(* the variables of an ASP text: the identifiers that start with a capital,
-   outside string literals, an aggregate's local ones included *)
-let asp_variables (s : string) =
-  let n = String.length s in
-  let ident c =
-    (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' || c = '\''
-  in
-  let rec go i acc =
-    if i >= n then List.sort_uniq compare acc
-    else if s.[i] = '"' then
-      let rec close j = if j >= n then n else if s.[j] = '\\' then close (j + 2) else if s.[j] = '"' then j + 1 else close (j + 1) in
-      go (close (i + 1)) acc
-    else if s.[i] >= 'A' && s.[i] <= 'Z' && (i = 0 || not (ident s.[i - 1])) then
-      let rec stop j = if j < n && ident s.[j] then stop (j + 1) else j in
-      let j = stop i in
-      go j (String.sub s i (j - i) :: acc)
-    else go (i + 1) acc
-  in
-  go 0 []
+   body; the form subject's variable, which an anchored node reads (IR-SPEC
+   ch. 4.1a: an anchored fold in a filter ranges from the form subject),
+   kept in the head and bound in the helper's body by its type; and anything
+   else of the enclosing rule — the fold's subject where it is a member, its
+   guard, a Let binder — which the helper cannot see. An aggregate that shares
+   one of the latter is refused by name (CLINGO-028) rather than hoisted into
+   a helper that would read a variable of its own in its place; so is an
+   aggregate that is not an assignment, or an earlier atom the helper would
+   need that itself reads the enclosing rule. *)
 
 let aggregate_keywords = [ "#min"; "#max"; "#sum"; "#count" ]
 
@@ -2011,15 +2110,27 @@ let aggregate_assignment a =
 (* per atom of an element condition: kept, or hoisted with the variables of
    its helper's head besides [x] and the result, and the earlier atoms its
    body copies. [outside] is the text of the enclosing rule the helper cannot
-   see (its subject, its guard, the binders). *)
-let element_aggregate_plan ~x ~outside atoms =
+   see (its subject, its guard, the binders); [form] the form subject's
+   variable and type, which a helper carries in its head where it reads it. *)
+let element_aggregate_plan ?form ~x ~outside atoms =
   let refuse a =
     faultc "CLINGO-028"
       "an aggregate in the condition of a fold's element reads a variable of the enclosing rule, \
        which a helper predicate per element cannot carry (or is no assignment): %s"
       a
   in
-  let outside_vars = List.filter (fun w -> w <> x) (List.concat_map asp_variables outside) in
+  let form_v = Option.map fst form in
+  let outside_vars =
+    List.filter (fun w -> w <> x && Some w <> form_v) (List.concat_map asp_variables outside)
+  in
+  (* a helper that reads the form subject carries its variable in the head,
+     beside the shared ones, and binds it in the body by its type *)
+  let with_form vars shared body =
+    match form with
+    | Some (s, sot) when s <> x && List.mem s vars ->
+        (s :: shared, Printf.sprintf "isa(%s,%s)" s (str sot) :: body)
+    | _ -> (shared, body)
+  in
   let rec go earlier = function
     | [] -> []
     | a :: rest ->
@@ -2029,12 +2140,17 @@ let element_aggregate_plan ~x ~outside atoms =
               let inner = List.filter (fun w -> w <> v && w <> x) (asp_variables a) in
               if List.exists (fun w -> List.mem w outside_vars) inner then refuse a;
               let earlier_vars = List.concat_map asp_variables earlier in
-              let shared = List.filter (fun w -> List.mem w earlier_vars) inner in
-              if shared = [] then `Hoist (a, v, [], [])
+              let shared =
+                List.filter (fun w -> List.mem w earlier_vars && Some w <> form_v) inner
+              in
+              if shared = [] then
+                let shared, body = with_form inner [] [] in
+                `Hoist (a, v, shared, body)
               else begin
                 let body = List.rev earlier in
-                if List.exists (fun w -> List.mem w outside_vars) (List.concat_map asp_variables body)
-                then refuse a;
+                let body_vars = List.concat_map asp_variables body in
+                if List.exists (fun w -> List.mem w outside_vars) body_vars then refuse a;
+                let shared, body = with_form (inner @ body_vars) shared body in
                 `Hoist (a, v, shared, body)
               end
           | None when mentions_aggregate a -> refuse a
@@ -2056,7 +2172,8 @@ let hoist_element_aggregates ctx ~x ~el ~outside atoms =
           emit ctx "%s(%s) :- %s." p head
             (String.concat ", " ((Printf.sprintf "isa(%s,%s)" x (str el) :: body) @ [ a ]));
           Printf.sprintf "%s(%s)" p head)
-    (element_aggregate_plan ~x ~outside:(outside @ ctx.rule_guard @ binders) atoms)
+    (element_aggregate_plan ?form:ctx.form_subject ~x
+       ~outside:(outside @ ctx.rule_guard @ binders) atoms)
 
 (* A fold member or quantifier element [x] is read only for a subject whose
    range holds it, so its reach adds that subject and the range join to what
@@ -2080,7 +2197,9 @@ let hoist_element_aggregates ctx ~x ~el ~outside atoms =
    empty, so a document whose rule has no condition translates as before. *)
 let with_member_reach ctx ~subject ~subject_ot ~join ?range ?part f =
   let saved = ctx.param_reach and saved_p = ctx.parts and saved_s = ctx.deposit_subject
-  and saved_g = ctx.rule_guard in
+  and saved_g = ctx.rule_guard and saved_f = ctx.form_subject in
+  (* the first move from the form's own level names the form subject *)
+  if saved_f = None then ctx.form_subject <- Some (subject, subject_ot);
   ctx.param_reach <-
     (fun name -> (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join ()) @ saved name);
   if ctx.deposit_subject = None then ctx.deposit_subject <- Some subject;
@@ -2095,6 +2214,7 @@ let with_member_reach ctx ~subject ~subject_ot ~join ?range ?part f =
   ctx.parts <- saved_p;
   ctx.deposit_subject <- saved_s;
   ctx.rule_guard <- saved_g;
+  ctx.form_subject <- saved_f;
   r
 
 (* the range order of a fold over [el] from [subject] ([use_ro]), and a part
@@ -3076,7 +3196,10 @@ let non_source_fold kind el (a : expr) =
    read simply fails the join (Tabel 38's any-empty-is-false, in BOTH
    equality directions, for free) — the sum/struct operand pattern on the
    scalar datatypes. *)
-let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
+let rec symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
+  match Ir_v0.Checks.unanchored_expr e with
+  | Some inner -> at_form ctx (fun subject subject_ot -> symbolic_term ctx ~subject ~subject_ot inner)
+  | None ->
   match e with
   | Literal { variant; typ = Some ((Text_type | Boolean | Enumeration _) as t); _ } ->
       ([], symbolic_literal_term t (Ir_v0.Loader.literal_lexeme variant))
@@ -3595,14 +3718,17 @@ let bind_let ctx ~subject ~subject_ot ~binder ~value ~body translate_value =
    NAF is stratified exactly as the numeric eqN is. Equality is untouched: it
    keeps its positive == join (any empty → false, Tabel 38). *)
 let neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr) : string list =
-  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+  let key, opening =
+    helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) (ll @ rr)
+  in
+  let base = String.concat ", " opening in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "eq%d" ctx.fresh in
-  emit ctx "%s_l(%s) :- %s." p subject (String.concat ", " (base :: ll));
-  emit ctx "%s_r(%s) :- %s." p subject (String.concat ", " (base :: rr));
-  emit ctx "%s(%s) :- %s, %s == %s." p subject (String.concat ", " (base :: (ll @ rr))) tl tr;
-  emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p subject base p subject p subject;
-  [ "not " ^ Printf.sprintf "%s(%s)" p subject ]
+  emit ctx "%s_l(%s) :- %s." p key (String.concat ", " (base :: ll));
+  emit ctx "%s_r(%s) :- %s." p key (String.concat ", " (base :: rr));
+  emit ctx "%s(%s) :- %s, %s == %s." p key (String.concat ", " (base :: (ll @ rr))) tl tr;
+  emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p key base p key p key;
+  [ "not " ^ Printf.sprintf "%s(%s)" p key ]
 
 (* The span the buckets must cover: the case's endpoints [lo, hi), widened
    by one period of every fixed start point's grid of one unit around each
@@ -3965,8 +4091,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   match let_into_arm ctx e with
   | Some pushed -> expr_term ctx ~subject ~subject_ot pushed
   | None ->
-  if Ir_v0.Checks.unanchored_expr e <> None then
-    fault "a node with anchor \"form\" (IR-SPEC ch. 4.1a) is not translated by this backend yet";
+  match Ir_v0.Checks.unanchored_expr e with
+  | Some inner -> at_form ctx (fun subject subject_ot -> expr_term ctx ~subject ~subject_ot inner)
+  | None ->
   match e with
   | Function_call { kind; grain = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
   | Function_call { kind = Time_proportional_part | Day_count; grain = Some _; _ } ->
@@ -4736,8 +4863,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         else begin
           ctx.fresh <- ctx.fresh + 1;
           let p = Printf.sprintf "somp%d" ctx.fresh in
-          emit ctx "%s(%s) :- %s." p subject (String.concat ", " (base :: contrib_body));
-          [ Printf.sprintf "%s(%s)" p subject ]
+          let key, opening =
+            helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot)
+              contrib_body
+          in
+          emit ctx "%s(%s) :- %s." p key (String.concat ", " (opening @ contrib_body));
+          [ Printf.sprintf "%s(%s)" p key ]
         end
       in
       ( guard
@@ -4825,12 +4956,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         source_join ctx env ~subject ~subject_ot ~el ~source_role ~source_path ~x
         @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms)
       in
-      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+      let key, opening =
+        helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) contrib_body
+      in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "extp%d" ctx.fresh in
-      emit ctx "%s(%s) :- %s." p subject (String.concat ", " (base :: contrib_body));
+      emit ctx "%s(%s) :- %s." p key (String.concat ", " (opening @ contrib_body));
       let agg = match kind with Minimum | First -> "#min" | _ -> "#max" in
-      ( [ Printf.sprintf "%s(%s)" p subject;
+      ( [ Printf.sprintf "%s(%s)" p key;
           Printf.sprintf "%s = %s { %s : %s }" v agg g (String.concat ", " contrib_body) ],
         v,
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
@@ -6215,6 +6348,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
    propagates by the bare join (an unbound date leaves the pair underivable),
    exactly the day-precision date rule. *)
 and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string =
+  match Ir_v0.Checks.unanchored_expr e with
+  | Some inner -> at_form ctx (fun subject subject_ot -> dt_term ctx ~subject ~subject_ot inner)
+  | None ->
   match e with
   | Literal { variant; typ = Some Date_time_type; _ } ->
       (* WF-095 (ch. 4.1): the lexeme reads through the SHARED datum-tijd
@@ -7365,11 +7501,9 @@ and cond_atoms ctx ~subject ~subject_ot (c : condition_expr) : string list =
   else cond_atoms_raw ctx ~subject ~subject_ot c
 
 and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
-  (match c with
-   | Identity_check _ -> fault "an IdentityCheck (IR-SPEC ch. 4.5) is not translated by this backend yet"
-   | _ when Ir_v0.Checks.unanchored_cond c <> None ->
-       fault "a node with anchor \"form\" (IR-SPEC ch. 4.1a) is not translated by this backend yet"
-   | _ -> ());
+  match Ir_v0.Checks.unanchored_cond c with
+  | Some inner -> at_form ctx (fun subject subject_ot -> cond_atoms_raw ctx ~subject ~subject_ot inner)
+  | None ->
   match c with
   (* ch. 3.9's value test over a timeline, executed here since 2026-09-16
      (the fold itself is [whole_period_fails]). Every other Comparison arm
@@ -7379,6 +7513,13 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
      "Negation complements the folded result" (ch. 3.9): the qualifier's
      "niet gedurende …" reads the failure atom itself, the plain form reads
      its negation. *)
+  | Comparison { left_side; right_side; time_period = Some _; _ }
+    when List.exists
+           (function Some e -> Ir_v0.Checks.unanchored_expr e <> None | None -> false)
+           [ left_side; right_side ] ->
+      fault
+        "a whole-period comparison with an anchored operand (IR-SPEC ch. 4.1a) is not translated: \
+         the fold reads one subject's own tl/5 facts against a bound (no corpus case)"
   | Comparison { op; left_side; right_side; time_period = Some gp; _ } ->
       let p = whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~gp in
       [ (if gp.gp_negated then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
@@ -7389,6 +7530,13 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
      unqualified test only. "Negation complements the folded result": the
      qualifier's "niet gedurende …" reads the failure atom itself, the plain
      form reads its negation. *)
+  | Predicate ({ operand = Some e; time_period = Some _; _ } as pred)
+    when Ir_v0.Checks.unanchored_expr e <> None ->
+      (* the test reads its operand alone: on an anchored operand it is the
+         form subject's test, a helper over the form subject (ch. 3.4a) *)
+      at_form ctx (fun subject subject_ot ->
+          cond_atoms_raw ctx ~subject ~subject_ot
+            (Predicate { pred with operand = Ir_v0.Checks.unanchored_expr e }))
   | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; time_period = Some gp; _ } ->
       let fails =
         whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation ~operand ~gp
@@ -7483,13 +7631,15 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       in
       let a1, d1, m1 = dt_term ctx ~subject ~subject_ot le in
       let a2, d2, m2 = dt_term ctx ~subject ~subject_ot re in
-      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-      let body = String.concat ", " ((base :: a1) @ a2) in
+      let key, opening =
+        helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) (a1 @ a2)
+      in
+      let body = String.concat ", " (opening @ a1 @ a2) in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "dtcmp%d" ctx.fresh in
-      emit ctx "%s(%s) :- %s, %s %s %s." p subject body d1 day_sym d2;
-      emit ctx "%s(%s) :- %s, %s == %s, %s %s %s." p subject body d1 d2 m1 ms_sym m2;
-      [ Printf.sprintf "%s(%s)" p subject ]
+      emit ctx "%s(%s) :- %s, %s %s %s." p key body d1 day_sym d2;
+      emit ctx "%s(%s) :- %s, %s == %s, %s %s %s." p key body d1 d2 m1 ms_sym m2;
+      [ Printf.sprintf "%s(%s)" p key ]
   | Comparison { op = (Equal | Not_equal) as op; left_side; right_side; time_period = None; _ }
     when not (op = Equal && (is_date_operand ctx left_side || is_date_operand ctx right_side)) ->
       (* the ch. 1.2d NUMERIC equality asymmetry (arith.compare_op):
@@ -7530,15 +7680,19 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
         ~body:((base :: ctx.rule_guard) @ b1 @ b2)
         [ (t1, max_int31 / (m / s1)); (t2, max_int31 / (m / s2)) ];
       let bindings, tl, tr = harmonised l r in
+      let key, opening =
+        helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) (b1 @ b2)
+      in
+      let base = String.concat ", " opening in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "eq%d" ctx.fresh in
-      emit ctx "%s_l(%s) :- %s." p subject (String.concat ", " (base :: b1));
-      emit ctx "%s_r(%s) :- %s." p subject (String.concat ", " (base :: b2));
-      emit ctx "%s(%s) :- %s, %s == %s." p subject
+      emit ctx "%s_l(%s) :- %s." p key (String.concat ", " (base :: b1));
+      emit ctx "%s_r(%s) :- %s." p key (String.concat ", " (base :: b2));
+      emit ctx "%s(%s) :- %s, %s == %s." p key
         (String.concat ", " (base :: bindings))
         tl tr;
-      emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p subject base p subject p subject;
-      [ (if op = Equal then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
+      emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p key base p key p key;
+      [ (if op = Equal then "" else "not ") ^ Printf.sprintf "%s(%s)" p key ]
   | Comparison { op; left_side; right_side; time_period = None; _ } ->
       (* the orderings, plus date-typed gelijk-aan (routed here by the
          when-guard above): bare positive joins, any empty operand false *)
@@ -8145,11 +8299,14 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
           ctx.fresh <- ctx.fresh + 1;
           let p = Printf.sprintf "kvc%d" ctx.fresh in
           let h = fresh ctx "H" in
-          emit ctx "%s(%s,%s) :- isa(%s,%s), %s = #count { %s : %s }." p subject h subject
-            (str subject_ot) h x
-            (String.concat ", " (join @ fatoms @ atoms));
+          let counted = join @ fatoms @ atoms in
+          let key, opening =
+            helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) counted
+          in
+          emit ctx "%s(%s,%s) :- %s, %s = #count { %s : %s }." p key h
+            (String.concat ", " opening) h x (String.concat ", " counted);
           let hc = fresh ctx "H" in
-          [ Printf.sprintf "%s(%s,%s)" p subject hc;
+          [ Printf.sprintf "%s(%s,%s)" p key hc;
             (match kv_quantifier with
             | At_least -> Printf.sprintf "%s >= %d" hc cutoff
             | At_most -> Printf.sprintf "%s <= %d" hc cutoff
@@ -8184,16 +8341,22 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
                special-cased arm read positively off `gpvN`. *)
             ctx.fresh <- ctx.fresh + 1;
             let s = Printf.sprintf "kvs%d" ctx.fresh in
-            emit ctx "%s(%s) :- %s." s x
-              (String.concat ", " (Printf.sprintf "isa(%s,%s)" x (str el) :: atoms));
-            [ Printf.sprintf "not %s(%s)" s x ]
+            (* an anchored node in the matrix reads the form subject: the
+               element's verdict is then one per form subject and element *)
+            let key, opening =
+              helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(x, el) atoms
+            in
+            emit ctx "%s(%s) :- %s." s key (String.concat ", " (opening @ atoms));
+            [ Printf.sprintf "not %s(%s)" s key ]
       in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "kv%d" ctx.fresh in
-      emit ctx "%s(%s) :- %s." p subject
-        (String.concat ", "
-           ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join) @ fatoms @ witness));
-      [ Printf.sprintf "not %s(%s)" p subject ])
+      let body = join @ fatoms @ witness in
+      let key, opening =
+        helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) body
+      in
+      emit ctx "%s(%s) :- %s." p key (String.concat ", " (opening @ body));
+      [ Printf.sprintf "not %s(%s)" p key ])
   | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; day_kind = None; time_period = None; _ }
     ->
       (* the leeg/gevuld tests (ch. 1.2; ref eval: leeg is `value = leeg`,
@@ -8253,9 +8416,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
              not be stratified. Declined in translation, conservatively for the whole document";
         ctx.fresh <- ctx.fresh + 1;
         let p = Printf.sprintf "gv%d" ctx.fresh in
-        emit ctx "%s(%s) :- %s." p subject
-          (String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: atoms));
-        [ Printf.sprintf "not %s(%s)" p subject ]
+        let key, opening =
+          helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) atoms
+        in
+        emit ctx "%s(%s) :- %s." p key (String.concat ", " (opening @ atoms));
+        [ Printf.sprintf "not %s(%s)" p key ]
       end
   | Condition_unresolved _ ->
       (* the unsolved-state guard on the CONDITION position — the sibling of
@@ -8267,6 +8432,11 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          …`) so both executors name the same position, and the expression arm
          (`… in translation …`) so the phase stays this backend's own. *)
       faultc "EF-019" "Unresolved condition reached in translation: this rule fails observably"
+  | Identity_check { negation; _ } ->
+      (* ch. 3.4a: the member is the form subject, the same object. Both
+         variables are bound where the filter's or the test's atoms land, and
+         the check reads no value, so it is never leeg *)
+      at_form ctx (fun s _ -> [ Printf.sprintf "%s %s %s" subject (if negation then "!=" else "==") s ])
   | Time_window { starting_at; up_to; to_inclusive; _ } ->
       (* ch. 3.10's evaluation-date gate, ref's arm read in this backend's
          phase. The date is a SESSION constant, so each bound becomes one
@@ -8317,7 +8487,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
    matches, and the clip writes nothing. One reader for both cases, as in
    ref, so the two cannot disagree about what a bound may be. *)
 and window_bounds ctx ~subject ~subject_ot starting_at up_to =
-  let bound side e =
+  let rec bound ~subject ~subject_ot side e =
+    match Ir_v0.Checks.unanchored_expr e with
+    | Some inner ->
+        (* an anchored bound is the form subject's own date (ch. 3.4a) *)
+        at_form ctx (fun subject subject_ot -> bound ~subject ~subject_ot side inner)
+    | None ->
     (match e with
      | Literal _ -> ()
      | Attribute_reference
@@ -8348,8 +8523,8 @@ and window_bounds ctx ~subject ~subject_ot starting_at up_to =
       fault "the %s bound of a period condition carries no day-precision date term" side;
     (atoms, term)
   in
-  let v = match starting_at with Some e -> Some (bound "from" e) | None -> None in
-  let t = match up_to with Some e -> Some (bound "to" e) | None -> None in
+  let v = match starting_at with Some e -> Some (bound ~subject ~subject_ot "from" e) | None -> None in
+  let t = match up_to with Some e -> Some (bound ~subject ~subject_ot "to" e) | None -> None in
   if v = None && t = None then
     fault "a period condition without any bound has no window to gate on";
   (v, t)
@@ -8376,6 +8551,9 @@ and construct_ground_term ctx typ constructor_ argument =
    bare ground term with no atom. Both are positive, so a leeg attribute read
    simply fails the join (Tabel 38 for free). *)
 and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
+  match Ir_v0.Checks.unanchored_expr e with
+  | Some inner -> at_form ctx (fun subject subject_ot -> sum_term ctx ~subject ~subject_ot inner)
+  | None ->
   match e with
   | Construct { typ; constructor_; argument; _ } ->
       ([], construct_ground_term ctx typ constructor_ argument)
@@ -8424,6 +8602,9 @@ and project_field ctx ~base ~bterm ~field_name : string * string * int =
    projects against. A leeg anywhere in the chain binds nothing, so the whole
    projection is underivable — leeg propagation for free at every depth. *)
 and struct_base ctx ~subject ~subject_ot (e : expr) : string list * string =
+  match Ir_v0.Checks.unanchored_expr e with
+  | Some inner -> at_form ctx (fun subject subject_ot -> struct_base ctx ~subject ~subject_ot inner)
+  | None ->
   match e with
   | Attribute_reference
       { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
@@ -8484,6 +8665,11 @@ and struct_term ctx ~subject ~subject_ot (e : expr) : string list * string =
 (* the scrutinee as a pattern atom for one match arm: the val atom carries
    the constructor pattern; a unary arm's payload variable is bound by it *)
 and scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern =
+  match Ir_v0.Checks.unanchored_expr scrutinee with
+  | Some inner ->
+      at_form ctx (fun subject subject_ot ->
+          scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee:inner ~pattern)
+  | None ->
   match scrutinee with
   | Attribute_reference
       { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
@@ -8594,6 +8780,9 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
    collide. The subject variable rides an attribute list-id, so the same
    derivation rules serve every subject at once. *)
 and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
+  match Ir_v0.Checks.unanchored_expr e with
+  | Some inner -> at_form ctx (fun subject subject_ot -> list_source ctx ~subject ~subject_ot inner)
+  | None ->
   match e with
   | Attribute_reference
       { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
@@ -12197,7 +12386,8 @@ let translate (doc : document) (case : Case.t) : string =
       value_of = None;
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
       before_arm = []; pre_scope = []; pre_reach = []; pre_let = [];
-      pre_asks = []; signs = []; sign_helpers = []; oc_strata }
+      pre_asks = []; signs = []; sign_helpers = []; oc_strata;
+      form_subject = None; anchored = [] }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a
