@@ -1,0 +1,111 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "R9",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "9"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V9",
+        "objectType": "Vergunning",
+        "attributes": {
+          "tarief": {
+            "number": "10"
+          },
+          "teller": {
+            "number": "0"
+          }
+        },
+        "roles": {
+          "register": [
+            "R9"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "R1",
+        "objectType": "Register",
+        "attributes": {
+          "nummer": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "tarief": {
+            "number": "10"
+          },
+          "teller": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "tarief": {
+            "number": "30"
+          },
+          "teller": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "register": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V9",
+      "attribute": "hoogste tarief boven eigen teller"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "hoogste tarief boven eigen teller",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "hoogste tarief boven eigen teller",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1262,6 +1262,35 @@ that computes the node where no member reaches it — over an empty range, or
 at a member whose filter stopped before the node (ch. 5.10) — must not raise
 its fault or make its deposit there.
 
+Worked example (the golden `anchor-once-per-member`, verbatim in gates 5, 6
+and 12 and as `WV-3.4a-anchor-once-*` in `ref/` tests). On the model of the
+worked example below, with a `teller` (a whole number) and the derived
+`hoogste tarief boven eigen teller` on the Vergunning: "de maximale waarde van
+het tarief van alle vergunningen van het register van de Vergunning die aan
+alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn
+tarief gedeeld door de teller van de Vergunning zelf is groter dan 1". The
+anchored teller is the divisor, and a teller of 0 makes the division a §9.5
+deposit of kind EF-005 (ch. 1.4 point 4) on the rule × the form subject.
+
+| case | registers, Vergunningen (tarief, teller) | hoogste tarief boven eigen teller | channel |
+|---|---|---|---|
+| `WV-3.4a-anchor-once-alone` | R9: V9 (10, 0); R1: V1 (10, 2), V2 (30, 1) | V9 **leeg**, V1 **30**, V2 **10** | **empty** |
+| `WV-3.4a-anchor-once-no-register` | V8 (10, 0) in no register; R1: V1 (10, 2), V2 (30, 1) | V8 **leeg**, V1 30, V2 10 | **empty** |
+| `WV-3.4a-anchor-once-reached` | R8: V7 (10, 2), V8 (10, 0) | V7 **10**, V8 **leeg** | EF-005 on the rule × **V8** |
+
+Read per case. **alone**: V9's range reaches V9 alone, and the identity check
+stops the filter before the division (ch. 5.10): no member reaches the
+anchored divisor, so V9's teller of 0 deposits nothing. **no register**: V8's
+range is empty: no member, no deposit. **reached**: V7 is a member of V8's
+range that passes the identity check and reaches 10 / 0: one deposit on the
+rule × V8; the comparison over the leeg quotient fails (ch. 1.2), so V8's
+maximum has no contributor (leeg). V7's divisor is its own teller 2: V8
+passes (10 / 2 = 5 > 1), 10. In the first two cases an executor that computed
+the anchored divisor once per form subject without asking whether a member
+reaches it would deposit on V9 and on V8. V1 and V2 give each case a value the
+input does not carry (gate 7): V1 folds V2 (30 / 2 = 15 > 1), V2 folds V1
+(10 / 1 = 10 > 1).
+
 **Two spellings, one answer.** Where the member reaches the form subject over
 a hop whose reached role is to-one ("de schuit van de Lading", from a lading of
 that schuit), a navigation from the member and an anchored read give the same

@@ -1432,7 +1432,10 @@ EXPECTED_CHANNEL=(
 # whose ir.json the frontend now writes with the anchor (fold-filter-nested-aggregate,
 # jutterswet-schone-maand-na-zware-klacht, jutterswet-vergunningtermijnen) and jutterswet-registervoorrang, now from
 # its source, keep their PLAYED lines.
-EXPECTED_PLAYED=276
+# 276 -> 277 (2026-10-23, the same card, fix round A after review A): the golden anchor-once-per-member
+# (RUNTIME-SEMANTICS ch. 3.4a, "Once or per member": an anchored divisor of 0 deposits only where a member reaches it),
+# hand-written IR with hand-computed cases. No source file of this backend changed; it plays on both with PLAYED 3.
+EXPECTED_PLAYED=277
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

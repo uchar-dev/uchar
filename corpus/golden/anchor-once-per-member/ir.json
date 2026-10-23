@@ -1,0 +1,233 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vergunning",
+        "animate": false,
+        "plural": "Vergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "tarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "teller",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoogste tarief boven eigen teller",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Register",
+        "animate": false,
+        "plural": "Registers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "nummer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "registerinschrijving",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "register",
+            "objectType": "Register",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vergunning",
+            "objectType": "Vergunning",
+            "plural": "vergunningen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "hoogste tarief boven eigen teller",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hoogste tarief boven eigen teller",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De hoogste tarief boven eigen teller van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "tarief",
+                  "subjectType": "Vergunning",
+                  "source": {
+                    "snippet": "het tarief"
+                  }
+                }
+              ],
+              "elementType": "Vergunning",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "IdentityCheck",
+                    "anchor": "form",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij is niet de Vergunning zelf"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "tarief",
+                        "subjectType": "Vergunning",
+                        "source": {
+                          "snippet": "zijn tarief"
+                        }
+                      },
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "teller",
+                        "subjectType": "Vergunning",
+                        "anchor": "form",
+                        "source": {
+                          "snippet": "de teller van de Vergunning zelf"
+                        }
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "zijn tarief gedeeld door de teller van de Vergunning zelf"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "1"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn tarief gedeeld door de teller van de Vergunning zelf is groter dan 1"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door de teller van de Vergunning zelf is groter dan 1"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "register"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "registerinschrijving",
+                  "role": "vergunning"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

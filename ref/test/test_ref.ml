@@ -5843,6 +5843,84 @@ let () =
     (fun () -> ignore (evaluate outside [ "R1" ] [ ("V4", "R1", Some "2026-01-01", 10) ]))
     "(WF-122)"
 
+(* WV-3.4a-anchor-once: the worked example of ch. 3.4a, *Once or per member*,
+   row by row. The document is the golden anchor-once-per-member's (minified,
+   equal as JSON): a maximum whose filter excludes the Vergunning itself and
+   keeps the members whose tarief divided by the Vergunning's own teller (an
+   anchored read) is above 1, over the Vergunningen of the Vergunning's
+   register. A teller of 0 makes the division an EF-005 deposit, on the rule
+   x the form subject, only where a member reaches it. Per Vergunning the
+   value as the table pins it, and the channel: empty, or that one fact. *)
+let () =
+  let doc =
+    {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vergunning","animate":false,"plural":"Vergunningen","attributes":[{"node":"Attribute","name":"tarief","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"teller","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"hoogste tarief boven eigen teller","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[]},{"node":"ObjectType","name":"Register","animate":false,"plural":"Registers","attributes":[{"node":"Attribute","name":"nummer","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[{"node":"FactType","name":"registerinschrijving","reciprocal":false,"roles":[{"node":"Role","name":"register","objectType":"Register","many":false},{"node":"Role","name":"vergunning","objectType":"Vergunning","plural":"vergunningen","many":true}]}],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"hoogste tarief boven eigen teller","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"hoogste tarief boven eigen teller","subjectType":"Vergunning","source":{"snippet":"De hoogste tarief boven eigen teller van een Vergunning"}},"value":{"node":"Aggregation","kind":"maximum","arguments":[{"node":"AttributeReference","attribute":"tarief","subjectType":"Vergunning","source":{"snippet":"het tarief"}}],"elementType":"Vergunning","filter":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"IdentityCheck","anchor":"form","negated":true,"source":{"snippet":"hij is niet de Vergunning zelf"}},{"node":"Comparison","op":"greater","left":{"node":"Binary","op":"dividedBy","left":{"node":"AttributeReference","attribute":"tarief","subjectType":"Vergunning","source":{"snippet":"zijn tarief"}},"right":{"node":"AttributeReference","attribute":"teller","subjectType":"Vergunning","anchor":"form","source":{"snippet":"de teller van de Vergunning zelf"}},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"zijn tarief gedeeld door de teller van de Vergunning zelf"}},"right":{"node":"Literal","value":{"number":"1"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"1"}},"source":{"snippet":"zijn tarief gedeeld door de teller van de Vergunning zelf is groter dan 1"}}],"source":{"snippet":"aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door de teller van de Vergunning zelf is groter dan 1"}},"sourcePath":[{"node":"RoleBinding","factType":"registerinschrijving","role":"register"},{"node":"RoleBinding","factType":"registerinschrijving","role":"vergunning"}],"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+  in
+  let rule = "hoogste tarief boven eigen teller" in
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-anchor-once" suffix in
+    let oc = open_out f in
+    output_string oc body_text;
+    close_out oc;
+    f
+  in
+  let register label =
+    Printf.sprintf {|{"label":"%s","objectType":"Register","attributes":{},"roles":{},"characteristics":[]}|} label
+  in
+  let vergunning (label, reg, tarief, teller) =
+    Printf.sprintf
+      {|{"label":"%s","objectType":"Vergunning","attributes":{"tarief":{"number":"%d"},"teller":{"number":"%d"}},"roles":{%s},"characteristics":[]}|}
+      label tarief teller
+      (match reg with Some r -> Printf.sprintf {|"register":["%s"]|} r | None -> "")
+  in
+  let evaluate registers vergunningen =
+    let case_text =
+      Printf.sprintf
+        {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[%s],"parameters":{}},"expected":[{"kind":"consistent"}]}|}
+        (String.concat "," (List.map register registers @ List.map vergunning vergunningen))
+    in
+    let irf = write ".ir.json" doc and casef = write ".case.json" case_text in
+    Fun.protect
+      ~finally:(fun () -> Sys.remove irf; Sys.remove casef)
+      (fun () ->
+        let d = Ir_v0.Loader.load_file irf in
+        let c = Case.load_file d casef in
+        Eval.evaluate
+          { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+            locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
+          c.world)
+  in
+  (* per Vergunning its value (None for leeg); [deposit] the one label the
+     channel carries an EF-005 fact of the rule for, or None for an empty
+     channel *)
+  let row name registers vergunningen expected deposit =
+    let final = evaluate registers vergunningen in
+    List.iter
+      (fun (label, value) ->
+        let at = Printf.sprintf "%s-%s" name label in
+        match value with
+        | Some t -> expect_num at (World.attr (World.get final label) rule) t
+        | None -> expect_empty at (World.attr (World.get final label) rule))
+      expected;
+    match deposit with
+    | None -> check (name ^ "-channel-empty") (final.channel = [])
+    | Some label ->
+        check (name ^ "-channel-one-fact")
+          (match final.channel with
+          | [ (f : World.error_fact) ] -> f.rule = rule && f.subject = label && f.codes = [ "EF-005" ]
+          | _ -> false)
+  in
+  let pair = [ ("V1", Some "R1", 10, 2); ("V2", Some "R1", 30, 1) ] in
+  let pair_values = [ ("V1", Some "30"); ("V2", Some "10") ] in
+  row "WV-3.4a-anchor-once-alone" [ "R9"; "R1" ]
+    (("V9", Some "R9", 10, 0) :: pair)
+    (("V9", None) :: pair_values) None;
+  row "WV-3.4a-anchor-once-no-register" [ "R1" ]
+    (("V8", None, 10, 0) :: pair)
+    (("V8", None) :: pair_values) None;
+  row "WV-3.4a-anchor-once-reached" [ "R8" ]
+    [ ("V7", Some "R8", 10, 2); ("V8", Some "R8", 10, 0) ]
+    [ ("V7", Some "10"); ("V8", None) ] (Some "V8")
+
 (* --- ch. 5.8a: the near-side rolcheck ---------------------------------- *)
 
 (* WV-5.8a: the `jutterswet-wachtindeling` worked example. Feittype
