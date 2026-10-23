@@ -91,14 +91,16 @@ Elke case pint ook dat het kanaal leeg is.
 
 De bron staat in `source.rgs`. Sinds de kaart `check-admits-instance-cycle`
 (2026-10-22) laat `check` de kring toe en geeft de frontend dit `ir.json`
-byte-identiek uit (gate 10). Sinds de kaart `subselection-reads-subject`
-(2026-10-23) draagt "de verlengde einddag van de Vergunning" in het filter
-van het restant en in de toets van afgewikkeld het vormanker; daarvoor
-schreef de frontend de stap naar de satelliet en terug (`path
-[vergunningstermijn.houder]`). De cases veranderden niet. Tot dan was de golden handgeschreven: de
+byte-identiek uit (gate 10). Tot dan was de golden handgeschreven: de
 frontend weigerde de kring, en het IR is gemaakt door de bron met
 hulpattributen te laten emitteren en die lezingen daarna in de JSON terug te
 zetten.
+
+Sinds de kaart `subselection-reads-subject` (2026-10-23) draagt "de
+verlengde einddag van de Vergunning" in het filter van het restant en in de
+toets van afgewikkeld het vormanker; daarvoor schreef de frontend de stap
+naar de satelliet en terug (`path [vergunningstermijn.houder]`). De cases
+veranderden niet.
 
 ## Herkomst
 
