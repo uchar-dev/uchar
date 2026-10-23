@@ -281,6 +281,17 @@ public final class TmsTranspiler {
     private final Map<String, String> formOfRule = new HashMap<>();
     /** The rules of the model that belong to no form of the document ({@link #formOf}). */
     private final Set<String> rulesWithoutForm = new LinkedHashSet<>();
+    /** The default each rule of an effective stack lowers, by the rule's name, the contribution rules of the folds the
+     *  default reads among them ({@link #originOf}). */
+    private final Map<String, Default> defaultOfRule = new HashMap<>();
+    /** The rules of an effective stack that lower the stack itself, no default of it ({@link #originOf}). */
+    private final Set<String> stackOwnRules = new HashSet<>();
+    /** The rule each reading rule of a build with readings reads, by the reading rule's name ({@link #originOf}). */
+    private final Map<String, String> readingRuleOf = new HashMap<>();
+    /** While a default of a stack lowers, and while the stack registers that default's reads: the default, which the
+     *  contribution rules of the folds registered meanwhile lower ({@link Reads#recorder}); null at every other
+     *  moment. */
+    private Default lowering;
     private final List<DefaultsGroup> defaultsGroups = new ArrayList<>();
     /** The knots of every effective stack the branch lowered, by its name, which {@link #decisionsOf} lays the control
      *  facts of a session on. */
@@ -465,6 +476,74 @@ public final class TmsTranspiler {
         String form = formOfRule.get(ruleName);
         if (form != null || rulesWithoutForm.contains(ruleName)) return form;
         throw new IllegalArgumentException("geen regel van dit model: '" + ruleName + "'");
+    }
+
+    /**
+     * Where one rule of the model comes from ({@link TmsTranspiler#originOf}): the form of the document whose lowering
+     * built it and, in an effective defaults stack, the default the rule lowers. The name of a rule of a stack does not
+     * say that: its label ({@code default 0.1.2}) is the lowering's own numbering of the knots of the effective stack,
+     * which ch. 7.10 composes from the groups of several types, and a contribution rule of a fold names its fold, not
+     * the default whose condition or consequence reads it.
+     *
+     * @param form    the form, by the name the manifest gives it, as {@link TmsTranspiler#formOf} gives it; for a reading
+     *                rule, which {@code formOf} leaves out so that no observer counts its firing as one of a form, the
+     *                form of the rule it reads. Null only for {@link Kind#NO_FORM}
+     * @param kind    what of its form the rule lowers
+     * @param pointer for {@link Kind#DEFAULT} the default, as {@link DefaultsDecision} names one: the JSON pointer of the
+     *                {@code Default} node, {@code /rules/prioritizedDefaults/3/defaults/1/exceptions/members/0/defaults/0},
+     *                or for an ordinary rule a subtype's stack takes in (ch. 7.10) the version of that rule,
+     *                {@code /rules/rules/0/versions/0}; null for every other kind
+     */
+    public record RuleOrigin(String form, Kind kind, String pointer) {
+
+        public RuleOrigin {
+            Objects.requireNonNull(kind, "kind");
+            if ((form == null) != (kind == Kind.NO_FORM) || (pointer == null) == (kind == Kind.DEFAULT))
+                throw new IllegalArgumentException("de herkomst " + kind + " met vorm " + form + " en pointer "
+                        + pointer);
+        }
+
+        public enum Kind {
+            /** A rule of no form, one the lowering keeps for every form alike ({@link TmsTranspiler#formOf} gives
+             *  null). */
+            NO_FORM,
+            /** A rule of a form that is no effective defaults stack: the form's own rule and every rule its lowering
+             *  adds beside it, the contribution rules of the folds it registered among them. */
+            FORM,
+            /** A rule of an effective stack that lowers one default of it: the rule of the default's own decision, its
+             *  fall-back where it has exception groups, the fault rule of its justification, the pass-on, difference and
+             *  agreement rules that reconcile its exception groups (ch. 7.9), the contribution rules of the folds its
+             *  justification or consequence reads, and its reading rule. */
+            DEFAULT,
+            /** A rule of an effective stack that lowers the stack itself, no default of it: the pass-on, difference and
+             *  agreement rules that reconcile the groups at its root (ch. 7.2), and the fault of a session without an
+             *  evaluation date where a group of the stack has a dated validity. */
+            STACK
+        }
+    }
+
+    /**
+     * Where rule {@code ruleName} of the model comes from ({@link RuleOrigin}), for every rule of the model: its form as
+     * {@link #formOf} gives it and, for a rule of an effective defaults stack, the default it lowers, as the pointer
+     * {@link #decisionsOf} names a decider by, or that it lowers the stack itself. A rule an ordinary form adds to lower
+     * a default, a contribution rule of a fold that the default's justification reads among them, has that default; a
+     * contribution rule of a fold that an ordinary rule registered first has that rule's form, also where a stack that
+     * took the rule in reads the same fold. Read off what the lowering recorded while it built the rule, never off
+     * the rule's name. A name of no rule of the model is refused, as {@link #formOf} refuses it.
+     */
+    public RuleOrigin originOf(String ruleName) {
+        String form = formOf(ruleName);
+        if (form == null) {
+            String own = readingRuleOf.get(ruleName);
+            return own != null ? originOf(own) : new RuleOrigin(null, RuleOrigin.Kind.NO_FORM, null);
+        }
+        Default d = defaultOfRule.get(ruleName);
+        if (d != null) return new RuleOrigin(form, RuleOrigin.Kind.DEFAULT, pointerOf(d));
+        if (stackOwnRules.contains(ruleName)) return new RuleOrigin(form, RuleOrigin.Kind.STACK, null);
+        if (layouts.containsKey(form))
+            throw new IllegalStateException("de regel '" + ruleName + "' hoort bij de stapel " + form + ", en de"
+                    + " verlaging noteerde niet van welke default of dat hij van de stapel zelf is");
+        return new RuleOrigin(form, RuleOrigin.Kind.FORM, null);
     }
 
     /** The names of the creation rules of the model, in the agenda groups {@link #FACT_CREATION} and
@@ -1173,7 +1252,10 @@ public final class TmsTranspiler {
         for (List<RulePlan> rs : contributionRules.values()) rules.addAll(rs);
         for (String relation : createdRelations) rules.addAll(linkRules(relation));
         // the reading rules of a build with readings belong to no form, so the observer and the coverage pass them by
-        for (ReadingRule r : readingRules) rules.add(r.plan());
+        for (ReadingRule r : readingRules) {
+            rules.add(r.plan());
+            readingRuleOf.put(r.plan().name(), r.ownRule());
+        }
         // a standing is built once per member, for every rule that reads it, and only for one a lowered rule reads: a
         // standing nothing reads would only add firings
         List<RulePlan> states = new ArrayList<>();
@@ -2835,6 +2917,8 @@ public final class TmsTranspiler {
         /** The bare ch. 7.2 conflict key, the target on the type that declares it. */
         final String targetForm;
         final List<Reads> readings = new ArrayList<>();
+        /** The default each of {@link #readings} belongs to. */
+        final Map<Reads, Default> defaultOf = new IdentityHashMap<>();
         final Set<String> controlFacts = new LinkedHashSet<>();
         int nextChain;
 
@@ -2884,7 +2968,19 @@ public final class TmsTranspiler {
         if (st.members().stream().anyMatch(l -> l.validity() != null && !l.validity().always()))
             rules.add(stackValidityFault(b));
         // registered only once every default of the stack lowered, as a single rule registers its reads
-        for (Reads reads : b.readings) reads.recorder();
+        for (Reads reads : b.readings) {
+            lowering = b.defaultOf.get(reads);
+            try {
+                reads.recorder();
+            } finally {
+                lowering = null;
+            }
+        }
+        // every rule of the stack lowers a default of it or the stack itself, and originOf says which
+        for (RulePlan r : rules)
+            if (!defaultOfRule.containsKey(r.name()) && !stackOwnRules.contains(r.name()))
+                throw new IllegalStateException("de regel '" + r.name() + "' van de stapel " + b.name + " verlaagt"
+                        + " geen default en niet de stapel zelf");
         derived.put(member.key(), member);
         defaultsGroups.add(new DefaultsGroup(b.name, general, rules.size(), List.copyOf(b.controlFacts)));
         layouts.put(b.name, new StackLayout(member, b.targetForm, general, squareRoot, b.javaClass));
@@ -2901,6 +2997,7 @@ public final class TmsTranspiler {
         Alpha concrete = concreteType(b.javaClass);
         Alpha withoutDate = new Alpha(id("geen-rekendatum"),
                 List.of(new Alpha.FieldTest("date", Alpha.Comparator.LEEG, null)));
+        stackOwnRules.add(name + ": geen rekendatum");
         return new RulePlan(name + ": geen rekendatum", form, null, new ReadTable(List.of()),
                 List.of(new Subject(b.javaClass, SUBJECT, List.of(concrete), List.of(), List.of()),
                         new FactPattern(EvaluationDate.class, "$rekendatum", List.of(withoutDate), List.of(), List.of())),
@@ -3064,8 +3161,10 @@ public final class TmsTranspiler {
         // characteristic only an attribution reaches the write (onlyTrue), so the attribution is planned as such
         Consequence.StackFact target = b.characteristic ? new Consequence.StackFact.Characteristic(key)
                 : new Consequence.StackFact.Value(key, b.name);
+        int root = out.size();
         reconciliation(b, 0, squareRoot.size(), squareRoot.stream().anyMatch(TmsTranspiler::canConflict), b.targetForm, "wortel",
                 List::of, new Consequence.StackFact.Inconsistency(), target, b.characteristic, false, out);
+        for (RulePlan r : out.subList(root, out.size())) stackOwnRules.add(r.name());
         return out;
     }
 
@@ -3094,9 +3193,11 @@ public final class TmsTranspiler {
             }
             for (List<Node> member : k.members()) chainRules(b, member, notHigher, out);
             int earliest = k.firstMember(), to = earliest + k.members().size();
+            int reconciling = out.size();
             reconciliation(b, earliest, k.members().size(), k.members().stream().anyMatch(TmsTranspiler::canConflict),
                     k.key(), k.label(), notHigher,
                     new Consequence.StackFact.Outcome(name, id, i, Outcome.Kind.CONFLICT), decides, false, true, out);
+            for (RulePlan r : out.subList(reconciling, out.size())) defaultOfRule.put(r.name(), k.d());
             if (decidesSelf(b, k.d()))
                 out.addAll(ownRule(b, k, name + ": terugval " + k.label(), () -> {
                     List<LhsItem> guard = new ArrayList<>();
@@ -3258,6 +3359,21 @@ public final class TmsTranspiler {
      */
     private List<RulePlan> ownRule(StackBuild b, Node k, String ruleName, Supplier<List<LhsItem>> guard,
                                        List<Consequence.StackFact> facts) {
+        // the rules built here lower the default, and so do the contributions of the folds registered meanwhile, those
+        // its justification's fault rule reads
+        lowering = k.d();
+        try {
+            List<RulePlan> out = lowerOwnRule(b, k, ruleName, guard, facts);
+            for (RulePlan r : out) defaultOfRule.put(r.name(), k.d());
+            return out;
+        } finally {
+            lowering = null;
+        }
+    }
+
+    /** The rules of {@link #ownRule}, built while {@link #lowering} is the default. */
+    private List<RulePlan> lowerOwnRule(StackBuild b, Node k, String ruleName, Supplier<List<LhsItem>> guard,
+                                        List<Consequence.StackFact> facts) {
         Default d = k.d();
         Supplier<Reads> fresh = () -> {
             Reads l = new Reads(k.levelOf());
@@ -3297,6 +3413,7 @@ public final class TmsTranspiler {
                     new Consequence.FaultName(name, name), facts, Consequence.Insertion.LOGICAL);
         }
         b.readings.add(reads);
+        b.defaultOf.put(reads, d);
         List<RulePlan> out = new ArrayList<>();
         out.add(reads.rulePlan(ruleName, items, decision));
         // the control facts stay: a default a higher one displaced is not at its turn (RUNTIME-SEMANTICS ch. 7.1, 7.9).
@@ -3366,13 +3483,14 @@ public final class TmsTranspiler {
 
     /**
      * The reading rule of one form in a build with readings, with what {@link #readingsOf} needs to read its facts:
-     * the form's pointer, its validity, whether the form has a guard of its turn (control facts of a defaults stack,
-     * the guard of an initialisation, the 1:1 guard of an object creation), the planned condition and value of the
-     * form's own rule, the very terms its test and its consequence evaluate, the condition null for a form without
-     * one, and the nodes of the reading in their order, a node evaluated per member of a fold left out.
+     * the name of the form's own rule, which it reads ({@link #originOf}), the form's pointer, its validity, whether the
+     * form has a guard of its turn (control facts of a defaults stack, the guard of an initialisation, the 1:1 guard of
+     * an object creation), the planned condition and value of the form's own rule, the very terms its test and its
+     * consequence evaluate, the condition null for a form without one, and the nodes of the reading in their order, a
+     * node evaluated per member of a fold left out.
      */
-    private record ReadingRule(RulePlan plan, String pointer, Validity validity, boolean guarded, Term condition,
-                               Term value, List<Site> sites) {
+    private record ReadingRule(RulePlan plan, String ownRule, String pointer, Validity validity, boolean guarded,
+                               Term condition, Term value, List<Site> sites) {
 
         /** The subject pattern of the reading rule. */
         Subject subject() {
@@ -3442,7 +3560,7 @@ public final class TmsTranspiler {
             sites.add(new Site(i, at.kind(), t, noted.units().get(n), fold == null ? null : fold.get(reads.subject),
                     n instanceof Condition.QuantifierFold q ? q : null, derived));
         }
-        readingRules.add(new ReadingRule(plan, pointer, validity, guarded, condition, value, sites));
+        readingRules.add(new ReadingRule(plan, ruleName, pointer, validity, guarded, condition, value, sites));
     }
 
     /** The variables the top level of {@code lhs} declares, which a consequence can name: the variable of each pattern
@@ -6089,7 +6207,10 @@ public final class TmsTranspiler {
             channels.addAll(channelNames);
             for (Fold v : folds) {
                 if (contributionRules.putIfAbsent(v.key(), v.rules()) == null)
-                    for (RulePlan r : v.rules()) formOfRule.put(r.name(), form);
+                    for (RulePlan r : v.rules()) {
+                        formOfRule.put(r.name(), form);
+                        if (lowering != null) defaultOfRule.put(r.name(), lowering);
+                    }
                 for (Reads l : v.readings()) l.recorder();
             }
         }
