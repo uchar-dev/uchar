@@ -137,3 +137,11 @@ Correctie op het advies: de nieuwe welgevormdheidsregel heet daar WF-120, maar d
 benaming (vocabulaires, IR-SPEC ch. 2.12) en WF-121 de herkomst; de nieuwe regel krijgt het eerstvolgende vrije nummer,
 nu WF-122. Het stappenplan van het advies (spec en schema, verifier en negatieven, ref, clingo, Drools, frontend,
 corpus en CONSTRUCTS) is het bouwplan.
+
+**Antwoord van de werkbank (2026-10-23, via de eigenaar).** "B8: vorm a. Het woord 'zelf' is goed; let op dat het in
+scenario- en regelnamen vrije tekst blijft (v2 heeft 'zelf' in twee scenarionamen)." B3 en B8 zijn daarmee besloten.
+Over de namen: `scenarioNaam` en `regelNaam` nemen elk token behalve hun eigen kopwoorden (`RegelSpraak.g4`), dus een
+token `ZELF` blijft daar vrije tekst, en een woord als "zelfstandige" lext als één `LOWER_ID`. Extra acceptatie: een
+frontend-test die een scenarionaam en een regelnaam met "zelf" erin (in de vorm van de twee v2-namen, "… van het recht
+zelf in een samenloop", "… dat zelf is geëindigd") parset zoals vóór de kaart, en dat de 179 bronnen van de repository
+bytegelijk emitteren.
