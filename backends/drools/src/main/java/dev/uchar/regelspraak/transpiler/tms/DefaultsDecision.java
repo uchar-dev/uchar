@@ -23,7 +23,9 @@ import java.util.Objects;
  * give where ch. 7.10 composes a subtype's stack from two declarations: per group at the root of the effective stack the
  * pointers of its defaults, highest first; more than one group only at a declared-unordered root (ch. 7.2). Below the
  * root a default's exception groups are evaluated in the order the document writes them, so the pointer of a default
- * there names the defaults before and after it in its chain as well.
+ * there names the defaults before and after it in its chain as well. The whole composition, with the exception groups
+ * below the root, is the composition of the stack in {@code TmsTranspiler.stacks} ({@link StackComposition}), whose
+ * chains at the root are these.
  *
  * @param object         the object the stack decided for, a bean of the build's bean model, compared by identity
  * @param member         the stack's target, named as the model declares it, as {@link Fixpoint} names a member

@@ -319,8 +319,8 @@ public final class TmsTranspiler {
     private Map<Default, String> pointers;
     /** The manifest names that name no declaration, with the element each comes from ({@link #generated}). */
     private final Map<String, RegelSpraakModel.GeneratedFrom> generated = new LinkedHashMap<>();
-    /** The type each effective stack runs for, by the stack's name ({@link #stackTypes}). */
-    private final Map<String, RegelSpraakModel.Designatable> stackTypes = new LinkedHashMap<>();
+    /** Every effective stack with its type and its composition, by the stack's name ({@link #stacks}). */
+    private final Map<String, Stack> effectiveStacks = new LinkedHashMap<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
      *  through is the bean property of the declared spelling, which the key no longer carries. */
     private final Map<ElementKey, Member> derived = new LinkedHashMap<>();
@@ -496,25 +496,56 @@ public final class TmsTranspiler {
      * element it comes from, in the order of the manifest: an effective defaults stack ({@code defaults A:<type>.<member>},
      * {@code defaults K:<type>.<member>}) from the member it decides, as declared on its owner's chain; a version of a
      * form with several ({@code <form> #<k>}) from that form. Every other name of the manifest is the name of a form of
-     * the model. A side table: the lowering reads none of it. The type a stack runs for is beside it, in
-     * {@link #stackTypes}.
+     * the model. A side table: the lowering reads none of it. The type a stack runs for and its composition are beside
+     * it, in {@link #stacks}.
      */
     public Map<String, RegelSpraakModel.GeneratedFrom> generated() {
         return java.util.Collections.unmodifiableMap(generated);
     }
 
     /**
-     * The type each effective defaults stack of {@link #generated} runs for, by the stack's name, in the order of the
-     * manifest: the owner of the effective stack (RUNTIME-SEMANTICS ch. 7.10), on whose instances of exactly that type
-     * its rules run, as an element of the model ({@link RegelSpraakModel.Designatable#objectType}). It is the type
-     * that declares the member {@code generated} gives, or a subtype of it, so two stacks that decide one inherited
-     * member for two types have one entry each in {@code generated} with the same member, and each its own type
-     * here. Beside {@code generated} and not in it, since {@link RegelSpraakModel.GeneratedFrom} is the frontend's
-     * record, which the wire carries as {@code origin} (IR-SPEC ch. 2.13). Every stack of {@code generated} has a type,
-     * a refused one too. A side table: the lowering reads none of it.
+     * Every effective defaults stack of {@link #generated}, by the stack's name, in the order of the manifest, with the
+     * type it runs for and its composition ({@link Stack}), a refused stack too. A name of the manifest that is no
+     * stack, a version of a form, has no entry: {@code get} gives null there, as {@code generated} gives another form.
+     * Beside {@code generated} and not in it, since {@link RegelSpraakModel.GeneratedFrom} is the frontend's record,
+     * which the wire carries as {@code origin} (IR-SPEC ch. 2.13). Filled while the analysis is built, as each stack has
+     * lowered or been refused, so a stack whose defaults cannot be named by their pointer fails every build, as a rule
+     * without a role does. A side table: the lowering reads none of it.
      */
-    public Map<String, RegelSpraakModel.Designatable> stackTypes() {
-        return java.util.Collections.unmodifiableMap(stackTypes);
+    public Map<String, Stack> stacks() {
+        return java.util.Collections.unmodifiableMap(effectiveStacks);
+    }
+
+    /**
+     * One effective defaults stack of {@link #stacks}.
+     *
+     * @param type        the type the stack runs for: the owner of the effective stack (RUNTIME-SEMANTICS ch. 7.10), on
+     *                    whose instances of exactly that type its rules run, as an element of the model
+     *                    ({@link RegelSpraakModel.Designatable#objectType}). It is the type that declares the member
+     *                    {@code generated} gives, or a subtype of it, so two stacks that decide one inherited member for
+     *                    two types have one entry each in {@code generated} with the same member, and each its own type
+     *                    here. A refused stack has one too
+     * @param composition its composition ({@link StackComposition}): its defaults in the order of priority, across the
+     *                    groups of the types ch. 7.10 composes it from, with the exception groups below each default
+     *                    (ch. 7.9), each by the pointer {@link #decisionsOf} and {@link #originOf} name a default by.
+     *                    Read off the knots the lowering laid for the stack, on which {@link #decisionsOf} lays the
+     *                    control facts of a session, so its chains at the root are the {@link DefaultsDecision#rootChains}
+     *                    of every record of the stack; never off the labels in the names of the rules or the order of the
+     *                    DRL text. Null for a stack the lowering refused, which laid no knots; the reason is in the
+     *                    manifest ({@link #coverage}). {@code DroolsBackend.build} refuses a document with a refused form
+     *                    whole, so in a build it returns every stack has a composition
+     */
+    public record Stack(RegelSpraakModel.Designatable type, StackComposition composition) {
+        public Stack {
+            Objects.requireNonNull(type, "type");
+        }
+    }
+
+    /** The chains {@code chains} of knots, each knot by the pointer of its default and its members below it. */
+    private StackComposition composition(List<List<Node>> chains) {
+        return new StackComposition(chains.stream().map(chain -> chain.stream()
+                .map(k -> new StackComposition.Entry(pointerOf(k.d()), k.hasMembers() ? composition(k.members()) : null))
+                .toList()).toList());
     }
 
     /**
@@ -1450,10 +1481,14 @@ public final class TmsTranspiler {
             rules.addAll(meet("uniciteit-unie", nameOf(u.name()), () -> uniquenessUnionRules(u)));
         if (composition != null) refuse(composition.reason(), "defaults", "effectieve stapels");
         for (Stacks.Stack st : effective) {
-            generated.put(stackName(st), new RegelSpraakModel.GeneratedFrom(stackTarget(st),
+            String name = stackName(st);
+            generated.put(name, new RegelSpraakModel.GeneratedFrom(stackTarget(st),
                     RegelSpraakModel.OriginForm.DEFAULTS_STACK));
-            stackTypes.put(stackName(st), RegelSpraakModel.Designatable.objectType(st.owner().name));
-            rules.addAll(meet("defaults", stackName(st), () -> stackRules(st)));
+            rules.addAll(meet("defaults", name, () -> stackRules(st)));
+            // a refused stack laid no knots: it has its type, and no composition
+            StackLayout laid = layouts.get(name);
+            effectiveStacks.put(name, new Stack(RegelSpraakModel.Designatable.objectType(st.owner().name),
+                    laid == null ? null : composition(laid.roots())));
         }
         rules.addAll(differenceRules());
         // a StartPointDetermination is a declaration that fires nothing: it says which member anchors a grid with a

@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       subject to ({@code $vouwonderwerp}), two more oracles of this witness;</li>
  * </ul>
  *
- * and every effective stack of {@code generated} has a type in {@code stackTypes}: an object type of the model that
+ * and every effective stack of {@code generated} has a type in {@code stacks}: an object type of the model that
  * declares the member {@code generated} gives or inherits it, the type the stack's name begins with
  * ({@code defaults A:<type>.}), a second oracle that reads the name.
  *
@@ -348,18 +348,19 @@ class RuleOriginCorpusWitnessTest {
     }
 
     /** Every effective stack of {@code generated} has a type: an object type of the model whose chain declares the
-     *  member the stack decides, and the type its name begins with; and {@code stackTypes} names no other stack. */
+     *  member the stack decides, and the type its name begins with; and {@code stacks} names no other stack. */
     private static void stackTypes(String which, DroolsBackend.Build build, List<String> differences,
                                    Map<String, Integer> counts) {
         TmsTranspiler t = build.execModelTranspiler();
         RegelSpraakModel model = build.model();
         Set<String> stacks = new LinkedHashSet<>();
         t.generated().forEach((n, g) -> { if (g.form() == RegelSpraakModel.OriginForm.DEFAULTS_STACK) stacks.add(n); });
-        if (!stacks.equals(t.stackTypes().keySet()))
-            differences.add(which + ": de stapels " + stacks + " en de stapels met een type " + t.stackTypes().keySet());
+        if (!stacks.equals(t.stacks().keySet()))
+            differences.add(which + ": de stapels " + stacks + " en de stapels met een type " + t.stacks().keySet());
         for (String stack : stacks) {
-            RegelSpraakModel.Designatable type = t.stackTypes().get(stack), member = t.generated().get(stack).source();
-            if (type == null) continue;
+            TmsTranspiler.Stack s = t.stacks().get(stack);
+            if (s == null) continue;
+            RegelSpraakModel.Designatable type = s.type(), member = t.generated().get(stack).source();
             String where = which + " | " + stack;
             RegelSpraakModel.ObjectType runs = type.kind() == RegelSpraakModel.Designatable.Kind.OBJECTTYPE
                     ? model.objectTypeByName(type.name()) : null;

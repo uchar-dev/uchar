@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * several by {@code <form> #<k>}. {@link TmsTranspiler#generated} gives each such name the declared element it comes
  * from, so a consumer of the manifest does not read it off the name: a stack from the member it decides, as declared,
  * also where the stack stands on a subtype; a version from its form. Every other manifest name is a form of the model.
- * Beside it {@link TmsTranspiler#stackTypes} gives each stack the type it runs for (card drl-rule-part).
+ * Beside it {@link TmsTranspiler#stacks} gives each stack the type it runs for (card drl-rule-part).
  */
 class GeneratedNamesWitnessTest {
 
@@ -76,20 +76,20 @@ class GeneratedNamesWitnessTest {
     }
 
     /** Each stack of {@code generated}, as {@code <stack> <- <member> for <type>}: the member as declared and the type
-     *  the stack runs for ({@link TmsTranspiler#stackTypes}). */
+     *  the stack runs for ({@link TmsTranspiler#stacks}). */
     private static List<String> stackTable(DroolsBackend.Build b) {
         TmsTranspiler t = b.execModelTranspiler();
         List<String> out = new ArrayList<>();
         for (Map.Entry<String, GeneratedFrom> e : t.generated().entrySet())
             if (e.getValue().form() == RegelSpraakModel.OriginForm.DEFAULTS_STACK)
                 out.add(e.getKey() + " <- " + element(e.getValue().source()) + " for "
-                        + element(t.stackTypes().get(e.getKey())));
+                        + element(t.stacks().get(e.getKey()).type()));
         return out;
     }
 
     @Test void two_stacks_of_one_member_each_name_the_type_they_run_for() throws Exception {
         // card drl-rule-part: a Strandjutter is a Jutter, and the member meldtermijn that Jutter declares has a stack
-        // on each type (RUNTIME-SEMANTICS ch. 7.10); generated gives both the same member, stackTypes each its type
+        // on each type (RUNTIME-SEMANTICS ch. 7.10); generated gives both the same member, stacks each its type
         assertEquals(List.of(
                 "defaults A:Jutter.meldtermijn <- ATTRIBUUT Jutter.meldtermijn for OBJECTTYPE Jutter",
                 "defaults A:Strandjutter.meldtermijn <- ATTRIBUUT Jutter.meldtermijn for OBJECTTYPE Strandjutter"),
