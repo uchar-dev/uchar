@@ -125,9 +125,9 @@ class EvaluationYearWitnessTest {
      *  DRL-text branch had a lowering, and a manifest, of its own, and the row asked both. */
     @Test void the_analysis_lowers_the_node() throws Exception {
         for (String rule : List.of(valueRule(), computeRule(), compareRule())) {
-            IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(document(rule))));
-            String key = "regel: " + l.model().resolvedRules.get(0).name();
-            Coverage tms = coverageOf(tmsCoverage(l), key);
+            IrLoader.Positioned p = IrLoader.loadWithPositions(JSON.readTree(Files.readString(document(rule))));
+            String key = "regel: " + p.loaded().model().resolvedRules.get(0).name();
+            Coverage tms = coverageOf(tmsCoverage(p), key);
             assertEquals(Coverage.Verdict.LOWERED, tms.verdict(), "tms — " + key + ": " + tms.reason());
         }
     }
@@ -296,13 +296,14 @@ class EvaluationYearWitnessTest {
         throw new AssertionError("no manifest entry " + key + " in " + coverage);
     }
 
-    private static List<Coverage> tmsCoverage(IrLoader.Loaded l) {
+    private static List<Coverage> tmsCoverage(IrLoader.Positioned p) {
+        IrLoader.Loaded l = p.loaded();
         ClassLoader cl = BeanCompiler.compile(FactModelGenerator.generate(l.model()));
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
             return TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.roleBindings(), l.lets(),
-                    l.sourcePaths(), l.navigationBindings(), l.anchored()).coverage();
+                    l.sourcePaths(), l.navigationBindings(), l.anchored(), p.positions()).coverage();
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }

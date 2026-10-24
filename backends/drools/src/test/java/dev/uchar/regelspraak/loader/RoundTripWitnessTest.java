@@ -54,7 +54,8 @@ class RoundTripWitnessTest {
         assertTrue(Files.exists(ir), "golden ir.json present: " + ir.toAbsolutePath());
 
         // the whole load: since L2 the relations a read walks ride beside the model, as bindings
-        IrLoader.Loaded loaded = IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
+        IrLoader.Positioned positioned = IrLoader.loadWithPositions(JSON.readTree(Files.readString(ir)));
+        IrLoader.Loaded loaded = positioned.loaded();
         RegelSpraakModel model = loaded.model();
         // the loader reconstructed a non-empty model with resolved rules — the emitter's inverse.
         assertFalse(model.objectTypes.isEmpty(), golden + ": loaded objecttypen");
@@ -72,7 +73,7 @@ class RoundTripWitnessTest {
         try {
             TmsTranspiler et = TmsTranspiler.build(model, cl, loaded.prioritizedDefaults(),
                     loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings(),
-                    loaded.anchored());
+                    loaded.anchored(), positioned.positions());
             for (Coverage d : et.coverage())
                 assertTrue(d.lowered(), golden + ": construct lowered — " + d.key() + " " + d.verdict());
         } finally {

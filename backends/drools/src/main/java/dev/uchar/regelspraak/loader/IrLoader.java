@@ -297,14 +297,14 @@ public final class IrLoader {
      *  place in the document's pre-order and the wire kind of every node of the condition and the expression union this
      *  loader read, and the pointer of every form version, by identity of the record. No side table of the lowering:
      *  a build with readings reads it, which numbers the nodes of a form by it ({@code TmsTranspiler#withReadings}), and
-     *  {@code TmsTranspiler#originOf} names the fold of a rule of a fold by it, in a build with or without readings. */
+     *  {@code TmsTranspiler#originOf} names the fold of a rule of a fold by it, in every build. */
     public record Positioned(Loaded loaded, NodePositions positions) {}
 
     /** Parse a {@code uchar-ir-v1} tree into a resolved model, or throw {@link Refusal} for a form
      *  the v0 backend does not carry. What rides beside the model — the prioritized-defaults extension and, since
      *  L2 of the v1 wire migration, every binding a read, a fold, a role check or a verdeling walks — is parsed but
      *  not returned: a transpiler handed this model alone reads every navigation as the subject's own. Use
-     *  {@link #loadAll} for anything that transpiles. */
+     *  {@link #loadWithPositions} for anything that transpiles. */
     public static RegelSpraakModel load(JsonNode root) {
         return new IrLoader().model(root);
     }

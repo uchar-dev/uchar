@@ -469,13 +469,14 @@ class TmsTimelineRefusalWitnessTest {
 
     /** Every refusal of the manifest of the document {@code ir}, in its order, in the words of the build's exclusion. */
     static List<String> refusals(Path ir) throws Exception {
-        IrLoader.Loaded l = IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(ir)));
+        IrLoader.Positioned p = IrLoader.loadWithPositions(TmsDocuments.JSON.readTree(Files.readString(ir)));
+        IrLoader.Loaded l = p.loaded();
         ClassLoader cl = BeanCompiler.compile(FactModelGenerator.generate(l.model()));
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
             TmsTranspiler t = TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.roleBindings(), l.lets(),
-                    l.sourcePaths(), l.navigationBindings(), l.anchored());
+                    l.sourcePaths(), l.navigationBindings(), l.anchored(), p.positions());
             List<String> out = new ArrayList<>();
             for (Coverage d : t.coverage())
                 if (!d.lowered()) out.add("transpiler " + d.verdict() + ": " + d.key()

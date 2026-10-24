@@ -370,10 +370,8 @@ public final class TmsTranspiler {
      *  of a build before the card. */
     private final dev.uchar.regelspraak.loader.NodePositions positions;
     /** Where the nodes of the document stand on the wire, for {@link #originOf} alone, which names the fold of a rule of
-     *  a fold by it: the positions the loader gave with the document, in a build with readings and in one without
-     *  ({@link #build(dev.uchar.regelspraak.loader.IrLoader.Positioned, ClassLoader)}); null in a build from the side
-     *  tables alone. The lowering reads none of it, so a build without readings that has it plans what one without it
-     *  plans. */
+     *  a fold by it: the positions the loader gave with the document, which every build takes. The lowering reads none
+     *  of it, so a build without readings plans what it planned before it had them. */
     private final dev.uchar.regelspraak.loader.NodePositions origins;
     /** While the condition and the value of a form's own rule compile in a build with readings: the term the analysis
      *  plans for each node of the IR it compiles there, by identity ({@link #note}); null at every other moment. */
@@ -411,10 +409,6 @@ public final class TmsTranspiler {
         this.dayKinds = new DayKinds(model);
     }
 
-    /** Build the model and its coverage manifest from the loaded model and every side table the loader returns. Each
-     *  table is required, also those no lowered form reads yet: a build that could leave one out could also lower a
-     *  form that needs it as if the document carried none. Fact beans resolve against {@code beanLoader}; null routes
-     *  to this transpiler's own loader. */
     /** The switch relations of the document's instance-ordered parts, as the hops that reach the predecessor
      *  ({@link Cycles#instanceWalks}): a case reader refuses a cycle in their links (EF-033, RUNTIME-SEMANTICS
      *  ch. 6.2). */
@@ -424,18 +418,25 @@ public final class TmsTranspiler {
         return instanceWalks;
     }
 
+    /** Build the model and its coverage manifest from the loaded model and every side table the loader returns. Each
+     *  table is required, also those no lowered form reads yet: a build that could leave one out could also lower a
+     *  form that needs it as if the document carried none. So are the positions of the document's nodes
+     *  ({@code IrLoader.loadWithPositions}), by which {@link #originOf} names the fold of a rule of a fold: no build
+     *  leaves a rule without the origin every other build gives it. The lowering reads none of them. Fact beans
+     *  resolve against {@code beanLoader}; null routes to this transpiler's own loader. */
     public static TmsTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
             Map<Object, RoleBindingRef> roleBindings, List<Expr.Let> lets,
             Map<Object, List<RoleBindingRef>> sourcePaths,
-            Map<Object, List<RoleBindingRef>> navigationBindings, Set<Object> anchored) {
-        return build(m, beanLoader, defaults, roleBindings, lets, sourcePaths, navigationBindings, anchored, null, null);
+            Map<Object, List<RoleBindingRef>> navigationBindings, Set<Object> anchored,
+            dev.uchar.regelspraak.loader.NodePositions positions) {
+        return build(m, beanLoader, defaults, roleBindings, lets, sourcePaths, navigationBindings, anchored, null,
+                Objects.requireNonNull(positions, "positions"));
     }
 
     /** The build without readings of the loaded {@code document}: the build of
-     *  {@link #build(RegelSpraakModel, ClassLoader, List, Map, List, Map, Map, Set)} with every side table the loader
-     *  returns, and beside it the positions of the document's nodes, which {@link #originOf} alone reads, to name the
-     *  fold of a rule of a fold ({@link RuleOrigin#fold}). The lowering reads none of them, so the plan is that of the
-     *  build from the side tables alone. */
+     *  {@link #build(RegelSpraakModel, ClassLoader, List, Map, List, Map, Map, Set, dev.uchar.regelspraak.loader.NodePositions)} with every side table the loader
+     *  returns and the positions of the document's nodes, which {@link #originOf} alone reads, to name the fold of a
+     *  rule of a fold ({@link RuleOrigin#fold}). */
     public static TmsTranspiler build(dev.uchar.regelspraak.loader.IrLoader.Positioned document,
                                       ClassLoader beanLoader) {
         Objects.requireNonNull(document, "document");
@@ -445,7 +446,7 @@ public final class TmsTranspiler {
     }
 
     /** A build with readings (card fixpoint-readings) of the loaded {@code document}: the build of
-     *  {@link #build(RegelSpraakModel, ClassLoader, List, Map, List, Map, Map, Set)}, and beside the rule of every form with a
+     *  {@link #build(RegelSpraakModel, ClassLoader, List, Map, List, Map, Map, Set, dev.uchar.regelspraak.loader.NodePositions)}, and beside the rule of every form with a
      *  condition, or without one that computes a value, a reading rule, whose facts {@link #readingsOf} reads, numbering
      *  the nodes of a form by the positions the loader gives with the document, by which {@link #originOf} names the
      *  fold of a rule of a fold as well. It takes the loaded document whole, so it leaves no side table out. */
@@ -458,8 +459,8 @@ public final class TmsTranspiler {
                 l.navigationBindings(), l.anchored(), positions, positions);
     }
 
-    /** The build, with {@code positions} for a build with readings and null for one without, and {@code origins} where
-     *  {@link #originOf} names the folds, null where the build has no positions of the document's nodes. */
+    /** The build, with {@code positions} for a build with readings and null for one without, and {@code origins}, the
+     *  positions of the document's nodes by which {@link #originOf} names the folds, in every build. */
     private static TmsTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
             Map<Object, RoleBindingRef> roleBindings, List<Expr.Let> lets,
             Map<Object, List<RoleBindingRef>> sourcePaths,
@@ -472,6 +473,7 @@ public final class TmsTranspiler {
         Objects.requireNonNull(sourcePaths, "side table 'sourcePaths' is null — pass an empty map for a document without one");
         Objects.requireNonNull(navigationBindings, "side table 'navigationBindings' is null — pass an empty map for a document without one");
         Objects.requireNonNull(anchored, "side table 'anchored' is null — pass an empty set for a document without one");
+        Objects.requireNonNull(origins, "origins");
         // copied by identity: the loader keys its tables on the nodes, which are records with value equality
         Map<Object, List<RoleBindingRef>> nav = new IdentityHashMap<>(navigationBindings);
         Set<Object> anchors = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -718,10 +720,8 @@ public final class TmsTranspiler {
      * rule of a fold the node of the fold. A rule the stack adds to lower a default, a rule of a fold that the
      * default's justification or consequence reads among them, has that default; a rule of a fold that an ordinary
      * rule registered first has that rule's form, also where a stack that took the rule in reads the same fold. Read
-     * off what the lowering noted while it built the rule, never off the rule's name. The fold needs the positions of
-     * the document's nodes: a build from the loaded document has them
-     * ({@link #build(dev.uchar.regelspraak.loader.IrLoader.Positioned, ClassLoader)}, {@link #withReadings}), and one
-     * from the side tables alone refuses, loudly, to name the fold of a rule of a fold. A name of no rule of the model
+     * off what the lowering noted while it built the rule, never off the rule's name; the fold by the position of its
+     * node, which every build is given. A name of no rule of the model
      * is refused, as {@link #formOf} refuses it, and so is a name the lowerings of two forms both build, which has no one
      * origin ({@link #sharedNames}).
      */
@@ -764,10 +764,6 @@ public final class TmsTranspiler {
         if (node == null)
             throw new IllegalStateException("de regel '" + ruleName + "' is een regel van een vouw, en de verlaging"
                     + " noteerde niet van welke");
-        if (origins == null)
-            throw new IllegalStateException("de regel '" + ruleName + "' is een regel van een vouw, en deze bouw kent"
-                    + " de plaatsen van de knopen van het document niet: bouw uit het geladen document met zijn"
-                    + " plaatsen (IrLoader.loadWithPositions)");
         dev.uchar.regelspraak.loader.NodePositions.Position at = origins.of(node);
         if (at == null)
             throw new IllegalStateException("de vouw van de regel '" + ruleName + "' is geen knoop die de lader las");

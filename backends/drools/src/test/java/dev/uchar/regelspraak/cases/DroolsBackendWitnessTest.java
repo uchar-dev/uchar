@@ -73,13 +73,14 @@ class DroolsBackendWitnessTest {
      *  defaults withheld — explicitly now, since no build can leave them out. One rule, and a manifest in which
      *  everything lowered, so nothing in the result said the family was missing. */
     @Test void without_the_defaults_the_family_misses_and_the_manifest_says_nothing() throws Exception {
-        IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(EXCLUSION.resolve("ir.json"))));
+        IrLoader.Positioned p = IrLoader.loadWithPositions(JSON.readTree(Files.readString(EXCLUSION.resolve("ir.json"))));
+        IrLoader.Loaded l = p.loaded();
         ClassLoader cl = BeanCompiler.compile(FactModelGenerator.generate(l.model()));
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
             TmsTranspiler et = TmsTranspiler.build(l.model(), cl, List.of(), l.roleBindings(), l.lets(),
-                    l.sourcePaths(), l.navigationBindings(), l.anchored());
+                    l.sourcePaths(), l.navigationBindings(), l.anchored(), p.positions());
             assertEquals(List.of("penninggerechtigd tenzij uitgesloten"),
                     rules(KieBaseBuilder.createKieBaseFromModel(et.model())));
             assertEquals(List.of("regel: penninggerechtigd tenzij uitgesloten"),
@@ -144,9 +145,11 @@ class DroolsBackendWitnessTest {
     }
 
     /** Each side table passed as null is refused before anything is lowered, in a sentence naming it; null used to
-     *  stand for "empty", which is the silent omission again by another route. */
+     *  stand for "empty", which is the silent omission again by another route. Since card drl-rule-part the positions
+     *  of the document's nodes are required beside them, and refused as null too: by them {@code originOf} names the
+     *  fold of a rule of a fold, in every build. */
     @Test void a_missing_side_table_is_loudly_refused() throws Exception {
-        IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(EXCLUSION.resolve("ir.json"))));
+        IrLoader.Positioned l = IrLoader.loadWithPositions(JSON.readTree(Files.readString(EXCLUSION.resolve("ir.json"))));
         for (Class<?> t : List.of(TmsTranspiler.class)) {
             Method build = modelEntries(t).get(0);
             Class<?>[] kinds = build.getParameterTypes();
@@ -164,6 +167,12 @@ class DroolsBackendWitnessTest {
                 tested++;
             }
             assertEquals(5, tested, t.getSimpleName() + ": the five side tables");
+            Object[] arguments = arguments(build, l);
+            arguments[Arrays.asList(kinds).indexOf(dev.uchar.regelspraak.loader.NodePositions.class)] = null;
+            InvocationTargetException fault = assertThrows(InvocationTargetException.class,
+                    () -> build.invoke(null, arguments));
+            assertEquals("positions", assertInstanceOf(NullPointerException.class, fault.getCause()).getMessage(),
+                    t.getSimpleName() + ": the positions of the nodes");
         }
     }
 
@@ -187,17 +196,22 @@ class DroolsBackendWitnessTest {
                 .toList();
     }
 
-    /** The loader's own values for every parameter of {@code build}, matched by generic type in parameter order;
-     *  the bean loader, which is no side table, is null (the transpiler then uses its own). */
-    private static Object[] arguments(Method build, IrLoader.Loaded l) throws Exception {
+    /** The loader's own values for every parameter of {@code build}, matched by generic type in parameter order, and
+     *  the positions of the nodes for that parameter; the bean loader, which is no side table, is null (the transpiler
+     *  then uses its own). */
+    private static Object[] arguments(Method build, IrLoader.Positioned p) throws Exception {
         List<RecordComponent> free = new ArrayList<>(Arrays.asList(IrLoader.Loaded.class.getRecordComponents()));
         Type[] types = build.getGenericParameterTypes();
         Object[] out = new Object[types.length];
         for (int i = 0; i < types.length; i++) {
             if (types[i] == ClassLoader.class) continue;
+            if (types[i] == dev.uchar.regelspraak.loader.NodePositions.class) {
+                out[i] = p.positions();
+                continue;
+            }
             for (RecordComponent c : free) {
                 if (!c.getGenericType().equals(types[i])) continue;
-                out[i] = c.getAccessor().invoke(l);
+                out[i] = c.getAccessor().invoke(p.loaded());
                 free.remove(c);
                 break;
             }

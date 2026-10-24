@@ -289,7 +289,8 @@ class MorePeriodicGateWitnessTest {
     /** The DRL TEXT of the DRL-text branch for a document, the analysis rendered as text — no case, no fire;
      *  {@code intervention} edits the loaded model first. */
     private static String drlText(Path irPath, java.util.function.Consumer<RegelSpraakModel> intervention) throws Exception {
-        IrLoader.Loaded loaded = IrLoader.loadAll(JSON.readTree(Files.readString(irPath)));
+        IrLoader.Positioned positioned = IrLoader.loadWithPositions(JSON.readTree(Files.readString(irPath)));
+        IrLoader.Loaded loaded = positioned.loaded();
         RegelSpraakModel model = loaded.model();
         intervention.accept(model);
         ClassLoader cl = BeanCompiler.compile(FactModelGenerator.generate(model));
@@ -297,7 +298,7 @@ class MorePeriodicGateWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             return TmsTranspiler.build(model, cl, loaded.prioritizedDefaults(), loaded.roleBindings(), loaded.lets(),
-                    loaded.sourcePaths(), loaded.navigationBindings(), loaded.anchored()).drl();
+                    loaded.sourcePaths(), loaded.navigationBindings(), loaded.anchored(), positioned.positions()).drl();
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }
@@ -306,7 +307,8 @@ class MorePeriodicGateWitnessTest {
     /** The exec-model branch's coverage manifest for a document, as comparable text; {@code intervention} edits
      *  the loaded model first. */
     private static List<String> coverage(Path irPath, java.util.function.Consumer<RegelSpraakModel> intervention) throws Exception {
-        IrLoader.Loaded loaded = IrLoader.loadAll(JSON.readTree(Files.readString(irPath)));
+        IrLoader.Positioned positioned = IrLoader.loadWithPositions(JSON.readTree(Files.readString(irPath)));
+        IrLoader.Loaded loaded = positioned.loaded();
         RegelSpraakModel model = loaded.model();
         intervention.accept(model);
         ClassLoader cl = BeanCompiler.compile(FactModelGenerator.generate(model));
@@ -315,7 +317,7 @@ class MorePeriodicGateWitnessTest {
         try {
             TmsTranspiler et = TmsTranspiler.build(model, cl, loaded.prioritizedDefaults(),
                     loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings(),
-                    loaded.anchored());
+                    loaded.anchored(), positioned.positions());
             List<String> out = new ArrayList<>();
             for (Coverage d : et.coverage()) out.add(d.verdict() + " " + d.key() + " — " + d.reason());
             return out;

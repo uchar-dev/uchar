@@ -204,12 +204,9 @@ Waarom een tweede ingang en geen eigen record:
 
 ### Voorlopige besluiten
 
-1. Een bouw uit de zijtabellen alleen (`TmsTranspiler.build(RegelSpraakModel, …)`, die zeven testklassen gebruiken) heeft
-   geen plaatsen van knopen. Daar weigert `originOf` een regel van een vouw luid (`IllegalStateException`, "bouw uit het
-   geladen document met zijn plaatsen (IrLoader.loadWithPositions)"), in plaats van hem zonder vouw te noemen; rol,
-   vorm en default van elke andere regel noemt hij wel. Afweging: een null-vouw zou een stil gat in het publieke veld zijn
-   en de invariant van `RuleOrigin` (vouw precies bij een vouwrol) breken; de toolchain bouwt via `DroolsBackend.build`,
-   waar de plaatsen er altijd zijn. De ingang uit de zijtabellen weghalen is buiten deze kaart.
+1. *Vervallen na het Fable-advies (2026-10-24):* de bouw uit de zijtabellen eist nu de plaatsen van de knopen
+   (`NodePositions`, verplicht), dus geen bouw is er meer zonder, en `originOf` noemt de vouw van elke regel van een vouw
+   (zie "De samenstelling (uitbreiding van 16:01)", punt 3 van het advies).
 2. De leesregel krijgt de rol `reading` en niet de rol van de regel die hij leest: de kaart noemt de leesregel als een
    rol van een default, en zo kan een lezer hem herkennen. De DRL die de toolchain toont komt uit een bouw zonder
    lezingen, dus daar komt `reading` niet voor.
@@ -258,7 +255,8 @@ Sinds de fixronde ook: twee vouwen van één vorm en één onderwerp noemen nooi
   `fold-filter-fault`, `fold-filter-deposit` met de vouw van een waarde en van een voorwaarde),
   `anchor/jutterswet-nummerregister` (de vier sleutelregels, `own`, `uniqueness-channel`), `jutterswet-bergersdeling`
   (`allocation-recipient`, `own`);
-- een bouw uit de zijtabellen alleen weigert de vouw luid en noemt de rest.
+- een bouw uit de zijtabellen alleen weigert de vouw luid en noemt de rest (vervallen na het Fable-advies: die bouw eist
+  nu de plaatsen, en de test is weg).
 
 Rood, met mutaties in de werkmap (niet gecommit; elk tegen `ba04a004`, daarna teruggezet):
 
@@ -279,7 +277,7 @@ Rood, met mutaties in de werkmap (niet gecommit; elk tegen `ba04a004`, daarna te
 - M7, `terugval` genoteerd als `own`: 26 verschillen in de corpusgetuige; de test van de geneste uitzondering rood.
 - M8, `originOf` geeft zonder plaatsen een null-vouw: de constructor van `RuleOrigin` weigert die
   (`IllegalArgumentException`), en de test van de bouw uit de zijtabellen, die de `IllegalStateException` met de
-  aanwijzing eist, is rood.
+  aanwijzing eist, is rood. (Sinds het Fable-advies is er geen bouw zonder plaatsen, en de arm die M8 muteerde is weg.)
 
 Zonder mutatie zijn de drie klassen groen (17 tests).
 
@@ -414,7 +412,8 @@ Per regelnaam van `drlRules`, zoals nu: `RuleOrigin o = build.execModelTranspile
   die verschilt. Elke stapel van `generated()` heeft een type; een ontbrekend type is een fout van de analyse.
 - zonder DRL (`drlError`): `stackTypes()` en `generated()` komen uit de analyse (`TmsTranspiler`), niet uit de
   DRL-tekst, en staan op de transpiler van elke tak.
-- de vouw is er in elke bouw via `DroolsBackend.build`, met en zonder lezingen. Een bouw uit de zijtabellen alleen
-  (`TmsTranspiler.build(RegelSpraakModel, …)`) weigert een regel van een vouw; de toolchain gebruikt die ingang niet.
+- de vouw is er in elke bouw, met en zonder lezingen: sinds het Fable-advies eist ook de bouw uit de zijtabellen
+  (`TmsTranspiler.build(RegelSpraakModel, …, NodePositions)`) de plaatsen van de knopen; de toolchain gebruikt die ingang
+  niet.
 - `Playground.drlRules` hoeft niets aan de soorten te veranderen: er is geen nieuwe `Kind`. De constructor van
   `RuleOrigin` heeft twee componenten meer; de toolchain bouwt er geen.

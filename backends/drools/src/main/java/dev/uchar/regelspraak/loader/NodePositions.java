@@ -15,8 +15,8 @@ import java.util.Map;
  * are those of the vendored frontend slice, which carry no position, and the table is keyed on them by identity, since
  * two nodes of equal content are two records. The lowering reads it only for a build with readings
  * ({@code TmsTranspiler}), which numbers the nodes of a form by their order here; beside the lowering,
- * {@code TmsTranspiler#originOf} names the fold of a rule of a fold by the pointer of its node, in every build that has
- * the table.
+ * {@code TmsTranspiler#originOf} names the fold of a rule of a fold by the pointer of its node, in every build, since
+ * every build takes the table.
  */
 public final class NodePositions {
 

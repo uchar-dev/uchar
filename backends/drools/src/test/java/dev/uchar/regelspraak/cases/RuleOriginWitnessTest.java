@@ -31,7 +31,6 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
 import static dev.uchar.regelspraak.cases.TmsDocuments.unit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@code TmsTranspiler.originOf} on goldens that show each shape (card drl-rule-origin, acceptance (b)), and on
@@ -340,28 +339,5 @@ class RuleOriginWitnessTest {
         assertEquals(new RuleOrigin(null, RuleOrigin.Kind.NO_FORM, null, null, null),
                 t.originOf("kenmerkstand Vondst.zwaar: onwaar"));
         assertThrows(IllegalArgumentException.class, () -> t.originOf("geen regel van dit model"));
-    }
-
-    @Test void the_fold_of_a_build_without_the_positions_of_its_nodes_is_refused() throws Exception {
-        // the build from the side tables alone has no place of a node: originOf names the role of a rule of a fold
-        // nowhere, rather than without its fold
-        JsonNode ir = document("jutterswet-premiestaffel");
-        dev.uchar.regelspraak.loader.IrLoader.Loaded l = dev.uchar.regelspraak.loader.IrLoader.loadAll(ir);
-        ClassLoader cl = dev.uchar.regelspraak.engine.BeanCompiler.compile(
-                dev.uchar.regelspraak.schema.FactModelGenerator.generate(l.model()));
-        ClassLoader previous = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(cl);
-        TmsTranspiler t;
-        try {
-            t = TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.roleBindings(), l.lets(),
-                    l.sourcePaths(), l.navigationBindings(), l.anchored());
-        } finally {
-            Thread.currentThread().setContextClassLoader(previous);
-        }
-        assertEquals(new RuleOrigin("defaults A:Jutter.premie", RuleOrigin.Kind.DEFAULT, RuleOrigin.Role.OWN,
-                "/rules/prioritizedDefaults/3/defaults/0", null), t.originOf("defaults A:Jutter.premie: default 0"));
-        IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> t.originOf("defaults A:Jutter.premie: bijdrage aan vouw 0"));
-        assertTrue(e.getMessage().contains("IrLoader.loadWithPositions"), e::getMessage);
     }
 }

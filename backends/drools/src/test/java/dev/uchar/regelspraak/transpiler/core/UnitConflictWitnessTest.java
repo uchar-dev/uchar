@@ -502,14 +502,15 @@ class UnitConflictWitnessTest {
     }
 
     private static void tms(JsonNode ir) {
-        IrLoader.Loaded loaded = IrLoader.loadAll(ir);
+        IrLoader.Positioned positioned = IrLoader.loadWithPositions(ir);
+        IrLoader.Loaded loaded = positioned.loaded();
         ClassLoader cl = BeanCompiler.compile(FactModelGenerator.generate(loaded.model()));
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
             assertNotNull(TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(),
                     loaded.roleBindings(), loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings(),
-                    loaded.anchored()));
+                    loaded.anchored(), positioned.positions()));
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
         }
