@@ -92,7 +92,7 @@ spec, het schema en het frontend veranderen niet.
 ```java
 public record RuleOrigin(String form, Kind kind, Role role, String pointer, String fold) {
     public enum Kind { NO_FORM, FORM, DEFAULT, STACK }
-    public enum Role { OWN, FALLBACK, CONDITION_FAULT, …;  String key(); Set<Kind> kinds(); boolean fold(); }
+    public enum Role { OWN, FALLBACK, CONDITION_FAULT, …;  String key(); Set<Kind> kinds(); boolean inFold(); }
 }
 ```
 
@@ -100,7 +100,7 @@ public record RuleOrigin(String form, Kind kind, Role role, String pointer, Stri
 constructor van de enum expliciet meekrijgt: een latere hernoeming van een constante verandert de sleutel in het publieke
 veld niet. `kinds()` zegt bij welke soorten herkomst de rol voorkomt. De constructor van `RuleOrigin` weigert elke andere
 combinatie: een rol precies niet bij `NO_FORM`, een rol alleen bij een soort uit zijn `kinds()`, een vouw precies bij een
-rol van een vouw (`fold()`), een pointer precies bij `DEFAULT` (zoals voorheen).
+rol van een vouw (`inFold()`), een pointer precies bij `DEFAULT` (zoals voorheen).
 
 | sleutel | soort | wat de regel doet | label in de naam (alleen ter oriëntatie) |
 |---|---|---|---|

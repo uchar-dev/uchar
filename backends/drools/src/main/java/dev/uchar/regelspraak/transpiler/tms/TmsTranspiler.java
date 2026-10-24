@@ -596,7 +596,7 @@ public final class TmsTranspiler {
      *                {@code Default} node, {@code /rules/prioritizedDefaults/3/defaults/1/exceptions/members/0/defaults/0},
      *                or for an ordinary rule a subtype's stack takes in (ch. 7.10) the version of that rule,
      *                {@code /rules/rules/0/versions/0}; null for every other kind
-     * @param fold    for a role of a fold ({@link Role#fold}) the fold, as the JSON pointer of its node in the document,
+     * @param fold    for a role of a fold ({@link Role#inFold}) the fold, as the JSON pointer of its node in the document,
      *                in the form {@code NodePositions} gives it: an {@code Aggregation},
      *                {@code /rules/prioritizedDefaults/3/defaults/0/justification/left}, or a {@code QuantifierFold}; the
      *                one node every form that reads the fold reads, below the form or the default that
@@ -607,7 +607,7 @@ public final class TmsTranspiler {
         public RuleOrigin {
             Objects.requireNonNull(kind, "kind");
             if ((form == null) != (kind == Kind.NO_FORM) || (role == null) != (kind == Kind.NO_FORM)
-                    || (pointer == null) == (kind == Kind.DEFAULT) || (fold != null) != (role != null && role.fold())
+                    || (pointer == null) == (kind == Kind.DEFAULT) || (fold != null) != (role != null && role.inFold())
                     || role != null && !role.kinds().contains(kind))
                 throw new IllegalArgumentException("de herkomst " + kind + " met vorm " + form + ", rol " + role
                         + ", pointer " + pointer + " en vouw " + fold);
@@ -704,7 +704,7 @@ public final class TmsTranspiler {
             public Set<Kind> kinds() { return kinds; }
 
             /** Whether a rule of this role belongs to a fold, which {@link RuleOrigin#fold} then names. */
-            public boolean fold() {
+            public boolean inFold() {
                 return this == FOLD_CONTRIBUTION || this == FOLD_FILTER_FAULT || this == FOLD_MEMBER_FAULT
                         || this == FOLD_FILTER_DEPOSIT;
             }
@@ -739,7 +739,7 @@ public final class TmsTranspiler {
             return new RuleOrigin(read.form(), read.kind(), roleOf(ruleName), read.pointer(), null);
         }
         RuleOrigin.Role role = roleOf(ruleName);
-        String fold = role.fold() ? foldOf(ruleName) : null;
+        String fold = role.inFold() ? foldOf(ruleName) : null;
         Default d = defaultOfRule.get(ruleName);
         if (d != null) return new RuleOrigin(form, RuleOrigin.Kind.DEFAULT, role, pointerOf(d), fold);
         if (stackOwnRules.contains(ruleName)) return new RuleOrigin(form, RuleOrigin.Kind.STACK, role, null, fold);
@@ -1535,9 +1535,9 @@ public final class TmsTranspiler {
             // a name two forms build has no one role or fold; the model holds both rules, which the backend refuses
             if (sharedNames.containsKey(r.name())) continue;
             RuleOrigin.Role role = roleOf(r.name());
-            if (role.fold() != foldOfRule.containsKey(r.name()))
+            if (role.inFold() != foldOfRule.containsKey(r.name()))
                 throw new IllegalStateException("de regel '" + r.name() + "' heeft de rol " + role + ", en de verlaging"
-                        + (role.fold() ? " noteerde zijn vouw niet" : " noteerde een vouw bij hem"));
+                        + (role.inFold() ? " noteerde zijn vouw niet" : " noteerde een vouw bij hem"));
         }
         List<RulePlan> plans = new ArrayList<>(rules);
         plans.addAll(states);
