@@ -52,8 +52,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       the record has no place for it, since the rendering names a function after its rule and writes its calls only
  *       in that rule's piece. Measured 2026-10-24: none;</li>
  *   <li>every function of a piece is reached from its rule, directly or through other functions of the piece, but the
- *       binder of a {@code Let} whose body does not read its variable ({@code _binder} in the name, a fourth oracle):
- *       measured 2026-10-24, one, in {@code jutterswet-bergingstoeslag}, in both builds.</li>
+ *       ones in {@link #EXPECTED_UNREACHED}, each by golden, rule and function, per build: the list holds with equality,
+ *       so a function that stops being reached, or one that stops being unreached, fails by name. The functions in it are
+ *       binders of a {@code Let} whose body does not read its variable.</li>
  * </ul>
  *
  * <p>The places are UTF-16 code units, as {@code String.substring} takes them: {@value #EXPECTED_MIN_NON_ASCII_TEXTS}
@@ -74,6 +75,22 @@ class DrlPiecesCorpusWitnessTest {
     static final int EXPECTED_MIN_GOLDENS = 282;
     /** The texts, without readings, that carry a character outside ASCII, measured 2026-10-24. */
     static final int EXPECTED_MIN_NON_ASCII_TEXTS = 49;
+    /**
+     * The functions that their rule does not reach, directly or through other functions of its piece, measured
+     * 2026-10-24 per build, without readings and with them, the same one in both: the binder of the {@code Let} "de
+     * bergingsgrond is zijn bergingsgrondslag" in {@code defaults A:Jutter.bergingsforfait: default 0} of
+     * {@code jutterswet-bergingstoeslag}, whose body is a constant ({@code return new java.math.BigDecimal("42")}) and
+     * does not read the variable, so nothing calls the binder function. The list is the whole allowance: both builds
+     * are held to it with equality, so a function that stops being reached, or another that starts not to be, fails
+     * by golden, rule and function name, where a pattern on the name would let any binder through.
+     */
+    static final List<Unreached> EXPECTED_UNREACHED = List.of(
+            new Unreached("jutterswet-bergingstoeslag", "defaults A:Jutter.bergingsforfait: default 0", "r2_binder4"));
+
+    /** A function that its rule does not reach: the golden (the path under the golden zone), the name of the rule and
+     *  the name of the function. */
+    record Unreached(String golden, String rule, String function) {}
+
     /** Per count, without readings and with them ({@code met lezingen}), measured 2026-10-24. */
     static final Map<String, Integer> EXPECTED_MIN = Map.ofEntries(
             Map.entry("stukken", 2124), Map.entry("stukken zonder functies", 763), Map.entry("functies", 2499),
@@ -94,7 +111,8 @@ class DrlPiecesCorpusWitnessTest {
         try (Stream<Path> s = Files.walk(GOLDEN)) {
             goldens = s.filter(p -> p.getFileName().toString().equals("ir.json")).map(Path::getParent).sorted().toList();
         }
-        List<String> differences = new ArrayList<>(), unreached = new ArrayList<>();
+        List<String> differences = new ArrayList<>();
+        List<Unreached> unreached = new ArrayList<>(), unreachedWithReadings = new ArrayList<>();
         Map<String, Integer> counts = new TreeMap<>();
         int carried = 0, nonAscii = 0;
         for (Path g : goldens) {
@@ -109,16 +127,15 @@ class DrlPiecesCorpusWitnessTest {
             String name = GOLDEN.relativize(g).toString();
             if (build.drl().chars().anyMatch(c -> c > 127)) nonAscii++;
             check(name, build, "", differences, unreached, counts);
-            check(name + " met lezingen", DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT, true), " met lezingen",
-                    differences, unreached, counts);
+            check(name, DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT, true), " met lezingen", differences,
+                    unreachedWithReadings, counts);
         }
         assertEquals(List.of(), differences, "stukken die de DRL-tekst niet precies dekken");
         int n = carried, a = nonAscii;
         System.out.println("DrlPiecesCorpusWitnessTest: " + n + " goldens, " + a + " teksten met een teken buiten ASCII, "
-                + counts + ", niet bereikt: " + unreached);
-        for (String u : unreached)
-            assertTrue(u.matches(".*_binder[0-9]+$"), () -> "een functie die haar regel niet bereikt en geen binder is: "
-                    + u);
+                + counts + ", niet bereikt: " + unreached + ", met lezingen " + unreachedWithReadings);
+        assertSameUnreached(unreached, "zonder lezingen");
+        assertSameUnreached(unreachedWithReadings, "met lezingen");
         assertTrue(n >= EXPECTED_MIN_GOLDENS, () -> "gedragen goldens " + n + ", onder de vloer " + EXPECTED_MIN_GOLDENS);
         assertTrue(a >= EXPECTED_MIN_NON_ASCII_TEXTS, () -> "teksten met een teken buiten ASCII " + a
                 + ", onder de vloer " + EXPECTED_MIN_NON_ASCII_TEXTS);
@@ -128,9 +145,26 @@ class DrlPiecesCorpusWitnessTest {
         }
     }
 
-    /** The checks of the text of {@code build} and its pieces; {@code suffix} names the build in the counts. */
-    private static void check(String which, DroolsBackend.Build build, String suffix, List<String> differences,
-                              List<String> unreached, Map<String, Integer> counts) {
+    /** The unreached functions of one build are those of {@link #EXPECTED_UNREACHED}, no more and no fewer. */
+    private static void assertSameUnreached(List<Unreached> actual, String build) {
+        List<Unreached> outside = new ArrayList<>(actual), stale = new ArrayList<>(EXPECTED_UNREACHED);
+        outside.removeAll(EXPECTED_UNREACHED);
+        stale.removeAll(actual);
+        assertTrue(outside.isEmpty() && stale.isEmpty() && actual.equals(EXPECTED_UNREACHED),
+                () -> "functies die hun regel niet bereiken, " + build + ": " + actual.size() + ", in de lijst "
+                        + EXPECTED_UNREACHED.size() + "; niet in de lijst: " + outside.size() + " " + first(outside)
+                        + "; in de lijst en wel bereikt: " + stale.size() + " " + first(stale));
+    }
+
+    private static String first(List<Unreached> list) {
+        return list.size() > 10 ? list.subList(0, 10) + " en " + (list.size() - 10) + " meer" : list.toString();
+    }
+
+    /** The checks of the text of {@code build} and its pieces; {@code suffix} names the build in the counts and the
+     *  differences. */
+    private static void check(String golden, DroolsBackend.Build build, String suffix, List<String> differences,
+                              List<Unreached> unreached, Map<String, Integer> counts) {
+        String which = golden + suffix;
         String text = build.drl();
         List<DrlPiece> pieces = build.execModelTranspiler().drlPieces();
         int before = differences.size();
@@ -217,8 +251,8 @@ class DrlPiecesCorpusWitnessTest {
             while (!todo.isEmpty())
                 for (String c : calls(bodies.getOrDefault(todo.pop(), ""), declared))
                     if (reached.add(c)) todo.push(c);
-            for (String f : bodies.keySet())
-                if (!reached.contains(f)) unreached.add(where + ": " + f);
+            for (DrlPiece.DrlFunction f : piece.functions())
+                if (!reached.contains(f.name())) unreached.add(new Unreached(golden, piece.rule(), f.name()));
         }
         if (!inPieces.equals(declared))
             differences.add(which + ": de tekst declareert " + declared.size() + " functies, de stukken noemen er "
