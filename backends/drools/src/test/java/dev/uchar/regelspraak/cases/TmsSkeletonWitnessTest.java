@@ -147,7 +147,8 @@ class TmsSkeletonWitnessTest {
 
     /** The loader's side tables are the oracle, as for the other two transpilers ({@code DroolsBackendWitnessTest}): no
      *  public constructor, one public static member that takes a model, which takes every table, and refuses each one
-     *  passed as null in a sentence naming it. */
+     *  passed as null in a sentence naming it. Since card drl-rule-part it takes the positions of the document's nodes
+     *  beside them, last, and refuses them as null too. */
     @Test void the_only_entry_takes_every_side_table() throws Exception {
         assertEquals(0, TmsTranspiler.class.getConstructors().length);
         List<Method> entries = Arrays.stream(TmsTranspiler.class.getMethods())
@@ -161,12 +162,13 @@ class TmsSkeletonWitnessTest {
             assertTrue(parameters.remove(c.getGenericType()), "build does not take " + c.getGenericType().getTypeName());
 
         Path ir = TmsDocuments.document(TmsDocuments.model(CHARACTERISTICS), List.of());
-        IrLoader.Loaded l = IrLoader.loadAll(TmsDocuments.JSON.readTree(Files.readString(ir)));
+        IrLoader.Positioned p = IrLoader.loadWithPositions(TmsDocuments.JSON.readTree(Files.readString(ir)));
+        IrLoader.Loaded l = p.loaded();
         Object[] goed = {l.model(), null, l.prioritizedDefaults(), l.roleBindings(), l.lets(), l.sourcePaths(),
-                l.navigationBindings(), l.anchored()};
+                l.navigationBindings(), l.anchored(), p.positions()};
         assertSame(TmsTranspiler.class, build.invoke(null, goed).getClass());
         int tested = 0;
-        for (int i = 2; i < goed.length; i++) {
+        for (int i = 2; i < goed.length - 1; i++) {
             Object[] arguments = goed.clone();
             arguments[i] = null;
             InvocationTargetException fault = assertThrows(InvocationTargetException.class, () -> build.invoke(null, arguments));
@@ -180,6 +182,11 @@ class TmsSkeletonWitnessTest {
         }
         // six since the card subselection-reads-subject, whose form anchor rides beside the model as a side table
         assertEquals(6, tested);
+        Object[] withoutPositions = goed.clone();
+        withoutPositions[goed.length - 1] = null;
+        InvocationTargetException fault = assertThrows(InvocationTargetException.class,
+                () -> build.invoke(null, withoutPositions));
+        assertEquals("positions", assertInstanceOf(NullPointerException.class, fault.getCause()).getMessage());
     }
 
     private static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
