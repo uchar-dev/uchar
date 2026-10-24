@@ -65,3 +65,250 @@ Na de toolchain-kaart en een pin-bump zegt de kaart "Verlaagde DRL" bij elke reg
 een jurist wat hij doet (de toets van de variant, een verzamelstap voor haar voorwaarde, een foutregel, …), en noemen de
 kaart, de trace en de dekking bij een stapel het type waarvoor zij loopt; de codenaam van de stapel gaat naar de
 tooltip.
+
+## Result (2026-10-24)
+
+Tak `card/drl-rule-part`, vanaf `1f3d86fb` (main `a97f7579` plus de kaart naar `doing/`). Geen beschermd pad geraakt;
+geen delta voor `spec/CONSTRUCTS.md` of `spec/PLAN.md` (geen spec-wijziging, een ingang van de backend). De draad, de
+spec, het schema en het frontend veranderen niet.
+
+- `ba04a004` de rol en de vouw in `RuleOrigin`, `stackTypes`, de bouw zonder lezingen met de plaatsen van de knopen, en
+  de getuigen.
+- dit Result, in het commit na `ba04a004`.
+
+### De rol
+
+```java
+public record RuleOrigin(String form, Kind kind, Role role, String pointer, String fold) {
+    public enum Kind { NO_FORM, FORM, DEFAULT, STACK }
+    public enum Role { OWN, FALLBACK, CONDITION_FAULT, …;  String key(); Set<Kind> kinds(); boolean fold(); }
+}
+```
+
+`Role` heeft Engelse constanten en per constante een vaste stringsleutel (`key()`, Engels, met koppeltekens), die de
+constructor van de enum expliciet meekrijgt: een latere hernoeming van een constante verandert de sleutel in het publieke
+veld niet. `kinds()` zegt bij welke soorten herkomst de rol voorkomt. De constructor van `RuleOrigin` weigert elke andere
+combinatie: een rol precies niet bij `NO_FORM`, een rol alleen bij een soort uit zijn `kinds()`, een vouw precies bij een
+rol van een vouw (`fold()`), een pointer precies bij `DEFAULT` (zoals voorheen).
+
+| sleutel | soort | wat de regel doet | label in de naam (alleen ter oriëntatie) |
+|---|---|---|---|
+| `own` | FORM, DEFAULT | de regel van de vorm zelf: van een regel de regel die het doel schrijft of het kenmerk toekent, van een consistentie de regel die de inconsistentie deponeert, van een uniciteit de regel die de exemplaren met een botsende sleutel aanwijst, van een verdeling de regel die verdeelt, van een creatie de regel die maakt; bij een default de regel van zijn eigen beslissing, ook een gewone regel die de stapel van een subtype opneemt (ch. 7.10) | de naam van de vorm; `default <label>` |
+| `fallback` | DEFAULT | de eigen beslissing van een default met uitzonderingsgroepen, waar geen van die groepen beslist (ch. 7.9) | `terugval <label>` |
+| `condition-fault` | FORM, DEFAULT | voegt de fout in van een voorwaarde, bewering of rechtvaardiging die kan falen | `: fout in de voorwaarde` |
+| `condition-deposit` | FORM | deponeert de §9.5-inconsistentie van een voorwaarde (deling door leeg, wortel van een negatief getal, ch. 1.2); een default bevat die niet | `: deponering in de voorwaarde` |
+| `no-evaluation-date` | FORM, STACK | de fout van een sessie zonder rekendatum, naast een vorm met een begrensde geldigheid, of bij een stapel met een gedateerde groep (ch. 8.1) | `: geen rekendatum` |
+| `reading` | FORM, DEFAULT | de leesregel van een bouw met lezingen (ch. 5.12), naast de regel die hij leest | `: lezing` |
+| `reconcile-pass-on` | DEFAULT, STACK | verzoening (ch. 7.9 onder een default, ch. 7.2 aan de wortel): geeft het eerste conflict van de leden door | `doorgeven <label>` |
+| `reconcile-difference` | DEFAULT, STACK | verzoening: maakt een conflict waar het eerste beslissende lid en een ander verschillend beslissen | `verschil <label>` |
+| `reconcile-agreement` | DEFAULT, STACK | verzoening: neemt de beslissing van het eerste beslissende lid waar geen lid conflicteert en geen ander verschilt | `eens <label>` |
+| `fold-contribution` | FORM, DEFAULT | voegt de bijdrage in van een lid van het bereik dat door het filter komt; één per bereik, en per selectie van een unie | `bijdrage aan vouw <n>` |
+| `fold-filter-fault` | FORM, DEFAULT | noteert het lid waarvoor het filter faalt (ch. 5.11) | `filterfout in vouw <n>` |
+| `fold-member-fault` | FORM, DEFAULT | noteert bij een per-element-vouw over een tijdlijn het lid dat de casus als emmerscalair geeft (ch. 3.6, 8.4) | `lidfout in vouw <n>` |
+| `fold-filter-deposit` | FORM, DEFAULT | noteert het lid waarvoor het filter deponeert (ch. 5.10, 5.11) | `filterdeponering in vouw <n>` |
+| `uniqueness-key` | FORM | voegt de sleutel in van een exemplaar van één bron (ch. 5.9) | `: sleutel van <type> <b>` |
+| `uniqueness-key-form-fault` | FORM | de fout van een exemplaar waarvan de casus een sleutel op een tijdlijn als emmerscalair geeft (ch. 5.9, 8.4) | `: sleutelvorm van <type> <b>` |
+| `uniqueness-channel` | FORM | zet de schending van een exemplaar op het §9.5-kanaal (ch. 5.6) | `: kanaal` |
+| `allocation-recipient` | FORM | voegt een ontvanger van een bron in, met zijn gewicht, volgordesleutel en plafond (ch. 4) | `: ontvanger` |
+
+Waarom zo ingedeeld:
+
+- Eén rol per soort regel die de verlaging bouwt, niet per vorm of per tak. Waar een vorm en een default dezelfde soort
+  regel hebben, is de sleutel gelijk: de foutregel van een voorwaarde en van een rechtvaardiging, de vier regels van een
+  vouw, de leesregel, en `own` voor de regel van een vorm en de eigen beslissing van een default. De lezer combineert de
+  rol met `kind` en `pointer`: de toets van een variant is `DEFAULT` met `own`, een verzamelstap voor haar voorwaarde
+  `DEFAULT` met `fold-contribution`, de verzoening van de groepen aan de wortel `STACK` met een `reconcile-`-sleutel.
+- `fallback` is een eigen rol en geen `own`: het is de eigen beslissing van de default, maar alleen waar geen
+  uitzonderingsgroep beslist, en een jurist leest die regel als "anders".
+- Families krijgen een voorvoegsel (`reconcile-`, `fold-`, `uniqueness-`, `allocation-`): de sleutel zegt bij welk
+  construct de regel hoort zonder opzoektabel. De sleutels volgen de Nederlandse labels van de namen niet (`terugval`,
+  `eens`), zodat een herformulering van een naam de sleutel niet raakt.
+- Niet onderscheiden: welke soort vorm een `own`-regel heeft (dat staat in het document onder `form`), en het nummer van
+  een bereik of selectie van een vouw (de eigen nummering van de verlaging).
+- Een regel van geen vorm (`NO_FORM`: standen, koppelingen uit de invoer, de vergelijking van twee schrijvers) heeft geen
+  rol; de kaart staat dat toe, en de werkbank toont die regels bij geen variant.
+
+Hoe: `as(Role, RulePlan)` noteert de rol in `roleOfRule` op elke plaats waar de verlaging een regel van een vorm bouwt
+(de eigen regels van regel, consistentie, uniciteit, verdeling en beide creaties; `validityFault`, `conditionFaultRule`,
+`depositRule`; `keyRule`, `keyFormRule`, het kanaal, de ontvanger; `ownRule`, dat nu de rol `own` of `fallback`
+meekrijgt; de drie regels van `reconciliation`; `stackValidityFault`; `contributionRules`, `quantifierContributions`,
+`filterFaultRule`, `memberFaultRule`, `filterDepositRule`; `readingRule`). Een naam die met twee rollen gebouwd wordt,
+faalt. Aan het eind van `run()` eist de bouw dat elke regel van een vorm, elke leesregel inbegrepen, een rol heeft, en dat
+een regel een vouw heeft precies als zijn rol een vouwrol is; een ontbrekende notitie faalt dus bij elke bouw van elk
+document luid, met de naam van de regel (`IllegalStateException`), en niet pas als iemand `originOf` vraagt. `originOf`
+leest de rol uit die notitie, nooit uit de naam.
+
+Gedragsverandering ten opzichte van `drl-rule-origin`, met de getuige bijgewerkt: een leesregel had daar de herkomst van
+de regel die hij leest, gelijk in alles; nu heeft hij diens vorm, soort en pointer met de rol `reading`. De corpusgetuige
+eiste de gelijkheid en eist nu dit; de tabellen van `RuleOriginWitnessTest` noemen de rol bij elke regel.
+
+### De vouwpointer
+
+`RuleOrigin.fold()`: bij de vier `fold-`-rollen de JSON Pointer van de vouwknoop in het document, in de vorm die
+`NodePositions` geeft (dezelfde vorm als de pointers van `decisionsOf` en van de lezingen): een `Aggregation` (ook de
+telling over een unie van instantieverzamelingen, de knoop met het `InstanceSetUnion`-argument) of een
+`QuantifierFold`. Voorbeelden: `/rules/prioritizedDefaults/3/defaults/0/justification/left` (de som in de
+rechtvaardiging van "premie bij een zware vangst", `jutterswet-premiestaffel`), `/rules/rules/1/versions/0/condition`
+(een kwantorvouw, `jutterswet-dringende-melding`). De tekst van de vouw is `source.snippet` van die knoop.
+
+Zonder nieuwe nummering: `foldFor` bouwt de regels van een vouw bij haar knoop (de sleutel van `folds` is de knoop zelf,
+per onderwerp) en noteert nu bij elke regel van de vouw die knoop (`foldOfRule`). `originOf` zoekt de pointer van de knoop
+op in de plaatsen van de lader. Er wordt niets geteld.
+
+De posities in een bouw zonder lezingen, zonder dat die bouw verandert: de lader bepaalt de plaatsen bij elke lading
+(`positions.node` in `expression` en `condition`, `positions.version` bij de versies); `loadAll` gaf ze niet terug,
+`loadWithPositions` wel, en verder is het dezelfde lading. `DroolsBackend.build` laadt nu altijd met plaatsen, en geeft ze
+aan een nieuwe ingang `TmsTranspiler.build(IrLoader.Positioned, ClassLoader)` (zonder lezingen) of aan `withReadings`. In
+de transpiler staan ze in een eigen veld `origins`, dat alleen `originOf` leest; het veld `positions`, waarop de verlaging
+de lezingen aan- en uitzet, blijft null zonder lezingen. De probe hieronder toont dat het plan gelijk blijft.
+
+Een vouw die meer vormen lezen: de lader leest elke knoop één keer (`NodePositions` weigert een tweede), en elke lezer
+van een vouw leest dat ene record. Een gewone regel die de stapel van een subtype opneemt (ch. 7.10), leest de vouw in de
+versie van die regel; twee stapels die een default van een supertype delen, lezen de vouw in die default. De pointer
+wijst dus de ene knoop aan, en die staat onder de vorm die `form` noemt (de vorm die de vouw eerst inschreef, zie
+`formOf`) of, bij `DEFAULT`, onder de default die `pointer` noemt. De corpusgetuige eist dat voor elke regel van een vouw
+en meet geen uitzondering (291 regels zonder lezingen).
+
+### Het stapeltype
+
+`TmsTranspiler.stackTypes()`: `Map<String, Designatable>`, per stapelnaam van `generated()` het type waarvoor de stapel
+loopt, `Designatable.objectType(st.owner().name)`, in de volgorde van de dekking. Elke stapel van `generated` heeft er een,
+ook een geweigerde, want beide worden op dezelfde plaats gevuld, vóór `meet`. Het type is het declarerende type van het lid
+dat `generated` geeft, of een subtype ervan. Voorbeeld `jutterswet-meldtermijn-strandjutter`:
+`defaults A:Jutter.meldtermijn` en `defaults A:Strandjutter.meldtermijn` hebben allebei `ATTRIBUUT Jutter.meldtermijn`,
+en als type `OBJECTTYPE Jutter` en `OBJECTTYPE Strandjutter`.
+
+Waarom een tweede ingang en geen eigen record:
+
+- `GeneratedFrom` is het record van het frontendmodel dat de draad als `origin` draagt (IR-SPEC ch. 2.13); het krijgt
+  geen veld.
+- Een eigen record (stapel, lid, type) zou het lid van `generated` herhalen. De toolchain leest `generated` al per naam
+  van de dekking (`Playground.generated`); een tweede tabel met dezelfde sleutels voegt alleen het type toe.
+- Een `Designatable` en geen string: het type is een element van het model, zoals `source` van `GeneratedFrom`, en de
+  toolchain kan het noemen in het vocabulaire van het antwoord (`Naming.name`, `Naming.objectType`) en het schrijven in
+  de vorm `{kind, owner, name}` die `generatedFrom` al heeft.
+- Niet in `DefaultsGroup`: die noemt alleen de gedragen stapels, `stackTypes` volgt `generated`.
+
+### Voorlopige besluiten
+
+1. Een bouw uit de zijtabellen alleen (`TmsTranspiler.build(RegelSpraakModel, …)`, die zeven testklassen gebruiken) heeft
+   geen plaatsen van knopen. Daar weigert `originOf` een regel van een vouw luid (`IllegalStateException`, "bouw uit het
+   geladen document met zijn plaatsen (IrLoader.loadWithPositions)"), in plaats van hem zonder vouw te noemen; rol,
+   vorm en default van elke andere regel noemt hij wel. Afweging: een null-vouw zou een stil gat in het publieke veld zijn
+   en de invariant van `RuleOrigin` (vouw precies bij een vouwrol) breken; de toolchain bouwt via `DroolsBackend.build`,
+   waar de plaatsen er altijd zijn. De ingang uit de zijtabellen weghalen is buiten deze kaart.
+2. De leesregel krijgt de rol `reading` en niet de rol van de regel die hij leest: de kaart noemt de leesregel als een
+   rol van een default, en zo kan een lezer hem herkennen. De DRL die de toolchain toont komt uit een bouw zonder
+   lezingen, dus daar komt `reading` niet voor.
+3. De sleutels met een voorvoegsel per familie en een expliciete stringsleutel naast de constante (zie boven).
+
+### Getuigen
+
+(a) `RuleOriginCorpusWitnessTest`, uitgebreid. Per regel van elke gedragen golden, op de tak `DRL_TEXT`, zonder en met
+lezingen: elke regel met een vorm heeft een rol, en het is de rol die het label in de naam noemt (`roleByName`: de getuige
+leest de naam als eigen orakel; de verlaging leest hem nooit); een leesregel heeft vorm, soort en pointer van de regel die
+hij leest en de rol `reading`; elke vouw lost op in `ir.json` naar een `Aggregation` of `QuantifierFold`, onder de default
+(`DEFAULT`) of onder de declaratie van de vorm (`/rules/<sectie>/<i>/` met de naam van `form`). Per stapel van
+`generated`: een type in `stackTypes`, een objecttype van het model dat het lid declareert of erft, en de naam van de
+stapel begint met `defaults A:<type>.` of `defaults K:<type>.` (een tweede orakel uit de naam); `stackTypes` noemt geen
+andere stapel. Gemeten 2026-10-24, de nieuwe vloeren (`EXPECTED_MIN_ROLES` per soort en sleutel): 282 goldens; zonder
+lezingen 2124 regels: FORM `own` 796, `fold-contribution` 251, `condition-fault` 48, `uniqueness-key` 19,
+`fold-filter-fault` 17, `allocation-recipient` 17, `condition-deposit` 13, `uniqueness-channel` 13, `fold-filter-deposit`
+8, `no-evaluation-date` 7, `uniqueness-key-form-fault` 6, `fold-member-fault` 3; DEFAULT `own` 163, `reconcile-agreement`
+16, `fallback` 13, `fold-contribution` 12, `reconcile-difference` 8, `reconcile-pass-on` 1; STACK `reconcile-agreement`
+15, `reconcile-pass-on` 6, `reconcile-difference` 4, `no-evaluation-date` 1; NO_FORM 687. Met lezingen 922 leesregels
+(FORM 746, DEFAULT 176). 291 regels van een vouw (`EXPECTED_MIN_FOLD_RULES`); 69 stapels met een type, 15 daarvan op
+een type dat het lid erft, in elf goldens (`EXPECTED_MIN_STACK_TYPES`, `EXPECTED_MIN_SUBTYPE_STACKS`). Geen golden heeft
+de foutregel van een rechtvaardiging of een vouw van een default waarvan filter of lid kan falen; die vormen staan in (b).
+Ongeveer 19 s.
+
+(b) `RuleOriginWitnessTest`, elf tests (vier nieuw), per stapel of vorm de hele tabel `<naam> -> <soort> <sleutel>
+<pointer> vouw <vouw>` in de volgorde van het model, en `GeneratedNamesWitnessTest`, vijf tests (één nieuw):
+
+- uitzonderingsgroep: `anchor/jutterswet-nestdiepte`: de bladen `own`, onder elke default met groepen
+  `reconcile-difference`, `reconcile-agreement`, `fallback` (en `reconcile-pass-on` onder `default 0`), aan de wortel
+  `STACK` `reconcile-pass-on` en `reconcile-agreement`;
+- default met een vouw in zijn voorwaarde: `jutterswet-premiestaffel` (de som, de telling, minimum en maximum, elk met de
+  pointer van haar `Aggregation` onder de rechtvaardiging, en de tekst van de vouw op die pointer),
+  `jutterswet-dringende-melding` (een kwantorvouw van een vorm en een van een default); en een document in de test
+  (`the_fault_rule_of_a_filter_in_a_justification_names_the_fold_and_its_default`): een telling van de vondsten met een
+  datumstap in het filter, waarvan `bijdrage aan vouw 0` en `filterfout in vouw 0` allebei
+  `/rules/prioritizedDefaults/0/defaults/0/justification/left` noemen, met de default `/0/defaults/0`, en de default een
+  `condition-fault`; de vouw uit `drl-rule-origin` (`the_fault_rule_of_a_justification_…`) noemt nu ook haar knoop;
+- gedateerde groep: `jutterswet-uitsluiting-gedateerd`, `geen rekendatum` → `STACK` `no-evaluation-date`;
+- stapel over een subtype: `jutterswet-meldtermijn-strandjutter`: de default van de groep op Jutter is `own` in beide
+  stapels met dezelfde pointer `/rules/prioritizedDefaults/0/defaults/0`, de stapel van Strandjutter verzoent zijn twee
+  groepen aan de wortel; `stackTypes` geeft `Jutter` en `Strandjutter` bij hetzelfde lid `Jutter.meldtermijn`, en in
+  `jutterswet-opgave-subtype` vijf stapels op Vondst, Strandvondst en Barnsteenvondst;
+- gewone vormen: `fold-filter-divides-by-zero` (`own`, `condition-fault`, `condition-deposit`, `fold-contribution`,
+  `fold-filter-fault`, `fold-filter-deposit` met de vouw van een waarde en van een voorwaarde),
+  `anchor/jutterswet-nummerregister` (de vier sleutelregels, `own`, `uniqueness-channel`), `jutterswet-bergersdeling`
+  (`allocation-recipient`, `own`);
+- een bouw uit de zijtabellen alleen weigert de vouw luid en noemt de rest.
+
+Rood, met mutaties in de werkmap (niet gecommit; elk tegen `ba04a004`, daarna teruggezet):
+
+- M1, de filterfoutregel genoteerd als `fold-filter-deposit`: de corpusgetuige meldt 34 verschillen ("de rol is
+  FOLD_FILTER_DEPOSIT, het label in de naam zegt FOLD_FILTER_FAULT"); rood ook de test van de gewone vormen en die van het
+  filter in een rechtvaardiging.
+- M2, `originOf` geeft de pointer van de ouder van de vouwknoop: de corpusgetuige meldt 582 vouwen die geen vouw noemen;
+  vijf gerichte tests rood (vlakke groep, bijdragen, beide documenten in de test, gewone vormen).
+- M3, `stackTypes` met het declarerende type in plaats van de eigenaar: de corpusgetuige meldt de 15 stapels op een
+  subtype (de naam begint niet met het type); `two_stacks_of_one_member_each_name_the_type_they_run_for` rood.
+- M4, de rol van het uniciteitskanaal niet genoteerd: de bouw faalt in `run()` met "de regel 'eenmalig kaveletiket:
+  kanaal' hoort bij een vorm, en de verlaging noteerde niet welke rol hij in haar verlaging heeft"; de corpusgetuige en
+  de test van de gewone vormen eindigen met die fout.
+- M5, de leesregel genoteerd als `own`: de corpusgetuige meldt 922 leesregels zonder de herkomst van de regel die zij
+  lezen en 922 keer een rol tegen het label; `a_subtype_stack_names_the_ordinary_rule_it_took_in` rood.
+- M6, `eens` genoteerd als `reconcile-difference`: 62 verschillen in de corpusgetuige; de tests van de geneste
+  uitzondering en van de twee stapels rood.
+- M7, `terugval` genoteerd als `own`: 26 verschillen in de corpusgetuige; de test van de geneste uitzondering rood.
+- M8, `originOf` geeft zonder plaatsen een null-vouw: de constructor van `RuleOrigin` weigert die
+  (`IllegalArgumentException`), en de test van de bouw uit de zijtabellen, die de `IllegalStateException` met de
+  aanwijzing eist, is rood.
+
+Zonder mutatie zijn de drie klassen groen (17 tests).
+
+### Probe van de DRL-tekst
+
+Een testklasse in de werkmap (niet gecommit, daarna verwijderd) schreef de DRL-tekst van alle 329 goldens, zonder en met
+lezingen, naar bestanden: 658 bestanden, waarvan 564 teksten van de 282 gedragen goldens en 94 keer de weigering. Eerst
+op `1f3d86fb` (code gelijk aan `a97f7579`), daarna op `ba04a004`: `diff -r` is leeg. Het exec-model rendert hetzelfde
+plan; `BranchDumpsCorpusWitnessTest` is ongewijzigd en groen in de suite.
+
+### Suite en gate 12
+
+Op `ba04a004`:
+
+- de JUnit-suite van `backends/drools` (`mvn -B -o test`): 1674 tests, 0 fouten, 0 overgeslagen, waarvan 2 van de
+  probe in de werkmap; zonder de probe 1672;
+- gate 12 (`scripts/check-drools.sh`): PASS; 279 goldens gespeeld op de exec-model-tak en op de DRL-teksttak, elke
+  statusregel gelijk; kanaalvloer 50 niet-gespeelde goldens bij naam; de suite van de gate 1672 tests (vloer 1573),
+  nul overgeslagen; `check-drools-codes` PASS (294 codes).
+
+De volledige gate-set draait de hoofdsessie vóór de landing (acceptatie (c)).
+
+### Wat de toolchain ermee doet (kaart `drl-rule-part-fields`)
+
+Per regelnaam van `drlRules`, zoals nu: `RuleOrigin o = build.execModelTranspiler().originOf(name)`. Daarbij:
+
+- de rol: `o.role().key()` in een veld van de vermelding, bij `FORM`, `DEFAULT` en `STACK`; bij `NO_FORM` is
+  `o.role()` null. De sleutels staan in de tabel hierboven; `Role.values()` geeft ze allemaal, met `kinds()`. Een
+  `switch` over `o.role()` met een `default`-tak die faalt, vangt een rol die een latere pin toevoegt, zoals de
+  `switch` over `o.kind()` in `Playground.drlRules` dat nu doet.
+- de vouw: `o.fold()`, alleen bij de vier `fold-`-sleutels niet null, een JSON Pointer in hetzelfde document als
+  `o.pointer()` (het document dat de emitter van het model schrijft). Bij `DEFAULT` begint hij met `o.pointer()`, bij
+  `FORM` met `/rules/<sectie>/<i>/` van de vorm. De tekst van de vouw is `ir.at(o.fold()).path("source").path("snippet")`;
+  `ir.at(o.fold()).path("node")` is `Aggregation` of `QuantifierFold`. Voor acceptatie (a) van de toolchain-kaart
+  verwacht ik bij de bijdrageregel van de variant `/defaults/2` een vouw onder de pointer van die default, want zo is het
+  op elke golden; op v2 heb ik het niet gemeten, die regelset staat buiten uchar.
+- het stapeltype: in `Playground.generated`, bij een vermelding met `g.form() == OriginForm.DEFAULTS_STACK`,
+  `Designatable type = build.execModelTranspiler().stackTypes().get(d.name())`; de naam in het vocabulaire van het
+  antwoord is `naming.name(type)` (of `naming.objectType(type.name())`), met `type.name()` als canonieke naam ernaast waar
+  die verschilt. Elke stapel van `generated()` heeft een type; een ontbrekend type is een fout van de analyse.
+- zonder DRL (`drlError`): `stackTypes()` en `generated()` komen uit de analyse (`TmsTranspiler`), niet uit de
+  DRL-tekst, en staan op de transpiler van elke tak.
+- de vouw is er in elke bouw via `DroolsBackend.build`, met en zonder lezingen. Een bouw uit de zijtabellen alleen
+  (`TmsTranspiler.build(RegelSpraakModel, …)`) weigert een regel van een vouw; de toolchain gebruikt die ingang niet.
+- `Playground.drlRules` hoeft niets aan de soorten te veranderen: er is geen nieuwe `Kind`. De constructor van
+  `RuleOrigin` heeft twee componenten meer; de toolchain bouwt er geen.
