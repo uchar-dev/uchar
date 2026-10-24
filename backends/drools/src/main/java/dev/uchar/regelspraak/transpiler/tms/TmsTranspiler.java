@@ -294,6 +294,15 @@ public final class TmsTranspiler {
     /** The role each rule of a form has in the lowering of its form, default or stack, by the rule's name, noted where
      *  the lowering builds the rule ({@link #as}, {@link #originOf}); a rule of no form has none. */
     private final Map<String, RuleOrigin.Role> roleOfRule = new HashMap<>();
+    /** The form whose lowering noted the role of each rule first ({@link #as}), by the rule's name. */
+    private final Map<String, String> notedBy = new HashMap<>();
+    /** The names of rules that the lowerings of two forms of the document both build, with those forms in the order
+     *  they noted the name: a form named like a helper rule of another one ({@code R} beside
+     *  {@code R: fout in de voorwaarde}), which WF-020 lets pass. Such a name has no one role and no one origin. Where
+     *  both forms lower, the model holds two rules of it, which {@code DroolsBackend} refuses by name (DROOLS-055), and
+     *  where one does not, the backend refuses that form from the manifest; so the lowering does not fail on it first
+     *  ({@link #as}, {@link #run}). */
+    private final Map<String, List<String>> sharedNames = new LinkedHashMap<>();
     /** The fold each rule of a fold belongs to, by the rule's name: the node of the document the fold is, an
      *  aggregation or a quantifier fold, noted where {@link #foldFor} builds the fold's rules ({@link #originOf}). */
     private final Map<String, Object> foldOfRule = new HashMap<>();
@@ -682,10 +691,16 @@ public final class TmsTranspiler {
      * the document's nodes: a build from the loaded document has them
      * ({@link #build(dev.uchar.regelspraak.loader.IrLoader.Positioned, ClassLoader)}, {@link #withReadings}), and one
      * from the side tables alone refuses, loudly, to name the fold of a rule of a fold. A name of no rule of the model
-     * is refused, as {@link #formOf} refuses it.
+     * is refused, as {@link #formOf} refuses it, and so is a name the lowerings of two forms both build, which has no one
+     * origin ({@link #sharedNames}).
      */
     public RuleOrigin originOf(String ruleName) {
         String form = formOf(ruleName);
+        List<String> sharing = sharedNames.get(ruleName);
+        if (sharing != null)
+            throw new IllegalStateException("de regel '" + ruleName + "' wordt gebouwd door de verlaging van de vormen "
+                    + String.join(" en ", sharing) + ", en heeft dus geen herkomst; DroolsBackend weigert dit model"
+                    + " (DROOLS-055)");
         if (form == null) {
             String own = readingRuleOf.get(ruleName);
             if (own == null) return new RuleOrigin(null, RuleOrigin.Kind.NO_FORM, null, null, null);
@@ -729,8 +744,15 @@ public final class TmsTranspiler {
     }
 
     /** Notes that the lowering builds {@code rule} in the role {@code role} ({@link #originOf}), and returns it. A rule
-     *  of one name built in two roles is a fault of this class. */
+     *  of one name that one form builds in two roles is a fault of this class; a name that two forms build comes from
+     *  the document's names, and is noted as shared ({@link #sharedNames}). */
     private RulePlan as(RuleOrigin.Role role, RulePlan rule) {
+        String first = notedBy.putIfAbsent(rule.name(), form);
+        if (first != null && !first.equals(form)) {
+            List<String> sharing = sharedNames.computeIfAbsent(rule.name(), k -> new ArrayList<>(List.of(first)));
+            if (!sharing.contains(form)) sharing.add(form);
+            return rule;
+        }
         RuleOrigin.Role before = roleOfRule.put(rule.name(), role);
         if (before != null && before != role)
             throw new IllegalStateException("de regel '" + rule.name() + "' is gebouwd als " + before + " en als "
@@ -1475,6 +1497,8 @@ public final class TmsTranspiler {
         // fold, so that originOf answers for every rule of every document, not only for those a witness asks
         for (RulePlan r : rules) {
             if (rulesWithoutForm.contains(r.name()) && !readingRuleOf.containsKey(r.name())) continue;
+            // a name two forms build has no one role or fold; the model holds both rules, which the backend refuses
+            if (sharedNames.containsKey(r.name())) continue;
             RuleOrigin.Role role = roleOf(r.name());
             if (role.fold() != foldOfRule.containsKey(r.name()))
                 throw new IllegalStateException("de regel '" + r.name() + "' heeft de rol " + role + ", en de verlaging"
