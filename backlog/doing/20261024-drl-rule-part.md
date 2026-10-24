@@ -132,8 +132,10 @@ Hoe: `as(Role, RulePlan)` noteert de rol in `roleOfRule` op elke plaats waar de 
 (de eigen regels van regel, consistentie, uniciteit, verdeling en beide creaties; `validityFault`, `conditionFaultRule`,
 `depositRule`; `keyRule`, `keyFormRule`, het kanaal, de ontvanger; `ownRule`, dat nu de rol `own` of `fallback`
 meekrijgt; de drie regels van `reconciliation`; `stackValidityFault`; `contributionRules`, `quantifierContributions`,
-`filterFaultRule`, `memberFaultRule`, `filterDepositRule`; `readingRule`). Een naam die met twee rollen gebouwd wordt,
-faalt. Aan het eind van `run()` eist de bouw dat elke regel van een vorm, elke leesregel inbegrepen, een rol heeft, en dat
+`filterFaultRule`, `memberFaultRule`, `filterDepositRule`; `readingRule`). Een naam die één vorm in twee rollen bouwt,
+faalt; een naam die twee vormen bouwen, is gedeeld en gaat naar de weigering DROOLS-055 (zie "Review (fixronde,
+2026-10-24)"). Aan het eind van `run()` eist de bouw dat elke regel van een vorm, elke leesregel inbegrepen, een rol heeft
+(een gedeelde naam uitgezonderd), en dat
 een regel een vouw heeft precies als zijn rol een vouwrol is; een ontbrekende notitie faalt dus bij elke bouw van elk
 document luid, met de naam van de regel (`IllegalStateException`), en niet pas als iemand `originOf` vraagt. `originOf`
 leest de rol uit die notitie, nooit uit de naam.
@@ -220,9 +222,10 @@ lezingen 2124 regels: FORM `own` 796, `fold-contribution` 251, `condition-fault`
 (FORM 746, DEFAULT 176). 291 regels van een vouw (`EXPECTED_MIN_FOLD_RULES`); 69 stapels met een type, 15 daarvan op
 een type dat het lid erft, in elf goldens (`EXPECTED_MIN_STACK_TYPES`, `EXPECTED_MIN_SUBTYPE_STACKS`). Geen golden heeft
 de foutregel van een rechtvaardiging of een vouw van een default waarvan filter of lid kan falen; die vormen staan in (b).
-Ongeveer 19 s.
+Sinds de fixronde ook: twee vouwen van één vorm en één onderwerp noemen nooit dezelfde knoop, met de vloer
+`EXPECTED_MIN_NESTED_FOLDS` (zie "Review (fixronde, 2026-10-24)"). Ongeveer 19 s.
 
-(b) `RuleOriginWitnessTest`, elf tests (vier nieuw), per stapel of vorm de hele tabel `<naam> -> <soort> <sleutel>
+(b) `RuleOriginWitnessTest`, twaalf tests (vijf nieuw, waarvan één uit de fixronde), per stapel of vorm de hele tabel `<naam> -> <soort> <sleutel>
 <pointer> vouw <vouw>` in de volgorde van het model, en `GeneratedNamesWitnessTest`, vijf tests (één nieuw):
 
 - uitzonderingsgroep: `anchor/jutterswet-nestdiepte`: de bladen `own`, onder elke default met groepen
@@ -287,6 +290,98 @@ Op `ba04a004`:
   nul overgeslagen; `check-drools-codes` PASS (294 codes).
 
 De volledige gate-set draait de hoofdsessie vóór de landing (acceptatie (c)).
+
+### Review (fixronde, 2026-10-24)
+
+Een review (alleen lezen) vond één fout en één gat in de getuigen. Beide zijn verwerkt op de tak
+`fix/drl-rule-part-review`: `554128c8` (vondst 1), `d2de393d` (vondst 2) en het commit van deze sectie.
+
+1. Fout: een naambotsing crashte in plaats van geweigerd te worden. Een vorm mag de naam dragen van een hulpregel van
+   een andere vorm (WF-020 ziet geen twee vormen van één naam). Het model heeft dan twee regels van één naam. Op
+   `a97f7579` gaf zo'n document de weigering DROOLS-055 (`refuseDuplicateRuleName` in `DroolsBackend.analyse`). Op
+   `e3985673` faalde `as` eerder, in `run()`, met een `IllegalStateException`, die `UcharBuild.assemble` van de
+   toolchain niet vangt. De vier botsingen: `laat` met een datumstap in zijn voorwaarde naast een regel `laat: fout in
+   de voorwaarde`; de uniciteit `eenmalig jutternummer` naast een regel `eenmalig jutternummer: kanaal`; `vondstental`
+   met een telling naast een regel `vondstental: bijdrage aan vouw 0`; en, in een bouw met lezingen, `actief` met een
+   voorwaarde naast een regel `actief: lezing`.
+
+   Wat de fix doet: `as` noteert bij elke regelnaam de vorm die hem als eerste bouwde (`notedBy`). Bouwt de verlaging
+   van een tweede vorm een regel met dezelfde naam, dan is die naam gedeeld (`sharedNames`, met beide vormen). `as`
+   noteert dan geen tweede rol en faalt niet; de controle aan het eind van `run()` (rol en vouw) slaat de naam over; de
+   backend weigert het model met DROOLS-055, zoals op `a97f7579`. Wat luid blijft falen: één vorm die één naam in twee
+   rollen bouwt (in `as`), en een regel van een vorm zonder notitie (aan het eind van `run()`). De andere tabellen die
+   op de naam sleutelen (`formOfRule`, `defaultOfRule`, `stackOwnRules`, `readingRuleOf`, `foldOfRule`) overschrijven
+   bij een botsing en falen niet; de controle in `stackRules` kijkt alleen naar namen onder de naam van een stapel; de
+   controle op twee regels van één naam in `DrlRendering.render` komt pas na de weigering. Bij geen van de vier
+   botsingen faalt iets vóór de weigering, op beide takken, met en zonder lezingen (getuige hieronder).
+
+   Voorlopig besluit: `originOf` weigert een gedeelde naam luid (`IllegalStateException`, met de namen van beide
+   vormen). Anders zou het een herkomst geven die voor een deel van de ene en voor een deel van de andere vorm is (de
+   rol van de eerste notitie, de vorm van de laatste). Via `DroolsBackend.build` is dit niet te bereiken, want de
+   backend weigert zo'n document. Het geldt alleen voor wie de analyse zelf bouwt (`TmsTranspiler.build(Positioned,
+   ClassLoader)`).
+
+   Getuige: `DuplicateRuleNameWitnessTest`, vier tests erbij (acht in de klasse), elk met een document dat in de test
+   wordt geschreven. Per botsing eist de test op beide takken, met en zonder lezingen, een `CaseRunner.Excluded` met
+   code `DROOLS-055` en de zin `exec-model: Duplicate rule name: <naam> — …`. Bij de botsing met de leesregel geldt dat
+   alleen met lezingen; zonder lezingen bouwt het document op beide takken. De eerste test bouwt daarnaast de analyse
+   zelf, en eist dat `originOf` de gedeelde naam weigert en voor `laat` `FORM own` geeft.
+   - Rood op de code van `e3985673`: alle vier, met "de regel 'laat: fout in de voorwaarde' is gebouwd als
+     CONDITION_FAULT en als OWN", "… 'eenmalig jutternummer: kanaal' … als OWN en als UNIQUENESS_CHANNEL", "…
+     'vondstental: bijdrage aan vouw 0' … als FOLD_CONTRIBUTION en als OWN" en "… 'actief: lezing' … als READING en als
+     OWN".
+   - Groen op de bronnen van `a97f7579` (`git checkout a97f7579 -- backends/drools/src` in de werkmap, daarna
+     teruggezet), in de vorm van de getuige zonder het deel over `originOf`, dat ik pas daarna toevoegde: de vier
+     botsingen gaven daar DROOLS-055.
+   - Groen na de fix.
+   - Mutatie (niet gecommit, daarna teruggezet): `depositRule` noemt zijn regel `…: fout in de voorwaarde`, zodat één
+     vorm één naam in twee rollen bouwt. `RuleOriginWitnessTest` faalt dan met "de regel 'drukte: fout in de voorwaarde'
+     is gebouwd als CONDITION_FAULT en als CONDITION_DEPOSIT": die fout van de verlaging blijft luid.
+
+2. Gat in de getuigen: een geneste vouw. Geen getuige legde vast dat een vouw in het filter van een andere vouw haar
+   eigen knoop noemt. Eerst gemeten, met een probe in de werkmap (niet gecommit, daarna verwijderd), op de 282 gedragen
+   goldens zonder lezingen: 291 regels van een vouw; binnen één vorm noemen twee vouwnummers nooit dezelfde knoop, ook
+   zonder onderscheid naar onderwerp; zeven vouwen staan onder een andere vouw van hun vorm, in vier goldens
+   (`anchor-forms` drie, `fold-filter-subject-two-spellings` twee, `fold-filter-inner-fold-via-element-role` en
+   `jutterswet-schone-maand-na-zware-klacht` één). Elke regel van een vouw bindt in zijn blok van de DRL-tekst precies
+   één `$vouwonderwerp`. Vijf van de zeven geneste vouwen hebben hetzelfde onderwerp als de vouw om hen heen.
+
+   Getuigen:
+   - Gericht: `RuleOriginWitnessTest.a_fold_in_the_filter_of_a_fold_names_its_own_node` (twaalf tests in de klasse). In
+     `anchor-forms` de tabel van `gelijk aan later tarief` (vouw 7 `/rules/rules/6/versions/0/value`, vouw 8
+     `/rules/rules/6/versions/0/value/filter/parts/1/right`, een `Aggregation` in een `Aggregation`) en die van `tarief
+     naast duur register` (vouw 3 `/rules/rules/3/versions/0/value`, vouw 4
+     `/rules/rules/3/versions/0/value/filter/parts/1`, een `QuantifierFold` in een `Aggregation`); de soort knoop op de
+     vier pointers, en de tekst van de binnenste vouw.
+   - Corpus: `RuleOriginCorpusWitnessTest` eist per vorm en per onderwerp van een vouw dat twee vouwnummers nooit
+     dezelfde knoop noemen. Het nummer leest de getuige uit de naam van de regel (`vouw 8`), het onderwerp uit de
+     DRL-tekst (de klasse van `$vouwonderwerp` in het blok van de regel); beide zijn orakels van de getuige zelf. Waarom
+     per onderwerp: de verlaging bouwt een vouw één keer per knoop en onderwerp, dus één knoop die op twee onderwerpen
+     gevouwen wordt, heeft terecht twee nummers; zonder het onderwerp kan de eis bij een later document vals rood geven.
+     Nieuwe vloer `EXPECTED_MIN_NESTED_FOLDS = 5`: de vouwen onder een andere vouw van hun vorm en onderwerp, zodat de
+     eis in het corpus iets heeft om te toetsen.
+   - Rood met de mutatie uit de review (in `foldFor` krijgen de regels van een binnenste vouw de knoop van de buitenste;
+     niet gecommit, daarna teruggezet): de corpusgetuige meldt tien verschillen, vijf vormen zonder en met lezingen,
+     bijvoorbeeld "anchor-forms | gelijk aan later tarief op dev.uchar.regelspraak.facts.Vergunning: de vouwen [7, 8]
+     noemen allebei /rules/rules/6/versions/0/value"; de gerichte test is rood. De twee geneste vouwen met een ander
+     onderwerp dan de vouw om hen heen (`fold-filter-inner-fold-via-element-role`, en `eerste klachtvrije maand via de
+     lading` in `fold-filter-subject-two-spellings`) ziet de corpuseis bij die mutatie niet; geen getuige pint hun
+     pointers.
+   - Groen zonder de mutatie.
+
+De drie probes van de reviewer (niet gecommit, in `backends/drools/src/test/java/dev/uchar/regelspraak/cases/`) zijn
+verwijderd: `ReviewCollisionTest.java` en `ReviewNestedFoldTest.java`, die de getuigen hierboven vervangen, en
+`ReviewRedOriginTest.java`, een eenmalige meting van `originOf` over elk red- en golden-document, zonder probleem.
+
+Geen gedragsverandering behalve dat de vier botsingen weer DROOLS-055 geven, en dat `originOf` een gedeelde naam weigert
+in een analyse die iemand zelf bouwt. De plannen veranderen niet: `as` geeft de regel ongewijzigd terug, en geen golden
+die de lader draagt heeft een gedeelde naam (anders had de analyse op `ba04a004` gefaald, en gate 12 was daar groen).
+
+Suite en gate 12, op `d2de393d` in de worktree van de fixronde: gate 12 (`scripts/check-drools.sh`) PASS; 279 goldens
+gespeeld op de exec-model-tak en op de DRL-teksttak, elke statusregel gelijk; kanaalvloer 50 niet-gespeelde goldens bij
+naam; `check-drools-codes` PASS (294 codes). De suite van de gate: 1677 tests (vloer 1573), 0 fouten, 0 overgeslagen;
+dat zijn de 1672 van `ba04a004` plus vier in `DuplicateRuleNameWitnessTest` en één in `RuleOriginWitnessTest`. De
+volledige gate-set draait de hoofdsessie vóór de landing.
 
 ### Wat de toolchain ermee doet (kaart `drl-rule-part-fields`)
 
