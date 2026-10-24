@@ -845,13 +845,14 @@ public final class TmsTranspiler {
      *  globals, or the refusal of the rendering; both null until the first call. */
     private String drl;
     private Map<String, java.util.function.Predicate<LocalDate>> drlDayKinds;
+    private List<DrlPiece> drlPieces;
     private DrlRendering.Refusal drlRefused;
 
     /**
      * The DRL text of the outcome of the analysis, the second rendering of the plan beside the executable model
      * ({@link #model}): the rules of the plan in its order, under their names, deriving with truth maintenance over the
-     * same facts. Rendered once, at the first call. A kind the rendering does not carry yet is refused at every call with
-     * {@link DrlRefusal}, never left out of the text.
+     * same facts. Rendered once, at the first call, with the piece of every rule ({@link #drlPieces}). A kind the
+     * rendering does not carry yet is refused at every call with {@link DrlRefusal}, never left out of the text.
      */
     public synchronized String drl() {
         if (drl == null && drlRefused == null) {
@@ -859,6 +860,7 @@ public final class TmsTranspiler {
                 DrlRendering.Rendered g = DrlRendering.render(modelplan);
                 drl = g.text();
                 drlDayKinds = g.dayKinds();
+                drlPieces = g.pieces();
             } catch (DrlRendering.Refusal w) {
                 drlRefused = w;
             }
@@ -874,6 +876,83 @@ public final class TmsTranspiler {
     public synchronized Map<String, java.util.function.Predicate<LocalDate>> drlDayKindGlobals() {
         drl();
         return drlDayKinds;
+    }
+
+    /**
+     * The piece of the DRL text ({@link #drl}) of every rule of the plan, in the order of the text ({@link DrlPiece}):
+     * the text is its header (package, imports, globals) and then these pieces, one after the other, without a gap and
+     * without an overlap. Rendered with the text, once; refused as {@link #drl} refuses.
+     */
+    public synchronized List<DrlPiece> drlPieces() {
+        drl();
+        return drlPieces;
+    }
+
+    /**
+     * The piece of the DRL text ({@link #drl}) of one rule: its functions, then the rule. Every test and every value of
+     * the rule's plan is a function in the Java dialect that the rule calls, with the RegelSpraak sentence of its node
+     * above it as a comment; a function of a node that needs statements of its own (a composite, a {@code Let}, the
+     * evaluation of a fold) is called by the function it stands in, a function of the same rule. A rule calls only
+     * functions of its own piece: the rendering names a function after its rule's place in the plan, and only the
+     * rendering of that rule writes a call of it.
+     *
+     * <p>A place is an index into the text as a Java {@code String} counts it, in UTF-16 code units, as JavaScript
+     * counts a string too (not bytes, not code points); a start is inclusive, an end exclusive, so
+     * {@code drl().substring(start, end)} is the piece. The places are those of the text the rendering wrote, never read
+     * back off it.
+     *
+     * @param rule      the name of the rule, as the KieBase, {@link #formOf} and {@link #originOf} have it: unescaped,
+     *                  where the line {@code rule "…"} spells it as a DRL string literal
+     * @param start     the beginning of the piece: that of its first function, or {@code ruleStart} for a rule without
+     *                  functions; the end of the previous piece, or of the header for the first one
+     * @param ruleStart the beginning of the line {@code rule "…"}
+     * @param end       the end of the piece, after the line {@code end} and the empty line after it: the beginning of the
+     *                  next piece, or the end of the text
+     * @param functions the functions of the rule, in the order of the text: the first begins at {@code start}, each
+     *                  ends where the next begins, and the last ends at {@code ruleStart}; empty for a rule without
+     *                  functions
+     */
+    public record DrlPiece(String rule, int start, int ruleStart, int end, List<DrlFunction> functions) {
+
+        public DrlPiece {
+            Objects.requireNonNull(rule, "rule");
+            functions = List.copyOf(functions);
+            int at = start;
+            for (DrlFunction f : functions) {
+                if (f.start() != at)
+                    throw new IllegalArgumentException("de functie " + f.name() + " van de regel '" + rule
+                            + "' begint op " + f.start() + ", niet op " + at + " waar de vorige eindigt");
+                at = f.end();
+            }
+            if (at != ruleStart || ruleStart >= end)
+                throw new IllegalArgumentException("de regel '" + rule + "' met het stuk " + start + "–" + end
+                        + " begint op " + ruleStart + ", en zijn functies eindigen op " + at);
+        }
+
+        /**
+         * One function of a rule's piece.
+         *
+         * @param name        its name, as the rule and the functions that call it spell it
+         * @param start       the beginning of the function with its comment: of the comment where it has one, else of
+         *                    its declaration
+         * @param declaration the beginning of its declaration, the line that begins with {@code function}; where
+         *                    {@code start} is before it, the text between the two is the one line of the comment:
+         *                    {@code //} and a space, the RegelSpraak sentence of the function's node (the IR's
+         *                    {@code source.snippet}, with a line break in it as a space and the end mark of a block
+         *                    comment as {@code * /}), and a line break; equal to {@code start} where the node has no
+         *                    sentence
+         * @param end         the end of the function, after the line with the brace that closes it and the empty line
+         *                    after it: the beginning of the next function or of the rule
+         */
+        public record DrlFunction(String name, int start, int declaration, int end) {
+
+            public DrlFunction {
+                Objects.requireNonNull(name, "name");
+                if (start < 0 || declaration < start || end <= declaration)
+                    throw new IllegalArgumentException("de functie " + name + " met de plaatsen " + start + ", "
+                            + declaration + " en " + end);
+            }
+        }
     }
 
     /**

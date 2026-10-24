@@ -73,7 +73,8 @@ import java.util.TreeSet;
  *       its full name in a pattern. A class of the JDK and an enumeration label stand with their full names.</li>
  *   <li>The local names of a consequence are fixed ({@code v}, {@code f}, {@code k}, {@code depositFlag}), and a function is
  *       named after its rule's place in the plan and its own place in that rule's functions, which stand before the
- *       rule in that order: one plan gives one text.</li>
+ *       rule in that order: one plan gives one text. Which piece of the text is a rule's, with its functions, the
+ *       rendering gives beside the text ({@link TmsTranspiler.DrlPiece}), so that a reader reads no names.</li>
  * </ul>
  *
  * <p>The consequences it carries are those of the ordinary rules, the faults, the inconsistency, the writers that
@@ -122,6 +123,9 @@ final class DrlRendering {
      *  the predicate the analysis compiled. */
     private final Map<String, Term.DayKind> dayKinds = new LinkedHashMap<>();
     private final StringBuilder rules = new StringBuilder();
+    /** The piece of every rule rendered so far, in the order of the plan, its places counted from the beginning of
+     *  {@link #rules}: the header that goes before them is known only once every rule has named its imports. */
+    private final List<TmsTranspiler.DrlPiece> pieces = new ArrayList<>();
 
     private DrlRendering() {}
 
@@ -137,10 +141,12 @@ final class DrlRendering {
 
     /** The DRL text of a plan ({@link #text}), and the predicate of every day kind whose global the text declares, by
      *  the name of the global: a session of the text sets each before it fires. The predicates are those the analysis
-     *  compiled into its plan ({@code Term.DayKind}); the rendering only names their globals (decision 6). */
-    record Rendered(String text, Map<String, java.util.function.Predicate<LocalDate>> dayKinds) {}
+     *  compiled into its plan ({@code Term.DayKind}); the rendering only names their globals (decision 6). Beside them
+     *  the piece of the text of every rule, in the order of the text ({@link TmsTranspiler.DrlPiece}). */
+    record Rendered(String text, Map<String, java.util.function.Predicate<LocalDate>> dayKinds,
+                    List<TmsTranspiler.DrlPiece> pieces) {}
 
-    /** {@link #text} with the predicates of its day-kind globals. */
+    /** {@link #text} with the predicates of its day-kind globals and the pieces of its rules. */
     static Rendered render(Modelplan plan) {
         DrlRendering w = new DrlRendering();
         Set<String> ruleNames = new HashSet<>();
@@ -168,7 +174,18 @@ final class DrlRendering {
         if (!globals.isEmpty()) out.append(globals).append('\n');
         Map<String, java.util.function.Predicate<LocalDate>> predicates = new LinkedHashMap<>();
         w.dayKinds.forEach((global, d) -> predicates.put(global, d.datePredicate()));
-        return new Rendered(out.append(w.rules).toString(), java.util.Collections.unmodifiableMap(predicates));
+        int header = out.length();
+        List<TmsTranspiler.DrlPiece> pieces = new ArrayList<>();
+        for (TmsTranspiler.DrlPiece p : w.pieces) {
+            List<TmsTranspiler.DrlPiece.DrlFunction> functions = new ArrayList<>();
+            for (TmsTranspiler.DrlPiece.DrlFunction f : p.functions())
+                functions.add(new TmsTranspiler.DrlPiece.DrlFunction(f.name(), header + f.start(),
+                        header + f.declaration(), header + f.end()));
+            pieces.add(new TmsTranspiler.DrlPiece(p.rule(), header + p.start(), header + p.ruleStart(),
+                    header + p.end(), functions));
+        }
+        return new Rendered(out.append(w.rules).toString(), java.util.Collections.unmodifiableMap(predicates),
+                List.copyOf(pieces));
     }
 
     // ---------------- names ----------------
@@ -378,6 +395,11 @@ final class DrlRendering {
         private final RulePlan plan;
         /** The functions of this rule, in the order of their names. */
         private final List<String> functions = new ArrayList<>();
+        /** Per place of {@link #functions} the name of its function and the length of the comment above its
+         *  declaration, 0 for none, from which {@link #renderRule} gives each function its places
+         *  ({@link TmsTranspiler.DrlPiece.DrlFunction}): noted where they are made, never read back off the text. */
+        private final List<String> functionNames = new ArrayList<>();
+        private final List<Integer> commentLengths = new ArrayList<>();
         /** The variables the patterns of this rule bind to their objects, as far as they are in scope. */
         private Set<String> patternVariables = new HashSet<>();
 
@@ -390,10 +412,18 @@ final class DrlRendering {
             List<String> when = new ArrayList<>();
             for (LhsItem item : plan.leftSide()) when.add(item(item));
             String then = consequence(plan.consequence());
-            for (String f : functions) {
-                if (f == null) throw new IllegalStateException("een functie van " + plan.name() + " is niet geschreven");
+            int start = rules.length();
+            List<TmsTranspiler.DrlPiece.DrlFunction> placed = new ArrayList<>();
+            for (int place = 0; place < functions.size(); place++) {
+                String f = functions.get(place);
+                if (f == null || functionNames.get(place) == null)
+                    throw new IllegalStateException("een functie van " + plan.name() + " is niet geschreven");
+                int at = rules.length();
                 rules.append(f).append('\n');
+                placed.add(new TmsTranspiler.DrlPiece.DrlFunction(functionNames.get(place), at,
+                        at + commentLengths.get(place), rules.length()));
             }
+            int ruleStart = rules.length();
             // the plan's name escaped as a string literal, which the parser reads back as that name (RuleNameWitnessTest):
             // formOf, the scenario report and the creation driver look a fired rule up by the name of its plan
             rules.append("rule ").append(str(plan.name())).append("\n");
@@ -402,17 +432,26 @@ final class DrlRendering {
             rules.append("when\n");
             for (String w : when) rules.append("    ").append(w).append('\n');
             rules.append("then\n").append(then).append("end\n\n");
+            pieces.add(new TmsTranspiler.DrlPiece(plan.name(), start, ruleStart, rules.length(), placed));
         }
 
         /** A place for a function of this rule, reserved where its node is met, so the functions stand in the order of
          *  the plan. */
         private int reserveer() {
             functions.add(null);
+            functionNames.add(null);
+            commentLengths.add(null);
             return functions.size() - 1;
         }
 
+        /** The name of the function at {@code place}, noted for its piece: every function is named once, right after its
+         *  place is reserved. */
         private String name(String category, int place) {
-            return "r" + n + "_" + category + place;
+            String name = "r" + n + "_" + category + place;
+            if (functionNames.set(place, name) != null)
+                throw new IllegalStateException("de functie op plaats " + place + " van " + plan.name()
+                        + " krijgt een tweede naam: " + name);
+            return name;
         }
 
         /** Writes the function at {@code place}: the RegelSpraak sentence {@code source} as a comment, where the node has
@@ -420,6 +459,7 @@ final class DrlRendering {
         private void fill(int place, String source, String head, String body) {
             StringBuilder f = new StringBuilder();
             if (source != null) f.append("// ").append(Namen.commentSafe(source)).append('\n');
+            commentLengths.set(place, f.length());
             f.append("function ").append(head).append(" {\n").append(body).append("}\n");
             functions.set(place, f.toString());
         }
