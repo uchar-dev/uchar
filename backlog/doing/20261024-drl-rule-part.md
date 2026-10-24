@@ -184,23 +184,26 @@ en meet geen uitzondering (291 regels zonder lezingen).
 
 ### Het stapeltype
 
-`TmsTranspiler.stackTypes()`: `Map<String, Designatable>`, per stapelnaam van `generated()` het type waarvoor de stapel
-loopt, `Designatable.objectType(st.owner().name)`, in de volgorde van de dekking. Elke stapel van `generated` heeft er een,
-ook een geweigerde, want beide worden op dezelfde plaats gevuld, vóór `meet`. Het type is het declarerende type van het lid
+`TmsTranspiler.stacks()`: `Map<String, Stack>`, per stapelnaam van `generated()` een `Stack(Designatable type,
+StackComposition composition)`, in de volgorde van de dekking, met als type het type waarvoor de stapel loopt,
+`Designatable.objectType(st.owner().name)`. (Tot het Fable-advies was dit `stackTypes()`, `Map<String, Designatable>`,
+met hetzelfde type; het record kwam met de samenstelling, zie "De samenstelling (uitbreiding van 16:01)".) Elke stapel van
+`generated` heeft er een, ook een geweigerde, die geen samenstelling heeft. Het type is het declarerende type van het lid
 dat `generated` geeft, of een subtype ervan. Voorbeeld `jutterswet-meldtermijn-strandjutter`:
 `defaults A:Jutter.meldtermijn` en `defaults A:Strandjutter.meldtermijn` hebben allebei `ATTRIBUUT Jutter.meldtermijn`,
 en als type `OBJECTTYPE Jutter` en `OBJECTTYPE Strandjutter`.
 
-Waarom een tweede ingang en geen eigen record:
+Waarom zo:
 
 - `GeneratedFrom` is het record van het frontendmodel dat de draad als `origin` draagt (IR-SPEC ch. 2.13); het krijgt
   geen veld.
-- Een eigen record (stapel, lid, type) zou het lid van `generated` herhalen. De toolchain leest `generated` al per naam
-  van de dekking (`Playground.generated`); een tweede tabel met dezelfde sleutels voegt alleen het type toe.
+- Een record naast `generated` zonder het lid, want het lid staat al in `generated`. De toolchain leest `generated` per
+  naam van de dekking (`Playground.generated`); een tweede tabel met dezelfde sleutels voegt het type en de samenstelling
+  toe.
 - Een `Designatable` en geen string: het type is een element van het model, zoals `source` van `GeneratedFrom`, en de
   toolchain kan het noemen in het vocabulaire van het antwoord (`Naming.name`, `Naming.objectType`) en het schrijven in
   de vorm `{kind, owner, name}` die `generatedFrom` al heeft.
-- Niet in `DefaultsGroup`: die noemt alleen de gedragen stapels, `stackTypes` volgt `generated`.
+- Niet in `DefaultsGroup`: die noemt alleen de gedragen stapels, `stacks` volgt `generated`.
 
 ### Voorlopige besluiten
 
@@ -219,8 +222,8 @@ lezingen: elke regel met een vorm heeft een rol, en het is de rol die het label 
 leest de naam als eigen orakel; de verlaging leest hem nooit); een leesregel heeft vorm, soort en pointer van de regel die
 hij leest en de rol `reading`; elke vouw lost op in `ir.json` naar een `Aggregation` of `QuantifierFold`, onder de default
 (`DEFAULT`) of onder de declaratie van de vorm (`/rules/<sectie>/<i>/` met de naam van `form`). Per stapel van
-`generated`: een type in `stackTypes`, een objecttype van het model dat het lid declareert of erft, en de naam van de
-stapel begint met `defaults A:<type>.` of `defaults K:<type>.` (een tweede orakel uit de naam); `stackTypes` noemt geen
+`generated`: een type in `stacks`, een objecttype van het model dat het lid declareert of erft, en de naam van de
+stapel begint met `defaults A:<type>.` of `defaults K:<type>.` (een tweede orakel uit de naam); `stacks` noemt geen
 andere stapel. Gemeten 2026-10-24, de nieuwe vloeren (`EXPECTED_MIN_ROLES` per soort en sleutel): 282 goldens; zonder
 lezingen 2124 regels: FORM `own` 796, `fold-contribution` 251, `condition-fault` 48, `uniqueness-key` 19,
 `fold-filter-fault` 17, `allocation-recipient` 17, `condition-deposit` 13, `uniqueness-channel` 13, `fold-filter-deposit`
@@ -249,7 +252,7 @@ Sinds de fixronde ook: twee vouwen van één vorm en één onderwerp noemen nooi
 - gedateerde groep: `jutterswet-uitsluiting-gedateerd`, `geen rekendatum` → `STACK` `no-evaluation-date`;
 - stapel over een subtype: `jutterswet-meldtermijn-strandjutter`: de default van de groep op Jutter is `own` in beide
   stapels met dezelfde pointer `/rules/prioritizedDefaults/0/defaults/0`, de stapel van Strandjutter verzoent zijn twee
-  groepen aan de wortel; `stackTypes` geeft `Jutter` en `Strandjutter` bij hetzelfde lid `Jutter.meldtermijn`, en in
+  groepen aan de wortel; `stacks` geeft `Jutter` en `Strandjutter` bij hetzelfde lid `Jutter.meldtermijn`, en in
   `jutterswet-opgave-subtype` vijf stapels op Vondst, Strandvondst en Barnsteenvondst;
 - gewone vormen: `fold-filter-divides-by-zero` (`own`, `condition-fault`, `condition-deposit`, `fold-contribution`,
   `fold-filter-fault`, `fold-filter-deposit` met de vouw van een waarde en van een voorwaarde),
@@ -392,6 +395,203 @@ naam; `check-drools-codes` PASS (294 codes). De suite van de gate: 1677 tests (v
 dat zijn de 1672 van `ba04a004` plus vier in `DuplicateRuleNameWitnessTest` en één in `RuleOriginWitnessTest`. De
 volledige gate-set draait de hoofdsessie vóór de landing.
 
+### De samenstelling (uitbreiding van 16:01)
+
+Om 16:01, na de start van de bouw, breidde de werkbank de kaart uit met punt 3 van de Aanleiding, de bullet "Per stapel
+haar samenstelling" van het Doel en het deel over de samenstelling in acceptatie (b); die tekst staat sinds `08888f04` in
+de kaart. Gebouwd op `08888f04`, met daarna de drie punten van een advies van Fable (2026-10-24), die de hoofdsessie
+overnam:
+
+- `f2c522b5` per stapel haar type en samenstelling: `StackComposition`, `TmsTranspiler.stacks()` met het record
+  `TmsTranspiler.Stack` (in plaats van `stackTypes()`, na het Fable-advies, punt 1), de getuigen;
+- `80d07c25` `Role.inFold()` in plaats van `Role.fold()` (na het Fable-advies, punt 2);
+- `8cf63746` geen bouw zonder de plaatsen van de knopen (na het Fable-advies, punt 3);
+- `e89dc723` `TmsSkeletonWitnessTest` geeft de plaatsen mee (een achtste klasse van die ingang, zie hieronder);
+- deze sectie, in het commit na `e89dc723`.
+
+Geen beschermd pad geraakt; de draad, de spec, het schema en het frontend veranderen niet; geen delta voor
+`spec/CONSTRUCTS.md` of `spec/PLAN.md`.
+
+#### De vorm
+
+```java
+public Map<String, Stack> stacks()                                        // TmsTranspiler
+public record Stack(Designatable type, StackComposition composition) {}   // TmsTranspiler.Stack
+public record StackComposition(List<List<Entry>> chains) {                // transpiler.tms
+    public boolean unordered() { return chains.size() > 1; }
+    public record Entry(String pointer, StackComposition exceptions) {}
+}
+```
+
+`stacks()` geeft per effectieve stapel van `generated()`, in de volgorde van de dekking, het type waarvoor zij loopt (zie
+"Het stapeltype") en haar samenstelling. `stacks().get(naam)` is null voor een naam die geen stapel is (een versie van
+een vorm), zoals `generated()` daar een andere vorm geeft. `composition` is null alleen voor een geweigerde stapel; de
+reden staat in de dekking. Via `DroolsBackend.build` komt dat niet voor: die weigert dan het hele document.
+
+De samenstelling geeft de ketens aan de wortel, elk met de defaults van hoog naar laag, en bij een default met
+uitzonderingsgroepen (ch. 7.9) `exceptions`, in dezelfde vorm; `unordered()` zegt waar ketens naast elkaar staan. Elke
+default staat er één keer in, als de pointer die `decisionsOf` en `originOf` gebruiken: een `Default`-knoop,
+`/rules/prioritizedDefaults/1/defaults/0/exceptions/members/0/defaults/2`, of de versie van een gewone regel die de stapel
+van een subtype opneemt, `/rules/rules/0/versions/0`. Gelezen uit `StackLayout.roots` en `Node.members`, de knopen die de
+verlaging voor de stapel legde en waarop `decisionsOf` de controlefeiten legt; de ketens aan de wortel zijn dus
+`rootChains`, pointer voor pointer. Nooit uit de labels van de namen (`default 0.0.1.0.0`) of de volgorde van de
+DRL-tekst. Gevuld in `run()` direct na `meet("defaults", …)`; de verlaging leest er niets van.
+
+Voorbeeld `jutterswet-meldtermijn-strandjutter`, dezelfde vorm als de meting op v2, met één `Afwijking van` in plaats van
+drie:
+
+```
+defaults A:Jutter.meldtermijn        [[ /rules/prioritizedDefaults/0/defaults/0 ]]
+defaults A:Strandjutter.meldtermijn  [[ /rules/prioritizedDefaults/1/defaults/0
+                                          exceptions [[ /rules/prioritizedDefaults/1/defaults/0/exceptions/members/0/defaults/0 ]],
+                                        /rules/prioritizedDefaults/0/defaults/0 ]]
+```
+
+`/1` is de groep `meldtermijn voor Strandjutter`, een groep-default met één uitzonderingsgroep: de afwijking
+`meldtermijn tot het vergunningseinde`. `/0` is de groep `meldtermijn` op `Jutter`, de geërfde basis.
+
+Waarom zo:
+
+1. Eén recursief record voor de wortel en voor de uitzonderingsgroepen van een default, want een default verzoent zijn
+   uitzonderingsgroepen zoals de wortel haar groepen verzoent (ch. 7.9: "exactly as the root group reconciles"). De
+   ketens zijn `List<List<…>>`, zoals `rootChains`, zodat de wortel er één op één op ligt.
+2. Alleen pointers, en geen blok van ch. 7.10 (eigen uitzondering, geërfde, basis, initialisatie) of niveau per default.
+   De volgorde van ch. 7.10 is de volgorde van de lijst, en de pointer wijst de groep aan, met haar naam en haar
+   onderwerp. De toolchain vertaalt een pointer al naar de sleutels van de beslisser.
+3. Type en samenstelling in één record per stapel, gevuld tijdens de bouw (na het Fable-advies, punt 1). Mijn eerste vorm
+   was een ingang per naam, `compositionOf(String)`, die bij elke aanroep uit de knopen las en een geweigerde stapel en
+   een naam van geen stapel luid weigerde. Het advies koos één tabel naast `generated()` in plaats van twee, en vullen
+   tijdens de bouw, zodat een fout van `pointerOf` (een gewone regel als basis met een naamloze regel ervoor) een fout van
+   elke bouw is, zoals de controle op de rollen aan het eind van `run()`, en niet pas van wie ernaar vraagt.
+
+Voorlopig besluit (niet uit de kaart, de spec of de code te halen): `unordered()` volgt uit het aantal ketens, meer dan
+één, en niet uit de markering `unordered` van het document. Afweging: de verlaging verzoent elke lijst van ketens als
+gelijken, of de markering er staat of niet; bij twee of meer ketens eisen WF-050 en WF-075 de markering, dus daar vallen
+de twee samen. Bij één keten kan het document `unordered: true` dragen (een `Uitzonderingen ongeordend op X:` met één
+lid), en dan staat er niets naast; een lezer die daar "ongeordend" toont, toont iets wat niets beslist. In het corpus
+draagt geen groep en geen uitzonderingsplek met één lid de markering (gemeten 2026-10-24). Wil de werkbank de markering
+tonen zoals de auteur haar schreef, dan leest zij die in het document op de pointer.
+
+#### Na het Fable-advies (2026-10-24)
+
+1. Eén record per stapel: zie "De vorm". `stackTypes()` is weg. De getuigen die het lazen (`RuleOriginCorpusWitnessTest`,
+   `GeneratedNamesWitnessTest`) lezen nu `stacks().get(naam).type()`. De javadoc van `generated` en `DefaultsDecision` en
+   de secties "Het stapeltype" en "Wat de toolchain ermee doet" noemen `stacks()`.
+2. `RuleOrigin.Role.fold()` heet `Role.inFold()`, zodat het niet botst met `RuleOrigin.fold()`, de pointer van de vouw:
+   vier plaatsen in `TmsTranspiler`, de definitie en de schets in "De rol".
+3. De bouw uit de zijtabellen, `TmsTranspiler.build(RegelSpraakModel, …, NodePositions positions)`, eist de plaatsen van
+   de knopen (`requireNonNull`), zodat `origins` nooit null is. De arm `origins == null` in `foldOf` is weg, en zo ook de
+   voorbehouden in de javadoc van `originOf`, `IrLoader.Positioned` en `NodePositions`. De zeven testklassen van die
+   ingang (`RuleOriginWitnessTest`, `EvaluationYearWitnessTest`, `DroolsBackendWitnessTest`,
+   `MorePeriodicGateWitnessTest`, `TmsTimelineRefusalWitnessTest`, `UnitConflictWitnessTest`, `RoundTripWitnessTest`)
+   laden met `IrLoader.loadWithPositions` en geven `positioned.positions()` mee; `DroolsBackendWitnessTest` houdt zijn
+   `List.of()`-defaults. `the_fold_of_a_build_without_the_positions_of_its_nodes_is_refused` pinde gedrag dat niet meer
+   bestaat en is weg; `RuleOriginWitnessTest` heeft nu elf tests. "Voorlopig besluit 1" hierboven vervalt.
+   Twee bestaande getuigen veranderd, omdat de kaart het gedrag verandert dat zij toetsen; beide roepen de ingang via
+   reflectie aan met precies de zijtabellen: `DroolsBackendWitnessTest.a_missing_side_table_is_loudly_refused` en
+   `TmsSkeletonWitnessTest.the_only_entry_takes_every_side_table` (een achtste klasse, die de lijst van zeven niet
+   noemde; de suite vond hem, `e89dc723`). Elk geeft nu de plaatsen mee en eist daarnaast dat de ingang null-plaatsen
+   weigert (`NullPointerException` "positions"); wat zij over de zijtabellen eisen is ongewijzigd. Twee kleine
+   javadoc-zaken mee: `IrLoader.load` verwijst voor alles wat transpileert naar `loadWithPositions` in plaats van
+   `loadAll`, en de javadoc van de zijtabel-ingang, die los vóór `instanceWalks` stond, staat nu bij die ingang.
+
+Niet veranderd, zoals het advies zei: de afhandeling van gedeelde namen (`notedBy`, `sharedNames`).
+
+#### Getuigen
+
+(a) `StackCompositionCorpusWitnessTest`, nieuw, op de exec-model-tak, de analyse waaruit de toolchain `generated` leest.
+Per stapel van elke gedragen golden:
+
+- de stapel heeft een samenstelling, en elke default staat er één keer in;
+- elke pointer lost op in `ir.json` naar een `Default` van een groep op het lid van de stapel, of naar een regelversie met
+  dat lid als doel; een regelversie staat aan de wortel;
+- een default heeft uitzonderingsgroepen in de samenstelling precies waar hij ze in het document heeft, en in de volgorde
+  van het document: lid m, default j is de pointer van de default met `/exceptions/members/<m>/defaults/<j>` erachter,
+  zoveel leden en defaults als het document heeft;
+- ketens naast elkaar zijn in het document ongeordend verklaard: aan de wortel draagt elke groep die een keten noemt
+  `unordered`, onder een default draagt zijn `exceptions` het;
+- aan de wortel, uit het document gelezen, de blokvolgorde van ch. 7.10: de defaults van één groep in de volgorde van de
+  groep; de initialisaties onderaan; en vóór de laagste gewone default (de basis) de niveaus die de defaults declareren,
+  vanaf het type van de stapel omhoog, dus de eigen uitzonderingen boven de geërfde en die van het kind boven die van de
+  grootouder;
+- tegen `originOf`: elke default van een regel van de stapel staat in de samenstelling, en een default die zelf beslist
+  (een eigen gevolg of besluit, of een gewone regel) heeft daar precies één regel van zijn eigen beslissing, `fallback`
+  met uitzonderingsgroepen en `own` zonder. Een groep-default heeft er geen, alleen de regels die zijn
+  uitzonderingsgroepen verzoenen. De kaart vroeg "elke default met een rol own of fallback … precies één keer in haar
+  samenstelling, en omgekeerd"; het omgekeerde geldt niet letterlijk voor een groep-default, die geen eigen beslissing
+  heeft, dus eist de getuige dit;
+- tegen `decisionsOf`: op elke case van elke golden met een defaultsgroep die de exec-model-tak speelt, zijn de
+  wortelketens van elk record de ketens aan de wortel van de samenstelling van zijn stapel. De stapel van een record is
+  die waarvan `Stack.type` het type van het object is en `generated` het lid van het record; de getuige leest geen naam.
+
+Gemeten 2026-10-24, de vloeren: 43 gedragen goldens met een stapel, 69 stapels, 179 defaults (176 die zelf beslissen,
+3 groep-defaults), waarvan 4 regelversies (`jutterswet-wrakbasis`, `jutterswet-diepwrakbasis`,
+`jutterswet-wrakinitialisatie`, `jutterswet-opgave-subtype`) en 26 onder een default; 16 defaults met
+uitzonderingsgroepen; 4 wortels en 8 uitzonderingsplekken met ketens naast elkaar; 8 stapels met een keten over twee
+niveaus; 69 stapels, in 331 records, vergeleken met `decisionsOf`. `anchor/jutterswet-toelagegronden` heeft nog twee
+ongeordende wortels, maar de backend draagt die golden niet (DROOLS-054). Ongeveer 6 s.
+
+(b) `StackCompositionWitnessTest`, nieuw, zeven tests, per stapel de hele samenstelling:
+
+- `anchor/jutterswet-strandrechtketen` (ch. 7.10.1): de stapel van `Wrakrecht` is `[[/1/defaults/0, /0/defaults/0,
+  /1/defaults/1]]` (onder `/rules/prioritizedDefaults`): de eigen uitzondering 55,00, de geërfde 99,00, de eigen basis;
+  die van `Strandrecht` is `[[/0/defaults/0, /0/defaults/1]]`; met de groepsnamen en gevolgen op de pointers;
+- `jutterswet-meldtermijn-strandjutter`: het voorbeeld hierboven, met de namen van de groepen en de afwijking op de
+  pointers;
+- een document in de test met de vorm van de meting op v2: de basis op `Recht`, en voor `RechtBijOntslag` de groep
+  `herlevingstermijn voor RechtBijOntslag`, een groep-default met drie afwijkingen in één geordende uitzonderingsgroep, de
+  middelste met een eigen `Uitzondering op` (op v2 de labels `default 0.0.1.0.0` en `eens 0.0.1`). Op beide takken, in
+  een sessie: de samenstelling van beide stapels, de wortelketens van elk record gelijk aan de wortel van zijn stapel, en
+  de beslissers (bij twee afwijkingen die gelden de hoogste; bij de middelste met haar uitzondering die uitzondering; op
+  een `Recht` de basis);
+- `anchor/jutterswet-nestdiepte`: de geneste uitzondering op twee diepten, ongeordend op beide, één keten aan de wortel;
+- `jutterswet-wachtgeld`: drie ongeordende groepen aan de wortel; `jutterswet-wrakconflict`: de geërfde ongeordende set,
+  heel, in de stapel van `Wrakrecht`;
+- `jutterswet-wrakbasis`, `jutterswet-diepwrakbasis`, `jutterswet-wrakinitialisatie`: een gewone regel als basis, ook
+  over drie niveaus, en als initialisatie, elk als regelversie;
+- een geweigerde stapel (een deling in een default; de analyse zelf gebouwd, want de backend weigert zo'n document heel):
+  een vermelding met het type en zonder samenstelling; een naam van geen stapel: geen vermelding.
+
+Rood eerst: de getuigen van een nieuwe ingang compileren niet op de oude code. Daarom per getuige een mutatie in de
+werkmap (niet gecommit, elk tegen `8cf63746`, daarna teruggezet; `werk/drl-rule-part/composition-mutations/run.py`, logs
+`werk/drl-rule-part/composition-logs/final-mutation-*.log`):
+
+| mutatie | corpusgetuige | gerichte tests die rood worden |
+|---|---|---|
+| MC1 elke keten omgekeerd, op elke diepte | 379 verschillen: 298 records met andere wortelketens dan `decisionsOf`, 71 keer een default na een lagere van zijn groep, 10 keer een initialisatie boven een gewone default | strandrechtketen, meldtermijn, het v2-document, de regelversies |
+| MC2 de uitzonderingsgroepen weggelaten | 52: 12 defaults zonder hun uitzonderingsgroepen, 9 keer `fallback` waar `own` verwacht werd, 31 regels van een default die er niet meer in staat | meldtermijn, het v2-document, nestdiepte |
+| MC3 de uitzonderingsgroepen in omgekeerde volgorde van de leden | 8: de groepen niet in de volgorde van het document | nestdiepte |
+| MC4 één keten telt als naast elkaar | 152: 144 defaults aan een wortel van één keten en 8 uitzonderingsplekken met één lid die als naast elkaar gelden, zonder `unordered` in het document | strandrechtketen, meldtermijn, nestdiepte |
+| MC5 de laagste default van elke wortelketen weggelaten | 367: 298 records met andere wortelketens, 69 regels van een default die er niet in staat | strandrechtketen, meldtermijn, het v2-document, de regelversies |
+| MC6 de wortelketens in omgekeerde volgorde | 12 records met andere wortelketens | de ongeordende wortels |
+| MS in `Stacks.merge` de geërfde uitzonderingen boven de eigen (de samenstelling en de verlaging) | 3 stapels waarvan de uitzonderingen niet van het eigen type omhoog staan; de wortelketens zijn gelijk, want beide komen uit dezelfde knopen, en de getuige vangt het in het document | strandrechtketen |
+| MR een geweigerde stapel niet in `stacks()` | geen (het corpus heeft geen geweigerde stapel in een gedragen golden) | de geweigerde stapel |
+
+Zonder mutatie zijn beide klassen groen (8 tests).
+
+#### Probe
+
+Een testklasse in de werkmap (niet gecommit, daarna verwijderd; een kopie in
+`werk/drl-rule-part/composition-logs/probe-src/`) schreef de DRL-tekst van alle 329 goldens, zonder en met lezingen, naar
+bestanden: 658 bestanden, waarvan 94 keer de weigering. Eerst op de code van `c7bd3307` (de worktree op `08888f04`, dat
+alleen de kaart verandert), daarna op `8cf63746`: `diff -r` is leeg. `BranchDumpsCorpusWitnessTest` is ongewijzigd en
+groen in de suite.
+
+#### Suite en gate 12
+
+Op `e89dc723` (de code van `8cf63746`, met de skeletgetuige):
+
+- de JUnit-suite van `backends/drools`, in gate 12 (`mvn -o package`): 1684 tests, 0 fouten, 0 overgeslagen. Dat zijn de
+  1677 van `c7bd3307`, plus één in `StackCompositionCorpusWitnessTest` en zeven in `StackCompositionWitnessTest`, min de
+  vervallen test van `RuleOriginWitnessTest`. Een losse run (`mvn -B -o test`) op `8cf63746` gaf 1684 tests met één fout,
+  in `TmsSkeletonWitnessTest` ("wrong number of arguments: 8 expected: 9"); die verhielp `e89dc723`. Eerder groen in
+  losse runs: 1685 op de eerste vorm (met `compositionOf`) en 1685 op `f2c522b5`;
+- gate 12 (`scripts/check-drools.sh`): PASS; 279 goldens gespeeld op de exec-model-tak en op de DRL-teksttak, elke
+  statusregel gelijk; kanaalvloer 50 niet-gespeelde goldens bij naam; de suite van de gate 1684 tests (vloer 1573), nul
+  overgeslagen; `check-drools-codes` PASS (294 codes). Log: `werk/drl-rule-part/composition-logs/gate12-1.log`.
+
+De volledige gate-set draait de hoofdsessie vóór de landing.
+
 ### Wat de toolchain ermee doet (kaart `drl-rule-part-fields`)
 
 Per regelnaam van `drlRules`, zoals nu: `RuleOrigin o = build.execModelTranspiler().originOf(name)`. Daarbij:
@@ -407,11 +607,33 @@ Per regelnaam van `drlRules`, zoals nu: `RuleOrigin o = build.execModelTranspile
   verwacht ik bij de bijdrageregel van de variant `/defaults/2` een vouw onder de pointer van die default, want zo is het
   op elke golden; op v2 heb ik het niet gemeten, die regelset staat buiten uchar.
 - het stapeltype: in `Playground.generated`, bij een vermelding met `g.form() == OriginForm.DEFAULTS_STACK`,
-  `Designatable type = build.execModelTranspiler().stackTypes().get(d.name())`; de naam in het vocabulaire van het
-  antwoord is `naming.name(type)` (of `naming.objectType(type.name())`), met `type.name()` als canonieke naam ernaast waar
-  die verschilt. Elke stapel van `generated()` heeft een type; een ontbrekend type is een fout van de analyse.
-- zonder DRL (`drlError`): `stackTypes()` en `generated()` komen uit de analyse (`TmsTranspiler`), niet uit de
-  DRL-tekst, en staan op de transpiler van elke tak.
+  `TmsTranspiler.Stack s = build.execModelTranspiler().stacks().get(d.name())` en `Designatable type = s.type()`; de naam
+  in het vocabulaire van het antwoord is `naming.name(type)` (of `naming.objectType(type.name())`), met `type.name()` als
+  canonieke naam ernaast waar die verschilt. Elke stapel van `generated()` heeft een vermelding in `stacks()`; een
+  ontbrekende is een fout van de analyse. `stacks().get(naam)` is null voor een versie. Sinds het Fable-advies is
+  `stackTypes()` weg: `Playground.generated` (r. ±582 op `e39328b4`) leest het nog, en gaat bij de pin-bump over op
+  `stacks()`.
+- de samenstelling: in dezelfde lus `StackComposition c = s.composition()`, bij een gedragen stapel nooit null. Per keten
+  van `c.chains()`, per `Entry e` van de keten, de sleutels van de beslisser uit `Verbaliser.decider(document,
+  e.pointer())`, zoals `drlRules` dat al doet met `o.pointer()`: `group`, `pointer` (zonder de plaats van de groep),
+  `position` en `variant`, of `rule` voor een regelversie; waar `e.exceptions()` niet null is, daaronder dezelfde vorm
+  voor de uitzonderingsgroepen; en `unordered()` waar ketens naast elkaar staan. `document` is
+  `Verbaliser.Document.of(IrLoader.loadWithPositions(ir))` van het document dat de emitter van het model schrijft, zoals
+  in `drlRules`; `generated` heeft het nu niet, en krijgt het mee. Een vorm, ter oriëntatie (de toolchain kiest de
+  sleutels): `"composition": {"unordered": false, "chains": [[{"group": …, "pointer": "/defaults/0", "position": 1,
+  "exceptions": {"unordered": false, "chains": [[…]]}}, {…}]]}`. Op `jutterswet-meldtermijn-strandjutter` geeft
+  `defaults A:Strandjutter.meldtermijn` één keten: eerst `{group: "meldtermijn voor Strandjutter", pointer: "/defaults/0",
+  position: 1}` met daaronder één keten `[{group: "meldtermijn voor Strandjutter", pointer:
+  "/defaults/0/exceptions/members/0/defaults/0", position: 1, variant: "meldtermijn tot het vergunningseinde"}]`, dan
+  `{group: "meldtermijn", pointer: "/defaults/0", position: 1, variant: "meldtermijn"}`. Voor acceptatie (a) van de
+  toolchain-kaart verwacht ik bij `defaults A:RechtOpUitkeringWwBijOntslag.herlevingstermijn` dezelfde vorm: eerst de
+  groep-default van `herlevingstermijn art. 21 lid 3 en 5 voor RechtOpUitkeringWwBijOntslag` met in `exceptions` één
+  keten van drie afwijkingen (de middelste met een eigen uitzonderingsgroep, het label `0.0.1.0.0`), dan de default van
+  de basisregel `herlevingstermijn art. 21 lid 3 en 5`; op v2 heb ik het niet gemeten, die regelset staat buiten uchar.
+- zonder DRL (`drlError`): `stacks()` en `generated()` komen uit de analyse (`TmsTranspiler`), niet uit de DRL-tekst, en
+  staan op de transpiler van elke tak; de samenstelling dus ook.
+- `Role.fold()` heet sinds het Fable-advies `Role.inFold()`; de toolchain gebruikt het niet (zij leest `o.fold()` en
+  `o.role().key()`).
 - de vouw is er in elke bouw, met en zonder lezingen: sinds het Fable-advies eist ook de bouw uit de zijtabellen
   (`TmsTranspiler.build(RegelSpraakModel, …, NodePositions)`) de plaatsen van de knopen; de toolchain gebruikt die ingang
   niet.
