@@ -1,4 +1,4 @@
-# drl-rule-part: de herkomst van een regel noemt ook zijn rol, en een stapel haar type
+# drl-rule-part: de herkomst van een regel noemt ook zijn rol, en een stapel haar type en samenstelling
 
 *Voorstel van de werkbank (2026-10-24), met akkoord van de eigenaar door de werkbank-sessie in deze backlog gezet (niet
 gecommit). Vervolg op `drl-rule-origin` (done). Klein; landt vóór de toolchain-kaart `drl-rule-part-fields`
@@ -27,6 +27,12 @@ een regel te ontleden, en dat doet zij niet:
    `defaults K:RechtOpUitkeringWwBijOntslag.indicatie herleving recht op uitkering` twee stapels met dezelfde
    `generatedFrom` (`{KENMERK, RechtOpUitkering, indicatie herleving recht op uitkering, defaultsstapel}`); de
    werkbank kan ze niet uit elkaar houden of het subtype noemen.
+3. **Hoe een stapel is samengesteld.** De werkbank toont nu per IR-groep de varianten, de hoogste eerst. Een effectieve
+   stapel van een subtype is meer dan één groep (ch. 7.10: "the subtype's own exceptions" boven "the inherited
+   exceptions" en de basis). Gemeten op v2: in `defaults A:RechtOpUitkeringWwBijOntslag.herlevingstermijn` gaat de
+   groep `herlevingstermijn art. 21 lid 3 en 5 voor RechtOpUitkeringWwBijOntslag` (met drie `Afwijking van` uit hww-13)
+   voor op de basisregel `herlevingstermijn art. 21 lid 3 en 5`; dat staat alleen in de labels (`default 0.0.1.0.0`,
+   `eens 0.0.1`) en in de volgorde van de DRL-tekst, en die leest de werkbank niet als semantiek.
 
 ## Doel
 
@@ -42,6 +48,10 @@ een regel te ontleden, en dat doet zij niet:
 - `generated()` noemt bij een stapel ook het type waarvoor zij loopt (de eigenaar van de effectieve stapel), naast het
   lid zoals gedeclareerd; bij een versie van een vorm verandert niets. De bouwer kiest de vorm (een veld naast
   `GeneratedFrom`, of een eigen record voor een stapel) en zegt waarom.
+- Per stapel haar samenstelling: de defaults in volgorde van voorrang over de groepen heen, met de nesting van ch. 7.9
+  en 7.10, elk als de pointer die `decisionsOf` en `originOf` al gebruiken (een gewone regel die de stapel van een
+  subtype opneemt, als `/rules/rules/f/versions/v`), en waar groepen naast elkaar staan zonder volgorde (`unordered`,
+  IR-SPEC §6.1) dat ook. Zo kan een lezer de beslisvolgorde per type tonen in plaats van per groep.
 - Geen gedragsverandering: DRL-tekst en exec-model bytegelijk (`BranchDumpsCorpusWitnessTest` ongewijzigd).
 
 ## Acceptatie
@@ -50,7 +60,8 @@ een regel te ontleden, en dat doet zij niet:
   `generated()` heeft een type, en dat type is het declarerende type of een subtype ervan.
 - (b) Gericht: een groep met een uitzonderingsgroep (eigen beslissing, terugval, verzoening), een default met een vouw
   in zijn voorwaarde (de bijdragen en hun filterfout wijzen naar die vouw, als de pointer er komt), een gedateerde
-  groep (`geen rekendatum`), en een stapel over een subtype (twee stapels met hetzelfde lid en elk hun eigen type).
+  groep (`geen rekendatum`), en een stapel over een subtype (twee stapels met hetzelfde lid en elk hun eigen type, en
+  in die van het subtype de eigen uitzonderingen in de samenstelling boven de geërfde).
 - (c) De volledige gate-set groen vóór de landing (`WAY-OF-WORKING.md` §6).
 
 ## Niet in deze kaart
@@ -64,7 +75,7 @@ een regel te ontleden, en dat doet zij niet:
 Na de toolchain-kaart en een pin-bump zegt de kaart "Verlaagde DRL" bij elke regel van een variant in de woorden van
 een jurist wat hij doet (de toets van de variant, een verzamelstap voor haar voorwaarde, een foutregel, …), en noemen de
 kaart, de trace en de dekking bij een stapel het type waarvoor zij loopt; de codenaam van de stapel gaat naar de
-tooltip.
+tooltip. De kaart toont dan per beslisvolgorde (stapel) haar samenstelling, niet alleen de groep van de pagina.
 
 ## Result (2026-10-24)
 
