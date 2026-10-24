@@ -54,6 +54,15 @@ backend). De draad, de spec, het schema en het frontend veranderen niet.
 
 - `aa543653` de stukken van de DRL-tekst per regel (`TmsTranspiler.drlPieces`) en de twee getuigen.
 - dit Result, in het commit na `aa543653`; de kaart naar `done/` in het commit daarna.
+- de fixronde na de review, `c111a9ef` en `210dfed2` en het commit van de sectie "Review (fixronde, 2026-10-24)"
+  onderaan; wat daar verandert, staat ook op zijn plaats hierboven.
+
+### May touch
+
+Achteraf geschreven: de kaart had geen regel `May touch:`, die `WAY-OF-WORKING.md` §2 vraagt. De diff van de tak raakt
+alleen `backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/` (`DrlRendering.java`, `TmsTranspiler.java`),
+`backends/drools/src/test/java/dev/uchar/regelspraak/cases/` (`DrlPiecesCorpusWitnessTest.java`,
+`DrlPiecesWitnessTest.java`) en deze kaart. Geen ander bestand en geen beschermd pad.
 
 ### De ingang
 
@@ -70,7 +79,11 @@ tekst is de kop (package, imports, globals) en daarna deze stukken, aaneengeslot
 gat en zonder overlap. Gerenderd met de tekst, één keer, in `drl()`; geweigerd zoals `drl()` weigert (`DrlRefusal`).
 Bereikbaar via de build, zoals `originOf`: `build.execModelTranspiler().drlPieces()`. Op de tak `DRL_TEXT` is
 `build.drl()` de tekst van `execModelTranspiler().drl()` (de constructor van `Build` eist dat), dus de plaatsen liggen
-in `build.drl()`.
+in `build.drl()`. Op een bouw van de tak `EXEC_MODEL` is `build.drl()` null en speelt de bouw het uitvoerbare model;
+`drlPieces()` rendert daar de tekst op verzoek, zoals `drl()` dat doet, en de plaatsen horen bij die tekst, niet bij een
+tekst van de bouw. Dat hoort zo: één analyse geeft één tekst, welke tak er ook om vraagt, en het is de tekst die een
+bouw van de tak `DRL_TEXT` van hetzelfde document en dezelfde lezingen draagt (een getuige, zie de fixronde). Wie de
+stukken toont, leest ze naast `execModelTranspiler().drl()`.
 
 - `rule`: de naam van de regel zonder escapes, zoals de KieBase, `formOf` en `originOf` hem hebben; de regel `rule "…"`
   spelt hem als DRL-stringliteral (`Namen.drlString`).
@@ -84,25 +97,29 @@ in `build.drl()`.
 - `DrlFunction`: `name` zoals de regel en de functies die haar aanroepen hem spellen; `start` het begin van de functie
   met haar commentaar; `declaration` het begin van de regel `function …`; `end` na de regel met de sluitaccolade en de
   lege regel erna. Waar `start` vóór `declaration` ligt, staat daartussen precies één regel: `// `, de RegelSpraak-zin
-  van de knoop van de functie (het `source.snippet` van het IR, met een regeleinde als spatie en `*/` als `* /`,
-  `Namen.commentSafe`) en een regeleinde. Een knoop zonder zin geeft `start == declaration`.
+  van de knoop van de functie (het `source.snippet` van het IR) en een regeleinde. Een functie van meer knopen, de
+  componenten van een uniciteitssleutel (`componenten`) en de initialisaties van een objectcreatie (`creatie`), heeft
+  de zinnen van die van haar knopen die er een hebben, verbonden met `"; "`: haar commentaar is dan niet de zin van één
+  knoop (gemeten: `anchor/jutterswet-rekenkamer`, `r2_creatie1`: `// de grondslag van de Jutter; de aftrek van de
+  Jutter`). In de zin of de verbonden zinnen staat een regeleinde als spatie en `*/` als `* /` (`Namen.commentSafe`). Een
+  functie waarvan geen knoop een zin heeft, geeft `start == declaration`.
 
 Eenheid: een plaats is een index in de tekst zoals een Java-`String` telt, in UTF-16-code-units, zoals JavaScript een
 string telt; geen bytes van UTF-8 en geen code points. Een `ë` telt één, een teken buiten het Basic Multilingual Plane
 twee. Een begin telt mee, een einde niet: `drl().substring(start, end)` is het stuk.
 
 De constructors weigeren een stuk waarvan de functies niet aaneensluiten van `start` tot `ruleStart`, een stuk dat niet
-na `ruleStart` eindigt, en een functie met `declaration` vóór `start` of een `end` dat niet na `declaration` ligt
-(`IllegalArgumentException`).
+na `ruleStart` eindigt, en een functie met `declaration` vóór `start` of een `end` dat niet na `declaration` ligt, met
+een `IllegalStateException` (sinds de fixronde; eerst `IllegalArgumentException`, zie de fixronde voor waarom).
 
 Waarom deze vorm:
 
 1. Plaatsen, en niet alleen namen. De werkbank knipt de tekst waar de toolchain het zegt en leest geen namen; met alleen
    de namen van de functies moest zij elke functie in de tekst opzoeken.
 2. Per functie haar eigen plaatsen, naast die van het stuk. De werkbank wil boven elke regel zijn functies tonen,
-   ingeklapt, met de zin uit hun commentaar zichtbaar (toolchain `backlog/new/20261024-drl-rule-functions-fields.md`,
-   "Daarna"). `declaration` scheidt de commentaarregel van de code, zodat ook die grens niet uit de tekst gelezen hoeft
-   te worden. `name` erbij, zodat een lezer een aanroep in de regel aan een functie kan koppelen.
+   ingeklapt, met de zin uit hun commentaar zichtbaar (toolchain, kaart
+   `backlog/doing/20261024-drl-rule-functions-fields.md` op de tak `card/drl-rule-functions-fields`, "Daarna").
+   `declaration` scheidt de commentaarregel van de code, zodat ook die grens niet uit de tekst gelezen hoeft te worden. `name` erbij, zodat een lezer een aanroep in de regel aan een functie kan koppelen.
 3. Eén lijst in de volgorde van de tekst, met de naam van de regel in het record, en geen `Map` op naam. De stukken
    dekken de tekst in die volgorde, en de toolchain loopt nu al over de regels in de volgorde van de tekst
    (`Playground.drlRules` met `drlRuleNames`). Wie op naam zoekt, maakt de map zelf; de namen zijn uniek, want
@@ -129,8 +146,9 @@ Op de 282 goldens die de backend draagt, zonder lezingen (de bouw waarvan de too
 - Een regel die een functie van een ander stuk aanroept: geen, zonder en met lezingen.
 - Een functie die haar regel niet bereikt, direct of via andere functies van het stuk: één, in beide bouwen, in
   `jutterswet-bergingstoeslag`: `defaults A:Jutter.bergingsforfait: default 0` heeft `r2_binder4`, de binder van een
-  `Let` ("de bergingsgrond is zijn bergingsgrondslag") waarvan de verlaagde body de variabele niet leest
-  (`return new java.math.BigDecimal("42")`). De functie staat in het stuk van die regel, want zij is van hem; de
+  `Let` waarvan de verlaagde body de variabele niet leest (`return new java.math.BigDecimal("42")`). Haar eigen
+  commentaar is `// zijn bergingsgrondslag`; "de bergingsgrond is zijn bergingsgrondslag" is de zin van de `Let` zelf,
+  `r2_let3`, en van `r2_afloop2`, die haar aanroept. De functie staat in het stuk van die regel, want zij is van hem; de
   werkbank toont dan bij die regel een functie die hij niet aanroept. Niet in deze kaart veranderd.
 - 49 teksten hebben een teken buiten ASCII; geen tekst heeft een teken buiten het Basic Multilingual Plane, dus het
   corpus maakt geen verschil tussen UTF-16 en code points. Dat verschil toetst een document in (b).
@@ -151,8 +169,9 @@ parser ze leest, de declaraties `function <type> <naam>(` en de aanroepen `<naam
   andere functie; elke declaratie van de tekst ligt in een stuk;
 - elke aanroep van een gedeclareerde functie in een stuk (buiten commentaar- en declaratieregels) is een aanroep van een
   functie van dat stuk;
-- elke functie van een stuk wordt vanuit de regel bereikt, behalve een binder (de naam eindigt op `_binder<n>`, een
-  vierde orakel), zoals de ene hierboven.
+- elke functie van een stuk wordt vanuit de regel bereikt, behalve die in `EXPECTED_UNREACHED`: een lijst met gelijkheid
+  van (golden, regel, functienaam), per bouw, zonder en met lezingen, met als enige de binder hierboven. (Tot de
+  fixronde: elke functie waarvan de naam op `_binder<n>` eindigde; zie de fixronde.)
 
 Vloeren, gemeten 2026-10-24: 282 goldens, 49 teksten met een teken buiten ASCII, en de tellingen hierboven.
 Ongeveer 20 s.
@@ -247,5 +266,92 @@ Op `aa543653`:
 4. `DrlRendering.Rule.name` noteert de naam van de functie bij haar plaats. Het alternatief was een `reserveer` met de
    soort als argument, op de 22 plaatsen waar `reserveer` wordt aangeroepen; dat verandert veel meer regels voor
    hetzelfde.
-5. De corpusgetuige laat een functie toe die haar regel niet bereikt als het een binder is (zie Gemeten). Of de
-   verlaging zo'n binder weg moet laten, is een vraag over het plan, niet over de weergave; zij valt buiten deze kaart.
+5. De corpusgetuige laat een functie toe die haar regel niet bereikt, bij naam: de ene binder van `Gemeten`, in
+   `EXPECTED_UNREACHED` (eerst: elke binder, op de naam; zie de fixronde). Of de verlaging zo'n binder weg moet laten,
+   is een vraag over het plan, niet over de weergave; zij valt buiten deze kaart.
+
+### Review (fixronde, 2026-10-24)
+
+Een review (alleen lezen) van `3c137fcd` vond één vondst van middel gewicht en vijf kleine. Verwerkt als nieuwe commits
+op de tak: `c111a9ef` (vondst 1), `210dfed2` (vondsten 2 tot en met 5) en het commit van deze sectie (vondst 6). De
+plaatsen hierboven waar het Result niet klopte, zijn ter plekke gecorrigeerd.
+
+1. Middel: de corpusgetuige liet elke onbereikte binder toe. Zij toetste alleen of de naam van een functie die haar
+   regel niet bereikt op `_binder<n>` eindigt. Met een mutatie in `DrlRendering.let` (de aanroep van de binder vervangen
+   door de waarde) werden alle binders onbereikt en de toets liet ze door; de getuige werd alleen rood via de vloer van
+   de functies die een functie van hun stuk aanroepen (zo mat de review).
+
+   Nu: `DrlPiecesCorpusWitnessTest.EXPECTED_UNREACHED`, een lijst met gelijkheid van (golden, regel, functienaam), per
+   bouw, zonder en met lezingen. Gemeten: één functie, in beide bouwen dezelfde, `jutterswet-bergingstoeslag` | `defaults
+   A:Jutter.bergingsforfait: default 0` | `r2_binder4`. Zonder en met lezingen telt de getuige er elk één; de
+   lezingen voegen er geen toe. De getuige faalt als een bouw er een meer of een minder heeft, met de functies die niet
+   in de lijst staan en de functies die in de lijst staan en wel bereikt worden, bij naam (de eerste tien). Een
+   patroon op de naam is er niet meer.
+
+   Mutatie (niet gecommit, daarna teruggezet; `git status` schoon en het bestand gelijk aan dat van `c111a9ef`): in
+   `let` wordt de binder niet meer aangeroepen maar de waarde ingeschreven (`inside.binders.put(l.slot(), value)`, na
+   het berekenen van `value`). De getuige wordt nu rood op de binder-toets zelf: "functies die hun regel niet bereiken,
+   zonder lezingen: 39, in de lijst 1; niet in de lijst: 38 [Unreached[golden=anchor/jutterswet-tariefstelling,
+   rule=aanslag van een jutter, function=r0_binder2], …]; in de lijst en wel bereikt: 0 []". Dat zijn 39 binders per
+   bouw, 78 over beide bouwen, het getal van de review; de ene uit de lijst blijft onbereikt, dus 38 zijn nieuw. Op
+   dezelfde run daalt het aantal functies dat een functie van hun stuk aanroept van 481 naar 448 (zonder en met
+   lezingen), onder zijn vloer, maar de getuige faalt eerder, op de binder-toets. De gerichte tests van
+   `DrlPiecesWitnessTest` blijven groen onder de mutatie. Log: `werk/drl-rule-functions/fix/mutation-binder.log`.
+
+   Het commitbericht van `c111a9ef` zegt "alle 78 binders"; dat zijn er 39 per bouw, 78 over beide bouwen.
+
+2. Laag: een fout in de stukken brak `drl()`. De constructors van `DrlPiece` en `DrlFunction` gooiden een
+   `IllegalArgumentException`. `drl()` vangt alleen `Refusal`, en de toolchain (`Playground`, toolchain `e469871e`) vangt
+   bij de DRL-tak alleen `NotCarried | IllegalStateException` en meldt dan `drlError`: een boekhoudfout in de stukken liet
+   zo heel `/playground/analyse` falen. `DrlRendering` gooit bij zijn eigen boekhoudfouten een `IllegalStateException`
+   (`renderRule`, `name`), en `DroolsBackend.drlBranch` noemt een fout van de weergave zo. De constructors doen dat nu
+   ook: de fout blijft luid (de constructors vangen of vervangen niets, en de toolchain meldt haar met haar melding als
+   `drlError`, de analyse zonder DRL, zoals elke andere boekhoudfout van de weergave) en is herkenbaar als boekhoudfout
+   van de weergave. De melding van `DrlPiece` noemt de regel en
+   de plaatsen; die van `DrlFunction` noemt de functie en haar plaatsen, niet de regel, want een `DrlFunction` kent haar
+   regel niet (haar naam begint wel met `r<n>_`, de plaats van de regel in het plan).
+
+   Getuige: `DrlPiecesWitnessTest.places_that_do_not_add_up_are_a_bookkeeping_fault_of_the_rendering`, vijf gevallen
+   (een eerste functie die niet op `start` begint, functies die niet op `ruleStart` eindigen, een regel die niet na
+   `ruleStart` eindigt, een `declaration` vóór `start`, een `end` dat niet na `declaration` ligt), elk met het type en
+   de melding. Rood op de constructors van `3c137fcd` ("expected `IllegalStateException` but was
+   `IllegalArgumentException`"), groen erna.
+
+3. Laag: `drlPieces()` op een bouw van de tak `EXEC_MODEL`. Dat rendert de tekst op verzoek, zoals `drl()`; de plaatsen
+   horen bij een tekst die die bouw niet als `drl()` draagt. Dat hoort zo, en het staat nu in de javadoc van
+   `drlPieces()` en in "De ingang" hierboven. Getuige:
+   `DrlPiecesWitnessTest.the_pieces_of_an_exec_model_build_are_those_of_the_text_branch_of_the_same_document`: op
+   `jutterswet-uitsluiting-rgs`, zonder en met lezingen, is `drl()` van de analyse van een bouw van de tak
+   `EXEC_MODEL` gelijk aan `build.drl()` van de tak `DRL_TEXT`, en zijn de stukken gelijk.
+
+4. Laag: het commentaar boven een functie is niet altijd het `source.snippet`. Bij `componenten` (de sleutel van een
+   uniciteit) en `creatie` (een objectcreatie) worden de zinnen van meer knopen met `"; "` verbonden. Gemeten op de 282
+   goldens, zonder lezingen: 43 functies van die twee soorten, waarvan 23 met een commentaar en 7 daarvan met meer
+   zinnen, bijvoorbeeld `anchor/jutterswet-rekenkamer`, `r2_creatie1`: `// de grondslag van de Jutter; de aftrek van de
+   Jutter`. De javadoc van `DrlFunction` (`declaration`) en "De ingang" hierboven zeggen het nu. Voor de toolchain en de
+   werkbank: de commentaarregel van een functie kan meer zinnen bevatten, verbonden met `"; "`; zij blijft één regel.
+   Geen getuige pint de `"; "`; de corpusgetuige eist van een commentaar één regel `// …`.
+
+5. Laag: de javadoc van `DrlPiece` zei dat een functie van een knoop met eigen statements wordt aangeroepen door de
+   functie waarin zij staat. Dat is onwaar voor de binder van een `Let` die haar variabele niet leest: niemand roept haar
+   aan. De javadoc zegt dat nu, en dat de constructors een stuk zonder sluitende plaatsen met een
+   `IllegalStateException` weigeren.
+
+6. Laag: het Result. Het pad van de toolchain-kaart is `backlog/doing/20261024-drl-rule-functions-fields.md` op de
+   toolchain-tak `card/drl-rule-functions-fields`; het citaat bij `r2_binder4` is gecorrigeerd (zie "Gemeten"); de
+   sectie "May touch" staat bovenaan.
+
+Geen gedragsverandering: de tekst en het plan veranderen niet. De signatuur van `drlPieces()`, `DrlPiece` en
+`DrlFunction` verandert niet (alleen het type van de uitzondering van hun constructors, en javadoc), dus de toolchain-kaart
+bouwt er ongewijzigd op.
+
+Suite en gate-set, op `210dfed2`:
+
+- de JUnit-suite van `backends/drools`: 1691 tests, 0 overgeslagen (vloer 1573); de 1689 van `3c137fcd` plus twee in
+  `DrlPiecesWitnessTest` (nu zes: de boekhoudfout en de bouw van de tak `EXEC_MODEL`). De corpusgetuige blijft één test
+  met dezelfde vloeren en tellingen (2124 stukken, 2499 functies, 1944 met commentaar, 481 die een functie van hun
+  stuk aanroepen; met lezingen 3046 stukken en 3456 functies); nieuw is de lijst: één onbereikte functie per bouw.
+- de volledige gate-set (`werk/gates.sh`): 17 van 17 groen in 30 minuten; samenvatting
+  `werk/drl-rule-functions/gates-2.summary.txt`. Gate 12: PASS; 279 goldens gespeeld op de exec-model-tak en op de
+  DRL-teksttak, elke statusregel gelijk; kanaalvloer 50 niet-gespeelde goldens bij naam; `check-drools-codes` PASS
+  (294 codes). De commits na `210dfed2` veranderen alleen de kaart.
