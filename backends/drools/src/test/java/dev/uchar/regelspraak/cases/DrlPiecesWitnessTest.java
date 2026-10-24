@@ -14,6 +14,8 @@ import java.util.regex.Pattern;
 import static dev.uchar.regelspraak.cases.TmsDocuments.characteristicRule;
 import static dev.uchar.regelspraak.cases.TmsDocuments.check;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -24,7 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the value). Per rule the table of its piece: per function its name and its comment as the text has them at the places
  * of the record, and which functions the rule and each function call, read off the text of the piece by this witness
  * (a name followed by an opening parenthesis), an oracle the rendering does not consult. Beside it, on a document
- * written here, that a place counts UTF-16 code units. {@link DrlPiecesCorpusWitnessTest} holds the same over the corpus.
+ * written here, that a place counts UTF-16 code units, and that a piece whose places do not add up is a bookkeeping
+ * fault of the rendering. {@link DrlPiecesCorpusWitnessTest} holds the same over the corpus.
  */
 class DrlPiecesWitnessTest {
 
@@ -136,5 +139,49 @@ class DrlPiecesWitnessTest {
         assertEquals(second.ruleStart() - 1, b.drl().codePointCount(0, second.ruleStart()));
         assertEquals("// hij uitgesloten is",
                 b.drl().substring(second.functions().get(0).start(), second.functions().get(0).declaration()).strip());
+    }
+
+    @Test void the_pieces_of_an_exec_model_build_are_those_of_the_text_branch_of_the_same_document() throws Exception {
+        // drlPieces() on a build that carries no text renders it on request: the text, and so the places, are those a
+        // build of the branch DRL_TEXT carries, with and without readings
+        Path ir = GOLDEN.resolve("jutterswet-uitsluiting-rgs").resolve("ir.json");
+        for (boolean readings : new boolean[] {false, true}) {
+            DroolsBackend.Build model = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL, readings);
+            DroolsBackend.Build text = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT, readings);
+            assertNull(model.drl());
+            assertEquals(text.drl(), model.execModelTranspiler().drl(), "readings " + readings);
+            assertEquals(text.execModelTranspiler().drlPieces(), model.execModelTranspiler().drlPieces(),
+                    "readings " + readings);
+        }
+    }
+
+    @Test void places_that_do_not_add_up_are_a_bookkeeping_fault_of_the_rendering() {
+        // an IllegalStateException, as the other bookkeeping faults of DrlRendering: the toolchain turns that one into
+        // its drlError, where any other exception would fail the analysis as a whole. The message holds the rule and
+        // the places, so that the fault is found without a debugger.
+        DrlPiece.DrlFunction f = new DrlPiece.DrlFunction("r1_toets0", 10, 20, 40);
+        // the first function does not begin at the start of the piece
+        IllegalStateException gap = assertThrows(IllegalStateException.class,
+                () -> new DrlPiece("regel gat", 12, 40, 60, List.of(f)));
+        assertTrue(gap.getMessage().contains("'regel gat'") && gap.getMessage().contains("r1_toets0")
+                && gap.getMessage().contains("10") && gap.getMessage().contains("12"), gap.getMessage());
+        // the functions do not end where the rule begins
+        IllegalStateException rule = assertThrows(IllegalStateException.class,
+                () -> new DrlPiece("regel naad", 10, 45, 60, List.of(f)));
+        assertTrue(rule.getMessage().contains("'regel naad'") && rule.getMessage().contains("45")
+                && rule.getMessage().contains("40"), rule.getMessage());
+        // the rule does not end after it begins
+        IllegalStateException end = assertThrows(IllegalStateException.class,
+                () -> new DrlPiece("regel einde", 60, 60, 60, List.of()));
+        assertTrue(end.getMessage().contains("'regel einde'") && end.getMessage().contains("60"), end.getMessage());
+        // a function whose declaration lies before its start, and one that ends before its declaration
+        IllegalStateException declaration = assertThrows(IllegalStateException.class,
+                () -> new DrlPiece.DrlFunction("r2_afloop1", 20, 10, 40));
+        assertTrue(declaration.getMessage().contains("r2_afloop1") && declaration.getMessage().contains("20")
+                && declaration.getMessage().contains("10") && declaration.getMessage().contains("40"),
+                declaration.getMessage());
+        IllegalStateException functionEnd = assertThrows(IllegalStateException.class,
+                () -> new DrlPiece.DrlFunction("r2_afloop1", 10, 20, 20));
+        assertTrue(functionEnd.getMessage().contains("r2_afloop1"), functionEnd.getMessage());
     }
 }

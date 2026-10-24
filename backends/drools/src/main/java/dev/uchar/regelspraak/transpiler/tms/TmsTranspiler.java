@@ -882,6 +882,13 @@ public final class TmsTranspiler {
      * The piece of the DRL text ({@link #drl}) of every rule of the plan, in the order of the text ({@link DrlPiece}):
      * the text is its header (package, imports, globals) and then these pieces, one after the other, without a gap and
      * without an overlap. Rendered with the text, once; refused as {@link #drl} refuses.
+     *
+     * <p>The places are those of the text of this transpiler, {@link #drl}. On a build of the branch
+     * {@code EXEC_MODEL} that text is not one the build carries (its {@code drl()} is null, and what it plays is the
+     * executable model), so this call renders it on request, as {@link #drl} does, and the places belong to that text
+     * and to no text of the build. That is intended: one analysis gives one text, whichever branch asks for it, and the
+     * text is the one a build of the branch {@code DRL_TEXT} of the same document and the same readings carries. A
+     * caller that shows the pieces reads them beside the text of this transpiler, never beside a text of the build.
      */
     public synchronized List<DrlPiece> drlPieces() {
         drl();
@@ -890,11 +897,16 @@ public final class TmsTranspiler {
 
     /**
      * The piece of the DRL text ({@link #drl}) of one rule: its functions, then the rule. Every test and every value of
-     * the rule's plan is a function in the Java dialect that the rule calls, with the RegelSpraak sentence of its node
-     * above it as a comment; a function of a node that needs statements of its own (a composite, a {@code Let}, the
-     * evaluation of a fold) is called by the function it stands in, a function of the same rule. A rule calls only
-     * functions of its own piece: the rendering names a function after its rule's place in the plan, and only the
-     * rendering of that rule writes a call of it.
+     * the rule's plan is a function in the Java dialect, with the RegelSpraak sentence of its node above it as a
+     * comment, and the rule calls it, or, for a node that needs statements of its own (a composite, a {@code Let}, the
+     * evaluation of a fold), the function of the node it stands in does, a function of the same rule; but for the
+     * binder of a {@code Let} whose body does not read its variable, which nothing calls and which stands in the piece
+     * of its rule all the same. A rule calls only functions of its own piece: the rendering names a function after its
+     * rule's place in the plan, and only the rendering of that rule writes a call of it.
+     *
+     * <p>A piece whose places do not add up is refused by the constructors with an {@code IllegalStateException} that
+     * names the rule and the places: a bookkeeping fault of the rendering, like the others of {@code DrlRendering}, not
+     * a wrong argument of a caller.
      *
      * <p>A place is an index into the text as a Java {@code String} counts it, in UTF-16 code units, as JavaScript
      * counts a string too (not bytes, not code points); a start is inclusive, an end exclusive, so
@@ -920,12 +932,12 @@ public final class TmsTranspiler {
             int at = start;
             for (DrlFunction f : functions) {
                 if (f.start() != at)
-                    throw new IllegalArgumentException("de functie " + f.name() + " van de regel '" + rule
+                    throw new IllegalStateException("de functie " + f.name() + " van de regel '" + rule
                             + "' begint op " + f.start() + ", niet op " + at + " waar de vorige eindigt");
                 at = f.end();
             }
             if (at != ruleStart || ruleStart >= end)
-                throw new IllegalArgumentException("de regel '" + rule + "' met het stuk " + start + "–" + end
+                throw new IllegalStateException("de regel '" + rule + "' met het stuk " + start + "–" + end
                         + " begint op " + ruleStart + ", en zijn functies eindigen op " + at);
         }
 
@@ -938,8 +950,11 @@ public final class TmsTranspiler {
          * @param declaration the beginning of its declaration, the line that begins with {@code function}; where
          *                    {@code start} is before it, the text between the two is the one line of the comment:
          *                    {@code //} and a space, the RegelSpraak sentence of the function's node (the IR's
-         *                    {@code source.snippet}, with a line break in it as a space and the end mark of a block
-         *                    comment as {@code * /}), and a line break; equal to {@code start} where the node has no
+         *                    {@code source.snippet}) and a line break; a function of several nodes, the components of a
+         *                    uniqueness key and the initialisations of an object creation, has the sentences of those of
+         *                    its nodes that have one, joined with {@code "; "}, so its comment is not the sentence of
+         *                    one node; in the sentence or the joined sentences a line break stands as a space and the
+         *                    end mark of a block comment as {@code * /}; equal to {@code start} where no node has a
          *                    sentence
          * @param end         the end of the function, after the line with the brace that closes it and the empty line
          *                    after it: the beginning of the next function or of the rule
@@ -949,7 +964,7 @@ public final class TmsTranspiler {
             public DrlFunction {
                 Objects.requireNonNull(name, "name");
                 if (start < 0 || declaration < start || end <= declaration)
-                    throw new IllegalArgumentException("de functie " + name + " met de plaatsen " + start + ", "
+                    throw new IllegalStateException("de functie " + name + " met de plaatsen " + start + ", "
                             + declaration + " en " + end);
             }
         }
