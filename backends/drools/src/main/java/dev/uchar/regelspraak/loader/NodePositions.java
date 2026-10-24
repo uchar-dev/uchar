@@ -14,7 +14,9 @@ import java.util.Map;
  * a record, the pointer of the version. A side table beside the model, as the loader's other tables are: the records
  * are those of the vendored frontend slice, which carry no position, and the table is keyed on them by identity, since
  * two nodes of equal content are two records. The lowering reads it only for a build with readings
- * ({@code TmsTranspiler}), which numbers the nodes of a form by their order here.
+ * ({@code TmsTranspiler}), which numbers the nodes of a form by their order here; beside the lowering,
+ * {@code TmsTranspiler#originOf} names the fold of a rule of a fold by the pointer of its node, in every build that has
+ * the table.
  */
 public final class NodePositions {
 

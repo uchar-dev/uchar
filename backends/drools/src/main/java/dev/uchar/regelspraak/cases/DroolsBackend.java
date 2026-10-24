@@ -192,10 +192,11 @@ public final class DroolsBackend {
      */
     public static Build build(JsonNode document, Branch branch, boolean readings) {
         Objects.requireNonNull(branch, "branch");
-        // the model plus the ch. 7 prioritized-defaults extension beside it, and for a build with readings the positions
-        // of the document's nodes
-        IrLoader.Positioned positioned = readings ? IrLoader.loadWithPositions(document) : null;
-        IrLoader.Loaded loaded = readings ? positioned.loaded() : IrLoader.loadAll(document);
+        // the model plus the ch. 7 prioritized-defaults extension beside it, and the positions of the document's nodes,
+        // which a build with readings numbers the nodes of a form by and every build names the folds of originOf by; the
+        // loader reads them in every load, so the model and its side tables are those of loadAll
+        IrLoader.Positioned positioned = IrLoader.loadWithPositions(document);
+        IrLoader.Loaded loaded = positioned.loaded();
         RegelSpraakModel model = loaded.model();
         refuseBeanNameCollision(loaded);
 
@@ -231,8 +232,8 @@ public final class DroolsBackend {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             return switch (branch) {
-                case EXEC_MODEL -> execModelBranch(loaded, cl, positioned);
-                case DRL_TEXT -> drlBranch(loaded, cl, positioned);
+                case EXEC_MODEL -> execModelBranch(positioned, cl, readings);
+                case DRL_TEXT -> drlBranch(positioned, cl, readings);
             };
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
@@ -297,8 +298,9 @@ public final class DroolsBackend {
      *  A form the transpiler does not lower is refused from its manifest, in the {@code transpiler SKIP:} sentence the
      *  toolchain reads; a cycle of the dependency graph that WF-045 or WF-046 forbids is refused before the KieBase is
      *  built, since truth maintenance gives such a cycle no single fixpoint ({@code Cycles}). */
-    private static Build execModelBranch(IrLoader.Loaded loaded, ClassLoader cl, IrLoader.Positioned positioned) {
-        TmsTranspiler t = analyse(loaded, cl, positioned);
+    private static Build execModelBranch(IrLoader.Positioned positioned, ClassLoader cl, boolean readings) {
+        IrLoader.Loaded loaded = positioned.loaded();
+        TmsTranspiler t = analyse(positioned, cl, readings);
         KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(t.model(), EqualityBehaviorOption.EQUALITY);
         return new Build(loaded.model(), cl, t, null, List.copyOf(t.coverage()), kieBase);
     }
@@ -307,10 +309,9 @@ public final class DroolsBackend {
      *  sentence each: a form the transpiler does not lower, from its manifest, in the {@code transpiler SKIP:}
      *  sentence the toolchain reads; a cycle of the dependency graph that WF-045 or WF-046 forbids; and two rules of one
      *  name, after the label {@code exec-model:}, the name of the analysis. */
-    private static TmsTranspiler analyse(IrLoader.Loaded loaded, ClassLoader cl, IrLoader.Positioned positioned) {
-        TmsTranspiler t = positioned != null ? TmsTranspiler.withReadings(positioned, cl)
-                : TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.roleBindings(),
-                        loaded.lets(), loaded.sourcePaths(), loaded.navigationBindings(), loaded.anchored());
+    private static TmsTranspiler analyse(IrLoader.Positioned positioned, ClassLoader cl, boolean readings) {
+        IrLoader.Loaded loaded = positioned.loaded();
+        TmsTranspiler t = readings ? TmsTranspiler.withReadings(positioned, cl) : TmsTranspiler.build(positioned, cl);
         for (Coverage d : t.coverage())
             if (!d.lowered()) throw new Excluded(new Reason(d.code(), Msg.drools("FRAME.transpiler-verdict",
                     "verdict", d.verdict(), "key", d.key(), "reasonClause", d.reason().isEmpty() ? ""
@@ -332,8 +333,9 @@ public final class DroolsBackend {
      *  which {@link Build#dayKindGlobals} gives from the analysis. A text the Drools compiler rejects is a fault of the
      *  rendering, not a form the branch does not carry: it fails with an {@link IllegalStateException}, which a caller
      *  that knows the document names. */
-    private static Build drlBranch(IrLoader.Loaded loaded, ClassLoader cl, IrLoader.Positioned positioned) {
-        TmsTranspiler t = analyse(loaded, cl, positioned);
+    private static Build drlBranch(IrLoader.Positioned positioned, ClassLoader cl, boolean readings) {
+        IrLoader.Loaded loaded = positioned.loaded();
+        TmsTranspiler t = analyse(positioned, cl, readings);
         String drl;
         try {
             drl = t.drl();

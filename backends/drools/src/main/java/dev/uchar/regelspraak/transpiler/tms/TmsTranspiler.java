@@ -291,6 +291,12 @@ public final class TmsTranspiler {
     private final Set<String> stackOwnRules = new HashSet<>();
     /** The rule each reading rule of a build with readings reads, by the reading rule's name ({@link #originOf}). */
     private final Map<String, String> readingRuleOf = new HashMap<>();
+    /** The role each rule of a form has in the lowering of its form, default or stack, by the rule's name, noted where
+     *  the lowering builds the rule ({@link #as}, {@link #originOf}); a rule of no form has none. */
+    private final Map<String, RuleOrigin.Role> roleOfRule = new HashMap<>();
+    /** The fold each rule of a fold belongs to, by the rule's name: the node of the document the fold is, an
+     *  aggregation or a quantifier fold, noted where {@link #foldFor} builds the fold's rules ({@link #originOf}). */
+    private final Map<String, Object> foldOfRule = new HashMap<>();
     /** While a default of a stack lowers, and while the stack registers that default's reads: the default, which the
      *  contribution rules of the folds registered meanwhile lower ({@link Reads#recorder}); null at every other
      *  moment. */
@@ -304,6 +310,8 @@ public final class TmsTranspiler {
     private Map<Default, String> pointers;
     /** The manifest names that name no declaration, with the element each comes from ({@link #generated}). */
     private final Map<String, RegelSpraakModel.GeneratedFrom> generated = new LinkedHashMap<>();
+    /** The type each effective stack runs for, by the stack's name ({@link #stackTypes}). */
+    private final Map<String, RegelSpraakModel.Designatable> stackTypes = new LinkedHashMap<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
      *  through is the bean property of the declared spelling, which the key no longer carries. */
     private final Map<ElementKey, Member> derived = new LinkedHashMap<>();
@@ -352,6 +360,12 @@ public final class TmsTranspiler {
      *  a value (card readings-of-unconditional-forms) ({@link #readingsOf}); null in a build without, whose plan is that
      *  of a build before the card. */
     private final dev.uchar.regelspraak.loader.NodePositions positions;
+    /** Where the nodes of the document stand on the wire, for {@link #originOf} alone, which names the fold of a rule of
+     *  a fold by it: the positions the loader gave with the document, in a build with readings and in one without
+     *  ({@link #build(dev.uchar.regelspraak.loader.IrLoader.Positioned, ClassLoader)}); null in a build from the side
+     *  tables alone. The lowering reads none of it, so a build without readings that has it plans what one without it
+     *  plans. */
+    private final dev.uchar.regelspraak.loader.NodePositions origins;
     /** While the condition and the value of a form's own rule compile in a build with readings: the term the analysis
      *  plans for each node of the IR it compiles there, by identity ({@link #note}); null at every other moment. */
     private Map<Object, Term> noted;
@@ -373,8 +387,10 @@ public final class TmsTranspiler {
                           Map<Object, List<RoleBindingRef>> navigationBindings, Set<Object> anchored,
                           Map<Object, RoleBindingRef> roleBindings,
                           Map<Object, List<RoleBindingRef>> sourcePaths, EffectiveUnit eff,
-                          dev.uchar.regelspraak.loader.NodePositions positions) {
+                          dev.uchar.regelspraak.loader.NodePositions positions,
+                          dev.uchar.regelspraak.loader.NodePositions origins) {
         this.positions = positions;
+        this.origins = origins;
         this.model = model;
         this.beanLoader = beanLoader != null ? beanLoader : TmsTranspiler.class.getClassLoader();
         this.defaults = defaults;
@@ -403,28 +419,44 @@ public final class TmsTranspiler {
             Map<Object, RoleBindingRef> roleBindings, List<Expr.Let> lets,
             Map<Object, List<RoleBindingRef>> sourcePaths,
             Map<Object, List<RoleBindingRef>> navigationBindings, Set<Object> anchored) {
-        return build(m, beanLoader, defaults, roleBindings, lets, sourcePaths, navigationBindings, anchored, null);
+        return build(m, beanLoader, defaults, roleBindings, lets, sourcePaths, navigationBindings, anchored, null, null);
+    }
+
+    /** The build without readings of the loaded {@code document}: the build of
+     *  {@link #build(RegelSpraakModel, ClassLoader, List, Map, List, Map, Map, Set)} with every side table the loader
+     *  returns, and beside it the positions of the document's nodes, which {@link #originOf} alone reads, to name the
+     *  fold of a rule of a fold ({@link RuleOrigin#fold}). The lowering reads none of them, so the plan is that of the
+     *  build from the side tables alone. */
+    public static TmsTranspiler build(dev.uchar.regelspraak.loader.IrLoader.Positioned document,
+                                      ClassLoader beanLoader) {
+        Objects.requireNonNull(document, "document");
+        dev.uchar.regelspraak.loader.IrLoader.Loaded l = document.loaded();
+        return build(l.model(), beanLoader, l.prioritizedDefaults(), l.roleBindings(), l.lets(), l.sourcePaths(),
+                l.navigationBindings(), l.anchored(), null, Objects.requireNonNull(document.positions(), "positions"));
     }
 
     /** A build with readings (card fixpoint-readings) of the loaded {@code document}: the build of
      *  {@link #build(RegelSpraakModel, ClassLoader, List, Map, List, Map, Map, Set)}, and beside the rule of every form with a
      *  condition, or without one that computes a value, a reading rule, whose facts {@link #readingsOf} reads, numbering
-     *  the nodes of a form by the positions the loader gives with the document. It takes the loaded document whole, so it
-     *  leaves no side table out. */
+     *  the nodes of a form by the positions the loader gives with the document, by which {@link #originOf} names the
+     *  fold of a rule of a fold as well. It takes the loaded document whole, so it leaves no side table out. */
     public static TmsTranspiler withReadings(dev.uchar.regelspraak.loader.IrLoader.Positioned document,
                                              ClassLoader beanLoader) {
         Objects.requireNonNull(document, "document");
         dev.uchar.regelspraak.loader.IrLoader.Loaded l = document.loaded();
+        dev.uchar.regelspraak.loader.NodePositions positions = Objects.requireNonNull(document.positions(), "positions");
         return build(l.model(), beanLoader, l.prioritizedDefaults(), l.roleBindings(), l.lets(), l.sourcePaths(),
-                l.navigationBindings(), l.anchored(), Objects.requireNonNull(document.positions(), "positions"));
+                l.navigationBindings(), l.anchored(), positions, positions);
     }
 
-    /** The build, with {@code positions} for a build with readings and null for one without. */
+    /** The build, with {@code positions} for a build with readings and null for one without, and {@code origins} where
+     *  {@link #originOf} names the folds, null where the build has no positions of the document's nodes. */
     private static TmsTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
             Map<Object, RoleBindingRef> roleBindings, List<Expr.Let> lets,
             Map<Object, List<RoleBindingRef>> sourcePaths,
             Map<Object, List<RoleBindingRef>> navigationBindings, Set<Object> anchored,
-            dev.uchar.regelspraak.loader.NodePositions positions) {
+            dev.uchar.regelspraak.loader.NodePositions positions,
+            dev.uchar.regelspraak.loader.NodePositions origins) {
         Objects.requireNonNull(defaults, "side table 'defaults' is null — pass an empty list for a document without one");
         Objects.requireNonNull(roleBindings, "side table 'roleBindings' is null — pass an empty map for a document without one");
         Objects.requireNonNull(lets, "side table 'lets' is null — pass an empty list for a document without one");
@@ -436,7 +468,7 @@ public final class TmsTranspiler {
         Set<Object> anchors = Collections.newSetFromMap(new IdentityHashMap<>());
         anchors.addAll(anchored);
         TmsTranspiler t = new TmsTranspiler(m, beanLoader, defaults, nav, anchors, new IdentityHashMap<>(roleBindings),
-                new IdentityHashMap<>(sourcePaths), new EffectiveUnit(lets), positions);
+                new IdentityHashMap<>(sourcePaths), new EffectiveUnit(lets), positions, origins);
         t.modelplan = t.run();
         t.model0 = PatternDslRendering.model(t.modelplan);
         return t;
@@ -455,10 +487,25 @@ public final class TmsTranspiler {
      * element it comes from, in the order of the manifest: an effective defaults stack ({@code defaults A:<type>.<member>},
      * {@code defaults K:<type>.<member>}) from the member it decides, as declared on its owner's chain; a version of a
      * form with several ({@code <form> #<k>}) from that form. Every other name of the manifest is the name of a form of
-     * the model. A side table: the lowering reads none of it.
+     * the model. A side table: the lowering reads none of it. The type a stack runs for is beside it, in
+     * {@link #stackTypes}.
      */
     public Map<String, RegelSpraakModel.GeneratedFrom> generated() {
         return java.util.Collections.unmodifiableMap(generated);
+    }
+
+    /**
+     * The type each effective defaults stack of {@link #generated} runs for, by the stack's name, in the order of the
+     * manifest: the owner of the effective stack (RUNTIME-SEMANTICS ch. 7.10), on whose instances of exactly that type
+     * its rules run, as an element of the model ({@link RegelSpraakModel.Designatable#objectType}). It is the type
+     * that declares the member {@code generated} gives, or a subtype of it, so two stacks that decide one inherited
+     * member for two types have one entry each in {@code generated} with the same member, and each its own type
+     * here. Beside {@code generated} and not in it, since {@link RegelSpraakModel.GeneratedFrom} is the frontend's
+     * record, which the wire carries as {@code origin} (IR-SPEC ch. 2.13). Every stack of {@code generated} has a type,
+     * a refused one too. A side table: the lowering reads none of it.
+     */
+    public Map<String, RegelSpraakModel.Designatable> stackTypes() {
+        return java.util.Collections.unmodifiableMap(stackTypes);
     }
 
     /**
@@ -492,70 +539,203 @@ public final class TmsTranspiler {
 
     /**
      * Where one rule of the model comes from ({@link TmsTranspiler#originOf}): the form of the document whose lowering
-     * built it and, in an effective defaults stack, the default the rule lowers. The name of a rule of a stack does not
-     * say that: its label ({@code default 0.1.2}) is the lowering's own numbering of the knots of the effective stack,
-     * which ch. 7.10 composes from the groups of several types, and a contribution rule of a fold names its fold, not
-     * the default whose condition or consequence reads it.
+     * built it, in an effective defaults stack the default the rule lowers, the role the rule has in that lowering, and
+     * for a rule of a fold the fold it belongs to. The name of a rule of a stack does not say the default: its label
+     * ({@code default 0.1.2}) is the lowering's own numbering of the knots of the effective stack, which ch. 7.10
+     * composes from the groups of several types, and a contribution rule of a fold names its fold by the lowering's
+     * own number ({@code vouw 3}), not the node of the document nor the default whose condition or consequence reads
+     * it. The role is a fixed key where the name has the lowering's wording.
      *
      * @param form    the form, by the name the manifest gives it, as {@link TmsTranspiler#formOf} gives it; for a reading
      *                rule, which {@code formOf} leaves out so that no observer counts its firing as one of a form, the
      *                form of the rule it reads. Null only for {@link Kind#NO_FORM}
      * @param kind    what of its form the rule lowers
+     * @param role    what the rule does in the lowering of its form, its default or its stack; null only for
+     *                {@link Kind#NO_FORM}, and one of the roles {@link Role#kinds} admits for {@code kind}
      * @param pointer for {@link Kind#DEFAULT} the default, as {@link DefaultsDecision} names one: the JSON pointer of the
      *                {@code Default} node, {@code /rules/prioritizedDefaults/3/defaults/1/exceptions/members/0/defaults/0},
      *                or for an ordinary rule a subtype's stack takes in (ch. 7.10) the version of that rule,
      *                {@code /rules/rules/0/versions/0}; null for every other kind
+     * @param fold    for a role of a fold ({@link Role#fold}) the fold, as the JSON pointer of its node in the document,
+     *                in the form {@code NodePositions} gives it: an {@code Aggregation},
+     *                {@code /rules/prioritizedDefaults/3/defaults/0/justification/left}, or a {@code QuantifierFold}; the
+     *                one node every form that reads the fold reads, below the form or the default that
+     *                {@code form} and {@code pointer} name. Null for every other role
      */
-    public record RuleOrigin(String form, Kind kind, String pointer) {
+    public record RuleOrigin(String form, Kind kind, Role role, String pointer, String fold) {
 
         public RuleOrigin {
             Objects.requireNonNull(kind, "kind");
-            if ((form == null) != (kind == Kind.NO_FORM) || (pointer == null) == (kind == Kind.DEFAULT))
-                throw new IllegalArgumentException("de herkomst " + kind + " met vorm " + form + " en pointer "
-                        + pointer);
+            if ((form == null) != (kind == Kind.NO_FORM) || (role == null) != (kind == Kind.NO_FORM)
+                    || (pointer == null) == (kind == Kind.DEFAULT) || (fold != null) != (role != null && role.fold())
+                    || role != null && !role.kinds().contains(kind))
+                throw new IllegalArgumentException("de herkomst " + kind + " met vorm " + form + ", rol " + role
+                        + ", pointer " + pointer + " en vouw " + fold);
         }
 
         public enum Kind {
             /** A rule of no form, one the lowering keeps for every form alike ({@link TmsTranspiler#formOf} gives
-             *  null). */
+             *  null). It has no role. */
             NO_FORM,
             /** A rule of a form that is no effective defaults stack: the form's own rule and every rule its lowering
-             *  adds beside it, the contribution rules of the folds it registered among them. */
+             *  adds beside it, the rules of the folds it registered among them. */
             FORM,
             /** A rule of an effective stack that lowers one default of it: the rule of the default's own decision, its
              *  fall-back where it has exception groups, the fault rule of its justification, the pass-on, difference and
-             *  agreement rules that reconcile its exception groups (ch. 7.9), the contribution rules of the folds its
-             *  justification or consequence reads, and its reading rule. */
+             *  agreement rules that reconcile its exception groups (ch. 7.9), the rules of the folds its justification
+             *  or consequence reads, and its reading rule. */
             DEFAULT,
             /** A rule of an effective stack that lowers the stack itself, no default of it: the pass-on, difference and
              *  agreement rules that reconcile the groups at its root (ch. 7.2), and the fault of a session without an
              *  evaluation date where a group of the stack has a dated validity. */
             STACK
         }
+
+        /**
+         * What a rule does in the lowering of its form, its default or its stack, as the lowering noted it when it
+         * built the rule: a fixed key, which {@link #key} spells for a consumer that writes it out, with the kinds of
+         * origin it occurs with ({@link #kinds}). Where a form and a default have the same kind of rule, the role is
+         * the same: the fault rule of a condition and of a justification, the rules of a fold, the reading rule.
+         */
+        public enum Role {
+            /** The rule of the form itself: of a rule the rule that writes its target or attributes its characteristic,
+             *  of a consistency the rule that deposits its inconsistency, of a uniqueness the rule that marks the
+             *  instances whose key collides, of an allocation the rule that distributes, of a creation the rule that
+             *  makes; and of a default the rule of its own decision, an ordinary rule a subtype's stack takes in
+             *  among them (ch. 7.10). */
+            OWN("own", Kind.FORM, Kind.DEFAULT),
+            /** The rule of a default's own decision where none of its exception groups settles (RUNTIME-SEMANTICS
+             *  ch. 7.9). */
+            FALLBACK("fallback", Kind.DEFAULT),
+            /** The rule that inserts the fault of a condition that can fault: a form's condition or assertion, a
+             *  default's justification. */
+            CONDITION_FAULT("condition-fault", Kind.FORM, Kind.DEFAULT),
+            /** The rule that deposits the §9.5 inconsistency where the evaluation of a form's condition divides a filled
+             *  dividend by a leeg divisor or takes the root of a negative number (ch. 1.2); a default holds neither. */
+            CONDITION_DEPOSIT("condition-deposit", Kind.FORM),
+            /** The rule that faults a session without an evaluation date: beside a form with a bounded validity, and
+             *  for a stack where a group of it has a dated validity (ch. 8.1). */
+            NO_EVALUATION_DATE("no-evaluation-date", Kind.FORM, Kind.STACK),
+            /** The reading rule of a build with readings (ch. 5.12) beside the rule it reads: the form's own rule, or
+             *  the rule of a default's own decision or of its fall-back. */
+            READING("reading", Kind.FORM, Kind.DEFAULT),
+            /** Of the reconciliation of a default's exception groups (ch. 7.9), or of the groups at the root of a stack
+             *  (ch. 7.2): the rule that passes on the first conflict among the members. */
+            RECONCILE_PASS_ON("reconcile-pass-on", Kind.DEFAULT, Kind.STACK),
+            /** Of that reconciliation: the rule that makes a conflict where the first deciding member and another one
+             *  decide differently. */
+            RECONCILE_DIFFERENCE("reconcile-difference", Kind.DEFAULT, Kind.STACK),
+            /** Of that reconciliation: the rule that takes the decision of the first deciding member where no member
+             *  conflicts and no other one decides differently. */
+            RECONCILE_AGREEMENT("reconcile-agreement", Kind.DEFAULT, Kind.STACK),
+            /** Of a fold (ch. 3.4): the rule that inserts the contribution of a member of the range that passes the
+             *  filter; one per range, and one per selection of an instance-set union. */
+            FOLD_CONTRIBUTION("fold-contribution", Kind.FORM, Kind.DEFAULT),
+            /** Of a fold: the rule that notes the member for which the filter faults (ch. 5.11). */
+            FOLD_FILTER_FAULT("fold-filter-fault", Kind.FORM, Kind.DEFAULT),
+            /** Of a per-element fold over a timeline: the rule that notes the member whose timeline the case gives as
+             *  the asOfDate-bucket scalar (ch. 3.6, 8.4). */
+            FOLD_MEMBER_FAULT("fold-member-fault", Kind.FORM, Kind.DEFAULT),
+            /** Of a fold: the rule that notes the member for which the filter deposits (ch. 5.10, 5.11). */
+            FOLD_FILTER_DEPOSIT("fold-filter-deposit", Kind.FORM, Kind.DEFAULT),
+            /** Of a uniqueness: the rule that inserts the key of an instance of one source (ch. 5.9). */
+            UNIQUENESS_KEY("uniqueness-key", Kind.FORM),
+            /** Of a uniqueness: the rule that faults an instance whose key component on a timeline the case gives as
+             *  the asOfDate-bucket scalar (ch. 5.9, 8.4). */
+            UNIQUENESS_KEY_FORM_FAULT("uniqueness-key-form-fault", Kind.FORM),
+            /** Of a uniqueness: the rule that puts the violation of an instance on the §9.5 channel (ch. 5.6). */
+            UNIQUENESS_CHANNEL("uniqueness-channel", Kind.FORM),
+            /** Of an allocation: the rule that inserts a recipient of a source, with its weight, its ordering key and
+             *  its cap (ch. 4). */
+            ALLOCATION_RECIPIENT("allocation-recipient", Kind.FORM);
+
+            private final String key;
+            private final Set<Kind> kinds;
+
+            Role(String key, Kind first, Kind... rest) {
+                this.key = key;
+                this.kinds = Collections.unmodifiableSet(java.util.EnumSet.of(first, rest));
+            }
+
+            /** The fixed key of this role, as a consumer writes it out. */
+            public String key() { return key; }
+
+            /** The kinds of origin a rule of this role has. */
+            public Set<Kind> kinds() { return kinds; }
+
+            /** Whether a rule of this role belongs to a fold, which {@link RuleOrigin#fold} then names. */
+            public boolean fold() {
+                return this == FOLD_CONTRIBUTION || this == FOLD_FILTER_FAULT || this == FOLD_MEMBER_FAULT
+                        || this == FOLD_FILTER_DEPOSIT;
+            }
+        }
     }
 
     /**
      * Where rule {@code ruleName} of the model comes from ({@link RuleOrigin}), for every rule of the model: its form as
      * {@link #formOf} gives it and, for a rule of an effective defaults stack, the default it lowers, as the pointer
-     * {@link #decisionsOf} names a decider by, or that it lowers the stack itself. A rule the stack adds to lower a
-     * default, a contribution rule of a fold that the default's justification or consequence reads among them, has that
-     * default; a contribution rule of a fold that an ordinary rule registered first has that rule's form, also where a
-     * stack that took the rule in reads the same fold. Read off what the lowering recorded while it built the rule,
-     * never off the rule's name. A name of no rule of the model is refused, as {@link #formOf} refuses it.
+     * {@link #decisionsOf} names a decider by, or that it lowers the stack itself; its role in that lowering; and for a
+     * rule of a fold the node of the fold. A rule the stack adds to lower a default, a rule of a fold that the
+     * default's justification or consequence reads among them, has that default; a rule of a fold that an ordinary
+     * rule registered first has that rule's form, also where a stack that took the rule in reads the same fold. Read
+     * off what the lowering noted while it built the rule, never off the rule's name. The fold needs the positions of
+     * the document's nodes: a build from the loaded document has them
+     * ({@link #build(dev.uchar.regelspraak.loader.IrLoader.Positioned, ClassLoader)}, {@link #withReadings}), and one
+     * from the side tables alone refuses, loudly, to name the fold of a rule of a fold. A name of no rule of the model
+     * is refused, as {@link #formOf} refuses it.
      */
     public RuleOrigin originOf(String ruleName) {
         String form = formOf(ruleName);
         if (form == null) {
             String own = readingRuleOf.get(ruleName);
-            return own != null ? originOf(own) : new RuleOrigin(null, RuleOrigin.Kind.NO_FORM, null);
+            if (own == null) return new RuleOrigin(null, RuleOrigin.Kind.NO_FORM, null, null, null);
+            RuleOrigin read = originOf(own);
+            return new RuleOrigin(read.form(), read.kind(), roleOf(ruleName), read.pointer(), null);
         }
+        RuleOrigin.Role role = roleOf(ruleName);
+        String fold = role.fold() ? foldOf(ruleName) : null;
         Default d = defaultOfRule.get(ruleName);
-        if (d != null) return new RuleOrigin(form, RuleOrigin.Kind.DEFAULT, pointerOf(d));
-        if (stackOwnRules.contains(ruleName)) return new RuleOrigin(form, RuleOrigin.Kind.STACK, null);
+        if (d != null) return new RuleOrigin(form, RuleOrigin.Kind.DEFAULT, role, pointerOf(d), fold);
+        if (stackOwnRules.contains(ruleName)) return new RuleOrigin(form, RuleOrigin.Kind.STACK, role, null, fold);
         if (layouts.containsKey(form))
             throw new IllegalStateException("de regel '" + ruleName + "' hoort bij de stapel " + form + ", en de"
                     + " verlaging noteerde niet van welke default of dat hij van de stapel zelf is");
-        return new RuleOrigin(form, RuleOrigin.Kind.FORM, null);
+        return new RuleOrigin(form, RuleOrigin.Kind.FORM, role, null, fold);
+    }
+
+    /** The role the lowering noted for {@code ruleName}, a rule of a form ({@link #as}). */
+    private RuleOrigin.Role roleOf(String ruleName) {
+        RuleOrigin.Role role = roleOfRule.get(ruleName);
+        if (role == null)
+            throw new IllegalStateException("de regel '" + ruleName + "' hoort bij een vorm, en de verlaging noteerde"
+                    + " niet welke rol hij in haar verlaging heeft");
+        return role;
+    }
+
+    /** The pointer of the fold of {@code ruleName}, a rule of a fold: the place of its node in the document. */
+    private String foldOf(String ruleName) {
+        Object node = foldOfRule.get(ruleName);
+        if (node == null)
+            throw new IllegalStateException("de regel '" + ruleName + "' is een regel van een vouw, en de verlaging"
+                    + " noteerde niet van welke");
+        if (origins == null)
+            throw new IllegalStateException("de regel '" + ruleName + "' is een regel van een vouw, en deze bouw kent"
+                    + " de plaatsen van de knopen van het document niet: bouw uit het geladen document met zijn"
+                    + " plaatsen (IrLoader.loadWithPositions)");
+        dev.uchar.regelspraak.loader.NodePositions.Position at = origins.of(node);
+        if (at == null)
+            throw new IllegalStateException("de vouw van de regel '" + ruleName + "' is geen knoop die de lader las");
+        return at.pointer();
+    }
+
+    /** Notes that the lowering builds {@code rule} in the role {@code role} ({@link #originOf}), and returns it. A rule
+     *  of one name built in two roles is a fault of this class. */
+    private RulePlan as(RuleOrigin.Role role, RulePlan rule) {
+        RuleOrigin.Role before = roleOfRule.put(rule.name(), role);
+        if (before != null && before != role)
+            throw new IllegalStateException("de regel '" + rule.name() + "' is gebouwd als " + before + " en als "
+                    + role);
+        return rule;
     }
 
     /** The names of the creation rules of the model, in the agenda groups {@link #FACT_CREATION} and
@@ -1250,6 +1430,7 @@ public final class TmsTranspiler {
         for (Stacks.Stack st : effective) {
             generated.put(stackName(st), new RegelSpraakModel.GeneratedFrom(stackTarget(st),
                     RegelSpraakModel.OriginForm.DEFAULTS_STACK));
+            stackTypes.put(stackName(st), RegelSpraakModel.Designatable.objectType(st.owner().name));
             rules.addAll(meet("defaults", stackName(st), () -> stackRules(st)));
         }
         rules.addAll(differenceRules());
@@ -1290,6 +1471,15 @@ public final class TmsTranspiler {
         globals.forEach((name, javaClass) -> declarations.add(new Modelplan.Global(name, javaClass)));
         for (RulePlan r : rules) if (!formOfRule.containsKey(r.name())) rulesWithoutForm.add(r.name());
         for (RulePlan r : states) rulesWithoutForm.add(r.name());
+        // every rule of a form, a reading rule among them, has the role its lowering noted, and a rule of a fold its
+        // fold, so that originOf answers for every rule of every document, not only for those a witness asks
+        for (RulePlan r : rules) {
+            if (rulesWithoutForm.contains(r.name()) && !readingRuleOf.containsKey(r.name())) continue;
+            RuleOrigin.Role role = roleOf(r.name());
+            if (role.fold() != foldOfRule.containsKey(r.name()))
+                throw new IllegalStateException("de regel '" + r.name() + "' heeft de rol " + role + ", en de verlaging"
+                        + (role.fold() ? " noteerde zijn vouw niet" : " noteerde een vouw bij hem"));
+        }
         List<RulePlan> plans = new ArrayList<>(rules);
         plans.addAll(states);
         return new Modelplan(declarations, plans);
@@ -1371,10 +1561,11 @@ public final class TmsTranspiler {
         evaluationDateNeeded();
         Alpha withoutDate = new Alpha(id("geen-rekendatum"),
                 List.of(new Alpha.FieldTest("date", Alpha.Comparator.LEEG, null)));
-        return new RulePlan(ruleName + ": geen rekendatum", this.form, null, new ReadTable(List.of()),
+        return as(RuleOrigin.Role.NO_EVALUATION_DATE, new RulePlan(ruleName + ": geen rekendatum", this.form, null,
+                new ReadTable(List.of()),
                 List.of(new FactPattern(EvaluationDate.class, "$rekendatum", List.of(withoutDate), List.of(), List.of())),
                 new Consequence.Fault("$rekendatum", ComputeFault.VALIDITY_WITHOUT_DATE, new Consequence.FaultName(form, ruleName),
-                        Consequence.Insertion.LOGICAL));
+                        Consequence.Insertion.LOGICAL)));
     }
 
     /** Declares the global of the evaluation date, the first time a lowered form needs the date. */
@@ -1420,8 +1611,8 @@ public final class TmsTranspiler {
         reads.recorder();
         String ruleName = model.emittedRuleName(r.name());
         List<RulePlan> out = new ArrayList<>();
-        out.add(reads.rulePlan(ruleName, items,
-                new Consequence.Characteristic(SUBJECT, key, Consequence.Insertion.LOGICAL)));
+        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items,
+                new Consequence.Characteristic(SUBJECT, key, Consequence.Insertion.LOGICAL))));
         if (noted != null && testTerm != null)
             readingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false), testTerm, null,
                     r.condition(), null, noted, r.validity(), false);
@@ -1773,7 +1964,7 @@ public final class TmsTranspiler {
         derived.put(key, member);
         reads.recorder();
         List<RulePlan> out = new ArrayList<>();
-        out.add(reads.rulePlan(ruleName, items, consequence));
+        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, consequence)));
         // every form this writes computes a value, so it has a reading also without a condition (RUNTIME-SEMANTICS
         // ch. 5.12): the reading of its value, where it is at its turn
         if (noted != null) {
@@ -1876,7 +2067,7 @@ public final class TmsTranspiler {
         Consequence fault = new Consequence.TestFault(SUBJECT, testTerm, TestItem.Role.FAULT, List.copyOf(read), reads.size(),
                 new Consequence.FaultName(form, model.emittedRuleName(form)), Consequence.Insertion.LOGICAL);
         reads.recorder();
-        return reads.rulePlan(ruleName + ": fout in de voorwaarde", items, fault);
+        return as(RuleOrigin.Role.CONDITION_FAULT, reads.rulePlan(ruleName + ": fout in de voorwaarde", items, fault));
     }
 
     /** The role of the test of a condition in the rule of its form: where the condition can fault it is tested without
@@ -1908,9 +2099,9 @@ public final class TmsTranspiler {
         List<LhsItem> items = reads.plan(TestItem.Role.DEPOSIT, testTerm, read, c);
         if (blockade != null) items.addAll(blockade.apply(reads));
         reads.recorder();
-        return reads.rulePlan(ruleName + ": deponering in de voorwaarde", items,
+        return as(RuleOrigin.Role.CONDITION_DEPOSIT, reads.rulePlan(ruleName + ": deponering in de voorwaarde", items,
                 new Consequence.ConditionDeposit(SUBJECT, form, testTerm, depositFlag, List.copyOf(read), reads.size(),
-                        Consequence.Insertion.LOGICAL));
+                        Consequence.Insertion.LOGICAL)));
     }
 
     // ---------------- a consistency and the §9.5 channel ----------------
@@ -1946,8 +2137,8 @@ public final class TmsTranspiler {
         reads.recorder();
         List<RulePlan> out = new ArrayList<>();
         // EF-025: the consistency does not hold (RUNTIME-SEMANTICS ch. 5.6, 5.7b)
-        out.add(reads.rulePlan(model.emittedRuleName(name), items,
-                new Consequence.Inconsistency(SUBJECT, name, List.of("EF-025"), Consequence.Insertion.LOGICAL)));
+        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(model.emittedRuleName(name), items,
+                new Consequence.Inconsistency(SUBJECT, name, List.of("EF-025"), Consequence.Insertion.LOGICAL))));
         // the reading is of the assertion, which the rule's test negates
         if (noted != null)
             readingRule(model.emittedRuleName(name), positions.versionOf(c), reads, reads.readingPlan(List.of(), false),
@@ -2017,14 +2208,15 @@ public final class TmsTranspiler {
                 ReadKind.COLLISIONS, "botsingen", "$botsingen")));
         TestItem duplicate = new TestItem(id("dubbel"), TestItem.Role.VORM,
                 new Term.Call(StaticFunction.DUPLICATE, List.of(new Term.SlotValue(0, null)), null), -1, List.of(0), 1);
-        out.add(new RulePlan(ruleName, form, null, table, List.of(key, collisions, duplicate),
-                new Consequence.UniquenessViolation("$element", name, Consequence.Insertion.LOGICAL)));
+        out.add(as(RuleOrigin.Role.OWN, new RulePlan(ruleName, form, null, table, List.of(key, collisions, duplicate),
+                new Consequence.UniquenessViolation("$element", name, Consequence.Insertion.LOGICAL))));
         FactPattern violation = new FactPattern(UniquenessViolation.class, "$schending", List.of(equal(id("schending"),
                 "uniqueness", name)), List.of(), List.of(Binding.of("$subject", UniquenessViolation.class, "element")));
-        out.add(new RulePlan(ruleName + ": kanaal", form, null, new ReadTable(List.of()),
+        out.add(as(RuleOrigin.Role.UNIQUENESS_CHANNEL, new RulePlan(ruleName + ": kanaal", form, null,
+                new ReadTable(List.of()),
                 // EF-026: a key of the uniqueness occurs more than once (RUNTIME-SEMANTICS ch. 5.6, 5.9, 5.7b)
                 List.of(violation), new Consequence.Inconsistency("$subject", name, List.of("EF-026"),
-                        Consequence.Insertion.LOGICAL)));
+                        Consequence.Insertion.LOGICAL))));
         RulePlan withoutDate = validityFault(ruleName, name, validity);
         if (withoutDate != null) out.add(withoutDate);
         return out;
@@ -2084,9 +2276,9 @@ public final class TmsTranspiler {
                     : component);
         }
         reads.recorder();
-        return reads.rulePlan(ruleName + ": sleutel van " + type.name + " " + (b + 1), items,
-                new Consequence.UniquenessKey(SUBJECT, name, b, components, timeline, scope, List.copyOf(read),
-                        reads.size(), Consequence.Insertion.LOGICAL));
+        return as(RuleOrigin.Role.UNIQUENESS_KEY, reads.rulePlan(ruleName + ": sleutel van " + type.name + " "
+                + (b + 1), items, new Consequence.UniquenessKey(SUBJECT, name, b, components, timeline, scope,
+                        List.copyOf(read), reads.size(), Consequence.Insertion.LOGICAL)));
     }
 
     /**
@@ -2121,10 +2313,11 @@ public final class TmsTranspiler {
         bucket.add(bucketScalar(timeline, true));
         List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(bucket), read, null);
         reads.recorder();
-        return reads.rulePlan(ruleName + ": sleutelvorm van " + type.name + " " + (b + 1), items,
+        return as(RuleOrigin.Role.UNIQUENESS_KEY_FORM_FAULT, reads.rulePlan(ruleName + ": sleutelvorm van "
+                + type.name + " " + (b + 1), items,
                 new Consequence.InputFormFault(SUBJECT, "the ever-unique key \"" + timeMember.name()
                         + "\" needs the full timeline; ", " supplies only a scalar (ch. 5.9)",
-                        new Consequence.FaultName(name, ruleName), Consequence.Insertion.LOGICAL));
+                        new Consequence.FaultName(name, ruleName), Consequence.Insertion.LOGICAL)));
     }
 
     /**
@@ -2340,8 +2533,8 @@ public final class TmsTranspiler {
         int m = maximum == null ? -1 : member.own(maximum);
         List<LhsItem> memberRule = member.plan(TestItem.Role.CONDITION, null, Set.of(), null);
         member.recorder();
-        out.add(member.rulePlan(ruleName + ": ontvanger", memberRule,
-                new Consequence.Recipient(FOLD_SUBJECT, name, recipient, g, k, m, Consequence.Insertion.LOGICAL)));
+        out.add(as(RuleOrigin.Role.ALLOCATION_RECIPIENT, member.rulePlan(ruleName + ": ontvanger", memberRule,
+                new Consequence.Recipient(FOLD_SUBJECT, name, recipient, g, k, m, Consequence.Insertion.LOGICAL))));
 
         // per source: the condition, the pot and the list of recipients, and the distribution computed from them
         Supplier<Reads> fresh = () -> new Reads(source).valid(v.validity());
@@ -2357,9 +2550,9 @@ public final class TmsTranspiler {
         List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read, v.condition());
         ElementKey shareKey = share.key(), restKey = rest == null ? null : rest.key();
         reads.recorder();
-        out.add(reads.rulePlan(ruleName, items, new Consequence.Payout(SUBJECT, name, method, p, list,
-                weight != null, maximum != null, v.descending(), v.roundingDecimals(), shareKey, restKey,
-                name, Consequence.Insertion.LOGICAL)));
+        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, new Consequence.Payout(SUBJECT, name, method,
+                p, list, weight != null, maximum != null, v.descending(), v.roundingDecimals(), shareKey, restKey,
+                name, Consequence.Insertion.LOGICAL))));
         if (noted != null && testTerm != null)
             readingRule(ruleName, positions.versionOf(v), reads, reads.readingPlan(List.of(), false), testTerm, null,
                     v.condition(), null, noted, v.validity(), false);
@@ -2584,7 +2777,7 @@ public final class TmsTranspiler {
         creationRules.add(ruleName);
         creationStrata.add(stratum);
         List<RulePlan> out = new ArrayList<>();
-        out.add(reads.rulePlan(ruleName, OBJECT_CREATION, items, creation));
+        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, OBJECT_CREATION, items, creation)));
         // the condition on every subject at the end world, in the main group: without the creation's guard, its phase
         // and its own fault, which keep it from making twice; the guard of the 1:1 shape stays, under which a subject
         // linked in the input is not the creation's to make for (RUNTIME-SEMANTICS ch. 5.5)
@@ -2743,7 +2936,7 @@ public final class TmsTranspiler {
         creationRules.add(ruleName);
         creationStrata.add(stratum);
         List<RulePlan> out = new ArrayList<>();
-        out.add(reads.rulePlan(ruleName, FACT_CREATION, items, relationLink));
+        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, FACT_CREATION, items, relationLink)));
         // the guard on the anchor at the end world, in the main group, without the creation's phase and the path to
         // its targets, so one reading per anchor
         if (noted != null && testTerm != null)
@@ -3016,11 +3209,11 @@ public final class TmsTranspiler {
                 List.of(new Alpha.FieldTest("date", Alpha.Comparator.LEEG, null)));
         String rule = name + ": geen rekendatum";
         stackOwnRules.add(rule);
-        return new RulePlan(rule, form, null, new ReadTable(List.of()),
+        return as(RuleOrigin.Role.NO_EVALUATION_DATE, new RulePlan(rule, form, null, new ReadTable(List.of()),
                 List.of(new Subject(b.javaClass, SUBJECT, List.of(concrete), List.of(), List.of()),
                         new FactPattern(EvaluationDate.class, "$rekendatum", List.of(withoutDate), List.of(), List.of())),
                 new Consequence.Fault(SUBJECT, ComputeFault.VALIDITY_WITHOUT_DATE, new Consequence.FaultName(name, name),
-                        Consequence.Insertion.LOGICAL));
+                        Consequence.Insertion.LOGICAL)));
     }
 
     /** The constraint that keeps a rule of a stack on instances of exactly the stack's owner, the bean class
@@ -3156,7 +3349,7 @@ public final class TmsTranspiler {
             if (!b.characteristic) facts.add(new Consequence.StackFact.Value(key, name));
             else if (Boolean.TRUE.equals(k.d().decision())) facts.add(new Consequence.StackFact.Characteristic(key));
             facts.add(new Consequence.StackFact.Decides(name, i));
-            out.addAll(ownRule(b, k, name + ": default " + k.label(),
+            out.addAll(ownRule(b, k, RuleOrigin.Role.OWN, name + ": default " + k.label(),
                     () -> higher ? List.of(noDecides(name, i)) : List.of(), facts));
         }
         return out;
@@ -3206,7 +3399,8 @@ public final class TmsTranspiler {
             if (!k.hasMembers()) {
                 if (!decidesSelf(b, k.d())) continue;
                 b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
-                out.addAll(ownRule(b, k, name + ": default " + k.label(), notHigher, List.of(decides)));
+                out.addAll(ownRule(b, k, RuleOrigin.Role.OWN, name + ": default " + k.label(), notHigher,
+                        List.of(decides)));
                 continue;
             }
             for (List<Node> member : k.members()) chainRules(b, member, notHigher, out);
@@ -3217,7 +3411,7 @@ public final class TmsTranspiler {
                     new Consequence.StackFact.Outcome(name, id, i, Outcome.Kind.CONFLICT), decides, false, true, out);
             for (RulePlan r : out.subList(reconciling, out.size())) defaultOfRule.put(r.name(), k.d());
             if (decidesSelf(b, k.d()))
-                out.addAll(ownRule(b, k, name + ": terugval " + k.label(), () -> {
+                out.addAll(ownRule(b, k, RuleOrigin.Role.FALLBACK, name + ": terugval " + k.label(), () -> {
                     List<LhsItem> guard = new ArrayList<>();
                     guard.add(new Not(outcomes(name, earliest, to, null)));
                     guard.addAll(notHigher.get());
@@ -3257,11 +3451,11 @@ public final class TmsTranspiler {
             if (itemCount > 1) items.add(new Not(outcomes(name, earliest, to, Outcome.Kind.CONFLICT,
                     "eerder-lid", StaticFunction.EARLIER_MEMBER, "$conflict")));
             items.addAll(guard.get());
-            out.add(new RulePlan(name + ": doorgeven " + label, form, null,
+            out.add(as(RuleOrigin.Role.RECONCILE_PASS_ON, new RulePlan(name + ": doorgeven " + label, form, null,
                     new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0,
                             ReadKind.CONFLICT_KEY, "conflictsleutel", "$sleutel"))), items,
                     new Consequence.Conflict(SUBJECT, new Term.SlotValue(0, null), List.of(0), 1, atConflict,
-                            Consequence.Insertion.LOGICAL)));
+                            Consequence.Insertion.LOGICAL))));
             if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.CONFLICT);
         }
         if (itemCount > 1) {
@@ -3276,9 +3470,10 @@ public final class TmsTranspiler {
                     "$besluit");
             items.add(new Exists(List.of(another), Exists.declared(List.of(another)), Exists.read(List.of(another))));
             items.addAll(guard.get());
-            out.add(new RulePlan(name + ": verschil " + label, form, null, new ReadTable(List.of()), items,
+            out.add(as(RuleOrigin.Role.RECONCILE_DIFFERENCE, new RulePlan(name + ": verschil " + label, form, null,
+                    new ReadTable(List.of()), items,
                     new Consequence.Conflict(SUBJECT, constant(key), List.of(), 0, atConflict,
-                            Consequence.Insertion.LOGICAL)));
+                            Consequence.Insertion.LOGICAL))));
             if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.CONFLICT);
         }
         List<LhsItem> items = new ArrayList<>();
@@ -3293,11 +3488,11 @@ public final class TmsTranspiler {
                     StaticFunction.OTHER_DECISION, "$besluit")));
         }
         items.addAll(guard.get());
-        out.add(new RulePlan(name + ": eens " + label, form, null,
+        out.add(as(RuleOrigin.Role.RECONCILE_AGREEMENT, new RulePlan(name + ": eens " + label, form, null,
                 new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, ReadKind.DECISION,
                         "besluit", "$waarde"))), items,
                 new Consequence.Decision(SUBJECT, new Term.SlotValue(0, null), List.of(0), 1, false, null, List.of(atDecision),
-                        Consequence.Insertion.LOGICAL)));
+                        Consequence.Insertion.LOGICAL))));
         if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
     }
 
@@ -3375,13 +3570,13 @@ public final class TmsTranspiler {
      * the fault it raised goes with it, so a fault counts only where its default is evaluated at the fixpoint (PLAN §9,
      * 2026-10-09).
      */
-    private List<RulePlan> ownRule(StackBuild b, Node k, String ruleName, Supplier<List<LhsItem>> guard,
-                                       List<Consequence.StackFact> facts) {
+    private List<RulePlan> ownRule(StackBuild b, Node k, RuleOrigin.Role role, String ruleName,
+                                   Supplier<List<LhsItem>> guard, List<Consequence.StackFact> facts) {
         // the rules built here lower the default, and so do the contributions of the folds registered meanwhile, those
         // its justification's fault rule reads
         lowering = k.d();
         try {
-            List<RulePlan> out = lowerOwnRule(b, k, ruleName, guard, facts);
+            List<RulePlan> out = lowerOwnRule(b, k, role, ruleName, guard, facts);
             for (RulePlan r : out) defaultOfRule.put(r.name(), k.d());
             return out;
         } finally {
@@ -3389,9 +3584,10 @@ public final class TmsTranspiler {
         }
     }
 
-    /** The rules of {@link #ownRule}, built while {@link #lowering} is the default. */
-    private List<RulePlan> lowerOwnRule(StackBuild b, Node k, String ruleName, Supplier<List<LhsItem>> guard,
-                                        List<Consequence.StackFact> facts) {
+    /** The rules of {@link #ownRule}, built while {@link #lowering} is the default: the rule of the default's own
+     *  decision in the role {@code role}, the default's own or its fall-back, and the fault rule of its justification. */
+    private List<RulePlan> lowerOwnRule(StackBuild b, Node k, RuleOrigin.Role role, String ruleName,
+                                        Supplier<List<LhsItem>> guard, List<Consequence.StackFact> facts) {
         Default d = k.d();
         Supplier<Reads> fresh = () -> {
             Reads l = new Reads(k.levelOf());
@@ -3433,7 +3629,7 @@ public final class TmsTranspiler {
         b.readings.add(reads);
         b.defaultOf.put(reads, d);
         List<RulePlan> out = new ArrayList<>();
-        out.add(reads.rulePlan(ruleName, items, decision));
+        out.add(as(role, reads.rulePlan(ruleName, items, decision)));
         // the control facts stay: a default a higher one displaced is not at its turn (RUNTIME-SEMANTICS ch. 7.1, 7.9).
         // A default without a justification, and an ordinary rule without a condition that the fold of ch. 7.10 took in
         // (its justification the fold's vacuous one, which stands nowhere in the document), has no condition to read:
@@ -3550,7 +3746,7 @@ public final class TmsTranspiler {
         if (pointer == null)
             throw new IllegalStateException("de vorm van de regel " + ruleName + " staat niet in het document dat de lader"
                     + " las: een lezing noemt haar vorm naar haar plaats");
-        RulePlan plan = reads.readingRulePlan(ruleName + ": lezing", pointer, items);
+        RulePlan plan = as(RuleOrigin.Role.READING, reads.readingRulePlan(ruleName + ": lezing", pointer, items));
         if ((condition == null) != (irCondition == null))
             throw new IllegalStateException("de leesregel van " + pointer + " heeft een voorwaarde zonder haar knopen, of"
                     + " knopen zonder haar voorwaarde");
@@ -5085,6 +5281,7 @@ public final class TmsTranspiler {
                 foldOnForm = outerOnForm;
             }
             perSubject.put(reads.subject, v);
+            for (RulePlan r : v.rules()) foldOfRule.put(r.name(), f);
         }
         return v;
     }
@@ -5157,8 +5354,9 @@ public final class TmsTranspiler {
         Consequence.Input input = kind == Expr.FunctionKind.AANTAL ? new Consequence.Input.Count()
                 : new Consequence.Input.MemberValue(value, total, kind == Expr.FunctionKind.AANTAL_GEVULDE);
         String formName = model.emittedRuleName(form);
-        out.add(reads.rulePlan(formName + ": bijdrage aan " + name, items, new Consequence.Contribution(FOLD_SUBJECT,
-                key, member, input, List.copyOf(use), reads.size(), Consequence.Insertion.LOGICAL)));
+        out.add(as(RuleOrigin.Role.FOLD_CONTRIBUTION, reads.rulePlan(formName + ": bijdrage aan " + name, items,
+                new Consequence.Contribution(FOLD_SUBJECT, key, member, input, List.copyOf(use), reads.size(),
+                        Consequence.Insertion.LOGICAL))));
         readings.add(reads);
         if (canFail) out.add(filterFaultRule(key, formName + ": filterfout in " + name, subject, elem, range,
                 selection, filter, readings::add));
@@ -5193,8 +5391,9 @@ public final class TmsTranspiler {
         recorder.accept(reads);
         Set<Integer> use = new TreeSet<>(read);
         use.add(member);
-        return reads.rulePlan(ruleName, items, new Consequence.FilterDeposit(FOLD_SUBJECT, key, member, testTerm,
-                reads.depositFlagSlot(), List.copyOf(use), reads.size(), Consequence.Insertion.LOGICAL));
+        return as(RuleOrigin.Role.FOLD_FILTER_DEPOSIT, reads.rulePlan(ruleName, items,
+                new Consequence.FilterDeposit(FOLD_SUBJECT, key, member, testTerm, reads.depositFlagSlot(),
+                        List.copyOf(use), reads.size(), Consequence.Insertion.LOGICAL)));
     }
 
     /**
@@ -5225,9 +5424,10 @@ public final class TmsTranspiler {
         }
         List<LhsItem> items = reads.plan(TestItem.Role.FAULT, testTerm, read, filter);
         recorder.accept(reads);
-        return reads.rulePlan(ruleName, items, new Consequence.FilterFault(FOLD_SUBJECT, key, member, testTerm,
-                new Consequence.FoldPlace(selection, places, Consequence.PlaceReason.FILTER_FAULT), List.copyOf(use),
-                reads.size(), Consequence.Insertion.LOGICAL));
+        return as(RuleOrigin.Role.FOLD_FILTER_FAULT, reads.rulePlan(ruleName, items,
+                new Consequence.FilterFault(FOLD_SUBJECT, key, member, testTerm,
+                        new Consequence.FoldPlace(selection, places, Consequence.PlaceReason.FILTER_FAULT),
+                        List.copyOf(use), reads.size(), Consequence.Insertion.LOGICAL)));
     }
 
     /**
@@ -5260,11 +5460,12 @@ public final class TmsTranspiler {
         bucket.add(bucketScalar(value, true));
         List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(bucket), read, filter);
         recorder.accept(reads);
-        return reads.rulePlan(ruleName, items, new Consequence.MemberFault(FOLD_SUBJECT, key, member,
-                new Consequence.FoldPlace(selection, places, Consequence.PlaceReason.MEMBER_FAULT),
-                "the per-element temporal total of \"" + memberValue.name() + "\" over ", ": the case supplies an"
-                + " asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own"
-                + " timeline (ch. 3.6/§7.1, ch. 8.4)", Consequence.Insertion.LOGICAL));
+        return as(RuleOrigin.Role.FOLD_MEMBER_FAULT, reads.rulePlan(ruleName, items,
+                new Consequence.MemberFault(FOLD_SUBJECT, key, member,
+                        new Consequence.FoldPlace(selection, places, Consequence.PlaceReason.MEMBER_FAULT),
+                        "the per-element temporal total of \"" + memberValue.name() + "\" over ", ": the case supplies an"
+                        + " asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own"
+                        + " timeline (ch. 3.6/§7.1, ch. 8.4)", Consequence.Insertion.LOGICAL)));
     }
 
     /** The reads of a contribution rule, planned: the member is the subject, the fold's subject is bound before it
@@ -5919,8 +6120,9 @@ public final class TmsTranspiler {
         String formName = model.emittedRuleName(form);
         List<RulePlan> rules = new ArrayList<>();
         List<Reads> readings = new ArrayList<>();
-        rules.add(reads.rulePlan(formName + ": bijdrage aan " + name, items, new Consequence.Contribution(FOLD_SUBJECT,
-                key, member, input, List.copyOf(use), reads.size(), Consequence.Insertion.LOGICAL)));
+        rules.add(as(RuleOrigin.Role.FOLD_CONTRIBUTION, reads.rulePlan(formName + ": bijdrage aan " + name, items,
+                new Consequence.Contribution(FOLD_SUBJECT, key, member, input, List.copyOf(use), reads.size(),
+                        Consequence.Insertion.LOGICAL))));
         readings.add(reads);
         if (filterCanFail) rules.add(filterFaultRule(key, formName + ": filterfout in " + name, subject, elem,
                 range, 0, kv.filter(), readings::add));

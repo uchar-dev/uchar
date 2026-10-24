@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * several by {@code <form> #<k>}. {@link TmsTranspiler#generated} gives each such name the declared element it comes
  * from, so a consumer of the manifest does not read it off the name: a stack from the member it decides, as declared,
  * also where the stack stands on a subtype; a version from its form. Every other manifest name is a form of the model.
+ * Beside it {@link TmsTranspiler#stackTypes} gives each stack the type it runs for (card drl-rule-part).
  */
 class GeneratedNamesWitnessTest {
 
@@ -72,6 +73,39 @@ class GeneratedNamesWitnessTest {
                 "defaults A:Barnsteenvondst.meldingsdatum <- ATTRIBUUT Vondst.meldingsdatum (defaultsstapel)"),
                 table(t));
         manifestIsCovered(t);
+    }
+
+    /** Each stack of {@code generated}, as {@code <stack> <- <member> for <type>}: the member as declared and the type
+     *  the stack runs for ({@link TmsTranspiler#stackTypes}). */
+    private static List<String> stackTable(DroolsBackend.Build b) {
+        TmsTranspiler t = b.execModelTranspiler();
+        List<String> out = new ArrayList<>();
+        for (Map.Entry<String, GeneratedFrom> e : t.generated().entrySet())
+            if (e.getValue().form() == RegelSpraakModel.OriginForm.DEFAULTS_STACK)
+                out.add(e.getKey() + " <- " + element(e.getValue().source()) + " for "
+                        + element(t.stackTypes().get(e.getKey())));
+        return out;
+    }
+
+    @Test void two_stacks_of_one_member_each_name_the_type_they_run_for() throws Exception {
+        // card drl-rule-part: a Strandjutter is a Jutter, and the member meldtermijn that Jutter declares has a stack
+        // on each type (RUNTIME-SEMANTICS ch. 7.10); generated gives both the same member, stackTypes each its type
+        assertEquals(List.of(
+                "defaults A:Jutter.meldtermijn <- ATTRIBUUT Jutter.meldtermijn for OBJECTTYPE Jutter",
+                "defaults A:Strandjutter.meldtermijn <- ATTRIBUUT Jutter.meldtermijn for OBJECTTYPE Strandjutter"),
+                stackTable(analyse("jutterswet-meldtermijn-strandjutter")));
+        // three stacks of Vondst.meldingsdatum, on Vondst and on its two subtypes, and two of the member the opgave
+        // marker made beside it, each on its subtype
+        assertEquals(List.of(
+                "defaults A:Vondst.meldingsdatum <- ATTRIBUUT Vondst.meldingsdatum for OBJECTTYPE Vondst",
+                "defaults A:Strandvondst.berekende meldingsdatum <- ATTRIBUUT Vondst.berekende meldingsdatum for"
+                        + " OBJECTTYPE Strandvondst",
+                "defaults A:Strandvondst.meldingsdatum <- ATTRIBUUT Vondst.meldingsdatum for OBJECTTYPE Strandvondst",
+                "defaults A:Barnsteenvondst.berekende meldingsdatum <- ATTRIBUUT Vondst.berekende meldingsdatum for"
+                        + " OBJECTTYPE Barnsteenvondst",
+                "defaults A:Barnsteenvondst.meldingsdatum <- ATTRIBUUT Vondst.meldingsdatum for OBJECTTYPE"
+                        + " Barnsteenvondst"),
+                stackTable(analyse("jutterswet-opgave-subtype")));
     }
 
     @Test void a_stack_on_a_characteristic_comes_out_of_the_characteristic() throws Exception {

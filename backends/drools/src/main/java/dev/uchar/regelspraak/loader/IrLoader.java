@@ -296,7 +296,8 @@ public final class IrLoader {
     /** A loaded document with the positions of its nodes on the wire ({@link NodePositions}): the JSON pointer, the
      *  place in the document's pre-order and the wire kind of every node of the condition and the expression union this
      *  loader read, and the pointer of every form version, by identity of the record. No side table of the lowering:
-     *  only a build with readings reads it, which numbers the nodes of a form by it ({@code TmsTranspiler#withReadings}). */
+     *  a build with readings reads it, which numbers the nodes of a form by it ({@code TmsTranspiler#withReadings}), and
+     *  {@code TmsTranspiler#originOf} names the fold of a rule of a fold by it, in a build with or without readings. */
     public record Positioned(Loaded loaded, NodePositions positions) {}
 
     /** Parse a {@code uchar-ir-v1} tree into a resolved model, or throw {@link Refusal} for a form
