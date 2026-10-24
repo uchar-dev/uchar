@@ -639,3 +639,16 @@ Per regelnaam van `drlRules`, zoals nu: `RuleOrigin o = build.execModelTranspile
   niet.
 - `Playground.drlRules` hoeft niets aan de soorten te veranderen: er is geen nieuwe `Kind`. De constructor van
   `RuleOrigin` heeft twee componenten meer; de toolchain bouwt er geen.
+
+### Landing (hoofdsessie, 2026-10-24)
+
+Review door een verse Opus-agent (alleen lezen): één fout (een naambotsing crashte in plaats van DROOLS-055) en één gat in
+de getuigen (een geneste vouw), verwerkt in `554128c8` en `d2de393d` (zie "Review"). De volledige gate-set
+(`werk/gates.sh`) op `c7bd3307`: 17 van 17 groen. Bij de landing bleek dat de werkbank de kaart om 16:01 had uitgebreid
+met de samenstelling van een stapel (punt 3); de landing is afgebroken, de uitbreiding staat als `08888f04` in de kaart,
+en punt 3 is op deze tak gebouwd. De eigenaar vroeg tussendoor of de code eenvoudig en zonder verrassingen was gebleven;
+een Fable-advies (alleen lezen) gaf drie wijzigingen (één record `Stack` per stapel in plaats van losse tabellen,
+`Role.inFold`, geen bouw zonder de plaatsen van de knopen) en behield de afhandeling van gedeelde namen; alle drie zijn
+verwerkt (zie "De samenstelling"). De volledige gate-set op `b0d5241c`: 17 van 17 groen in 31 minuten (12 797 s, 13 240
+s, 17 411 s). Geen beschermd pad, geen rij voor `spec/CONSTRUCTS.md`, `spec/PLAN.md` ongewijzigd. Fast-forward op main en
+gepusht; daarna de toolchain-kaart `drl-rule-part-fields`, die al op `b0d5241c` gebouwd is, met de pin van deze landing.
