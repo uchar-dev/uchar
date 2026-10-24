@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -57,6 +58,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       of the rule it reads and the role {@code READING};</li>
  *   <li>every rule of a fold names its fold, and the pointer resolves in the golden's document to an
  *       {@code Aggregation} or a {@code QuantifierFold} below the default it lowers, or below the form it is of;</li>
+ *   <li>two folds of one form and one subject never name one node ({@link #foldsOfOneSubject}): the lowering builds a
+ *       fold once per node and subject and numbers each fold it builds, so two numbers on one node and one subject
+ *       are rules that name a node not their own, such as that of the fold in whose filter their fold stands. The
+ *       number is the one in the rule's name ({@code vouw 3}) and the subject the class the DRL text binds the fold's
+ *       subject to ({@code $vouwonderwerp}), two more oracles of this witness;</li>
  * </ul>
  *
  * and every effective stack of {@code generated} has a type in {@code stackTypes}: an object type of the model that
@@ -73,7 +79,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * measured 2026-10-24: {@link #EXPECTED_MIN_ROLES} per kind and role in the builds without readings, and the reading
  * rules per kind in the builds with them; {@value #EXPECTED_MIN_FOLD_RULES} rules of a fold, each with its fold;
  * {@value #EXPECTED_MIN_STACK_TYPES} stacks with a type, {@value #EXPECTED_MIN_SUBTYPE_STACKS} of them on a type
- * that inherits the member.
+ * that inherits the member; and, measured 2026-10-24 at the review of that card,
+ * {@value #EXPECTED_MIN_NESTED_FOLDS} folds below another fold of their form and subject.
  */
 class RuleOriginCorpusWitnessTest {
 
@@ -121,6 +128,11 @@ class RuleOriginCorpusWitnessTest {
     /** Of those, the stacks on a type that inherits the member it decides (ch. 7.10), measured 2026-10-24: in eleven
      *  goldens, among them jutterswet-meldtermijn-strandjutter and jutterswet-opgave-subtype. */
     static final int EXPECTED_MIN_SUBTYPE_STACKS = 15;
+    /** The folds whose node stands below the node of another fold of their form and subject, in the builds without
+     *  readings, measured 2026-10-24: three in anchor-forms, one each in fold-filter-subject-two-spellings and
+     *  jutterswet-schone-maand-na-zware-klacht. Two more nested folds, in fold-filter-inner-fold-via-element-role and
+     *  fold-filter-subject-two-spellings, have another subject than the fold around them. */
+    static final int EXPECTED_MIN_NESTED_FOLDS = 5;
 
     private static final Pattern GROUP = Pattern.compile("/rules/prioritizedDefaults/[0-9]+");
     private static final Pattern RULE_VERSION = Pattern.compile("/rules/rules/[0-9]+/versions/[0-9]+");
@@ -128,6 +140,10 @@ class RuleOriginCorpusWitnessTest {
     private static final Pattern FORM_PLACE = Pattern.compile("(/rules/[A-Za-z]+/[0-9]+)/");
     private static final Set<String> FOLD_NODES = Set.of("Aggregation", "QuantifierFold");
     private static final String READING = ": lezing";
+    /** The number of the fold in the name of a rule of a fold. */
+    private static final Pattern FOLD_NUMBER = Pattern.compile(" (?:in|aan) vouw ([0-9]+)");
+    /** The binding of the fold's subject in the DRL text of a rule of a fold. */
+    private static final Pattern FOLD_SUBJECT = Pattern.compile("\\$vouwonderwerp : ([^\\s(]+)\\(");
 
     @Test void every_rule_of_every_carried_golden_has_its_origin() throws Exception {
         List<Path> goldens;
@@ -180,6 +196,7 @@ class RuleOriginCorpusWitnessTest {
         floor(plain, "regels van een vouw", EXPECTED_MIN_FOLD_RULES);
         floor(plain, "stapels met een type", EXPECTED_MIN_STACK_TYPES);
         floor(plain, "stapels op een type dat het lid erft", EXPECTED_MIN_SUBTYPE_STACKS);
+        floor(plain, "geneste vouwen van één onderwerp", EXPECTED_MIN_NESTED_FOLDS);
     }
 
     private static void floor(Map<String, Integer> counts, String key, int floor) {
@@ -193,6 +210,8 @@ class RuleOriginCorpusWitnessTest {
         TmsTranspiler t = build.execModelTranspiler();
         KiePackage p = build.kieBase().getKiePackage(TmsTranspiler.PKG);
         List<Rule> rules = p == null ? List.of() : List.copyOf(p.getRules());
+        // per form and subject of a fold, the fold numbers that name each node
+        Map<String, Map<String, Set<String>>> folds = new TreeMap<>();
         for (Rule r : rules) {
             String rule = r.getName(), where = which + " | " + rule;
             counts.merge("regels", 1, Integer::sum);
@@ -223,6 +242,7 @@ class RuleOriginCorpusWitnessTest {
                 if (o.fold() != null) {
                     counts.merge("regels van een vouw", 1, Integer::sum);
                     fold(where, ir, o, differences);
+                    foldNumber(where, build.drl(), rule, o, folds, differences);
                 }
             }
             RegelSpraakModel.GeneratedFrom generated = o.form() == null ? null : t.generated().get(o.form());
@@ -248,6 +268,7 @@ class RuleOriginCorpusWitnessTest {
                 }
             }
         }
+        foldsOfOneSubject(which, folds, differences, counts);
     }
 
     /** The role the label in the name of {@code rule}, of origin {@code o}, spells: the oracle of this witness, which
@@ -277,6 +298,35 @@ class RuleOriginCorpusWitnessTest {
             return null;
         }
         return RuleOrigin.Role.OWN;
+    }
+
+    /** Notes, for {@code rule}, a rule of a fold of origin {@code o}, the number of its fold under its form and the
+     *  subject of the fold, as the name and the DRL text {@code drl} spell them. */
+    private static void foldNumber(String where, String drl, String rule, RuleOrigin o,
+                                   Map<String, Map<String, Set<String>>> folds, List<String> differences) {
+        Matcher number = FOLD_NUMBER.matcher(rule);
+        String header = "rule " + Namen.drlString(rule) + "\n";
+        int at = drl.indexOf(header), end = at < 0 ? -1 : drl.indexOf("\nend\n", at);
+        Matcher subject = end < 0 ? null : FOLD_SUBJECT.matcher(drl.substring(at, end));
+        if (!number.find() || subject == null || !subject.find()) {
+            differences.add(where + ": een regel van een vouw zonder het nummer van zijn vouw in zijn naam of zonder het"
+                    + " onderwerp van de vouw in de DRL-tekst");
+            return;
+        }
+        folds.computeIfAbsent(o.form() + " op " + subject.group(1), k -> new TreeMap<>())
+                .computeIfAbsent(o.fold(), k -> new TreeSet<>()).add(number.group(1));
+    }
+
+    /** Two folds of one form and one subject name two nodes: the lowering builds one fold per node and subject. A fold
+     *  whose node stands below another one's is counted. */
+    private static void foldsOfOneSubject(String which, Map<String, Map<String, Set<String>>> folds,
+                                          List<String> differences, Map<String, Integer> counts) {
+        folds.forEach((formAndSubject, nodes) -> nodes.forEach((node, numbers) -> {
+            if (numbers.size() > 1)
+                differences.add(which + " | " + formAndSubject + ": de vouwen " + numbers + " noemen allebei " + node);
+            if (nodes.keySet().stream().anyMatch(outer -> node.startsWith(outer + "/")))
+                counts.merge("geneste vouwen van één onderwerp", 1, Integer::sum);
+        }));
     }
 
     /** The fold of {@code o} names an aggregation or a quantifier fold of {@code ir}, below the default it lowers or

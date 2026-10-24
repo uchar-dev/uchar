@@ -187,6 +187,34 @@ class RuleOriginWitnessTest {
                 .at("/rules/prioritizedDefaults/0/defaults/0/justification/node").asText());
     }
 
+    @Test void a_fold_in_the_filter_of_a_fold_names_its_own_node() throws Exception {
+        // the inner fold stands in the filter of the outer one, so the lowering builds it while it builds the outer
+        // fold's contribution rule; each names its own node: an aggregation in an aggregation, and a quantifier fold in
+        // one. The inner folds are anchored to the form's subject ("van de Vergunning zelf"), so all four are folds of
+        // the Vergunning
+        DroolsBackend.Build b = build("anchor-forms", false);
+        JsonNode ir = document("anchor-forms");
+        String equal = "/rules/rules/6/versions/0/value", beside = "/rules/rules/3/versions/0/value";
+        assertEquals(List.of(
+                "gelijk aan later tarief -> FORM own",
+                "gelijk aan later tarief: bijdrage aan vouw 7 -> FORM fold-contribution vouw " + equal,
+                "gelijk aan later tarief: bijdrage aan vouw 8 -> FORM fold-contribution vouw " + equal
+                        + "/filter/parts/1/right"),
+                table(b, "gelijk aan later tarief"));
+        assertEquals(List.of(
+                "tarief naast duur register -> FORM own",
+                "tarief naast duur register: bijdrage aan vouw 3 -> FORM fold-contribution vouw " + beside,
+                "tarief naast duur register: bijdrage aan vouw 4 -> FORM fold-contribution vouw " + beside
+                        + "/filter/parts/1"),
+                table(b, "tarief naast duur register"));
+        assertEquals(List.of("Aggregation", "Aggregation", "Aggregation", "QuantifierFold"), List.of(
+                ir.at(equal + "/node").asText(), ir.at(equal + "/filter/parts/1/right/node").asText(),
+                ir.at(beside + "/node").asText(), ir.at(beside + "/filter/parts/1/node").asText()));
+        assertEquals("de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die"
+                + " later ingaan dan de Vergunning zelf die zijn ingangsdag is later dan de ingangsdag van de Vergunning"
+                + " zelf", ir.at(equal + "/filter/parts/1/right/source/snippet").asText());
+    }
+
     /** "De meldtermijn van een Jutter is zijn aanmelddatum indien {@code justification}", and below it "… indien hij
      *  niet gemeld is", on a Jutter with an aanmelddatum and Vondsten with a vondstdatum and wachtdagen. */
     private static Path meldtermijn(String justification) throws Exception {
