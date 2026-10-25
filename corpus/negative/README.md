@@ -10,14 +10,14 @@ hand-broken variant of a golden dump) and `NOTE.md` (which rule, and
 what was broken). Gate 3 (`scripts/check-verifier.sh`) requires the
 verifier to reject every case here **for exactly the declared rule**; a
 case that passes, or fails only for other rules, turns the gate red. A
-directory may also hold `expect.txt` (since L2, U1): the ARM the case pins.
-Since the card `verifier-arm-keys` the first line is the arm key
-`WF-###.<slug>` of the declared rule and each further line a `name=value` pair
-that must be among the parameters the verifier reports for that key
-(`verifier --arms`), so a case that moves to another arm of its rule turns the
-gate red too, and a rewording of a message does not. Before that card the file
-was one literal fragment of the message; the rows below, written then, speak of
-the fragment.
+directory may also hold `expect.txt`: the ARM the case pins. Its first line
+is the arm key `WF-###.<slug>` of the declared rule and each further line a
+`name=value` pair that must be among the parameters the verifier reports for
+that key (`verifier --arms`; card `verifier-arm-keys`), so a case that moves to
+another arm of its rule turns the gate red too, and a rewording of a message
+does not. The rows of the registers below that speak of the fragment of an
+`expect.txt` were written when the file held one literal fragment of the
+message.
 
 These files are not required to validate against the schema (gate 2
 covers `corpus/golden/` only); they must stay *loadable* — a violation
@@ -25,15 +25,13 @@ is a semantic defect in a structurally well-formed document, not a
 syntax error.
 
 Paths in the notes are JSON pointers into the document, the spelling the
-verifier reports (`/model/objectTypes/<i>/...`; since L4 a version of a named
-form is `/rules/<list>/<f>/versions/<v>/...`, and since L5 the list and the
-fields below it carry their L5 names, as in
-`/rules/rules/0/versions/0/condition/host`). The citations were respelled when
-the verifier's paths moved, quotes of measurements taken on a document's v0
-form included: the position cited is the same, only its spelling is the current
-one. At L4, and again at L5, every citation was taken again from the verifier's
-own output on the witness; the quotes that a note marks as measured on a wire
-form that has since left keep the spelling of that time.
+verifier reports (`/model/objectTypes/<i>/...`; a version of a named form is
+`/rules/<list>/<f>/versions/<v>/...`, as in
+`/rules/rules/0/versions/0/condition/host`). Every citation carries the
+verifier's current spelling, quotes of measurements taken on a document's v0
+form included: the position cited is the one measured. The quotes that a note
+marks as measured on a wire form that has left the wire keep the spelling of
+that form.
 
 ## Vervallen bij de v1-migratie
 
