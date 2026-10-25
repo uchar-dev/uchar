@@ -59,13 +59,13 @@
         target's unit. Convertibility that is merely unknown is not a conversion
         factor, so an unnamed side keeps the standing refusal.
 
-   THE DIFFERENTIAL GUARANTEE NEEDS NO NEW HARNESS. Gate 6 already demands that
-   clingo-over-(now-normalised)-wire hit the SAME absolute expectations gate 5
+   THE DIFFERENTIAL GUARANTEE NEEDS NO HARNESS OF ITS OWN. Gate 6 demands that
+   clingo-over-(normalised)-wire hit the SAME absolute expectations gate 5
    pins for ref-over-source. Because [Model.check] scales the expected value by
    the target attribute's declared decimals (the ORIGINAL, un-normalised doc)
    and ref restates on the write boundary (World.collapse), a normalised literal
    that scales exactly onto the finest-unit target reproduces ref's value bit for
-   bit: ref ≡ clingo remains the proof, now over the factor≠1 goldens too.
+   bit: ref ≡ clingo is the proof, over the factor≠1 goldens too.
 
    IDENTITY ON ALREADY-TRANSLATING WIRES. The pass only ever touches a numeric
    literal that (a) carries a plain unit restating into the target's unit and

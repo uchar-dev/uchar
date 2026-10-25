@@ -266,11 +266,9 @@ let datetime_term (t : int) : string =
    value or fault in ref's own words on a malformed or out-of-range lexeme,
    and the case reader refuses a malformed asOfDate before translation
    starts, so no other constructor can come back and the arm below says so
-   once. Four readers here used to answer that arm with a refusal sentence of
-   their own that no document reaches (measured 2026-09-23: a malformed date
+   once. No document reaches that arm (measured 2026-09-23: a malformed date
    or datum-tijd literal faults in the reader, a malformed asOfDate at the
-   case load, in both executors), and a fifth let it fall through in
-   silence. *)
+   case load, in both executors). *)
 let day_of_lexeme s = match Value.date_of_iso s with Value.Date z -> z | _ -> assert false
 
 let ms_of_lexeme s = match Value.datetime_of_lexeme s with Value.Date_time t -> t | _ -> assert false
@@ -434,7 +432,7 @@ type ctx = {
   mutable named : (string * (string * string * string)) list;
   (* the Let lowering's branch hoist moves the operands beside a branch into
      both arms, behind the branch's condition, while ref evaluates them before
-     it ([hoist_branch]; README [S2] until 2026-09-23). [hoisted]: per branch
+     it ([hoist_branch]; the retired README [S2]). [hoisted]: per branch
      node the hoist built, by identity, those operands. [before_arm]: the arms
      of such nodes being translated, innermost first, each with its node's
      operands and the place of the arm's own atoms in [rule_guard] (start,
@@ -860,11 +858,9 @@ let fresh ctx prefix =
    the runtime gate is decided HERE: a form whose window excludes the
    date simply does not apply and emits nothing — no head, no helper, no
    viol/2 fence (ref never evaluates it). The decision is ref's own
-   [Eval.window_admits], called rather than copied: this mirror used to
-   compare the raw strings itself, and with ref it answered a
-   non-canonical date silently (card ref-geldigheid-datumlezing,
-   2026-09-23). Now a bound or asOfDate that is not a date refuses in
-   both executors with one sentence. *)
+   [Eval.window_admits], called rather than copied (card
+   ref-geldigheid-datumlezing): a bound or asOfDate that is not a date
+   refuses in both executors with one sentence. *)
 let applies ctx (g : validity_window option) = Eval.window_admits ~as_of:ctx.case.as_of g
 
 (* The EFFECTIVE object type (IR-SPEC ch. 2.2): the declaration with its
@@ -1062,9 +1058,10 @@ let attr_temporal ctx ~otype ~attr = Ir_v0.Checks.attr_temporal (object_type ctx
 
 (* the CHARACTERISTIC side of the same question, and this backend's own —
    deliberately not borrowed from `ref`. A characteristic target declares its
-   timeline in `kenmerkGranulariteit`, a different table from the attribute
-   one above, and reading only the attribute table let a KENMERKTOEKENNING on
-   a temporal target pass the ch. 3.10 clip test here (measured 2026-09-20:
+   timeline in `characteristic_granularity`, a different table from the
+   attribute one above, and reading only the attribute table would let a
+   KENMERKTOEKENNING on a temporal target pass the ch. 3.10 clip test here
+   (measured 2026-09-20:
    this backend PLAYED the scalar gate on a timeline while both Drools
    branches named the clip). The condition WALK the clip test uses is shared
    with `ref` [Eval.contains_time_window]; this half is not, because a second shared
@@ -1077,21 +1074,16 @@ let characteristic_temporal ctx ~otype ~characteristic =
 
 (* ch. 3.10's v0 mirror note carries TWO bounds on the window and this is the
    second: v0's backends "refuse the condition under counting quantifiers".
-   Measured 2026-09-20, one verifier-clean document per quantifier, before
-   card drools-venster-vouwtoets (2026-09-23): the DRL-text branch then named
-   this limit in words of its own ("periodevergelijking onder een tellende
-   kwantor") under `none`, `atLeast`, `atMost` and `exactly`, the exec branch
-   dropped the rule there, and both played under `all` and `the`. Since that card
-   both Drools branches play the window under `all`, the exec branch now also
-   inside a quantifier fold's test and filter, and both refuse every WF-112
-   position themselves, by name, in one shared sentence that names the
+   The Drools backend plays the window under `all`, also inside a quantifier
+   fold's test and filter (card drools-venster-vouwtoets), and refuses every
+   WF-112 position itself, by name, in one shared sentence that names the
    construct, the quantifier and WF-112. The refused reading is not a near
    miss — under `none` the window's verdict is COMPLEMENTED, so a time-free
    session, where ch. 3.10 says the window never matches, would make the
    composite true and fire the rule. Word for word ref's sentence up to the
-   phase, as the other ch. 3.10 refusals are. Since 2026-09-23 the position
-   is WF-112 and the verifier refuses the document; this stays as the
-   fail-fast belt on non-conforming input. *)
+   phase, as the other ch. 3.10 refusals are. The position is WF-112 and the
+   verifier refuses the document; this is the fail-fast belt on
+   non-conforming input. *)
 let period_under_count_quantifier (quantifier_kind : quantifier_kind) (parts : condition_expr list) =
   match quantifier_kind with
   | All | The -> ()
@@ -2751,12 +2743,11 @@ let compare_sym = function
 (* arithmetic operands must be statically numeric: ref faults date
    arithmetic under the additive/multiplicative operators, so a
    non-numeric static type must not silently compute on day numbers.
-   The unknown-type recursion arm RETIRED with the eenheid-identiteit
-   typerfix (besluit 16Y+17b): the v0 frontend no longer degrades a unit it
-   cannot name on an arithmetic Binary — it types the product identity
-   (unitloos × E = E) or faults loudly at the resolver, so "unit unknown is
-   never a wire type". Since L2 an untypable derived position is written with
-   a null type (U3); a composite that carries one faults here like any other
+   There is no unknown-type recursion arm (besluit 16Y+17b): the frontend
+   does not degrade a unit it cannot name on an arithmetic Binary — it types
+   the product identity (unitloos × E = E) or faults loudly at the resolver,
+   so "unit unknown is never a wire type". An untypable derived position is
+   written with a null type (U3); a composite that carries one faults here like any other
    non-numeric operand — an unknown type is never read as a number. *)
 let numeric_ok ctx e =
   match e with
@@ -3503,12 +3494,12 @@ let rec reads_first b (e : expr) : bool =
    §9.5 fact is keyed by (rule × subject) and collapses, and a `viol/2` witness
    makes the program UNSAT whichever copy fires. What the hoist DOES move is
    the ch.-5.11 position of the condition relative to those siblings — it is
-   now read first. For values that is below the resolution of the encoding,
+   read first. For values that is below the resolution of the encoding,
    which models order as guarding and not as stopping. For the unbound-
    parameter guard it is not: a sibling read before the branch waits for the
    condition, and a condition that reads a binder whose need is leeg decides
    no arm, so `p plus (als n > 0 dan k anders 0)` with n leeg and p unbound
-   answered where ref faults at p (README [S2] until 2026-09-23). So every
+   would answer where ref faults at p (the retired README [S2]). So every
    branch node the hoist builds keeps the operands ref evaluates before its
    condition ([ctx.hoisted]): the siblings before the reading operand, at
    every level, and those an inner hoist kept. A parameter read in one of
@@ -3533,12 +3524,12 @@ let rec reads_first b (e : expr) : bool =
      except where [let_into_arm]'s swap reaches it first.
    - the nested VALUE must not mention the outer binder. The distribution copies
      `v` into BOTH arms, and a `v` mentioning the outer binder would make both
-     copies mention it — which is why the SYNTACTIC form of this guard used to
-     stop the rewrite outright. It stopped too much. Whether the outer need is
-     really read in both arms is a ch.-10.6 question, not a syntactic one: the
-     copy in the arm that never reads `b` never evaluates `v` either (clause 3),
-     so the outer need is read exactly where `b` is. Since 2026-09-19 that case
-     therefore has its OWN arm below, which searches with `b` instead of with
+     copies mention it. A SYNTACTIC form of this guard would stop the rewrite
+     outright, which stops too much: whether the outer need is really read in
+     both arms is a ch.-10.6 question, not a syntactic one, and the copy in the
+     arm that never reads `b` never evaluates `v` either (clause 3), so the
+     outer need is read exactly where `b` is. That case therefore has its OWN
+     arm below, which searches with `b` instead of with
      the outer binder, drops the copy in the arm that does not read `b`, and
      then CHECKS the single-reading-arm invariant on the result rather than
      assuming it. Where the check fails — the outer binder read in both arms,
@@ -3868,10 +3859,9 @@ let fixed_grid_span ctx (lo, hi) =
 
 (* the periods of a grid as data, one [p_b(start, next, days)] fact each,
    over the span [fixed_grid_span] gives (shared by the ch. 3.7 pro-rata
-   fold, the ch. 3.8 day count and — since 2026-09-11 — the ch. 3.9
-   whole-period qualifier, which is why the two emitters sit here, above
-   the expression/condition recursion, rather than beside the pro-rata that
-   first needed them). The periods are those of [grid]: the calendar's
+   fold, the ch. 3.8 day count and the ch. 3.9 whole-period qualifier,
+   which is why the two emitters sit here, above the expression/condition
+   recursion, rather than beside the pro-rata). The periods are those of [grid]: the calendar's
    buckets for the qualifier and the pro-rata, the target's own grid for
    the day count, whose fixed start point lays them (RUNTIME-SEMANTICS
    ch. 3.2) — ref's one grid function, so the two executors cut at the
@@ -5019,20 +5009,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          comparison). The tie-break differs on paper — agg_first keeps the
          LATER equal operand where agg_min keeps the first-seen — and is
          unobservable, because a tie means value equality and this fold
-         yields a value, never a member. Until this card the set spelling
-         of these two kinds reached no arm at all and the backend refused
-         the expression kind, while ref answered: a live one-answers-one-
-         refuses gap under a verifier-clean, frontend-emitted document. *)
+         yields a value, never a member. *)
       let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribute_ref) in
       (* a TEMPORAL element attribute has no defined moment to rank at, so
          ref refuses the form outright (ch. 3.6: only sum and total carry
          the per-element timeline fold). This arm would rank the asOfDate
          buckets instead — an answer where the other executor refuses.
          Refuse in step. The guard hangs on [el], the anchor
-         ([fold_operand_otype]) — where it always hung, and where the
-         som/totaal arm above and the temporal-totaal refusal arm below
-         now hang theirs too. This is the one set fold that STAYS refused
-         after 2026-09-05, because ref refuses it. ref's guard names the
+         ([fold_operand_otype]), where the som/totaal arm above and the
+         temporal-totaal refusal arm below hang theirs too. This is the one
+         temporal set fold that is refused, because ref refuses it. ref's guard names the
          four ranking kinds as one ("this aggregation over the temporal
          attribute … has no defined moment to fold"), so eerste/laatste
          inherit the refusal on the same ground rather than by a second
@@ -5289,13 +5275,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                  KEY is refused a timeline at case load, so the join finds
                  nothing, the intersection is empty and the clipped total a
                  silent 0 (a hunted gap). The other half of that class — a
-                 key present with a NULL VALUE, where the three readers
-                 passed while the case loader refused the timeline on the
-                 value — is closed since 2026-09-09 at the two ends that
-                 create it: the schema drops `null` from the
-                 kenmerkGranulariteit enum and WF-034 refuses the value, so
-                 key existence and value existence now coincide and this
-                 predicate is exact again. *)
+                 key present with a NULL VALUE — cannot arise: the schema
+                 admits no `null` granularity and WF-034 refuses the value,
+                 so key existence and value existence coincide and this
+                 predicate is exact. *)
               fault "gedurende over %S, which is not a temporal characteristic" k;
             if not negation then fun v t -> Printf.sprintf "ktl(S,%s,%s,%s)" (str k) v t
             else begin
@@ -5577,22 +5560,21 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           | None -> false) ->
       let set = source_role <> None || source_path <> None in
       (* every temporal totaal the arms above deliberately do not carry.
-         Each of these used to fall INTO the own-subject arm and be
+         Each of these would otherwise fall INTO the own-subject arm and be
          answered off val(<SUBJECT>,…) — the wrong instance — so each is
          refused here by its own reason instead: never a silent value,
          never a silent leeg. A NON-temporal totaal is not this arm's
-         business and reaches the catch-all below, as it always has.
+         business and reaches the catch-all below.
 
          The temporality guard hangs on the ANCHOR ([fold_operand_otype]),
          not on the operand's own objecttype: a set fold's declaration
-         lives on the element type. Before that decision a MIXED
-         annotation — a non-temporal aot beside a temporal element type —
-         missed this arm and fell reasonlessly into the catch-all; it now
-         reaches the carried set-fold arm above, which folds it as the
-         temporal fold its element type declares. *)
+         lives on the element type. A MIXED annotation — a non-temporal aot
+         beside a temporal element type — reaches the carried set-fold arm
+         above, which folds it as the temporal fold its element type
+         declares. *)
       if set then
-        (* the navigation-free set fold is CARRIED above (§7.1, since
-           2026-09-05); what is left here NAVIGATES, and the carried arm
+        (* the navigation-free set fold is CARRIED above (§7.1); what is
+           left here NAVIGATES, and the carried arm
            anchors every read at the element variable of a navigation-free
            source, mirroring ref — whose instance-fold source arm refuses
            a navigated source outright. *)
@@ -6440,7 +6422,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
    dividend deposits the §9.5 channel fact (EF-031) and derives no value
    (leeg as absence); a numeric zero divisor under a filled dividend does
    the same with EF-005 (RUNTIME-SEMANTICS ch. 1.4 point 4: v1 routes it
-   into the channel; until then it was a viol/2 witness). The value itself: the true quotient (L/sl)/(R/sr) at
+   into the channel). The value itself: the true quotient (L/sl)/(R/sr) at
    out-scale m is L·(sr·m) / (R·sl). Bare division translates only
    its EXACT outcomes — a remainder derives a viol/2 witness instead
    of a truncated value (v0's §6.1.2 static guard demands an explicit
@@ -6932,10 +6914,9 @@ and translate_power ctx ~subject ~subject_ot ~left_side ~right_side =
    Failure is derived POSITIVELY and named, rather than folded into the
    caller's atom list, because the day count it folds is an aggregate and an
    aggregate is not a constraint the caller can carry: the name is what makes
-   the verdict readable as ONE atom, in either polarity. (Until 2026-09-16
-   this was also what let the quantifier fold negate the matrix under `all`;
-   that fold now reifies EVERY matrix of its own accord and reads this one
-   through [cond_atoms] like any other.)
+   the verdict readable as ONE atom, in either polarity. (The quantifier fold
+   reifies EVERY matrix of its own accord and reads this one through
+   [cond_atoms] like any other.)
 
    The helper rules quantify over their own S, like the ch. 3.9
    characteristic arm beside them, so the predicate is defined for every
@@ -7621,8 +7602,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
   | Some inner -> at_form ctx (fun subject subject_ot -> cond_atoms_raw ctx ~subject ~subject_ot inner)
   | None ->
   match c with
-  (* ch. 3.9's value test over a timeline, executed here since 2026-09-16
-     (the fold itself is [whole_period_fails]). Every other Comparison arm
+  (* ch. 3.9's value test over a timeline (the fold itself is
+     [whole_period_fails]). Every other Comparison arm
      below guards `periode = None`, so this arm sees every qualified
      comparison and nothing else reaches it.
 
@@ -7639,10 +7620,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
   | Comparison { op; left_side; right_side; time_period = Some gp; _ } ->
       let p = whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~gp in
       [ (if gp.gp_negated then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
-  (* ch. 3.9, the leeg and gevuld tests under the whole-period qualifier,
-     executed here since 2026-09-26 (the fold is
-     [whole_period_empty_filled_fails]); until then this arm refused the form
-     by name. It stands before the plain leeg/gevuld arm, which takes the
+  (* ch. 3.9, the leeg and gevuld tests under the whole-period qualifier (the
+     fold is [whole_period_empty_filled_fails]). It stands before the plain leeg/gevuld arm, which takes the
      unqualified test only. "Negation complements the folded result": the
      qualifier's "niet gedurende …" reads the failure atom itself, the plain
      form reads its negation. *)
@@ -7709,9 +7688,9 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
     when is_datetime_operand ctx left_side || is_datetime_operand ctx right_side ->
       (* THE DATUM-TIJD ORDERING (RUNTIME-SEMANTICS ch. 1.2e + ch. 3.8).
          Every other comparison arm below harmonises INTEGER SCALES; a
-         datum-tijd has none — [decimals_of_datatype] refuses it, which is
-         why a datetime ordering carrying no literal at all used to fault
-         `unscalable datatype` here while ref replayed the same document
+         datum-tijd has none — [decimals_of_datatype] refuses it, so a
+         datetime ordering carrying no literal at all would fault
+         `unscalable datatype` there while ref replays the same document
          exactly. The scale question has one answer and the pair term
          already gives it: an instant rides dt(D, MS), the civil day beside
          the ms-of-day, because the absolute ms value does not fit gringo's
@@ -7842,13 +7821,12 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
   | Characteristic_check { characteristic; negation; navigation_binding; holder; time_period = Some gp; _ } ->
       (* ch. 3.9, the §8.2 whole-period qualifier over a characteristic —
          the second of ch. 3.3's two "dedicated collapses", and therefore
-         NOT the scalar context ch. 3.3 refuses. Until 2026-09-11 both arms
-         below matched `time_period` away with `_`: a temporal characteristic is
+         NOT the scalar context ch. 3.3 refuses. A temporal characteristic is
          never delivered in the flat `characteristics` list (the ch. 8.2
-         apartness, refused at load since 2026-09-09), so the dropped
-         qualifier left a bare has/2 lookup over facts that can never
-         exist — the rule simply never fired, and the answer was leeg where
-         the chapter says the vacuous cases pass.
+         apartness, refused at load), so an arm that dropped the qualifier
+         would leave a bare has/2 lookup over facts that can never exist —
+         the rule would never fire, and the answer would be leeg where the
+         chapter says the vacuous cases pass.
 
          The fold is encoded in ASP, over the SAME bucket-and-true-day facts
          the ch. 3.7 pro-rata uses, rather than by calling ref's ch. 3.9
@@ -8569,8 +8547,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          nothing may hold.
 
          The carried bound shapes are ref's, deliberately not a superset: a
-         literal or the subject's own scalar date attribute — WF-111 since
-         2026-09-23, so the verifier refuses the rest and the arm below is the
+         literal or the subject's own scalar date attribute — WF-111, so the
+         verifier refuses the rest and the arm below is the
          fail-fast belt. Two executors that carried different bound forms would
          let the differential arbitrate a form only one of them reads. *)
       let v, t = window_bounds ctx ~subject ~subject_ot starting_at up_to in
@@ -9715,8 +9693,7 @@ and value_condition ctx ~subject ~subject_ot (c : condition_expr) : string list 
    the rule head per branch. The shape that gets there is one need read under
    two different branch guards: `(als k > d dan k anders 0) plus (als k > h dan
    k anders 0)`, where the two nodes sit under an operator and each arm is its
-   own guard. Until this arm existed that document faulted "expression kind not
-   translated" while ref played it.
+   own guard.
 
    One helper predicate, one rule per arm — the [translate_match] shape, for
    the same reason: mutually exclusive guards, no NAF, and leeg by
@@ -9814,7 +9791,7 @@ let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
       ctx.demands <- saved_d;
       (* ch. 10.6 clause 2: the value atoms guard exactly the READING branches
          — a branch that never reads the binder survives a leeg value, which is
-         where L parts company with the old strict lowering. The read set moves
+         where L parts company with a strict lowering. The read set moves
          outward too: an outer binder is read on this branch either directly,
          or because THIS binder is read and its value reads it. *)
       List.map
@@ -10256,7 +10233,7 @@ let translate_rule ctx (r : resolved_rule) =
             | Some Characteristic_attribution -> characteristic_temporal ctx ~otype:ot ~characteristic:a
             | _ -> attr_temporal ctx ~otype:ot ~attr:a
           in
-          (* ch. 3.10's CLIP (built 2026-09-23): on a timeline target the
+          (* ch. 3.10's CLIP: on a timeline target the
              window is taken off the condition position — it gates nothing —
              and cuts the producer's segments instead ([write_segment]).
              Two positions stay refused by name, in ref's words up to the
@@ -10306,11 +10283,9 @@ let translate_rule ctx (r : resolved_rule) =
           (match r.rr_presentation with
           | Some Characteristic_attribution ->
               (* ch. 3.11: a temporal characteristic's write is a TIMELINE of
-                 true-periods, and has/2 is the scalar reading. Until
-                 2026-09-23 this arm wrote has/2 on such a target anyway —
-                 measured on the document of red case
-                 time-window-timeline-characteristic without its window: PASS
-                 here, where ref refuses. Refused now, in ref's words. *)
+                 true-periods, and has/2 is the scalar reading, so the write
+                 is refused, in ref's words (red case
+                 time-window-timeline-characteristic). *)
               if characteristic_temporal ctx ~otype:ot ~characteristic:a then
                 fault "temporal characteristic %S: temporal writes are not implemented" a;
               (match r.value_node with
@@ -10686,10 +10661,7 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
    witness "creation budget exhausted" — UNSAT where ref/ faults in the
    same words, never a silent truncation. The depth is the norm, not a
    count of generations: a mint that waits for a link or a value keeps
-   its subject's depth, as in ref/. Until 2026-10-09 the depth ran on over
-   the strata and the witness fell at the 100th mint: a chain of 100
-   mints, and chains of 50 + 1 + 50 over three strata, were UNSAT here,
-   where ref plays them.
+   its subject's depth, as in ref/.
 
    The depth guard would leave a creation silent on a subject without a
    depth in its stratum, and only a mint of a higher stratum lacks one: an
@@ -10699,7 +10671,7 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
    creation carries a clamp that derives a named viol/2 witness on such a
    subject instead of firing silently on none.
 
-   The depth no longer bounds the nesting of the terms, which grows by one
+   The depth does not bound the nesting of the terms, which grows by one
    per creation over all strata, and clingo 5.8.2 aborts while it prints a
    string atom of certain lengths, which a deep term reaches (README,
    Recorded limitations).
@@ -11290,12 +11262,12 @@ let translate_defaults_group ctx gidx ~owner
    the remainder lives at its own scale r ≥ max(p, d). Without declared
    rounding ref writes the EXACT rational share and faults a
    non-fitting write — here an exactness viol/2 at the target scale,
-   never a silent floor (the aligned form used to floor silently). *)
+   never a silent floor. *)
 let translate_allocation ctx i (v : resolved_allocation) =
-  (* windows on the untranslated-window forms fault LOUDLY (they were
-     silently ignored before the ch. 8.2 gate landed for rules, prioritized
-     defaults and creations): an unwindowed translation of a windowed allocation
-     would silently apply outside its window *)
+  (* windows on the untranslated-window forms fault LOUDLY (rules,
+     prioritized defaults and creations pass the ch. 8.2 gate): an
+     unwindowed translation of a windowed allocation would silently apply
+     outside its window *)
   (match v.vd_validity with
   | Some { valid_from = Some _; _ } | Some { valid_to = Some _; _ } ->
       fault "allocation validity windows are not translated (no corpus case)"
@@ -11371,9 +11343,8 @@ let translate_allocation ctx i (v : resolved_allocation) =
   let p = Printf.sprintf "vd%d_" i in
   (* ch. 4.1: the recipient set of one source instance is every DOELTYPE
      instance the connecting relation reaches — the role supplies the
-     relation, doelType supplies the population. The two used to coincide,
-     because WF-047 demanded one and the same name on both; since ch. 2.6
-     widened "agree" to ⊑-compatibility the bound role's filler may be a
+     relation, doelType supplies the population. WF-047 asks
+     ⊑-compatibility of the two (ch. 2.6), so the bound role's filler may be a
      STRICT SUPERTYPE of doelType, and the role then reaches instances this
      allocation does not target. One derived predicate carries the
      intersection and every recipient body below joins on it instead of
@@ -12231,8 +12202,8 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    Wachter with a maatgever ervaren, a creation that gives a Haven a
    Rapport with the number of its ervaren wachters makes the Rapport in
    generation 1, when one of the three wachters is ervaren; ref answers 1,
-   and this backend answered 3 until 2026-10-09, when the test asked only
-   for a writer on a cycle through the creation. A writer that no such
+   and a test that asked only for a writer on a cycle through the creation
+   would let this backend answer 3. A writer that no such
    creation reaches keeps its value from generation 0 on, and a creation
    of a higher stratum than the cycle reads the end value, as ref does.
 
@@ -12262,11 +12233,9 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    generation brings a change from it, and the same gate that leaves it
    untranslated ([applies], ref's [Eval.window_admits]) decides that here.
    The writers and the cycles between them stay read off the static graph,
-   as above. Until the second fix round of 2026-10-09 the excluded version
-   counted: with "geef door" valid from 2027-01-01 and a case on
-   2026-01-01 no executor lays a maatschap, only W1 is ervaren and ref
-   answers rapportaantal(H1) = 1, and this backend refused the Rapport
-   where, before the test reached off the cycle, it answered 1 as well. *)
+   as above. With "geef door" valid from 2027-01-01 and a case on
+   2026-01-01 no executor lays a maatschap, only W1 is ervaren, and ref and
+   this backend answer rapportaantal(H1) = 1. *)
 let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
   let cctx = Ir_v0.Checks.ctx_of doc in
   let forms = Array.of_list (Ir_v0.Checks.dep_forms cctx) in
