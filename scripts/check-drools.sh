@@ -62,23 +62,20 @@
 # (scripts/lib/drools-jar.sh) like the five other gates that read the jar: rebuilt when a path it is
 # built from is newer, so the replay never runs a jar that predates the source under review.
 #
-# --fast (card drl-teksttak-op-truth-maintenance, 2026-10-14, at the maintainer's request) serves a
-# builder who changes a pin or a list of this gate. The jar is taken fresh or rebuilt as always, so the
-# replay never runs a stale jar, but the JUnit suite does not run; the exec-model replay runs with every
-# pin and list; the DRL-text sweep is left out. So under --fast nothing compares the two branches: neither the sweep
-# nor the suite's per-case comparison runs. Its report says what did not run, and its last line that
-# it is no landing run: a landing always runs the full gate, without a flag.
+# The replay runs in two passes, the exec-model branch and then the DRL-text branch, and each pass
+# collects, then judges (scripts/lib/parallel.sh): first the `java -jar` of every golden runs, with the
+# replay flags PARALLEL_JVM_FLAGS, on one process per two cores, each into a file of its own; then the
+# loop of the pass reads those files in the order of the corpus and judges them, with the lists, pins,
+# counts and report of a replay one golden after the other. The DRL-text pass begins only after the
+# exec-model pass is judged green, so a break on the exec-model branch fails before the cost of the
+# second pass. A JVM that crashes or does not start leaves an empty or partial output, which the loop
+# meets at its golden and fails by name.
 set -u
 cd "$(dirname "$0")/.."
 
 fail() { echo "check-drools: FAIL — $*" >&2; exit 1; }
 
-FAST=0
-case "$#:${1:-}" in
-  0:) ;;
-  1:--fast) FAST=1 ;;
-  *) echo "usage: scripts/check-drools.sh [--fast]" >&2; exit 2 ;;
-esac
+[ "$#" -eq 0 ] || { echo "usage: scripts/check-drools.sh (no arguments)" >&2; exit 2; }
 
 command -v java >/dev/null 2>&1 || fail "java not found (the Drools runtime needs a JDK/JRE 21+)"
 
@@ -140,41 +137,38 @@ suite_begin=backends/drools/target/check-drools-begin
 # drl-teksttak-op-truth-maintenance: the card moved the comparison of the two branches per case into the
 # suite, so a suite that quietly ran less would now also compare less.
 EXPECTED_MIN_TESTS=1573   # 2026-10-14: measured 1573 (backends/drools, the surefire run, step 6c of that card)
-# --fast: the jar above is fresh or rebuilt as always (never a stale one), but the suite does not run
-if [ "$FAST" -eq 0 ]; then
-  suite_out=$(mvn -o -f backends/drools/pom.xml test 2>&1)
-  suite_status=$?
-  if [ $suite_status -ne 0 ]; then
-    echo "$suite_out" | tail -25 >&2
-    fail "the backend's build+JUnit suite is red"
-  fi
-  summary=$(printf '%s\n' "$suite_out" | sed -n 's/^\[[A-Z]*\] Tests run: \([0-9][0-9]*\), Failures: [0-9]*, Errors: [0-9]*, Skipped: \([0-9][0-9]*\).*/\1 \2/p' | tail -1)
-  [ -n "$summary" ] || fail "the suite produced no 'Tests run: N' summary — it did not run"
-  tests=${summary%% *}; skipped=${summary##* }
-  [ "$tests" -gt 0 ] || fail "the suite ran zero tests (an empty test set is a failure, never silently green)"
-  [ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \
-    || fail "the suite ran $tests tests, but EXPECTED_MIN_TESTS pins at least $EXPECTED_MIN_TESTS — the suite shrank (a deliberately dropped test lowers the floor in the same commit)"
-  [ "$skipped" -eq 0 ] || fail "the suite skipped $skipped test(s) — a skipped witness is a silent greenlight"
-  # BranchDumpsCorpusWitnessTest is the comparison of the two branches per case, over every played golden and every
-  # red case, that card drl-teksttak-op-truth-maintenance put in the suite (the owner's decision on norm question 1
-  # of its fourth Fable advice), where the sweep below compares status lines only; so this build must have run
-  # both its rows, by name, as its surefire report written after the build began says.
-  branch_dumps=backends/drools/target/surefire-reports/TEST-dev.uchar.regelspraak.cases.BranchDumpsCorpusWitnessTest.xml
-  [ -f "$branch_dumps" ] && [ "$branch_dumps" -nt "$suite_begin" ] \
-    || fail "BranchDumpsCorpusWitnessTest did not run in this build (no surefire report newer than its start: $branch_dumps) — the suite's comparison of the two branches per case is required"
-  for table_row in every_case_of_every_played_golden_has_the_same_dump_on_both_branches \
-             every_red_case_gives_the_same_red_result_on_both_branches; do
-    grep -q "<testcase name=\"$table_row\"" "$branch_dumps" \
-      || fail "BranchDumpsCorpusWitnessTest ran without its row '$table_row' — the comparison of the two branches per case is required whole"
-  done
-  # card fixpoint-readings: the build with readings leaves the fixpoint, the observer and the coverage alone, and its
-  # readings agree with the fixpoint, over every played golden; this build must have run those witnesses, by name
-  for witness in ReadingRulesFixpointWitnessTest ReadingsCorpusWitnessTest ReadingRulesObserverWitnessTest; do
-    report=backends/drools/target/surefire-reports/TEST-dev.uchar.regelspraak.cases.$witness.xml
-    [ -f "$report" ] && [ "$report" -nt "$suite_begin" ] \
-      || fail "$witness did not run in this build (no surefire report newer than its start: $report) — the witnesses of the build with readings are required"
-  done
+suite_out=$(mvn -o -f backends/drools/pom.xml test 2>&1)
+suite_status=$?
+if [ $suite_status -ne 0 ]; then
+  echo "$suite_out" | tail -25 >&2
+  fail "the backend's build+JUnit suite is red"
 fi
+summary=$(printf '%s\n' "$suite_out" | sed -n 's/^\[[A-Z]*\] Tests run: \([0-9][0-9]*\), Failures: [0-9]*, Errors: [0-9]*, Skipped: \([0-9][0-9]*\).*/\1 \2/p' | tail -1)
+[ -n "$summary" ] || fail "the suite produced no 'Tests run: N' summary — it did not run"
+tests=${summary%% *}; skipped=${summary##* }
+[ "$tests" -gt 0 ] || fail "the suite ran zero tests (an empty test set is a failure, never silently green)"
+[ "$tests" -ge "$EXPECTED_MIN_TESTS" ] \
+  || fail "the suite ran $tests tests, but EXPECTED_MIN_TESTS pins at least $EXPECTED_MIN_TESTS — the suite shrank (a deliberately dropped test lowers the floor in the same commit)"
+[ "$skipped" -eq 0 ] || fail "the suite skipped $skipped test(s) — a skipped witness is a silent greenlight"
+# BranchDumpsCorpusWitnessTest is the comparison of the two branches per case, over every played golden and every
+# red case, that card drl-teksttak-op-truth-maintenance put in the suite (the owner's decision on norm question 1
+# of its fourth Fable advice), where the sweep below compares status lines only; so this build must have run
+# both its rows, by name, as its surefire report written after the build began says.
+branch_dumps=backends/drools/target/surefire-reports/TEST-dev.uchar.regelspraak.cases.BranchDumpsCorpusWitnessTest.xml
+[ -f "$branch_dumps" ] && [ "$branch_dumps" -nt "$suite_begin" ] \
+  || fail "BranchDumpsCorpusWitnessTest did not run in this build (no surefire report newer than its start: $branch_dumps) — the suite's comparison of the two branches per case is required"
+for table_row in every_case_of_every_played_golden_has_the_same_dump_on_both_branches \
+           every_red_case_gives_the_same_red_result_on_both_branches; do
+  grep -q "<testcase name=\"$table_row\"" "$branch_dumps" \
+    || fail "BranchDumpsCorpusWitnessTest ran without its row '$table_row' — the comparison of the two branches per case is required whole"
+done
+# card fixpoint-readings: the build with readings leaves the fixpoint, the observer and the coverage alone, and its
+# readings agree with the fixpoint, over every played golden; this build must have run those witnesses, by name
+for witness in ReadingRulesFixpointWitnessTest ReadingsCorpusWitnessTest ReadingRulesObserverWitnessTest; do
+  report=backends/drools/target/surefire-reports/TEST-dev.uchar.regelspraak.cases.$witness.xml
+  [ -f "$report" ] && [ "$report" -nt "$suite_begin" ] \
+    || fail "$witness did not run in this build (no surefire report newer than its start: $report) — the witnesses of the build with readings are required"
+done
 
 # --- the value-divergence exclusion list (reason-carrying; fails when stale) -------------------
 # Each entry: "<golden-relative-path>|<reason>". A golden here MUST diverge (FAIL/ERROR); if it
@@ -1507,14 +1501,33 @@ played=0; auto_excl=0; div_excl=0; nocase=0
 declare -a AUTO_REASONS=()
 declare -a FAILED=()
 
+# --- the replay, in two passes that each collect and then judge (scripts/lib/parallel.sh) ------------------
+# One process per two cores: a replay JVM with PARALLEL_JVM_FLAGS uses 1.5 cores (the measurement is in
+# scripts/lib/parallel.sh). A task per golden with case files, keyed by the golden's place in the corpus order.
+. scripts/lib/parallel.sh || fail "could not read scripts/lib/parallel.sh"
+procs=$(parallel_jobs 2) || fail "no number of processes for the replay (the parallel line above says why)"
+work=$(mktemp -d) || fail "cannot make a work directory for the replay"
+trap 'rm -rf "$work"' EXIT
+mkdir "$work/exec" "$work/drl" || fail "cannot make the task directories of the replay in $work"
+echo "  replay: $procs processes per pass (one per two cores)"
+i=0
 while IFS= read -r ir; do
+  i=$((i + 1))
+  cases=$(find "$(dirname "$ir")" -maxdepth 1 -name 'case*.json' | sort)
+  [ -z "$cases" ] || parallel_task "$work/exec" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" $cases
+done < <(find corpus/golden -name ir.json | sort)
+parallel_run "$work/exec" "$procs" || fail "the exec-model replay did not end for every golden (the parallel line above names it)"
+
+i=0
+while IFS= read -r ir; do
+  i=$((i + 1))
   dir=$(dirname "$ir"); name=${dir#corpus/golden/}
   cases=$(find "$dir" -maxdepth 1 -name 'case*.json' | sort)
   if [ -z "$cases" ]; then
     nocase=$((nocase + 1)); SEEN+=("$name|NOCASE"); SEEN_LINE+=("$name|(no case file)")
     echo "  no-case  $name (a golden without a case file — not playable)"; continue
   fi
-  out=$(java -jar "$JAR" "$ir" $cases 2>/dev/null | tail -1)
+  out=$(tail -1 "$work/exec/$i.out")
   tok=${out%% *}
   case "$tok" in
     PLAYED)
@@ -1597,24 +1610,6 @@ done
 # (c) the count closes the direction the played-by-default list cannot see: a NEW golden that plays
 [ "$played" -eq "$EXPECTED_PLAYED" ] || fail "played $played, but EXPECTED_PLAYED pins $EXPECTED_PLAYED — a golden entered or left the played channel without the list noticing (a new golden plays: raise the number; a golden went away: the corpus lost a player)"
 
-# --fast stops here, with the square above green: the JUnit suite did not run, and the DRL-text sweep
-# below belongs to the full gate.
-if [ "$FAST" -eq 1 ]; then
-  echo ""
-  echo "check-drools: PASS --fast (the exec-model replay with every pin and list)"
-  echo "  played $played  (loaded off the wire, wholly lowered, matched the pinned ref≡clingo expectations)"
-  echo "  auto-excluded $auto_excl  (per-form refusals: loader / transpiler marker / contract / unsupported input)"
-  if [ ${#AUTO_REASONS[@]} -gt 0 ]; then
-    printf '%s\n' "${AUTO_REASONS[@]}" | sort | uniq -c | sort -rn | sed 's/^ *\([0-9][0-9]*\) /    \1x  /'
-  fi
-  echo "  value-divergence $div_excl  (listed with reason — the exec-model differs from ref/clingo)"
-  echo "  no-case $nocase  (goldens without a case file)"
-  echo "  channel floor ${#EXPECTED_CHANNEL[@]} non-PLAYED goldens pinned by name; played matches the pinned $EXPECTED_PLAYED"
-  echo "  NOT RUN under --fast: the JUnit suite and the DRL-text sweep, so nothing compared the two branches"
-  echo "check-drools: --fast is no landing run; a landing runs the full gate, without a flag"
-  exit 0
-fi
-
 # --- the DRL-TEXT sweep: the second rendering of the one analysis ---------------------------------
 # A SECOND pass over every golden through the runner's --drl entry. It runs LAST, after the square
 # above is green, so an exec-side break still fails in the time it always did and the extra wall
@@ -1635,14 +1630,24 @@ exec_line() {   # the status line the exec sweep recorded for a golden; nothing 
   done
   return 1
 }
+i=0
 while IFS= read -r ir; do
+  i=$((i + 1))
+  drl_cases=()
+  while IFS= read -r c; do drl_cases+=("$c"); done < <(find "$(dirname "$ir")" -maxdepth 1 -name 'case*.json' | sort)
+  [ ${#drl_cases[@]} -eq 0 ] || parallel_task "$work/drl" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "${drl_cases[@]}"
+done < <(find corpus/golden -name ir.json | sort)
+parallel_run "$work/drl" "$procs" || fail "the DRL-text replay did not end for every golden (the parallel line above names it)"
+i=0
+while IFS= read -r ir; do
+  i=$((i + 1))
   dir=$(dirname "$ir"); name=${dir#corpus/golden/}
   drl_cases=()
   while IFS= read -r c; do drl_cases+=("$c"); done < <(find "$dir" -maxdepth 1 -name 'case*.json' | sort)
   if [ ${#drl_cases[@]} -eq 0 ]; then
     out="(no case file)"
   else
-    out=$(java -jar "$JAR" --drl "$ir" "${drl_cases[@]}" 2>/dev/null | tail -1)
+    out=$(tail -1 "$work/drl/$i.out")
     if [ "${out%% *}" = PLAYED ]; then
       # the same hollow-token guard the exec arm carries: PLAYED 0 replayed nothing at all
       n_drl_cases=${out#PLAYED }
