@@ -44,7 +44,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * consequence with and without {@code collapse} and a decision with and without both {@code collapse} and its fault in
  * the plan; the bound uitkijkbonus in each of those forms; and a value consequence with a probe in the plan over a
  * constant and over the bound value. Every term carries {@link #SENTENCE}, which stands as a comment line above the
- * statement that carries it, where Drools reads past it. The plan fires through the executable model, as the exec-model
+ * statement that carries it, where Drools reads past it. The name of a rule over a constant, and so its writer and its
+ * stack, has a space before a dot, which the preparation of a consequence drops where it takes the text for code, as it
+ * would after a literal it did not read to its end. The plan fires through the executable model, as the exec-model
  * branch builds it, and through the DRL text, as {@code DRL_TEXT} builds it, on a Wachter with an uitkijkbonus and on
  * one without: both give the same facts, and those the plan says, a value of the same class equal to the constant,
  * collapsed where the plan collapses it.
@@ -117,13 +119,13 @@ class DrlCarriedValueWitnessTest {
             for (boolean collapse : new boolean[] {false, true}) {
                 Object v = collapse ? ComputeHelpers.collapse(w) : w;
                 Term t = new Term.Const(w, null, SENTENCE);
-                String value = "waarde " + i + (collapse ? " ingeklapt" : "");
+                String value = "waarde ." + i + (collapse ? " ingeklapt" : "");
                 rules.add(new RulePlan(value, "proef", null, new ReadTable(List.of()), List.of(subject),
                         new Consequence.Value(O, TARGET, value, t, List.of(), 0, collapse, true, null,
                                 new Consequence.FaultName("proef", value), Consequence.Insertion.LOGICAL)));
                 expect(with, without, "Value " + value + " = " + describe(v));
                 for (boolean fault : new boolean[] {false, true}) {
-                    String decision = "afloop " + i + (collapse ? " ingeklapt" : "") + (fault ? " met fout" : "");
+                    String decision = "afloop ." + i + (collapse ? " ingeklapt" : "") + (fault ? " met fout" : "");
                     rules.add(new RulePlan(decision, "proef", null, new ReadTable(List.of()), List.of(subject),
                             decision(t, List.of(), 0, collapse, fault, decision)));
                     if (v != null) {
