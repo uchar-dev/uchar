@@ -89,11 +89,12 @@ runs onder `werk/gates-design/parallel-replays/logs/`.
 POSIX sh, gesourced. `parallel_task DIR KEY STDERR COMMAND ARG…` legt een taak vast (`DIR/KEY.args`, een argument per
 regel; STDERR `out` = 2>&1, `err` = eigen bestand, `null`); `parallel_run DIR N` draait alle taken van DIR met `xargs -P
 N -n 1`, elk met stdin /dev/null, en schrijft per taak `KEY.out` (en `KEY.err`) en na afloop `KEY.rc`. De shell die een
-taak draait eindigt altijd met 0, zodat een status (ook 255) de andere taken nooit stopt; een taak zonder `.rc` na xargs
-(zijn shell is gestorven of xargs stopte) of een xargs-status ≠ 0 laat `parallel_run` falen met `parallel: FAIL —` en het
-commando van de taak. Verkeerd gebruik (sleutel, STDERR, geen commando, dubbele sleutel, newline in een argument)
+taak draait eindigt altijd met 0, zodat een status (ook 255) de andere taken nooit stopt. `parallel_run` faalt (status 1,
+één regel `parallel: FAIL — …`) bij een N die geen geheel getal boven 0 is, bij een taak zonder `.rc` na xargs (zijn shell
+is gestorven of xargs stopte; de regel noemt het commando van de taak) en bij een xargs-status ≠ 0. Verkeerd gebruik (sleutel, STDERR, geen commando, dubbele sleutel, newline in een argument)
 beëindigt de gate met 2. `parallel_jobs D` = cores (`getconf _NPROCESSORS_ONLN`) / D, minstens 1, zonder knop.
-`PARALLEL_JVM_FLAGS='-XX:TieredStopAtLevel=1 -XX:+UseSerialGC'` voor elke replay-JVM van de vier gates.
+`PARALLEL_JVM_FLAGS='-XX:TieredStopAtLevel=1 -XX:+UseSerialGC'` voor elke replay-JVM van gates 12, 13 en 17; gate 6 start
+geen JVM, gate 13 neemt uit de hulp alleen de vlaggen.
 
 **De JVM-meting** (kaartopdracht; 54 goldens, elke zesde met een casebestand, een `java -jar` per golden, 16 cores, load
 ±7 bij het begin; tabel ook in de kop van `parallel.sh`): exec zonder vlaggen 24,7 s serieel (86 s cpu), 8,3 / 6,7 /
@@ -106,14 +107,15 @@ nieuwe meting: D = 2 voor de JVM-lussen.
 
 | gate | processen (16 cores) | regel | reden |
 |---|---|---|---|
-| 6 | cores (16) | `check-clingo: replays on 16 processes (one per core)` | runner en clingo ééndraads; replay-pas 152 s serieel, 51 s op 4, 36 s op 8 en op 16: de langste case (`jutterswet-opvolgerversies/case3-tweede-versie.json`) duurt alleen al 35 s |
+| 6 | cores/2 (8) | `check-clingo: replays on 8 processes (one per two cores)` | replay-pas 152 s serieel, 51 s op 4, 36 s op 8 en op 16: de langste case (`jutterswet-opvolgerversies/case3-tweede-versie.json`) duurt alleen al 35 s; meer dan 8 nemen in `make gates` alleen kernen van de suite van gate 12 (fixronde, punt 8) |
 | 12 | cores/2 (8) per pas | `  replay: 8 processes per pass (one per two cores)` | replay-JVM met de vlaggen 1,5 kern |
 | 13 | 4 (de benen) | `  legs: 4 processes (unit, vocabulary, origin, name)` | vier benen, elk één golden tegelijk; ±6 kernen bezig |
 | 17 | traces cores (16), readings en replays cores/2 (8) | `  traces on 16 processes (one per core), readings and replays on 8 (one per two cores)` | runner ééndraads; JVM 1,5 kern |
 
-**Gate 12, twee passen.** Na de suite (ongewijzigd, eerst): pas 1 legt per golden met cases `java $PARALLEL_JVM_FLAGS
--jar "$JAR" "$ir" $cases` vast, draait ze, en de bestaande exec-lus leest `tail -1` van `$work/exec/<i>.out` (i = plaats
-in de corpusvolgorde) waar hij `java` startte; alle oordelen, lijsten en pins tot en met `EXPECTED_PLAYED` daarna. Pas 2
+**Gate 12, twee passen.** Na de suite (ongewijzigd, eerst) lijst de gate de goldens één keer naar `$work/goldens` en de
+cases van de i-de golden naar `$work/cases/<i>`; elke lus van beide passen leest die bestanden (fixronde, punt 1). Pas 1
+legt per golden met cases `java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" $cases` vast, draait ze, en de bestaande exec-lus
+leest `tail -1` van `$work/exec/<i>.out` (i = plaats in die lijst) waar hij `java` startte; alle oordelen, lijsten en pins tot en met `EXPECTED_PLAYED` daarna. Pas 2
 (de DRL-sweep, `drl_begin` vóór het verzamelen, dus de sweepkosten zijn de pas) begint pas als pas 1 groen is, en de
 bestaande DRL-lus leest `$work/drl/<i>.out`. Een JVM die crasht of niet start geeft een lege uitvoer: de `*)`-arm, bij
 naam. `--fast` is weg; de gate weigert argumenten (`usage: scripts/check-drools.sh (no arguments)`, exit 2).
@@ -145,7 +147,8 @@ gate 13: 2a3  >   legs: 4 processes (unit, vocabulary, origin, name)
 gate 17: 2a3  >   traces on 16 processes (one per core), readings and replays on 8 (one per two cores)
 ```
 
-Logs `gate{06,12,13,17}-{before,after}.log`.
+Logs `gate{06,12,13,17}-{before,after}.log`. Sinds de fixronde (punt 8) luidt de regel van gate 6 `check-clingo: replays
+on 8 processes (one per two cores)`.
 
 ### (c) Rood blijft rood (mutaties niet gecommit, in twee kopieën: `56a25404` en `22956095`)
 
@@ -243,10 +246,105 @@ verwachting van de kaart (5–7 min) is gehaald.
 - Het kritieke pad van de set is nu de JUnit-suite van gate 12 onder load (221 s van 285 s). Een volgende stap zou de
   exec-pas naast de suite verzamelen (de suite blijft eerst beoordeeld); dat verandert het DESIGN van gate 12 en is een
   eigen besluit.
-- Gate 6 duurt in de set 239 s (alleen 83 s): de unit-suite van de clingo-backend draait 45 s op één kern vóór de
+- Gate 6 duurt in de set 239 s (alleen 83 s; beide op 16 processen, vóór punt 8 van de fixronde): de unit-suite van de clingo-backend draait 45 s op één kern vóór de
   replays; naast de replays zou gate 6 alleen ±45 s duren. Niet op het kritieke pad.
 - `spec/PLAN.md:1215` noemt `--fast` (logboek van 2026-10-14; hoofdsessie). Voorstel voor een regel bij de landing:
   "On 2026-10-25 (card `parallel-gate-replays`) `--fast` went: gate 12 takes no arguments and runs in about three
   minutes on its own."
 - De gates zelf liepen alleen op macOS; `parallel.sh` ook onder dash met GNU-xargs.
 - De `make gates`-landingsrun van de hoofdsessie geeft de "na" voor de set op een rustige machine.
+
+## Review (fixronde, 2026-10-25)
+
+Een Opus-review van de tak (eindoordeel EERST FIXEN) vond acht punten; de fixer verwerkte 1–4 en 6–8 in deze tak, punt 5
+lag buiten de repo. Rode en groene standen in een kopie (`git worktree add --detach` vanuit de hoofdcheckout in
+`werk/gates-design/parallel-replays/fix/copy`, opgeruimd met `git worktree remove`), eerst op `e2bbe21a` (vóór), dan op
+`6a90350e` (na); logs, de twee `java`-wrappers en het runscript onder `werk/gates-design/parallel-replays/fix/`.
+
+1. **Eén lijst per gate** — `e489de83`. Gates 12 en 17 lijsten de goldens één keer naar `$work/goldens` en de cases van
+   de i-de golden naar `$work/cases/<i>`, vóór de eerste aanroep; elke lus leest die bestanden (gate 12: verzamelen en
+   oordelen in beide passen; gate 17: traces en readings, de keuze van de replays, het oordeel). Er is geen tweede `find`
+   over het corpus meer. Gate 6 had al één lijst. Gate 13 houdt zijn ene `$LIST`; elk been zoekt per golden zijn cases en
+   gebruikt ze in dezelfde iteratie, zonder sleutel tussen twee lussen, dus daar kan geen uitvoer bij een buur
+   terechtkomen; ongewijzigd. Recept: een `java` vooraan op PATH (`fix/wrap-insert/java`) kopieert bij de eerste
+   replay-aanroep `corpus/golden/ambiguous-fold-role-name` naar `corpus/golden/aaa-inserted`, dat vooraan sorteert, en
+   start dan de echte java.
+   - Vóór, gate 12 (rood, 146 s): `check-drools: FAIL — 3 golden(s) neither play nor carry an exclusion reason:` /
+     `jutterswet-seinwacht :: unexpected output: ` / `jutterswet-voorwaardelijke-initialisatie :: unexpected output: ` /
+     `ww-herleving-inkomen-rgs :: unexpected output: `. Die drie mankeren niets: op hun plaats stond in de verzamelpas een
+     golden zonder case (`tail: …/exec/208.out: No such file or directory`); elke andere golden kreeg de uitvoer van zijn
+     voorganger.
+   - Vóór, gate 17 (rood, 58 s): de ingevoegde golden kreeg de traces en readings van `ambiguous-fold-role-name` en ging
+     zonder fout door het oordeel; daarna `check-readings: FAIL — ref does not trace
+     corpus/golden/ambiguous-fold-role-name/case2.json:` (plaats 2 was in de verzamelpas `anchor-depth-two`, met één case).
+   - Na: gate 12 (183 s) en gate 17 (64 s) groen; de ingevoegde golden komt in geen lus voor (`DRL-text sweep: … over 329
+     goldens`, `ref traced 899 golden case files`), en beide rapporten zijn, op tijdregels na, gelijk aan die van de
+     groene runs hieronder.
+
+   Logs `g12-insert-{before,after}.log`, `g17-insert-{before,after}.log`.
+2. **Wie wat uit `parallel.sh` gebruikt** — `b6cf55c5`. De kop zegt: gates 6, 12 en 17 draaien hun dure aanroep via
+   `parallel_task`/`parallel_run` (gate 6 de clingo-runner, gate 12 `java -jar`, gate 17 de trace van ref en `java
+   -jar`); gate 13 neemt alleen `PARALLEL_JVM_FLAGS` en draait zijn vier benen met eigen `&`/`wait`; de vlaggen gelden
+   voor de replay-JVM's van gates 12, 13 en 17, en gate 6 start geen JVM.
+3. **Wanneer `parallel_run` faalt** — `b6cf55c5`. De kop noemt de drie gevallen: N is geen geheel getal boven 0; een taak
+   heeft geen `.rc` na xargs; xargs eindigt met een status ≠ 0. De gates zeggen `parallel_run failed over the <pas> (the
+   parallel line above says why)` (gate 6 op één plaats, gate 12 op twee, gate 17 op drie).
+4. **Docs, de huidige stand** — `9eb3ced4`. `check-drools.sh`: de suite "runs on every run of the gate" (was "every full
+   run"); het blok van de DRL-pas zegt dat een fout op de exec-tak faalt vóór de pas begint (zonder "in the time it always
+   did") en geeft als kosten de meting van deze kaart (2026-10-25, de gate alleen op 16 kernen: 34 s van 181 s) in plaats
+   van die van FABLE-3 (202 s). `CLAUDE.md` gate 12: dezelfde meting in plaats van "220 s of 635 s" (2026-10-14).
+   `check-reftype-derivation.sh`, kop van `leg_report`: "stops the gate there with status 2" in plaats van "as it did".
+   `spec/PLAN.md:1215` noemt `--fast` nog (hoofdsessie; zie Wat openblijft).
+5. Buiten de repo; niets gedaan.
+6. **Leeg tegen leeg in gate 13** — `8b40f3a3`. Nieuwe functie `drools_status`: de laatste regel van een Drools-run is
+   een van de vier die `DroolsBackendMain.run` schrijft (`PLAYED <n>`, `FAIL <detail>`, `EXCLUDE DROOLS-###: <reason>`,
+   `ERROR <detail>`). Eindigt de run op de onveranderde ir.json in iets anders, de lege regel inbegrepen, dan faalt de gate
+   met `FAIL: <golden> — the untouched run of <Drools | the DRL-text branch> in the <unit | vocabulary | origin | name> leg
+   ends in '<regel>', no status line of DroolsBackendMain (PLAYED, FAIL, EXCLUDE, ERROR): its JVM crashed, was killed or
+   did not start`, in elk been en voor beide takken, en het been vergelijkt niets met die regel (dus geen tweede FAIL die
+   de gewijzigde kopie de schuld geeft). Een zin erover in `CLAUDE.md` bij gate 13. Per executor nagegaan:
+   - ref en clingo vergelijkt gate 13 niet met een onveranderde run: het oordeelt hun run op de gewijzigde kopie op de
+     exitstatus (0 na `oracle: PASS (…)` en `clingo: PASS (…)`), en een runner die crasht, gedood wordt of niet start
+     eindigt niet met 0. Geen controle nodig.
+   - Gate 12: de exec-regel moet `PLAYED n` (n > 0), `EXCLUDE DROOLS-###: …` of een gelijste `FAIL` zijn
+     (`EXCLUDE_KNOWN` is leeg); een lege regel valt in de `*)`-arm en faalt bij naam. De DRL-regel moet gelijk zijn aan die
+     exec-regel. Leeg tegen leeg kan daar niet groen.
+   - Gate 17: `exec_last` = `drl_last` gaat daarna door een `case` die alleen `READINGS <n>` (n = het aantal cases),
+     `EXCLUDE …` (met een gelijke replayregel) en `ERROR …` (alleen voor een golden in `READINGS_ERROR_KNOWN`, leeg)
+     doorlaat; een lege regel faalt als "neither READINGS nor EXCLUDE". De traces oordeelt hij op `.rc`. Leeg tegen leeg
+     kan daar niet groen.
+
+   Recept: een `java` vooraan op PATH (`fix/wrap-kill/java`) die zichzelf zonder uitvoer met SIGKILL beëindigt bij elke
+   aanroep met een pad van `jutterswet-vangstklem` (eenheidsbeen), `jutterswet-vocabulaires` (vocabulairebeen),
+   `jutterswet-meldtermijn-strandjutter` (herkomst- en naambeen) of `jutterswet-bergingsdrempel` (naambeen), voor de
+   onveranderde en de gewijzigde kopie.
+   - Vóór (69 s): `check-reftype-derivation: PASS`, exit 0. Het enige verschil met de groene run is "23 of them PLAYED by
+     the DRL-text branch" tegen 24.
+   - Na (69 s): exit 1 met tien regels, een per golden, been en tak, bijvoorbeeld `FAIL: jutterswet-vangstklem — the
+     untouched run of Drools in the unit leg ends in '', no status line of DroolsBackendMain (PLAYED, FAIL, EXCLUDE,
+     ERROR): its JVM crashed, was killed or did not start`.
+
+   Logs `g13-kill-{before,after}.log`. `drools_status` ook los beproefd onder macOS-sh en dash (15 regels: de vier
+   vormen, leeg, `PLAY`, `PLAYED`, `PLAYED 1x`, `EXCLUDE DROOLS-14: z`, `FAIL` zonder detail, `READINGS 2`, …).
+7. **Gate 6 neemt geen argumenten** — `6a90350e`. Bovenaan `usage: scripts/check-clingo.sh (no arguments)`, exit 2, zoals
+   gate 12; de `exec "$BIN" "$1" "$2"` is weg. De kop wijst naar de runner, zoals `backends/clingo/README.md` (sectie
+   "Run") hem al toont: `_build/default/backends/clingo/bin/clingo_runner.exe <ir.json> <case.json>`. `CLAUDE.md` gate 6:
+   "The gate takes no arguments." Vóór, met `corpus/golden/jutterswet-vangstklem/{ir,case}.json`: bouw en suite, dan
+   `clingo: PASS (25 expectations)`, exit 0 (39 s). Na: `usage: …`, exit 2 (0 s). Logs `g06-args-{before,after}.log`.
+8. **Gate 6 op `parallel_jobs 2`** — `6a90350e`. Reden in het script en in `CLAUDE.md`: 36 s op 8 processen en op 16 (16
+   kernen, 2026-10-25); in `make gates` nemen processen boven de acht alleen kernen van de JUnit-suite van gate 12, het
+   kritieke pad. Processenregel `check-clingo: replays on 8 processes (one per two cores)`.
+
+**Groen op de tip `6a90350e`**, in de worktree, één gate tegelijk, zonder andere gate-run (`pgrep` vooraf leeg); load =
+1-minuutsgemiddelde bij begin → eind:
+
+| gate | wand | load |
+|---|---|---|
+| 6 | 79 s | 7,2 → 7,0 |
+| 12 | 179 s (DRL-pas 32 s) | 6,0 → 21,4 |
+| 13 | 71 s | 19,8 → 11,7 (begon direct na gate 12) |
+| 17 | 64 s | 11,7 → 14,5 |
+
+De rapporten zijn, met het filter van (b) en zonder de regels van het runscript, gelijk aan de "na"-rapporten van de
+bouwer, op de processenregel van gate 6 na. Logs `g{06,12,13,17}-green.log`. Geen volledige `make gates`: die draait de
+hoofdsessie bij de landing.
