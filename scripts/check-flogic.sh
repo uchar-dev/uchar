@@ -41,7 +41,7 @@ FE=frontends/flogic
 [ -d "$FE" ] || fail "$FE is missing"
 
 . scripts/lib/ocaml-build.sh
-ensure_ocaml || fail "the frontend does not build"
+ensure_ocaml || fail "the OCaml build is red (the ocaml-build line above says why)"
 # The suite runs as its runtest rule ($FE/test/dune) runs it, with the
 # rule's own argv, through run_suite (scripts/lib/ocaml-build.sh): so it
 # RUNS every time, and no dune call at gate time can meet another gate's

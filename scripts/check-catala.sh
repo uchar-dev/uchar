@@ -36,7 +36,7 @@ command -v catala >/dev/null 2>&1 \
 command -v python3 >/dev/null 2>&1 || fail "python3 not found (the canonicaliser needs it)"
 
 . scripts/lib/ocaml-build.sh
-ensure_ocaml || fail "the frontend does not build"
+ensure_ocaml || fail "the OCaml build is red (the ocaml-build line above says why)"
 # The suite runs as its runtest rule (frontends/catala/test/dune) runs it,
 # with the rule's own argv, through run_suite (scripts/lib/ocaml-build.sh):
 # so it RUNS every time, and no dune call at gate time can meet another

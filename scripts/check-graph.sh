@@ -87,7 +87,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 # --- builds ---------------------------------------------------------------------------------------
 . scripts/lib/ocaml-build.sh
-ensure_ocaml || fail "the verifier does not build (the ocaml-build line above says why)"
+ensure_ocaml || fail "the OCaml build is red (the ocaml-build line above says why)"
 VERIFIER=_build/default/spec/verifier/bin/verifier.exe
 . scripts/lib/drools-jar.sh
 JAR=$(ensure_drools_jar) || fail "no fresh backend jar (see the drools-jar line above)"

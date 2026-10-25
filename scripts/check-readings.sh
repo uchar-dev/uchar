@@ -88,7 +88,7 @@ command -v java >/dev/null 2>&1 || fail "need java: the Drools backend's reading
 command -v python3 >/dev/null 2>&1 || fail "need python3: the comparison rule is applied in python"
 
 . scripts/lib/ocaml-build.sh
-ensure_ocaml || fail "ref/ does not build"
+ensure_ocaml || fail "the OCaml build is red (the ocaml-build line above says why)"
 BIN=_build/default/ref/bin/runner.exe
 [ -x "$BIN" ] || fail "the runner is missing at $BIN after the build"
 

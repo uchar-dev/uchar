@@ -316,7 +316,7 @@ command -v python3 >/dev/null 2>&1 || { echo 'FAIL: need python3 (the twister)' 
 
 . scripts/lib/ocaml-build.sh
 if ! ensure_ocaml; then
-    echo 'check-reftype-derivation: FAIL (ref/clingo build)' >&2
+    echo 'check-reftype-derivation: FAIL (build)' >&2
     exit 1
 fi
 # The jar is taken FRESH OR REBUILT (scripts/lib/drools-jar.sh, 2026-09-23), so the harness can
