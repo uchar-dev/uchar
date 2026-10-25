@@ -49,12 +49,11 @@ if ! command -v dune >/dev/null 2>&1; then
 fi
 command -v dune >/dev/null 2>&1 || { echo 'admit: need dune (OCaml)' >&2; exit 2; }
 command -v clingo >/dev/null 2>&1 || { echo 'admit: need clingo on PATH (the differential square needs both executors)' >&2; exit 2; }
-dune build spec/verifier ref backends/clingo 2>&1 || fail "build is red"
+# the OCaml workspace as the gates take it: built when a source is newer than its last green build
+. scripts/lib/ocaml-build.sh
+ensure_ocaml || fail "the OCaml build is red (the ocaml-build line above says why)"
 
-# the workspace build above produces THIS binary; the --root build some
-# gates make (spec/verifier/_build/...) may be stale and is only a fallback
 VERIFIER=_build/default/spec/verifier/bin/verifier.exe
-[ -x "$VERIFIER" ] || VERIFIER=spec/verifier/_build/default/bin/verifier.exe
 REF=_build/default/ref/bin/runner.exe
 CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 
