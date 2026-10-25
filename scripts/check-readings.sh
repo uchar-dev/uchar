@@ -41,6 +41,14 @@
 # that its matrix can fault, so it would fault on a member the reference interpreter's stop never reads.
 # The tripwire holds on a case in DEVIATIONS too.
 #
+# The traces and the readings are collected, then judged (scripts/lib/parallel.sh): first every
+# `runner --trace` runs, one process per core, then every `--readings` of both branches, one process per two
+# cores (replay JVMs with PARALLEL_JVM_FLAGS, measured there), then the plain replay of each golden whose
+# readings end in EXCLUDE or ERROR, each call into files of its own; then the loop of checks 1 and 2 reads
+# those files in the order of the corpus and judges them as the calls one after the other would. A process
+# that crashes or does not start leaves an exit status other than 0 or an output without its last line,
+# which the loop meets at its golden or case and fails by name.
+#
 # An empty comparison is a failure, never silently green. Report: goldens and cases traced, compared per
 # branch, excluded (per first word of the reason), and the counts the floors hold.
 set -u
@@ -95,16 +103,53 @@ BIN=_build/default/ref/bin/runner.exe
 . scripts/lib/drools-jar.sh
 JAR=$(ensure_drools_jar) || fail "no fresh Drools backend jar (the drools-jar line above says why)"
 
+. scripts/lib/parallel.sh
 work=$(mktemp -d) || exit 2
 trap 'rm -rf "$work"' EXIT
-mkdir "$work/ref" "$work/exec" "$work/drl" || exit 2
+mkdir "$work/ref" "$work/exec" "$work/drl" "$work/traces" "$work/readings" "$work/replays" || exit 2
 manifest="$work/manifest"
 : > "$manifest"
 
 # --- 1 and 2: the trace and the readings, per golden ----------------------------------------------------
 n_traced=0; nocase=''
 start=$(date +%s)
+# One process per core for the traces (the runner is single-threaded), one per two cores for the JVMs (a
+# replay JVM with PARALLEL_JVM_FLAGS uses 1.5 cores; the measurement is in scripts/lib/parallel.sh). The tasks
+# are keyed by the golden's place in the corpus order, and a trace by its case's place among the golden's.
+traces=$(parallel_jobs 1) || fail "no number of processes for the traces (the parallel line above says why)"
+jvms=$(parallel_jobs 2) || fail "no number of processes for the readings (the parallel line above says why)"
+echo "  traces on $traces processes (one per core), readings and replays on $jvms (one per two cores)"
+i=0
 while IFS= read -r ir; do
+  i=$((i + 1))
+  cases=$(find "$(dirname "$ir")" -maxdepth 1 -name 'case*.json' | sort)
+  [ -n "$cases" ] || continue
+  j=0
+  for c in $cases; do
+    j=$((j + 1))
+    parallel_task "$work/traces" "$i.$j" err "$BIN" --trace "$ir" "$c"
+  done
+  parallel_task "$work/readings" "exec.$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --readings "$ir" $cases
+  parallel_task "$work/readings" "drl.$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --readings --drl "$ir" $cases
+done < <(find corpus/golden -name ir.json | sort)
+parallel_run "$work/traces" "$traces" || fail "a trace did not end (the parallel line above names it)"
+parallel_run "$work/readings" "$jvms" || fail "a reading did not end (the parallel line above names it)"
+# the plain replay that check 2 asks of a golden whose readings end in EXCLUDE or ERROR
+i=0
+while IFS= read -r ir; do
+  i=$((i + 1))
+  [ -f "$work/readings/exec.$i.out" ] || continue
+  case "$(tail -1 "$work/readings/exec.$i.out")" in
+    EXCLUDE*|ERROR*)
+      cases=$(find "$(dirname "$ir")" -maxdepth 1 -name 'case*.json' | sort)
+      parallel_task "$work/replays" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" $cases ;;
+  esac
+done < <(find corpus/golden -name ir.json | sort)
+parallel_run "$work/replays" "$jvms" || fail "a replay did not end (the parallel line above names it)"
+
+i=0
+while IFS= read -r ir; do
+  i=$((i + 1))
   dir=$(dirname "$ir"); name=${dir#corpus/golden/}
   cases=$(find "$dir" -maxdepth 1 -name 'case*.json' | sort)
   if [ -z "$cases" ]; then nocase="$nocase $name"; continue; fi
@@ -114,13 +159,14 @@ while IFS= read -r ir; do
   for c in $cases; do
     ncases=$((ncases + 1))
     echo "case $(basename "$c")" >> "$work/ref/$file"
-    if ! "$BIN" --trace "$ir" "$c" >> "$work/ref/$file" 2> "$work/err"; then
-      fail "ref does not trace $c: $(tail -3 "$work/err")"
+    cat "$work/traces/$i.$ncases.out" >> "$work/ref/$file"
+    if [ "$(cat "$work/traces/$i.$ncases.rc")" != 0 ]; then
+      fail "ref does not trace $c: $(tail -3 "$work/traces/$i.$ncases.err")"
     fi
   done
   n_traced=$((n_traced + ncases))
-  java -jar "$JAR" --readings "$ir" $cases > "$work/exec/$file" 2>/dev/null
-  java -jar "$JAR" --readings --drl "$ir" $cases > "$work/drl/$file" 2>/dev/null
+  mv "$work/readings/exec.$i.out" "$work/exec/$file" && mv "$work/readings/drl.$i.out" "$work/drl/$file" \
+    || fail "$name: cannot move its readings into $work"
   exec_last=$(tail -1 "$work/exec/$file"); drl_last=$(tail -1 "$work/drl/$file")
   [ "$exec_last" = "$drl_last" ] \
     || fail "$name: the two branches end their readings apart — exec: '$exec_last', drl: '$drl_last'"
@@ -129,7 +175,7 @@ while IFS= read -r ir; do
     READINGS*) fail "$name: '$exec_last', but the golden has $ncases case file(s)" ;;
     EXCLUDE*|ERROR*)
       # a golden the readings do not read is one the replay does not play, in the same line
-      replay=$(java -jar "$JAR" "$ir" $cases 2>/dev/null | tail -1)
+      replay=$(tail -1 "$work/replays/$i.out")
       case "$replay" in EXCLUDE*) ;; *) fail "$name: the readings end in '$exec_last', but the replay plays it ('$replay') — a golden the square plays is read" ;; esac
       if [ "${exec_last%% *}" = EXCLUDE ]; then
         [ "$replay" = "$exec_last" ] \
