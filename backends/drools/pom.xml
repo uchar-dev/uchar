@@ -116,11 +116,12 @@
           <!-- The suite runs in as many JVMs as half the machine's cores (8 on 16 cores, 1 on 2); each JVM takes the
                next test class from one queue until the queue is empty (reuseForks), so the suite lasts about as long
                as its longest class, TmsCreationStratumWitnessTest, or its total time divided by the JVMs, whichever is
-               longer. Half, and not all, of the cores: a JVM that builds and fires KieBases keeps more than one core
-               busy. A test class therefore relies on no state another class leaves in its JVM (a static field, a
-               cache, a system property) and writes only to files and directories it creates itself
-               (Files.createTempFile, Files.createTempDirectory). The system properties and the environment below
-               reach every JVM. -->
+               longer. Half, and not all, of the cores: a JVM of this suite keeps more than one core busy (1.4 on
+               average in a run in one JVM, user plus system time over wall-clock time, measured 2026-10-25).
+               Which classes share a JVM, and in which order, differs from run to run, so a test class relies on no
+               state another class leaves in its JVM (a static field, a cache, a system property) and writes only to
+               files and directories it creates itself (Files.createTempFile, Files.createTempDirectory). The system
+               properties and the environment below reach every JVM. -->
           <forkCount>0.5C</forkCount>
           <reuseForks>true</reuseForks>
           <!-- the tests assert the Dutch sentences; the backend's own default is English -->
