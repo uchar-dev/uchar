@@ -47,8 +47,9 @@ jobs:
       - uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: "5"
-      - name: install yojson
-        run: opam install -y yojson
+      - name: install yojson + zarith
+        # the gate builds the whole OCaml workspace (scripts/lib/ocaml-build.sh), ref and its zarith among it
+        run: opam install -y yojson zarith
       - name: check-verifier
         run: opam exec -- sh scripts/check-verifier.sh
 
