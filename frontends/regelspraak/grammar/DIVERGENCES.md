@@ -10,17 +10,13 @@ extensions and their lowering at one place.
 The frontend takes the same inert-extension posture the grammar already uses
 for `Regelgroep` (§9.10 is prose-only in v2.3.0) and the scenariotoetsen test
 layer: the extension's opening tokens occur **nowhere** in the flat v2.3.0
-corpus, so an official document parses byte-for-byte as before and emits an IR
-with no extension keys.
+corpus, so an official document parses byte-for-byte as without the extensions
+and emits an IR with no extension keys.
 
-**Pointers this register does not answer yet.** The frontend came over from the
-source toolchain with its comments, and those comments pointed at that
-toolchain's own register, a file that does not exist in this repository. Since
-the fix round of 2026-09-23 the 24 in the grammar and the main sources point
-here (two in existing tests still name the old file), but the text they cited
-stayed behind. This register does not carry the sections
+**Pointers this register does not answer yet.** Comments in the grammar and
+the main sources point here for text this register does not carry: the sections
 `'§9.10 recursie / regelgroep'`, `'negated membership'` and
-`"concatenatie as a standalone value"`, nor the untitled topics at the other
+`"concatenatie as a standalone value"`, and the untitled topics at the other
 sites: the unit checks of the aggregations, the begrenzing bound, the period
 lowering, the "is gevuurd" predicate, the mixed date precision, the best-effort
 role plural, and the `Regelgroep` extension itself beyond the introduction
@@ -53,8 +49,8 @@ defaults groups.
 Two productions sit beside `regel` / `regelGroep` / `beslistabel` in
 `regelSpraakDocument`; the first carries two headers:
 
-**Ordered exception** — stacks an exception above a named base rule (since
-form 2, below, the name may also denote another block):
+**Ordered exception** — stacks an exception above a named base rule (the name
+may also denote another block: form 2, below):
 
 ```
 Regel <basisregelnaam>
@@ -94,8 +90,8 @@ New tokens: `UITZONDERINGEN` (`'Uitzonderingen'`), `ONGEORDEND`
 `regel` constructs that follow it and ends at the first non-rule construct, so
 it is inert on any non-extension document. `UITZONDERINGEN` is never a prefix of
 `UITZONDERING_OP` (`'Uitzonderingen'` has no space after `Uitzondering`), so the
-two whole-phrase/keyword tokens never collide under maximal munch. Since form 2
-the header takes an optional carrier, `Uitzonderingen ongeordend op <naam>:`,
+two whole-phrase/keyword tokens never collide under maximal munch. The header
+takes an optional carrier (form 2), `Uitzonderingen ongeordend op <naam>:`,
 which needs no token of its own: `op` is the preposition token `OP`, and the
 carrier name runs up to the `:` as a base name does.
 
@@ -104,9 +100,9 @@ carrier name runs up to the `:` as a base name does.
 Every form LIFTs already-resolved rules out of `resolvedRegels` into
 `prioritizedDefaults`: WF-050 forbids both a rule and a defaults group on one
 target, so the lifted rule's semantics live in the defaults group alone. The
-model keeps a `Regel` stub for each lifted rule, but since M1 of the v1 wire
-(delta B3) the emitter writes no `regels` list, so on the wire a lifted rule
-exists only as its default.
+model keeps a `Regel` stub for each lifted rule, but the emitter writes no
+`regels` list (delta B3 of the v1 wire), so on the wire a lifted rule exists
+only as its default.
 
 - **Ordered:** the base rule and its `Uitzondering op` and `Afwijking van`
   blocks become ONE `PrioritizedDefaults` group — with everything hanging under
@@ -127,8 +123,7 @@ exists only as its default.
   channel; deciding the same reconciles idempotently. On an attribute target the
   members differ in value; on a characteristic target a negated member (form 1,
   below) beside a positive one gives the conflict when both apply — no write and
-  one §9.5 fact. Until form 1 a kenmerk assignment could only decide `waar`, and
-  the conflict was expressible on an attribute target alone.
+  one §9.5 fact.
 
 ### Form 1 — a negated decision in a rule that becomes a default
 
@@ -164,19 +159,19 @@ sentence is refused and the message gives the kind's own spelling (`is niet X`,
 condition can. After `een` no negation is read at all: a condition binds the
 name behind `een` whole (the EEN-form), so `is een niet X` and `heeft een geen
 X` negate nothing there, and a result refuses them, with the spelling of X's
-kind. A positive name keeps its written spelling, as before: the lookup only
-decides whether the name is negated.
+kind. A positive name keeps its written spelling: the lookup only decides
+whether the name is negated.
 
-**Grammar.** `is niet X`, `is geen X` and `heeft geen X` parsed already: `NIET`
+**Grammar.** `is niet X`, `is geen X` and `heeft geen X` parse as written: `NIET`
 is a name word and `geen` lexes as an ordinary word, so both stand inside the
-`kaleNaam`. `is niet een X` did not (`EEN` is no name word; the syntax error was
-"extraneous input 'een'"). `kenmerkToekenning` has one more alternative,
-`onderwerpKeten IS NIET EEN kaleNaam`, the result counterpart of the condition's
-`NIET EEN` branch. `Regel` and the extension blocks share the production, so
-whether a negation is admitted is decided in the resolver.
+`kaleNaam`. `EEN` is no name word, so `is niet een X` has an alternative of its
+own in `kenmerkToekenning`, `onderwerpKeten IS NIET EEN kaleNaam`, the result
+counterpart of the condition's `NIET EEN` branch. `Regel` and the extension
+blocks share the production, so whether a negation is admitted is decided in the
+resolver.
 
 **Where it is admitted** (decision 2): in every rule that becomes a default — the
-body of an `Uitzondering op` or (since form 2) an `Afwijking van`, a member of
+body of an `Uitzondering op` or an `Afwijking van`, a member of
 `Uitzonderingen ongeordend`, and the base of an `Uitzondering op` chain. A negated
 base is the lowest default and decides `onwaar`. In a flat model that changes no
 outcome, since under the closed world an unattributed characteristic is false
@@ -210,14 +205,11 @@ makes it false anyway.
 - a negated kenmerktoekenning in a plain `Regel` — no exception, no member of
   an unordered block, no base of a chain — is an ERROR in the verifier's WF-022
   sentence for the value the rule would write (`regel '<naam>':
-  characteristic target's value must be the boolean constant true`).
-  Measured on the frontend before this card: the sentence went to disk as an
-  undeclared characteristic `niet uitgesloten` with `diagnostics: []`, for the
-  verifier to refuse under WF-022; in an `Uitzondering op` it drew "schrijft een
-  ander doel (Jutter.niet uitgesloten (kenmerk))". A plain negated rule on a
-  target that also has a defaults group gets this ERROR alone, without WF-050's
-  second-writer ERROR beside it. A rule written in an extension block that was
-  refused for another reason stays un-lifted and is judged by that refusal;
+  characteristic target's value must be the boolean constant true`). A plain
+  negated rule on a target that also has a defaults group gets this ERROR alone,
+  without WF-050's second-writer ERROR beside it. A rule written in an extension
+  block that was refused for another reason stays un-lifted and is judged by
+  that refusal;
 - a negation whose rest names no characteristic of the subject (`is niet
   vervallen` with `vervallen` undeclared, and no characteristic `niet vervallen`
   either) is an ERROR naming the rest ("… ontkent geen kenmerk van Jutter —
@@ -226,7 +218,7 @@ makes it false anyway.
   gesteld worden op onwaar`.
   The lowering then skips the block's family instead of adding a
   target-mismatch ERROR. A POSITIVE result on an undeclared characteristic is
-  still not refused here: it reaches the verifier's WF-022;
+  not refused here: it reaches the verifier's WF-022;
 - `is niet een X` on an X that is bijvoeglijk or bezittelijk is an ERROR ("de
   vorm 'is niet een' ontkent een zelfstandig kenmerk (Tabel 16) …");
 - a negation written after `een` (`is een niet X`, `heeft een geen X`) is an
@@ -253,16 +245,11 @@ makes it false anyway.
   a table row (a row is re-parsed in a stream of its own) and name the table;
   a rule with several versions draws one ERROR, not one per version.
 
-**Which documents change.** Only a document with a result sentence whose name,
-after an article, begins with `niet` or `geen` and does not bind as a whole, or
-with `is niet een` — the forms §9.2 keeps out of official RegelSpraak. Before
-this card no such document reached a valid IR: it drew the target-mismatch ERROR
-or a syntax error, or it was emitted with a characteristic named `niet …` or
-`geen …` that its object type does not declare, which the verifier refuses
-(WF-022 on a flat rule, the defaults-target check on a group). The 71 `source.rgs`
-goldens that existed before this card re-emit byte-identically
-(gate 10). The golden `jutterswet-schorsing` (Jutterswet art. 3 and 4bis) is the
-first whose source carries a negated exception.
+**Which documents it reads.** Only a document with a result sentence whose
+name, after an article, begins with `niet` or `geen` and does not bind as a
+whole, or with `is niet een` — the forms §9.2 keeps out of official RegelSpraak.
+The golden `jutterswet-schorsing` (Jutterswet art. 3 and 4bis) carries a negated
+exception in its source.
 
 ### Form 2 — the exception tree, `Afwijking van` and `Uitzonderingen ongeordend op`
 
@@ -270,13 +257,8 @@ Origin: maintainer decisions 4–6 of 2026-09-23
 (`spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md` §5 and §10), with the two
 decisions of that day's second decision question: an `Afwijking van` names a
 base rule only, and the members of an `Uitzonderingen ongeordend op` block
-inherit their carrier's justification. Measured on the frontend before the card
-that built it (`dialect-uitzondering-op-uitzondering`): an `Uitzondering op`
-naming an exception drew "geen basisregel met die naam gevonden", because the
-lowering took each family out of `resolvedRegels` before it looked up the next
-carrier; `Afwijking van` was a syntax error ("extraneous input 'Afwijking'"),
-and so was `Uitzonderingen ongeordend op` ("mismatched input 'op' expecting
-':'").
+inherit their carrier's justification (card
+`dialect-uitzondering-op-uitzondering`).
 
 **The tree.** Every `Uitzondering op` block, every `Afwijking van` block and
 every member of an `Uitzonderingen ongeordend op` block names one carrier. The
@@ -285,8 +267,8 @@ second. A carrier that is no block is the base rule of its tree, and each tree
 becomes one defaults group, named after that base. Every block is resolved
 before anything is lifted, so where a block is written does not decide whether
 its carrier is found. Among the children of one carrier the later-written block
-ranks higher, at every level, as the first level always did. The depth has no
-bound: WF-075 and the three executors recurse to any depth.
+ranks higher, at every level. The depth has no bound: WF-075 and the three
+executors recurse to any depth.
 
 **Lowering** (the lowering of the proposal's §5.2, in the wire's names):
 
@@ -354,8 +336,7 @@ block that inherits nothing could decide where its carrier's condition does not
 hold. An `Uitzondering op` or an `Uitzonderingen ongeordend op` block may name a
 deviation as its carrier, and then inherits the deviation's own condition.
 `jutterswet-bergingsdrempel` (noodweer with eight wrecks above a base of twenty)
-is written with this header; its `ir.json` is byte-identical to the one its
-`Uitzondering op` gave before form 2.
+is written with this header.
 
 **Refusals**, each one ERROR at the block, naming what can be written instead
 (witness: `ExceptionOnExceptionTest`):
@@ -376,11 +357,9 @@ is written with this header; its `ir.json` is byte-identical to the one its
   subtype inherits, `Afwijking van <basisregel>: <naam>`, carrying the full
   condition of the node plus its own: the fixed block order lets it decide
   exactly where both apply. That base is the tree's, or the base a type on the
-  subtype's line declares of its own, which replaces it (ch. 7.10). Until the
-  inheritance line below was lowered, the message asked a subtype without a rule
-  of its own on the target to write one with the outcome and the condition of
-  the base it inherits; a block for a subtype directly under the supertype's base
-  rule now lowers (the inheritance line, under the fail-fast refusals);
+  subtype's line declares of its own, which replaces it (ch. 7.10). A block for
+  a subtype directly under the supertype's base rule lowers (the inheritance
+  line, under the fail-fast refusals);
 - a carrier with ordered children and an `Uitzonderingen ongeordend op` block, or
   with two such blocks: nothing fixes the priority between them. The message names
   the two expressible forms, all ordered or all members of one block. Recorded, not
@@ -388,28 +367,22 @@ is written with this header; its `ir.json` is byte-identical to the one its
 - a member of an `Uitzonderingen ongeordend:` block WITHOUT a carrier, named as a
   carrier: such a member is a defaults group of its own beside the other members,
   not a node of a tree. The message names `Uitzonderingen ongeordend op
-  <basisregel>:`, whose members can carry. Before form 2 the same document drew
-  "groepslid '…' leverde geen kenmerktoekenning/gelijkstelling op". Recorded,
-  not built: lowering such a member's sibling group to the chain `[F, member]`,
-  the member as its base and the block F that names it above it. The way out
-  the message names asks for a base rule, which parallel grounds without a
-  common base do not have;
+  <basisregel>:`, whose members can carry. Recorded, not built: lowering such a
+  member's sibling group to the chain `[F, member]`, the member as its base and
+  the block F that names it above it. The way out the message names asks for a
+  base rule, which parallel grounds without a common base do not have;
 - per edge, the fences of the first level: the target (WF-050), the validity window
   (the group carries one), and one version per rule.
 
-A refused node keeps its whole tree un-lifted, as a refused family always stayed,
-and nothing below a refused node is judged, so one mistake draws one ERROR. The
+A refused node keeps its whole tree un-lifted, as a refused family stays, and
+nothing below a refused node is judged, so one mistake draws one ERROR. The
 members of an `Uitzonderingen ongeordend op` block share its header: once one
 member is refused, the block's other members are not judged, so a block draws
 one ERROR however many of its members would be refused.
 
-**Which documents change.** Two goldens. `jutterswet-schorsing` keeps its
-`Uitzondering op` (art. 4bis restricts art. 3) and was re-emitted: its
-exception's justification now carries the base's `>= 12` first; its four cases
-are unchanged and pass in ref, clingo and the Drools exec branch.
-`jutterswet-bergingsdrempel` changed its header to `Afwijking van`, with a
-byte-identical `ir.json`. Every other `source.rgs` golden re-emits byte-identically
-(gate 10), and so does every re-emitted source of the parity zone (gate 11). The
+**Which documents it reads.** `jutterswet-schorsing` writes an `Uitzondering op`
+(art. 4bis restricts art. 3), so its exception's justification carries the
+base's `>= 12` first; `jutterswet-bergingsdrempel` writes `Afwijking van`. The
 phrase `Afwijking van` occurs in no source of the repository besides that golden
 (counted 2026-09-25 over the 81 corpus sources and the 47 of the parity zone) and
 nowhere in the v2.3.0 specification set.
@@ -422,24 +395,17 @@ anchor.
 
 ### `// Bron:` annotations of lifted rules
 
-A lifted rule leaves `resolvedRegels`, and with it the `bronAnnotaties` list
-that carries its `// Bron:` annotation on a flat rule. Until 2026-09-23 the
-lowering also set `bron: null` on every defaults group and every default, so
-each annotation on an extension block vanished. Measured on the frontend before
-the change (the M6 document of `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md`
-§9.2: an annotated base and its annotated exception): neither annotation text
-occurred anywhere in the IR, with `diagnostics: []` and a verifier PASS. The
-placement since (card `frontend-bron-annotatie-in-defaults`; the list on the
-default since card `default-statute-annotations`, 2026-10-21):
+A lifted rule leaves `resolvedRules`, and with it the `statuteAnnotations` list
+that carries its `// Bron:` annotation on a flat rule. The lowering places the
+annotations of an extension block so (cards `frontend-bron-annotatie-in-defaults`
+and, for the list on the default, `default-statute-annotations`, 2026-10-21):
 
 - a lifted rule's annotations land in the `statuteAnnotations` of the default
   it becomes (IR-SPEC ch. 6.1, WF-082), the list a rule carries on the wire:
   the exception's on the exception default, the base's on the base default,
   an unordered member's on its sibling group's single default. The default
   then carries no `source`: the frontend has no source text for a block as a
-  whole. Until 2026-10-21 the annotations stood in the default's `bron` (on
-  the wire its `source` snippet), joined with `"; "` as the group's still are
-  (below);
+  whole;
 - the group's `PrioritizedDefaults.bron` carries the annotation of the rule the
   group is named after: the base of an ordered family, the member itself for an
   unordered sibling. The base's text therefore stands twice, on the group and
@@ -459,17 +425,17 @@ default since card `default-statute-annotations`, 2026-10-21):
   group they are joined with `"; "` in source order. That join loses a
   distinction and cannot be undone: one annotation that itself contains `"; "`
   reads exactly like two (the golden `jutterswet-tweeledige-grondslag` carries
-  such an annotation, and the wire already carried such a text in the group
-  citation of the golden `jutterswet-samenloop`), so a reader cannot recover
-  the list from the group's snippet. The defaults carry the list, so a reader
-  that needs the separate annotations reads the base default, which holds the
-  same annotations as the group. The group's `bron` stays a single string (on
-  the wire the `source` snippet): option (b) of the proposal's §9.2 was taken
-  for the default only;
+  such an annotation, and the group citation of the golden
+  `jutterswet-samenloop` such a text), so a reader cannot recover the list from
+  the group's snippet. The defaults carry the list, so a reader that needs the
+  separate annotations reads the base default, which holds the same annotations
+  as the group. The group's `source` is a single string (on the wire the
+  `source` snippet): option (b) of the proposal's §9.2 holds for the default
+  only;
 - an unannotated block writes no `statuteAnnotations` and no `source`: the
   three extension goldens carry no annotation and re-emit byte-identically;
-- the `Regel` stubs carry no annotation either: since M1 of the v1 wire (delta
-  B3) the emitter writes no `regels` list, so a lifted rule's annotation reaches
+- the `Regel` stubs carry no annotation either: the emitter writes no `regels`
+  list (delta B3 of the v1 wire), so a lifted rule's annotation reaches
   the wire through its default alone;
 - nesting (form 2): a nested block's annotations land on its own default inside
   the `ExceptionGroup`. Every lifted rule becomes a default in one place
@@ -481,19 +447,16 @@ default since card `default-statute-annotations`, 2026-10-21):
   to no rule — an annotation belongs to the rule directly below it, and the
   header is none — so it reaches no default and no group (the group-default an
   `Uitzonderingen ongeordend op` header makes carries the header's own text,
-  form 2). It used to vanish without a word; it now draws a WARNING that names
-  it, instead of being hung on a member the author did not choose. The same
-  WARNING, citing §9.10, covers an annotation above a `Regelgroep` header (fix
-  round, 2026-09-23).
+  form 2). It draws a WARNING that names it, instead of being hung on a member
+  the author did not choose. The same WARNING, citing §9.10, covers an
+  annotation above a `Regelgroep` header.
   The group's own `bron` is no place for it: on a `ResolvedRegelGroep` that
   record's snippet is the group's name (the `source` of its `RuleGroup`). A
   `Beslistabel` header is the one header whose annotation does reach the wire,
   because the table is rules: the annotation lands in the `bronAnnotaties` of
   every rule the
   table desugars to, the multi-version precedent of IR-SPEC ch. 3.1 (one comment
-  block above a shared header, stamped per flattened entry). Until the same fix
-  round it vanished, since each row is re-parsed in a stream of its own where no
-  comment stands above it. An annotation above
+  block above a shared header, stamped per flattened entry). An annotation above
   a definition (an `Objecttype`, `Feittype`, `Domein`, `Parameter`, …) draws no
   warning: it documents the declaration, which has no wire slot for it, and it
   is common practice — 351 of the 736 annotations in the measured operational
@@ -513,21 +476,19 @@ Witness: `DefaultsSourceAnnotationTest`, `SourceAnnotationPlaceTest`.
 - a negated kenmerktoekenning in a plain `Regel`, a negation whose rest names
   no declared characteristic, `is niet een` on a characteristic that is not
   zelfstandig, and a negation written after `een` (form 1, above);
-- a base rule or exception with more than one `geldig`-versie (not carried by
-  this first card);
+- a base rule or exception with more than one `geldig`-versie (not carried);
 - an extension block within the scope of a `Regelgroep`, or over a base rule
   that is a group member (next subsection);
 - a second writer on a group's target (WF-050, fix round 3): a plain rule
   beside a defaults group — another rule on the base's target, or the other
   rows of a decision table when one row is the base — or a second group on the
   target unless every group there is declared unordered (two ordered
-  families, a family beside an unordered block). Each reached disk silently
-  for the verifier to refuse; the ERROR is the verifier's WF-050 sentence for
-  the clause, after a Dutch context that names the groups and the other
-  writers. Keyed on the declared object type, as WF-050 is, so a supertype's
-  and a subtype's stacks stay two targets. Two unordered blocks on one target
-  stay admitted. A rule written in an extension block whose family or block
-  the lowering refused is not counted as a second writer (2026-09-23, card
+  families, a family beside an unordered block). The ERROR is the verifier's
+  WF-050 sentence for the clause, after a Dutch context that names the groups
+  and the other writers. Keyed on the declared object type, as WF-050 is, so a
+  supertype's and a subtype's stacks stay two targets. Two unordered blocks on
+  one target stay admitted. A rule written in an extension block whose family or
+  block the lowering refused is not counted as a second writer (2026-09-23, card
   `dialect-niet-in-uitzondering`): its block's own ERROR stands, and a
   second-writer ERROR would name a rule of the very block it stands in.
 
@@ -608,12 +569,10 @@ the opgave marker, a navigated read and a characteristic check in the base's
 condition, an unconditional base, a block nested under the subtype's own block, a
 grandchild's block under an intermediate type's own base, two blocks and both
 heads for one subtype, and the base written after the block. Each plays with the
-hand-computed values, and the DRL-text branch refuses each on its defaults
-sentence. A window on the base and its block plays in ref and clingo, and the
-Drools exec branch excludes it by name, as it excludes every defaults group with
-a dated window. The 116 `source.rgs` goldens re-emit byte-identically, and so do
-the two ways around the refusal that played before: the whole tree on the
-subtype, and the base repeated on the subtype with the deviation under it.
+hand-computed values. A window on the base and its block plays in ref and
+clingo. The 116 `source.rgs` goldens re-emit byte-identically, and so do
+the two ways around the refusal: the whole tree on the subtype, and the base
+repeated on the subtype with the deviation under it.
 Golden: `jutterswet-meldtermijn-strandjutter`.
 
 ### Interaction with `Regelgroep` (§9.10) — refused
@@ -622,14 +581,13 @@ Maintainer decision 2026-09-23, option (a) of the card
 `frontend-regelgroep-sluit-bij-uitzondering`. A `Regelgroep` scopes the
 consecutive rules and decision tables behind its header and exists only to
 mark recursion (§9.10, prose-only in v2.3.0). `groepLid` takes no extension
-block, so until that day a group **ended silently** at the first extension
-block. Measured on the frontend before the refusal (the M5 document of
-`spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md` §9.1): a group over a
-base rule, its `Uitzondering op` and a third rule emitted `leden` holding the
-base alone with `diagnostics: []`; the exception and the rule behind it fell
-outside the group without a word, and because the lowering lifted the base
-into a defaults group, the verifier then refused the document under WF-033 —
-on the group rather than on the block, and without the cause.
+block, so without the refusal a group would **end silently** at the first
+extension block (the M5 document of
+`spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md` §9.1): the exception and
+the rules behind it would fall outside the group without a word, and because
+the lowering lifts the base into a defaults group, the verifier would refuse
+the document under WF-033 — on the group rather than on the block, and without
+the cause.
 
 The dialect does not admit the combination. Option (b) — a defaults group as
 a group member — would need WF-033 to accept one and a statement of what a
@@ -640,27 +598,25 @@ block's own head, with two arms:
 - **positional** — the block stands directly after a group's last member,
   where the group would read on if the block were a rule. The arm keys on
   "neither a definition nor a group" rather than on the heads by name,
-  so `Afwijking van`, which came later, is refused there by construction
-  instead of reopening the silent end;
+  so a head such as `Afwijking van` is refused there by construction;
 - **membership** — the block's base rule is a group member, wherever the
   block stands. A definition that ends the group does not help: the lift
   would still take the member out of the rule forms, and the group would
   name nothing (WF-033). A decision table in the group stands for the rules
   of its rows ("Bergingspremie 1", …), which is what a block names as its
   base; the table's own name names no rule. The group's own `leden` list
-  those rows too: until the same fix round it carried the table's name, and
-  the verifier refused every group holding a table under WF-033. A row is
-  named after the table and its number, so rows without a number, or with the
-  same one, share a name; that table is refused by name, in the verifier's
-  WF-020 sentence (`duplicate name '<rij>' in rules`), and the group lists each
-  name once (fix round 3). The arm speaks only where the
-  lift would happen: a base that resolves to no plain rule — a table's own
-  name, an object creation — gets the lowering's "no base rule" refusal,
-  which names the construct (fix round 2, 2026-09-23); for a table it names
-  the rows and says why none of them alone can be a base (fix round 3).
-  `Afwijking van` shares the production of `Uitzondering op` and so the arm;
-  `Uitzonderingen ongeordend op` joined it by name (form 2). A later head that
-  names a carrier of its own has to join it the same way.
+  those rows too, since the verifier refuses a group that names a table under
+  WF-033. A row is named after the table and its number, so rows without a
+  number, or with the same one, share a name; that table is refused by name, in
+  the verifier's WF-020 sentence (`duplicate name '<rij>' in rules`), and the
+  group lists each name once (fix round 3). The arm speaks only where the lift
+  would happen: a base that resolves to no plain rule — a table's own name, an
+  object creation — gets the lowering's "no base rule" refusal, which names the
+  construct (fix round 2, 2026-09-23); for a table it names the rows and says
+  why none of them alone can be a base (fix round 3). `Afwijking van` shares the
+  production of `Uitzondering op` and so the arm; `Uitzonderingen ongeordend op`
+  is in it by name (form 2). A further head that names a carrier of its own has
+  to join it the same way.
 
 The membership arm speaks the verifier's WF-033 sentence for the group the lift
 would leave (`group member '<basisregel>' does not resolve to a rule form`),
@@ -673,14 +629,13 @@ together with its whole base family, as the other refusals leave it. The way
 out the positional message names is one that holds wherever the author
 follows it: before the document's FIRST group header,
 which no group's scope reaches, or behind a definition that ends the group.
-"Before the header of this group" was named until fix round 2 and did not
-hold — with two groups back to back it lands behind the other group's last
-member. A header without any member is a syntax error of its own and draws
-no placement message. What stays clean, and is pinned as clean: a block
-before the group's header, and a block behind a definition that ends the
-group, each over a base outside the group. Two placements that were
-verifier-clean before are refused since — an `Uitzondering op` directly after
-a group whose members do not include its base, and an `Uitzonderingen
+It does not name "before the header of this group": with two groups back to back
+that lands behind the other group's last member. A header without any member is
+a syntax error of its own and draws no placement message. What stays clean, and
+is pinned as clean: a block before the group's header, and a block behind a
+definition that ends the group, each over a base outside the group. Two
+placements that are verifier-clean are refused — an `Uitzondering op` directly
+after a group whose members do not include its base, and an `Uitzonderingen
 ongeordend` block directly after a group — because at that position the rules
 behind the block would fall outside the group in silence. No `.rgs` source in
 the repository — golden, red or parity zone — carries a `Regelgroep` at all,
@@ -702,33 +657,30 @@ member's own `Regel <naam>` in an `Uitzonderingen ongeordend` block, with or
 without `op`; an authored initialisation that the opgave marker (§7) takes
 into its group keeps its name there. A group-default that a head makes and
 the two defaults the opgave marker generates have no written name and carry
-none. Until that card the name of a lifted block reached neither the wire
-nor the model, and an explanation could name the deciding default only by
-its index path. The name has no semantics and names no form on the wire, so
+none. The name has no semantics and names no form on the wire, so
 WF-020 does not judge it there.
 
-### Scope / limitations of the first card
+### Scope / limitations
 
-- The first card exercised the ordered shape on a characteristic only. Since
-  then `jutterswet-wrakrecht` exercises it on an attribute target, on a
-  supertype and its subtype, `jutterswet-schorsing` with a negated
+- `jutterswet-wrakrecht` exercises the ordered shape on an attribute target, on
+  a supertype and its subtype, `jutterswet-schorsing` with a negated
   exception (form 1, above), `jutterswet-uitsluiting-rgs` and
   `jutterswet-nestkenmerk-rgs` form 2, and `jutterswet-meldtermijn-strandjutter`
   a block for a subtype under its supertype's base (the inheritance line,
   above).
-- Exception-on-exception is authored from source since form 2 (above): nested
-  exceptions lower to `Default.exceptions`, and `Afwijking van` and
-  `Uitzonderingen ongeordend op` joined the surface.
+- Exception-on-exception is authored from source (form 2, above): nested
+  exceptions lower to `Default.exceptions`, beside the heads `Afwijking van`
+  and `Uitzonderingen ongeordend op`.
 - Multi-version base/exception rules are refused (single-version only).
 - The new keyword tokens narrow the ordinary-name space: `Uitzonderingen`
   (capitalised) and `ongeordend` are reserved and can no longer appear as
   name words (e.g. a plural `(mv: Uitzonderingen)` or a kenmerk named
-  `ongeordend` now refuses loudly at the lexer) — the same loud posture the
-  existing `Regelgroep`/`recursief` extension tokens take. The corpus and
-  every committed source are free of these words. Since form 2 the capitalised
-  phrase `Afwijking van` is one whole-phrase token as well: a name that is read
-  word by word — an object type, an attribute, a characteristic — can no longer
-  contain it (a syntax error), while a name word `Afwijking` without `van`
+  `ongeordend` refuses loudly at the lexer) — the same loud posture the
+  `Regelgroep`/`recursief` extension tokens take. The corpus and every committed
+  source are free of these words. The capitalised phrase `Afwijking van` is one
+  whole-phrase token as well (form 2): a name that is read word by word — an
+  object type, an attribute, a characteristic — cannot contain it (a syntax
+  error), while a name word `Afwijking` without `van`
   behind it still lexes as a name. A rule name runs up to `geldig` over any
   token, so it can still contain the phrase (`Regel Afwijking van de norm`
   emits a rule named 'Afwijking van de norm'); only at the head of a block does
@@ -766,7 +718,7 @@ Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
 
 The clause sits **after the object-type name and before the `mv:` group**. It
 does not touch the order of the existing head annotations, which the grammar
-already fixes (`mv:` before `(bezield)`), and both remain reachable behind it.
+fixes (`mv:` before `(bezield)`), and both remain reachable behind it.
 
 **No new lexer token, deliberately.** A whole-phrase `IS_EEN : 'is' WSP 'een'`
 is not safe here and the `IS_VAN_HET_TYPE` precedent does not carry over.
@@ -780,7 +732,7 @@ context disambiguates. A §13.3.2 kenmerk declaration is `IS lowerNaam …`, and
 `naamWoordLower` excludes `EEN`, so no member declaration can be read as this
 clause and no clause can be read as a member. The extension consequently
 reserves **no** name words: unlike `Uitzonderingen`/`ongeordend`, both its
-tokens already existed and their other uses are untouched.
+tokens are tokens of the language, and their other uses are untouched.
 
 The article before the parent name is the language's own `onbepaaldLidwoord`,
 read exactly where the language reads one elsewhere; it is required, so a bare
@@ -793,7 +745,7 @@ declaration has been read, so resolution is **document-wide and order-free** —
 a forward reference is legal and only an undeclared name refuses. The bound
 parent lands in `ObjectType.supertype`, whose chain accessors (`chain`,
 `isA`, `attribute`, `hasMember`, `characteristicKind`, `declarantOf`) the model
-already carried; the member maps stay OWN, so a subtype declares only what it
+carries; the member maps stay OWN, so a subtype declares only what it
 adds.
 
 ### Fail-fast refusals (resolver, loud diagnostics)
@@ -844,11 +796,11 @@ byte-identity of every flat golden holds.
 
 One emission consequence comes with the relation rather than with the syntax.
 A role's declared filler type is an **upper bound** (`IR-SPEC.md` ch. 2.6), so
-WF-048's uniqueness is computed over the **chain-closed** type-pair set: adding
-a subtype can make a pair that was uniquely connected doubly connected, and a
-fold that went out bindingless yesterday would be refused today. The emitter is
-ahead of it — where the by-pair search goes silent, the fold's `bronRol` falls
-back to the role the sentence WROTE, which still names exactly one.
+the by-pair search computes its uniqueness over the **chain-closed** type-pair
+set: adding a subtype can make a pair that is uniquely connected doubly
+connected, and the pair then binds no range. Where the by-pair search goes
+silent, the fold's `sourceRole` falls back to the role the sentence WROTE,
+which still names exactly one (`RegelSpraakModel.foldSourceBinding`).
 
 That fallback carries one tightening the other role searches do not need, and
 it is what makes it safe. The name candidates are formed by dropping leading
@@ -857,9 +809,10 @@ type; the upper-bound filler test that is right everywhere else would wave that
 through, because the element type is a subtype of the other role's filler. The
 reached role must therefore declare **exactly** the element type — identity, not
 `⊑`. A phrase naming no role, naming more than one, or naming one whose filler
-is not the element type itself stays bindingless, and gets the loud WF-048
-refusal. Binding the wrong relation would instead be verifier-clean and
-silently fold the wrong set, which is by far the worse of the two.
+is not the element type itself stays bindingless, and the emitter refuses the
+fold loudly: the wire requires the range. Binding the wrong relation would
+instead be verifier-clean and silently fold the wrong set, which is by far the
+worse of the two.
 
 ### Scope / limitations of this card
 
@@ -875,9 +828,8 @@ silently fold the wrong set, which is by far the worse of the two.
   dimension or plural, another article or kind of characteristic, a second
   marker) is an ERROR on the repeat's line that names both lines, and so is a
   role line in an extension whose name is a role of a fact type the type takes
-  part in (witness: `ExtensionRedeclarationTest`, every sentence whole). Until
-  then the repeat replaced the declaration without a diagnostic, also with
-  another datatype. The word-for-word repeat is admitted because it changes
+  part in (witness: `ExtensionRedeclarationTest`, every sentence whole). The
+  word-for-word repeat is admitted because it changes
   nothing and the casus of the repository's parity zone writes three
   of them (measured 2026-09-28; no source of the corpus declares an
   extension). Along the inheritance line WF-105 refuses every repeat, literal
@@ -896,8 +848,8 @@ Origin: `spec/IR-SPEC.md` ch. 4.3 and `spec/RUNTIME-SEMANTICS.md` ch. 3.4c
 `filledCount` (in memory `AANTAL_GEVULDE`): over one set source it counts the
 contributors whose value is not leeg, so `{5, 7, leeg}` answers **2** where the
 instance count answers 3.
-The kind was written on the wire first and answered by all four executors
-before any frontend could author it; this extension is its producer route.
+All four executors answer the kind; this extension is the route by which
+RegelSpraak writes it.
 
 **Official RegelSpraak v2.3.0 has no spelling for the operation at all.**
 §5.8's `<getalaggregatiefunctie>` is a closed alternation of four phrases (the
@@ -959,13 +911,9 @@ document and its conversion notes).
   by one name, and the ANTLR "expecting {…}" set in a syntax-error message names
   the new token. Normalising exactly those two leaves no residual difference in
   any document.
-- **The seventh collection was found by a second reader, not by the first.**
-  Three of the seven were missed on the first pass, and the sentence that
-  claimed the sweep was exhaustive was therefore too strong. It is recorded here
-  because the lesson outlives the number: a coverage claim over "everything
-  reachable" is one a second reader has to re-count, and that re-count found
-  three. The re-count agreed — 76 of 76 identical, no diagnostic differences —
-  so the conclusion widened rather than moved.
+- **Three of the seven collections came from a second pass** (76 documents),
+  which agreed: 76 of 76 identical, no diagnostic differences. The measurement
+  covers the documents it names, not "everything reachable".
 
 **What the measurement does not claim.** It cannot exclude that some unmeasured
 document names a role or an attribute with the exact phrase. What bounds that
@@ -986,8 +934,8 @@ fixture (`FilledCountDialectTest`).
 
 ### Lowering (resolver)
 
-The phrase builds an ordinary `Expr.Functie` with `kind = AANTAL_GEVULDE` and
-one argument, reusing the value folds' machinery rather than adding any:
+The phrase builds an ordinary `Expr.FunctionCall` with `kind = AANTAL_GEVULDE`
+and one argument, reusing the value folds' machinery rather than adding any:
 
 - the element type is the argument's own object type (`aggregationElement`), the
   VALUE-fold derivation — not the count's, whose element word is a role name;
@@ -1003,12 +951,12 @@ one argument, reusing the value folds' machinery rather than adding any:
   value and a boolean alike — so a numeric-operand check here would undo the
   decision in silence.
 
-`RuleChecker.FOLD_KINDS` grows with the kind in the same movement, because
+`RuleChecker.FOLD_KINDS` holds the kind, because
 WF-096 admits a set reading on a value fold's source alone and a filled count
 is a count in its RESULT but a value fold in its READING. That set and the
 verifier's `set_source_exempt` are one boundary in two languages;
-`FoldKindsBoundaryTest` now READS the verifier's own kind list and the line that
-keys on it, so the two cannot drift again in either direction.
+`FoldKindsBoundaryTest` READS the verifier's own kind list and the line that
+keys on it, so the two cannot drift in either direction.
 
 ### Fail-fast refusals (resolver, loud diagnostics)
 
@@ -1018,18 +966,18 @@ keys on it, so the two cannot drift again in either direction.
   writes. ERROR, so the document never reaches disk; every other kind admits a
   non-set source for a reason of its own (the §7.1 timeline fold, the row-1
   count wart), which is why the fence is drawn per kind.
-- The refusals the value folds already carry reach the new kind unchanged,
-  because it joined the shared aggregation predicate: a source naming no
+- The refusals of the value folds reach the kind unchanged, because it is in
+  the shared aggregation predicate: a source naming no
   declared member of the element type markers with a WARNING, and the three
   fold-source refusals (a nested set step, an intermediate to-one anchor, a
   by-pair binding the written name contradicts) keep refusing here too.
 
 ### Emission
 
-Nothing about emission is new: the kind reaches the wire through the same
-`Functie` writer as the other seven, with the same `bronRol`/`bronPad`
-exclusivity. A document that does not write the phrase emits exactly what it
-emitted before, which is the measurement above stated as a property.
+The kind reaches the wire through the same `FunctionCall` writer as the other
+seven, with the same `sourceRole`/`sourcePath` exclusivity. A document that does
+not write the phrase emits what it emits without the extension, which is the
+measurement above stated as a property.
 
 ### Scope / limitations of this card
 
@@ -1038,12 +986,10 @@ emitted before, which is the measurement above stated as a property.
   arity at exactly one.
 - **The token matches lowercase `het` only**, as `AANTAL_DAGEN_IN` and
   `TOTAAL_VAN` do, so a sentence-initial "Het aantal gevulde waarden van …"
-  falls back to the pre-extension reading — the instance count swallows the
-  words as its element name and markers with a WARNING. Measured 2026-09-20:
-  that document still reaches disk, exactly as it did before the extension. It
-  is no regression (the base behaviour is unchanged) and no aggregation phrase
-  in this grammar is written sentence-initially, but it is a real asymmetry with
-  the lowercase form and is recorded rather than discovered.
+  is read as without the extension — the instance count swallows the words as
+  its element name and markers with a WARNING, and the document reaches disk
+  (measured 2026-09-20). No aggregation phrase in this grammar is written
+  sentence-initially, but it is an asymmetry with the lowercase form.
 - The temporal set source stays refused downstream, not here. A filled count
   over a timeline attribute has no moment at which to ask, and the two OCaml
   executors refuse it by name (`corpus/red/filled-count-temporal-set-source`);
@@ -1057,32 +1003,30 @@ emitted before, which is the measurement above stated as a property.
 
 Not a dialect extension and not inert: a narrowing of what v2.3.0 spells.
 §13.4.15.68 gives a periodevergelijking ("vanaf …", "van … tot …", "tot en met
-…") any date expression as a bound, and the frontend used to build every one of
-them into a window. WF-111 (`spec/IR-SPEC.md` ch. 4.6, maintainer decision
-2026-09-23) admits two shapes on the wire — a date literal, or an own scalar
-date attribute of the subject — both of day precision; the general date
-expression is an OPEN wire decision (`spec/RUNTIME-SEMANTICS.md` ch. 3.12).
-Measured before the fence (2026-09-23): a parameter, a navigated read, a
-datum-tijd attribute, a computed date ("zijn peildatum plus 1 dg"), a
-time-dependent attribute, a datum-tijd literal and an attribute of another
-object type each reached disk with `diagnostics: []`, and the verifier refused
-every one. `RuleChecker.periodBoundaryError` refuses them now with an ERROR in the
-verifier's WF-111 sentence for the bound it would write, after the written
-bound, so the document never reaches disk. No source in any zone writes a
-window with such a bound, so nothing moves.
+…") any date expression as a bound. WF-111 (`spec/IR-SPEC.md` ch. 4.6,
+maintainer decision 2026-09-23) admits two shapes on the wire — a date literal,
+or an own scalar date attribute of the subject — both of day precision; the
+general date expression is an OPEN wire decision (`spec/RUNTIME-SEMANTICS.md`
+ch. 3.12). `RuleChecker.periodBoundaryError` refuses every other bound — a
+parameter, a navigated read, a datum-tijd attribute, a computed date ("zijn
+peildatum plus 1 dg"), a time-dependent attribute, a datum-tijd literal and an
+attribute of another object type, each of which the verifier refuses — with an
+ERROR in the verifier's WF-111 sentence for the bound it would write, after the
+written bound, so the document never reaches disk. No source in any zone writes
+a window with such a bound.
 
 **"Own" is written on the subject, and compared by identity.** WF-111's text
 admits an attribute "on an object type the subject satisfies" (`S ⊑ O`). This
 frontend writes an own read — an inherited attribute included — with the
 subject as its object type: "zijn peildatum" in a rule on a subtype is an
-`AttribuutRef` on that subtype. A read that names any other type, a supertype of
-the subject included ("de peildatum van de Jutter" in a rule on a subtype of
-Jutter), goes out as a navigation, with by-pair bindings when a fact type
-relates the two types, which the verifier refuses as navigated (WF-111). Where
-no fact type relates them the emitter refuses the model (measured 2026-09-25),
-so no document carries that bound and its refusal keeps the Dutch words, which
-for the supertype-named read say how to read the subject's own date instead.
-So the fence compares by identity, as the Drools gate
+`AttributeReference` on that subtype. A read that names any other type, a
+supertype of the subject included ("de peildatum van de Jutter" in a rule on a
+subtype of Jutter), goes out as a navigation, with by-pair bindings when a fact
+type relates the two types, which the verifier refuses as navigated (WF-111).
+Where no fact type relates them the emitter refuses the model (measured
+2026-09-25), so no document carries that bound and its refusal keeps the Dutch
+words, which for the supertype-named read say how to read the subject's own date
+instead. So the fence compares by identity, as the Drools gate
 `TimeCalculation.periodBoundLowerable` does; with `⊑` it would pass the
 supertype-named read on to a verifier that refuses it. Witness:
 `PeriodBoundaryTest`, `StructureSentenceTest`.
@@ -1092,10 +1036,9 @@ supertype-named read on to a verifier that refuses it. Witness:
 under any quantifier. The wire does not: a window gates the RULE, so under
 'geen van de' or a counting quantifier ('ten minste', 'ten hoogste',
 'precies') its verdict would be complemented or counted, and no reading is
-specified for that. Measured before the fence: the bullet under each of those
-four quantifiers, and under a 'geen van de' sub-compound of an 'alle' compound,
-reached disk with `diagnostics: []`, and the verifier refused every one.
-`RuleChecker.checkWindowPositions` now walks every condition the emitter writes —
+specified for that, and the verifier refuses the bullet under each of those
+four quantifiers, and under a 'geen van de' sub-compound of an 'alle' compound.
+`RuleChecker.checkWindowPositions` walks every condition the emitter writes —
 the reach of the verifier's own walk, conditions nested in expressions included
 — and refuses each composite or quantifier fold of that kind that holds a
 window, with an ERROR naming the quantifier, in the verifier's WF-112
@@ -1118,14 +1061,13 @@ changed. Witness: `RuleTargetTest`.
 
 §13.4.4 gives a gelijkstelling an `<attribuutvanonderwerp>` target, whose
 onderwerpketen may run through roles ("De vakpremie van het strandvak van een
-Jutter …"). This frontend builds a target on the rule's universal subject only,
-and such a sentence used to come out as an attribute named "vakpremie van het
-strandvak" on Jutter — the name swallowed the navigation — reaching disk with
-`diagnostics: []` for the verifier to refuse under WF-022 and WF-034. An
-undeclared attribute target did the same, and so did a characteristic whose
-subject is a navigation, which resolves to no object type at all. Since fix
-round 2 (2026-09-23) each is an ERROR naming the form
-(`RuleChecker.checkRuleTargets`). An undeclared characteristic on a resolved
+Jutter …"). This frontend builds a target on the rule's universal subject only:
+read as written, such a sentence is an attribute named "vakpremie van het
+strandvak" on Jutter — the name swallows the navigation — which the verifier
+refuses under WF-022 and WF-034. That sentence, an undeclared attribute target
+and a characteristic whose subject is a navigation, which resolves to no object
+type at all, are each an ERROR naming the form (`RuleChecker.checkRuleTargets`;
+fix round 2, 2026-09-23). An undeclared characteristic on a resolved
 subject is not fenced here: that is the ground of the dialect card for negated
 decisions ("is niet X"). No source in any zone writes the refused forms. A
 refused target inside an extension block speaks alone: the defaults lowering
@@ -1133,20 +1075,18 @@ skips its family, whose checks would otherwise judge a target the author did
 not write and add a second refusal ("is geen kenmerktoekenning of
 gelijkstelling", "schrijft een ander doel") beside the true one (fix round 3).
 A target that navigates from an implied subject ("De premie van zijn vakhouder
-…") is refused the same way; it ended in the emitter's exception until the fix
-round of 2026-09-26. A name that is both an attribute and a characteristic of
-the subject type decides no member and is refused in WF-022's sentence
-(`StructureSentenceTest`). Witness: `RuleTargetTest`.
+…") is refused the same way. A name that is both an attribute and a
+characteristic of the subject type decides no member and is refused in WF-022's
+sentence (`StructureSentenceTest`). Witness: `RuleTargetTest`.
 
 **A cell of a dimensioned attribute as the target** (fix round 3). The wire has
 no cell assignment: a rule's target is an attribute reference, which WF-022
 demands, and the dimension-cell node is a read (IR-SPEC ch. 4.3). "De premie
-van een Jutter in voorjaar moet gesteld worden op 10" put the label into the
-subject text and wrote the WHOLE attribute — verifier PASS on a different
-document than the one written. It is refused now with the cell named
+van een Jutter in voorjaar moet gesteld worden op 10", read as written, puts
+the label into the subject text and writes the WHOLE attribute — verifier PASS
+on a different document than the one written. It is refused with the cell named
 (attribute, dimension, label), and so is "De premie in voorjaar van een Jutter
-…", which was refused before as an undeclared attribute without naming the
-dimension. A whole-attribute write of a dimensioned attribute, with no label at
+…". A whole-attribute write of a dimensioned attribute, with no label at
 all, stays unfenced: the verifier admits it, `ref` and clingo write the value as
 a scalar, and the Drools exec branch fails at fire time — a norm question for
 the verifier line, recorded in the card. Witness: `DimensionTargetTest`.
@@ -1168,13 +1108,12 @@ at all (a reference by type name points back to a subject of that type,
 
 1. A written role name binds the one relation in which a role of that name,
    reachable from the subject, is filled by the type read — however many
-   relations join the two types. This was already so.
+   relations join the two types.
 2. A noun that is the other type's name and also the declared name or
    declared plural of a role binds that role when the type pair alone does
    not decide, as a written role does: "het kadegeld van de haven" on a
    Schuit, where one of two relations between Schuit and Haven names its
-   Haven role `haven`. Until 2026-09-26 the type reading won, the pair was
-   ambiguous, and the emitter ended in an exception.
+   Haven role `haven`.
 3. A type name that names no such role binds by the type pair, and only where
    exactly one relation joins the two types. That derivation is a convenience
    of this frontend; v2.3.0 has no such navigation.
@@ -1196,46 +1135,38 @@ and then by the pair, a set reading by the pair and then by the written name
 the element type's name or its declared plural ("de som van de romplengten
 van alle Schuiten van de Haven") claims no role, and binds by the pair where
 exactly one relation joins the two types, as case 3 does; with several it has
-no range and is refused below. Until the fix round of 2026-09-26 the declared
-plural was not taken for the type's name, and one relation gave a marker with
-the WARNING of a written name the pair contradicts. That WARNING remains for
-a written name that names another role than the one relation carries ("alle
-geborgen vondsten" where only `aangemelde vondst` joins the types): the pair
-would fold another set than the sentence names, so the fold stays a marker.
-A source that writes a step beyond its element from an anchor other than the
-subject ("de som van de romplengten van alle liggers van zijn thuishaven" on a
-Schuit) has a range of two steps from another object, which this frontend
-does not spell; the refusal's Dutch part names that anchor. A quantifier fold
-("ten minste twee van de liggers van de Haven") binds its range the same way,
-by the role its member phrase writes where the pair does not decide; until the
-fix round of 2026-09-26 the count words were offered as the written name, the
-fold stayed a marker over two relations, and its WARNING said no fact type
-joined the types. A fold without a range is
-refused with an ERROR in the loader's sentence (`a single-argument fold with
-an elementType carries its range … : the range is written, never derived`),
-and under a total whose element is another type in WF-083's sentence; a total
-over the subject's own type without a range keeps this frontend's words. The
-other folds the wire cannot spell are refused the same way, each in the
-sentence for what the emitter would write: a step or chain written on the
-source ("het aantal liggers van zijn thuishaven", "het totaal van het kadegeld
-van zijn thuishaven") in WF-053's (`a path on a fold source is ill-formed …`),
-any fold but a total over the subject's own attribute ("de som van zijn
-romplengte") in the loader's, and a total over another type's attribute ("het
-totaal van het kadegeld van de Haven" on a Schuit), whose step a total without
-a range drops, in WF-083's. The first two ended in the emitter's exception;
-the third went to disk with `diagnostics: []` and the verifier refused it.
+no range and is refused below. The WARNING of a written name the pair
+contradicts stands for a written name that names another role than the one
+relation carries ("alle geborgen vondsten" where only `aangemelde vondst` joins
+the types): the pair would fold another set than the sentence names, so the fold
+stays a marker. A source that writes a step beyond its element from an anchor
+other than the subject ("de som van de romplengten van alle liggers van zijn
+thuishaven" on a Schuit) has a range of two steps from another object, which
+this frontend does not spell; the refusal's Dutch part names that anchor. A
+quantifier fold ("ten minste twee van de liggers van de Haven") binds its range
+the same way, by the role its member phrase writes where the pair does not
+decide. A fold without a range is refused with an ERROR in the loader's sentence
+(`a single-argument fold with an elementType carries its range … : the range is
+written, never derived`), and under a total whose element is another type in
+WF-083's sentence; a total over the subject's own type without a range keeps
+this frontend's words. The other folds the wire cannot spell are refused the
+same way, each in the sentence for what the emitter would write: a step or chain
+written on the source ("het aantal liggers van zijn thuishaven", "het totaal van
+het kadegeld van zijn thuishaven") in WF-053's (`a path on a fold source is
+ill-formed …`), any fold but a total over the subject's own attribute ("de som
+van zijn romplengte") in the loader's, and a total over another type's attribute
+("het totaal van het kadegeld van de Haven" on a Schuit), whose step a total
+without a range drops, in WF-083's.
 
 A read whose binding reaches a to-many role in a slot that takes one value is
 refused with an ERROR too, in the verifier's WF-053 sentence (`hop 0 reaches
 the to-many role … in a scalar slot — a to-many step needs an aggregation,
 never a silent first pick`), the one the set fence speaks for a set reading.
-Before, such a read went to disk with `diagnostics: []` and the verifier
-refused the document. A §13.4.7 fact creation's condition on the created
+A §13.4.7 fact creation's condition on the created
 relation's target ("… is een schuit van de Haven indien de romplengte van de
 schuit …") is such a read: the wire reads that condition from the anchor, so
 the target is reached over the to-many role. Where the target is named as its
-type, case 2 now binds its role, and the sentence ends in this refusal instead
-of the emitter's exception.
+type, case 2 binds its role, and the sentence ends in this refusal.
 
 An allocation's recipient join (IR-SPEC ch. 3.2, `connectingRole`) binds in the
 same order: the role the recipient phrase writes ("de bergingsaandelen van alle
@@ -1243,9 +1174,7 @@ hoofdbergers van de berging"), where it names one relation between the source
 and the recipient type, else the one relation between the two types. An
 allocation that binds neither — a type name with two relations — is refused
 with an ERROR in the loader's sentence for the document without the join
-(`missing field 'connectingRole'`). Until the fix round of 2026-09-26 the join
-came from the type pair only, and two relations ended in the emitter's
-exception whatever the phrase named.
+(`missing field 'connectingRole'`).
 
 A parent-scoped uniqueness binds its scope (IR-SPEC ch. 3.6, `scope`) by the
 written names as well: the parent role the sentence writes ("van de
@@ -1259,13 +1188,8 @@ in this frontend's words: the document without the scope is a uniqueness over
 every instance, which no reader refuses (measured 2026-09-26: the verifier
 admits it, and admits it bound to the other relation). A scope whose parent
 role is to-many is refused in the verifier's WF-054 sentence (`the scope role
-… is to-many — a scope parent is one instance`); until the fix round of
-2026-09-26 it went to disk with `diagnostics: []` and the verifier refused the
-document. Each of these refusals, like the one of a scope over a reciprocal
-fact type, is the rule's only message. Until the fix round of 2026-09-26 the
-scope was bound by the type pair only, so two relations between the element
-and the parent type left the rule with the WARNING that it was not lowered,
-and the uniqueness was left off the wire.
+… is to-many — a scope parent is one instance`). Each of these refusals, like
+the one of a scope over a reciprocal fact type, is the rule's only message.
 
 The element name of a fold source binds independently of the order of the fact
 types (2026-10-02). A name read as an object type through a role takes the
@@ -1276,38 +1200,26 @@ steps or more, the walk decides the element type when the element name is no
 object type's name or declared plural: the last step bound that name to a role
 from the holder before it, and the element type is its filler; a name that
 names an object type is the population, which a subtype of the filler narrows
-and any other type contradicts, refused as before ("… komt via haar stappen uit
-bij <landing>, maar de geschreven elementnaam is gelezen als <type>"). Until
-then the first role in declaration order whose name or plural matched, a
-guessed plural included, decided: with the fact type of a subtype declared
-before the one the fold walks, a fold over two steps was refused, and a fold
-over one step from the holder ("alle vondsten van de Berging") folded over the
-subtype's instances alone — 5 where 9 is right in ref, clingo and both Drools
-branches, a silent wrong answer. A name that names both a role the walk binds
-and an object type outside the landing ("alle wrakken" for a role `wrak (mv:
-wrakken)` filled by Vondst, beside a type Wrak) read as the role before and is
-refused now. Witness: `ElementNameFoldSourceTest`.
+and any other type contradicts, refused ("… komt via haar stappen uit bij
+<landing>, maar de geschreven elementnaam is gelezen als <type>"). A name that
+names both a role the walk binds and an object type outside the landing ("alle
+wrakken" for a role `wrak (mv: wrakken)` filled by Vondst, beside a type Wrak)
+is refused. Witness: `ElementNameFoldSourceTest`.
 
 The matrix of a quantifier fold reads with the element as subject
 (RUNTIME-SEMANTICS ch. 3.9a). An operand beside the quantified one that names
 the element by its type ("… later is dan de sluitdag van de jutter van de
 Vondst") is built again with the element as subject, as a subselection and a
-condition read it, and typed again; it was built with the rule subject, from
-which the element is a to-many step, and refused as a read not laid as a
-navigation, where "de sluitdag van zijn jutter" bound. Its wire is that of the
-possessive form. Only an operand that left such a read unresolved is built
-again, so every operand that bound stays as it was. Witness:
+condition read it, and typed again: built with the rule subject, from which
+the element is a to-many step, it would be a read not laid as a navigation,
+where "de sluitdag van zijn jutter" binds. Its wire is that of the possessive
+form. Only an operand that left such a read unresolved is built again, so every
+operand that binds stays as built. Witness:
 `QuantifierMatrixElementNameTest`. Over a range of two steps or more an operand
 the matrix takes over unchanged may read nothing from the rule subject: see
 "A quantifier over a written path" below.
 
-Measured before the change (2026-09-26): with two relations between Schuit and
-Haven, a read by type name, a read with no relation, and the noun of case 2
-each ended in an `IllegalStateException` of the emitter, and so did a count or
-a sum over the type's plural with two relations or none. Now case 2 binds and
-the others end in the ERROR; every rgs golden and every source of the parity
-zone re-emits unchanged (gates 10 and 11), since each read that binds now threw
-before. Witnesses: `NavigationChoiceTest`, `CountRangeTest`, `SubtypeDialectTest`.
+Witnesses: `NavigationChoiceTest`, `CountRangeTest`, `SubtypeDialectTest`.
 
 ---
 
@@ -1317,19 +1229,8 @@ A reconstruction (card `third-condition-level`). The grammar reads a bullet
 without its depth, `bullet : ( DASH | DOTDOT | BULLET )+` with whitespace
 skipped, and the list of a nested group, `genesteVoorwaarde+`, takes every
 bullet after it. v2.3.0 §13.4.14.7 writes the depth as the number of bullets
-(`("•")+`). Until this card the resolver repaired the parse afterwards: it
-re-nested a list by column where the columns differed, turned a list with
-different signs or columns into a marker (RGS-092), and under a counting
-quantifier also turned every list whose nested group held a nested group into a
-marker, in a condition and in a subselection alike. A third level therefore had
-no spelling under 'ten minste', 'ten hoogste' or 'precies', `...` was a syntax
-error (it lexed as `..` and `.`), and under 'alle' a list read silently wrong:
-"indien hij aan alle volgende voorwaarden voldoet: - zijn leeftijd is groter
-dan 65 - hij voldoet aan ten minste één van de volgende voorwaarden: - zijn
-soort is gelijk aan 'Touw' - zijn soort is gelijk aan 'Glas' - zijn leeftijd
-is kleiner dan 80", every bullet '-' on one column, reached disk with
-`diagnostics: []` and the last bullet, written as a member of the 'alle' list,
-inside the or-group.
+(`("•")+`). The resolver builds the tree from the depth of each bullet
+(below).
 
 **The depth.** The lexer reads a run of two dots or more as one token
 (`DOTDOT : '..' '.'*`). The depth of a bullet is the pair (number of sign
@@ -1353,7 +1254,11 @@ ERRORs, each at the line of the bullet it quotes:
 
 - RGS-353, a group header without a deeper bullet after it, or with none at
   all. That is also the same sign on the same column after a header, under
-  every quantifier, 'alle' included: the silent reading above is this case.
+  every quantifier, 'alle' included: "indien hij aan alle volgende
+  voorwaarden voldoet: - zijn leeftijd is groter dan 65 - hij voldoet aan ten
+  minste één van de volgende voorwaarden: - zijn soort is gelijk aan 'Touw' -
+  …", every bullet '-' on one column, leaves open which bullets belong to the
+  or-group.
 - RGS-354, a deeper bullet without a group header before it ('-' and then '..'
   after a plain condition).
 - RGS-355, a return to a depth that is no open level.
@@ -1365,51 +1270,46 @@ such a subselection every bullet after it, so a bullet of the outer list after
 it lands in the subselection's list, inside the expression of the outer bullet;
 the tree of the subselection cannot hand it back to the outer list. It is
 refused (RGS-355, with the advice to put the bullet with the subselection last
-in its list, or the subselection in parentheses). Before this card such a
-bullet silently became a member of the filter, read on the element. A
-subselection whose list is closed by an operator ("… die aan ten minste één
-van de volgende voorwaarden voldoen: .. … .. … is groter dan 0") is not
-affected.
+in its list, or the subselection in parentheses). A subselection whose list is
+closed by an operator ("… die aan ten minste één van de volgende voorwaarden
+voldoen: .. … .. … is groter dan 0") is not affected.
 
 **Measured.** The corpus, the parity zone and the scenario goldens re-emit
 byte-identically (gates 10, 11 and 16), and the rule set herleving-WW v2
 (fundament and herleving-ww) gives the same IR without a diagnostic: no list in
 any of them reads otherwise or meets one of the four ERRORs. The decision-table
-desugaring writes `•` and `••` on deeper columns, which reads as before.
-Witnesses: `BulletDepthTest`, `SilentMarkerTest` (the two former marker routes),
-the golden `jutterswet-vrijstelling-drie-niveaus`.
+desugaring writes `•` and `••` on deeper columns, which reads the same by sign
+as by column. Witnesses: `BulletDepthTest`, `SilentMarkerTest`, the golden
+`jutterswet-vrijstelling-drie-niveaus`.
 
 **A decision-table row with several or-cells** (fix round of the same card).
 The desugaring writes a row with more than one condition as an 'alle' list and
 each or-cell ("touw" of "glas") as a nested 'ten minste één' group: a `•` header
-with `••` values, after the row's other conditions. Without the depth two such
-groups would have read as one, the second header and its values inside the
-first group, so the desugaring skipped such a row with a WARNING (RGS-300).
-With the depth a `•` after a `••` returns to the row's list, the groups are
-sisters, and the row is written; RGS-300 is gone. A row with at most one or-cell
-desugars byte-identically as before. Witnesses: `DecisionTableDesugarTest`, the
+with `••` values, after the row's other conditions. A `•` after a `••` returns
+to the row's list, so the groups are sisters and the row is written; by column
+alone two such groups would read as one, the second header and its values
+inside the first group. Witnesses: `DecisionTableDesugarTest`, the
 golden `jutterswet-premietabel-twee-ofcellen`.
 
 ---
 
 ## One subselection per chain — narrowed (2026-10-22)
 
-A narrowing of the grammar (card `subselection-per-chain`). `onderwerpKeten`
-took its die/dat subselection by direct left recursion
-(`onderwerpKeten ( DIE | DAT ) predicaat`), so one chain could carry two
-predicates. In "… de eerste van de maand van alle ladingen van de Schuit die
-aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand
-plus 1 mnd is later dan de laatste van de einddag van alle klachten van de
-Schuit die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan
-'Zwaar'." both `die` hung on the outer anchor "de Schuit": the fold over the
-ladingen took the inner predicate as its filter, the outer one stayed
-unconsumed (RGS-099), and 'zijn soort' was read on a Lading. The rule is now
-`( selector VAN onderwerp | universeelOnderwerp | onderwerpVerwijzing | ZIJN
-kaleNaam ) ( ( DIE | DAT ) predicaat )?`: a chain carries at most one
-subselection, and it belongs to the set right before it. The sentence above
-parses as the same sentence with the inner fold in parentheses, which stays
-admitted. No source of the corpus, the parity zone or the scenario goldens
-wrote two predicates on one chain: gates 10, 11 and 16 re-emit byte-identically.
+A narrowing of the grammar (card `subselection-per-chain`). The rule is
+`onderwerpKeten : ( selector VAN onderwerp | universeelOnderwerp |
+onderwerpVerwijzing | ZIJN kaleNaam ) ( ( DIE | DAT ) predicaat )?`: a chain
+carries at most one subselection, and it belongs to the set right before it.
+With the subselection taken by direct left recursion (`onderwerpKeten ( DIE |
+DAT ) predicaat`) one chain would carry two predicates: in "… de eerste van de
+maand van alle ladingen van de Schuit die aan alle volgende voorwaarden
+voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de
+laatste van de einddag van alle klachten van de Schuit die aan de volgende
+voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'." both `die` would hang on
+the outer anchor "de Schuit", the fold over the ladingen would take the inner
+predicate as its filter, and 'zijn soort' would be read on a Lading. The
+sentence parses as the same sentence with the inner fold in parentheses, which
+stays admitted. No source of the corpus, the parity zone or the scenario
+goldens writes two predicates on one chain.
 
 A second `die` or `dat` right after a subselection is a second requirement on
 the same set. Where no chain stands around the set — the quantified set of a
@@ -1491,46 +1391,40 @@ to-many step after the set), a time-dependent or dimensioned member, a count of
 instances ("het aantal …").
 
 Measured 2026-10-02: the three forms of the reproduction (two steps, two steps
-under a subselection, one step to a date) were markers (a WARNING, and the
-subselection an ERROR) and now play in ref, clingo, the Drools exec branch and,
-but for the earliest date, the DRL-text branch; so do a sum, a sum with a
-fallback, a minimum, a filled count and a total over two steps. Witnesses:
-`StepsAfterSetTest`, the golden `jutterswet-zwaarste-weging`.
+under a subselection, one step to a date) play in ref, clingo and the Drools
+exec branch; so do a sum, a sum with a fallback, a minimum, a filled count and a
+total over two steps. Witnesses: `StepsAfterSetTest`, the golden
+`jutterswet-zwaarste-weging`.
 
 ---
 
 ## §13.4.15.45 A characteristic check under a quantifier reads its name whole
 
 Not a dialect extension and not a narrowing: the reading of a sanctioned
-sentence that this frontend had wrong. In "alle vondsten van de Jutter geen
-drijfvermogen hebben" the name of the member phrase's anchor runs on over every
-name word, so the anchor reads "Jutter geen" and the operator keeps
-"drijfvermogen" alone; in "… geen recht op berging hebben" the anchor takes
-"geen recht op". The quantifier fold read the operator's name and gave back a
-trailing `niet` only, so the negation of a possessive characteristic (Tabel 16's
-`heeft geen`), and `geen` before any other kind, went out as the affirmed check,
-and a multi-word name was cut to its last word: `dubbel gekeurd` bound the
+sentence. In "alle vondsten van de Jutter geen drijfvermogen hebben" the name of
+the member phrase's anchor runs on over every name word, so the parse gives the
+anchor "Jutter geen" and the operator "drijfvermogen" alone; in "… geen recht op
+berging hebben" the anchor takes "geen recht op". Read from the operator's name
+alone, the negation of a possessive characteristic (Tabel 16's `heeft geen`),
+and `geen` before any other kind, would go out as the affirmed check, and a
+multi-word name would be cut to its last word: `dubbel gekeurd` would bind the
 characteristic `gekeurd` where the element declares both, and `recht op berging`
-bound nothing and stayed a marker. Measured 2026-09-29 over 88 forms — the three
+would bind nothing. Measured 2026-09-29 over 88 forms — the three
 quantifiers `alle`, `geen van de` and `ten minste één van de` over a possessive
 and an adjectival characteristic, affirmed and negated with `niet` and `geen`,
 with both verbs of Tabel 16; multi-word names; the anchor written as the role
 name and with `een`; the bullets; a negation in and after a subselection; the
-role checks; four spellings of an existential — 27 reached disk with
-`diagnostics: []` and were answered wrongly by ref and clingo alike, and by both
-Drools branches wherever these play the form (24 of the 27; the other 3 are
-bullets under `ten minste één van de volgende voorwaarden`, which both branches
-refuse), among them every `geen` under a quantifier. The anchor names
-the rule subject, so the frontend now reads the words after the name the anchor
+role checks; four spellings of an existential. The anchor names
+the rule subject, so the frontend reads the words after the name the anchor
 writes it with (a type name along the subject's chain, or the declared name or
 plural of the role the subject fills in the fold's relation, the longest that
 opens the anchor) as the front of the predicate, and binds the whole name as the
 unquantified check does: the written name first, then a leading `niet` or
 `geen` as the negation, with the same Tabel 16 register warning. An anchor
-written otherwise gives back only a trailing `niet` or `geen`. Now 79 of the 88
+written otherwise gives back only a trailing `niet` or `geen`. 79 of the 88
 forms are answered as written by ref and clingo, and by both Drools branches but
 for the 12 bullets under `ten minste één van de volgende voorwaarden`, which they
-refuse as before; the other 9 are refused loudly by the frontend: a negation
+refuse; the other 9 are refused loudly by the frontend: a negation
 inside a `die/dat` subselection (an ERROR: the subselection binds nothing), a
 role check of the element (a marker with its WARNING), and the existential
 spellings (`er een vondst van de Jutter is die …`, `hij een vondst heeft die
@@ -1545,45 +1439,40 @@ longest type name along the subject's chain or declared name or plural of any
 role a type of that chain fills, since the relation of the first step is only
 known once the anchor is.
 
-**"niet een" under a quantifier (2026-10-20).** "ten minste één van de vondsten
-van de melder van de Melding niet een wrakstuk is" reached the binder of the
-nominal characteristic (the form with `een`) as the name `niet wrakstuk`, which
-binds nothing, and was refused with the reason "'wrakstuk' is geen kenmerk van
-Vondst" and a marker (EF-019 in every executor), over one step and over a path;
-the stellende order ("… is niet een wrakstuk", Tabel 16's `NIET EEN` branch)
-was kept out of the fold altogether, since that branch resolves the positive
-form and flips it. Under a quantifier both now read `niet` as the negation of a
+**"niet een" under a quantifier (2026-10-20).** Under a quantifier, "ten minste
+één van de vondsten van de melder van de Melding niet een wrakstuk is" and the
+stellende order ("… is niet een wrakstuk", Tabel 16's `NIET EEN` branch, which
+resolves the positive form and flips it) read `niet` as the negation of a
 zelfstandig characteristic, the same test as "geen wrakstuk": the written name
 first, then the name after `niet`; the stellende branch passes its `NIET` to
 the fold. A name after `niet een` that is no zelfstandig characteristic of the
-element stays refused with its WARNING. Witness: `QuantifierOverPathTest`. The
+element is refused with its WARNING. Witness: `QuantifierOverPathTest`. The
 vragende "niet een" outside a quantifier ("indien de Vondst niet een wrakstuk
-is") is unchanged: a marker with its WARNING, and with "hij" a syntax error.
+is") is a marker with its WARNING, and with "hij" a syntax error.
 
 ---
 
 ## A quantifier over a written path — the range is the path (2026-10-20)
 
-Not a dialect extension: the wire form IR-SPEC ch. 4.5 already carries
+Not a dialect extension: the wire form IR-SPEC ch. 4.5 carries
 (`QuantifierFold.sourcePath`, WF-108 (c), the flat union of RUNTIME-SEMANTICS
-ch. 3.4b that ch. 3.9a shares), which this frontend did not write. A
-quantifier whose members lie two relations or more from the rule subject —
-"ten minste één van de vondsten van de melder van de Melding zwaar is", "alle
-wachten van alle ploegen van de Haven gediplomeerd zijn" — lowers to a
-`QuantifierFold` whose range is the written walk, spelled `sourcePath`, one
-`RoleBinding` per step, subject-outward; the `elementType` is the type the walk
-lands on. The walk is the one a value fold's range takes ("A fold over a set
-and to-one steps after it" and §13.4.1 above, `ExpressionBuilder.walkRange`):
-every written step binds the role its name or declared plural names from the
-type before it, to-one and to-many alike, in any order, the anchor names the
-rule subject, and a step that binds no role declines the whole path. It holds
-for every quantifier (`alle`, `geen van de`, `ten minste`/`ten hoogste`/
-`precies` *n* `van de`), for every matrix (a characteristic, the nominal one
-read as "is een <naam>" among them; a comparison; a leeg or gevuld test), with
-a die/dat subselection on the element as in the one-step form, in the condition
-of a rule and in the justification of a defaults group ("Uitzondering op …").
-A counting quantifier counts the elements of the union, each once, however
-many intermediates reach it.
+ch. 3.4b that ch. 3.9a shares). A quantifier whose members lie two relations or
+more from the rule subject — "ten minste één van de vondsten van de melder van
+de Melding zwaar is", "alle wachten van alle ploegen van de Haven gediplomeerd
+zijn" — lowers to a `QuantifierFold` whose range is the written walk, spelled
+`sourcePath`, one `RoleBinding` per step, subject-outward; the `elementType` is
+the type the walk lands on. The walk is the one a value fold's range takes ("A
+fold over a set and to-one steps after it" and §13.4.1 above,
+`ExpressionBuilder.walkRange`): every written step binds the role its name or
+declared plural names from the type before it, to-one and to-many alike, in any
+order, the anchor names the rule subject, and a step that binds no role declines
+the whole path. It holds for every quantifier (`alle`, `geen van de`, `ten
+minste`/`ten hoogste`/ `precies` *n* `van de`), for every matrix (a
+characteristic, the nominal one read as "is een <naam>" among them; a
+comparison; a leeg or gevuld test), with a die/dat subselection on the element
+as in the one-step form, in the condition of a rule and in the justification of
+a defaults group ("Uitzondering op …"). A counting quantifier counts the
+elements of the union, each once, however many intermediates reach it.
 
 **Refused, loudly.** A walk that does not bind keeps the marker with the
 WARNING that names where it stopped (the step that binds no role and why, an
@@ -1597,174 +1486,23 @@ the element: over one step the read reaches the subject back over the
 relation's other role, but over a path no walk from the element names the
 subject (the melder of a Vondst has more Meldingen than the one the rule is
 about), and a binding from the element would read another object without a
-word. Such an operand was refused with an ERROR (RGS-348) that named the read;
-a literal, a parameter, and an own attribute of the element are read as
-before. Since 2026-10-23 such an operand carries the form anchor and is read
-on the rule subject, over a path and over one step, and RGS-348 is retired
-("The rule subject in a subselection — `zelf`", below). Where the element has
-the rule subject's own type, a read of the subject that does not write `zelf`
-is refused, over a path and over one step (RGS-349, next section).
+word. Such an operand carries the form anchor and is read on the rule
+subject, over a path and over one step; a literal, a parameter, and an own
+attribute of the element are read as they stand ("The rule subject in a
+subselection — `zelf`", below). Where the element has the rule subject's own
+type, a read of the subject that does not write `zelf` is refused, over a path
+and over one step (RGS-349, the same section).
 A count over a path ("het aantal vondsten van de melder van de
-Melding") stays refused (§13.4.17.47, "A count over a written path"): it is a
+Melding") is refused (§13.4.17.47, "A count over a written path"): it is a
 count, not a quantifier, and the wire has no range of more than one step under
 a count (WF-102 (c)).
 
-Measured 2026-10-20 on twenty forms of the card frontend-kwantor-over-een-pad:
-until then a characteristic check over a path gave the WARNING of a multi-step
-range and a marker (EF-019 in every executor), and a comparison or a leeg or
-gevuld test over a path the ERROR of a set reading outside a fold source. Now
+Measured 2026-10-20 on twenty forms of the card `frontend-kwantor-over-een-pad`:
 every such form reaches disk with `diagnostics: []`, verifier-clean, and is
 answered as written by ref, clingo and both Drools branches; the frontend
 writes the two sentences of `jutterswet-ketenkwantor` byte-identically to its
 hand-written `ir.json`. Witnesses: `QuantifierOverPathTest`, the golden
 `jutterswet-dringende-melding`.
-
----
-
-## A read of a rule subject of the element's own type in a fold — refused (2026-10-20)
-
-*History.* Since 2026-10-23 the next section but one, "The rule subject in a
-subselection — `zelf`", holds what is current: the IR has a reference to the
-outer subject there (the form anchor), RGS-349 and RGS-350 refuse only a read
-that does not write `zelf`, and the variable of the rule reads the rule subject.
-The text below records the narrowing as it stood.
-
-A narrowing: a sentence this frontend wrote and every executor answered
-wrongly. The test of a quantifier fold and the filter of a subselection ("die
-aan de volgende voorwaarde voldoen: …") are read per element, with the element
-as their subject (RUNTIME-SEMANTICS ch. 3.9a, IR-SPEC ch. 4.5), and the IR has
-no reference to the outer subject there. Where the elements have the rule
-subject's own type, a read of the subject and a read of the element are the
-same node. Two shapes are affected.
-
-- **The test of a quantifier.** "Een Jutter is kistplichtig indien de leeftijd
-  van ten minste één van de jutters van de ploeg van de Jutter groter is dan de
-  leeftijd van de Jutter": the operand beside the quantified one is built from
-  the rule subject, and in the test it read the element, so every element was
-  compared with itself (with P1 = {J1 40, J2 50} ref, clingo and both Drools
-  branches answered "J1 lacks kistplichtig"). RGS-348 did not fall, because the
-  read is an own attribute of the element type. Every read of the subject in
-  that operand ("de leeftijd van de Jutter", "zijn leeftijd", "de drempel van de
-  ploeg van de Jutter") is now refused with an ERROR (RGS-349) that names the
-  read, over a path and over one step ("de leeftijd van alle leerlingen van de
-  Jutter …", over a fact type whose two roles are Jutters). A literal and a
-  parameter are read as before.
-- **A subselection.** In a subselection "de <Type>" names the element ("zijn
-  vinddag is later dan de sluitdag van de jutter van de Vondst", element Vondst
-  on a Jutter; golden `jutterswet-late-vondst`); where the rule subject has that
-  type too, the name means either. The filter bound it to the element: "de som
-  van de leeftijd van alle jutters van de ploeg van de Jutter die aan de
-  volgende voorwaarde voldoen: zijn leeftijd is groter dan de leeftijd van de
-  Jutter" gave J1 leeg where 50 is right, in all four executors, and so did a sum
-  and a count over one step ("alle leerlingen van de Jutter"). A read whose
-  onderwerp ends in the type's name is now refused with an ERROR (RGS-350) that
-  names the read and the subselection, in the filter of a value fold and of a
-  quantifier, over a path and over one step; the WARNING of an unconverted
-  subselection (RGS-069) stands beside it on a value fold. "zijn leeftijd" in a
-  subselection is the element's and binds as before. A read that happened to give
-  the same value in both readings ("de drempel van de ploeg van de Jutter" in a
-  subselection of the jutters of that same ploeg) is refused as well: the name
-  is the same. A variable of the rule read in such a subselection is refused with
-RGS-350 too (2026-10-22): its definition belongs to the rule subject, and the
-filter would read the element (next section).
-
-Measured 2026-10-20 on the review probes and twelve forms of the fix round:
-before, five forms reached disk with `diagnostics: []` and were answered
-wrongly by ref, clingo and both Drools branches (the comparison and "zijn
-leeftijd" in the test of a quantifier over a path, the sum over a path, the sum
-and the count over one step), and two more (the comparison under "alle
-leerlingen", one step; a quantifier with a subselection over a path) passed only
-because their scenarios could not tell the readings apart; now each of them ends
-in RGS-349 or RGS-350, and the forms with
-"zijn" in a subselection, an element of another type, and a constant play as
-before. All 126 rgs goldens re-emit byte-identically, and none of the 179
-RegelSpraak sources of the repository raises either code. Witness:
-`QuantifierOverPathTest`.
-
----
-
-## A read of the rule subject in a filter — written over the way back (2026-10-22)
-
-*History.* Since 2026-10-23 the next section, "The rule subject in a
-subselection — `zelf`", holds what is current: the lowering over the way back
-is gone, a read of the rule subject in a filter or a quantifier test carries
-the form anchor, and RGS-352 is retired. The text below records the lowering as
-it stood.
-
-Not a dialect extension: the wire form IR-SPEC ch. 4.3 already carries
-(`sourcePath`, WF-102, a navigation `path`), which this frontend did not write
-here (cards `fold-in-element-condition` and `rule-variable-in-subselection`).
-The filter of a fold ("die aan alle volgende voorwaarden voldoen: …") and the
-test of a quantifier fold are read per element, with the element as their
-subject (RUNTIME-SEMANTICS ch. 3.9a, IR-SPEC ch. 4.5), and the IR has no
-reference to the outer subject there. Three reads there belong to the rule
-subject all the same:
-
-- a fold whose written range is anchored at the rule subject: "zijn maand plus
-  1 mnd is later dan de laatste van de einddag van alle klachten van de Schuit
-  die aan de volgende voorwaarde voldoen: zijn soort is gelijk aan 'Zwaar'" in
-  the filter of a fold over the ladingen of the Schuit;
-- a variable of the rule ("Daarbij geldt:", §13.4.2.10) read in a filter: its
-  definition is built at the rule subject, a read of one step, of two, or a
-  fold with a filter;
-- the operand beside the quantified one in the test of a quantifier over one
-  relation, which the frontend builds at the rule subject.
-
-Until now the fold in a filter kept a marker with a WARNING (RGS-075), or with
-a subselection on it was refused (RGS-131); a variable of two steps and a fold
-as a variable were refused (RGS-131, an unbound read), a variable of one step
-bound by the type pair; in the test of a quantifier a fold and a read of two
-steps were refused the same way. **Lowering.** The expression is built at the
-rule subject as written, and every read and every fold range that starts at
-the rule subject gets the way back from the element in front of it: per step
-of the outer fold's range, from its end, the other role of the step's fact
-type (`ExpressionBuilder.frame`, `reanchor`). A read becomes a navigation over
-those roles and its own; a fold's range becomes a `sourcePath` of the way back
-and its own range, which WF-102 (d) judges from the filter's subject. The
-definition is not built again with the element as its subject: "zijn X" would
-then read the element. The fold of the example above is written with
-`sourcePath [lading in-een-maand.schuit, schuitklacht.klacht]`, the IR the
-element-role spelling "alle klachten van de schuit van de Lading in-een-maand"
-already got. The anchor is the rule subject where it is that type's own name
-("de Schuit"); a role of the element ("de schuit"), a possessive ("zijn
-schuit") and a name that only matches with a leading word dropped keep the
-walk from the element.
-
-**Refused, loudly.** Where a step back is to-many (a lading of several
-schuiten) or the fact type is reciprocal, the element does not point at one
-rule subject: an ERROR (RGS-352) that names the read, the subject, the element,
-the subselection and the step, with the way out: an own member on the rule
-subject, set by a rule, read in the subselection. RGS-352 also refuses a count
-(its range is one relation, WF-102 (c)) and a form that has no spelling from
-the element (a choice, a union, a fold over a dimension). A variable read in a
-subselection over elements of the rule subject's own type is refused with
-RGS-350, as a read that names the type already is (previous section): the
-filter would read the element. In the test of a quantifier the operand stays
-as built where there is no way back or a part has no spelling from the
-element, and the refusals it had speak (RGS-348 over a path, an unbound read,
-RGS-131).
-
-The type check of the conditions of a subselection reads them with the element
-as subject and the filters around it, as the filter itself does. It built them
-at the rule subject, which typed most operands unknown, so a type error in a
-subselection passed, and which raised a stale WARNING on the element-role
-spelling above ("keten zonder sourcePath in een vouwbron … blijft onopgelost",
-RGS-073) while the IR carried the fold with its path.
-
-**A known limit for the explanation.** A fold in a filter is evaluated per
-member and has no reading of its own (RUNTIME-SEMANTICS ch. 5.12: a node read
-once per member keeps its number): the explanation shows which ladingen pass,
-not the last einddag with its contributors.
-
-Measured 2026-10-22 on the forms of the two cards: the direct sentence R1, the
-same with the inner fold in parentheses, without the soort filter, the
-element-role spelling, the variable of two steps, the fold as a variable, and
-the fold and the variable in the test of a quantifier over one relation reach
-disk with `diagnostics: []` and verifier-clean; the golden
-`jutterswet-schone-maand-na-zware-klacht` plays in ref, clingo and both Drools
-branches. All 127 rgs goldens, the parity zone and the scenario goldens re-emit
-byte-identically. Witnesses: `FoldInElementConditionTest`,
-`RuleVariableInSubselectionTest`.
 
 ---
 
@@ -1782,8 +1520,7 @@ dan de ingangsdag van de Vergunning zelf"). The IR has the form anchor for
 that: `anchor: "form"` on a read, a characteristic check or a fold says that
 the node is read on the subject of the form, as if it stood in the form's own
 condition or value, and `IdentityCheck` compares the element with that
-subject. The two sections above are the history of this one: the narrowing of
-2026-10-20 and the lowering over the way back of 2026-10-22.
+subject.
 
 **Surface syntax.** One token, `ZELF` (`'zelf'`), and two productions:
 
@@ -1803,18 +1540,18 @@ name take every token, so the word stays free text there, as v2 of the
 werkbank writes it ("… van het recht zelf in een samenloop", "… dat zelf is
 geëindigd"); `regelReferentieWoord` takes it too, so a rule name with the word
 stays referable in the list of a scope. A fact-type name takes every one-word
-token ("Namen in declaratiekoppen"), `ZELF` among them since review B of the
-card, so "Feittype belading zelf" reads as before: the name occurs in no rule
-text, so the token cannot run a reading on there. The price of the keyword: a
+token ("Namen in declaratiekoppen"), `ZELF` among them, so "Feittype belading
+zelf" reads as a fact-type name: the name occurs in no rule text, so the token
+cannot run a reading on there. The price of the keyword: a
 declared object type, attribute, characteristic, role, domain, dimension, unit
 system, parameter, parameter set, day kind, timeline, vocabulary, variable or
 situation name, and the rule name after `regelversie`, that contains the word
-"zelf" no longer parses. Their rules take a closed set of word tokens, most of
+"zelf" does not parse. Their rules take a closed set of word tokens, most of
 them shared with the names rule text reads (`lowerNaam`, `vrijeNaam`,
 `objectTypeNaam`), where a name that ran on over the word would swallow the
-marker; they are left as they are. None of the repository's sources writes
-one; the word stood in three scenario names ("doel zelf in invoer"), which read
-as before. "zelfstandige" lexes as one word, as before.
+marker. None of the repository's sources writes one; three scenario names carry
+the word ("doel zelf in invoer"), which a scenario name takes. "zelfstandige"
+lexes as one word.
 
 **Lowering (resolver).** One rule: the frontend builds every expression at the
 subject the sentence names, and a node built at the subject of the form that
@@ -1835,9 +1572,9 @@ minste één van de jutters van de ploeg van de Jutter groter is dan de
 drempel van de Ploeg"), so its reads and folds carry the anchor; an own read
 of the element's type by that type's name stays the element's, and so does an
 operand the matrix built again from the element ("de sluitdag van de jutter
-van de Vondst"). "zijn …" and "hij" in a subselection are the element, as
-before. A read that navigates from the element ("de afmeerdag van de schuit
-van de Lading in-een-maand") keeps the navigation: the IR has two spellings of
+van de Vondst"). "zijn …" and "hij" in a subselection are the element. A read
+that navigates from the element ("de afmeerdag van de schuit van de Lading
+in-een-maand") keeps the navigation: the IR has two spellings of
 the same reading where the way back from the element is to-one (IR-SPEC ch.
 4.1a), and the golden `fold-filter-subject-two-spellings` pins both on one
 value. Outside a filter and a test the word is admitted and changes nothing:
@@ -1849,15 +1586,12 @@ it writes (`RuleChecker.checkPaths`) and its dependency graph
 (`Dependencies`, WF-045) read an anchored node on that subject too, as the
 verifier does.
 
-**Gone.** The lowering over the way back (`ExpressionBuilder.frame`,
-`reanchor`, `wayBack`, `chainTo`, `foldAtAnchor`, `matrixFromElement`), and
-with it RGS-348 (a read of the rule subject in the test of a quantifier over
-a path) and RGS-352 (a read of the rule subject in a filter without a spelling
-from the element): both existed because the way back was missing, and the
-anchor needs none. Both codes leave the register and the catalogues and are
-not reused. The refusal of a variable of the rule in a subselection over the
-rule subject's own type (RGS-350, 2026-10-22) is gone as well: the variable
-names the rule subject.
+The type check of the conditions of a subselection reads them with the element
+as subject and the filters around it, as the filter itself does. A fold in a
+filter is evaluated per member and has no reading of its own (RUNTIME-SEMANTICS
+ch. 5.12: a node read once per member keeps its number): the explanation shows
+which ladingen pass, not the last einddag with its contributors. RGS-348 and
+RGS-352 are retired numbers of the register and are not reused.
 
 **Refused, loudly.**
 
@@ -1871,7 +1605,7 @@ names the rule subject.
   type, a read of the subject that is not written with `zelf` ("de leeftijd van
   de Jutter", "zijn leeftijd"); a variable of the rule is admitted. The message
   names the way out.
-- RGS-358 (new), with its reason: "zelf" after another name than the own name
+- RGS-358, with its reason: "zelf" after another name than the own name
   of the form subject's type; the element of an enclosing subselection named by
   its type in a nested one (it has no name there: only the inner element and
   the rule subject do; the read over its role stays, "de afmeerdag van de
@@ -1886,53 +1620,44 @@ names the rule subject.
   subject inside a filter or a test: the IR has the anchor on
   `QuantifierFold`, this frontend writes none until a sentence asks for it.
 
-**Narrowed.** Two of these refusals take sentences the frontend wrote until
-2026-10-23, over the way back from the element (the section of 2026-10-22
-above). The one B6 of the card names: the element of an enclosing subselection
-named by its type in a nested one (no source of the repository writes one).
-And beside it: a read of the condition's own subject in the test of a
-quantifier inside a filter, "zijn …" among them — "de eerste van de maand van
-alle ladingen van de Schuit die aan de volgende voorwaarde voldoen: de einddag
-van alle klachten van de Lading is later dan zijn maand", where "zijn maand" is
-the maand of the Lading, the enclosing element. Both read an element the anchor
-does not reach, so both are refused (RGS-358), and each message names the read
-that works: from the inner element over its role back. For the quantifier test
-over a one-step range the message names that role, "… van de beklaagde lading
-van de Klacht"; "de maand van de beklaagde lading van de Klacht" resolves to
-the path the frontend wrote over the way back
-(`path [ladingklacht.beklaagde lading]`). Witness: `RuleSubjectSelfTest`.
+**Narrowed.** Two of these refusals take sentences that read an element the
+anchor does not reach: the element of an enclosing subselection named by its
+type in a nested one (B6 of the card; no source of the repository writes one),
+and a read of the condition's own subject in the test of a quantifier inside a
+filter, "zijn …" among them — "de eerste van de maand van alle ladingen van de
+Schuit die aan de volgende voorwaarde voldoen: de einddag van alle klachten van
+de Lading is later dan zijn maand", where "zijn maand" is the maand of the
+Lading, the enclosing element. Both are refused (RGS-358), and each message
+names the read that works: from the inner element over its role back. For the
+quantifier test over a one-step range the message names that role, "… van de
+beklaagde lading van de Klacht"; "de maand van de beklaagde lading van de
+Klacht" resolves to the path `[ladingklacht.beklaagde lading]`. Witness:
+`RuleSubjectSelfTest`.
 
-**Read differently, without a diagnostic.** Two kinds of sentence change their
-meaning at this card. The bare own name of the rule subject's type in a filter
-(B4 of the card) was until 2026-10-23 a navigation from the element over the
-element's role of that type, wherever the element had one: where that role is
-the way back it named the rule subject, where it is another role it named
-another object. In a filter over "alle klachten van de thuishaven van de
-Schuit", where a Klacht has a `veroorzaker` of type Schuit, "zijn einddag is
-later dan de afmeerdag van de Schuit" read the afmeerdag of the veroorzaker of
-each klacht (`path [veroorzaking.veroorzaker]`); now it reads the afmeerdag of
-the rule subject, with the anchor, and a sentence that means the veroorzaker
-writes "de afmeerdag van de veroorzaker van de Klacht". And a source that wrote
-"zelf" before the word was a token: "de peildag van het register van de
-Vergunning zelf" in a filter over Vergunningen read the register of the
-element, and reads that of the rule subject now. The repository's sources write
-neither (the measurement below). Witness: `RuleSubjectSelfTest`.
+**The bare own name of the rule subject's type in a filter** (B4 of the card)
+names the rule subject, also where the element has a role of that type: in a
+filter over "alle klachten van de thuishaven van de Schuit", where a Klacht has
+a `veroorzaker` of type Schuit, "zijn einddag is later dan de afmeerdag van de
+Schuit" reads the afmeerdag of the rule subject, with the anchor, and a
+sentence that means the veroorzaker writes "de afmeerdag van de veroorzaker van
+de Klacht". "de peildag van het register van de Vergunning zelf" in a filter
+over Vergunningen reads the register of the rule subject. Witness:
+`RuleSubjectSelfTest`.
 
 **Measured** 2026-10-23 over every RegelSpraak document of the repository —
 the 227 tracked `.rgs` files each alone (the corpus sources, the Drools test
 resources, the scenario files, the 47 fragments of the parity zone), the 36
 scenario files with their source in `--cases` mode, and the casus of the
 parity zone with and without the two holdouts of gate 11, 265 documents: the
-IR, the case files, the diagnostics and the exit code are byte-identical
-before and after, but for the three goldens of B2 of the card, whose `ir.json`
-the frontend now writes with the anchor in 13 places
+IR, the case files, the diagnostics and the exit code are byte-identical with
+and without the card, but for the three goldens of B2 of the card, whose
+`ir.json` the frontend writes with the anchor in 13 places
 (`fold-filter-nested-aggregate` 10, `jutterswet-schone-maand-na-zware-klacht`
 1, `jutterswet-vergunningtermijnen` 2; their cases are unchanged), and for the
 line numbers in the stack trace of the emitter's refusal of three fragments
-of the parity zone alone, which are no documents. The golden
-`jutterswet-registervoorrang` has its source now and the frontend writes its
-`ir.json`, which differs from the hand-written one in five source snippets
-only. Witnesses: `RuleSubjectSelfTest`, `FoldInElementConditionTest`,
+of the parity zone alone, which are no documents. The frontend writes the
+`ir.json` of the golden `jutterswet-registervoorrang` from its source.
+Witnesses: `RuleSubjectSelfTest`, `FoldInElementConditionTest`,
 `RuleVariableInSubselectionTest`, `QuantifierOverPathTest`,
 `QuantifierMatrixElementNameTest`; the goldens `jutterswet-registervoorrang`,
 `fold-filter-subject-two-spellings` and the three above.
@@ -1941,11 +1666,10 @@ only. Witnesses: `RuleSubjectSelfTest`, `FoldInElementConditionTest`,
 
 ## §13.4.17.47 The count's operand list — an ACCEPTING superset, fenced in the resolver
 
-Unlike the three sections above this is **not** a dialect extension and it is
-**not** inert: it is a production that accepts more than v2.3.0 spells, and it
-was found by a wire decision rather than designed. It is recorded here because
-the register is where a divergence has to be findable, whether it was chosen or
-inherited.
+Unlike the extensions of this register this is **not** a dialect extension and
+it is **not** inert: it is a production that accepts more than v2.3.0 spells. It
+is recorded here because the register is where a divergence has to be findable,
+whether it was chosen or inherited.
 
 `functieAanroep`'s `aantalFunc` alternative reads
 
@@ -1962,21 +1686,19 @@ none. The `( COMMA … )* ( EN … )?` tail is therefore this frontend's own
 widening, carried over from the neighbouring `minMaxFunc` and
 `eersteLaatsteFunc` alternatives that legitimately have it.
 
-**Two divergences live at this rule, and only one of them was registered.** The
-`primaireExpressie` operand (instead of the symmetric `expressie`) is a
-deliberate, narrowing reconstruction — a trailing `maal`/`plus` binds OUTSIDE
-the count, which §4.11 requires — and it is noted at the rule. The operand LIST
-is the widening, and until 2026-09-20 it was noted nowhere.
+**Two divergences live at this rule.** The `primaireExpressie` operand (instead
+of the symmetric `expressie`) is a deliberate, narrowing reconstruction — a
+trailing `maal`/`plus` binds OUTSIDE the count, which §4.11 requires — and it is
+noted at the rule. The operand LIST is the widening (registered 2026-09-20).
 
-**What it cost, measured 2026-09-20.** `ExpressionBuilder.args` builds every child
-as its own argument, so the list reached the wire as an `AANTAL` with two or
-more `argumenten`. Three sentences emitted unblocked — the `en` spelling and the
-`comma` spelling with `diagnostics: []`, the element-binding spelling ("het
-aantal vondsten van de Jutter en kavels van de Jutter") with a WARNING that does
-not stop emission — and the uchar verifier rejects all three: under WF-037 since
-that day's count-arity decision (`spec/IR-SPEC.md` ch. 4.3), the third under
-WF-034 as well. One executor answered such a document and three refused it,
-which is the class `spec/PLAN.md` §6 calls a spec fault.
+**Why it is fenced.** `ExpressionBuilder.args` builds every child as its own
+argument, so without the fence the list would reach the wire as an `AANTAL`
+with two or more `argumenten`, in the `en` spelling, the `comma` spelling and
+the element-binding spelling ("het aantal vondsten van de Jutter en kavels van
+de Jutter") alike, and the uchar verifier rejects all three under WF-037
+(`spec/IR-SPEC.md` ch. 4.3), the third under WF-034 as well. Measured
+2026-09-20, one executor answered such a document and three refused it, which
+is the class `spec/PLAN.md` §6 calls a spec fault.
 
 **The fence stands in the resolver, not in the grammar** — `ExpressionBuilder`'s
 `countArityError`, an ERROR, so `Resolver.irMode` writes nothing and the
@@ -1988,32 +1710,29 @@ Why not simply delete the tail:
 
 - It is a **parse** change, not a diagnostic change. `( EN primaireExpressie )?`
   decides how a trailing conjunction binds inside a larger sentence; removing it
-  re-associates those sentences instead of refusing them, and 64 byte-identical
-  emitter goldens sit downstream of every parse.
+  re-associates those sentences instead of refusing them, and every
+  byte-identical emitter golden (gate 10) sits downstream of every parse.
 - Mirror-then-diverge: the widening is a fact about this grammar, and a fact
   that is deleted stops being registered. Fenced and written down, it stays
   readable; deleted, the next reader rediscovers it from scratch.
 - The refusal is the same either way. What differs is only whether the author
   gets a named refusal in the verifier's sentence, or a syntax error.
 
-This is the same posture `CountSetSourceTest` records one decision earlier: when
-the wire narrows, the frontend's fence moves and its grammar does not.
+This is the posture `CountSetSourceTest` records too: when the wire narrows,
+the frontend's fence moves and its grammar does not.
 
-### Half of it stopped being a divergence (2026-09-20, the unie-telling card)
+### The concatenation half is no divergence (2026-09-20, the unie-telling card)
 
-**The tail is a widening of the EBNF and it always was. What was wrong was the
-reading of what it widened INTO.** §13.4.17.46 gives the count one `<expressie>`
-operand, and the register above concluded from that — and from §5.8.1 ranging
-the count over instances — that a count has no articulated operand list at all.
-That is true of an operand list of VALUES and false of the sentence: §5.7 spells
+**The tail is a widening of the EBNF, and half of it widens into what the source
+language spells.** §13.4.17.46 gives the count one `<expressie>` operand, and
+§5.8.1 ranges the count over instances, so a count has no operand list of
+VALUES. It has one of subject expressions: §5.7 spells
 a **concatenation of subject expressions** — the instance sets the selections
 yield, joined into one new set — and the typing document's own §4.11 says of the
 count operator that a concatenation of expressions may be used with it,
 unbounded in number, subject expressions only.
-The previous card cited §4.11 for the half that excludes the value reading and
-did not read the half that admits the concatenation.
 
-So the grammar's `( COMMA primaireExpressie )* ( EN primaireExpressie )?` is now
+So the grammar's `( COMMA primaireExpressie )* ( EN primaireExpressie )?` is
 **two things at once**, and the resolver is where they part:
 
 - operands that are **rolselecties** ("aangemelde vondsten van de Jutter die
@@ -2022,17 +1741,12 @@ So the grammar's `( COMMA primaireExpressie )* ( EN primaireExpressie )?` is now
   with its own population, its own one-step relation and its own die/dat
   subselection — and the count carries it as its SINGLE argument. The wire form
   is `InstanceSetUnion` (uchar `IR-SPEC.md` ch. 4.3, WF-110). At this half the
-  production is no longer a divergence: it spells what the source language
-  spells.
+  production is no divergence: it spells what the source language spells.
 - operands that are **waardelezingen** ("de gewogen vangst van de Jutter") stay
   the widening, and `countArityError` keeps refusing them.
 
-The refusal's message gained a TAIL rather than a rewrite, because its Dutch
-head would have misled on its own: it said the source language spells no
-listed form, which is true of the list and false of the sentence. Since
-2026-09-25 the message is the verifier's WF-037 sentence for the listed count
-after the written count, and the tail that named the §5.7 route for value
-operands left with the head it corrected. Where the route opened and
+The refusal's message is the verifier's WF-037 sentence for the listed count
+after the written count. Where the route opened and
 `buildInstanceUnion` refused it for a reason of its own, that reason stands in
 the Dutch context before the sentence (`opgesomde telling '<zin>', geen unie
 van selecties: <reden>: a count folds INSTANCES …`). Three such reasons, each an
@@ -2058,10 +1772,8 @@ selections themselves, so `filter: null` is the ordinary case.
 
 Witness: `CountUnionTest` (the two-relation union, the two-characteristic union,
 the unfiltered selection, the comma spelling, the wire shape, the three named
-refusals, and the two counter-proofs). Measured red-first on the pre-card
-frontend (5b42e5b9): both of this card's golden sources — `jutterswet-vondstunie`
-and `jutterswet-keurunie` — were refused with the WF-037 arity ERROR and wrote
-nothing.
+refusals, and the two counter-proofs); the goldens `jutterswet-vondstunie` and
+`jutterswet-keurunie`.
 
 ### A type as the operand: no count over all instances (2026-09-23)
 
@@ -2088,19 +1800,15 @@ count over ALL instances of a type, and measured that it does not:
   and no count in the official casus of the repository's parity zone
   counts a type: its two count sentences count a role.
 
-So the form stays refused, and nothing reaches the wire. The refusal is older
-than the card (WF-037's source-less-count arm), but its sentence said that the
-operand "names no instances to count", which is untrue for an author who named
-a population. The card's sentence stated the norm and the way out — count
-through a role from the rule's subject. Since 2026-09-25 the refusal is the
-verifier's WF-037 sentence for a count without an element type, and the object
-type the operand named stands in its Dutch context (`telling zonder bron
-'<zin>', over het objecttype <T>: the count is an INSTANCE fold …`), for every
-spelling that reaches it: bare, with an article or "alle", the type's own name,
-the plural in lower case, in parentheses; the norm and the way out are this
-section's. Only an operand that resolved to nothing declared qualifies, so a
-parameter or a "Daarbij geldt" variable that shares a type's name keeps the
-generic context. A subselection
+So the form is refused, and nothing reaches the wire. The refusal is the
+verifier's WF-037 sentence for a count without an element type (WF-037's
+source-less-count arm), and the object type the operand named stands in its
+Dutch context (`telling zonder bron '<zin>', over het objecttype <T>: the count
+is an INSTANCE fold …`), for every spelling that reaches it: bare, with an
+article or "alle", the type's own name, the plural in lower case, in
+parentheses; the norm and the way out are this section's. Only an operand that
+resolved to nothing declared qualifies, so a parameter or a "Daarbij geldt"
+variable that shares a type's name keeps the generic context. A subselection
 over a bare type ("het aantal Vondsten die gewogen zijn") parses another way
 and is refused by the subselection fence of §5.6 with its own sentence.
 Witness: `TypePluralCountTest`.
@@ -2115,17 +1823,10 @@ de haven van de jutter`, read on the Vondst. A count's range is one relation fro
 the rule subject (`spec/IR-SPEC.md` ch. 4.3, WF-102 (c): a path is the range of a
 value fold's set source only), and the emitter takes it from the head of the name,
 by the role it names, or from the type pair of subject and element
-(`IrEmitter.foldRange`). The other steps fell away without a word: measured
-2026-10-02 on the frontend of `da03d480`, the count went out as a count over
-`JutterHeeftVondst.jutter` with `diagnostics: []`, verifier-clean, and ref and
-clingo answered 1 where the path reaches 2. So did a count in a condition, in a
-characteristic's condition, under a subselection, behind a possessive anchor ("van
-de haven van zijn jutter"), by the type's plural, under "plus", in a default's
-justification and consequence, and with an anchor of another type than the subject
-("het aantal havenjutters van de Haven" on a Vondst); and a selection of a §5.7
-union, which takes its range from its head alone, so that "het aantal vondsten van
-de Jutter en vondsten van de havenjutters van de haven van de Jutter" went out with
-both selections over one relation and counted the Jutter's own vondsten alone.
+(`IrEmitter.foldRange`), so without a refusal the other steps fall away
+without a word: measured 2026-10-02 on the frontend of `da03d480`, the count
+went out as a count over `JutterHeeftVondst.jutter` with `diagnostics: []`,
+verifier-clean, and ref and clingo answered 1 where the path reaches 2.
 
 `ExpressionBuilder.buildFunction` refuses a count whose written source walks more than
 one relation wherever the emitter would still write a range: the parts of its name
@@ -2139,14 +1840,13 @@ selection over more than one step refuses the union, in the union's own refusal
 (`… geen unie van selecties: selectie <i> ('<bron>') is een telling over een pad
 van <n> stappen (…): een selectie telt over één relatie vanaf het onderwerp
 (IR-SPEC ch. 4.3, WF-110 (e)); …`). Where the emitter writes no range, the fold
-fences speak as before: a fold without a range, a written step on the source, the
+fences speak: a fold without a range, a written step on the source, the
 set reading, and "van alle …", a marker with its WARNING. A count over a path has
 no lowering: a member per element (the section "A fold over a set and to-one steps
 after it") does not count instances, and the flat union under `count` is not
-expressible on the wire (WF-102 (c)). The card `frontend-kwantor-over-een-pad`
-(2026-10-20) lowered the quantifier over a path ("A quantifier over a written path"
-above), whose counting forms count the elements of the union, and left this
-refusal as it stands. All 196 RegelSpraak sources of the repository, the 28 scenario goldens
+expressible on the wire (WF-102 (c)). The quantifier over a path ("A quantifier
+over a written path" above) is lowered; its counting forms count the elements of
+the union. All 196 RegelSpraak sources of the repository, the 28 scenario goldens
 as test documents and the 108 sources of the distribution emit the same IR,
 diagnostics, case files and exit code before and after. Witness
 `CountOverPathTest`.
@@ -2184,34 +1884,30 @@ decimal claim).
 **The parenthesised form.** "het percentage P van ( Y )" is
 `percentageVanHaakjes : bepaaldLidwoord? kaleNaamDeel VAN LPAREN expressie
 RPAREN`, the last alternative of `primaireExpressie`. An onderwerp never opens
-with '(', so no navigation competes. Two readings the grammar already had do:
+with '(', so no navigation competes. Two other readings of the grammar do:
 the period comparison of §13.4.15.68 after a value ("… op 5,00 van (de vinddag
 van de Vondst) tot (de meldingsdag van de Vondst)"), and the '%' form where a
 name takes the sign as a word ("P % van ( Y )", "12,5 % van ( Y )"). Being the
-last alternative, the form loses every such ambiguity to the reading the
-grammar had, and is taken only where no other reading parses. The resolver
+last alternative, the form loses every such ambiguity to the other reading,
+and is taken only where no other reading parses. The resolver
 reads P as a name and refuses with an ERROR where it is no Percentage parameter
 or variable: "'<zin>' leest als de percentagefunctie zonder procentteken
 (§13.4.17.12), maar '<P>' is geen parameter of variabele van het type
 Percentage — schrijf het procentteken ('… % van …') of noem een percentage".
 
-**Measured 2026-10-02.** Before, the re-reading took a Y of at most two name
-parts: a navigated Y was refused with the ERROR of an undeclared member ("het
-lid 'percentage havengeld van het taxatiebedrag' bestaat niet op 'Taxatie',
-…"), a variable as Y with the ERROR that it names no role, a '%' after P with
-the ERROR of an undeclared member whose name ended in '%' — for an own member
-as well — and the parenthesised form was a syntax error. Now each lowers to
-`percentageOf` and plays in ref, clingo and both Drools branches where Y
-carries no unit. A first version placed the parenthesised form as a suffix of
-`expressie` behind a semantic predicate against the period; "P % van ( Y )" and
-"12,5 % van ( Y )" then became syntax errors, because the decision whether a
-name takes the '%' does not see a predicate inside `expressie`. All 196
+**Measured 2026-10-02.** A navigated Y, a variable as Y, a '%' after P and the
+parenthesised form each lower to `percentageOf` and play in ref, clingo and both
+Drools branches where Y carries no unit. The parenthesised form is the last
+alternative of `primaireExpressie`, not a suffix of `expressie` behind a
+semantic predicate against the period: there "P % van ( Y )" and "12,5 % van
+( Y )" would be syntax errors, because the decision whether a name takes the
+'%' does not see a predicate inside `expressie`. All 196
 RegelSpraak sources of the repository and the 108 of the distribution emit the
 same IR, diagnostics and exit code before and after. Witnesses:
 `PercentageReadTest`, the golden `jutterswet-havengeld`.
 
 **Not carried.** A product with a percentage ("zijn getaxeerde waarde maal het
-percentage havengeld") stays the typing ERROR "maal vereist numerieke
+percentage havengeld") is the typing ERROR "maal vereist numerieke
 operanden, kreeg …": the multiplication tables of the typing chapter (§4.4)
 list no Percentage row; the percentage function is the spelling. clingo refuses
 a percentage of an amount with a unit loudly ("a unit-carrying multiplicative
@@ -2359,22 +2055,19 @@ writer on T beside an `Afwijking van` tree on the subtype; an initialisation
 on T below a subtype's writer; a subtype rule that reads `afwijkende opgave X`
 and one that reads `berekende X`; a number as well as a date; the opgave
 filled, empty and equal to the computation. Each plays in the three executors
-with the hand-computed values, and the DRL-text branch refuses each on its
-defaults sentence. Where the composition is the point — the tree beside a
-writer on T, the grandchild under the tree, the unordered block — the document
-without the marker, measured beside it, gives X the same values where no
-opgave is given. Two plain
-conditional writers on T and on a subtype play where one of them applies to an
-instance; where both apply to one instance with different values, all four
-executors fault by name (two writers of one target, RUNTIME-SEMANTICS ch. 5.7;
-since 2026-10-01 — before, ref and the Drools exec branch reported no fixpoint
-without naming them and clingo gave the target two values), with and without
-the marker: the marker does not choose between them. Two unconditional writers on T and on a
-subtype are refused by the verifier under WF-079, on `berekende X` with the
-marker and on X without it. An `Afwijking van` on T's rule written for the
-subtype lowers to a group on the subtype (§4, the inheritance line), and under the
-marker that group moves to `berekende X` as the group of T's rule does; measured
-2026-10-01 in the three executors, the opgave filled and empty.
+with the hand-computed values. Where the composition is the point — the tree
+beside a writer on T, the grandchild under the tree, the unordered block — the
+document without the marker, measured beside it, gives X the same values where
+no opgave is given. Two plain conditional writers on T and on a subtype play
+where one of them applies to an instance; where both apply to one instance with
+different values, all four executors fault by name (two writers of one target,
+RUNTIME-SEMANTICS ch. 5.7), with and without the marker: the marker does not
+choose between them. Two unconditional writers on T and on a subtype are refused
+by the verifier under WF-079, on `berekende X` with the marker and on X without
+it. An `Afwijking van` on T's rule written for the subtype lowers to a group on
+the subtype (§4, the inheritance line), and under the marker that group moves to
+`berekende X` as the group of T's rule does; measured 2026-10-01 in the three
+executors, the opgave filled and empty.
 
 An initialisation on a subtype stays on X. The generated group opens the fold
 of ch. 7.10 on X's chain, and the fold makes the subtype's initialisation the
@@ -2469,12 +2162,12 @@ naming the name read.
 
 ### Emission
 
-Nothing about emission is new: the generated attributes, characteristic, rule,
-group and consistency go out through the writers every other form uses, each
-with the designations the frontend composes from the marked attribute's where
-the document declares vocabularies (section "Gegenereerde elementen"). A
-document that does not write the marker emits exactly what it emitted before,
-which is the measurement above stated as a property.
+The generated attributes, characteristic, rule, group and consistency go out
+through the writers every other form uses, each with the designations the
+frontend composes from the marked attribute's where the document declares
+vocabularies (section "Gegenereerde elementen"). A document that does not write
+the marker emits what it emits without the extension, which is the measurement
+above stated as a property.
 
 ### Scope / limitations of this card
 
@@ -2491,7 +2184,7 @@ which is the measurement above stated as a property.
   is a card of its own.
 - No retargeting of allocations and object creations. Writers of X on the
   subtypes of T are lowered (above); on a subtype, two initialisations in one
-  inheritance line and an initialisation with a window or with versions stay
+  inheritance line and an initialisation with a window or with versions are
   refused.
 - The generated names are fixed by the attribute's name; they carry no type
   name, so the form names of two marked attributes of one name collide. Their
@@ -2503,11 +2196,9 @@ which is the measurement above stated as a property.
   with the marker the cycle runs through the generated group and WF-046 and
   WF-051 speak as well. Measured 2026-09-25. The frontend gives both the same
   WARNING, `kringverwijzing tussen berekeningen: Vondst.waarde -> Vondst.waarde
-  — …` for the direct self-read, in the author's names. Until 2026-10-06 it
-  still wrote the document, as it did for every cycle on a rule's own subject;
-  since then it refuses it beside the WARNING with an ERROR in the verifier's
-  sentence (section "Kringen: WF-045 en WF-051 in check"; witness:
-  `SelfReadCycleTest`). The
+  — …` for the direct self-read, in the author's names, and refuses the
+  document beside the WARNING with an ERROR in the verifier's sentence (section
+  "Kringen: WF-045 en WF-051 in check"; witness: `SelfReadCycleTest`). The
   clamp idiom "x = x, met een maximum van y" is such a self-read too, and so is
   a computation whose condition reads its own target: the verifier refuses both
   under WF-045 as well (measured the same day). The frontend's graph mirrors the
@@ -2521,8 +2212,7 @@ which is the measurement above stated as a property.
   generated rule attributes from `berekende X`, directly or through another
   attribute. The verifier refuses it under WF-045, and a cycle through
   `afwijkende opgave X` under WF-046 as well, since the generated attribution
-  reads a value, a strict edge; the frontend said nothing, because its graph
-  ran over the authored forms only (measured 2026-09-25). Where a marker was
+  reads a value, a strict edge (measured 2026-09-25). Where a marker was
   lowered, the graph runs once more over the lowered forms — the moved writers,
   the generated rule and every defaults group — and such a cycle gets the same
   WARNING in the names the author read, `kringverwijzing tussen berekeningen:
@@ -2537,9 +2227,9 @@ which is the measurement above stated as a property.
   supertype and a subtype is no cycle of the frontend's graph: measured
   2026-09-25 on `x` of a Klok computed from its `y` and `y` of a Ding, its
   supertype, computed from its `x`, the verifier gives `WF-045 … zet x -> zet y
-  -> zet x` and the frontend says nothing. A cycle only these close is refused
-  since 2026-10-02 in the verifier's sentence (section "Kringen: WF-045 en
-  WF-051 in check"), unless it runs through an object creation. A writer on a
+  -> zet x` and the frontend gives no WARNING. A cycle only these close is
+  refused in the verifier's sentence (section "Kringen: WF-045 en WF-051 in
+  check"), unless it runs through an object creation. A writer on a
   subtype makes
   one of them: a computation on the subtype that reads `afwijkende opgave X`
   closes a cycle through the generated rule, which stands on T. Measured
@@ -2547,15 +2237,14 @@ which is the measurement above stated as a property.
   afwijkende opgave meldingsdatum heeft": the verifier refuses it under WF-045
   and WF-046 and the frontend gives no WARNING, where the same rule on the
   Vondst gets `kringverwijzing tussen berekeningen: Vondst.berekende
-  meldingsdatum -> Vondst.afwijkende opgave meldingsdatum -> …`. Since
-  2026-10-02 both are refused with an ERROR in the verifier's sentence
-  (measured: `regel 'zet x' hangt via een kring van zichzelf af; … (WF-045):
-  dependency cycle through no recursive creation: zet x -> zet y -> zet x`,
-  and `regel 'melding op vinddag' … melding op vinddag -> afwijking opgave
-  meldingsdatum -> melding op vinddag`). A computation
-  on the subtype that reads the `berekende X` it writes stays on one type and
-  is warned (`Strandvondst.berekende meldingsdatum -> Strandvondst.berekende
-  meldingsdatum`), and since 2026-10-06 refused as well.
+  meldingsdatum -> Vondst.afwijkende opgave meldingsdatum -> …`; both are
+  refused with an ERROR in the verifier's sentence (`regel 'zet x' hangt via een
+  kring van zichzelf af; … (WF-045): dependency cycle through no recursive
+  creation: zet x -> zet y -> zet x`, and `regel 'melding op vinddag' … melding
+  op vinddag -> afwijking opgave meldingsdatum -> melding op vinddag`). A
+  computation on the subtype that reads the `berekende X` it writes stays on one
+  type and is warned (`Strandvondst.berekende meldingsdatum ->
+  Strandvondst.berekende meldingsdatum`) and refused.
 - The semantic variant — a per-target marking on the wire that moves the input
   default of ch. 7.8 above the ordinary defaults — is the recorded alternative
   (the proposal's §5.9), not built.
@@ -2564,34 +2253,31 @@ which is the measurement above stated as a property.
 
 Goldens: `jutterswet-opgave-boven-berekening` (two marked attributes, one with
 an initialisation, and a rule reading the generated characteristic; ref,
-clingo and the Drools exec branch replay its twelve cases, the DRL-text branch
-refuses it on its defaults sentence), `jutterswet-opgave-vormen` (the three
-authored forms that are no plain rule under the marker: a tree with a nested
-exception, an unordered block whose conflict is recorded under the moved
-target, and the rows of a decision table; fifteen cases, replayed and refused
-the same way) and `jutterswet-opgave-datum` (the marker on a Datum in dagen,
-computed from another date by `plus`, initialised with a date literal as the
-lowest default, read by a computation, with a rule reading the generated
-characteristic; seven cases, written as a scenario document). Measured on
-2026-09-28: ref and clingo replay the seven cases exactly, the Drools exec
-branch plays them (`PLAYED 7`), the date literal of the initialisation default
-among them, and the DRL-text branch refuses the document on its defaults
-sentence. The computation of the date golden carries no condition: an empty
-date propagates through `plus` (ch. 1.2), so without the other date the
-computation decides nothing and the initialisation below it decides. Measured
-the same day on the computation alone, without the marker, on a Vondst without
-the other date: the target stays empty in ref (`oracle: PASS`), clingo
-(`clingo: PASS`) and the Drools exec branch (`PLAYED 1`).
+clingo and the Drools exec branch replay its twelve cases),
+`jutterswet-opgave-vormen` (the three authored forms that are no plain rule
+under the marker: a tree with a nested exception, an unordered block whose
+conflict is recorded under the moved target, and the rows of a decision table;
+fifteen cases, replayed the same way) and `jutterswet-opgave-datum` (the marker
+on a Datum in dagen, computed from another date by `plus`, initialised with a
+date literal as the lowest default, read by a computation, with a rule reading
+the generated characteristic; seven cases, written as a scenario document).
+Measured on 2026-09-28: ref and clingo replay the seven cases exactly, the
+Drools exec branch plays them (`PLAYED 7`), the date literal of the
+initialisation default among them. The computation of the date golden carries no
+condition: an empty date propagates through `plus` (ch. 1.2), so without the
+other date the computation decides nothing and the initialisation below it
+decides. Measured the same day on the computation alone, without the marker, on
+a Vondst without the other date: the target stays empty in ref (`oracle: PASS`),
+clingo (`clingo: PASS`) and the Drools exec branch (`PLAYED 1`).
 `jutterswet-opgave-subtype` puts the marker on a date of the Vondst whose
 writers stand on its subtypes: an `Uitzondering op` tree on the Strandvondst,
 an own base on the Barnsteenvondst below it, the initialisation on the Vondst,
 and rules on the Strandvondst that read the generated characteristic and
 `berekende X`; twelve cases, written as a scenario document. Measured on
 2026-09-30: ref and clingo replay the twelve cases exactly, the Drools exec
-branch plays them (`PLAYED 12`), and the DRL-text branch refuses the document
-on its defaults sentence. The same document without the marker, the two rules
-that read generated members left out, gives the same values of X in the eight
-cases without an opgave, in the three executors.
+branch plays them (`PLAYED 12`). The same document without the marker, the two
+rules that read generated members left out, gives the same values of X in the
+eight cases without an opgave, in the three executors.
 `jutterswet-opgave-bedrag` puts the marker on an amount in € (one unit),
 computed by an addition in the same unit under "indien zijn taxatie gevuld is"
 — `plus` counts an empty operand as 0, so without the condition the computation
@@ -2600,11 +2286,10 @@ with 25,00 € as the lowest default, with a rule that reads the generated
 characteristic and a computation that reads the marked amount; seven cases,
 written as a scenario document. Measured on 2026-10-02: ref and clingo replay
 the seven cases exactly, the Drools exec branch plays them (`PLAYED 7`), the
-amount of the initialisation default among them, and the DRL-text branch
-refuses the document on its defaults sentence. The lowering written by hand in
-€ played in the three executors before the frontend admitted the marker; an
-initialisation beside an `Afwijking van` group cannot be written by hand in the
-dialect, so that piece is measured on the golden itself.
+amount of the initialisation default among them. The lowering written by hand in
+€ plays in the three executors; an initialisation beside an `Afwijking van`
+group cannot be written by hand in the dialect, so that piece is measured on the
+golden itself.
 
 ---
 
@@ -2710,10 +2395,9 @@ table (`RegelSpraakModel.vocabulaires`, `.designations`) under the declaration
 the rule check it composes the designations of the elements a lowered opgave
 marker generates, from the designations of the marked attribute, and those
 of the group of a subtype's blocks and of the member and rule of a fold with
-steps after the set, part by part from the designations of the names their
-own name is made of (section "Gegenereerde elementen", both since
-2026-10-15): those are designations like the written ones, in the same side
-table, written to the wire the same way.
+steps after the set, part by part from the designations of the names their own
+name is made of (section "Gegenereerde elementen"): those are designations like
+the written ones, in the same side table, written to the wire the same way.
 Then, when the model holds every form the emitter writes, it
 judges what needs the whole model: a rule's designation needs a named form of
 that rule on the wire; the default vocabulary names every designatable
@@ -2742,9 +2426,8 @@ every sentence on its line):
 - `vocabulaire '<v>' draagt '(standaard)' twee keer`, and the same for
   `'(taal: …)'`
 - `vocabulaire '<v>': '(<woord>: …)' is geen eigenschap van een vocabulaire;
-  een vocabulairekop kent '(standaard)' en '(taal: <code>)'` — among them the
-  `(soort: …)` of the card's first design, which the maintainer's decision
-  withdrew
+  een vocabulairekop kent '(standaard)' en '(taal: <code>)'` — among them
+  `(soort: …)`: a vocabulary has no kind (maintainer decision 2026-09-27)
 - `vocabulaire '<v>': de taalcode '<code>' is leeg of bevat witruimte; een
   taalcode is één woord (WF-116)`
 - `de vocabulaires '<a>' en '<b>' zijn allebei het standaardvocabulaire; een
@@ -2824,8 +2507,8 @@ declaration order (`name`, `default`, and `language` when written); every
 designatable node writes its `designations` as its LAST field, and an
 enumeration's declaration its `valueDesignations` after `values`, value by
 value. Each is written only where there is something to write, so a
-document without the extension emits exactly what it emitted before, which
-is the measurement above stated as a property (`VocabularyDialectTest`
+document without the extension emits what it emits without it, which is the
+measurement above stated as a property (`VocabularyDialectTest`
 holds it on the golden's source with its annotations taken out, and gate 10
 on the corpus).
 
@@ -2839,8 +2522,8 @@ on the corpus).
   writes itself: the rules of a decision table's rows, the members and forms
   the opgave marker generates (§7), a start point's anchor, the group of a
   subtype's blocks and the member of a fold with steps after the set. Those
-  have no place for an annotation. Since 2026-10-15 the members and forms of
-  the opgave marker carry the designations the frontend composes from the
+  have no place for an annotation. The members and forms of the opgave marker
+  carry the designations the frontend composes from the
   marked attribute's, and the group of a subtype's blocks and the member and
   rule of a fold with steps after the set those it composes part by part
   (section "Gegenereerde elementen"), so those constructs stand in a document
@@ -2880,25 +2563,24 @@ names, and its examples show fact-type names with prepositions (§3.11, §9.3,
 §9.4), an object type spelled with changing capitals (§9.3 against §9.4) and an
 attribute name that runs on over the next line (§3.9).
 
-The consequence was a name cut short at the first word its production did not
-take, and the rest read as a declaration of its own — for an object type with
-a preposition and without a plural, and for a member whose name held a
-capitalised word, without any diagnostic: `Objecttype de Vondst bij eb`
-declared the type `Vondst` with one attribute `bij eb de waarde`. Rule text
-already read prepositions and capitalised words in a name, case-insensitively;
-the limit sat in the heads.
+A name cut short at the first word its production does not take leaves the
+rest to be read as a declaration of its own, without any diagnostic: with the
+name words of rule text alone, `Objecttype de Vondst bij eb` would declare the
+type `Vondst` with one attribute `bij eb de waarde`. Rule text reads
+prepositions and capitalised words in a name, case-insensitively, and the head
+productions below take them as well.
 
 ### Surface syntax (three productions widened; no new token)
 
-The word sets per position, since this card:
+The word sets per position:
 
 | position | production | words |
 |---|---|---|
 | object-type name — head, extension head, `is een` clause, role filler, scenario instance | `objectTypeNaam` | a capitalised word, then capitalised and lowercase words and the prepositions rule text reads in a name: `op`, `bij`, `in`, `voor`, `over`, `tot`, `tot en met`, `per`, `met` — `Recht op premie`, `Vondst bij eb` |
 | plural `(mv: …)` — object type, attribute, characteristic, role, day kind, unit | `meervoudsvorm` | every word of `kaleNaamWoord`, the words rule text reads in a name, up to the closing parenthesis — `(mv: rechten op premie)` |
 | fact-type name | `feitTypeNaam` | every one-word token and `tot en met`, the verbs `heeft`, `hebben`, `is` and `zijn` among them — `jutter heeft premierecht` |
-| attribute, characteristic and role name | `lowerNaam` | unchanged: lowercase-led, no capitalised word, no `en` |
-| domain name | `domeinNaam` | unchanged: a capitalised word, then capitalised and lowercase words |
+| attribute, characteristic and role name | `lowerNaam` | lowercase-led, no capitalised word, no `en` |
+| domain name | `domeinNaam` | a capitalised word, then capitalised and lowercase words |
 
 Out of the object-type name stay `van`, the articles and every other keyword.
 `van` is the navigation separator of rule text, so a type name that carried it
@@ -2916,23 +2598,20 @@ reading there bounds the set.
 
 A plural is bounded by its parenthesis, so its words change no reading of what
 follows. The object-type name is followed by members, roles and labels, and one
-reading does change: a member without an article that opens with one of the
-nine prepositions on the head's own line is now read into the name, where it
-was read as a member, because the loop is greedy. The resolver's line check
-(below) refuses what that leaves on the head's line, so the shift is loud.
+reading follows from the wider set: a member without an article that opens with
+one of the nine prepositions on the head's own line is read into the name,
+because the loop is greedy. The resolver's line check (below) refuses what that
+leaves on the head's line, so the reading is loud.
 
 A word on the NEXT line is never read into the name (2026-10-02):
 `objectTypeNaam` takes a word only from the line its previous word ends on (a
 semantic predicate over the token lines), since a line end bounds an
-object-type head (§13.3.1.1). Until then the loop took the first word of a
-member without an article on the line after an extension head or a head without
-`(mv: …)` ("boven de maat kenmerk (bezittelijk);", "laatste vinddag Datum in
-dagen;"), the type was named "Vondst boven" and the line check refused the
-rest; a one-word member read correctly only because the longer head then left
-no member to parse. Measured: those forms now read, the forms that read before
-emit the same IR, and all 196 RegelSpraak sources of the repository and the 108
-of the distribution emit the same IR, diagnostics and exit code. Witness:
-`HeadLineEndTest`.
+object-type head (§13.3.1.1), so a member without an article on the line after
+an extension head or a head without `(mv: …)` ("boven de maat kenmerk
+(bezittelijk);", "laatste vinddag Datum in dagen;") stays a member. Measured
+2026-10-02: all 196 RegelSpraak sources of the repository and the 108 of the
+distribution emit the same IR, diagnostics and exit code with and without the
+predicate. Witness: `HeadLineEndTest`.
 
 ### Inertness — measured, not assumed
 
@@ -2992,9 +2671,7 @@ diagnostic to act on.
   line, so nothing begins after it there.
 - **The filler check** (WF-003). A role's filler is a declared object type,
   compared without regard to case, and checked once every declaration is read,
-  so a type declared after the fact type binds. Until this card only the
-  verifier refused an undeclared filler, and a check without the verifier wrote
-  the document.
+  so a type declared after the fact type binds.
 - **The readability check.** A declared attribute, characteristic or role name
   is lexed again on its own and parsed as the `kaleNaam` of rule text, up to its
   end. Where that fails, a WARNING names the word: `als` is no word of a name
@@ -3031,21 +2708,21 @@ every sentence whole, on its line):
   declares its object types in another file reads so on its own, and resolves
   once the files are read as one; the collections outside this repository are
   split per kind of declaration, and the parity zone's own tests resolve such a
-  slice without an error. The verifier still refuses the file emitted on its
-  own under WF-003.
+  slice without an error. The verifier refuses the file emitted on its own
+  under WF-003.
 - WARNING, the readability check: `<drager>: regeltekst leest <lid> niet als
   één naam, want '<woord>' is daar geen woord van een naam; verbind het met een
   koppelteken aan een buurwoord ('<voorbeeld>')`, the example being the name with
   the word joined to its neighbour. A WARNING and no ERROR: the declaration is
   well-formed, and a document that never reads the name in a rule is sound.
 
-The guess the resolver already made about a role name that swallowed an article
-of the fact type's name (`de rolnaam '<r>' bevat een lidwoord (de/het) na een
-zelfstandig woord …`, a WARNING) stays beside the line check: that check names
+The resolver's guess about a role name that swallowed an article of the fact
+type's name (`de rolnaam '<r>' bevat een lidwoord (de/het) na een zelfstandig
+woord …`, a WARNING) stands beside the line check: that check names
 the line and the word, the guess names the likely cause, and the guess alone
 sees a swallow that runs on over the next line.
 
-Two named forms with one name are refused since 2026-10-02 (WF-020: the rules, the
+Two named forms with one name are refused (WF-020: the rules, the
 other forms of ch. 3 and the defaults groups share one namespace, compared as the
 verifier compares them, case and whitespace aside). The forms are read after the
 lift as the emitter writes them, and the ERROR stands on the second 'Regel' head or
@@ -3055,25 +2732,22 @@ zijn uniek (WF-020): duplicate name '<naam>' in rules`, or `… name '<naam>'
 collides with '<naam>' in <lijst> (unique across all named forms)` across two
 lists. The name of an 'Uitzondering op' or 'Afwijking van' block does not reach the
 wire — its default joins the group of its base — and is not judged here; the lift
-refuses two such blocks of one name in its own words. Before: such a document
-passed `check` without a diagnostic, the verifier refused it, ref and clingo played
-it, and the Drools exec branch kept one of the two rules. No source of the corpora
+refuses two such blocks of one name in its own words. No source of the corpora
 carries two heads of one name. Witness `DuplicateFormNameTest`.
 
 ### Emission
 
-Nothing about emission is new. A document that parsed before emits the same
-model and rules; a WARNING of the new checks goes into the IR's diagnostics
-list, as every WARNING does.
+A WARNING of these checks goes into the IR's diagnostics list, as every
+WARNING does.
 
 ### Scope / limitations of this card
 
-- An attribute, characteristic or role name still ends at its first
+- An attribute, characteristic or role name ends at its first
   capitalised word, which is read as its type or filler (maintainer decision
   2026-09-28: a later card without new syntax; until then, write the word in
   lowercase). The line check makes the misreading loud where the rest stays
   on the line; the filler check where the rest names a declared type.
-- A keyword in a name still ends it, in the head and in rule text alike; a
+- A keyword in a name ends it, in the head and in rule text alike; a
   hyphen joins the keyword to its neighbour, and the hyphenated word reads in
   both (`premie-en-toeslag`, `kenmerk-strand`).
 - A lowercase `van` stays out of an object-type name (maintainer decision
@@ -3100,10 +2774,9 @@ reachable only through the start rule `testDocument`: `regelSpraakDocument`
 is unchanged, so production parsing and the re-emission of every golden are
 untouched (gate 10), and a scenario block does not parse there
 (`ScenarioParseTest`), nor does a parameter set (`ScenarioParameterSetTest`).
-The parameter set came at the card `scenario-parametersets` (2026-09-27):
-the source toolchain read parameter sets from a JSON file beside a scenario
-or a service descriptor, and here a set is a block of the scenario
-document.
+A parameter set (card `scenario-parametersets`, 2026-09-27) is a block of the
+scenario document, where the source toolchain read parameter sets from a JSON
+file beside a scenario or a service descriptor.
 
 **A scenario is a case file written in RegelSpraak.** The lowering writes
 one case file of the format uchar-case-v0
@@ -3365,15 +3038,15 @@ serialiser, so a case file and an IR document share one shape.
   subtype's own exceptions under the base of its supertype (§4, the
   inheritance line: `<basisregel> voor <subtype>`) holds no base, and
   RUNTIME-SEMANTICS ch. 7.10 composes the stack of that subtype from it and
-  the base's group, so the two go together (since 2026-10-01): a scope that
+  the base's group, so the two go together (2026-10-01): a scope that
   carries the base carries every such group that takes it, and a scope that
   names such a group carries its base and the other groups that take it.
   They are found in the groups themselves — the subject, the target, and
   whether a default at the top holds a decision or a consequence of its own
   — not in their names. A subtype's own base is a tree of its own and goes
-  only where a scope names it, with the groups that take it. Before, a scope
-  that named the base carried its group alone, and a subtype instance got
-  the base's value where the whole document gives it the subtype's exception
+  only where a scope names it, with the groups that take it. A scope that
+  carried the base's group alone would give a subtype instance the base's value
+  where the whole document gives it the subtype's exception
   (`ScenarioInheritanceLineScopeTest`). Without a scope the document is the
   production route's.
 
@@ -3549,50 +3222,42 @@ every expectation kind of the case format.
 
 `check` runs no verifier. The frontend repeats rules of the verifier as an ERROR in the verifier's sentence where
 the document it would write breaks them — among them WF-020, WF-022, WF-033, WF-050, WF-053, WF-111 and WF-112 — and
-since 2026-10-02 the two cycle rules WF-045 and WF-051. `resolver/Dependencies` reads the dependency graph of
+the two cycle rules WF-045 and WF-051 (2026-10-02). `resolver/Dependencies` reads the dependency graph of
 IR-SPEC ch. 5 over the written document as the verifier reads it (the forms in `dep_forms` order, their reads and
 writes, the edges in reading order, the depth-first walk of WF-045 that names the first cycle it meets, and the
 reach test of WF-051); `RuleChecker.checkDependencyCycles`, the last check, refuses each cycle at the head of
 the form the verifier reports: "regel 'restgewicht' hangt via een kring van zichzelf af; de afhankelijkheden zijn
 kringvrij buiten een recursieve creatie (WF-045): dependency cycle through no recursive creation: restgewicht ->
 bergingsgewicht -> restgewicht", and "defaults-groep 'meldtermijn' ligt op een afhankelijkheidskring, en een kring
-door een defaults-groep heeft geen strata (WF-051): …". Measured 2026-10-02: before, a value of one object read from
-the same value of another object of its type over a role passed `check` without a diagnostic; the edges equal
+door een defaults-groep heeft geen strata (WF-051): …". Measured 2026-10-02: the edges equal
 `verifier --dependency-edges` on 883 documents of the corpus zones, and the WF-045 and WF-051 lines equal the
-verifier's, in its order. Until 2026-10-06 one bound stood, pinned by tests: a cycle through an object creation
-outside a recursive group got no ERROR, because the casus of the parity zone, without its two held-out fragments,
-carried one, and refusing it refused the casus. That cycle did not exist. A fact creation wrote the population of its
-target role's filler in the graph, a proxy from before every fold named its relation, and an object creation that
-counts members of a role over that type read that population; the fact creation that links those members to the
-created object closed the cycle (RUNTIME-SEMANTICS ch. 6.1, golden `jutterswet-premiepot`). The proxy went the same
-day, in the verifier and in `Dependencies`, and the bound with it: the casus has no cycle, and a cycle through an
-object creation — a creation of its own subject's type reads the population it grows — is refused like any other
-(`CreationRoleTest`, `SetReadWithoutFoldTest`). Since that day a role check reads the relation it names as well,
-negated as a negative edge (`resolver/FactCreationEdgesTest`).
+verifier's, in its order. A fact creation writes the relation it lays, not the population of its target role's filler,
+so an object creation that counts members of a role over that type and the fact creation that links those members to
+the created object close no cycle (RUNTIME-SEMANTICS ch. 6.1, golden `jutterswet-premiepot`), and the casus of the
+parity zone has none. A cycle through an object creation — a creation of its own subject's type reads the population
+it grows — is refused like any other (`CreationRoleTest`, `SetReadWithoutFoldTest`). A role check reads the relation it
+names as well, negated as a negative edge (`resolver/FactCreationEdgesTest`).
 
-A cycle the warning "kringverwijzing tussen berekeningen" names on a rule's own subject kept that WARNING alone until
-2026-10-06; since then it is refused like any other, and the WARNING stays beside the ERROR, naming the cycle in the
-members the author wrote (`RecursionTest`, `SelfReadCycleTest`). Measured before, on the frontend of `b3861896`:
-"Een Jutter is uitgesloten indien hij niet penninggerechtigd is" beside "Een Jutter is penninggerechtigd indien hij
-niet uitgesloten is" passed `check` with that WARNING alone, the verifier refused the document under WF-045 and twice
-under WF-046, and the ASP backend found two stable models for a Jutter without input. No golden, no source of the
-parity zone or of the distribution's examples carried such a cycle. WF-046 is not repeated as a rule of its own:
-where a negative edge runs between two forms of a WF-045 cycle, the refusal names it — "regel 'uitsluiting' hangt via
-een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een recursieve creatie (WF-045), en een kring
-draagt geen negatieve rand, zoals een ontkenning (WF-046): dependency cycle through no recursive creation: uitsluiting
--> penningrecht -> uitsluiting" — measured equal to the verifier's WF-046 lines on the eleven WF-045 cycles in the 868
-documents of the corpus zones and the parity zone, five of them with a negative edge (2026-10-06). A negative edge
-on a cycle WF-045 admits, through a recursive creation, still passes `check`. Witnesses: `DependencyCycleTest`,
-`SelfReadCycleTest`, and the negative `wf046-characteristics-read-each-other-negation`.
+A cycle the warning "kringverwijzing tussen berekeningen" names on a rule's own subject is refused like any other,
+and the WARNING stands beside the ERROR, naming the cycle in the members the author wrote (`RecursionTest`,
+`SelfReadCycleTest`): "Een Jutter is uitgesloten indien hij niet penninggerechtigd is" beside "Een Jutter is
+penninggerechtigd indien hij niet uitgesloten is" is refused by the verifier under WF-045 and twice under WF-046, and
+the ASP backend finds two stable models for a Jutter without input (measured on `b3861896`). WF-046 is not repeated as a
+rule of its own: where a negative edge runs between two forms of a WF-045 cycle, the refusal names it — "regel
+'uitsluiting' hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een recursieve creatie
+(WF-045), en een kring draagt geen negatieve rand, zoals een ontkenning (WF-046): dependency cycle through no recursive
+creation: uitsluiting -> penningrecht -> uitsluiting" — measured equal to the verifier's WF-046 lines on the eleven
+WF-045 cycles in the 868 documents of the corpus zones and the parity zone, five of them with a negative edge
+(2026-10-06). A negative edge on a cycle WF-045 admits, through a recursive creation, passes `check`. Witnesses:
+`DependencyCycleTest`, `SelfReadCycleTest`, and the negative `wf046-characteristics-read-each-other-negation`.
 
-Since 2026-10-22 (card `check-admits-instance-cycle`) `Dependencies` keeps the path of every read of a rule and a
-defaults group, as the verifier's `dep_expr_at` does, and finds the instance-ordered parts of IR-SPEC ch. 5.3 as its
+`Dependencies` keeps the path of every read of a rule and a defaults group (card `check-admits-instance-cycle`,
+2026-10-22), as the verifier's `dep_expr_at` does, and finds the instance-ordered parts of IR-SPEC ch. 5.3 as its
 `instance_ordering` finds them. A cycle that only reads of the predecessor over a switch relation close, with the
 reads inside it in the household of the object or of its predecessor, is admitted, and its shifted edges leave the
-walks of WF-045 and WF-051. Until then `check` refused such a cycle where the verifier admitted it: the source of the
-golden `jutterswet-vergunningketen` gave three ERRORs under WF-045, that of `jutterswet-vergunningtermijnen` five.
-Where a part over a switch relation falls on a clause of ch. 5.3, the refusal of the cycle gets RGS-357 beside it, at
-the head of the form that reads, with the parameters of the verifier's `WF-045.instance-read-outside` and the switch
+walks of WF-045 and WF-051. Where a part over a switch relation falls on a clause of ch. 5.3, the refusal of the cycle
+gets RGS-357 beside it, at the head of the form that reads, with the parameters of the verifier's
+`WF-045.instance-read-outside` and the switch
 relation: "'blokkade' leest char:vergunning:openstand over [registratie/register; registratie/geregistreerde
 vergunning], en die lezing valt buiten de afbakening van de per object geordende kring over het feittype 'vorige
 vergunning' (clausule hub): …". Measured 2026-10-22 on 396 documents (the negatives of WF-045, WF-046 and WF-051, the
@@ -3606,28 +3271,25 @@ goldens and the red cases): the WF-045 and WF-051 lines and the reads outside eq
 RegelSpraak is declarative: the frontend writes the same document, the forms of a list in their own source order
 aside, whatever the order of the rules in the source and of the files a model is put together from. The rules are
 resolved one by one in source order, so a rule may read nothing another rule puts in the model while the rules are
-resolved. Until 2026-10-06 three places did, as the toolchain's resolver did before it.
+resolved. Three places that would read so take what they need in a pass before the rules, or refuse:
 
 - A fact creation whose path walks through the back-link of an object creation ("de premiehaven van de verdeelde
-  premiepot") takes the side of that step from the object creation. Only an object creation earlier in the source
-  counted; written above it, the fact creation was dropped with the WARNING "feitcreatie wordt nog niet naar IR/DRL
-  omgezet … referentieveld-zijde voor tussenstap … niet af te leiden". The casus of the parity zone has the shape
-  (its object creation and fact creation over the contingent), and the files of the distribution put the object
-  creation first. A pass before the rules now reads the object creations of the whole document off the parse tree.
-- A start point determination declares the anchor member `startpunt <tijdlijn>` on its subject, and did so when
-  its rule came up: a rule above it that reads the anchor became an unresolved marker. A pass before the rules now
-  declares it; the determination is judged and written as before.
+  premiepot") takes the side of that step from the object creation; a pass before the rules reads the object
+  creations of the whole document off the parse tree, so the object creation may stand anywhere in the source. The
+  casus of the parity zone has the shape (its object creation and fact creation over the contingent).
+- A start point determination declares the anchor member `startpunt <tijdlijn>` on its subject in a pass before
+  the rules, so a rule above it reads the anchor; the determination itself is judged and written in its place.
 - Two declarations of one name — two heads of one object type, two parameters, domains, unit systems, fact types,
-  dimensions or day kinds — were taken together, the last one winning, and the IR carried one declaration, so the
-  verifier never saw the collision WF-001 refuses. They are refused at the second, in the verifier's sentence:
+  dimensions or day kinds — are refused at the second, in the verifier's sentence (taken together, the last one
+  winning, the IR would carry one declaration and the verifier would never see the collision WF-001 refuses):
   "objecttype 'Jutter' is al gedeclareerd (bronregel 1); een naam komt in zijn soort declaratie één keer voor,
   hoofdletters niet meegeteld (WF-001): namespace 'objectTypes': names 'Jutter' and 'Jutter' collide
   case-insensitively". An extension adds members and declares no name; timelines are WF-015's, which the verifier
   sees.
 
 Measured 2026-10-06 with the files of every multi-file source in reverse order and the blocks of every golden
-source rearranged (declarations after the rules, the rules reversed), on 368 sources and source chains: after the
-fix no document differs beyond the order of a list. What still depends on the order is recorded, not changed: the
+source rearranged (declarations after the rules, the rules reversed), on 368 sources and source chains: no document
+differs beyond the order of a list. What depends on the order is recorded, not changed: the
 order of the forms within a list; which form a refusal names first (the WF-045 walk names the first cycle it meets,
 the verifier the same, and a duplicate day kind or rule name is reported at the second); which fold's written text
 the rule of a generated member (section "A fold over a set and to-one steps after it") takes as its source snippet
@@ -3722,18 +3384,15 @@ desugaring of decision tables and exception blocks, the dialect's fences — amo
 them a member of an unordered block that is no kenmerktoekenning or
 gelijkstelling, or yields no rule at all — a timeline reference that names no
 declared timeline, among them a multi-period form written without its start
-date ("voor elke 2 maanden", which parses as the name of a timeline and was
-written as a single value until the fix round of 2026-09-26), a unit clause
-after an attribute's type that has no reading (a percentage, a value that is
-no number, a number that carries a unit already; on a domain-typed number the
-clause sets the unit, §3.4, where until that fix round it was parsed and
-dropped), and forms this frontend does not lower — among them a uniqueness
-scoped over a reciprocal fact type, which the wire writes as the binding of a
-fact type with two roles and which ended in the emitter's exception until that
-fix round) have no reader either, because no document carries them. The same holds
-for the refusals of the scenariotoetsen extension (its section above): no reader
-refuses a case file for them, because a case file that carries such a defect is
-never written.
+date ("voor elke 2 maanden", which parses as the name of a timeline), a unit
+clause after an attribute's type that has no reading (a percentage, a value that
+is no number, a number that carries a unit already; on a domain-typed number the
+clause sets the unit, §3.4), and forms this frontend does not lower — among them
+a uniqueness scoped over a reciprocal fact type, which the wire writes as the
+binding of a fact type with two roles) have no reader either, because no
+document carries them. The same holds for the refusals of the scenariotoetsen
+extension (its section above): no reader refuses a case file for them, because a
+case file that carries such a defect is never written.
 
 ---
 
@@ -3803,7 +3462,7 @@ a role walked from where the read stands reaches a type that declares the member
 the remaining words name, here the Jutter's 'premie' — a WARNING names both
 readings and says the declaration wins (maintainer decision 2026-10-01,
 `DoubleReadingTest`; no golden and no fragment of the parity zone reads such a
-name, so no pinned document changed).
+name).
 
 What stays with the verifier is an own read — one that reaches no role — of an
 undeclared name with no role or type name behind a `van`: "de rang van de
@@ -3816,21 +3475,20 @@ parity zone reads undeclared names of the first kind, which only its replay
 slices declare, and an ERROR would stop its emission; a WARNING would change
 its pinned document. When the parity zone leaves the repository, the refusal
 can cover every undeclared read. A fold source whose element lacks the member,
-or whose name took in a role, is no such read: it stays a marker with a
+or whose name took in a role, is no such read: it is a marker with a
 WARNING, and ref and the ASP backend refuse it loudly.
 
-Measured on 2026-10-01 before the second and third shapes: each such read went
-to disk with `diagnostics: []`. Over 168 generated documents — the member on a
-subtype of the filler, nowhere, on another object type, and a role name that is
-no role, in the four positions, one and two roles far, in three spellings,
-beside the reads that bind — 96 were written without a diagnostic and refused
-by the verifier; 92 of them are now refused here, and the 4 that write the
-wrong role name one role far in full stay the verifier's. The 72 that bind,
-the declared attribute with `van` in its name and the member inherited from a
-supertype of the filler among them, play unchanged in ref and the ASP backend.
-Every rgs golden and the sources of the parity zone re-emit byte-identically
-(gates 10 and 11). Negatief witnesses: `wf053-jutterswet-unbound-read-subtype`
-and `wf034-jutterswet-unbound-read-nowhere`.
+Measured on 2026-10-01 over 168 generated documents — the member on a subtype
+of the filler, nowhere, on another object type, and a role name that is no
+role, in the four positions, one and two roles far, in three spellings, beside
+the reads that bind: of the 96 the verifier refuses, 92 are refused here, and
+the 4 that write the wrong role name one role far in full stay the verifier's.
+The 72 that bind, the declared attribute with `van` in its name and the member
+inherited from a supertype of the filler among them, play in ref and the ASP
+backend. Every rgs golden and the sources of the parity zone re-emit
+byte-identically (gates 10 and 11). Negatief witnesses:
+`wf053-jutterswet-unbound-read-subtype` and
+`wf034-jutterswet-unbound-read-nowhere`.
 
 ---
 
@@ -3878,13 +3536,11 @@ whose literal restates whole (`1 jr plus 12 mnd`), a tijdsduur and a count.
 Date arithmetic written step by step (`zijn startdag plus 1 jr plus 6 mnd`) is
 two calendar steps and plays.
 
-Found in the same form space and refused beside it: a rounding of a value that
-is no number. The rounding binds weakest, so written behind a date sum without
-the parentheses around the duration it rounds the date; that went to disk as a
-Rounding over a Date, which the verifier admits, while ref refused it at
-evaluation, the ASP backend answered the unrounded date and the Drools exec
-branch crashed. The refusal names the value's kind and, behind a date sum, the
-form with the rounding around the duration.
+Refused beside it: a rounding of a value that is no number. The rounding binds
+weakest, so written behind a date sum without the parentheses around the
+duration it rounds the date: a Rounding over a Date, which the verifier admits
+while the executors part on it. The refusal names the value's kind and, behind a
+date sum, the form with the rounding around the duration.
 
 Measured on 2026-10-01 over 136 generated documents, 1168 forms: ten sources of
 a fraction (an attribute with one decimal, an unbounded attribute, a parameter,
@@ -3893,18 +3549,11 @@ decimal, a product with 1,5, a restatement into a larger unit) and seven whole
 forms, each in dg, wk, mnd, kw and jr on a Datum in dagen and in u, minuut, sec
 and ms on a date-time (the restatements where the unit systems declare a
 neighbour), with plus and min, in the four positions above, each with a
-positive and a negative case. Before: every document passed `check` without a
-diagnostic, and ref, the ASP backend and both Drools branches answered the
-truncated date wherever they answered (the ASP backend refuses loudly a
-quotient or percentage with a unit, a restatement between units, a negative
-operand under a rounding down, a case value of an unbounded number that is not
-whole, and a date-time target in a default's consequence; the Drools exec branch
-skips a quotient in a default's consequence, and the DRL-text branch excludes
-the defaults and the computed durations it cannot compile). After: the 80 documents
-with a source of a fraction are refused with one ERROR per form; the 56 with a
-whole form write the same IR byte for byte and play unchanged. Every rgs golden,
-the sources of the parity zone and the scenario goldens re-emit byte-identically
-(gates 10, 11 and 16); no source in the corpus writes a fractional duration.
+positive and a negative case: the 80 documents with a source of a fraction are
+refused with one ERROR per form; the 56 with a whole form write their IR and
+play. Every rgs golden, the sources of the parity zone and the scenario goldens
+re-emit byte-identically (gates 10, 11 and 16); no source in the corpus writes a
+fractional duration.
 
 ---
 
@@ -3993,11 +3642,9 @@ designations, and because no reader of the wire could compose it: the
 composition needs the source's designations and, for a name of more than one
 part, the parts, and the wire carries the source (`origin`, above) but not the
 parts. A model the IR loader reads therefore has the same effective names as
-the frontend's. The wire, the
-schema and WF-116 to WF-120 are unchanged, and no golden combines the
-marker, a subtype's group (below) or a fold with steps after the set (below)
-with a vocabulary, so every IR document of the corpus stays byte-identical
-(gates 10, 11 and 16).
+the frontend's. The composition needs no field of the wire, the schema or
+WF-116 to WF-120 of its own. No golden combines the marker, a subtype's group
+(below) or a fold with steps after the set (below) with a vocabulary.
 
 **Part by part** (card `gegenereerde-namen-per-deel`, maintainer decision
 2026-10-15: fall back per part). Two names of the table are made of more than
@@ -4071,15 +3718,14 @@ The other forms of the table carry no designation, each for a reason:
 nor its field on the wire, and a document whose `origin` fields are removed
 gives every executor the same answer (gate 13, the origin leg). What reaches
 the wire through it are the `origin` fields and the composed designations
-(above), both side tables without semantics; a document without an element
-the frontend made emits exactly what it emitted before (gates 10, 11 and 16,
-and `OriginOnTheWireTest`). A version of a form with several versions is no
-element (the element is the form; the model entry is `<form> #<k>`), and an
-effective defaults stack is no element either: both are names of the Drools
-backend's coverage manifest, and its TMS transpiler gives their source the
-same way (`TmsTranspiler.generated()`: a stack `defaults A:<type>.<member>`
-or `defaults K:<type>.<member>` from the member as declared, key
-`defaultsstapel`; a version from its form, key `versie`).
+(above), both side tables without semantics; a document without an element the
+frontend made carries neither (`OriginOnTheWireTest`). A version of a form with
+several versions is no element (the element is the form; the model entry is
+`<form> #<k>`), and an effective defaults stack is no element either: both are
+names of the Drools backend's coverage manifest, and its TMS transpiler gives
+their source the same way (`TmsTranspiler.generated()`: a stack `defaults
+A:<type>.<member>` or `defaults K:<type>.<member>` from the member as declared,
+key `defaultsstapel`; a version from its form, key `versie`).
 
 Not covered: the names the Drools backend gives the rules inside a form
 (`<form>: …`), which the manifest and the trace do not show, and the names of
@@ -4197,10 +3843,9 @@ than none. The resolution and this pass can part; the corpus witness measures it
 **After a syntax error.** The parse tree is ANTLR's recovery. Rule text in it is read as any rule text: a word there
 that names nothing is `unresolved`. A word the recovery placed in no name and no rule text keeps its lexical kind
 `word`, not `unresolved`: the syntax error marks the place, and marking every word after it would mark the consequence
-rather than the cause. Seven places where the resolution itself crashed on a parse node the recovery left without a
-child — and with it `--ir`, which crashed instead of reporting the syntax error — skip the node now (a conversion, a
-rounding or a start date without its number, a condition or criteria header without its bullets, a start-point
-determination without its subject).
+rather than the cause. At seven places the resolution skips a parse node the recovery left without a child (a
+conversion, a rounding or a start date without its number, a condition or criteria header without its bullets, a
+start-point determination without its subject), so `--ir` reports the syntax error there.
 
 **LSP 3.17.** The token type of the Language Server Protocol closest to each kind, for a later language server that
 passes the output on (a language server itself is no part of this output):
