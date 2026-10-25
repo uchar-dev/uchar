@@ -314,7 +314,8 @@ command -v java >/dev/null 2>&1 || { echo 'FAIL: need a JDK/JRE 21+' >&2; exit 2
 command -v mvn >/dev/null 2>&1 || { echo 'FAIL: need mvn (the Drools backend jar is taken fresh or rebuilt here, and only mvn can rebuild a stale one)' >&2; exit 2; }
 command -v python3 >/dev/null 2>&1 || { echo 'FAIL: need python3 (the twister)' >&2; exit 2; }
 
-if ! dune build ref backends 2>&1; then
+. scripts/lib/ocaml-build.sh
+if ! ensure_ocaml; then
     echo 'check-reftype-derivation: FAIL (ref/clingo build)' >&2
     exit 1
 fi

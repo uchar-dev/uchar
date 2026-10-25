@@ -35,13 +35,18 @@ command -v catala >/dev/null 2>&1 \
   || fail "the catala compiler is not installed — the frontend gate cannot run (never silently green)"
 command -v python3 >/dev/null 2>&1 || fail "python3 not found (the canonicaliser needs it)"
 
-dune build frontends/catala 2>/dev/null || dune build frontends/catala \
-  || fail "the frontend does not build"
-# --force so the suite actually RUNS every time (a cached run prints
-# nothing), and the check count is verified: the bare runtest alias is
-# a dune default that is empty-but-valid, so "the alias built" proves
-# nothing — a hunted silent green. Zero checks is a failure.
-suite_out=$(dune build --force @frontends/catala/runtest 2>&1)
+. scripts/lib/ocaml-build.sh
+ensure_ocaml || fail "the frontend does not build"
+# The suite exe runs here directly, with the argv of its runtest rule
+# (frontends/catala/test/dune) and in its source directory, where the
+# rule's programs and cases are: so it RUNS every time, and no dune call
+# at gate time can meet another gate's on the _build lock. The check
+# count is verified: a suite that printed no count line ran nothing — a
+# hunted silent green. Zero checks is a failure.
+B=../../../_build/default
+suite_out=$(cd frontends/catala/test && "$B/frontends/catala/test/suite.exe" \
+  "$B/frontends/catala/bin/catala_frontend.exe" "$B/spec/verifier/bin/verifier.exe" \
+  "$B/ref/bin/runner.exe" "$B/backends/clingo/bin/clingo_runner.exe" 2>&1)
 suite_status=$?
 if [ $suite_status -ne 0 ]; then
   echo "$suite_out" | tail -15 >&2

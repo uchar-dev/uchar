@@ -9,7 +9,7 @@
 # parity alone.
 #
 # Checks:
-#   1. backends/clingo builds (dune, workspace root);
+#   1. backends/clingo builds (the OCaml workspace, scripts/lib/ocaml-build.sh);
 #   2. clingo is available;
 #   3. every corpus/golden/**/case*.json replays exactly through the
 #      translate → clingo → check pipeline; an empty case set is a
@@ -38,7 +38,8 @@ if ! command -v clingo >/dev/null 2>&1; then
     exit 2
 fi
 
-if ! dune build backends 2>&1; then
+. scripts/lib/ocaml-build.sh
+if ! ensure_ocaml; then
     echo 'check-clingo: FAIL (build)' >&2
     exit 1
 fi

@@ -219,8 +219,9 @@ if ! command -v dune >/dev/null 2>&1; then
   command -v opam >/dev/null 2>&1 && eval "$(opam env)"
 fi
 command -v dune >/dev/null 2>&1 || fail "dune not found (the verifier, ref and clingo need OCaml/dune)"
-dune build --root spec/verifier >/dev/null 2>&1 || fail "the verifier build is red (dune build --root spec/verifier, as gate 3 builds it)"
-VERIFIER=spec/verifier/_build/default/bin/verifier.exe
+. scripts/lib/ocaml-build.sh || fail "could not read scripts/lib/ocaml-build.sh"
+ensure_ocaml || fail "the OCaml build is red (the verifier, ref and clingo; the ocaml-build line above says why)"
+VERIFIER=_build/default/spec/verifier/bin/verifier.exe
 [ -x "$VERIFIER" ] || fail "no verifier binary at $VERIFIER after the build"
 VH_DIRS=(); VH_PINS=()
 # The list may be empty: bash 3.2 under set -u calls "${a[@]}" on an empty array unbound, so every
@@ -270,9 +271,8 @@ fi
 MANIFEST="$TOKA/cases/parity.manifest"
 [ -f "$MANIFEST" ] || fail "no parity manifest at $MANIFEST (the replay leg has nothing pinned)"
 
-# ref + clingo (OCaml) — build at the workspace root (dune was located in 3c).
+# ref + clingo (OCaml) — built with the verifier in 3c (ensure_ocaml).
 command -v clingo >/dev/null 2>&1 || fail "clingo not found on PATH (the differential needs it)"
-dune build ref backends >/dev/null 2>&1 || fail "the ref/clingo build is red"
 REF=_build/default/ref/bin/runner.exe
 CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 [ -x "$REF" ] && [ -x "$CLINGO" ] || fail "ref/clingo binaries missing after the build"

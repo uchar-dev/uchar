@@ -86,8 +86,9 @@ TMP=$(mktemp -d -t check-graph-XXXXXX) || fail "mktemp"
 trap 'rm -rf "$TMP"' EXIT
 
 # --- builds ---------------------------------------------------------------------------------------
-dune build --root spec/verifier 2>"$TMP/dune.err" || { cat "$TMP/dune.err" >&2; fail "the verifier does not build"; }
-VERIFIER=spec/verifier/_build/default/bin/verifier.exe
+. scripts/lib/ocaml-build.sh
+ensure_ocaml || fail "the verifier does not build (the ocaml-build line above says why)"
+VERIFIER=_build/default/spec/verifier/bin/verifier.exe
 . scripts/lib/drools-jar.sh
 JAR=$(ensure_drools_jar) || fail "no fresh backend jar (see the drools-jar line above)"
 

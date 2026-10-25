@@ -40,12 +40,18 @@ command -v python3 >/dev/null 2>&1 || fail "python3 not found (the canonicaliser
 FE=frontends/flogic
 [ -d "$FE" ] || fail "$FE is missing"
 
-dune build "$FE" 2>/dev/null || dune build "$FE" || fail "the frontend does not build"
-# --force so the suite actually RUNS every time (a cached run prints
-# nothing), and the check count is verified: the bare runtest alias is a
-# dune default that is empty-but-valid, so "the alias built" proves
-# nothing — a hunted silent green. Zero checks is a failure.
-suite_out=$(dune build --force "@$FE/runtest" 2>&1)
+. scripts/lib/ocaml-build.sh
+ensure_ocaml || fail "the frontend does not build"
+# The suite exe runs here directly, with the argv of its runtest rule
+# ($FE/test/dune) and in its source directory, where the rule's programs
+# and cases are: so it RUNS every time, and no dune call at gate time can
+# meet another gate's on the _build lock. The check count is verified: a
+# suite that printed no count line ran nothing — a hunted silent green.
+# Zero checks is a failure.
+B=../../../_build/default
+suite_out=$(cd "$FE/test" && "$B/$FE/test/suite.exe" \
+  "$B/$FE/bin/flogic_frontend.exe" "$B/spec/verifier/bin/verifier.exe" \
+  "$B/ref/bin/runner.exe" "$B/backends/clingo/bin/clingo_runner.exe" 2>&1)
 suite_status=$?
 if [ $suite_status -ne 0 ]; then
   echo "$suite_out" | tail -20 >&2

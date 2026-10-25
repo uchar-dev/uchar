@@ -276,7 +276,8 @@ if ! command -v dune >/dev/null 2>&1; then
     exit 2
 fi
 
-if ! dune build ref 2>&1; then
+. scripts/lib/ocaml-build.sh
+if ! ensure_ocaml; then
     echo 'check-noop: FAIL (build)' >&2
     exit 1
 fi

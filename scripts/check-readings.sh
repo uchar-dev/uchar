@@ -87,7 +87,8 @@ command -v dune >/dev/null 2>&1 || fail "need dune (OCaml): the reference interp
 command -v java >/dev/null 2>&1 || fail "need java: the Drools backend's readings are the other side"
 command -v python3 >/dev/null 2>&1 || fail "need python3: the comparison rule is applied in python"
 
-dune build ref 2>&1 || fail "ref/ does not build"
+. scripts/lib/ocaml-build.sh
+ensure_ocaml || fail "ref/ does not build"
 BIN=_build/default/ref/bin/runner.exe
 [ -x "$BIN" ] || fail "the runner is missing at $BIN after the build"
 

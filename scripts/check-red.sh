@@ -58,7 +58,8 @@ if ! command -v clingo >/dev/null 2>&1; then
     exit 2
 fi
 
-if ! dune build ref backends 2>&1; then
+. scripts/lib/ocaml-build.sh
+if ! ensure_ocaml; then
     echo 'check-red: FAIL (build)' >&2
     exit 1
 fi

@@ -2,7 +2,7 @@
 # Gate 3: the IR verifier (spec/verifier/, OCaml).
 #
 # Three checks:
-#   1. the verifier builds (dune build in spec/verifier/);
+#   1. the verifier builds (the OCaml workspace, scripts/lib/ocaml-build.sh);
 #   2. every corpus/golden/**/ir.json is verifier-clean (exit 0);
 #   3. every corpus/negative/<case>/ir.json is rejected (non-zero exit) AND
 #      the verifier reports the WF rule the case declares in its directory
@@ -54,12 +54,14 @@ if ! command -v dune >/dev/null 2>&1; then
 fi
 command -v python3 >/dev/null 2>&1 || { echo 'FAIL: need python3 (the pointer check)' >&2; exit 2; }
 
-# check 1: build.
-if ! dune build --root "$VERIFIER_DIR" 2>&1; then
+# check 1: build. The verifier is a project of the dune workspace; ensure_ocaml builds the workspace
+# when a source is newer than its last green build, and leaves dune alone otherwise.
+. scripts/lib/ocaml-build.sh
+if ! ensure_ocaml; then
     echo 'check-verifier: FAIL (build)' >&2
     exit 1
 fi
-BIN="$VERIFIER_DIR/_build/default/bin/verifier.exe"
+BIN="_build/default/$VERIFIER_DIR/bin/verifier.exe"
 
 if [ "$#" -gt 0 ]; then
     status=0

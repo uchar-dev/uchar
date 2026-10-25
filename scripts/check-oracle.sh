@@ -4,8 +4,8 @@
 # must pass").
 #
 # Four checks:
-#   1. ref/ builds (dune build at the workspace root, which also rebuilds
-#      the ir_v0 loader it links against);
+#   1. ref/ builds (the OCaml workspace, scripts/lib/ocaml-build.sh, which
+#      also builds the ir_v0 loader it links against);
 #   2. ref/'s OWN test suite (ref/test/test_ref.ml) runs green with a
 #      non-zero, floored example count — see below;
 #   3. every corpus/golden/**/case*.json replays exactly: the runner loads
@@ -36,8 +36,9 @@ if ! command -v dune >/dev/null 2>&1; then
     exit 2
 fi
 
-# check 1: build (workspace root: ref/ plus the ir_v0 library).
-if ! dune build ref 2>&1; then
+# check 1: build (the OCaml workspace: ref/ plus the ir_v0 library).
+. scripts/lib/ocaml-build.sh
+if ! ensure_ocaml; then
     echo 'check-oracle: FAIL (build)' >&2
     exit 1
 fi
@@ -60,7 +61,7 @@ fi
 # examples RUNTIME-SEMANTICS.md owes each of its clauses (CLAUDE.md, Spec discipline) — spec
 # artifacts whose executor was unguarded. It is run here, in the gate that already owns ref/ and
 # already builds it, exactly the way gate 6 runs the clingo backend's own suite: run it, demand a
-# count line, floor the count. `dune build ref` above already produces the exe.
+# count line, floor the count. The workspace build above already produces the exe.
 # It sits BELOW the two-argument branch on purpose: that form replays one pair for a person
 # debugging it, and making that pay for the whole suite is a cost with no gate value.
 SUITE_BIN=_build/default/ref/test/test_ref.exe
