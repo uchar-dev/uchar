@@ -305,15 +305,15 @@ final class RuleChecker {
      * WF-045 and WF-051, the verifier's two cycle rules, over the document the emitter writes, in the verifier's own
      * reading of IR-SPEC ch. 5 ({@link Dependencies}): a dependency cycle that passes through no creation of a
      * recursive rule group, and a cycle through a defaults group, are refused in the verifier's sentence, at the head of
-     * the form the verifier reports. {@code check} runs no verifier, and such a document passed it without a word: a
-     * value of one object that depends on the same value of another object of its type, over a role, is a cycle of the
+     * the form the verifier reports. {@code check} runs no verifier, and without this check such a document would pass
+     * it without a word: a value of one object that depends on the same value of another object of its type, over a role, is a cycle of the
      * graph (one node per object type and member, ch. 5.1), and the warning below sees only the reads on a rule's own
      * subject. A cycle that warning names is refused here as well, and the WARNING stays beside the ERROR: it names the
      * cycle in the members the author wrote, where the verifier's sentence names forms. Where a negative edge (ch. 5.2)
      * runs between two forms of a WF-045 cycle the refusal names WF-046 too, the rule the verifier adds for it. A cycle
-     * through an object creation outside a recursive group is refused like any other since 2026-10-06; until then it was
-     * let through, because a fact creation wrote the population of its target type in the graph and so closed a cycle
-     * that does not exist with an object creation that counts members of that type (the casus of the parity zone). One
+     * through an object creation outside a recursive group is refused like any other; a fact creation writes the
+     * relation it lays, not the population of its target type, so it closes no cycle with an object creation that
+     * counts members of that type (the casus of the parity zone). One
      * violation is refused once, where the verifier reports it twice over two edges of one pair. A cycle that only reads
      * of the predecessor over a switch relation close is instance-ordered and admitted, as the verifier admits it
      * (IR-SPEC ch. 5.3); where a read inside a cycle over a switch relation falls outside that scope, the refusal of the
@@ -545,9 +545,9 @@ final class RuleChecker {
     // §4 (PRIORITIZED-DEFAULTS-EVOLUTIE) prioritized-defaults lowering — the uchar DIALECT EXTENSION
     // 'Uitzondering op' / 'Afwijking van' / 'Uitzonderingen ongeordend'. Recognition only ever lowers the extension's
     // OWN blocks; a flat rule family is NEVER folded into a defaults group (PRIORITIZED-DEFAULTS-EVOLUTIE §4.2
-    // rejects that — the source never encoded the priority). All forms LIFT already-resolved ResolvedRegels
+    // rejects that — the source never encoded the priority). All forms LIFT already-resolved ResolvedRules
     // out of resolvedRules into PrioritizedDefaults nodes: WF-050 forbids both a rule AND a defaults group on
-    // one target, so the lifted rule's semantics now live in the defaults group alone. See
+    // one target, so the lifted rule's semantics live in the defaults group alone. See
     // grammar/DIVERGENCES.md for the surface + lowering.
     // ==============================================================================================
 
@@ -850,11 +850,11 @@ final class RuleChecker {
 
     /** WF-022, producer side (fix round 2, 2026-09-23): a rule writes a declared attribute or characteristic of
      *  its OWN universal subject. The frontend builds a target on the subject only, so a sentence that names
-     *  another instance's attribute — "De vakpremie van het strandvak van een Jutter moet …" — came out as an
-     *  attribute named 'vakpremie van het strandvak' on Jutter: the name swallowed the navigation, the type
-     *  stayed unknown, and the document reached disk with {@code diagnostics: []} for the verifier to refuse
-     *  under WF-022 and WF-034. The same for an undeclared attribute, and for a characteristic whose subject is a
-     *  navigation, which resolves to no object type at all. Each is an ERROR now, naming the form. An undeclared
+     *  another instance's attribute — "De vakpremie van het strandvak van een Jutter moet …" — reads as an
+     *  attribute named 'vakpremie van het strandvak' on Jutter: the name swallows the navigation, the type
+     *  stays unknown, and the verifier refuses the document under WF-022 and WF-034. The same holds for an
+     *  undeclared attribute, and for a characteristic whose subject is a navigation, which resolves to no object
+     *  type at all. Each is an ERROR, naming the form. An undeclared
      *  characteristic on a resolved subject is not judged here: a negated one ("is niet X" with X undeclared) is
      *  refused where the name is read ({@link #characteristic}, dialect §4), and a positive one still reaches the
      *  verifier's WF-022 — no card has taken that one yet. */
@@ -864,7 +864,7 @@ final class RuleChecker {
             int line = a.source() == null ? 0 : a.source().line();
             String written = a.source() == null ? a.attribute() : a.source().snippet();
             // a name that is both an attribute and a characteristic of the subject decides no member, and so no rule
-            // kind; before this check a rule on it ended in the emitter's exception
+            // kind, which the emitter cannot write
             if (a.objectType() != null && a.attribute() != null && a.objectType().attribute(a.attribute()) != null
                     && a.objectType().characteristicName(a.attribute()) != null) {
                 refusedTargets.add(r);
@@ -1083,9 +1083,8 @@ final class RuleChecker {
 
     /**
      * WF-034, producer side, for one shape of read: a name that took in a word before 'van'. The name of a read runs
-     * over every inner 'van', so "het maximum van de romplengte van de Schuit" — no function of the language — became a
-     * read of an attribute 'maximum van de romplengte' of Schuit, went to disk with {@code diagnostics: []}, and the
-     * verifier refused the document. Refused here, in the verifier's sentence, where the name the emitter writes is no
+     * over every inner 'van', so "het maximum van de romplengte van de Schuit" — no function of the language — is a
+     * read of an attribute 'maximum van de romplengte' of Schuit, which the verifier refuses. Refused here, in the verifier's sentence, where the name the emitter writes is no
      * member of the type it is read on and its part behind a 'van' is a declared attribute of that type. A name whose
      * part behind a 'van' is a role is {@link #memberError}'s, in the walk of {@link #checkPaths}. An own read
      * of an undeclared name with neither in it is left to the verifier: the casus of the parity zone reads such names,
@@ -1107,8 +1106,7 @@ final class RuleChecker {
 
     /** A constant the wire has no node for: the bound day of a day-kind definition is a BoundDay and the two session
      *  values a ContextValue, and every other name — "hij" written as a value, "de naam … op hij" — would be a
-     *  ContextValue outside WF-098's closed set. Before this check such a document ended in the emitter's exception;
-     *  now it is refused in the verifier's WF-098 sentence. */
+     *  ContextValue outside WF-098's closed set. Such a document is refused in the verifier's WF-098 sentence. */
     private void checkConstants() {
         Set<Object> reported = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         everyWrittenExpr(x -> {
@@ -2362,8 +2360,7 @@ final class RuleChecker {
 
     /** A {@code // Bron:} annotation written above a block HEADER — 'Uitzonderingen ongeordend:' or 'Regelgroep
      *  &lt;naam&gt;' — belongs to no rule: an annotation travels with the rule directly below it, and a header is
-     *  none, so it reaches no default, no group and no rule. It used to vanish without a word; the WARNING says
-     *  where the citation has to go. Not an ERROR: the document is sound, only the citation is lost. These two
+     *  none, so it reaches no default, no group and no rule. The WARNING says where the citation has to go. Not an ERROR: the document is sound, only the citation is lost. These two
      *  headers warn because they open rules, which is where an author expects the citation to reach; an
      *  annotation above a definition documents the declaration and has no wire slot to miss. The group's own
      *  {@code source} is no place for it either: on a rule group that record's snippet is its name. */
@@ -3162,47 +3159,37 @@ final class RuleChecker {
     }
 
     // ==============================================================================================
-    // The set fence (IR-SPEC ch. 4.3), producer side. Until L2 of the v1 wire migration it was WF-096 on the
-    // wire (maintainer decisions 2026-09-09 and — the KIND half — 2026-09-19). Since L2 the wire has no set
-    // flag, and a set reading the fence let through would reach it as a read over a to-many step (WF-053) or,
+    // The set fence (IR-SPEC ch. 4.3), producer side (maintainer decisions 2026-09-09 and — the KIND half —
+    // 2026-09-19). The wire has no set flag, and a set reading the fence let through would reach it as a read over a to-many step (WF-053) or,
     // as the source of a count, as a count over member values (WF-093 (b)). The frontend keeps the reading in
     // memory and refuses it here.
     // ==============================================================================================
 
     /** The seven VALUE folds — the kinds that read a value per contributor, and so the only kinds that
-     *  consume what a set reading hands them. This is the exemption the verifier drew in
-     *  {@code set_source_exempt} under WF-096 until L2 and draws in {@code source_reading} since (arity one
-     *  AND a value-folding kind AND a resolved element type), so the frontend's fence and the wire's are the
+     *  consume what a set reading hands them. This is the exemption the verifier draws in
+     *  {@code source_reading} (arity one AND a value-folding kind AND a resolved element type), so the frontend's fence and the wire's are the
      *  same boundary.
      *
-     *  <p><b>AANTAL_GEVULDE joined this set on 2026-09-20</b> (decision G9's card). The verifier's
-     *  {@code value_fold_name} grew the kind on 2026-09-20 with the wire itself, and this set did not
-     *  follow for two cards — the two fences ran six against seven while no frontend could write the
-     *  kind, so nothing measured the gap. It is the same class of leak the AANTAL narrowing below was,
-     *  from the other side, which is why {@code FoldKindsBoundaryTest} now READS the verifier's own
-     *  list instead of trusting a comment that says the two agree.
-     *  The kind belongs here for the fence's own reason: a filled count is a count in its RESULT but a
+     *  <p><b>AANTAL_GEVULDE is in this set</b> (decision G9). {@code FoldKindsBoundaryTest} READS the verifier's
+     *  own list ({@code value_fold_name}) instead of trusting a comment that says the two agree, so the two fences
+     *  cannot run apart unmeasured. The kind belongs here for the fence's own reason: a filled count is a count in its RESULT but a
      *  VALUE fold in its READING — it asks each contributor's value whether it is there
      *  (`RUNTIME-SEMANTICS.md` ch. 3.4c), which is exactly what a set reading hands it.
      *
-     *  <p><b>AANTAL left this set on 2026-09-19</b> (maintainer decision, `spec/IR-SPEC.md` ch. 4.3):
+     *  <p><b>AANTAL is not in this set</b> (maintainer decision 2026-09-19, `spec/IR-SPEC.md` ch. 4.3):
      *  a count folds the CONTRIBUTORS themselves — `RUNTIME-SEMANTICS.md` ch. 3.4a says so in as many
      *  words and ch. 3.4b restates it for the union — so a set reading under a count names a
-     *  collection the node does not read. Keeping it here was a LEAK, not a stale comment: measured
-     *  2026-09-19, a count over a set reading passed this naloop untouched and was emitted with
-     *  {@code diagnostics: []} although the verifier rejected it under WF-096 and nothing else
-     *  ({@code dev.uchar.regelspraak.CountSetSourceTest}).
+     *  collection the node does not read. With AANTAL in this set a count over a set reading would pass this
+     *  naloop untouched and be emitted with {@code diagnostics: []} although the verifier rejects it (measured
+     *  2026-09-19, {@code dev.uchar.regelspraak.CountSetSourceTest}).
      *
-     *  <p><b>One boundary, one consumer — measured before narrowing.</b> The verifier had to SPLIT its
-     *  hoisted exemption then, because one boolean there fed two rules (WF-034's sentinel fence, which
-     *  exempted the whole folding family, and WF-096's set fence, which no longer did; both left with L2). Here no
-     *  split is needed and that was checked rather than assumed: this set has exactly ONE reader, the
-     *  fold-source test in {@link #checkSetRead}, and it is the frontend's only collection of fold
+     *  <p><b>One boundary, one consumer.</b> This set has exactly ONE reader, the fold-source test in
+     *  {@link #checkSetRead}, and it is the frontend's only collection of fold
      *  kinds at all — the count's own element derivation keys on {@code kind == AANTAL} directly
-     *  ({@link ExpressionBuilder#aggregationElement}) and never consults this set. So the narrowing moves
-     *  the set fence and nothing else. The SENTINEL half has no counterpart here: the frontend writes
-     *  the row-1 wart from its own route and WF-093 governs it, which is why the bare count stays
-     *  clean under this narrowing and its witness says so. */
+     *  ({@link ExpressionBuilder#aggregationElement}) and never consults this set, so this set decides the set
+     *  fence and nothing else. A sentinel fence has no counterpart here: the frontend writes the row-1 wart
+     *  from its own route and WF-093 governs it, which is why the bare count stays clean and its witness says
+     *  so. */
     static final Set<Expr.FunctionKind> FOLD_KINDS = Set.of(
             Expr.FunctionKind.SOM, Expr.FunctionKind.TOTAAL, Expr.FunctionKind.MINIMUM,
             Expr.FunctionKind.MAXIMUM, Expr.FunctionKind.EERSTE, Expr.FunctionKind.LAATSTE,
@@ -3212,8 +3199,8 @@ final class RuleChecker {
      *  definite "de") makes a reference a SET reading: it names the members' values, one per member —
      *  a collection. Exactly one node consumes a collection, the instance fold that OWNS the source,
      *  so the shape is ill-formed at every other READ position: as a whole rule value, as an operand of a
-     *  composite node, inside a condition, and as an operand of the listed value fold (WF-096 until L2; since
-     *  then WF-053 at such a position, and WF-093 (b) at a count's source).
+     *  composite node, inside a condition, and as an operand of the listed value fold (WF-053 at such a
+     *  position, and WF-093 (b) at a count's source).
      *
      *  <p>Measured on this frontend (2026-09-11), all from the one sentence fragment "het gewicht van
      *  alle vondsten van de Jutter": eight routes reached the wire with {@code diagnostics: []} — a
@@ -3226,19 +3213,11 @@ final class RuleChecker {
      *  built before the node that would consume it exists, so "is there a fold around this" is a
      *  question only the enclosing tree can answer, and it is a local one there.
      *
-     *  <p>WARNING, deliberately, and the level is the one knob here. The diagnostic reaches the WIRE
-     *  ({@link dev.uchar.regelspraak.emit.IrEmitter} writes every diagnostic), so the emitted
-     *  document states that it is ill-formed and why — where it used to say {@code diagnostics: []}.
-     *  ERROR would be the fail-fast level and would stop the document reaching disk at all
-     *  ({@link Resolver#irMode} writes nothing when the model carries an error); it is deliberately
-     *  NOT taken here, because one committed test expectation —
-     *  {@code IrTest.references_resolve_via_fact_type_roles}, a third witness of the same producer
-     *  route — asserts that a rule value of exactly this shape resolves error-free, and moving that is
-     *  the maintainer's call. Raising the level is a one-token change at the {@link Severity} below.
+     *  <p>ERROR, the fail-fast level: the document does not reach disk ({@link Resolver#irMode} writes
+     *  nothing when the model carries an error).
      *
-     *  <p>Scope: the READ. A rule's {@code target} is a WRITE position, outside the fence (under WF-096 it was
-     *  verifier-clean and all three executors ignored the field; since L2 the wire carries no set flag at all),
-     *  so it is deliberately not walked.
+     *  <p>Scope: the READ. A rule's {@code target} is a WRITE position, outside the fence (the wire carries no
+     *  set flag), so it is deliberately not walked.
      *  <p>The three VALUE slots of this repo's IR are all walked, and that is the whole list rather than
      *  a sample: a {@link ResolvedRule}'s waarde, a {@code ResolvedConsistency}'s assertie, and a
      *  §13.4.6 {@link ResolvedObjectCreation.MemberInit}'s waarde — the last a generic expressie RHS and
@@ -3657,7 +3636,7 @@ final class RuleChecker {
         if (b == null)
             reportOnce(new Diagnostic(Severity.ERROR, "RGS-173", params("bound", d != null ? src(d) : ""), line));
         // The DATE token admits a time of day, but Validity holds LocalDates: there is no
-        // carrier for it, and reading only the date part used to drop the time silently.
+        // carrier for it, and reading only the date part would drop the time silently.
         boolean time = d != null && d.DATE() != null && d.DATE().getText().contains(":");
         if (time)
             reportOnce(new Diagnostic(Severity.ERROR, "RGS-174", params("bound", src(d)), line));
@@ -4029,8 +4008,7 @@ final class RuleChecker {
         if (attr == null) return null;
         String parentNav = stripArticle(src(parts.get(1)));
         // the written names decide, as for a navigated read (grammar/DIVERGENCES.md, §13.4.1): the parent role, and
-        // where that role stands in several relations, the element role; until the fix round of 2026-09-26 the type
-        // pair decided, and two relations between the types left the rule unlowered whatever the sentence named
+        // where that role stands in several relations, the element role
         java.util.List<RoleBindingRef> scope = model.scopeBindings(elem, src(parts.get(0)), parentNav);
         if (scope.isEmpty()) return null;
         // the wire writes the scope as its binding, and written without it the uniqueness would hold over every
@@ -4041,8 +4019,7 @@ final class RuleChecker {
             return REFUSED;
         }
         RoleBindingRef scopeBinding = scope.get(0);
-        // a reciprocal fact type has no two-role binding to write the scope as; this ended in the emitter's exception
-        // until the fix round of 2026-09-26
+        // a reciprocal fact type has no two-role binding to write the scope as
         if (model.factTypes.get(scopeBinding.factType()).reciprocal) {
             model.diagnostics.add(new Diagnostic(Severity.ERROR,
                     "RGS-182", params("name", name, "scopeParent", src(parts.get(1))), source.line()));
@@ -4089,8 +4066,8 @@ final class RuleChecker {
             return p.kind() == Condition.PredicateKind.LEEG || p.kind() == Condition.PredicateKind.GEVULD;
         // A compound is lowerable when every criterion is: under ALLE the violation is the OR of the
         // criteria's violations, under GEEN and the counting kwantoren (ten minste/hoogste/precies) the
-        // negation of the count of the criteria that hold against the drempel — both Drools branches carry
-        // it since the card aantal-bronarm-en-drools-lader, as ref and the ASP backend did.
+        // negation of the count of the criteria that hold against the drempel — ref, the ASP backend and both
+        // Drools branches carry it.
         if (c instanceof Condition.Compound s)
             return !s.components().isEmpty() && s.components().stream().allMatch(RuleChecker::transpilable);
         return false;
@@ -4325,8 +4302,8 @@ final class RuleChecker {
      *  restricts to the waar|onwaar literal — anything else is an ERROR (it would otherwise lower to a
      *  boolean setter fed a non-boolean: a broken rule at build/fire time). A matched kenmerk stores its
      *  DECLARED name (the match is case-insensitive, the fact property is not). A name that is NEITHER a
-     *  declared attribute NOR a kenmerk of the created type is an ERROR too — the old silent skip emitted
-     *  a setter on a property that does not exist. */
+     *  declared attribute NOR a kenmerk of the created type is an ERROR too — a silent skip would emit a
+     *  setter on a property that does not exist. */
     private ResolvedObjectCreation.MemberInit makeMemberInit(ObjectType createdType, String name,
                                                             ExpressieContext valueCtx, ObjectCreatieContext oc) {
         Expr value = builder.build(valueCtx);
@@ -4485,8 +4462,7 @@ final class RuleChecker {
     /** True when an objectcreatie creates {@code holder} linked to {@code target} ("Een doelwit heeft een
      *  holder"), so — by the convention objectCreatie sets the reference on the new object — {@code holder}
      *  holds the reference field to {@code target}. Any objectcreatie of the document counts, wherever it stands
-     *  ({@link #createdObjects}); until 2026-10-06 only one earlier in the document did, so a feitcreatie
-     *  written above the objectcreatie it walks through was dropped with a WARNING. */
+     *  ({@link #createdObjects}), so a feitcreatie may stand above the objectcreatie it walks through. */
     private boolean createdTo(ObjectType holder, ObjectType target) {
         return objectCreations.stream().anyMatch(p -> p[0] == holder && p[1] == target);
     }
@@ -4518,8 +4494,7 @@ final class RuleChecker {
 
     /** §9.9: the anchor member every startpuntbepaling declares on its subject, declared before any rule resolves, so
      *  a rule that reads it ("zijn startpunt penningjaar") resolves the same wherever the startpuntbepaling stands.
-     *  Until 2026-10-06 {@link #startPointDetermination} declared it when its own rule came up, and a reader written above that rule
-     *  became an unresolved marker. {@link #startPointDetermination} still judges every declaration and writes the rule; this pass
+     *  {@link #startPointDetermination} judges every declaration and writes the rule; this pass
      *  declares only what that would declare, and leaves an author's own member of that name to its refusal. */
     private void startPointAnchors(RegelSpraakDocumentContext doc) {
         for (ResultaatDeelContext rd : resultParts(doc)) {
@@ -5128,7 +5103,7 @@ final class RuleChecker {
         flattenBullets(list, flat);
         List<BulletNode> tree = bulletTree(flat, opener);
         if (tree != null) return conditionsOf(tree);
-        // Refused, but every bullet is still built, as the old marker path did: a subselection inside one is then
+        // Refused, but every bullet is still built: a subselection inside one is then
         // consumed (RGS-099 stays quiet), and an ill-formed bullet keeps its own message.
         for (FlatBullet b : flat) {
             if (b.item() instanceof GenesteVoorwaardeContext g && g.genesteSamengesteldeVoorwaarde() != null) {
@@ -5563,9 +5538,8 @@ final class RuleChecker {
      * (§13.4.2.9 {@code kwantificatie?}, §13.4.17.5) and the whole-period check (§13.4.15.70
      * {@code gehelePeriodevergelijking?}, optional in every §13.4.15.19-.48/.71-.100 operator) are
      * independent productions, so "alle X die Y groter zijn dan N" is as much RegelSpraak as its
-     * qualified sibling; until 2026-09-19 this lowering opened on a qualifier test and refused the plain
-     * spelling, which put a FRONTEND boundary where the language has none (maintainer reading
-     * 2026-09-17). The matrix is then an ordinary, non-temporal condition of the member
+     * qualified sibling; a lowering that refused the plain spelling would put a FRONTEND boundary where the
+     * language has none (maintainer reading 2026-09-17). The matrix is then an ordinary, non-temporal condition of the member
      * (RUNTIME-SEMANTICS ch. 3.9a, whose formula is stated over an arbitrary {@code test}).
      *
      * <p>Scope is exactly ONE set operand in a CONDITION. Every other producer route of the fence — a rule
@@ -5576,8 +5550,7 @@ final class RuleChecker {
      * ASSERTION is fenced too, and on its own carrier's terms rather than the wire's — see
      * {@link #consistency}.
      *
-     * <p>All five §13.4.14 quantifiers over a set lower: ALLE and GEEN, and — since 2026-09-16 — the three
-     * COUNTING quantors, which carry the written telwoord as the fold's {@code threshold} (IR-SPEC ch. 4.5,
+     * <p>All five §13.4.14 quantifiers over a set lower: ALLE and GEEN, and the three COUNTING quantors, which carry the written telwoord as the fold's {@code threshold} (IR-SPEC ch. 4.5,
      * WF-108 (e); the verdict counts the contributors the matrix holds of). A telwoord that is not a
      * positive whole number declines and keeps the fence's error: "ten minste 0 van de" would read as a
      * forall or as nothing at all depending on which arm saw it, and WF-041 refuses the wire form, so
@@ -5587,8 +5560,8 @@ final class RuleChecker {
      * (IR-SPEC ch. 4.5, WF-108 (c); card frontend-kwantor-over-een-pad, 2026-10-20); what the matrix reads of the
      * rule subject carries the form anchor ({@link #matrixAtForm}). A range that does not resolve at all declines and keeps
      * the fence's error rather than lowering, because lowering would be a guess — a quantifier bound to no relation
-     * is the silent-wrong-set failure a required range prevents (WF-048 until L2; since L2 the quantifier fold
-     * carries its range by schema), and a loud refusal beats a fold over a set the sentence never named.
+     * is the silent-wrong-set failure a required range prevents (the quantifier fold carries its range by
+     * schema), and a loud refusal beats a fold over a set the sentence never named.
      *
      * <p>A THIRD shape declines for the same reason the other two do, and it is the §5.6 die/dat
      * SUBSELECTION: a subselectie this resolver cannot bind against the element type leaves the fence's
@@ -5690,9 +5663,8 @@ final class RuleChecker {
     /**
      * Why the test of a quantifier over {@code elem} in a filter cannot read the element of the enclosing subselection,
      * with the read that can: from {@code elem} over its role back to that element, the other role of the fact type of
-     * a one-step {@code range} ("de maand van de beklaagde lading van de Klacht"). Until 2026-10-23 the frontend wrote
-     * such a read over that way back itself; the anchor reaches only the subject of the form (grammar/DIVERGENCES.md,
-     * "The rule subject in a subselection — zelf").
+     * a one-step {@code range} ("de maand van de beklaagde lading van de Klacht"). The anchor reaches only the subject of
+     * the form (grammar/DIVERGENCES.md, "The rule subject in a subselection — zelf").
      */
     private Msg intermediateTest(ObjectType elem, RegelSpraakModel.RoleBindingRef range) {
         ObjectType enclosing = builder.subject();
@@ -5827,11 +5799,10 @@ final class RuleChecker {
      * quantified kenmerkcheck has no worked semantics here and keeps its marker), and a §8.1.7 ROLCHECK
      * of the element, which is a different quantified question and binds nothing here.
      *
-     * <p>Every one of those declines is LOUD (maintainer decision 2026-09-19). Four of them used to be
-     * silent — the bare "de", the §8.1.7 rolcheck of the element, a multi-step range and an unbindable
-     * one — beside three that always spoke, and a sentence that reads as a quantification is exactly the
-     * one whose author cannot see a marker coming. The marker itself is unchanged: the WARNING says which
-     * axis the fold declined on, and the document stays emittable.
+     * <p>Every one of those declines is LOUD (maintainer decision 2026-09-19), the bare "de", the §8.1.7
+     * rolcheck of the element, a multi-step range and an unbindable one included: a sentence that reads as a
+     * quantification is exactly the one whose author cannot see a marker coming. The WARNING says which axis
+     * the fold declined on, and the document stays emittable.
      */
     private Condition quantifierCharacteristicCheck(Expr lhs, ExpressieContext lhsCtx, KaleNaamContext nameCtx, boolean withIndefiniteArticle,
                                     boolean hasVerb, boolean negated, Source source) {
@@ -6506,7 +6477,7 @@ final class RuleChecker {
 
     /** A §13.4.8 single criterion ("&lt;expressie&gt; moet &lt;operator&gt;") is the same
      *  predicate over the same onderwerpexpressie as the matching §5 voorwaarde (§8.3.1),
-     *  so its operands get the identical typeringen check — the lifted criterion now
+     *  so its operands get the identical typeringen check — the lifted criterion
      *  transpiles, which would otherwise let an ill-typed comparison through silently. */
     private void checkConsistencyCriterion(EnkelvoudigeConsistentieRegelContext c) {
         if (c.expressie() == null || c.toplevelOperator() == null) return;
@@ -6524,7 +6495,7 @@ final class RuleChecker {
     }
 
     // §8.3.1/§13.4.15: a TOPLEVEL voorwaarde (after 'indien'/'dat'/'gedurende de tijd dat') takes ONLY the
-    // verb-trailing (vragende) toplevelOperator — the grammar no longer admits the verb-leading register here
+    // verb-trailing (vragende) toplevelOperator — the grammar does not admit the verb-leading register here
     // (that is reserved for samengestelde bullets, checkElemCondition, which keeps both families). So only the
     // toplevelOperator needs checking; an ill-typed predicate is still caught by checkToplevelOp.
     private void checkTopCondition(ToplevelElementaireVoorwaardeContext c) {
@@ -6631,7 +6602,7 @@ final class RuleChecker {
     }
 
     // ---- expression datatype, via the resolved IR ----
-    // The condition checks need an operand's datatype; that is now the type the
+    // The condition checks need an operand's datatype; that is the type the
     // ExpressionBuilder computes for the resolved Expr, so inference and IR can never
     // diverge — they are the same code path.
     /** The type check builds an operand the rule's own resolution already built, so a diagnostic this build repeats

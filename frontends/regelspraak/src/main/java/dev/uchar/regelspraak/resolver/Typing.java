@@ -428,7 +428,7 @@ public final class Typing {
 
     /** §4.4/4.5 result datatype for a maal/gedeeld of two unit-bearing operands, in the cases the Unit
      *  model can represent (a numerator over one simple denominator, or an opaque product); the rest are a LOUD
-     *  error (besluit 17c: a unit the model cannot spell is never a wire type — it used to degrade to Onbekend).
+     *  error (besluit 17c: a unit the model cannot spell is never a wire type, and never degrades to Onbekend).
      *  MAAL: a rate times its (convertible) denominator-unit cancels to the numerator ("€/jr maal jr = €"); two
      *  plain numerators are the opaque product "€ maal m = €·m"; a rate factor ("€·m/jr") is unspellable.
      *  GEDEELD: two plain units divide to a rate ("€ gedeeld door jr = €/jr"), or to a dimensionless number when
@@ -442,7 +442,7 @@ public final class Typing {
                 return Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, rightUnit.numerator()));
             // §4.4: two plain units multiply to a PRODUCT unit ("€ maal m = €·m") the model CAN spell — an opaque
             // composite (no canonical, IR-SPEC ch. 2.5), convertible only to an identical product, so a €·m result
-            // assigned to a € target now flags a unit mismatch (it used to degrade to Onbekend and pass silently).
+            // assigned to a € target flags a unit mismatch (degraded to Onbekend it would pass silently).
             if (el.denominator() == null && rightUnit.denominator() == null)
                 return Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, Unit.product(el, rightUnit)));
             // a rate factor (a second denominator / "€·m/jr") is UNSPELLABLE — besluit 17c: a loud error, not Unknown.
@@ -480,7 +480,7 @@ public final class Typing {
     }
 
     /** Tabel 36/43 rij 7 (vergelijking) and Tabel 61 rij 7 (toekenning): both sides must be the SAME
-     *  enumeration — two attributes of DIFFERENT declared domains used to pass silently on class equality
+     *  enumeration — two attributes of DIFFERENT declared domains would pass silently on class equality
      *  (a comparison that could only be label-coincidence, an assignment that puts a foreign label in). The
      *  verifier refuses both (WF-036's equality arm, WF-023's domain clause), and the callers carry its
      *  sentences. */

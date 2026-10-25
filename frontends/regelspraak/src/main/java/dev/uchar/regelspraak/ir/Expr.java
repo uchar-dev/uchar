@@ -105,9 +105,8 @@ public sealed interface Expr {
     /** §13.4.17.10-.58 named functions and aggregations over their argument expressions.
      *
      *  <p>{@code AANTAL_GEVULDE} is the one member with NO source-language spelling: the filled-value
-     *  count (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4c) is a uchar dialect kind, written first on
-     *  the wire and read here by the Drools backend, which compiles this record. Since 2026-09-20 it
-     *  also has a PRODUCER route, and that route is a dialect extension of this frontend's grammar
+     *  count (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4c) is a uchar dialect kind, written on the wire
+     *  and read here by the Drools backend, which compiles this record. It also has a PRODUCER route, and that route is a dialect extension of this frontend's grammar
      *  rather than a v2.3.0 form: "het aantal gevulde waarden van &lt;setlezing&gt;", measured inert on
      *  official documents in {@code grammar/DIVERGENCES.md} §6. */
     enum FunctionKind {
@@ -128,8 +127,8 @@ public sealed interface Expr {
      *  `filter` is a §13.4.2 "die/dat &lt;predicaat&gt;" subselectie on the counted/aggregated
      *  element ("het aantal deelnemers van de groep die een kind zijn" — only the kind-deelnemers).
      *  It is resolved against the ELEMENT type, not the rule subject. Null when the operand
-     *  carries no such filter. A kenmerk-membership predicate now resolves to a real
-     *  {@link Condition.CharacteristicCheck} against the element type; a filter the resolver still cannot
+     *  carries no such filter. A kenmerk-membership predicate resolves to a real
+     *  {@link Condition.CharacteristicCheck} against the element type; a filter the resolver cannot
      *  structure is kept here as an {@link Condition.Unresolved} marker so the transpiler can see it
      *  must NOT lower the aggregation to a count over every instance — it emits a visible marker
      *  instead of a silently-wrong total. */

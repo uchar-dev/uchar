@@ -334,8 +334,7 @@ public final class RegelSpraakModel {
      *  {@code name}, and only where no role declares it so, of the roles whose guessed plural (+s/+en) it is. One
      *  filler per pass or none: roles of one name with different fillers choose neither, so no position in the
      *  declaration order decides, and a guessed plural never defeats a declared form (grammar/DIVERGENCES.md
-     *  §13.4.1). Until 2026-10-02 the first role in declaration order whose name or plural matched, a guessed plural
-     *  included, decided. */
+     *  §13.4.1). */
     private ObjectType objectTypeViaRole(String name) {
         ObjectType[] declared = rolesFiller(name, true);
         if (declared != null) return declared[0];
@@ -646,9 +645,9 @@ public final class RegelSpraakModel {
      * §8.2 quantifier fold alike. One search, two callers: the emitter's fold arm and the resolver's
      * §8.2 lowering must never classify one written range differently, so neither owns a copy of it.
      *
-     * <p>By-PAIR first, then the WRITTEN name. IR-SPEC ch. 2.2: the pair's uniqueness (WF-048's, until L2) is
-     * computed over the CHAIN-CLOSED type pair, so a new subtype can make a pair that was uniquely connected doubly
-     * connected — and a range that went out bound yesterday would be refused today. The written name is
+     * <p>By-PAIR first, then the WRITTEN name. IR-SPEC ch. 2.2: the pair's uniqueness is computed over the
+     * CHAIN-CLOSED type pair, so a new subtype can make a pair that is uniquely connected doubly connected, and the
+     * pair then binds nothing. The written name is
      * authoritative (§13.4.1) and still names exactly one role, so the binding stays derivable and the
      * document keeps working.
      *
@@ -659,7 +658,7 @@ public final class RegelSpraakModel {
      * through because the element type is a subtype of that role's filler. The range would then go out
      * bound to a relation the sentence never named — verifier-clean and silently folding the wrong set,
      * which is strictly worse than the loud refusal a bindingless fold gets (the emitter refuses it; the
-     * wire requires the range since L2). A phrase that names no
+     * wire requires the range). A phrase that names no
      * role, more than one, or one whose filler is not the element type itself stays bindingless (null),
      * and a binding is never emitted as null.
      */
@@ -858,15 +857,14 @@ public final class RegelSpraakModel {
     }
 
     /** Singular form of a built-in time unit (the lexer's nine units), else the spelling trimmed and
-     *  lower-cased. That fall-through used to hand back the ORIGINAL string, which made the whole
-     *  time-unit table case-sensitive for everything except the nine {@code -en} plurals — those are the
-     *  only spellings the switch below REPLACES, and the replacement happened to be lowercase. Measured
-     *  2026-09-20: {@code chronoUnit} answered WEEKS for {@code weken} and {@code WEKEN} but null for
-     *  {@code WK}, {@code Wk}, {@code ' wk '} and {@code Sec}, so a verifier-clean document with the unit
-     *  spelled {@code WK} split the executors 3-against-2 — the verifier, {@code ref} and the ASP backend
-     *  reckoned in weeks (they trim and lower-case before the lookup) while both Drools branches refused
-     *  the rule as an unknown time unit. RUNTIME-SEMANTICS ch. 3.8 calls the recognition
-     *  case-insensitive, so the defect was here and not in the readers. */
+     *  lower-cased. A fall-through that handed back the ORIGINAL string would make the whole time-unit
+     *  table case-sensitive for everything except the nine {@code -en} plurals, the only spellings the
+     *  switch below REPLACES. Measured 2026-09-20 with such a fall-through: {@code chronoUnit} answered
+     *  WEEKS for {@code weken} and {@code WEKEN} but null for {@code WK}, {@code Wk}, {@code ' wk '} and
+     *  {@code Sec}, so a verifier-clean document with the unit spelled {@code WK} split the executors
+     *  3-against-2 — the verifier, {@code ref} and the ASP backend reckoned in weeks (they trim and
+     *  lower-case before the lookup) while both Drools branches refused the rule as an unknown time unit.
+     *  RUNTIME-SEMANTICS ch. 3.8 calls the recognition case-insensitive. */
     public static String normaliseTimeUnit(String s) {
         String sel = s == null ? "" : s.trim().toLowerCase();
         return switch (sel) {

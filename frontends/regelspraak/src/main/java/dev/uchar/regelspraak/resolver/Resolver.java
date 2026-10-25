@@ -292,8 +292,8 @@ public final class Resolver {
             return 1;
         }
         // A WARNING does NOT block the emission — that is the whole difference with an ERROR — but it must
-        // be SEEN: until 2026-09-19 a successful run printed nothing, so every marker-with-a-warning was
-        // invisible on the one path an author actually uses. stderr, so the stdout summary stays parseable.
+        // be SEEN, also on a successful run, the one path an author actually uses. stderr, so the stdout
+        // summary stays parseable.
         m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println("  " + d));
         // the WARNINGs the emitter itself appends, for what the wire cannot carry, are shown the same way
         dev.uchar.regelspraak.emit.IrEmitter.unwrittenAllocations(m)
@@ -349,8 +349,8 @@ public final class Resolver {
                 .forEach(d -> System.err.println("  " + d));
         // Everything is decided before anything is written: the IR document and every case file as text, and the
         // case files the map already holds that this run would not write — a case left there beside the new ones
-        // would be replayed against an IR document it was not written for. Written until the fix round of
-        // 2026-09-26 file by file, a refusal after the first file left half a case directory behind.
+        // would be replayed against an IR document it was not written for. Written file by file, a refusal
+        // after the first file would leave half a case directory behind.
         String ir = dev.uchar.regelspraak.emit.IrEmitter.emit(irModel);
         java.util.Map<String, String> cases = new java.util.LinkedHashMap<>();
         for (int i = 0; i < b.scenarios().size(); i++) {

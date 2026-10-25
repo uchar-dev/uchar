@@ -130,8 +130,8 @@ public record Unit(String abbreviation, String system, String canonical, BigDeci
     /** Numerator-only conversion factor (the simple-unit rule), for a numerator pair that
      *  {@link #numeratorConvertible} has already accepted: the identity when the two abbreviations are the same,
      *  otherwise the ratio of the two declared factors. Everything else has no factor and says so — a factor
-     *  the declaration left unknown (the wire admits a canonical without a factorToCanonical), which used to
-     *  answer 1: that is how a name mismatch became a wrong magnitude instead of a fault. The
+     *  the declaration left unknown (the wire admits a canonical without a factorToCanonical): answering 1 there
+     *  would turn a name mismatch into a wrong magnitude instead of a fault. The
      *  DIFFERENT-canonical throw below is a defensive assertion, unreachable under the callers' precondition
      *  (numeratorConvertible already accepted the pair, so unequal abbreviations imply one shared non-null
      *  canonical — measured over 8.8M constructed pairs, zero hits; no witness pins it and none claims to). Called for the DENOMINATOR too, so
@@ -153,14 +153,13 @@ public record Unit(String abbreviation, String system, String canonical, BigDeci
      *  composite-aware, so €/jr→€/mnd (factor 1/12) requires conversion even though the
      *  numerators share an abbreviation.
      *
-     *  <p>Two units that do NOT inter-convert answer false, now explicitly rather than through an invented
+     *  <p>Two units that do NOT inter-convert answer false, explicitly rather than through an invented
      *  factor of 1. This is the one legitimate caller of the unguarded question: the transpilers ask it as
      *  "is this a cross-unit site?" on operand pairs whose convertibility they have not established (a §8.2
      *  timeline bound, an additive pair, a begrenzing bound) — and "no common unit" is precisely where no
-     *  factor exists. On such pairs the answer is unchanged from the fallback it replaces (false either way,
-     *  measured). The one exception is the wire form: a CONVERTIBLE pair whose canonical has no declared
-     *  factorToCanonical now throws here too, via the factor question, where it used to answer false — the
-     *  method is no longer total, and it sits behind every gated call site as well.
+     *  factor exists. The one exception is the wire form: a CONVERTIBLE pair whose canonical has no declared
+     *  factorToCanonical throws here too, via the factor question — the method is not total, and it sits
+     *  behind every gated call site as well.
      *  @throws IllegalStateException on the wire form: convertible, but the shared canonical carries no
      *  declared factorToCanonical. A caller that must tell "same unit" from "no common unit" apart asks
      *  {@link #convertibleTo}. */

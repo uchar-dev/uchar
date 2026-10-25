@@ -27,14 +27,11 @@ import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
  * binding references against the model and computing result datatypes via the
  * {@link Typing} matrix.
  *
- * The node datatypes it produces are, by construction, exactly the datatypes the
- * checker's earlier inline inference produced — so type-checking diagnostics, and
- * the resolver's "unknown ⇒ no claim" guarantee, are unchanged by the move to an
- * AST. What the AST adds is structure: arithmetic, aggregations and bounds are now
- * first-class nodes, and attribute/parameter references are bound, giving the
- * transpiler something to walk instead of a bare datatype. Aggregation result typing,
- * once deliberately left at Onbekend, has since landed in {@code functionType} — SOM,
- * TOTAAL (with the §4.20 rate strip), MIN/MAX, AANTAL and the date functions all carry a
+ * The resolver's "unknown ⇒ no claim" guarantee holds for the node datatypes it
+ * produces. Arithmetic, aggregations and bounds are first-class nodes, and
+ * attribute/parameter references are bound, giving the transpiler something to walk
+ * instead of a bare datatype. {@code functionType} types the aggregations — SOM, TOTAAL
+ * (with the §4.20 rate strip), MIN/MAX, AANTAL and the date functions all carry a
  * computed type; the kinds with no scalar meaning keep Onbekend on purpose.
  */
 final class ExpressionBuilder {
@@ -717,9 +714,8 @@ final class ExpressionBuilder {
 
     /** RUNTIME-SEMANTICS ch. 3.8: every executor truncates a fractional duration count toward zero before the
      *  calendar step. A sentence that adds or subtracts a duration whose count can carry a fraction therefore says
-     *  more than the executors do — "zijn startdag plus 20,5 mnd" lands half a month short — and until 2026-10-01
-     *  the resolver wrote it without a word while ref, the ASP backend and the Drools branches agreed on the
-     *  truncated date. The wire keeps the ch. 3.8 meaning (a hand-written document with a fractional count is
+     *  more than the executors do — "zijn startdag plus 20,5 mnd" lands half a month short — while ref, the ASP
+     *  backend and the Drools branches agree on the truncated date. The wire keeps the ch. 3.8 meaning (a hand-written document with a fractional count is
      *  well-formed and pinned), so the refusal is this producer's own: the duration and its unit as written, the
      *  truncation, and the forms that say what is meant (grammar/DIVERGENCES.md, "A date plus or min a duration
      *  that can carry a fraction"). Null when the count is whole by its form. */
@@ -896,8 +892,8 @@ final class ExpressionBuilder {
     /** Arithmetic node over already-built operands (used where the right operand is a
      *  primaireExpressie, e.g. the exponent of "tot de macht"). A typeringen error (a
      *  family mismatch or incompatible/inconvertible units) is SURFACED as a diagnostic
-     *  before degrading the result to Onbekend — the comparison and begrenzing paths
-     *  already do; the arithmetic path used to swallow it (p45). An Onbekend operand makes
+     *  before degrading the result to Onbekend, as the comparison and begrenzing paths
+     *  do (p45). An Onbekend operand makes
      *  reken return ok (no claim), so no false positive on an unresolved sub-expression. */
     private Expr binaryExpr(Expr.BinOp op, Expr left, Expr right, Source source, int line) {
         // §6.11: "datum plus 2 kerstdagen" — a declared dagsoort as duration unit is a valid date shift
@@ -931,9 +927,8 @@ final class ExpressionBuilder {
     }
 
     /** A rounding rounds a number (§13.4.17.26). The rounding binds weakest, so written behind a date sum without the
-     *  parentheses around the duration it rounds the date: until 2026-10-01 that went to disk as a Rounding over a
-     *  Date, which the verifier admits, ref refuses at evaluation, the ASP backend reads as the unrounded date and the
-     *  Drools exec branch crashes on. Null where the value is a number, or no claim is made. */
+     *  parentheses around the duration it rounds the date: a Rounding over a Date, which the verifier admits, ref
+     *  refuses at evaluation and the ASP backend reads as the unrounded date. Null where the value is a number, or no claim is made. */
     private static Typing.Coded roundingError(Expr base, Source source, String rounding) {
         Datatype t = base.type();
         if (t == null || t.isUnknown() || t.isNumberLike()) return null;
@@ -1053,7 +1048,7 @@ final class ExpressionBuilder {
                 // and lossless, with every embedded character kept verbatim and nothing unescaped. Taking the
                 // TOKENS rather than source.snippet() minus its first and last char also keeps the interior's own
                 // whitespace: DefinitionResolver.src collapses every whitespace run to one space, which a
-                // snippet-derived value silently carried into the text ("a  b" became "a b").
+                // snippet-derived value would silently carry into the text ("a  b" would read "a b").
                 StringBuilder text = new StringBuilder();
                 for (Expr.TextComposition.Part part : parts) text.append(((Expr.TextComposition.LiteralChunk) part).text());
                 return new Expr.Literal(text.toString(), new Datatype.Text(), source);
@@ -1154,8 +1149,7 @@ final class ExpressionBuilder {
     /* The RegelSpraak SOURCE readers: the §13.2.19/.21 DATE token as the author wrote it, day-first, the
      * variable-width day and month the token admits cut to one or two digits, matched whole. They live here
      * and not in core.Literals because Literals is the WIRE reader the back-ends link, and the wire carries
-     * the ISO lexeme alone (WF-084, WF-095); until 2026-09-23 the two were one reader, so every back-end also
-     * read the snippet that no conforming document carries (card datumtijd-lezers-versmalling). The Drools
+     * the ISO lexeme alone (WF-084, WF-095; card datumtijd-lezers-versmalling). The Drools
      * backend's build excludes this package, so no back-end can reach these. */
     private static final java.util.regex.Pattern SOURCE_DATE = java.util.regex.Pattern.compile(
             "(?:dd\\. +)?(\\d{1,2})-(\\d{1,2})-(\\d{4})");
@@ -1551,13 +1545,12 @@ final class ExpressionBuilder {
      *
      * <p>(a) A written CHAIN that does not become a path: a NESTED set step ("… van alle X van alle Y van
      * de Z"), or any chain of three segments or more ("… van alle X van de Y van de Z" too) that the walk
-     * declines. Since WF-102 the uchar wire carries a written multi-step range as {@code sourcePath} (IR-SPEC
-     * ch. 4.3) where {@link #rangePath} binds it off the chain, and such a chain returns before this route (the
+     * declines. The uchar wire carries a written multi-step range as {@code sourcePath} (IR-SPEC ch. 4.3,
+     * WF-102) where {@link #rangePath} binds it off the chain, and such a chain returns before this route (the
      * first check below). A chain it declines has the one-step spelling alone, one {@code elementType} plus one
      * {@code sourceRole}, and the emitter's derivation ranges from the RULE SUBJECT to the innermost element
      * type — so the written steps disappear without a trace and the fold runs over the wrong set. Where no
-     * relation joins subject and element that was caught downstream (WF-048, until L2; since then the emitter
-     * refuses a fold it cannot bind); where one happens to exist it is verifier-CLEAN and silently wrong,
+     * relation joins subject and element the emitter refuses a fold it cannot bind; where one happens to exist it is verifier-CLEAN and silently wrong,
      * which is the shape this refusal exists for. The WARNING names where the walk stopped
      * ({@link #walkRange}): the step that binds no role and why, an anchor that is not the subject, or a
      * landing on another type than the element type.
@@ -1586,8 +1579,7 @@ final class ExpressionBuilder {
         if (o == null) return null;
         // (a): a written chain the walk declined, and every nested set step. The refusal names where the chain
         // stopped: the step that binds no role and why, an anchor that is not the subject, a landing on another
-        // type. The ground this route gave before WF-102, that a fold source carries one relation, no longer
-        // holds. A nested chain the walk does not decide has no anchor it can read: fewer than three segments,
+        // type. A nested chain the walk does not decide has no anchor it can read: fewer than three segments,
         // or a last segment that is no name.
         RangeWalk walk = walkRange(o);
         if (walk.refusal() != null || nestedSetStep(o) != null) {
@@ -2112,20 +2104,18 @@ final class ExpressionBuilder {
         // (A min/max value-fold reaches here too with >1 operand, but its die is on a sub-operand
         // navigation, not the element — so it is excluded; only AANTAL unions.)
         //
-        // NOT the §5.7 route any more, and dead for every concatenation that RESOLVES (2026-09-20,
-        // card unie-telling). A resolving concatenation becomes an InstanceSetUnion in buildFunction,
-        // which runs BEFORE this method, so what still reaches this branch is a concatenation
-        // buildInstanceUnion REFUSED. The OR-filter form it builds is deliberately not a second
-        // spelling of the union (IR-SPEC ch. 4.3); what it can still reach never reaches disk.
+        // NOT the §5.7 route, and dead for every concatenation that RESOLVES (card unie-telling). A
+        // resolving concatenation becomes an InstanceSetUnion in buildFunction, which runs BEFORE this
+        // method, so what reaches this branch is a concatenation buildInstanceUnion REFUSED. The
+        // OR-filter form it builds is deliberately not a second spelling of the union (IR-SPEC ch.
+        // 4.3); what it can reach never reaches disk.
         //
-        // The branch is not DELETED, and that was measured rather than assumed (fixronde
-        // 2026-09-22): removing it shifts the marker-reason census MarkerReasonPinTest pins (3 -> 2)
-        // and costs the `consumed` bookkeeping its consumption of the operands' subselecties,
-        // which then report themselves as silently dropped — three diagnoses where the ERROR had
-        // said it once. What DID move is the noise: it used to raise a "die/dat wordt nog niet
-        // omgezet" WARNING on a refused concatenation that carried no die/dat at all. The guard
-        // below asks the question only when an operand really writes one, so the WARNING is now
-        // true wherever it fires and silent where it has nothing to report; a sentence WITH an
+        // The branch stays (measured 2026-09-22): removing it shifts the marker-reason census
+        // MarkerReasonPinTest pins (3 -> 2) and costs the `consumed` bookkeeping its consumption of
+        // the operands' subselecties, which then report themselves as silently dropped — three
+        // diagnoses where the ERROR says it once. The guard below raises the "die/dat wordt nog niet
+        // omgezet" WARNING only when an operand really writes a die/dat, so the WARNING is true
+        // wherever it fires and silent where it has nothing to report; a sentence WITH an
         // unresolvable subselectie keeps both its ERROR and its WARNING (measured, both probes).
         if (f instanceof AantalFuncContext) {
             // No operand writes a subselectie at all: there is nothing to OR and nothing to report, so
@@ -2209,12 +2199,9 @@ final class ExpressionBuilder {
         if (filter != null) return new Subselection(filter, null);
         // §5.6 getalpredicaat "die <op> <expr>" names no attribute of its own, so elementComparison
         // re-anchors the FOLD's operand as its left side. When that operand is TIJDSAFHANKELIJK the filter
-        // has no reading — a timeline in a scalar slot (ch. 3.3) — and it is refused below. That used to be
-        // the case BY CONSTRUCTION on this position, because the §8.2 qualifier was what admitted the fold
-        // at all and §8.2 only qualifies a temporal onderwerp; since the unqualified fold landed
-        // (2026-09-19) the matrix is an ordinary condition and the operand is usually scalar, so the filter
-        // binds here. The refusal was always keyed to the ATTRIBUTE's granularity rather than to the
-        // position, so it needed no change — only its reason had to stop claiming the position.
+        // has no reading — a timeline in a scalar slot (ch. 3.3) — and it is refused below. The matrix of an
+        // unqualified fold is an ordinary condition and the operand is usually scalar, so the filter binds
+        // here; the refusal is keyed to the ATTRIBUTE's granularity rather than to the position.
         // A MEMBERSHIP fold (the kenmerkcheck over a quantified subject) quantifies no attribute at all,
         // so there is no operand for a getalpredicaat to re-anchor on; it falls into the reason below.
         filter = elementComparison(p, elem, quantified == null ? List.of() : List.of(quantified));
@@ -2248,8 +2235,7 @@ final class ExpressionBuilder {
      *  {@link Expr.InstanceSetUnion} — one selection per operand, each with its own population, its
      *  own one-step relation and its own die/dat subselection. Null when the route does not open,
      *  with {@link #unionRefusal} carrying the reason unless the operands are not subject
-     *  expressions at all (there the arity refusal already says everything, in the words it has said
-     *  since 2026-09-20).
+     *  expressions at all (there the arity refusal says everything).
      *
      *  <p>What it does NOT build: a union over two POPULATIONS (WF-110 (d)), a selection whose
      *  relation is not uniquely derivable (WF-110 (e) — a union names each selection's relation and
@@ -2297,8 +2283,7 @@ final class ExpressionBuilder {
             // `jutterswet-kaveltelling`, whose whole point is that such a plural does not bind.
             //
             // So fall back to the TYPE PAIR — the unique fact-type role reaching the element from the
-            // subject — which is exactly the derivation the ONE-selection count has always leaned on
-            // (WF-048's model until L2, when executors still derived a bindingless fold's range). WF-110 (e) is
+            // subject — which is the derivation the ONE-selection count leans on too. WF-110 (e) is
             // unmoved by this: it forbids the WIRE from omitting the relation, so that a consumer never
             // derives one; how the PRODUCER arrives at the relation it writes is the producer's own
             // business, and it writes the result out explicitly either way.
@@ -2503,13 +2488,13 @@ final class ExpressionBuilder {
             // explicit Percentage row + prose exactly where it admits one (§5.1/§5.3 comparison tables) and
             // explicitly excludes Percentage where it means to (§6.7 maal) — Tabel 21 does neither. The
             // "gespecialiseerd numeriek datatype" sentence (§3.3.5) does not override the tables (see
-            // grammar/DIVERGENCES.md). A Percentage som-operand is now a type error, no longer silently summed.
+            // grammar/DIVERGENCES.md). A Percentage som-operand is a type error, never silently summed.
             case SOM -> verifierSentence("som van", Typing.numberAggregation("som van", types),
                     arithmeticFoldSentence(Spelling.AGGREGATION_KIND.spelling(kind), arguments));
             // §4.6 Tabel 16 (wortel van) / §4.9 Tabel 20 (absolute waarde van): the single operand must be Numeriek.
-            // WORTEL always types Numeriek regardless of its radicand, so "de wortel van <tekst>" produced a Numeriek
-            // result with NO diagnostic; ABSOLUTE_WAARDE propagates the operand type, so "absolute waarde van (<datum>)"
-            // leaked a datum unless a downstream assignment happened to reject it. Both now reject a concrete
+            // WORTEL always types Numeriek regardless of its radicand, so "de wortel van <tekst>" would produce a
+            // Numeriek result with NO diagnostic; ABSOLUTE_WAARDE propagates the operand type, so "absolute waarde
+            // van (<datum>)" would leak a datum unless a downstream assignment happened to reject it. Both reject a concrete
             // non-numeriek operand at the operator (Onbekend skipped, no claim), in the verifier's words where it
             // refuses the operand too (WF-038).
             case WORTEL -> verifierSentence("de wortel van", Typing.numberAggregation("de wortel van", types),
@@ -2602,8 +2587,8 @@ final class ExpressionBuilder {
      *  "het aantal 3", "het aantal (3 plus 4)", "het aantal drempel" (a parameter), "het aantal
      *  Vondsten" — each an AANTAL with {@code elementObjectType: null}, all with
      *  {@code diagnostics: []}, in the v0 wire spelling of that date; on the L5 wire the shape is a
-     *  {@code count} without {@code elementType}. The verifier now rejects that shape, and {@code ref}
-     *  used to answer it with the operand counted, not a population ({@link dev.uchar.regelspraak
+     *  {@code count} without {@code elementType}. The verifier rejects that shape, where {@code ref}
+     *  answered it with the operand counted, not a population ({@link dev.uchar.regelspraak
      *  .CountWithoutSourceTest}).
      *
      *  <p>ERROR for the same reason as the arity arm: {@link Resolver#irMode} then writes nothing.
@@ -2869,7 +2854,7 @@ final class ExpressionBuilder {
     /**
      * Result datatype of an aggregation/function. The aggregations that preserve
      * their operand's type — sum/total/min/max/first/last/abs — yield the element
-     * type (which now carries a real unit once the argument's subject resolves
+     * type (which carries a real unit once the argument's subject resolves
      * through a role); a count is a non-negative integer; concatenation is Tekst;
      * the date constructors and Easter are dates. The unit/precision-sensitive
      * functions (tijdsduur's "in hele <eenheid>", wortel's unit drop, date-component
@@ -2912,7 +2897,7 @@ final class ExpressionBuilder {
             case SOM, EERSTE, LAATSTE, ABSOLUTE_WAARDE -> first;
             // §4.20 Tabel 30: totaal-van INTEGRATES a rate over time, so the result drops the /tijdseenheid —
             // row 1 result eenheid "-", row 2 "Eenheid1" (the numerator). "het totaal van <EUR/mnd>" types EUR
-            // and assigns cleanly to a EUR target (a EUR/mnd target is now the unit mismatch it should be).
+            // and assigns cleanly to a EUR target (a EUR/mnd target is the unit mismatch it should be).
             // A non-rate operand type passes through unchanged (the §7.1 unitless-Bedrag path).
             // The strip is suppressed on the NON-TEMPORAL SET READING alone (maintainer decision 2026-09-04,
             // read narrowly: a non-set non-temporal rate read keeps the strip and both executors refuse it
@@ -2959,7 +2944,7 @@ final class ExpressionBuilder {
             // milliseconde uit) is a unitless non-negative whole Numeriek. Typing it (rather than leaving it
             // Onbekend, which makes Typing.compare short-circuit OK) lets the comparison matrix REJECT an
             // illegal use — e.g. "de maand uit X eerder dan <een datum>", which Tabel 45 restricts to two dates
-            // — instead of the transpiler now lowering it to an uncompilable BigDecimal-vs-LocalDate term.
+            // — instead of the transpiler lowering it to an uncompilable BigDecimal-vs-LocalDate term.
             case JAAR_UIT, MAAND_UIT, DAG_UIT, UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT ->
                     new Datatype.Numeric(true, 0, Datatype.Sign.NIET_NEGATIEF, null);
             // §7.3.2/§13.4.17.58: the pro-rata part carries the BASE's value type — the per-bucket fraction
@@ -3054,7 +3039,7 @@ final class ExpressionBuilder {
      *  - positie beyond the rule's same-named bindings: ERROR (the rule does not name that many onderwerpen);
      *  - two or more same-named bindings: the genuinely multi-bound case needs one pattern variable PER
      *    mention, which the single-subject rule IR does not carry — WARNING + honest marker, never a silent
-     *    alias of one binding (which is what dropping the ordinal used to mean);
+     *    alias of one binding (which is what dropping the ordinal would mean);
      *  - eerstgenoemde/laatstgenoemde/positie-1 over at most one binding: the bare resolution IS the answer. */
     private Expr checkOrdinal(RangtelwoordContext r, String name, ParserRuleContext ref, Source source) {
         if (r == null) return null;
@@ -3072,7 +3057,7 @@ final class ExpressionBuilder {
             // pairing/ranging over the several bindings is, and the typeringen matrix is silent. So a genuinely
             // multi-bound rule is spec-UNDERDETERMINED, not merely unimplemented: we cannot lower it soundly (which
             // mention order, which pairing). It stays a visible WARNING + honest marker in both back-ends — never a
-            // silent alias of one binding (which is what dropping the ordinal used to mean).
+            // silent alias of one binding (which is what dropping the ordinal would mean).
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                     "RGS-090", params("bindings", bindings, "name", name, "expression", source),
                     r.getStart().getLine()));
@@ -3108,10 +3093,10 @@ final class ExpressionBuilder {
         // percentage P is the LEFTMOST kaleNaamDeel and V is the ordinary value read "<every remaining deel> van
         // <onderwerp>", which walks a chain of to-one steps as any read does ("het taxatiebedrag van de taxatie van
         // de Vondst"); with no inner 'van' (one deel) V is the onderwerp built as a value, or a "Daarbij geldt"
-        // variable it names. Until 2026-10-02 a V of more than one remaining deel stayed a marker.
+        // variable it names.
         // Each operand carries the text that writes it, so that a sentence naming the operands with their values
         // names each once: P its name part without the sign (the sign is the function's, as in the '%' form), V
-        // the remaining delen with the onderwerp. Until 2026-10-22 both carried the sentence of the function.
+        // the remaining delen with the onderwerp.
         java.util.List<KaleNaamDeelContext> parts = a.attribuutMetLidwoord().kaleNaam().kaleNaamDeel();
         Parameter pct = percentageParameter(src(parts.get(0)));
         if (pct != null) {
@@ -3321,7 +3306,7 @@ final class ExpressionBuilder {
      * §5.8/§13.4.2 the MULTI-STEP fold-source range ("de &lt;attr&gt; van alle X van alle Y van &lt;onderwerp&gt;"),
      * resolved into the symbolic bindings the uchar wire carries as {@code sourcePath} (IR-SPEC ch. 4.3,
      * WF-102). The written names are authoritative (§13.4.1: the written role IS the navigation), which is
-     * the whole point — the by-PAIR derivation that used to stand in here looks only at TYPES and will bind
+     * the whole point — a by-PAIR derivation looks only at TYPES and will bind
      * a coincidental direct subject-to-element relation, folding a different set from the one the sentence
      * names.
      *
@@ -3399,9 +3384,7 @@ final class ExpressionBuilder {
         // that role's filler. Where the name is no object type (not its name, not its declared plural), it named
         // the role, and the role decides the element type: the filler. Where it names an object type, that type is
         // the population, which a subtype of the filler narrows (IR-SPEC ch. 2.2) and any other type contradicts:
-        // binding it anyway would fold a set the sentence does not name. Until 2026-10-02 the head noun's own
-        // binding decided, through the first role in declaration order that carried the name, so the order of the
-        // fact types could refuse the walk (grammar/DIVERGENCES.md §13.4.1).
+        // binding it anyway would fold a set the sentence does not name (grammar/DIVERGENCES.md §13.4.1).
         ObjectType written = elementNameObjectType(segments.get(0));
         if (written != null && written != holder && !written.isA(holder))
             return RangeWalk.refused(Msg.frontend("PART.range-element-mismatch", "source", source, "holder", holder.name,
@@ -3529,8 +3512,8 @@ final class ExpressionBuilder {
     /** §13.4.2 whether {@code o}'s top-level quantifier ranges over a SET — a kwantificatie that is NOT the bare
      *  definite "de" (alle / al / geen van de / ten minste … / ten hoogste … / precies …). A possessive, an
      *  indefinite "een &lt;X&gt;" universal subject, or an onderwerpketen carries no kwantificatie and is a single
-     *  object. The structural replacement for the old subjectSource "alle " text scan, computed once from the parse
-     *  tree (so it also catches the threshold quantifiers the text scan missed, and is immune to casing/spacing). */
+     *  object. Computed once from the parse tree, not by a text scan of subjectSource for "alle ", so it catches the
+     *  threshold quantifiers too and is immune to casing/spacing. */
     private static boolean isSetSubject(OnderwerpContext o) {
         if (o == null || o.kwantificatie() == null) return false;
         KwantificatieContext q = o.kwantificatie();
@@ -3844,8 +3827,8 @@ final class ExpressionBuilder {
 
     /** A bare name: a "Daarbij geldt" variable, else a known parameter binds to a ParameterRef; anything else is
      *  unresolved, a marker whose WARNING names it. The onderwerp route ("de basisprijs") and the variabeleNaam route
-     *  ("basisprijs", without an article) answer alike: until 2026-10-22 the second kept the name as a VariableRef
-     *  without a word, a document the verifier refuses (WF-034: a variable reference resolves against no binding). */
+     *  ("basisprijs", without an article) answer alike; the name kept as a VariableRef without a word would be a
+     *  document the verifier refuses (WF-034: a variable reference resolves against no binding). */
     private Expr nameRef(String name, Source source) {
         // §11 resolve the captured "Daarbij geldt:" definition FIRST: a local variable reference works WITH or WITHOUT
         // a leading article (the spec explicitly allows a lidwoord at a variable reference — "de drempel" arrives via

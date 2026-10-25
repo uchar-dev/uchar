@@ -17,10 +17,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The wire spelling of every enumeration value, family by family (IR-SPEC, Conventions: English lowerCamel since
- * the L5 landing). The Java records keep their v0 form, so their constants are the v0 wire values the emitter
- * used to write by name; memory and wire now spell differently, and this class is the one place where the two
- * meet. The emitter asks it for the spelling of an in-memory value, and the Drools loader, which compiles these
+ * The wire spelling of every enumeration value, family by family (IR-SPEC, Conventions: English lowerCamel). The
+ * Java records keep their v0 form, so their constants are the v0 wire values; memory and wire spell differently,
+ * and this class is the one place where the two meet. The emitter asks it for the spelling of an in-memory value, and the Drools loader, which compiles these
  * records, asks it for the value a wire spelling names at a place. No other code turns an enum into wire text
  * or wire text into an enum: a second copy of the table would drift from this one and nothing would notice.
  *

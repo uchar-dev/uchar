@@ -67,14 +67,14 @@ public final class TimeCalculation {
      *  <p>That order is the point of this method, and it is normative: RUNTIME-SEMANTICS ch. 3.8 recognises a
      *  duration's unit by spelling through the table and settles the remainder with "a spelling outside the
      *  table is a declared day kind" — outside, so the table goes first. The verifier (WF-035, WF-038), the
-     *  reference interpreter and the ASP backend have always read it that way; both Drools branches asked the
-     *  registry first, at all four of their day-kind positions, until 2026-09-20. On a document that registered
-     *  a calendar spelling as a day-kind unit the executors therefore SPLIT — three read calendar arithmetic
-     *  where these two read a day-kind walk — and that document was verifier-clean at the time. Measured on
-     *  {@code jutterswet-bergingsklok} with its unit spelled {@code wk} and {@code wk} registered beside it:
-     *  {@code ref} answered 2026-03-31 / 2026-02-17 / 5 / 5 where both branches here answered the day-kind
-     *  2026-04-15 / 2026-02-01 / 3 / 3. WF-017 refuses such a document since the same day, so the wire no
-     *  longer carries the contradiction; this method is why an executor could not act on it either way.
+     *  reference interpreter and the ASP backend read it that way, and so does this method at the four day-kind
+     *  positions of the Drools backend. Asked registry first, on a document that registers a calendar spelling
+     *  as a day-kind unit, the executors SPLIT — three read calendar arithmetic where the fourth reads a day-kind
+     *  walk. Measured 2026-09-20 on {@code jutterswet-bergingsklok} with its unit spelled {@code wk} and
+     *  {@code wk} registered beside it: {@code ref} answered 2026-03-31 / 2026-02-17 / 5 / 5 where the
+     *  registry-first reading answered the day-kind 2026-04-15 / 2026-02-01 / 3 / 3. WF-017 refuses such a
+     *  document, so the wire does not carry the contradiction; this method is why an executor cannot act on it
+     *  either way.
      *
      *  <p>The four callers keep their own fall-through to {@link #chronoUnit}: a spelling that is neither a day
      *  kind nor a table entry is still an honest marker/skip there. */

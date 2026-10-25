@@ -21,7 +21,7 @@ import java.util.TreeSet;
  * WF-051, each with the verifier's sentence. It reads the document the emitter writes and not the model, so it
  * judges what the verifier judges; {@code check} has no verifier to call, so the frontend repeats it, as it repeats
  * other WF rules in their sentences. {@link #edges} prints the graph in the form of {@code verifier --dependency-edges},
- * so the two can be compared line for line. Since 2026-10-22 a read carries its path, and the instance-ordered parts
+ * so the two can be compared line for line. A read carries its path, and the instance-ordered parts
  * of IR-SPEC ch. 5.3 are found as the verifier's {@code instance_ordering} finds them: their shifted edges leave the
  * graph both walks read, and a part over a switch relation that falls on a clause of ch. 5.3 names its reads outside
  * ({@link #find}).

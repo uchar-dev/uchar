@@ -371,9 +371,9 @@ public final class DefinitionResolver {
     /** An extension adds members to a type and replaces none (grammar/DIVERGENCES.md, §5 and §7). A member it declares
      *  that the type already carries, in its head or, where no head declares it, in an earlier extension, is admitted
      *  as that declaration written again word for word, the opgave marker aside; the repeat may add the marker once.
-     *  Any other repeat is an ERROR at the repeat's line that names both lines: until this check the repeat replaced
-     *  the declaration without a word, also with another datatype, and a repeated characteristic went to the wire
-     *  twice. The words decide, so layout and the closing ';' do not count. The literal repeat is admitted because it
+     *  Any other repeat is an ERROR at the repeat's line that names both lines: admitted, the repeat would replace
+     *  the declaration without a word, also with another datatype, and a repeated characteristic would go to the
+     *  wire twice. The words decide, so layout and the closing ';' do not count. The literal repeat is admitted because it
      *  changes nothing, and the casus of the repository's parity zone writes three of them. Along the
      *  inheritance line WF-105 refuses every repeat, literal or not ({@link #refuseShadowedMembers}). A definition the
      *  parser recovered inside is left alone: its syntax error is the one to act on. */
@@ -448,8 +448,8 @@ public final class DefinitionResolver {
     /** An extension declares attributes and characteristics, so the grammar reads a role line in it ('de vinder
      *  Jutter;') as an attribute whose type is a domain. Where that name is no domain but a declared object type, and
      *  the member's name is a role of a fact type the type or a supertype of it takes part in, the line declares that
-     *  role again: an ERROR naming both lines. Until this check the line was refused as an undeclared domain on line
-     *  0; the member leaves the model, so that refusal does not come beside this one. */
+     *  role again: an ERROR naming both lines. The member leaves the model, so no refusal as an undeclared domain
+     *  comes beside this one. */
     private void refuseRoleRedeclaration(Member d) {
         AttribuutSpecificatieContext a = d.ctx().attribuutSpecificatie();
         if (a.datatype() != null || a.domeinNaam() == null) return;
@@ -592,8 +592,7 @@ public final class DefinitionResolver {
 
     /** Resolve an attribute/parameter type: a concrete datatype, or a (possibly forward) domain reference. */
     /** §3.4 the attribute-level unit clause ("de prijs Bedrag met eenheid €"): a domain-typed attribute pins a unit
-     *  on its number. The clause used to be parsed and never read, so the unit was dropped and the attribute written
-     *  as a bare number, where every unit check reads it. It sets the unit of a number without one; on a number that
+     *  on its number, which every unit check reads. It sets the unit of a number without one; on a number that
      *  carries a unit already, a percentage (whose unit is %) or a value of another kind it has no reading, and is
      *  refused. */
     private Datatype withUnit(Datatype dt, AttribuutSpecificatieContext a, String name) {
@@ -745,8 +744,8 @@ public final class DefinitionResolver {
         }
         model.unitSystems.put(system.name, system);
         // the wire writes a factor as a fraction of two integers from 1 to 2^62 - 1 (IR-SPEC ch. 2.5): a declared zero
-        // or negative factor, and one its chain of declarations grows past that bound, have no document. Before this
-        // check the first ended in the emitter's exception; each is refused in the loader's sentence now.
+        // or negative factor, and one its chain of declarations grows past that bound, have no document; each is
+        // refused in the loader's sentence.
         java.math.BigInteger limit = java.math.BigInteger.TWO.pow(62).subtract(java.math.BigInteger.ONE);
         for (var entry : system.exactFactors.entrySet()) {
             UnitSystem.Factor f = entry.getValue();
@@ -1283,9 +1282,9 @@ public final class DefinitionResolver {
 
     /** A member (attribute, characteristic) or a role that begins on the line where the head, the previous member or
      *  the previous role ended is refused. The lexer skips every line end, so a name the grammar cut short leaves
-     *  its rest to be read as a declaration of its own, and that reading went out without a word: one attribute
-     *  became two, a fact type lost the words of its name to its first role (grammar/DIVERGENCES.md, "Namen in
-     *  declaratiekoppen"). The lines of the tokens decide, never their capitals. A member that runs on over the next
+     *  its rest to be read as a declaration of its own, and without this check that reading goes out without a
+     *  word: one attribute becomes two, a fact type loses the words of its name to its first role
+     *  (grammar/DIVERGENCES.md, "Namen in declaratiekoppen"). The lines of the tokens decide, never their capitals. A member that runs on over the next
      *  line (the §3.9 example) begins on a line of its own and stays admitted; a heading ('---') runs to the end of
      *  its line, so nothing begins after it there. The sentence names the word the declaration begins with and the
      *  token the previous one ended on, and, where a keyword is the likely cut, the spelling that does read: the
@@ -1351,9 +1350,8 @@ public final class DefinitionResolver {
     private record RoleFiller(String factType, String role, String fillerType, int line) {}
     private final List<RoleFiller> roleFillers = new ArrayList<>();
 
-    /** WF-003 for a role's filler, BEFORE the emission: until this check the frontend wrote the document without a
-     *  word and only the verifier refused it, so a check without the verifier passed a filler like 'BK Jutter' — a
-     *  role name cut at its first capitalised word, its rest read as the type. Case-insensitive, as WF-003 resolves.
+    /** WF-003 for a role's filler, BEFORE the emission, so that a check without the verifier does not pass a filler
+     *  like 'BK Jutter' — a role name cut at its first capitalised word, its rest read as the type. Case-insensitive, as WF-003 resolves.
      *  An ERROR where the document shows the misreading: the name is declared as another kind (the sentence says
      *  which), or a shorter tail of it is a declared object type (the sentence says the role name ended at the first
      *  capitalised word). A WARNING where the name is declared nowhere in the document: one file of a model that
@@ -1473,11 +1471,11 @@ public final class DefinitionResolver {
      *  (uchar's RUNTIME-SEMANTICS ch. 3.8 — thirty spellings, abbreviations and second plurals included) is
      *  NOT registered: it must not shadow the calendar arithmetic of {@code datum ± N dagen}; warn instead.
      *  The comparison goes through {@link TimeCalculation} rather than a list of its own, so this guard and the
-     *  arithmetic that reads a unit spelling can never come to know different tables — which is what they
-     *  did until 2026-09-20, when this list held the eighteen singulars and plurals and let the twelve
-     *  remaining spellings through into an IR that WF-017 refuses.
-     *  {@code line} is the declaration's own line: the warning used to be raised at a hard-coded 0, which
-     *  points an author at nothing in a document with many day kinds. */
+     *  arithmetic that reads a unit spelling can never come to know different tables: a list of its own with
+     *  the eighteen singulars and plurals let the twelve remaining spellings through into an IR that WF-017
+     *  refuses (measured 2026-09-20).
+     *  {@code line} is the declaration's own line: a warning at a fixed line 0 points an author at nothing in a
+     *  document with many day kinds. */
     private void registerDayKindUnit(String spelling, String dayKind, int line, Boolean plural) {
         String k = spelling.trim().toLowerCase();
         if (TimeCalculation.isCalendarSpelling(k)) {
@@ -1485,8 +1483,8 @@ public final class DefinitionResolver {
                     "RGS-034", params("unit", spelling), line));
             return;
         }
-        // A written spelling another day kind already carries names two day kinds (WF-017). It used to be dropped
-        // without a word: the second day kind lost its declared plural, or its name came to stand for the first. A
+        // A written spelling another day kind already carries names two day kinds (WF-017). Dropped without a
+        // word, the second day kind would lose its declared plural, or its name would come to stand for the first. A
         // derived plural ({@code plural} null) is this frontend's own convenience and gives way without a refusal,
         // also to a written spelling that comes after it.
         if (plural == null) {                 // a derived plural gives way to every spelling already there

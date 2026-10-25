@@ -1357,8 +1357,8 @@ public final class ScenarioResolver {
 
     /** The exact factor {num, den} that restates a quantity in {@code van} as one in {@code naar}: each unit's
      *  factor to the shared canonical as its system declares it, a rate's denominators inverted. The unit records
-     *  carry those factors rounded to 16 digits, and a restatement through them was a rounding: "2 gtd" with
-     *  "gtd = 1/3 etm" became 0.6666666666666666 etm where the wire and every executor read 2/3. Null where a unit
+     *  carry those factors rounded to 16 digits, and a restatement through them is a rounding: "2 gtd" with
+     *  "gtd = 1/3 etm" would become 0.6666666666666666 etm where the wire and every executor read 2/3. Null where a unit
      *  has no exact factor. */
     private BigInteger[] exactRescaling(Unit van, Unit to) {
         BigInteger[] a = exactFactor(van.numerator()), b = exactFactor(to.numerator());
