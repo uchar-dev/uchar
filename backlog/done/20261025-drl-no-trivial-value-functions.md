@@ -458,3 +458,12 @@ veranderen niet.
   (`Consequence.Reading`), niet uit de functies van een waarde; `BranchDumpsCorpusWitnessTest` vergelijkt ook de
   lezingen van beide takken en is groen.
 - De commits na `9047f68a` veranderen alleen de kaart.
+
+### Landing (hoofdsessie)
+
+- `make gates` op `0dc84233`: 17 van 17 groen plus `after-run`, in 287 s (acceptatie (g)). Log
+  `werk/drl-no-trivial-value-functions/landing-make-gates.log`.
+- Nagegaan door de hoofdsessie, niet gecommit: `DrlCarriedValueWitnessTest` met als zin één aanhalingsteken
+  (`zin met een enkel " aanhalingsteken`) en met een backslash vóór een aanhalingsteken en aan het eind blijft groen;
+  de regelnamen met een spatie vóór een punt komen ongeschonden door, dus de voorbereiding van een gevolg leest de
+  commentaarregel niet als begin van een literal.
