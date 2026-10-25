@@ -58,8 +58,7 @@ class DrlConditionFunctionsWitnessTest {
         String sentence = "// hij vergunning geweigerd is en hij weigering herroepen is en hij herroeping vervallen is";
         assertEquals(List.of(
                 "toets_defaultsKJutterUitgeslotenDefault000 | " + sentence + " | roept []",
-                "afloop_defaultsKJutterUitgeslotenDefault000 | - | roept []",
-                "regel | roept [toets_defaultsKJutterUitgeslotenDefault000, afloop_defaultsKJutterUitgeslotenDefault000]"), table(b.drl(), p));
+                "regel | roept [toets_defaultsKJutterUitgeslotenDefault000]"), table(b.drl(), p));
         assertEquals(sentence + "\n"
                 + "function boolean toets_defaultsKJutterUitgeslotenDefault000(Object $vergunningGeweigerd, Object $weigeringHerroepen, Object $herroepingVervallen) {\n"
                 + "    int raak = 0;\n"
@@ -168,13 +167,14 @@ class DrlConditionFunctionsWitnessTest {
 
     @Test void a_default_without_a_condition_has_no_test() throws Exception {
         // the composite over no member under ALLE, whose verdict is true (ComputeHelpers.endVerdict(ALLE, 0, 0, 0)): no
-        // function and no eval; the rule fires on its patterns alone
+        // function and no eval; the rule fires on its patterns alone. Its value, a constant, has no function either:
+        // the consequence carries it, with its sentence above it
         DroolsBackend.Build b = build("jutterswet-bergingstoeslag");
         DrlPiece p = piece(b, "defaults A:Jutter.bergingstoeslag: default 1");
-        assertEquals(List.of(
-                "afloop_defaultsAJutterBergingstoeslagDefault1 | // 0.00 | roept []",
-                "regel | roept [afloop_defaultsAJutterBergingstoeslagDefault1]"), table(b.drl(), p));
+        assertEquals(List.of("regel | roept []"), table(b.drl(), p));
         assertFalse(rule(b, p).contains("eval("), rule(b, p));
+        assertTrue(rule(b, p).contains("then\n    // 0.00\n    Object v = ComputeHelpers.collapse(new java.math.BigDecimal(\"0\"));\n"),
+                rule(b, p));
         // the same in the default whose binder its rule does not reach: its functions are those of its value
         assertEquals(List.of(
                 "afloop_defaultsAJutterBergingsforfaitDefault0 | // de bergingsgrond is zijn bergingsgrondslag | roept [let_defaultsAJutterBergingsforfaitDefault0]",

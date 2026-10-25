@@ -22,7 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code TmsTranspiler.drlPieces} on the shapes of card drl-rule-functions, acceptance (b), all three in the golden
  * {@code jutterswet-uitsluiting-rgs}: a rule without functions, a rule with a composite condition, and the fall-back of
  * a default with an exception group, of the same shape as the fall-back of the card's v2 example (a test over a
- * composite, and the function of the value). Until card drl-no-passthrough-functions the test of a composite
+ * composite, and a value; here a constant, which the consequence carries without a function since card
+ * drl-no-trivial-value-functions). Until card drl-no-passthrough-functions the test of a composite
  * condition called the composite's function, the function of a rule that calls another function of the same rule
  * which that acceptance asked for; since that card the test carries the composite's statements, and
  * {@code DrlConditionFunctionsWitnessTest} shows such a call (a test that calls the function of a fold, and one of a
@@ -92,11 +93,9 @@ class DrlPiecesWitnessTest {
         DrlPiece p = piece(b, rule);
         String sentence = "// hij vergunning geweigerd is en hij weigering herroepen is en hij herroeping vervallen is";
         String test = "toets_defaultsKJutterUitgeslotenDefault000";
-        String value = "afloop_defaultsKJutterUitgeslotenDefault000";
         assertEquals(List.of(
                 test + " | " + sentence + " | roept []",
-                value + " | - | roept []",
-                "regel | roept [" + test + ", " + value + "]"), table(b.drl(), p));
+                "regel | roept [" + test + "]"), table(b.drl(), p));
         // the piece begins with the comment of its first function and holds its rule up to its end
         String text = b.drl().substring(p.start(), p.end());
         assertTrue(text.startsWith(sentence + "\nfunction boolean " + test + "("), text);
@@ -105,18 +104,24 @@ class DrlPiecesWitnessTest {
         assertEquals(RuleOrigin.Role.OWN, b.execModelTranspiler().originOf(rule).role());
     }
 
-    @Test void the_fall_back_of_a_default_carries_the_functions_of_its_test_and_its_value() throws Exception {
+    @Test void the_fall_back_of_a_default_carries_the_function_of_its_test_and_its_value_in_its_consequence()
+            throws Exception {
         DroolsBackend.Build b = build("jutterswet-uitsluiting-rgs");
         String rule = "defaults K:Jutter.uitgesloten: terugval 0";
         DrlPiece p = piece(b, rule);
         String sentence = "// hij vergunning geweigerd is en hij weigering herroepen is";
-        String test = "toets_defaultsKJutterUitgeslotenTerugval0", value = "afloop_defaultsKJutterUitgeslotenTerugval0";
+        String test = "toets_defaultsKJutterUitgeslotenTerugval0";
         assertEquals(List.of(
                 test + " | " + sentence + " | roept []",
-                value + " | - | roept []",
-                "regel | roept [" + test + ", " + value + "]"), table(b.drl(), p));
-        assertEquals("function Object " + value + "() {\n    return Boolean.FALSE;\n}\n\n",
-                b.drl().substring(p.functions().get(1).start(), p.functions().get(1).end()));
+                "regel | roept [" + test + "]"), table(b.drl(), p));
+        // the value, a constant, computes nothing: the consequence carries it
+        assertTrue(b.drl().substring(p.ruleStart(), p.end()).endsWith("then\n"
+                + "    Object v = Boolean.FALSE;\n"
+                + "    if (v != null) {\n"
+                + "        insertLogical(new Outcome($onderwerp, \"defaults K:Jutter.uitgesloten\", 0, 0,"
+                + " dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));\n"
+                + "    }\n"
+                + "end\n\n"), b.drl().substring(p.ruleStart(), p.end()));
         RuleOrigin o = b.execModelTranspiler().originOf(rule);
         assertEquals(RuleOrigin.Kind.DEFAULT, o.kind());
         assertEquals(RuleOrigin.Role.FALLBACK, o.role());

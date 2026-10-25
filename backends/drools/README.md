@@ -336,7 +336,16 @@ whose verdict is that member's (ALLE, DE, TEN_MINSTE 1, PRECIES 1, as
 `ComputeHelpers.established` and `endVerdict` give it) is that member, a composite over no
 member is its verdict where it stands, and a default without a condition has no test and no
 `eval`. The sentence of a composite that goes into another function stays there as a comment
-line where it differs from that function's own. A function is named after its kind and its rule
+line where it differs from that function's own. The value of a decision or of a value
+consequence that computes nothing, a constant or the variable a binding binds, with or without
+`ComputeHelpers.collapse`, is no function: the consequence carries its expression,
+`Object v = …;`, with the sentence of the term as a comment line above it, and asks no
+evaluation fault of `v`, since that expression cannot fault. A constant stands there as in a
+function, but a backslash in a text stands as the Unicode escape of a backslash with capital
+hex digits (`005C`), since Drools's preparation of a consequence
+(`MVELConsequenceBuilder.delimitExpressions`) reads a quote after a backslash as escaped, and a
+U+0000 in a text stands in a literal of its own, since MVEL does not keep it in a literal with an
+escape. A function is named after its kind and its rule
 (card `drl-function-names-from-rule`): `<kind>_<rule>`, the kind the word of what it computes
 (`toets`, `samengesteld`, `afloop`, `waarde`, `pad`, `fout`, …) and the rule part `Namen.ident`
 of the rule's name, without the code points Drools 8.44 does not read in a name (its DRL lexer

@@ -72,7 +72,12 @@ import java.util.concurrent.ConcurrentHashMap;
  *       its verdict, {@code ComputeHelpers.endVerdict} over no member, where it stands; and a test whose condition is
  *       such a composite with the verdict true, a default without a condition, is no test: the rule has no
  *       {@code eval} for it. The sentence of a composite that goes into another function stays there as a comment
- *       line, above the member it is or above the body it gives, where it differs from that function's own.</li>
+ *       line, above the member it is or above the body it gives, where it differs from that function's own. The value
+ *       of a decision or of a value consequence that computes nothing, a constant or the variable a binding binds,
+ *       with or without {@code ComputeHelpers.collapse}, is no function: the consequence carries its expression,
+ *       {@code Object v = …;}, with the sentence of the term as a comment line above it, and has no branch for an
+ *       evaluation fault, since that expression cannot fault. A constant stands there as in a function, a text as
+ *       MVEL reads it after Drools prepared the consequence ({@link #consequenceText}).</li>
  *   <li>The constraints that decide which fact a pattern matches stay DRL constraints: the key of a fact, a null
  *       test, the rank of a control fact and an identity join, so that Drools indexes them. A test of a class goes
  *       through a route, since the text imports no bean class. A member of a bean stands as the name Drools reads
@@ -330,6 +335,49 @@ final class DrlRendering {
             return new Expr("java.util.Arrays.asList(" + String.join(", ", parts) + ")", List.class);
         }
         throw new IllegalStateException("een constante van het type " + w.getClass().getName() + " in het plan");
+    }
+
+    /** A constant of the plan in an MVEL consequence, with its Java type: as {@link #constant} spells it in a function,
+     *  which MVEL reads as the same value of the same class, but a text, also in a list, as {@link #consequenceText}
+     *  spells it. */
+    private Expr consequenceConstant(Object w) {
+        if (w instanceof String s) return new Expr(consequenceText(s), String.class);
+        if (w instanceof List<?> l) {
+            List<String> parts = new ArrayList<>();
+            for (Object x : l) parts.add(consequenceConstant(x).text());
+            return new Expr("java.util.Arrays.asList(" + String.join(", ", parts) + ")", List.class);
+        }
+        return constant(w);
+    }
+
+    /**
+     * A text as MVEL string literals in a consequence, joined with {@code +}. Drools prepares a consequence before MVEL
+     * reads it ({@code MVELConsequenceBuilder.delimitExpressions}) and takes every quote after a backslash for an
+     * escaped quote, also where that backslash is itself escaped, so a text that ends in a backslash would leave its
+     * literal open: a backslash stands as its Unicode escape, a backslash, {@code u} and {@code 005C}, with the capital
+     * hex digit MVEL requires. MVEL does not keep a U+0000 in its place in a literal that has an escape, so a run of
+     * them stands in a literal of its own, without one. A quote, a carriage return and a line feed are escaped as
+     * {@link Namen#drlString} escapes them, every other character stands as it is.
+     */
+    private static String consequenceText(String s) {
+        List<String> literals = new ArrayList<>();
+        int i = 0;
+        do {
+            boolean nul = i < s.length() && s.charAt(i) == '\0';
+            StringBuilder literal = new StringBuilder("\"");
+            for (; i < s.length() && (s.charAt(i) == '\0') == nul; i++) {
+                char c = s.charAt(i);
+                literal.append(switch (c) {
+                    case '\\' -> "\\u005C";
+                    case '"' -> "\\\"";
+                    case '\r' -> "\\r";
+                    case '\n' -> "\\n";
+                    default -> String.valueOf(c);
+                });
+            }
+            literals.add(literal.append('"').toString());
+        } while (i < s.length());
+        return String.join(" + ", literals);
     }
 
     /** An enumeration label by its full name. */
@@ -1255,38 +1303,64 @@ final class DrlRendering {
 
         /** The value of {@link Consequence.Value}: a function that evaluates it and gives an evaluation fault as its
          *  outcome; the fault in place of the value and of the deposit, else the deposit first and then the value,
-         *  where it is gevuld or the plan writes leeg. */
+         *  where it is gevuld or the plan writes leeg. A value that computes nothing ({@link #computesNothing}) has no
+         *  function and no fault: the consequence carries its expression ({@link #carried}), and then the deposit and
+         *  the value. */
         private void value(Consequence.Value x, StringBuilder b) {
             Consequence.Deposit d = x.deposit();
-            int place = reserveer();
-            String name = name("waarde", place);
-            Context c = context(x.slots(), d == null ? -1 : d.depositFlag(), DEPOSIT_FLAG, x.value());
-            Expr e = value(x.value(), c);
-            String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
-            fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")",
-                    tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
+            boolean carried = computesNothing(x.value());
             if (d != null) b.append("    Object ").append(DEPOSIT_FLAG).append(" = ").append(route(Route.FRESH_DEPOSIT_FLAG)).append("();\n");
-            b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
-            b.append("    if (").append(route(Route.IS_EVALUATION_FAULT)).append("(v)) {\n");
-            insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
-                    + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
-            b.append("    } else {\n");
+            if (carried) {
+                carried(x.value(), x.collapse(), x.slots(), b);
+            } else {
+                int place = reserveer();
+                String name = name("waarde", place);
+                Context c = context(x.slots(), d == null ? -1 : d.depositFlag(), DEPOSIT_FLAG, x.value());
+                Expr e = value(x.value(), c);
+                String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
+                fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")",
+                        tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
+                b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
+                b.append("    if (").append(route(Route.IS_EVALUATION_FAULT)).append("(v)) {\n");
+                insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
+                        + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
+                b.append("    } else {\n");
+            }
+            String in = carried ? "    " : "        ";
             if (d != null) {
-                b.append("        if (").append(route(Route.REPORTED)).append("(").append(DEPOSIT_FLAG).append(")) {\n");
-                insert(b, "            ", x.insertion(), route(Route.INCONSISTENCY) + "(" + str(d.form()) + ", "
+                b.append(in).append("if (").append(route(Route.REPORTED)).append("(").append(DEPOSIT_FLAG).append(")) {\n");
+                insert(b, in + "    ", x.insertion(), route(Route.INCONSISTENCY) + "(" + str(d.form()) + ", "
                         + x.subject() + ", " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + "))");
-                b.append("        }\n");
+                b.append(in).append("}\n");
             }
             String fact = "new " + typeName(Value.class) + "(" + x.subject() + ", " + key(x.target()) + ", v, "
                     + str(x.writer()) + ")";
             if (x.writesEmpty()) {
-                insert(b, "        ", x.insertion(), fact);
+                insert(b, in, x.insertion(), fact);
             } else {
-                b.append("        if (!").append(route(Route.IS_EMPTY)).append("(v)) {\n");
-                insert(b, "            ", x.insertion(), fact);
-                b.append("        }\n");
+                b.append(in).append("if (!").append(route(Route.IS_EMPTY)).append("(v)) {\n");
+                insert(b, in + "    ", x.insertion(), fact);
+                b.append(in).append("}\n");
             }
-            b.append("    }\n");
+            if (!carried) b.append("    }\n");
+        }
+
+        /** Whether {@code t}, the value of a decision or of a value consequence, computes nothing: a constant, or the
+         *  variable a binding binds. Its evaluation cannot fault, with or without {@code collapse}, which only turns a
+         *  {@link Breuk} into its decimal ({@code Breuk.naarDecimal} never throws). */
+        private static boolean computesNothing(Term t) {
+            return t instanceof Term.Const || t instanceof Term.SlotValue;
+        }
+
+        /** The statement {@code Object v = …;} of the consequence over the bound values at {@code slots} that carries
+         *  {@code t}, a term that computes nothing ({@link #computesNothing}): the variable a binding binds, or the
+         *  constant as MVEL reads it ({@link DrlRendering#consequenceConstant}), through the route of {@code collapse}
+         *  where {@code collapse} says so; with the sentence of the term as a comment line above it. */
+        private void carried(Term t, boolean collapse, List<Integer> slots, StringBuilder b) {
+            Expr e = t instanceof Term.Const k ? consequenceConstant(k.value()) : value(t, context(slots, -1, null));
+            if (t.source() != null) b.append("    // ").append(Namen.commentSafe(t.source())).append('\n');
+            b.append("    Object v = ").append(collapse ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text())
+                    .append(";\n");
         }
 
         /** The codes of the deposit of {@code condition}, which the test of the rule found: a function of the rule
@@ -1403,8 +1477,17 @@ final class DrlRendering {
          *  so, and gives an evaluation fault as its outcome where the plan names a fault, a computed decision; any other
          *  exception leaves the fire, a broken contract, as in the executable model. The fault in place of the
          *  decision; nothing where the value is null, so that the lower defaults decide (RUNTIME-SEMANTICS ch. 7.1);
-         *  else the facts of the decision in the order of the plan. */
+         *  else the facts of the decision in the order of the plan. A value that computes nothing
+         *  ({@link #computesNothing}) has no function and no fault: the consequence carries its expression
+         *  ({@link #carried}). */
         private void decisionOf(Consequence.Decision x, StringBuilder b) {
+            if (computesNothing(x.value())) {
+                carried(x.value(), x.collapse(), x.slots(), b);
+                b.append("    if (v != null) {\n");
+                for (Consequence.StackFact f : x.facts()) insert(b, "        ", x.insertion(), stackFact(f, x.subject()));
+                b.append("    }\n");
+                return;
+            }
             int place = reserveer();
             String name = name("afloop", place);
             Context c = context(x.slots(), -1, null, x.value());

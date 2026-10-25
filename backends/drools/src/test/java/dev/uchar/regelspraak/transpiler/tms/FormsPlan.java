@@ -334,19 +334,22 @@ final class FormsPlan {
     }
 
     /** Fragments of the text that show the forms of the plan of the defaults ({@link #defaults}), one per form. */
-    static final List<String> DEFAULTS_FORMS = List.of("Object afloop_default0(Object $uitkijkbonus)",
-            "        return ComputeHelpers.collapse($uitkijkbonus);\n    } catch (RuntimeException e) {\n"
-                    + "        return ComputeHelpers.caught(e);",
-            "    if (ComputeHelpers.isEvaluationFault(v)) {\n        insertLogical(new Fault($onderwerp, \"proefstapel\","
+    static final List<String> DEFAULTS_FORMS = List.of(
+            "    Object v = ComputeHelpers.collapse($uitkijkbonus);\n    if (v != null) {\n"
+                    + "        insertLogical(new Value($onderwerp, ElementKey.of(\"wachter\", \"uitkijkbonus\", false), v,"
+                    + " \"proefstapel\"));\n        insertLogical(new Decides($onderwerp, \"proefstapel\", 0));",
+            "// zijn uitkijkbonus of 0\nfunction Object afloop_default3(Object $uitkijkbonus) {",
+            "        return ComputeHelpers.collapse(ComputeHelpers.fallback($uitkijkbonus, new java.math.BigDecimal(\"0\")));\n"
+                    + "    } catch (RuntimeException e) {\n        return ComputeHelpers.caught(e);",
+            "    Object v = afloop_default3($uitkijkbonus);\n"
+                    + "    if (ComputeHelpers.isEvaluationFault(v)) {\n        insertLogical(new Fault($onderwerp, \"proefstapel\","
                     + " ComputeHelpers.designate(v, \"proefstapel\")));\n    } else if (v != null) {",
-            "insertLogical(new Value($onderwerp, ElementKey.of(\"wachter\", \"uitkijkbonus\", false), v,"
-                    + " \"proefstapel\"));",
-            "insertLogical(new Decides($onderwerp, \"proefstapel\", 0));",
-            "Object afloop_default1() {\n    return Boolean.TRUE;\n}",
-            "insertLogical(new HasCharacteristic($onderwerp, ElementKey.of(\"wachter\", \"waakzaam\", true)));",
-            "Object afloop_default2() {\n    return Boolean.FALSE;\n}",
-            "    if (v != null) {\n        insertLogical(new Decides($onderwerp, \"proefstapel\", 2));\n    }",
-            "insertLogical(new Outcome($onderwerp, \"proefstapel\", 1, 2,"
+            "insertLogical(new Decides($onderwerp, \"proefstapel\", 3));",
+            "    Object v = Boolean.TRUE;\n    if (v != null) {\n"
+                    + "        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of(\"wachter\", \"waakzaam\", true)));",
+            "    Object v = Boolean.FALSE;\n    if (v != null) {\n"
+                    + "        insertLogical(new Decides($onderwerp, \"proefstapel\", 2));\n    }",
+            "    Object v = $waarde;\n    if (v != null) {\n        insertLogical(new Outcome($onderwerp, \"proefstapel\", 1, 2,"
                     + " dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));",
             "Object conflict_verschil0() {\n    return \"proefstapel/0\";\n}",
             "insertLogical(new Outcome($onderwerp, \"proefstapel\", 0, 1,"
@@ -355,8 +358,9 @@ final class FormsPlan {
 
     /**
      * A plan with every consequence of the rules of a defaults stack (step 4 of card drl-teksttak-op-truth-maintenance),
-     * over the Wachter of the same document as {@link #plan}: the decision of the simple form on an attribute, computed
-     * and collapsed, with its fault and its control fact; the attribution of a characteristic and the decision not to
+     * over the Wachter of the same document as {@link #plan}: the decision of the simple form on an attribute, bound and
+     * collapsed, with its fault in the plan and its control fact, which the consequence carries, and one computed and
+     * collapsed, with its fault, through its function; the attribution of a characteristic and the decision not to
      * attribute it, constants, each with its control fact; the decision of a reconciliation bound off the outcome of a
      * member, inserted as an outcome; and the conflict of a reconciliation, under a constant key as an outcome and under
      * the key of a member as the §9.5 inconsistency. No rule of it is meant to fire.
@@ -382,6 +386,13 @@ final class FormsPlan {
         FactPattern decision = new FactPattern(Outcome.class, "$besluit", List.of(new Alpha("lid-besluit", List.of(
                 new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, Outcome.Kind.DECIDED)))), List.of(),
                 List.of(Binding.of(O, Outcome.class, "subject"), Binding.of("$waarde", Outcome.class, "value")));
+        rules.add(new RulePlan("default 3", "proefstapel", null,
+                table(new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus")), List.of(withBonus),
+                new Consequence.Decision(O, new Term.Call(StaticFunction.FALLBACK, List.of(readOf(0), number("0")),
+                        "zijn uitkijkbonus of 0"), List.of(0), 1, true, new Consequence.FaultName("proefstapel", "proefstapel"),
+                        List.of(new Consequence.StackFact.Value(ElementKey.of("wachter", "uitkijkbonus", false),
+                                "proefstapel"), new Consequence.StackFact.Decides("proefstapel", 3)),
+                        Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("eens 0", "proefstapel", null, table(new Read(0, ReadKind.DECISION, "besluit",
                 "$waarde")), List.of(decision), new Consequence.Decision(O, readOf(0), List.of(0), 1, false, null,
                 List.of(new Consequence.StackFact.Outcome("proefstapel", 1, 2, Outcome.Kind.DECIDED)),

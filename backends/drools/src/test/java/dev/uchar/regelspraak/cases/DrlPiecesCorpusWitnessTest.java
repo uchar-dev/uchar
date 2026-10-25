@@ -85,6 +85,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       declaration or a call, so that no member of a bean a pattern reads, no local, no parameter and no global
  *       has its name. Measured on {@code f867513d}, before that card: every function named
  *       {@code r<n>_<kind><place>}, outside the form.</li>
+ *   <li>a value that computes nothing has no function (card drl-no-trivial-value-functions, acceptance (a),
+ *       {@link #ownWork} and {@link #carriedValue}): no function of the value of a decision or of a value consequence
+ *       ({@link #VALUE_KINDS}) only returns, within or without the standard {@code try}, a constant as the text spells
+ *       one ({@link #CONSTANT}), one of its parameters or {@code ComputeHelpers.collapse} of one of them; a consequence
+ *       that carries such an expression itself, {@code Object v = …;} over a constant or a variable its rule binds, is
+ *       counted, with the comment line of the sentence above it apart, and asks no evaluation fault of {@code v}. A
+ *       function of another kind that only returns such an expression, the key of a conflict, is counted and allowed.
+ *       Measured on {@code 4707a183}, before that card, per build: 330 such functions of a value (182 of a decision, 148
+ *       of a value consequence) and no consequence that carries its value.</li>
  * </ul>
  *
  * <p>The places are UTF-16 code units, as {@code String.substring} takes them: {@value #EXPECTED_MIN_NON_ASCII_TEXTS}
@@ -97,7 +106,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * selection that silently stopped checking. Card drl-no-passthrough-functions lowered the floors of the functions, of
  * those with a comment and of those that call a function of their piece, measured 2026-10-25, since it writes fewer
  * functions: per build 240 functions of a composite and 58 tests went. Card drl-function-names-from-rule added the
- * floors of the names with a number of their kind, measured 2026-10-25.
+ * floors of the names with a number of their kind, measured 2026-10-25. Card drl-no-trivial-value-functions lowered the
+ * floors of the functions and of those with a comment and raised that of the pieces without functions, measured
+ * 2026-10-25, since per build 330 functions of a value went, and added the floors of the consequences that carry their
+ * value.
  */
 class DrlPiecesCorpusWitnessTest {
 
@@ -131,14 +143,20 @@ class DrlPiecesCorpusWitnessTest {
     /** Per count, without readings and with them ({@code met lezingen}), measured 2026-10-24; the functions, those
      *  with a comment and those that call a function of their piece measured 2026-10-25 (card
      *  drl-no-passthrough-functions; before it 2499, 1944, 481 and with readings 3456); the names with a number of
-     *  their kind measured 2026-10-25 (card drl-function-names-from-rule). */
+     *  their kind measured 2026-10-25 (card drl-function-names-from-rule); the functions, those with a comment, the
+     *  pieces without functions and the consequences that carry their value measured 2026-10-25 (card
+     *  drl-no-trivial-value-functions; before it 2201, 1680, 763 and with readings 3158, 763). */
     static final Map<String, Integer> EXPECTED_MIN = Map.ofEntries(
-            Map.entry("stukken", 2124), Map.entry("stukken zonder functies", 763), Map.entry("functies", 2201),
-            Map.entry("functies met commentaar", 1680),
+            Map.entry("stukken", 2124), Map.entry("stukken zonder functies", 879), Map.entry("functies", 1871),
+            Map.entry("functies met commentaar", 1422),
             Map.entry("functies die een functie van hun stuk aanroepen", 241),
-            Map.entry("stukken met lezingen", 3046), Map.entry("functies met lezingen", 3158),
+            Map.entry("stukken met lezingen", 3046), Map.entry("functies met lezingen", 2828),
+            Map.entry("stukken zonder functies met lezingen", 879),
             Map.entry("functienamen met een nummer van hun soort", 261),
-            Map.entry("functienamen met een nummer van hun soort met lezingen", 265));
+            Map.entry("functienamen met een nummer van hun soort met lezingen", 265),
+            Map.entry("gevolgen die hun waarde dragen", 330), Map.entry("gevolgen die hun waarde dragen met lezingen", 330),
+            Map.entry("gevolgen die hun waarde dragen, met de zin erboven", 258),
+            Map.entry("gevolgen die hun waarde dragen, met de zin erboven met lezingen", 258));
 
     /** The kinds of the functions of the text, the word of what a function computes, the first part of its name. */
     static final Set<String> KINDS = Set.of("afloop", "beta", "binder", "componenten", "conflict", "creatie",
@@ -170,10 +188,34 @@ class DrlPiecesCorpusWitnessTest {
     /** The return of the verdict of a composite over no member. */
     private static final Pattern VERDICT_OVER_NONE = Pattern.compile("\\s*return ComputeHelpers\\.endVerdict\\("
             + "dev\\.uchar\\.regelspraak\\.ir\\.Condition\\.Quantifier\\.([A-Z_]+), (-?[0-9]+), [a-z0-9]+, 0\\);");
+    /** A string literal, its escapes included. */
+    private static final String STRING = "\"(?:[^\"\\\\]|\\\\.)*\"";
+    /** A constant of the plan as the text spells it, in a function and in a consequence: null, a truth value, a text
+     *  (in a consequence possibly literals joined with {@code +}), a number of each class, an exact rational, a date, a
+     *  date-time, an enumeration label, a class, or a list of those. */
+    private static final String SCALAR = "(?:null|Boolean\\.TRUE|Boolean\\.FALSE|" + STRING + "(?: \\+ " + STRING + ")*"
+            + "|Integer\\.valueOf\\(-?[0-9]+\\)|Long\\.valueOf\\(-?[0-9]+L\\)"
+            + "|new java\\.math\\.BigDecimal\\(" + STRING + "\\)|new java\\.math\\.BigInteger\\(" + STRING + "\\)"
+            + "|Breuk\\.van\\(new java\\.math\\.BigInteger\\(" + STRING + "\\), new java\\.math\\.BigInteger\\(" + STRING
+            + "\\)\\)|java\\.time\\.LocalDate\\.parse\\(" + STRING + "\\)|java\\.time\\.LocalDateTime\\.parse\\(" + STRING
+            + "\\)|(?:[a-z][A-Za-z0-9_]*\\.)+[A-Z][A-Za-z0-9_$]*(?:\\.[A-Z][A-Za-z0-9_$]*)*\\.[A-Z][A-Z0-9_]*"
+            + "|[A-Za-z][A-Za-z0-9_.$]*\\.class)";
+    private static final Pattern CONSTANT = Pattern.compile(SCALAR + "|java\\.util\\.Arrays\\.asList\\((?:" + SCALAR
+            + "(?:, " + SCALAR + ")*)?\\)");
+    /** An expression that computes nothing: {@code ComputeHelpers.collapse} of, or else, a constant ({@link #CONSTANT})
+     *  or a name; whether the name is a variable a binding binds, the caller asks. */
+    private static final Pattern NOTHING_COMPUTED = Pattern.compile("ComputeHelpers\\.collapse\\((.*)\\)|(.*)");
+    /** The kinds of the functions of the value of a decision and of a value consequence. */
+    private static final Set<String> VALUE_KINDS = Set.of("afloop", "waarde");
+    /** The line of a consequence that holds its value. */
+    private static final Pattern CONSEQUENCE_VALUE = Pattern.compile("    Object v = (.*);");
     /** The lines around the verdict of a composite over no member in its function: its locals, and the try of a test
      *  that asks that it holds without a fault. */
     private static final Set<String> FRAME = Set.of("int raak = 0;", "Boolean vast;", "try {",
             "} catch (RuntimeException e) {", "ComputeHelpers.caught(e);", "return false;", "}");
+    /** The lines of the standard try of the function of a value, around its return. */
+    private static final Set<String> VALUE_FRAME = Set.of("try {", "} catch (RuntimeException e) {",
+            "return ComputeHelpers.caught(e);", "}");
 
     @Test void the_pieces_of_the_rules_cover_the_text_after_its_header() throws Exception {
         List<Path> goldens;
@@ -331,7 +373,8 @@ class DrlPiecesCorpusWitnessTest {
             for (DrlPiece.DrlFunction f : piece.functions())
                 if (!reached.contains(f.name())) unreached.add(new Unreached(golden, piece.rule(), f.name()));
             for (Map.Entry<String, String> b : bodies.entrySet())
-                ownWork(where + " | " + b.getKey(), b.getValue(), bodies.keySet(), suffix, notOwnWork, counts);
+                ownWork(where + " | " + b.getKey(), b.getKey(), b.getValue(), bodies.keySet(), suffix, notOwnWork, counts);
+            carriedValue(where, rule, suffix, notOwnWork, counts);
         }
         if (!inPieces.equals(declared))
             differences.add(which + ": de tekst declareert " + declared.size() + " functies, de stukken noemen er "
@@ -443,14 +486,35 @@ class DrlPiecesCorpusWitnessTest {
      * not the function of a composite over no member whose verdict is true, nor of a composite over one member whose
      * verdict is that member's; and the locals {@code raak} and {@code vast} of a composite stand only where they are
      * read. The verdicts are those of {@link ComputeHelpers#established} and {@link ComputeHelpers#endVerdict}, the
-     * runtime's own, which the evaluation of a composite calls.
+     * runtime's own, which the evaluation of a composite calls. And the check of card drl-no-trivial-value-functions:
+     * a function {@code name} of a kind of {@link #VALUE_KINDS} does more than return, within or without the standard
+     * {@code try}, a constant, one of its parameters or {@code ComputeHelpers.collapse} of one of them.
      */
-    private static void ownWork(String where, String function, Set<String> ownFunctions, String suffix,
+    private static void ownWork(String where, String name, String function, Set<String> ownFunctions, String suffix,
                                 List<String> differences, Map<String, Integer> counts) {
         List<String> code = new ArrayList<>();
         String[] lines = function.split("\n");
         // the lines between the declaration and the closing brace, without the lines of a comment
         for (int i = 1; i < lines.length - 1; i++) if (!lines[i].strip().startsWith("//")) code.add(lines[i]);
+        // the function of a value that only returns a constant, a parameter or collapse of one of them, within or
+        // without the standard try (card drl-no-trivial-value-functions)
+        List<String> returned = new ArrayList<>();
+        for (String line : code) if (!VALUE_FRAME.contains(line.strip())) returned.add(line.strip());
+        Matcher d = DECLARATION_WITH_PARAMETERS.matcher(lines[0]);
+        if (returned.size() == 1 && returned.get(0).startsWith("return ") && returned.get(0).endsWith(";") && d.matches()) {
+            Set<String> parameters = new HashSet<>();
+            for (String p : d.group(1).split(", ")) if (!p.isEmpty()) parameters.add(p.substring(p.lastIndexOf(' ') + 1));
+            String e = returned.get(0).substring("return ".length(), returned.get(0).length() - 1);
+            if (computesNothing(e, parameters)) {
+                Matcher kind = NAME.matcher(name);
+                if (kind.matches() && VALUE_KINDS.contains(kind.group(1))) {
+                    counts.merge("functies van een waarde die niets berekent" + suffix, 1, Integer::sum);
+                    differences.add(where + ": geeft alleen " + e + " terug");
+                } else {
+                    counts.merge("functies van een andere soort die niets berekenen" + suffix, 1, Integer::sum);
+                }
+            }
+        }
         if (code.size() == 1) {
             Matcher m = RETURNED_CALL.matcher(code.get(0));
             if (m.matches() && ownFunctions.contains(m.group(1)) && closes(m.group(2))) {
@@ -488,6 +552,44 @@ class DrlPiecesCorpusWitnessTest {
         if (raakUnread || vastUnread) {
             counts.merge("functies met een local die niet gelezen wordt" + suffix, 1, Integer::sum);
             differences.add(where + ": declareert " + (raakUnread ? "raak" : "vast") + " en leest het niet");
+        }
+    }
+
+    /** The declaration of a function and its parameters. */
+    private static final Pattern DECLARATION_WITH_PARAMETERS = Pattern.compile("function \\S+ [^\\s(]+\\((.*)\\) \\{");
+    /** A variable a binding binds. */
+    private static final Pattern VARIABLE = Pattern.compile("\\$[\\p{L}\\p{N}_]+");
+
+    /** Whether expression {@code e} computes nothing: {@code ComputeHelpers.collapse} of, or else, a constant or one of
+     *  {@code names}. */
+    private static boolean computesNothing(String e, Set<String> names) {
+        Matcher m = NOTHING_COMPUTED.matcher(e);
+        if (!m.matches()) return false;
+        String inner = m.group(1) != null ? m.group(1) : m.group(2);
+        return names.contains(inner) || CONSTANT.matcher(inner).matches();
+    }
+
+    /**
+     * The value of a consequence that computes nothing, which the consequence carries itself (card
+     * drl-no-trivial-value-functions): per line {@code Object v = …;} of {@code rule} whose expression is a constant, a
+     * variable a binding of the rule binds, or {@code collapse} of one of them, a count, and one beside it where the line
+     * before it is a comment, the sentence of the term; such a consequence asks no evaluation fault of {@code v}, since
+     * its expression cannot fault.
+     */
+    private static void carriedValue(String where, String rule, String suffix, List<String> differences,
+                                     Map<String, Integer> counts) {
+        String[] parts = rule.split("\nthen\n", 2);
+        Set<String> variables = new HashSet<>();
+        for (Matcher m = VARIABLE.matcher(parts[0]); m.find(); ) variables.add(m.group());
+        String[] lines = parts[1].split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            Matcher m = CONSEQUENCE_VALUE.matcher(lines[i]);
+            if (!m.matches() || !computesNothing(m.group(1), variables)) continue;
+            counts.merge("gevolgen die hun waarde dragen" + suffix, 1, Integer::sum);
+            if (i > 0 && lines[i - 1].startsWith("    // "))
+                counts.merge("gevolgen die hun waarde dragen, met de zin erboven" + suffix, 1, Integer::sum);
+            if (parts[1].contains("ComputeHelpers.isEvaluationFault(v)"))
+                differences.add(where + ": draagt zijn waarde " + m.group(1) + " en toetst haar op een fout");
         }
     }
 
