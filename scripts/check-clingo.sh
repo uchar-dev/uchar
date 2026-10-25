@@ -87,8 +87,9 @@ if [ "$#" -eq 2 ]; then
     exec "$BIN" "$1" "$2"
 fi
 
-# One process per core: clingo_runner and the clingo it starts are single-threaded (measured
-# 2026-10-25 on 16 cores: 899 cases in N s on 16 processes, against 216 s one at a time).
+# One process per core: clingo_runner and the clingo it starts are single-threaded. Measured 2026-10-25
+# on 16 cores, the 899 cases: 152 s one at a time, 51 s on 4 processes, 36 s on 8 and on 16, where the
+# longest case alone takes 35 s (jutterswet-opvolgerversies/case3-tweede-versie.json).
 . scripts/lib/parallel.sh
 if ! procs=$(parallel_jobs 1); then
     echo 'check-clingo: FAIL (no number of processes)' >&2
