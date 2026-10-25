@@ -107,3 +107,11 @@ test count (maintainer decision 2026-08-30).":
 
 Acceptatie (d), de toolchain, vervalt (opdracht van de hoofdsessie): de toolchain draait deze suite straks niet meer
 zelf (toolchain-kaart `gates-own-tests-in-parallel`). De volledige gate-set draait de hoofdsessie bij de landing.
+
+### Landing (hoofdsessie)
+
+- De volledige gate-set (`werk/gates.sh`) op `eba21fbe` (herbaseerd op main `8b5664c1`): 17 van 17 groen in 25
+  minuten; gate 12 in 493 s (op `5adb0386` zonder forks 733 s), 13 in 200 s, 17 in 385 s. Samenvatting
+  `werk/gates-design/suite-forks/gates-1.summary.txt`. Geland op `main` fast-forward.
+- De voorgestelde zin voor `CLAUDE.md` bij gate 12 staat in de `CLAUDE.md`-tekst van kaart
+  `gate-builds-when-stale`, die de alinea van gate 12 herschrijft en na deze kaart landt.
