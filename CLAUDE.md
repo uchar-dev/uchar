@@ -30,7 +30,8 @@ Sessions may propose diffs to these; only the maintainer merges them:
   `spec/verifier/`
 - `corpus/golden/anchor/` (hand-written cases with absolute expected values)
 - `.github/` (CODEOWNERS; the workflow file, hand-triggered only)
-- `scripts/` (gate scripts), `WAY-OF-WORKING.md`, and this file
+- `scripts/` (gate scripts), the root `Makefile` (`make gates`),
+  `WAY-OF-WORKING.md`, and this file
 
 Mechanism: `.github/CODEOWNERS` lists these paths, and the mandate-and-review
 protocol of `WAY-OF-WORKING.md` carries the review (§3: a card branch that
@@ -142,7 +143,24 @@ and the per-gate environment and is triggered by hand only
 says "CI leg unconditional and blocking" (or, for gate 9, conditional on
 the runner), read that as the decision taken at the time about the
 workflow; what is enforced is the local run, and gate 9 there is the
-reviewer's duty on a machine that has catala. Current gates:
+reviewer's duty on a machine that has catala.
+
+**How the set runs (maintainer decision 2026-10-25, card
+`gate-builds-when-stale`).** `make gates` in the repository root runs the
+set. It first builds the three trees the gates read, side by side: the
+OCaml workspace (`scripts/lib/ocaml-build.sh`), the RegelSpraak frontend
+(`frontends/regelspraak/Makefile`) and the Drools backend jar
+(`scripts/lib/drools-jar.sh`). Then it runs the gates in parallel in the
+same checkout (`make -k -j<cores>`), with one log per gate under
+`out/gates/<run>/` and a summary with one line per gate in the order of
+`.github/workflows/gates.yml`; a red build, a red gate or a gate without
+a line makes it exit non-zero. A single gate runs with its script. Every
+gate builds what it needs only when a source is newer than the product:
+dune only when a source is newer than the stamp of the last green build
+of the workspace, the frontend only when a source is newer than its
+classes, the jar only when a source is newer than the jar. So after the
+first step of `make gates` no gate builds, and no two gates write the
+same file. Current gates:
 
 1. `scripts/check-self-contained.sh` — artifact zones (`corpus/golden`,
    `corpus/negative`, `corpus/red`, `spec/schema`, `spec/verifier`,
@@ -170,8 +188,9 @@ reviewer's duty on a machine that has catala. Current gates:
    with the path and both orders on a deviation; an unpopulated corpus is
    reported explicitly, never silently green.
 3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`)
-   builds; every `corpus/golden/**/ir.json` and `corpus/red/**/ir.json`
-   is verifier-clean; every
+   builds, in the workspace `_build` (`scripts/lib/ocaml-build.sh`), the
+   verifier gates 11 and 15 run as well; every `corpus/golden/**/ir.json`
+   and `corpus/red/**/ir.json` is verifier-clean; every
    `corpus/negative/<wf###-slug>/ir.json` is rejected, citing the WF
    rule its directory name declares — and, since L2 of the v1 wire
    migration (2026-09-24), on the ARM its `expect.txt` names where that
@@ -340,7 +359,8 @@ reviewer's duty on a machine that has catala. Current gates:
     stale.
     Since the card toka-welgevormd (2026-09-25; maintainer decision the same
     day: the zone stays a while longer, in its own directory) the gate also
-    holds every replay slice VERIFIER-CLEAN — a well-formedness leg with its
+    holds every replay slice VERIFIER-CLEAN (the verifier from the workspace
+    `_build`, as gate 3 builds it) — a well-formedness leg with its
     own floor `EXPECTED_MIN_CLEAN` and a reason-carrying holdout list
     (`VERIFIER_HOLDOUTS`, the slice whose clamp bound carries a unit against a
     unitless base, WF-099) that fails when stale; the casus dump stays outside
@@ -403,9 +423,11 @@ reviewer's duty on a machine that has catala. Current gates:
     being silently counted among the refusals, and a stale pin — a listed
     golden that plays again, or is gone — fails too. A pinned played
     count closes the one direction a played-by-default list cannot see: a
-    newly arrived player. The gate rebuilds the jar and runs the
-    backend's own JUnit suite, which must pass with a non-zero, zero-skip
-    test count (maintainer decision 2026-08-30). Since 2026-09-19 the
+    newly arrived player. The gate takes the jar fresh or rebuilt
+    (`scripts/lib/drools-jar.sh`), as the other five jar gates do, and runs
+    the backend's own JUnit suite with `mvn -o test` on the same
+    `target/`, which must pass with a non-zero, zero-skip test count
+    (maintainer decisions 2026-08-30 and 2026-10-25). Since 2026-09-19 the
     gate also sweeps the DRL-TEXT branch (card gate12-drl-takteller)
     through the replay runner's branch flag. Since the card
     `drl-teksttak-op-truth-maintenance` (2026-10-14) that branch is the
@@ -445,8 +467,9 @@ reviewer's duty on a machine that has catala. Current gates:
     canonical text the reference interpreter's trace is held to (card
     `ref-trace-and-readings-gate`). An empty played
     set is a failure. For a builder who changes a pin or a list,
-    `scripts/check-drools.sh --fast` rebuilds the jar without the JUnit
-    suite, runs the exec-model replay with every pin and list, and
+    `scripts/check-drools.sh --fast` takes the jar fresh or rebuilt,
+    does not run the JUnit suite, runs the exec-model replay with every
+    pin and list, and
     leaves out the DRL-text sweep, so nothing compares the two branches
     under it; its report names what did not run and its last line says
     it is no landing run (maintainer request 2026-10-14). A landing
@@ -533,7 +556,8 @@ reviewer's duty on a machine that has catala. Current gates:
     holds to IR-SPEC ch. 5. SPEC LEG: the graph is built for every golden
     from its `ir.json` through the loader — never from the source — and
     compared per golden with the verifier's ch. 5 edges
-    (`verifier --dependency-edges`, the list WF-045/046 walk) over an
+    (`verifier --dependency-edges` from the workspace `_build`, the list
+    WF-045/046 walk) over an
     attribute or characteristic node, whatever forms of the rule layer they
     join (rules, object and fact creations, allocations, consistencies,
     uniquenesses, prioritized-defaults groups), without the edge kind and

@@ -111,8 +111,8 @@ without access to the maintainer's machine or private repositories.
   material whose release is not yet confirmed in writing); the same script
   trips on it.
 
-Run `scripts/check-self-contained.sh` before every commit, and the full gate
-set before every landing — locally (maintainer decision 2026-09-26: no
+Run `scripts/check-self-contained.sh` before every commit, and `make gates`
+before every landing — locally (maintainer decision 2026-09-26: no
 GitHub Actions; `.github/workflows/gates.yml` documents the order and runs
 by hand only).
 
