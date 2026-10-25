@@ -97,10 +97,10 @@ carrier name runs up to the `:` as a base name does.
 
 ### Lowering (resolver)
 
-Every form LIFTs already-resolved rules out of `resolvedRegels` into
+Every form LIFTs already-resolved rules out of `resolvedRules` into
 `prioritizedDefaults`: WF-050 forbids both a rule and a defaults group on one
 target, so the lifted rule's semantics live in the defaults group alone. The
-model keeps a `Regel` stub for each lifted rule, but the emitter writes no
+model keeps a `Rule` stub for each lifted rule, but the emitter writes no
 `regels` list (delta B3 of the v1 wire), so on the wire a lifted rule exists
 only as its default.
 
@@ -406,7 +406,7 @@ and, for the list on the default, `default-statute-annotations`, 2026-10-21):
   an unordered member's on its sibling group's single default. The default
   then carries no `source`: the frontend has no source text for a block as a
   whole;
-- the group's `PrioritizedDefaults.bron` carries the annotation of the rule the
+- the group's `PrioritizedDefaults.source` carries the annotation of the rule the
   group is named after: the base of an ordered family, the member itself for an
   unordered sibling. The base's text therefore stands twice, on the group and
   on the lowest default. The hand-written defaults anchors decided this: in
@@ -434,7 +434,7 @@ and, for the list on the default, `default-statute-annotations`, 2026-10-21):
   only;
 - an unannotated block writes no `statuteAnnotations` and no `source`: the
   three extension goldens carry no annotation and re-emit byte-identically;
-- the `Regel` stubs carry no annotation either: the emitter writes no `regels`
+- the `Rule` stubs carry no annotation either: the emitter writes no `regels`
   list (delta B3 of the v1 wire), so a lifted rule's annotation reaches
   the wire through its default alone;
 - nesting (form 2): a nested block's annotations land on its own default inside
@@ -450,10 +450,10 @@ and, for the list on the default, `default-statute-annotations`, 2026-10-21):
   form 2). It draws a WARNING that names it, instead of being hung on a member
   the author did not choose. The same WARNING, citing §9.10, covers an
   annotation above a `Regelgroep` header.
-  The group's own `bron` is no place for it: on a `ResolvedRegelGroep` that
+  The group's own `source` is no place for it: on a `ResolvedRuleGroup` that
   record's snippet is the group's name (the `source` of its `RuleGroup`). A
   `Beslistabel` header is the one header whose annotation does reach the wire,
-  because the table is rules: the annotation lands in the `bronAnnotaties` of
+  because the table is rules: the annotation lands in the `statuteAnnotations` of
   every rule the
   table desugars to, the multi-version precedent of IR-SPEC ch. 3.1 (one comment
   block above a shared header, stamped per flattened entry). An annotation above

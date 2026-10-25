@@ -55,9 +55,8 @@ has one build, and it takes every side table the loader returns beside the model
 produced a KieBase — a defaults family firing nowhere, a navigated read answered as the subject's own — and no marker
 said so, which is why there is no shorter way in. A document whose lowering holds two rules of one name in one package —
 two forms of one name, which WF-020 forbids and a hand-written document can still carry — is refused on both branches
-before the KieBase is built: the KieBase keeps one rule per name, and the destructive exec-model lowering played such a
-document with the second rule in the place of the first (measured 2026-10-02: "kenmerk actief: verwacht aanwezig,
-werkelijk afwezig"). The analysis refuses it in the words of Drools' DRL compiler, on both branches in one sentence:
+before the KieBase is built: the KieBase keeps one rule per name, so the second rule would replace the first and no
+marker would say so. The analysis refuses it in the words of Drools' DRL compiler, on both branches in one sentence:
 "exec-model: Duplicate rule name: actief — …" (witness `DuplicateRuleNameWitnessTest`).
 
 **A session in four calls.** The replay makes them for every case (`CaseRunner`), so the gate fires a session as a
