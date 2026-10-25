@@ -70,6 +70,9 @@ CMD.15-graph          := opam exec -- bash scripts/check-graph.sh
 CMD.16-scenario       := bash scripts/check-scenario.sh
 CMD.17-readings       := opam exec -- bash scripts/check-readings.sh
 
+# A target without a command would run an empty recipe and report rc=0.
+$(foreach t,$(BUILDS) $(GATES),$(if $(CMD.$(t)),,$(error no command CMD.$(t) for the target $(t))))
+
 help:
 	@echo 'make gates    runs the gate set: the three builds, then the 17 gates in parallel (CLAUDE.md, Gate set);'
 	@echo '              logs and summary under out/gates/<run>/. A single gate runs with its script.'
