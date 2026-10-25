@@ -17,7 +17,7 @@
 # every call takes the lock on _build, a call with nothing to do as well, and two calls in one _build at
 # the same time fail on it ("Unexpected contents of build directory global lock file", dune 3.24.2). So
 # that gates can run side by side in one checkout (`make gates`), dune runs only when a path of the source
-# set is newer than the stamp _build/.gates-built, which ensure_ocaml writes after a successful
+# set is newer than the stamp _build/.gates-built, which ensure_ocaml puts in place after a successful
 # `dune build` of the whole workspace. The stamp vouches for "dune succeeded after the youngest source
 # change", not for "every executable is newer than every source": dune's early cutoff leaves an executable
 # older than a source whose edit did not change it.
@@ -34,10 +34,10 @@
 # deleting or renaming a source leaves no file newer than the stamp, but it does update the mtime of its
 # directory. A directory dune does not read (a name starting with `_` or `.`, such as an old
 # spec/verifier/_build) is skipped here too. The stamp takes its time from the moment BEFORE dune starts
-# (a marker made then and moved into place after the build), so a source saved while dune runs is newer
-# than the stamp; the assertion at the end, stamp mtime >= youngest source mtime, then fails the call
-# instead of vouching for executables that may predate the edit. `find -newer` is strict, so an equal
-# mtime counts as fresh.
+# (a marker written then, the list of projects in it, and moved into place after the build), so a source
+# saved while dune runs is newer than the stamp; the assertion at the end, stamp mtime >= youngest source
+# mtime, then fails the call instead of vouching for executables that may predate the edit. `find -newer`
+# is strict, so an equal mtime counts as fresh.
 #
 # Accepted limits, recorded rather than hidden: mtimes are the whole test. A source whose mtime was set
 # back below the stamp's (touch -t, cp -p), and on a filesystem with whole-second mtimes an edit in the
@@ -101,9 +101,13 @@ ensure_ocaml() (
 
     if [ -n "$why" ]; then
         t0=$(date +%s)
-        # the marker carries the time the build starts; it becomes the stamp only after a green build
-        if ! { mkdir -p _build && marker=$(mktemp _build/.gates-building.XXXXXX); }; then
-            echo 'ocaml-build: FAIL — cannot make the start marker under _build' >&2
+        # The marker carries the time the build starts, so the list of projects goes into it now: a write
+        # after the build would move its mtime to the end of the build. It becomes the stamp only after a
+        # green build, by mv, which keeps the mtime.
+        marker=
+        if ! { mkdir -p _build && marker=$(mktemp _build/.gates-building.XXXXXX) && printf '%s\n' "$targets" > "$marker"; }; then
+            [ -n "$marker" ] && rm -f "$marker"
+            echo 'ocaml-build: FAIL — cannot write the start marker under _build' >&2
             exit 1
         fi
         # shellcheck disable=SC2086
@@ -115,9 +119,9 @@ ensure_ocaml() (
             echo "ocaml-build: FAIL — the dune build is red ($why) — run: dune build $targets" >&2
             exit 1
         fi
-        if ! { printf '%s\n' "$targets" > "$marker" && mv "$marker" "$stamp"; }; then
+        if ! mv "$marker" "$stamp"; then
             rm -f "$marker"
-            echo "ocaml-build: FAIL — cannot write the stamp $stamp" >&2
+            echo "ocaml-build: FAIL — cannot move the start marker to the stamp $stamp" >&2
             exit 1
         fi
         secs=$(( $(date +%s) - t0 ))
@@ -144,8 +148,10 @@ ensure_ocaml() (
 # A sourcing gate's $0 names that gate's own script, so only a direct run reaches this. It walks the
 # steps of scripts/lib/drools-jar.sh: an aged stamp is rebuilt, directly again it is fresh; then it
 # touches one path of each part of the source set, a directory among them, and each must rebuild; a
-# stamp written for another list of projects rebuilds; a source dated in the future fails the
-# assertion. Dropping any part of the set, or the assertion, fails a named step.
+# stamp written for another list of projects rebuilds; a source saved while dune runs (a dune on PATH
+# that touches a source and then runs the real one) and a source dated in the future fail the
+# assertion. Dropping any part of the set, the assertion, or the start time of the stamp fails a named
+# step.
 case ${0##*/} in
 ocaml-build.sh)
     set -u
@@ -161,14 +167,20 @@ ocaml-build.sh)
         exit 1
     fi
     stamp=_build/.gates-built
+    real_dune=$(command -v dune) || { echo 'ocaml-build selftest: FAIL — dune not found (run: eval $(opam env))' >&2; exit 1; }
     tmp=$(mktemp -d) || exit 2
     future=
-    # a source dated in the future by step 11 gets its mtime back as now, also when the test stops early
+    # a source dated in the future by step 12 gets its mtime back as now, also when the test stops early
     trap 'rm -rf "$tmp"; if [ -n "$future" ]; then touch "$future"; fi' EXIT
+    # step 11's dune: it saves a source a second after the start marker is written, then runs the real dune
+    mkdir "$tmp/bin" || exit 2
+    printf '#!/bin/sh\nsleep 1\ntouch "%s"\nexec "%s" "$@"\n' "$ref_src" "$real_dune" > "$tmp/bin/dune" || exit 2
+    chmod +x "$tmp/bin/dune" || exit 2
     step=0
-    last=11
-    for because in any rebuilt fresh rebuilt rebuilt rebuilt rebuilt rebuilt rebuilt rebuilt rebuilt fail; do
+    last=12
+    for because in any rebuilt fresh rebuilt rebuilt rebuilt rebuilt rebuilt rebuilt rebuilt rebuilt fail fail; do
         # every touch waits a second first, so a step also holds on whole-second mtimes
+        path=$PATH
         case $step in
             0) what='the tree as found' ;;
             1) sleep 1; touch -t 200001010000 "$stamp"; what="stamp made older than every source: touch -t 200001010000 $stamp" ;;
@@ -181,9 +193,11 @@ ocaml-build.sh)
             8) sleep 1; touch dune-workspace; what='dune-workspace touched' ;;
             9) sleep 1; touch "$(dirname "$ref_src")"; what="a source directory touched, as a deletion or rename does: $(dirname "$ref_src")" ;;
             10) printf 'another list\n' > "$stamp"; what="the stamp written for another list of projects: $stamp" ;;
-            11) future=$verifier_src; touch -t 209901010000 "$future"; what="a source dated in the future: touch -t 209901010000 $future" ;;
+            11) sleep 1; touch -t 200001010000 "$stamp"; path=$tmp/bin:$PATH
+                what="a source saved while dune runs: a dune on PATH that touches $ref_src a second after the start, then runs the real one" ;;
+            12) future=$verifier_src; touch -t 209901010000 "$future"; what="a source dated in the future: touch -t 209901010000 $future" ;;
         esac
-        ensure_ocaml >"$tmp/out" 2>"$tmp/err"
+        ( PATH=$path; ensure_ocaml ) >"$tmp/out" 2>"$tmp/err"
         rc=$?
         line=$(tail -n 1 "$tmp/err")
         echo "ocaml-build selftest $step/$last ($what) -> $line"
@@ -207,6 +221,6 @@ ocaml-build.sh)
     touch "$future"; future=
     ensure_ocaml 2>"$tmp/err" || { cat "$tmp/err" >&2; echo 'ocaml-build selftest: FAIL — the build after the future-dated source was set back does not hold' >&2; exit 1; }
     echo "ocaml-build selftest: the source set back to now -> $(tail -n 1 "$tmp/err")"
-    echo 'ocaml-build selftest: PASS (aged stamp -> rebuilt; again -> fresh; a source of each project, dune-workspace and a source directory touched -> rebuilt each; a stamp for another list -> rebuilt; a source dated in the future -> FAIL)'
+    echo 'ocaml-build selftest: PASS (aged stamp -> rebuilt; again -> fresh; a source of each project, dune-workspace and a source directory touched -> rebuilt each; a stamp for another list -> rebuilt; a source saved while dune runs -> FAIL; a source dated in the future -> FAIL)'
     ;;
 esac
