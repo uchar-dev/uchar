@@ -31,7 +31,7 @@ normalisation.
 - `bin/runner.ml` — `runner <ir.json> <case.json>`; exit 0 = every
   expectation matches exactly, 1 = mismatch or evaluation fault,
   2 = a load or cross-check error that no expectedFault pins (a
-  pinned load fault observes as exit 0 since 2026-09-19). On an
+  pinned load fault observes as exit 0). On an
   expectedFault case the runner prints `CODE <code> <params as JSON>` for the
   fault it observed and `CODE-PINNED <code> <params>` for the case's pin, and
   exits 0 only if the observed code is the pinned one with the pinned
@@ -159,14 +159,13 @@ faults with file/position context — never a silent fallback.
   (ch. 3.11) except in the two shapes that produce buckets: the ch. 3.7
   pro-rata target and the ch. 3.8 day-count target. Never a silent
   coercion.
-- **Not implemented** (each faults with context): day kinds,
-  multi-period grids, dimension cells, dimension selections,
-  variable/constant refs, the "is gevuurd" test (row 30:
+- **Not implemented** (each faults with context): multi-period grids,
+  dimension cells, dimension selections, variable/constant refs, the "is gevuurd" test (row 30:
   decided as a dialect-only fixpoint predicate, not yet implemented),
   and a granular parameter read in a SCALAR slot — vintage selection is
   ch. 8 scope.
-- **Landed since that list was written**, and no longer refused: the
-  ch. 3.7 pro-rata and ch. 3.8 day-count temporal targets, navigated
+- **Implemented**, and not refused: day kinds, the ch. 3.7 pro-rata and
+  ch. 3.8 day-count temporal targets, navigated
   scalar reads over a hop path (WF-053), the die/dat subselection filter
   on a fold, object and fact creation, parent-scoped uniqueness
   (ch. 5.9, WF-054), uniqueness unions, the temporal read of a
