@@ -379,3 +379,17 @@ gedraaid: gate 1, 3, 9 en 14 groen, de selftest van `ocaml-build.sh` groen.
 
 Daarnaast `4ad3a8c5`: de Makefile-kop zegt wanneer een regel groen is, dat een doel zonder commando make stopt en dat
 een kale `make` toont hoe de set draait; de kop van `ocaml-build.sh` noemt `admit.sh`.
+
+### Landing (hoofdsessie)
+
+- Akkoord van de eigenaar (2026-10-25), met een Opus-review vooraf (13 punten, alle verwerkt in de fixronde
+  hierboven) en één punt van de hoofdsessie: `scripts/admit.sh` draait stap 6 met `make gates`.
+- Herbaseerd op main `38983e6b` (met `drools-suite-forks`). `make gates` op `28598fb5`: 17 van 17 groen plus
+  `after-run`, in 595 s (load1 4,0 bij de start, piek ±165); de seriële set (`werk/gates.sh`) duurde 1763 s op
+  `5adb0386`. Langste gates in deze run: 12 589 s, 17 528 s, 13 334 s, 6 313 s. Samenvatting
+  `out/gates/20261025-152715/summary.txt` in de worktree, log `werk/gates-design/builds-when-stale/landing-make-gates.log`.
+- Acceptatie (g), de toolchain op deze commit: de toolchain pint alleen commits van uchar's main (sinds
+  `gates-own-tests-in-parallel`), dus dit volgt bij de eerstvolgende pin-bump (kaart `drl-value-functions-pin`).
+  Wat de toolchain van uchar leest, `EXPECTED_PLAYED` en `EXPECTED_CHANNEL` in `scripts/check-drools.sh`, is
+  ongewijzigd.
+- `werk/gates.sh` (buiten de repository) is weggehaald.
