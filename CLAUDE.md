@@ -427,7 +427,14 @@ same file. Current gates:
     (`scripts/lib/drools-jar.sh`), as the other five jar gates do, and runs
     the backend's own JUnit suite with `mvn -o test` on the same
     `target/`, which must pass with a non-zero, zero-skip test count
-    (maintainer decisions 2026-08-30 and 2026-10-25). Since 2026-09-19 the
+    (maintainer decisions 2026-08-30 and 2026-10-25). Since 2026-10-25
+    (card `drools-suite-forks`) surefire runs that suite in `forkCount`
+    0.5C JVMs with `reuseForks` (`backends/drools/pom.xml`; 8 on 16 cores,
+    1 on 2), which take the test classes from one queue: the count, the
+    floor and the witnesses by name are those of a run in one JVM, the
+    system property and the environment of the pom hold in every fork, and
+    a test class relies on no state another class leaves in its JVM.
+    Since 2026-09-19 the
     gate also sweeps the DRL-TEXT branch (card gate12-drl-takteller)
     through the replay runner's branch flag. Since the card
     `drl-teksttak-op-truth-maintenance` (2026-10-14) that branch is the
