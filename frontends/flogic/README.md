@@ -48,11 +48,8 @@ every kernel extension that widens a node union breaks the build here
 instead of failing silently. That is why the verifier, `ref/`, the
 clingo backend and this frontend are OCaml.
 
-The **quantifier fold** is the second construct this frontend guards, and
-it arrived the same way. `QuantifierFold` had three independent executors and
-no source language: RegelSpraak declines the non-temporal matrix, Catala
-does not carry the node, and the corpus witnesses for it were hand-written
-IR. Counting is native here — `count{…}` is an F-logic aggregate, and all
+The **quantifier fold** is the second construct this frontend guards,
+chosen the same way. Catala does not carry the node. Counting is native here — `count{…}` is an F-logic aggregate, and all
 five quantifiers are one comparison of a count with a number — so the node
 reaches the wire from a language with none of RegelSpraak's grammar, which
 is the same argument the subtype kernel got.
@@ -84,9 +81,9 @@ grammar and **not run**. They are, exactly:
    Flora-2's aggregate body is a comma-separated conjunction of literals,
    and the slice only restricts which conjuncts it reads;
 2. the **isa head** `?X : k :- Body.` — a rule concluding class membership;
-3. `<=` as the non-strict less-than comparison. It was in the slice's
-   operator table before the fold arrived, but no program used it until
-   `karig` and `zuinig` did; Prolog and XSB spell that comparison `=<`, and
+3. `<=` as the non-strict less-than comparison. It stood in the slice's
+   operator table at the 2026-09-12 check, but no program the check ran
+   used it; Prolog and XSB spell that comparison `=<`, and
    whether Flora-2 2.2 also accepts `<=` is the one form on this list whose
    answer could be "no". If it is, the fix is mechanical and local: `=<`
    replaces `<=` in the lexer's punctuation table, in the operator line
@@ -115,7 +112,7 @@ Flora-2's rule id is optional and unavailable outside a rule; here it is
 definitions. A barred *signature* declares a member and names nothing, so
 an id on one refuses, as it does on `::`, on `:` and on the unbarred
 frame. Ids must be distinct across both kinds. The same demands hold
-downstream since 2026-09-12: WF-107 requires a present, non-blank name on
+downstream: WF-107 requires a present, non-blank name on
 every named form and WF-020 keeps names unique across rules and defaults
 groups in one namespace. The frontend refuses first, with a source line;
 the verifier is the second net. Because Flora-2 has no per-item id, a
@@ -171,8 +168,8 @@ programs to do it.
 | `… = count{?V \| ?V = ?X.role, F…}` — the same comprehension WITHOUT its last goal | `all` |
 
 All five are one comparison of a count with a number, which is why the
-slice needs **no negation form** for them and the `\naf` / `\neg` refusals
-below did not move when the fold arrived: `none` is `count = 0` and `all`
+slice needs **no negation form** for them and keeps the `\naf` / `\neg`
+refusals below: `none` is `count = 0` and `all`
 is `count = |contributors|`, which is what ch. 3.9a states. A comprehension
 with no goal beside the hop states no matrix and stays the plain instance
 fold; a quantifier over no condition would violate WF-108 (d).
