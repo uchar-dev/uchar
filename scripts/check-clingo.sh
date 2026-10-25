@@ -15,13 +15,16 @@
 #      translate → clingo → check pipeline; an empty case set is a
 #      failure, never silently green.
 #
-# The replays run on one process per core (scripts/lib/parallel.sh): the
-# runner and the clingo it starts each use one core. The loop that judges
-# them reads each case's output and exit status in the order of the case
-# list, so the report is the one a replay case by case would give.
+# The replays run on one process per two cores (scripts/lib/parallel.sh;
+# the measurement is below). The loop that judges them reads each case's
+# output and exit status in the order of the case list, so the report is
+# the one a replay case by case would give.
 #
-# With explicit arguments (ir.json case.json) it replays just that pair.
+# The gate takes no arguments. One pair plays through the runner itself,
+# as backends/clingo/README.md shows:
+#   _build/default/backends/clingo/bin/clingo_runner.exe <ir.json> <case.json>
 set -u
+[ "$#" -eq 0 ] || { echo "usage: scripts/check-clingo.sh (no arguments)" >&2; exit 2; }
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
 if [ ! -d backends/clingo ]; then
@@ -83,15 +86,13 @@ if [ "$SUITE_CHECKS" -lt "$EXPECTED_MIN_SUITE_CHECKS" ]; then
 fi
 BIN=_build/default/backends/clingo/bin/clingo_runner.exe
 
-if [ "$#" -eq 2 ]; then
-    exec "$BIN" "$1" "$2"
-fi
-
-# One process per core: clingo_runner and the clingo it starts are single-threaded. Measured 2026-10-25
-# on 16 cores, the 899 cases: 152 s one at a time, 51 s on 4 processes, 36 s on 8 and on 16, where the
-# longest case alone takes 35 s (jutterswet-opvolgerversies/case3-tweede-versie.json).
+# One process per two cores. clingo_runner and the clingo it starts are single-threaded, but more than
+# eight processes do not help: measured 2026-10-25 on 16 cores, the 899 cases took 152 s one at a time,
+# 51 s on 4 processes and 36 s on 8 and on 16, where the longest case alone takes 35 s
+# (jutterswet-opvolgerversies/case3-tweede-versie.json). In `make gates` more processes would only take
+# cores from the JUnit suite of gate 12, the longest gate of the set.
 . scripts/lib/parallel.sh
-if ! procs=$(parallel_jobs 1); then
+if ! procs=$(parallel_jobs 2); then
     echo 'check-clingo: FAIL (no number of processes)' >&2
     exit 1
 fi
@@ -111,7 +112,7 @@ while IFS= read -r case; do
         parallel_task "$tasks" "$n_cases" out "$BIN" "$ir" "$case"
     fi
 done < "$list"
-echo "check-clingo: replays on $procs processes (one per core)"
+echo "check-clingo: replays on $procs processes (one per two cores)"
 if ! parallel_run "$tasks" "$procs"; then
     echo 'check-clingo: FAIL (parallel_run failed over the replays; the parallel line above says why)' >&2
     exit 1

@@ -255,9 +255,12 @@ missing line makes `make gates` exit non-zero. Current gates:
    backend's own unit suite — the normalisation fault modes no corpus
    witness can exercise — demanding its check-count line and holding
    that count to a floor; an un-run or shrunken suite is a silent green,
-   so neither is allowed. The replays run on one process per core and
+   so neither is allowed. The replays run on one process per two cores
+   (measured 2026-10-25 on 16 cores: 36 s on 8 processes and on 16, so
+   eight leave the other cores to gate 12's suite in `make gates`) and
    are judged in the order of the case list (`scripts/lib/parallel.sh`,
-   card `parallel-gate-replays`, 2026-10-25).
+   card `parallel-gate-replays`, 2026-10-25). The gate takes no
+   arguments.
 7. `scripts/check-noop.sh` — the no-op guard (PLAN §8: an identity
    transpiler must fail): every golden case run through the reference
    runner's `--noop` mode (expectations against the raw input, no
