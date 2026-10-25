@@ -356,4 +356,8 @@ acceptatie (d) geldt voor de code.
 - De volledige gate-set draaide hier niet; die draait de hoofdsessie vóór de landing (acceptatie (h)). Gate 13 en 17
   gebruiken de DRL-teksttak ook; gate 13 vergelijkt statusregels, en de lezingen van gate 17 komen uit het plan
   (`Consequence.Reading`), niet uit de namen van de functies.
-- De commits na `7a25a21d` veranderen alleen de kaart.
+- De commits na `7a25a21d` veranderen alleen de kaart, op `5adb0386` na (de javadoc van `TmsTranspiler.drlPieces`, zie
+  "Open punt").
+- De volledige gate-set (`werk/gates.sh`, hoofdsessie) op `5adb0386`: 17 van 17 groen in 29 minuten (12 733 s,
+  13 201 s, 17 398 s); samenvatting `werk/drl-function-names-from-rule/gates-1.summary.txt`. Geland op `main`
+  fast-forward, met deze kaart naar `done/`.
