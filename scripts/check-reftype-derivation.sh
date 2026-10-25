@@ -18,7 +18,9 @@
 #   3. each executor must produce EXACTLY the outcome it produces on the untouched ir.json —
 #      the same pinned values, or the same per-form refusal. A twist that changes an answer is
 #      an executor reading the repetition instead of the declaration, and the gate goes red
-#      with the diverging executor and golden named.
+#      with the diverging executor and golden named. A Drools run on the untouched ir.json that
+#      ends in no status line of the runner fails the gate by golden, leg and executor, before
+#      any comparison (drools_status below).
 #   4. the goldens that legitimately survive with a DIFFERENT outcome are pinned in the
 #      explicit survivor list below, each with the reason its outcome may move. A survivor
 #      outside the list is a failure; a listed survivor that no longer diverges, or no longer
@@ -870,6 +872,26 @@ mention() {
     [ -n "$matched" ]
 }
 
+# The status line DroolsBackendMain prints last: `PLAYED <n>`, `FAIL <detail>`, `EXCLUDE DROOLS-###: <reason>`
+# or `ERROR <detail>`. Each leg compares the line of a run on a changed copy with the line of the run on the
+# untouched ir.json, so two runs whose JVMs both crashed, were killed or did not start would compare equal,
+# empty against empty. An untouched run that ends in any other line therefore fails the gate by golden, leg
+# and executor, and the leg compares nothing with it. ref and clingo need no such check: the legs judge them
+# by their exit status, and a process that crashed, was killed or did not start does not end with 0.
+drools_status() {
+    case $1 in
+        "PLAYED "*)
+            case ${1#PLAYED } in ''|*[!0-9]*) return 1 ;; esac ;;
+        "FAIL "*|"ERROR "*|"EXCLUDE DROOLS-"[0-9][0-9][0-9]": "*) ;;
+        *) return 1 ;;
+    esac
+}
+no_status() {   # <golden> <leg> <executor> <line>
+    printf "FAIL: %s — the untouched run of %s in the %s leg ends in '%s', no status line of DroolsBackendMain (PLAYED, FAIL, EXCLUDE, ERROR): its JVM crashed, was killed or did not start\n" \
+        "$1" "$3" "$2" "$4" >&2
+    status=1
+}
+
 # --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------
 # Lower bounds, never equalities: they catch SHRINK — the harness that quietly probes half — while
 # growth needs no bump, so an ordinary corpus card touches no protected script. Raised deliberately,
@@ -981,7 +1003,9 @@ leg_twist() {
         base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
         twisted=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$tw" "$@" 2>/dev/null | tail -1)
         [ "${base_expr%% *}" = PLAYED ] && n_exec_played=$((n_exec_played + 1))
-        if [ "$base_expr" != "$twisted" ]; then
+        if ! drools_status "$base_expr"; then
+            no_status "$ident" unit Drools "$base_expr"
+        elif [ "$base_expr" != "$twisted" ]; then
             if mention "$ident" drools; then
                 n_survivors=$((n_survivors + 1)); echo "$ident|drools" >> "$HITS"
             else
@@ -998,13 +1022,15 @@ leg_twist() {
         n_checked=$((n_checked + 1))
         drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
         d_twisted=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$tw" "$@" 2>/dev/null | tail -1)
-        if [ "$drl_baseline" != "$base_expr" ]; then
+        if ! drools_status "$drl_baseline"; then
+            no_status "$ident" unit "the DRL-text branch" "$drl_baseline"
+        elif drools_status "$base_expr" && [ "$drl_baseline" != "$base_expr" ]; then
             printf 'FAIL: %s — the DRL-text branch, the second rendering of the analysis, gives another status line than the exec-model branch on the UNTOUCHED golden:\n  exec-model: %s\n  drl-text:   %s\n' \
                 "$ident" "$base_expr" "$drl_baseline" >&2
             status=1
         fi
         [ "${drl_baseline%% *}" = PLAYED ] && n_drl=$((n_drl + 1))
-        if [ "$drl_baseline" != "$d_twisted" ]; then
+        if drools_status "$drl_baseline" && [ "$drl_baseline" != "$d_twisted" ]; then
             if mention "$ident" drl; then
                 n_survivors=$((n_survivors + 1)); echo "$ident|drl" >> "$HITS"
             else
@@ -1043,6 +1069,8 @@ leg_vocabulary() {
         while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
         base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
         drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+        drools_status "$base_expr" || no_status "$ident" vocabulary Drools "$base_expr"
+        drools_status "$drl_baseline" || no_status "$ident" vocabulary "the DRL-text branch" "$drl_baseline"
         for variant in stripped swapped rotated; do
             vir="$vdir/$variant.json"
             while IFS= read -r case; do
@@ -1058,13 +1086,13 @@ leg_vocabulary() {
             done < "$CASES"
             n_vreplays=$((n_vreplays + 2))
             v=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$vir" "$@" 2>/dev/null | tail -1)
-            if [ "$v" != "$base_expr" ]; then
+            if drools_status "$base_expr" && [ "$v" != "$base_expr" ]; then
                 printf 'FAIL: %s — Drools answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
                     "$ident" "$variant" "$base_expr" "$variant" "$v" >&2
                 status=1
             fi
             dv=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$vir" "$@" 2>/dev/null | tail -1)
-            if [ "$dv" != "$drl_baseline" ]; then
+            if drools_status "$drl_baseline" && [ "$dv" != "$drl_baseline" ]; then
                 printf 'FAIL: %s — the DRL-text branch answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
                     "$ident" "$variant" "$drl_baseline" "$variant" "$dv" >&2
                 status=1
@@ -1107,14 +1135,18 @@ leg_origin() {
         n_hreplays=$((n_hreplays + 2))
         base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
         h=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$hir" "$@" 2>/dev/null | tail -1)
-        if [ "$h" != "$base_expr" ]; then
+        if ! drools_status "$base_expr"; then
+            no_status "$ident" origin Drools "$base_expr"
+        elif [ "$h" != "$base_expr" ]; then
             printf 'FAIL: %s — Drools answers differently on the stripped copy (origin leg):\n  untouched: %s\n  stripped:  %s\n' \
                 "$ident" "$base_expr" "$h" >&2
             status=1
         fi
         drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
         dh=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$hir" "$@" 2>/dev/null | tail -1)
-        if [ "$dh" != "$drl_baseline" ]; then
+        if ! drools_status "$drl_baseline"; then
+            no_status "$ident" origin "the DRL-text branch" "$drl_baseline"
+        elif [ "$dh" != "$drl_baseline" ]; then
             printf 'FAIL: %s — the DRL-text branch answers differently on the stripped copy (origin leg):\n  untouched: %s\n  stripped:  %s\n' \
                 "$ident" "$drl_baseline" "$dh" >&2
             status=1
@@ -1160,14 +1192,18 @@ leg_name() {
         n_nreplays=$((n_nreplays + 2))
         base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
         nm=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$nir" "$@" 2>/dev/null | tail -1)
-        if [ "$nm" != "$base_expr" ]; then
+        if ! drools_status "$base_expr"; then
+            no_status "$ident" name Drools "$base_expr"
+        elif [ "$nm" != "$base_expr" ]; then
             printf 'FAIL: %s — Drools answers differently on the stripped copy (name leg):\n  untouched: %s\n  stripped:  %s\n' \
                 "$ident" "$base_expr" "$nm" >&2
             status=1
         fi
         drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
         dn=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$nir" "$@" 2>/dev/null | tail -1)
-        if [ "$dn" != "$drl_baseline" ]; then
+        if ! drools_status "$drl_baseline"; then
+            no_status "$ident" name "the DRL-text branch" "$drl_baseline"
+        elif [ "$dn" != "$drl_baseline" ]; then
             printf 'FAIL: %s — the DRL-text branch answers differently on the stripped copy (name leg):\n  untouched: %s\n  stripped:  %s\n' \
                 "$ident" "$drl_baseline" "$dn" >&2
             status=1

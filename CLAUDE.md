@@ -553,8 +553,11 @@ missing line makes `make gates` exit non-zero. Current gates:
     four legs (unit, vocabulary, origin, name) run as four processes at
     once, with the replay flags of `scripts/lib/parallel.sh` on their
     JVMs, and their reports are read in that order (card
-    `parallel-gate-replays`, 2026-10-25). CI leg unconditional and
-    blocking.
+    `parallel-gate-replays`, 2026-10-25). A Drools run on an untouched
+    golden that ends in no status line of the runner (`PLAYED`, `FAIL`,
+    `EXCLUDE`, `ERROR`) fails the gate by golden, leg and executor, so two
+    runs whose JVMs both died never compare equal. CI leg unconditional
+    and blocking.
 
 14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`,
     plain OCaml in the workspace's dune build, so no fetched jars and no
