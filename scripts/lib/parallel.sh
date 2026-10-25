@@ -40,16 +40,16 @@
 #   number of cores fails the call (status 1, a `parallel: FAIL — …` line).
 # PARALLEL_JVM_FLAGS
 #   the flags of every replay JVM of the four gates, `java $PARALLEL_JVM_FLAGS -jar "$JAR" …` (unquoted: two
-#   words). They choose the JIT and the collector and change no result. Measured 2026-10-25 on 16 cores, 54
-#   goldens (every sixth with a case file), one `java -jar` per golden, wall clock and user+sys:
-#                          1 process        4 processes    8 processes    16 processes
-#     exec, no flags       24.7 s  86 cpu   8.3 s          6.7 s          6.7 s
-#     exec, these flags    21.3 s  33 cpu   6.1 s          3.6 s          3.3 s
-#     --drl, no flags      38.5 s 136 cpu  12.5 s         10.6 s         10.5 s
-#     --drl, these flags   31.7 s  49 cpu   9.1 s          5.5 s          4.6 s
-#   A replay JVM without them uses 3.5 cores (the C2 compiler and the parallel collector, at start-up), with
-#   them 1.5; every golden ended in the same status line either way. Hence D = 2 for a loop of replay JVMs:
-#   eight at once fill 16 cores.
+#   words). They stop the JIT compiler at its first tier and take the single-threaded collector, and change
+#   no result. Measured 2026-10-25 on 16 cores, 54 goldens (every sixth with a case file), one `java -jar`
+#   per golden, the wall clock, and for one process also the CPU time (user+sys):
+#                          1 process          4 processes    8 processes    16 processes
+#     exec, no flags       24.7 s (86 s cpu)   8.3 s          6.7 s          6.7 s
+#     exec, these flags    21.3 s (33 s cpu)   6.1 s          3.6 s          3.3 s
+#     --drl, no flags      38.5 s (136 s cpu) 12.5 s         10.6 s         10.5 s
+#     --drl, these flags   31.7 s (49 s cpu)   9.1 s          5.5 s          4.6 s
+#   A replay JVM without them keeps 3.5 cores busy, with them 1.5; every golden ended in the same status
+#   line either way. Hence D = 2 for a loop of replay JVMs: eight at once fill 16 cores.
 PARALLEL_JVM_FLAGS='-XX:TieredStopAtLevel=1 -XX:+UseSerialGC'
 
 # the shell that runs one task: $1 the directory, $2 the key
