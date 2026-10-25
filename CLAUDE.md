@@ -255,7 +255,9 @@ missing line makes `make gates` exit non-zero. Current gates:
    backend's own unit suite — the normalisation fault modes no corpus
    witness can exercise — demanding its check-count line and holding
    that count to a floor; an un-run or shrunken suite is a silent green,
-   so neither is allowed.
+   so neither is allowed. The replays run on one process per core and
+   are judged in the order of the case list (`scripts/lib/parallel.sh`,
+   card `parallel-gate-replays`, 2026-10-25).
 7. `scripts/check-noop.sh` — the no-op guard (PLAN §8: an identity
    transpiler must fail): every golden case run through the reference
    runner's `--noop` mode (expectations against the raw input, no
@@ -483,14 +485,13 @@ missing line makes `make gates` exit non-zero. Current gates:
     `DroolsBackendMain --readings` prints the readings per case in the
     canonical text the reference interpreter's trace is held to (card
     `ref-trace-and-readings-gate`). An empty played
-    set is a failure. For a builder who changes a pin or a list,
-    `scripts/check-drools.sh --fast` takes the jar fresh or rebuilt,
-    does not run the JUnit suite, runs the exec-model replay with every
-    pin and list, and
-    leaves out the DRL-text sweep, so nothing compares the two branches
-    under it; its report names what did not run and its last line says
-    it is no landing run (maintainer request 2026-10-14). A landing
-    always runs the full gate, without a flag. CI leg unconditional and
+    set is a failure. The replay runs in two passes, the exec-model
+    branch and then the DRL-text branch: each pass runs the `java -jar`
+    of every golden on one process per two cores, with the replay flags
+    of `scripts/lib/parallel.sh`, and then judges the outputs in the
+    order of the corpus, so the DRL-text pass begins only after the
+    exec-model pass is green. The gate takes no arguments (card
+    `parallel-gate-replays`, 2026-10-25). CI leg unconditional and
     blocking.
 
 13. `scripts/check-reftype-derivation.sh` — the annotation-indifference
@@ -547,8 +548,12 @@ missing line makes `make gates` exit non-zero. Current gates:
     (measured 2026-10-21). Since the card `default-statute-annotations`
     (2026-10-21) the same stripped copy also loses every
     `statuteAnnotations` of a Default (IR-SPEC ch. 6.1), with its own floor
-    `EXPECTED_MIN_ANNOTATIONS_STRIPPED=29` (measured 2026-10-21). CI leg
-    unconditional and blocking.
+    `EXPECTED_MIN_ANNOTATIONS_STRIPPED=29` (measured 2026-10-21). The
+    four legs (unit, vocabulary, origin, name) run as four processes at
+    once, with the replay flags of `scripts/lib/parallel.sh` on their
+    JVMs, and their reports are read in that order (card
+    `parallel-gate-replays`, 2026-10-25). CI leg unconditional and
+    blocking.
 
 14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`,
     plain OCaml in the workspace's dune build, so no fetched jars and no
@@ -648,7 +653,11 @@ missing line makes `make gates` exit non-zero. Current gates:
     and `EXPECTED_MIN_TIMELINE_LINES=76` (measured 2026-10-21), and
     `EXPECTED_MIN_UNREACHED_CONTRIBUTORS=106` (contributors of the trace
     not reached, measured 2026-10-21, card `fold-contributor-verdicts`).
-    The jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). An
+    The jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). The
+    traces run on one process per core, the readings and the plain
+    replays on one per two cores with the replay flags of
+    `scripts/lib/parallel.sh`, and the outputs are judged in the order of
+    the corpus (card `parallel-gate-replays`, 2026-10-25). An
     empty comparison is a failure, never silently green. CI leg
     unconditional and blocking.
 
