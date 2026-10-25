@@ -58,7 +58,10 @@ commit. Done = the merge moves the card to `done/` and appends a short
 
 1. Read `CLAUDE.md`, this file, and your card. If gates are red at start,
    report and stop — never build on red.
-2. Work the card. When adding a gate: show it red, then green.
+2. Work the card. When adding a gate: give it a target in the root
+   `Makefile`, a job in `.github/workflows/gates.yml` and its entry in
+   the gate list of `CLAUDE.md` (`make gates` does not run while the
+   three differ), and show it red, then green.
 3. Report honestly: what passed (with real output), what is a marker or gap,
    what stayed out of scope. A green subset is not green.
 4. End: fast-forward merge with the card moved to `done/`; for protected

@@ -147,8 +147,11 @@ reviewer's duty on a machine that has catala.
 
 **How the set runs (maintainer decision 2026-10-25, card
 `gate-builds-when-stale`).** `make gates` in the repository root runs the
-set. It first builds the three trees the gates read, side by side: the
-OCaml workspace (`scripts/lib/ocaml-build.sh`), the RegelSpraak frontend
+set. It first checks that the gate scripts its targets run are those
+`.github/workflows/gates.yml` runs, in that order, and those this list
+names, and stops before any build, naming the script, where they differ.
+Then it builds the three trees the gates read, side by side: the OCaml
+workspace (`scripts/lib/ocaml-build.sh`), the RegelSpraak frontend
 (`frontends/regelspraak/Makefile`) and the Drools backend jar
 (`scripts/lib/drools-jar.sh`). Then it runs the gates in parallel in the
 same checkout (`make -k -j<cores>`), with one log per gate under

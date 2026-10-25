@@ -3,12 +3,15 @@
 #
 #     make gates
 #
-# first builds the three trees the gates read, side by side, each only when a source is newer than its
-# product: `ocaml`, the OCaml workspace (scripts/lib/ocaml-build.sh); `frontend`, the RegelSpraak frontend
-# and its two tool jars (frontends/regelspraak/Makefile); `jar`, the Drools backend jar
-# (scripts/lib/drools-jar.sh). When all three are green it runs the 17 gates in parallel in this checkout,
-# `make -k -j<cores>`, the number of cores read from the machine. A gate builds what it needs only when a
-# source is newer, so after the first step no gate builds, and no two gates write the same file.
+# first compares the gate lists: the gate scripts the targets below run must be those .github/workflows/
+# gates.yml runs, in its order, and those CLAUDE.md lists; a difference stops the run before anything is
+# built and names the script. Then it builds the three trees the gates read, side by side, each only when a
+# source is newer than its product: `ocaml`, the OCaml workspace (scripts/lib/ocaml-build.sh); `frontend`,
+# the RegelSpraak frontend and its two tool jars (frontends/regelspraak/Makefile); `jar`, the Drools
+# backend jar (scripts/lib/drools-jar.sh). When all three are green it runs the 17 gates in parallel in
+# this checkout, `make -k -j<cores>`, the number of cores read from the machine. A gate builds what it
+# needs only when a source is newer, so after the build step no gate builds, and no two gates write the
+# same file.
 #
 # Each target writes its output to out/gates/<run>/<target>.log. out/gates/<run>/summary.txt holds one
 # line per build target and one per gate, in the order of .github/workflows/gates.yml:
@@ -73,11 +76,27 @@ CMD.17-readings       := opam exec -- bash scripts/check-readings.sh
 # A target without a command would run an empty recipe and report rc=0.
 $(foreach t,$(BUILDS) $(GATES),$(if $(CMD.$(t)),,$(error no command CMD.$(t) for the target $(t))))
 
+# the gate script of each gate target, in the order of GATES
+GATE_SCRIPTS := $(foreach g,$(GATES),$(filter scripts/check-%.sh,$(CMD.$(g))))
+
 help:
 	@echo 'make gates    runs the gate set: the three builds, then the 17 gates in parallel (CLAUDE.md, Gate set);'
 	@echo '              logs and summary under out/gates/<run>/. A single gate runs with its script.'
 
 gates:
+	@mk=' $(GATE_SCRIPTS) '; bad=0; \
+	yml=$$(grep -v '^[[:space:]]*#' .github/workflows/gates.yml | grep -o 'scripts/check-[a-z0-9-]*\.sh' | awk '!seen[$$0]++'); \
+	doc=$$(grep -o '^[0-9][0-9]*\. `scripts/check-[a-z0-9-]*\.sh`' CLAUDE.md | grep -o 'scripts/check-[a-z0-9-]*\.sh'); \
+	for s in $$yml; do case "$$mk" in *" $$s "*) ;; *) echo "make gates: .github/workflows/gates.yml runs $$s, no target of the Makefile does" >&2; bad=1 ;; esac; done; \
+	for s in $$doc; do case "$$mk" in *" $$s "*) ;; *) echo "make gates: CLAUDE.md lists the gate $$s, no target of the Makefile runs it" >&2; bad=1 ;; esac; done; \
+	for s in $(GATE_SCRIPTS); do \
+	  case " $$(echo $$yml) " in *" $$s "*) ;; *) echo "make gates: the Makefile runs $$s, .github/workflows/gates.yml does not" >&2; bad=1 ;; esac; \
+	  case " $$(echo $$doc) " in *" $$s "*) ;; *) echo "make gates: the Makefile runs $$s, CLAUDE.md lists no such gate" >&2; bad=1 ;; esac; \
+	done; \
+	if [ $$bad -eq 0 ] && [ "$$(echo $$yml)" != "$(GATE_SCRIPTS)" ]; then \
+	  echo "make gates: GATES is not in the order of .github/workflows/gates.yml, the order of the summary: $$(echo $$yml)" >&2; bad=1; \
+	fi; \
+	if [ $$bad -ne 0 ]; then echo 'make gates: the gate lists of the Makefile, .github/workflows/gates.yml and CLAUDE.md differ (above); nothing ran' >&2; exit 2; fi
 	@mkdir -p out/gates; mkdir $(LOGS) || { echo "make gates: $(LOGS) exists; start the run again" >&2; exit 2; }
 	@echo "start $$(date '+%F %T') $$(git rev-parse --short HEAD) $$(git branch --show-current)" > $(LOGS)/summary.txt
 	@t0=$$(date +%s); \
