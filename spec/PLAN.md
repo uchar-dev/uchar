@@ -1216,6 +1216,8 @@ branches write 0.3333333333333333, a recorded limit of the backend). On
 a pin or a list: a fresh jar without the suite, the replay under every pin and
 list, no DRL sweep, and a last line saying it is no landing run; 130–160 s
 against about 650 s for the full gate, which took about 300 s at the claim.
+On 2026-10-25 (card `parallel-gate-replays`) `--fast` went: gate 12 takes no
+arguments and runs in about three minutes on its own.
 Gate 13's DRL leg must reproduce the exec-model branch's untouched line and
 play as many goldens; gate 7 gains the survivor case 2 of
 `jutterswet-uniciteit-drie-bronnen`, a consistency that holds on the input.

@@ -348,3 +348,15 @@ lag buiten de repo. Rode en groene standen in een kopie (`git worktree add --det
 De rapporten zijn, met het filter van (b) en zonder de regels van het runscript, gelijk aan de "na"-rapporten van de
 bouwer, op de processenregel van gate 6 na. Logs `g{06,12,13,17}-green.log`. Geen volledige `make gates`: die draait de
 hoofdsessie bij de landing.
+
+### Landing (hoofdsessie)
+
+- Akkoord van de eigenaar (2026-10-25), na een Opus-review (acht punten; 1–4 en 6–8 verwerkt in de fixronde
+  hierboven, 5 lag buiten de repository).
+- `make gates` op `772e46ef`: 17 van 17 groen plus `after-run`, in 283 s (load1 4,2 bij de start, piek ±81); de
+  vorige landing (`28598fb5`, kaart `gate-builds-when-stale`) duurde 595 s. Langste gates in deze run: 12 283 s,
+  6 241 s, 13 222 s, 17 211 s. Samenvatting `out/gates/20261025-173857/summary.txt` in de worktree, log
+  `werk/gates-design/parallel-replays/landing-make-gates.log`.
+- `spec/PLAN.md` krijgt bij de alinea van 2026-10-14 over `--fast` één zin over het vervallen ervan.
+- Wat de toolchain van uchar leest, `EXPECTED_PLAYED` en `EXPECTED_CHANNEL` in `scripts/check-drools.sh`, is
+  ongewijzigd; de toolchain volgt bij de eerstvolgende pin-bump (kaart `drl-value-functions-pin`).
