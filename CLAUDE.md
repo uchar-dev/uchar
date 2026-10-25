@@ -462,10 +462,11 @@ missing line makes `make gates` exit non-zero. Current gates:
     `EXPECTED_DRL_PLAYED` equality pin and a reason-carrying
     `DRL_CHANNEL` list; both went with the destructive lowering they
     described. The sweep runs as the gate's final block, so only an
-    otherwise-green gate pays its cost (measured 2026-10-14 on a copy:
-    220 s of 635 s). The gate also fails when the backend's suite did
-    not run `BranchDumpsCorpusWitnessTest`, the case-by-case comparison of
-    the two branches over every golden and red case.
+    otherwise-green gate pays its cost (measured 2026-10-25, the gate
+    alone on 16 cores: 34 s of 181 s). The gate also fails when the
+    backend's suite did not run `BranchDumpsCorpusWitnessTest`, the
+    case-by-case comparison of the two branches over every golden and
+    red case.
     Since 2026-10-21 (card `fixpoint-readings`) the backend has a build
     with readings (`DroolsBackend.build(…, readings)`): beside the rule of
     every form with a condition a reading rule, with the left-hand side of

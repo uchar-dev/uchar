@@ -1192,8 +1192,8 @@ done
 wait
 
 # The report of a leg, in its place. A leg that stopped early (a twister or a stripper could not read a
-# golden: its FAIL line, then status 2) stops the gate there, as it did; a leg whose process ended in any
-# other way without its counts fails the gate by the name of the leg.
+# golden: its FAIL line, then status 2) stops the gate there with status 2; a leg whose process ended in
+# any other way without its counts fails the gate by the name of the leg.
 leg_report() {
     cat "$WORK/$1.log" >&2
     leg_rc=$(cat "$WORK/$1.rc" 2>/dev/null)

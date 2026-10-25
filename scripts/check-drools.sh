@@ -104,8 +104,8 @@ bash scripts/check-drools-codes.sh || fail "the register of refusal codes does n
 #      an edited test rebuilds the jar as well; an edit saved while the gate runs is the recorded limit
 #      of drools-jar.sh;
 #   3. a suite that did not run or did not count: the suite is a check, not a build step, and runs on
-#      every full run with the counts below — more than zero, none skipped, the floor, the witnesses by
-#      name, each report newer than suite_begin. It is never taken from a surefire report on disk: a
+#      every run of the gate with the counts below — more than zero, none skipped, the floor, the
+#      witnesses by name, each report newer than suite_begin. It is never taken from a surefire report on disk: a
 #      report can predate an edit.
 # `mvn test` writes no jar, so the gates that read the jar can run beside this one in one checkout
 # (`make gates` builds the jar before it starts them). The suite runs FIRST, so a red or empty suite
@@ -1623,13 +1623,13 @@ done
 
 # --- the DRL-TEXT sweep: the second rendering of the one analysis ---------------------------------
 # A SECOND pass over every golden through the runner's --drl entry. It runs LAST, after the square
-# above is green, so an exec-side break still fails in the time it always did and the extra wall
-# clock is only ever paid by an otherwise-passing gate. Per golden the line must be the exec-model
+# above is green, so an exec-side break fails before it starts and only an otherwise-passing gate
+# pays its wall clock. Per golden the line must be the exec-model
 # branch's line (the header says why); while EXCLUDE_KNOWN is empty, a FAIL or ERROR here is a difference by
 # construction (the header says when it is not).
-# MEASURED COST: the text compiles its Java functions per golden, so this sweep is the more expensive
-# of the two (FABLE-3 §3.3 A: 202 s against 96–100 s for the old text); the figure printed below is
-# the one to believe, and it is printed on the failing path too.
+# MEASURED COST: the text compiles its Java functions per golden, so this pass is the more expensive
+# of the two (measured 2026-10-25, the gate alone on 16 cores: 34 s of 181 s); the figure printed below
+# is the one to believe, and it is printed on the failing path too.
 drl_begin=$(date +%s)
 declare -a DRL_DRIFT=()
 drl_played=0; drl_seen=0
