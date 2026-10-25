@@ -379,3 +379,6 @@ voorwaarde heeft geen toets meer; zijn waarde heet `r<n>_afloop0`.
   gebruiken de DRL-teksttak ook; de lezingen komen uit het plan (`Consequence.Reading`), niet uit de functies van een
   toets, en `ReadingsCorpusWitnessTest` en `BranchDumpsCorpusWitnessTest` (met de sectie `reading`) zijn groen.
 - De commits na `c786cc5f` veranderen alleen de kaart.
+- De volledige gate-set (`werk/gates.sh`, hoofdsessie) op `bb2d9f2a`: 17 van 17 groen in 29 minuten (12 732 s,
+  13 201 s, 17 390 s); samenvatting `werk/drl-no-passthrough-functions/gates-1.summary.txt`. Geland op `main`
+  fast-forward, met deze kaart naar `done/`.
