@@ -37,16 +37,13 @@ command -v python3 >/dev/null 2>&1 || fail "python3 not found (the canonicaliser
 
 . scripts/lib/ocaml-build.sh
 ensure_ocaml || fail "the frontend does not build"
-# The suite exe runs here directly, with the argv of its runtest rule
-# (frontends/catala/test/dune) and in its source directory, where the
-# rule's programs and cases are: so it RUNS every time, and no dune call
-# at gate time can meet another gate's on the _build lock. The check
-# count is verified: a suite that printed no count line ran nothing — a
-# hunted silent green. Zero checks is a failure.
-B=../../../_build/default
-suite_out=$(cd frontends/catala/test && "$B/frontends/catala/test/suite.exe" \
-  "$B/frontends/catala/bin/catala_frontend.exe" "$B/spec/verifier/bin/verifier.exe" \
-  "$B/ref/bin/runner.exe" "$B/backends/clingo/bin/clingo_runner.exe" 2>&1)
+# The suite runs as its runtest rule (frontends/catala/test/dune) runs it,
+# with the rule's own argv, through run_suite (scripts/lib/ocaml-build.sh):
+# so it RUNS every time, and no dune call at gate time can meet another
+# gate's on the _build lock. The check count is verified: a suite that
+# printed no count line ran nothing — a hunted silent green. Zero checks
+# is a failure.
+suite_out=$(run_suite frontends/catala/test 2>&1)
 suite_status=$?
 if [ $suite_status -ne 0 ]; then
   echo "$suite_out" | tail -15 >&2

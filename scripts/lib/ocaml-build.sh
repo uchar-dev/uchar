@@ -6,6 +6,8 @@
 #     . scripts/lib/ocaml-build.sh
 #     ensure_ocaml || <fail the gate>
 #
+# (gates 9 and 14 then run their frontend's suite with run_suite, below).
+#
 # ensure_ocaml prints exactly one status line on stderr, as its last line,
 #     ocaml-build: fresh (stamp newer than N source files)
 #     ocaml-build: rebuilt (<why>; <seconds>s)
@@ -56,12 +58,16 @@
 ensure_ocaml() (
     # A subshell body, so the sourcing gate keeps every variable of its own.
     stamp=_build/.gates-built
-    set -- ref backends/clingo spec/verifier frontends/catala frontends/flogic dune-workspace   # the source set (above)
+    sources='ref backends/clingo spec/verifier frontends/catala frontends/flogic dune-workspace'   # the source set (above)
+    # The paths of the source set that pass the find test "$@", a directory dune skips pruned with its
+    # contents.
+    # shellcheck disable=SC2086
+    scan() { find $sources \( -name '_*' -o -name '.*' \) -type d -prune -o "$@" -print; }
     if ! command -v dune >/dev/null 2>&1; then
         echo 'ocaml-build: FAIL — dune not found (run: eval $(opam env))' >&2
         exit 1
     fi
-    for p in "$@"; do
+    for p in $sources; do
         if [ ! -e "$p" ]; then
             echo "ocaml-build: FAIL — $p is missing; call from the repository root (the freshness test reads every path the build reads)" >&2
             exit 1
@@ -73,12 +79,11 @@ ensure_ocaml() (
         targets='ref backends/clingo spec/verifier frontends/flogic'
         left_out='; frontends/catala left out: no catala on PATH, gate 9 fails on its own'
     fi
-    # every path of the set, a directory dune skips pruned with its contents
-    if ! paths=$(find "$@" \( -name '_*' -o -name '.*' \) -type d -prune -o -print); then
+    if ! files=$(scan -type f); then
         echo 'ocaml-build: FAIL — find could not list the source set' >&2
         exit 1
     fi
-    nsrc=$(find "$@" \( -name '_*' -o -name '.*' \) -type d -prune -o -type f -print | grep -c .)
+    nsrc=$(printf '%s\n' "$files" | grep -c .)
     if [ "$nsrc" -eq 0 ]; then
         echo 'ocaml-build: FAIL — the source set holds no file, and a freshness test over nothing is vacuous' >&2
         exit 1
@@ -90,7 +95,7 @@ ensure_ocaml() (
     elif [ "$(cat "$stamp")" != "$targets" ]; then
         why="the stamp is for '$(cat "$stamp")', the build is for '$targets'"
     else
-        if ! stale=$(find "$@" \( -name '_*' -o -name '.*' \) -type d -prune -o -newer "$stamp" -print); then
+        if ! stale=$(scan -newer "$stamp"); then
             echo "ocaml-build: FAIL — find could not compare the source set with $stamp" >&2
             exit 1
         fi
@@ -128,7 +133,7 @@ ensure_ocaml() (
     fi
 
     # The internal assertion: stamp mtime >= youngest source mtime, whichever way the stamp came.
-    if ! late=$(find "$@" \( -name '_*' -o -name '.*' \) -type d -prune -o -newer "$stamp" -print); then
+    if ! late=$(scan -newer "$stamp"); then
         echo "ocaml-build: FAIL — find could not compare the source set with $stamp" >&2
         exit 1
     fi
@@ -142,6 +147,48 @@ ensure_ocaml() (
     else
         echo "ocaml-build: fresh (stamp newer than $nsrc source files$left_out)" >&2
     fi
+)
+
+# run_suite DIR, for gates 9 and 14 after ensure_ocaml: runs the suite of the runtest rule in DIR/dune as
+# that rule runs it, with the argv read from the rule itself, so the rule is the one place the argv is
+# written. Dune runs the rule in _build/default/DIR, where it copies the rule's programs and cases only for
+# the runtest alias; run_suite runs the suite in DIR, where those files are, and takes the exe and every
+# path of the argv under _build/default/DIR. No dune call, so no gate meets another on the _build lock,
+# and the suite runs every time (a cached runtest alias runs nothing). The output and the status are the
+# suite's; a rule without a `(run %{exe:suite.exe} <path> ...)` form, or a path missing under
+# _build/default, fails with a `run_suite: FAIL — …` line.
+run_suite() (
+    dir=$1
+    rule=$dir/dune
+    [ -f "$rule" ] || { echo "run_suite: FAIL — no $rule (call from the repository root)" >&2; exit 1; }
+    built=$(printf '%s\n' "$dir" | sed 's|[^/][^/]*|..|g')/_build/default/$dir   # seen from DIR
+    # the atoms of the rule's (run ...) form, one per line: comments dropped, from `(run` to the first `)`,
+    # which closes it, since no atom of the form holds a parenthesis
+    # shellcheck disable=SC2046
+    set -- $(awk '{ sub(/;.*/, "") }
+                  !on && /\(run([[:space:]]|$)/ { on = 1; sub(/.*\(run/, "") }
+                  on { for (i = 1; i <= NF; i++) { a = $i; gsub(/[()]/, "", a); if (a != "") print a }
+                       if ($0 ~ /\)/) exit }' "$rule")
+    if [ "${1:-}" != '%{exe:suite.exe}' ] || [ $# -lt 2 ]; then
+        echo "run_suite: FAIL — no '(run %{exe:suite.exe} <path> ...)' form in $rule" >&2
+        exit 1
+    fi
+    shift
+    n=$#
+    for a in "$@"; do
+        case $a in *'%{'*) echo "run_suite: FAIL — $rule passes $a, which run_suite cannot expand" >&2; exit 1 ;; esac
+        if [ ! -x "$dir/$built/$a" ]; then
+            echo "run_suite: FAIL — $a of $rule is not an executable under _build/default/$dir" >&2
+            exit 1
+        fi
+        set -- "$@" "$built/$a"
+    done
+    shift "$n"
+    if [ ! -x "$dir/$built/suite.exe" ]; then
+        echo "run_suite: FAIL — the suite of $rule is not an executable under _build/default/$dir" >&2
+        exit 1
+    fi
+    cd "$dir" && exec "$built/suite.exe" "$@"
 )
 
 # --- the self-test, when this file is RUN rather than sourced ----------------------------------

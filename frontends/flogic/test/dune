@@ -7,6 +7,9 @@
 ; F-logic test programs and their cases. All four executables and the
 ; source/case fixtures are declared as deps so dune builds and sandboxes
 ; them; their paths are handed to the suite as argv.
+; Gate 14 (scripts/check-flogic.sh) runs the suite with the argv it reads
+; from the action below (run_suite, scripts/lib/ocaml-build.sh), so the
+; argv is written here only.
 (rule
  (alias runtest)
  (deps
