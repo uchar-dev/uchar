@@ -293,6 +293,30 @@ class DrlConditionFunctionsWitnessTest {
                 expectations);
     }
 
+    @Test void a_composite_over_no_member_is_its_verdict() throws Exception {
+        // the default without a condition under another quantifier: GEEN over no member holds, TEN_MINSTE 1 does not
+        // (ComputeHelpers.endVerdict over no member); the first is no test, the second a test that returns the verdict
+        // of the composite, without a function of the composite and without its locals
+        Path document = TmsDocuments.document(TmsDocuments.model(List.of("geenDoel", "tenMinsteDoel")), List.of(
+                characteristicRule("geen lid onder geen", "geenDoel", compound("none", 0, List.of(),
+                        "aan geen van de voorwaarden voldoet")),
+                characteristicRule("geen lid onder ten minste een", "tenMinsteDoel", compound("atLeast", 1, List.of(),
+                        "aan ten minste een van de voorwaarden voldoet"))));
+        DroolsBackend.Build b = DroolsBackend.build(document, DroolsBackend.Branch.DRL_TEXT);
+        DrlPiece none = piece(b, "geen lid onder geen");
+        assertEquals(List.of("regel | roept []"), table(b.drl(), none));
+        assertFalse(rule(b, none).contains("eval("), rule(b, none));
+        DrlPiece atLeast = piece(b, "geen lid onder ten minste een");
+        assertEquals(List.of("r1_toets0 | // aan ten minste een van de voorwaarden voldoet | roept []",
+                "regel | roept [r1_toets0]"), table(b.drl(), atLeast));
+        assertEquals("// aan ten minste een van de voorwaarden voldoet\n"
+                + "function boolean r1_toets0() {\n"
+                + "    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 0, 0);\n"
+                + "}\n\n", function(b, atLeast, "r1_toets0"));
+        play(document, List.of(TmsDocuments.jutter("j", List.of())), List.of(
+                TmsDocuments.expected("j", "geenDoel", true), TmsDocuments.expected("j", "tenMinsteDoel", false)));
+    }
+
     /** A composite of {@code parts} under {@code quantifier} with the sentence {@code sentence}. */
     private static String compound(String quantifier, int threshold, List<String> parts, String sentence) {
         return "{\"node\":\"Compound\",\"quantifier\":\"" + quantifier + "\",\"threshold\":" + threshold + ",\"parts\":["
